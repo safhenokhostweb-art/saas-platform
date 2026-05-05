@@ -11,18 +11,51 @@
     <?php else: ?>
         <script src="https://cdn.tailwindcss.com"></script>
         <script>tailwind.config = { theme: { extend: { fontFamily: { vazir: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
-        <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+            @font-face{
+                font-family: 'Vazirmatn';
+                src: local('Vazirmatn'), local('Vazirmatn Regular'),
+                     url('/assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+                font-weight: 400;
+                font-style: normal;
+                font-display: swap;
+            }
+            @font-face{
+                font-family: 'Vazirmatn';
+                src: local('Vazirmatn Medium'),
+                     url('/assets/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+                font-weight: 500;
+                font-style: normal;
+                font-display: swap;
+            }
+            @font-face{
+                font-family: 'Vazirmatn';
+                src: local('Vazirmatn Bold'),
+                     url('/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+                font-weight: 700;
+                font-style: normal;
+                font-display: swap;
+            }
+            :root{
+                --admin-bg:#f1f5f9;
+                --admin-surface:#ffffff;
+                --admin-surface-soft:#f8fafc;
+                --admin-primary:#2563eb;
+                --admin-primary-hover:#1d4ed8;
+                --admin-border:#e2e8f0;
+                --admin-shadow:0 8px 24px rgba(15, 23, 42, 0.06);
+                --admin-radius:14px;
+            }
             body{ font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; }
-            .btn{ display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; }
-            .btn-primary{ background: #2563eb; color: #fff; }
+            .btn{ display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.625rem; font-weight: 500; }
+            .btn-primary{ background: var(--admin-primary); color: #fff; }
             .btn-secondary,.btn-outline-secondary{ background: transparent; color: #374151; border: 2px solid #9ca3af; }
-            .btn-outline-primary{ background: transparent; color: #2563eb; border: 2px solid #2563eb; }
+            .btn-outline-primary{ background: transparent; color: var(--admin-primary); border: 2px solid var(--admin-primary); }
             .btn-outline-primary:hover{ background: #eff6ff; }
             .form-control,.form-select{ width: 100%; padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; text-align: right; }
             .form-label{ display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem; text-align: right; }
             .form-check-input{ width: 1rem; height: 1rem; accent-color: #2563eb; }
-            .card{ background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; }
+            .card{ background: var(--admin-surface); border-radius: var(--admin-radius); box-shadow: var(--admin-shadow); border: 1px solid var(--admin-border); }
             .card-body{ padding: 1rem 1.5rem; }
             .alert{ padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid; }
             .alert-success{ background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
@@ -37,13 +70,38 @@
     <?php endif; ?>
     <?php echo $__env->make('partials.platform-styles', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <style>
+        @font-face{
+            font-family: 'Vazirmatn';
+            src: local('Vazirmatn'), local('Vazirmatn Regular'),
+                 url('/assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face{
+            font-family: 'Vazirmatn';
+            src: local('Vazirmatn Medium'),
+                 url('/assets/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face{
+            font-family: 'Vazirmatn';
+            src: local('Vazirmatn Bold'),
+                 url('/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        body { font-family: Vazirmatn, Tahoma, sans-serif; }
         #admin-sidebar[data-collapsed="true"] { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .admin-sidebar-inner { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .sidebar-text { display: none; }
     </style>
     <?php echo $__env->yieldPushContent('head'); ?>
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen bg-gray-50" style="background: var(--admin-bg);">
 
     <div class="flex h-screen overflow-hidden" id="admin-layout-root">
         <!-- Sidebar: با دکمه تاگل در دسکتاپ جمع می‌شود (فقط آیکن‌ها). همبرگر فقط موبایل. -->
