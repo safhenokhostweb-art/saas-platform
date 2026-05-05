@@ -11,8 +11,8 @@
     @else
         <script src="https://cdn.tailwindcss.com"></script>
         <script>tailwind.config = { theme: { extend: { fontFamily: { vazir: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
-        <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+            @include('partials.vazirmatn-font-faces-inline')
             body{ font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; margin: 0; background: #f9fafb; }
             .btn{ display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.25rem; border-radius: 0.5rem; font-weight: 500; border: none; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
             .btn-primary{ background: #4f46e5; color: #fff; }

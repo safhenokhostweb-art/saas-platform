@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>پیش‌نمایش {{ $zone === 'footer' ? 'فوتر' : 'هدر' }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        @include('partials.vazirmatn-font-faces-inline')
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; font-size: 16px; }
         .tb-section { padding: 1rem 0; }

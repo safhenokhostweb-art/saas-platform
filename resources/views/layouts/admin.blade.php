@@ -11,23 +11,32 @@
     @else
         <script src="https://cdn.tailwindcss.com"></script>
         <script>tailwind.config = { theme: { extend: { fontFamily: { vazir: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
-        <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+            @include('partials.vazirmatn-font-faces-inline')
+            :root{
+                --admin-bg:#f1f5f9;
+                --admin-surface:#ffffff;
+                --admin-surface-soft:#f8fafc;
+                --admin-primary:#2563eb;
+                --admin-primary-hover:#1d4ed8;
+                --admin-border:#e2e8f0;
+                --admin-shadow:0 8px 24px rgba(15, 23, 42, 0.06);
+                --admin-radius:14px;
+            }
             body{ font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; }
-            .btn{ display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; }
-            .btn-primary{ background: #2563eb; color: #fff; }
+            .btn{ display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.625rem; font-weight: 500; }
+            .btn-primary{ background: var(--admin-primary); color: #fff; }
             .btn-secondary,.btn-outline-secondary{ background: transparent; color: #374151; border: 2px solid #9ca3af; }
-            .btn-outline-primary{ background: transparent; color: #2563eb; border: 2px solid #2563eb; }
+            .btn-outline-primary{ background: transparent; color: var(--admin-primary); border: 2px solid var(--admin-primary); }
             .btn-outline-primary:hover{ background: #eff6ff; }
             .form-control,.form-select{ width: 100%; padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; text-align: right; }
             .form-label{ display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem; text-align: right; }
             .form-check-input{ width: 1rem; height: 1rem; accent-color: #2563eb; }
-            .card{ background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; }
+            .card{ background: var(--admin-surface); border-radius: var(--admin-radius); box-shadow: var(--admin-shadow); border: 1px solid var(--admin-border); }
             .card-body{ padding: 1rem 1.5rem; }
             .alert{ padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid; }
             .alert-success{ background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
             .alert-danger{ background: #fef2f2; border-color: #fecaca; color: #991b1b; }
-            .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; border-radius: 0.5rem; }
             .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; border-radius: 0.5rem; }
             .sidebar-link:hover{ background: #eff6ff; color: #2563eb; }
             .sidebar-link.active{ background: #eff6ff; color: #2563eb; }
@@ -43,7 +52,7 @@
     </style>
     @stack('head')
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen bg-gray-50" style="background: var(--admin-bg);">
 
     <div class="flex h-screen overflow-hidden" id="admin-layout-root">
         <!-- Sidebar: با دکمه تاگل در دسکتاپ جمع می‌شود (فقط آیکن‌ها). همبرگر فقط موبایل. -->

@@ -1,10 +1,46 @@
-/* @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap'); */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: local('Vazirmatn'), local('Vazirmatn Regular'),
+         url('/assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: local('Vazirmatn Medium'),
+         url('/assets/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: local('Vazirmatn Bold'),
+         url('/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+    :root {
+        --admin-bg: #f1f5f9;
+        --admin-surface: #ffffff;
+        --admin-surface-soft: #f8fafc;
+        --admin-primary: #2563eb;
+        --admin-primary-hover: #1d4ed8;
+        --admin-border: #e2e8f0;
+        --admin-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        --admin-radius: 14px;
+    }
+
     * {
         @apply border-gray-200;
     }
