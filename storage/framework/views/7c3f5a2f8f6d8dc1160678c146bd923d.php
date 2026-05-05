@@ -1,0 +1,9 @@
+<?php $__env->startComponent('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای لاگ فعالیت', 'updated' => '۱۴۰۴/۱۲/۰۵', 'id' => 'activity-log']); ?>
+    <p class="font-medium text-gray-800">ثبت فعالیت‌های کاربران</p>
+    <ul class="list-disc list-inside space-y-1 pr-2">
+        <li>لاگ فعالیت رویدادهای مهم (ورود، تغییر تنظیمات، ایجاد/ویرایش رکوردها و ...) را در پلتفرم ثبت می‌کند.</li>
+        <li>از این صفحه می‌توانید فیلتر بر اساس کاربر، تاریخ یا نوع رویداد اعمال کنید و خروجی بگیرید.</li>
+        <li>با هر تغییر در نوع رویدادهای ثبت‌شده یا قابلیت‌های این صفحه، این راهنما و تاریخ آخرین بروزرسانی در عنوان به‌روز می‌شود.</li>
+    </ul>
+<?php echo $__env->renderComponent(); ?>
+<?php /**PATH C:\laragon\www\saas-platform\resources\views/admin/activity-log/guide.blade.php ENDPATH**/ ?>

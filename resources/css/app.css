@@ -1,0 +1,187 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap'); */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    * {
+        @apply border-gray-200;
+    }
+
+    body {
+        @apply font-vazir bg-gray-50 text-gray-900 antialiased;
+        font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+        direction: rtl;
+    }
+
+    html {
+        direction: rtl;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2;
+    }
+
+    .btn-primary {
+        @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    }
+
+    .btn-success {
+        @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    }
+
+    .btn-danger {
+        @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    }
+
+    .btn-secondary {
+        @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500;
+    }
+
+    .btn-outline-primary {
+        @apply border-2 border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500 bg-transparent;
+    }
+
+    .btn-outline-secondary {
+        @apply border-2 border-gray-400 text-gray-700 hover:bg-gray-100 focus:ring-gray-500 bg-transparent;
+    }
+
+    .btn-outline-light {
+        @apply border border-white/70 text-white hover:bg-white/10 bg-transparent;
+    }
+
+    .card {
+        @apply bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden;
+    }
+
+    .card-header {
+        @apply px-6 py-4 border-b border-gray-200 bg-gray-50;
+    }
+
+    .card-body {
+        @apply px-6 py-4;
+    }
+
+    .form-control {
+        @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-400 text-right;
+    }
+
+    .form-label {
+        @apply block text-sm font-medium text-gray-700 mb-2 text-right;
+    }
+
+    .form-select {
+        @apply form-control appearance-none bg-white text-right;
+    }
+
+    .form-check-input {
+        @apply w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500;
+    }
+
+    .form-check-label {
+        @apply mr-2 text-sm text-gray-700 text-right;
+    }
+
+    .alert {
+        @apply px-4 py-3 rounded-lg mb-4 border;
+    }
+
+    .alert-success {
+        @apply bg-green-50 border-green-200 text-green-800;
+    }
+
+    .alert-danger {
+        @apply bg-red-50 border-red-200 text-red-800;
+    }
+
+    .alert-warning {
+        @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+    }
+
+    .alert-info {
+        @apply bg-blue-50 border-blue-200 text-blue-800;
+    }
+
+    .badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+
+    .badge-success {
+        @apply bg-green-100 text-green-800;
+    }
+
+    .badge-danger {
+        @apply bg-red-100 text-red-800;
+    }
+
+    .badge-warning {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+
+    .badge-info {
+        @apply bg-blue-100 text-blue-800;
+    }
+
+    .table {
+        @apply w-full text-right border-collapse;
+    }
+
+    .table thead {
+        @apply bg-gray-50;
+    }
+
+    .table th {
+        @apply px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200;
+    }
+
+    .table td {
+        @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-200;
+    }
+
+    .table tbody tr:hover {
+        @apply bg-gray-50;
+    }
+
+    .sidebar-link {
+        @apply flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg transition-all duration-200 hover:bg-blue-50 hover:text-blue-700;
+    }
+
+    .sidebar-link.active {
+        @apply bg-blue-50 text-blue-700;
+    }
+
+    .navbar {
+        @apply bg-white shadow-md border-b border-gray-200;
+    }
+
+    .navbar-brand {
+        @apply text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors;
+    }
+
+    .navbar-link {
+        @apply text-gray-700 hover:text-blue-600 transition-colors font-medium;
+    }
+
+    /* جلوگیری از بزرگ شدن آیکن‌ها در نوار ناوبری */
+    .navbar svg {
+        max-width: 24px;
+        max-height: 24px;
+    }
+}
+
+@layer utilities {
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .gradient-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+}

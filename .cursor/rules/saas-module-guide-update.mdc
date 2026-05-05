@@ -1,0 +1,46 @@
+---
+description: به‌روزرسانی آموزش هر ماژول ادمین و درج تاریخ آخرین بروزرسانی در عنوان
+alwaysApply: true
+---
+
+# قانون: آموزش ماژول‌ها و تاریخ آخرین بروزرسانی
+
+در پنل ادمین **saas-platform** برای هر صفحهٔ ماژول یک بلوک آموزش (راهنما) وجود دارد. این قانون از این پس **ثابت** است.
+
+## قانون
+
+**هرگاه در پروژه تغییری اتفاق افتاد** (قابلیتی اضافه، حذف یا تغییر کرد)، در **همان ماژول** مربوطه:
+
+1. **متن آموزش** آن صفحه را به‌روز کن تا با رفتار فعلی همخوان باشد.
+2. **تاریخ آخرین بروزرسانی** را در **عنوان** همان بلوک آموزش درج کن (فقط **تاریخ فارسی/شمسی**، فرمت: `Y/m/d`، مثلاً `۱۴۰۴/۱۲/۰۵`).
+
+یعنی: هر تغییر در کد، API، فرم، فیلد، یا قابلیت یک ماژول → به‌روزرسانی راهنمای همان ماژول + به‌روز کردن تاریخ در عنوان.
+
+## محل فایل‌های آموزش (راهنما)
+
+| ماژول | فایل راهنما |
+|-------|-------------|
+| داشبورد | `resources/views/admin/dashboard/guide.blade.php` |
+| کاربران پلتفرم | `resources/views/admin/users/guide.blade.php` |
+| مشتریان | `resources/views/admin/customers/guide.blade.php` |
+| سایت‌ها | `resources/views/admin/sites/guide.blade.php` |
+| فرم‌ها | `resources/views/admin/forms/guide.blade.php` |
+| فیلدهای پروفایل | `resources/views/admin/profile-fields/guide.blade.php` |
+| دسترسی و منو | `resources/views/admin/access/guide.blade.php` |
+| تنظیمات کپچا | `resources/views/admin/captcha/guide.blade.php` |
+| تنظیمات عمومی پلتفرم | `resources/views/admin/platform-settings/guide.blade.php` |
+| صفحات ثابت و راهنما (لیست) | `resources/views/admin/pages/partials/pages-index-guide.blade.php` |
+| صفحه‌ساز (فرم ایجاد/ویرایش صفحه) | `resources/views/admin/pages/partials/page-builder-guide.blade.php` |
+| عنوان ماژول‌ها | `resources/views/admin/module-labels/guide.blade.php` |
+| محصولات فروشگاه | `resources/views/admin/products/guide.blade.php` |
+| نمایندگان (Reseller) | `resources/views/admin/resellers/guide.blade.php` |
+| تسویه کمیسیون | `resources/views/admin/reseller-commissions/guide.blade.php` |
+| لاگ فعالیت | `resources/views/admin/activity-log/guide.blade.php` |
+
+قالب مشترک جعبهٔ آموزش: `resources/views/admin/partials/module-guide-box.blade.php` (پارامترها: `guideTitle`, `updated`, اختیاری `id`).
+
+## نحوهٔ به‌روزرسانی
+
+- در فایل راهنمای همان ماژول محتوای داخل بلوک را ویرایش کن.
+- در همان فایل، مقدار **`updated`** (یا در صفحه‌ساز متن «آخرین بروزرسانی») را به **تاریخ امروز به شمسی** (مثلاً ۱۴۰۴/۱۲/۰۵) تغییر بده. در تمام پروژه‌ها فقط تاریخ فارسی مجاز است (قانون persian-date-only).
+- در فایل‌هایی که از `@component('admin.partials.module-guide-box', ...)` استفاده می‌کنند، آرگومان `'updated' => '2026-02-23'` را به تاریخ روز به‌روزرسانی عوض کن.

@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ActivityLog extends Model
+{
+    protected $fillable = [
+        'action',
+        'description',
+        'user_id',
+        'subject_type',
+        'subject_id',
+        'properties',
+        'ip_address',
+        'user_agent',
+    ];
+
+    protected $casts = [
+        'properties' => 'array',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /** مدل مرتبط با subject (مثلاً Customer، Site، Form) */
+    public function subject()
+    {
+        if (!$this->subject_type) {
+            return null;
+        }
+        return $this->subject_type::find($this->subject_id);
+    }
+
+    /** برچسب عملیات برای نمایش در لیست */
+    public static function actionLabel(string $action): string
+    {
+        $labels = [
+            'auth.login' => 'ورود به سیستم',
+            'auth.logout' => 'خروج از سیستم',
+            'customer.created' => 'ایجاد مشتری',
+            'customer.updated' => 'ویرایش مشتری',
+            'customer.deleted' => 'حذف مشتری',
+            'site.created' => 'ایجاد سایت',
+            'site.updated' => 'ویرایش سایت',
+            'site.deleted' => 'حذف سایت',
+            'form.created' => 'ایجاد فرم',
+            'form.updated' => 'ویرایش فرم',
+            'form.deleted' => 'حذف فرم',
+            'user.toggled' => 'تغییر وضعیت کاربر',
+            'module.activated' => 'فعال‌سازی ماژول پس از پرداخت',
+        ];
+        return $labels[$action] ?? $action;
+    }
+}
