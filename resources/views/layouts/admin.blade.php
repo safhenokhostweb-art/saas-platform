@@ -6,13 +6,22 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'پنل مدیریت')</title>
+    {{-- فونت آفلاین Vazirmatn (preload + crossorigin برای کش بهتر) --}}
+    <link rel="preload" as="font" href="{{ asset('assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') }}" type="font/woff2" crossorigin>
+    <link rel="preload" as="font" href="{{ asset('assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') }}" type="font/woff2" crossorigin>
     @if(file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>@include('partials.vazirmatn-font-faces-inline')</style>
     @else
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>tailwind.config = { theme: { extend: { fontFamily: { vazir: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
         <style>
             @include('partials.vazirmatn-font-faces-inline')
+            /* بدون build — کلاس‌های ضروری برای آکاردئون و چیدمان */
+            .hidden { display: none !important; }
+            .flex { display: flex; }
+            .items-center { align-items: center; }
+            .justify-between { justify-content: space-between; }
+            .w-full { width: 100%; }
+            .min-h-screen { min-height: 100vh; }
             :root{
                 --admin-bg:#f1f5f9;
                 --admin-surface:#ffffff;
@@ -49,6 +58,28 @@
         #admin-sidebar[data-collapsed="true"] { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .admin-sidebar-inner { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .sidebar-text { display: none; }
+        #admin-sidebar[data-collapsed="true"] [data-admin-group-caret] { display: none; }
+        /* یوتیلیتی‌های مورد نیاز برای آکاردئون منو (در صورت عدم وجود در build تیلویند) */
+        [data-admin-group-caret] { transition: transform .2s ease; }
+        [data-admin-group-caret].rotate-180 { transform: rotate(180deg); }
+        /* اسکرول داخلی برای زیرمنوهای طولانی (مثل «ماژول‌های پلتفرم») */
+        [data-admin-group-items]:not(.hidden) {
+            max-height: 50vh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(37, 99, 235, 0.35) transparent;
+            padding-right: 2px;
+        }
+        [data-admin-group-items]::-webkit-scrollbar { width: 6px; }
+        [data-admin-group-items]::-webkit-scrollbar-track { background: transparent; }
+        [data-admin-group-items]::-webkit-scrollbar-thumb { background: rgba(37, 99, 235, 0.25); border-radius: 6px; }
+        [data-admin-group-items]::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.45); }
+        /* در حالت سایدبار جمع‌شده، اسکرول داخلی نخواهیم */
+        #admin-sidebar[data-collapsed="true"] [data-admin-group-items]:not(.hidden) {
+            max-height: none;
+            overflow: visible;
+        }
     </style>
     @stack('head')
 </head>
@@ -74,8 +105,24 @@
                                 @php $hasVisible = false; foreach ($keys as $k) { if (\App\Helpers\AdminMenu::isMenuItemVisible($k)) { $hasVisible = true; break; } } @endphp
                                 @if($hasVisible)
                                     <div class="mb-4">
-                                        <div class="sidebar-text px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">{{ $groupLabel }}</div>
-                                        <div class="mt-1 space-y-0.5">
+                                        <button
+                                            type="button"
+                                            class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border-b border-gray-100 text-gray-500 hover:text-blue-600 hover:bg-blue-50/60 transition-colors"
+                                            data-admin-group-toggle="{{ $loop->index }}"
+                                            aria-expanded="false"
+                                        >
+                                            <span class="sidebar-text">{{ $groupLabel }}</span>
+                                            <svg
+                                                data-admin-group-caret
+                                                class="w-4 h-4 transition-transform text-gray-500"
+                                                viewBox="0 0 20 20"
+                                                fill="none"
+                                                aria-hidden="true"
+                                            >
+                                                <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        <div class="mt-1 space-y-0.5 hidden" data-admin-group-items="{{ $loop->index }}">
                                             @foreach($keys as $key)
                                                 @if(\App\Helpers\AdminMenu::isMenuItemVisible($key))
                                                     <a href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\AdminMenu::isActive($key) ? 'active' : '' }}">
@@ -91,8 +138,24 @@
                         @else
                             @foreach(\App\Helpers\CustomerMenu::getGroups() as $groupLabel => $keys)
                                 <div class="mb-4">
-                                    <div class="sidebar-text px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">{{ $groupLabel }}</div>
-                                    <div class="mt-1 space-y-0.5">
+                                    <button
+                                        type="button"
+                                        class="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border-b border-gray-100 text-gray-500 hover:text-blue-600 hover:bg-blue-50/60 transition-colors"
+                                        data-admin-group-toggle="{{ $loop->index }}"
+                                        aria-expanded="false"
+                                    >
+                                        <span class="sidebar-text">{{ $groupLabel }}</span>
+                                        <svg
+                                            data-admin-group-caret
+                                            class="w-4 h-4 transition-transform text-gray-500"
+                                            viewBox="0 0 20 20"
+                                            fill="none"
+                                            aria-hidden="true"
+                                        >
+                                            <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                    <div class="mt-1 space-y-0.5 hidden" data-admin-group-items="{{ $loop->index }}">
                                         @foreach($keys as $key)
                                             @if(\App\Helpers\CustomerMenu::isVisible($key))
                                                 <a href="{{ route(\App\Helpers\CustomerMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\CustomerMenu::isActive($key) ? 'active' : '' }}">
@@ -246,6 +309,48 @@
                     apply();
                 });
             }
+        })();
+        // Sidebar menu groups accordion (collapse/expand)
+        (function(){
+            var toggles = document.querySelectorAll('[data-admin-group-toggle]');
+            toggles.forEach(function(btn){
+                var idx = btn.getAttribute('data-admin-group-toggle');
+                var caret = btn.querySelector('[data-admin-group-caret]');
+                var items = document.querySelector('[data-admin-group-items="' + idx + '"]');
+                if (!items || !caret) return;
+
+                var storageKey = 'admin-group-open-' + idx;
+                var open = localStorage.getItem(storageKey) === 'true';
+
+                function apply(isOpen){
+                    if (isOpen){
+                        items.classList.remove('hidden');
+                        btn.setAttribute('aria-expanded', 'true');
+                        caret.classList.add('rotate-180');
+                        caret.classList.remove('text-gray-500');
+                        caret.classList.add('text-blue-600');
+                        btn.classList.add('text-blue-600');
+                        btn.classList.remove('text-gray-500');
+                    } else {
+                        items.classList.add('hidden');
+                        btn.setAttribute('aria-expanded', 'false');
+                        caret.classList.remove('rotate-180');
+                        caret.classList.add('text-gray-500');
+                        caret.classList.remove('text-blue-600');
+                        btn.classList.remove('text-blue-600');
+                        btn.classList.add('text-gray-500');
+                    }
+                }
+
+                apply(open);
+
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    open = items.classList.contains('hidden');
+                    localStorage.setItem(storageKey, open ? 'true' : 'false');
+                    apply(open);
+                });
+            });
         })();
     </script>
 </body>

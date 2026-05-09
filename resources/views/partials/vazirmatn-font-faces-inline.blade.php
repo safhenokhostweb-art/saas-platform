@@ -16,9 +16,25 @@
 }
 @font-face{
     font-family: 'Vazirmatn';
+    src: local('Vazirmatn SemiBold'),
+         url('/assets/fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face{
+    font-family: 'Vazirmatn';
     src: local('Vazirmatn Bold'),
          url('/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
     font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face{
+    font-family: 'Vazirmatn';
+    src: local('Vazirmatn ExtraBold'),
+         url('/assets/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2') format('woff2');
+    font-weight: 800;
     font-style: normal;
     font-display: swap;
 }

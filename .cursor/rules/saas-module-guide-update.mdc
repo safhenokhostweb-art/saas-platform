@@ -1,46 +1,88 @@
 ---
-description: به‌روزرسانی آموزش هر ماژول ادمین و درج تاریخ آخرین بروزرسانی در عنوان
+description: استاندارد حرفه‌ای بروزرسانی ماژول‌ها + آپدیت راهنما و تاریخ شمسی
 alwaysApply: true
 ---
 
-# قانون: آموزش ماژول‌ها و تاریخ آخرین بروزرسانی
+# قانون حرفه‌ای بروزرسانی ماژول‌ها
 
-در پنل ادمین **saas-platform** برای هر صفحهٔ ماژول یک بلوک آموزش (راهنما) وجود دارد. این قانون از این پس **ثابت** است.
+این قانون برای بروزرسانی همهٔ ماژول‌ها در اکوسیستم `saas-platform` و `customer-site` اجباری است.
+هر ماژول باید با استاندارد یکسان، قابل نگهداری، تست‌پذیر و آمادهٔ توسعهٔ بعدی بروزرسانی شود.
 
-## قانون
+## اصل کلیدی
 
-**هرگاه در پروژه تغییری اتفاق افتاد** (قابلیتی اضافه، حذف یا تغییر کرد)، در **همان ماژول** مربوطه:
+با هر تغییر ماژول (افزودن/حذف/تغییر قابلیت)، انجام همزمان این موارد اجباری است:
 
-1. **متن آموزش** آن صفحه را به‌روز کن تا با رفتار فعلی همخوان باشد.
-2. **تاریخ آخرین بروزرسانی** را در **عنوان** همان بلوک آموزش درج کن (فقط **تاریخ فارسی/شمسی**، فرمت: `Y/m/d`، مثلاً `۱۴۰۴/۱۲/۰۵`).
+1. **کد ماژول** مطابق چک‌لیست حرفه‌ای پایین آپدیت شود.
+2. **راهنمای همان ماژول** در پنل ادمین آپدیت شود.
+3. **تاریخ آخرین بروزرسانی** راهنما فقط با تاریخ فارسی/شمسی (`Y/m/d`) ثبت شود.
+4. **مستند پروژه** (`docs/PROJECT-GUIDE.md`) در صورت تغییر رفتاری/فنی آپدیت شود.
 
-یعنی: هر تغییر در کد، API، فرم، فیلد، یا قابلیت یک ماژول → به‌روزرسانی راهنمای همان ماژول + به‌روز کردن تاریخ در عنوان.
+## الزامات اجباری تاریخ و ویرایشگر محتوا
+
+- در **راهنمای ماژول، changelog، release note و هر نمایش admin-facing** که تاریخ دارد، تاریخ باید **شمسی/جلالی** و با ارقام فارسی باشد (ترجیحاً `\App\Helpers\Jalali::formatFa`).
+- در **لیست و صفحهٔ ویرایش ادمین** برای ماژول‌های محتوامحور (`blog`، `shop` و مشابه): نمایش **`published_at` / زمان انتشار**، **زمان‌بندی** (همان `published_at` آینده در وبلاگ)، **`created_at`** و **`updated_at`** (و در صورت اهمیت، مثلاً `sale_ends_at` محصول) با **شمسی + ساعت** در UI ادمین الزامی است؛ ورودی‌های `datetime-local` میلادی ممکن است بمانند ولی باید کنار آن‌ها معادل شمسی ذخیره‌شده یا راهنما برای کاربر فارسی‌زبان باشد.
+- در ماژول‌های **تولید محتوا** (مانند `blog`، `pages`، توضیحات بلند `shop`، ارسال/مرجوعی، گارانتی، جدول سایز HTML) استفاده از **ویرایشگر پیشرفته (WYSIWYG/Blocks)** اجباری است؛ برای **FAQ فروشگاه** در `customer-site` ورودی باید به‌صورت **ردیف‌های فرم** (`faq_items` با کلیدهای `q` و `a`) باشد و روی فیلد **پاسخ** ویرایشگر غنی (TinyMCE از partial مشترک) اعمال شود — JSON خام تنها برای مهاجرت/ایمپورت داده مجاز است. `textarea` ساده فقط برای داده‌های غیرمحتوایی (لیست مسیرها، SKU خام، و غیره) مجاز است.
+- اسکریپت بارگذاری TinyMCE را در partial اختصاصی هر ماژول (مثل `admin.posts._editor_scripts` و `admin.products._editor_scripts`) یا partial مشترک `admin.partials` نگه دار تا فرم‌های create/edit یکسان بمانند.
+
+## چک‌لیست حرفه‌ای اجباری برای هر ماژول (Definition of Done)
+
+برای هر ماژول قبل از بسته‌شدن کار، همهٔ موارد زیر باید بررسی و تکمیل شوند:
+
+- دامنه و هدف: مسئله، خروجی کسب‌وکاری، محدودیت‌ها و نقش ماژول روشن باشد.
+- مدل داده: جداول/ایندکس‌ها/قیود/soft delete/seed/backfill تکمیل و سازگار باشد.
+- منطق دامنه: سرویس‌ها و policyها تفکیک، خطاها قابل‌فهم، و رفتار idempotent باشد.
+- API و کنترلر: ورودی‌ها Validate شوند، پاسخ‌ها پایدار و قابل نسخه‌بندی باشند.
+- UI ادمین: فرم‌ها، stateها، empty/error/loading و UX واقعی پوشش داده شود.
+- UI کاربر نهایی: نمایش ماژول با Feature Gate و fallback مناسب انجام شود.
+- دسترسی و مجوز: Policy/Gate/permission برای عملیات حساس کامل باشد.
+- لایسنس و Feature Toggle: فعال‌سازی فقط از مسیر رسمی ماژول‌ها انجام شود.
+- امنیت: اعتبارسنجی، ضد XSS/CSRF، حفاظت فایل‌ها و نرخ‌محدودسازی مسیرهای حساس رعایت شود.
+- کارایی: query بهینه، N+1 حذف، کش/صف برای کارهای سنگین، و pagination اعمال شود.
+- لاگ و مشاهده‌پذیری: لاگ خطا، event کلیدی و نقاط عیب‌یابی ثبت شود.
+- تست: Unit + Feature/Integration + مسیرهای منفی/مجوز/لبه پوشش داده شود.
+- مهاجرت نسخه: مسیر upgrade/backward compatibility و اسکریپت backfill مشخص باشد.
+- مستندسازی: راهنمای ماژول، مسیرهای کلیدی، env/config و سناریوهای استفاده بروزرسانی شود.
+
+## نقشهٔ اجرای ماژول‌ها (One-by-one)
+
+ماژول‌ها را مرحله‌ای و یکی‌یکی بروزرسانی کن؛ ترتیب پیشنهادی:
+
+1) Core: `blog`, `shop`, `menu`, `media`, `forms`, `advertisements`, `notifications`, `module_labels`, `captcha`
+2) Commerce: `coupon`, `discount_advanced`, `wallet`, `inventory`, `shipping`, `invoice`, `accounting`, `product_bundling`, `marketplace_sync`, `multi_currency`
+3) Content & Brand: `video`, `podcast`, `gallery`, `projects`, `portfolio`, `services`, `brand`, `i18n`, `advanced_search`, `seo_advanced`
+4) CRM & Ops: `crm`, `subscription`, `referral`, `announcements`, `tasks`, `contract`, `backup`, `cloud`, `analytics`, `marketing_automation`, `omnichannel`, `qa`, `courses`, `business_card`, `social_links`, `sms`, `recruitment`
+
+برای هر ماژول یک برگهٔ اجرا نگه دار:
+- وضعیت: `todo` | `in_progress` | `done`
+- تاریخ آخرین بروزرسانی: شمسی
+- تغییرات کلیدی کد
+- تست‌های اضافه‌شده
+- ریسک بازمانده و اقدام بعدی
 
 ## محل فایل‌های آموزش (راهنما)
 
-| ماژول | فایل راهنما |
-|-------|-------------|
-| داشبورد | `resources/views/admin/dashboard/guide.blade.php` |
-| کاربران پلتفرم | `resources/views/admin/users/guide.blade.php` |
-| مشتریان | `resources/views/admin/customers/guide.blade.php` |
-| سایت‌ها | `resources/views/admin/sites/guide.blade.php` |
-| فرم‌ها | `resources/views/admin/forms/guide.blade.php` |
-| فیلدهای پروفایل | `resources/views/admin/profile-fields/guide.blade.php` |
-| دسترسی و منو | `resources/views/admin/access/guide.blade.php` |
-| تنظیمات کپچا | `resources/views/admin/captcha/guide.blade.php` |
-| تنظیمات عمومی پلتفرم | `resources/views/admin/platform-settings/guide.blade.php` |
-| صفحات ثابت و راهنما (لیست) | `resources/views/admin/pages/partials/pages-index-guide.blade.php` |
-| صفحه‌ساز (فرم ایجاد/ویرایش صفحه) | `resources/views/admin/pages/partials/page-builder-guide.blade.php` |
-| عنوان ماژول‌ها | `resources/views/admin/module-labels/guide.blade.php` |
-| محصولات فروشگاه | `resources/views/admin/products/guide.blade.php` |
-| نمایندگان (Reseller) | `resources/views/admin/resellers/guide.blade.php` |
-| تسویه کمیسیون | `resources/views/admin/reseller-commissions/guide.blade.php` |
-| لاگ فعالیت | `resources/views/admin/activity-log/guide.blade.php` |
+- `resources/views/admin/dashboard/guide.blade.php`
+- `resources/views/admin/users/guide.blade.php`
+- `resources/views/admin/customers/guide.blade.php`
+- `resources/views/admin/sites/guide.blade.php`
+- `resources/views/admin/forms/guide.blade.php`
+- `resources/views/admin/profile-fields/guide.blade.php`
+- `resources/views/admin/access/guide.blade.php`
+- `resources/views/admin/captcha/guide.blade.php`
+- `resources/views/admin/platform-settings/guide.blade.php`
+- `resources/views/admin/pages/partials/pages-index-guide.blade.php`
+- `resources/views/admin/pages/partials/page-builder-guide.blade.php`
+- `resources/views/admin/module-labels/guide.blade.php`
+- `resources/views/admin/products/guide.blade.php`
+- `resources/views/admin/resellers/guide.blade.php`
+- `resources/views/admin/reseller-commissions/guide.blade.php`
+- `resources/views/admin/activity-log/guide.blade.php`
 
 قالب مشترک جعبهٔ آموزش: `resources/views/admin/partials/module-guide-box.blade.php` (پارامترها: `guideTitle`, `updated`, اختیاری `id`).
 
 ## نحوهٔ به‌روزرسانی
 
-- در فایل راهنمای همان ماژول محتوای داخل بلوک را ویرایش کن.
-- در همان فایل، مقدار **`updated`** (یا در صفحه‌ساز متن «آخرین بروزرسانی») را به **تاریخ امروز به شمسی** (مثلاً ۱۴۰۴/۱۲/۰۵) تغییر بده. در تمام پروژه‌ها فقط تاریخ فارسی مجاز است (قانون persian-date-only).
-- در فایل‌هایی که از `@component('admin.partials.module-guide-box', ...)` استفاده می‌کنند، آرگومان `'updated' => '2026-02-23'` را به تاریخ روز به‌روزرسانی عوض کن.
+- متن راهنمای ماژول را با رفتار فعلی کد همگام کن.
+- مقدار `updated` را با تاریخ شمسی روز بروزرسانی کن (فقط ارقام فارسی).
+- اگر رفتار ماژول در سایت مشتری تغییر کرده، `customer-site/docs/PROJECT-GUIDE.md` هم همزمان آپدیت شود.
+- برای ماژول‌های لایسنس‌محور، بررسی کن که مسیر فعال‌سازی از `saas-platform` و `SiteHelper::moduleEnabled()` حفظ شده باشد.

@@ -6,11 +6,13 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', \App\Helpers\ResellerBranding::platformName())</title>
+    {{-- فونت آفلاین Vazirmatn --}}
+    <link rel="preload" as="font" href="{{ asset('assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') }}" type="font/woff2" crossorigin>
+    <link rel="preload" as="font" href="{{ asset('assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') }}" type="font/woff2" crossorigin>
     @if(file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>@include('partials.vazirmatn-font-faces-inline')</style>
     @else
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>tailwind.config = { theme: { extend: { fontFamily: { vazir: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
         <style>
             @include('partials.vazirmatn-font-faces-inline')
             body{ font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; margin: 0; background: #f9fafb; }

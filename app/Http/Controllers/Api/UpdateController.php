@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ModuleRelease;
 use App\Models\SiteUpdate;
 use App\Services\LicenseServerService;
 use App\Services\ModuleUpdateEligibilityService;
@@ -127,10 +128,97 @@ class UpdateController extends Controller
         }
 
         $updates = $eligibilityService->getAvailableModuleUpdates($license->site);
+        $updates = array_map(function (array $row) use ($license) {
+            $module = $license->site->modules()->where('slug', $row['slug'])->first();
+            if (!$module) {
+                return $row;
+            }
+            $latest = ModuleRelease::latestForModule($module->id);
+            if ($latest) {
+                $row['latest_release'] = [
+                    'version' => $latest->version,
+                    'release_type' => $latest->release_type,
+                    'title' => null,
+                    'changelog' => $latest->changelog,
+                    'released_at' => $latest->distributed_at?->toIso8601String(),
+                ];
+            }
+            return $row;
+        }, $updates);
 
         return response()->json([
             'allowed' => true,
             'modules' => $updates,
+        ]);
+    }
+
+    /**
+     * GET /api/updates/module-history — تاریخچهٔ نسخه و تغییرات ماژول‌های این سایت.
+     */
+    public function moduleHistory(Request $request): JsonResponse
+    {
+        $request->validate([
+            'license_key' => 'required|string|max:255',
+            'domain' => 'required|string|max:255',
+            'limit' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $valid = $this->licenseService->validate(
+            $request->input('license_key'),
+            $request->input('domain')
+        );
+        if (empty($valid['valid'])) {
+            return response()->json([
+                'allowed' => false,
+                'error' => $valid['error'] ?? 'invalid_license',
+            ], 403);
+        }
+
+        $license = \App\Models\PlatformLicense::where('license_key_prefix', substr(preg_replace('/[^A-Z0-9]/', '', strtoupper($request->license_key)), 0, 8))
+            ->where('license_key_hash', hash('sha256', $request->input('license_key')))
+            ->with('site.modules')
+            ->first();
+
+        if (!$license || !$license->site) {
+            return response()->json(['allowed' => false], 403);
+        }
+
+        $eligibilityService = app(ModuleUpdateEligibilityService::class);
+        if (!$eligibilityService->isEligibleForModuleUpdates($license->site)) {
+            return response()->json([
+                'allowed' => false,
+                'error' => 'support_expired',
+            ], 403);
+        }
+
+        $moduleIds = $license->site->modules->pluck('id')->all();
+        $moduleById = $license->site->modules->keyBy('id');
+        $limit = (int) $request->input('limit', 50);
+
+        $releases = ModuleRelease::query()
+            ->whereIn('module_id', $moduleIds)
+            ->where('is_active', true)
+            ->orderByDesc('distributed_at')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
+        $rows = $releases->map(function (ModuleRelease $release) use ($moduleById) {
+            $module = $moduleById[$release->module_id] ?? null;
+            return [
+                'module_slug' => $module?->slug,
+                'module_title' => $module?->title,
+                'version' => $release->version,
+                'release_type' => $release->release_type,
+                'title' => null,
+                'changelog' => $release->changelog,
+                'released_at' => $release->distributed_at?->toIso8601String(),
+            ];
+        })->values();
+
+        return response()->json([
+            'allowed' => true,
+            'history' => $rows,
         ]);
     }
 

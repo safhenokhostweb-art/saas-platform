@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('header', 'ارسال اعلان به چند سایت')
 
@@ -45,12 +45,12 @@
     </div>
 </div>
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<link rel="stylesheet" href="{{ asset('vendor/persian-datepicker/persian-datepicker.min.css') }}">
 @endpush
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
-<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ asset('vendor/persian-date/persian-date.min.js') }}"></script>
+<script src="{{ asset('vendor/persian-datepicker/persian-datepicker.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof jQuery !== 'undefined' && jQuery.fn.persianDatepicker) {

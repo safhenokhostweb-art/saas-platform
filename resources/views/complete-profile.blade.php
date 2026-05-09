@@ -1,13 +1,8 @@
 @extends('layouts.app')
 
 @section('head')
-    {{-- Leaflet CSS --}}
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin=""
-    />
+    {{-- Leaflet CSS (آفلاین) --}}
+    <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
     <style>
         /* کانتینر نقشه: راست‌چین نباید روی نقشه اعمال شود */
         .map-wrapper {
@@ -170,11 +165,7 @@
 @endsection
 
 @section('scripts')
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-></script>
+<script src="{{ asset('vendor/leaflet/leaflet.js') }}" defer></script>
 
 @if($mapField)
 <script>
@@ -182,9 +173,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconRetinaUrl: '{{ asset('vendor/leaflet/images/marker-icon-2x.png') }}',
+        iconUrl: '{{ asset('vendor/leaflet/images/marker-icon.png') }}',
+        shadowUrl: '{{ asset('vendor/leaflet/images/marker-shadow.png') }}',
     });
 
     const mapEl = document.getElementById('map');

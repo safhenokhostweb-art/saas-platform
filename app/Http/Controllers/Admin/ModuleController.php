@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Module;
+use App\Models\ModuleRelease;
 use App\Models\Product;
 use App\Models\Site;
 use Illuminate\Http\Request;
@@ -14,9 +15,29 @@ use Illuminate\Support\Facades\DB;
  */
 class ModuleController extends Controller
 {
+    private const SEMVER_REGEX = '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z\-\.]+)?(?:\+[0-9A-Za-z\-\.]+)?$/';
+
+    public function releasesIndex()
+    {
+        $releases = ModuleRelease::query()
+            ->with('module:id,slug,title')
+            ->orderByDesc('distributed_at')
+            ->orderByDesc('id')
+            ->paginate(50);
+
+        return view('admin.modules.releases-index', compact('releases'));
+    }
+
     public function index()
     {
         $modules = Module::orderBy('slug')->get();
+        $latestReleases = ModuleRelease::query()
+            ->where('is_active', true)
+            ->orderByDesc('distributed_at')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('module_id')
+            ->keyBy('module_id');
         $sitesCount = Site::count();
         $moduleSiteCounts = DB::table('site_modules')
             ->where('is_active', true)
@@ -43,7 +64,7 @@ class ModuleController extends Controller
             ->get()
             ->keyBy('module_id');
 
-        return view('admin.modules.index', compact('modules', 'sitesCount', 'moduleSiteCounts', 'licensedCounts', 'productByModuleId'));
+        return view('admin.modules.index', compact('modules', 'latestReleases', 'sitesCount', 'moduleSiteCounts', 'licensedCounts', 'productByModuleId'));
     }
 
     public function edit(Module $module)
@@ -52,6 +73,108 @@ class ModuleController extends Controller
             ->where('module_id', $module->id)
             ->first();
         return view('admin.modules.edit', compact('module', 'productInStore'));
+    }
+
+    /**
+     * مدیریت نسخه‌ها و changelog یک ماژول.
+     */
+    public function releases(Module $module)
+    {
+        $releases = $module->releases()
+            ->orderByDesc('distributed_at')
+            ->orderByDesc('id')
+            ->paginate(30);
+
+        $latestVersion = (string) ($module->version ?: '1.0.0');
+        $suggestedVersions = [
+            'patch' => $this->bumpSemver($latestVersion, ModuleRelease::TYPE_PATCH),
+            'minor' => $this->bumpSemver($latestVersion, ModuleRelease::TYPE_MINOR),
+            'major' => $this->bumpSemver($latestVersion, ModuleRelease::TYPE_MAJOR),
+        ];
+
+        return view('admin.modules.releases', compact('module', 'releases', 'suggestedVersions'));
+    }
+
+    public function storeRelease(Request $request, Module $module)
+    {
+        $data = $request->validate([
+            'version' => ['required', 'string', 'max:32', 'regex:' . self::SEMVER_REGEX],
+            'release_type' => 'required|in:patch,minor,major',
+            'changelog' => 'required|string|min:20',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $latestVersion = ModuleRelease::getLatestVersionForModule($module);
+        if (version_compare($data['version'], $latestVersion, '<=')) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'version' => 'نسخهٔ انتشار باید بزرگ‌تر از آخرین نسخه باشد. آخرین نسخه: ' . $latestVersion,
+                ]);
+        }
+
+        if (! $this->isReleaseTypeAligned($latestVersion, $data['version'], $data['release_type'])) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'release_type' => 'نوع انتشار با نسخهٔ انتخابی هم‌خوانی ندارد. برای این نسخه از نوع صحیح (patch/minor/major) استفاده کنید.',
+                ]);
+        }
+
+        $release = ModuleRelease::updateOrCreate(
+            ['module_id' => $module->id, 'version' => $data['version']],
+            [
+                'release_type' => $data['release_type'],
+                'changelog' => trim($data['changelog']),
+                'distributed_at' => now(),
+                'is_active' => $request->boolean('is_active', true),
+            ]
+        );
+
+        if (version_compare($data['version'], (string) ($module->version ?? '0'), '>')) {
+            $module->update(['version' => $data['version']]);
+        }
+
+        return redirect()
+            ->route('admin.modules.releases', $module)
+            ->with('success', 'نسخهٔ ماژول منتشر شد: ' . $release->version);
+    }
+
+    private function bumpSemver(string $baseVersion, string $releaseType): string
+    {
+        $parts = array_map('intval', explode('.', explode('-', explode('+', $baseVersion)[0])[0]));
+        $major = $parts[0] ?? 1;
+        $minor = $parts[1] ?? 0;
+        $patch = $parts[2] ?? 0;
+
+        return match ($releaseType) {
+            ModuleRelease::TYPE_MAJOR => ($major + 1) . '.0.0',
+            ModuleRelease::TYPE_MINOR => $major . '.' . ($minor + 1) . '.0',
+            default => $major . '.' . $minor . '.' . ($patch + 1),
+        };
+    }
+
+    private function isReleaseTypeAligned(string $fromVersion, string $toVersion, string $releaseType): bool
+    {
+        $normalize = static function (string $version): array {
+            $clean = explode('-', explode('+', $version)[0])[0];
+            $parts = array_map('intval', explode('.', $clean));
+            return [
+                $parts[0] ?? 0,
+                $parts[1] ?? 0,
+                $parts[2] ?? 0,
+            ];
+        };
+
+        [$fromMajor, $fromMinor, $fromPatch] = $normalize($fromVersion);
+        [$toMajor, $toMinor, $toPatch] = $normalize($toVersion);
+
+        return match ($releaseType) {
+            ModuleRelease::TYPE_MAJOR => $toMajor > $fromMajor,
+            ModuleRelease::TYPE_MINOR => $toMajor === $fromMajor && $toMinor > $fromMinor,
+            ModuleRelease::TYPE_PATCH => $toMajor === $fromMajor && $toMinor === $fromMinor && $toPatch > $fromPatch,
+            default => false,
+        };
     }
 
     public function update(Request $request, Module $module)

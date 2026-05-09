@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('header', 'داشبورد')
 
@@ -216,7 +216,7 @@
 
 @section('scripts')
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('vendor/chartjs/chart.umd.js') }}"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

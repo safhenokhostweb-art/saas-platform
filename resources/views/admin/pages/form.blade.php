@@ -1,6 +1,6 @@
-{{-- فرم مشترک ایجاد/ویرایش صفحه - شامل صفحه‌ساز بلوکی --}}
+﻿{{-- فرم مشترک ایجاد/ویرایش صفحه - شامل صفحه‌ساز بلوکی --}}
 @push('head')
-<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js"></script>
+<script src="{{ asset('vendor/tinymce/tinymce.min.js') }}"></script>
 @endpush
 <form method="POST" action="{{ $action }}" enctype="multipart/form-data" id="page-form" data-upload-image-url="{{ route('admin.pages.upload-image') }}">
     @csrf

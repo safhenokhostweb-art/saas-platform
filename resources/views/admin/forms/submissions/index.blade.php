@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('header', 'گزارش ارسال فرم‌ها')
 
@@ -101,12 +101,12 @@
 </div>
 
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<link rel="stylesheet" href="{{ asset('vendor/persian-datepicker/persian-datepicker.min.css') }}">
 @endpush
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
-<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ asset('vendor/persian-date/persian-date.min.js') }}"></script>
+<script src="{{ asset('vendor/persian-datepicker/persian-datepicker.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof jQuery !== 'undefined' && jQuery.fn.persianDatepicker) {
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ asset('vendor/sortablejs/Sortable.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var row = document.getElementById('submission-header-row');

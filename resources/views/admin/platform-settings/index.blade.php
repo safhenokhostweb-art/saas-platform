@@ -347,7 +347,7 @@
                 </div>
                 <div class="pt-4 border-t border-gray-200">
                     <h3 class="font-bold mb-3">فونت‌های اضافی (۳ تا ۵ فونت)</h3>
-                    <p class="text-gray-500 text-xs mb-3">لینک CSS فونت (مثلاً از Google Fonts) و نام فونت را وارد کنید. سپس نام فونت را در فیلدهای بالا استفاده کنید.</p>
+                    <p class="text-gray-500 text-xs mb-3">لینک CSS فونت (ترجیحاً مسیر محلی روی هاست برای کارکرد آفلاین) و نام فونت را وارد کنید. سپس نام فونت را در فیلدهای بالا استفاده کنید.</p>
                     @for($i = 1; $i <= 5; $i++)
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                             <div>
@@ -356,7 +356,7 @@
                             </div>
                             <div>
                                 <label class="form-label text-xs">فونت {{ $i }} – لینک CSS</label>
-                                <input type="url" name="font_custom_{{ $i }}_url" class="form-control" value="{{ old('font_custom_'.$i.'_url', $font['font_custom_'.$i.'_url'] ?? '') }}" placeholder="https://fonts.googleapis.com/css2?family=...">
+                                <input type="url" name="font_custom_{{ $i }}_url" class="form-control" value="{{ old('font_custom_'.$i.'_url', $font['font_custom_'.$i.'_url'] ?? '') }}" placeholder="مثال: /assets/fonts/myfont/myfont.css (محلی) یا https://...">
                             </div>
                         </div>
                     @endfor

@@ -33,6 +33,7 @@ class AdminMenu
         'support_tickets' => 'تیکت‌های پشتیبانی',
         'payment_gateways' => 'درگاه‌های پرداخت',
         'modules' => 'ماژول‌ها',
+        'module_releases' => 'تاریخچه نسخه ماژول‌ها',
         'module_licenses' => 'لایسنس‌های ماژول',
         'licenses' => 'لایسنس‌ها',
         'updates' => 'داشبورد بروزرسانی‌ها',
@@ -64,6 +65,7 @@ class AdminMenu
         'support_tickets' => 'admin.support-tickets.index',
         'payment_gateways' => 'admin.payment-gateways.index',
         'modules' => 'admin.modules.index',
+        'module_releases' => 'admin.module-releases.index',
         'module_licenses' => 'admin.module-licenses.index',
         'licenses' => 'admin.licenses.index',
         'updates' => 'admin.updates.index',
@@ -95,6 +97,7 @@ class AdminMenu
         'support_tickets' => 'admin.support-tickets.*',
         'payment_gateways' => 'admin.payment-gateways.*',
         'modules' => 'admin.modules.*',
+        'module_releases' => 'admin.module-releases.*',
         'module_licenses' => 'admin.module-licenses.*',
         'licenses' => 'admin.licenses.*',
         'updates' => 'admin.updates.*',
@@ -109,7 +112,7 @@ class AdminMenu
     {
         return [
             'اصلی' => ['dashboard', 'users'],
-            'مشتریان و سایت‌ها' => ['customers', 'sites', 'sites_menus', 'modules', 'module_licenses', 'licenses', 'updates', 'resellers', 'reseller_commissions', 'payout_requests'],
+            'مشتریان و سایت‌ها' => ['customers', 'sites', 'sites_menus', 'modules', 'module_releases', 'module_licenses', 'licenses', 'updates', 'resellers', 'reseller_commissions', 'payout_requests'],
             'فروش و پشتیبانی' => ['products', 'support_plans', 'support_tickets', 'payment_gateways'],
             'فرم و پروفایل' => ['forms', 'forms_submissions', 'profile_fields', 'settings_profile'],
             'محتوا' => ['pages', 'theme_builder'],

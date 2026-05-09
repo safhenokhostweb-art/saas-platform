@@ -252,7 +252,10 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
         Route::get('modules', [ModuleController::class, 'index'])->name('modules.index');
+        Route::get('module-releases', [ModuleController::class, 'releasesIndex'])->name('module-releases.index');
         Route::post('modules/bulk-update', [ModuleController::class, 'bulkUpdate'])->name('modules.bulk-update');
+        Route::get('modules/{module}/releases', [ModuleController::class, 'releases'])->name('modules.releases');
+        Route::post('modules/{module}/releases', [ModuleController::class, 'storeRelease'])->name('modules.releases.store');
         Route::get('modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
         Route::put('modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
         Route::get('module-licenses', [AdminModuleLicenseController::class, 'index'])->name('module-licenses.index');
