@@ -1,32 +1,354 @@
 ---
-description: Global SaaS Development Rules (module-safe updates)
+description: Global SaaS Development, Licensing, and Feature Propagation Rules
 alwaysApply: true
 ---
 
-# Global Rules
+# Global SaaS Rules
 
 ## Mission
 
-Analyze each module, document current capabilities, and add only missing enterprise-grade features.
+Analyze the current codebase and safely enhance the platform without breaking existing functionality, customer entitlements, or backward compatibility.
 
-## Critical Safety Rules
+---
 
-1. Never delete working code.
-2. Never refactor complete and stable structures unless required for a critical bug fix.
-3. If the existing structure is more complete than the proposed one, keep the existing structure unchanged.
-4. Only add missing features, services, tests, and documentation.
-5. Preserve backward compatibility.
-6. If all required features already exist, do nothing.
-7. Update module documentation and CHANGELOG only when actual changes are made.
+# 1. General Development Rules
 
-## Update Workflow
+## Core Principles
 
-1. Read `docs/modules/<module>.md` if it exists.
-2. Analyze the current codebase.
-3. Detect existing features and architecture.
-4. Compare with required features.
-5. Implement only missing items.
-6. Add tests.
-7. Update documentation and changelog.
+1. Analyze the existing code before making changes.
+2. Preserve all working functionality.
+3. Never delete stable code.
+4. Never simplify or replace an existing structure if it is more complete than the proposed structure.
+5. Only add missing features, tests, migrations, and documentation.
+6. Preserve backward compatibility.
+7. If all required functionality already exists, make no code changes.
+8. Update documentation and changelog only when actual changes are made.
 
-**نکته:** در هر مخزن، بسیاری از «ماژول‌ها» به‌صورت مسیرهای Laravel (`app/…`) هستند؛ برای آن‌ها از قوانین مخصوص همان مسیر در `.cursor/rules` و فایل `docs/modules/<module>.md` متناظر استفاده کنید.
+## Safe Update Workflow
+
+1. Read all applicable rule files.
+2. Analyze the current architecture and implemented features.
+3. Detect missing functionality.
+4. Implement only missing parts.
+5. Add tests.
+6. Update documentation.
+7. Update CHANGELOG.
+8. Verify no existing functionality is broken.
+
+---
+
+# 2. Multi-Panel Architecture Rules
+
+## Platform Structure
+
+The platform consists of:
+
+1. Main Admin Panel
+2. Customer Admin Panel
+3. Customer Website
+
+## Synchronization Rule
+
+When a new module, feature, setting, or capability is added to the Main Admin Panel:
+
+- It may be propagated to Customer Admin Panel and Customer Website.
+- Propagation must follow licensing and activation rules.
+- Existing customer data and settings must be preserved.
+
+---
+
+# 3. Licensing and Activation Rules
+
+## Activation Conditions
+
+A module or feature is available to a customer only if:
+
+1. The customer has purchased it, OR
+2. It is included in the customer license, AND
+3. The license is active, AND
+4. The module/feature is activated by the Main Admin.
+
+## Visibility Rules
+
+- Purchased and activated features must be visible and operational.
+- Unpurchased or inactive features must remain hidden or disabled.
+- Feature visibility must be consistent across all panels.
+
+---
+
+# 4. Immutable Customer Entitlement Protection
+
+## Core Principle
+
+Once a module or feature has been purchased and activated for a customer, access becomes permanent.
+
+## Non-Negotiable Rule
+
+If a customer had access before an update, the customer must still have access after the update.
+
+## Protected Entitlement Rules
+
+1. Purchased and activated modules/features must NEVER be disabled automatically.
+2. Refactoring, renaming, restructuring, or license changes must NOT revoke access.
+3. Missing metadata or changed identifiers must NOT deactivate previously granted access.
+4. Existing entitlements remain active indefinitely.
+5. Only Main Admin can manually revoke access.
+
+---
+
+# 5. Manual Revocation Only
+
+A module or feature may be disabled ONLY when:
+
+1. A Main Admin explicitly revokes it.
+2. The revocation is stored in the database.
+3. The action is recorded in the audit log.
+
+No automated process may remove previously granted access.
+
+---
+
+# 6. Feature Propagation Rules
+
+## New Features
+
+When a new feature is added to Main Admin:
+
+1. Detect whether the customer owns the parent module.
+2. If licensed and activated, expose the feature.
+3. If separately licensable, require explicit purchase.
+4. Preserve all previous entitlements.
+
+## Existing Features
+
+Previously granted features must remain available regardless of:
+
+- Code refactoring
+- Module renaming
+- License logic changes
+- Database migrations
+- Feature flag changes
+
+---
+
+# 7. Required Entitlement Data Model
+
+Customer entitlements should be stored persistently.
+
+Suggested tables:
+
+- customer_module_entitlements
+- customer_feature_entitlements
+
+Suggested fields:
+
+- customer_id
+- module_key
+- feature_key
+- purchased_at
+- activated_at
+- revoked_at (nullable)
+- revoked_by_admin_id (nullable)
+- status (active | revoked)
+
+---
+
+# 8. Migration and Refactoring Safety
+
+Before changing:
+
+- module keys
+- feature keys
+- license rules
+- database schemas
+- feature flags
+
+Cursor must:
+
+1. Analyze all historical purchases and activations.
+2. Preserve active entitlements.
+3. Create mapping from old identifiers to new identifiers.
+4. Add migration scripts.
+5. Add automated tests proving entitlements are preserved.
+
+---
+
+# 9. Backward Compatibility Rules
+
+The following must never break:
+
+- Existing APIs
+- Customer access rights
+- Purchased modules
+- Customer settings
+- Historical invoices and payments
+- Audit logs
+
+---
+
+# 10. Testing Requirements
+
+For all changes, add tests covering:
+
+- Existing functionality
+- License validation
+- Feature activation
+- Entitlement persistence
+- Manual revocation
+- Migration safety
+
+---
+
+# 11. Documentation Rules
+
+When changes are made:
+
+1. Update module documentation.
+2. Update CHANGELOG.
+3. Record new modules/features.
+4. Record migration notes.
+
+---
+
+# 12. Decision Rules
+
+## If Existing Structure Is Better
+
+If the current implementation is more advanced, more stable, or more complete than the proposed design:
+
+- Keep it unchanged.
+- Only fill gaps.
+
+## If Everything Is Complete
+
+If all required functionality already exists and all customer entitlements are protected:
+
+- Make no code changes.
+- Respond exactly with:
+
+No changes required
+
+---
+
+# 13. Priority Order of Rules
+
+1. Protect existing customer entitlements.
+2. Preserve backward compatibility.
+3. Avoid breaking changes.
+4. Add only missing functionality.
+5. Maintain consistency across all panels.
+6. Document all actual changes.
+
+---
+
+# 14. Automatic Module Rule Management
+
+## Automatic Rule File Creation
+
+Before implementing any new module or feature, Cursor must:
+
+1. Check whether a matching `.mdc` rule file already exists.
+2. If no rule file exists:
+   - Automatically create a new module rule file inside:
+     `.cursor/rules/`
+   - Generate:
+     - module globs
+     - required features
+     - architecture notes
+     - safety rules
+     - entitlement protection rules
+3. Automatically create module documentation inside:
+   `docs/modules/`
+4. Register the module in:
+   `docs/CHANGELOG.md`
+
+## Mandatory Pre-Implementation Workflow
+
+Before making code changes, Cursor must:
+
+1. Analyze existing architecture.
+2. Analyze entitlement/licensing impact.
+3. Analyze customer activation state.
+4. Verify backward compatibility.
+5. Verify that no purchased feature can be lost.
+
+If risks are detected:
+
+- Stop implementation.
+- Report the risk.
+- Wait for explicit approval.
+
+---
+
+# 15. Automatic Entitlement Protection
+
+## Customer Module Safety
+
+For customer-active modules/features:
+
+1. Cursor must NEVER:
+   - disable modules automatically
+   - revoke access automatically
+   - hide purchased features automatically
+   - remove customer permissions automatically
+
+2. Only Main Admin manual actions may:
+   - revoke modules
+   - deactivate features
+   - change entitlements
+
+3. Refactoring, migrations, renaming, or feature restructuring must preserve:
+   - purchased modules
+   - activated features
+   - customer settings
+   - feature visibility
+   - API compatibility
+
+---
+
+# 16. Automatic Upgrade Safety
+
+Before upgrading any module:
+
+Cursor must automatically:
+
+1. Detect all customers using the module.
+2. Detect all purchased features.
+3. Detect historical entitlements.
+4. Preserve all active entitlements.
+5. Create migration mappings if identifiers changed.
+6. Add upgrade safety tests.
+
+If any entitlement could be lost:
+
+- Abort the upgrade.
+- Report the issue.
+- Require Main Admin approval.
+
+---
+
+# 17. Required Cursor Behavior
+
+Cursor must act as a safe enterprise SaaS architect.
+
+This means:
+
+- Never assume revocation is allowed.
+- Never remove customer access automatically.
+- Never replace stable architecture with simpler architecture.
+- Never overwrite production-ready systems.
+- Always preserve customer business continuity.
+
+Priority order:
+
+1. Preserve customer access
+2. Preserve production stability
+3. Preserve backward compatibility
+4. Add missing features safely
+5. Document changes
+
+---
+
+# 18. Laravel and rule file layout
+
+In each repository, many capabilities live under Laravel paths (`app/…`, `routes/…`, `database/…`). Use path-specific `.cursor/rules` globs and `docs/modules/<module>.md` where they exist. This does not override licensing or entitlement rules above.
