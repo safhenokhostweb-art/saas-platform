@@ -26,6 +26,17 @@ class PlatformSettingsController extends Controller
 
     public function update(Request $request)
     {
+        $themeRules = [];
+        foreach (array_keys(PlatformSettings::THEME_KEYS) as $k) {
+            $themeRules[$k] = ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'];
+        }
+        $request->validate(array_merge($themeRules, [
+            'platform_name' => 'required|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:64',
+            'contact_address' => 'nullable|string|max:500',
+        ]));
+
         $data = $request->only(array_merge(
             array_keys(PlatformSettings::GENERAL_KEYS),
             array_keys(PlatformSettings::THEME_KEYS),

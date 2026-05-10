@@ -21,12 +21,12 @@
                     <label class="form-label">کپچا</label>
                     @if(($captcha['type'] ?? '') === 'persian_number' && !empty($captcha['persian_code']))
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-2xl font-bold tracking-widest text-gray-700 bg-gray-100 px-3 py-2 rounded select-none" aria-hidden="true">{{ $captcha['persian_code'] }}</span>
+                            <x-persian-captcha-challenge :code="$captcha['persian_code']" id="preview-captcha-persian" />
                             <input type="text" class="form-control w-32" placeholder="عدد بالا را وارد کنید" disabled>
                         </div>
                     @elseif(($captcha['type'] ?? '') === 'normal' && !empty($captcha['normal_text']))
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-xl font-bold text-gray-700 bg-gray-100 px-3 py-2 rounded select-none" aria-hidden="true">{{ $captcha['normal_text'] }}</span>
+                            <x-persian-captcha-math :text="$captcha['normal_text']" />
                             <input type="text" class="form-control w-24" placeholder="جواب" disabled>
                         </div>
                     @elseif(($captcha['type'] ?? '') === 'hcaptcha' && !empty($captcha['hcaptcha_site_key']))

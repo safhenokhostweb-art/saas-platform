@@ -30,9 +30,10 @@
     <div class="col-md-6 mb-3">
         <label class="form-label">مخاطب</label>
         <select name="audience" class="form-select">
-            <option value="admin" {{ old('audience', $n?->audience ?? 'admin') === 'admin' ? 'selected' : '' }}>ادمین سایت مشتری</option>
+            <option value="admin" {{ old('audience', $n?->audience ?? 'admin') === 'admin' ? 'selected' : '' }}>پنل ادمین سایت مشتری (تولبار شناور)</option>
+            <option value="public" {{ old('audience', $n?->audience) === 'public' ? 'selected' : '' }}>کاربران نهایی (فرانت و تولبار «حساب من»)</option>
         </select>
-        <small class="text-muted">اعلان‌ها فقط در پنل مدیریت سایت مشتری به ادمین نمایش داده می‌شوند.</small>
+        <small class="text-muted">«ادمین» فقط در پنل مدیریت مشتری دیده می‌شود. «کاربران نهایی» در سایت عمومی (ویجت اعلان) و فقط برای کاربران لاگین‌کرده در نوار حساب کاربری نمایش داده می‌شود — مشروط به فعال بودن ماژول اعلان در آن سایت.</small>
     </div>
     <div class="col-md-6 mb-3">
         <label class="form-label">اولویت</label>

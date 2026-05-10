@@ -64,7 +64,7 @@ public function register(Request $request)
         'password' => Hash::make($request->password),
     ]);
 
-    return redirect()->route('login')->with('success', 'ثبت‌نام با موفقیت انجام شد');
+    return redirect()->route('login.show')->with('success', 'ثبت‌نام با موفقیت انجام شد');
 }
 
 }

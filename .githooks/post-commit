@@ -1,0 +1,7 @@
+#!/bin/sh
+# پس از هر commit، اگر زیر .cursor/rules/ تغییر کرده باشد، قوانین را به مخزن دیگر می‌فرستد.
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 0
+if git diff-tree --no-commit-id --name-only -r HEAD | grep -qE '^\.cursor/rules/'; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$REPO_ROOT/scripts/sync-cursor-rules.ps1" || true
+fi

@@ -1,0 +1,37 @@
+---
+description: Template rules for a module (copy and set globs + module name)
+globs:
+  - "modules/<module>/**/*"
+alwaysApply: false
+---
+
+# <Module> Rules
+
+## Required Features
+
+- Feature A
+- Feature B
+- Feature C
+
+## Standard Architecture
+
+- Service Layer
+- Repository Pattern
+- Validation Layer
+- Tests
+
+## Safety Rules
+
+1. If the current implementation is more advanced or complete, do not replace it.
+2. Only add missing features or files.
+3. Do not rename public APIs unless required.
+4. Keep database schema backward compatible.
+5. Skip changes if the module is already complete.
+
+## Update Process
+
+1. Scan module.
+2. Identify missing features.
+3. Implement only missing parts.
+4. Update `docs/modules/<module>.md`
+5. Update `docs/CHANGELOG.md`

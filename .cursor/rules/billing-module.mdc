@@ -1,0 +1,55 @@
+---
+description: Billing and Payment Rules
+globs:
+  - "app/Services/Payment/**/*"
+  - "app/Models/PaymentGateway.php"
+  - "app/Models/Invoice.php"
+  - "app/Models/InvoiceItem.php"
+  - "app/Models/Payment.php"
+alwaysApply: false
+---
+
+# Billing Module Rules
+
+## Purpose
+
+Manage invoices, payments, subscriptions, taxes, and financial reporting.
+
+## Existing Architecture
+
+- Payment Gateway Services (`app/Services/Payment/`)
+- Invoice Models
+- Local Iranian gateways (Zarinpal, IDPay)
+- IRR-based billing
+
+## Required Features
+
+- Invoice generation
+- Payment processing
+- Multi-currency support (optional)
+- Tax/VAT support
+- Invoice PDF export
+- Retry failed payments
+- Webhook handling
+- Financial reporting
+
+## Safety Rules
+
+1. If the current implementation is more advanced or production-ready, keep it unchanged.
+2. Only add missing features.
+3. Do not remove support for Iranian gateways.
+4. Preserve IRR compatibility.
+5. Keep all public APIs backward compatible.
+6. If all required features exist, respond exactly:
+
+   No changes required
+
+## Update Workflow
+
+1. Analyze all files matched by globs.
+2. Detect implemented features.
+3. Identify missing capabilities.
+4. Implement only missing features.
+5. Add tests.
+6. Update `docs/modules/billing-module.md`.
+7. Update `docs/CHANGELOG.md`.

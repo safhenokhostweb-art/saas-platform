@@ -5,26 +5,63 @@
 
 @section('content')
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+@php
+    $modulesCount = $modulesCount ?? 0;
+    $activeLicensesCount = $activeLicensesCount ?? 0;
+@endphp
 
-    <!-- Customers -->
-    <div class="bg-white rounded-2xl shadow p-6">
-        <div class="text-gray-500 text-sm">تعداد مشتری‌ها</div>
-        <div class="text-3xl font-bold mt-2">{{ $customers }}</div>
-    </div>
+<p class="text-slate-600 text-sm mb-4">آمار و میانبرهای اصلی پلتفرم — هر کاشی را برای ورود به بخش مربوطه بزنید.</p>
 
-    <!-- Sites -->
-    <div class="bg-white rounded-2xl shadow p-6">
-        <div class="text-gray-500 text-sm">تعداد سایت‌ها</div>
-        <div class="text-3xl font-bold mt-2">{{ $sites }}</div>
-    </div>
+<div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+    <a href="{{ route('admin.customers.index') }}" class="dashboard-stat-tile dashboard-stat-tile--violet">
+        <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
+        <div class="dashboard-stat-tile__label">مشتری‌ها</div>
+        <div class="dashboard-stat-tile__value">{{ number_format($customers) }}</div>
+        <div class="dashboard-stat-tile__hint">مدیریت مشتریان</div>
+    </a>
+    <a href="{{ route('admin.sites.index') }}" class="dashboard-stat-tile dashboard-stat-tile--sky">
+        <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
+        <div class="dashboard-stat-tile__label">سایت‌ها (تِننت)</div>
+        <div class="dashboard-stat-tile__value">{{ number_format($sites) }}</div>
+        <div class="dashboard-stat-tile__hint">سایت‌های مشتری</div>
+    </a>
+    <a href="{{ route('admin.forms.index') }}" class="dashboard-stat-tile dashboard-stat-tile--emerald">
+        <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
+        <div class="dashboard-stat-tile__label">فرم‌ها</div>
+        <div class="dashboard-stat-tile__value">{{ number_format($forms) }}</div>
+        <div class="dashboard-stat-tile__hint">فرم‌ساز مرکزی</div>
+    </a>
+    <a href="{{ route('admin.modules.index') }}" class="dashboard-stat-tile dashboard-stat-tile--rose">
+        <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
+        <div class="dashboard-stat-tile__label">تعریف ماژول</div>
+        <div class="dashboard-stat-tile__value">{{ number_format($modulesCount) }}</div>
+        <div class="dashboard-stat-tile__hint">کاتالوگ ماژول</div>
+    </a>
+    <a href="{{ route('admin.licenses.index') }}" class="dashboard-stat-tile dashboard-stat-tile--amber">
+        <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
+        <div class="dashboard-stat-tile__label">لایسنس فعال</div>
+        <div class="dashboard-stat-tile__value">{{ number_format($activeLicensesCount) }}</div>
+        <div class="dashboard-stat-tile__hint">صدور و مدیریت</div>
+    </a>
+</div>
 
-    <!-- Forms -->
-    <div class="bg-white rounded-2xl shadow p-6">
-        <div class="text-gray-500 text-sm">تعداد فرم‌ها</div>
-        <div class="text-3xl font-bold mt-2">{{ $forms }}</div>
-    </div>
-
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+    <a href="{{ route('admin.platform-settings.index') }}" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-indigo-300 hover:shadow transition">
+        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 text-lg">⚙</span>
+        <span class="font-medium text-slate-800">تنظیمات پلتفرم</span>
+    </a>
+    <a href="{{ route('admin.updates.index') }}" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-indigo-300 hover:shadow transition">
+        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700 text-lg">↻</span>
+        <span class="font-medium text-slate-800">بروزرسانی‌ها</span>
+    </a>
+    <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-indigo-300 hover:shadow transition">
+        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-700 text-lg">👤</span>
+        <span class="font-medium text-slate-800">کاربران</span>
+    </a>
+    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-indigo-300 hover:shadow transition">
+        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 text-lg">⌂</span>
+        <span class="font-medium text-slate-800">داشبورد کاربر عادی</span>
+    </a>
 </div>
 
 <!-- هشدارهای انقضا (اعلان خودکار در ادمین اصلی) -->
@@ -51,29 +88,6 @@
     </ul>
 </div>
 @endif
-
-<!-- دسترسی سریع: مدیریت سایت‌ها (تِننت‌ها)، ماژول‌ها، لایسنس، بروزرسانی -->
-<div class="bg-white rounded-2xl shadow p-6 mb-8">
-    <h2 class="font-bold mb-4">مدیریت سایت‌ها و سرویس‌ها</h2>
-    <div class="flex flex-wrap gap-3">
-        <a href="{{ route('admin.sites.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-            سایت‌ها (تِننت‌ها)
-        </a>
-        <a href="{{ route('admin.modules.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-            ماژول‌ها
-        </a>
-        <a href="{{ route('admin.licenses.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-            لایسنس‌ها
-        </a>
-        <a href="{{ route('admin.updates.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            داشبورد بروزرسانی‌ها
-        </a>
-    </div>
-</div>
 
 <!-- فرم‌ها و وضعیت در سایت‌ها (فقط در پنل ادمین) -->
 @if(isset($formSiteColumnExists))

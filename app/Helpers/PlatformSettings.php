@@ -26,13 +26,52 @@ class PlatformSettings
         'theme_title_color' => '#111827',
         'theme_link_color' => '#4f46e5',
         'theme_link_hover' => '#4338ca',
-        'theme_sidebar_bg' => '#ffffff',
-        'theme_sidebar_text' => '#374151',
-        'theme_sidebar_active_bg' => '#eff6ff',
-        'theme_sidebar_active_text' => '#2563eb',
+        /** پالت پیش‌فرض نوار کناری: آبیِ ملایم با کنتراست خوانا (پنل ادمین پلتفرم) */
+        'theme_sidebar_bg' => '#5a7fa8',
+        'theme_sidebar_bg_bottom' => '#456f94',
+        'theme_sidebar_text' => '#f1f6fb',
+        'theme_sidebar_muted' => '#d8ebfb',
+        'theme_sidebar_accent' => '#7dd3fc',
+        'theme_sidebar_active_bg' => '#6b8eb5',
+        'theme_sidebar_active_text' => '#ffffff',
+        'theme_sidebar_border' => '#8aa9c4',
         'theme_button_primary_bg' => '#4f46e5',
         'theme_button_primary_text' => '#ffffff',
     ];
+
+    /**
+     * برچسب فارسی فیلدهای تم (برای فرم تنظیمات پلتفرم).
+     *
+     * @return array<string, string>
+     */
+    public static function themeKeyLabels(): array
+    {
+        return [
+            'theme_primary' => 'رنگ اصلی',
+            'theme_secondary' => 'رنگ ثانویه',
+            'theme_menu_bg' => 'پس‌زمینه منوی بالا',
+            'theme_menu_text' => 'متن منوی بالا',
+            'theme_menu_link_active' => 'لینک فعال منوی بالا',
+            'theme_title_color' => 'رنگ عناوین',
+            'theme_link_color' => 'رنگ لینک‌ها',
+            'theme_link_hover' => 'رنگ لینک هنگام قرارگیری ماوس',
+            'theme_sidebar_bg' => 'نوار کناری: بالای گرادیان',
+            'theme_sidebar_bg_bottom' => 'نوار کناری: پایین گرادیان',
+            'theme_sidebar_text' => 'نوار کناری: متن لینک‌ها',
+            'theme_sidebar_muted' => 'نوار کناری: برچسب گروه‌ها',
+            'theme_sidebar_accent' => 'نوار کناری: تأکید و آیکن فعال',
+            'theme_sidebar_active_bg' => 'نوار کناری: پس‌زمینه آیتم فعال',
+            'theme_sidebar_active_text' => 'نوار کناری: متن آیتم فعال',
+            'theme_sidebar_border' => 'نوار کناری: حاشیه',
+            'theme_button_primary_bg' => 'پس‌زمینه دکمه اصلی',
+            'theme_button_primary_text' => 'متن دکمه اصلی',
+        ];
+    }
+
+    public static function themeKeyLabel(string $key): string
+    {
+        return self::themeKeyLabels()[$key] ?? $key;
+    }
 
     public const FONT_KEYS = [
         'font_body' => 'Vazirmatn, Tahoma, sans-serif',

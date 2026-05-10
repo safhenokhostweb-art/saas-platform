@@ -51,18 +51,20 @@
         @php $colorPalette = ['#4f46e5','#2563eb','#059669','#dc2626','#ea580c','#ca8a04','#7c3aed','#db2777','#0d9488','#1e40af','#374151','#ffffff','#f9fafb','#eff6ff','#111827']; @endphp
         <div class="bg-white rounded-2xl shadow p-6">
             <h2 class="font-bold text-lg mb-4 border-b border-gray-200 pb-2">پالت رنگ و ظاهر</h2>
-            <p class="text-gray-500 text-sm mb-4">رنگ‌های منوها، عناوین، لینک‌ها و دکمه‌ها در کل سایت را تنظیم کنید. مقدار را به صورت هگز (مثلاً #4f46e5) وارد کنید.</p>
+            <p class="text-gray-500 text-sm mb-4">رنگ‌های منوها، عناوین، لینک‌ها، <strong>نوار کناری پنل ادمین پلتفرم</strong> و دکمه‌ها را تنظیم کنید. مقدار را به صورت هگز شش‌رقمی (مثلاً <code class="bg-gray-100 px-1 rounded">#4f46e5</code>) وارد کنید.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 @foreach(\App\Helpers\PlatformSettings::THEME_KEYS as $key => $default)
                     @php
-                        $label = str_replace('theme_', '', $key);
-                        $label = str_replace('_', ' ', $label);
+                        $val = old($key, $theme[$key] ?? $default);
+                        $hex6 = is_string($val) && preg_match('/^#[0-9A-Fa-f]{6}$/', $val);
                     @endphp
                     <div>
-                        <label class="form-label text-sm">{{ $label }}</label>
+                        <label class="form-label text-sm">{{ \App\Helpers\PlatformSettings::themeKeyLabel($key) }}</label>
                         <div class="flex items-center gap-2">
-                            <input type="color" id="color_{{ $key }}" value="{{ old($key, $theme[$key] ?? $default) }}" class="h-10 w-14 rounded border cursor-pointer" title="{{ $key }}">
-                            <input type="text" name="{{ $key }}" class="form-control flex-1" value="{{ old($key, $theme[$key] ?? $default) }}" placeholder="{{ $default }}">
+                            @if($hex6)
+                                <input type="color" id="color_{{ $key }}" value="{{ $val }}" class="h-10 w-14 rounded border cursor-pointer" title="{{ $key }}">
+                            @endif
+                            <input type="text" name="{{ $key }}" class="form-control flex-1" value="{{ $val }}" placeholder="{{ $default }}" pattern="#[0-9A-Fa-f]{6}" maxlength="7">
                         </div>
                         <div class="flex flex-wrap gap-1 mt-1">
                             @foreach($colorPalette as $c)

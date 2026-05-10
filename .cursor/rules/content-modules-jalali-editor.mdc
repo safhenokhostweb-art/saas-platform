@@ -1,0 +1,11 @@
+---
+description: ماژول‌های محتوا — تاریخ جلالی در ادمین و ویرایشگر پیشرفته
+alwaysApply: false
+---
+
+# ماژول‌های محتوا و فروشگاه (ادمین)
+
+- در **لیست و فرم ادمین** برای مطالب وبلاگ و محصولات، هر جایی که `published_at`، `created_at`، `updated_at` یا زمان‌بندی انتشار (`published_at` آینده) و موارد مشابه (`sale_ends_at`) relevant است، تاریخ را با `\App\Helpers\Jalali::formatFa(..., 'Y/m/d H:i')` و ارقام فارسی نشان بده.
+- برای فیلدهای **محتوای غنی / HTML** از الگوی partial مشترک `@include('admin.partials.tinymce-professional-base')` + اسکریپت‌های `_editor_scripts` در هر ماژول استفاده کن؛ تنظیمات مشترک از `window.AdminTinyMCE.baseOptions(context, height)` است.
+- **FAQ محصولات**: ورودی به صورت `faq_items[][q]` و `faq_items[][a]` با ویرایشگر روی پاسخ (HTML)؛ از JSON دستی در فرم ادمین استفاده نکن مگر برای مهاجرت داده.
+- کتابخانهٔ تقویم: `hekmatinasser/verta` از طریق `App\Helpers\Jalali`.

@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\Form;
 use App\Models\Module as ModuleModel;
 use App\Models\ExpiryReminderLog;
+use App\Models\PlatformLicense;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
@@ -17,6 +18,15 @@ class DashboardController extends Controller
         $customers = Customer::count();
         $sites     = Site::count();
         $forms     = Form::count();
+        $modulesCount = ModuleModel::count();
+        $activeLicensesCount = 0;
+        if (Schema::hasTable('platform_licenses')) {
+            $activeLicensesCount = PlatformLicense::whereNull('revoked_at')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->count();
+        }
 
         $formsList = collect();
         $sitesList = collect();
@@ -48,6 +58,8 @@ class DashboardController extends Controller
             'customers',
             'sites',
             'forms',
+            'modulesCount',
+            'activeLicensesCount',
             'formsList',
             'sitesList',
             'formSiteColumnExists',

@@ -24,7 +24,7 @@
                 <a href="{{ route('admin.notification-templates.index') }}" class="btn btn-outline-secondary">قالب‌های خوش‌آمدگویی</a>
             </div>
         </div>
-        <p class="text-sm text-gray-600 mb-4">این اعلان‌ها فقط در پنل مدیریت سایت مشتری به ادمین نمایش داده می‌شوند. اگر ماژول اعلان برای این سایت فعال نیست، از صفحهٔ <a href="{{ route('admin.sites.edit', $site) }}" class="text-indigo-600">ویرایش سایت</a> یا <a href="{{ route('admin.sites.modules.edit', $site) }}" class="text-indigo-600">ماژول‌ها</a> آن را فعال کنید.</p>
+        <p class="text-sm text-gray-600 mb-4">با انتخاب مخاطب «ادمین» اعلان در پنل مدیریت سایت مشتری (تولبار شناور) دیده می‌شود؛ با «کاربران نهایی» در فرانت و نوار «حساب من» (در صورت فعال بودن ماژول اعلان روی آن سایت). از صفحهٔ <a href="{{ route('admin.sites.edit', $site) }}" class="text-indigo-600">ویرایش سایت</a> یا <a href="{{ route('admin.sites.modules.edit', $site) }}" class="text-indigo-600">ماژول‌ها</a> ماژول را فعال کنید.</p>
 
         <div class="table-responsive">
             <table class="table">
@@ -49,7 +49,13 @@
                                 $classes = ['low' => 'bg-gray-100 text-gray-700', 'normal' => 'bg-sky-100 text-sky-800', 'high' => 'bg-amber-100 text-amber-800', 'urgent' => 'bg-red-100 text-red-800'];
                             @endphp
                                 <span class="badge {{ $classes[$p] ?? 'bg-sky-100 text-sky-800' }}">{{ $labels[$p] ?? 'عادی' }}</span></td>
-                            <td><span class="badge bg-amber-100 text-amber-800">ادمین</span></td>
+                            <td>
+                                @if(($n->audience ?? 'admin') === 'public')
+                                    <span class="badge bg-emerald-100 text-emerald-800">کاربران سایت</span>
+                                @else
+                                    <span class="badge bg-amber-100 text-amber-800">ادمین</span>
+                                @endif
+                            </td>
                             <td>{{ $n->position === 'top' ? 'بالا' : ($n->position === 'left' ? 'چپ' : 'راست') }}</td>
                             <td>{{ $n->image_path ? '✓' : '—' }}</td>
                             <td>{{ $n->is_active ? 'فعال' : 'غیرفعال' }}</td>

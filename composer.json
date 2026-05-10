@@ -38,6 +38,12 @@
         }
     },
     "scripts": {
+        "sync-cursor-rules": [
+            "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-cursor-rules.ps1"
+        ],
+        "sync-cursor-rules:reverse": [
+            "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-cursor-rules.ps1 -Reverse"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

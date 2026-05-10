@@ -75,8 +75,8 @@ class LoginController extends Controller
         // تلاش برای ورود با موبایل
         if (Auth::attempt([
             'mobile' => $credentials['mobile'],
-            'password' => $credentials['password']
-        ])) {
+            'password' => $credentials['password'],
+        ], $request->boolean('remember'))) {
             $user = auth()->user();
             // اکانت غیرفعال (توسط ادمین)
             if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'is_active') && !($user->is_active ?? true)) {

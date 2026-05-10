@@ -32,7 +32,7 @@ class CaptchaService
         if (!self::isModuleEnabled()) {
             return false;
         }
-        return (string) Setting::get('auth_captcha_enabled', '0') === '0';
+        return (string) Setting::get('auth_captcha_enabled', '0') === '1';
     }
 
     /** تنظیمات کپچا برای فرم ورود و ثبت‌نام (فقط وقتی auth_captcha_enabled روشن باشد) */

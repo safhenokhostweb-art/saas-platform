@@ -81,6 +81,7 @@ class SiteConfigController extends Controller
                 ->active()
                 ->orderByRaw("CASE COALESCE(priority, 'normal') WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'low' THEN 4 ELSE 3 END")
                 ->orderBy('order')
+                ->orderByDesc('id')
                 ->get();
             foreach ($items as $n) {
                 $imgUrl = null;
@@ -93,6 +94,7 @@ class SiteConfigController extends Controller
                     }
                 }
                 $notifications[] = [
+                    'id' => $n->id,
                     'title' => $n->title,
                     'body' => $n->body,
                     'type' => $n->type,
@@ -103,6 +105,7 @@ class SiteConfigController extends Controller
                     'image_position' => $n->image_position,
                     'audience' => $n->audience ?? 'public',
                     'priority' => $n->priority ?? 'normal',
+                    'created_at' => $n->created_at?->toIso8601String(),
                 ];
             }
         }

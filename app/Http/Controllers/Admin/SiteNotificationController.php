@@ -51,7 +51,7 @@ class SiteNotificationController extends Controller
             'image_path' => 'nullable|string|max:500',
             'position' => 'required|in:top,left,right',
             'image_position' => 'required|in:background,left,right',
-            'audience' => 'required|in:admin',
+            'audience' => 'required|in:admin,public',
             'priority' => 'nullable|in:low,normal,high,urgent',
             'starts_at' => 'nullable|string',
             'expires_at' => 'nullable|string',
@@ -87,11 +87,13 @@ class SiteNotificationController extends Controller
             'image_path' => 'nullable|string|max:500',
             'position' => 'required|in:top,left,right',
             'image_position' => 'required|in:background,left,right',
-            'audience' => 'required|in:admin',
+            'audience' => 'required|in:admin,public',
+            'priority' => 'nullable|in:low,normal,high,urgent',
             'starts_at' => 'nullable|string',
             'expires_at' => 'nullable|string',
             'is_active' => 'nullable|boolean',
         ]);
+        $data['priority'] = $data['priority'] ?? 'normal';
         $data['site_id'] = $site->id;
         $data['is_active'] = $request->boolean('is_active');
         $data['starts_at'] = !empty($data['starts_at']) ? \App\Helpers\Jalali::toCarbon($data['starts_at']) : null;
@@ -124,7 +126,7 @@ class SiteNotificationController extends Controller
             'image_path' => 'nullable|string|max:500',
             'position' => 'required|in:top,left,right',
             'image_position' => 'required|in:background,left,right',
-            'audience' => 'required|in:admin',
+            'audience' => 'required|in:admin,public',
             'priority' => 'nullable|in:low,normal,high,urgent',
             'starts_at' => 'nullable|string',
             'expires_at' => 'nullable|string',

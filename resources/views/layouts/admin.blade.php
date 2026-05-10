@@ -37,52 +37,63 @@
             .alert{ padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid; }
             .alert-success{ background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
             .alert-danger{ background: #fef2f2; border-color: #fecaca; color: #991b1b; }
-            .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; border-radius: 0.5rem; }
-            .sidebar-link:hover{ background: #eff6ff; color: #2563eb; }
-            .sidebar-link.active{ background: #eff6ff; color: #2563eb; }
-            form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: #dc2626; }
-            form.mt-2 button:hover{ background: #fef2f2; color: #b91c1c; }
+            .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; }
+            form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: #fca5a5; }
+            form.mt-2 button:hover{ background: rgba(220,38,38,0.2); color: #fecaca; }
+            .admin-sidebar-scroll-area{ scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; }
+            .admin-sidebar-scroll-area::-webkit-scrollbar{ width: 8px; }
+            .admin-sidebar-scroll-area::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.35); border-radius: 8px; }
         </style>
     @endif
     @include('partials.platform-styles')
+    @include('partials.platform-admin-sidebar-theme')
+    @include('partials.dashboard-stat-tiles-css')
     <style>
         #admin-sidebar[data-collapsed="true"] { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .admin-sidebar-inner { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .sidebar-text { display: none; }
+        #admin-sidebar[data-collapsed="true"] .sidebar-group-label { display: none; }
+        #admin-sidebar[data-collapsed="true"] .sidebar-group-caret { display: none; }
+        .admin-sidebar-scroll-area{ scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; }
+        .admin-sidebar-scroll-area::-webkit-scrollbar{ width: 8px; }
+        .admin-sidebar-scroll-area::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.35); border-radius: 8px; }
     </style>
     @stack('head')
 </head>
 <body class="min-h-screen bg-gray-50" style="background: var(--admin-bg);">
 
-    <div class="flex h-screen overflow-hidden" id="admin-layout-root">
+    <div class="flex h-screen overflow-hidden min-h-0" id="admin-layout-root">
         <!-- Sidebar: با دکمه تاگل در دسکتاپ جمع می‌شود (فقط آیکن‌ها). همبرگر فقط موبایل. -->
-        <aside id="admin-sidebar" class="hidden md:flex md:flex-shrink-0 transition-[width] duration-300 ease-in-out w-64" data-collapsed="false">
-            <div class="admin-sidebar-inner flex flex-col w-64 min-w-0 flex-1">
-                <div class="flex flex-col flex-grow bg-white border-l border-gray-200 overflow-y-auto overflow-x-hidden">
+        <aside id="admin-sidebar" class="hidden md:flex md:flex-shrink-0 transition-[width] duration-300 ease-in-out w-64 min-h-0" data-collapsed="false">
+            <div class="admin-sidebar-inner flex flex-col w-64 min-w-0 flex-1 min-h-0">
+                <div class="admin-sidebar-scroll-area flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <!-- Logo / عنوان -->
-                    <div class="flex items-center flex-shrink-0 px-4 py-5 border-b border-gray-200 min-h-[4rem]">
-                        <svg class="w-6 h-6 text-blue-600 shrink-0" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="max-width:24px;max-height:24px">
+                    <div class="flex items-center flex-shrink-0 px-4 py-5 border-b min-h-[4rem]">
+                        <svg class="w-6 h-6 shrink-0" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="max-width:24px;max-height:24px">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
-                        <span class="sidebar-text mr-3 text-xl font-bold text-gray-900 whitespace-nowrap overflow-hidden">{{ auth()->user()->is_admin ? 'پنل مدیریت' : 'پنل من' }}</span>
+                        <span class="sidebar-text mr-3 text-xl font-bold whitespace-nowrap overflow-hidden">{{ auth()->user()->is_admin ? 'پنل مدیریت' : 'پنل من' }}</span>
                     </div>
 
                     <!-- Navigation: ادمین = منوی ادمین، مشتری = منوی مشتری -->
-                    <nav class="flex-1 px-4 py-6 overflow-y-auto">
+                    <nav class="flex-1 px-4 py-6 min-h-0">
                         @if(auth()->user()->is_admin)
                             @foreach(\App\Helpers\AdminMenu::getGroups() as $groupLabel => $keys)
-                                @php $hasVisible = false; foreach ($keys as $k) { if (\App\Helpers\AdminMenu::isMenuItemVisible($k)) { $hasVisible = true; break; } } @endphp
-                                @if($hasVisible)
-                                    <div class="mb-4">
-                                        <div class="sidebar-text px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">{{ $groupLabel }}</div>
-                                        <div class="mt-1 space-y-0.5">
-                                            @foreach($keys as $key)
-                                                @if(\App\Helpers\AdminMenu::isMenuItemVisible($key))
-                                                    <a href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\AdminMenu::isActive($key) ? 'active' : '' }}">
-                                                        @include('admin.partials.sidebar-icon', ['key' => $key])
-                                                        <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key, null) }}</span>
-                                                    </a>
-                                                @endif
+                                @php $visibleKeys = array_values(array_filter($keys, fn ($k) => \App\Helpers\AdminMenu::isMenuItemVisible($k))); @endphp
+                                @if(count($visibleKeys) > 0)
+                                    <div class="admin-sidebar-group" data-group-index="{{ $loop->index }}">
+                                        <button type="button" class="sidebar-group-toggle" data-group-toggle="{{ $loop->index }}" aria-expanded="false">
+                                            <span class="sidebar-group-label sidebar-text">{{ $groupLabel }}</span>
+                                            <svg class="sidebar-group-caret" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        <div class="admin-sidebar-item-list sidebar-group-items is-collapsed" data-group-items="{{ $loop->index }}">
+                                            @foreach($visibleKeys as $key)
+                                                <a href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\AdminMenu::isActive($key) ? 'active' : '' }}">
+                                                    @include('admin.partials.sidebar-icon', ['key' => $key])
+                                                    <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key, null) }}</span>
+                                                </a>
                                             @endforeach
                                         </div>
                                     </div>
@@ -90,26 +101,32 @@
                             @endforeach
                         @else
                             @foreach(\App\Helpers\CustomerMenu::getGroups() as $groupLabel => $keys)
-                                <div class="mb-4">
-                                    <div class="sidebar-text px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">{{ $groupLabel }}</div>
-                                    <div class="mt-1 space-y-0.5">
-                                        @foreach($keys as $key)
-                                            @if(\App\Helpers\CustomerMenu::isVisible($key))
+                                @php $visibleKeys = array_values(array_filter($keys, fn ($k) => \App\Helpers\CustomerMenu::isVisible($k))); @endphp
+                                @if(count($visibleKeys) > 0)
+                                    <div class="admin-sidebar-group" data-group-index="{{ $loop->index }}">
+                                        <button type="button" class="sidebar-group-toggle" data-group-toggle="{{ $loop->index }}" aria-expanded="false">
+                                            <span class="sidebar-group-label sidebar-text">{{ $groupLabel }}</span>
+                                            <svg class="sidebar-group-caret" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        <div class="admin-sidebar-item-list sidebar-group-items is-collapsed" data-group-items="{{ $loop->index }}">
+                                            @foreach($visibleKeys as $key)
                                                 <a href="{{ route(\App\Helpers\CustomerMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\CustomerMenu::isActive($key) ? 'active' : '' }}">
                                                     @include('admin.partials.customer-sidebar-icon', ['key' => $key])
                                                     <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</span>
                                                 </a>
-                                            @endif
-                                        @endforeach
+                                            @endforeach
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             @endforeach
                         @endif
 
-                        <div class="pt-4 mt-4 border-t border-gray-200">
+                        <div class="pt-4 mt-4 border-t border-slate-600/40">
                             @if(auth()->user()->is_admin)
                             <a href="{{ route('dashboard') }}" class="sidebar-link">
-                                <svg class="w-4 h-4 ml-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 ml-2 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                                 </svg>
                                 <span class="sidebar-text">بازگشت به داشبورد</span>
@@ -117,7 +134,7 @@
                             @endif
                             <form method="POST" action="{{ route('logout') }}" class="mt-2">
                                 @csrf
-                                <button type="submit" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 border-0 bg-transparent cursor-pointer text-right">
+                                <button type="submit" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-red-300 hover:bg-red-950/40 hover:text-red-100 border-0 bg-transparent cursor-pointer text-right">
                                     <svg class="w-4 h-4 ml-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                     </svg>
@@ -246,6 +263,41 @@
                     apply();
                 });
             }
+        })();
+        (function() {
+            var toggles = document.querySelectorAll('#admin-sidebar [data-group-toggle]');
+            toggles.forEach(function(btn) {
+                var idx = btn.getAttribute('data-group-toggle');
+                var group = btn.closest('.admin-sidebar-group');
+                if (!group) return;
+                var items = group.querySelector('[data-group-items]');
+                var caret = group.querySelector('.sidebar-group-caret');
+                if (!items || !caret) return;
+                var storageKey = 'saas-admin-group-open-' + idx;
+                var hasActive = !!group.querySelector('.sidebar-link.active');
+                var open = hasActive || localStorage.getItem(storageKey) === 'true';
+                function setOpen(isOpen) {
+                    if (isOpen) {
+                        items.classList.remove('is-collapsed');
+                        btn.setAttribute('aria-expanded', 'true');
+                        caret.classList.add('is-open');
+                    } else {
+                        items.classList.add('is-collapsed');
+                        btn.setAttribute('aria-expanded', 'false');
+                        caret.classList.remove('is-open');
+                    }
+                }
+                setOpen(open);
+                if (hasActive) {
+                    localStorage.setItem(storageKey, 'true');
+                }
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    open = items.classList.contains('is-collapsed');
+                    localStorage.setItem(storageKey, open ? 'true' : 'false');
+                    setOpen(open);
+                });
+            });
         })();
     </script>
 </body>

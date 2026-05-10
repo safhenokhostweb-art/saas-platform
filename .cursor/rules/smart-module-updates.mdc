@@ -1,0 +1,42 @@
+---
+description: Smart rules for safe module updates
+globs:
+  - "modules/**"
+alwaysApply: false
+---
+
+# Smart Module Rules
+
+## Purpose
+
+- Ensure modules have required features and architecture.
+- Only add missing features or structure.
+- Never break existing functionality.
+
+## Architecture Guidelines
+
+- Check existing architecture.
+- Compare with standard pattern.
+- Only add missing layers or services if absent.
+
+## Feature Guidelines
+
+1. List **Required Features** for this module.
+2. Scan existing code to detect them.
+3. If a feature is missing → add it.
+4. If all features exist → **do nothing**.
+
+## Safety Rules
+
+1. **Do not remove or modify existing code** unless critical bugfix.
+2. **Backup current module** (branch or commit) before any large or automated change.
+3. Update module documentation and CHANGELOG **only when new features are added**.
+4. Preserve backward compatibility.
+
+## Process for Updates
+
+1. Scan module directory.
+2. Compare current structure vs. required structure.
+3. Identify missing features or layers.
+4. Apply only missing parts.
+5. Document the changes.
