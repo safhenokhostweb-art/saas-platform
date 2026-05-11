@@ -169,11 +169,25 @@ class OrderFulfillmentService
         }
         $plan = $item->product->supportPlan;
         $durationDays = $plan->duration_days ?? 30;
-        $newEndsAt = $site->support_expires_at && $site->support_expires_at->isFuture()
+
+        $hasActiveSupport = $site->support_expires_at && $site->support_expires_at->isFuture();
+        $newEndsAt = $hasActiveSupport
             ? $site->support_expires_at->addDays($durationDays)
             : now()->addDays($durationDays);
 
-        $site->update(['support_expires_at' => $newEndsAt]);
+        $updateData = ['support_expires_at' => $newEndsAt];
+
+        // P1-6: اگر ستون support_starts_at موجود است و هنوز ثبت نشده،
+        // (یا support قبلی منقضی شده) شروع پشتیبانی فعلی را ثبت کن.
+        // در تمدید پلان فعال، support_starts_at دست‌نخورده باقی می‌ماند.
+        if (\Illuminate\Support\Facades\Schema::hasColumn('sites', 'support_starts_at')) {
+            $existingStart = $site->support_starts_at ?? null;
+            if (!$hasActiveSupport || empty($existingStart)) {
+                $updateData['support_starts_at'] = now();
+            }
+        }
+
+        $site->update($updateData);
 
         DB::table('site_support_subscriptions')->insert([
             'site_id' => $site->id,
