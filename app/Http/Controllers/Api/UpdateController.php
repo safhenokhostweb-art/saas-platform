@@ -43,12 +43,8 @@ class UpdateController extends Controller
             ], 403);
         }
 
-        $prefix = substr(preg_replace('/[^A-Z0-9]/', '', strtoupper($request->license_key)), 0, 8);
-        $hash = hash('sha256', $request->input('license_key'));
-        $license = \App\Models\PlatformLicense::where('license_key_prefix', $prefix)
-            ->where('license_key_hash', $hash)
-            ->with('site')
-            ->first();
+        // Phase 5 / P0-5: یافتن لایسنس از طریق سرویس مرکزی (HMAC + lazy rehash از SHA256 legacy).
+        $license = $this->licenseService->findByKey($request->input('license_key'));
 
         if (!$license || !$license->site) {
             return response()->json(['allowed' => false], 403);
@@ -109,10 +105,8 @@ class UpdateController extends Controller
             ], 403);
         }
 
-        $license = \App\Models\PlatformLicense::where('license_key_prefix', substr(preg_replace('/[^A-Z0-9]/', '', strtoupper($request->license_key)), 0, 8))
-            ->where('license_key_hash', hash('sha256', $request->input('license_key')))
-            ->with('site')
-            ->first();
+        // Phase 5 / P0-5: یافتن لایسنس از طریق سرویس مرکزی (HMAC + lazy rehash از SHA256 legacy).
+        $license = $this->licenseService->findByKey($request->input('license_key'));
 
         if (!$license || !$license->site) {
             return response()->json(['allowed' => false], 403);
@@ -158,10 +152,8 @@ class UpdateController extends Controller
             ], 403);
         }
 
-        $license = \App\Models\PlatformLicense::where('license_key_prefix', substr(preg_replace('/[^A-Z0-9]/', '', strtoupper($request->license_key)), 0, 8))
-            ->where('license_key_hash', hash('sha256', $request->input('license_key')))
-            ->with('site')
-            ->first();
+        // Phase 5 / P0-5: یافتن لایسنس از طریق سرویس مرکزی (HMAC + lazy rehash از SHA256 legacy).
+        $license = $this->licenseService->findByKey($request->input('license_key'));
 
         if (!$license || !$license->site) {
             return response()->json(['success' => false, 'error' => 'invalid_license'], 403);
