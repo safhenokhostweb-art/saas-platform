@@ -16,6 +16,7 @@ class Module extends Model
     public const MODE_PAID_MARKETPLACE = 'paid_marketplace';
     public const MODE_LICENSE_ONLY = 'license_only';
     public const MODE_DISABLED = 'disabled';
+    public const MODE_RETIRED = 'retired';
 
     protected $fillable = [
         'slug',
@@ -34,6 +35,7 @@ class Module extends Model
         'license_type_default',
         'short_description',
         'screenshots',
+        'retired_at',
     ];
 
     protected $casts = [
@@ -44,6 +46,7 @@ class Module extends Model
         'license_required' => 'boolean',
         'marketplace_visible' => 'boolean',
         'screenshots' => 'array',
+        'retired_at' => 'datetime',
     ];
 
     /** نسخهٔ پیش‌فرض برای ماژول‌های جدید */
@@ -51,10 +54,37 @@ class Module extends Model
 
     /**
      * ماژول‌های قابل اختصاص به سایت (core و paid؛ internal هرگز).
+     * ماژول‌های بازنشسته (retired) از این لیست حذف می‌شوند.
      */
     public function scopeAssignableToSite(Builder $query): Builder
     {
-        return $query->whereIn('type', [self::TYPE_CORE, self::TYPE_PAID]);
+        $query->whereIn('type', [self::TYPE_CORE, self::TYPE_PAID]);
+        if (\Illuminate\Support\Facades\Schema::hasColumn($query->getModel()->getTable(), 'retired_at')) {
+            $query->whereNull('retired_at');
+        }
+        return $query;
+    }
+
+    /**
+     * ماژول‌های فعال و بازنشسته نشده (پیشنهاد می‌شود در فهرست‌های assignment/marketplace استفاده شود).
+     */
+    public function scopeNotRetired(Builder $query): Builder
+    {
+        if (\Illuminate\Support\Facades\Schema::hasColumn($query->getModel()->getTable(), 'retired_at')) {
+            return $query->whereNull('retired_at');
+        }
+        return $query;
+    }
+
+    /**
+     * فقط ماژول‌های بازنشسته.
+     */
+    public function scopeRetired(Builder $query): Builder
+    {
+        if (\Illuminate\Support\Facades\Schema::hasColumn($query->getModel()->getTable(), 'retired_at')) {
+            return $query->whereNotNull('retired_at');
+        }
+        return $query->whereRaw('0=1');
     }
 
     /**
@@ -63,8 +93,13 @@ class Module extends Model
      */
     public function scopeFreeAssignable(Builder $query): Builder
     {
-        if (\Illuminate\Support\Facades\Schema::hasColumn($query->getModel()->getTable(), 'free_assignable')) {
-            return $query->where('free_assignable', true);
+        $table = $query->getModel()->getTable();
+        if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'free_assignable')) {
+            $query->where('free_assignable', true);
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'retired_at')) {
+                $query->whereNull('retired_at');
+            }
+            return $query;
         }
         return $query->whereRaw('0=1');
     }
@@ -72,6 +107,7 @@ class Module extends Model
     /**
      * ماژول‌های قابل خرید در فروشگاه tenant (قیمت دارند، فقط از طریق خرید).
      * در پنل اصلی در لیست اختصاص دستی نمایش داده نمی‌شوند.
+     * ماژول‌های بازنشسته از مارکت‌پلیس حذف می‌شوند ولی مالکیت قبلی مشتری حفظ می‌شود.
      */
     public function scopePaidMarketplace(Builder $query): Builder
     {
@@ -80,11 +116,15 @@ class Module extends Model
             ->where(function ($q) {
                 $q->whereNotNull('price_irr')->where('price_irr', '>', 0);
             });
-        if (\Illuminate\Support\Facades\Schema::hasColumn($query->getModel()->getTable(), 'license_required')) {
+        $table = $query->getModel()->getTable();
+        if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'license_required')) {
             $query->where('license_required', false);
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn($query->getModel()->getTable(), 'marketplace_visible')) {
+        if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'marketplace_visible')) {
             $query->where('marketplace_visible', true);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'retired_at')) {
+            $query->whereNull('retired_at');
         }
         return $query;
     }
@@ -121,9 +161,16 @@ class Module extends Model
 
     /**
      * وضعیت توزیع ماژول برای نمایش و قوانین اختصاص.
+     *
+     * توجه: حالت RETIRED صرفاً برای جلوگیری از **اختصاص جدید** است.
+     * مشتریانی که قبلاً این ماژول را داشتند، entitlement خود را حفظ می‌کنند
+     * (در `site_modules` و `site_module_purchases` و `module_licenses` دست‌نخورده باقی می‌ماند).
      */
     public function getDistributionMode(): string
     {
+        if ($this->isRetired()) {
+            return self::MODE_RETIRED;
+        }
         if (! $this->is_active) {
             return self::MODE_DISABLED;
         }
@@ -158,6 +205,44 @@ class Module extends Model
     public function isDistributionDisabled(): bool
     {
         return $this->getDistributionMode() === self::MODE_DISABLED;
+    }
+
+    /**
+     * آیا ماژول بازنشسته شده است؟
+     * ماژول بازنشسته در فهرست‌های assignment و marketplace ظاهر نمی‌شود،
+     * ولی entitlementهای موجود مشتریان حفظ می‌شوند.
+     */
+    public function isRetired(): bool
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'retired_at')) {
+            return false;
+        }
+        return $this->retired_at !== null;
+    }
+
+    /**
+     * بازنشسته‌سازی ماژول (soft retirement). entitlementهای موجود حفظ می‌شوند؛
+     * فقط از فهرست‌های assignment و marketplace کنار می‌رود.
+     */
+    public function retire(?\Illuminate\Support\Carbon $at = null): bool
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'retired_at')) {
+            return false;
+        }
+        $this->retired_at = $at ?? now();
+        return $this->save();
+    }
+
+    /**
+     * بازگردانی ماژول از حالت بازنشسته.
+     */
+    public function unretire(): bool
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'retired_at')) {
+            return false;
+        }
+        $this->retired_at = null;
+        return $this->save();
     }
 
     /**
