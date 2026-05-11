@@ -53,6 +53,8 @@ class ActivityLog extends Model
             'form.deleted' => 'حذف فرم',
             'user.toggled' => 'تغییر وضعیت کاربر',
             'module.activated' => 'فعال‌سازی ماژول پس از پرداخت',
+            'module.updated' => 'ویرایش ماژول',
+            'module.bulk_updated' => 'بروزرسانی گروهی ماژول‌ها',
         ];
         return $labels[$action] ?? $action;
     }

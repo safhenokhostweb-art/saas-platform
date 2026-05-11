@@ -58,6 +58,8 @@ class ActivityLogController extends Controller
             'form.updated' => 'ویرایش فرم',
             'form.deleted' => 'حذف فرم',
             'user.toggled' => 'تغییر وضعیت کاربر',
+            'module.updated' => 'ویرایش ماژول',
+            'module.bulk_updated' => 'بروزرسانی گروهی ماژول‌ها',
         ];
 
         return view('admin.activity-log.index', compact('logs', 'users', 'actionOptions'));
