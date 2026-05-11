@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Phase 5 / Wave 3 — ۱۴۰۵/۰۲/۲۱
+
+- **P0-6:** افزودن endpoint `GET /api/updates/module-history` به `App\Http\Controllers\Api\UpdateController` (متد `moduleHistory`). این endpoint قبلاً در سمت customer-site (`UpdateCheckService::syncModuleChangeLogs`) درخواست می‌شد ولی در پلتفرم تعریف نشده بود → silent failure. حالا با reuse از `LicenseServerService::validate` + `findByKey` (مسیر HMAC + lazy rehash Wave 2 / P0-5) و gating با `ModuleUpdateEligibilityService::isEligibleForModuleUpdates`، فقط ماژول‌هایی که سایت به‌صورت فعال در `site_modules.is_active=true` دارد (یا fallback از `license->modules`) برگردانده می‌شود. پاسخ سازگار با کلاینت موجود: `{ allowed:true, history:[{ module_slug, version, release_type, title, changelog, released_at }] }`. پارامتر `limit` بازه ۱..۲۰۰ (پیش‌فرض ۱۰۰). با `Schema::hasTable('module_releases')` guard ایمن. additive و backward-compatible. `commit 8a78a35`
+- **P1-3:** افزودن audit logging به `App\Http\Controllers\Admin\ModuleController`. `update()` تغییرات کاتالوگ ماژول را در `activity_logs` با action `module.updated` و properties شامل `changes` (diff old/new روی فیلدهای watch: type, title, short_description, price_irr, price_promo_irr, currency, license_type_default, marketplace_visible, free_assignable, license_required, category) و در صورت تغییر type به `INTERNAL`، `side_effects.site_modules_disabled_count` ثبت می‌کند (شمارش قبل از soft-deactivation). `bulkUpdate()` یک ردیف aggregate با action `module.bulk_updated` و properties `{ bulk_action, module_ids, count, side_effects? }` می‌نویسد. action labels جدید در `ActivityLog::actionLabel()` و فیلتر `ActivityLogController::index()` ثبت شد. هیچ تغییری در منطق update یا transaction نیست — فقط ثبت رویداد. `commit 5b004fc`
+
 ### Phase 5 / Wave 2 — ۱۴۰۵/۰۲/۲۱
 
 - **P0-5:** هش کلید لایسنس از `hash('sha256', $key)` ساده به `hash_hmac('sha256', $key, config('app.key'))` ارتقا یافت در `LicenseServerService`. متد جدید `findByKey()` به‌عنوان منبع واحد جستجوی لایسنس از کلید کامل اضافه شد که dual lookup (HMAC اول، سپس SHA256 legacy) و lazy rehash را encapsulate می‌کند. `UpdateController` در سه نقطه (check، checkModules، reportVersions) از hash مستقیم به `findByKey()` refactor شد. **هیچ مایگریشن دیتابیس لازم نیست** (طول HMAC-SHA256 = SHA256 = 64 hex). لایسنس‌های موجود در اولین استفاده به‌طور خاموش به HMAC ارتقا می‌یابند. `commit 0dfbfac`
