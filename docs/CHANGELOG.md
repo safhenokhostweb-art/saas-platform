@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Phase 5 / Wave 2 — ۱۴۰۵/۰۲/۲۱
+
+- **P0-5:** هش کلید لایسنس از `hash('sha256', $key)` ساده به `hash_hmac('sha256', $key, config('app.key'))` ارتقا یافت در `LicenseServerService`. متد جدید `findByKey()` به‌عنوان منبع واحد جستجوی لایسنس از کلید کامل اضافه شد که dual lookup (HMAC اول، سپس SHA256 legacy) و lazy rehash را encapsulate می‌کند. `UpdateController` در سه نقطه (check، checkModules، reportVersions) از hash مستقیم به `findByKey()` refactor شد. **هیچ مایگریشن دیتابیس لازم نیست** (طول HMAC-SHA256 = SHA256 = 64 hex). لایسنس‌های موجود در اولین استفاده به‌طور خاموش به HMAC ارتقا می‌یابند. `commit 0dfbfac`
+- **P1-4:** افزودن `'password' => 'hashed'` به casts در `App\Models\User`. مدل user در customer-site از قبل داشت ولی در saas-platform نبود. Laravel با `Hash::needsRehash` اطمینان می‌دهد پسوردهای از قبل hashed دوباره hash نشوند → کاملاً backward-compatible. `commit 47dacd9`
+
 ### Phase 5 / Wave 1 — ۱۴۰۵/۰۲/۲۱
 
 - **P4-6:** افزودن `docs/PROJECT-GUIDE.md` به این مخزن (هم‌محتوا با customer-site؛ هش SHA256 یکسان). `commit c8624c4`
