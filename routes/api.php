@@ -35,6 +35,7 @@ Route::prefix('license')->middleware('throttle:60,1')->group(function () {
 Route::prefix('updates')->middleware('throttle:30,1')->group(function () {
     Route::get('check', [ApiUpdateController::class, 'check'])->name('api.updates.check');
     Route::get('modules', [ApiUpdateController::class, 'checkModules'])->name('api.updates.modules');
+    Route::get('module-history', [ApiUpdateController::class, 'moduleHistory'])->name('api.updates.module-history');
     Route::post('report-versions', [ApiUpdateController::class, 'reportVersions'])->name('api.updates.report-versions');
 });
 

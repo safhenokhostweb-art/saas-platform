@@ -112,10 +112,15 @@
 ### ۳.۵ بروزرسانی ماژول‌ها
 
 - **مسیر:** `GET /api/updates/modules` — لیست ماژول‌های دارای بروزرسانی (tenant-aware)
-- **مسیر:** `GET /api/updates/module-history` — دریافت تاریخچهٔ نسخه و changelog ماژول‌های تخصیص‌یافته به سایت
+- **مسیر:** `GET /api/updates/module-history` — تاریخچهٔ نسخه و changelog ماژول‌های تخصیص‌یافته به سایت (Phase 5 / Wave 3 / P0-6)
+  - **پارامترها (query):** `license_key` ، `domain` ، اختیاری `limit` (۱..۲۰۰، پیش‌فرض ۱۰۰)
+  - **gating:** اعتبارسنجی لایسنس (مسیر HMAC + lazy rehash Wave 2) + `ModuleUpdateEligibilityService::isEligibleForModuleUpdates`
+  - **پاسخ موفق:** `{ allowed: true, history: [{ module_slug, version, release_type, title, changelog, released_at }] }`
+  - **پاسخ ناموفق:** `{ allowed: false, error: 'invalid_license' | 'support_expired' | 'revoked' }` با کد 403
+  - **scope:** فقط ماژول‌هایی که سایت در `site_modules.is_active=true` دارد یا در `license->modules` آمده
 - **مسیر:** `POST /api/updates/report-versions` — گزارش نسخه‌های نصب‌شده به پلتفرم
 
-**جستجو:** `updates` ، `check` ، `report-versions`
+**جستجو:** `updates` ، `check` ، `report-versions` ، `module-history`
 
 ---
 
@@ -277,12 +282,13 @@
 | `modules` | ماژول‌ها (slug، title، description، **type**: core\|paid\|internal، **price_irr** برای ماژول‌های paid؛ نوع internal فقط برای پنل مدیر اصلی، نوع core برای ماژول‌های مبتنی بر لایسنس (همراه لایسنس اصلی سایت)، نوع paid برای ماژول‌های پولی قابل خرید) |
 | `module_features` | فیچرهای هر ماژول (module_id، key، title) |
 | `site_module_features` | pivot: `site_module_id` (رفرنس به site_modules) ، `module_feature_id` ، `is_active` — **بدون site_id** |
-| `platform_licenses` | لایسنسهای صادرشده (site_id، hash کلید، domain_allowed، expires_at) |
+| `platform_licenses` | لایسنسهای صادرشده (site_id، hash کلید HMAC-SHA256 با fallback SHA256 legacy، domain_allowed، expires_at) |
 | `settings` | key/value تنظیمات پلتفرم (نام، لوگو، رنگ‌ها، فونت‌ها و ...) |
 | `customers` | مشتریان |
 | `users` | کاربران پلتفرم (ورود با موبایل) |
+| `activity_logs` | لاگ فعالیت پنل ادمین پلتفرم (action، description، user_id، subject_type/id، properties json، ip، ua). actions ثبت‌شده: customer.*، site.*، form.*، user.toggled، license.issued، site_update.distributed، module.updated، module.bulk_updated (Phase 5 / Wave 3 / P1-3) |
 
-**جستجو:** `migration` ، `site_modules` ، `site_module_features` ، `platform_licenses`
+**جستجو:** `migration` ، `site_modules` ، `site_module_features` ، `platform_licenses` ، `activity_logs`
 
 ### customer-site
 
@@ -294,8 +300,11 @@
 | `posts` ، `categories` ، `tags` ، `post_tag` ، `post_series` ، `post_revisions` | محتوای وبلاگ (مطلب، دسته، برچسب، مجموعه، نسخه‌ها) |
 | `products` ، `orders` و جداول وابسته | فروشگاه (در صورت فعال بودن ماژول) |
 | `settings` | تنظیمات محلی سایت |
+| `user_activity_log` | فعالیت end-user (ورود، تغییر رمز، ویرایش پروفایل و آدرس) |
+| `admin_activity_log` | لاگ فعالیت پنل ادمین tenant — Phase 5 / Wave 3 / P1-2 (admin_user_id، action، description، subject_type/id، properties json، ip، ua). actions ثبت‌شده: license.activated، license.refreshed_config، license.refreshed_modules، module.settings_updated. مسیر نمایش: `/admin/activity-log` |
+| `module_change_logs` | تاریخچهٔ نسخه و changelog ماژول‌ها (sync از پلتفرم با `GET /api/updates/module-history`) |
 
-**جستجو:** `licenses` ، `migration` ، `customer-site`
+**جستجو:** `licenses` ، `migration` ، `customer-site` ، `admin_activity_log` ، `module_change_logs`
 
 ---
 

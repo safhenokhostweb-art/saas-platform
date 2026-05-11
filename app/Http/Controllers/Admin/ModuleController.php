@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\Product;
 use App\Models\Site;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -77,6 +78,14 @@ class ModuleController extends Controller
 
         $oldType = $module->type;
 
+        // Phase 5 / Wave 3 / P1-3: snapshot فیلدهای watch قبل از تغییر برای audit log.
+        $watchFields = [
+            'type', 'title', 'short_description', 'price_irr', 'price_promo_irr',
+            'currency', 'license_type_default', 'marketplace_visible',
+            'free_assignable', 'license_required', 'category',
+        ];
+        $oldSnapshot = collect($watchFields)->mapWithKeys(fn ($f) => [$f => $module->getOriginal($f) ?? $module->{$f}])->all();
+
         $data = $request->only([
             'title', 'description', 'short_description',
             'price_irr', 'price_promo_irr', 'currency', 'license_type_default',
@@ -105,7 +114,18 @@ class ModuleController extends Controller
         };
         $data['type'] = $newType;
 
-        DB::transaction(function () use ($module, $data, $oldType, $newType) {
+        // Phase 5 / Wave 3 / P1-3: side effect tracking (تعداد site_modules که در صورت سوئیچ به internal غیرفعال خواهند شد).
+        $sideEffectCount = 0;
+        if ($newType === Module::TYPE_INTERNAL
+            && $oldType !== Module::TYPE_INTERNAL
+            && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+            $sideEffectCount = (int) \Illuminate\Support\Facades\DB::table('site_modules')
+                ->where('module_id', $module->id)
+                ->where('is_active', true)
+                ->count();
+        }
+
+        DB::transaction(function () use ($module, $data, $oldType, $newType, $oldSnapshot, $watchFields, $sideEffectCount) {
             $module->update($data);
 
             // منطق امن تغییر نوع:
@@ -122,6 +142,31 @@ class ModuleController extends Controller
             // جابه‌جایی بین core (license) و paid:
             // - هیچ تغییری روی site_modules انجام نمی‌دهیم تا سایت‌هایی که هم‌اکنون دسترسی دارند، آن را از دست ندهند.
             // - قوانین جدید توزیع از این پس از روی تنظیمات قیمت/لایسنس اعمال می‌شود.
+
+            // Phase 5 / Wave 3 / P1-3: ثبت audit log برای تغییرات کاتالوگ ماژول.
+            $changes = [];
+            foreach ($watchFields as $f) {
+                $newVal = $module->{$f};
+                $oldVal = $oldSnapshot[$f] ?? null;
+                if ($oldVal != $newVal) {
+                    $changes[$f] = ['old' => $oldVal, 'new' => $newVal];
+                }
+            }
+            if (!empty($changes)) {
+                $props = ['changes' => $changes];
+                if ($newType === Module::TYPE_INTERNAL && $oldType !== Module::TYPE_INTERNAL) {
+                    $props['side_effects'] = [
+                        'site_modules_disabled_count' => $sideEffectCount,
+                        'reason' => 'type_switched_to_internal',
+                    ];
+                }
+                ActivityLogger::log(
+                    'module.updated',
+                    'ویرایش ماژول: ' . ($module->title ?: $module->slug),
+                    $module,
+                    $props
+                );
+            }
         });
 
         return redirect()->route('admin.modules.index')->with('success', 'ماژول به‌روزرسانی شد.');
@@ -152,6 +197,11 @@ class ModuleController extends Controller
         $action = $data['bulk_action'];
 
         $modules = Module::whereIn('id', $ids)->get();
+
+        // Phase 5 / Wave 3 / P1-3: aggregate counters برای audit log عملیات گروهی.
+        $bulkChanged = 0;
+        $bulkSideEffectModules = 0;
+        $bulkSideEffectSiteModules = 0;
 
         foreach ($modules as $module) {
             $oldType = $module->type;
@@ -203,6 +253,17 @@ class ModuleController extends Controller
                 continue;
             }
 
+            // P1-3: قبل از transaction count site_modules فعال برای ماژول‌هایی که نوع به internal می‌شود.
+            $perModuleSideEffect = 0;
+            if (($updates['type'] ?? null) === Module::TYPE_INTERNAL
+                && $oldType !== Module::TYPE_INTERNAL
+                && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+                $perModuleSideEffect = (int) \Illuminate\Support\Facades\DB::table('site_modules')
+                    ->where('module_id', $module->id)
+                    ->where('is_active', true)
+                    ->count();
+            }
+
             DB::transaction(function () use ($module, $updates, $oldType, $newType) {
                 $module->update($updates);
 
@@ -215,6 +276,33 @@ class ModuleController extends Controller
                     }
                 }
             });
+
+            $bulkChanged++;
+            if ($perModuleSideEffect > 0) {
+                $bulkSideEffectModules++;
+                $bulkSideEffectSiteModules += $perModuleSideEffect;
+            }
+        }
+
+        // Phase 5 / Wave 3 / P1-3: ثبت یک audit log کلی برای کل عملیات گروهی.
+        if ($bulkChanged > 0) {
+            $props = [
+                'bulk_action' => $action,
+                'module_ids' => $ids,
+                'count' => $bulkChanged,
+            ];
+            if ($bulkSideEffectSiteModules > 0) {
+                $props['side_effects'] = [
+                    'modules_switched_to_internal' => $bulkSideEffectModules,
+                    'site_modules_disabled_count' => $bulkSideEffectSiteModules,
+                ];
+            }
+            ActivityLogger::log(
+                'module.bulk_updated',
+                'بروزرسانی گروهی ماژول‌ها (' . $action . '): ' . $bulkChanged . ' مورد',
+                null,
+                $props
+            );
         }
 
         return redirect()->route('admin.modules.index')->with('success', 'تغییرات گروهی ماژول‌ها اعمال شد.');
