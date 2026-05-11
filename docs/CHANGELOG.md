@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Phase 5 — Wave-tip tags — ۱۴۰۵/۰۲/۲۱
+
+- افزوده شدن سه **lightweight tag** برای نام‌گذاری دائمی tip شاخه‌های phase5-waveN قبل از حذف احتمالی feature branchها (محلی، بدون push به GitHub):
+  - `phase5-wave1-tip` → `03092ae`
+  - `phase5-wave2-tip` → `a8d32cd`
+  - `phase5-wave3-tip` → `95e4c61`
+- مستندسازی کامل تگ‌ها، تفاوت با `deploy-backup-*` و `branch`، و الگوی استفادهٔ روزمره در `DEPLOY-fa.md` §۹ (فارسی) و `DEPLOY.md` §9 (انگلیسی). شامل سناریوهای checkout/diff/log/show، روال wave آینده، بازیابی از merge commit، و push اختیاری به GitHub.
+
 ### Phase 5 / Wave 3 — ۱۴۰۵/۰۲/۲۱
 
 - **P0-6:** افزودن endpoint `GET /api/updates/module-history` به `App\Http\Controllers\Api\UpdateController` (متد `moduleHistory`). این endpoint قبلاً در سمت customer-site (`UpdateCheckService::syncModuleChangeLogs`) درخواست می‌شد ولی در پلتفرم تعریف نشده بود → silent failure. حالا با reuse از `LicenseServerService::validate` + `findByKey` (مسیر HMAC + lazy rehash Wave 2 / P0-5) و gating با `ModuleUpdateEligibilityService::isEligibleForModuleUpdates`، فقط ماژول‌هایی که سایت به‌صورت فعال در `site_modules.is_active=true` دارد (یا fallback از `license->modules`) برگردانده می‌شود. پاسخ سازگار با کلاینت موجود: `{ allowed:true, history:[{ module_slug, version, release_type, title, changelog, released_at }] }`. پارامتر `limit` بازه ۱..۲۰۰ (پیش‌فرض ۱۰۰). با `Schema::hasTable('module_releases')` guard ایمن. additive و backward-compatible. `commit 8a78a35`

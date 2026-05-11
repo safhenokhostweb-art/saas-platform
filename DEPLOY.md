@@ -186,7 +186,64 @@ The scripts honour the platform's global safety rules (`.cursor/rules/global-rul
 
 > **APP_KEY rotation is prohibited in production** unless you also re-encrypt all `licenses.license_key` rows on customer sites and re-hash `platform_licenses.license_key_hash` rows (Phase 5 / Wave 2 contract). See `docs/CHANGELOG.md` Wave 2 entries for the migration plan.
 
-## 9. Troubleshooting
+## 9. Wave-tip tags (permanent names for development milestones)
+
+In addition to automatic `deploy-backup-*` tags created by the deploy scripts, the repository carries **lightweight tags** that name the tip of each Phase 5 wave. These let you refer to important historical points without remembering raw SHAs.
+
+| Tag | Commit | What it captures |
+|---|---|---|
+| `phase5-wave1-tip` | `03092ae` | End of Wave 1: security hardening, credential removal, P0-3, P0-7 |
+| `phase5-wave2-tip` | `a8d32cd` | End of Wave 2: P1-4 (password hashed cast), P0-5 (HMAC license hashing) |
+| `phase5-wave3-tip` | `95e4c61` | End of Wave 3: P0-6 (module-history API), P1-3 (ModuleController audit logging) |
+
+These are **local-only** by design (not pushed to GitHub, to keep the remote tag list clean). They are stable, never advance, and survive deletion of the original `phase5-waveN` feature branches.
+
+### Common operations
+
+```bash
+# List every wave-tip tag
+git tag --list 'phase5-wave*-tip'
+
+# Inspect repository state at the end of Wave 2 (read-only)
+git checkout phase5-wave2-tip
+# ... explore files ...
+git checkout main
+
+# Compare two waves
+git diff phase5-wave1-tip phase5-wave2-tip --stat
+
+# List commits introduced by Wave 3
+git log phase5-wave2-tip..phase5-wave3-tip --oneline
+
+# Read a file as it was at a milestone
+git show phase5-wave1-tip:app/Models/User.php
+
+# Branch off a milestone for an emergency hotfix
+git checkout -b hotfix-wave2 phase5-wave2-tip
+```
+
+### Future waves
+
+After completing and merging each new wave, create the matching tag before deleting the feature branch:
+
+```bash
+# Replace N with the wave number, HASH with the tip commit (e.g. git rev-parse phase5-wave4)
+git tag phase5-waveN-tip <HASH>
+```
+
+If you forgot to tag before merging, the wave tip is still recoverable from the merge commit's second parent: `git rev-parse <merge-commit>^2`.
+
+### Publishing to GitHub (optional)
+
+If you ever want the wave-tip tags on GitHub, push them explicitly (never `--tags` blindly — that would also push transient `deploy-backup-*` tags):
+
+```bash
+git push origin phase5-wave1-tip phase5-wave2-tip phase5-wave3-tip
+```
+
+For full operator details and Persian guidance, see `DEPLOY-fa.md` §9.
+
+## 10. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -198,4 +255,4 @@ The scripts honour the platform's global safety rules (`.cursor/rules/global-rul
 
 ---
 
-**Phase 5 / Wave 3 reference state:** `main` at `309ad1a` (saas-platform), `pre-phase5-baseline` tag preserved.
+**Phase 5 / Wave 3 reference state:** `main` at `309ad1a` (saas-platform). Tags: `pre-phase5-baseline`, `phase5-wave1-tip` → `03092ae`, `phase5-wave2-tip` → `a8d32cd`, `phase5-wave3-tip` → `95e4c61`.

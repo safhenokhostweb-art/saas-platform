@@ -13,8 +13,9 @@
 6. [بازگشت (Rollback) در صورت خرابی](#۶-بازگشت-rollback-در-صورت-خرابی)
 7. [اولین deploy روی سرور جدید](#۷-اولین-deploy-روی-سرور-جدید)
 8. [تضمین‌های ایمنی](#۸-تضمینهای-ایمنی)
-9. [پرسش‌های متداول](#۹-پرسشهای-متداول)
-10. [خلاصه دستورات](#۱۰-خلاصه-دستورات)
+9. [تگ‌های Wave-tip — نام دائمی هر مرحله](#۹-تگهای-wave-tip--نام-دائمی-هر-مرحله)
+10. [پرسش‌های متداول](#۱۰-پرسشهای-متداول)
+11. [خلاصه دستورات](#۱۱-خلاصه-دستورات)
 
 ---
 
@@ -256,7 +257,179 @@ php artisan optimize
 
 ---
 
-## ۹. پرسش‌های متداول
+## ۹. تگ‌های Wave-tip — نام دائمی هر مرحله
+
+### این تگ‌ها چه هستند و چه کاری برای شما می‌کنند؟
+
+در طول Phase 5، هر بار که یک «موج» (Wave) تغییرات کامل شد، آن مجموعه تغییرات به `main` ادغام (merge) شد. شاخه‌های `phase5-wave1`, `phase5-wave2`, `phase5-wave3` فقط در لپ‌تاپ شما به‌عنوان feature branch موقت ساخته شدند و به GitHub push نشدند تا مخزن remote تمیز بماند.
+
+**مشکل:** اگر روزی این شاخه‌های محلی به‌اشتباه پاک شوند (مثلاً `git branch -D phase5-wave3`)، **commitها از دست نمی‌روند** (چون از طریق merge commit در main همچنان قابل دسترسی هستند)، اما **نامِ خوانا و قابل تایپ** آن نقطه از تاریخ گم می‌شود و باید با یک hash هفت‌رقمی مثل `95e4c61` کار کنید.
+
+**راه‌حل:** برای هر wave یک **lightweight tag** ساخته شد که نقش «نام دائمی» آن نقطه را بازی می‌کند:
+
+| تگ | اشاره به | شامل چه commitی است |
+|---|---|---|
+| `phase5-wave1-tip` | `03092ae` | آخرین commit شاخهٔ wave1 (قبل از merge به main): hardening، cleanup، P0-3، P0-7، حذف credentials |
+| `phase5-wave2-tip` | `a8d32cd` | آخرین commit شاخهٔ wave2: P1-4 (password hashed cast)، P0-5 (HMAC license hashing) |
+| `phase5-wave3-tip` | `95e4c61` | آخرین commit شاخهٔ wave3: P0-6 (module-history API)، P1-3 (ModuleController audit) |
+
+### تفاوت با تگ‌های `deploy-backup-*`
+
+| ویژگی | `phase5-wave*-tip` | `deploy-backup-YYYYMMDD-HHMMSS` |
+|---|---|---|
+| چه زمانی ساخته می‌شود؟ | یک بار، در پایان هر wave (دستی) | خودکار، در ابتدای هر deploy |
+| هدف | مرور تاریخ توسعه، مقایسه، rollback مرحله‌ای | نقطهٔ بازگشت اضطراری برای deploy ناموفق |
+| طول عمر | دائمی (نگه دارید) | موقتی (پس از deploy موفق می‌توانید حذف کنید) |
+| Push به GitHub؟ | خیر (محلی می‌مانند) | خیر |
+
+### تفاوت با شاخه (`branch`)
+
+| ویژگی | تگ (tag) | شاخه (branch) |
+|---|---|---|
+| تغییر می‌کند با commit جدید؟ | ❌ نه — همیشه به همان commit ثابت می‌ماند | ✅ بله — با هر commit جلو می‌رود |
+| می‌توان checkout کرد؟ | ✅ بله | ✅ بله |
+| می‌توان commit جدید روی آن زد؟ | ❌ نه (detached HEAD می‌شوید) | ✅ بله |
+| فضای دیسک | بسیار کم (یک خط در `.git/refs/tags/`) | بسیار کم |
+| در صفحهٔ Branches روی GitHub؟ | خیر (در قسمت Tags/Releases) | بله |
+
+به‌طور خلاصه: **تگ یک ثبت ثابت از یک نقطهٔ تاریخی است؛ شاخه یک خط رو به جلو از کار است.** برای «اسم دائمی برای نقطه‌ای از گذشته»، تگ بهترین گزینه است.
+
+### چطور از این تگ‌ها استفاده می‌کنید؟
+
+#### سناریو ۱: دیدن وضعیت پروژه در پایان یک wave
+
+```bash
+# پروژه را به‌صورت موقت به آن نقطه برمی‌گردانیم (read-only)
+git checkout phase5-wave2-tip
+
+# الان فایل‌های روی دیسک، دقیقاً همان وضعیت پایان Wave 2 هستند
+ls app/Services/                    # ببینید چه فایل‌هایی بود
+cat docs/CHANGELOG.md                # چنج‌لاگ آن زمان
+
+# بازگشت به وضعیت فعلی (آخرین main)
+git checkout main
+```
+
+#### سناریو ۲: مقایسه دو wave
+
+```bash
+# همه فایل‌هایی که بین پایان Wave 1 و پایان Wave 2 تغییر کردند
+git diff phase5-wave1-tip phase5-wave2-tip --stat
+
+# diff کامل یک فایل بین دو wave
+git diff phase5-wave1-tip phase5-wave2-tip -- app/Services/LicenseServerService.php
+```
+
+#### سناریو ۳: دیدن لیست commit‌های هر wave
+
+```bash
+# لیست commit‌های wave3 (پس از merge wave2 تا پایان wave3)
+git log phase5-wave2-tip..phase5-wave3-tip --oneline
+
+# diff کامل با تک‌تک commit‌ها
+git log phase5-wave2-tip..phase5-wave3-tip -p
+```
+
+#### سناریو ۴: دیدن وضعیت یک فایل خاص در نقطهٔ مشخص
+
+```bash
+# مدل User در پایان Wave 1
+git show phase5-wave1-tip:app/Models/User.php
+
+# همان فایل را در فایل موقتی برای مقایسه ذخیره کن
+git show phase5-wave1-tip:app/Models/User.php > /tmp/user-wave1.php
+```
+
+#### سناریو ۵: ساخت یک شاخهٔ جدید از نقطه‌ای از گذشته (در صورت نیاز اضطراری)
+
+```bash
+# مثلاً اگر بخواهید روی پایان Wave 2 یک hotfix انجام دهید
+git checkout -b hotfix-wave2 phase5-wave2-tip
+# الان روی شاخهٔ جدید هستید و می‌توانید commit بزنید
+```
+
+### دستور دیدن همهٔ تگ‌های Phase 5
+
+```bash
+git tag --list 'phase5-wave*-tip'
+# خروجی:
+#   phase5-wave1-tip
+#   phase5-wave2-tip
+#   phase5-wave3-tip
+
+# با hash هم نشان بده
+git tag --list 'phase5-wave*-tip' --format='%(refname:short) -> %(objectname:short)'
+```
+
+### آیا این تگ‌ها روی GitHub هم هستند؟
+
+**خیر — فقط روی این لپ‌تاپ.** این انتخاب آگاهانه است:
+- مخزن GitHub تمیز و فقط با تگ‌های release رسمی می‌ماند
+- شما به تاریخ کامل دسترسی دارید بدون شلوغی روی صفحهٔ Tags در GitHub
+- اگر روزی بخواهید این تگ‌ها را روی GitHub هم داشته باشید، با یک دستور انجام می‌شود:
+
+```bash
+# push همهٔ تگ‌های phase5-wave*-tip به GitHub
+git push origin phase5-wave1-tip phase5-wave2-tip phase5-wave3-tip
+
+# یا push همهٔ تگ‌های دارای این الگو
+git push origin --tags
+# (هشدار: --tags هر تگ محلی را push می‌کند، شامل deploy-backup-* هم. توصیه نمی‌شود.)
+```
+
+### روال آینده — برای wave 4 و بعد از آن
+
+پس از تکمیل و merge هر wave جدید، یک تگ مشابه بسازید:
+
+```bash
+# مثال برای Wave 4 (پس از merge به main)
+# قبل از merge، tip شاخهٔ phase5-wave4 را پیدا کنید:
+git rev-parse phase5-wave4
+# فرض: a1b2c3d
+
+# تگ بسازید
+git tag phase5-wave4-tip a1b2c3d
+
+# تأیید
+git rev-parse phase5-wave4-tip
+```
+
+اگر فراموش کردید قبل از merge تگ بزنید، اشکالی ندارد — می‌توانید بعداً از merge commit در main استخراج کنید:
+
+```bash
+# parent دوم merge commit، tip شاخهٔ wave بود
+git log --merges --oneline main | head -5    # پیدا کردن merge commit
+git rev-parse <merge-commit-hash>^2          # parent دوم = tip wave
+git tag phase5-wave4-tip <hash-بازیافت‌شده>
+```
+
+### اگر تگی به اشتباه پاک شد
+
+تگ‌های lightweight بسیار آسان بازسازی می‌شوند چون شامل هیچ متادیتای خاصی نیستند:
+
+```bash
+# پاک کردن تگ
+git tag -d phase5-wave2-tip
+
+# بازسازی با همان hash (در hash بازسازی نیاز نیست رمز خاصی بدانید — همان commit ثابت است)
+git tag phase5-wave2-tip a8d32cd
+```
+
+### چه چیز را تگ بزنیم، چه چیز را نزنیم
+
+✅ **بله، تگ بزنید برای:**
+- پایان هر Wave مهم (مثل Phase 5 / Wave 4)
+- نسخه‌های release رسمی (`v1.0.0`, `v1.1.0`)
+- نقاط منطقی بزرگ از پروژه که می‌خواهید نام داشته باشند
+
+❌ **نه، تگ نزنید برای:**
+- هر commit کوچک
+- بخش‌های میانه کار wave (در حال توسعه)
+- branchهای موقت debug
+
+---
+
+## ۱۰. پرسش‌های متداول
 
 **س: اگر سرور من ویندوز است ولی Composer/PHP نصب نیست؟**
 ج: اسکریپت در مرحلهٔ بررسی پیش‌نیازها متوقف می‌شود و پیام `[FAIL] composer is not installed or not in PATH.` می‌دهد. هیچ آسیبی به سیستم نمی‌رسد.
@@ -296,7 +469,7 @@ php artisan migrate:rollback --step=1
 
 ---
 
-## ۱۰. خلاصه دستورات
+## ۱۱. خلاصه دستورات
 
 | می‌خواهید… | دستور |
 |---|---|
@@ -304,11 +477,15 @@ php artisan migrate:rollback --step=1
 | Deploy عادی روی Linux | `./deploy.sh` |
 | Deploy عادی روی Windows (cmd) | `deploy.bat` |
 | Deploy عادی روی Windows (PowerShell) | `.\deploy.bat` |
-| دیدن لیست تگ‌های پشتیبان | `git tag --list 'deploy-backup-*'` |
-| Rollback سریع کد | `git reset --hard deploy-backup-YYYYMMDD-HHMMSS` + composer + optimize |
+| دیدن لیست تگ‌های پشتیبان deploy | `git tag --list 'deploy-backup-*'` |
+| دیدن لیست تگ‌های wave-tip | `git tag --list 'phase5-wave*-tip'` |
+| Rollback سریع کد به deploy قبلی | `git reset --hard deploy-backup-YYYYMMDD-HHMMSS` + composer + optimize |
+| دیدن وضعیت پایان یک wave | `git checkout phase5-waveN-tip` (سپس `git checkout main` برای بازگشت) |
+| مقایسهٔ دو wave | `git diff phase5-wave1-tip phase5-wave2-tip --stat` |
+| لیست commit های یک wave | `git log phase5-wave2-tip..phase5-wave3-tip --oneline` |
 | Restart queueها | `php artisan queue:restart` |
 | خواندن راهنمای فنی کامل (انگلیسی) | `cat DEPLOY.md` |
 
 ---
 
-**وضعیت مرجع Phase 5 / Wave 3:** `main` در `a7d1308` (پلتفرم)، تگ `pre-phase5-baseline` حفظ شده.
+**وضعیت مرجع Phase 5 / Wave 3:** `main` در `a7d1308` (پلتفرم)، تگ‌ها: `pre-phase5-baseline`، `phase5-wave1-tip` → `03092ae`، `phase5-wave2-tip` → `a8d32cd`، `phase5-wave3-tip` → `95e4c61`.
