@@ -19,7 +19,15 @@ class User extends Authenticatable
         'is_active',
     ];
 
+    /**
+     * Phase 5 / P1-4:
+     * cast `password => hashed` تضمین می‌کند هر تخصیصِ پسورد روی مدل به‌صورت خودکار
+     * با Bcrypt هش شود. Laravel فقط زمانی Hash::make اعمال می‌کند که
+     * `Hash::needsRehash($value)` true باشد؛ بنابراین پسوردهای موجود (که از قبل هش شده‌اند)
+     * بدون تغییر باقی می‌مانند و backward-compatibility کاملاً حفظ می‌شود.
+     */
     protected $casts = [
+        'password' => 'hashed',
         'is_admin' => 'boolean',
         'is_active' => 'boolean',
     ];
