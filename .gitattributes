@@ -6,6 +6,10 @@
 *.md diff=markdown
 *.php diff=php
 
+# Deploy scripts: force native line endings per platform
+*.sh  text eol=lf
+*.bat text eol=crlf
+
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
