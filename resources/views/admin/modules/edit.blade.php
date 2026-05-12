@@ -48,7 +48,6 @@
     </div>
 
     @php
-        // Phase 5 / Wave 5.2 / P0-1: تعداد سایت‌های فعال روی این ماژول (برای نمایش در «منطقه خطرناک»).
         $activeSitesOnModule = 0;
         if (\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
             $activeSitesOnModule = (int) \Illuminate\Support\Facades\DB::table('site_modules')
@@ -58,29 +57,12 @@
         }
     @endphp
 
-    {{-- Phase 5 / Wave 5.2 / P0-1: کادر «منطقه خطرناک» — فقط زمانی نمایش/فعال می‌شود که نوع به «داخلی» تبدیل شود و سایت فعال داشته باشد. --}}
-    <div id="destructive-zone"
-         class="p-4 rounded-lg border border-red-300 bg-red-50 space-y-3"
-         style="display: {{ ($selectedType === 'internal' && $currentType !== 'internal' && $activeSitesOnModule > 0) ? 'block' : 'none' }};"
-         data-active-sites="{{ $activeSitesOnModule }}">
-        <h4 class="font-semibold text-red-800">⚠ عملیات مخرب — تأیید صریح لازم است</h4>
-        <p class="text-sm text-red-700">
-            با تبدیل این ماژول به «داخلی»، دسترسی <strong id="dz-site-count">{{ $activeSitesOnModule }}</strong> سایت فعال
-            به آن قطع می‌شود و رابط کاربری مخفی می‌شود. <strong>هیچ داده‌ای پاک نمی‌شود</strong> و در صورت بازگردانی نوع،
-            دسترسی قبلی قابل بازگشت است. هر سایت affected یک رکورد revoke صریح در دفترکل (`module_entitlements`) ثبت خواهد کرد.
-        </p>
-        <div>
-            <label class="block text-sm font-medium text-red-800 mb-1">دلیل revoke (اجباری، حداقل ۵ نویسه)</label>
-            <textarea name="revoke_reason" rows="2" maxlength="1000"
-                      class="form-control w-full border-red-300"
-                      placeholder="مثال: ماژول از کاتالوگ بازنشسته شد و در نسخهٔ بعدی پشتیبانی نمی‌شود.">{{ old('revoke_reason') }}</textarea>
-            @error('revoke_reason')<p class="text-red-700 text-sm mt-1">{{ $message }}</p>@enderror
-        </div>
-        <label class="flex items-center gap-2 text-sm text-red-800">
-            <input type="checkbox" name="confirmed_destructive" value="1" {{ old('confirmed_destructive') ? 'checked' : '' }}>
-            با اطلاع کامل از پیامد بالا، تأیید می‌کنم که این عملیات مخرب اعمال شود.
-        </label>
-        @error('confirmed_destructive')<p class="text-red-700 text-sm mt-1">{{ $message }}</p>@enderror
+    {{-- Phase 5 / Wave 5.2 / P0-1 (revised): هشدار inline ساده. خود فرم تأیید per-site در صفحهٔ بعدی است. --}}
+    <div id="destructive-warning"
+         class="p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm"
+         style="display: {{ ($selectedType === 'internal' && $currentType !== 'internal' && $activeSitesOnModule > 0) ? 'block' : 'none' }};">
+        ⚠ این تغییر می‌تواند دسترسی <strong>{{ $activeSitesOnModule }}</strong> سایت فعال را تحت‌تأثیر قرار دهد. پس از ذخیره،
+        به صفحهٔ تأیید per-site منتقل می‌شوید و می‌توانید برای هر سایت تصمیم بگیرید (هیچ revoke خودکار اتفاق نمی‌افتد).
     </div>
 
     <div>
@@ -169,34 +151,26 @@ document.addEventListener('DOMContentLoaded', function () {
     var select = form.querySelector('select[name="module_type"]');
     if (!select) return;
     var originalType = select.getAttribute('data-original-type') || '';
-    var destructiveZone = document.getElementById('destructive-zone');
-    var activeSites = destructiveZone ? parseInt(destructiveZone.getAttribute('data-active-sites') || '0', 10) : 0;
+    var warningBox = document.getElementById('destructive-warning');
 
-    // Phase 5 / Wave 5.2 / P0-1: کادر «منطقه خطرناک» فقط زمانی نمایش داده شود که در حال تبدیل به internal با سایت‌های فعال هستیم.
-    function syncDestructiveZone() {
-        if (!destructiveZone) return;
-        var isDestructive = (select.value === 'internal' && originalType !== 'internal' && activeSites > 0);
-        destructiveZone.style.display = isDestructive ? 'block' : 'none';
+    function syncWarning() {
+        if (!warningBox) return;
+        var isDestructive = (select.value === 'internal' && originalType !== 'internal');
+        warningBox.style.display = isDestructive ? 'block' : 'none';
     }
-    select.addEventListener('change', syncDestructiveZone);
+    select.addEventListener('change', syncWarning);
 
     form.addEventListener('submit', function (e) {
         var current = select.value;
-        // اگر کادر مخرب فعال است، server-side خود ولیداسیون می‌کند؛ نیازی به prompt JS نیست.
         if (current === originalType) return;
-        if (current === 'internal' && originalType !== 'internal' && activeSites > 0) {
-            // ولیداسیون اضافی client-side: اگر چک‌باکس نزده، اجازه نده submit شود.
-            var cb = form.querySelector('input[name="confirmed_destructive"]');
-            var rr = form.querySelector('textarea[name="revoke_reason"]');
-            if (!cb || !cb.checked || !rr || rr.value.trim().length < 5) {
+        if (current === 'internal' && originalType !== 'internal') {
+            // P0-1 (revised): server به‌جای rejected کردن، یک صفحهٔ تأیید per-site رندر می‌کند.
+            // اینجا فقط یک confirm سبک می‌گذاریم تا تصادفی submit نشود.
+            if (!window.confirm('با ذخیره، به صفحهٔ تأیید per-site هدایت می‌شوید تا برای هر سایت تصمیم بگیرید. ادامه می‌دهید؟')) {
                 e.preventDefault();
-                window.alert('برای تبدیل این ماژول به «داخلی»، کادر منطقه خطرناک را تکمیل کنید: دلیل revoke (حداقل ۵ نویسه) + تیک تأیید عملیات مخرب.');
-                if (rr) rr.focus();
-                return;
             }
-            return; // server-side validation final ساز است
+            return;
         }
-        // تغییرات غیر-مخرب (مثلاً paid↔license): فقط confirm ساده.
         var message = 'با تغییر نوع ماژول، نحوهٔ دسترسی سایت‌های مشتری عوض می‌شود.\n' +
             '• تبدیل به ماژول لایسنس‌محور یا پولی = سایت‌های فعلی دسترسی را نگه می‌دارند، اما قواعد فعال‌سازی بعدی عوض می‌شود.\n\n' +
             'آیا از ادامه مطمئن هستید؟';

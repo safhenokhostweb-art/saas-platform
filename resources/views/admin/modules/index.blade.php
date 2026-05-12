@@ -7,7 +7,7 @@
     <p><strong>سه نوع ماژول:</strong> (۱) <strong>داخلی</strong> — فقط برای پنل مدیر اصلی؛ هرگز به سایت‌های مشتری ارسال نمی‌شود؛ (۲) <strong>مبتنی بر لایسنس</strong> (type = core) — همراه لایسنس اصلی سایت قابل اختصاص است و در فروشگاه ماژول فروخته نمی‌شود؛ (۳) <strong>پولی</strong> (type = paid) — فقط از طریق فروشگاه ماژول در پنل مشتری قابل خرید است و پس از خرید خودکار فعال می‌شود.</p>
     <p><strong>حالت‌های توزیع:</strong> با تیک‌های «قابل اختصاص رایگان»، «فقط با لایسنس»، قیمت و «نمایش در فروشگاه» می‌توانید تعیین کنید ماژول چگونه به سایت‌ها برسد (تخصیص دستی، فقط با لایسنس ماژول، یا فقط از مارکت‌پلیس).</p>
     <p>تغییر نوع ماژول از «مبتنی بر لایسنس» یا «پولی» به «داخلی» فقط دسترسی سایت‌ها را غیرفعال و رابط کاربری را مخفی می‌کند؛ <strong>هیچ داده‌ای از سایت مشتری حذف نمی‌شود</strong> و در صورت بازگردانی نوع، محتوای قبلی دوباره در دسترس خواهد بود.</p>
-    <p><strong>منطقهٔ خطرناک (Phase 5 / Wave 5.2 / P0-1):</strong> اگر در حال تبدیل نوع ماژول به «داخلی» هستید و این ماژول روی سایت‌های فعال وجود دارد، فرم به‌صورت خودکار یک کادر قرمز «منطقهٔ خطرناک» نمایش می‌دهد. ادامه فقط با تکمیل دو مورد ممکن است: (۱) دلیل revoke (متن آزاد، حداقل ۵ نویسه) و (۲) چک‌باکس تأیید عملیات مخرب. پس از تأیید، برای هر سایت تحت‌تأثیر یک رکورد revoke صریح در دفترکل `module_entitlements` (با `revoked_by`/`revoke_reason`/`revoked_at`) ثبت می‌شود و این رفتار در «بروزرسانی گروهی» (`set_type_internal`) هم اعمال می‌شود. هیچ ردیفی از هیچ جدولی پاک نمی‌شود؛ تنها flag/status تغییر می‌کند.</p>
+    <p><strong>صفحهٔ تأیید per-site (Phase 5 / Wave 5.2 / P0-1):</strong> اگر در حال تبدیل نوع ماژول به «داخلی» هستید (به‌صورت تکی یا گروهی) و سایت فعالی وجود دارد، <strong>هیچ revoke خودکاری اتفاق نمی‌افتد</strong>. به‌جای آن، یک صفحهٔ تأیید نمایش داده می‌شود که در آن تمام سایت‌های تحت‌تأثیر فهرست شده‌اند. سایت‌هایی که خرید موفق (`site_module_purchases`) یا لایسنس فعال (`module_licenses`) برای آن ماژول دارند، به‌طور پیش‌فرض «نگه‌دار فعال» pre-checked هستند تا مطابق قانون <em>Immutable Customer Entitlement Protection</em> دسترسی خریداری‌شده به‌اشتباه از دست نرود. ادمین می‌تواند برای هر سایت تصمیم بگیرد و <strong>فقط سایت‌هایی که به‌صراحت UNCHECK می‌شوند</strong>، revoke می‌شوند: یک ردیف صریح در دفترکل `module_entitlements` با `revoked_by`/`revoke_reason`/`revoked_at` ثبت + پرچم `site_modules.is_active=false`. هم تصمیم‌های revoke و هم سایت‌های kept در audit log ثبت می‌شوند.</p>
 @endcomponent
 
 <form method="POST" action="{{ route('admin.modules.bulk-update') }}" class="mt-4 bg-white rounded-2xl shadow overflow-hidden">
@@ -36,53 +36,33 @@
         </div>
     </div>
 
-    {{-- Phase 5 / Wave 5.2 / P0-1: کادر «منطقه خطرناک» برای bulk set_type_internal — فقط با انتخاب این action نمایان می‌شود. --}}
-    <div id="bulk_destructive_zone" class="px-4 py-3 border-b border-red-300 bg-red-50 text-xs space-y-2" style="display: none;">
-        <h4 class="font-semibold text-red-800">⚠ عملیات مخرب گروهی — تأیید صریح لازم است</h4>
-        <p class="text-red-700">
-            با تبدیل گروهی ماژول‌های انتخاب‌شده به «داخلی»، دسترسی همهٔ سایت‌های فعال روی این ماژول‌ها قطع می‌شود.
-            هیچ داده‌ای حذف نمی‌شود؛ برای هر سایت affected یک رکورد revoke صریح در دفترکل ثبت می‌شود.
-        </p>
-        <div>
-            <label class="block font-medium text-red-800 mb-1">دلیل revoke (اجباری، حداقل ۵ نویسه)</label>
-            <textarea name="revoke_reason" rows="2" maxlength="1000"
-                      class="form-control w-full border-red-300"
-                      placeholder="مثال: مجموعهٔ ماژول‌های قدیمی برای بازنشستگی فاز اول.">{{ old('revoke_reason') }}</textarea>
-            @error('revoke_reason')<p class="text-red-700 text-xs mt-1">{{ $message }}</p>@enderror
-        </div>
-        <label class="flex items-center gap-2 text-red-800">
-            <input type="checkbox" name="confirmed_destructive" value="1" {{ old('confirmed_destructive') ? 'checked' : '' }}>
-            با اطلاع کامل از پیامد بالا، تأیید می‌کنم که این عملیات مخرب گروهی اعمال شود.
-        </label>
-        @error('confirmed_destructive')<p class="text-red-700 text-xs mt-1">{{ $message }}</p>@enderror
+    {{-- Phase 5 / Wave 5.2 / P0-1 (revised): اگر set_type_internal انتخاب شود، server به‌جای اعمال
+         فوری، یک صفحهٔ تأیید per-(site,module) رندر می‌کند. اینجا فقط یک پیام راهنما نمایش می‌دهیم. --}}
+    <div id="bulk_destructive_hint" class="px-4 py-2 border-b border-amber-300 bg-amber-50 text-xs text-amber-900" style="display: none;">
+        ⚠ با اعمال این گزینه، به <strong>صفحهٔ تأیید per-site</strong> منتقل می‌شوید. هیچ revoke خودکار اتفاق نمی‌افتد؛
+        برای هر جفت (سایت × ماژول) می‌توانید تصمیم بگیرید.
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         var sel = document.getElementById('bulk_action');
-        var zone = document.getElementById('bulk_destructive_zone');
+        var hint = document.getElementById('bulk_destructive_hint');
         var btn = document.getElementById('bulk_apply_btn');
-        if (!sel || !zone || !btn) return;
+        if (!sel || !hint || !btn) return;
         function sync() {
-            zone.style.display = (sel.value === 'set_type_internal') ? 'block' : 'none';
+            hint.style.display = (sel.value === 'set_type_internal') ? 'block' : 'none';
         }
         sel.addEventListener('change', sync);
         sync();
         btn.addEventListener('click', function (e) {
-            // اگر action ساده است، یک confirm ساده.
-            if (sel.value !== 'set_type_internal') {
-                if (!window.confirm('تغییرات گروهی روی ماژول‌های انتخاب‌شده اعمال می‌شود. ادامه می‌دهید؟')) {
+            if (sel.value === 'set_type_internal') {
+                if (!window.confirm('با اعمال این گزینه به صفحهٔ تأیید per-site منتقل می‌شوید. ادامه می‌دهید؟')) {
                     e.preventDefault();
                 }
                 return;
             }
-            // مخرب: ولیداسیون client-side قبل از submit.
-            var rr = zone.querySelector('textarea[name="revoke_reason"]');
-            var cb = zone.querySelector('input[name="confirmed_destructive"]');
-            if (!cb || !cb.checked || !rr || rr.value.trim().length < 5) {
+            if (!window.confirm('تغییرات گروهی روی ماژول‌های انتخاب‌شده اعمال می‌شود. ادامه می‌دهید؟')) {
                 e.preventDefault();
-                window.alert('برای تبدیل گروهی به «داخلی»، کادر منطقه خطرناک را تکمیل کنید: دلیل revoke (حداقل ۵ نویسه) + تیک تأیید عملیات مخرب.');
-                if (rr) rr.focus();
             }
         });
     });
