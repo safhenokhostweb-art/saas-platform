@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+### Phase 5 / Wave 5.2 — ۱۴۰۵/۰۲/۲۲
+
+- **P0-1 (Admin\\ModuleController — confirmation + reason + ledger.revoke):** هر مسیر مخرب در `Admin\\ModuleController` که می‌توانست به‌صورت ضمنی دسترسی سایت‌های مشتری را قطع کند، اکنون به **revoke صریح + audit + ledger** تبدیل شده است (مطابق global-rules §۴ Immutable Customer Entitlement Protection و §۵ Manual Revocation Only).
+  - **مسیرهای پوشش‌شده:** `update()` با تغییر نوع به `internal` (که قبلاً non-internal بود) **و** وجود `site_modules.is_active=true` روی این ماژول؛ `bulkUpdate()` با action `set_type_internal` و حداقل یک ماژول دارای سایت فعال.
+  - **server-side validation شرطی:** فیلدهای جدید `revoke_reason` (string, min:5, max:1000) و `confirmed_destructive` (checkbox, must be accepted) اجباری می‌شوند. خطاهای فارسی صریح در صورت نبود/کوتاه بودن.
+  - **ledger integration:** پس از فلیپ شدن `site_modules.is_active=false`، برای هر site×module pair یک `EntitlementLedger::revokeBySiteModule()` با `revoked_by=auth()->id()` و reason ادمین صدا زده می‌شود؛ نتیجه: ردیف active entitlement به `status=revoked` با timestamp و reason صریح منتقل می‌شود. هیچ ردیفی از هیچ جدولی پاک نمی‌شود (در `site_modules`, `site_module_purchases`, `module_licenses`, `module_entitlements` فقط flag یا status تغییر می‌کند). فراخوانی ledger درون try/catch + `Schema::hasTable` guard ⇒ امن حتی پیش از مایگریشن.
+  - **audit log:** ردیف `module.updated` (single) و `module.bulk_updated` (aggregate) در `activity_logs` اکنون شامل `properties.side_effects.revoke_reason` + `affected_site_ids` (single) یا `affected_pairs_count` (bulk) + `site_modules_disabled_count` هستند.
+  - **UI:** کادر «منطقهٔ خطرناک» (red) در `resources/views/admin/modules/edit.blade.php` و `index.blade.php`، با JS فقط زمانی نمایش داده می‌شود که تغییر در سمت ادمین، نوع را به `internal` می‌برد و حداقل یک سایت فعال روی این ماژول وجود دارد (در edit) یا `bulk_action=set_type_internal` انتخاب شده (در index). شامل: نمایش تعداد سایت‌های affected، textarea دلیل revoke، چک‌باکس تأیید عملیات مخرب. ولیداسیون client-side قبل از submit (با fallback به server-side validation).
+  - **رفتارهای محافظت‌شده (backward compatibility):**
+    - تغییر نوع از paid به license یا برعکس **بدون** revoke_reason کار می‌کند (non-destructive).
+    - تغییر نوع به internal روی ماژولی که هیچ سایت فعالی ندارد، بدون نیاز به destructive fields انجام می‌شود (no-op برای entitlement).
+    - actionهای bulk غیرمخرب (`marketplace_on/off`, `free_assignable_*`, `license_required_*`, `set_type_license`, `set_type_paid`) بدون تغییر و بدون reason.
+    - بازگشت دادن نوع به paid/license باعث **خودکار grant** نمی‌شود؛ ردیف‌های revoked در ledger به‌عنوان تاریخ باقی می‌مانند.
+  - **out of scope این wave (planned for later):** `AdminModuleLicenseController::revoke`، `PlatformLicenseController::revoke`، `AccessMenuController::update (section=modules)` — این‌ها نقاط revoke مستقل هستند و در یک wave مجزا (احتمالاً 5.5) با همان قرارداد پوشش داده می‌شوند.
+  - **تست‌ها:** `tests/Feature/Wave52DestructiveConfirmationTest.php` — ۱۰ تست با ۸۲ assertion (همه pass). موارد: rejection بدون reason / با reason کوتاه / بدون چک‌باکس، success path با حفظ ردیف‌ها و ledger revoke per pair، paid↔license non-destructive، bulk aggregate validation/success، bulk غیرمخرب بدون reason، bulk با ماژول already-internal.
+  - **اثر روی Wave 5.4 tests:** یک تست در `Wave3AuditAndCastsTest::test_module_update_records_side_effect_when_switching_to_internal` به‌خاطر ولیداسیون سفت‌تر جدید نیاز به بازنویسی payload داشت تا revoke_reason + confirmed_destructive ارسال کند؛ سایر تست‌ها دست‌نخورده ماندند. کل suite: ۸۵ تست با ۳۴۶ assertion، همه pass.
+
 ### Phase 5 / Wave 5.4 — ۱۴۰۵/۰۲/۲۲
 
 - **P3-1/P3-2 (regression test suite — saas-platform):** افزودن مجموعهٔ کامل feature testهای regression برای رفتارهای حساس waveهای ۱ تا ۵.۱. هیچ تغییر رفتاری در کد production انجام نشد؛ فقط تست. مجموعاً **۵۲ تست جدید + ۲۳ تست baseline = ۷۵ تست با ۲۶۴ assertion، همه pass**.
