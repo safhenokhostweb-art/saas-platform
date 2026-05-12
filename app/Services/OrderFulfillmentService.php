@@ -118,7 +118,36 @@ class OrderFulfillmentService
         $site->modules()->syncWithoutDetaching([
             $moduleId => ['is_active' => true, 'activated_at' => now()],
         ]);
-        app(ModulePurchaseService::class)->recordPurchaseFromInvoice($site, $moduleId, $item);
+        $purchase = app(ModulePurchaseService::class)->recordPurchaseFromInvoice($site, $moduleId, $item);
+
+        // Wave 5.1 / P1-1 — record ledger entry (best-effort; ledger has its
+        // own try/catch and Schema guards, so a missing table or transient
+        // failure can never break the payment flow).
+        if ($module !== null) {
+            try {
+                app(\App\Services\EntitlementLedger::class)->grant(
+                    $site,
+                    $module,
+                    \App\Models\ModuleEntitlement::SOURCE_PURCHASE,
+                    [
+                        'granted_by' => null,
+                        'invoice_id' => $item->invoice_id,
+                        'invoice_item_id' => $item->id,
+                        'module_purchase_id' => $purchase?->id,
+                        'metadata' => [
+                            'product_sku' => $item->product->sku ?? null,
+                            'amount_irr' => $item->price_irr * $item->quantity,
+                        ],
+                    ]
+                );
+            } catch (\Throwable $e) {
+                Log::warning('EntitlementLedger grant failed in fulfillModuleAddon', [
+                    'site_id' => $site->id,
+                    'module_id' => $moduleId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         Log::info('ماژول پس از پرداخت فعال شد', [
             'site_id' => $site->id,

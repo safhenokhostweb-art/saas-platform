@@ -246,6 +246,21 @@ class Module extends Model
     }
 
     /**
+     * Wave 5.1 / P1-1 — append-only ledger of every grant/revoke event
+     * touching this module across all customer sites.
+     */
+    public function entitlements()
+    {
+        return $this->hasMany(\App\Models\ModuleEntitlement::class, 'module_id');
+    }
+
+    public function activeEntitlements()
+    {
+        return $this->entitlements()
+            ->where('status', \App\Models\ModuleEntitlement::STATUS_ACTIVE);
+    }
+
+    /**
      * قیمت نمایشی (ترجیح پرومو در صورت وجود).
      */
     public function getDisplayPriceAttribute(): ?int
