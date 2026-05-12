@@ -11,33 +11,46 @@ use App\Models\User;
 use App\Services\EntitlementLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
- * Wave 5.2 / P0-1 — Confirmation + reason + ledger.revoke on
- * Admin\ModuleController destructive paths.
+ * Wave 5.2 / P0-1 — Per-site confirmation page + reason + ledger.revoke
+ * on Admin\ModuleController destructive paths.
  *
- * Behaviour under test:
- *   - update() with module_type=internal on a module that has active
- *     site_modules MUST require revoke_reason (min:5) AND
- *     confirmed_destructive=accepted. Missing either rejects the request
- *     with validation errors (no mutation occurs, no audit row, no
- *     ledger revoke).
- *   - When both are supplied, the controller:
- *       (a) flips every active site_modules row to is_active=0
- *       (b) writes ONE module.updated activity_log row with
- *           side_effects.revoke_reason + side_effects.affected_site_ids
- *           + side_effects.site_modules_disabled_count
- *       (c) writes ONE revoked ModuleEntitlement row per site×module
- *           pair with status=revoked, revoke_reason carrying the admin
- *           reason, revoked_by=admin id.
- *   - Switching a module that has NO active sites does NOT require the
- *     destructive fields (backwards compatibility for non-destructive
- *     type flips).
- *   - bulkUpdate() set_type_internal with active sites enforces the
- *     same validation + writes ledger revokes for every affected pair.
+ * Contract under test (refined per explicit user requirements):
+ *   - When `module_type` is being switched to INTERNAL on a module that
+ *     has active site_modules, the first POST does NOT mutate anything.
+ *     It renders an interstitial confirmation page that lists every
+ *     affected site.
+ *   - On the confirmation page, sites that have a successful purchase
+ *     in `site_module_purchases` OR an active row in `module_licenses`
+ *     for this module MUST be pre-checked “Keep Active”. This protects
+ *     paid entitlements from accidental revocation.
+ *   - Only the second POST, carrying `__confirm_step=apply`, applies the
+ *     change. That POST requires:
+ *         * revoke_reason (min:5)
+ *         * confirmed_destructive accepted
+ *     and may pass a `keep_active_site_ids[]` list (a subset of the
+ *     affected sites).
+ *   - For each affected site that is NOT in keep_active_site_ids:
+ *         * its site_modules row is flipped to is_active=false
+ *         * EntitlementLedger::revokeBySiteModule is called → one
+ *           ModuleEntitlement row with status=revoked, revoke_reason
+ *           embedding the admin reason, revoked_by=admin id, revoked_at
+ *           not null.
+ *   - For each affected site that IS in keep_active_site_ids:
+ *         * its site_modules row stays is_active=true
+ *         * its entitlement stays ACTIVE.
+ *   - The single `module.updated` activity_log row carries
+ *     side_effects.revoke_reason, affected_site_ids, revoked_site_ids,
+ *     kept_site_ids, site_modules_disabled_count.
+ *   - When a module has NO active sites, switching to INTERNAL does NOT
+ *     require destructive fields (no interstitial, no validation).
+ *   - `bulkUpdate()` with set_type_internal applies the same two-step
+ *     flow per (site,module) pair.
  *   - Non-destructive bulk actions (marketplace_on/off, etc.) keep
- *     working with no reason required.
+ *     working with no confirmation required.
  */
 class Wave52DestructiveConfirmationTest extends TestCase
 {
@@ -72,7 +85,8 @@ class Wave52DestructiveConfirmationTest extends TestCase
     }
 
     /**
-     * @param  int  $count  number of sites attached
+     * Attach $count sites to $module with a seed ACTIVE entitlement.
+     *
      * @return array{0: array<int>, 1: Customer}
      */
     private function attachSites(Module $module, int $count): array
@@ -97,66 +111,184 @@ class Wave52DestructiveConfirmationTest extends TestCase
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            // Seed an active entitlement so we can verify the ledger revoke.
             app(EntitlementLedger::class)->grant($site, $module, ModuleEntitlement::SOURCE_SEED);
             $ids[] = $site->id;
         }
         return [$ids, $customer];
     }
 
+    /**
+     * Seed a successful purchase row to mark a site as “commercially attached”.
+     * The mere presence of a row in site_module_purchases counts as proof of
+     * purchase (the table only stores successful purchases — there is no
+     * `status` column).
+     */
+    private function seedPurchase(int $siteId, int $moduleId): void
+    {
+        if (!Schema::hasTable('site_module_purchases')) {
+            $this->markTestSkipped('site_module_purchases table not present');
+        }
+        DB::table('site_module_purchases')->insert([
+            'site_id' => $siteId,
+            'module_id' => $moduleId,
+            'amount_irr' => 1000000,
+            'purchased_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     // =====================================================================
-    // update() — destructive type switch
+    // update() — step 1: confirmation page
     // =====================================================================
 
-    public function test_update_to_internal_rejects_request_without_revoke_reason_when_active_sites_exist(): void
+    public function test_destructive_update_first_post_renders_confirmation_view_without_mutating(): void
     {
         $admin = $this->admin();
-        $module = $this->paidModule('w52_block_no_reason');
+        $module = $this->paidModule('w52_step1_render_view');
         [$siteIds] = $this->attachSites($module, 2);
 
-        $payload = [
-            'title' => $module->title,
-            'license_type_default' => 'one_time',
-            'module_type' => 'internal',
-            'marketplace_visible' => '0',
-            'free_assignable' => '0',
-            'license_required' => '0',
-            // intentionally omit revoke_reason + confirmed_destructive
-        ];
+        $response = $this->actingAs($admin)
+            ->put(route('admin.modules.update', $module), [
+                'title' => $module->title,
+                'license_type_default' => 'one_time',
+                'module_type' => 'internal',
+                'marketplace_visible' => '0',
+                'free_assignable' => '0',
+                'license_required' => '0',
+                // no __confirm_step → step 1
+            ]);
+
+        $response->assertOk();
+        $response->assertViewIs('admin.modules.confirm-destructive');
+        $response->assertViewHas('module', fn ($m) => $m->id === $module->id);
+        $response->assertViewHas('affectedSiteIds', fn ($ids) => count(array_diff($ids, $siteIds)) === 0
+            && count(array_diff($siteIds, $ids)) === 0);
+
+        // Nothing was mutated.
+        $module->refresh();
+        $this->assertSame(Module::TYPE_PAID, $module->type);
+        $this->assertSame(
+            2,
+            DB::table('site_modules')->where('module_id', $module->id)->where('is_active', 1)->count(),
+            'first POST must NOT disable any site_modules row'
+        );
+        $this->assertSame(
+            0,
+            ModuleEntitlement::query()
+                ->where('module_id', $module->id)
+                ->where('status', ModuleEntitlement::STATUS_REVOKED)
+                ->count(),
+            'first POST must NOT create any revoked entitlement row'
+        );
+        $this->assertSame(
+            0,
+            ActivityLog::where('action', 'module.updated')
+                ->where('subject_type', Module::class)
+                ->where('subject_id', $module->id)
+                ->count(),
+            'first POST must NOT write any audit row'
+        );
+    }
+
+    public function test_confirmation_view_pre_checks_sites_with_active_purchase(): void
+    {
+        $admin = $this->admin();
+        $module = $this->paidModule('w52_precheck_purchase');
+        [$siteIds] = $this->attachSites($module, 3);
+
+        // Mark only site #0 as commercially attached.
+        $this->seedPurchase($siteIds[0], $module->id);
+
+        $response = $this->actingAs($admin)
+            ->put(route('admin.modules.update', $module), [
+                'title' => $module->title,
+                'license_type_default' => 'one_time',
+                'module_type' => 'internal',
+                'marketplace_visible' => '0',
+                'free_assignable' => '0',
+                'license_required' => '0',
+            ]);
+
+        $response->assertOk();
+        $response->assertViewIs('admin.modules.confirm-destructive');
+
+        $commercial = $response->viewData('commerciallyAttachedSiteIds');
+        $this->assertContains($siteIds[0], $commercial);
+        $this->assertNotContains($siteIds[1], $commercial);
+        $this->assertNotContains($siteIds[2], $commercial);
+    }
+
+    public function test_confirmation_view_pre_checks_sites_with_active_module_license(): void
+    {
+        if (!Schema::hasTable('module_licenses')) {
+            $this->markTestSkipped('module_licenses table not present');
+        }
+        $admin = $this->admin();
+        $module = $this->paidModule('w52_precheck_license');
+        [$siteIds] = $this->attachSites($module, 2);
+
+        DB::table('module_licenses')->insert([
+            'site_id' => $siteIds[0],
+            'module_id' => $module->id,
+            'license_type' => 'one_time',
+            'purchased_at' => now(),
+            'status' => 'active',
+            'revoked_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->put(route('admin.modules.update', $module), [
+                'title' => $module->title,
+                'license_type_default' => 'one_time',
+                'module_type' => 'internal',
+                'marketplace_visible' => '0',
+                'free_assignable' => '0',
+                'license_required' => '0',
+            ]);
+
+        $response->assertOk();
+        $commercial = $response->viewData('commerciallyAttachedSiteIds');
+        $this->assertContains($siteIds[0], $commercial);
+        $this->assertNotContains($siteIds[1], $commercial);
+    }
+
+    // =====================================================================
+    // update() — step 2: apply
+    // =====================================================================
+
+    public function test_apply_without_reason_returns_validation_errors(): void
+    {
+        $admin = $this->admin();
+        $module = $this->paidModule('w52_apply_no_reason');
+        $this->attachSites($module, 2);
 
         $response = $this->actingAs($admin)
             ->from(route('admin.modules.edit', $module))
-            ->put(route('admin.modules.update', $module), $payload);
+            ->put(route('admin.modules.update', $module), [
+                'title' => $module->title,
+                'license_type_default' => 'one_time',
+                'module_type' => 'internal',
+                'marketplace_visible' => '0',
+                'free_assignable' => '0',
+                'license_required' => '0',
+                '__confirm_step' => 'apply',
+                // no revoke_reason / confirmed_destructive
+            ]);
 
         $response->assertSessionHasErrors(['revoke_reason', 'confirmed_destructive']);
 
-        // No row was disabled, no audit row, no ledger revoke.
-        $stillActive = DB::table('site_modules')
-            ->where('module_id', $module->id)
-            ->where('is_active', 1)
-            ->count();
-        $this->assertSame(2, $stillActive);
-
-        $this->assertSame(0, ActivityLog::where('action', 'module.updated')
-            ->where('subject_type', Module::class)
-            ->where('subject_id', $module->id)
-            ->count());
-
-        $this->assertSame(0, ModuleEntitlement::query()
-            ->whereIn('site_id', $siteIds)
-            ->where('module_id', $module->id)
-            ->where('status', ModuleEntitlement::STATUS_REVOKED)
-            ->count());
-
-        // Module type was NOT changed either.
         $module->refresh();
         $this->assertSame(Module::TYPE_PAID, $module->type);
+        $this->assertSame(2, DB::table('site_modules')->where('module_id', $module->id)->where('is_active', 1)->count());
     }
 
-    public function test_update_to_internal_rejects_short_revoke_reason(): void
+    public function test_apply_with_short_reason_returns_validation_error(): void
     {
         $admin = $this->admin();
-        $module = $this->paidModule('w52_block_short_reason');
+        $module = $this->paidModule('w52_apply_short_reason');
         $this->attachSites($module, 1);
 
         $response = $this->actingAs($admin)
@@ -168,7 +300,8 @@ class Wave52DestructiveConfirmationTest extends TestCase
                 'marketplace_visible' => '0',
                 'free_assignable' => '0',
                 'license_required' => '0',
-                'revoke_reason' => 'abc', // < min:5
+                '__confirm_step' => 'apply',
+                'revoke_reason' => 'abc',
                 'confirmed_destructive' => '1',
             ]);
 
@@ -177,35 +310,16 @@ class Wave52DestructiveConfirmationTest extends TestCase
         $this->assertSame(Module::TYPE_PAID, $module->type);
     }
 
-    public function test_update_to_internal_rejects_without_confirmation_checkbox(): void
+    public function test_apply_revokes_only_unchecked_sites_and_preserves_kept_ones(): void
     {
         $admin = $this->admin();
-        $module = $this->paidModule('w52_block_no_confirm');
-        $this->attachSites($module, 1);
+        $module = $this->paidModule('w52_partial_revoke');
+        [$siteIds] = $this->attachSites($module, 4);
+        // Admin decides to keep sites [0,1] active and revoke sites [2,3].
+        $keep = [$siteIds[0], $siteIds[1]];
+        $revoke = [$siteIds[2], $siteIds[3]];
 
-        $response = $this->actingAs($admin)
-            ->from(route('admin.modules.edit', $module))
-            ->put(route('admin.modules.update', $module), [
-                'title' => $module->title,
-                'license_type_default' => 'one_time',
-                'module_type' => 'internal',
-                'marketplace_visible' => '0',
-                'free_assignable' => '0',
-                'license_required' => '0',
-                'revoke_reason' => 'reason that is long enough',
-                // confirmed_destructive omitted
-            ]);
-
-        $response->assertSessionHasErrors(['confirmed_destructive']);
-    }
-
-    public function test_update_to_internal_with_valid_reason_disables_sites_and_revokes_ledger(): void
-    {
-        $admin = $this->admin();
-        $module = $this->paidModule('w52_success_with_reason');
-        [$siteIds] = $this->attachSites($module, 3);
-
-        $reason = 'ماژول از کاتالوگ نسخهٔ بعدی حذف می‌شود.';
+        $reason = 'بازنشستگی نوع پولی برای دو سایت آزمایشی.';
 
         $response = $this->actingAs($admin)
             ->put(route('admin.modules.update', $module), [
@@ -215,67 +329,67 @@ class Wave52DestructiveConfirmationTest extends TestCase
                 'marketplace_visible' => '0',
                 'free_assignable' => '0',
                 'license_required' => '0',
+                '__confirm_step' => 'apply',
                 'revoke_reason' => $reason,
                 'confirmed_destructive' => '1',
-            ])
-            ->assertRedirect(route('admin.modules.index'));
+                'keep_active_site_ids' => $keep,
+            ]);
 
-        // (a) all site_modules rows flipped to is_active=0; no row deleted.
-        $stillActive = DB::table('site_modules')
-            ->where('module_id', $module->id)
-            ->where('is_active', 1)
-            ->count();
-        $this->assertSame(0, $stillActive, 'every active site_modules row must be disabled');
+        $response->assertRedirect(route('admin.modules.index'));
 
-        $totalRows = DB::table('site_modules')
-            ->where('module_id', $module->id)
-            ->count();
-        $this->assertSame(3, $totalRows, 'no site_modules row may be deleted by P0-1');
+        // Kept sites stay active in site_modules.
+        foreach ($keep as $sid) {
+            $row = DB::table('site_modules')->where('site_id', $sid)->where('module_id', $module->id)->first();
+            $this->assertNotNull($row);
+            $this->assertSame(1, (int) $row->is_active, "kept site $sid must remain is_active=1");
+        }
+        // Revoked sites flipped off, but rows not deleted.
+        foreach ($revoke as $sid) {
+            $row = DB::table('site_modules')->where('site_id', $sid)->where('module_id', $module->id)->first();
+            $this->assertNotNull($row, "site $sid row must NOT be deleted");
+            $this->assertSame(0, (int) $row->is_active, "site $sid must be is_active=0");
+        }
 
-        // (b) audit log row carries reason + affected_site_ids + count.
-        $log = ActivityLog::where('action', 'module.updated')
-            ->where('subject_type', Module::class)
-            ->where('subject_id', $module->id)
-            ->latest('id')
-            ->first();
-
-        $this->assertNotNull($log);
-        $this->assertSame($admin->id, $log->user_id);
-        $this->assertArrayHasKey('side_effects', $log->properties);
-        $this->assertSame($reason, $log->properties['side_effects']['revoke_reason']);
-        $this->assertSame(3, (int) $log->properties['side_effects']['site_modules_disabled_count']);
-        $this->assertEqualsCanonicalizing($siteIds, $log->properties['side_effects']['affected_site_ids']);
-
-        // (c) one revoked entitlement per affected pair; reason embedded; revoked_by=admin.
-        foreach ($siteIds as $siteId) {
+        // ledger: kept sites stay active; revoked sites have status=revoked.
+        foreach ($keep as $sid) {
+            $active = ModuleEntitlement::query()
+                ->where('site_id', $sid)->where('module_id', $module->id)
+                ->where('status', ModuleEntitlement::STATUS_ACTIVE)->count();
+            $this->assertSame(1, $active, "kept site $sid must keep one ACTIVE entitlement");
+        }
+        foreach ($revoke as $sid) {
             $row = ModuleEntitlement::query()
-                ->where('site_id', $siteId)
-                ->where('module_id', $module->id)
-                ->where('status', ModuleEntitlement::STATUS_REVOKED)
-                ->first();
-            $this->assertNotNull($row, "site $siteId must have a revoked entitlement row");
+                ->where('site_id', $sid)->where('module_id', $module->id)
+                ->where('status', ModuleEntitlement::STATUS_REVOKED)->first();
+            $this->assertNotNull($row, "revoked site $sid must have a revoked entitlement row");
             $this->assertSame($admin->id, $row->revoked_by);
             $this->assertStringContainsString($reason, (string) $row->revoke_reason);
             $this->assertNotNull($row->revoked_at);
         }
 
-        // No active entitlement remains.
-        $this->assertSame(0, ModuleEntitlement::query()
-            ->where('module_id', $module->id)
-            ->where('status', ModuleEntitlement::STATUS_ACTIVE)
-            ->count());
+        // Audit log records both lists.
+        $log = ActivityLog::where('action', 'module.updated')
+            ->where('subject_type', Module::class)
+            ->where('subject_id', $module->id)
+            ->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertSame($reason, $log->properties['side_effects']['revoke_reason']);
+        $this->assertEqualsCanonicalizing($siteIds, $log->properties['side_effects']['affected_site_ids']);
+        $this->assertEqualsCanonicalizing($keep, $log->properties['side_effects']['kept_site_ids']);
+        $this->assertEqualsCanonicalizing($revoke, $log->properties['side_effects']['revoked_site_ids']);
+        $this->assertSame(count($revoke), (int) $log->properties['side_effects']['site_modules_disabled_count']);
 
         $module->refresh();
         $this->assertSame(Module::TYPE_INTERNAL, $module->type);
     }
 
-    public function test_update_to_internal_when_no_active_sites_does_not_require_destructive_fields(): void
+    public function test_apply_with_all_sites_kept_does_not_revoke_anything(): void
     {
         $admin = $this->admin();
-        $module = $this->paidModule('w52_noop_no_active_sites');
-        // No sites attached.
+        $module = $this->paidModule('w52_keep_everything');
+        [$siteIds] = $this->attachSites($module, 2);
 
-        $response = $this->actingAs($admin)
+        $this->actingAs($admin)
             ->put(route('admin.modules.update', $module), [
                 'title' => $module->title,
                 'license_type_default' => 'one_time',
@@ -283,7 +397,80 @@ class Wave52DestructiveConfirmationTest extends TestCase
                 'marketplace_visible' => '0',
                 'free_assignable' => '0',
                 'license_required' => '0',
-                // no revoke_reason, no confirmed_destructive
+                '__confirm_step' => 'apply',
+                'revoke_reason' => 'تأیید: تمام سایت‌ها نگه داشته شوند.',
+                'confirmed_destructive' => '1',
+                'keep_active_site_ids' => $siteIds,
+            ])
+            ->assertRedirect(route('admin.modules.index'));
+
+        // No revoked entitlement.
+        $this->assertSame(0, ModuleEntitlement::query()
+            ->where('module_id', $module->id)
+            ->where('status', ModuleEntitlement::STATUS_REVOKED)->count());
+        // All site_modules still active.
+        $this->assertSame(2, DB::table('site_modules')->where('module_id', $module->id)->where('is_active', 1)->count());
+
+        // Module type still updated to internal.
+        $module->refresh();
+        $this->assertSame(Module::TYPE_INTERNAL, $module->type);
+
+        $log = ActivityLog::where('action', 'module.updated')
+            ->where('subject_id', $module->id)->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertSame(0, (int) $log->properties['side_effects']['site_modules_disabled_count']);
+        $this->assertEqualsCanonicalizing($siteIds, $log->properties['side_effects']['kept_site_ids']);
+        $this->assertSame([], $log->properties['side_effects']['revoked_site_ids']);
+    }
+
+    public function test_apply_ignores_keep_ids_outside_affected_list(): void
+    {
+        $admin = $this->admin();
+        $module = $this->paidModule('w52_keep_ignores_strangers');
+        [$siteIds] = $this->attachSites($module, 2);
+
+        $strangerId = 999999; // not affected
+
+        $this->actingAs($admin)
+            ->put(route('admin.modules.update', $module), [
+                'title' => $module->title,
+                'license_type_default' => 'one_time',
+                'module_type' => 'internal',
+                'marketplace_visible' => '0',
+                'free_assignable' => '0',
+                'license_required' => '0',
+                '__confirm_step' => 'apply',
+                'revoke_reason' => 'تست اینکه شناسهٔ بیرونی نادیده گرفته شود.',
+                'confirmed_destructive' => '1',
+                'keep_active_site_ids' => [$strangerId, $siteIds[0]], // only site[0] is valid keep
+            ])
+            ->assertRedirect();
+
+        // site[0] kept, site[1] revoked.
+        $this->assertSame(1, (int) DB::table('site_modules')
+            ->where('site_id', $siteIds[0])->where('module_id', $module->id)->value('is_active'));
+        $this->assertSame(0, (int) DB::table('site_modules')
+            ->where('site_id', $siteIds[1])->where('module_id', $module->id)->value('is_active'));
+
+        $log = ActivityLog::where('action', 'module.updated')
+            ->where('subject_id', $module->id)->latest('id')->first();
+        $this->assertSame([$siteIds[0]], $log->properties['side_effects']['kept_site_ids']);
+        $this->assertNotContains($strangerId, $log->properties['side_effects']['kept_site_ids']);
+    }
+
+    public function test_update_to_internal_when_no_active_sites_does_not_require_confirmation(): void
+    {
+        $admin = $this->admin();
+        $module = $this->paidModule('w52_noop_no_active_sites');
+
+        $this->actingAs($admin)
+            ->put(route('admin.modules.update', $module), [
+                'title' => $module->title,
+                'license_type_default' => 'one_time',
+                'module_type' => 'internal',
+                'marketplace_visible' => '0',
+                'free_assignable' => '0',
+                'license_required' => '0',
             ])
             ->assertRedirect(route('admin.modules.index'));
 
@@ -291,17 +478,17 @@ class Wave52DestructiveConfirmationTest extends TestCase
         $this->assertSame(Module::TYPE_INTERNAL, $module->type);
     }
 
-    public function test_update_paid_to_license_does_not_require_destructive_fields(): void
+    public function test_update_paid_to_license_does_not_render_confirmation(): void
     {
         $admin = $this->admin();
         $module = $this->paidModule('w52_paid_to_license');
         $this->attachSites($module, 2);
 
-        $response = $this->actingAs($admin)
+        $this->actingAs($admin)
             ->put(route('admin.modules.update', $module), [
                 'title' => $module->title,
                 'license_type_default' => 'one_time',
-                'module_type' => 'license', // paid → license (NOT destructive)
+                'module_type' => 'license',
                 'marketplace_visible' => '1',
                 'free_assignable' => '0',
                 'license_required' => '0',
@@ -309,114 +496,127 @@ class Wave52DestructiveConfirmationTest extends TestCase
             ->assertRedirect(route('admin.modules.index'));
 
         // Active sites stay active.
-        $stillActive = DB::table('site_modules')
-            ->where('module_id', $module->id)
-            ->where('is_active', 1)
-            ->count();
-        $this->assertSame(2, $stillActive);
-
-        // No revoked entitlement was created.
+        $this->assertSame(2, DB::table('site_modules')->where('module_id', $module->id)->where('is_active', 1)->count());
         $this->assertSame(0, ModuleEntitlement::query()
             ->where('module_id', $module->id)
-            ->where('status', ModuleEntitlement::STATUS_REVOKED)
-            ->count());
+            ->where('status', ModuleEntitlement::STATUS_REVOKED)->count());
 
         $module->refresh();
         $this->assertSame(Module::TYPE_CORE, $module->type);
     }
 
     // =====================================================================
-    // bulkUpdate() — destructive bulk
+    // bulkUpdate() — two-step
     // =====================================================================
 
-    public function test_bulk_set_type_internal_requires_revoke_reason_when_any_module_has_active_sites(): void
+    public function test_bulk_destructive_first_post_renders_confirm_bulk_view(): void
     {
         $admin = $this->admin();
-        $a = $this->paidModule('w52_bulk_a_active');
-        $b = $this->paidModule('w52_bulk_b_active');
+        $a = $this->paidModule('w52_bulk_step1_a');
+        $b = $this->paidModule('w52_bulk_step1_b');
         $this->attachSites($a, 2);
         $this->attachSites($b, 1);
 
         $response = $this->actingAs($admin)
-            ->from(route('admin.modules.index'))
             ->post(route('admin.modules.bulk-update'), [
                 'module_ids' => [$a->id, $b->id],
                 'bulk_action' => 'set_type_internal',
-                // no revoke_reason / confirmed_destructive
             ]);
 
-        $response->assertSessionHasErrors(['revoke_reason', 'confirmed_destructive']);
+        $response->assertOk();
+        $response->assertViewIs('admin.modules.confirm-bulk-destructive');
+        $response->assertViewHas('affectedPairs', fn ($pairs) => count($pairs) === 3);
 
-        $aActive = DB::table('site_modules')->where('module_id', $a->id)->where('is_active', 1)->count();
-        $bActive = DB::table('site_modules')->where('module_id', $b->id)->where('is_active', 1)->count();
-        $this->assertSame(2, $aActive);
-        $this->assertSame(1, $bActive);
-
+        // No mutation.
         $a->refresh();
         $b->refresh();
         $this->assertSame(Module::TYPE_PAID, $a->type);
         $this->assertSame(Module::TYPE_PAID, $b->type);
+        $this->assertSame(2, DB::table('site_modules')->where('module_id', $a->id)->where('is_active', 1)->count());
+        $this->assertSame(1, DB::table('site_modules')->where('module_id', $b->id)->where('is_active', 1)->count());
     }
 
-    public function test_bulk_set_type_internal_with_reason_revokes_ledger_for_each_pair_and_logs_aggregate(): void
+    public function test_bulk_apply_revokes_only_unchecked_pairs(): void
     {
         $admin = $this->admin();
-        $a = $this->paidModule('w52_bulk_a_ok');
-        $b = $this->paidModule('w52_bulk_b_ok');
-        [$aSites] = $this->attachSites($a, 2);
-        [$bSites] = $this->attachSites($b, 1);
+        $a = $this->paidModule('w52_bulk_apply_partial_a');
+        $b = $this->paidModule('w52_bulk_apply_partial_b');
+        [$aSites] = $this->attachSites($a, 2); // both for A
+        [$bSites] = $this->attachSites($b, 1); // one for B
 
-        $reason = 'بازنشستگی گروهی ماژول‌های قدیمی.';
+        // Admin keeps A[0] active, revokes A[1] and B[0].
+        $keepKey = $aSites[0] . ':' . $a->id;
+        $reason = 'بازنشستگی گزینشی.';
 
         $this->actingAs($admin)
             ->post(route('admin.modules.bulk-update'), [
                 'module_ids' => [$a->id, $b->id],
                 'bulk_action' => 'set_type_internal',
+                '__confirm_step' => 'apply',
                 'revoke_reason' => $reason,
                 'confirmed_destructive' => '1',
+                'keep_active_pair_keys' => [$keepKey],
             ])
             ->assertRedirect(route('admin.modules.index'));
 
-        // All site_modules rows flipped off, but none deleted.
-        $this->assertSame(0, DB::table('site_modules')->where('module_id', $a->id)->where('is_active', 1)->count());
-        $this->assertSame(0, DB::table('site_modules')->where('module_id', $b->id)->where('is_active', 1)->count());
-        $this->assertSame(2, DB::table('site_modules')->where('module_id', $a->id)->count());
-        $this->assertSame(1, DB::table('site_modules')->where('module_id', $b->id)->count());
+        // A[0] kept active.
+        $this->assertSame(1, (int) DB::table('site_modules')
+            ->where('site_id', $aSites[0])->where('module_id', $a->id)->value('is_active'));
+        $this->assertSame(1, ModuleEntitlement::query()
+            ->where('site_id', $aSites[0])->where('module_id', $a->id)
+            ->where('status', ModuleEntitlement::STATUS_ACTIVE)->count());
 
-        // Aggregate audit row.
-        $log = ActivityLog::where('action', 'module.bulk_updated')
-            ->latest('id')
-            ->first();
+        // A[1] revoked.
+        $this->assertSame(0, (int) DB::table('site_modules')
+            ->where('site_id', $aSites[1])->where('module_id', $a->id)->value('is_active'));
+        $this->assertSame(1, ModuleEntitlement::query()
+            ->where('site_id', $aSites[1])->where('module_id', $a->id)
+            ->where('status', ModuleEntitlement::STATUS_REVOKED)->count());
+
+        // B[0] revoked.
+        $this->assertSame(0, (int) DB::table('site_modules')
+            ->where('site_id', $bSites[0])->where('module_id', $b->id)->value('is_active'));
+        $this->assertSame(1, ModuleEntitlement::query()
+            ->where('site_id', $bSites[0])->where('module_id', $b->id)
+            ->where('status', ModuleEntitlement::STATUS_REVOKED)->count());
+
+        // Aggregate audit row carries the counters.
+        $log = ActivityLog::where('action', 'module.bulk_updated')->latest('id')->first();
         $this->assertNotNull($log);
-        $this->assertSame('set_type_internal', $log->properties['bulk_action']);
-        $this->assertSame(2, (int) $log->properties['count']);
         $this->assertSame($reason, $log->properties['side_effects']['revoke_reason']);
+        $this->assertSame(2, (int) $log->properties['side_effects']['site_modules_disabled_count']);
+        $this->assertSame(1, (int) $log->properties['side_effects']['site_modules_kept_active_count']);
         $this->assertSame(3, (int) $log->properties['side_effects']['affected_pairs_count']);
-        $this->assertSame(3, (int) $log->properties['side_effects']['site_modules_disabled_count']);
 
-        // One revoked entitlement per pair for module A.
-        foreach ($aSites as $sid) {
-            $row = ModuleEntitlement::query()
-                ->where('site_id', $sid)->where('module_id', $a->id)
-                ->where('status', ModuleEntitlement::STATUS_REVOKED)->first();
-            $this->assertNotNull($row, "A: site $sid revoked entitlement missing");
-            $this->assertStringContainsString($reason, (string) $row->revoke_reason);
-            $this->assertSame($admin->id, $row->revoked_by);
-        }
-        foreach ($bSites as $sid) {
-            $row = ModuleEntitlement::query()
-                ->where('site_id', $sid)->where('module_id', $b->id)
-                ->where('status', ModuleEntitlement::STATUS_REVOKED)->first();
-            $this->assertNotNull($row, "B: site $sid revoked entitlement missing");
-        }
-
+        // Both modules switched to internal.
         $a->refresh();
         $b->refresh();
         $this->assertSame(Module::TYPE_INTERNAL, $a->type);
         $this->assertSame(Module::TYPE_INTERNAL, $b->type);
     }
 
-    public function test_bulk_non_destructive_action_does_not_require_reason(): void
+    public function test_bulk_apply_without_reason_returns_validation_errors(): void
+    {
+        $admin = $this->admin();
+        $a = $this->paidModule('w52_bulk_apply_no_reason_a');
+        $this->attachSites($a, 1);
+
+        $this->actingAs($admin)
+            ->from(route('admin.modules.index'))
+            ->post(route('admin.modules.bulk-update'), [
+                'module_ids' => [$a->id],
+                'bulk_action' => 'set_type_internal',
+                '__confirm_step' => 'apply',
+            ])
+            ->assertSessionHasErrors(['revoke_reason', 'confirmed_destructive']);
+
+        // No mutation.
+        $a->refresh();
+        $this->assertSame(Module::TYPE_PAID, $a->type);
+        $this->assertSame(1, DB::table('site_modules')->where('module_id', $a->id)->where('is_active', 1)->count());
+    }
+
+    public function test_bulk_non_destructive_action_still_works_without_confirmation(): void
     {
         $admin = $this->admin();
         $a = $this->paidModule('w52_bulk_marketplace_off_a');
@@ -427,7 +627,6 @@ class Wave52DestructiveConfirmationTest extends TestCase
             ->post(route('admin.modules.bulk-update'), [
                 'module_ids' => [$a->id, $b->id],
                 'bulk_action' => 'marketplace_off',
-                // no reason needed
             ])
             ->assertRedirect(route('admin.modules.index'));
 
@@ -436,20 +635,16 @@ class Wave52DestructiveConfirmationTest extends TestCase
         $this->assertFalse((bool) $a->marketplace_visible);
         $this->assertFalse((bool) $b->marketplace_visible);
 
-        // Still paid (no type change), still has active sites.
         $this->assertSame(Module::TYPE_PAID, $a->type);
         $this->assertSame(1, DB::table('site_modules')->where('module_id', $a->id)->where('is_active', 1)->count());
-
-        // No revoked entitlements created.
         $this->assertSame(0, ModuleEntitlement::query()
             ->whereIn('module_id', [$a->id, $b->id])
             ->where('status', ModuleEntitlement::STATUS_REVOKED)->count());
     }
 
-    public function test_bulk_set_type_internal_with_only_already_internal_modules_does_not_require_reason(): void
+    public function test_bulk_set_type_internal_with_only_already_internal_modules_does_not_render_confirm(): void
     {
         $admin = $this->admin();
-        // Module is ALREADY internal — no destructive transition.
         $alreadyInternal = Module::firstOrCreate(
             ['slug' => 'w52_already_internal'],
             ['title' => 'ماژول داخلی', 'type' => Module::TYPE_INTERNAL, 'is_active' => true]
