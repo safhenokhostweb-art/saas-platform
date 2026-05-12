@@ -127,6 +127,9 @@ class Wave3AuditAndCastsTest extends TestCase
             ['site_id' => $siteB->id, 'module_id' => $module->id, 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
+        // Wave 5.2 / P0-1: destructive type switch with active sites requires
+        // an explicit revoke_reason + confirmed_destructive. The original
+        // P1-3 side-effects keys (count + reason) remain in the audit row.
         $this->actingAs($admin)
             ->put(route('admin.modules.update', $module), [
                 'title' => $module->title,
@@ -135,6 +138,8 @@ class Wave3AuditAndCastsTest extends TestCase
                 'marketplace_visible' => '0',
                 'free_assignable' => '0',
                 'license_required' => '0',
+                'revoke_reason' => 'P1-3 audit side-effect verification reason',
+                'confirmed_destructive' => '1',
             ])
             ->assertRedirect();
 
