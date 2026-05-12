@@ -122,6 +122,29 @@
 
 **جستجو:** `updates` ، `check` ، `report-versions` ، `module-history`
 
+### ۳.۶ فروشگاه ماژول tenant (مارکت‌پلیس)
+
+- **مسیر:** `GET /api/tenant-marketplace/modules` — لیست ماژول‌های pay (مارکت‌پلیس) با وضعیت مالکیت سایت
+- **پارامترها (query):** `license_key` ، `domain`
+- **پاسخ موفق (Phase 5 / Wave 4 / P2-5):**
+  ```
+  { allowed: true, modules: [
+      {
+        id, slug, title, short_description, description,
+        price_irr, price_promo_irr, display_price, currency, category,
+        installed: bool,            // site_modules.is_active=true
+        owned: bool,                // history of purchase / active license
+        status: 'installed' | 'owned_disabled' | 'available'
+      }
+    ],
+    platform_store_url
+  }
+  ```
+- **منبع `owned`:** `site_module_purchases.module_id` (هر خرید موفق) + `module_licenses.module_id` با `status=active` و `revoked_at=null` برای سایت جاری. فیلد قدیمی `installed` با همان معنای قبلی حفظ شد (backward-compat).
+- **پاسخ ناموفق:** 403 با `{ allowed: false, error: 'invalid_license' | ... }`
+
+**جستجو:** `tenant-marketplace` ، `marketplace` ، `owned`
+
 ---
 
 ## ۴. مسیرهای مهم (Routes)
@@ -247,7 +270,8 @@
 | `config/site.php` | `platform_url` ، `platform_config_cache_ttl` ، `name` ، `theme` ، `locale` |
 | `config/modules.php` | تعریف ماژول‌های blog و shop و env مربوطه |
 | `app/Http/Middleware/UseFileSessionWhenNotInstalled.php` | هنگام نصب‌نشده بودن سایت، درایور session را موقتاً `file` می‌کند تا ویزارد نصب حتی قبل از آماده شدن دیتابیس/جدول sessions قابل استفاده باشد. |
-| `resources/views/admin/layout.blade.php` | قالب پنل ادمین؛ استایل پوسته از `public/css/customer-admin-layout.css` (بدون CDN)؛ رنگ نوار کناری از `partials/customer-admin-sidebar-theme` (تنظیمات `admin_sidebar_*`)؛ صفحات داخلی از `resources/css/app.css` ساخته‌شده با Vite روی همان هاست. |
+| `resources/views/admin/layout.blade.php` | قالب پنل ادمین؛ استایل پوسته از `public/css/customer-admin-layout.css` (بدون CDN)؛ رنگ نوار کناری از `partials/customer-admin-sidebar-theme` (تنظیمات `admin_sidebar_*`)؛ صفحات داخلی از `resources/css/app.css` ساخته‌شده با Vite روی همان هاست. **Phase 5 / Wave 4 / P2-6:** include partial `admin.partials.license-transient-banner` قبل از flash messages برای نمایش هشدار غیرمزاحم وقتی آخرین revalidate به دلیل خطای موقت (network/5xx) skip شده باشد؛ banner از Cache key `license.transient_error.{license_id}` (TTL 30 دقیقه) خوانده می‌شود و در validation موفق بعدی خودکار پاک می‌شود — لایسنس فعلی همچنان معتبر و دسترسی به ماژول‌ها قطع نمی‌شود. |
+| `resources/views/admin/partials/license-transient-banner.blade.php` | partial banner خطای موقت لایسنس (Phase 5 / Wave 4 / P2-6). License::current() را می‌خواند، Cache key `license.transient_error.{license_id}` را چک می‌کند، در صورت وجود یک باکس امبر admin-flash--warning با HTTP status (در صورت موجودیت) و لینک «تلاش مجدد» (به `admin.license.refresh-config.get`) نمایش می‌دهد. |
 | `public/css/customer-admin-layout.css` | CSS محلی منو، هدر، فلش‌ها، کارت/جدول/فرم پایهٔ ادمین (بدون Tailwind CDN). |
 | `resources/views/admin/{products,orders,forms,pages,posts}/index.blade.php` | صفحات پرتردد ادمین با الگوی یکدست `admin-page` (هدر ابزار، کارت جدول، empty-state، pagination) استاندارد شده‌اند. |
 | `resources/views/admin/{products,pages,posts}/{create,edit}.blade.php` | فرم‌های ایجاد/ویرایش پرتردد با الگوی یکسان کارت + `form-group` + اکشن‌های استاندارد بازآرایی شده‌اند. |
@@ -279,7 +303,7 @@
 | `sites` | سایت‌های مشتری (عنوان، دامنه، فعال/غیرفعال، support_expires_at و ...) |
 | `site_modules` | pivot سایت–ماژول: `site_id` ، `module_id` ، `is_active` ، `installed_version` ، `activated_at` |
 | `site_module_purchases` | خرید/مالکیت ماژول (برای PAID): `site_id` ، `module_id` ، `invoice_id` ، `granted_by` ، `purchased_at` |
-| `modules` | ماژول‌ها (slug، title، description، **type**: core\|paid\|internal، **price_irr** برای ماژول‌های paid؛ نوع internal فقط برای پنل مدیر اصلی، نوع core برای ماژول‌های مبتنی بر لایسنس (همراه لایسنس اصلی سایت)، نوع paid برای ماژول‌های پولی قابل خرید) |
+| `modules` | ماژول‌ها (slug، title، description، **type**: core\|paid\|internal، **price_irr** برای ماژول‌های paid؛ نوع internal فقط برای پنل مدیر اصلی، نوع core برای ماژول‌های مبتنی بر لایسنس (همراه لایسنس اصلی سایت)، نوع paid برای ماژول‌های پولی قابل خرید). **Phase 5 / Wave 4 / P0-2:** ستون `retired_at` (nullable timestamp + index) برای soft retirement. ماژول بازنشسته از فهرست‌های assignment/marketplace کنار می‌رود ولی entitlement سایت‌های دارای آن کاملاً حفظ می‌شود. FK های `module_id` در `site_modules` / `site_module_purchases` / `module_licenses` به `restrictOnDelete` تبدیل شدند تا حذف فیزیکی ماژولِ در حال استفاده در DB-level مسدود شود (data-loss path closed). |
 | `module_features` | فیچرهای هر ماژول (module_id، key، title) |
 | `site_module_features` | pivot: `site_module_id` (رفرنس به site_modules) ، `module_feature_id` ، `is_active` — **بدون site_id** |
 | `platform_licenses` | لایسنسهای صادرشده (site_id، hash کلید HMAC-SHA256 با fallback SHA256 legacy، domain_allowed، expires_at) |
