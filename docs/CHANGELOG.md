@@ -6,20 +6,46 @@
 
 ### Phase 5 / Wave 5.2 — ۱۴۰۵/۰۲/۲۲
 
-- **P0-1 (Admin\\ModuleController — confirmation + reason + ledger.revoke):** هر مسیر مخرب در `Admin\\ModuleController` که می‌توانست به‌صورت ضمنی دسترسی سایت‌های مشتری را قطع کند، اکنون به **revoke صریح + audit + ledger** تبدیل شده است (مطابق global-rules §۴ Immutable Customer Entitlement Protection و §۵ Manual Revocation Only).
-  - **مسیرهای پوشش‌شده:** `update()` با تغییر نوع به `internal` (که قبلاً non-internal بود) **و** وجود `site_modules.is_active=true` روی این ماژول؛ `bulkUpdate()` با action `set_type_internal` و حداقل یک ماژول دارای سایت فعال.
-  - **server-side validation شرطی:** فیلدهای جدید `revoke_reason` (string, min:5, max:1000) و `confirmed_destructive` (checkbox, must be accepted) اجباری می‌شوند. خطاهای فارسی صریح در صورت نبود/کوتاه بودن.
-  - **ledger integration:** پس از فلیپ شدن `site_modules.is_active=false`، برای هر site×module pair یک `EntitlementLedger::revokeBySiteModule()` با `revoked_by=auth()->id()` و reason ادمین صدا زده می‌شود؛ نتیجه: ردیف active entitlement به `status=revoked` با timestamp و reason صریح منتقل می‌شود. هیچ ردیفی از هیچ جدولی پاک نمی‌شود (در `site_modules`, `site_module_purchases`, `module_licenses`, `module_entitlements` فقط flag یا status تغییر می‌کند). فراخوانی ledger درون try/catch + `Schema::hasTable` guard ⇒ امن حتی پیش از مایگریشن.
-  - **audit log:** ردیف `module.updated` (single) و `module.bulk_updated` (aggregate) در `activity_logs` اکنون شامل `properties.side_effects.revoke_reason` + `affected_site_ids` (single) یا `affected_pairs_count` (bulk) + `site_modules_disabled_count` هستند.
-  - **UI:** کادر «منطقهٔ خطرناک» (red) در `resources/views/admin/modules/edit.blade.php` و `index.blade.php`، با JS فقط زمانی نمایش داده می‌شود که تغییر در سمت ادمین، نوع را به `internal` می‌برد و حداقل یک سایت فعال روی این ماژول وجود دارد (در edit) یا `bulk_action=set_type_internal` انتخاب شده (در index). شامل: نمایش تعداد سایت‌های affected، textarea دلیل revoke، چک‌باکس تأیید عملیات مخرب. ولیداسیون client-side قبل از submit (با fallback به server-side validation).
+- **P0-1 (Admin\\ModuleController — صفحهٔ تأیید per-site قبل از هرگونه revoke):** هر مسیر مخرب در `Admin\\ModuleController` که می‌توانست به‌صورت ضمنی دسترسی سایت‌های مشتری را قطع کند، اکنون به یک **flow دو-مرحله‌ای با granularity per-site** تبدیل شده است (مطابق global-rules §۴ Immutable Customer Entitlement Protection و §۵ Manual Revocation Only). **هیچ revoke خودکار اتفاق نمی‌افتد** — برای هر سایت ادمین به‌صراحت تصمیم می‌گیرد.
+  - **مسیرهای پوشش‌شده:**
+    - `update()` با تغییر نوع به `internal` (که قبلاً non-internal بود) **و** وجود حداقل یک ردیف `site_modules.is_active=true` روی این ماژول.
+    - `bulkUpdate()` با action `set_type_internal` و حداقل یک جفت (سایت × ماژول) فعال.
+  - **مرحلهٔ ۱ — صفحهٔ تأیید (هیچ mutation):** اولین POST به جای اعمال تغییر، یک view interstitial رندر می‌کند:
+    - `resources/views/admin/modules/confirm-destructive.blade.php` (تک ماژول)
+    - `resources/views/admin/modules/confirm-bulk-destructive.blade.php` (گروهی)
+
+    این view فهرست همهٔ سایت‌های (یا جفت‌های سایت × ماژول) تحت‌تأثیر را با یک چک‌باکس «نگه‌دار فعال» برای هر کدام نمایش می‌دهد. تمام فیلدهای فرم اولیه (`title`, `description`, ... ) به‌عنوان `hidden` بازفرستاده می‌شوند تا در submit نهایی همه با هم اعمال شوند.
+  - **Pre-check «نگه‌دار فعال»:** سایت‌هایی که برای این ماژول حداقل یک ردیف در `site_module_purchases` (هر خرید موفق ⇒ commercial attachment) **یا** یک ردیف در `module_licenses` با `status=active` و `revoked_at IS NULL` دارند، در view به‌طور پیش‌فرض pre-checked هستند تا entitlement خریداری‌شده/لایسنسی به‌اشتباه از دست نرود. ادمین می‌تواند هر کدام را override کند.
+  - **مرحلهٔ ۲ — apply (با `__confirm_step=apply`):** دومین POST عملیات را اعمال می‌کند و فقط در این مرحله ولیداسیون سرور اجباری می‌شود:
+    - `revoke_reason` (string, min:5, max:1000)
+    - `confirmed_destructive` (must be accepted)
+    - `keep_active_site_ids[]` (single) یا `keep_active_pair_keys[]` (bulk) — لیست سایت‌ها/جفت‌هایی که ادمین آن‌ها را tick زده تا فعال بمانند. هر شناسهٔ بیرونی نسبت به لیست affected نادیده گرفته می‌شود (defense-in-depth).
+  - **منطق revoke (فقط سایت‌های UNCHECKED):** برای هر سایت در `affected − keep`:
+    - `site_modules.is_active` به `false` فلیپ می‌شود (ردیف حذف نمی‌شود).
+    - `EntitlementLedger::revokeBySiteModule()` با `revoked_by=Auth::id()` و reason ترکیبی (پیشوند سیستم + reason ادمین) صدا زده می‌شود ⇒ entitlement active به `status=revoked` با `revoked_at` می‌رود. سایت‌های kept هیچ تغییری نمی‌بینند — entitlement آن‌ها همچنان `active`. هیچ ردیفی از هیچ جدولی پاک نمی‌شود. فراخوانی ledger درون try/catch + `Schema::hasTable` guard ⇒ امن حتی پیش از مایگریشن.
+  - **audit log:** ردیف `module.updated` (single) و `module.bulk_updated` (aggregate) در `activity_logs` اکنون شامل این فیلدهاست:
+    - single: `properties.side_effects.revoke_reason`, `affected_site_ids`, `revoked_site_ids`, `kept_site_ids`, `site_modules_disabled_count`.
+    - bulk: `properties.side_effects.revoke_reason`, `affected_pairs_count`, `site_modules_disabled_count`, `site_modules_kept_active_count`, `modules_switched_to_internal`.
+  - **UI:** کادرهای inline «منطقهٔ خطرناک» در فرم edit/index حذف شدند (به interstitial page منتقل شده‌اند). به‌جای آن یک کادر amber هشدار سبک نشان داده می‌شود: «این تغییر می‌تواند N سایت فعال را تحت‌تأثیر قرار دهد؛ پس از ذخیره به صفحهٔ تأیید per-site منتقل می‌شوید — هیچ revoke خودکار نخواهد بود.» دکمهٔ submit در فرم اصلی فقط یک confirm سبک JS می‌گیرد و هدایت به صفحهٔ تأیید را اعلام می‌کند.
   - **رفتارهای محافظت‌شده (backward compatibility):**
-    - تغییر نوع از paid به license یا برعکس **بدون** revoke_reason کار می‌کند (non-destructive).
-    - تغییر نوع به internal روی ماژولی که هیچ سایت فعالی ندارد، بدون نیاز به destructive fields انجام می‌شود (no-op برای entitlement).
+    - تغییر نوع از paid به license یا برعکس بدون نمایش صفحهٔ تأیید (non-destructive).
+    - تغییر نوع به internal روی ماژولی که هیچ سایت فعالی ندارد، تک‌مرحله‌ای انجام می‌شود (no-op برای entitlement).
     - actionهای bulk غیرمخرب (`marketplace_on/off`, `free_assignable_*`, `license_required_*`, `set_type_license`, `set_type_paid`) بدون تغییر و بدون reason.
-    - بازگشت دادن نوع به paid/license باعث **خودکار grant** نمی‌شود؛ ردیف‌های revoked در ledger به‌عنوان تاریخ باقی می‌مانند.
-  - **out of scope این wave (planned for later):** `AdminModuleLicenseController::revoke`، `PlatformLicenseController::revoke`، `AccessMenuController::update (section=modules)` — این‌ها نقاط revoke مستقل هستند و در یک wave مجزا (احتمالاً 5.5) با همان قرارداد پوشش داده می‌شوند.
-  - **تست‌ها:** `tests/Feature/Wave52DestructiveConfirmationTest.php` — ۱۰ تست با ۸۲ assertion (همه pass). موارد: rejection بدون reason / با reason کوتاه / بدون چک‌باکس، success path با حفظ ردیف‌ها و ledger revoke per pair، paid↔license non-destructive، bulk aggregate validation/success، bulk غیرمخرب بدون reason، bulk با ماژول already-internal.
-  - **اثر روی Wave 5.4 tests:** یک تست در `Wave3AuditAndCastsTest::test_module_update_records_side_effect_when_switching_to_internal` به‌خاطر ولیداسیون سفت‌تر جدید نیاز به بازنویسی payload داشت تا revoke_reason + confirmed_destructive ارسال کند؛ سایر تست‌ها دست‌نخورده ماندند. کل suite: ۸۵ تست با ۳۴۶ assertion، همه pass.
+    - بازگشت دادن نوع به paid/license باعث **خودکار grant** نمی‌شود؛ ردیف‌های revoked در ledger به‌عنوان تاریخ باقی می‌مانند و هر grant جدید باید از طریق purchase/license/admin grant صریح اتفاق بیفتد.
+    - شناسه‌های `keep_active_site_ids`/`keep_active_pair_keys` که با affected list match نکنند، نادیده گرفته می‌شوند ⇒ ادمین نمی‌تواند با inject هر سایت دلخواه کاری کند.
+  - **خارج از scope این wave (planned for later):** `AdminModuleLicenseController::revoke`، `PlatformLicenseController::revoke`، `AccessMenuController::update (section=modules)` — این‌ها نقاط revoke مستقل هستند و در یک wave مجزا (احتمالاً 5.5) با همان قرارداد پوشش داده می‌شوند.
+  - **تست‌ها:** `tests/Feature/Wave52DestructiveConfirmationTest.php` — **۱۵ تست، ۱۱۰ assertion، همه pass.** سناریوها:
+    - مرحلهٔ ۱: اولین POST مخرب confirm view را رندر می‌کند بدون هیچ mutation (ماژول/site_modules/ledger/audit).
+    - Pre-check بر اساس `site_module_purchases` کار می‌کند.
+    - Pre-check بر اساس `module_licenses` فعال کار می‌کند.
+    - مرحلهٔ ۲: بدون reason ⇒ session errors؛ reason کوتاه ⇒ session error؛ بدون چک‌باکس ⇒ session error.
+    - revoke فقط سایت‌های unchecked، سایت‌های kept کاملاً دست‌نخورده.
+    - تمام سایت‌ها kept ⇒ صفر revoke، entitlement‌ها همگی active؛ ولی module type عوض می‌شود.
+    - شناسه‌های بیرونی keep ⇒ نادیده گرفته می‌شوند.
+    - تغییر به internal بدون سایت فعال ⇒ تک‌مرحله‌ای.
+    - paid → license ⇒ تک‌مرحله‌ای، سایت‌ها دست‌نخورده.
+    - Bulk: اولین POST confirm view؛ apply با per-pair keep؛ بدون reason ⇒ errors؛ غیرمخرب tarball؛ already-internal بدون confirm.
+  - **اثر روی Wave 5.4 tests:** `Wave3AuditAndCastsTest::test_module_update_records_side_effect_when_switching_to_internal` نیاز به اضافه‌شدن `__confirm_step=apply` به payload داشت تا flow apply مرحلهٔ ۲ را شبیه‌سازی کند. هیچ تست دیگری تحت‌تأثیر قرار نگرفت. کل suite Wave 3 + 5.1 + 5.2 پس از این تغییر: **۳۴ تست، ۲۰۳ assertion، همه pass**.
 
 ### Phase 5 / Wave 5.4 — ۱۴۰۵/۰۲/۲۲
 

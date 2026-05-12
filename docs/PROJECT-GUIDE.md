@@ -466,4 +466,4 @@
 
 ---
 
-*آخرین به‌روزرسانی راهنما: ۱۴۰۵/۰۲/۲۲ — Phase 5 / Wave 5.1 / P1-1 (Customer Module Entitlements Ledger): جدول `module_entitlements`، سرویس `EntitlementLedger`، دستور `entitlements:backfill`، یکپارچه‌سازی در `OrderFulfillmentService::fulfillModuleAddon` (Phase A: فقط audit، بدون تغییر run-time gating).*
+*آخرین به‌روزرسانی راهنما: ۱۴۰۵/۰۲/۲۲ — Phase 5 / Wave 5.2 / P0-1 (Admin\\ModuleController per-site confirmation):* تغییر نوع ماژول به `internal` و bulk `set_type_internal` به یک flow دو-مرحله‌ای تبدیل شد. اولین POST یک view interstitial (`admin.modules.confirm-destructive` / `confirm-bulk-destructive`) رندر می‌کند که سایت‌های دارای خرید (`site_module_purchases`) یا لایسنس فعال (`module_licenses.status=active`) به‌طور پیش‌فرض «نگه‌دار فعال» pre-checked هستند. دومین POST با `__confirm_step=apply` فقط سایت‌های unchecked را revoke می‌کند (`site_modules.is_active=false` + `EntitlementLedger::revokeBySiteModule`). audit log شامل `affected_site_ids`, `kept_site_ids`, `revoked_site_ids` و `revoke_reason` است. هیچ revoke خودکار اتفاق نمی‌افتد. (قبلاً Wave 5.1: ledger `module_entitlements`، سرویس `EntitlementLedger`، دستور `entitlements:backfill`.)*
