@@ -26,8 +26,7 @@
                 <option value="license_required_on">فعال‌کردن «فقط با لایسنس»</option>
                 <option value="license_required_off">غیرفعال‌کردن «فقط با لایسنس»</option>
             </select>
-            <button type="submit" class="btn btn-secondary btn-xs"
-                    onclick="return window.confirm('تغییرات گروهی روی ماژول‌های انتخاب‌شده اعمال می‌شود. در صورت تبدیل نوع به «داخلی»، دسترسی سایت‌ها به این ماژول‌ها غیرفعال و رابط کاربری آن‌ها مخفی می‌شود، اما هیچ داده‌ای حذف نخواهد شد. ادامه می‌دهید؟');">
+            <button type="submit" id="bulk_apply_btn" class="btn btn-secondary btn-xs">
                 اعمال
             </button>
         </div>
@@ -35,6 +34,58 @@
             ابتدا ماژول‌ها را از ستون اول تیک بزنید، سپس نوع یا تنظیم موردنظر را انتخاب کنید.
         </div>
     </div>
+
+    {{-- Phase 5 / Wave 5.2 / P0-1: کادر «منطقه خطرناک» برای bulk set_type_internal — فقط با انتخاب این action نمایان می‌شود. --}}
+    <div id="bulk_destructive_zone" class="px-4 py-3 border-b border-red-300 bg-red-50 text-xs space-y-2" style="display: none;">
+        <h4 class="font-semibold text-red-800">⚠ عملیات مخرب گروهی — تأیید صریح لازم است</h4>
+        <p class="text-red-700">
+            با تبدیل گروهی ماژول‌های انتخاب‌شده به «داخلی»، دسترسی همهٔ سایت‌های فعال روی این ماژول‌ها قطع می‌شود.
+            هیچ داده‌ای حذف نمی‌شود؛ برای هر سایت affected یک رکورد revoke صریح در دفترکل ثبت می‌شود.
+        </p>
+        <div>
+            <label class="block font-medium text-red-800 mb-1">دلیل revoke (اجباری، حداقل ۵ نویسه)</label>
+            <textarea name="revoke_reason" rows="2" maxlength="1000"
+                      class="form-control w-full border-red-300"
+                      placeholder="مثال: مجموعهٔ ماژول‌های قدیمی برای بازنشستگی فاز اول.">{{ old('revoke_reason') }}</textarea>
+            @error('revoke_reason')<p class="text-red-700 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+        <label class="flex items-center gap-2 text-red-800">
+            <input type="checkbox" name="confirmed_destructive" value="1" {{ old('confirmed_destructive') ? 'checked' : '' }}>
+            با اطلاع کامل از پیامد بالا، تأیید می‌کنم که این عملیات مخرب گروهی اعمال شود.
+        </label>
+        @error('confirmed_destructive')<p class="text-red-700 text-xs mt-1">{{ $message }}</p>@enderror
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var sel = document.getElementById('bulk_action');
+        var zone = document.getElementById('bulk_destructive_zone');
+        var btn = document.getElementById('bulk_apply_btn');
+        if (!sel || !zone || !btn) return;
+        function sync() {
+            zone.style.display = (sel.value === 'set_type_internal') ? 'block' : 'none';
+        }
+        sel.addEventListener('change', sync);
+        sync();
+        btn.addEventListener('click', function (e) {
+            // اگر action ساده است، یک confirm ساده.
+            if (sel.value !== 'set_type_internal') {
+                if (!window.confirm('تغییرات گروهی روی ماژول‌های انتخاب‌شده اعمال می‌شود. ادامه می‌دهید؟')) {
+                    e.preventDefault();
+                }
+                return;
+            }
+            // مخرب: ولیداسیون client-side قبل از submit.
+            var rr = zone.querySelector('textarea[name="revoke_reason"]');
+            var cb = zone.querySelector('input[name="confirmed_destructive"]');
+            if (!cb || !cb.checked || !rr || rr.value.trim().length < 5) {
+                e.preventDefault();
+                window.alert('برای تبدیل گروهی به «داخلی»، کادر منطقه خطرناک را تکمیل کنید: دلیل revoke (حداقل ۵ نویسه) + تیک تأیید عملیات مخرب.');
+                if (rr) rr.focus();
+            }
+        });
+    });
+    </script>
 
     <table class="w-full text-sm">
         <thead class="bg-gray-50">

@@ -7,7 +7,9 @@ use App\Models\Module;
 use App\Models\Product;
 use App\Models\Site;
 use App\Services\ActivityLogger;
+use App\Services\EntitlementLedger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -115,27 +117,65 @@ class ModuleController extends Controller
         $data['type'] = $newType;
 
         // Phase 5 / Wave 3 / P1-3: side effect tracking (تعداد site_modules که در صورت سوئیچ به internal غیرفعال خواهند شد).
+        // Phase 5 / Wave 5.2 / P0-1: snapshot سایت‌های affected قبل از mutation تا بتوانیم ledger.revoke را برای هر کدام صدا بزنیم.
         $sideEffectCount = 0;
-        if ($newType === Module::TYPE_INTERNAL
-            && $oldType !== Module::TYPE_INTERNAL
-            && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
-            $sideEffectCount = (int) \Illuminate\Support\Facades\DB::table('site_modules')
+        $affectedSiteIds = [];
+        $isDestructiveTypeSwitch = ($newType === Module::TYPE_INTERNAL && $oldType !== Module::TYPE_INTERNAL);
+        if ($isDestructiveTypeSwitch && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+            $affectedSiteIds = \Illuminate\Support\Facades\DB::table('site_modules')
                 ->where('module_id', $module->id)
                 ->where('is_active', true)
-                ->count();
+                ->pluck('site_id')
+                ->all();
+            $sideEffectCount = count($affectedSiteIds);
         }
 
-        DB::transaction(function () use ($module, $data, $oldType, $newType, $oldSnapshot, $watchFields, $sideEffectCount) {
+        // Phase 5 / Wave 5.2 / P0-1: revoke explicit بودن ضروری است (global-rules §۴ + §۵).
+        // اگر سوئیچ به internal سایت فعالی را تحت‌تأثیر قرار می‌دهد، فیلد revoke_reason اجباری است.
+        if ($isDestructiveTypeSwitch && $sideEffectCount > 0) {
+            $request->validate([
+                'revoke_reason' => 'required|string|min:5|max:1000',
+                'confirmed_destructive' => 'required|accepted',
+            ], [
+                'revoke_reason.required' => 'برای تبدیل نوع به «داخلی» با وجود سایت‌های فعال، ذکر دلیل صریح اجباری است.',
+                'revoke_reason.min' => 'دلیل revoke باید حداقل ۵ نویسه باشد.',
+                'confirmed_destructive.required' => 'برای ادامه باید چک‌باکس تأیید عملیات مخرب را علامت بزنید.',
+                'confirmed_destructive.accepted' => 'برای ادامه باید چک‌باکس تأیید عملیات مخرب را علامت بزنید.',
+            ]);
+        }
+
+        $revokeReason = (string) ($request->input('revoke_reason') ?? '');
+        $adminId = Auth::id();
+
+        DB::transaction(function () use ($module, $data, $oldType, $newType, $oldSnapshot, $watchFields, $sideEffectCount, $affectedSiteIds, $isDestructiveTypeSwitch, $revokeReason, $adminId) {
             $module->update($data);
 
             // منطق امن تغییر نوع:
             // - internal → سایر حالات: هیچ سایتی خودکار ماژول را دریافت نمی‌کند (site_modules دست‌نخورده می‌ماند).
             // - هر حالت → internal: دسترسی همهٔ سایت‌ها به‌صورت نرم غیرفعال می‌شود (بدون حذف داده).
-            if ($newType === Module::TYPE_INTERNAL && $oldType !== Module::TYPE_INTERNAL) {
+            if ($isDestructiveTypeSwitch) {
                 if (\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
                     \Illuminate\Support\Facades\DB::table('site_modules')
                         ->where('module_id', $module->id)
                         ->update(['is_active' => false]);
+                }
+
+                // Phase 5 / Wave 5.2 / P0-1: برای هر سایت affected یک revoke صریح در ledger.
+                // ledger امن: اگر جدول وجود نداشته باشد یا rowای پیدا نشود، بی‌سر و صدا skip می‌شود.
+                if (!empty($affectedSiteIds)) {
+                    $ledger = app(EntitlementLedger::class);
+                    $reason = 'Module switched to internal via admin update. Reason: ' . $revokeReason;
+                    foreach ($affectedSiteIds as $siteId) {
+                        try {
+                            $ledger->revokeBySiteModule((int) $siteId, (int) $module->id, $adminId, $reason);
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\Log::warning('moduleController.ledger.revoke_failed', [
+                                'site_id' => $siteId,
+                                'module_id' => $module->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
                 }
             }
 
@@ -154,10 +194,13 @@ class ModuleController extends Controller
             }
             if (!empty($changes)) {
                 $props = ['changes' => $changes];
-                if ($newType === Module::TYPE_INTERNAL && $oldType !== Module::TYPE_INTERNAL) {
+                if ($isDestructiveTypeSwitch) {
                     $props['side_effects'] = [
                         'site_modules_disabled_count' => $sideEffectCount,
                         'reason' => 'type_switched_to_internal',
+                        // Phase 5 / Wave 5.2 / P0-1: ضبط دلیل صریح ادمین در audit + لیست سایت‌های affected.
+                        'revoke_reason' => $revokeReason !== '' ? $revokeReason : null,
+                        'affected_site_ids' => $affectedSiteIds,
                     ];
                 }
                 ActivityLogger::log(
@@ -198,10 +241,37 @@ class ModuleController extends Controller
 
         $modules = Module::whereIn('id', $ids)->get();
 
+        // Phase 5 / Wave 5.2 / P0-1: قبل از حلقه، sideEffect کل عملیات set_type_internal را محاسبه کن
+        // تا اگر سایت فعالی تحت‌تأثیر است، revoke_reason را ولیدیشن کنیم (global-rules §۴ + §۵).
+        $isBulkDestructive = ($action === 'set_type_internal');
+        $totalSideEffectPreview = 0;
+        if ($isBulkDestructive && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+            $totalSideEffectPreview = (int) \Illuminate\Support\Facades\DB::table('site_modules')
+                ->whereIn('module_id', $ids)
+                ->where('is_active', true)
+                ->whereIn('module_id', $modules->where('type', '!=', Module::TYPE_INTERNAL)->pluck('id'))
+                ->count();
+        }
+        if ($isBulkDestructive && $totalSideEffectPreview > 0) {
+            $request->validate([
+                'revoke_reason' => 'required|string|min:5|max:1000',
+                'confirmed_destructive' => 'required|accepted',
+            ], [
+                'revoke_reason.required' => 'برای تبدیل گروهی نوع به «داخلی» با وجود سایت‌های فعال، ذکر دلیل صریح اجباری است.',
+                'revoke_reason.min' => 'دلیل revoke باید حداقل ۵ نویسه باشد.',
+                'confirmed_destructive.required' => 'برای ادامه باید چک‌باکس تأیید عملیات مخرب را علامت بزنید.',
+                'confirmed_destructive.accepted' => 'برای ادامه باید چک‌باکس تأیید عملیات مخرب را علامت بزنید.',
+            ]);
+        }
+        $bulkRevokeReason = (string) ($request->input('revoke_reason') ?? '');
+        $bulkAdminId = Auth::id();
+
         // Phase 5 / Wave 3 / P1-3: aggregate counters برای audit log عملیات گروهی.
         $bulkChanged = 0;
         $bulkSideEffectModules = 0;
         $bulkSideEffectSiteModules = 0;
+        // Phase 5 / Wave 5.2 / P0-1: نگه‌داشتن لیست site×module ها برای ledger.revoke پس از تراکنش هر ماژول.
+        $bulkAffectedPairs = []; // [['site_id' => ..., 'module_id' => ...], ...]
 
         foreach ($modules as $module) {
             $oldType = $module->type;
@@ -254,25 +324,45 @@ class ModuleController extends Controller
             }
 
             // P1-3: قبل از transaction count site_modules فعال برای ماژول‌هایی که نوع به internal می‌شود.
+            // P0-1: همچنین snapshot site_id ها را نگه می‌داریم تا بعد از transaction برای هر کدام ledger.revoke صدا بزنیم.
             $perModuleSideEffect = 0;
-            if (($updates['type'] ?? null) === Module::TYPE_INTERNAL
-                && $oldType !== Module::TYPE_INTERNAL
-                && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
-                $perModuleSideEffect = (int) \Illuminate\Support\Facades\DB::table('site_modules')
+            $perModuleAffectedSiteIds = [];
+            $isPerModuleDestructive = (($updates['type'] ?? null) === Module::TYPE_INTERNAL && $oldType !== Module::TYPE_INTERNAL);
+            if ($isPerModuleDestructive && \Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+                $perModuleAffectedSiteIds = \Illuminate\Support\Facades\DB::table('site_modules')
                     ->where('module_id', $module->id)
                     ->where('is_active', true)
-                    ->count();
+                    ->pluck('site_id')
+                    ->all();
+                $perModuleSideEffect = count($perModuleAffectedSiteIds);
             }
 
-            DB::transaction(function () use ($module, $updates, $oldType, $newType) {
+            DB::transaction(function () use ($module, $updates, $oldType, $newType, $isPerModuleDestructive, $perModuleAffectedSiteIds, $bulkRevokeReason, $bulkAdminId) {
                 $module->update($updates);
 
                 // همان منطق ایمن تغییر نوع برای حالت گروهی هم اعمال می‌شود.
-                if (($updates['type'] ?? null) === Module::TYPE_INTERNAL && $oldType !== Module::TYPE_INTERNAL) {
+                if ($isPerModuleDestructive) {
                     if (\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
                         \Illuminate\Support\Facades\DB::table('site_modules')
                             ->where('module_id', $module->id)
                             ->update(['is_active' => false]);
+                    }
+
+                    // Phase 5 / Wave 5.2 / P0-1: revoke صریح در ledger برای هر سایت affected.
+                    if (!empty($perModuleAffectedSiteIds)) {
+                        $ledger = app(EntitlementLedger::class);
+                        $reason = 'Bulk: module switched to internal via admin bulk action. Reason: ' . $bulkRevokeReason;
+                        foreach ($perModuleAffectedSiteIds as $siteId) {
+                            try {
+                                $ledger->revokeBySiteModule((int) $siteId, (int) $module->id, $bulkAdminId, $reason);
+                            } catch (\Throwable $e) {
+                                \Illuminate\Support\Facades\Log::warning('moduleController.bulk.ledger.revoke_failed', [
+                                    'site_id' => $siteId,
+                                    'module_id' => $module->id,
+                                    'error' => $e->getMessage(),
+                                ]);
+                            }
+                        }
                     }
                 }
             });
@@ -281,6 +371,9 @@ class ModuleController extends Controller
             if ($perModuleSideEffect > 0) {
                 $bulkSideEffectModules++;
                 $bulkSideEffectSiteModules += $perModuleSideEffect;
+                foreach ($perModuleAffectedSiteIds as $siteId) {
+                    $bulkAffectedPairs[] = ['site_id' => (int) $siteId, 'module_id' => (int) $module->id];
+                }
             }
         }
 
@@ -295,6 +388,9 @@ class ModuleController extends Controller
                 $props['side_effects'] = [
                     'modules_switched_to_internal' => $bulkSideEffectModules,
                     'site_modules_disabled_count' => $bulkSideEffectSiteModules,
+                    // Phase 5 / Wave 5.2 / P0-1: thumb-print revoke صریح در audit log.
+                    'revoke_reason' => $bulkRevokeReason !== '' ? $bulkRevokeReason : null,
+                    'affected_pairs_count' => count($bulkAffectedPairs),
                 ];
             }
             ActivityLogger::log(
