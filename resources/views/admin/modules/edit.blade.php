@@ -36,7 +36,7 @@
                 : ($module->type === \App\Models\Module::TYPE_PAID ? 'paid' : 'license');
             $selectedType = old('module_type', $currentType);
         @endphp
-        <select name="module_type" class="form-control w-full" data-original-type="{{ $currentType }}">
+        <select name="module_type" id="module_type_select" class="form-control w-full" data-original-type="{{ $currentType }}">
             <option value="internal" {{ $selectedType === 'internal' ? 'selected' : '' }}>داخلی (فقط پنل مدیر اصلی)</option>
             <option value="license" {{ $selectedType === 'license' ? 'selected' : '' }}>مبتنی بر لایسنس (غیرقابل خرید مستقیم)</option>
             <option value="paid" {{ $selectedType === 'paid' ? 'selected' : '' }}>پولی (قابل خرید توسط مشتری)</option>
@@ -45,6 +45,24 @@
             تغییر نوع ماژول فقط نحوهٔ دسترسی سایت‌های مشتری را عوض می‌کند؛ داده‌ها و محتوا هرگز حذف نمی‌شوند.
         </p>
         @error('module_type')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+    </div>
+
+    @php
+        $activeSitesOnModule = 0;
+        if (\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+            $activeSitesOnModule = (int) \Illuminate\Support\Facades\DB::table('site_modules')
+                ->where('module_id', $module->id)
+                ->where('is_active', true)
+                ->count();
+        }
+    @endphp
+
+    {{-- Phase 5 / Wave 5.2 / P0-1 (revised): هشدار inline ساده. خود فرم تأیید per-site در صفحهٔ بعدی است. --}}
+    <div id="destructive-warning"
+         class="p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm"
+         style="display: {{ ($selectedType === 'internal' && $currentType !== 'internal' && $activeSitesOnModule > 0) ? 'block' : 'none' }};">
+        ⚠ این تغییر می‌تواند دسترسی <strong>{{ $activeSitesOnModule }}</strong> سایت فعال را تحت‌تأثیر قرار دهد. پس از ذخیره،
+        به صفحهٔ تأیید per-site منتقل می‌شوید و می‌توانید برای هر سایت تصمیم بگیرید (هیچ revoke خودکار اتفاق نمی‌افتد).
     </div>
 
     <div>
@@ -133,17 +151,31 @@ document.addEventListener('DOMContentLoaded', function () {
     var select = form.querySelector('select[name="module_type"]');
     if (!select) return;
     var originalType = select.getAttribute('data-original-type') || '';
+    var warningBox = document.getElementById('destructive-warning');
+
+    function syncWarning() {
+        if (!warningBox) return;
+        var isDestructive = (select.value === 'internal' && originalType !== 'internal');
+        warningBox.style.display = isDestructive ? 'block' : 'none';
+    }
+    select.addEventListener('change', syncWarning);
 
     form.addEventListener('submit', function (e) {
         var current = select.value;
-        if (current !== originalType) {
-            var message = 'با تغییر نوع ماژول، نحوهٔ دسترسی سایت‌های مشتری عوض می‌شود.\n' +
-                '• تبدیل به ماژول داخلی = مخفی شدن در همهٔ سایت‌ها (بدون حذف داده)\n' +
-                '• تبدیل به ماژول لایسنس‌محور یا پولی = سایت‌های فعلی دسترسی را نگه می‌دارند، اما قواعد فعال‌سازی بعدی عوض می‌شود.\n\n' +
-                'آیا از ادامه مطمئن هستید؟';
-            if (!window.confirm(message)) {
+        if (current === originalType) return;
+        if (current === 'internal' && originalType !== 'internal') {
+            // P0-1 (revised): server به‌جای rejected کردن، یک صفحهٔ تأیید per-site رندر می‌کند.
+            // اینجا فقط یک confirm سبک می‌گذاریم تا تصادفی submit نشود.
+            if (!window.confirm('با ذخیره، به صفحهٔ تأیید per-site هدایت می‌شوید تا برای هر سایت تصمیم بگیرید. ادامه می‌دهید؟')) {
                 e.preventDefault();
             }
+            return;
+        }
+        var message = 'با تغییر نوع ماژول، نحوهٔ دسترسی سایت‌های مشتری عوض می‌شود.\n' +
+            '• تبدیل به ماژول لایسنس‌محور یا پولی = سایت‌های فعلی دسترسی را نگه می‌دارند، اما قواعد فعال‌سازی بعدی عوض می‌شود.\n\n' +
+            'آیا از ادامه مطمئن هستید؟';
+        if (!window.confirm(message)) {
+            e.preventDefault();
         }
     });
 });
