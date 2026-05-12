@@ -311,8 +311,9 @@
 | `customers` | مشتریان |
 | `users` | کاربران پلتفرم (ورود با موبایل) |
 | `activity_logs` | لاگ فعالیت پنل ادمین پلتفرم (action، description، user_id، subject_type/id، properties json، ip، ua). actions ثبت‌شده: customer.*، site.*، form.*، user.toggled، license.issued، site_update.distributed، module.updated، module.bulk_updated (Phase 5 / Wave 3 / P1-3) |
+| `module_entitlements` | **Phase 5 / Wave 5.1 / P1-1** — دفترکل دائمی اعطا/ابطال ماژول‌ها (append-only). ستون‌ها: `site_id` (FK restrictOnDelete sites)، `customer_id` (FK restrictOnDelete customers)، `module_id` (FK restrictOnDelete modules)، `module_slug` (snapshot برای مقاومت در برابر rename)، `source` (purchase\|license\|admin_grant\|free_assign\|seed\|import\|sync)، `status` (active\|revoked\|suspended)، `granted_at`، `granted_by` (FK nullOnDelete users)، `revoked_at`، `revoked_by` (FK nullOnDelete users)، `revoke_reason`، `invoice_id`/`invoice_item_id`/`module_purchase_id`/`module_license_id` (همه nullOnDelete)، `metadata` (JSON). در Phase A فقط audit/history؛ runtime gating همچنان از `site_modules.is_active` + لایسنس معتبر. هیچ revoke خودکار از این جدول؛ هر revoke صریح و audited (per global-rules §۴، §۵). |
 
-**جستجو:** `migration` ، `site_modules` ، `site_module_features` ، `platform_licenses` ، `activity_logs`
+**جستجو:** `migration` ، `site_modules` ، `site_module_features` ، `platform_licenses` ، `activity_logs` ، `module_entitlements` ، `EntitlementLedger`
 
 ### customer-site
 
@@ -446,6 +447,7 @@
 ### saas-platform
 
 - دستورات استاندارد Laravel (migrate، cache:clear و ...). ماژول‌ها و سایت‌ها از پنل ادمین مدیریت می‌شوند.
+- `php artisan entitlements:backfill [--dry-run] [--site=ID]` — **Phase 5 / Wave 5.1 / P1-1**. پر کردن جدول `module_entitlements` از داده‌های موجود (`site_modules` فعال → seed، `site_module_purchases` → purchase، `module_licenses` با status=active → license). idempotent (هر اجرای مجدد بی‌خطر است؛ rowهای active موجود فقط metadata-merge می‌شوند). `--dry-run` چیزی نمی‌نویسد. `--site=ID` فقط همان سایت را پر می‌کند. **هیچ revoke نمی‌کند.**
 
 ---
 
@@ -464,4 +466,4 @@
 
 ---
 
-*آخرین به‌روزرسانی راهنما: ۱۴۰۵/۰۲/۱۹ — کپچای فارسی رنگی/آشفتهٔ بصری؛ فهرست تبلیغات با KPI و تاریخ شمسی؛ فرم‌ساز و منو و layout مطابق نسخهٔ قبلی.*
+*آخرین به‌روزرسانی راهنما: ۱۴۰۵/۰۲/۲۲ — Phase 5 / Wave 5.1 / P1-1 (Customer Module Entitlements Ledger): جدول `module_entitlements`، سرویس `EntitlementLedger`، دستور `entitlements:backfill`، یکپارچه‌سازی در `OrderFulfillmentService::fulfillModuleAddon` (Phase A: فقط audit، بدون تغییر run-time gating).*
