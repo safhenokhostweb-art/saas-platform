@@ -138,6 +138,22 @@ class Site extends Model
         return $this->hasMany(\App\Models\ModuleLicense::class, 'site_id');
     }
 
+    /**
+     * Wave 5.1 / P1-1 — append-only ledger of every grant/revoke event for
+     * this site. Independent from site_modules; used for audit, not for
+     * run-time gating in Phase A.
+     */
+    public function entitlements()
+    {
+        return $this->hasMany(\App\Models\ModuleEntitlement::class, 'site_id');
+    }
+
+    public function activeEntitlements()
+    {
+        return $this->entitlements()
+            ->where('status', \App\Models\ModuleEntitlement::STATUS_ACTIVE);
+    }
+
     /** Support expiration: expired, expiring_soon (<= 30 days), valid */
     public function supportStatus(): string
     {

@@ -30,4 +30,19 @@ class Customer extends Model
     {
         return $this->belongsTo(Reseller::class);
     }
+
+    /**
+     * Wave 5.1 / P1-1 — append-only ledger of every module grant/revoke
+     * across all sites owned by this customer.
+     */
+    public function entitlements()
+    {
+        return $this->hasMany(\App\Models\ModuleEntitlement::class, 'customer_id');
+    }
+
+    public function activeEntitlements()
+    {
+        return $this->entitlements()
+            ->where('status', \App\Models\ModuleEntitlement::STATUS_ACTIVE);
+    }
 }
