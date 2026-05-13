@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Phase 6 / Wave 6.1 — Shop Data-Integrity Hardening (customer-site only) — ۱۴۰۵/۰۲/۲۳
+
+- این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد یا migration روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 6.1).
+- خلاصه برای ارجاع: nullable شدن `coupons.discount_percent`، advisory lock + pad ۶ رقمی برای `Order::generateNumber`، قفل پایدار parent/bundle-child/variant در checkout، حذف شاخهٔ email-match در `Account\\OrderController` (IDOR fix)، جدول جدید `order_status_history` و سرویس `App\\Services\\OrderStatusService` به‌عنوان تنها مسیر تغییر وضعیت سفارش (FSM + history + audit + restock اتمیک در گذار به cancelled). ۲۲ تست رگرسیون جدید سبز؛ baseline failureها بدون تغییر.
+- این ورودی صرفاً برای حفظ هم‌خوانی روایی بین دو CHANGELOG قرار داده شده تا اگر کسی فقط CHANGELOG پلتفرم را می‌خواند بداند روی customer-site چه گذشته.
+
 ### Phase 5 / Wave 5.2 — ۱۴۰۵/۰۲/۲۲
 
 - **P0-1 (Admin\\ModuleController — صفحهٔ تأیید per-site قبل از هرگونه revoke):** هر مسیر مخرب در `Admin\\ModuleController` که می‌توانست به‌صورت ضمنی دسترسی سایت‌های مشتری را قطع کند، اکنون به یک **flow دو-مرحله‌ای با granularity per-site** تبدیل شده است (مطابق global-rules §۴ Immutable Customer Entitlement Protection و §۵ Manual Revocation Only). **هیچ revoke خودکار اتفاق نمی‌افتد** — برای هر سایت ادمین به‌صراحت تصمیم می‌گیرد.
