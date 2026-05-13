@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 2 / Wave 7.0a — Test Bootstrap Stabilization (customer-site only) — ۱۴۰۵/۰۲/۲۳
+
+- این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route یا policy روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 7.0a).
+- خلاصه برای ارجاع: اتصال trait موجود `Tests\\Concerns\\SeedsValidLicenseWithShop` (که در Wave 6.2 ساخته شد) به ۴ فایل تست قدیمی (`BlogProfessionalUpliftTest`، `MenuModuleFeatureTest`، `PhaseOneTwoThreeTest`، `StageFourValidationTest`) ⇒ پاکسازی ۱۰ failure باقی‌ماندهٔ baseline به ۰ failure و ۲ risky (هر دو hygiene output-buffer در viewهای frontend که `@push('json-ld')` می‌زنند — assertion سبز). علاوه بر آن، test-data hygiene فقط در `PhaseOneTwoThreeTest`: افزودن `editorial_status => Post::EDITORIAL_PUBLISHED` به ۳ `Post::create` که با `scopePublished` همگام نبودند. صفر تغییر در `app/**`، `routes/**`، `config/**`، `database/migrations/**`، `resources/views/**` کاستومرسایت؛ صفر migration؛ صفر تأثیر بر entitlement مشتری؛ صفر تأثیر روی saas-platform.
+- نتیجهٔ کل suite کاستومرسایت پس از این wave: **۱۶۳ تست ⇒ ۱۶۱ pass، ۲ risky، ۰ failure**.
+- این ورودی صرفاً برای حفظ هم‌خوانی روایی بین دو CHANGELOG قرار داده شده تا اگر کسی فقط CHANGELOG پلتفرم را می‌خواند بداند روی customer-site چه گذشته.
+
 ### Phase 6 / Wave 6.2 — Shop Test-Suite Stabilization (customer-site only) — ۱۴۰۵/۰۲/۲۳
 
 - این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route یا policy روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 6.2).
