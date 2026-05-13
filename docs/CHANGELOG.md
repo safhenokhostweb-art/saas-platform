@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Phase 6 / Wave 6.2 — Shop Test-Suite Stabilization (customer-site only) — ۱۴۰۵/۰۲/۲۳
+
+- این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route یا policy روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 6.2).
+- خلاصه برای ارجاع: trait جدید `Tests\\Concerns\\SeedsValidLicenseWithShop` (host-aware) برای پاکسازی bootstrap قدیمی `ShopModuleFeatureTest` ⇒ ۶ failure baseline متعلق به Shop سبز شد. مایگریشن additive `2026_05_13_110000_add_timestamps_to_shop_pivots` ⇒ افزودن `created_at/updated_at` به pivotهای `product_product_tag` و `product_product_attribute_value` (fix یک latent bug پروداکشن که در eager-load `Product::tags()->withTimestamps()` کرش می‌کرد). `docs/KNOWN-TEST-FAILURES.md` با baseline جدید **۱۰** (همگی non-Shop) به‌روز شد. صفر تغییر در منطق production لایسنس/shop، صفر breaking change، صفر تأثیر بر entitlement مشتری.
+- این ورودی صرفاً برای حفظ هم‌خوانی روایی بین دو CHANGELOG قرار داده شده تا اگر کسی فقط CHANGELOG پلتفرم را می‌خواند بداند روی customer-site چه گذشته.
+
 ### Phase 6 / Wave 6.1 — Shop Data-Integrity Hardening (customer-site only) — ۱۴۰۵/۰۲/۲۳
 
 - این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد یا migration روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 6.1).
