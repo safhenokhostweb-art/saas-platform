@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### Phase 2 / Wave 7.0b — Forms Hardening (customer-site only) — ۱۴۰۵/۰۲/۲۳
+
+- این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route، policy، یا view روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 7.0b).
+- خلاصه برای ارجاع:
+  - **Output sanitization** برای `intro_text` در public + admin-preview با allowlist گستردهٔ TinyMCE (`<p><br><strong><em><u><a><ul><ol><li><h2><h3><h4><blockquote><span><img><table><thead><tbody><tr><td><th>`)، افزایش `intro_text` validation max از ۵۰۰۰ به ۶۵۰۰۰.
+  - **Rate-limit جدید `forms-submit`** با محدودیت ۱۰/دقیقه per `(user_id ?: ip) + slug`، middleware `throttle:forms-submit` روی مسیر `POST /forms/{slug}` ⇒ HTTP 429 پس از overage.
+  - **راهنمای ادمین** جدید `resources/views/admin/forms/guide.blade.php` (فارسی، تاریخ شمسی ۱۴۰۵/۰۲/۲۳ در عنوان)، include شده در `admin.forms.index`.
+  - **P0 production fix #۱:** Blade `@json` compile bug در `resources/views/forms/show.blade.php` که هر بازدید عمومی `/forms/{slug}` را به HTTP 500 می‌رساند (`ParseError`). ریشه: directive `@json` با `explode(',', ...)` ناقص، آرگومان‌های `strip_tags($pageDesc, 300)` را غلط می‌شکست. جایگزینی با `<?php echo json_encode([...], JSON_UNESCAPED_UNICODE) ?>` خام ⇒ payload JSON-LD bit-for-bit unchanged.
+  - **Test-data hygiene fix** در ۴ تست جدید: ارسال empty string برای فیلدهای nullable optional در payload‌های ادمین برای شبیه‌سازی رفتار واقعی browser. این یک latent production bug در `Admin\FormController::store/storeField` را آشکار کرد (pattern `$data['key'] ?: null` بدون `?? null` در request data ناقص ⇒ «Undefined array key») که در UI بروز نمی‌کند چون browser همیشه فیلدها را با مقدار خالی می‌فرستد؛ fix controller در wave بعدی (پس از تأیید صریح) قابل افزودن است.
+- نتیجهٔ کل suite کاستومرسایت پس از این wave: **۱۷۴ pass، ۲ risky، ۰ failure** (همان ۲ risky output-buffer hygiene از Wave 6.2/7.0a). صفر مایگریشن. صفر تغییر entitlement.
+- این ورودی صرفاً برای حفظ هم‌خوانی روایی بین دو CHANGELOG قرار داده شده.
+
 ### Phase 2 / Wave 7.0a — Test Bootstrap Stabilization (customer-site only) — ۱۴۰۵/۰۲/۲۳
 
 - این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route یا policy روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 7.0a).
