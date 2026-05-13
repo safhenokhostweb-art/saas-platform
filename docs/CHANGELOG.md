@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+### Phase 2 / Wave 7.0c — UX Uniformity Sweep (customer-site only) — ۱۴۰۵/۰۲/۲۳
+
+- این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route، policy، یا view روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 7.0c).
+- خلاصه برای ارجاع:
+  - **Breadcrumb partial** جدید قابل استفاده مجدد در `resources/views/admin/partials/breadcrumb.blade.php` (opt-in)، استفاده در ۵ صفحه: `dashboard`، `forms/index`، `orders/index`، `products/index`، `posts/index`. صفحهٔ coupons عمداً خارج از scope.
+  - **۴ راهنمای جدید ماژول‌ها** با الگوی `<details>` و تاریخ شمسی `۱۴۰۵/۰۲/۲۳` در عنوان: `admin/orders/guide`، `admin/products/guide`، `admin/posts/guide`، `admin/coupons/guide`. include در صدر هر index متناظر. راهنمای `forms` که در Wave 7.0b ساخته شد همچنان فعال.
+  - **«به‌زودی» badge** برای ماژول‌های placeholder: banner در `admin/platform-modules/show.blade.php` و pill کوچک در tile grid `admin/modules/index.blade.php` برای ۲۶ slug placeholder موجود در `PlatformModuleController::MODULE_GUIDES` (منبع حقیقت controller است؛ آرایهٔ slugs در view یک passive mirror با کامنت صریح).
+  - **۹ تست feature جدید** (`Wave70cUxUniformityTest` — ۴۱ assertion) برای پوشش breadcrumb، guide partial، Coming Soon banner، و قراردادهای صریح (مثل عدم وجود breadcrumb روی coupons).
+- نتیجهٔ کل suite کاستومرسایت پس از این wave: **۱۸۳ pass، ۲ risky، ۰ failure** (همان ۲ risky output-buffer hygiene از Wave 6.2/7.0a). صفر مایگریشن. صفر تغییر controller/middleware/service/route. صفر تغییر entitlement.
+- این ورودی صرفاً برای حفظ هم‌خوانی روایی بین دو CHANGELOG قرار داده شده.
+
 ### Phase 2 / Wave 7.0b — Forms Hardening (customer-site only) — ۱۴۰۵/۰۲/۲۳
 
 - این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route، policy، یا view روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 7.0b).
