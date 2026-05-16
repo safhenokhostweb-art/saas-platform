@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Profile;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'mobile',
@@ -19,13 +20,6 @@ class User extends Authenticatable
         'is_active',
     ];
 
-    /**
-     * Phase 5 / P1-4:
-     * cast `password => hashed` تضمین می‌کند هر تخصیصِ پسورد روی مدل به‌صورت خودکار
-     * با Bcrypt هش شود. Laravel فقط زمانی Hash::make اعمال می‌کند که
-     * `Hash::needsRehash($value)` true باشد؛ بنابراین پسوردهای موجود (که از قبل هش شده‌اند)
-     * بدون تغییر باقی می‌مانند و backward-compatibility کاملاً حفظ می‌شود.
-     */
     protected $casts = [
         'password' => 'hashed',
         'is_admin' => 'boolean',

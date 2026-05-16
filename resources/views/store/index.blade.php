@@ -8,7 +8,7 @@
     @if($preselectedSiteId ?? null)
         @php $preselectedSite = auth()->user()->customer?->sites->firstWhere('id', $preselectedSiteId); @endphp
         @if($preselectedSite)
-            <div class="alert alert-success mb-4">شما برای سایت «{{ $preselectedSite->title }}» پشتیبانی یا ماژول خریداری می‌کنید. سایت از قبل انتخاب شده است.</div>
+            <div class="alert alert-success mb-4">شما برای سایت «{{ \App\Helpers\NumberHelper::toPersianNumbers($preselectedSite->title) }}» پشتیبانی یا ماژول خریداری می‌کنید. سایت از قبل انتخاب شده است.</div>
         @endif
     @endif
     @if(session('success'))
@@ -22,16 +22,16 @@
         @forelse($products as $product)
             <div class="card p-4 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <strong>{{ $product->name_fa }}</strong>
+                    <strong>{{ \App\Helpers\NumberHelper::toPersianNumbers($product->name_fa) }}</strong>
                     <span class="text-gray-500 text-sm block">{{ $product->typeLabel() }}</span>
                     @if($product->type === \App\Models\Product::TYPE_MODULE_ADDON && $product->module)
-                        <span class="text-gray-600 text-sm block mt-1">{{ $product->module->title }}</span>
+                        <span class="text-gray-600 text-sm block mt-1">{{ \App\Helpers\NumberHelper::toPersianNumbers($product->module->title) }}</span>
                         @if($product->module->description)
-                            <p class="text-gray-500 text-xs mt-1">{{ Str::limit($product->module->description, 120) }}</p>
+                            <p class="text-gray-500 text-xs mt-1">{{ \App\Helpers\NumberHelper::toPersianNumbers(Str::limit($product->module->description, 120)) }}</p>
                         @endif
                     @endif
                     @if($product->type === \App\Models\Product::TYPE_SUPPORT_PLAN && $product->supportPlan)
-                        <span class="text-gray-600 text-sm block mt-1">{{ $product->supportPlan->title ?? 'پشتیبانی' }}</span>
+                        <span class="text-gray-600 text-sm block mt-1">{{ \App\Helpers\NumberHelper::toPersianNumbers($product->supportPlan->title ?? 'پشتیبانی') }}</span>
                     @endif
                 </div>
                 <div class="flex items-center gap-2">
@@ -41,10 +41,10 @@
                             $price = (int) round($price * (100 - $wholesaleDiscount) / 100);
                         }
                     @endphp
-                    <span class="font-bold">{{ number_format($price) }} ریال</span>
+                    <span class="font-bold">{{ \App\Helpers\NumberHelper::formatFa($price)) }} ریال</span>
                     @if($wholesaleDiscount > 0)
-                        <span class="text-gray-500 text-sm line-through">{{ number_format($product->price_irr) }}</span>
-                        <span class="text-green-600 text-xs">تخفیف عمده {{ $wholesaleDiscount }}%</span>
+                        <span class="text-gray-500 text-sm line-through">{{ \App\Helpers\NumberHelper::formatFa($product->price_irr)) }}</span>
+                        <span class="text-green-600 text-xs">تخفیف عمده {{ \App\Helpers\NumberHelper::toPersianNumbers($wholesaleDiscount) }}%</span>
                     @endif
                     @php
                         $enabledModuleIdsBySite = $enabledModuleIdsBySite ?? [];
@@ -58,7 +58,7 @@
                                 @foreach(auth()->user()->customer?->sites ?? [] as $site)
                                     @php $siteHasModule = $product->module_id && in_array($product->module_id, $enabledModuleIdsBySite[$site->id] ?? [], true); @endphp
                                     <option value="{{ $site->id }}" {{ old('site_id', $preselectedSiteId ?? null) == $site->id ? 'selected' : '' }}>
-                                        {{ $site->title }} ({{ $site->domain ?: '—' }}){{ $siteHasModule ? ' — خریداری‌شده' : '' }}
+                                        {{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }} ({{ $site->domain ?: '—' }}){{ $siteHasModule ? ' — خریداری‌شده' : '' }}
                                     </option>
                                 @endforeach
                             </select>

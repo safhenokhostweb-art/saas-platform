@@ -23,7 +23,7 @@
             <tbody>
                 @foreach($items as $row)
                     <tr class="border-b">
-                        <td class="p-2">{{ $row['product']->name_fa }}</td>
+                        <td class="p-2">{{ \App\Helpers\NumberHelper::toPersianNumbers($row['product']->name_fa) }}</td>
                         <td class="p-2">
                             @if($row['product']->type === \App\Models\Product::TYPE_LICENSE_TEMPLATE)
                                 <input type="text" name="new_site_title" class="form-control" placeholder="عنوان سایت جدید" value="{{ old('new_site_title') }}">
@@ -31,12 +31,12 @@
                             @else
                                 <select name="site_id[{{ $row['key'] }}]" class="form-control">
                                     @foreach($sites as $site)
-                                        <option value="{{ $site->id }}" {{ $row['site_id'] == $site->id ? 'selected' : '' }}>{{ $site->title }}</option>
+                                        <option value="{{ $site->id }}" {{ $row['site_id'] == $site->id ? 'selected' : '' }}>{{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}</option>
                                     @endforeach
                                 </select>
                             @endif
                         </td>
-                        <td class="p-2">{{ number_format($row['line_total']) }} ریال</td>
+                        <td class="p-2">{{ \App\Helpers\NumberHelper::toPersianNumbers(number_format($row['line_total'])) }} ریال</td>
                         <td class="p-2">
                             <a href="{{ route('store.cart.remove', $row['key']) }}" onclick="return confirm('حذف شود؟');" class="text-red-600">حذف</a>
                         </td>
@@ -44,7 +44,7 @@
                 @endforeach
             </tbody>
         </table>
-        <p class="font-bold">جمع: {{ number_format($total) }} ریال</p>
+        <p class="font-bold">جمع: {{ \App\Helpers\NumberHelper::toPersianNumbers(number_format($total)) }} ریال</p>
         <button type="submit" class="btn btn-primary mt-4">پرداخت و انتقال به درگاه</button>
     </form>
 

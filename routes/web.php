@@ -342,7 +342,17 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
         Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('users/{user}/toggle', [UserController::class, 'toggleActive'])->name('users.toggle');
+        Route::post('users/bulk-toggle', [UserController::class, 'bulkToggle'])->name('users.bulk-toggle');
+        Route::post('users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
+        Route::post('users/bulk-restore', [UserController::class, 'bulkRestore'])->name('users.bulk-restore');
+        Route::get('users/export-csv', [UserController::class, 'exportCsv'])->name('users.export-csv');
+        Route::get('users/import', [UserController::class, 'showImportForm'])->name('users.import');
+        Route::post('users/import', [UserController::class, 'importCsv'])->name('users.import.csv');
 
         /*
         |--------------------------------------------------------------------------
@@ -378,7 +388,17 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('customers', CustomerController::class);
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');
+        Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+        Route::get('customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+        Route::post('customers/bulk-delete', [CustomerController::class, 'bulkDelete'])->name('customers.bulk-delete');
+        Route::post('customers/bulk-restore', [CustomerController::class, 'bulkRestore'])->name('customers.bulk-restore');
+        Route::get('customers/export-csv', [CustomerController::class, 'exportCsv'])->name('customers.export-csv');
+        Route::get('customers/import', [CustomerController::class, 'showImportForm'])->name('customers.import');
+        Route::post('customers/import', [CustomerController::class, 'importCsv'])->name('customers.import.csv');
 
 
         /*

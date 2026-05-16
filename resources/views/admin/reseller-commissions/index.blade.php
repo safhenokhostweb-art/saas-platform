@@ -8,7 +8,7 @@
 @if(session('error'))<div class="alert alert-danger mt-2">{{ session('error') }}</div>@endif
 
 <div class="card p-4 mb-4">
-    <strong>جمع کمیسیون در انتظار:</strong> <span class="text-amber-600 font-bold">{{ number_format($totalPending) }} ریال</span>
+    <strong>جمع کمیسیون در انتظار:</strong> <span class="text-amber-600 font-bold">{{ \App\Helpers\NumberHelper::formatFa($totalPending) }} ریال</span>
 </div>
 
 <div class="bg-white rounded shadow overflow-hidden">
@@ -27,7 +27,7 @@
                 <tr class="border-t">
                     <td class="p-3">{{ $c->reseller->company_name ?: $c->reseller->user->mobile ?? '—' }}</td>
                     <td class="p-3">#{{ $c->invoice_id }}</td>
-                    <td class="p-3 font-medium">{{ number_format($c->amount_irr) }}</td>
+                    <td class="p-3 font-medium">{{ \App\Helpers\NumberHelper::formatFa($c->amount_irr) }}</td>
                     <td class="p-3 text-gray-500">{{ $c->created_at->format('Y/m/d') }}</td>
                     <td class="p-3">
                         <form method="POST" action="{{ route('admin.reseller-commissions.mark-paid', $c) }}" class="inline">

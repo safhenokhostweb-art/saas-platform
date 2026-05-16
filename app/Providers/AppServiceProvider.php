@@ -24,5 +24,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Product::observe(ProductObserver::class);
+
+        // ثبت directive برای تبدیل اعداد انگلیسی به فارسی در Blade
+        \Blade::directive('persianNumber', function ($expression) {
+            return "<?php echo \App\Helpers\NumberHelper::toPersianNumbers($expression); ?>";
+        });
     }
 }

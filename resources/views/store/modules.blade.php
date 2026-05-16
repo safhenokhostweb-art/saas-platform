@@ -18,7 +18,7 @@
     @if($preselectedSiteId ?? null)
         @php $preselectedSite = auth()->user()->customer?->sites->firstWhere('id', $preselectedSiteId); @endphp
         @if($preselectedSite)
-            <div class="alert alert-success mb-4">شما برای سایت «{{ $preselectedSite->title }}» خرید می‌کنید. سایت از قبل انتخاب شده است.</div>
+            <div class="alert alert-success mb-4">شما برای سایت «{{ \App\Helpers\NumberHelper::toPersianNumbers($preselectedSite->title) }}» خرید می‌کنید. سایت از قبل انتخاب شده است.</div>
         @endif
     @endif
     @if(session('success'))
@@ -36,7 +36,6 @@
     @else
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @foreach($products as $product)
-                @php
                     $module = $product->module;
                     $price = $product->price_irr;
                     if ($wholesaleDiscount > 0) {
@@ -45,28 +44,29 @@
                     $sites = auth()->user()->customer?->sites ?? collect();
                     $hasForAnySite = $product->module_id && collect($enabledModuleIdsBySite ?? [])->flatten()->unique()->contains($product->module_id);
                 @endphp
-                <div class="card overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col">
                     <div class="p-5 flex-1 flex flex-col">
                         <div class="flex items-start justify-between gap-2 mb-2">
-                            <h3 class="font-bold text-lg text-gray-800">{{ $product->name_fa }}</h3>
+                            <h3 class="font-bold text-lg text-gray-800">{{ \App\Helpers\NumberHelper::toPersianNumbers($product->name_fa) }}</h3>
                             @if($hasForAnySite)
                                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 shrink-0">خریداری‌شده</span>
                             @endif
                         </div>
                         @if($module?->short_description)
-                            <p class="text-gray-600 text-sm mb-3 line-clamp-3">{{ $module->short_description }}</p>
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-3">{{ \App\Helpers\NumberHelper::toPersianNumbers($module->short_description) }}</p>
                         @elseif($module?->description)
-                            <p class="text-gray-600 text-sm mb-3 line-clamp-3">{{ Str::limit($module->description, 140) }}</p>
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-3">{{ \App\Helpers\NumberHelper::toPersianNumbers(Str::limit($module->description, 140)) }}</p>
                         @else
                             <p class="text-gray-500 text-sm mb-3">ماژول افزودنی برای سایت شما.</p>
                         @endif
                         <div class="mt-auto">
                             <div class="flex items-center gap-2 flex-wrap mb-3">
-                                <span class="font-bold text-indigo-600 text-lg">{{ number_format($price) }}</span>
+
+                                <span class="font-bold text-indigo-600 text-lg">{{ \App\Helpers\NumberHelper::formatFa($price)) }}</span>
                                 <span class="text-gray-500 text-sm">ریال</span>
                                 @if($wholesaleDiscount > 0)
-                                    <span class="text-gray-400 text-sm line-through">{{ number_format($product->price_irr) }}</span>
-                                    <span class="text-green-600 text-xs">تخفیف {{ $wholesaleDiscount }}٪</span>
+
+                                    <span class="text-gray-400 text-sm line-through">{{ \App\Helpers\NumberHelper::formatFa($product->price_irr)) }}</span>
+                                    <span class="text-green-600 text-xs">تخفیف {{ \App\Helpers\NumberHelper::toPersianNumbers($wholesaleDiscount) }}٪</span>
                                 @endif
                             </div>
                             <form action="{{ route('store.cart.add') }}" method="post" class="space-y-2">
@@ -77,7 +77,7 @@
                                     @foreach($sites as $site)
                                         @php $siteHasModule = $product->module_id && in_array($product->module_id, $enabledModuleIdsBySite[$site->id] ?? [], true); @endphp
                                         <option value="{{ $site->id }}" {{ old('site_id', $preselectedSiteId ?? null) == $site->id ? 'selected' : '' }} {{ $siteHasModule ? 'disabled' : '' }}>
-                                            {{ $site->title }}{{ $siteHasModule ? ' — خریداری‌شده' : '' }}
+                                            {{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}{{ $siteHasModule ? ' — خریداری‌شده' : '' }}
                                         </option>
                                     @endforeach
                                 </select>

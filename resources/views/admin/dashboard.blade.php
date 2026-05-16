@@ -16,31 +16,31 @@
     <a href="{{ route('admin.customers.index') }}" class="dashboard-stat-tile dashboard-stat-tile--violet">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">مشتری‌ها</div>
-        <div class="dashboard-stat-tile__value">{{ number_format($customers) }}</div>
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($customers)) }}</div>
         <div class="dashboard-stat-tile__hint">مدیریت مشتریان</div>
     </a>
     <a href="{{ route('admin.sites.index') }}" class="dashboard-stat-tile dashboard-stat-tile--sky">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">سایت‌ها (تِننت)</div>
-        <div class="dashboard-stat-tile__value">{{ number_format($sites) }}</div>
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($sites)) }}</div>
         <div class="dashboard-stat-tile__hint">سایت‌های مشتری</div>
     </a>
     <a href="{{ route('admin.forms.index') }}" class="dashboard-stat-tile dashboard-stat-tile--emerald">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">فرم‌ها</div>
-        <div class="dashboard-stat-tile__value">{{ number_format($forms) }}</div>
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($forms)) }}</div>
         <div class="dashboard-stat-tile__hint">فرم‌ساز مرکزی</div>
     </a>
     <a href="{{ route('admin.modules.index') }}" class="dashboard-stat-tile dashboard-stat-tile--rose">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">تعریف ماژول</div>
-        <div class="dashboard-stat-tile__value">{{ number_format($modulesCount) }}</div>
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($modulesCount)) }}</div>
         <div class="dashboard-stat-tile__hint">کاتالوگ ماژول</div>
     </a>
     <a href="{{ route('admin.licenses.index') }}" class="dashboard-stat-tile dashboard-stat-tile--amber">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">لایسنس فعال</div>
-        <div class="dashboard-stat-tile__value">{{ number_format($activeLicensesCount) }}</div>
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($activeLicensesCount)) }}</div>
         <div class="dashboard-stat-tile__hint">صدور و مدیریت</div>
     </a>
 </div>
@@ -74,9 +74,9 @@
             <li class="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100">
                 <span class="shrink-0 w-2 h-2 mt-1.5 rounded-full {{ $reminder->type === 'support' ? 'bg-blue-500' : ($reminder->type === 'host' ? 'bg-purple-500' : 'bg-teal-500') }}" title="{{ $reminder->type === 'support' ? 'پشتیبانی' : ($reminder->type === 'host' ? 'هاست' : 'دامنه') }}"></span>
                 <div class="min-w-0 flex-1">
-                    <span class="font-medium text-gray-800">{{ $reminder->title ?? 'هشدار انقضا' }}</span>
+                    <span class="font-medium text-gray-800">{{ \App\Helpers\NumberHelper::toPersianNumbers($reminder->title ?? 'هشدار انقضا') }}</span>
                     @if($reminder->body)
-                        <p class="text-sm text-gray-600 mt-0.5">{{ Str::limit($reminder->body, 100) }}</p>
+                        <p class="text-sm text-gray-600 mt-0.5">{{ \App\Helpers\NumberHelper::toPersianNumbers(Str::limit($reminder->body, 100)) }}</p>
                     @endif
                     <p class="text-xs text-gray-500 mt-1">{{ $reminder->sent_at ? \App\Helpers\Jalali::formatFa($reminder->sent_at, 'Y/m/d H:i') : '' }}</p>
                 </div>
@@ -110,7 +110,7 @@
                     <tr class="border-b">
                         <th class="p-3 font-bold">فرم</th>
                         @foreach($sitesList as $site)
-                            <th class="p-3 font-bold whitespace-nowrap">{{ $site->title }}</th>
+                            <th class="p-3 font-bold whitespace-nowrap">{{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}</th>
                         @endforeach
                         <th class="p-3 font-bold">عملیات</th>
                     </tr>
@@ -118,7 +118,7 @@
                 <tbody>
                     @forelse($formsList as $form)
                         <tr class="border-b hover:bg-gray-50">
-                            <td class="p-3">{{ $form->title }}</td>
+                            <td class="p-3">{{ \App\Helpers\NumberHelper::toPersianNumbers($form->title) }}</td>
                             @foreach($sitesList as $site)
                                 @php
                                     $pivot = $form->sites->firstWhere('id', $site->id);
@@ -180,11 +180,11 @@
                     @forelse($sitesWithModules as $site)
                         <tr class="border-b hover:bg-gray-50">
                             <td class="p-3">
-                                <a href="{{ route('admin.sites.show', $site) }}" class="text-blue-600 hover:underline">{{ $site->title }}</a>
+                                <a href="{{ route('admin.sites.show', $site) }}" class="text-blue-600 hover:underline">{{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}</a>
                                 <span class="mx-1">|</span>
                                 <a href="{{ route('admin.sites.modules.edit', $site) }}" class="text-sm text-gray-600 hover:underline">ماژول‌ها</a>
                             </td>
-                            <td class="p-3 text-sm text-gray-600">{{ $site->domain ?? '—' }}</td>
+                            <td class="p-3 text-sm text-gray-600">{{ \App\Helpers\NumberHelper::toPersianNumbers($site->domain ?? '—') }}</td>
                             @foreach($allModules as $mod)
                                 @php
                                     $attached = $site->modules->contains('id', $mod->id);

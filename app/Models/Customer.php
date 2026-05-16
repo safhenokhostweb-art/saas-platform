@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'name',
         'email',
@@ -31,10 +34,6 @@ class Customer extends Model
         return $this->belongsTo(Reseller::class);
     }
 
-    /**
-     * Wave 5.1 / P1-1 — append-only ledger of every module grant/revoke
-     * across all sites owned by this customer.
-     */
     public function entitlements()
     {
         return $this->hasMany(\App\Models\ModuleEntitlement::class, 'customer_id');
