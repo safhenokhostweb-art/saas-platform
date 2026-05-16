@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Mail\LicenseIssuedMail;
-use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Module;
@@ -156,16 +155,8 @@ class OrderFulfillmentService
             'invoice_item_id' => $item->id,
         ]);
 
-        if (class_exists(ActivityLog::class) && \Illuminate\Support\Facades\Schema::hasTable('activity_logs')) {
-            ActivityLog::create([
-                'action' => 'module.activated',
-                'description' => sprintf('فعال‌سازی ماژول «%s» برای سایت «%s» پس از پرداخت', $module?->title ?? $moduleId, $site->title ?? $site->domain),
-                'user_id' => $site->customer?->user_id,
-                'subject_type' => Site::class,
-                'subject_id' => $site->id,
-                'properties' => ['module_id' => $moduleId, 'invoice_id' => $item->invoice_id],
-            ]);
-        }
+        // Wave 8.0b: audit فقط از EntitlementLedger::grant → activity_logs
+        // (`entitlement_granted`)؛ از ثبت تکراری `module.activated` خودداری می‌شود.
 
         $this->notifyTenantModuleActivated($site, $module, $item->invoice);
     }

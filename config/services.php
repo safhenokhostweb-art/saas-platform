@@ -60,4 +60,18 @@ return [
     */
     'free_support_days_for_new_license' => (int) env('FREE_SUPPORT_DAYS_FOR_NEW_LICENSE', 30),
 
+    /*
+    |--------------------------------------------------------------------------
+    | DeepSeek API
+    |--------------------------------------------------------------------------
+    |
+    | استفاده‌شده توسط Agent Layer و DeepSeekClient
+    |
+    */
+
+    'deepseek' => [
+        // مقدار صحیح: env('DEEPSEEK_API_KEY')
+        'key' => env('DEEPSEEK_API_KEY'),
+    ],
+
 ];

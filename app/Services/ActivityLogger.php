@@ -30,16 +30,23 @@ class ActivityLogger
         $description = $description ?? ActivityLog::actionLabel($action);
         $request = request();
 
+        $causerId = Auth::id();
+        $mergedProperties = array_merge($properties, ['causer_id' => $causerId]);
+
         $data = [
             'action' => $action,
             'description' => $description,
-            'user_id' => Auth::id(),
+            'user_id' => $causerId,
             'subject_type' => $subject ? get_class($subject) : null,
             'subject_id' => $subject?->getKey(),
-            'properties' => $properties ?: null,
+            'properties' => $mergedProperties,
             'ip_address' => $request?->ip(),
             'user_agent' => $request?->userAgent(),
         ];
+
+        if (Schema::hasColumn('activity_logs', 'causer_id')) {
+            $data['causer_id'] = $causerId;
+        }
 
         return ActivityLog::create($data);
     }

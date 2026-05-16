@@ -1,0 +1,13 @@
+{
+    "rules": [
+        "rules/*.md",
+        "rules/*.mdc"
+    ],
+    "settings": {
+        "enforcement": "strict",
+        "askBeforeRuleViolation": true,
+        "projectType": "laravel-saas",
+        "language": "en",
+        "autoLoadRules": true
+    }
+}

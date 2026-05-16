@@ -310,7 +310,7 @@
 | `settings` | key/value تنظیمات پلتفرم (نام، لوگو، رنگ‌ها، فونت‌ها و ...) |
 | `customers` | مشتریان |
 | `users` | کاربران پلتفرم (ورود با موبایل) |
-| `activity_logs` | لاگ فعالیت پنل ادمین پلتفرم (action، description، user_id، subject_type/id، properties json، ip، ua). actions ثبت‌شده: customer.*، site.*، form.*، user.toggled، license.issued، site_update.distributed، module.updated، module.bulk_updated (Phase 5 / Wave 3 / P1-3) |
+| `activity_logs` | لاگ فعالیت پنل ادمین پلتفرم (action، description، `user_id`، در صورت migrate ستون `causer_id`، subject_type/id، properties json، ip، ua). رویدادهای entitlement (`entitlement_granted` / `entitlement_revoked`) فقط از `EntitlementLedger` ثبت می‌شوند؛ پس از پرداخت ماژول دیگر ردیف تکراری `module.activated` ثبت نمی‌شود. سایر actions: customer.*، site.*، form.*، reseller.*، user.toggled، license.issued، site_update.distributed، module.updated، module.bulk_updated. **نگهداری:** `php artisan activity-log:prune` + `config/audit.php` / `AUDIT_RETENTION_DAYS` / `AUDIT_PRUNE_DRY_RUN`؛ زمان‌بندی روزانه در `app/Console/Kernel.php`. |
 | `module_entitlements` | **Phase 5 / Wave 5.1 / P1-1** — دفترکل دائمی اعطا/ابطال ماژول‌ها (append-only). ستون‌ها: `site_id` (FK restrictOnDelete sites)، `customer_id` (FK restrictOnDelete customers)، `module_id` (FK restrictOnDelete modules)، `module_slug` (snapshot برای مقاومت در برابر rename)، `source` (purchase\|license\|admin_grant\|free_assign\|seed\|import\|sync)، `status` (active\|revoked\|suspended)، `granted_at`، `granted_by` (FK nullOnDelete users)، `revoked_at`، `revoked_by` (FK nullOnDelete users)، `revoke_reason`، `invoice_id`/`invoice_item_id`/`module_purchase_id`/`module_license_id` (همه nullOnDelete)، `metadata` (JSON). در Phase A فقط audit/history؛ runtime gating همچنان از `site_modules.is_active` + لایسنس معتبر. هیچ revoke خودکار از این جدول؛ هر revoke صریح و audited (per global-rules §۴، §۵). |
 
 **جستجو:** `migration` ، `site_modules` ، `site_module_features` ، `platform_licenses` ، `activity_logs` ، `module_entitlements` ، `EntitlementLedger`
@@ -326,7 +326,7 @@
 | `products` ، `orders` و جداول وابسته | فروشگاه (در صورت فعال بودن ماژول) |
 | `settings` | تنظیمات محلی سایت |
 | `user_activity_log` | فعالیت end-user (ورود، تغییر رمز، ویرایش پروفایل و آدرس) |
-| `admin_activity_log` | لاگ فعالیت پنل ادمین tenant — Phase 5 / Wave 3 / P1-2 (admin_user_id، action، description، subject_type/id، properties json، ip، ua). actions ثبت‌شده: license.activated، license.refreshed_config، license.refreshed_modules، module.settings_updated. مسیر نمایش: `/admin/activity-log` |
+| `admin_activity_log` | لاگ فعالیت پنل ادمین tenant — Phase 5 / Wave 3 / P1-2 (`admin_user_id`، در صورت migrate ستون `causer_id`، action، description، subject_type/id، properties json، ip، ua). actions نمونه: license.*، module.settings_*، setting.updated، order.status_changed، blog.post_published / blog.post_scheduled (Wave 8.0b). مسیر نمایش: `/admin/activity-log`. **نگهداری:** `php artisan admin-activity-log:prune` + `config/audit.php` / `AUDIT_RETENTION_DAYS` / `AUDIT_PRUNE_DRY_RUN`؛ زمان‌بندی در `bootstrap/app.php` (روزانه ۰۳:۰۵). |
 | `module_change_logs` | تاریخچهٔ نسخه و changelog ماژول‌ها (sync از پلتفرم با `GET /api/updates/module-history`) |
 
 **جستجو:** `licenses` ، `migration` ، `customer-site` ، `admin_activity_log` ، `module_change_logs`

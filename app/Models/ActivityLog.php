@@ -11,6 +11,7 @@ class ActivityLog extends Model
         'action',
         'description',
         'user_id',
+        'causer_id',
         'subject_type',
         'subject_id',
         'properties',
@@ -25,6 +26,11 @@ class ActivityLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function causer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'causer_id');
     }
 
     /** مدل مرتبط با subject (مثلاً Customer، Site، Form) */
@@ -55,6 +61,8 @@ class ActivityLog extends Model
             'module.activated' => 'فعال‌سازی ماژول پس از پرداخت',
             'module.updated' => 'ویرایش ماژول',
             'module.bulk_updated' => 'بروزرسانی گروهی ماژول‌ها',
+            'entitlement_granted' => 'اعطای entitlement',
+            'entitlement_revoked' => 'لغو entitlement',
         ];
         return $labels[$action] ?? $action;
     }

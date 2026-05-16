@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\Site;
 use App\Services\ModuleAssignmentService;
+use App\Services\SiteModuleEntitlementAuditor;
 use Illuminate\Http\Request;
 
 class SiteModuleController extends Controller
 {
     public function __construct(
-        protected ModuleAssignmentService $assignmentService
+        protected ModuleAssignmentService $assignmentService,
+        protected SiteModuleEntitlementAuditor $entitlementAuditor,
     ) {}
 
     public function edit(Site $site)
@@ -41,6 +43,11 @@ class SiteModuleController extends Controller
         $licenseService = app(\App\Services\ModuleLicenseService::class);
         $site->load('modules');
 
+        $beforeActive = [];
+        foreach ($site->modules as $m) {
+            $beforeActive[(int) $m->id] = (bool) $m->pivot->is_active;
+        }
+
         // همهٔ ماژول‌های فعلی سایت را نگه می‌داریم (شامل PAID که از خرید فعال شده)
         $syncModules = [];
         foreach ($site->modules as $m) {
@@ -69,6 +76,15 @@ class SiteModuleController extends Controller
             ];
         }
         $site->modules()->sync($syncModules);
+
+        $site->load('modules');
+        foreach ($assignableModules as $moduleId => $module) {
+            $mid = (int) $moduleId;
+            $before = $beforeActive[$mid] ?? false;
+            $pivotRow = $site->modules->firstWhere('id', $mid);
+            $after = $pivotRow ? (bool) $pivotRow->pivot->is_active : false;
+            $this->entitlementAuditor->syncAfterPivotChange($site, $module, $before, $after);
+        }
 
         // سینک فیچرها: جدول site_module_features با site_module_id کار می‌کند، نه site_id
         $site->load('modules');
@@ -123,8 +139,8 @@ class SiteModuleController extends Controller
         }
 
         $current = $site->modules()->where('module_id', $moduleId)->first();
-        $active = $current && $current->pivot->is_active;
-        $newActive = ! $active;
+        $wasActive = $current && $current->pivot->is_active;
+        $newActive = ! $wasActive;
 
         $assignableIds = $this->assignmentService->modulesForManualAssign()->pluck('id')->all();
         $site->load('modules');
@@ -139,6 +155,11 @@ class SiteModuleController extends Controller
             $sync[$moduleId] = ['is_active' => $newActive, 'activated_at' => $newActive ? now() : null];
         }
         $site->modules()->sync($sync);
+
+        $site->load('modules');
+        $pivotRow = $site->modules->firstWhere('id', $moduleId);
+        $nowActive = $pivotRow ? (bool) $pivotRow->pivot->is_active : false;
+        $this->entitlementAuditor->syncAfterPivotChange($site, $module, (bool) $wasActive, $nowActive);
 
         if ($request->wantsJson()) {
             $site->load('modules');

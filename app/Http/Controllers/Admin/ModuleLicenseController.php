@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Module;
+use App\Models\ModuleEntitlement;
 use App\Models\ModuleLicense;
+use App\Models\ModulePurchase;
 use App\Models\Site;
+use App\Services\EntitlementLedger;
 use App\Services\ModuleLicenseService;
 use App\Services\ModulePurchaseService;
 use Illuminate\Http\Request;
@@ -75,6 +78,30 @@ class ModuleLicenseController extends Controller
 
         app(ModuleLicenseService::class)->grantByAdmin($site, $module->id, $request->user(), $expiresAt);
         app(ModulePurchaseService::class)->grantByAdmin($site, $module->id, $request->user());
+
+        // Wave 8.0b — ledger grant (idempotent؛ activity_logs فقط از EntitlementLedger)
+        try {
+            $license = ModuleLicense::query()
+                ->where('site_id', $site->id)
+                ->where('module_id', $module->id)
+                ->where('status', ModuleLicense::STATUS_ACTIVE)
+                ->whereNull('revoked_at')
+                ->orderByDesc('id')
+                ->first();
+            $purchase = ModulePurchase::query()
+                ->where('site_id', $site->id)
+                ->where('module_id', $module->id)
+                ->orderByDesc('id')
+                ->first();
+            app(EntitlementLedger::class)->grant($site, $module, ModuleEntitlement::SOURCE_ADMIN_GRANT, [
+                'granted_by' => $request->user()->id,
+                'module_license_id' => $license?->id,
+                'module_purchase_id' => $purchase?->id,
+                'metadata' => ['path' => 'admin_module_license_grant'],
+            ]);
+        } catch (\Throwable) {
+            // best-effort: اعطای لایسنس اصلی نباید به خاطر ledger شکست بخورد
+        }
 
         return back()->with('success', 'لایسنس اعطا شد.');
     }

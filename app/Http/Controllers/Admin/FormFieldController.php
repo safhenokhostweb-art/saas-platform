@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ProfileField;
 use Illuminate\Http\Request;
 
-class ProfileFieldController extends Controller
+class FormFieldController extends Controller
 {
     public function index()
     {

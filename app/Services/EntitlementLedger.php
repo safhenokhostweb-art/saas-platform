@@ -39,6 +39,10 @@ use Illuminate\Support\Facades\Schema;
  *   • All writes happen inside a transaction. Failures are logged and the
  *     caller receives a null / false back; no exception leaks unless DB
  *     is hard-broken.
+ *
+ * Wave 8.0b — Activity audit for grant/revoke is emitted only from this
+ * ledger (single source of truth). One activity_logs row per new grant
+ * (not on idempotent metadata-merge) and one per successful revoke.
  */
 class EntitlementLedger
 {
@@ -53,6 +57,7 @@ class EntitlementLedger
      *     module_purchase_id?: int|null,
      *     module_license_id?: int|null,
      *     metadata?: array<string,mixed>,
+     *     reason?: string|null,
      * }  $context
      */
     public function grant(
@@ -71,11 +76,13 @@ class EntitlementLedger
                 'site_id' => $site->id,
                 'module_id' => $module->id,
             ]);
+
             return null;
         }
 
         try {
-            return DB::transaction(function () use ($site, $module, $source, $context) {
+            /** @var array{model: ModuleEntitlement, was_new: bool}|null $payload */
+            $payload = DB::transaction(function () use ($site, $module, $source, $context) {
                 $existing = ModuleEntitlement::query()
                     ->where('site_id', $site->id)
                     ->where('module_id', $module->id)
@@ -95,12 +102,13 @@ class EntitlementLedger
                     );
                     $existing->metadata = $mergedMetadata;
                     $existing->save();
-                    return $existing;
+
+                    return ['model' => $existing, 'was_new' => false];
                 }
 
                 $grantedAt = $this->parseTimestamp($context['granted_at'] ?? null) ?? now();
 
-                return ModuleEntitlement::create([
+                $created = ModuleEntitlement::create([
                     'site_id' => $site->id,
                     'customer_id' => $site->customer_id,
                     'module_id' => $module->id,
@@ -115,7 +123,15 @@ class EntitlementLedger
                     'module_license_id' => $context['module_license_id'] ?? null,
                     'metadata' => $context['metadata'] ?? null,
                 ]);
+
+                return ['model' => $created, 'was_new' => true];
             });
+
+            if ($payload !== null && $payload['was_new']) {
+                $this->logEntitlementGranted($site, $module, $payload['model'], $source, $context);
+            }
+
+            return $payload['model'];
         } catch (\Throwable $e) {
             Log::error('EntitlementLedger::grant failed', [
                 'site_id' => $site->id,
@@ -123,6 +139,7 @@ class EntitlementLedger
                 'source' => $source,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -151,7 +168,7 @@ class EntitlementLedger
      * Every revoke MUST carry:
      *   • $revokedBy — the admin user id (or null for system, used only for
      *     migrations or explicit admin actions logged elsewhere).
-     *   • $reason    — a non-empty audit reason.
+     *   • $reason    — stored as `unspecified` when missing (Wave 8.0b audit).
      */
     public function revoke(
         int $entitlementId,
@@ -163,7 +180,9 @@ class EntitlementLedger
         }
 
         try {
-            return (bool) DB::transaction(function () use ($entitlementId, $revokedBy, $reason) {
+            $logSubject = null;
+
+            $ok = (bool) DB::transaction(function () use ($entitlementId, $revokedBy, $reason, &$logSubject) {
                 /** @var ModuleEntitlement|null $row */
                 $row = ModuleEntitlement::query()
                     ->where('id', $entitlementId)
@@ -175,17 +194,34 @@ class EntitlementLedger
                     return false;
                 }
 
+                $finalReason = ($reason !== null && trim((string) $reason) !== '')
+                    ? trim((string) $reason)
+                    : 'unspecified';
+
                 $row->status = ModuleEntitlement::STATUS_REVOKED;
                 $row->revoked_at = now();
                 $row->revoked_by = $revokedBy ?? Auth::id();
-                $row->revoke_reason = $reason;
-                return $row->save();
+                $row->revoke_reason = $finalReason;
+                if (! $row->save()) {
+                    return false;
+                }
+
+                $logSubject = $row->fresh();
+
+                return true;
             });
+
+            if ($ok && $logSubject instanceof ModuleEntitlement) {
+                $this->logEntitlementRevoked($logSubject);
+            }
+
+            return $ok;
         } catch (\Throwable $e) {
             Log::error('EntitlementLedger::revoke failed', [
                 'entitlement_id' => $entitlementId,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -212,6 +248,7 @@ class EntitlementLedger
         if ($active === null) {
             return false;
         }
+
         return $this->revoke($active->id, $revokedBy, $reason);
     }
 
@@ -220,6 +257,7 @@ class EntitlementLedger
         if (! $this->tableReady()) {
             return null;
         }
+
         return ModuleEntitlement::query()
             ->where('site_id', $site->id)
             ->where('module_id', $module->id)
@@ -235,6 +273,7 @@ class EntitlementLedger
         if (! $this->tableReady()) {
             return [];
         }
+
         return ModuleEntitlement::query()
             ->where('site_id', $site->id)
             ->where('status', ModuleEntitlement::STATUS_ACTIVE)
@@ -251,6 +290,7 @@ class EntitlementLedger
         if (! $this->tableReady()) {
             return [];
         }
+
         return ModuleEntitlement::query()
             ->where('site_id', $site->id)
             ->orderBy('granted_at')
@@ -295,5 +335,47 @@ class EntitlementLedger
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    protected function logEntitlementGranted(
+        Site $site,
+        Module $module,
+        ModuleEntitlement $entitlement,
+        string $source,
+        array $context
+    ): void {
+        $reason = $context['reason'] ?? null;
+        if ($reason === null || trim((string) $reason) === '') {
+            $reason = $source;
+        }
+
+        ActivityLogger::log(
+            'entitlement_granted',
+            'Entitlement granted to tenant',
+            $site,
+            [
+                'plan_id' => $module->id,
+                'tenant_id' => $site->id,
+                'granted_by' => $context['granted_by'] ?? Auth::id(),
+                'reason' => $reason,
+                'entitlement_id' => $entitlement->id,
+                'module_slug' => $module->slug,
+            ]
+        );
+    }
+
+    protected function logEntitlementRevoked(ModuleEntitlement $entitlement): void
+    {
+        ActivityLogger::log(
+            'entitlement_revoked',
+            'Entitlement revoked',
+            $entitlement,
+            [
+                'plan_id' => $entitlement->module_id,
+                'tenant_id' => $entitlement->site_id,
+                'revoked_by' => $entitlement->revoked_by,
+                'revoke_reason' => $entitlement->revoke_reason ?? 'unspecified',
+            ]
+        );
     }
 }

@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Wave 8.0b — Audit coverage closeout (saas-platform) — ۱۴۰۵/۰۲/۲۴
+
+- حذف ثبت تکراری `module.activated` در `OrderFulfillmentService::fulfillModuleAddon`؛ مسیر audit پرداخت ماژول فقط `entitlement_granted` از `EntitlementLedger` است.
+- پس از اعطای لایسنس ماژول توسط ادمین در `Admin\ModuleLicenseController::grant`، فراخوانی best-effort به `EntitlementLedger::grant` با `SOURCE_ADMIN_GRANT` برای هم‌ترازی ledger با UI.
+- تست feature جدید `tests/Feature/Wave80bFulfillmentAuditLogTest.php`.
+- فیلتر اکشن `module.activated` (قدیمی) در `ActivityLogController` برای رکوردهای تاریخی؛ به‌روزرسانی `resources/views/admin/activity-log/guide.blade.php` و جدول `activity_logs` در `docs/PROJECT-GUIDE.md`.
+
 ### Phase 2 / Wave 7.0c — UX Uniformity Sweep (customer-site only) — ۱۴۰۵/۰۲/۲۳
 
 - این wave صرفاً در مخزن **customer-site** اجرا شد؛ هیچ تغییر کد، migration، middleware، service، route، policy، یا view روی saas-platform وارد نشد. جزئیات کامل در `customer-site/docs/CHANGELOG.md` (Wave 7.0c).

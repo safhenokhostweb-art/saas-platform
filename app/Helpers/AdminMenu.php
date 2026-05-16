@@ -12,18 +12,18 @@ class AdminMenu
     public const MENU_KEYS = [
         'dashboard' => 'داشبورد',
         'users' => 'کاربران پلتفرم',
-        'customers' => 'مشتری‌ها',
+        'customers' => 'مشتریان',
         'sites' => 'سایت‌ها',
         'sites_menus' => 'منوهای سایت',
         'forms' => 'فرم‌ها',
-        'forms_submissions' => 'گزارش ارسال فرم‌ها',
+        'forms_submissions' => 'ارسال‌های فرم',
         'profile_fields' => 'فیلدهای پروفایل',
-        'settings_profile' => 'تنظیمات فرم پروفایل',
+        'settings_profile' => 'تنظیمات پروفایل',
         'access' => 'دسترسی و منو',
         'captcha' => 'تنظیمات کپچا',
         'activity_log' => 'لاگ فعالیت',
         'platform_settings' => 'تنظیمات عمومی پلتفرم',
-        'pages' => 'صفحات ثابت و راهنما',
+        'pages' => 'برگه‌ها',
         'module_labels' => 'عنوان و جزئیات ماژول‌ها',
         'resellers' => 'نمایندگان',
         'reseller_commissions' => 'تسویه کمیسیون',
@@ -104,17 +104,23 @@ class AdminMenu
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
     public const ALWAYS_VISIBLE_KEYS = ['access'];
 
-    /** گروه‌های منو: عنوان => آرایهٔ کلیدها */
+    /**
+     * گروه‌های منوی استاندارد SaaS به ترتیب صحیح:
+     */
     public static function getGroups(): array
     {
         return [
-            'اصلی' => ['dashboard', 'users'],
-            'مشتریان و سایت‌ها' => ['customers', 'sites', 'sites_menus', 'modules', 'module_licenses', 'licenses', 'updates', 'resellers', 'reseller_commissions', 'payout_requests'],
-            'فروش و پشتیبانی' => ['products', 'support_plans', 'support_tickets', 'payment_gateways'],
-            'فرم و پروفایل' => ['forms', 'forms_submissions', 'profile_fields', 'settings_profile'],
-            'محتوا' => ['pages', 'theme_builder'],
-            'تنظیمات سیستم' => ['access', 'captcha', 'module_labels', 'activity_log', 'platform_settings'],
-    ];
+            'داشبورد'                          => ['dashboard'],
+            'مشتریان / کاربران'                 => ['users', 'customers'],
+            'سایت‌ها / پروژه‌ها'                => ['sites', 'sites_menus', 'modules', 'module_licenses', 'licenses', 'updates'],
+            'فروش / صورتحساب'                   => ['products', 'support_plans', 'payment_gateways', 'resellers', 'reseller_commissions', 'payout_requests'],
+            'پشتیبانی / تیکت‌ها'                => ['support_tickets'],
+            'فرم‌ها / برگه‌ها'                  => ['forms', 'forms_submissions', 'profile_fields', 'settings_profile', 'pages'],
+            'محتوا / مقالات'                    => ['theme_builder'],
+            'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings'],
+            'بازاریابی / دانش‌محور'             => [],
+            'گزارش‌ها / آمار'                   => ['activity_log'],
+        ];
     }
 
     public static function isVisible(string $key): bool

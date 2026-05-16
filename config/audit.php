@@ -1,0 +1,14 @@
+<?php
+
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | Audit log retention (days)
+    |--------------------------------------------------------------------------
+    |
+    | Rows in activity_logs older than this many days are removed by
+    | `php artisan activity-log:prune`. Override with AUDIT_RETENTION_DAYS.
+    |
+    */
+    'retention_days' => (int) env('AUDIT_RETENTION_DAYS', 365),
+];

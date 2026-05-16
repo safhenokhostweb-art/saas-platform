@@ -14,6 +14,9 @@ class Kernel extends ConsoleKernel
     {
         // اعلان خودکار انقضا: یک ماه قبل و هر ۱۰ روز — هر روز یک‌بار چک می‌شود
         $schedule->command('expiry:send-reminders')->daily()->at('08:00');
+
+        // Wave 8.0b — prune platform admin activity_logs (respect AUDIT_PRUNE_DRY_RUN)
+        $schedule->command('activity-log:prune')->dailyAt('03:00');
     }
 
     /**

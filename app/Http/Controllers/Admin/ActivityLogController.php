@@ -60,6 +60,9 @@ class ActivityLogController extends Controller
             'user.toggled' => 'تغییر وضعیت کاربر',
             'module.updated' => 'ویرایش ماژول',
             'module.bulk_updated' => 'بروزرسانی گروهی ماژول‌ها',
+            'entitlement_granted' => 'اعطای entitlement',
+            'entitlement_revoked' => 'لغو entitlement',
+            'module.activated' => 'فعال‌سازی ماژول پس از پرداخت (قدیمی)',
         ];
 
         return view('admin.activity-log.index', compact('logs', 'users', 'actionOptions'));
