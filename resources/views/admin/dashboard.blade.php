@@ -16,32 +16,30 @@
     <a href="{{ route('admin.customers.index') }}" class="dashboard-stat-tile dashboard-stat-tile--violet">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">مشتری‌ها</div>
-        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($customers)) }}</div>
-        <div class="dashboard-stat-tile__hint">مدیریت مشتریان</div>
     </a>
     <a href="{{ route('admin.sites.index') }}" class="dashboard-stat-tile dashboard-stat-tile--sky">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">سایت‌ها (تِننت)</div>
-        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($sites)) }}</div>
+
+
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($sites) }}</div>
         <div class="dashboard-stat-tile__hint">سایت‌های مشتری</div>
     </a>
     <a href="{{ route('admin.forms.index') }}" class="dashboard-stat-tile dashboard-stat-tile--emerald">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">فرم‌ها</div>
-        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($forms)) }}</div>
-        <div class="dashboard-stat-tile__hint">فرم‌ساز مرکزی</div>
     </a>
     <a href="{{ route('admin.modules.index') }}" class="dashboard-stat-tile dashboard-stat-tile--rose">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">تعریف ماژول</div>
-        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($modulesCount)) }}</div>
+
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($modulesCount) }}</div>
         <div class="dashboard-stat-tile__hint">کاتالوگ ماژول</div>
     </a>
     <a href="{{ route('admin.licenses.index') }}" class="dashboard-stat-tile dashboard-stat-tile--amber">
         <span class="dashboard-stat-tile__shine" aria-hidden="true"></span>
         <div class="dashboard-stat-tile__label">لایسنس فعال</div>
-        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($activeLicensesCount)) }}</div>
-        <div class="dashboard-stat-tile__hint">صدور و مدیریت</div>
+        <div class="dashboard-stat-tile__value">{{ \App\Helpers\NumberHelper::formatFa($activeLicensesCount) }}</div>
     </a>
 </div>
 

@@ -7,6 +7,8 @@
     ساخت فرم
 </a>
 
+<x-module-features module="forms" />
+
 <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
     @foreach($forms as $form)
         <div class="bg-white p-4 rounded shadow">
@@ -33,3 +35,7 @@
 
 @endsection
 
+    </table>
+</div>
+{{ $tickets->links() }}
+@endsection

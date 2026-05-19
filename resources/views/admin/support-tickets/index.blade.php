@@ -4,6 +4,7 @@
 
 @section('content')
 @include('admin.support-tickets.guide')
+<x-module-features module="support" />
 @if(session('success'))<div class="alert alert-success mb-4">{{ session('success') }}</div>@endif
 
 <p class="mb-4"><a href="{{ route('admin.support-tickets.create') }}" class="btn btn-primary">ثبت تیکت جدید</a></p>

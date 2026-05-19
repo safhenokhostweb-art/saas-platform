@@ -5,6 +5,8 @@
 @section('content')
 @include('admin.users.guide')
 
+<x-module-features module="users" />
+
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
     <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-wrap items-end gap-2">
         <div>

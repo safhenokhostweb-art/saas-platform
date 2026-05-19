@@ -65,6 +65,48 @@
                                 <span class="text-gray-500 text-sm">ریال</span>
                                 @if($wholesaleDiscount > 0)
 
+                                    <span class="text-gray-400 text-sm line-through">{{ \App\Helpers\NumberHelper::formatFa($product->price_irr) }}</span>
+                                    <span class="text-green-600 text-xs">تخفیف {{ \App\Helpers\NumberHelper::toPersianNumbers($wholesaleDiscount) }}٪</span>
+                                @endif
+                            </div>
+                            <form action="{{ route('store.cart.add') }}" method="post" class="space-y-2">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <select name="site_id" class="form-control text-sm" required>
+                                    <option value="">انتخاب سایت</option>
+                                    @foreach($sites as $site)
+                                        @php $siteHasModule = $product->module_id && in_array($product->module_id, $enabledModuleIdsBySite[$site->id] ?? [], true); @endphp
+                                        <option value="{{ $site->id }}" {{ old('site_id', $preselectedSiteId ?? null) == $site->id ? 'selected' : '' }} {{ $siteHasModule ? 'disabled' : '' }}>
+                                            {{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}{{ $siteHasModule ? ' — خریداری‌شده' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-primary w-full text-sm py-2">
+                                    افزودن به سبد خرید
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-4 justify-center">
+            <a href="{{ route('store.cart') }}" class="btn btn-primary">مشاهده سبد خرید</a>
+            <a href="{{ route('store.index') }}" class="btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">همه محصولات فروشگاه</a>
+        </div>
+    @endif
+</div>
+@endsection
+                        @else
+                            <p class="text-gray-500 text-sm mb-3">ماژول افزودنی برای سایت شما.</p>
+                        @endif
+                        <div class="mt-auto">
+                            <div class="flex items-center gap-2 flex-wrap mb-3">
+
+                                <span class="text-gray-500 text-sm">ریال</span>
+                                @if($wholesaleDiscount > 0)
+
                                     <span class="text-gray-400 text-sm line-through">{{ \App\Helpers\NumberHelper::formatFa($product->price_irr)) }}</span>
                                     <span class="text-green-600 text-xs">تخفیف {{ \App\Helpers\NumberHelper::toPersianNumbers($wholesaleDiscount) }}٪</span>
                                 @endif

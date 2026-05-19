@@ -6,11 +6,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 use App\Models\Profile;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'mobile',
@@ -18,12 +19,31 @@ class User extends Authenticatable
         'password',
         'is_admin',
         'is_active',
+        'two_factor_enabled',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'failed_login_attempts',
+        'locked_until',
+        'last_login_at',
+        'last_login_ip',
     ];
 
     protected $casts = [
         'password' => 'hashed',
         'is_admin' => 'boolean',
         'is_active' => 'boolean',
+        'two_factor_enabled' => 'boolean',
+        'two_factor_confirmed_at' => 'datetime',
+        'locked_until' => 'datetime',
+        'last_login_at' => 'datetime',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     public function profile()
@@ -46,6 +66,49 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_user');
     }
 
+    // --- 2FA ---
+    public function twoFactor()
+    {
+        return $this->morphOne(TwoFactor::class, 'authenticatable');
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_enabled && $this->two_factor_confirmed_at !== null;
+    }
+
+    // --- Auto-lock ---
+    public function isLocked(): bool
+    {
+        return $this->locked_until !== null && $this->locked_until->isFuture();
+    }
+
+    // --- Groups ---
+    public function groups()
+    {
+        return $this->belongsToMany(UserGroup::class, 'user_group_user')
+            ->withTimestamps();
+    }
+
+    // --- Tags (polymorphic) ---
+    public function tags()
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    // --- Login Attempts ---
+    public function loginAttempts()
+    {
+        return $this->hasMany(LoginAttempt::class);
+    }
+
+    // --- Password Resets ---
+    public function passwordResets()
+    {
+        return $this->hasMany(PasswordReset::class, 'mobile', 'mobile');
+    }
+
+    // --- RBAC helpers ---
     public function hasRole(string $slug): bool
     {
         return $this->roles()->where('slug', $slug)->exists();
