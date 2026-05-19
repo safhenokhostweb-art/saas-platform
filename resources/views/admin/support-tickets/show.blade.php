@@ -59,8 +59,8 @@
         <label>تخصیص به:</label>
         <select name="assigned_to" class="form-control w-auto inline-block">
             <option value="">—</option>
-            @foreach(\App\Models\User::orderBy('name')->get(['id','name']) as $u)
-                <option value="{{ $u->id }}" {{ (int)$supportTicket->assigned_to === (int)$u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+            @foreach(\App\Models\User::orderBy('mobile')->get(['id','mobile']) as $u)
+                <option value="{{ $u->id }}" {{ (int)$supportTicket->assigned_to === (int)$u->id ? 'selected' : '' }}>{{ $u->mobile }}</option>
             @endforeach
         </select>
         <button type="submit" class="btn btn-secondary">تخصیص</button>

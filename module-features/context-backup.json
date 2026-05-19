@@ -1,1 +1,98 @@
-﻿{backup_version:1.1.0,created_at:2026-05-16 22:35:00,session_id:session_001,summary:{completed_steps:[گام 1: ایجاد پوشه module-features,گام 2: ایجاد 9 فایل JSON برای 9 ماژول,گام 3: ایجاد سرویس ModuleFeatureService با کش 60 دقیقه + کامپوننت module-features.blade.php,گام 4: ایجاد context-backup.json,گام 5: بروزرسانی users.json به وضعیت واقعی (7 از 12 پیاده‌سازی شده),گام 6: افزودن کامپوننت به صفحه admin/users/index.blade.php,گام 3.1: بروزرسانی JSON سایت‌ها، فروش، فرم‌ها، پشتیبانی بر اساس کدهای واقعی],current_step:گام 3.1 کامل شد - آماده برای گام 1 یا 2,next_steps:[گام 1: افزودن کامپوننت x-module-features به صفحات سایر ماژول‌ها (sites, support, sales, forms, pages),گام 2: تکمیل ویژگی‌های پیاده‌سازی نشده ماژول کاربران (2FA، مسدودسازی، بازیابی رمز، گروه‌بندی، برچسب‌گذاری)],modules_completed:{total:9,not_started:4,in_progress:5,completed:0,details:[{module:users,status:in_progress,features_count:12,implemented_count:7},{module:sites,status:in_progress,features_count:9,implemented_count:5},{module:sales,status:in_progress,features_count:10,implemented_count:7},{module:support,status:in_progress,features_count:8,implemented_count:3},{module:forms,status:in_progress,features_count:8,implemented_count:5},{module:content,status:not_started,features_count:8},{module:reports,status:not_started,features_count:8},{module:marketing,status:not_started,features_count:8}]},files_created:[module-features/users.json,module-features/sites.json,module-features/sales.json,module-features/support.json,module-features/forms.json,module-features/content.json,module-features/reports.json,module-features/marketing.json,app/Services/ModuleFeatureService.php,resources/views/components/module-features.blade.php,module-features/context-backup.json],files_modified:[module-features/users.json (بروزرسانی v1.0.1),module-features/sites.json (بروزرسانی v1.0.1 - in_progress),module-features/sales.json (بروزرسانی v1.0.1 - in_progress),module-features/support.json (بروزرسانی v1.0.1 - in_progress),module-features/forms.json (بروزرسانی v1.0.1 - in_progress),resources/views/admin/users/index.blade.php (افزودن کامپوننت)],last_changes:بروزرسانی وضعیت واقعی 5 ماژول (sites, sales, support, forms) به in_progress و افزودن implement_details,context_usage:حدود 65%},instructions_for_next_session:گام 3.1 کامل شد. گام بعدی: 1) افزودن کامپوننت x-module-features به صفحات index ماژول‌های in_progress. 2) تکمیل 5 ویژگی باقیمانده ماژول کاربران.}
+{
+  "backup_version": "1.1.0",
+  "created_at": "2026-05-16 22:35:00",
+  "session_id": "session_001",
+  "summary": {
+    "completed_steps": [
+      "گام 1: ایجاد فایل module-features",
+      "گام 2: ایجاد 9 فایل JSON برای 9 ماژول",
+      "گام 3: ایجاد سرویس ModuleFeatureService با 60 دقیقه کش + کامپوننت module-features.blade.php",
+      "گام 4: ایجاد context-backup.json",
+      "گام 5: به‌روزرسانی users.json و تکمیل ویژگی‌ها (7 از 12 پیاده‌سازی شده)",
+      "گام 6: بهبود کامپوننت و صفحه admin/users/index.blade.php",
+      "گام 3.1: به‌روزرسانی JSON های دیگر از not_started به in_progress"
+    ],
+    "current_step": "گام 3.1 از 5 - ادامه کار بر گام 1 و 2",
+    "next_steps": [
+      "گام 1: بهبود کامپوننت x-module-features در صفحه ماژول‌های دیگر (sites, support, sales, forms, pages)",
+      "گام 2: شروع پیاده‌سازی ویژگی‌های باقیمانده ماژول‌ها (2FA, احراز هویت, رمزنگاری, برچسب گذاری)"
+    ],
+    "modules_completed": {
+      "total": 9,
+      "not_started": 4,
+      "in_progress": 5,
+      "completed": 0,
+      "details": [
+        {
+          "module": "users",
+          "status": "in_progress",
+          "features_count": 12,
+          "implemented_count": 7
+        },
+        {
+          "module": "sites",
+          "status": "in_progress",
+          "features_count": 9,
+          "implemented_count": 5
+        },
+        {
+          "module": "sales",
+          "status": "in_progress",
+          "features_count": 10,
+          "implemented_count": 7
+        },
+        {
+          "module": "support",
+          "status": "in_progress",
+          "features_count": 8,
+          "implemented_count": 3
+        },
+        {
+          "module": "forms",
+          "status": "in_progress",
+          "features_count": 8,
+          "implemented_count": 5
+        },
+        {
+          "module": "content",
+          "status": "not_started",
+          "features_count": 8
+        },
+        {
+          "module": "reports",
+          "status": "not_started",
+          "features_count": 8
+        },
+        {
+          "module": "marketing",
+          "status": "not_started",
+          "features_count": 8
+        }
+      ]
+    },
+    "files_created": [
+      "module-features/users.json",
+      "module-features/sites.json",
+      "module-features/sales.json",
+      "module-features/support.json",
+      "module-features/forms.json",
+      "module-features/content.json",
+      "module-features/reports.json",
+      "module-features/marketing.json",
+      "app/Services/ModuleFeatureService.php",
+      "resources/views/components/module-features.blade.php",
+      "module-features/context-backup.json"
+    ],
+    "files_modified": [
+      "module-features/users.json (به‌روزرسانی v1.0.1)",
+      "module-features/sites.json (به‌روزرسانی v1.0.1 - in_progress)",
+      "module-features/sales.json (به‌روزرسانی v1.0.1 - in_progress)",
+      "module-features/support.json (به‌روزرسانی v1.0.1 - in_progress)",
+      "module-features/forms.json (به‌روزرسانی v1.0.1 - in_progress)",
+      "resources/views/admin/users/index.blade.php (بهبود کامپوننت)"
+    ],
+    "last_changes": "به‌روزرسانی 5 ماژول (sites, sales, support, forms) به in_progress و بهبود implement_details",
+    "context_usage": "65%"
+  },
+  "instructions_for_next_session": "گام 3.1 از 5. کار بعدی: 1) بهبود کامپوننت x-module-features در صفحه index ماژول‌های in_progress. 2) شروع 5 ویژگی باقیمانده ماژول‌ها."
+}

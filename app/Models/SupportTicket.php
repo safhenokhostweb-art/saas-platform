@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SupportTicket extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'site_id', 'ticket_number', 'subject', 'message', 'status', 'priority',
         'support_level', 'customer_email', 'customer_name',

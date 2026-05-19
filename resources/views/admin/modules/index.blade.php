@@ -1,56 +1,112 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'سبد خرید')
+@section('header', 'مدیریت ماژول‌ها')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <h2 class="text-xl font-bold mb-4">سبد خرید</h2>
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
+<x-module-features module='modules' />
+@if(session('success'))<div class='alert alert-success mb-4'>{{ session('success') }}</div>@endif
+@if(session('error'))<div class='alert alert-danger mb-4'>{{ session('error') }}</div>@endif
 
-    @if(empty($items))
-        <p class="text-gray-500">سبد خرید خالی است.</p>
-        <p class="mt-2"><a href="{{ route('store.index') }}" class="btn btn-primary">بازگشت به فروشگاه</a></p>
-    @else
-    <form action="{{ route('checkout.process') }}" method="post" class="card p-4">
-        @csrf
-        <table class="w-full text-sm mb-4">
-            <thead><tr class="border-b"><th class="p-2 text-right">محصول</th><th class="p-2 text-right">سایت</th><th class="p-2 text-right">قیمت</th><th></th></tr></thead>
-            <tbody>
-                @foreach($items as $row)
-                    <tr class="border-b">
-                        <td class="p-2">{{ \App\Helpers\NumberHelper::toPersianNumbers($row['product']->name_fa) }}</td>
-                        <td class="p-2">
-                            @if($row['product']->type === \App\Models\Product::TYPE_LICENSE_TEMPLATE)
-                                <input type="text" name="new_site_title" class="form-control" placeholder="عنوان سایت جدید" value="{{ old('new_site_title') }}">
-                                <input type="text" name="new_site_domain" class="form-control mt-1" placeholder="دامنه (اختیاری)" value="{{ old('new_site_domain') }}">
+<p class='mb-4'>
+    <span class='text-sm text-gray-500'>تعداد سایت‌ها: {{ $sitesCount ?? 0 }}</span>
+</p>
+
+<form action="{{ route('admin.modules.bulk-update') }}" method="POST" id="bulk-form">
+    @csrf
+    <div class='bg-white rounded shadow overflow-hidden'>
+        <div class='overflow-x-auto'>
+            <table class='w-full text-sm'>
+                <thead class='bg-gray-50'>
+                    <tr>
+                        <th class='p-3 text-right w-8'><input type='checkbox' id='select-all'></th>
+                        <th class='p-3 text-right'>عنوان</th>
+                        <th class='p-3 text-right'>نوع</th>
+                        <th class='p-3 text-right'>وضعیت</th>
+                        <th class='p-3 text-right'>قیمت (ریال)</th>
+                        <th class='p-3 text-right'>سایت‌های فعال</th>
+                        <th class='p-3 text-right'>نسخه</th>
+                        <th class='p-3 text-right'>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($modules as $module)
+                    <tr class='border-t hover:bg-gray-50'>
+                        <td class='p-3'><input type='checkbox' name='module_ids[]' value="{{ $module->id }}" class='module-checkbox'></td>
+                        <td class='p-3 font-medium'>{{ $module->title ?? $module->slug }}</td>
+                        <td class='p-3'>
+                            @php
+                                $typeLabels = ['core' => 'هسته', 'paid' => 'پولی', 'internal' => 'داخلی'];
+                                $typeColors = ['core' => 'bg-blue-100 text-blue-700', 'paid' => 'bg-green-100 text-green-700', 'internal' => 'bg-gray-100 text-gray-700'];
+                            @endphp
+                            <span class='px-2 py-0.5 text-xs rounded-full {{ $typeColors[$module->type] ?? 'bg-gray-100' }}'>
+                                {{ $typeLabels[$module->type] ?? $module->type }}
+                            </span>
+                        </td>
+                        <td class='p-3'>
+                            @if($module->is_active)
+                                <span class='text-green-600 text-xs'>فعال</span>
                             @else
-                                <select name="site_id[{{ $row['key'] }}]" class="form-control">
-                                    @foreach($sites as $site)
-                                        <option value="{{ $site->id }}" {{ $row['site_id'] == $site->id ? 'selected' : '' }}>{{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}</option>
-                                    @endforeach
-                                </select>
+                                <span class='text-red-600 text-xs'>غیرفعال</span>
                             @endif
                         </td>
-
-                        <td class="p-2">{{ \App\Helpers\NumberHelper::formatFa($row['line_total'])) }} ریال</td>
-                        <td class="p-2">
-                            <a href="{{ route('store.cart.remove', $row['key']) }}" onclick="return confirm('حذف شود؟');" class="text-red-600">حذف</a>
+                        <td class='p-3' dir='ltr'>
+                            @if($module->price_irr)
+                                {{ number_format($module->price_irr) }}
+                            @else
+                                <span class='text-gray-400'>—</span>
+                            @endif
+                        </td>
+                        <td class='p-3'>
+                            @php $cnt = $moduleSiteCounts[$module->id] ?? 0; @endphp
+                            @if($cnt > 0)
+                                <span class='text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded'>{{ $cnt }}</span>
+                            @else
+                                <span class='text-gray-400 text-xs'>0</span>
+                            @endif
+                        </td>
+                        <td class='p-3 text-xs text-gray-500'>{{ $module->version ?? '1.0.0' }}</td>
+                        <td class='p-3'>
+                            <a href="{{ route('admin.modules.edit', $module) }}" class='text-blue-600 hover:underline text-xs'>ویرایش</a>
                         </td>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                    @empty
+                    <tr><td colspan='8' class='p-4 text-center text-gray-500'>هیچ ماژولی یافت نشد.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-        <p class="font-bold">جمع: {{ \App\Helpers\NumberHelper::formatFa($total)) }} ریال</p>
-        <button type="submit" class="btn btn-primary mt-4">پرداخت و انتقال به درگاه</button>
-    </form>
-
-    <p class="mt-4"><a href="{{ route('store.index') }}" class="text-indigo-600">ادامه خرید</a></p>
+    @if(count($modules) > 0)
+    <div class='mt-4 flex items-center gap-3'>
+        <select name='bulk_action' class='form-control w-auto' required>
+            <option value=''>— انتخاب عملیات گروهی —</option>
+            <optgroup label='تغییر نوع'>
+                <option value='set_type_internal'>تبدیل به داخلی</option>
+                <option value='set_type_license'>تبدیل به مبتنی بر لایسنس</option>
+                <option value='set_type_paid'>تبدیل به پولی</option>
+            </optgroup>
+            <optgroup label='مارکت‌پلیس'>
+                <option value='marketplace_on'>فعال کردن نمایش در فروشگاه</option>
+                <option value='marketplace_off'>غیرفعال کردن نمایش در فروشگاه</option>
+            </optgroup>
+            <optgroup label='اختصاص رایگان'>
+                <option value='free_assignable_on'>فعال کردن اختصاص رایگان</option>
+                <option value='free_assignable_off'>غیرفعال کردن اختصاص رایگان</option>
+            </optgroup>
+            <optgroup label='لایسنس'>
+                <option value='license_required_on'>الزام لایسنس دستی</option>
+                <option value='license_required_off'>لغو الزام لایسنس دستی</option>
+            </optgroup>
+        </select>
+        <button type='submit' class='btn btn-primary' onclick="return confirm('عملیات گروهی اعمال شود؟')">اعمال</button>
+    </div>
     @endif
-</div>
+</form>
+
+<script>
+document.getElementById('select-all')?.addEventListener('change', function() {
+    document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = this.checked);
+});
+</script>
 @endsection

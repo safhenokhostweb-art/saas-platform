@@ -80,7 +80,7 @@
                                         <span class="text-[9px] px-1 py-0.5 rounded bg-gray-100 text-gray-500">غیرفعال</span>
                                     @endif
                                 </div>
-                                <p class="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{{ $feature['description'] }}</p>
+                                <p class="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{{ $feature['description'] ?? '' }}</p>
                             </div>
                         </div>
                     </div>

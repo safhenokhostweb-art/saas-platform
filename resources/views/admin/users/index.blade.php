@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('header', 'مدیریت کاربران پلتفرم')
 
@@ -7,161 +7,70 @@
 
 <x-module-features module="users" />
 
-<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-    <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-wrap items-end gap-2">
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">موبایل</label>
-            <input type="text" name="mobile" class="form-control w-36" placeholder="موبایل" value="{{ $filters['mobile'] ?? '' }}">
+<div x-data="usersIndex()" x-init="init()" class="space-y-6">
+
+    {{-- Stats Cards --}}
+    @if(isset($stats) && is_array($stats))
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-indigo-600">{{ number_format($stats['total'] ?? 0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">کل کاربران</div>
         </div>
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">ایمیل</label>
-            <input type="text" name="email" class="form-control w-36" placeholder="ایمیل" value="{{ $filters['email'] ?? '' }}">
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-green-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-green-600">{{ number_format($stats['active'] ?? 0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">فعال</div>
         </div>
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">نام</label>
-            <input type="text" name="name" class="form-control w-36" placeholder="نام" value="{{ $filters['name'] ?? '' }}">
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-red-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-red-600">{{ number_format($stats['inactive'] ?? 0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">غیرفعال</div>
         </div>
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">وضعیت</label>
-            <select name="status" class="form-select w-32">
-                <option value="">همه</option>
-                <option value="active" {{ ($filters['status'] ?? '') === 'active' ? 'selected' : '' }}>فعال</option>
-                <option value="inactive" {{ ($filters['status'] ?? '') === 'inactive' ? 'selected' : '' }}>غیرفعال</option>
-            </select>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-amber-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-amber-600">{{ number_format($stats['locked'] ?? 0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">قفل شده</div>
         </div>
-        <div>
-            <label class="block text-xs text-gray-500 mb-1">نقش</label>
-            <select name="role" class="form-select w-32">
-                <option value="">همه</option>
-                @foreach(\App\Models\Role::orderBy('name')->get() as $role)
-                    <option value="{{ $role->slug }}" {{ ($filters['role'] ?? '') === $role->slug ? 'selected' : '' }}>{{ $role->name }}</option>
-                @endforeach
-            </select>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-blue-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-blue-600">{{ number_format($stats['admins'] ?? 0) }}</div>
+
+            <div class="text-xs text-gray-500 mt-1">ادمین</div>
         </div>
-        <button type="submit" class="btn btn-primary">جستجو</button>
-        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">پاک کردن</a>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-purple-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-purple-600">{{ number_format($stats['two_factor_enabled'] ?? 0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">2FA فعال</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-teal-100 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl font-bold text-teal-600">{{ number_format($stats['new_today'] ?? 0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">جدید امروز</div>
+        </div>
+    </div>
+    @endif
+
+
+    @include('admin.users._toast')
+
+    @include('admin.users._table')
+
+    @include('admin.users._bulk_modal')
+
+    @include('admin.users._delete_modal')
+
+    <form id="bulk-form" method="POST" class="hidden"
+          data-routes='{{ json_encode(["activate" => route("admin.users.bulk-toggle"), "deactivate" => route("admin.users.bulk-toggle"), "delete" => route("admin.users.bulk-delete"), "restore" => route("admin.users.bulk-restore")]) }}'>
+        @csrf
+        <input type="hidden" name="user_ids" id="bulk-ids">
+        <input type="hidden" name="action" id="bulk-action-hidden">
     </form>
-    <div class="flex gap-2">
-        <a href="{{ route('admin.users.create') }}" class="btn btn-primary">+ کاربر جدید</a>
-        <a href="{{ route('admin.users.export-csv') }}" class="btn btn-outline-secondary">خروجی CSV</a>
-        <a href="{{ route('admin.users.import') }}" class="btn btn-outline-secondary">وارد کردن</a>
-    </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-
-<div class="bg-white rounded-2xl shadow overflow-hidden">
-    <div class="p-3 bg-gray-50 border-b flex items-center gap-2" id="bulk-actions" style="display:none;">
-        <span class="text-sm text-gray-600" id="selected-count">۰ انتخاب شده</span>
-        <button type="button" class="btn btn-sm btn-primary" onclick="bulkAction('activate')">فعال‌سازی گروهی</button>
-        <button type="button" class="btn btn-sm btn-secondary" onclick="bulkAction('deactivate')">غیرفعال‌سازی گروهی</button>
-        <button type="button" class="btn btn-sm btn-danger" onclick="bulkAction('delete')">حذف گروهی</button>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-right border-collapse">
-            <thead>
-                <tr class="bg-gray-50 border-b border-gray-200">
-                    <th class="p-3 w-10"><input type="checkbox" id="select-all" class="form-check-input"></th>
-                    <th class="p-3 font-bold cursor-pointer" onclick="sortBy('id')"># @if(($sortBy ?? 'created_at') === 'id') {{ $sortDir === 'asc' ? '↑' : '↓' }} @endif</th>
-                    <th class="p-3 font-bold cursor-pointer" onclick="sortBy('mobile')">موبایل @if(($sortBy ?? '') === 'mobile') {{ $sortDir === 'asc' ? '↑' : '↓' }} @endif</th>
-                    <th class="p-3 font-bold">ایمیل</th>
-                    <th class="p-3 font-bold">نام (پروفایل)</th>
-                    <th class="p-3 font-bold">نقش‌ها</th>
-                    <th class="p-3 font-bold cursor-pointer" onclick="sortBy('created_at')">تاریخ ثبت‌نام @if(($sortBy ?? 'created_at') === 'created_at') {{ $sortDir === 'asc' ? '↑' : '↓' }} @endif</th>
-                    <th class="p-3 font-bold">وضعیت</th>
-                    <th class="p-3 font-bold">مشتری</th>
-                    <th class="p-3 font-bold">عملیات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($users as $user)
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="p-3"><input type="checkbox" class="user-checkbox form-check-input" value="{{ $user->id }}"></td>
-                        <td class="p-3">{{ $user->id }}</td>
-                        <td class="p-3 font-medium">{{ $user->mobile }}</td>
-                        <td class="p-3 text-sm text-gray-600">{{ $user->email ?? '—' }}</td>
-                        <td class="p-3">{{ $user->profile->full_name ?? '—' }}</td>
-                        <td class="p-3">
-                            @foreach($user->roles as $role)
-                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-1">{{ $role->name }}</span>
-                            @endforeach
-                            @if($user->roles->isEmpty()) — @endif
-                        </td>
-                        <td class="p-3 text-sm text-gray-600">{{ $user->created_at ? \App\Helpers\Jalali::formatFa($user->created_at, 'Y/m/d H:i') : '—' }}</td>
-                        <td class="p-3">
-                            @if($user->id !== auth()->id())
-                                <form action="{{ route('admin.users.toggle', $user) }}" method="POST" class="inline">
-                                    @csrf @method('PATCH')
-                                    <button type="submit" class="px-2 py-1 rounded text-sm {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600' }}">
-                                        {{ $user->is_active ? 'فعال' : 'غیرفعال' }}
-                                    </button>
-                                </form>
-                            @else
-                                <span class="text-gray-500 text-sm">شما</span>
-                            @endif
-                        </td>
-                        <td class="p-3 text-sm">
-                            @if($user->customer)
-                                <a href="{{ route('admin.customers.edit', $user->customer) }}" class="text-blue-600 hover:underline">{{ $user->customer->company_name ?: $user->customer->name }}</a>
-                            @else — @endif
-                        </td>
-                        <td class="p-3 space-x-2 space-x-reverse">
-                            <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:underline text-sm">ویرایش</a>
-                            @if($user->is_admin)
-                                <span class="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">ادمین</span>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="10" class="p-6 text-center text-gray-500">کاربری یافت نشد.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    <div class="p-3 border-t border-gray-200">
-        {{ $users->appends(request()->query())->links() }}
-    </div>
-</div>
-
-<form id="bulk-form" method="POST" style="display:none;">
-    @csrf
-    <input type="hidden" name="action" id="bulk-action-input">
-</form>
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('usersIndex', usersIndex);
+    });
+</script>
+@endpush
 
 <script>
-document.getElementById('select-all')?.addEventListener('change', function() {
-    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = this.checked);
-    updateBulkBar();
-});
-document.querySelectorAll('.user-checkbox').forEach(cb => {
-    cb.addEventListener('change', updateBulkBar);
-});
-function updateBulkBar() {
-    var checked = document.querySelectorAll('.user-checkbox:checked');
-    var bar = document.getElementById('bulk-actions');
-    var count = document.getElementById('selected-count');
-    if (checked.length > 0) {
-        bar.style.display = 'flex';
-        count.textContent = checked.length + ' انتخاب شده';
-    } else {
-        bar.style.display = 'none';
-    }
-}
-function bulkAction(action) {
-    var checked = document.querySelectorAll('.user-checkbox:checked');
-    if (checked.length === 0) return;
-    if (action === 'delete' && !confirm(checked.length + ' کاربر حذف شوند؟')) return;
-    var ids = Array.from(checked).map(cb => cb.value);
-    var form = document.getElementById('bulk-form');
-    document.getElementById('bulk-action-input').value = JSON.stringify(ids);
-    form.action = action === 'activate' || action === 'deactivate'
-        ? '{{ route('admin.users.bulk-toggle') }}'
-        : '{{ route('admin.users.bulk-delete') }}';
-    form.submit();
-}
-function sortBy(field) {
+function sortByClick(field) {
     var url = new URL(window.location.href);
     var dir = url.searchParams.get('sort') === field && url.searchParams.get('direction') === 'asc' ? 'desc' : 'asc';
     url.searchParams.set('sort', field);
@@ -170,3 +79,4 @@ function sortBy(field) {
 }
 </script>
 @endsection
+

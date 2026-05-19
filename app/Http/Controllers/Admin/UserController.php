@@ -3,19 +3,40 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\Role;
-use App\Services\UserService;
+use App\Models\User;
+use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Services\ActivityLogger;
+use App\UseCases\User\BulkDeleteUserUseCase;
+use App\UseCases\User\BulkRestoreUserUseCase;
+use App\UseCases\User\BulkToggleUserStatusUseCase;
+use App\UseCases\User\CreateUserUseCase;
+use App\UseCases\User\DeleteUserUseCase;
+use App\UseCases\User\SearchUsersUseCase;
+use App\UseCases\User\UpdateUserUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use App\Rules\IranianMobile;
 
+/**
+ * @file user-controller.php
+ * قانون ۱: معماری لایه‌ها - کنترلر فقط درخواست را دریافت، UseCase را صدا بزند و پاسخ را برگرداند
+ * قانون ۴: اعتبارسنجی ورودی - استفاده از FormRequest
+ * قانون ۶: پاسخ‌دهی - Format خروجی ثابت
+ */
 class UserController extends Controller
 {
     public function __construct(
-        protected UserService $userService
+        private CreateUserUseCase $createUserUseCase,
+        private UpdateUserUseCase $updateUserUseCase,
+        private DeleteUserUseCase $deleteUserUseCase,
+        private BulkToggleUserStatusUseCase $bulkToggleUserStatusUseCase,
+        private BulkDeleteUserUseCase $bulkDeleteUserUseCase,
+        private BulkRestoreUserUseCase $bulkRestoreUserUseCase,
+        private SearchUsersUseCase $searchUsersUseCase,
+        private UserRepositoryInterface $userRepository,
     ) {}
 
     /**
@@ -23,13 +44,15 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['mobile', 'email', 'name', 'status', 'role', 'created_from', 'created_to']);
+        $filters = $request->only(['mobile', 'email', 'name', 'status', 'role', 'group_id', 'tag_id', 'two_factor', 'created_from', 'created_to']);
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('direction', 'desc');
 
-        $users = $this->userService->search($filters, $sortBy, $sortDir);
+        $users = $this->searchUsersUseCase->execute($filters, $sortBy, $sortDir);
+        $stats = $this->userRepository->getStats();
+        $roles = Role::orderBy('name')->get();
 
-        return view('admin.users.index', compact('users', 'filters', 'sortBy', 'sortDir'));
+        return view('admin.users.index', compact('users', 'filters', 'sortBy', 'sortDir', 'stats', 'roles'));
     }
 
     /**
@@ -44,29 +67,9 @@ class UserController extends Controller
     /**
      * ذخیره کاربر جدید
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'mobile'     => ['required', 'string', 'unique:users,mobile', new IranianMobile],
-            'email'      => 'nullable|email|unique:users,email',
-            'password'   => 'nullable|string|min:8',
-            'first_name' => 'nullable|string|max:255',
-            'last_name'  => 'nullable|string|max:255',
-            'is_active'  => 'boolean',
-            'is_admin'   => 'boolean',
-            'roles'      => 'nullable|array',
-            'roles.*'    => 'exists:roles,id',
-        ], [
-            'mobile.unique' => 'این شماره موبایل قبلاً ثبت شده است.',
-            'email.unique'  => 'این ایمیل قبلاً ثبت شده است.',
-            'password.min'  => 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $user = $this->userService->create($validator->validated());
+        $user = $this->createUserUseCase->execute($request->validated());
 
         return redirect()->route('admin.users.index')
             ->with('success', "کاربر {$user->mobile} با موفقیت ایجاد شد.");
@@ -77,7 +80,7 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $user->load(['profile', 'roles']);
+        $user->load(['profile', 'roles', 'groups', 'tags']);
         $roles = Role::orderBy('name')->get();
         return view('admin.users.edit', compact('user', 'roles'));
     }
@@ -85,25 +88,9 @@ class UserController extends Controller
     /**
      * به‌روزرسانی کاربر
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $validator = Validator::make($request->all(), [
-            'mobile'     => ['required', 'string', 'unique:users,mobile,' . $user->id, new IranianMobile],
-            'email'      => 'nullable|email|unique:users,email,' . $user->id,
-            'password'   => 'nullable|string|min:8',
-            'first_name' => 'nullable|string|max:255',
-            'last_name'  => 'nullable|string|max:255',
-            'is_active'  => 'boolean',
-            'is_admin'   => 'boolean',
-            'roles'      => 'nullable|array',
-            'roles.*'    => 'exists:roles,id',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $this->userService->update($user, $validator->validated());
+        $this->updateUserUseCase->execute($user, $request->validated());
 
         return redirect()->route('admin.users.index')
             ->with('success', "کاربر {$user->mobile} با موفقیت به‌روزرسانی شد.");
@@ -121,7 +108,7 @@ class UserController extends Controller
         $user->update(['is_active' => !$user->is_active]);
         $message = $user->is_active ? 'کاربر فعال شد.' : 'کاربر غیرفعال شد.';
         ActivityLogger::log('user.toggled', $message . ' (موبایل: ' . $user->mobile . ')', $user);
-        $this->userService->clearCache();
+        $this->userRepository->clearCache();
 
         return back()->with('success', $message);
     }
@@ -138,7 +125,7 @@ class UserController extends Controller
         ]);
 
         $active = $request->action === 'activate';
-        $count = $this->userService->bulkToggleActive($request->user_ids, $active);
+        $count = $this->bulkToggleUserStatusUseCase->execute($request->user_ids, $active);
 
         $msg = $active ? "{$count} کاربر فعال شدند." : "{$count} کاربر غیرفعال شدند.";
         return back()->with('success', $msg);
@@ -154,7 +141,7 @@ class UserController extends Controller
             'user_ids.*' => 'exists:users,id',
         ]);
 
-        $count = $this->userService->bulkSoftDelete($request->user_ids);
+        $count = $this->bulkDeleteUserUseCase->execute($request->user_ids);
 
         return back()->with('success', "{$count} کاربر حذف شدند.");
     }
@@ -169,7 +156,7 @@ class UserController extends Controller
             'user_ids.*' => 'exists:users,id',
         ]);
 
-        $count = $this->userService->bulkRestore($request->user_ids);
+        $count = $this->bulkRestoreUserUseCase->execute($request->user_ids);
 
         return back()->with('success', "{$count} کاربر بازیابی شدند.");
     }
@@ -180,7 +167,35 @@ class UserController extends Controller
     public function exportCsv(Request $request)
     {
         $filters = $request->only(['mobile', 'email', 'status']);
-        $filename = $this->userService->exportCsv($filters, 'created_at', 'desc');
+        $users = $this->userRepository->getAllForExport($filters);
+
+        $filename = 'users_export_' . now()->format('Ymd_His') . '.csv';
+        $path = storage_path("app/exports/{$filename}");
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $handle = fopen($path, 'w');
+        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        fputcsv($handle, ['#', 'موبایل', 'ایمیل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
+
+        foreach ($users as $user) {
+            fputcsv($handle, [
+                $user->id,
+                $user->mobile,
+                $user->email ?? '',
+                $user->profile?->full_name ?? '',
+                $user->is_active ? 'فعال' : 'غیرفعال',
+                $user->is_admin ? 'بله' : 'خیر',
+                $user->hasTwoFactorEnabled() ? 'فعال' : 'غیرفعال',
+                $user->groups->pluck('name')->implode('، '),
+                $user->tags->pluck('name')->implode('، '),
+                $user->created_at->format('Y-m-d H:i'),
+            ]);
+        }
+
+        fclose($handle);
 
         return Storage::disk('local')->download("exports/{$filename}");
     }
@@ -205,11 +220,43 @@ class UserController extends Controller
         $path = $request->file('file')->store('imports');
         $fullPath = storage_path("app/{$path}");
 
-        $result = $this->userService->importCsv($fullPath);
+        if (!file_exists($fullPath)) {
+            return back()->with('error', 'فایل یافت نشد.');
+        }
+
+        $result = ['imported' => 0, 'failed' => []];
+        $handle = fopen($fullPath, 'r');
+        $header = fgetcsv($handle);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($handle, &$result) {
+            while (($row = fgetcsv($handle)) !== false) {
+                try {
+                    $data = [
+                        'mobile'    => $row[1] ?? '',
+                        'email'     => $row[2] ?? '',
+                        'first_name'=> $row[3] ?? '',
+                        'last_name' => '',
+                        'is_active' => ($row[4] ?? 'فعال') === 'فعال',
+                    ];
+
+                    if (empty($data['mobile'])) {
+                        continue;
+                    }
+
+                    $this->createUserUseCase->execute($data);
+                    $result['imported']++;
+                } catch (\Exception $e) {
+                    $result['failed'][] = $row[1] ?? 'unknown';
+                    \Illuminate\Support\Facades\Log::warning("Import user failed: {$e->getMessage()}");
+                }
+            }
+        });
+
+        fclose($handle);
 
         $message = "{$result['imported']} کاربر با موفقیت وارد شدند.";
         if (!empty($result['failed'])) {
-            $message .= ' ' . count($result['failed']) . ' مورد ناموفق: ' . implode(', ', $result['failed']);
+            $message .= ' ' . count($result['failed']) . ' مورد ناموفق: ' . implode(', ', array_slice($result['failed'], 0, 5));
         }
 
         return redirect()->route('admin.users.index')->with('success', $message);

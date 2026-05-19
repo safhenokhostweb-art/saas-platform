@@ -1,1 +1,125 @@
-﻿{module_name:پشتیبانی و تیکت‌ها,module_slug:support,version:1.0.1,last_updated:2026-05-16 22:30:00,session_id:session_001,completion_status:in_progress,features:[{id:feat_sp_001,title:مدیریت تیکت‌ها (CRUD),category:core,status:active,priority:high,created_at:2026-05-16,updated_at:2026-05-16,implemented:true,implementation_details:SupportTicketController با index, create, show, updateStatus - view با pagination},{id:feat_sp_002,title:اولویت‌بندی تیکت,category:core,status:active,priority:high,created_at:2026-05-16,updated_at:2026-05-16,implemented:true,implementation_details:فیلد priority در SupportTicket model (low/normal/high)},{id:feat_sp_003,title:گفتگوی بلادرنگ (چت),category:core,status:active,priority:high,created_at:2026-05-16,updated_at:2026-05-16,implemented:false},{id:feat_sp_004,title:دسته‌بندی و برچسب تیکت,category:core,status:active,priority:medium,created_at:2026-05-16,updated_at:2026-05-16,implemented:false},{id:feat_sp_005,title:اشتراک‌گذاری دانش‌نامه,category:knowledge,status:active,priority:medium,created_at:2026-05-16,updated_at:2026-05-16,implemented:false},{id:feat_sp_006,title:گزارش تیکت‌ها,category:analytics,status:active,priority:medium,created_at:2026-05-16,updated_at:2026-05-16,implemented:false},{id:feat_sp_007,title:انتقال تیکت بین اپراتورها,category:core,status:active,priority:medium,created_at:2026-05-16,updated_at:2026-05-16,implemented:true,implementation_details:assigned_to در SupportTicket + متد assign در Controller},{id:feat_sp_008,title:پیام خودکار و تریگر,category:automation,status:active,priority:low,created_at:2026-05-16,updated_at:2026-05-16,implemented:false}],upcoming_features:[{id:upc_sp_001,title:چت هوشمند با AI}],changelog:[{date:2026-05-16,version:1.0.0,description:ایجاد فایل اولیه با 8 ویژگی},{date:2026-05-16,version:1.0.1,description:3 ویژگی پیاده‌سازی شده (CRUD, اولویت‌بندی, ارجاع)}],last_checkpoint:{step:گام 3,message:بروزرسانی support.json}}
+{
+  "module_name": "پشتیبانی و تیکت‌ها",
+  "module_slug": "support",
+  "version": "1.2.0",
+  "last_updated": "2026-05-18 23:30:00",
+  "session_id": "session_001",
+  "completion_status": "in_progress",
+  "features": [
+    {
+      "id": "feat_sp_001",
+      "title": "مدیریت تیکت‌ها (CRUD)",
+      "category": "core",
+      "status": "active",
+      "priority": "high",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": true,
+      "implementation_details": "SupportTicketController با index, create, show, updateStatus - view با pagination"
+    },
+    {
+      "id": "feat_sp_002",
+      "title": "اولویت‌بندی تیکت",
+      "category": "core",
+      "status": "active",
+      "priority": "high",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": true,
+      "implementation_details": "فیلد priority در SupportTicket model (low/normal/high)"
+    },
+    {
+      "id": "feat_sp_003",
+      "title": "پیوست فایل (PDF)",
+      "category": "core",
+      "status": "active",
+      "priority": "high",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": false
+    },
+    {
+      "id": "feat_sp_004",
+      "title": "دسته‌بندی و برچسب تیکت",
+      "category": "core",
+      "status": "active",
+      "priority": "medium",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": false
+    },
+    {
+      "id": "feat_sp_005",
+      "title": "تمدیدپشتیبانی دانشنامه",
+      "category": "knowledge",
+      "status": "active",
+      "priority": "medium",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": false
+    },
+    {
+      "id": "feat_sp_006",
+      "title": "گزارش تیکت‌ها",
+      "category": "analytics",
+      "status": "active",
+      "priority": "medium",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": false
+    },
+    {
+      "id": "feat_sp_007",
+      "title": "ارجاع تیکت به کارشناس",
+      "category": "core",
+      "status": "active",
+      "priority": "medium",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": true,
+      "implementation_details": "assigned_to در SupportTicket + متد assign در Controller"
+    },
+    {
+      "id": "feat_sp_008",
+      "title": "پاسخ زمانبندی و خودکار",
+      "category": "automation",
+      "status": "active",
+      "priority": "low",
+      "created_at": "2026-05-16",
+      "updated_at": "2026-05-16",
+      "implemented": false
+    }
+  ],
+  "upcoming_features": [
+    {
+      "id": "upc_sp_001",
+      "title": "پاسخ هوشمند با AI"
+    }
+  ],
+  "changelog": [
+    {
+      "date": "2026-05-16",
+      "version": "1.0.0",
+      "description": "ایجاد فایل اولیه با 8 ویژگی"
+    },
+    {
+      "date": "2026-05-16",
+      "version": "1.0.1",
+      "description": "3 ویژگی پیاده‌سازی شد (CRUD, اولویت, انتساب)"
+    },
+    {
+      "date": "2026-05-18",
+      "version": "1.1.0",
+      "description": "رفع باگ‌های Controller + اضافه شدن HasFactory و Casts + ۳۰ تست اختصاصی (ماژول تست)"
+    },
+    {
+      "date": "2026-05-18",
+      "version": "1.2.0",
+      "description": "Business Hours در SLA + رابطه SupportPlan→Product + پنل مشتری (ایجاد، مشاهده و پاسخ تیکت)"
+    }
+  ],
+  "last_checkpoint": {
+    "step": "گام 3",
+    "message": "به‌روزرسانی support.json"
+  }
+}

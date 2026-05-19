@@ -65,6 +65,9 @@ class SupportTicketController extends Controller
         ];
         if ($request->status === 'closed') {
             $updates['resolved_at'] = now();
+        } else {
+            // بازگشایی مجدد تیکت → پاک کردن زمان بسته شدن و حل
+            $updates['resolved_at'] = null;
         }
         $supportTicket->update($updates);
         return back()->with('success', 'وضعیت به‌روزرسانی شد.');
@@ -93,11 +96,10 @@ class SupportTicketController extends Controller
 
     public function assign(Request $request, SupportTicket $supportTicket)
     {
-        $assignedTo = $request->input('assigned_to') ?: null;
         $request->validate([
-            'assigned_to' => $assignedTo ? 'required|exists:users,id' : 'nullable',
+            'assigned_to' => 'nullable|exists:users,id',
         ]);
-        $supportTicket->update(['assigned_to' => $assignedTo]);
-        return back()->with('success', 'تیکت به‌روزرسانی شد.');
+        $supportTicket->update(['assigned_to' => $request->input('assigned_to') ?: null]);
+        return back()->with('success', 'تیکت با موفقیت به کارشناس ارجاع شد.');
     }
 }

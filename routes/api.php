@@ -62,6 +62,7 @@ Route::prefix('products')->middleware('throttle:60,1')->group(function () {
 */
 Route::prefix('support-tickets')->middleware('throttle:30,1')->group(function () {
     Route::post('/', [ApiSupportTicketController::class, 'store'])->name('api.support-tickets.store');
+    Route::get('/', [ApiSupportTicketController::class, 'index'])->name('api.support-tickets.index');
 });
 
 /*

@@ -15,18 +15,24 @@ class CustomerMenu
     public const MENU_KEYS = [
         'dashboard' => 'داشبورد',
         'profile' => 'پروفایل',
+        'forms' => 'فرم‌ها',
+        'support-tickets' => 'تیکت‌های پشتیبانی',
     ];
 
     /** مسیر هر آیتم منو (روت‌های قابل دسترسی برای مشتری، بدون پیشوند admin) */
     public const MENU_ROUTES = [
         'dashboard' => 'dashboard',
         'profile' => 'profile.edit',
+        'forms' => 'customer.forms.index',
+        'support-tickets' => 'customer.support-tickets.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
     public const MENU_ROUTE_PATTERNS = [
         'dashboard' => 'dashboard',
         'profile' => 'profile.*',
+        'forms' => 'customer.forms.*',
+        'support-tickets' => 'customer.support-tickets.*',
     ];
 
     /** آیتم‌هایی که همیشه برای مشتری نمایش داده می‌شوند */

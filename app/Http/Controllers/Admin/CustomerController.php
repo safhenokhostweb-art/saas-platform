@@ -6,17 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Reseller;
 use App\Models\User;
-use App\Services\CustomerService;
+use App\Contracts\Repositories\CustomerRepositoryInterface;
 use App\Services\ActivityLogger;
+use App\UseCases\Customer\BulkDeleteCustomerUseCase;
+use App\UseCases\Customer\BulkRestoreCustomerUseCase;
+use App\UseCases\Customer\CreateCustomerUseCase;
+use App\UseCases\Customer\DeleteCustomerUseCase;
+use App\UseCases\Customer\SearchCustomersUseCase;
+use App\UseCases\Customer\UpdateCustomerUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use App\Rules\IranianMobile;
 
+/**
+ * @file customer-controller.php
+ * قانون ۱: معماری لایه‌ها - کنترلر فقط درخواست را دریافت کرده و UseCase را صدا می‌زند
+ * قانون ۴: اعتبارسنجی - استفاده از FormRequest معادل
+ * قانون ۳: Soft Delete در UseCase رعایت شده
+ */
 class CustomerController extends Controller
 {
     public function __construct(
-        protected CustomerService $customerService
+        private CreateCustomerUseCase $createCustomerUseCase,
+        private UpdateCustomerUseCase $updateCustomerUseCase,
+        private DeleteCustomerUseCase $deleteCustomerUseCase,
+        private BulkDeleteCustomerUseCase $bulkDeleteCustomerUseCase,
+        private BulkRestoreCustomerUseCase $bulkRestoreCustomerUseCase,
+        private SearchCustomersUseCase $searchCustomersUseCase,
+        private CustomerRepositoryInterface $customerRepository,
     ) {}
 
     /**
@@ -28,9 +45,9 @@ class CustomerController extends Controller
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('direction', 'desc');
 
-        $customers = $this->customerService->search($filters, $sortBy, $sortDir);
+        $customers = $this->searchCustomersUseCase->execute($filters, $sortBy, $sortDir);
         $resellers = Reseller::with('user.profile')->orderBy('company_name')->get();
-        $stats = $this->customerService->getStats();
+        $stats = $this->customerRepository->getStats();
 
         return view('admin.customers.index', compact('customers', 'filters', 'sortBy', 'sortDir', 'resellers', 'stats'));
     }
@@ -50,23 +67,7 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name'         => 'required|string|max:255',
-            'email'        => 'nullable|email',
-            'mobile'       => ['required', 'unique:customers,mobile', new IranianMobile],
-            'company_name' => 'nullable|string|max:255',
-            'notes'        => 'nullable|string',
-            'user_id'      => 'nullable|exists:users,id',
-            'reseller_id'  => 'nullable|exists:resellers,id',
-        ], [
-            'mobile.unique' => 'این شماره موبایل قبلاً ثبت شده است.',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $customer = $this->customerService->create($validator->validated());
+        $customer = $this->createCustomerUseCase->execute($request->all());
 
         return redirect()->route('admin.customers.index')
             ->with('success', "مشتری {$customer->name} با موفقیت اضافه شد.");
@@ -90,21 +91,7 @@ class CustomerController extends Controller
      */
     public function update(Request $request, Customer $customer)
     {
-        $validator = Validator::make($request->all(), [
-            'name'         => 'required|string|max:255',
-            'email'        => 'nullable|email',
-            'mobile'       => ['required', 'unique:customers,mobile,' . $customer->id, new IranianMobile],
-            'company_name' => 'nullable|string|max:255',
-            'notes'        => 'nullable|string',
-            'user_id'      => 'nullable|exists:users,id',
-            'reseller_id'  => 'nullable|exists:resellers,id',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $this->customerService->update($customer, $validator->validated());
+        $this->updateCustomerUseCase->execute($customer, $request->all());
 
         return redirect()->route('admin.customers.index')
             ->with('success', "اطلاعات مشتری {$customer->name} بروزرسانی شد.");
@@ -115,7 +102,7 @@ class CustomerController extends Controller
      */
     public function destroy(Customer $customer)
     {
-        $this->customerService->softDelete($customer);
+        $this->deleteCustomerUseCase->execute($customer);
 
         return redirect()->route('admin.customers.index')
             ->with('success', 'مشتری حذف شد.');
@@ -131,7 +118,7 @@ class CustomerController extends Controller
             'customer_ids.*' => 'exists:customers,id',
         ]);
 
-        $count = $this->customerService->bulkSoftDelete($request->customer_ids);
+        $count = $this->bulkDeleteCustomerUseCase->execute($request->customer_ids);
 
         return back()->with('success', "{$count} مشتری حذف شدند.");
     }
@@ -146,7 +133,7 @@ class CustomerController extends Controller
             'customer_ids.*' => 'exists:customers,id',
         ]);
 
-        $count = $this->customerService->bulkRestore($request->customer_ids);
+        $count = $this->bulkRestoreCustomerUseCase->execute($request->customer_ids);
 
         return back()->with('success', "{$count} مشتری بازیابی شدند.");
     }
@@ -157,7 +144,33 @@ class CustomerController extends Controller
     public function exportCsv(Request $request)
     {
         $filters = $request->only(['name', 'mobile', 'email']);
-        $filename = $this->customerService->exportCsv($filters);
+        $customers = $this->customerRepository->getAllForExport($filters);
+
+        $filename = 'customers_export_' . now()->format('Ymd_His') . '.csv';
+        $path = storage_path("app/exports/{$filename}");
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $handle = fopen($path, 'w');
+        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'ایمیل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
+
+        foreach ($customers as $customer) {
+            fputcsv($handle, [
+                $customer->id,
+                $customer->name,
+                $customer->company_name ?? '',
+                $customer->mobile,
+                $customer->email ?? '',
+                $customer->sites->count(),
+                $customer->reseller?->company_name ?? '',
+                $customer->created_at->format('Y-m-d H:i'),
+            ]);
+        }
+
+        fclose($handle);
 
         return Storage::disk('local')->download("exports/{$filename}");
     }
@@ -182,7 +195,38 @@ class CustomerController extends Controller
         $path = $request->file('file')->store('imports');
         $fullPath = storage_path("app/{$path}");
 
-        $result = $this->customerService->importCsv($fullPath);
+        if (!file_exists($fullPath)) {
+            return back()->with('error', 'فایل یافت نشد.');
+        }
+
+        $result = ['imported' => 0, 'failed' => []];
+        $handle = fopen($fullPath, 'r');
+        $header = fgetcsv($handle);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($handle, &$result) {
+            while (($row = fgetcsv($handle)) !== false) {
+                try {
+                    $data = [
+                        'name'         => $row[1] ?? '',
+                        'company_name' => $row[2] ?? '',
+                        'mobile'       => $row[3] ?? '',
+                        'email'        => $row[4] ?? '',
+                    ];
+
+                    if (empty($data['mobile'])) {
+                        continue;
+                    }
+
+                    $this->createCustomerUseCase->execute($data);
+                    $result['imported']++;
+                } catch (\Exception $e) {
+                    $result['failed'][] = $row[3] ?? 'unknown';
+                    \Illuminate\Support\Facades\Log::warning("Import customer failed: {$e->getMessage()}");
+                }
+            }
+        });
+
+        fclose($handle);
 
         $message = "{$result['imported']} مشتری وارد شدند.";
         if (!empty($result['failed'])) {

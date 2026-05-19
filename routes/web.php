@@ -175,6 +175,15 @@ Route::middleware('auth')->group(function () {
         ->middleware(EnsureProfileIsComplete::class)
         ->name('customer.forms.index');
 
+    // تیکت‌های پشتیبانی برای مشتری (منوی پنل مشتری)
+    Route::prefix('dashboard/support-tickets')->name('customer.support-tickets.')->middleware(EnsureProfileIsComplete::class)->group(function () {
+        Route::get('/', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'store'])->name('store');
+        Route::get('/{support_ticket}', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'show'])->name('show');
+        Route::post('/{support_ticket}/replies', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'storeReply'])->name('replies.store');
+    });
+
     // فروشگاه و پرداخت (خرید لایسنس، ماژول، پشتیبانی)
     Route::get('/store', [StoreController::class, 'index'])->name('store.index');
     Route::get('/store/modules', [StoreController::class, 'modules'])->name('store.modules');
