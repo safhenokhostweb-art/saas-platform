@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\Payment;
 
 use Illuminate\Support\Facades\Http;

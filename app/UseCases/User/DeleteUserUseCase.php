@@ -1,5 +1,4 @@
 <?php
-
 namespace App\UseCases\User;
 
 use App\Contracts\Repositories\UserRepositoryInterface;

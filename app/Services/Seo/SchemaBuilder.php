@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\Seo;
 
 class SchemaBuilder

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,10 +14,12 @@ class SupportTicketReply extends Model
     protected $fillable = [
         'support_ticket_id', 'user_id', 'message',
         'author_type', 'customer_email', 'customer_name',
+        'attachments',
     ];
 
     protected $casts = [
         'author_type' => 'string',
+        'attachments' => 'array',
     ];
 
     public function ticket()

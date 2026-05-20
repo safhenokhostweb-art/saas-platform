@@ -49,14 +49,120 @@
     @include('partials.platform-admin-sidebar-theme')
     @include('partials.dashboard-stat-tiles-css')
     <style>
+        /* ─── Glass Sidebar ─── */
+        #admin-sidebar {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 4px 0 24px rgba(15, 23, 42, 0.06);
+        }
         #admin-sidebar[data-collapsed="true"] { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .admin-sidebar-inner { width: 5rem; min-width: 5rem; }
         #admin-sidebar[data-collapsed="true"] .sidebar-text { display: none; }
         #admin-sidebar[data-collapsed="true"] .sidebar-group-label { display: none; }
         #admin-sidebar[data-collapsed="true"] .sidebar-group-caret { display: none; }
-        .admin-sidebar-scroll-area{ scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; }
-        .admin-sidebar-scroll-area::-webkit-scrollbar{ width: 8px; }
-        .admin-sidebar-scroll-area::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.35); border-radius: 8px; }
+
+        /* ─── Sidebar Logo ─── */
+        .admin-sidebar-inner .border-b {
+            border-color: rgba(226, 232, 240, 0.5);
+        }
+
+        /* ─── Sidebar Links ─── */
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.75rem;
+            color: #475569;
+            transition: all 0.2s ease;
+            margin-bottom: 1px;
+        }
+        .sidebar-link:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05));
+            color: #6366f1;
+            transform: translateX(-2px);
+        }
+        .sidebar-link.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08));
+            color: #6366f1;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+        }
+        .sidebar-link svg { transition: transform 0.2s ease; }
+        .sidebar-link:hover svg { transform: scale(1.1); }
+
+        /* ─── Sidebar Group Toggle ─── */
+        .sidebar-group-toggle {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.6rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-radius: 0.75rem;
+            transition: color 0.2s ease;
+            text-align: right;
+            gap: 0.5rem;
+        }
+        .sidebar-group-toggle:hover { color: #64748b; }
+
+        /* ─── Group Items ─── */
+        .sidebar-group-items {
+            overflow: hidden;
+            transition: max-height 0.35s ease, opacity 0.25s ease;
+            max-height: 1000px;
+            opacity: 1;
+        }
+        .sidebar-group-items.is-collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        /* ─── Group Caret ─── */
+        .sidebar-group-caret {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+        .sidebar-group-caret.is-open { transform: rotate(180deg); }
+
+        /* ─── Logout Button ─── */
+        form.mt-2 button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.75rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: right;
+            color: #fca5a5;
+            transition: all 0.2s ease;
+        }
+        form.mt-2 button:hover {
+            background: rgba(239, 68, 68, 0.08);
+            color: #f87171;
+            transform: translateX(-2px);
+        }
+
+        /* ─── Scrollbar ─── */
+        .admin-sidebar-scroll-area { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.25) transparent; }
+        .admin-sidebar-scroll-area::-webkit-scrollbar{ width: 5px; }
+        .admin-sidebar-scroll-area::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.2); border-radius: 8px; }
+        .admin-sidebar-scroll-area::-webkit-scrollbar-thumb:hover{ background: rgba(148,163,184,0.35); }
     </style>
     @stack('head')
 </head>

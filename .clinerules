@@ -1,0 +1,589 @@
+
+ 📄 قانون نهایی و کامل - یک متن واحد
+
+# قانون حرفه‌ای یکپارچه برای تمام پروژه‌های Workspace
+
+## 🏗️ معماری کلی
+
+### ساختار Workspace
+
+C:\laragon\www
+├── saas-platform\ # پروژه اصلی SaaS
+└── customer-site\ # پروژه سایت مشتریان
+
+
+
+### اصول یکسان در هر دو پروژه
+1. **همیشه** از آخرین نسخه Laravel 11 استفاده کن
+2. **همیشه** از Tailwind CSS v3.4+ برای استایل‌دهی استفاده کن
+3. **همیشه** از Alpine.js 3.14+ برای تعاملات سمت کلاینت استفاده کن
+4. **هیچ‌وقت** از Bootstrap، jQuery یا CSS خالص استفاده نکن
+
+---
+
+## 🎨 قانون یکسان فرانت‌اند (مطلقاً برای هر دو پروژه)
+
+### سیستم آیکن‌ها (قانون سختگیرانه)
+
+**فرمت استاندارد آیکن - همیشه همین:**
+```html
+<svg class="w-5 h-5 flex-shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M..."/>
+</svg>
+
+جدول سایزها (مطلقاً اجباری):
+
+    w-4 h-4 : داخل دکمه‌های کوچک (فقط در موارد خاص)
+
+    w-5 h-5 : استفاده پیش‌فرض (90% مواقع)
+
+    w-6 h-6 : هدر بخش‌ها و کارت‌های آمار
+
+    w-8 h-8 : آواتارها و تصاویر پروفایل
+
+فاصله‌گذاری استاندارد:
+
+    فاصله بین فیلدها: gap-4 یا gap-6
+
+    پدینگ فیلدها: px-4 py-3
+
+    پدینگ کارت‌ها: p-6
+
+    فاصله بین سکشن‌ها: mb-8
+
+گوشه‌ها و سایه‌ها:
+
+    فیلدها: rounded-xl
+
+    کارت‌ها: rounded-2xl
+
+    دکمه‌ها: rounded-xl
+
+    سایه کارت: shadow-sm
+
+    سایه مودال: shadow-xl
+
+رنگ‌بندی یکسان:
+
+    Primary: indigo-600 (bg-indigo-600)
+
+    Secondary: purple-600 (bg-purple-600)
+
+    Success: emerald-600
+
+    Danger: red-600
+
+    Warning: amber-500
+
+    Info: blue-500
+
+دکمه اصلی همیشه گرادیانت:
+html
+
+<button class="bg-gradient-to-r from-indigo-600 to-purple-600 ...">
+
+🗄️ قانون یکسان بک‌اند لاراول
+ساختار اجباری پروژه
+
+1. کنترلرها (Controllers)
+
+    مسیر: app/Http/Controllers/
+
+    هر کنترلر از Service استفاده کند (نه کوئری مستقیم)
+
+    توابع استاندارد: index, create, store, show, edit, update, destroy
+
+    type hinting اجباری
+
+2. مدل‌ها (Models)
+
+    مسیر: app/Models/
+
+    use SoftDeletes, HasUuid, HasUserStamps
+
+    protected $fillable = []
+
+    protected $casts = []
+
+    روابط با return type declaration
+
+3. فرم‌های اعتبارسنجی (Form Requests)
+
+    مسیر: app/Http/Requests/
+
+    authorize() returns true
+
+    rules() با قوانین کامل
+
+    messages() به فارسی
+
+4. سرویس‌ها (Services)
+
+    مسیر: app/Services/
+
+    implements Interface
+
+    توابع: getAll, getById, create, update, delete
+
+5. ریپازیتوری‌ها (Repositories)
+
+    مسیر: app/Repositories/
+
+    فقط عملیات دیتابیسی (بدون منطق کسب‌وکار)
+
+6. اینترفیس‌ها (Contracts)
+
+    مسیر: app/Contracts/Services/
+
+    مسیر: app/Contracts/Repositories/
+
+7. Traits
+
+    مسیر: app/Traits/
+
+    HasUuid.php - تولید UUID خودکار
+
+    HasUserStamps.php - ثبت created_by و updated_by
+
+    ApiResponse.php - استاندارد پاسخ API
+
+⚙️ قوانین کدنویسی
+قوانین مدل
+php
+
+// ✅ درست
+protected $fillable = ['name', 'email', 'status'];
+protected $casts = ['is_active' => 'boolean'];
+
+// ❌ غلط - هرگز استفاده نکن
+protected $guarded = [];
+
+قوانین کنترلر
+php
+
+// ✅ درست - استفاده از FormRequest و Service
+public function store(TicketStoreRequest $request)
+{
+    return $this->service->create($request->validated());
+}
+
+// ❌ غلط - استفاده مستقیم از مدل
+public function store(Request $request)
+{
+    $ticket = new Ticket();
+}
+
+قوانین سرویس
+php
+
+// ✅ درست - برگرداندن Type Hint و استفاده از ریپازیتوری
+public function create(array $data): Ticket
+{
+    return $this->repository->create($data);
+}
+
+// ❌ غلط - مدیریت تراکنش در سرویس (باید در کنترلر باشد)
+public function create(array $data)
+{
+    DB::beginTransaction();
+}
+
+قوانین ریپازیتوری
+php
+
+// ✅ درست - فقط عملیات دیتابیسی
+public function create(array $data): Ticket
+{
+    return Ticket::create($data);
+}
+
+// ❌ غلط - منطق کسب‌وکار در ریپازیتوری
+public function create(array $data): Ticket
+{
+    if (auth()->user()->can('create')) {
+        return Ticket::create($data);
+    }
+}
+
+🚨 ممنوعیت‌های مطلق
+
+    ❌ استفاده از DB::table() در کنترلر
+
+    ❌ نوشتن کوئری در کنترلر
+
+    ❌ استفاده از $guarded در مدل
+
+    ❌ حذف type hinting
+
+    ❌ استفاده از dd() یا var_dump() در کد نهایی
+
+    ❌ بازگرداندن خطاهای انگلیسی (از زبان فارسی استفاده کن)
+
+    ❌ استفاده از Bootstrap یا jQuery
+
+    ❌ آیکن‌ها با سایز متفاوت (w-4, w-6, w-8) بدون دلیل
+
+📤 خروجی مورد انتظار از هوش مصنوعی
+وقتی از من خواسته شد "ماژول را بساز":
+
+    فقط کدهای کامل را نشان بده
+
+    هیچ توضیح اضافه‌ای نده
+
+    مسیر کامل هر فایل را مشخص کن
+
+    کدها باید آماده کپی و استفاده باشند
+
+وقتی از من خواسته شد "خطایی را رفع کن":
+
+    فقط فایل، خط و کد اصلاحی را مشخص کن
+
+    هرگز چند راهکار پیشنهاد نده
+
+    هرگز نگو "ممکن است مشکل از X یا Y باشد"
+
+    حداکثر 3 خط کد برای راه حل بنویس
+
+فرمت خروجی برای رفع خطا:
+فایل: مسیر/فایل.php
+خط: شماره خط
+مشکل: (حداکثر 5 کلمه)
+راه حل: (کد دقیق جایگزینی)
+
+✅ لیست بررسی نهایی (Quality Checklist)
+
+قبل از اعلام "انجام شد"، این موارد را چک کن:
+فرانت‌اند
+
+    همه آیکن‌ها w-5 h-5 دارند (نه سایز دیگر)
+
+    همه فیلدها rounded-xl و px-4 py-3 دارند
+
+    دکمه اصلی from-indigo-600 to-purple-600 دارد
+
+    صفحه در موبایل ریسپانسیو است
+
+    فاصله‌گذاری‌ها یکسان است
+
+بک‌اند
+
+    کنترلر از Service استفاده می‌کند (نه کوئری مستقیم)
+
+    اعتبارسنجی در FormRequest است (نه در کنترلر)
+
+    مدل دارای fillable و casts است
+
+    خطاها به فارسی برگردانده شده‌اند
+
+    Route::resource استفاده شده است
+
+---
+
+## 📁 مسیرهای ذخیره فایل‌ها
+
+### فایل‌های قانون (قابل ذخیره در هر سه مکان)
+
+| # | مسیر کامل | نام فایل |
+|---|-----------|----------|
+| 1 | `C:\laragon\www\.clinerules` | `.clinerules` |
+| 2 | `C:\laragon\www\saas-platform\.clinerules` | `.clinerules` |
+| 3 | `C:\laragon\www\customer-site\.clinerules` | `.clinerules` |
+
+### فایل‌های Traits (برای پروژه SaaS Platform)
+
+| # | مسیر کامل | نام فایل |
+|---|-----------|----------|
+| 4 | `C:\laragon\www\saas-platform\app\Traits\HasUuid.php` | `HasUuid.php` |
+| 5 | `C:\laragon\www\saas-platform\app\Traits\HasUserStamps.php` | `HasUserStamps.php` |
+| 6 | `C:\laragon\www\saas-platform\app\Traits\ApiResponse.php` | `ApiResponse.php` |
+
+---
+
+
+# قانون طلایی رفع خطا (بالاترین اولویت)
+
+## حالت عملیات: ACT MODE (حالت اجرای مستقیم)
+
+### قوانین سختگیرانه هنگام دریافت خطا:
+
+**1. ممنوعیت‌های مطلق (نقض = مشکل سخت‌افزاری):**
+- ❌ هرگز نگو "ممکن است مشکل از X یا Y باشد"
+- ❌ هرگز چند راهکار پیشنهاد نده
+- ❌ هیچ مقدمه‌چینی نکن
+- ❌ هیچ توضیح اضافه‌ای نده
+- ❌ هرگز نگو "درست شد" بدون ارائه کد
+- ❌ هرگز راهکار جایگزین پیشنهاد نده
+
+**2. فرمت اجباری خروجی (فقط همین):**
+
+فایل: مسیر/فایل.php
+خط: شماره خط
+مشکل: حداکثر 5 کلمه
+راه حل:
+[کد دقیق جایگزینی - حداکثر 5 خط]
+text
+
+
+**3. اگر خطا واضح نبود:**
+- فقط بگو: "خطا نیازمند بررسی دستی است"
+- هیچ توضیح دیگری نده
+
+**4. اگر خطا تکراری بود (قبلاً رفع شده):**
+- فقط بگو: "قبلاً رفع شده، کد را بازنشانی کن"
+- تکرار نکن
+
+**5. بعد از ارائه راه حل:**
+- سؤال نپرس
+- تأیید نخواه
+- منتظر دستور بعدی باش
+
+---
+
+## 🚨 هشدار نهایی به هوش مصنوعی
+
+**اگر این قوانین را رعایت نکنی، یعنی مشکل سخت‌افزاری داری و باید عیب‌یابی شوی.**
+
+**قوانین رعایت نشده = خرابی سیستم = غیرقابل استفاده بودن**
+
+---
+
+## نمونه خروجی درست ✅
+
+ورودی کاربر:
+
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'saas.users' doesn't exist
+
+
+خروجی صحیح:
+
+فایل: database/migrations/2024_01_01_000000_create_users_table.php
+خط: 15
+مشکل: نام جدول اشتباه
+راه حل:
+protected table=′users′;//تغییربه:protectedtable=′users′;//تغییربه:protectedtable = 'saas.users';
+
+
+
+## نمونه خروجی غلط ❌
+
+بله، این خطا به این معناست که جدول users در دیتابیس وجود ندارد. ممکن است migration را اجرا نکرده باشید. یا شاید نام دیتابیس اشتباه است. چند راهکار وجود دارد:
+
+    اجرا کن php artisan migrate
+
+    بررسی کن فایل .env
+
+    ...
+
+**خروجی غلط بالا = نقض قوانین = مشکل سخت‌افزاری**
+
+
+
+
+
+
+
+# قانون توسعه ماژول (توسعه همزمان در هر دو پروژه)
+
+## ساختار Workspace
+
+C:\laragon\www
+├── saas-platform\ # پروژه اصلی SaaS
+└── customer-site\ # پروژه سایت مشتریان
+
+## قوانین سختگیرانه هنگام دریافت این دستور:
+
+### 1. قبل از شروع (تحلیل کامل)
+- [ ] هر دو پروژه را بررسی کن (saas-platform و customer-site)
+- [ ] ببین کدام فایل‌ها وجود دارند و کدام را باید ایجاد کنی
+- [ ] اگر ماژول در یک پروژه وجود دارد و در دیگری نه، هر دو را هماهنگ کن
+
+### 2. هنگام اجرا (توسعه کامل)
+- [ ] **همه** فایل‌های مورد نیاز را ایجاد کن:
+  - Migration (با schema مناسب)
+  - Model (با fillable, casts, relations)
+  - Controller (با 7 متد CRUD)
+  - FormRequest (با قوانین و پیام‌های فارسی)
+  - Service (با Interface)
+  - Repository (با Interface)
+  - Blade views (index, create, edit, show)
+  - Routes (web.php و در صورت نیاز api.php)
+
+### 3. قوانین فرانت‌اند (اجباری)
+- [ ] همه آیکن‌ها: `w-5 h-5 flex-shrink-0`
+- [ ] همه فیلدها: `px-4 py-3 rounded-xl`
+- [ ] همه کارت‌ها: `p-6 rounded-2xl shadow-sm`
+- [ ] دکمه اصلی: `bg-gradient-to-r from-indigo-600 to-purple-600`
+- [ ] صفحه در موبایل ریسپانسیو باشد
+
+### 4. قوانین بک‌اند (اجباری)
+- [ ] کنترلر از Service استفاده کند
+- [ ] اعتبارسنجی در FormRequest باشد
+- [ ] خطاها به فارسی برگردانده شوند
+- [ ] type hinting اجباری
+- [ ] مدل از SoftDeletes, HasUuid, HasUserStamps استفاده کند
+
+### 5. بعد از اتمام (تأیید نهایی)
+- [ ] یکبار تمام کدها را مرور کن
+- [ ] مطمئن شو هیچ خطایی وجود ندارد
+- [ ] فقط بگو: **"✅ ماژول [نام ماژول] در هر دو پروژه با موفقیت اعمال شد"**
+- [ ] هیچ توضیح اضافه‌ای نده
+
+---
+
+## فرمت خروجی نهایی (فقط همین):
+
+✅ ماژول [نام ماژول] در هر دو پروژه با موفقیت اعمال شد
+
+فایل‌های ایجاد شده در saas-platform:
+
+    database/migrations/...create[table]_table.php
+
+    app/Models/[Name].php
+
+    app/Http/Controllers/Web/[Name]Controller.php
+
+    app/Http/Requests/[Name]Request.php
+
+    app/Services/[Name]Service.php
+
+    app/Repositories/[Name]Repository.php
+
+    resources/views/[name]/index.blade.php
+
+    resources/views/[name]/create.blade.php
+
+    resources/views/[name]/edit.blade.php
+
+    resources/views/[name]/show.blade.php
+
+فایل‌های ایجاد شده در customer-site:
+[لیست مشابه]
+
+تمام قوانین رعایت شده است.
+text
+
+
+---
+
+## دستورات کوتاه معادل (همین اثر را دارند):
+
+| دستور | معنی |
+|-------|------|
+| `ماژول [X] را در هر دو پروژه اجرا کن` | توسعه کامل ماژول X |
+| `بخش [Y] را با دقت کامل اعمال کن` | اضافه کردن بخش Y به هر دو پروژه |
+| `[Z] را یکبار برای همیشه درست کن` | رفع مشکل Z در هر دو پروژه |
+| `قوانین را در [W] اعمال کن` | بازنویسی W با رعایت تمام قوانین |
+
+---
+
+
+## دستور جادویی یک جمله‌ای
+
+**وقتی این جمله را دیدی، بلافاصله اجرا کن:**
+
+> **"ماژول [نام ماژول] را با دقت یکبار برای همیشه در هر دو پروژه اعمال کن"**
+
+یا
+
+> **"بخش [نام بخش] را با رعایت تمام قوانین در هر دو پروژه اجرا کن"**
+
+---
+
+
+## نمونه دستور کامل (کپی کن):
+
+ماژول "مدیریت تیکت‌ها" را با دقت یکبار برای همیشه در هر دو پروژه اعمال کن.
+
+ویژگی‌های مورد نیاز:
+
+    فیلدهای تیکت: subject, message, status, priority, user_id
+
+    وضعیت‌ها: open, in_progress, closed
+
+    اولویت‌ها: low, medium, high
+
+    قابلیت ارسال پاسخ برای تیکت
+
+    نمایش تاریخ شمسی
+
+تمام قوانین فرانت‌اند و بک‌اند را رعایت کن.
+
+---
+
+## 🚨 هشدار نهایی
+
+**اگر این دستور را دریافت کردی و:**
+- یک پروژه را فراموش کردی ← نقض قانون
+- توضیح اضافه دادی ← نقض قانون
+- چند راهکار پیشنهاد دادی ← نقض قانون
+- قوانین فرانت‌اند را رعایت نکردی ← نقض قانون
+
+**نقض هر قانون = مشکل سخت‌افزاری = غیرقابل استفاده بودن**
+
+---
+
+## نمونه اجرای درست ✅
+
+**دستور کاربر:**
+
+ماژول "مدیریت کاربران" را با دقت یکبار برای همیشه در هر دو پروژه اعمال کن
+
+
+**خروجی صحیح (بدون توضیح اضافه):**
+
+✅ ماژول مدیریت کاربران در هر دو پروژه با موفقیت اعمال شد
+
+فایل‌های ایجاد شده در saas-platform:
+
+    database/migrations/2025_01_01_000001_create_users_table.php
+
+    app/Models/User.php
+
+    app/Http/Controllers/Web/UserController.php
+
+    app/Http/Requests/UserRequest.php
+
+    app/Services/UserService.php
+
+    app/Repositories/UserRepository.php
+
+    resources/views/users/index.blade.php
+
+    resources/views/users/create.blade.php
+
+    resources/views/users/edit.blade.php
+
+    resources/views/users/show.blade.php
+
+فایل‌های ایجاد شده در customer-site:
+[لیست مشابه]
+
+تمام قوانین رعایت شده است.
+
+
+## نمونه اجرای غلط ❌
+
+باشه، من می‌تونم این کار رو انجام بدم. اول باید بررسی کنیم که ...
+
+[500 خط توضیح اضافه]
+
+ممکن است راهکارهای مختلفی وجود داشته باشد...
+
+
+**خروجی غلط بالا = نقض قوانین = مشکل سخت‌افزاری**
+
+🎯 پرامپت نهایی برای کپی (یک جمله‌ای)
+
+
+ماژول "[نام ماژول]" را با دقت یکبار برای همیشه در هر دو پروژه اعمال کن. تمام قوانین فرانت‌اند و بک‌اند را رعایت کن. هیچ توضیح اضافه‌ای نده. فقط بگو "✅ انجام شد" و لیست فایل‌ها را نشان بده.
+
+📋 کاربردهای این قانون
+کاربرد	دستور
+ساخت ماژول جدید	ماژول "مدیریت محصولات" را در هر دو پروژه اجرا کن
+اضافه کردن فیلد	فیلد "phone" را به مدل User در هر دو پروژه اضافه کن
+حذف قابلیت	قابلیت "نظردهی" را از هر دو پروژه حذف کن
+ویرایش جزئیات	دکمه حذف را در هر دو پروژه به قرمز تغییر بده
+رفع مشکل	مشکل نمایش آیکن‌ها را در هر دو پروژه یکبار برای همیشه درست کن
+
+
+

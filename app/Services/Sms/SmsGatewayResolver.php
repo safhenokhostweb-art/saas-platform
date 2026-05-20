@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\Sms;
 
 use App\Contracts\SmsGatewayInterface;

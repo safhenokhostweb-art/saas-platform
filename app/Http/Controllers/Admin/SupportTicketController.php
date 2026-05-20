@@ -1,19 +1,28 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AssignSupportTicketRequest;
+use App\Http\Requests\Admin\StoreSupportTicketReplyRequest;
+use App\Http\Requests\Admin\StoreSupportTicketRequest;
+use App\Http\Requests\Admin\UpdateSupportTicketStatusRequest;
 use App\Models\Site;
 use App\Models\SupportTicket;
-use App\Models\SupportTicketReply;
-use App\Services\SupportLicenseService;
+use App\Services\SupportTicketService;
 use Illuminate\Http\Request;
 
 class SupportTicketController extends Controller
 {
     public function __construct(
-        protected SupportLicenseService $supportLicenseService
+        protected SupportTicketService $supportTicketService
     ) {}
+
+    public function index(Request $request)
+    {
+        $filters = $request->only(['status', 'priority', 'site_id', 'category', 'q']);
+        $tickets = $this->supportTicketService->getAll($filters);
+        return view('admin.support-tickets.index', compact('tickets'));
+    }
 
     public function create()
     {
@@ -21,33 +30,14 @@ class SupportTicketController extends Controller
         return view('admin.support-tickets.create', compact('sites'));
     }
 
-    public function store(Request $request)
+    public function store(StoreSupportTicketRequest $request)
     {
-        $data = $request->validate([
-            'site_id' => 'required|exists:sites,id',
-            'subject' => 'required|string|max:255',
-            'message' => 'required|string|max:5000',
-            'customer_email' => 'required|email',
-            'customer_name' => 'nullable|string|max:255',
-            'priority' => 'nullable|in:low,normal,high',
-        ]);
-        $data['priority'] = $data['priority'] ?? 'normal';
+        $this->supportTicketService->create(
+            $request->validated(),
+            $request->file('attachments')
+        );
 
-        $site = Site::find($data['site_id']);
-        $data['support_level'] = $site ? $this->supportLicenseService->getLevel($site) : 'basic';
-
-        SupportTicket::create($data);
-        return redirect()->route('admin.support-tickets.index')->with('success', 'تیکت ثبت شد.');
-    }
-
-    public function index(Request $request)
-    {
-        $query = SupportTicket::with(['site', 'assignee'])->latest();
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        $tickets = $query->paginate(20);
-        return view('admin.support-tickets.index', compact('tickets'));
+        return redirect()->route('admin.support-tickets.index')->with('success', 'تیکت با موفقیت ثبت شد.');
     }
 
     public function show(SupportTicket $supportTicket)
@@ -56,50 +46,26 @@ class SupportTicketController extends Controller
         return view('admin.support-tickets.show', compact('supportTicket'));
     }
 
-    public function updateStatus(Request $request, SupportTicket $supportTicket)
+    public function updateStatus(UpdateSupportTicketStatusRequest $request, SupportTicket $supportTicket)
     {
-        $request->validate(['status' => 'required|in:open,in_progress,closed']);
-        $updates = [
-            'status' => $request->status,
-            'closed_at' => $request->status === 'closed' ? now() : null,
-        ];
-        if ($request->status === 'closed') {
-            $updates['resolved_at'] = now();
-        } else {
-            // بازگشایی مجدد تیکت → پاک کردن زمان بسته شدن و حل
-            $updates['resolved_at'] = null;
-        }
-        $supportTicket->update($updates);
-        return back()->with('success', 'وضعیت به‌روزرسانی شد.');
+        $this->supportTicketService->updateStatus($supportTicket, $request->validated()['status']);
+        return back()->with('success', 'وضعیت تیکت با موفقیت به‌روزرسانی شد.');
     }
 
-    public function storeReply(Request $request, SupportTicket $supportTicket)
+    public function storeReply(StoreSupportTicketReplyRequest $request, SupportTicket $supportTicket)
     {
-        $data = $request->validate(['message' => 'required|string|max:5000']);
-
-        SupportTicketReply::create([
-            'support_ticket_id' => $supportTicket->id,
+        $this->supportTicketService->addReply($supportTicket, [
             'user_id' => $request->user()->id,
-            'message' => $data['message'],
-            'author_type' => SupportTicketReply::AUTHOR_STAFF,
-        ]);
+            'message' => $request->validated()['message'],
+            'author_type' => \App\Models\SupportTicketReply::AUTHOR_STAFF,
+        ], $request->file('attachments'));
 
-        if (!$supportTicket->first_response_at) {
-            $supportTicket->update(['first_response_at' => now()]);
-        }
-        if ($supportTicket->status === SupportTicket::STATUS_OPEN) {
-            $supportTicket->update(['status' => SupportTicket::STATUS_IN_PROGRESS]);
-        }
-
-        return back()->with('success', 'پاسخ ثبت شد.');
+        return back()->with('success', 'پاسخ با موفقیت ثبت شد.');
     }
 
-    public function assign(Request $request, SupportTicket $supportTicket)
+    public function assign(AssignSupportTicketRequest $request, SupportTicket $supportTicket)
     {
-        $request->validate([
-            'assigned_to' => 'nullable|exists:users,id',
-        ]);
-        $supportTicket->update(['assigned_to' => $request->input('assigned_to') ?: null]);
+        $this->supportTicketService->assignTo($supportTicket, $request->input('assigned_to'));
         return back()->with('success', 'تیکت با موفقیت به کارشناس ارجاع شد.');
     }
 }

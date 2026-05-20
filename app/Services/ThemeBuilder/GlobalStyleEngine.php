@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\ThemeBuilder;
 
 use App\Services\DesignSystemService;

@@ -467,10 +467,7 @@ Route::prefix('admin')
         Route::patch('payout-requests/{payout_request}/reject', [AdminPayoutRequestController::class, 'reject'])->name('payout-requests.reject');
         Route::resource('support-plans', AdminSupportPlanController::class)->except('show');
         Route::resource('payment-gateways', PaymentGatewayController::class)->except('show');
-        Route::get('support-tickets', [AdminSupportTicketController::class, 'index'])->name('support-tickets.index');
-        Route::get('support-tickets/create', [AdminSupportTicketController::class, 'create'])->name('support-tickets.create');
-        Route::post('support-tickets', [AdminSupportTicketController::class, 'store'])->name('support-tickets.store');
-        Route::get('support-tickets/{support_ticket}', [AdminSupportTicketController::class, 'show'])->name('support-tickets.show');
+        Route::resource('support-tickets', AdminSupportTicketController::class)->only(['index', 'create', 'store', 'show']);
         Route::patch('support-tickets/{support_ticket}/status', [AdminSupportTicketController::class, 'updateStatus'])->name('support-tickets.update-status');
         Route::post('support-tickets/{support_ticket}/replies', [AdminSupportTicketController::class, 'storeReply'])->name('support-tickets.replies.store');
         Route::patch('support-tickets/{support_ticket}/assign', [AdminSupportTicketController::class, 'assign'])->name('support-tickets.assign');

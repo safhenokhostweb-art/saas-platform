@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,12 +12,14 @@ class SupportTicket extends Model
         'site_id', 'ticket_number', 'subject', 'message', 'status', 'priority',
         'support_level', 'customer_email', 'customer_name',
         'assigned_to', 'closed_at', 'first_response_at', 'resolved_at',
+        'category', 'tags', 'attachments',
     ];
 
     protected $casts = [
         'closed_at' => 'datetime',
         'first_response_at' => 'datetime',
         'resolved_at' => 'datetime',
+        'attachments' => 'array',
     ];
 
     public const STATUS_OPEN = 'open';

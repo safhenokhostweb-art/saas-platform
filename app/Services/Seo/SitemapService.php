@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\Seo;
 
 use Illuminate\Support\Facades\Cache;

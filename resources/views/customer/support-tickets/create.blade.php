@@ -39,13 +39,31 @@
             <textarea name="message" class="form-control" rows="6" required maxlength="5000" placeholder="مشکل خود را به طور کامل شرح دهید...">{{ old('message') }}</textarea>
             <small class="text-gray-500">حداکثر ۵۰۰۰ کاراکتر</small>
         </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+            <div>
+                <label class="form-label">دسته‌بندی</label>
+                <select name="category" class="form-select">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="technical" {{ old('category') === 'technical' ? 'selected' : '' }}>فنی</option>
+                    <option value="billing" {{ old('category') === 'billing' ? 'selected' : '' }}>مالی و صورتحساب</option>
+                    <option value="feature" {{ old('category') === 'feature' ? 'selected' : '' }}>درخواست ویژگی</option>
+                    <option value="bug" {{ old('category') === 'bug' ? 'selected' : '' }}>گزارش مشکل</option>
+                    <option value="other" {{ old('category') === 'other' ? 'selected' : '' }}>سایر</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">اولویت</label>
+                <select name="priority" class="form-select">
+                    <option value="low" {{ old('priority') === 'low' ? 'selected' : '' }}>کم</option>
+                    <option value="normal" {{ old('priority', 'normal') === 'normal' ? 'selected' : '' }}>عادی</option>
+                    <option value="high" {{ old('priority') === 'high' ? 'selected' : '' }}>بالا</option>
+                </select>
+            </div>
+        </div>
         <div class="mb-3">
-            <label class="form-label">اولویت</label>
-            <select name="priority" class="form-select w-auto">
-                <option value="low" {{ old('priority') === 'low' ? 'selected' : '' }}>کم</option>
-                <option value="normal" {{ old('priority', 'normal') === 'normal' ? 'selected' : '' }}>عادی</option>
-                <option value="high" {{ old('priority') === 'high' ? 'selected' : '' }}>بالا</option>
-            </select>
+            <label class="form-label">برچسب‌ها (اختیاری)</label>
+            <input type="text" name="tags" class="form-control" value="{{ old('tags') }}" placeholder="مهم, فوری, خطا">
+            <small class="text-gray-400 text-xs">با کاما جدا کنید</small>
         </div>
         <div class="flex gap-2">
             <button type="submit" class="btn btn-primary">ثبت تیکت</button>

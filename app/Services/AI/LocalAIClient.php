@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\AI;
 
 use Illuminate\Support\Facades\Http;
