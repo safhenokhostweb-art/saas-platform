@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SupportTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'site_id', 'ticket_number', 'subject', 'message', 'status', 'priority',
@@ -19,6 +20,7 @@ class SupportTicket extends Model
         'closed_at' => 'datetime',
         'first_response_at' => 'datetime',
         'resolved_at' => 'datetime',
+        'deleted_at' => 'datetime',
         'attachments' => 'array',
     ];
 
@@ -42,7 +44,7 @@ class SupportTicket extends Model
     public static function generateTicketNumber(): string
     {
         $year = now()->format('Y');
-        $count = static::whereYear('created_at', $year)->count();
+        $count = static::withTrashed()->whereYear('created_at', $year)->count();
         return sprintf('ST-%s-%05d', $year, $count + 1);
     }
 

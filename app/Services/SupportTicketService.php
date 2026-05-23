@@ -4,13 +4,15 @@ namespace App\Services;
 use App\Contracts\Repositories\SupportTicketRepositoryInterface;
 use App\Contracts\Repositories\SupportTicketReplyRepositoryInterface;
 use App\Contracts\Services\SupportTicketServiceInterface;
+use App\Models\Site;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketReply;
 use App\Services\ActivityLogger;
 use App\Services\SupportLicenseService;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class SupportTicketService implements SupportTicketServiceInterface
 {
@@ -30,6 +32,21 @@ class SupportTicketService implements SupportTicketServiceInterface
         return $this->ticketRepository->findById($id, ['site', 'assignee', 'replies.user']);
     }
 
+    public function getBySiteId(int $siteId): Collection
+    {
+        return $this->ticketRepository->getBySiteId($siteId, ['replies.user']);
+    }
+
+    public function getByIdForSite(int $id, int $siteId): ?SupportTicket
+    {
+        return $this->ticketRepository->findByIdForSite($id, $siteId, ['site', 'assignee', 'replies.user']);
+    }
+
+    public function countUnreadBySiteId(int $siteId): int
+    {
+        return $this->ticketRepository->countUnreadBySiteId($siteId);
+    }
+
     public function create(array $data, ?array $files = null): SupportTicket
     {
         return DB::transaction(function () use ($data, $files) {
@@ -41,9 +58,9 @@ class SupportTicketService implements SupportTicketServiceInterface
 
             $data['priority'] = $data['priority'] ?? 'normal';
 
-            // Set support level from site
+            // Set support level from the tenant site without exposing tenant data outside the use case.
             if (!empty($data['site_id'])) {
-                $site = \App\Models\Site::find($data['site_id']);
+                $site = Site::query()->find((int) $data['site_id']);
                 if ($site) {
                     $data['support_level'] = $this->supportLicenseService->getLevel($site);
                 }
@@ -51,7 +68,7 @@ class SupportTicketService implements SupportTicketServiceInterface
 
             $ticket = $this->ticketRepository->create($data);
 
-            ActivityLogger::log('support_ticket.created', "تیکت جدید: {$ticket->ticket_number} - {$ticket->subject}", $ticket);
+            ActivityLogger::log('support_ticket.created', "تیکت جدید: {$ticket->ticket_number}", $ticket);
 
             return $ticket;
         });
@@ -92,6 +109,12 @@ class SupportTicketService implements SupportTicketServiceInterface
 
     public function addReply(SupportTicket $ticket, array $data, ?array $files = null): SupportTicket
     {
+        if ($ticket->status === SupportTicket::STATUS_CLOSED) {
+            throw ValidationException::withMessages([
+                'message' => 'این تیکت بسته شده است و قابل پاسخ‌دهی نیست.',
+            ]);
+        }
+
         return DB::transaction(function () use ($ticket, $data, $files) {
             // Handle file uploads for reply
             $uploadedFiles = $this->handleFileUploads($files);

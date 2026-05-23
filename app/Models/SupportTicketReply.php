@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SupportTicketReply extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const AUTHOR_STAFF = 'staff';
     public const AUTHOR_CUSTOMER = 'customer';
@@ -20,6 +21,7 @@ class SupportTicketReply extends Model
     protected $casts = [
         'author_type' => 'string',
         'attachments' => 'array',
+        'deleted_at' => 'datetime',
     ];
 
     public function ticket()

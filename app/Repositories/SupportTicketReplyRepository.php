@@ -8,16 +8,12 @@ use Illuminate\Support\Facades\Cache;
 
 class SupportTicketReplyRepository implements SupportTicketReplyRepositoryInterface
 {
-    private const CACHE_TTL = 900;
-
     public function getByTicketId(int $ticketId): Collection
     {
-        return Cache::remember("support_ticket_replies_{$ticketId}", self::CACHE_TTL, function () use ($ticketId) {
-            return SupportTicketReply::where('support_ticket_id', $ticketId)
-                ->with('user')
-                ->orderBy('created_at')
-                ->get();
-        });
+        return SupportTicketReply::where('support_ticket_id', $ticketId)
+            ->with('user')
+            ->orderBy('created_at')
+            ->get();
     }
 
     public function create(array $data): SupportTicketReply
@@ -29,6 +25,6 @@ class SupportTicketReplyRepository implements SupportTicketReplyRepositoryInterf
 
     public function clearCache(): void
     {
-        Cache::flush();
+        Cache::forget('support_ticket_stats');
     }
 }

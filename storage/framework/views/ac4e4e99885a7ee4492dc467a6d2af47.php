@@ -21,6 +21,8 @@
 
 <?php $__env->startSection('content'); ?>
 
+<!-- SUPPORT-REAL-FILE: c:\laragon\www\saas-platform\resources\views\admin\support-tickets\index.blade.php -->
+
 <?php if(session('success')): ?>
 <div class="glass-card-strong mb-6 p-4 border-r-4 border-r-green-400 flex items-center gap-3 rounded-2xl" x-data="{ show: true }" x-show="show" x-transition>
     <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -155,4 +157,5 @@ $slaService = app(\App\Services\SupportSlaService::class);
 <?php endif; ?>
 <?php echo $__env->make('admin.support-tickets.guide', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 <?php $__env->stopSection(); ?>
+
 <?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\saas-platform\resources\views/admin/support-tickets/index.blade.php ENDPATH**/ ?>

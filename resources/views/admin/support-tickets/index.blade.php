@@ -23,6 +23,8 @@
 
 @section('content')
 
+<!-- SUPPORT-REAL-FILE: c:\laragon\www\saas-platform\resources\views\admin\support-tickets\index.blade.php -->
+
 @if(session('success'))
 <div class="glass-card-strong mb-6 p-4 border-r-4 border-r-green-400 flex items-center gap-3 rounded-2xl" x-data="{ show: true }" x-show="show" x-transition>
     <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

@@ -13,7 +13,11 @@ interface SupportTicketRepositoryInterface
 
     public function findByTicketNumber(string $ticketNumber): ?SupportTicket;
 
+    public function findByIdForSite(int $id, int $siteId, array $relations = []): ?SupportTicket;
+
     public function getBySiteId(int $siteId, array $relations = []): Collection;
+
+    public function countUnreadBySiteId(int $siteId): int;
 
     public function create(array $data): SupportTicket;
 

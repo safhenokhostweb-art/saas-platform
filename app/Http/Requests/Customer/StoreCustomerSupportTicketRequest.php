@@ -23,6 +23,8 @@ class StoreCustomerSupportTicketRequest extends FormRequest
             'priority' => 'nullable|in:low,normal,high',
             'category' => 'nullable|string|max:50',
             'tags' => 'nullable|string|max:500',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,zip|max:10240',
         ];
     }
 
@@ -38,6 +40,9 @@ class StoreCustomerSupportTicketRequest extends FormRequest
             'priority.in' => 'اولویت باید یکی از مقادیر low, normal, high باشد.',
             'category.max' => 'دسته‌بندی حداکثر ۵۰ کاراکتر می‌باشد.',
             'tags.max' => 'برچسب‌ها حداکثر ۵۰۰ کاراکتر می‌باشند.',
+            'attachments.max' => 'حداکثر ۵ فایل قابل ارسال است.',
+            'attachments.*.mimes' => 'فرمت فایل باید jpg, jpeg, png, pdf, doc, docx, zip باشد.',
+            'attachments.*.max' => 'حداکثر حجم هر فایل ۱۰ مگابایت است.',
         ];
     }
 }

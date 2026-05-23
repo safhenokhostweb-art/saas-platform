@@ -16,55 +16,56 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
 
     public function search(array $filters, string $sortBy = 'created_at', string $sortDir = 'desc', int $perPage = 20): LengthAwarePaginator
     {
-        $cacheKey = 'support_tickets_search_' . md5(serialize($filters) . $sortBy . $sortDir . request('page', 1) . $perPage);
+        $allowedSorts = ['created_at', 'updated_at', 'status', 'priority', 'ticket_number'];
+        $sortBy = in_array($sortBy, $allowedSorts, true) ? $sortBy : 'created_at';
+        $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+        $perPage = max(1, min($perPage, 100));
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir, $perPage) {
-            $query = SupportTicket::with(self::RELATIONS_DEFAULT)
-                ->orderBy($sortBy, $sortDir);
+        $query = SupportTicket::with(self::RELATIONS_DEFAULT)
+            ->orderBy($sortBy, $sortDir);
 
-            if (!empty($filters['status'])) {
-                $query->where('status', $filters['status']);
-            }
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
 
-            if (!empty($filters['priority'])) {
-                $query->where('priority', $filters['priority']);
-            }
+        if (!empty($filters['priority'])) {
+            $query->where('priority', $filters['priority']);
+        }
 
-            if (!empty($filters['site_id'])) {
-                $query->where('site_id', $filters['site_id']);
-            }
+        if (!empty($filters['site_id'])) {
+            $query->where('site_id', $filters['site_id']);
+        }
 
-            if (!empty($filters['site_ids'])) {
-                $query->whereIn('site_id', (array)$filters['site_ids']);
-            }
+        if (!empty($filters['site_ids'])) {
+            $query->whereIn('site_id', (array) $filters['site_ids']);
+        }
 
-            if (!empty($filters['assigned_to'])) {
-                $query->where('assigned_to', $filters['assigned_to']);
-            }
+        if (!empty($filters['assigned_to'])) {
+            $query->where('assigned_to', $filters['assigned_to']);
+        }
 
-            if (!empty($filters['category'])) {
-                $query->where('category', $filters['category']);
-            }
+        if (!empty($filters['category'])) {
+            $query->where('category', $filters['category']);
+        }
 
-            if (!empty($filters['q'])) {
-                $q = $filters['q'];
-                $query->where(function ($query) use ($q) {
-                    $query->where('subject', 'like', "%{$q}%")
-                          ->orWhere('ticket_number', 'like', "%{$q}%")
-                          ->orWhere('customer_email', 'like', "%{$q}%")
-                          ->orWhere('customer_name', 'like', "%{$q}%");
-                });
-            }
+        if (!empty($filters['q'])) {
+            $likeTerm = '%' . $this->escapeLikeTerm((string) $filters['q']) . '%';
+            $query->where(function ($query) use ($likeTerm) {
+                $query->where('subject', 'like', $likeTerm)
+                    ->orWhere('ticket_number', 'like', $likeTerm)
+                    ->orWhere('customer_email', 'like', $likeTerm)
+                    ->orWhere('customer_name', 'like', $likeTerm);
+            });
+        }
 
-            if (!empty($filters['created_from'])) {
-                $query->whereDate('created_at', '>=', $filters['created_from']);
-            }
-            if (!empty($filters['created_to'])) {
-                $query->whereDate('created_at', '<=', $filters['created_to']);
-            }
+        if (!empty($filters['created_from'])) {
+            $query->whereDate('created_at', '>=', $filters['created_from']);
+        }
+        if (!empty($filters['created_to'])) {
+            $query->whereDate('created_at', '<=', $filters['created_to']);
+        }
 
-            return $query->paginate($perPage);
-        });
+        return $query->paginate($perPage);
     }
 
     public function findById(int $id, array $relations = []): ?SupportTicket
@@ -80,6 +81,15 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
         return SupportTicket::where('ticket_number', $ticketNumber)->first();
     }
 
+    public function findByIdForSite(int $id, int $siteId, array $relations = []): ?SupportTicket
+    {
+        $relations = $relations ?: self::RELATIONS_DEFAULT;
+
+        return SupportTicket::with($relations)
+            ->where('site_id', $siteId)
+            ->find($id);
+    }
+
     public function getBySiteId(int $siteId, array $relations = []): Collection
     {
         $relations = $relations ?: self::RELATIONS_DEFAULT;
@@ -87,6 +97,16 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
             ->where('site_id', $siteId)
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    public function countUnreadBySiteId(int $siteId): int
+    {
+        return SupportTicket::where('site_id', $siteId)
+            ->whereIn('status', [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS])
+            ->whereHas('replies', function ($query) {
+                $query->where('author_type', \App\Models\SupportTicketReply::AUTHOR_STAFF);
+            })
+            ->count();
     }
 
     public function create(array $data): SupportTicket
@@ -120,6 +140,11 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
 
     public function clearCache(): void
     {
-        Cache::flush();
+        Cache::forget('support_ticket_stats');
+    }
+
+    private function escapeLikeTerm(string $term): string
+    {
+        return addcslashes($term, '%_\\');
     }
 }

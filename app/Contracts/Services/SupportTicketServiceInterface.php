@@ -3,13 +3,19 @@ namespace App\Contracts\Services;
 
 use App\Models\SupportTicket;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 
 interface SupportTicketServiceInterface
 {
     public function getAll(array $filters = []): LengthAwarePaginator;
 
     public function getById(int $id): ?SupportTicket;
+
+    public function getBySiteId(int $siteId): Collection;
+
+    public function getByIdForSite(int $id, int $siteId): ?SupportTicket;
+
+    public function countUnreadBySiteId(int $siteId): int;
 
     public function create(array $data, ?array $files = null): SupportTicket;
 

@@ -5,13 +5,20 @@ use App\Models\Reseller;
 use App\Models\Site;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\CoreUtils\Traits\HasTenantContext;
 
 /**
  * سرویس مرکزی برای دسترسی به tenant فعلی.
  * Tenant از دامنه/زیردامنه یا از route/request استخراج می‌شود.
+ *
+ * این کلاس اینترفیس TenantContextContract را پیاده‌سازی می‌کند
+ * و از trait HasTenantContext برای متد hasFeature() استفاده می‌کند.
  */
-class TenantContext
+class TenantContext implements TenantContextContract
 {
+    use HasTenantContext;
+
     protected ?object $tenant = null;
 
     protected ?string $tenantType = null;

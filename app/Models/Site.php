@@ -27,6 +27,7 @@ class Site extends Model
         'customer_menu_keys',
         'payment_gateway_id',
         'theme_id',
+        'features',
     ];
 
     protected $casts = [
@@ -36,6 +37,7 @@ class Site extends Model
         'support_starts_at' => 'date',
         'is_active' => 'boolean',
         'customer_menu_keys' => 'array',
+        'features' => 'array',
     ];
 
     public function customer()

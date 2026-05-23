@@ -7,6 +7,16 @@
         "framework"
     ],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/saas-platform/core-utils"
+        },
+        {
+            "type": "path",
+            "url": "packages/saas-platform/modules/tickets"
+        }
+    ],
     "require": {
         "php": "^8.1",
         "anhskohbo/no-captcha": "^3.7",
@@ -14,7 +24,8 @@
         "hekmatinasser/verta": "8.5",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
-        "laravel/tinker": "^2.8"
+        "laravel/tinker": "^2.8",
+        "saas-platform/modules-tickets": "@dev"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -72,6 +83,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }

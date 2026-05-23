@@ -73,7 +73,9 @@ class CustomerSupportTicketController extends Controller
         $data['customer_name'] = $user->name ?? $user->email;
         $data['status'] = SupportTicket::STATUS_OPEN;
 
-        $this->supportTicketService->create($data);
+        unset($data['attachments']);
+
+        $this->supportTicketService->create($data, $request->file('attachments'));
 
         return redirect()->route('customer.support-tickets.index')
             ->with('success', 'تیکت شما با موفقیت ثبت شد. در اسرع وقت پاسخ داده خواهد شد.');
@@ -125,13 +127,15 @@ class CustomerSupportTicketController extends Controller
             return back()->with('error', 'این تیکت بسته شده است و قابل پاسخ‌دهی نیست.');
         }
 
+        $validated = $request->validated();
+
         $this->supportTicketService->addReply($supportTicket, [
             'user_id' => $user->id,
-            'message' => $request->validated()['message'],
+            'message' => $validated['message'],
             'author_type' => SupportTicketReply::AUTHOR_CUSTOMER,
             'customer_email' => $user->email,
             'customer_name' => $user->name,
-        ]);
+        ], $request->file('attachments'));
 
         return back()->with('success', 'پاسخ شما با موفقیت ثبت شد.');
     }

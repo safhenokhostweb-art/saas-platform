@@ -63,6 +63,20 @@
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
     ),
   ),
+  'saas-platform/core-utils' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'SaaSPlatform\\CoreUtils\\Providers\\CoreUtilsServiceProvider',
+    ),
+  ),
+  'saas-platform/modules-tickets' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'SaaSPlatform\\Modules\\Tickets\\Providers\\TicketsServiceProvider',
+    ),
+  ),
   'spatie/laravel-ignition' => 
   array (
     'aliases' => 

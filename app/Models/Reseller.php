@@ -16,12 +16,14 @@ class Reseller extends Model
         'logo_path',
         'custom_domain',
         'subdomain',
+        'features',
     ];
 
     protected $casts = [
         'commission_rate' => 'decimal:2',
         'wholesale_discount_percent' => 'decimal:2',
         'is_white_label' => 'boolean',
+        'features' => 'array',
     ];
 
     public function user()
