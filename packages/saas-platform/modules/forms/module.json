@@ -1,0 +1,49 @@
+{
+    "name": "Forms Module",
+    "module_slug": "forms",
+    "version": "1.1.0",
+    "type": "core",
+    "description": "Shared forms module for the SaaS Platform ecosystem. Provides form builder, field management, multi-site assignment, submissions, CSV export, and public frontend views.",
+    "namespace": "SaaSPlatform\\Modules\\Forms",
+    "provider": "SaaSPlatform\\Modules\\Forms\\Providers\\FormsServiceProvider",
+    "compatibility": {
+        "php": "^8.1",
+        "laravel": "^10.0|^11.0",
+        "saas-platform": ">=1.0.0"
+    },
+    "update_type": "minor",
+    "dependencies": {
+        "packages": [
+            "saas-platform/core-utils"
+        ],
+        "modules": []
+    },
+    "config": {
+        "field_types": [
+            "text",
+            "textarea",
+            "email",
+            "number",
+            "date",
+            "radio",
+            "checkbox",
+            "select"
+        ],
+        "pagination": 25,
+        "export_limit": 10000
+    },
+    "install": {
+        "command": "forms:install",
+        "publishes": [
+            "forms-config",
+            "forms-views",
+            "forms-migrations"
+        ]
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "SaaS Platform Team"
+        }
+    ]
+}

@@ -54,7 +54,7 @@ use App\Http\Controllers\Admin\ThemeBuilderController;
 use App\Http\Controllers\PageController;
 
 use App\Http\Middleware\EnsureProfileIsComplete;
-use App\Http\Controllers\Site\FormFrontendController;
+use SaaSPlatform\Modules\Forms\Http\Controllers\FormFrontendController;
 use App\Http\Controllers\Customer\CustomerFormController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CheckoutController;

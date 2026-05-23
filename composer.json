@@ -15,6 +15,10 @@
         {
             "type": "path",
             "url": "packages/saas-platform/modules/tickets"
+        },
+        {
+            "type": "path",
+            "url": "packages/saas-platform/modules/forms"
         }
     ],
     "require": {
@@ -25,6 +29,7 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "saas-platform/modules-forms": "@dev",
         "saas-platform/modules-tickets": "@dev"
     },
     "require-dev": {

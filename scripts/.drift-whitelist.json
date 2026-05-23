@@ -1,0 +1,25 @@
+{
+    "files": [
+        "resources/views/components/module-features.blade.php",
+        "resources/views/components/persian-captcha-challenge.blade.php",
+        "resources/views/components/persian-captcha-math.blade.php",
+        "resources/views/components/persian-date-input.blade.php",
+        "resources/views/admin/activity-log/*",
+        "resources/views/admin/captcha/*",
+        "resources/views/admin/forms/*",
+        "resources/views/admin/menus/*",
+        "resources/views/admin/pages/*",
+        "resources/views/admin/partials/module-guide-box.blade.php",
+        "resources/views/admin/support/*",
+        "resources/views/partials/module-guide-box.blade.php",
+        "resources/views/partials/sidebar-icon.blade.php",
+        "resources/views/install/*",
+        "resources/views/auth/login.blade.php",
+        "resources/views/layouts/auth-login.blade.php"
+    ],
+    "metadata": {
+        "description": "Whitelist for shared module files that are ALLOWED to exist in both projects",
+        "last_updated": "2026-05-22",
+        "policy": "Files listed here are shared modules under active migration. New duplicates will be rejected."
+    }
+}

@@ -1,0 +1,108 @@
+name: Anti-Drift Detection
+
+on:
+  pull_request:
+    paths:
+      - "resources/views/**"
+      - "app/Http/Controllers/**"
+      - "packages/**"
+      - "scripts/drift-detect.php"
+      - "scripts/.drift-whitelist.json"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "resources/views/**"
+      - "app/Http/Controllers/**"
+      - "packages/**"
+      - "scripts/drift-detect.php"
+      - "scripts/.drift-whitelist.json"
+  schedule:
+    # Weekly drift report every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout saas-platform
+        uses: actions/checkout@v4
+        with:
+          path: saas-platform
+
+      - name: Checkout customer-site
+        uses: actions/checkout@v4
+        with:
+          repository: safhenokhostweb-art/customer-site
+          path: customer-site
+          ref: main
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring
+          coverage: none
+
+      - name: Run full drift detection (CI mode)
+        id: drift
+        continue-on-error: true
+        run: |
+          cd saas-platform
+          php scripts/drift-detect.php --ci --report
+        shell: bash
+
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: saas-platform/storage/logs/drift-report-*.txt
+          retention-days: 30
+
+      - name: Fail on high-severity violations
+        if: steps.drift.outcome == 'failure'
+        run: |
+          echo "❌ High-severity drift violations detected!"
+          echo "Review the drift report artifact for details."
+          echo "To add exceptions: php scripts/drift-detect.php --add-exception <file> <reason>"
+          exit 1
+
+  drift-report-weekly:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    needs: [drift-check]
+
+    steps:
+      - name: Download drift report
+        uses: actions/download-artifact@v4
+        with:
+          name: drift-report
+
+      - name: Generate weekly summary
+        run: |
+          echo "## 📊 Weekly Drift Report" > drift-summary.md
+          echo "" >> drift-summary.md
+          echo "Generated: $(date -u)" >> drift-summary.md
+          echo "" >> drift-summary.md
+          echo "See attached drift report for full details." >> drift-summary.md
+
+      - name: Create GitHub Issue for weekly report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportFiles = fs.readdirSync('.').filter(f => f.startsWith('drift-report-'));
+            const reportContent = reportFiles.length > 0
+              ? fs.readFileSync(reportFiles[0], 'utf8').substring(0, 32000)
+              : 'No report generated.';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Weekly Drift Report — ${new Date().toISOString().split('T')[0]}`,
+              body: `## Weekly Anti-Drift Report\n\n\`\`\`\n${reportContent}\n\`\`\`\n\n_Automated weekly report._`,
+              labels: ['drift-report', 'automated']
+            });

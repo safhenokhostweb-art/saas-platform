@@ -34,8 +34,3 @@
 @include('admin.forms.guide')
 
 @endsection
-
-    </table>
-</div>
-{{ $tickets->links() }}
-@endsection

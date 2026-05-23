@@ -1,0 +1,25 @@
+{
+    "name": "saas-platform/modules-tickets",
+    "description": "Shared Tickets Module for SaaS Platform",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^10.0|^11.0|^12.0",
+        "saas-platform/core-utils": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "SaaSPlatform\\Modules\\Tickets\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SaaSPlatform\\Modules\\Tickets\\Providers\\TicketsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

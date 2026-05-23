@@ -70,6 +70,13 @@
       0 => 'SaaSPlatform\\CoreUtils\\Providers\\CoreUtilsServiceProvider',
     ),
   ),
+  'saas-platform/modules-forms' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'SaaSPlatform\\Modules\\Forms\\Providers\\FormsServiceProvider',
+    ),
+  ),
   'saas-platform/modules-tickets' => 
   array (
     'providers' => 

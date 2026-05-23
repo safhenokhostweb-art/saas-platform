@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "341a40974919b00db5fc0c2f504b247a",
+    "content-hash": "c0335120a945711823a3b3d0cb5e34f2",
     "packages": [
         {
             "name": "anhskohbo/no-captcha",
@@ -3441,6 +3441,40 @@
                 "MIT"
             ],
             "description": "Shared Core Utilities for SaaS Platform modules",
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "saas-platform/modules-forms",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/saas-platform/modules/forms",
+                "reference": "40de773684acb164bb285557db79af07b6d26ade"
+            },
+            "require": {
+                "laravel/framework": "^10.0|^11.0",
+                "php": "^8.1",
+                "saas-platform/core-utils": "@dev"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "SaaSPlatform\\Modules\\Forms\\Providers\\FormsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "SaaSPlatform\\Modules\\Forms\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Shared Forms Module for SaaS Platform",
             "transport-options": {
                 "relative": true
             }
@@ -8532,6 +8566,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "saas-platform/modules-forms": 20,
         "saas-platform/modules-tickets": 20
     },
     "prefer-stable": true,
