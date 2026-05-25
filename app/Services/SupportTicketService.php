@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * @deprecated PHASE 7.1 — Use SaaSPlatform\Modules\Tickets\Services\TicketService (via TicketServiceInterface) instead.
+ *             This service operates on the legacy support_tickets table.
+ */
+
 namespace App\Services;
 
 use App\Contracts\Repositories\SupportTicketRepositoryInterface;

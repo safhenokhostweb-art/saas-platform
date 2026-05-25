@@ -1,0 +1,56 @@
+{
+    "_comment": "PHASE 6.98 — TASK 4: Satis private package repository configuration (FOUNDATION ONLY)",
+    "_note": "This file defines the ARCHITECTURE for production module distribution via a private Satis server. Do NOT deploy yet. Replace placeholder URLs with real infrastructure URLs before deploying.",
+
+    "name": "saas-platform/private",
+    "description": "Private Satis repository for SaaS Platform canonical modules",
+    "homepage": "https://packages.example.com",
+
+    "repositories": [
+        {
+            "_comment": "core-utils — shared infrastructure package",
+            "type": "vcs",
+            "url": "https://github.com/example-org/saas-platform-core-utils"
+        },
+        {
+            "_comment": "forms module — canonical reference module (PHASE 6.97)",
+            "type": "vcs",
+            "url": "https://github.com/example-org/saas-platform-modules-forms"
+        },
+        {
+            "_comment": "tickets module",
+            "type": "vcs",
+            "url": "https://github.com/example-org/saas-platform-modules-tickets"
+        }
+    ],
+
+    "require": {
+        "saas-platform/core-utils": "*",
+        "saas-platform/modules-forms": "*",
+        "saas-platform/modules-tickets": "*"
+    },
+
+    "require-all": false,
+    "require-dependencies": true,
+    "require-dev-dependencies": false,
+
+    "archive": {
+        "directory": "dist",
+        "format": "zip",
+        "skip-dev": true
+    },
+
+    "output-dir": "public",
+    "output-html": true,
+    "pretty-print": true,
+
+    "_deployment_notes": {
+        "step_1": "Replace all example.com URLs with real infrastructure domains",
+        "step_2": "Configure VCS authentication (SSH keys or tokens) in Satis server",
+        "step_3": "Run: php satis.phar build satis.json public/ to generate repository",
+        "step_4": "Serve the public/ directory from a private web server (nginx/Apache)",
+        "step_5": "Add Satis repository to customer-site composer.json (see docs/architecture/distributed-module-delivery.md)",
+        "step_6": "Configure HTTP Basic Auth or token-based access control on the web server",
+        "local_dev": "Path repositories in composer.json override Satis — local development is unaffected"
+    }
+}

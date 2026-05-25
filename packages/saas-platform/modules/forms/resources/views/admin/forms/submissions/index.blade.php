@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(config('forms.layouts.admin'))
 
 @section('header', 'گزارش ارسال فرم‌ها')
 
@@ -19,6 +19,7 @@
                 @endforeach
             </select>
         </div>
+        @platform
         @if(isset($sites) && $sites->count())
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">سایت</label>
@@ -30,6 +31,8 @@
             </select>
         </div>
         @endif
+        @endplatform
+
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">از تاریخ (شمسی)</label>
             <x-persian-date-input name="from" placeholder="۱۴۰۳/۰۱/۰۱" :value="request('from')"

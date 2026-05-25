@@ -1,4 +1,5 @@
-@extends('layouts.admin')
+@platform
+@extends(config('forms.layouts.admin'))
 
 @section('header', 'اتصال فرم به سایت‌ها: ' . $form->title)
 
@@ -55,3 +56,4 @@
     </div>
 </div>
 @endsection
+@endplatform

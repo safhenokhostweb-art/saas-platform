@@ -1,10 +1,15 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @deprecated PHASE 7.1 — Use SaaSPlatform\Modules\Tickets\Models\TicketReply instead.
+ *             References support_ticket_replies table. Canonical table is ticket_replies.
+ */
 class SupportTicketReply extends Model
 {
     use HasFactory, SoftDeletes;

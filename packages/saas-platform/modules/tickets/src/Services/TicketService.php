@@ -5,57 +5,75 @@ namespace SaaSPlatform\Modules\Tickets\Services;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
+use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterface;
+use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketReplyRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
 
-class TicketService
+class TicketService implements TicketServiceInterface
 {
     /**
-     * Get all tickets with optional filters.
+     * Create a new ticket service instance.
+     */
+    public function __construct(
+        protected TicketRepositoryInterface $ticketRepository,
+        protected TicketReplyRepositoryInterface $replyRepository,
+    ) {
+        //
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function getAll(array $filters = []): LengthAwarePaginator
     {
-        $query = Ticket::query()->with(['site', 'assignee']);
-
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (!empty($filters['priority'])) {
-            $query->where('priority', $filters['priority']);
-        }
-
-        if (!empty($filters['site_id'])) {
-            $query->where('site_id', $filters['site_id']);
-        }
-
-        if (!empty($filters['category'])) {
-            $query->where('category', $filters['category']);
-        }
-
-        if (!empty($filters['q'])) {
-            $search = $filters['q'];
-            $query->where(function ($q) use ($search) {
-                $q->where('subject', 'like', "%{$search}%")
-                  ->orWhere('ticket_number', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        return $query->orderBy('created_at', 'desc')
-            ->paginate(config('tickets.pagination', 20));
+        return $this->ticketRepository->search(
+            $filters,
+            $filters['sort_by'] ?? 'created_at',
+            $filters['sort_dir'] ?? 'desc',
+            $filters['per_page'] ?? config('tickets.pagination', 20)
+        );
     }
 
     /**
-     * Get a ticket by ID.
+     * {@inheritDoc}
      */
     public function getById(int $id): ?Ticket
     {
-        return Ticket::with(['site', 'assignee', 'replies.user'])->find($id);
+        return $this->ticketRepository->findById($id, ['site', 'assignee', 'replies.user']);
     }
 
     /**
-     * Create a new ticket.
+     * {@inheritDoc}
+     */
+    public function getBySiteId(int $siteId): Collection
+    {
+        return $this->ticketRepository->getBySiteId($siteId, ['assignee']);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getByIdForSite(int $id, int $siteId): ?Ticket
+    {
+        return $this->ticketRepository->findByIdForSite($id, $siteId, ['site', 'assignee', 'replies.user']);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function countUnreadBySiteId(int $siteId): int
+    {
+        return $this->ticketRepository->countUnreadBySiteId($siteId);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function create(array $data, ?array $files = null): Ticket
     {
@@ -68,14 +86,12 @@ class TicketService
             $data['priority'] = $data['priority'] ?? 'normal';
             $data['ticket_number'] = $this->generateTicketNumber();
 
-            $ticket = Ticket::create($data);
-
-            return $ticket;
+            return $this->ticketRepository->create($data);
         });
     }
 
     /**
-     * Update ticket status.
+     * {@inheritDoc}
      */
     public function updateStatus(Ticket $ticket, string $status): Ticket
     {
@@ -90,26 +106,22 @@ class TicketService
                 $updates['resolved_at'] = null;
             }
 
-            $ticket->update($updates);
-
-            return $ticket->fresh();
+            return $this->ticketRepository->update($ticket, $updates);
         });
     }
 
     /**
-     * Assign ticket to a user.
+     * {@inheritDoc}
      */
     public function assignTo(Ticket $ticket, ?int $userId): Ticket
     {
         return DB::transaction(function () use ($ticket, $userId) {
-            $ticket->update(['assigned_to' => $userId]);
-
-            return $ticket->fresh();
+            return $this->ticketRepository->update($ticket, ['assigned_to' => $userId]);
         });
     }
 
     /**
-     * Add a reply to a ticket.
+     * {@inheritDoc}
      */
     public function addReply(Ticket $ticket, array $data, ?array $files = null): Ticket
     {
@@ -127,31 +139,26 @@ class TicketService
 
             $data['ticket_id'] = $ticket->id;
 
-            TicketReply::create($data);
+            $this->replyRepository->create($data);
 
             if (!$ticket->first_response_at && ($data['author_type'] ?? '') === TicketReply::AUTHOR_STAFF) {
-                $ticket->update(['first_response_at' => now()]);
+                $this->ticketRepository->update($ticket, ['first_response_at' => now()]);
             }
 
             if ($ticket->status === Ticket::STATUS_OPEN) {
-                $ticket->update(['status' => Ticket::STATUS_IN_PROGRESS]);
+                $this->ticketRepository->update($ticket, ['status' => Ticket::STATUS_IN_PROGRESS]);
             }
 
-            return $ticket->fresh(['site', 'assignee', 'replies.user']);
+            return $this->ticketRepository->findById($ticket->id, ['site', 'assignee', 'replies.user']);
         });
     }
 
     /**
-     * Get ticket statistics.
+     * {@inheritDoc}
      */
     public function getStats(): array
     {
-        return [
-            'total' => Ticket::count(),
-            'open' => Ticket::where('status', Ticket::STATUS_OPEN)->count(),
-            'in_progress' => Ticket::where('status', Ticket::STATUS_IN_PROGRESS)->count(),
-            'closed' => Ticket::where('status', Ticket::STATUS_CLOSED)->count(),
-        ];
+        return $this->ticketRepository->getStats();
     }
 
     /**

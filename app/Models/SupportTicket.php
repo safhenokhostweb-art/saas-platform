@@ -1,10 +1,16 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @deprecated PHASE 7.1 — Use SaaSPlatform\Modules\Tickets\Models\Ticket instead.
+ *             This model references the legacy support_tickets table. Migration to
+ *             the canonical tickets table is tracked in docs/phase-7.1/.
+ */
 class SupportTicket extends Model
 {
     use HasFactory, SoftDeletes;

@@ -1,117 +1,24 @@
 {
-  "module_name": "فرم‌ها و صفحات",
-  "module_slug": "forms",
-  "version": "1.0.1",
-  "last_updated": "2026-05-16 22:30:00",
-  "session_id": "session_001",
-  "completion_status": "in_progress",
-  "features": [
-    {
-      "id": "feat_f_001",
-      "title": "ساخت فرم (Drag & Drop)",
-      "category": "core",
-      "status": "active",
-      "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": true,
-      "implementation_details": "FormField با position + متد sortFields + SortableJS frontend"
-    },
-    {
-      "id": "feat_f_002",
-      "title": "انواع فیلدهای ورودی",
-      "category": "core",
-      "status": "active",
-      "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": true,
-      "implementation_details": "FormField model با type, label, name, is_required"
-    },
-    {
-      "id": "feat_f_003",
-      "title": "اعتبارسنجی هوشمند",
-      "category": "core",
-      "status": "active",
-      "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": true,
-      "implementation_details": "is_required در انواع + اعتبارسنجی frontend با preview"
-    },
-    {
-      "id": "feat_f_004",
-      "title": "ذخیره و مدیریت ارسال‌ها",
-      "category": "core",
-      "status": "active",
-      "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": true,
-      "implementation_details": "FormSubmission model + FormSubmissionController"
-    },
-    {
-      "id": "feat_f_005",
-      "title": "فرم‌های شرطی",
-      "category": "core",
-      "status": "active",
-      "priority": "medium",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
-    },
-    {
-      "id": "feat_f_006",
-      "title": "مدیریت صفحات (سیستم)",
-      "category": "core",
-      "status": "active",
-      "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": true,
-      "implementation_details": "Page model کامل + PageController CRUD + SortableJS"
-    },
-    {
-      "id": "feat_f_007",
-      "title": "گزارش‌گیری فرم",
-      "category": "utility",
-      "status": "active",
-      "priority": "low",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
-    },
-    {
-      "id": "feat_f_008",
-      "title": "API ارسال‌ها",
-      "category": "analytics",
-      "status": "active",
-      "priority": "medium",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
+    "module_name": "فرم‌ها و صفحات",
+    "module_slug": "forms",
+    "version": "1.0.1",
+    "last_updated": "2026-05-24 11:20:00",
+    "session_id": "session_001",
+    "completion_status": "canonicalized",
+    "canonical_source": "packages/saas-platform/modules/forms/config/module-manifest.php",
+    "canonical_config_key": "forms.module_manifest",
+    "note": "این فایل منسوخ شده است. منبع اصلی درون پکیج ماژول قرار دارد. برای دسترسی به متادیتا از config('module-manifest-forms') استفاده کنید.",
+    "features": [],
+    "upcoming_features": [],
+    "changelog": [
+        {
+            "date": "2026-05-24",
+            "version": "1.0.2",
+            "description": "منسوخ شدن forms.json - متادیتا به پکیج ماژول منتقل شد"
+        }
+    ],
+    "last_checkpoint": {
+        "step": "Phase 6.5B",
+        "message": "Canonical Package Authority Transition - module-features/forms.json canonicalized into package config/module-manifest.php"
     }
-  ],
-  "upcoming_features": [
-    {
-      "id": "upc_f_001",
-      "title": "اتصال به CRM"
-    }
-  ],
-  "changelog": [
-    {
-      "date": "2026-05-16",
-      "version": "1.0.0",
-      "description": "ایجاد فایل اولیه با 8 ویژگی"
-    },
-    {
-      "date": "2026-05-16",
-      "version": "1.0.1",
-      "description": "5 ویژگی پیاده‌سازی شد (ساخت, انواع, اعتبارسنجی, ارسال‌ها, صفحات)"
-    }
-  ],
-  "last_checkpoint": {
-    "step": "گام 3",
-    "message": "به‌روزرسانی forms.json"
-  }
 }

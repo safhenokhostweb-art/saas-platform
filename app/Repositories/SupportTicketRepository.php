@@ -1,4 +1,9 @@
 <?php
+
+/**
+ * @deprecated PHASE 7.1 — Use SaaSPlatform\Modules\Tickets\Repositories\TicketRepository (via TicketRepositoryInterface) instead.
+ */
+
 namespace App\Repositories;
 
 use App\Contracts\Repositories\SupportTicketRepositoryInterface;

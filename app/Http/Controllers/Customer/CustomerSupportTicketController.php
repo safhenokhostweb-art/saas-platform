@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * @deprecated PHASE 7.1 — Use SaaSPlatform\Modules\Tickets\Http\Controllers\Site\TicketPortalController
+ *             and TicketSubmissionController instead.
+ *             This controller operates on the legacy support_tickets table.
+ */
+
 namespace App\Http\Controllers\Customer;
 
 use App\Helpers\CustomerMenu;

@@ -1,3 +1,5 @@
+@extends(config('forms.layouts.site'))
+
 @php
     $pageTitle = trim((string) ($form->meta_title ?: $form->title));
     $pageDesc = trim((string) ($form->meta_description ?: ''));

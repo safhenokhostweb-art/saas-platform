@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(config('forms.layouts.admin'))
 
 @section('header', 'ایجاد فرم جدید')
 

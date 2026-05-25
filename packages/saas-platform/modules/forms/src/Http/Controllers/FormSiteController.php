@@ -12,7 +12,16 @@ class FormSiteController extends Controller
 {
     public function __construct(
         protected FormSiteServiceInterface $siteService
-    ) {}
+    ) {
+        // PHASE 6.95 — TASK 8: Gate site assignment routes to platform context only.
+        // customer-site (tenant) should never access site assignment.
+        $this->middleware(function ($request, $next) {
+            if (app(\SaaSPlatform\Modules\Forms\Services\PlatformContextService::class)->isTenantAdmin()) {
+                abort(403, 'دسترسی به این بخش فقط در پلتفرم مرکزی امکان‌پذیر است.');
+            }
+            return $next($request);
+        });
+    }
 
     public function edit(Form $form)
     {
@@ -32,3 +41,4 @@ class FormSiteController extends Controller
         return back()->with('success', $isActive ? 'فرم در این سایت فعال شد.' : 'فرم در این سایت غیرفعال شد.');
     }
 }
+

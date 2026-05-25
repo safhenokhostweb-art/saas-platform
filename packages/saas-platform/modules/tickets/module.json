@@ -1,11 +1,12 @@
 {
     "name": "Tickets Module",
     "module_slug": "tickets",
-    "version": "1.0.0",
+    "version": "1.1.0",
+    "schema_version": "1",
     "type": "core",
-    "description": "Shared ticket/support module for the SaaS Platform ecosystem. Provides ticket CRUD, status management, priority levels, replies, and tenant isolation.",
-    "namespace": "SaasPlatform\\Modules\\Tickets",
-    "provider": "SaasPlatform\\Modules\\Tickets\\Providers\\TicketsServiceProvider",
+    "description": "Canonical support ticket module for the SaaS Platform ecosystem. Provides full ticket lifecycle, status machine, SLA tracking, portal isolation, and tenant segregation.",
+    "namespace": "SaaSPlatform\\Modules\\Tickets",
+    "provider": "SaaSPlatform\\Modules\\Tickets\\Providers\\TicketsServiceProvider",
     "compatibility": {
         "php": "^8.1",
         "laravel": "^10.0",
@@ -16,18 +17,18 @@
         "packages": [],
         "modules": []
     },
+    "publish_tags": [
+        "tickets-config",
+        "tickets-views",
+        "tickets-migrations",
+        "tickets-manifest",
+        "tickets-assets"
+    ],
     "config": {
-        "ticket_statuses": [
-            "open",
-            "in_progress",
-            "closed"
-        ],
-        "ticket_priorities": [
-            "low",
-            "normal",
-            "high"
-        ],
-        "pagination": 20
+        "ticket_statuses": ["open", "in_progress", "closed"],
+        "ticket_priorities": ["low", "normal", "high"],
+        "pagination": 20,
+        "sla_enabled": false
     },
     "license": "MIT",
     "authors": [

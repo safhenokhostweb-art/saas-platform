@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(config('forms.layouts.admin'))
 
 @section('header', 'ویرایش فرم: ' . $form->title)
 
@@ -12,6 +12,7 @@
         </svg>
         پیش‌نمایش فرم نهایی
     </a>
+    @platform
     <a href="{{ route('admin.forms.sites.edit', $form) }}"
        class="border border-indigo-600 text-indigo-600 px-4 py-2 rounded-xl inline-flex items-center gap-2 text-sm hover:bg-indigo-50 transition">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -19,6 +20,7 @@
         </svg>
         اتصال به سایت‌ها
     </a>
+    @endplatform
 </div>
 
 @if(session('success'))

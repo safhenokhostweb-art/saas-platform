@@ -17,8 +17,6 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\InstallController;
 
-use App\Http\Controllers\Admin\FormController;
-use App\Http\Controllers\Admin\FormSiteController;
 use App\Http\Controllers\Admin\ProfileFieldController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\SiteController;
@@ -39,7 +37,6 @@ use App\Http\Controllers\Admin\CaptchaController;
 use App\Http\Controllers\Admin\ModuleLabelController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Admin\FormSubmissionController;
 use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\GuideSearchController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
@@ -55,6 +52,9 @@ use App\Http\Controllers\PageController;
 
 use App\Http\Middleware\EnsureProfileIsComplete;
 use SaaSPlatform\Modules\Forms\Http\Controllers\FormFrontendController;
+use SaaSPlatform\Modules\Forms\Http\Controllers\FormController;
+use SaaSPlatform\Modules\Forms\Http\Controllers\FormSiteController;
+use SaaSPlatform\Modules\Forms\Http\Controllers\FormSubmissionController;
 use App\Http\Controllers\Customer\CustomerFormController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CheckoutController;
@@ -272,46 +272,6 @@ Route::prefix('admin')
         Route::post('licenses/{platform_license}/reactivate', [PlatformLicenseController::class, 'reactivate'])->name('licenses.reactivate');
         Route::delete('licenses/{platform_license}', [PlatformLicenseController::class, 'destroy'])->name('licenses.destroy');
         Route::get('updates', [UpdateDashboardController::class, 'index'])->name('updates.index');
-
-        /*
-        |--------------------------------------------------------------------------
-        | مدیریت فرم‌ها
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('forms/submissions', [FormSubmissionController::class, 'index'])->name('forms.submissions.index');
-        Route::get('forms/submissions/export', [FormSubmissionController::class, 'export'])->name('forms.submissions.export');
-        Route::post('forms/submissions/column-order', [FormSubmissionController::class, 'updateColumnOrder'])->name('forms.submissions.column-order');
-
-        Route::resource('forms', FormController::class);
-
-        Route::get('forms/{form}/preview', [FormController::class, 'preview'])
-            ->name('forms.preview');
-
-        // افزودن فیلد به فرم
-        Route::post('forms/{form}/fields', [FormController::class, 'storeField'])
-            ->name('forms.fields.store');
-
-        // حذف فیلد
-        Route::delete('forms/fields/{field}', [FormController::class, 'destroyField'])
-            ->name('forms.fields.destroy');
-
-        // فعال / غیرفعال کردن فیلد
-        Route::patch('forms/fields/{field}/toggle', [FormController::class, 'toggleField'])
-            ->name('forms.fields.toggle');
-
-        // مرتب‌سازی فیلدها (Drag & Drop)
-        Route::post('forms/{form}/fields/reorder', [FormController::class, 'sortFields'])
-            ->name('forms.fields.reorder');
-
-        // اتصال فرم به سایت‌ها و فعال/غیرفعال
-        Route::get('forms/{form}/sites', [FormSiteController::class, 'edit'])
-            ->name('forms.sites.edit');
-        Route::put('forms/{form}/sites', [FormSiteController::class, 'update'])
-            ->name('forms.sites.update');
-        Route::patch('forms/{form}/sites/{site}/toggle', [FormSiteController::class, 'toggleSite'])
-            ->name('forms.sites.toggle');
-
 
         /*
         |--------------------------------------------------------------------------

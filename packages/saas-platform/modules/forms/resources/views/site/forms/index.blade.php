@@ -1,4 +1,4 @@
-@extends('themes.default.layout')
+@extends(config('forms.layouts.site'))
 @section('title', 'فرم‌های ارتباطی و درخواست')
 @section('meta_description', 'فهرست فرم‌های فعال سایت برای ارسال درخواست، پیشنهاد و اطلاعات.')
 @section('breadcrumb')

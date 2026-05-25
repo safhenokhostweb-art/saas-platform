@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * @deprecated PHASE 7.1 — Use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketController instead.
+ *             This controller operates on the legacy support_tickets table and App\Models\SupportTicket.
+ */
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;

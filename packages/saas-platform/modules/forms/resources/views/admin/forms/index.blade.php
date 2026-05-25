@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(config('forms.layouts.admin'))
 
 @section('header', 'فرم‌ها')
 
@@ -16,8 +16,16 @@
     </a>
 </div>
 
-<x-module-features module="forms" />
-
+@platformfeature('forms')
+    <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 mb-6">
+        <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0 text-indigo-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17l-5.25-5.25a1.5 1.5 0 010-2.12l5.25-5.25a1.5 1.5 0 012.12 0l5.25 5.25a1.5 1.5 0 010 2.12l-5.25 5.25a1.5 1.5 0 01-2.12 0z"/>
+            </svg>
+            <span class="text-sm text-indigo-700">ماژول فرم‌ها فعال است</span>
+        </div>
+    </div>
+@endplatformfeature
 @if($forms->count())
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($forms as $form)
@@ -51,6 +59,7 @@
                         </svg>
                         پیش‌نمایش
                     </a>
+                    @platform
                     <a href="{{ route('admin.forms.sites.edit', $form) }}"
                        class="text-indigo-600 text-sm hover:underline inline-flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -58,6 +67,7 @@
                         </svg>
                         سایت‌ها
                     </a>
+                    @endplatform
                 </div>
 
                 <form method="POST" action="{{ route('admin.forms.destroy', $form) }}" class="mt-3"

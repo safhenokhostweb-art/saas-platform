@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(config('forms.layouts.admin'))
 
 @section('header', 'پیش‌نمایش فرم: ' . $form->title)
 
@@ -93,12 +93,14 @@
 
     <p class="mt-4 text-center">
         <a href="{{ route('admin.forms.edit', $form) }}" class="text-indigo-600 hover:underline">بازگشت به ویرایش فرم</a>
+        @platform
         <span class="mx-2">|</span>
         <a href="{{ route('admin.forms.sites.edit', $form) }}" class="text-indigo-600 hover:underline">اتصال به سایت‌ها</a>
         @if(isset($firstSite))
             <span class="mx-2">|</span>
             <a href="{{ route('site.forms.show_for_site', [$firstSite, $form->slug]) }}" class="text-indigo-600 hover:underline" target="_blank">مشاهده در سایت (با کپچا)</a>
         @endif
+        @endplatform
     </p>
 </div>
 

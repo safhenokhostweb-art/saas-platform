@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\saas-platform\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(php artisan *)",
+      "PowerShell($paths = @\\(\"C:\\\\php\\\\php.exe\",\"C:\\\\php8\\\\php.exe\",\"C:\\\\xampp\\\\php\\\\php.exe\",\"C:\\\\wamp64\\\\bin\\\\php\\\\php8.4.0\\\\php.exe\"\\); foreach\\($p in $paths\\){ if\\(Test-Path $p\\){ $p; break } })",
+      "PowerShell($drives = @\\(\"C\",\"D\"\\); foreach\\($d in $drives\\){ $p = \"${d}:\\\\laragon\"; if\\(Test-Path $p\\){ Get-ChildItem $p | Select-Object Name; break } })"
+    ]
+  }
+}
