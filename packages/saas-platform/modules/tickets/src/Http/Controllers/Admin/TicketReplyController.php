@@ -8,12 +8,14 @@ use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterfac
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketReplyRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 /**
  * PHASE 7.1 — TASK 3: Admin Ticket Reply Controller (canonical)
  */
 class TicketReplyController extends Controller
 {
+    use AuthorizesRequests;
     public function __construct(
         protected TicketServiceInterface    $ticketService,
         protected TicketRepositoryInterface $ticketRepository,

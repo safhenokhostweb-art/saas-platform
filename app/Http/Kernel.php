@@ -18,6 +18,8 @@ class Kernel extends HttpKernel
 
     protected $middlewareGroups = [
         'web' => [
+            // PHASE 8.3 — Correlation IDs must be injected before any other middleware reads them
+            \App\Http\Middleware\CorrelationIdMiddleware::class,
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,

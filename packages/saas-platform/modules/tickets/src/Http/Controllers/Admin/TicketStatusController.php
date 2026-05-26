@@ -3,10 +3,12 @@
 namespace SaaSPlatform\Modules\Tickets\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // ← این خط
 use SaaSPlatform\CoreUtils\Contracts\Services\AuthUserResolverInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\UpdateTicketStatusRequest;
 use SaaSPlatform\Modules\Tickets\Services\TicketLifecycleService;
+
 
 /**
  * PHASE 7.1 — TASK 3: Admin Ticket Status Controller (canonical)
@@ -15,6 +17,8 @@ use SaaSPlatform\Modules\Tickets\Services\TicketLifecycleService;
  */
 class TicketStatusController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         protected TicketRepositoryInterface $ticketRepository,
         protected TicketLifecycleService    $lifecycleService,

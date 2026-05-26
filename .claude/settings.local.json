@@ -6,7 +6,16 @@
       "Bash(Sort-Object)",
       "Bash(php artisan *)",
       "PowerShell($paths = @\\(\"C:\\\\php\\\\php.exe\",\"C:\\\\php8\\\\php.exe\",\"C:\\\\xampp\\\\php\\\\php.exe\",\"C:\\\\wamp64\\\\bin\\\\php\\\\php8.4.0\\\\php.exe\"\\); foreach\\($p in $paths\\){ if\\(Test-Path $p\\){ $p; break } })",
-      "PowerShell($drives = @\\(\"C\",\"D\"\\); foreach\\($d in $drives\\){ $p = \"${d}:\\\\laragon\"; if\\(Test-Path $p\\){ Get-ChildItem $p | Select-Object Name; break } })"
+      "PowerShell($drives = @\\(\"C\",\"D\"\\); foreach\\($d in $drives\\){ $p = \"${d}:\\\\laragon\"; if\\(Test-Path $p\\){ Get-ChildItem $p | Select-Object Name; break } })",
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\saas-platform\\\\resources\\\\views\" -Recurse -Directory)",
+      "PowerShell(if \\(-not \\(Test-Path \"c:\\\\laragon\\\\www\\\\saas-platform\\\\docs\\\\phase-7.25\"\\)\\) { New-Item -ItemType Directory -Path \"c:\\\\laragon\\\\www\\\\saas-platform\\\\docs\\\\phase-7.25\" | Out-Null }; Write-Host \"ready\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\laragon\\\\www\\\\saas-platform\" -Force)",
+      "Bash(Select-Object -Property Name, FullName)",
+      "Bash(grep -n \"App\\\\\\\\\\\\\\\\\")",
+      "Bash(grep -rn \"App\\\\\\\\\\\\\\\\\" c:/laragon/www/saas-platform/packages/saas-platform/modules/tickets/src/)",
+      "Bash(grep \"use App\\\\\\\\\\\\\\\\\")",
+      "Bash(grep -rn \"use Illuminate\\\\\\\\\\\\\\\\Support\\\\\\\\\\\\\\\\Facades\" packages/ --include=\"*.php\")",
+      "Bash(grep -rn \"App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\\\\\|App\\\\\\\\\\\\\\\\Services\\\\\\\\\\\\\\\\\\\\|App\\\\\\\\\\\\\\\\Helpers\\\\\\\\\\\\\\\\\" packages/ --include=\"*.php\")"
     ]
   }
 }

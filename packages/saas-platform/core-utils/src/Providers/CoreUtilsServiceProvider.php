@@ -57,6 +57,185 @@ use SaaSPlatform\CoreUtils\Services\Rollback\RollbackCoordinator;
 use SaaSPlatform\CoreUtils\Services\Rollback\ReleaseRollbackValidator;
 use SaaSPlatform\CoreUtils\Services\Rollback\FailedDeploymentRecoveryService;
 use SaaSPlatform\CoreUtils\Services\DeploymentGovernanceValidationService;
+// Phase 8.3 — Telemetry
+use SaaSPlatform\CoreUtils\Telemetry\TelemetryContext;
+use SaaSPlatform\CoreUtils\Telemetry\TelemetrySanitizer;
+use SaaSPlatform\CoreUtils\Telemetry\TelemetryPayloadFactory;
+use SaaSPlatform\CoreUtils\Telemetry\TelemetryEventBus;
+use SaaSPlatform\CoreUtils\Telemetry\TelemetryStorageManager;
+use SaaSPlatform\CoreUtils\Telemetry\TelemetryManager;
+use SaaSPlatform\CoreUtils\Telemetry\ObservabilityGovernanceValidationService;
+use SaaSPlatform\CoreUtils\Telemetry\Tracing\RequestTraceManager;
+use SaaSPlatform\CoreUtils\Telemetry\Tracing\TraceContextResolver;
+use SaaSPlatform\CoreUtils\Telemetry\Tracing\RuntimeRequestProfiler;
+use SaaSPlatform\CoreUtils\Telemetry\Logging\StructuredLogger;
+use SaaSPlatform\CoreUtils\Telemetry\Logging\TenantAwareLogChannel;
+use SaaSPlatform\CoreUtils\Telemetry\Logging\RuntimeDiagnosticLogger;
+use SaaSPlatform\CoreUtils\Telemetry\Logging\SecurityEventLogger;
+use SaaSPlatform\CoreUtils\Telemetry\Logging\DeploymentEventLogger;
+use SaaSPlatform\CoreUtils\Telemetry\Anomaly\QueueAnomalyDetector;
+use SaaSPlatform\CoreUtils\Telemetry\Anomaly\TenantIsolationAnomalyDetector;
+use SaaSPlatform\CoreUtils\Telemetry\Anomaly\DeploymentFailureDetector;
+use SaaSPlatform\CoreUtils\Telemetry\Anomaly\SecurityAnomalyDetector;
+use SaaSPlatform\CoreUtils\Telemetry\Anomaly\RuntimeAnomalyEngine;
+use SaaSPlatform\CoreUtils\Telemetry\Queue\QueueTelemetryService;
+use SaaSPlatform\CoreUtils\Telemetry\Queue\WorkerHealthTracker;
+use SaaSPlatform\CoreUtils\Telemetry\Queue\FailedJobDiagnosticsService;
+use SaaSPlatform\CoreUtils\Telemetry\Queue\QueuePerformanceAnalyzer;
+use SaaSPlatform\CoreUtils\Telemetry\Deployment\ReleaseAnalyticsService;
+use SaaSPlatform\CoreUtils\Telemetry\Deployment\DeploymentDiagnosticsService;
+use SaaSPlatform\CoreUtils\Telemetry\Deployment\ReleaseFailureIntelligence;
+use SaaSPlatform\CoreUtils\Telemetry\Deployment\RollbackImpactAnalyzer;
+use SaaSPlatform\CoreUtils\Telemetry\Tenant\TenantRuntimeMetrics;
+use SaaSPlatform\CoreUtils\Telemetry\Tenant\TenantIncidentTracker;
+use SaaSPlatform\CoreUtils\Telemetry\Tenant\TenantUsageTelemetry;
+use SaaSPlatform\CoreUtils\Telemetry\Tenant\TenantObservabilityService;
+use SaaSPlatform\CoreUtils\Telemetry\Security\AuthFailureTelemetry;
+use SaaSPlatform\CoreUtils\Telemetry\Security\TenantBoundaryViolationTelemetry;
+use SaaSPlatform\CoreUtils\Telemetry\Security\SensitiveOperationAuditStream;
+use SaaSPlatform\CoreUtils\Telemetry\Security\SecurityTelemetryService;
+use SaaSPlatform\CoreUtils\Telemetry\Metrics\RuntimeMetricsRepository;
+use SaaSPlatform\CoreUtils\Telemetry\Metrics\DeploymentMetricsRepository;
+use SaaSPlatform\CoreUtils\Telemetry\Metrics\QueueMetricsRepository;
+use SaaSPlatform\CoreUtils\Telemetry\Metrics\TenantMetricsRepository;
+use SaaSPlatform\CoreUtils\Telemetry\Metrics\OperationalMetricsAggregator;
+use SaaSPlatform\CoreUtils\Telemetry\Incident\RuntimeTimelineBuilder;
+use SaaSPlatform\CoreUtils\Telemetry\Incident\TraceReplayService;
+use SaaSPlatform\CoreUtils\Telemetry\Incident\IncidentReconstructionService;
+// Phase 8.3 — Commands
+use SaaSPlatform\CoreUtils\Console\Commands\Telemetry\QueueTelemetryCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Telemetry\QueueDiagnosticsCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Telemetry\ValidateObservabilityCommand;
+// Phase 8.4 — Runtime Governance core
+use SaaSPlatform\CoreUtils\RuntimeGovernance\GovernanceContext;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\GovernancePolicyRegistry;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\RuntimeDecisionEngine;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\RuntimeStateCoordinator;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\GovernanceExecutionPipeline;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\RuntimeGovernanceKernel;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\GovernanceRuntimeValidationService;
+// Phase 8.4 — SelfHealing
+use SaaSPlatform\CoreUtils\RuntimeGovernance\SelfHealing\FailureClassificationEngine;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\SelfHealing\RecoveryExecutionLog;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\SelfHealing\RecoveryStrategyManager;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\SelfHealing\RuntimeRecoveryCoordinator;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\SelfHealing\SelfHealingEngine;
+// Phase 8.4 — CircuitBreaker
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CircuitBreaker\CircuitHealthTracker;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CircuitBreaker\CircuitBreakerManager;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CircuitBreaker\TenantCircuitRegistry;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CircuitBreaker\ModuleCircuitRegistry;
+// Phase 8.4 — Throttle
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Throttle\TenantLoadGovernor;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Throttle\QueuePressureController;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Throttle\RuntimeThrottleManager;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Throttle\RequestRateRegulator;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Throttle\RuntimeBackpressureCoordinator;
+// Phase 8.4 — Degradation
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Degradation\TenantDegradationManager;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Degradation\TenantIsolationPolicy;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Degradation\RuntimeFeatureDegrader;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Degradation\TenantProtectionCoordinator;
+// Phase 8.4 — CascadeProtection
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CascadeProtection\DependencyImpactGraph;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CascadeProtection\RuntimeBlastRadiusAnalyzer;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CascadeProtection\FailureContainmentCoordinator;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\CascadeProtection\CascadingFailureDetector;
+// Phase 8.4 — Queue governance
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Queue\QueueStallDetector;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Queue\WorkerCrashAnalyzer;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Queue\DeadLetterGovernanceService;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Queue\QueueRuntimeBalancer;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Queue\QueueAutoRecoveryManager;
+// Phase 8.4 — Policy
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Policy\PolicyConditionEvaluator;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Policy\GovernanceRuleCompiler;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Policy\RuntimePolicyExecutor;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Policy\RuntimePolicyEngine;
+// Phase 8.4 — Incident
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Incident\IncidentSeverityClassifier;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Incident\RuntimeIncidentTimeline;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Incident\AutomatedMitigationExecutor;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Incident\IncidentResolutionTracker;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Incident\IncidentResponseCoordinator;
+// Phase 8.4 — Governance Metrics
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Metrics\RuntimeGovernanceSnapshot;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Metrics\RuntimeGovernanceMetrics;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Metrics\GovernanceStatusAggregator;
+use SaaSPlatform\CoreUtils\RuntimeGovernance\Metrics\RuntimeStabilityIndexCalculator;
+// Phase 8.4 — Commands
+use SaaSPlatform\CoreUtils\Console\Commands\Governance\ValidateRuntimeCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Governance\RuntimeStatusCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Governance\SimulateFailureCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Governance\TestRecoveryCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Governance\ListPoliciesCommand;
+// Phase 8.5 — Runtime Isolation
+use SaaSPlatform\CoreUtils\RuntimeIsolation\TenantCapacityProfile;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\TenantQuotaManager;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\TenantRuntimeBudget;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\TenantConsumptionTracker;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\TenantResourceGovernor;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\RuntimeIsolationCoordinator;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\EnforcementResult;
+// Phase 8.5 — Noisy Neighbor
+use SaaSPlatform\CoreUtils\RuntimeIsolation\NoisyNeighbor\TenantPressureAnalyzer;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\NoisyNeighbor\NoisyNeighborDetector;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\NoisyNeighbor\TenantPenaltyEngine;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\NoisyNeighbor\AdaptiveTenantThrottler;
+use SaaSPlatform\CoreUtils\RuntimeIsolation\NoisyNeighbor\RuntimeFairnessCoordinator;
+// Phase 8.5 — Distributed Queue
+use SaaSPlatform\CoreUtils\DistributedQueue\QueuePartitionRegistry;
+use SaaSPlatform\CoreUtils\DistributedQueue\TenantQueueAffinityResolver;
+use SaaSPlatform\CoreUtils\DistributedQueue\QueueShardManager;
+use SaaSPlatform\CoreUtils\DistributedQueue\RuntimeQueueBalancer;
+use SaaSPlatform\CoreUtils\DistributedQueue\DistributedQueueCoordinator;
+// Phase 8.5 — Capacity Governance
+use SaaSPlatform\CoreUtils\CapacityGovernance\CapacityThresholdManager;
+use SaaSPlatform\CoreUtils\CapacityGovernance\CapacityForecastEngine;
+use SaaSPlatform\CoreUtils\CapacityGovernance\RuntimePressurePredictor;
+use SaaSPlatform\CoreUtils\CapacityGovernance\RuntimeScalingAdvisor;
+use SaaSPlatform\CoreUtils\CapacityGovernance\RuntimeCapacityPlanner;
+// Phase 8.5 — Node Coordination
+use SaaSPlatform\CoreUtils\NodeCoordination\NodeRegistry;
+use SaaSPlatform\CoreUtils\NodeCoordination\NodeHealthSnapshot;
+use SaaSPlatform\CoreUtils\NodeCoordination\NodeCapacityTracker;
+use SaaSPlatform\CoreUtils\NodeCoordination\DistributedRuntimeMap;
+use SaaSPlatform\CoreUtils\NodeCoordination\RuntimeNodeCoordinator;
+// Phase 8.5 — Cache Governance
+use SaaSPlatform\CoreUtils\CacheGovernance\TenantCacheNamespaceManager;
+use SaaSPlatform\CoreUtils\CacheGovernance\RuntimeCachePartitioner;
+use SaaSPlatform\CoreUtils\CacheGovernance\TenantCachePressureMonitor;
+use SaaSPlatform\CoreUtils\CacheGovernance\CacheEvictionCoordinator;
+use SaaSPlatform\CoreUtils\CacheGovernance\DistributedCacheIsolation;
+// Phase 8.5 — Storage Governance
+use SaaSPlatform\CoreUtils\StorageGovernance\RuntimeStorageQuotaService;
+use SaaSPlatform\CoreUtils\StorageGovernance\AttachmentAccessTelemetry;
+use SaaSPlatform\CoreUtils\StorageGovernance\AttachmentIsolationManager;
+use SaaSPlatform\CoreUtils\StorageGovernance\StoragePressureAnalyzer;
+use SaaSPlatform\CoreUtils\StorageGovernance\TenantStorageGovernor;
+// Phase 8.5 — Runtime Scheduling
+use SaaSPlatform\CoreUtils\RuntimeScheduling\RuntimeWorkloadClassifier;
+use SaaSPlatform\CoreUtils\RuntimeScheduling\TenantPriorityScheduler;
+use SaaSPlatform\CoreUtils\RuntimeScheduling\DeferredExecutionCoordinator;
+use SaaSPlatform\CoreUtils\RuntimeScheduling\GovernanceAwareDispatcher;
+use SaaSPlatform\CoreUtils\RuntimeScheduling\RuntimeScheduler;
+// Phase 8.5 — Scalability
+use SaaSPlatform\CoreUtils\Scalability\TenantStressSimulator;
+use SaaSPlatform\CoreUtils\Scalability\QueuePressureSimulator;
+use SaaSPlatform\CoreUtils\Scalability\RuntimeLoadSimulationEngine;
+use SaaSPlatform\CoreUtils\Scalability\CapacityValidationReport;
+use SaaSPlatform\CoreUtils\Scalability\ScalabilityValidationService;
+// Phase 8.5 — Scalability Metrics
+use SaaSPlatform\CoreUtils\Scalability\Metrics\RuntimeCapacitySnapshot;
+use SaaSPlatform\CoreUtils\Scalability\Metrics\TenantIsolationMetrics;
+use SaaSPlatform\CoreUtils\Scalability\Metrics\DistributedRuntimeMetrics;
+use SaaSPlatform\CoreUtils\Scalability\Metrics\QueueScalabilityMetrics;
+use SaaSPlatform\CoreUtils\Scalability\Metrics\ResourcePressureIndex;
+// Phase 8.5 — Commands
+use SaaSPlatform\CoreUtils\Console\Commands\Scalability\ValidateScalabilityCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Scalability\SimulateLoadCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Scalability\TestIsolationCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Scalability\ForecastCapacityCommand;
 // Phase 8.2 — Commands
 use SaaSPlatform\CoreUtils\Console\Commands\Deployment\DeploymentLockCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Deployment\DeploymentUnlockCommand;
@@ -160,6 +339,141 @@ class CoreUtilsServiceProvider extends ServiceProvider
         $this->app->singleton(FailedDeploymentRecoveryService::class);
         $this->app->singleton(DeploymentGovernanceValidationService::class);
 
+        // PHASE 8.3 — Telemetry core (order matters: Context → Sanitizer → Factory → Bus → Storage → Manager)
+        $this->app->singleton(TelemetryContext::class);
+        $this->app->singleton(TelemetrySanitizer::class);
+        $this->app->singleton(TelemetryEventBus::class);
+        $this->app->singleton(TelemetryStorageManager::class);
+        $this->app->singleton(TelemetryPayloadFactory::class);
+        $this->app->singleton(TelemetryManager::class);
+
+        // PHASE 8.3 — Tracing
+        $this->app->singleton(RequestTraceManager::class);
+        $this->app->singleton(TraceContextResolver::class);
+        $this->app->singleton(RuntimeRequestProfiler::class);
+
+        // PHASE 8.3 — Logging
+        $this->app->singleton(StructuredLogger::class);
+        $this->app->singleton(TenantAwareLogChannel::class);
+        $this->app->singleton(RuntimeDiagnosticLogger::class);
+        $this->app->singleton(SecurityEventLogger::class);
+        $this->app->singleton(DeploymentEventLogger::class);
+
+        // PHASE 8.3 — Anomaly detectors (leaf classes first, then engine)
+        $this->app->singleton(QueueAnomalyDetector::class);
+        $this->app->singleton(TenantIsolationAnomalyDetector::class);
+        $this->app->singleton(DeploymentFailureDetector::class);
+        $this->app->singleton(SecurityAnomalyDetector::class);
+        $this->app->singleton(RuntimeAnomalyEngine::class);
+
+        // PHASE 8.3 — Queue observability
+        $this->app->singleton(QueueTelemetryService::class);
+        $this->app->singleton(WorkerHealthTracker::class);
+        $this->app->singleton(FailedJobDiagnosticsService::class);
+        $this->app->singleton(QueuePerformanceAnalyzer::class);
+
+        // PHASE 8.3 — Deployment analytics
+        $this->app->singleton(ReleaseAnalyticsService::class);
+        $this->app->singleton(DeploymentDiagnosticsService::class);
+        $this->app->singleton(ReleaseFailureIntelligence::class);
+        $this->app->singleton(RollbackImpactAnalyzer::class);
+
+        // PHASE 8.3 — Tenant observability (leaf classes first)
+        $this->app->singleton(TenantRuntimeMetrics::class);
+        $this->app->singleton(TenantIncidentTracker::class);
+        $this->app->singleton(TenantUsageTelemetry::class);
+        $this->app->singleton(TenantObservabilityService::class);
+
+        // PHASE 8.3 — Security telemetry (leaf classes first)
+        $this->app->singleton(AuthFailureTelemetry::class);
+        $this->app->singleton(TenantBoundaryViolationTelemetry::class);
+        $this->app->singleton(SensitiveOperationAuditStream::class);
+        $this->app->singleton(SecurityTelemetryService::class);
+
+        // PHASE 8.3 — Metrics repositories
+        $this->app->singleton(RuntimeMetricsRepository::class);
+        $this->app->singleton(DeploymentMetricsRepository::class);
+        $this->app->singleton(QueueMetricsRepository::class);
+        $this->app->singleton(TenantMetricsRepository::class);
+        $this->app->singleton(OperationalMetricsAggregator::class);
+
+        // PHASE 8.3 — Incident reconstruction
+        $this->app->singleton(RuntimeTimelineBuilder::class);
+        $this->app->singleton(TraceReplayService::class);
+        $this->app->singleton(IncidentReconstructionService::class);
+
+        // PHASE 8.3 — Validation
+        $this->app->singleton(ObservabilityGovernanceValidationService::class);
+
+        // PHASE 8.4 — Runtime Governance core
+        $this->app->singleton(GovernanceContext::class);
+        $this->app->singleton(GovernancePolicyRegistry::class);
+        $this->app->singleton(RuntimeDecisionEngine::class);
+        $this->app->singleton(RuntimeStateCoordinator::class);
+        $this->app->singleton(GovernanceExecutionPipeline::class);
+        $this->app->singleton(RuntimeGovernanceKernel::class);
+
+        // PHASE 8.4 — SelfHealing
+        $this->app->singleton(FailureClassificationEngine::class);
+        $this->app->singleton(RecoveryExecutionLog::class);
+        $this->app->singleton(RecoveryStrategyManager::class);
+        $this->app->singleton(RuntimeRecoveryCoordinator::class);
+        $this->app->singleton(SelfHealingEngine::class);
+
+        // PHASE 8.4 — CircuitBreaker
+        $this->app->singleton(CircuitHealthTracker::class);
+        $this->app->singleton(CircuitBreakerManager::class);
+        $this->app->singleton(TenantCircuitRegistry::class);
+        $this->app->singleton(ModuleCircuitRegistry::class);
+
+        // PHASE 8.4 — Throttle
+        $this->app->singleton(TenantLoadGovernor::class);
+        $this->app->singleton(QueuePressureController::class);
+        $this->app->singleton(RuntimeThrottleManager::class);
+        $this->app->singleton(RequestRateRegulator::class);
+        $this->app->singleton(RuntimeBackpressureCoordinator::class);
+
+        // PHASE 8.4 — Degradation
+        $this->app->singleton(TenantDegradationManager::class);
+        $this->app->singleton(TenantIsolationPolicy::class);
+        $this->app->singleton(RuntimeFeatureDegrader::class);
+        $this->app->singleton(TenantProtectionCoordinator::class);
+
+        // PHASE 8.4 — CascadeProtection
+        $this->app->singleton(DependencyImpactGraph::class);
+        $this->app->singleton(RuntimeBlastRadiusAnalyzer::class);
+        $this->app->singleton(FailureContainmentCoordinator::class);
+        $this->app->singleton(CascadingFailureDetector::class);
+
+        // PHASE 8.4 — Queue governance
+        $this->app->singleton(QueueStallDetector::class);
+        $this->app->singleton(WorkerCrashAnalyzer::class);
+        $this->app->singleton(DeadLetterGovernanceService::class);
+        $this->app->singleton(QueueRuntimeBalancer::class);
+        $this->app->singleton(QueueAutoRecoveryManager::class);
+
+        // PHASE 8.4 — Policy
+        $this->app->singleton(PolicyConditionEvaluator::class);
+        $this->app->singleton(GovernanceRuleCompiler::class);
+        $this->app->singleton(RuntimePolicyExecutor::class);
+        $this->app->singleton(RuntimePolicyEngine::class);
+
+        // PHASE 8.4 — Incident
+        $this->app->singleton(IncidentSeverityClassifier::class);
+        $this->app->singleton(RuntimeIncidentTimeline::class);
+        $this->app->singleton(AutomatedMitigationExecutor::class);
+        $this->app->singleton(IncidentResolutionTracker::class);
+        $this->app->singleton(IncidentResponseCoordinator::class);
+
+        // PHASE 8.4 — Governance Metrics
+        $this->app->singleton(RuntimeGovernanceSnapshot::class);
+        $this->app->singleton(RuntimeGovernanceMetrics::class);
+        $this->app->singleton(GovernanceStatusAggregator::class);
+        $this->app->singleton(RuntimeStabilityIndexCalculator::class);
+
+        // PHASE 8.4 — Validation
+        $this->app->singleton(GovernanceRuntimeValidationService::class);
+
         // PHASE 6.98 — TASK 6: Register ModuleUpdateOrchestrator
         $this->app->singleton(ModuleUpdateOrchestrator::class);
 
@@ -237,6 +551,16 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 QueueValidateRuntimeCommand::class,
                 QueueDrainSafeCommand::class,
                 PlatformHealthCommand::class,
+                // PHASE 8.3 — Telemetry & observability commands
+                QueueTelemetryCommand::class,
+                QueueDiagnosticsCommand::class,
+                ValidateObservabilityCommand::class,
+                // PHASE 8.4 — Governance commands
+                ValidateRuntimeCommand::class,
+                RuntimeStatusCommand::class,
+                SimulateFailureCommand::class,
+                TestRecoveryCommand::class,
+                ListPoliciesCommand::class,
             ]);
         }
 

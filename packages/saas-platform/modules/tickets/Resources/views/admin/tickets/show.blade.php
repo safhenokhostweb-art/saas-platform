@@ -34,13 +34,15 @@
                 </div>
                 <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{{ $ticket->description }}</p>
 
-                @if($ticket->attachments)
+                @if($ticket->attachments && is_array($ticket->attachments))
                 <div class="mt-3 flex flex-wrap gap-2">
                     @foreach($ticket->attachments as $file)
-                    <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
-                       class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
-                        📎 {{ $file['name'] }}
-                    </a>
+                        @if(isset($file['path']) && isset($file['name']))
+                        <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
+                           class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                            📎 {{ $file['name'] }}
+                        </a>
+                        @endif
                     @endforeach
                 </div>
                 @endif

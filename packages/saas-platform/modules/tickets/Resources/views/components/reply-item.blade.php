@@ -22,14 +22,16 @@
     </div>
     <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{{ $reply->message }}</p>
 
-    @if(!empty($reply->attachments))
-    <div class="mt-2 flex flex-wrap gap-2">
-        @foreach($reply->attachments as $file)
+    @if(!empty($reply->attachments) && is_array($reply->attachments))
+<div class="mt-2 flex flex-wrap gap-2">
+    @foreach($reply->attachments as $file)
+        @if(isset($file['path']) && isset($file['name']))
         <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
            class="text-xs bg-white text-gray-600 border border-gray-200 px-2 py-1 rounded-full hover:bg-gray-50 transition">
             📎 {{ $file['name'] }}
         </a>
-        @endforeach
-    </div>
-    @endif
+        @endif
+    @endforeach
+</div>
+@endif
 </div>

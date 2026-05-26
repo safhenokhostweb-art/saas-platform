@@ -15,6 +15,7 @@ use SaaSPlatform\Modules\Tickets\Models\TicketReply;
 use SaaSPlatform\Modules\Tickets\Events\TicketCreated;
 use SaaSPlatform\Modules\Tickets\Events\TicketReplied;
 use SaaSPlatform\Modules\Tickets\Events\TicketStatusChanged;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\UploadedFile;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -236,7 +237,13 @@ class TicketService implements TicketServiceInterface
         $sitePrefix    = $siteId ? "site-{$siteId}/" : 'unscoped/';
 
         foreach ($files as $file) {
-            if (!$file instanceof UploadedFile || !$file->isValid()) {
+            // Skip invalid or missing files
+            if (!$file instanceof UploadedFile || !$file->isValid() || $file->getSize() === 0) {
+                continue;
+            }
+
+            // Verify file actually exists
+            if (!$file->getRealPath() || !file_exists($file->getRealPath())) {
                 continue;
             }
 
@@ -257,16 +264,14 @@ class TicketService implements TicketServiceInterface
             }
 
             // Store in private disk — NOT publicly accessible
-            $storagePath = 'ticket-attachments/' . $sitePrefix . now()->format('Y/m') . '/' . $name;
-            $file->storeAs(
-                'ticket-attachments/' . $sitePrefix . now()->format('Y/m'),
-                $name,
-                'private'
-            );
+            $path = $file->store('ticket-attachments/' . $sitePrefix . now()->format('Y/m'), 'private');
+            if (!$path) {
+                continue;
+            }
 
             $uploadedFiles[] = [
                 'name' => $originalName,
-                'path' => $storagePath,
+                'path' => $path,
                 'size' => $file->getSize(),
                 'mime' => $mime,
                 'disk' => 'private',
