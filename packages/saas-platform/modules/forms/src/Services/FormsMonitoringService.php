@@ -105,10 +105,10 @@ class FormsMonitoringService
             'reason' => $reason,
             'context' => $context,
             'timestamp' => now()->toIso8601String(),
-            'ip' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'url' => request()->fullUrl(),
-            'method' => request()->method(),
+            'ip' => app()->runningInConsole() ? null : request()?->ip(),
+            'user_agent' => app()->runningInConsole() ? null : request()?->userAgent(),
+            'url' => app()->runningInConsole() ? null : request()?->fullUrl(),
+            'method' => app()->runningInConsole() ? null : request()?->method(),
         ], $metadata);
 
         Log::warning('forms.entitlement.denied', $entry);
@@ -232,8 +232,8 @@ class FormsMonitoringService
             'reason' => $reason,
             'context' => $context,
             'timestamp' => now()->toIso8601String(),
-            'url' => request()->fullUrl(),
-            'method' => request()->method(),
+            'url' => app()->runningInConsole() ? null : request()?->fullUrl(),
+            'method' => app()->runningInConsole() ? null : request()?->method(),
         ];
 
         if ($granted) {

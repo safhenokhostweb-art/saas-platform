@@ -116,4 +116,15 @@ return [
     */
     'seo_enabled' => env('FORMS_SEO_ENABLED', true),
     'captcha_enabled' => env('FORMS_CAPTCHA_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Site Model
+    |--------------------------------------------------------------------------
+    |
+    | The Eloquent model class used for the "site" relationship on Form and
+    | FormSubmission. Override in the consuming app's published config.
+    |
+    */
+    'site_model' => \App\Models\Site::class,
 ];

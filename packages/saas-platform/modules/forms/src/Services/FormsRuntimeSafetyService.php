@@ -553,18 +553,14 @@ class FormsRuntimeSafetyService
      */
     protected function getRegisteredProviders(): array
     {
+        // Use the application's booted provider list (framework-native, no App\ config dependency)
         $app = app();
-        if (method_exists($app, 'getProviders')) {
-            // Laravel 10: getProviders() requires a provider name
-            // Fall through to config/app.php providers
+        if (method_exists($app, 'getLoadedProviders')) {
+            return array_keys($app->getLoadedProviders());
         }
 
-        // Fallback: check config/app.php providers
+        // Last-resort fallback: read host config if available
         $providers = config('app.providers', []);
-        if (is_array($providers)) {
-            return $providers;
-        }
-
-        return [];
+        return is_array($providers) ? $providers : [];
     }
 }

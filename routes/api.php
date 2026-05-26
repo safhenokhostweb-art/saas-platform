@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UpdateController as ApiUpdateController;
 use App\Http\Controllers\Api\SiteConfigController as ApiSiteConfigController;
 use App\Http\Controllers\Api\ProductController as ApiProductController;
 use App\Http\Controllers\Api\SupportTicketController as ApiSupportTicketController;
+use App\Http\Controllers\Api\TenantTicketController as ApiTenantTicketController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\Api\GroupApiController;
 use App\Http\Controllers\Api\TagApiController;
@@ -57,10 +58,40 @@ Route::prefix('products')->middleware('throttle:60,1')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Support Tickets API (برای customer-site)
+| Tenant Tickets API (برای customer-site) — PHASE 7.25 CANONICAL
+|--------------------------------------------------------------------------
+| Auth: license_key + domain (AuthenticateTenantApi middleware)
+| Data: reads from canonical `tickets` table via TicketServiceInterface
+| Response: backward-compatible with legacy /api/support-tickets format
 |--------------------------------------------------------------------------
 */
-Route::prefix('support-tickets')->middleware('throttle:30,1')->group(function () {
+// PHASE 8.0 — Secure tenant attachment download (private disk, site-scoped)
+Route::prefix('tenant/attachments')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
+    Route::get('{path}', [\App\Http\Controllers\Admin\SecureAttachmentController::class, 'tenantDownload'])
+        ->where('path', '.+')
+        ->name('api.tenant-attachments.download');
+});
+
+Route::prefix('tenant/tickets')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
+    Route::get('/', [ApiTenantTicketController::class, 'index'])->name('api.tenant-tickets.index');
+    Route::post('/', [ApiTenantTicketController::class, 'store'])->name('api.tenant-tickets.store');
+    Route::get('{id}', [ApiTenantTicketController::class, 'show'])->name('api.tenant-tickets.show');
+    Route::post('{id}/reply', [ApiTenantTicketController::class, 'reply'])->name('api.tenant-tickets.reply');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Support Tickets API (برای customer-site) — PHASE 7.25 DEPRECATED
+|--------------------------------------------------------------------------
+| DEPRECATED: SupportApiClient در customer-site به /api/tenant/tickets مایگریت شد.
+| این مسیرها برای backward-compatibility با نسخه‌های قدیمی‌تر باقی می‌مانند.
+| TODO (post-PHASE 7.25): حذف پس از اطمینان از عدم استفاده.
+|--------------------------------------------------------------------------
+*/
+// PHASE 8.0 — SECURITY: tenant.api middleware now required on legacy routes.
+// All callers must supply a valid license_key + domain (Authorization header or body).
+// X-Deprecated-Endpoint: true header is added by SupportTicketController.
+Route::prefix('support-tickets')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
     Route::post('/', [ApiSupportTicketController::class, 'store'])->name('api.support-tickets.store');
     Route::get('/', [ApiSupportTicketController::class, 'index'])->name('api.support-tickets.index');
     Route::post('{id}/reply', [ApiSupportTicketController::class, 'reply'])->name('api.support-tickets.reply');

@@ -12,6 +12,8 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        // PHASE 8.0 — Security headers on ALL responses
+        \App\Http\Middleware\SecurityHeaders::class,
     ];
 
     protected $middlewareGroups = [
@@ -25,6 +27,8 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\AddNoindexHeaders::class,
             \App\Http\Middleware\DetectResellerFromDomain::class,
             \App\Http\Middleware\SetTenantContext::class,
+            // PHASE 8.2 — Per-tenant maintenance isolation (must run after SetTenantContext)
+            \App\Http\Middleware\CheckTenantMaintenance::class,
         ],
 
         'api' => [
@@ -44,5 +48,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'notifications.enabled' => \App\Http\Middleware\EnsureNotificationsModuleEnabled::class,
         'wizard' => \App\Http\Middleware\EnsureSuperAdminForWizard::class,
+        'tenant.api' => \App\Http\Middleware\AuthenticateTenantApi::class,
     ];
 }

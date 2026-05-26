@@ -45,7 +45,8 @@ use App\Http\Controllers\Admin\ResellerController as AdminResellerController;
 use App\Http\Controllers\Admin\ResellerCommissionController as AdminResellerCommissionController;
 use App\Http\Controllers\Admin\PayoutRequestController as AdminPayoutRequestController;
 use App\Http\Controllers\Admin\SupportPlanController as AdminSupportPlanController;
-use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
+// PHASE 7.2 — AdminSupportTicketController removed from active routing (redirected to canonical)
+// use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
 use App\Http\Controllers\Admin\ThemeBuilderController;
 use App\Http\Controllers\PageController;
@@ -66,6 +67,30 @@ use App\Http\Controllers\CheckoutController;
 */
 
 Route::get('/', fn() => view('welcome'))->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Health Endpoints — PHASE 8.2 (load-balancer / orchestrator probes)
+|--------------------------------------------------------------------------
+| No auth, no CSRF, always bypass maintenance mode.
+*/
+Route::prefix('health')->name('health.')->group(function () {
+    Route::get('live', function () {
+        return response()->json(
+            app(\SaaSPlatform\CoreUtils\Services\Health\RuntimeHealthService::class)->live()
+        );
+    })->name('live');
+
+    Route::get('ready', function () {
+        $result = app(\SaaSPlatform\CoreUtils\Services\Health\RuntimeHealthService::class)->ready();
+        return response()->json($result, $result['ready'] ? 200 : 503);
+    })->name('ready');
+
+    Route::get('release', function () {
+        $result = app(\SaaSPlatform\CoreUtils\Services\Health\RuntimeHealthService::class)->release();
+        return response()->json($result, $result['coherent'] ? 200 : 503);
+    })->name('release');
+});
 
 // سرو فایل‌های استوریج از storage/app/public (جایگزین لینک نمادین وقتی ۴۰۴ می‌دهد)
 Route::get('storage/{path}', function (string $path) {
@@ -175,13 +200,14 @@ Route::middleware('auth')->group(function () {
         ->middleware(EnsureProfileIsComplete::class)
         ->name('customer.forms.index');
 
-    // تیکت‌های پشتیبانی برای مشتری (منوی پنل مشتری)
+    // PHASE 7.2 — Customer portal support-tickets redirected to canonical /tickets/* routes
+    // CustomerSupportTicketController removed from active routing; data lives in tickets table.
     Route::prefix('dashboard/support-tickets')->name('customer.support-tickets.')->middleware(EnsureProfileIsComplete::class)->group(function () {
-        Route::get('/', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'store'])->name('store');
-        Route::get('/{support_ticket}', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'show'])->name('show');
-        Route::post('/{support_ticket}/replies', [\App\Http\Controllers\Customer\CustomerSupportTicketController::class, 'storeReply'])->name('replies.store');
+        Route::get('/', fn() => redirect()->route('tickets.site.index', [], 301))->name('index');
+        Route::get('/create', fn() => redirect()->route('tickets.site.create', [], 301))->name('create');
+        Route::post('/', fn() => redirect()->route('tickets.site.store', [], 301))->name('store');
+        Route::get('/{support_ticket}', fn($id) => redirect()->route('tickets.site.show', $id, 301))->name('show');
+        Route::post('/{support_ticket}/replies', fn($id) => redirect()->route('tickets.site.replies.store', $id, 301))->name('replies.store');
     });
 
     // فروشگاه و پرداخت (خرید لایسنس، ماژول، پشتیبانی)
@@ -343,6 +369,11 @@ Route::prefix('admin')
         */
         Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 
+        // PHASE 8.0 — Secure attachment download (private disk, access-controlled)
+        Route::get('attachments/{path}', [\App\Http\Controllers\Admin\SecureAttachmentController::class, 'download'])
+            ->where('path', '.+')
+            ->name('admin.attachments.download');
+
         /*
         |--------------------------------------------------------------------------
         | تنظیمات عمومی پلتفرم
@@ -427,10 +458,15 @@ Route::prefix('admin')
         Route::patch('payout-requests/{payout_request}/reject', [AdminPayoutRequestController::class, 'reject'])->name('payout-requests.reject');
         Route::resource('support-plans', AdminSupportPlanController::class)->except('show');
         Route::resource('payment-gateways', PaymentGatewayController::class)->except('show');
-        Route::resource('support-tickets', AdminSupportTicketController::class)->only(['index', 'create', 'store', 'show']);
-        Route::patch('support-tickets/{support_ticket}/status', [AdminSupportTicketController::class, 'updateStatus'])->name('support-tickets.update-status');
-        Route::post('support-tickets/{support_ticket}/replies', [AdminSupportTicketController::class, 'storeReply'])->name('support-tickets.replies.store');
-        Route::patch('support-tickets/{support_ticket}/assign', [AdminSupportTicketController::class, 'assign'])->name('support-tickets.assign');
+        // PHASE 7.2 — Legacy admin support-tickets routes redirected to canonical /admin/tickets/* routes.
+        // AdminSupportTicketController has been removed from active routing.
+        Route::get('support-tickets',                fn() => redirect()->route('tickets.admin.index', [], 301))->name('support-tickets.index');
+        Route::get('support-tickets/create',         fn() => redirect()->route('tickets.admin.create', [], 301))->name('support-tickets.create');
+        Route::post('support-tickets',               fn() => redirect()->route('tickets.admin.store', [], 301))->name('support-tickets.store');
+        Route::get('support-tickets/{id}',           fn($id) => redirect()->route('tickets.admin.show', $id, 301))->name('support-tickets.show');
+        Route::patch('support-tickets/{id}/status',  fn($id) => redirect()->route('tickets.admin.status.update', $id, 301))->name('support-tickets.update-status');
+        Route::post('support-tickets/{id}/replies',  fn($id) => redirect()->route('tickets.admin.replies.store', $id, 301))->name('support-tickets.replies.store');
+        Route::patch('support-tickets/{id}/assign',  fn($id) => redirect()->route('tickets.admin.assign', $id, 301))->name('support-tickets.assign');
 
         /*
         |--------------------------------------------------------------------------

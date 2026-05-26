@@ -58,7 +58,7 @@ class FormsServiceProvider extends ServiceProvider
         // Bind lifecycle contract
         $this->app->bind(ModuleLifecycleInterface::class, ModuleLifecycleService::class);
 
-        // Register production hardening services (singletons for consistent state)
+        // Bind FormsLicensingService: requires ModuleLicenseServiceInterface from host app
         $this->app->singleton(FormsLicensingService::class);
         $this->app->singleton(FormsGateService::class);
         $this->app->singleton(FormsUpdateValidationService::class);
@@ -90,6 +90,7 @@ class FormsServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \SaaSPlatform\Modules\Forms\Console\Commands\InstallFormsModule::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsIsolationCommand::class,
             ]);
         }
 

@@ -2,9 +2,9 @@
 
 namespace SaaSPlatform\Modules\Forms\Services;
 
-use App\Models\Site;
-use App\Services\TenantContext;
-use Illuminate\Support\Facades\App;
+use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
+use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 
 /**
  * PHASE 6.95 — TASK 1: Platform Context Service
@@ -28,7 +28,8 @@ class PlatformContextService
     public const CONTEXT_TENANT = 'tenant';
 
     public function __construct(
-        protected TenantContext $tenantContext
+        protected TenantContextContract $tenantContext,
+        protected SiteRepositoryInterface $siteRepository
     ) {}
 
     /**
@@ -115,15 +116,13 @@ class PlatformContextService
      * NOTE: customer-site TenantContext does not have site() method.
      * We use method_exists() for defensive cross-project compatibility.
      */
-    public function tenantSite(): ?Site
+    public function tenantSite(): ?SiteModelInterface
     {
         if (!$this->isTenantAdmin()) {
             return null;
         }
-        if (method_exists($this->tenantContext, 'site')) {
-            return $this->tenantContext->site();
-        }
-        return null;
+        $site = $this->tenantContext->site();
+        return $site instanceof SiteModelInterface ? $site : null;
     }
 
 
@@ -134,18 +133,11 @@ class PlatformContextService
      */
     public function platformHasMultiSite(): bool
     {
-        // Check if the Site model exists and has multi-site routes
-        if (class_exists(\App\Models\Site::class)) {
-            try {
-                // If we can count sites, we're on the platform
-                $siteCount = \App\Models\Site::count();
-                return $siteCount > 0;
-            } catch (\Throwable $e) {
-                // Table might not exist
-                return false;
-            }
+        try {
+            return $this->siteRepository->count() > 0;
+        } catch (\Throwable $e) {
+            return false;
         }
-        return false;
     }
 
     /**

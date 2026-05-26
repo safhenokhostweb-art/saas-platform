@@ -2,13 +2,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
 
 /**
  * سایتِ زیرمجموعه (مثل customer-site).
  * همهٔ مدیریت‌ها (ماژول، تنظیمات و …) از پنل saas-platform انجام می‌شود.
  */
-class Site extends Model
+class Site extends Model implements SiteModelInterface
 {
+    public function getId(): int       { return (int) $this->id; }
+    public function getDomain(): ?string { return $this->domain; }
+    public function getTitle(): ?string  { return $this->title; }
+    public function isActive(): bool     { return (bool) $this->is_active; }
+
     protected $fillable = [
         'customer_id',
         'title',

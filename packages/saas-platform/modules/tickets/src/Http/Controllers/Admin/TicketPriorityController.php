@@ -4,6 +4,7 @@ namespace SaaSPlatform\Modules\Tickets\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use SaaSPlatform\CoreUtils\Contracts\Services\AuthUserResolverInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Services\TicketPriorityService;
 
@@ -15,6 +16,7 @@ class TicketPriorityController extends Controller
     public function __construct(
         protected TicketRepositoryInterface $ticketRepository,
         protected TicketPriorityService     $priorityService,
+        protected AuthUserResolverInterface $authResolver,
     ) {}
 
     public function update(Request $request, int $ticketId)
@@ -29,7 +31,7 @@ class TicketPriorityController extends Controller
             abort(404);
         }
 
-        $this->priorityService->changePriority($ticket, $request->priority, auth()->id());
+        $this->priorityService->changePriority($ticket, $request->priority, $this->authResolver->id());
 
         return back()->with('success', 'اولویت تیکت تغییر کرد.');
     }

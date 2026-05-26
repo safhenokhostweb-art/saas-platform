@@ -4,10 +4,12 @@ namespace SaaSPlatform\Modules\Tickets\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
 use SaaSPlatform\Modules\Tickets\Services\TicketSlaService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 /**
  * PHASE 7.1 — TASK 3: Admin Ticket Controller (canonical)
@@ -17,14 +19,18 @@ use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketRequest;
  */
 class TicketController extends Controller
 {
+    use AuthorizesRequests;
     public function __construct(
-        protected TicketServiceInterface $ticketService,
-        protected TicketGateService      $gateService,
-        protected TicketSlaService       $slaService,
+        protected TicketServiceInterface  $ticketService,
+        protected TicketGateService       $gateService,
+        protected TicketSlaService        $slaService,
+        protected SiteRepositoryInterface $siteRepository,
     ) {}
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
+
         $filters = $request->only(['status', 'priority', 'site_id', 'category', 'q', 'sort_by', 'sort_dir', 'per_page']);
         $tickets = $this->ticketService->getAll($filters);
         $stats   = $this->ticketService->getStats();
@@ -39,6 +45,8 @@ class TicketController extends Controller
 
     public function create()
     {
+        $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
+
         $sites = $this->getActiveSites();
 
         return view('tickets::admin.tickets.create', [
@@ -50,9 +58,13 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request)
     {
-        $files = $this->gateService->canUploadAttachments()
-            ? $request->file('attachments')
-            : null;
+        $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
+
+       $files = $this->gateService->canUploadAttachments()
+    ? array_filter((array) $request->file('attachments'))
+    : null;
+
+$files = empty($files) ? null : array_values($files);
 
         $this->ticketService->create($request->validated(), $files);
 
@@ -69,6 +81,8 @@ class TicketController extends Controller
             abort(404);
         }
 
+        $this->authorize('view', $ticket);
+
         return view('tickets::admin.tickets.show', [
             'ticket'     => $ticket,
             'slaEnabled' => $this->gateService->isSlaEnabled(),
@@ -81,9 +95,6 @@ class TicketController extends Controller
 
     protected function getActiveSites()
     {
-        if (class_exists(\App\Models\Site::class)) {
-            return \App\Models\Site::where('is_active', true)->orderBy('name')->get();
-        }
-        return collect([]);
+        return $this->siteRepository->allActive();
     }
 }

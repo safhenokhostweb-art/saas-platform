@@ -2,14 +2,17 @@
 
 namespace SaaSPlatform\Modules\Forms\Repositories;
 
-use SaaSPlatform\Modules\Forms\Contracts\FormSubmissionRepositoryInterface;
-use SaaSPlatform\Modules\Forms\Models\FormSubmission;
-use App\Helpers\Jalali;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use SaaSPlatform\CoreUtils\Contracts\Services\DateFormatterInterface;
+use SaaSPlatform\Modules\Forms\Contracts\FormSubmissionRepositoryInterface;
+use SaaSPlatform\Modules\Forms\Models\FormSubmission;
 
 class FormSubmissionRepository implements FormSubmissionRepositoryInterface
 {
+    public function __construct(
+        protected DateFormatterInterface $dateFormatter
+    ) {}
     public function getAll(array $filters = []): LengthAwarePaginator
     {
         $query = FormSubmission::with(['form.fields', 'site'])->latest();
@@ -21,13 +24,13 @@ class FormSubmissionRepository implements FormSubmissionRepositoryInterface
             $query->where('site_id', $filters['site_id']);
         }
         if (!empty($filters['from'])) {
-            $fromCarbon = Jalali::toCarbon($filters['from']);
+            $fromCarbon = $this->dateFormatter->toCarbon($filters['from']);
             if ($fromCarbon) {
                 $query->whereDate('created_at', '>=', $fromCarbon->format('Y-m-d'));
             }
         }
         if (!empty($filters['to'])) {
-            $toCarbon = Jalali::toCarbon($filters['to']);
+            $toCarbon = $this->dateFormatter->toCarbon($filters['to']);
             if ($toCarbon) {
                 $query->whereDate('created_at', '<=', $toCarbon->format('Y-m-d'));
             }
@@ -55,13 +58,13 @@ class FormSubmissionRepository implements FormSubmissionRepositoryInterface
             $query->where('site_id', $filters['site_id']);
         }
         if (!empty($filters['from'])) {
-            $fromCarbon = Jalali::toCarbon($filters['from']);
+            $fromCarbon = $this->dateFormatter->toCarbon($filters['from']);
             if ($fromCarbon) {
                 $query->whereDate('created_at', '>=', $fromCarbon->format('Y-m-d'));
             }
         }
         if (!empty($filters['to'])) {
-            $toCarbon = Jalali::toCarbon($filters['to']);
+            $toCarbon = $this->dateFormatter->toCarbon($filters['to']);
             if ($toCarbon) {
                 $query->whereDate('created_at', '<=', $toCarbon->format('Y-m-d'));
             }

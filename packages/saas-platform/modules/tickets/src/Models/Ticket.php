@@ -2,11 +2,13 @@
 
 namespace SaaSPlatform\Modules\Tickets\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use SaaSPlatform\Modules\Tickets\Models\Scopes\SiteTenantScope;
 
 class Ticket extends Model
 {
@@ -32,47 +34,53 @@ class Ticket extends Model
     ];
 
     protected $casts = [
-        'closed_at' => 'datetime',
+        'closed_at'         => 'datetime',
         'first_response_at' => 'datetime',
-        'resolved_at' => 'datetime',
-        'attachments' => 'array',
+        'resolved_at'       => 'datetime',
+        'attachments'       => 'array',
+        'tags'              => 'array',
     ];
 
-    public const STATUS_OPEN = 'open';
+    public const STATUS_OPEN        = 'open';
     public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_CLOSED = 'closed';
+    public const STATUS_CLOSED      = 'closed';
 
-    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_LOW    = 'low';
     public const PRIORITY_NORMAL = 'normal';
-    public const PRIORITY_HIGH = 'high';
+    public const PRIORITY_HIGH   = 'high';
+
+    // PHASE 8.0 — Structural tenant isolation
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new SiteTenantScope());
+    }
 
     /**
-     * Get the customer that owns the ticket.
+     * Bypass tenant isolation for admin / platform contexts.
+     * MUST only be called from admin controllers, migrations, or validated internal services.
      */
+    public static function withoutTenantIsolation(): Builder
+    {
+        return static::withoutGlobalScope(SiteTenantScope::class);
+    }
+
+    // ─── Relationships ────────────────────────────────────────────────────────
+
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'customer_id');
+        return $this->belongsTo(config('tickets.user_model'), 'customer_id');
     }
 
-    /**
-     * Get the assignee of the ticket.
-     */
     public function assignee(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'assigned_to');
+        return $this->belongsTo(config('tickets.user_model'), 'assigned_to');
     }
 
-    /**
-     * Get the site that owns the ticket.
-     */
     public function site(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Site::class, 'site_id');
+        return $this->belongsTo(config('tickets.site_model'), 'site_id');
     }
 
-    /**
-     * Get the replies for the ticket.
-     */
     public function replies(): HasMany
     {
         return $this->hasMany(TicketReply::class, 'ticket_id')->orderBy('created_at');

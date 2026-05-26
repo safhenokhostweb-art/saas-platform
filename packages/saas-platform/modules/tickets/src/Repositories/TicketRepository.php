@@ -9,12 +9,14 @@ use Illuminate\Support\Collection;
 
 class TicketRepository implements TicketRepositoryInterface
 {
-    /**
-     * {@inheritDoc}
-     */
+    // ─── Admin-context methods ────────────────────────────────────────────────
+    // These use withoutTenantIsolation() so platform admins see all sites.
+    // Tenant isolation is enforced at the API layer (AuthenticateTenantApi middleware).
+
     public function search(array $filters, string $sortBy = 'created_at', string $sortDir = 'desc', int $perPage = 20): LengthAwarePaginator
     {
-        $query = Ticket::query();
+        // Admin context: bypass scope, allow explicit site_id filter from caller.
+        $query = Ticket::withoutTenantIsolation();
 
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -42,19 +44,15 @@ class TicketRepository implements TicketRepositoryInterface
         }
 
         $allowedSorts = ['created_at', 'updated_at', 'priority', 'status', 'subject'];
-        $sortBy = in_array($sortBy, $allowedSorts) ? $sortBy : 'created_at';
+        $sortBy  = in_array($sortBy, $allowedSorts) ? $sortBy : 'created_at';
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
-        return $query->orderBy($sortBy, $sortDir)
-            ->paginate($perPage);
+        return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function findById(int $id, array $relations = []): ?Ticket
     {
-        $query = Ticket::query();
+        $query = Ticket::withoutTenantIsolation();
 
         if (!empty($relations)) {
             $query->with($relations);
@@ -63,17 +61,28 @@ class TicketRepository implements TicketRepositoryInterface
         return $query->find($id);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function findByTicketNumber(string $ticketNumber): ?Ticket
     {
-        return Ticket::where('ticket_number', $ticketNumber)->first();
+        return Ticket::withoutTenantIsolation()->where('ticket_number', $ticketNumber)->first();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    public function getStats(): array
+    {
+        $base = Ticket::withoutTenantIsolation();
+
+        return [
+            'total'       => (clone $base)->count(),
+            'open'        => (clone $base)->where('status', Ticket::STATUS_OPEN)->count(),
+            'in_progress' => (clone $base)->where('status', Ticket::STATUS_IN_PROGRESS)->count(),
+            'closed'      => (clone $base)->where('status', Ticket::STATUS_CLOSED)->count(),
+        ];
+    }
+
+    // ─── Tenant-context methods ───────────────────────────────────────────────
+    // The SiteTenantScope global scope applies automatically when tenant_site is
+    // present on the request. The explicit site_id WHERE clauses below are an
+    // additional layer of safety (double-check) rather than the sole guard.
+
     public function findByIdForSite(int $id, int $siteId, array $relations = []): ?Ticket
     {
         $query = Ticket::where('id', $id)->where('site_id', $siteId);
@@ -85,9 +94,6 @@ class TicketRepository implements TicketRepositoryInterface
         return $query->first();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getBySiteId(int $siteId, array $relations = []): Collection
     {
         $query = Ticket::where('site_id', $siteId);
@@ -99,9 +105,6 @@ class TicketRepository implements TicketRepositoryInterface
         return $query->orderBy('created_at', 'desc')->get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function countUnreadBySiteId(int $siteId): int
     {
         return Ticket::where('site_id', $siteId)
@@ -109,33 +112,14 @@ class TicketRepository implements TicketRepositoryInterface
             ->count();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function create(array $data): Ticket
     {
-        return Ticket::create($data);
+        return Ticket::withoutTenantIsolation()->create($data);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function update(Ticket $ticket, array $data): Ticket
     {
         $ticket->update($data);
         return $ticket->fresh();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getStats(): array
-    {
-        return [
-            'total' => Ticket::count(),
-            'open' => Ticket::where('status', Ticket::STATUS_OPEN)->count(),
-            'in_progress' => Ticket::where('status', Ticket::STATUS_IN_PROGRESS)->count(),
-            'closed' => Ticket::where('status', Ticket::STATUS_CLOSED)->count(),
-        ];
     }
 }

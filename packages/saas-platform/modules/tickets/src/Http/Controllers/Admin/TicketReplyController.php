@@ -28,8 +28,10 @@ class TicketReplyController extends Controller
             abort(404);
         }
 
+        $this->authorize('reply', $ticket);
+
         $files = $this->gateService->canUploadAttachments()
-            ? $request->file('attachments')
+            ? array_filter((array) $request->file('attachments'))
             : null;
 
         $this->ticketService->addReply($ticket, array_merge(

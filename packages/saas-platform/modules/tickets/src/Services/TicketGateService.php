@@ -2,49 +2,38 @@
 
 namespace SaaSPlatform\Modules\Tickets\Services;
 
+use SaaSPlatform\CoreUtils\Contracts\Services\AuthUserResolverInterface;
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
 
-/**
- * PHASE 7.1 — TASK 5: Ticket Gate Service
- *
- * Single authority for permission resolution.
- * Controllers and views MUST use this service, not raw Gate checks.
- *
- * Does NOT bypass Laravel's Gate/Policy system — augments it with
- * module-specific feature-flag and licensing checks.
- */
 class TicketGateService
 {
+    public function __construct(
+        protected AuthUserResolverInterface $authResolver
+    ) {}
+
     public function canViewAdmin(): bool
     {
-        return auth()->check() && auth()->user()?->is_admin;
+        return $this->authResolver->check() && $this->authResolver->isAdmin();
     }
 
     public function canCreateTicket(?int $siteId = null): bool
     {
-        if (!auth()->check()) {
-            return false;
-        }
-        // FUTURE: check site module activation
-        return true;
+        return $this->authResolver->check();
     }
 
     public function canReply(Ticket $ticket): bool
     {
-        if (!auth()->check()) {
-            return false;
-        }
-        return $ticket->status !== Ticket::STATUS_CLOSED;
+        return $this->authResolver->check() && $ticket->status !== Ticket::STATUS_CLOSED;
     }
 
     public function canAssign(): bool
     {
-        return auth()->check() && auth()->user()?->is_admin;
+        return $this->authResolver->check() && $this->authResolver->isAdmin();
     }
 
     public function canChangeStatus(): bool
     {
-        return auth()->check() && auth()->user()?->is_admin;
+        return $this->authResolver->check() && $this->authResolver->isAdmin();
     }
 
     public function canViewSlaMetrics(): bool

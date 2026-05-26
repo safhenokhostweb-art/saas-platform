@@ -7,7 +7,7 @@
         $pageDesc = \Illuminate\Support\Str::limit(strip_tags($form->intro_text), 160);
     }
     if ($pageDesc === '') {
-        $pageDesc = 'فرم «' . $form->title . '» — ارسال اطلاعات به ' . config('app.name');
+        $pageDesc = 'فرم «' . $form->title . '» — ارسال اطلاعات به ' . config('saas-platform.app_name', config('app.name', ''));
     }
     $canonicalOverride = trim((string) ($form->canonical_url ?: ''));
 @endphp

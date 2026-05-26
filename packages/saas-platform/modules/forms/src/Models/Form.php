@@ -44,7 +44,7 @@ class Form extends Model
 
     public function sites()
     {
-        return $this->belongsToMany(\App\Models\Site::class, 'form_site')
+        return $this->belongsToMany(config('forms.site_model'), 'form_site')
             ->withPivot('is_active')
             ->withTimestamps();
     }

@@ -14,8 +14,8 @@ return [
     */
 
     'layouts' => [
-        'admin'        => 'admin.layout',
-        'admin_tenant' => 'admin.layout',
+        'admin'        => 'layouts.admin',
+        'admin_tenant' => 'layouts.admin',
         'site'         => 'layouts.app',
     ],
 
@@ -24,6 +24,9 @@ return [
     | Core Settings
     |--------------------------------------------------------------------------
     */
+
+    'site_model' => \App\Models\Site::class,
+    'user_model' => \App\Models\User::class,
 
     'statuses'             => ['open', 'in_progress', 'closed'],
     'priorities'           => ['low', 'normal', 'high'],

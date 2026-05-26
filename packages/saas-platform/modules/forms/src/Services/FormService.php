@@ -2,18 +2,20 @@
 
 namespace SaaSPlatform\Modules\Forms\Services;
 
-use SaaSPlatform\Modules\Forms\Contracts\FormServiceInterface;
-use SaaSPlatform\Modules\Forms\Contracts\FormRepositoryInterface;
-use SaaSPlatform\Modules\Forms\Models\Form;
-use App\Services\CaptchaService;
-use App\Models\Site;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use SaaSPlatform\CoreUtils\Contracts\Services\CaptchaServiceInterface;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
+use SaaSPlatform\Modules\Forms\Contracts\FormRepositoryInterface;
+use SaaSPlatform\Modules\Forms\Contracts\FormServiceInterface;
+use SaaSPlatform\Modules\Forms\Models\Form;
 
 class FormService implements FormServiceInterface
 {
     public function __construct(
-        protected FormRepositoryInterface $repository
+        protected FormRepositoryInterface $repository,
+        protected CaptchaServiceInterface $captchaService,
+        protected SiteRepositoryInterface $siteRepository
     ) {}
 
     public function getAll(array $filters = []): LengthAwarePaginator
@@ -56,22 +58,22 @@ class FormService implements FormServiceInterface
 
         $captcha = ['enabled' => false, 'type' => null, 'hcaptcha_site_key' => '', 'persian_code' => '', 'normal_text' => ''];
 
-        if (config('forms.captcha_enabled', true) && CaptchaService::isModuleEnabled()) {
-            $cfg = CaptchaService::getForSite(null);
+        if (config('forms.captcha_enabled', true) && $this->captchaService->isEnabled()) {
+            $cfg = $this->captchaService->getConfigForSite(null);
             if ($cfg['enabled']) {
                 $captcha['enabled'] = true;
-                $captcha['type'] = $cfg['type'];
+                $captcha['type']    = $cfg['type'];
                 $captcha['hcaptcha_site_key'] = $cfg['hcaptcha_site_key'];
-                if ($cfg['type'] === CaptchaService::TYPE_PERSIAN_NUMBER) {
-                    $captcha['persian_code'] = CaptchaService::generatePersianNumber(4);
-                } elseif ($cfg['type'] === CaptchaService::TYPE_NORMAL) {
-                    $gen = CaptchaService::generateNormal();
+                if ($cfg['type'] === CaptchaServiceInterface::TYPE_PERSIAN_NUMBER) {
+                    $captcha['persian_code'] = $this->captchaService->generatePersianNumber(4);
+                } elseif ($cfg['type'] === CaptchaServiceInterface::TYPE_NORMAL) {
+                    $gen = $this->captchaService->generateNormal();
                     $captcha['normal_text'] = $gen['text'];
                 }
             }
         }
 
-        $firstSite = $form->sites()->first() ?? Site::orderBy('id')->first();
+        $firstSite = $form->sites()->first() ?? $this->siteRepository->allForDisplay()->first();
 
         return compact('form', 'captcha', 'firstSite');
     }

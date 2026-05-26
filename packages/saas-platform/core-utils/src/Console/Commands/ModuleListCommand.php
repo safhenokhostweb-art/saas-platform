@@ -29,8 +29,8 @@ class ModuleListCommand extends Command
             return self::SUCCESS;
         }
 
-        // Determine running platform version (config-driven, fallback to 1.0.0)
-        $platformVersion = config('app.platform_version', '1.0.0');
+        // Package-scoped config first; fall back to host app or default
+        $platformVersion = config('saas-platform.platform_version', config('app.platform_version', '1.0.0'));
 
         $rows = [];
         foreach ($modules as $slug => $data) {

@@ -47,10 +47,10 @@ class TicketSubmissionController extends Controller
         ]);
 
         $files = $this->gateService->canUploadAttachments()
-            ? $request->file('attachments')
+            ? array_filter((array) $request->file('attachments'))
             : null;
 
-        $this->portalService->createForSite($siteId, $data, auth()->id(), $files);
+        $this->portalService->createForSite($siteId, $data, auth()->id(), $files ?: null);
 
         return redirect()
             ->route('tickets.site.index')
@@ -63,7 +63,7 @@ class TicketSubmissionController extends Controller
         $ticket = $this->portalService->findForSite($ticketId, $siteId);
 
         $files = $this->gateService->canUploadAttachments()
-            ? $request->file('attachments')
+            ? array_filter((array) $request->file('attachments'))
             : null;
 
         $this->portalService->addCustomerReply($ticket, $siteId, array_merge(

@@ -43,6 +43,14 @@ use SaaSPlatform\Modules\Tickets\Services\TicketOverrideSafetyService;
 use SaaSPlatform\Modules\Tickets\Services\TicketCanonicalValidationService;
 // Lifecycle implementation (PHASE 7.1)
 use SaaSPlatform\Modules\Tickets\Services\TicketModuleLifecycle;
+// PHASE 7.2 — Data migration services
+use SaaSPlatform\Modules\Tickets\Services\TicketDataMigrationService;
+use SaaSPlatform\Modules\Tickets\Services\TicketIntegrityValidationService;
+use SaaSPlatform\Modules\Tickets\Services\TicketRollbackService;
+use SaaSPlatform\Modules\Tickets\Services\TicketCanonicalRuntimeValidationService;
+// PHASE 7.2 — Artisan commands
+use SaaSPlatform\Modules\Tickets\Console\Commands\ValidateRuntimeAuthorityCommand;
+use SaaSPlatform\Modules\Tickets\Console\Commands\MigrateTicketDataCommand;
 
 // Models and Policies (PHASE 7.1)
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
@@ -89,6 +97,12 @@ class TicketsServiceProvider extends ServiceProvider
         $this->app->singleton(TicketRuntimeSafetyService::class);
         $this->app->singleton(TicketOverrideSafetyService::class);
         $this->app->singleton(TicketCanonicalValidationService::class);
+
+        // PHASE 7.2 — Data migration services
+        $this->app->singleton(TicketDataMigrationService::class);
+        $this->app->singleton(TicketIntegrityValidationService::class);
+        $this->app->singleton(TicketRollbackService::class);
+        $this->app->singleton(TicketCanonicalRuntimeValidationService::class);
     }
 
     public function boot(): void
@@ -100,6 +114,18 @@ class TicketsServiceProvider extends ServiceProvider
         $this->registerPublishables();
         $this->registerModuleAssets();
         $this->registerViewComposers();
+        $this->registerCommands();
+    }
+
+    protected function registerCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ValidateRuntimeAuthorityCommand::class,
+                MigrateTicketDataCommand::class,
+                \SaaSPlatform\Modules\Tickets\Console\Commands\ValidateTicketsIsolationCommand::class,
+            ]);
+        }
     }
 
     protected function registerRoutes(): void
@@ -151,10 +177,8 @@ class TicketsServiceProvider extends ServiceProvider
 
     protected function registerModuleAssets(): void
     {
-        if (app()->environment('production')) {
-            return;
-        }
-
+        // PHASE 8.0 FIX: production guard removed — assets must be registered in all environments.
+        // The guard was incorrectly skipping asset registration in production.
         $existingModules = config('module-assets.modules', []);
 
         foreach ($existingModules as $module) {

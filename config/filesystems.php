@@ -36,6 +36,14 @@ return [
             'throw' => false,
         ],
 
+        // PHASE 8.0 — explicit private disk for tenant attachments (never web-accessible)
+        'private' => [
+            'driver'     => 'local',
+            'root'       => storage_path('app/private'),
+            'throw'      => false,
+            'visibility' => 'private',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

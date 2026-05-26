@@ -2,24 +2,14 @@
 
 namespace SaaSPlatform\Modules\Forms\Services;
 
-use App\Models\Site;
-use App\Services\TenantContext;
 use Illuminate\Support\Facades\Log;
+use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
+use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 
-/**
- * TASK 3 — Tenant Feature Gates
- *
- * Centralized tenant/module access checks for the Forms module.
- * Ensures that routes, menus, controllers, widgets, and API endpoints
- * all enforce module entitlement consistently.
- *
- * This service provides a single point of truth for all gating decisions.
- * No controller, view, or route should bypass this service.
- */
 class FormsGateService
 {
     public function __construct(
-        protected TenantContext $tenantContext,
+        protected TenantContextContract $tenantContext,
         protected FormsLicensingService $licensingService
     ) {}
 
@@ -33,24 +23,15 @@ class FormsGateService
     {
         $site = $this->tenantContext->site();
 
-        if (!$site) {
-            Log::warning('forms.gate.no_tenant', [
-                'ip' => request()->ip(),
-                'url' => request()->fullUrl(),
-            ]);
-            return [
-                'granted' => false,
-                'reason' => 'تنانت (سایت) شناسایی نشد.',
-            ];
+        if (!$site instanceof SiteModelInterface) {
+            Log::warning('forms.gate.no_tenant');
+            return ['granted' => false, 'reason' => 'تنانت (سایت) شناسایی نشد.'];
         }
 
         return $this->authorizeForSite($site);
     }
 
-    /**
-     * Check if a specific site can access Forms.
-     */
-    public function authorizeForSite(Site $site): array
+    public function authorizeForSite(SiteModelInterface $site): array
     {
         $result = $this->licensingService->checkEntitlement($site);
 
@@ -62,15 +43,9 @@ class FormsGateService
             );
         }
 
-        return [
-            'granted' => $result['allowed'],
-            'reason' => $result['reason'],
-        ];
+        return ['granted' => $result['allowed'], 'reason' => $result['reason']];
     }
 
-    /**
-     * Quick boolean check for Blade views and menu rendering.
-     */
     public function canAccess(): bool
     {
         $result = $this->authorize();

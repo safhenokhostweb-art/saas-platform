@@ -2,17 +2,19 @@
 
 namespace SaaSPlatform\Modules\Tickets\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Services\TenantContext;
 use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
+use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\CoreUtils\Http\BaseController as Controller;
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
 use SaaSPlatform\Modules\Tickets\Services\TicketService;
 
 class TicketsController extends Controller
 {
     public function __construct(
-        protected TicketService $ticketService,
-        protected TenantContext $tenantContext
+        protected TicketService             $ticketService,
+        protected TenantContextContract     $tenantContext,
+        protected SiteRepositoryInterface   $siteRepository
     ) {}
 
     /**
@@ -41,10 +43,9 @@ class TicketsController extends Controller
      */
     public function create()
     {
-        $sites = \App\Models\Site::where('is_active', true)->orderBy('title')->get(['id', 'title', 'domain']);
+        $sites = $this->siteRepository->allActive();
 
-        // بررسی feature flag برای آپلود فایل ضمیمه
-        $attachmentsEnabled = app(TenantContext::class)->hasFeature('tickets.attachments');
+        $attachmentsEnabled = $this->tenantContext->hasFeature('tickets.attachments');
 
         return view('tickets::create', compact('sites', 'attachmentsEnabled'));
     }
@@ -64,7 +65,6 @@ class TicketsController extends Controller
             'category' => 'nullable|string|max:255',
         ]);
 
-        // فقط در صورت فعال بودن feature، فایل ضمیمه پردازش شود
         $attachments = $this->tenantContext->hasFeature('tickets.attachments')
             ? $request->file('attachments')
             : null;

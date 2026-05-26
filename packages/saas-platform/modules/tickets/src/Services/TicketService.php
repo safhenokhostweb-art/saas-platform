@@ -2,8 +2,6 @@
 
 namespace SaaSPlatform\Modules\Tickets\Services;
 
-use App\Models\Site;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -14,6 +12,11 @@ use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterfac
 use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketReplyRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
+use SaaSPlatform\Modules\Tickets\Events\TicketCreated;
+use SaaSPlatform\Modules\Tickets\Events\TicketReplied;
+use SaaSPlatform\Modules\Tickets\Events\TicketStatusChanged;
+use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TicketService implements TicketServiceInterface
 {
@@ -61,7 +64,13 @@ class TicketService implements TicketServiceInterface
      */
     public function getByIdForSite(int $id, int $siteId): ?Ticket
     {
-        return $this->ticketRepository->findByIdForSite($id, $siteId, ['site', 'assignee', 'replies.user']);
+        $ticket = $this->ticketRepository->findByIdForSite($id, $siteId, ['site', 'assignee', 'replies.user']);
+
+        if ($ticket) {
+            $this->assertTenantIsolation($ticket, $siteId);
+        }
+
+        return $ticket;
     }
 
     /**
@@ -78,7 +87,7 @@ class TicketService implements TicketServiceInterface
     public function create(array $data, ?array $files = null): Ticket
     {
         return DB::transaction(function () use ($data, $files) {
-            $uploadedFiles = $this->handleFileUploads($files);
+            $uploadedFiles = $this->handleFileUploads($files, $data['site_id'] ?? null);
             if (!empty($uploadedFiles)) {
                 $data['attachments'] = $uploadedFiles;
             }
@@ -86,7 +95,11 @@ class TicketService implements TicketServiceInterface
             $data['priority'] = $data['priority'] ?? 'normal';
             $data['ticket_number'] = $this->generateTicketNumber();
 
-            return $this->ticketRepository->create($data);
+            $ticket = $this->ticketRepository->create($data);
+
+            event(new TicketCreated($ticket));
+
+            return $ticket;
         });
     }
 
@@ -96,6 +109,7 @@ class TicketService implements TicketServiceInterface
     public function updateStatus(Ticket $ticket, string $status): Ticket
     {
         return DB::transaction(function () use ($ticket, $status) {
+            $previousStatus = $ticket->status;
             $updates = ['status' => $status];
 
             if ($status === Ticket::STATUS_CLOSED) {
@@ -106,7 +120,11 @@ class TicketService implements TicketServiceInterface
                 $updates['resolved_at'] = null;
             }
 
-            return $this->ticketRepository->update($ticket, $updates);
+            $updated = $this->ticketRepository->update($ticket, $updates);
+
+            event(new TicketStatusChanged($updated, $previousStatus, $status));
+
+            return $updated;
         });
     }
 
@@ -132,14 +150,14 @@ class TicketService implements TicketServiceInterface
         }
 
         return DB::transaction(function () use ($ticket, $data, $files) {
-            $uploadedFiles = $this->handleFileUploads($files);
+            $uploadedFiles = $this->handleFileUploads($files, $ticket->site_id);
             if (!empty($uploadedFiles)) {
                 $data['attachments'] = $uploadedFiles;
             }
 
             $data['ticket_id'] = $ticket->id;
 
-            $this->replyRepository->create($data);
+            $reply = $this->replyRepository->create($data);
 
             if (!$ticket->first_response_at && ($data['author_type'] ?? '') === TicketReply::AUTHOR_STAFF) {
                 $this->ticketRepository->update($ticket, ['first_response_at' => now()]);
@@ -149,7 +167,11 @@ class TicketService implements TicketServiceInterface
                 $this->ticketRepository->update($ticket, ['status' => Ticket::STATUS_IN_PROGRESS]);
             }
 
-            return $this->ticketRepository->findById($ticket->id, ['site', 'assignee', 'replies.user']);
+            $refreshed = $this->ticketRepository->findById($ticket->id, ['site', 'assignee', 'replies.user']);
+
+            event(new TicketReplied($refreshed, $reply));
+
+            return $refreshed;
         });
     }
 
@@ -159,6 +181,20 @@ class TicketService implements TicketServiceInterface
     public function getStats(): array
     {
         return $this->ticketRepository->getStats();
+    }
+
+    /**
+     * PHASE 7.2 — TASK 6: Enforce tenant isolation at the service boundary.
+     * Throws if the ticket's site_id does not match the expected site context.
+     * Prevents cross-tenant data leakage regardless of repository-level filtering.
+     */
+    public function assertTenantIsolation(Ticket $ticket, int $expectedSiteId): void
+    {
+        if ($ticket->site_id !== null && $ticket->site_id !== $expectedSiteId) {
+            throw new AccessDeniedHttpException(
+                "Tenant isolation violation: ticket #{$ticket->id} belongs to site {$ticket->site_id}, not {$expectedSiteId}."
+            );
+        }
     }
 
     /**
@@ -174,26 +210,66 @@ class TicketService implements TicketServiceInterface
     }
 
     /**
-     * Handle file uploads for attachments.
+     * PHASE 8.0 — Attachments are stored in the PRIVATE disk under a per-site
+     * path so they are never directly web-accessible. Access is only via
+     * SecureAttachmentController which validates ownership before streaming.
      */
-    private function handleFileUploads(?array $files): array
+    private function handleFileUploads(?array $files, ?int $siteId = null): array
     {
         if (empty($files)) {
             return [];
         }
 
+        // Allowed MIME types — executable types explicitly blocked
+        $allowedMimes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf',
+            'text/plain', 'text/csv',
+            'application/zip', 'application/x-zip-compressed',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+
         $uploadedFiles = [];
+        $sitePrefix    = $siteId ? "site-{$siteId}/" : 'unscoped/';
+
         foreach ($files as $file) {
-            if (!$file || !$file->isValid()) {
+            if (!$file instanceof UploadedFile || !$file->isValid()) {
                 continue;
             }
 
-            $path = $file->store('tickets/' . now()->format('Y/m'), 'public');
+            $mime = $file->getMimeType();
+            if (!in_array($mime, $allowedMimes, true)) {
+                continue; // silently skip disallowed types
+            }
+
+            // Block dangerous double extensions: e.g. invoice.pdf.php
+            $originalName = $file->getClientOriginalName();
+            if (preg_match('/\.(php|phtml|phar|exe|sh|bat|cmd|ps1|asp|aspx|jsp|cgi)$/i', $originalName)) {
+                continue;
+            }
+
+            $name = $file->hashName();
+            if ($name === '') {
+                continue;
+            }
+
+            // Store in private disk — NOT publicly accessible
+            $storagePath = 'ticket-attachments/' . $sitePrefix . now()->format('Y/m') . '/' . $name;
+            $file->storeAs(
+                'ticket-attachments/' . $sitePrefix . now()->format('Y/m'),
+                $name,
+                'private'
+            );
+
             $uploadedFiles[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
+                'name' => $originalName,
+                'path' => $storagePath,
                 'size' => $file->getSize(),
-                'mime' => $file->getMimeType(),
+                'mime' => $mime,
+                'disk' => 'private',
             ];
         }
 

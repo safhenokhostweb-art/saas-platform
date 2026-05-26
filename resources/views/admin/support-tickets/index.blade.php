@@ -1,3 +1,4 @@
+{{-- @deprecated PHASE 7.15 — Use tickets::admin.tickets.index (canonical package view). Route to: tickets.admin.index --}}
 @extends('layouts.admin')
 
 @section('header', 'تیکت‌های پشتیبانی')

@@ -1,3 +1,4 @@
+{{-- @deprecated PHASE 7.15 — Use tickets::admin.tickets.create (canonical package view). Route to: tickets.admin.create --}}
 @extends('layouts.admin')
 
 @section('header', 'ثبت تیکت پشتیبانی')

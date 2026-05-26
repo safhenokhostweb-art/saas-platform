@@ -16,7 +16,7 @@ use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSlaController;
 | Middleware: web, auth, admin (resolved by consuming project)
 */
 
-Route::middleware(['web', 'auth'])
+Route::middleware(['web', 'auth', 'admin'])
     ->prefix('admin/tickets')
     ->name('tickets.admin.')
     ->group(function () {

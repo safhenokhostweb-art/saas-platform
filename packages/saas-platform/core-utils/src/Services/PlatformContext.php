@@ -74,8 +74,8 @@ class PlatformContext
             return $this->cachedContext;
         }
 
-        // Priority 2: config('app.role')
-        $role = config('app.role');
+        // Priority 2: package-scoped role, with fallback to host app config
+        $role = config('saas-platform.role', config('app.role'));
         if ($role && in_array($role, [
             self::CONTEXT_CENTRAL_ADMIN,
             self::CONTEXT_TENANT_ADMIN,

@@ -41,7 +41,7 @@ class TicketReply extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return $this->belongsTo(config('tickets.user_model'), 'user_id');
     }
 
     /**

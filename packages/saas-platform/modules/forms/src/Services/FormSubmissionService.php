@@ -2,27 +2,30 @@
 
 namespace SaaSPlatform\Modules\Forms\Services;
 
-use SaaSPlatform\Modules\Forms\Contracts\FormSubmissionRepositoryInterface;
-use SaaSPlatform\Modules\Forms\Models\FormSubmission;
-use App\Helpers\Jalali;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Session;
+use SaaSPlatform\CoreUtils\Contracts\Services\DateFormatterInterface;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
+use SaaSPlatform\Modules\Forms\Contracts\FormSubmissionRepositoryInterface;
+use SaaSPlatform\Modules\Forms\Models\FormSubmission;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FormSubmissionService
 {
     public function __construct(
-        protected FormSubmissionRepositoryInterface $repository
+        protected FormSubmissionRepositoryInterface $repository,
+        protected DateFormatterInterface $dateFormatter,
+        protected SiteRepositoryInterface $siteRepository
     ) {}
 
     public function index(array $filters = []): array
     {
         $submissions = $this->repository->getAll($filters);
-        $dataKeys = $this->repository->collectDataKeys($submissions);
+        $dataKeys    = $this->repository->collectDataKeys($submissions);
         $columnOrder = Session::get('submission_column_order', $this->defaultColumnOrder($dataKeys));
-        $forms = \SaaSPlatform\Modules\Forms\Models\Form::orderBy('title')->get(['id', 'title']);
-        $sites = \App\Models\Site::orderBy('title')->get(['id', 'title', 'domain']);
+        $forms       = \SaaSPlatform\Modules\Forms\Models\Form::orderBy('title')->get(['id', 'title']);
+        $sites       = $this->siteRepository->allForDisplay();
 
         return compact('submissions', 'dataKeys', 'columnOrder', 'forms', 'sites');
     }
@@ -63,7 +66,7 @@ class FormSubmissionService
                     if ($col === 'id') $row[] = $s->id;
                     elseif ($col === 'form') $row[] = $s->form?->title ?? '';
                     elseif ($col === 'site') $row[] = $s->site?->title ?? $s->site?->domain ?? '';
-                    elseif ($col === 'date') $row[] = $s->created_at ? Jalali::formatFa($s->created_at, 'Y/m/d H:i') : '';
+                    elseif ($col === 'date') $row[] = $s->created_at ? $this->dateFormatter->formatFa($s->created_at, 'Y/m/d H:i') : '';
                     elseif ($col === 'ip') $row[] = $s->ip ?? '';
                     elseif (in_array($col, $dataKeys, true)) $row[] = $s->data[$col] ?? '';
                 }

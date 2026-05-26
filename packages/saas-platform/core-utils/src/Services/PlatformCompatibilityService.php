@@ -201,7 +201,7 @@ class PlatformCompatibilityService
     protected function checkPlatformVersionConstraint(string $module, array &$errors, array &$warnings): void
     {
         $compat          = $this->registry->compatibility($module);
-        $platformVersion = config('app.platform_version', '1.0.0');
+        $platformVersion = config('saas-platform.platform_version', config('app.platform_version', '1.0.0'));
 
         if (empty($compat['saas-platform'])) {
             return;

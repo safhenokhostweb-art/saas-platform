@@ -2,7 +2,7 @@
 
 namespace SaaSPlatform\Modules\Forms\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use SaaSPlatform\CoreUtils\Http\BaseController as Controller;
 use SaaSPlatform\Modules\Forms\Services\FormSubmissionService;
 use Illuminate\Http\Request;
 

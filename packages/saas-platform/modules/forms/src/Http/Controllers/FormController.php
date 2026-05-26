@@ -2,21 +2,22 @@
 
 namespace SaaSPlatform\Modules\Forms\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\Services\ActivityLoggerInterface;
+use SaaSPlatform\CoreUtils\Http\BaseController as Controller;
 use SaaSPlatform\Modules\Forms\Contracts\FormServiceInterface;
-use SaaSPlatform\Modules\Forms\Http\Requests\FormRequest;
 use SaaSPlatform\Modules\Forms\Http\Requests\FormFieldRequest;
+use SaaSPlatform\Modules\Forms\Http\Requests\FormRequest;
 use SaaSPlatform\Modules\Forms\Models\Form;
 use SaaSPlatform\Modules\Forms\Models\FormField;
 use SaaSPlatform\Modules\Forms\Services\FormFieldService;
-use App\Services\ActivityLogger;
-use Illuminate\Http\Request;
 
 class FormController extends Controller
 {
     public function __construct(
-        protected FormServiceInterface $formService,
-        protected FormFieldService $fieldService
+        protected FormServiceInterface      $formService,
+        protected FormFieldService          $fieldService,
+        protected ActivityLoggerInterface   $activityLogger
     ) {}
 
     public function index()
@@ -34,9 +35,7 @@ class FormController extends Controller
     {
         $form = $this->formService->create($request->validated());
 
-        if (class_exists(ActivityLogger::class)) {
-            ActivityLogger::log('form.created', 'ایجاد فرم: ' . $form->title, $form);
-        }
+        $this->activityLogger->log('form.created', 'ایجاد فرم: ' . $form->title, $form);
 
         return redirect()->route('admin.forms.edit', $form)
             ->with('success', 'فرم ساخته شد؛ اکنون فیلدها را اضافه کنید.');
@@ -58,9 +57,7 @@ class FormController extends Controller
     {
         $this->formService->update($form, $request->validated());
 
-        if (class_exists(ActivityLogger::class)) {
-            ActivityLogger::log('form.updated', 'ویرایش فرم: ' . $form->title, $form);
-        }
+        $this->activityLogger->log('form.updated', 'ویرایش فرم: ' . $form->title, $form);
 
         return back()->with('success', 'فرم ویرایش شد');
     }
@@ -72,9 +69,7 @@ class FormController extends Controller
 
         $this->formService->delete($form);
 
-        if (class_exists(ActivityLogger::class)) {
-            ActivityLogger::log('form.deleted', 'حذف فرم: ' . $title, null, ['deleted_id' => $id]);
-        }
+        $this->activityLogger->log('form.deleted', 'حذف فرم: ' . $title, null, ['deleted_id' => $id]);
 
         return redirect()->route('admin.forms.index')
             ->with('success', 'فرم حذف شد');

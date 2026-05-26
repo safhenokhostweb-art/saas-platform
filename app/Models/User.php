@@ -7,10 +7,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Profile;
+use SaaSPlatform\CoreUtils\Contracts\Platform\UserModelInterface;
 
-class User extends Authenticatable
+class User extends Authenticatable implements UserModelInterface
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    public function getId(): int        { return (int) $this->id; }
+    public function getKey(): mixed     { return $this->id; }
+    public function getName(): ?string  { return $this->profile?->full_name ?? $this->email; }
+    public function getEmail(): ?string { return $this->email; }
+    public function isAdmin(): bool     { return (bool) $this->is_admin; }
 
     protected $fillable = [
         'mobile',

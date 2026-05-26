@@ -2,8 +2,8 @@
 
 namespace SaaSPlatform\Modules\Forms\Contracts;
 
+use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
 use SaaSPlatform\Modules\Forms\Models\Form;
-use App\Models\Site;
 
 interface FormSiteServiceInterface
 {
@@ -11,5 +11,5 @@ interface FormSiteServiceInterface
 
     public function syncSites(Form $form, array $siteIds): void;
 
-    public function toggleSite(Form $form, Site $site): bool;
+    public function toggleSite(Form $form, SiteModelInterface $site): bool;
 }

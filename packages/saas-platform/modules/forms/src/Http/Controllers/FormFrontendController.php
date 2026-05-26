@@ -2,18 +2,20 @@
 
 namespace SaaSPlatform\Modules\Forms\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
+use SaaSPlatform\CoreUtils\Contracts\Services\CaptchaServiceInterface;
+use SaaSPlatform\CoreUtils\Http\BaseController as Controller;
 use SaaSPlatform\Modules\Forms\Models\Form;
 use SaaSPlatform\Modules\Forms\Models\FormSubmission;
-use App\Models\Site;
-use App\Services\CaptchaService;
-use Illuminate\Http\Request;
 
 class FormFrontendController extends Controller
 {
-    /**
-     * لیست فرم‌های فعال (عمومی)
-     */
+    public function __construct(
+        protected CaptchaServiceInterface $captchaService,
+        protected \SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface $siteRepository
+    ) {}
+
     public function index()
     {
         $forms = Form::where('is_active', true)->orderBy('title')->get();
@@ -31,21 +33,7 @@ class FormFrontendController extends Controller
             ->with(['fields' => fn ($q) => $q->where('is_active', true)->orderBy('position')])
             ->firstOrFail();
 
-        $captcha = ['enabled' => false, 'type' => null, 'hcaptcha_site_key' => '', 'persian_code' => '', 'normal_text' => ''];
-        if (CaptchaService::isModuleEnabled()) {
-            $cfg = CaptchaService::getForSite(null);
-            if ($cfg['enabled']) {
-                $captcha['enabled'] = true;
-                $captcha['type'] = $cfg['type'];
-                $captcha['hcaptcha_site_key'] = $cfg['hcaptcha_site_key'];
-                if ($cfg['type'] === CaptchaService::TYPE_PERSIAN_NUMBER) {
-                    $captcha['persian_code'] = CaptchaService::generatePersianNumber(4);
-                } elseif ($cfg['type'] === CaptchaService::TYPE_NORMAL) {
-                    $gen = CaptchaService::generateNormal();
-                    $captcha['normal_text'] = $gen['text'];
-                }
-            }
-        }
+        $captcha = $this->buildCaptcha(null);
 
         return view('forms::site.forms.show', compact('form', 'captcha'));
     }
@@ -70,21 +58,9 @@ class FormFrontendController extends Controller
             }
         }
 
-        $captchaValid = true;
-        if (CaptchaService::isModuleEnabled()) {
-            $cfg = CaptchaService::getForSite(null);
-            if ($cfg['enabled']) {
-                if ($cfg['type'] === CaptchaService::TYPE_PERSIAN_NUMBER) {
-                    $captchaValid = CaptchaService::validatePersianNumber($request->input('captcha_answer', ''));
-                } elseif ($cfg['type'] === CaptchaService::TYPE_NORMAL) {
-                    $captchaValid = CaptchaService::validateNormal($request->input('captcha_answer', ''));
-                } elseif ($cfg['type'] === CaptchaService::TYPE_HCAPTCHA) {
-                    $captchaValid = CaptchaService::verifyHcaptcha($request->input('h-captcha-response', ''), $cfg['hcaptcha_secret_key']);
-                }
-                if (!$captchaValid) {
-                    return back()->withInput()->withErrors(['captcha' => 'کپچا اشتباه است یا منقضی شده. لطفا دوباره تلاش کنید.']);
-                }
-            }
+        $captchaValid = $this->validateCaptcha($request, null);
+        if ($captchaValid !== true) {
+            return back()->withInput()->withErrors(['captcha' => 'کپچا اشتباه است یا منقضی شده. لطفا دوباره تلاش کنید.']);
         }
 
         $validated = $request->validate($rules);
@@ -112,54 +88,41 @@ class FormFrontendController extends Controller
         return back()->with('success', 'فرم با موفقیت ارسال شد ✅');
     }
 
-    /**
-     * لیست فرم‌های فعال برای یک سایت (multi-site)
-     */
-    public function siteForms(Site $site)
+    public function siteForms(int $site)
     {
-        $forms = $site->forms()->wherePivot('is_active', true)->get();
+        $siteModel = $this->siteRepository->find($site);
+        abort_unless($siteModel, 404);
 
-        return view('forms::site.forms.index', compact('site', 'forms'));
+        $forms = \SaaSPlatform\Modules\Forms\Models\Form::whereHas(
+            'sites',
+            fn ($q) => $q->where('sites.id', $siteModel->getId())->wherePivot('is_active', true)
+        )->get();
+
+        return view('forms::site.forms.index', compact('siteModel', 'forms'));
     }
 
-    /**
-     * نمایش یک فرم مشخص برای یک سایت (multi-site)
-     */
-    public function showForSite(Site $site, string $slug)
+    public function showForSite(int $site, string $slug)
     {
-        $form = $site->forms()
-            ->where('slug', $slug)
-            ->wherePivot('is_active', true)
+        $siteModel = $this->siteRepository->find($site);
+        abort_unless($siteModel, 404);
+
+        $form = \SaaSPlatform\Modules\Forms\Models\Form::where('slug', $slug)
+            ->whereHas('sites', fn ($q) => $q->where('sites.id', $siteModel->getId())->wherePivot('is_active', true))
             ->with('fields')
             ->firstOrFail();
 
-        $captcha = ['enabled' => false, 'type' => null, 'hcaptcha_site_key' => '', 'persian_code' => '', 'normal_text' => ''];
-        if (CaptchaService::isModuleEnabled()) {
-            $cfg = CaptchaService::getForSite($site->id);
-            if ($cfg['enabled']) {
-                $captcha['enabled'] = true;
-                $captcha['type'] = $cfg['type'];
-                $captcha['hcaptcha_site_key'] = $cfg['hcaptcha_site_key'];
-                if ($cfg['type'] === CaptchaService::TYPE_PERSIAN_NUMBER) {
-                    $captcha['persian_code'] = CaptchaService::generatePersianNumber(4);
-                } elseif ($cfg['type'] === CaptchaService::TYPE_NORMAL) {
-                    $gen = CaptchaService::generateNormal();
-                    $captcha['normal_text'] = $gen['text'];
-                }
-            }
-        }
+        $captcha = $this->buildCaptcha($siteModel->getId());
 
-        return view('forms::site.forms.show', compact('site', 'form', 'captcha'));
+        return view('forms::site.forms.show', compact('siteModel', 'form', 'captcha'));
     }
 
-    /**
-     * ثبت اطلاعات فرم برای یک سایت (multi-site)
-     */
-    public function submitForSite(Request $request, Site $site, string $slug)
+    public function submitForSite(Request $request, int $site, string $slug)
     {
-        $form = $site->forms()
-            ->where('slug', $slug)
-            ->wherePivot('is_active', true)
+        $siteModel = $this->siteRepository->find($site);
+        abort_unless($siteModel, 404);
+
+        $form = \SaaSPlatform\Modules\Forms\Models\Form::where('slug', $slug)
+            ->whereHas('sites', fn ($q) => $q->where('sites.id', $siteModel->getId())->wherePivot('is_active', true))
             ->with('fields')
             ->firstOrFail();
 
@@ -168,33 +131,68 @@ class FormFrontendController extends Controller
             $rules['field_' . $field->id] = $field->is_required ? 'required' : 'nullable';
         }
 
-        $captchaValid = true;
-        if (CaptchaService::isModuleEnabled()) {
-            $cfg = CaptchaService::getForSite($site->id);
-            if ($cfg['enabled']) {
-                if ($cfg['type'] === CaptchaService::TYPE_PERSIAN_NUMBER) {
-                    $captchaValid = CaptchaService::validatePersianNumber($request->input('captcha_answer', ''));
-                } elseif ($cfg['type'] === CaptchaService::TYPE_NORMAL) {
-                    $captchaValid = CaptchaService::validateNormal($request->input('captcha_answer', ''));
-                } elseif ($cfg['type'] === CaptchaService::TYPE_HCAPTCHA) {
-                    $captchaValid = CaptchaService::verifyHcaptcha($request->input('h-captcha-response', ''), $cfg['hcaptcha_secret_key']);
-                }
-                if (!$captchaValid) {
-                    return back()->withInput()->withErrors(['captcha' => 'کپچا اشتباه است یا منقضی شده. لطفا دوباره تلاش کنید.']);
-                }
-            }
+        $captchaValid = $this->validateCaptcha($request, $siteModel->getId());
+        if ($captchaValid !== true) {
+            return back()->withInput()->withErrors(['captcha' => 'کپچا اشتباه است یا منقضی شده. لطفا دوباره تلاش کنید.']);
         }
 
         $validated = $request->validate($rules);
 
         FormSubmission::create([
             'form_id' => $form->id,
-            'site_id' => $site->id,
-            'data' => $validated,
-            'ip' => $request->ip(),
+            'site_id' => $siteModel->getId(),
+            'data'    => $validated,
+            'ip'      => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
 
         return back()->with('success', 'فرم با موفقیت ارسال شد ✅');
+    }
+
+    private function buildCaptcha(?int $siteId): array
+    {
+        $captcha = ['enabled' => false, 'type' => null, 'hcaptcha_site_key' => '', 'persian_code' => '', 'normal_text' => ''];
+
+        if (!$this->captchaService->isEnabled()) {
+            return $captcha;
+        }
+
+        $cfg = $this->captchaService->getConfigForSite($siteId);
+        if (!$cfg['enabled']) {
+            return $captcha;
+        }
+
+        $captcha['enabled']          = true;
+        $captcha['type']             = $cfg['type'];
+        $captcha['hcaptcha_site_key'] = $cfg['hcaptcha_site_key'];
+
+        if ($cfg['type'] === CaptchaServiceInterface::TYPE_PERSIAN_NUMBER) {
+            $captcha['persian_code'] = $this->captchaService->generatePersianNumber(4);
+        } elseif ($cfg['type'] === CaptchaServiceInterface::TYPE_NORMAL) {
+            $gen = $this->captchaService->generateNormal();
+            $captcha['normal_text'] = $gen['text'];
+        }
+
+        return $captcha;
+    }
+
+    private function validateCaptcha(Request $request, ?int $siteId): bool
+    {
+        if (!$this->captchaService->isEnabled()) {
+            return true;
+        }
+        $cfg = $this->captchaService->getConfigForSite($siteId);
+        if (!$cfg['enabled']) {
+            return true;
+        }
+        return match ($cfg['type']) {
+            CaptchaServiceInterface::TYPE_PERSIAN_NUMBER =>
+                $this->captchaService->validatePersianNumber($request->input('captcha_answer', '')),
+            CaptchaServiceInterface::TYPE_NORMAL =>
+                $this->captchaService->validateNormal($request->input('captcha_answer', '')),
+            CaptchaServiceInterface::TYPE_HCAPTCHA =>
+                $this->captchaService->verifyHcaptcha($request->input('h-captcha-response', ''), $cfg['hcaptcha_secret_key']),
+            default => true,
+        };
     }
 }

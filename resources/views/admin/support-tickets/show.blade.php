@@ -1,3 +1,4 @@
+{{-- @deprecated PHASE 7.15 — Use tickets::admin.tickets.show (canonical package view). Route to: tickets.admin.show --}}
 @php
     use App\Helpers\Jalali;
     $settings = [
