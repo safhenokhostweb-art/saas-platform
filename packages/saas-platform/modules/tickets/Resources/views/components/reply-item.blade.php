@@ -1,37 +1,42 @@
 @php
-    $isStaff  = ($reply->author_type ?? '') === 'staff';
-    $bgClass  = $isStaff ? 'bg-green-50 border-green-100' : 'bg-blue-50 border-blue-100';
-    $initial  = mb_substr($reply->user?->name ?? ($isStaff ? 'پشتیبانی' : 'مشتری'), 0, 1);
-    $nameColor = $isStaff ? 'text-green-700' : 'text-blue-700';
-    $avatarBg  = $isStaff ? 'bg-green-200 text-green-700' : 'bg-blue-200 text-blue-700';
+$isStaff    = ($reply->author_type ?? '') === 'staff';
+$authorName = $isStaff
+    ? ($reply->user?->name ?? 'پشتیبان')
+    : ($reply->customer_name ?? 'مشتری');
+$initial    = mb_substr($authorName, 0, 1);
+$bgColor    = $isStaff ? '#dcf8c6' : '#e3f2fd';
+$avatarColor = $isStaff ? '#10b981' : '#6366f1';
 @endphp
-<div class="rounded-xl border p-4 {{ $bgClass }}">
-    <div class="flex items-center gap-2 mb-2">
-        <div class="w-7 h-7 rounded-full {{ $avatarBg }} flex items-center justify-center text-xs font-bold">
-            {{ $initial }}
-        </div>
-        <div class="flex items-center gap-2">
-            <p class="text-sm font-medium {{ $nameColor }}">
-                {{ $reply->user?->name ?? ($isStaff ? 'پشتیبانی' : 'مشتری') }}
+<div class="flex items-end gap-2 max-w-[85%] mb-4 {{ $isStaff ? 'flex-row-reverse mr-auto' : '' }}">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm"
+         style="background-color: {{ $avatarColor }};">
+        {{ $initial }}
+    </div>
+    <div>
+        <div class="rounded-2xl px-4 py-2.5 shadow-sm {{ $isStaff ? 'rounded-bl-sm' : 'rounded-br-sm' }}"
+             style="background-color: {{ $bgColor }}; color: #1a1a2e;">
+            <p class="text-xs font-semibold mb-1 opacity-80">
+                {{ $authorName }}
+                @if($isStaff)
+                    <span class="inline-flex items-center text-[9px] bg-green-200/50 px-1.5 py-0.5 rounded-full mr-1">پشتیبان</span>
+                @endif
             </p>
-            @if($isStaff)
-            <span class="text-xs bg-green-200 text-green-800 px-1.5 py-0.5 rounded">پشتیبان</span>
+            <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ $reply->message }}</p>
+            @if(!empty($reply->attachments) && is_array($reply->attachments))
+            <div class="flex flex-wrap gap-1.5 mt-2">
+                @foreach($reply->attachments as $file)
+                    @if(isset($file['path']))
+                    <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
+                       class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
+                        📎 <span class="truncate max-w-[100px]">{{ $file['name'] ?? 'فایل' }}</span>
+                    </a>
+                    @endif
+                @endforeach
+            </div>
             @endif
         </div>
-        <p class="text-xs text-gray-400 mr-auto">{{ $reply->created_at->diffForHumans() }}</p>
+        <span class="text-[10px] text-gray-400 mt-1 px-1 {{ $isStaff ? 'text-left block' : '' }}">
+            {{ \App\Helpers\Jalali::formatFa($reply->created_at, 'H:i') }}
+        </span>
     </div>
-    <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{{ $reply->message }}</p>
-
-    @if(!empty($reply->attachments) && is_array($reply->attachments))
-<div class="mt-2 flex flex-wrap gap-2">
-    @foreach($reply->attachments as $file)
-        @if(isset($file['path']) && isset($file['name']))
-        <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
-           class="text-xs bg-white text-gray-600 border border-gray-200 px-2 py-1 rounded-full hover:bg-gray-50 transition">
-            📎 {{ $file['name'] }}
-        </a>
-        @endif
-    @endforeach
-</div>
-@endif
 </div>

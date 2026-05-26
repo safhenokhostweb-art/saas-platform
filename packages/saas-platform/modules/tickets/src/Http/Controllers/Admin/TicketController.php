@@ -8,6 +8,7 @@ use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
 use SaaSPlatform\Modules\Tickets\Services\TicketSlaService;
+use SaaSPlatform\Modules\Tickets\Services\TicketNotificationService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -21,10 +22,11 @@ class TicketController extends Controller
 {
     use AuthorizesRequests;
     public function __construct(
-        protected TicketServiceInterface  $ticketService,
-        protected TicketGateService       $gateService,
-        protected TicketSlaService        $slaService,
-        protected SiteRepositoryInterface $siteRepository,
+        protected TicketServiceInterface     $ticketService,
+        protected TicketGateService          $gateService,
+        protected TicketSlaService           $slaService,
+        protected SiteRepositoryInterface    $siteRepository,
+        protected TicketNotificationService  $notificationService,
     ) {}
 
     public function index(Request $request)
@@ -66,7 +68,9 @@ class TicketController extends Controller
 
 $files = empty($files) ? null : array_values($files);
 
-        $this->ticketService->create($request->validated(), $files);
+        $ticket = $this->ticketService->create($request->validated(), $files);
+
+        $this->notificationService->onCreated($ticket);
 
         return redirect()
             ->route('tickets.admin.index')
@@ -83,10 +87,18 @@ $files = empty($files) ? null : array_values($files);
 
         $this->authorize('view', $ticket);
 
+        $userModel  = config('tickets.user_model', \App\Models\User::class);
+        $adminUsers = $userModel::where('is_admin', true)->get(['id', 'name']);
+        $sites      = $this->siteRepository->allActive();
+        $smsEnabled = (bool) Setting::get('tickets.sms_enabled', false);
+
         return view('tickets::admin.tickets.show', [
-            'ticket'     => $ticket,
-            'slaEnabled' => $this->gateService->isSlaEnabled(),
-            'slaMetrics' => $this->gateService->isSlaEnabled()
+            'ticket'             => $ticket,
+            'adminUsers'         => $adminUsers,
+            'sites'              => $sites,
+            'smsEnabled'         => $smsEnabled,
+            'slaEnabled'         => $this->gateService->isSlaEnabled(),
+            'slaMetrics'         => $this->gateService->isSlaEnabled()
                 ? $this->slaService->getMetrics($ticket->site_id)
                 : [],
             'attachmentsEnabled' => $this->gateService->canUploadAttachments(),

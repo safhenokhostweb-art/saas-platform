@@ -7,6 +7,7 @@ use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
+use SaaSPlatform\Modules\Tickets\Services\TicketNotificationService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketReplyRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -20,6 +21,7 @@ class TicketReplyController extends Controller
         protected TicketServiceInterface    $ticketService,
         protected TicketRepositoryInterface $ticketRepository,
         protected TicketGateService         $gateService,
+        protected TicketNotificationService $notificationService,
     ) {}
 
     public function store(StoreTicketReplyRequest $request, int $ticketId)
@@ -36,10 +38,15 @@ class TicketReplyController extends Controller
             ? array_filter((array) $request->file('attachments'))
             : null;
 
-        $this->ticketService->addReply($ticket, array_merge(
+        $updatedTicket = $this->ticketService->addReply($ticket, array_merge(
             $request->validated(),
             ['author_type' => TicketReply::AUTHOR_STAFF]
         ), $files);
+
+        $lastReply = $updatedTicket->replies->last();
+        if ($lastReply) {
+            $this->notificationService->onReplyAdded($updatedTicket, $lastReply);
+        }
 
         return back()->with('success', 'پاسخ با موفقیت ثبت شد.');
     }

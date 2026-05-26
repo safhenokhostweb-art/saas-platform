@@ -236,6 +236,60 @@ use SaaSPlatform\CoreUtils\Console\Commands\Scalability\ValidateScalabilityComma
 use SaaSPlatform\CoreUtils\Console\Commands\Scalability\SimulateLoadCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Scalability\TestIsolationCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Scalability\ForecastCapacityCommand;
+// Phase 8.6 — Plugin Governance
+use SaaSPlatform\CoreUtils\PluginGovernance\CapabilityDefinition;
+use SaaSPlatform\CoreUtils\PluginGovernance\ModuleCapabilityRegistry;
+use SaaSPlatform\CoreUtils\PluginGovernance\CapabilityGrantManager;
+use SaaSPlatform\CoreUtils\PluginGovernance\CapabilityResolutionEngine;
+use SaaSPlatform\CoreUtils\PluginGovernance\ModulePermissionProfile;
+use SaaSPlatform\CoreUtils\PluginGovernance\RuntimeCapabilityEnforcer;
+// Phase 8.6 — Sandbox
+use SaaSPlatform\CoreUtils\PluginGovernance\Sandbox\SandboxRuntimeManager;
+use SaaSPlatform\CoreUtils\PluginGovernance\Sandbox\RuntimeSandboxBoundary;
+use SaaSPlatform\CoreUtils\PluginGovernance\Sandbox\ModuleResourceLimiter;
+use SaaSPlatform\CoreUtils\PluginGovernance\Sandbox\IsolatedExecutionCoordinator;
+use SaaSPlatform\CoreUtils\PluginGovernance\Sandbox\PluginRuntimeContainer;
+// Phase 8.6 — Dependency Scanning
+use SaaSPlatform\CoreUtils\PluginGovernance\DependencyScanning\PluginDependencyScanner;
+use SaaSPlatform\CoreUtils\PluginGovernance\DependencyScanning\RuntimeDependencyValidator;
+use SaaSPlatform\CoreUtils\PluginGovernance\DependencyScanning\UnsafeImportDetector;
+use SaaSPlatform\CoreUtils\PluginGovernance\DependencyScanning\SandboxCompatibilityAnalyzer;
+use SaaSPlatform\CoreUtils\PluginGovernance\DependencyScanning\DependencyRiskClassifier;
+// Phase 8.6 — Lifecycle
+use SaaSPlatform\CoreUtils\PluginGovernance\Lifecycle\PluginLifecycleManager;
+use SaaSPlatform\CoreUtils\PluginGovernance\Lifecycle\PluginActivationCoordinator;
+use SaaSPlatform\CoreUtils\PluginGovernance\Lifecycle\PluginHealthMonitor;
+use SaaSPlatform\CoreUtils\PluginGovernance\Lifecycle\PluginUpgradeValidator;
+use SaaSPlatform\CoreUtils\PluginGovernance\Lifecycle\PluginRollbackCoordinator;
+// Phase 8.6 — Trust
+use SaaSPlatform\CoreUtils\PluginGovernance\Trust\PluginSignatureVerifier;
+use SaaSPlatform\CoreUtils\PluginGovernance\Trust\ModuleTrustRegistry;
+use SaaSPlatform\CoreUtils\PluginGovernance\Trust\TrustedPublisherRegistry;
+use SaaSPlatform\CoreUtils\PluginGovernance\Trust\PluginIntegrityValidator;
+use SaaSPlatform\CoreUtils\PluginGovernance\Trust\ExtensionAuthenticityService;
+// Phase 8.6 — Containment
+use SaaSPlatform\CoreUtils\PluginGovernance\Containment\PluginContainmentManager;
+use SaaSPlatform\CoreUtils\PluginGovernance\Containment\RuntimeViolationDetector;
+use SaaSPlatform\CoreUtils\PluginGovernance\Containment\ExtensionQuarantineService;
+use SaaSPlatform\CoreUtils\PluginGovernance\Containment\UnsafeExecutionTerminator;
+use SaaSPlatform\CoreUtils\PluginGovernance\Containment\SandboxViolationTelemetry;
+// Phase 8.6 — Resource Governance
+use SaaSPlatform\CoreUtils\PluginGovernance\ResourceGovernance\PluginQuotaManager;
+use SaaSPlatform\CoreUtils\PluginGovernance\ResourceGovernance\ExtensionRuntimePressureAnalyzer;
+use SaaSPlatform\CoreUtils\PluginGovernance\ResourceGovernance\PluginResourceBudget;
+use SaaSPlatform\CoreUtils\PluginGovernance\ResourceGovernance\PluginFairnessCoordinator;
+use SaaSPlatform\CoreUtils\PluginGovernance\ResourceGovernance\SandboxLoadBalancer;
+// Phase 8.6 — Marketplace
+use SaaSPlatform\CoreUtils\PluginGovernance\Marketplace\MarketplaceGovernanceValidator;
+use SaaSPlatform\CoreUtils\PluginGovernance\Marketplace\RuntimeMarketplacePolicy;
+// Phase 8.6 — Metrics
+use SaaSPlatform\CoreUtils\PluginGovernance\Metrics\PluginRuntimeMetrics;
+// Phase 8.6 — Commands
+use SaaSPlatform\CoreUtils\Console\Commands\Plugins\ValidateSandboxCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Plugins\ScanDependenciesCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Plugins\TestIsolationCommand as PluginTestIsolationCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Plugins\VerifySignaturesCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Plugins\PluginRuntimeStatusCommand;
 // Phase 8.2 — Commands
 use SaaSPlatform\CoreUtils\Console\Commands\Deployment\DeploymentLockCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Deployment\DeploymentUnlockCommand;
@@ -474,6 +528,130 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 8.4 — Validation
         $this->app->singleton(GovernanceRuntimeValidationService::class);
 
+        // PHASE 8.5 — Runtime Isolation
+        $this->app->singleton(TenantCapacityProfile::class);
+        $this->app->singleton(TenantQuotaManager::class);
+        $this->app->singleton(TenantRuntimeBudget::class);
+        $this->app->singleton(TenantConsumptionTracker::class);
+        $this->app->singleton(TenantResourceGovernor::class);
+        $this->app->singleton(RuntimeIsolationCoordinator::class);
+
+        // PHASE 8.5 — Noisy Neighbor
+        $this->app->singleton(TenantPressureAnalyzer::class);
+        $this->app->singleton(NoisyNeighborDetector::class);
+        $this->app->singleton(TenantPenaltyEngine::class);
+        $this->app->singleton(AdaptiveTenantThrottler::class);
+        $this->app->singleton(RuntimeFairnessCoordinator::class);
+
+        // PHASE 8.5 — Distributed Queue
+        $this->app->singleton(QueuePartitionRegistry::class);
+        $this->app->singleton(TenantQueueAffinityResolver::class);
+        $this->app->singleton(QueueShardManager::class);
+        $this->app->singleton(RuntimeQueueBalancer::class);
+        $this->app->singleton(DistributedQueueCoordinator::class);
+
+        // PHASE 8.5 — Capacity Governance
+        $this->app->singleton(CapacityThresholdManager::class);
+        $this->app->singleton(CapacityForecastEngine::class);
+        $this->app->singleton(RuntimePressurePredictor::class);
+        $this->app->singleton(RuntimeScalingAdvisor::class);
+        $this->app->singleton(RuntimeCapacityPlanner::class);
+
+        // PHASE 8.5 — Node Coordination
+        $this->app->singleton(NodeRegistry::class);
+        $this->app->singleton(NodeCapacityTracker::class);
+        $this->app->singleton(DistributedRuntimeMap::class);
+        $this->app->singleton(RuntimeNodeCoordinator::class);
+
+        // PHASE 8.5 — Cache Governance
+        $this->app->singleton(TenantCacheNamespaceManager::class);
+        $this->app->singleton(RuntimeCachePartitioner::class);
+        $this->app->singleton(TenantCachePressureMonitor::class);
+        $this->app->singleton(CacheEvictionCoordinator::class);
+        $this->app->singleton(DistributedCacheIsolation::class);
+
+        // PHASE 8.5 — Storage Governance
+        $this->app->singleton(RuntimeStorageQuotaService::class);
+        $this->app->singleton(AttachmentAccessTelemetry::class);
+        $this->app->singleton(AttachmentIsolationManager::class);
+        $this->app->singleton(StoragePressureAnalyzer::class);
+        $this->app->singleton(TenantStorageGovernor::class);
+
+        // PHASE 8.5 — Runtime Scheduling
+        $this->app->singleton(RuntimeWorkloadClassifier::class);
+        $this->app->singleton(TenantPriorityScheduler::class);
+        $this->app->singleton(DeferredExecutionCoordinator::class);
+        $this->app->singleton(GovernanceAwareDispatcher::class);
+        $this->app->singleton(RuntimeScheduler::class);
+
+        // PHASE 8.5 — Scalability
+        $this->app->singleton(TenantStressSimulator::class);
+        $this->app->singleton(QueuePressureSimulator::class);
+        $this->app->singleton(RuntimeLoadSimulationEngine::class);
+        $this->app->singleton(CapacityValidationReport::class);
+        $this->app->singleton(ScalabilityValidationService::class);
+
+        // PHASE 8.5 — Scalability Metrics
+        $this->app->singleton(RuntimeCapacitySnapshot::class);
+        $this->app->singleton(TenantIsolationMetrics::class);
+        $this->app->singleton(DistributedRuntimeMetrics::class);
+        $this->app->singleton(QueueScalabilityMetrics::class);
+        $this->app->singleton(ResourcePressureIndex::class);
+
+        // PHASE 8.6 — Plugin Capability Governance (leaf-first)
+        $this->app->singleton(ModuleCapabilityRegistry::class);
+        $this->app->singleton(CapabilityGrantManager::class);
+        $this->app->singleton(CapabilityResolutionEngine::class);
+        $this->app->singleton(RuntimeCapabilityEnforcer::class);
+
+        // PHASE 8.6 — Sandbox
+        $this->app->singleton(ModuleResourceLimiter::class);
+        $this->app->singleton(RuntimeSandboxBoundary::class);
+        $this->app->singleton(IsolatedExecutionCoordinator::class);
+        $this->app->singleton(SandboxRuntimeManager::class);
+
+        // PHASE 8.6 — Dependency Scanning
+        $this->app->singleton(DependencyRiskClassifier::class);
+        $this->app->singleton(UnsafeImportDetector::class);
+        $this->app->singleton(SandboxCompatibilityAnalyzer::class);
+        $this->app->singleton(RuntimeDependencyValidator::class);
+        $this->app->singleton(PluginDependencyScanner::class);
+
+        // PHASE 8.6 — Lifecycle
+        $this->app->singleton(PluginHealthMonitor::class);
+        $this->app->singleton(PluginActivationCoordinator::class);
+        $this->app->singleton(PluginUpgradeValidator::class);
+        $this->app->singleton(PluginRollbackCoordinator::class);
+        $this->app->singleton(PluginLifecycleManager::class);
+
+        // PHASE 8.6 — Trust
+        $this->app->singleton(TrustedPublisherRegistry::class);
+        $this->app->singleton(ModuleTrustRegistry::class);
+        $this->app->singleton(PluginIntegrityValidator::class);
+        $this->app->singleton(PluginSignatureVerifier::class);
+        $this->app->singleton(ExtensionAuthenticityService::class);
+
+        // PHASE 8.6 — Containment
+        $this->app->singleton(SandboxViolationTelemetry::class);
+        $this->app->singleton(RuntimeViolationDetector::class);
+        $this->app->singleton(ExtensionQuarantineService::class);
+        $this->app->singleton(UnsafeExecutionTerminator::class);
+        $this->app->singleton(PluginContainmentManager::class);
+
+        // PHASE 8.6 — Resource Governance
+        $this->app->singleton(PluginResourceBudget::class);
+        $this->app->singleton(ExtensionRuntimePressureAnalyzer::class);
+        $this->app->singleton(PluginFairnessCoordinator::class);
+        $this->app->singleton(SandboxLoadBalancer::class);
+        $this->app->singleton(PluginQuotaManager::class);
+
+        // PHASE 8.6 — Marketplace
+        $this->app->singleton(MarketplaceGovernanceValidator::class);
+        $this->app->singleton(RuntimeMarketplacePolicy::class);
+
+        // PHASE 8.6 — Metrics
+        $this->app->singleton(PluginRuntimeMetrics::class);
+
         // PHASE 6.98 — TASK 6: Register ModuleUpdateOrchestrator
         $this->app->singleton(ModuleUpdateOrchestrator::class);
 
@@ -561,6 +739,17 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 SimulateFailureCommand::class,
                 TestRecoveryCommand::class,
                 ListPoliciesCommand::class,
+                // PHASE 8.5 — Scalability commands
+                ValidateScalabilityCommand::class,
+                SimulateLoadCommand::class,
+                TestIsolationCommand::class,
+                ForecastCapacityCommand::class,
+                // PHASE 8.6 — Plugin governance commands
+                ValidateSandboxCommand::class,
+                ScanDependenciesCommand::class,
+                PluginTestIsolationCommand::class,
+                VerifySignaturesCommand::class,
+                PluginRuntimeStatusCommand::class,
             ]);
         }
 

@@ -69,7 +69,8 @@ class DeploymentStatusCommand extends Command
             $this->newLine();
             $this->line("  <fg=cyan>Recent Deployments</>");
             foreach (array_slice($manifestManager->all(), 0, 5) as $uuid => $m) {
-                $this->line("     {$m['released_at']}  {$uuid}  ({$m['git_branch'] ?? '?'})");
+                $branch = $m['git_branch'] ?? '?';
+                $this->line("     {$m['released_at']}  {$uuid}  ({$branch})");
             }
         }
 

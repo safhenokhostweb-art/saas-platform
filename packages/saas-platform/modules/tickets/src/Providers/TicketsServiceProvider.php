@@ -82,13 +82,20 @@ class TicketsServiceProvider extends ServiceProvider
         // --- Lifecycle contract ---
         $this->app->bind(ModuleLifecycleInterface::class, TicketModuleLifecycle::class);
 
+        // SMS service singleton (used by TicketSmsController + TicketNotificationService)
+        $this->app->singleton(\SaaSPlatform\Modules\Tickets\Services\TicketSmsService::class);
+
         // --- 14 canonical services as singletons ---
         $this->app->singleton(TicketLifecycleService::class);
         $this->app->singleton(TicketAssignmentService::class);
         $this->app->singleton(TicketStatusService::class);
         $this->app->singleton(TicketPriorityService::class);
         $this->app->singleton(TicketSlaService::class);
-        $this->app->singleton(TicketNotificationService::class);
+        $this->app->singleton(TicketNotificationService::class, function ($app) {
+            return new TicketNotificationService(
+                $app->make(\SaaSPlatform\Modules\Tickets\Services\TicketSmsService::class)
+            );
+        });
         $this->app->singleton(TicketPortalService::class);
         $this->app->singleton(TicketActivityService::class);
         $this->app->singleton(TicketGateService::class);

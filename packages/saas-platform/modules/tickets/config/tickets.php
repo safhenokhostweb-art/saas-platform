@@ -25,8 +25,10 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'site_model' => \App\Models\Site::class,
-    'user_model' => \App\Models\User::class,
+    'site_model'           => \App\Models\Site::class,
+    'user_model'           => \App\Models\User::class,
+    'settings_model'       => \App\Models\Setting::class,
+    'sms_gateway_resolver' => \App\Services\Sms\SmsGatewayResolver::class,
 
     'statuses'             => ['open', 'in_progress', 'closed'],
     'priorities'           => ['low', 'normal', 'high'],

@@ -51,6 +51,11 @@ class RuntimeThrottleManager
         $this->tenantGovernor->throttle($tenantId, $factor, $reason);
     }
 
+    public function activateTenant(int $tenantId, float $factor, string $reason = ''): void
+    {
+        $this->tenantGovernor->throttle($tenantId, $factor, $reason);
+    }
+
     public function releaseTenant(int $tenantId): void
     {
         $this->tenantGovernor->release($tenantId);
