@@ -2,9 +2,9 @@
 
 namespace SaaSPlatform\Modules\Forms\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Foundation\Http\FormRequest as BaseFormRequest;
 
-class FormRequest extends FormRequest
+class FormRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {

@@ -4,12 +4,10 @@ namespace SaaSPlatform\Modules\Forms\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use SaaSPlatform\CoreUtils\Traits\HasUuid;
-use SaaSPlatform\CoreUtils\Traits\HasUserStamps;
 
 class Form extends Model
 {
-    use SoftDeletes, HasUuid, HasUserStamps;
+    use SoftDeletes;
 
     protected $table = 'forms';
 
@@ -49,7 +47,12 @@ class Form extends Model
 
     public function sites()
     {
-        return $this->belongsToMany(config('forms.site_model'), 'form_site')
+        $siteModel = config('forms.site_model');
+        if (!$siteModel || !class_exists($siteModel)) {
+            // form_site pivot table does not exist in single-tenant setups; avoid any JOIN on it.
+            return $this->hasMany(static::class, 'id', 'id')->whereRaw('1 = 0');
+        }
+        return $this->belongsToMany($siteModel, 'form_site')
             ->withPivot('is_active')
             ->withTimestamps();
     }

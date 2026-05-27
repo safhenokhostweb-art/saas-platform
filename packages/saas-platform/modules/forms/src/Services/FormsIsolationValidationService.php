@@ -126,6 +126,19 @@ class FormsIsolationValidationService
                     continue;
                 }
 
+                // Skip validation/safety tooling files: they contain 'App\' in string
+                // literals, regex patterns, and comments for inspection purposes —
+                // not as actual PHP namespace imports.
+                $basename = basename($relativePath);
+                if (in_array($basename, [
+                    'FormsIsolationValidationService.php',
+                    'FormsFrontendGovernanceValidationService.php',
+                    'FormsRuntimeSafetyService.php',
+                    'ValidateFormsIsolationCommand.php',
+                ], true)) {
+                    continue;
+                }
+
                 $contents = file_get_contents($file->getPathname());
 
                 // Match "use App\" or "new \App\" or "App\Models" etc.

@@ -4,12 +4,10 @@ namespace SaaSPlatform\Modules\Forms\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use SaaSPlatform\CoreUtils\Traits\HasUuid;
-use SaaSPlatform\CoreUtils\Traits\HasUserStamps;
 
 class FormField extends Model
 {
-    use SoftDeletes, HasUuid, HasUserStamps;
+    use SoftDeletes;
 
     protected $table = 'form_fields';
 

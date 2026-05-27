@@ -14,7 +14,7 @@
     <div class="flex items-center gap-2">
       {{-- Bulk delete (visible when rows selected) --}}
       <template x-if="selectedIds.length > 0">
-        <div class="flex items-center gap-2 animate-in">
+        <div class="flex items-center gap-2 transition-all duration-200">
           <span class="text-xs text-indigo-600 font-medium" x-text="`${selectedIds.length} ارسال انتخاب‌شده`"></span>
         </div>
       </template>
@@ -176,7 +176,7 @@
               @elseif($col === 'ip')
               <td class="p-3 text-slate-400 font-mono text-xs">{{ $item->ip ?? '—' }}</td>
               @elseif(in_array($col, $dataKeys, true))
-              <td class="p-3 text-slate-700 max-w-50">
+              <td class="p-3 text-slate-700 max-w-[12.5rem]">
                 <span class="truncate block">{{ is_array($item->data[$col] ?? null) ? implode(', ', $item->data[$col]) : ($item->data[$col] ?? '—') }}</span>
               </td>
               @endif
@@ -247,7 +247,7 @@
             <template x-for="[key, value] in Object.entries(detailData.data || {})" :key="key">
               <div class="bg-slate-50 rounded-xl p-3">
                 <p class="text-xs font-medium text-slate-500 mb-1" x-text="key"></p>
-                <p class="text-sm text-slate-800 wrap-break-word"
+                <p class="text-sm text-slate-800 break-words"
                    x-text="Array.isArray(value) ? value.join(', ') : (value || '—')"></p>
               </div>
             </template>

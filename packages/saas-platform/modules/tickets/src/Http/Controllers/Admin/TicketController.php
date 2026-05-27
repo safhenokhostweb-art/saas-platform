@@ -10,6 +10,9 @@ use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
 use SaaSPlatform\Modules\Tickets\Services\TicketSlaService;
 use SaaSPlatform\Modules\Tickets\Services\TicketNotificationService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketRequest;
+use SaaSPlatform\Modules\Tickets\Services\TicketTimelineService;
+use SaaSPlatform\Modules\Tickets\Models\Ticket;
+use SaaSPlatform\Modules\Tickets\Models\TicketActivity;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Setting;
 
@@ -28,6 +31,7 @@ class TicketController extends Controller
         protected TicketSlaService           $slaService,
         protected SiteRepositoryInterface    $siteRepository,
         protected TicketNotificationService  $notificationService,
+        protected TicketTimelineService      $timeline,
     ) {}
 
     public function index(Request $request)
@@ -108,6 +112,11 @@ class TicketController extends Controller
         $sites      = $this->siteRepository->allActive();
         $smsEnabled = (bool) Setting::get('tickets.sms_enabled', false);
 
+        $activities    = TicketActivity::where('ticket_id', $ticket->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+        $internalNotes = $ticket->internalNotes()->get();
+
         return view('tickets::admin.tickets.show', [
             'ticket'             => $ticket,
             'adminUsers'         => $adminUsers,
@@ -119,7 +128,61 @@ class TicketController extends Controller
                 : [],
             'attachmentsEnabled' => $this->gateService->canUploadAttachments(),
             'watchers'           => $ticket->watchers ?? [],
+            'activities'         => $activities,
+            'internalNotes'      => $internalNotes,
         ]);
+    }
+
+    public function bulkAction(Request $request)
+    {
+        $this->authorize('viewAny', Ticket::class);
+
+        $action  = $request->input('action');
+        $ids     = (array) $request->input('ids', []);
+        $ids     = array_filter(array_map('intval', $ids));
+
+        if (empty($ids) || ! in_array($action, ['close', 'reopen', 'delete'], true)) {
+            return back()->with('error', 'عملیات یا انتخاب معتبر نیست.');
+        }
+
+        $tickets = Ticket::withoutTenantIsolation()->whereIn('id', $ids)->get();
+        $count   = 0;
+
+        foreach ($tickets as $ticket) {
+            match ($action) {
+                'close'  => $this->applyBulkClose($ticket),
+                'reopen' => $this->applyBulkReopen($ticket),
+                'delete' => $this->applyBulkDelete($ticket),
+            };
+            $count++;
+        }
+
+        $labels = ['close' => 'بسته شدند', 'reopen' => 'بازگشایی شدند', 'delete' => 'حذف شدند'];
+        return back()->with('success', "{$count} تیکت {$labels[$action]}.");
+    }
+
+    private function applyBulkClose(Ticket $ticket): void
+    {
+        if ($ticket->status === 'closed') {
+            return;
+        }
+        $old = $ticket->status;
+        $ticket->update(['status' => 'closed', 'closed_at' => now()]);
+        $this->timeline->recordStatusChanged($ticket->id, $old, 'closed');
+    }
+
+    private function applyBulkReopen(Ticket $ticket): void
+    {
+        if ($ticket->status !== 'closed') {
+            return;
+        }
+        $ticket->update(['status' => 'open', 'closed_at' => null]);
+        $this->timeline->recordReopened($ticket->id);
+    }
+
+    private function applyBulkDelete(Ticket $ticket): void
+    {
+        $ticket->delete();
     }
 
     protected function getActiveSites()

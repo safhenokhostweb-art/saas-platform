@@ -87,4 +87,23 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketReply::class, 'ticket_id')->orderBy('created_at');
     }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(TicketActivity::class, 'ticket_id')->orderBy('created_at');
+    }
+
+    public function internalNotes(): HasMany
+    {
+        return $this->hasMany(TicketReply::class, 'ticket_id')
+            ->where('is_internal', true)
+            ->orderBy('created_at');
+    }
+
+    public function publicReplies(): HasMany
+    {
+        return $this->hasMany(TicketReply::class, 'ticket_id')
+            ->where('is_internal', false)
+            ->orderBy('created_at');
+    }
 }

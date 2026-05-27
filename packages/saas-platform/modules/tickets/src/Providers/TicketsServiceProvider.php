@@ -54,6 +54,9 @@ use SaaSPlatform\Modules\Tickets\Console\Commands\MigrateTicketDataCommand;
 // PHASE 9.1 — Frontend governance
 use SaaSPlatform\Modules\Tickets\Governance\TicketsFrontendGovernanceValidationService;
 use SaaSPlatform\Modules\Tickets\Console\Commands\ValidateFrontendGovernanceCommand;
+// PHASE 9.3 — Timeline + Internal Notes services
+use SaaSPlatform\Modules\Tickets\Services\TicketTimelineService;
+use SaaSPlatform\Modules\Tickets\Services\TicketInternalNotesService;
 
 // Models and Policies (PHASE 7.1)
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
@@ -116,12 +119,27 @@ class TicketsServiceProvider extends ServiceProvider
 
         // PHASE 9.1 — Frontend governance
         $this->app->singleton(TicketsFrontendGovernanceValidationService::class);
+
+        // PHASE 9.3 — Timeline + Internal Notes
+        $this->app->singleton(TicketTimelineService::class);
+        $this->app->singleton(TicketInternalNotesService::class);
+
+        // PHASE 9.4 — Analytics dashboard
+        $this->app->bind(
+            \SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class,
+            function ($app) {
+                return new \SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController(
+                    $app->make(\SaaSPlatform\CoreUtils\Analytics\OperationalDashboardService::class)
+                );
+            }
+        );
     }
 
     public function boot(): void
     {
         $this->registerRoutes();
         $this->registerViews();
+        $this->registerBladeDirectives();
         $this->registerMigrations();
         $this->registerPolicies();
         $this->registerPublishables();
@@ -153,6 +171,43 @@ class TicketsServiceProvider extends ServiceProvider
     protected function registerViews(): void
     {
         $this->loadViewsFrom(__DIR__ . '/../../Resources/views', 'tickets');
+
+        // Share the Forms package core-ui:: component namespace — registered once
+        // by FormsServiceProvider when forms module is loaded. If forms is absent,
+        // fall back to tickets own resources. This prevents "component not found" in
+        // tickets-only deployments while keeping forms as the single authority.
+        if (! $this->app->bound('core-ui.namespace.registered')) {
+            Blade::anonymousComponentNamespace('tickets::core-ui.components', 'core-ui');
+            $this->app->instance('core-ui.namespace.registered', true);
+        }
+    }
+
+    protected function registerBladeDirectives(): void
+    {
+        // Mirror the @platform / @tenant / @capability directives from FormsServiceProvider.
+        // Only register if not already registered (Forms module may register first).
+        if (! Blade::getCustomDirectives()['platform'] ?? true) {
+            return;
+        }
+
+        $context = function () {
+            if ($this->app->bound(\SaaSPlatform\CoreUtils\Services\PlatformContext::class)) {
+                return $this->app->make(\SaaSPlatform\CoreUtils\Services\PlatformContext::class);
+            }
+            return null;
+        };
+
+        Blade::if('platform', function () use ($context) {
+            return $context()?->isCentralAdmin() ?? false;
+        });
+
+        Blade::if('tenant', function () use ($context) {
+            return $context()?->isTenantAdmin() ?? true;
+        });
+
+        Blade::if('capability', function (string $cap) use ($context) {
+            return $context()?->hasCapability($cap) ?? false;
+        });
     }
 
     protected function registerMigrations(): void

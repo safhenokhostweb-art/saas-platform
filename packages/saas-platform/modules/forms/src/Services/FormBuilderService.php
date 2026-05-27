@@ -96,12 +96,16 @@ class FormBuilderService
     public function updateFormSettings(Form $form, array $settings): Form
     {
         $current = $form->settings ?? [];
+        $settingsToStore = array_diff_key($settings, array_flip([
+            'title', 'slug', 'is_active', 'step_count',
+        ]));
+
         $form->update([
-            'settings'   => array_merge($current, $settings),
+            'settings'   => array_merge($current, $settingsToStore),
             'title'      => $settings['title'] ?? $form->title,
             'slug'       => $settings['slug'] ?? $form->slug,
             'is_active'  => $settings['is_active'] ?? $form->is_active,
-            'step_count' => $settings['step_count'] ?? $form->step_count,
+            'step_count' => $settings['step_count'] ?? $form->step_count ?? 1,
         ]);
 
         return $form->fresh();

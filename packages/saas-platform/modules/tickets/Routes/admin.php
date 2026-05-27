@@ -32,10 +32,11 @@ Route::middleware(['web', 'auth', 'admin'])
         Route::get('/sla/dashboard', [TicketSlaController::class, 'index'])->name('sla.index');
 
         // ─── Core ticket CRUD ────────────────────────────────────────
-        Route::get('/',        [TicketController::class, 'index'])->name('index');
-        Route::get('/create',  [TicketController::class, 'create'])->name('create');
-        Route::post('/',       [TicketController::class, 'store'])->name('store');
-        Route::get('/{id}',    [TicketController::class, 'show'])->name('show');
+        Route::get('/',           [TicketController::class, 'index'])->name('index');
+        Route::get('/create',     [TicketController::class, 'create'])->name('create');
+        Route::post('/',          [TicketController::class, 'store'])->name('store');
+        Route::post('/bulk',      [TicketController::class, 'bulkAction'])->name('bulk');
+        Route::get('/{id}',       [TicketController::class, 'show'])->name('show');
 
         // ─── Status / Assignment / Priority ──────────────────────────
         Route::patch('/{id}/status',   [TicketStatusController::class,    'update'])->name('status.update');
@@ -49,4 +50,8 @@ Route::middleware(['web', 'auth', 'admin'])
         // ─── SMS ─────────────────────────────────────────────────────
         Route::post('/{id}/sms',          [TicketSmsController::class, 'send'])->name('sms.send');
         Route::get('/{id}/sms/templates', [TicketSmsController::class, 'templates'])->name('sms.templates');
+
+        // ─── Phase 9.4: Operational Analytics Dashboard ───────────
+        Route::get('/analytics',      [\SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/analytics/data', [\SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class, 'data'])->name('analytics.data');
     });

@@ -290,6 +290,72 @@ use SaaSPlatform\CoreUtils\Console\Commands\Plugins\ScanDependenciesCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Plugins\TestIsolationCommand as PluginTestIsolationCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Plugins\VerifySignaturesCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Plugins\PluginRuntimeStatusCommand;
+// Phase 9.4 — Realtime Collaboration
+use SaaSPlatform\CoreUtils\Realtime\RealtimePresenceService;
+use SaaSPlatform\CoreUtils\Realtime\UserPresenceTracker;
+use SaaSPlatform\CoreUtils\Realtime\CollaborativeEditingCoordinator;
+use SaaSPlatform\CoreUtils\Realtime\LiveActivityBroadcastService;
+use SaaSPlatform\CoreUtils\Realtime\RealtimeNotificationHub;
+use SaaSPlatform\CoreUtils\Realtime\ConnectionHealthMonitor;
+// Phase 9.4 — AI Layer (base)
+use SaaSPlatform\CoreUtils\AI\AiPromptRegistry;
+use SaaSPlatform\CoreUtils\AI\AiSuggestionEngine;
+use SaaSPlatform\CoreUtils\AI\AiFormBuilderAssistant;
+use SaaSPlatform\CoreUtils\AI\AiSupportReplyAssistant;
+use SaaSPlatform\CoreUtils\AI\ContextAwareRecommendationService;
+use SaaSPlatform\CoreUtils\AI\SmartAutomationAdvisor;
+// Phase 9.5-A — AI Provider Runtime
+use SaaSPlatform\CoreUtils\AI\Providers\OpenAIProvider;
+use SaaSPlatform\CoreUtils\AI\Providers\ClaudeProvider;
+use SaaSPlatform\CoreUtils\AI\AiProviderManager;
+use SaaSPlatform\CoreUtils\AI\AiRuntimeCoordinator;
+use SaaSPlatform\CoreUtils\AI\AiCapabilityRegistry;
+use SaaSPlatform\CoreUtils\AI\AiProviderHealthMonitor;
+use SaaSPlatform\CoreUtils\AI\AiFallbackCoordinator;
+// Phase 9.5-A — Prompt Governance
+use SaaSPlatform\CoreUtils\AI\Governance\SensitiveDataRedactor;
+use SaaSPlatform\CoreUtils\AI\Governance\PromptInjectionDetector;
+use SaaSPlatform\CoreUtils\AI\Governance\AiPromptAuditLogger;
+use SaaSPlatform\CoreUtils\AI\Governance\PromptSecuritySanitizer;
+use SaaSPlatform\CoreUtils\AI\Governance\TenantSafePromptBuilder;
+use SaaSPlatform\CoreUtils\AI\Governance\PromptTemplateRegistry;
+use SaaSPlatform\CoreUtils\AI\Governance\TenantAiQuotaManager;
+use SaaSPlatform\CoreUtils\AI\Governance\AiRateLimitCoordinator;
+use SaaSPlatform\CoreUtils\AI\Governance\AiCostEstimator;
+use SaaSPlatform\CoreUtils\AI\Governance\AiRequestBudgetManager;
+use SaaSPlatform\CoreUtils\AI\Governance\AiOperationPolicyEngine;
+use SaaSPlatform\CoreUtils\AI\Governance\AiUsageGovernor;
+use SaaSPlatform\CoreUtils\AI\Governance\AiGovernanceValidationService;
+// Phase 9.5-A — AI Observability
+use SaaSPlatform\CoreUtils\AI\Observability\AiTelemetryService;
+use SaaSPlatform\CoreUtils\AI\Observability\AiInteractionTimeline;
+use SaaSPlatform\CoreUtils\AI\Observability\AiDecisionAuditLog;
+use SaaSPlatform\CoreUtils\AI\Observability\AiProviderDiagnostics;
+use SaaSPlatform\CoreUtils\AI\Observability\AiFailureAnalytics;
+use SaaSPlatform\CoreUtils\AI\Observability\AiSuggestionEffectivenessAnalyzer;
+// Phase 9.5-A — AI Commands
+use SaaSPlatform\CoreUtils\Console\Commands\AI\ValidateAiGovernanceCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\AI\TestAiProviderCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\AI\AiDiagnosticsCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\AI\AiQuotaReportCommand;
+// Phase 9.4 — Search & Command Center
+use SaaSPlatform\CoreUtils\Search\GlobalSearchEngine;
+use SaaSPlatform\CoreUtils\Search\SmartCommandPalette;
+use SaaSPlatform\CoreUtils\Search\SearchTelemetryService;
+use SaaSPlatform\CoreUtils\Search\ContextualSearchIndex;
+use SaaSPlatform\CoreUtils\Search\RuntimeQuickActionsService;
+// Phase 9.4 — Enterprise Governance
+use SaaSPlatform\CoreUtils\Enterprise\EnterpriseProductExperienceService;
+use SaaSPlatform\CoreUtils\Enterprise\EnterpriseRuntimeGovernanceValidator;
+// Phase 9.4 — Interaction Recovery
+use SaaSPlatform\CoreUtils\InteractionRecovery\InteractionRecoveryEngine;
+// Phase 9.4 — Security Advisory
+use SaaSPlatform\CoreUtils\Security\SecurityAdvisoryService;
+// Phase 9.4 — Analytics
+use SaaSPlatform\CoreUtils\Analytics\OperationalDashboardService;
+// Phase 9.4 — Commands
+use SaaSPlatform\CoreUtils\Console\Commands\Enterprise\ValidateProductExperienceCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\Enterprise\ValidateEnterpriseGovernanceCommand;
 // Phase 8.2 — Commands
 use SaaSPlatform\CoreUtils\Console\Commands\Deployment\DeploymentLockCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\Deployment\DeploymentUnlockCommand;
@@ -655,6 +721,122 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 6.98 — TASK 6: Register ModuleUpdateOrchestrator
         $this->app->singleton(ModuleUpdateOrchestrator::class);
 
+        // PHASE 9.4 — Realtime Collaboration
+        $this->app->singleton(RealtimePresenceService::class);
+        $this->app->singleton(UserPresenceTracker::class);
+        $this->app->singleton(CollaborativeEditingCoordinator::class);
+        $this->app->singleton(LiveActivityBroadcastService::class);
+        $this->app->singleton(RealtimeNotificationHub::class);
+        $this->app->singleton(ConnectionHealthMonitor::class);
+
+        // PHASE 9.4 — AI Layer (base prompt registry + suggestion engine)
+        $this->app->singleton(AiPromptRegistry::class);
+        $this->app->singleton(AiSuggestionEngine::class);
+        $this->app->singleton(ContextAwareRecommendationService::class);
+        $this->app->singleton(SmartAutomationAdvisor::class);
+
+        // PHASE 9.5-A — Prompt governance (leaf-first)
+        $this->app->singleton(SensitiveDataRedactor::class);
+        $this->app->singleton(PromptInjectionDetector::class);
+        $this->app->singleton(AiPromptAuditLogger::class);
+        $this->app->singleton(PromptSecuritySanitizer::class);
+        $this->app->singleton(TenantSafePromptBuilder::class);
+        $this->app->singleton(PromptTemplateRegistry::class);
+
+        // PHASE 9.5-A — AI Rate/Quota/Budget governance
+        $this->app->singleton(TenantAiQuotaManager::class);
+        $this->app->singleton(AiRateLimitCoordinator::class);
+        $this->app->singleton(AiCostEstimator::class);
+        $this->app->singleton(AiRequestBudgetManager::class);
+        $this->app->singleton(AiOperationPolicyEngine::class);
+        $this->app->singleton(AiUsageGovernor::class);
+
+        // PHASE 9.5-A — AI Observability
+        $this->app->singleton(AiTelemetryService::class);
+        $this->app->singleton(AiInteractionTimeline::class);
+        $this->app->singleton(AiDecisionAuditLog::class);
+        $this->app->singleton(AiFailureAnalytics::class);
+        $this->app->singleton(AiSuggestionEffectivenessAnalyzer::class);
+
+        // PHASE 9.5-A — Provider runtime (providers registered, then manager, then coordinator)
+        $this->app->singleton(AiProviderManager::class, function ($app) {
+            $manager = new AiProviderManager();
+            $manager->register($app->make(OpenAIProvider::class));
+            $manager->register($app->make(ClaudeProvider::class));
+            $active = config('ai.provider', 'none');
+            if ($active !== 'none' && $manager->getProvider($active)) {
+                try { $manager->setActive($active); } catch (\Throwable) {}
+            }
+            return $manager;
+        });
+        $this->app->singleton(OpenAIProvider::class);
+        $this->app->singleton(ClaudeProvider::class);
+        $this->app->singleton(AiCapabilityRegistry::class);
+        $this->app->singleton(AiProviderHealthMonitor::class);
+        $this->app->singleton(AiFallbackCoordinator::class);
+        $this->app->singleton(AiProviderDiagnostics::class);
+        $this->app->singleton(AiGovernanceValidationService::class);
+
+        // PHASE 9.5-A — AI Runtime Coordinator (orchestrates all governance + providers)
+        $this->app->singleton(AiRuntimeCoordinator::class);
+
+        // PHASE 9.5-A — Upgraded AI Assistants (now use coordinator + templates)
+        $this->app->singleton(AiFormBuilderAssistant::class);
+        $this->app->singleton(AiSupportReplyAssistant::class);
+
+        // PHASE 9.5-A — AI config
+        $this->mergeConfigFrom(__DIR__ . '/../../config/ai.php', 'ai');
+
+        // PHASE 9.4 — Search & Command Center
+        $this->app->singleton(GlobalSearchEngine::class, function ($app) {
+            $engine = new GlobalSearchEngine();
+            // Register tenant-aware search drivers
+            $engine->registerDriver('tickets', function (string $query, string $tenantId, int $limit) {
+                if (! class_exists(\SaaSPlatform\Modules\Tickets\Models\Ticket::class)) return [];
+                try {
+                    return \SaaSPlatform\Modules\Tickets\Models\Ticket::where('site_id', $tenantId)
+                        ->where(fn ($q) => $q->where('subject', 'like', "%{$query}%")->orWhere('ticket_number', 'like', "%{$query}%"))
+                        ->limit($limit)->get(['id', 'subject', 'ticket_number', 'status'])
+                        ->map(fn ($t) => ['id' => $t->id, 'label' => $t->subject, 'meta' => '#'.$t->ticket_number, 'url' => '/admin/tickets/'.$t->id, 'relevance' => 5])->toArray();
+                } catch (\Throwable) { return []; }
+            });
+            $engine->registerDriver('forms', function (string $query, string $tenantId, int $limit) {
+                if (! class_exists(\SaaSPlatform\Modules\Forms\Models\Form::class)) return [];
+                try {
+                    return \SaaSPlatform\Modules\Forms\Models\Form::where('site_id', $tenantId)
+                        ->where('title', 'like', "%{$query}%")
+                        ->limit($limit)->get(['id', 'title', 'slug'])
+                        ->map(fn ($f) => ['id' => $f->id, 'label' => $f->title, 'meta' => $f->slug, 'url' => '/admin/forms/'.$f->id, 'relevance' => 4])->toArray();
+                } catch (\Throwable) { return []; }
+            });
+            return $engine;
+        });
+        $this->app->singleton(SmartCommandPalette::class, function () {
+            $palette = new SmartCommandPalette();
+            $palette->loadDefaults();
+            return $palette;
+        });
+        $this->app->singleton(SearchTelemetryService::class);
+        $this->app->singleton(ContextualSearchIndex::class);
+        $this->app->singleton(RuntimeQuickActionsService::class, function () {
+            $service = new RuntimeQuickActionsService();
+            $service->loadDefaults();
+            return $service;
+        });
+
+        // PHASE 9.4 — Enterprise Governance
+        $this->app->singleton(EnterpriseProductExperienceService::class);
+        $this->app->singleton(EnterpriseRuntimeGovernanceValidator::class);
+
+        // PHASE 9.4 — Interaction Recovery
+        $this->app->singleton(InteractionRecoveryEngine::class);
+
+        // PHASE 9.4 — Security Advisory
+        $this->app->singleton(SecurityAdvisoryService::class);
+
+        // PHASE 9.4 — Analytics
+        $this->app->singleton(OperationalDashboardService::class);
+
         // Merge configs
         $this->mergeConfigFrom(
             __DIR__ . '/../../config/saas-platform.php',
@@ -750,6 +932,14 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 PluginTestIsolationCommand::class,
                 VerifySignaturesCommand::class,
                 PluginRuntimeStatusCommand::class,
+                // PHASE 9.4 — Enterprise commands
+                ValidateProductExperienceCommand::class,
+                ValidateEnterpriseGovernanceCommand::class,
+                // PHASE 9.5-A — AI commands
+                ValidateAiGovernanceCommand::class,
+                TestAiProviderCommand::class,
+                AiDiagnosticsCommand::class,
+                AiQuotaReportCommand::class,
             ]);
         }
 

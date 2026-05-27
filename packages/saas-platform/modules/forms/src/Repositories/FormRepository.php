@@ -25,7 +25,7 @@ class FormRepository implements FormRepositoryInterface
 
     public function create(array $data): Form
     {
-        return Form::create($data);
+        return Form::create($data)->fresh();
     }
 
     public function update(Form $form, array $data): Form

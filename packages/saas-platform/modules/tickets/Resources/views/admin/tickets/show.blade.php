@@ -399,56 +399,68 @@
                 </div>
             </div>
 
-            {{-- ── TAB: Timeline ───────────────────────────────────── --}}
+            {{-- ── TAB: Timeline (core-ui::activity-timeline) ─────── --}}
             <div x-show="activeTab==='timeline'" class="flex-1" style="min-height:500px">
                 <div class="glass-card p-5 h-full">
-                    <h3 class="text-sm font-bold text-gray-800 mb-5 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        تاریخچه فعالیت تیکت
-                    </h3>
-                    <div class="space-y-2">
-                        {{-- Created event --}}
-                        <div class="timeline-item">
-                            <div class="timeline-dot bg-indigo-500"></div>
-                            <div class="pr-3">
-                                <p class="text-xs font-semibold text-gray-700">تیکت ایجاد شد</p>
-                                <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($ticket->created_at, 'Y/m/d H:i') }}</p>
-                                <p class="text-[10px] text-gray-500 mt-0.5">توسط: {{ $ticket->customer_name ?? $ticket->customer_email ?? 'مشتری' }}</p>
-                            </div>
-                        </div>
-                        @if($ticket->assignee)
-                        <div class="timeline-item">
-                            <div class="timeline-dot bg-purple-500"></div>
-                            <div class="pr-3">
-                                <p class="text-xs font-semibold text-gray-700">تخصیص به کارشناس</p>
-                                <p class="text-[10px] text-gray-400 mt-0.5">{{ $ticket->assignee->name }}</p>
-                            </div>
-                        </div>
-                        @endif
-                        @foreach($ticket->replies as $reply)
-                        <div class="timeline-item">
-                            <div class="timeline-dot {{ $reply->author_type === 'staff' ? 'bg-green-500' : ($reply->author_type === 'internal' ? 'bg-amber-400' : 'bg-blue-400') }}"></div>
-                            <div class="pr-3">
-                                <p class="text-xs font-semibold text-gray-700">
-                                    @if($reply->author_type === 'internal') یادداشت داخلی
-                                    @elseif($reply->author_type === 'staff') پاسخ پشتیبانی
-                                    @else پاسخ مشتری
-                                    @endif
-                                </p>
-                                <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($reply->created_at, 'Y/m/d H:i') }} — {{ $reply->user?->name ?? $reply->customer_name ?? 'کاربر' }}</p>
-                            </div>
-                        </div>
-                        @endforeach
-                        @if($ticket->status === 'closed')
-                        <div class="timeline-item">
-                            <div class="timeline-dot bg-gray-400"></div>
-                            <div class="pr-3">
-                                <p class="text-xs font-semibold text-gray-700">تیکت بسته شد</p>
-                                <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($ticket->updated_at, 'Y/m/d H:i') }}</p>
-                            </div>
-                        </div>
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            تاریخچه فعالیت
+                        </h3>
+                        @if(isset($activities) && $activities->count())
+                        <span class="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {{ $activities->count() }} رویداد
+                        </span>
                         @endif
                     </div>
+
+                    @if(isset($activities) && $activities->isNotEmpty())
+                        <x-core-ui::activity-timeline :activities="$activities" />
+                    @else
+                        {{-- Fallback: synthetic timeline from ticket data --}}
+                        <div class="space-y-2">
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-indigo-500"></div>
+                                <div class="pr-3">
+                                    <p class="text-xs font-semibold text-gray-700">تیکت ایجاد شد</p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($ticket->created_at, 'Y/m/d H:i') }}</p>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">توسط: {{ $ticket->customer_name ?? $ticket->customer_email ?? 'مشتری' }}</p>
+                                </div>
+                            </div>
+                            @if($ticket->assignee)
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-purple-500"></div>
+                                <div class="pr-3">
+                                    <p class="text-xs font-semibold text-gray-700">تخصیص به کارشناس</p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">{{ $ticket->assignee->name }}</p>
+                                </div>
+                            </div>
+                            @endif
+                            @foreach($ticket->replies as $reply)
+                            <div class="timeline-item">
+                                <div class="timeline-dot {{ $reply->is_internal ? 'bg-amber-400' : ($reply->author_type === 'staff' ? 'bg-green-500' : 'bg-blue-400') }}"></div>
+                                <div class="pr-3">
+                                    <p class="text-xs font-semibold text-gray-700">
+                                        @if($reply->is_internal) یادداشت داخلی
+                                        @elseif($reply->author_type === 'staff') پاسخ پشتیبانی
+                                        @else پاسخ مشتری
+                                        @endif
+                                    </p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($reply->created_at, 'Y/m/d H:i') }} — {{ $reply->user?->name ?? $reply->customer_name ?? 'کاربر' }}</p>
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($ticket->status === 'closed')
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-emerald-500"></div>
+                                <div class="pr-3">
+                                    <p class="text-xs font-semibold text-gray-700">تیکت بسته شد</p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($ticket->updated_at, 'Y/m/d H:i') }}</p>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
 

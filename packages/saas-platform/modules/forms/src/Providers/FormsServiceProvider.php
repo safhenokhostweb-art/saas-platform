@@ -33,6 +33,20 @@ use SaaSPlatform\Modules\Forms\Services\FormAnalyticsService;
 use SaaSPlatform\Modules\Forms\Services\FormTemplateService;
 use SaaSPlatform\Modules\Forms\Services\FormsFrontendGovernanceValidationService;
 use SaaSPlatform\Modules\Forms\Services\FormsFrontendParityValidationService;
+use SaaSPlatform\Modules\Forms\Services\FormsAssetGovernanceService;
+use SaaSPlatform\Modules\Forms\Services\FrontendAccessibilityValidationService;
+use SaaSPlatform\Modules\Forms\Services\FormsRuntimeSelfHealingService;
+use SaaSPlatform\Modules\Forms\Services\FormsVersionHistoryService;
+use SaaSPlatform\Modules\Forms\Services\FormsVisualConsistencyService;
+use SaaSPlatform\Modules\Forms\Services\FormsRuntimeStabilizationService;
+// Phase 9.3 — Cross-Context Runtime Parity
+use SaaSPlatform\Modules\Forms\Services\FrontendVisualParityEngine;
+use SaaSPlatform\Modules\Forms\Services\FrontendRuntimeRecoveryService;
+use SaaSPlatform\Modules\Forms\Services\CrossContextRuntimeValidationService;
+use SaaSPlatform\Modules\Forms\Services\NullSiteRepository;
+use SaaSPlatform\Modules\Forms\Services\NullTenantContext;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
+use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 use Illuminate\Support\Facades\Blade;
 
 class FormsServiceProvider extends ServiceProvider
@@ -89,6 +103,32 @@ class FormsServiceProvider extends ServiceProvider
 
         // Phase 9.1 — Frontend Parity Validation
         $this->app->singleton(FormsFrontendParityValidationService::class);
+
+        // Phase 9.2 — Runtime Stabilization, Asset Governance, Accessibility, Self-Healing
+        $this->app->singleton(FormsAssetGovernanceService::class);
+        $this->app->singleton(FrontendAccessibilityValidationService::class);
+        $this->app->singleton(FormsRuntimeSelfHealingService::class);
+        $this->app->singleton(FormsVersionHistoryService::class);
+        $this->app->singleton(FormsVisualConsistencyService::class);
+        $this->app->singleton(FormsRuntimeStabilizationService::class);
+
+        // Phase 9.3 — Cross-Context Runtime Parity
+        $this->app->singleton(FrontendVisualParityEngine::class);
+        $this->app->singleton(FrontendRuntimeRecoveryService::class);
+        $this->app->singleton(CrossContextRuntimeValidationService::class);
+
+        // Provide a no-op fallback when the host app doesn't bind SiteRepositoryInterface
+        // (e.g. customer-site has no multi-site concept). Saas-platform overrides via
+        // InfrastructureServiceProvider, which registers before this provider boots.
+        if (! $this->app->bound(SiteRepositoryInterface::class)) {
+            $this->app->bind(SiteRepositoryInterface::class, NullSiteRepository::class);
+        }
+
+        // Provide a no-op fallback when the host app doesn't bind TenantContextContract.
+        // customer-site has its own TenantContext that does not implement this interface.
+        if (! $this->app->bound(TenantContextContract::class)) {
+            $this->app->bind(TenantContextContract::class, NullTenantContext::class);
+        }
     }
 
     /**
@@ -100,11 +140,9 @@ class FormsServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'forms');
 
         // Load core-ui shared component namespace (Phase 9.1)
-        // Anonymous components at core-ui/components/*.blade.php resolve as <x-core-ui::*>
-        Blade::anonymousComponentNamespace(
-            __DIR__ . '/../../resources/views/core-ui/components',
-            'core-ui'
-        );
+        // anonymousComponentNamespace mangles filesystem paths (converts / to dots);
+        // anonymousComponentPath registers a real directory and hashes the prefix as a view namespace.
+        Blade::anonymousComponentPath(__DIR__ . '/../../resources/views/core-ui/components', 'core-ui');
 
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
@@ -119,6 +157,14 @@ class FormsServiceProvider extends ServiceProvider
                 \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsIsolationCommand::class,
                 \SaaSPlatform\Modules\Forms\Console\Commands\FormsFrontendGovernanceCommand::class,
                 \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsFrontendParityCommand::class,
+                // Phase 9.2 — Stability, Consistency, UX, Asset validation commands
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsRuntimeStabilityCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsFrontendConsistencyCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsEnterpriseUxCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsAssetsCommand::class,
+                // Phase 9.3 — Cross-Context Parity + Runtime Recovery commands
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFrontendParityCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\FrontendRuntimeDiagnosticsCommand::class,
             ]);
         }
 

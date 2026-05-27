@@ -5,13 +5,11 @@ namespace SaaSPlatform\Modules\Forms\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use SaaSPlatform\CoreUtils\Traits\HasUuid;
-use SaaSPlatform\CoreUtils\Traits\HasUserStamps;
 use SaaSPlatform\Modules\Forms\Models\Scopes\SiteTenantScope;
 
 class FormSubmission extends Model
 {
-    use SoftDeletes, HasUuid, HasUserStamps;
+    use SoftDeletes;
 
     // PHASE 8.0 — Structural tenant isolation
     protected static function booted(): void
@@ -46,6 +44,10 @@ class FormSubmission extends Model
 
     public function site()
     {
-        return $this->belongsTo(config('forms.site_model'));
+        $siteModel = config('forms.site_model');
+        if (!$siteModel || !class_exists($siteModel)) {
+            return $this->belongsTo(static::class, 'site_id');
+        }
+        return $this->belongsTo($siteModel);
     }
 }

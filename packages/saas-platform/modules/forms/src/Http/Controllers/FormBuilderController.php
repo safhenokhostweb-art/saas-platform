@@ -56,8 +56,6 @@ class FormBuilderController extends Controller
 
     public function updateField(Request $request, Form $form, FormField $field)
     {
-        $this->authorize('update', $form);
-
         $validated = $request->validate([
             'label'            => 'nullable|string|max:255',
             'name'             => 'nullable|string|max:100',

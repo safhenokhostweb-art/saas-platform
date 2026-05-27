@@ -98,6 +98,14 @@
 
     <div class="w-px h-5 bg-slate-200"></div>
 
+    {{-- Keyboard shortcuts hint --}}
+    <button @click="showKeyboardHelp = !showKeyboardHelp"
+            class="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition" title="کلیدهای میانبر (?)">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+    </button>
+
+    <div class="w-px h-5 bg-slate-200"></div>
+
     {{-- Preview --}}
     <a href="{{ route('admin.forms.preview', $form) }}" target="_blank"
        class="flex items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
@@ -146,7 +154,7 @@
       {{-- Field categories --}}
       <div class="flex-1 overflow-y-auto p-3 space-y-4" id="palette-list">
         @foreach(config('forms.field_type_categories', []) as $cat)
-          <div x-show="categoryVisible(@js($cat['types']), paletteSearch)">
+          <div x-show="categoryVisible({{ json_encode($cat['types']) }}, paletteSearch)">
             <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-1">{{ $cat['label'] }}</p>
             <div class="space-y-1">
               @foreach($cat['types'] as $type)
@@ -240,8 +248,8 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"/></svg>
                   </button>
 
-                  <button @click.stop="deleteField(field.id)"
-                          class="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition" title="حذف">
+                  <button @click.stop="requestDeleteField(field.id)"
+                          class="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition" title="حذف" aria-label="حذف فیلد">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/></svg>
                   </button>
                 </div>
@@ -600,12 +608,18 @@
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0"
        x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @keydown.escape.window="showTemplateModal = false"
        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-       @click.self="showTemplateModal = false">
+       role="dialog" aria-modal="true" aria-labelledby="template-modal-title"
+       @click.self="showTemplateModal = false"
+       style="display:none">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-        <h3 class="font-bold text-slate-800">انتخاب قالب</h3>
-        <button @click="showTemplateModal = false" class="p-1 rounded hover:bg-slate-100 text-slate-400">
+        <h3 id="template-modal-title" class="font-bold text-slate-800">انتخاب قالب</h3>
+        <button @click="showTemplateModal = false" class="p-1 rounded hover:bg-slate-100 text-slate-400" aria-label="بستن">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
         </button>
       </div>
@@ -619,6 +633,82 @@
         </button>
         @endforeach
       </div>
+    </div>
+  </div>
+
+  {{-- ════════════════════════════════════════ DELETE CONFIRM MODAL ══════════════════════════════════════════════════ --}}
+  <div x-show="showDeleteConfirm"
+       x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-100"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @keydown.escape.window="showDeleteConfirm = false; deleteTargetFieldId = null"
+       class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+       role="alertdialog" aria-modal="true" aria-labelledby="delete-confirm-title"
+       style="display:none">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showDeleteConfirm = false; deleteTargetFieldId = null" aria-hidden="true"></div>
+    <div x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 z-10 p-6">
+      <div class="flex items-start gap-4">
+        <div class="shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916"/></svg>
+        </div>
+        <div>
+          <h3 id="delete-confirm-title" class="font-semibold text-slate-800 mb-1">حذف فیلد</h3>
+          <p class="text-sm text-slate-500">آیا مطمئن هستید؟ این فیلد حذف می‌شود.</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 mt-6">
+        <button type="button" @click="showDeleteConfirm = false; deleteTargetFieldId = null"
+                class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none">
+          انصراف
+        </button>
+        <button type="button" @click="deleteField(deleteTargetFieldId)"
+                class="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-xl transition active:scale-95 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:outline-none">
+          بله، حذف شود
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {{-- ════════════════════════════════════════ KEYBOARD SHORTCUTS HELP ══════════════════════════════════════════════ --}}
+  <div x-show="showKeyboardHelp"
+       x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       @keydown.escape.window="showKeyboardHelp = false"
+       class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+       role="dialog" aria-modal="true" aria-label="کلیدهای میانبر"
+       style="display:none">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showKeyboardHelp = false" aria-hidden="true"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm z-10 p-6">
+      <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+        کلیدهای میانبر سازنده
+      </h3>
+      <div class="space-y-2">
+        @foreach([
+          ['Ctrl + Z', 'برگشت (Undo)'],
+          ['Ctrl + Y', 'انجام دوباره (Redo)'],
+          ['Ctrl + S', 'ذخیره همه تغییرات'],
+          ['Escape', 'بستن پانل‌ها و مودال‌ها'],
+          ['Click روی فیلد', 'انتخاب فیلد برای ویرایش'],
+          ['Drag & Drop', 'تغییر ترتیب فیلدها'],
+        ] as [$shortcut, $desc])
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0">
+          <span class="text-sm text-slate-600">{{ $desc }}</span>
+          <kbd class="px-2 py-0.5 text-xs font-mono bg-slate-100 text-slate-600 rounded border border-slate-200">{{ $shortcut }}</kbd>
+        </div>
+        @endforeach
+      </div>
+      <button @click="showKeyboardHelp = false"
+              class="mt-5 w-full py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+        بستن
+      </button>
     </div>
   </div>
 
@@ -645,7 +735,9 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"
+        integrity="sha256-jAyjsy6n6PV3/ABbID07EhWEcwpHNGBMiNlGgDsNLWA="
+        crossorigin="anonymous"></script>
 <script>
 document.addEventListener('alpine:init', () => {
   Alpine.data('formBuilder', (initialData) => ({
@@ -659,11 +751,17 @@ document.addEventListener('alpine:init', () => {
     paletteSearch:    '',
     isDraggingOver:   false,
     draggingType:     null,
-    showTemplateModal: false,
-    toasts:           [],
-    _saveTimer:       null,
-    _fieldSaveTimer:  null,
-    sortableInstance: null,
+    showTemplateModal:    false,
+    showVersionHistory:   false,
+    showDeleteConfirm:    false,
+    showKeyboardHelp:     false,
+    deleteTargetFieldId:  null,
+    toasts:               [],
+    _saveTimer:           null,
+    _fieldSaveTimer:      null,
+    _saveController:      null,
+    _fieldSaveController: null,
+    sortableInstance:     null,
 
     get selectedField() {
       if (! this.selectedFieldId) return null;
@@ -691,12 +789,20 @@ document.addEventListener('alpine:init', () => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); }
         if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); this.redo(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.saveAll(); }
+        if (e.key === '?' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
+          this.showKeyboardHelp = !this.showKeyboardHelp;
+        }
+        if (e.key === 'Escape') {
+          this.showKeyboardHelp = false;
+          this.showTemplateModal = false;
+        }
       });
     },
 
     initSortable() {
       const canvas = document.getElementById('fields-canvas');
       if (! canvas || typeof Sortable === 'undefined') return;
+      if (this.sortableInstance) { this.sortableInstance.destroy(); }
       this.sortableInstance = new Sortable(canvas, {
         animation: 180,
         handle: '.drag-handle',
@@ -705,12 +811,24 @@ document.addEventListener('alpine:init', () => {
         filter: '#drop-zone',
         onEnd: (evt) => {
           if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
-          const item = this.fields.splice(evt.oldIndex, 1)[0];
-          this.fields.splice(evt.newIndex, 0, item);
+          // Re-index Alpine array to match DOM order (prevents positional desync)
+          this.updateFieldOrderFromDom();
           this.persistSort();
           this.pushHistory();
         },
       });
+    },
+
+    updateFieldOrderFromDom() {
+      const canvas = document.getElementById('fields-canvas');
+      if (! canvas) return;
+      const domIds = Array.from(canvas.querySelectorAll('[data-field-id]'))
+        .map(el => Number(el.getAttribute('data-field-id')));
+      const fieldMap = Object.fromEntries(this.fields.map(f => [f.id, f]));
+      // Rebuild Alpine array matching DOM order, preserve fields not in DOM
+      const reordered = domIds.map(id => fieldMap[id]).filter(Boolean);
+      const remaining = this.fields.filter(f => !domIds.includes(f.id));
+      this.fields = [...reordered, ...remaining];
     },
 
     getFieldTypeLabel(type) {
@@ -796,10 +914,14 @@ document.addEventListener('alpine:init', () => {
     async saveCurrentField() {
       const field = this.selectedField;
       if (! field) return;
+      // Cancel any in-flight field save to prevent stale overwrites
+      if (this._fieldSaveController) { this._fieldSaveController.abort(); }
+      this._fieldSaveController = new AbortController();
       this.saveStatus = 'saving';
       try {
         const resp = await fetch(`/admin/forms/{{ $form->id }}/builder/fields/${field.id}`, {
           method: 'PUT',
+          signal: this._fieldSaveController.signal,
           headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -812,23 +934,28 @@ document.addEventListener('alpine:init', () => {
         const idx = this.fields.findIndex(f => f.id === field.id);
         if (idx >= 0) this.fields[idx] = json.field;
         this.saveStatus = 'saved';
+        this._fieldSaveController = null;
         this.pushHistory();
       } catch (e) {
-        this.saveStatus = 'unsaved';
+        if (e.name !== 'AbortError') { this.saveStatus = 'unsaved'; }
       }
     },
 
     autosave() {
       this.saveStatus = 'unsaved';
       clearTimeout(this._saveTimer);
-      this._saveTimer = setTimeout(() => this.saveFormSettings(), 1000);
+      this._saveTimer = setTimeout(() => this.saveFormSettings(), 1200);
     },
 
     async saveFormSettings() {
+      // Cancel any in-flight settings save to prevent race conditions
+      if (this._saveController) { this._saveController.abort(); }
+      this._saveController = new AbortController();
       this.saveStatus = 'saving';
       try {
         const resp = await fetch(`{{ route('admin.forms.builder.settings', $form) }}`, {
           method: 'PUT',
+          signal: this._saveController.signal,
           headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -844,8 +971,9 @@ document.addEventListener('alpine:init', () => {
         });
         if (! resp.ok) throw new Error();
         this.saveStatus = 'saved';
+        this._saveController = null;
       } catch (e) {
-        this.saveStatus = 'unsaved';
+        if (e.name !== 'AbortError') { this.saveStatus = 'unsaved'; }
       }
     },
 
@@ -855,14 +983,23 @@ document.addEventListener('alpine:init', () => {
       this.showToast('همه تغییرات ذخیره شد', 'success');
     },
 
+    requestDeleteField(id) {
+      this.deleteTargetFieldId = id;
+      this.showDeleteConfirm = true;
+    },
+
     async deleteField(id) {
-      if (! confirm('این فیلد حذف شود؟')) return;
-      const idx = this.fields.findIndex(f => f.id === id);
+      this.showDeleteConfirm = false;
+      const targetId = id || this.deleteTargetFieldId;
+      if (! targetId) return;
+      const idx = this.fields.findIndex(f => f.id === targetId);
       if (idx < 0) return;
+      // Optimistic removal
       this.fields.splice(idx, 1);
-      if (this.selectedFieldId === id) this.selectedFieldId = null;
+      if (this.selectedFieldId === targetId) this.selectedFieldId = null;
+      this.deleteTargetFieldId = null;
       try {
-        await fetch(`/admin/forms/{{ $form->id }}/builder/fields/${id}`, {
+        await fetch(`/admin/forms/{{ $form->id }}/builder/fields/${targetId}`, {
           method: 'DELETE',
           headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
         });
@@ -982,6 +1119,8 @@ document.addEventListener('alpine:init', () => {
     },
 
     showToast(message, type = 'info') {
+      // Deduplicate: skip if identical message+type toast is already visible
+      if (this.toasts.some(t => t.message === message && t.type === type)) return;
       const id = Date.now();
       this.toasts.push({ id, message, type });
       setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
@@ -990,4 +1129,3 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 @endpush
-@endsection

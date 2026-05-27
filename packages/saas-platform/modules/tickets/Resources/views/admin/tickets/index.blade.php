@@ -351,6 +351,18 @@
 
     </div>
 
+    {{-- ─── Bulk Toolbar (core-ui::bulk-toolbar) ──────────────────────── --}}
+    <x-core-ui::bulk-toolbar
+        form-action="{{ route('tickets.admin.bulk') }}"
+        form-method="POST"
+        count-var="bulkCount"
+        :actions="[
+            ['label' => 'بستن گروهی',   'value' => 'close',  'color' => 'gray'],
+            ['label' => 'بازگشایی',      'value' => 'reopen', 'color' => 'gray'],
+            ['label' => 'حذف انتخاب‌شده','value' => 'delete', 'color' => 'red'],
+        ]"
+    />
+
     {{-- ─── Actions Bar ────────────────────────────────────────────────── --}}
     <div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div class="flex items-center gap-2 flex-wrap">
@@ -358,12 +370,6 @@
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 تیکت جدید
             </a>
-            {{-- Bulk Action (visible when items selected) --}}
-            <div x-show="bulkCount > 0" x-transition class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
-                <span class="text-xs font-semibold text-indigo-700" x-text="`${bulkCount} انتخاب شده`"></span>
-                <button class="text-xs text-indigo-600 hover:text-indigo-800 font-medium border-r border-indigo-200 pr-2 mr-1">بستن گروهی</button>
-                <button @click="bulkSelected=[]" class="text-xs text-gray-500 hover:text-gray-700">انصراف</button>
-            </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             @if($slaEnabled)

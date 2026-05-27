@@ -16,6 +16,7 @@ class TicketReply extends Model
         'user_id',
         'message',
         'author_type',
+        'is_internal',
         'customer_email',
         'customer_name',
         'attachments',
@@ -23,6 +24,7 @@ class TicketReply extends Model
 
     protected $casts = [
         'attachments' => 'array',
+        'is_internal' => 'boolean',
     ];
 
     public const AUTHOR_STAFF = 'staff';
@@ -44,11 +46,13 @@ class TicketReply extends Model
         return $this->belongsTo(config('tickets.user_model'), 'user_id');
     }
 
-    /**
-     * Check if the reply is from staff.
-     */
     public function isFromStaff(): bool
     {
         return $this->author_type === self::AUTHOR_STAFF;
+    }
+
+    public function isInternal(): bool
+    {
+        return (bool) $this->is_internal;
     }
 }
