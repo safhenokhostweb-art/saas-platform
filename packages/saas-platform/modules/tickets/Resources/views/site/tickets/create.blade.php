@@ -18,7 +18,6 @@
 @endpush
 
 @section('content')
-@tenant
 <div class="max-w-xl mx-auto p-6">
 
     {{-- Header --}}
@@ -126,5 +125,4 @@
     </form>
 
 </div>
-@endtenant
 @endsection

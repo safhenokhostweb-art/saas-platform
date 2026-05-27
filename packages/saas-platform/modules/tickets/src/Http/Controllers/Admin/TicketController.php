@@ -11,6 +11,7 @@ use SaaSPlatform\Modules\Tickets\Services\TicketSlaService;
 use SaaSPlatform\Modules\Tickets\Services\TicketNotificationService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\Setting;
 
 /**
  * PHASE 7.1 — TASK 3: Admin Ticket Controller (canonical)
@@ -49,9 +50,12 @@ class TicketController extends Controller
     {
         $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
-        $sites = $this->getActiveSites();
+        $userModel = config('tickets.user_model', \App\Models\User::class);
+        $users     = $userModel::where('is_admin', false)->orderBy('name')->get(['id', 'name', 'email']);
+        $sites     = $this->getActiveSites();
 
         return view('tickets::admin.tickets.create', [
+            'users'               => $users,
             'sites'               => $sites,
             'attachmentsEnabled'  => $this->gateService->canUploadAttachments(),
             'autoAssignEnabled'   => $this->gateService->isAutoAssignEnabled(),
@@ -62,13 +66,25 @@ class TicketController extends Controller
     {
         $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
-       $files = $this->gateService->canUploadAttachments()
-    ? array_filter((array) $request->file('attachments'))
-    : null;
+        $data = $request->validated();
 
-$files = empty($files) ? null : array_values($files);
+        if (!empty($data['for_user_id'])) {
+            $userModel = config('tickets.user_model', \App\Models\User::class);
+            $user = $userModel::find($data['for_user_id']);
+            if ($user) {
+                $data['customer_id']    = $user->id;
+                $data['customer_name']  = $data['customer_name']  ?? $user->name;
+                $data['customer_email'] = $data['customer_email'] ?? $user->email;
+            }
+            unset($data['for_user_id']);
+        }
 
-        $ticket = $this->ticketService->create($request->validated(), $files);
+        $files = $this->gateService->canUploadAttachments()
+            ? array_filter((array) $request->file('attachments'))
+            : null;
+        $files = empty($files) ? null : array_values($files);
+
+        $ticket = $this->ticketService->create($data, $files);
 
         $this->notificationService->onCreated($ticket);
 
@@ -102,6 +118,7 @@ $files = empty($files) ? null : array_values($files);
                 ? $this->slaService->getMetrics($ticket->site_id)
                 : [],
             'attachmentsEnabled' => $this->gateService->canUploadAttachments(),
+            'watchers'           => $ticket->watchers ?? [],
         ]);
     }
 

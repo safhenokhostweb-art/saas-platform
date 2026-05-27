@@ -25,6 +25,14 @@ use SaaSPlatform\Modules\Forms\Services\FormsCanonicalValidationService;
 use SaaSPlatform\Modules\Forms\Services\FormsFrontendRuntimeService;
 use SaaSPlatform\Modules\Forms\Services\FormsRuntimeUnificationService;
 use SaaSPlatform\Modules\Forms\Services\PlatformContextService;
+// Phase 9.0 services
+use SaaSPlatform\Modules\Forms\Services\FormBuilderService;
+use SaaSPlatform\Modules\Forms\Services\FormConditionalLogicService;
+use SaaSPlatform\Modules\Forms\Services\FormAutomationService;
+use SaaSPlatform\Modules\Forms\Services\FormAnalyticsService;
+use SaaSPlatform\Modules\Forms\Services\FormTemplateService;
+use SaaSPlatform\Modules\Forms\Services\FormsFrontendGovernanceValidationService;
+use SaaSPlatform\Modules\Forms\Services\FormsFrontendParityValidationService;
 use Illuminate\Support\Facades\Blade;
 
 class FormsServiceProvider extends ServiceProvider
@@ -70,6 +78,17 @@ class FormsServiceProvider extends ServiceProvider
 
         // PHASE 6.95: Register PlatformContextService as singleton
         $this->app->singleton(PlatformContextService::class);
+
+        // Phase 9.0 — Enterprise Form Builder services
+        $this->app->singleton(FormBuilderService::class);
+        $this->app->singleton(FormConditionalLogicService::class);
+        $this->app->singleton(FormAutomationService::class);
+        $this->app->singleton(FormAnalyticsService::class);
+        $this->app->singleton(FormTemplateService::class);
+        $this->app->singleton(FormsFrontendGovernanceValidationService::class);
+
+        // Phase 9.1 — Frontend Parity Validation
+        $this->app->singleton(FormsFrontendParityValidationService::class);
     }
 
     /**
@@ -79,6 +98,13 @@ class FormsServiceProvider extends ServiceProvider
     {
         // Load views
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'forms');
+
+        // Load core-ui shared component namespace (Phase 9.1)
+        // Anonymous components at core-ui/components/*.blade.php resolve as <x-core-ui::*>
+        Blade::anonymousComponentNamespace(
+            __DIR__ . '/../../resources/views/core-ui/components',
+            'core-ui'
+        );
 
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
@@ -91,6 +117,8 @@ class FormsServiceProvider extends ServiceProvider
             $this->commands([
                 \SaaSPlatform\Modules\Forms\Console\Commands\InstallFormsModule::class,
                 \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsIsolationCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\FormsFrontendGovernanceCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsFrontendParityCommand::class,
             ]);
         }
 

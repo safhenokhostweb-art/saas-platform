@@ -12,6 +12,7 @@ class FormRepository implements FormRepositoryInterface
     {
         $query = Form::withCount('submissions')
             ->withCount(['fields' => fn ($q) => $q->where('is_active', true)])
+            ->withCount(['automations' => fn ($q) => $q->where('is_active', true)])
             ->latest();
 
         return $query->paginate(config('forms.pagination', 25))->withQueryString();

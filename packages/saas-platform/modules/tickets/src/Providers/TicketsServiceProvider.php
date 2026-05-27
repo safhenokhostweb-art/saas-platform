@@ -51,6 +51,9 @@ use SaaSPlatform\Modules\Tickets\Services\TicketCanonicalRuntimeValidationServic
 // PHASE 7.2 — Artisan commands
 use SaaSPlatform\Modules\Tickets\Console\Commands\ValidateRuntimeAuthorityCommand;
 use SaaSPlatform\Modules\Tickets\Console\Commands\MigrateTicketDataCommand;
+// PHASE 9.1 — Frontend governance
+use SaaSPlatform\Modules\Tickets\Governance\TicketsFrontendGovernanceValidationService;
+use SaaSPlatform\Modules\Tickets\Console\Commands\ValidateFrontendGovernanceCommand;
 
 // Models and Policies (PHASE 7.1)
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
@@ -110,6 +113,9 @@ class TicketsServiceProvider extends ServiceProvider
         $this->app->singleton(TicketIntegrityValidationService::class);
         $this->app->singleton(TicketRollbackService::class);
         $this->app->singleton(TicketCanonicalRuntimeValidationService::class);
+
+        // PHASE 9.1 — Frontend governance
+        $this->app->singleton(TicketsFrontendGovernanceValidationService::class);
     }
 
     public function boot(): void
@@ -131,6 +137,7 @@ class TicketsServiceProvider extends ServiceProvider
                 ValidateRuntimeAuthorityCommand::class,
                 MigrateTicketDataCommand::class,
                 \SaaSPlatform\Modules\Tickets\Console\Commands\ValidateTicketsIsolationCommand::class,
+                ValidateFrontendGovernanceCommand::class,
             ]);
         }
     }

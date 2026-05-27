@@ -24,12 +24,17 @@ class Form extends Model
         'canonical_url',
         'meta_robots',
         'intro_text',
+        'settings',
+        'template_id',
+        'step_count',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'            => 'boolean',
         'enable_simple_captcha' => 'boolean',
-        'enable_hcaptcha' => 'boolean',
+        'enable_hcaptcha'      => 'boolean',
+        'settings'             => 'array',
+        'step_count'           => 'integer',
     ];
 
     public function fields()
@@ -47,5 +52,30 @@ class Form extends Model
         return $this->belongsToMany(config('forms.site_model'), 'form_site')
             ->withPivot('is_active')
             ->withTimestamps();
+    }
+
+    public function automations()
+    {
+        return $this->hasMany(FormAutomation::class);
+    }
+
+    public function isMultiStep(): bool
+    {
+        return ($this->settings['is_multi_step'] ?? false) === true;
+    }
+
+    public function getStepsConfig(): array
+    {
+        return $this->settings['steps'] ?? [];
+    }
+
+    public function getSuccessMessage(): string
+    {
+        return $this->settings['success_message'] ?? 'فرم با موفقیت ارسال شد.';
+    }
+
+    public function getSubmitButtonText(): string
+    {
+        return $this->settings['submit_button_text'] ?? 'ارسال فرم';
     }
 }

@@ -18,7 +18,6 @@
 @endpush
 
 @section('content')
-@tenant
 <div class="max-w-4xl mx-auto p-6">
 
     {{-- Header --}}
@@ -122,5 +121,4 @@
     </div>{{-- end Alpine scope --}}
 
 </div>
-@endtenant
 @endsection

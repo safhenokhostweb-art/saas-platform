@@ -52,6 +52,40 @@ class FormService implements FormServiceInterface
         return $this->repository->getWithFields($id);
     }
 
+    public function duplicate(Form $form): Form
+    {
+        $form->loadMissing('fields');
+
+        $newSlug = Str::slug($form->slug . '-copy') . '-' . time();
+
+        $newForm = $this->repository->create([
+            'title'    => $form->title . ' (کپی)',
+            'slug'     => $newSlug,
+            'is_active' => false,
+            'settings' => array_merge((array) $form->settings, ['is_draft' => true]),
+        ]);
+
+        foreach ($form->fields as $field) {
+            \SaaSPlatform\Modules\Forms\Models\FormField::create([
+                'form_id'          => $newForm->id,
+                'type'             => $field->type,
+                'label'            => $field->label,
+                'name'             => $field->name,
+                'placeholder'      => $field->placeholder,
+                'help_text'        => $field->help_text,
+                'is_required'      => $field->is_required,
+                'is_active'        => $field->is_active,
+                'options'          => $field->options,
+                'validation_rules' => $field->validation_rules,
+                'column_span'      => $field->column_span,
+                'conditions'       => $field->conditions,
+                'position'         => $field->position,
+            ]);
+        }
+
+        return $newForm;
+    }
+
     public function getPreviewData(Form $form): array
     {
         $form->load(['fields' => fn ($q) => $q->where('is_active', true)->orderBy('position')]);

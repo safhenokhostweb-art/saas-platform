@@ -20,4 +20,6 @@ interface FormServiceInterface
     public function getWithFields(int $id): ?Form;
 
     public function getPreviewData(Form $form): array;
+
+    public function duplicate(Form $form): Form;
 }

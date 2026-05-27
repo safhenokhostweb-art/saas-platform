@@ -10,7 +10,6 @@
 @endpush
 
 @section('content')
-@tenant
 <div class="max-w-3xl mx-auto p-6">
 
     {{-- Header --}}
@@ -208,5 +207,4 @@
     </div>
 
 </div>
-@endtenant
 @endsection

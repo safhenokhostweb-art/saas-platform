@@ -15,11 +15,26 @@
 .btn-gradient:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,0.35)}
 .btn-ghost{display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.75rem;border-radius:0.75rem;font-weight:600;font-size:0.875rem;transition:all 0.2s ease;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;cursor:pointer;text-decoration:none}
 .btn-ghost:hover{background:#f8fafc;border-color:#cbd5e1;color:#475569}
+/* User selector */
+.user-selector-wrap{position:relative}
+.user-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:#fff;border:1px solid #e2e8f0;border-radius:0.75rem;box-shadow:0 8px 24px rgba(15,23,42,0.1);max-height:220px;overflow-y:auto}
+.user-option{display:flex;align-items:center;gap:0.625rem;padding:0.625rem 0.875rem;cursor:pointer;transition:background 0.15s}
+.user-option:hover,.user-option.active{background:#f5f3ff}
+.user-option .u-avatar{width:2rem;height:2rem;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.user-chip{display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(168,85,247,0.05));border:1px solid rgba(99,102,241,0.2);border-radius:2rem;padding:0.35rem 0.75rem 0.35rem 0.5rem;font-size:0.8125rem;font-weight:500;color:#4f46e5}
+.user-chip .u-avatar-sm{width:1.5rem;height:1.5rem;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.625rem;font-weight:700}
+.on-behalf-panel{background:linear-gradient(135deg,rgba(99,102,241,0.05),rgba(168,85,247,0.03));border:1px solid rgba(99,102,241,0.15);border-radius:1rem;padding:1rem 1.25rem}
+.internal-note-toggle{display:flex;align-items:center;gap:0.75rem;padding:0.875rem 1rem;border-radius:0.875rem;border:1.5px solid #e2e8f0;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.5)}
+.internal-note-toggle.active{border-color:#f59e0b;background:rgba(245,158,11,0.05)}
 </style>
 @endpush
 
 @section('content')
-<div class="max-w-3xl mx-auto">
+<div class="max-w-3xl mx-auto"
+     x-data="ticketCreate({
+         users: {{ json_encode($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email ?? ''])->values()) }},
+         oldUserId: {{ old('for_user_id', 'null') }}
+     })">
 
     {{-- Header --}}
     <div class="flex items-center gap-4 mb-8">
@@ -70,6 +85,54 @@
 
         <div class="p-6 sm:p-8 space-y-6">
 
+            {{-- ═══ ON BEHALF OF USER ═══ --}}
+            <div class="on-behalf-panel">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span class="text-sm font-semibold text-indigo-800">ثبت تیکت برای کاربر مشخص</span>
+                    <span class="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">اختیاری</span>
+                </div>
+
+                {{-- Selected user chip --}}
+                <div x-show="selectedUser" x-transition class="flex items-center gap-3 mb-3">
+                    <div class="user-chip">
+                        <div class="u-avatar-sm" x-text="selectedUser ? selectedUser.name.charAt(0).toUpperCase() : ''"></div>
+                        <span x-text="selectedUser ? selectedUser.name : ''"></span>
+                        <span class="text-indigo-400 text-xs" x-text="selectedUser ? selectedUser.email : ''"></span>
+                    </div>
+                    <button type="button" @click="clearUser()"
+                            class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        حذف انتخاب
+                    </button>
+                </div>
+
+                {{-- User search --}}
+                <div x-show="!selectedUser" class="user-selector-wrap">
+                    <input type="text" x-model="userSearch" @focus="showUserDrop = true" @input="showUserDrop = true"
+                           @keydown.escape="showUserDrop = false"
+                           class="form-input" placeholder="جستجوی کاربر بر اساس نام یا ایمیل..."
+                           autocomplete="off">
+                    <div class="user-dropdown" x-show="showUserDrop && filteredUsers.length > 0"
+                         @click.outside="showUserDrop = false" x-transition>
+                        <template x-for="u in filteredUsers" :key="u.id">
+                            <div class="user-option" @click="selectUser(u)">
+                                <div class="u-avatar" x-text="u.name.charAt(0).toUpperCase()"></div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-800" x-text="u.name"></div>
+                                    <div class="text-xs text-gray-400" x-text="u.email"></div>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="filteredUsers.length === 0 && userSearch.length > 0"
+                             class="px-4 py-3 text-sm text-gray-400 text-center">کاربری یافت نشد</div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="for_user_id" :value="selectedUser ? selectedUser.id : ''">
+                <p class="text-xs text-indigo-400 mt-2">با انتخاب کاربر، اطلاعات مشتری به‌صورت خودکار تکمیل می‌شود.</p>
+            </div>
+
             {{-- موضوع --}}
             <div>
                 <label class="form-label">موضوع <span class="required">*</span></label>
@@ -103,13 +166,26 @@
             {{-- نام مشتری + ایمیل --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                    <label class="form-label">نام مشتری <span class="text-gray-400 text-xs">(اختیاری)</span></label>
-                    <input type="text" name="customer_name" value="{{ old('customer_name') }}"
+                    <label class="form-label">
+                        نام مشتری
+                        <span class="text-gray-400 text-xs">(اختیاری)</span>
+                        <span x-show="selectedUser" class="text-indigo-400 text-xs mr-1">— از کاربر انتخابی</span>
+                    </label>
+                    <input type="text" name="customer_name"
+                           :value="selectedUser ? selectedUser.name : '{{ old('customer_name') }}'"
+                           :readonly="!!selectedUser"
+                           :class="selectedUser ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
                            class="form-input" placeholder="مثال: علی رضایی">
                 </div>
                 <div>
-                    <label class="form-label">ایمیل مشتری <span class="text-gray-400 text-xs">(اختیاری)</span></label>
-                    <input type="email" name="customer_email" value="{{ old('customer_email') }}"
+                    <label class="form-label">
+                        ایمیل مشتری
+                        <span class="text-gray-400 text-xs">(اختیاری)</span>
+                    </label>
+                    <input type="email" name="customer_email"
+                           :value="selectedUser ? selectedUser.email : '{{ old('customer_email') }}'"
+                           :readonly="!!selectedUser"
+                           :class="selectedUser ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
                            class="form-input" placeholder="email@example.com" dir="ltr">
                 </div>
             </div>
@@ -135,6 +211,27 @@
                           placeholder="متن پیام را بنویسید...">{{ old('description') }}</textarea>
                 @error('description')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 <p class="text-[11px] text-gray-400 mt-1">حداکثر ۵۰۰۰ کاراکتر</p>
+            </div>
+
+            {{-- یادداشت داخلی اولیه --}}
+            <div>
+                <label class="internal-note-toggle" :class="{ active: internalNote }"
+                       @click="internalNote = !internalNote; if(internalNote) $nextTick(() => $refs.noteRef.focus())">
+                    <input type="checkbox" class="hidden" x-model="internalNote">
+                    <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded"
+                         :class="internalNote ? 'bg-amber-400' : 'border-2 border-gray-300'">
+                        <svg x-show="internalNote" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium" :class="internalNote ? 'text-amber-800' : 'text-gray-600'">یادداشت داخلی اولیه</p>
+                        <p class="text-xs text-gray-400">یادداشتی که فقط تیم پشتیبانی می‌بیند</p>
+                    </div>
+                </label>
+                <div x-show="internalNote" x-transition class="mt-3">
+                    <textarea x-ref="noteRef" name="initial_note" rows="3"
+                              class="form-input resize-y min-h-[80px]"
+                              placeholder="یادداشت داخلی (برای تیم پشتیبانی)...">{{ old('initial_note') }}</textarea>
+                </div>
             </div>
 
             {{-- پیوست --}}
@@ -170,4 +267,44 @@
     </form>
 
 </div>
+
+@push('scripts')
+<script>
+function ticketCreate({ users, oldUserId }) {
+    return {
+        users,
+        userSearch: '',
+        showUserDrop: false,
+        selectedUser: null,
+        internalNote: false,
+
+        get filteredUsers() {
+            const q = this.userSearch.toLowerCase().trim();
+            if (!q) return this.users.slice(0, 12);
+            return this.users.filter(u =>
+                u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+            ).slice(0, 12);
+        },
+
+        selectUser(u) {
+            this.selectedUser = u;
+            this.userSearch   = '';
+            this.showUserDrop = false;
+        },
+
+        clearUser() {
+            this.selectedUser = null;
+            this.userSearch   = '';
+        },
+
+        init() {
+            if (oldUserId) {
+                const found = this.users.find(u => u.id == oldUserId);
+                if (found) this.selectUser(found);
+            }
+        },
+    };
+}
+</script>
+@endpush
 @endsection

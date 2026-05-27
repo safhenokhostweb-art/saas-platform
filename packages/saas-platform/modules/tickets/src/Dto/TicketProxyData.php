@@ -1,0 +1,96 @@
+<?php
+
+namespace SaaSPlatform\Modules\Tickets\Dto;
+
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+
+/**
+ * Wraps an API ticket array so canonical Blade views can use object-style access.
+ *
+ * Provides the same property interface as the Eloquent Ticket model, allowing
+ * tickets::site.tickets.* views to render identically in customer-site context.
+ *
+ * Canonical views use: $ticket->subject, $ticket->ticket_number, $ticket->status,
+ *   $ticket->priority, $ticket->description, $ticket->customer_name,
+ *   $ticket->customer_email, $ticket->created_at, $ticket->id,
+ *   $ticket->site?->name, $ticket->assignee?->name, $ticket->replies,
+ *   $ticket->attachments, $ticket->category, $ticket->tags
+ */
+final class TicketProxyData
+{
+    public readonly int|string $id;
+    public readonly string     $ticket_number;
+    public readonly string     $subject;
+    public readonly string     $description;
+    public readonly string     $status;
+    public readonly string     $priority;
+    public readonly ?string    $customer_name;
+    public readonly ?string    $customer_email;
+    public readonly ?string    $category;
+    public readonly ?array     $tags;
+    public readonly ?array     $attachments;
+    public readonly Carbon     $created_at;
+    public readonly Carbon     $updated_at;
+
+    public readonly ?object    $site;
+    public readonly ?object    $assignee;
+    public readonly Collection $replies;
+
+    public function __construct(array $data)
+    {
+        $this->id             = $data['id'] ?? 0;
+        $this->ticket_number  = $data['ticket_number'] ?? ('TKT-' . ($data['id'] ?? '0'));
+        $this->subject        = $data['subject'] ?? '';
+        $this->description    = $data['description'] ?? $data['message'] ?? '';
+        $this->status         = $data['status'] ?? 'open';
+        $this->priority       = $data['priority'] ?? 'normal';
+        $this->customer_name  = $data['customer_name'] ?? null;
+        $this->customer_email = $data['customer_email'] ?? $data['email'] ?? null;
+        $this->category       = $data['category'] ?? null;
+        $this->tags           = is_array($data['tags'] ?? null) ? $data['tags'] : null;
+        $this->attachments    = is_array($data['attachments'] ?? null) ? $data['attachments'] : null;
+
+        $rawCreated = $data['created_at'] ?? now()->toIso8601String();
+        $rawUpdated = $data['updated_at'] ?? $rawCreated;
+        $this->created_at = $rawCreated instanceof Carbon ? $rawCreated : Carbon::parse($rawCreated);
+        $this->updated_at = $rawUpdated instanceof Carbon ? $rawUpdated : Carbon::parse($rawUpdated);
+
+        $siteName = $data['site_name'] ?? ($data['site']['name'] ?? null);
+        $this->site = $siteName ? (object) ['name' => $siteName, 'id' => $data['site_id'] ?? null] : null;
+
+        $assigneeName = $data['assignee_name'] ?? ($data['assignee']['name'] ?? null);
+        $this->assignee = $assigneeName ? (object) ['name' => $assigneeName] : null;
+
+        $rawReplies = $data['replies'] ?? [];
+        $this->replies = TicketReplyProxyData::collectionFrom(
+            is_array($rawReplies) ? $rawReplies : []
+        );
+    }
+
+    public static function fromArray(array $data): self
+    {
+        return new self($data);
+    }
+
+    public static function collectionFromApiResult($tickets): Collection
+    {
+        if ($tickets instanceof Collection) {
+            return $tickets->map(fn($t) => new self(is_array($t) ? $t : (array) $t));
+        }
+
+        return collect((array) $tickets)->map(fn($t) => new self(is_array($t) ? $t : (array) $t));
+    }
+
+    /** Build summary stats from a collection of TicketProxyData. */
+    public static function statsFrom(Collection $tickets): array
+    {
+        return [
+            'total'       => $tickets->count(),
+            'open'        => $tickets->where('status', 'open')->count(),
+            'in_progress' => $tickets->where('status', 'in_progress')->count(),
+            'closed'      => $tickets->where('status', 'closed')->count(),
+            'sla_breaches' => 0,
+        ];
+    }
+}

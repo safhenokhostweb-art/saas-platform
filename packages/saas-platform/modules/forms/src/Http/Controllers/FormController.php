@@ -11,13 +11,15 @@ use SaaSPlatform\Modules\Forms\Http\Requests\FormRequest;
 use SaaSPlatform\Modules\Forms\Models\Form;
 use SaaSPlatform\Modules\Forms\Models\FormField;
 use SaaSPlatform\Modules\Forms\Services\FormFieldService;
+use SaaSPlatform\Modules\Forms\Services\FormTemplateService;
 
 class FormController extends Controller
 {
     public function __construct(
         protected FormServiceInterface      $formService,
         protected FormFieldService          $fieldService,
-        protected ActivityLoggerInterface   $activityLogger
+        protected ActivityLoggerInterface   $activityLogger,
+        protected FormTemplateService       $templateService,
     ) {}
 
     public function index()
@@ -35,16 +37,38 @@ class FormController extends Controller
     {
         $form = $this->formService->create($request->validated());
 
+        // Apply a built-in starter template if the user chose one on the create screen
+        if ($request->boolean('builtin')) {
+            $templates = $this->templateService->getBuiltInTemplates();
+            $index = (int) $request->input('template', 0);
+            $tpl = $templates[$index] ?? null;
+
+            if ($tpl) {
+                foreach ($tpl['fields'] as $position => $fieldData) {
+                    \SaaSPlatform\Modules\Forms\Models\FormField::create([
+                        'form_id'     => $form->id,
+                        'type'        => $fieldData['type'],
+                        'label'       => $fieldData['label'],
+                        'name'        => $fieldData['name'],
+                        'is_required' => $fieldData['is_required'] ?? false,
+                        'is_active'   => true,
+                        'options'     => isset($fieldData['options']) ? $fieldData['options'] : null,
+                        'column_span' => $fieldData['column_span'] ?? 12,
+                        'position'    => $position,
+                    ]);
+                }
+            }
+        }
+
         $this->activityLogger->log('form.created', 'ایجاد فرم: ' . $form->title, $form);
 
-        return redirect()->route('admin.forms.edit', $form)
-            ->with('success', 'فرم ساخته شد؛ اکنون فیلدها را اضافه کنید.');
+        return redirect()->route('admin.forms.builder', $form)
+            ->with('success', 'فرم ساخته شد. فیلدها را سفارشی کنید.');
     }
 
     public function edit(Form $form)
     {
-        $form->load('fields');
-        return view('forms::admin.forms.edit', compact('form'));
+        return redirect()->route('admin.forms.builder', $form);
     }
 
     public function preview(Form $form)
@@ -73,6 +97,16 @@ class FormController extends Controller
 
         return redirect()->route('admin.forms.index')
             ->with('success', 'فرم حذف شد');
+    }
+
+    public function duplicate(Form $form)
+    {
+        $newForm = $this->formService->duplicate($form);
+
+        $this->activityLogger->log('form.duplicated', 'کپی فرم: ' . $form->title . ' → ' . $newForm->title, $newForm);
+
+        return redirect()->route('admin.forms.builder', $newForm)
+            ->with('success', 'فرم «' . $form->title . '» کپی شد.');
     }
 
     public function storeField(FormFieldRequest $request, Form $form)

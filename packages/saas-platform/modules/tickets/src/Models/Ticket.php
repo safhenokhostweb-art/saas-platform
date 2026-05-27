@@ -28,6 +28,7 @@ class Ticket extends Model
         'category',
         'tags',
         'attachments',
+        'watchers',
         'closed_at',
         'first_response_at',
         'resolved_at',
@@ -39,6 +40,7 @@ class Ticket extends Model
         'resolved_at'       => 'datetime',
         'attachments'       => 'array',
         'tags'              => 'array',
+        'watchers'          => 'array',
     ];
 
     public const STATUS_OPEN        = 'open';

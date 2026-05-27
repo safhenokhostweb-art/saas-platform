@@ -18,6 +18,8 @@ class StoreTicketRequest extends FormRequest
             'customer_email' => ['nullable', 'email', 'max:255'],
             'customer_name'  => ['nullable', 'string', 'max:255'],
             'category'       => ['nullable', 'string', 'max:100'],
+            'for_user_id'    => ['nullable', 'integer'],
+            'initial_note'   => ['nullable', 'string', 'max:5000'],
             'attachments'    => ['nullable', 'array'],
             'attachments.*'  => ['file', 'max:10240'],
         ];
