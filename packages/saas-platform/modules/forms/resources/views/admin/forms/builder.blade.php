@@ -154,7 +154,7 @@
       {{-- Field categories --}}
       <div class="flex-1 overflow-y-auto p-3 space-y-4" id="palette-list">
         @foreach(config('forms.field_type_categories', []) as $cat)
-          <div x-show="categoryVisible({{ json_encode($cat['types']) }}, paletteSearch)">
+          <div x-show="!paletteSearch || {{ collect($cat['types'])->map(fn($t) => "fieldTypeVisible('{$t}', paletteSearch)")->join(' || ') }}">
             <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-1">{{ $cat['label'] }}</p>
             <div class="space-y-1">
               @foreach($cat['types'] as $type)
