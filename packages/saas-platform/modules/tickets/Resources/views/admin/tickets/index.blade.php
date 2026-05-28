@@ -2,72 +2,13 @@
 
 @section('title', 'داشبورد پشتیبانی')
 
-@push('head')
-<style>
-/* ── Base ─────────────────────────────────────── */
-:root{--c-indigo:99,102,241;--c-purple:168,85,247;--c-amber:245,158,11;--c-red:239,68,68;--c-green:16,185,129;--c-blue:59,130,246;--c-teal:20,184,166}
-/* ── Stat Cards ────────────────────────────────── */
-.tkt-stat{background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(255,255,255,.72));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.35);border-radius:1.25rem;padding:1.25rem 1.5rem;transition:all .3s ease;box-shadow:0 4px 20px rgba(15,23,42,.06);position:relative;overflow:hidden}
-.tkt-stat::before{content:'';position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .3s ease;pointer-events:none}
-.tkt-stat:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(99,102,241,.12)}
-.tkt-stat:hover::before{opacity:1}
-.tkt-stat__accent{position:absolute;top:0;right:0;width:3px;height:100%;border-radius:0 1.25rem 1.25rem 0}
-.tkt-stat__icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;flex-shrink:0;transition:transform .3s ease}
-.tkt-stat:hover .tkt-stat__icon{transform:scale(1.1) rotate(-5deg)}
-.tkt-stat__val{font-size:1.875rem;font-weight:800;line-height:1;letter-spacing:-.03em}
-.tkt-stat__label{font-size:.725rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;opacity:.6;margin-top:.35rem}
-.tkt-stat__trend{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:600;padding:.2rem .6rem;border-radius:9999px;margin-top:.5rem}
-/* ── SLA Ring ──────────────────────────────────── */
-.sla-ring-wrap{position:relative;width:56px;height:56px;flex-shrink:0}
-.sla-ring-wrap svg{transform:rotate(-90deg)}
-.sla-ring-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.625rem;font-weight:800;color:#374151}
-/* ── Priority Heatmap ──────────────────────────── */
-.heatmap-cell{transition:all .2s ease;cursor:pointer;border-radius:.5rem}
-.heatmap-cell:hover{transform:scale(1.05);z-index:10}
-/* ── Agent Cards ───────────────────────────────── */
-.agent-card{background:rgba(255,255,255,.8);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);border-radius:1rem;padding:1rem;transition:all .25s ease;box-shadow:0 2px 12px rgba(15,23,42,.04)}
-.agent-card:hover{box-shadow:0 8px 28px rgba(99,102,241,.1);transform:translateY(-2px)}
-.agent-workload{height:6px;border-radius:9999px;background:#e5e7eb;overflow:hidden;margin-top:.5rem}
-.agent-workload-bar{height:100%;border-radius:9999px;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
-/* ── Queue Health ──────────────────────────────── */
-.queue-health-bar{height:10px;border-radius:9999px;background:#f3f4f6;overflow:hidden;position:relative}
-.queue-health-fill{height:100%;border-radius:9999px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
-/* ── Glass Table ───────────────────────────────── */
-.glass-card-strong{background:rgba(255,255,255,.84);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.3);border-radius:1.5rem;box-shadow:0 8px 32px rgba(15,23,42,.06)}
-.glass-filter-bar{background:rgba(255,255,255,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.25);border-radius:1rem;padding:1rem 1.5rem;box-shadow:0 8px 24px rgba(15,23,42,.04)}
-.ticket-row{transition:all .2s ease;position:relative}
-.ticket-row:hover{background:rgba(99,102,241,.03)}
-.ticket-row::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:0;height:60%;background:rgba(99,102,241,.15);border-radius:0 4px 4px 0;transition:width .2s ease}
-.ticket-row:hover::after{width:3px}
-/* ── Status Badges ─────────────────────────────── */
-.tkt-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .85rem;border-radius:9999px;font-size:.72rem;font-weight:700;white-space:nowrap;border:1px solid transparent;letter-spacing:.01em}
-/* ── Priority Dot ──────────────────────────────── */
-.pdot{display:inline-block!important;width:7px!important;height:7px!important;border-radius:50%!important;animation:pdot-pulse 2s ease-in-out infinite!important}
-@keyframes pdot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.6)}}
-/* ── Skeleton ──────────────────────────────────── */
-.skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:skeleton-wave 1.4s ease infinite;border-radius:.5rem}
-@keyframes skeleton-wave{0%{background-position:200% 0}100%{background-position:-200% 0}}
-/* ── Escalation Alert ──────────────────────────── */
-.escalation-alert{background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.06));border:1px solid rgba(239,68,68,.2);border-radius:1rem;animation:alert-pulse 3s ease-in-out infinite}
-@keyframes alert-pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 0 6px rgba(239,68,68,.08)}}
-/* ── Buttons ───────────────────────────────────── */
-.btn-gradient{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.5rem;border-radius:.85rem;font-weight:700;font-size:.875rem;transition:all .25s ease;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.25);text-decoration:none;letter-spacing:.01em}
-.btn-gradient:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(99,102,241,.38)}
-/* ── Section Divider ───────────────────────────── */
-.section-divider{display:flex;align-items:center;gap:.75rem;margin:2rem 0 1rem}
-.section-divider span{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;white-space:nowrap}
-.section-divider hr{flex:1;border:none;border-top:1px solid #e2e8f0}
-/* ── Response Time ─────────────────────────────── */
-.resp-bar{height:20px;background:#f8fafc;border-radius:.5rem;overflow:hidden;position:relative}
-.resp-fill{height:100%;border-radius:.5rem;display:flex;align-items:center;justify-content:flex-end;padding-right:.5rem;font-size:.65rem;font-weight:700;color:#fff;min-width:2rem;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
-/* ── Feature Pills ─────────────────────────────── */
-.feature-pill{background:rgba(255,255,255,.75);border:1px solid rgba(99,102,241,.12);border-radius:.85rem;padding:.75rem 1rem;transition:all .25s ease;cursor:default}
-.feature-pill:hover{border-color:rgba(99,102,241,.3);box-shadow:0 4px 16px rgba(99,102,241,.1);transform:translateY(-2px)}
-</style>
-@endpush
+{{-- Phase 10.1 — Module styles migrated to resources/css/app.css (canonical bundle) --}}
 
 @section('content')
-<div class="admin-page" style="gap:0" x-data="{
+{{-- Phase 10.0: Inject canonical design tokens once per page --}}
+<x-core-ui::design-tokens />
+
+<div class="admin-page" style="gap:0" role="main" aria-label="داشبورد پشتیبانی" x-data="{
     search: '',
     status: '',
     priority: '',

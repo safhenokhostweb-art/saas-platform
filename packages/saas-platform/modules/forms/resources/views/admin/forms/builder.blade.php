@@ -1,38 +1,41 @@
 @extends(config('forms.layouts.admin'))
 
+@php
+$paletteCategories = config('forms.field_type_categories', []);
+$_iconSvgs = [
+    'text'           => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></svg>',
+    'textarea'       => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z"/></svg>',
+    'email'          => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>',
+    'number'         => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5"/></svg>',
+    'phone'          => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/></svg>',
+    'date'           => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>',
+    'radio'          => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>',
+    'checkbox'       => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>',
+    'select'         => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"/></svg>',
+    'rating'         => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5z"/></svg>',
+    'section_header' => '<svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12"/></svg>',
+];
+$paletteIconMap = [];
+foreach (array_keys(config('forms.field_types', [])) as $_t) {
+    $paletteIconMap[$_t] = $_iconSvgs[$_t] ?? $_iconSvgs['text'];
+}
+@endphp
+
 @section('header', '')
 
-@push('head')
-<style>
-  #forms-builder { height: calc(100vh - 64px); overflow: hidden; }
-  .builder-palette { width: 272px; min-width: 272px; }
-  .builder-inspector { width: 340px; min-width: 340px; }
-  .builder-canvas { flex: 1; min-width: 0; }
-  .field-card.sortable-ghost { opacity: .35; background: #eef2ff; }
-  .field-card.sortable-drag { box-shadow: 0 20px 60px -10px rgba(79,70,229,.35); }
-  .palette-item { cursor: grab; user-select: none; }
-  .palette-item:active { cursor: grabbing; }
-  .drop-hint { border: 2px dashed #c7d2fe; border-radius: .75rem; transition: all .15s; }
-  .drop-hint.drag-over { border-color: #6366f1; background: #eef2ff; }
-  .inspector-tab.active { border-bottom: 2px solid #6366f1; color: #4f46e5; font-weight: 600; }
-  [x-cloak] { display: none !important; }
-  .field-card { transition: box-shadow .15s, background .15s; }
-  .field-card:hover { box-shadow: 0 2px 12px rgba(79,70,229,.12); }
-  .field-card.selected { box-shadow: 0 0 0 2px #6366f1, 0 4px 16px rgba(79,70,229,.15); }
-  .toast-enter { animation: toastIn .25s ease; }
-  @keyframes toastIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:translateY(0); } }
-  .autosave-pulse { animation: pulse 1.5s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .canvas-grid { background-image: radial-gradient(circle,#e5e7eb 1px, transparent 1px); background-size: 24px 24px; }
-  .width-btn.active { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
-  .star-rating input[type=radio] { display: none; }
-  .star-rating label { cursor: pointer; font-size: 1.4rem; color: #d1d5db; }
-  .star-rating:hover label, .star-rating input:checked ~ label { color: #f59e0b; }
-</style>
-@endpush
+{{--
+  Phase 10.2 Frontend Governance:
+  - Static toolbar controls: migrated to x-core-ui::button / x-core-ui::input
+  - Alpine <template x-for> template controls: ARCHITECTURAL EXCEPTION — these controls
+    are rendered by the JavaScript runtime (Alpine.js), not Blade. x-core-ui components
+    are Blade-server-rendered and cannot be used inside client-side Alpine templates.
+    This is the only accepted exception to the raw-control rule.
+--}}
 
 @section('content')
-<div id="forms-builder" class="flex flex-col bg-slate-50" x-data="formBuilder(@json($formData))" x-cloak>
+{{-- Inject form data into a JS global to avoid HTML-attribute double-quote encoding issues --}}
+<script>window.__formBuilderInitialData = @json($formData);</script>
+<div id="forms-builder" class="flex flex-col bg-slate-50" x-data="formBuilder(window.__formBuilderInitialData)" x-cloak>
 
   {{-- ═══════════════════════════════════════════════ TOP TOOLBAR ═════════════════════════════════════════════════ --}}
   <div class="flex items-center gap-3 px-4 h-14 bg-white border-b border-slate-200 shadow-sm shrink-0 z-10">
@@ -45,21 +48,29 @@
 
     <div class="w-px h-5 bg-slate-200 mx-1"></div>
 
-    {{-- Form Name (inline editable) --}}
+    {{-- Form Name (inline editable) — x-core-ui::input; Alpine x-model passes through $attributes --}}
     <div class="flex items-center gap-2 min-w-0">
-      <input type="text" x-model="form.title"
-             @change="autosave"
-             class="font-semibold text-slate-800 text-sm bg-transparent border-0 border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-400 outline-none px-0.5 py-0.5 min-w-[160px] max-w-[320px] transition"
-             placeholder="نام فرم...">
+      <x-core-ui::input
+        name="form-title"
+        placeholder="نام فرم..."
+        aria-label="نام فرم"
+        x-model="form.title"
+        @change="autosave"
+        class="font-semibold text-slate-800 text-sm min-w-[160px] max-w-[320px] !border-transparent !bg-transparent !shadow-none focus-visible:!border-[var(--ui-indigo)] focus-visible:!bg-white"
+      />
     </div>
 
-    {{-- Status Toggle --}}
-    <button @click="toggleFormStatus"
-            :class="form.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-            class="px-3 py-1 rounded-full text-xs font-medium transition flex items-center gap-1.5">
+    {{-- Status Toggle — dynamic :class + Alpine; passes through $attributes --}}
+    <x-core-ui::button
+      variant="ghost"
+      size="sm"
+      @click="toggleFormStatus"
+      :class="form.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+      class="!rounded-full !px-3 !py-1 !text-xs"
+    >
       <span class="w-1.5 h-1.5 rounded-full" :class="form.is_active ? 'bg-emerald-500' : 'bg-slate-400'"></span>
       <span x-text="form.is_active ? 'فعال' : 'غیرفعال'"></span>
-    </button>
+    </x-core-ui::button>
 
     {{-- Autosave indicator --}}
     <div class="flex items-center gap-1.5 text-xs transition" :class="{
@@ -86,23 +97,20 @@
 
     {{-- Undo/Redo --}}
     <div class="flex items-center gap-0.5">
-      <button @click="undo" :disabled="historyIndex <= 0"
-              class="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30 transition" title="برگشت (Ctrl+Z)">
-        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
-      </button>
-      <button @click="redo" :disabled="historyIndex >= history.length - 1"
-              class="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30 transition" title="انجام دوباره (Ctrl+Y)">
-        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
-      </button>
+      <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="undo" :disabled="historyIndex <= 0" aria-label="برگشت (Ctrl+Z)" title="برگشت (Ctrl+Z)">
+        <svg class="w-4 h-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
+      </x-core-ui::button>
+      <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="redo" :disabled="historyIndex >= history.length - 1" aria-label="انجام دوباره (Ctrl+Y)" title="انجام دوباره (Ctrl+Y)">
+        <svg class="w-4 h-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+      </x-core-ui::button>
     </div>
 
     <div class="w-px h-5 bg-slate-200"></div>
 
     {{-- Keyboard shortcuts hint --}}
-    <button @click="showKeyboardHelp = !showKeyboardHelp"
-            class="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition" title="کلیدهای میانبر (?)">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
-    </button>
+    <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="showKeyboardHelp = !showKeyboardHelp" aria-label="کلیدهای میانبر" title="کلیدهای میانبر (?)">
+      <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+    </x-core-ui::button>
 
     <div class="w-px h-5 bg-slate-200"></div>
 
@@ -128,11 +136,10 @@
     </a>
 
     {{-- Save Button --}}
-    <button @click="saveAll"
-            class="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:scale-95 transition font-medium shadow-sm">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
+    <x-core-ui::button variant="primary" size="sm" @click="saveAll">
+      <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
       ذخیره
-    </button>
+    </x-core-ui::button>
   </div>
 
   {{-- ═══════════════════════════════════════════ THREE-PANEL LAYOUT ══════════════════════════════════════════════ --}}
@@ -146,41 +153,40 @@
         <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">فیلدها</p>
         <div class="relative">
           <svg class="w-4 h-4 text-slate-500 absolute right-2.5 top-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
-          <input type="text" x-model="paletteSearch" placeholder="جستجوی فیلد..."
-                 class="w-full bg-slate-700 border border-slate-600 rounded-lg pl-3 pr-8 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+          <input type="text" id="palette-search-input" x-model="paletteSearch" placeholder="جستجوی فیلد..."
+                 class="w-full text-sm focus:outline-none">
         </div>
       </div>
 
-      {{-- Field categories --}}
+      {{-- Field categories (rendered client-side via Alpine x-for to avoid Blade/HTML-attribute encoding issues) --}}
       <div class="flex-1 overflow-y-auto p-3 space-y-4" id="palette-list">
-        @foreach(config('forms.field_type_categories', []) as $cat)
-          <div x-show="!paletteSearch || {{ collect($cat['types'])->map(fn($t) => "fieldTypeVisible('{$t}', paletteSearch)")->join(' || ') }}">
-            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-1">{{ $cat['label'] }}</p>
+        <template x-for="cat in _paletteCategories" :key="cat.label">
+          <div x-show="!paletteSearch || cat.types.some(t => fieldTypeVisible(t, paletteSearch))">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-1" x-text="cat.label"></p>
             <div class="space-y-1">
-              @foreach($cat['types'] as $type)
+              <template x-for="type in cat.types" :key="type">
                 <div class="palette-item flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 hover:border-slate-500 transition group"
                      draggable="true"
-                     data-field-type="{{ $type }}"
-                     @dragstart="onPaletteDragStart($event, '{{ $type }}')"
-                     @click="quickAddField('{{ $type }}')"
-                     x-show="fieldTypeVisible('{{ $type }}', paletteSearch)">
-                  <span class="text-base leading-none">@include('forms::admin.forms._partials.field-icon', ['type' => $type])</span>
-                  <span class="text-sm text-slate-200 group-hover:text-white transition">{{ config("forms.field_types.{$type}", $type) }}</span>
+                     :data-field-type="type"
+                     @dragstart="onPaletteDragStart($event, type)"
+                     @click="quickAddField(type)"
+                     x-show="fieldTypeVisible(type, paletteSearch)">
+                  <span class="text-slate-300 leading-none" x-html="_paletteIcons[type] || ''"></span>
+                  <span class="text-sm text-slate-200 group-hover:text-white transition" x-text="getFieldTypeLabel(type)"></span>
                   <svg class="w-3.5 h-3.5 text-slate-500 mr-auto opacity-0 group-hover:opacity-100 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 </div>
-              @endforeach
+              </template>
             </div>
           </div>
-        @endforeach
+        </template>
       </div>
 
       {{-- Template quick-apply --}}
       <div class="p-3 border-t border-slate-700 shrink-0">
-        <button @click="showTemplateModal = true"
-                class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 0 1-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-2.25z"/></svg>
+        <x-core-ui::button variant="primary" size="sm" class="w-full justify-center" @click="showTemplateModal = true">
+          <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 0 1-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-2.25z"/></svg>
           از قالب شروع کنید
-        </button>
+        </x-core-ui::button>
       </div>
     </div>
 
@@ -762,6 +768,8 @@ document.addEventListener('alpine:init', () => {
     _saveController:      null,
     _fieldSaveController: null,
     sortableInstance:     null,
+    _paletteCategories:   @json($paletteCategories),
+    _paletteIcons:        @json($paletteIconMap),
 
     get selectedField() {
       if (! this.selectedFieldId) return null;

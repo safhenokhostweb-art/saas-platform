@@ -1,0 +1,769 @@
+/**
+ * Canonical Design Token System — Phase 10.1 (Enterprise Interaction Runtime)
+ * Single source of truth for ALL visual primitives across saas-platform and customer-site.
+ * Compatible with Tailwind v3 (tailwind.config.js) and v4 (@tailwindcss/vite).
+ * Import once per host app in app.css: @import '../../../packages/saas-platform/core-utils/resources/css/design-tokens.css';
+ */
+
+:root {
+  /* ─── Brand / Primary ─────────────────────────────────────────── */
+  --ui-primary-50:  #eff6ff;
+  --ui-primary-100: #dbeafe;
+  --ui-primary-200: #bfdbfe;
+  --ui-primary-300: #93c5fd;
+  --ui-primary-400: #60a5fa;
+  --ui-primary-500: #3b82f6;
+  --ui-primary-600: #2563eb;
+  --ui-primary-700: #1d4ed8;
+  --ui-primary-800: #1e40af;
+  --ui-primary-900: #1e3a8a;
+
+  /* ─── Indigo / Action ─────────────────────────────────────────── */
+  --ui-indigo:        #4f46e5;
+  --ui-indigo-hover:  #4338ca;
+  --ui-indigo-light:  #eef2ff;
+  --ui-indigo-ring:   rgb(99 102 241 / 0.25);
+
+  /* ─── Purple / Accent ─────────────────────────────────────────── */
+  --ui-purple:       #a855f7;
+  --ui-purple-hover: #9333ea;
+  --ui-purple-light: #faf5ff;
+
+  /* ─── Semantic Surfaces ───────────────────────────────────────── */
+  --ui-bg:           #f1f5f9;
+  --ui-surface:      #ffffff;
+  --ui-surface-soft: #f8fafc;
+  --ui-surface-muted:#f1f5f9;
+  --ui-border:       #e2e8f0;
+  --ui-border-soft:  #f1f5f9;
+  --ui-border-strong:#cbd5e1;
+
+  /* ─── Text Scale ──────────────────────────────────────────────── */
+  --ui-text-primary:   #0f172a;
+  --ui-text-secondary: #334155;
+  --ui-text-muted:     #64748b;
+  --ui-text-subtle:    #94a3b8;
+  --ui-text-inverse:   #ffffff;
+  --ui-text-placeholder: #94a3b8;
+
+  /* ─── Status: Success ─────────────────────────────────────────── */
+  --ui-success:        #16a34a;
+  --ui-success-hover:  #15803d;
+  --ui-success-bg:     #d1fae5;
+  --ui-success-text:   #065f46;
+  --ui-success-border: #6ee7b7;
+  --ui-success-light:  #f0fdf4;
+
+  /* ─── Status: Danger / Error ──────────────────────────────────── */
+  --ui-danger:        #dc2626;
+  --ui-danger-hover:  #b91c1c;
+  --ui-danger-bg:     #fee2e2;
+  --ui-danger-text:   #991b1b;
+  --ui-danger-border: #fca5a5;
+  --ui-danger-light:  #fef2f2;
+
+  /* ─── Status: Warning ─────────────────────────────────────────── */
+  --ui-warning:        #d97706;
+  --ui-warning-hover:  #b45309;
+  --ui-warning-bg:     #fef3c7;
+  --ui-warning-text:   #92400e;
+  --ui-warning-border: #fcd34d;
+  --ui-warning-light:  #fffbeb;
+
+  /* ─── Status: Info ────────────────────────────────────────────── */
+  --ui-info:        #2563eb;
+  --ui-info-hover:  #1d4ed8;
+  --ui-info-bg:     #eff6ff;
+  --ui-info-text:   #1e40af;
+  --ui-info-border: #93c5fd;
+  --ui-info-light:  #f0f7ff;
+
+  /* ─── Status: Neutral / Inactive ─────────────────────────────── */
+  --ui-neutral:        #475569;
+  --ui-neutral-bg:     #f1f5f9;
+  --ui-neutral-text:   #475569;
+  --ui-neutral-border: #cbd5e1;
+
+  /* ─── Interactive States ──────────────────────────────────────── */
+  --ui-focus-ring:        0 0 0 3px rgb(99 102 241 / 0.25);
+  --ui-focus-ring-color:  #6366f1;
+  --ui-focus-ring-width:  3px;
+  --ui-focus-ring-offset: 2px;
+  --ui-hover-overlay:     rgba(99, 102, 241, 0.04);
+  --ui-hover-bg:          rgba(99, 102, 241, 0.06);
+  --ui-active-overlay:    rgba(99, 102, 241, 0.08);
+  --ui-active-bg:         rgba(99, 102, 241, 0.10);
+  --ui-selected-bg:       rgba(99, 102, 241, 0.08);
+  --ui-selected-border:   var(--ui-indigo);
+
+  /* ─── Disabled States ─────────────────────────────────────────── */
+  --ui-disabled-opacity:   0.50;
+  --ui-disabled-bg:        #f8fafc;
+  --ui-disabled-border:    #e2e8f0;
+  --ui-disabled-text:      #94a3b8;
+  --ui-disabled-cursor:    not-allowed;
+
+  /* ─── Loading States ──────────────────────────────────────────── */
+  --ui-loading-opacity:     0.70;
+  --ui-loading-spinner-size:1.25rem;
+  --ui-loading-overlay-bg:  rgba(255, 255, 255, 0.80);
+  --ui-skeleton-bg:         #f0f0f0;
+  --ui-skeleton-shine:      #e8e8e8;
+  --ui-skeleton-radius:     var(--ui-radius-md);
+
+  /* ─── Elevation / Shadows ─────────────────────────────────────── */
+  --ui-shadow-xs:   0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ui-shadow-sm:   0 1px 3px 0 rgb(0 0 0 / 0.07);
+  --ui-shadow-md:   0 4px 12px -2px rgb(0 0 0 / 0.10);
+  --ui-shadow-lg:   0 10px 30px -5px rgb(0 0 0 / 0.13);
+  --ui-shadow-xl:   0 20px 50px -10px rgb(0 0 0 / 0.18);
+  --ui-shadow-card: 0 4px 20px rgb(15 23 42 / 0.06);
+  --ui-shadow-card-hover: 0 16px 40px rgb(99 102 241 / 0.12);
+  --ui-shadow-indigo: 0 4px 14px rgb(99 102 241 / 0.25);
+  --ui-shadow-focus: var(--ui-focus-ring);
+  --ui-shadow-modal: 0 25px 60px rgb(15 23 42 / 0.20);
+  --ui-shadow-dropdown: 0 8px 24px rgb(15 23 42 / 0.12);
+  --ui-shadow-toast: 0 8px 24px rgb(15 23 42 / 0.15);
+  --ui-shadow-popover: 0 6px 20px rgb(15 23 42 / 0.10);
+
+  /* ─── Border Radius ───────────────────────────────────────────── */
+  --ui-radius-sm:   0.375rem;   /* 6px  */
+  --ui-radius-md:   0.5rem;     /* 8px  */
+  --ui-radius-lg:   0.75rem;    /* 12px */
+  --ui-radius-xl:   1rem;       /* 16px */
+  --ui-radius-2xl:  1.25rem;    /* 20px */
+  --ui-radius-3xl:  1.5rem;     /* 24px */
+  --ui-radius-full: 9999px;
+
+  /* ─── Spacing Scale ───────────────────────────────────────────── */
+  --ui-space-0:  0;
+  --ui-space-px: 1px;
+  --ui-space-0-5: 0.125rem;
+  --ui-space-1:  0.25rem;
+  --ui-space-1-5:0.375rem;
+  --ui-space-2:  0.5rem;
+  --ui-space-2-5:0.625rem;
+  --ui-space-3:  0.75rem;
+  --ui-space-3-5:0.875rem;
+  --ui-space-4:  1rem;
+  --ui-space-5:  1.25rem;
+  --ui-space-6:  1.5rem;
+  --ui-space-7:  1.75rem;
+  --ui-space-8:  2rem;
+  --ui-space-9:  2.25rem;
+  --ui-space-10: 2.5rem;
+  --ui-space-12: 3rem;
+  --ui-space-14: 3.5rem;
+  --ui-space-16: 4rem;
+  --ui-space-20: 5rem;
+  --ui-space-24: 6rem;
+
+  /* ─── Typography ──────────────────────────────────────────────── */
+  --ui-font-persian: 'Vazirmatn', 'Tahoma', ui-sans-serif, system-ui, sans-serif;
+  --ui-font-mono:    'Courier New', Consolas, monospace;
+  --ui-text-xs:     0.75rem;    /* 12px */
+  --ui-text-sm:     0.875rem;   /* 14px */
+  --ui-text-base:   1rem;       /* 16px */
+  --ui-text-lg:     1.125rem;   /* 18px */
+  --ui-text-xl:     1.25rem;    /* 20px */
+  --ui-text-2xl:    1.5rem;     /* 24px */
+  --ui-text-3xl:    1.875rem;   /* 30px */
+  --ui-text-4xl:    2.25rem;    /* 36px */
+  --ui-weight-normal:   400;
+  --ui-weight-medium:   500;
+  --ui-weight-semibold: 600;
+  --ui-weight-bold:     700;
+  --ui-weight-extrabold:800;
+  --ui-leading-none:    1;
+  --ui-leading-tight:   1.25;
+  --ui-leading-snug:    1.375;
+  --ui-leading-normal:  1.5;
+  --ui-leading-relaxed: 1.625;
+  --ui-leading-loose:   2;
+  --ui-tracking-tighter: -0.05em;
+  --ui-tracking-tight:  -0.025em;
+  --ui-tracking-normal:  0;
+  --ui-tracking-wide:    0.025em;
+  --ui-tracking-wider:   0.05em;
+  --ui-tracking-widest:  0.1em;
+
+  /* ─── Motion / Transitions ────────────────────────────────────── */
+  --ui-duration-instant:  50ms;
+  --ui-duration-fast:     100ms;
+  --ui-duration-normal:   150ms;
+  --ui-duration-moderate: 250ms;
+  --ui-duration-slow:     300ms;
+  --ui-duration-slower:   500ms;
+  --ui-duration-slowest:  700ms;
+  --ui-ease-default:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ui-ease-in:       cubic-bezier(0.4, 0, 1, 1);
+  --ui-ease-out:      cubic-bezier(0, 0, 0.2, 1);
+  --ui-ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ui-ease-bounce:   cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ui-ease-linear:   linear;
+
+  /* ─── Canonical Transition Presets ───────────────────────────── */
+  --ui-transition:           all var(--ui-duration-normal) var(--ui-ease-default);
+  --ui-transition-fast:      all var(--ui-duration-fast) var(--ui-ease-default);
+  --ui-transition-slow:      all var(--ui-duration-slow) var(--ui-ease-default);
+  --ui-transition-transform: transform var(--ui-duration-moderate) var(--ui-ease-default);
+  --ui-transition-opacity:   opacity var(--ui-duration-normal) var(--ui-ease-default);
+  --ui-transition-colors:    color var(--ui-duration-normal) var(--ui-ease-default), background-color var(--ui-duration-normal) var(--ui-ease-default), border-color var(--ui-duration-normal) var(--ui-ease-default);
+  --ui-transition-shadow:    box-shadow var(--ui-duration-normal) var(--ui-ease-default);
+  --ui-transition-modal:     transform var(--ui-duration-moderate) var(--ui-ease-out), opacity var(--ui-duration-moderate) var(--ui-ease-out);
+  --ui-transition-slide:     transform var(--ui-duration-slow) var(--ui-ease-out);
+  --ui-transition-fade:      opacity var(--ui-duration-moderate) var(--ui-ease-default);
+
+  /* ─── Z-Index Hierarchy ───────────────────────────────────────── */
+  --ui-z-below:    -1;
+  --ui-z-base:      0;
+  --ui-z-raised:    10;
+  --ui-z-dropdown:  100;
+  --ui-z-sticky:    200;
+  --ui-z-fixed:     250;
+  --ui-z-drawer:    280;
+  --ui-z-modal:     300;
+  --ui-z-modal-2:   310;    /* stacked modal level 2 */
+  --ui-z-modal-3:   320;    /* stacked modal level 3 */
+  --ui-z-toast:     400;
+  --ui-z-tooltip:   500;
+  --ui-z-spotlight: 600;
+  --ui-z-overlay:   1000;
+  --ui-z-max:       9999;
+
+  /* ─── Modal System ────────────────────────────────────────────── */
+  --ui-modal-overlay-bg:    rgba(15, 23, 42, 0.60);
+  --ui-modal-backdrop-blur: blur(4px);
+  --ui-modal-max-width-sm:  28rem;   /* 448px */
+  --ui-modal-max-width-md:  36rem;   /* 576px */
+  --ui-modal-max-width-lg:  48rem;   /* 768px */
+  --ui-modal-max-width-xl:  64rem;   /* 1024px */
+  --ui-modal-max-width-full:100%;
+  --ui-modal-padding:       var(--ui-space-6);
+  --ui-modal-radius:        var(--ui-radius-2xl);
+  --ui-modal-header-height: 3.5rem;
+
+  /* ─── Layout Dimensions ───────────────────────────────────────── */
+  --ui-navbar-height:            3.5rem;    /* 56px */
+  --ui-sidebar-width:            260px;
+  --ui-sidebar-collapsed-width:  72px;
+  --ui-sidebar-mobile-width:     280px;
+  --ui-content-max-width:        80rem;     /* 1280px */
+  --ui-content-max-width-prose:  65ch;
+  --ui-content-max-width-narrow: 48rem;
+  --ui-page-padding-x:           var(--ui-space-6);
+  --ui-page-padding-y:           var(--ui-space-6);
+
+  /* ─── Sidebar Colors ──────────────────────────────────────────── */
+  --ui-sidebar-bg:              #1e293b;
+  --ui-sidebar-border:          rgba(255,255,255,0.06);
+  --ui-sidebar-text:            #94a3b8;
+  --ui-sidebar-text-active:     #ffffff;
+  --ui-sidebar-text-hover:      #cbd5e1;
+  --ui-sidebar-item-active:     rgba(99, 102, 241, 0.15);
+  --ui-sidebar-item-hover:      rgba(255, 255, 255, 0.05);
+  --ui-sidebar-section-label:   #64748b;
+  --ui-sidebar-icon-color:      #64748b;
+  --ui-sidebar-icon-active:     #a5b4fc;
+
+  /* ─── Form Controls ───────────────────────────────────────────── */
+  --ui-input-height-sm:  2rem;      /* 32px */
+  --ui-input-height-md:  2.375rem;  /* 38px */
+  --ui-input-height-lg:  2.75rem;   /* 44px */
+  --ui-input-padding-x:  0.75rem;
+  --ui-input-padding-y:  0.5rem;
+  --ui-input-radius:     var(--ui-radius-lg);
+  --ui-input-border:     var(--ui-border);
+  --ui-input-bg:         var(--ui-surface);
+  --ui-input-focus-border: var(--ui-indigo);
+  --ui-input-error-border: var(--ui-danger);
+  --ui-label-size:       var(--ui-text-sm);
+  --ui-label-weight:     var(--ui-weight-medium);
+  --ui-label-color:      var(--ui-text-secondary);
+  --ui-label-gap:        var(--ui-space-1-5);
+
+  /* ─── Button System ───────────────────────────────────────────── */
+  --ui-btn-height-sm:    2rem;
+  --ui-btn-height-md:    2.375rem;
+  --ui-btn-height-lg:    2.75rem;
+  --ui-btn-height-xl:    3.25rem;
+  --ui-btn-padding-x-sm: var(--ui-space-3);
+  --ui-btn-padding-x-md: var(--ui-space-4);
+  --ui-btn-padding-x-lg: var(--ui-space-6);
+  --ui-btn-font-sm:      var(--ui-text-xs);
+  --ui-btn-font-md:      var(--ui-text-sm);
+  --ui-btn-font-lg:      var(--ui-text-base);
+  --ui-btn-radius:       var(--ui-radius-xl);
+  --ui-btn-transition:   var(--ui-transition-fast);
+  --ui-btn-active-scale: 0.97;
+
+  /* ─── Icon Sizing ─────────────────────────────────────────────── */
+  --ui-icon-xs: 0.875rem;   /* 14px */
+  --ui-icon-sm: 1rem;       /* 16px */
+  --ui-icon-md: 1.25rem;    /* 20px */
+  --ui-icon-lg: 1.5rem;     /* 24px */
+  --ui-icon-xl: 2rem;       /* 32px */
+  --ui-icon-2xl:2.5rem;     /* 40px */
+
+  /* ─── Table System ────────────────────────────────────────────── */
+  --ui-table-header-height:      2.75rem;
+  --ui-table-row-height-compact: 2.25rem;
+  --ui-table-row-height-default: 3rem;
+  --ui-table-row-height-comfortable: 3.75rem;
+  --ui-table-header-bg:          var(--ui-surface-soft);
+  --ui-table-header-text:        var(--ui-text-muted);
+  --ui-table-header-font:        var(--ui-text-xs);
+  --ui-table-header-weight:      var(--ui-weight-semibold);
+  --ui-table-row-border:         var(--ui-border-soft);
+  --ui-table-row-hover-bg:       rgba(99, 102, 241, 0.03);
+  --ui-table-row-selected-bg:    rgba(99, 102, 241, 0.06);
+  --ui-table-cell-padding-x:     var(--ui-space-4);
+  --ui-table-cell-padding-y-compact: var(--ui-space-2);
+  --ui-table-cell-padding-y-default: var(--ui-space-3);
+  --ui-table-sort-icon-color:    var(--ui-text-subtle);
+  --ui-table-sort-active-color:  var(--ui-indigo);
+
+  /* ─── Glass / Frosted Effects ─────────────────────────────────── */
+  --ui-glass-bg:        rgba(255, 255, 255, 0.84);
+  --ui-glass-bg-strong: rgba(255, 255, 255, 0.92);
+  --ui-glass-bg-subtle: rgba(255, 255, 255, 0.60);
+  --ui-glass-border:    rgba(255, 255, 255, 0.30);
+  --ui-glass-blur:      blur(20px);
+  --ui-glass-blur-sm:   blur(12px);
+  --ui-glass-blur-lg:   blur(32px);
+
+  /* ─── Blur Presets ────────────────────────────────────────────── */
+  --ui-blur-xs:  blur(4px);
+  --ui-blur-sm:  blur(8px);
+  --ui-blur-md:  blur(16px);
+  --ui-blur-lg:  blur(24px);
+  --ui-blur-xl:  blur(40px);
+
+  /* ─── Mobile / Responsive Breakpoints ─────────────────────────── */
+  --ui-breakpoint-xs:  480px;
+  --ui-breakpoint-sm:  640px;
+  --ui-breakpoint-md:  768px;
+  --ui-breakpoint-lg:  1024px;
+  --ui-breakpoint-xl:  1280px;
+  --ui-breakpoint-2xl: 1536px;
+
+  /* ─── Touch / Accessibility Minimums ─────────────────────────── */
+  --ui-touch-target-min:  44px;
+  --ui-touch-target-sm:   36px;
+  --ui-tap-highlight:     transparent;
+
+  /* ─── Density Modes ───────────────────────────────────────────── */
+  --ui-density-compact-factor: 0.75;
+  --ui-density-cozy-factor:    1.25;
+  --ui-density-current:        1;
+
+  /* ─── Responsive Spacing ──────────────────────────────────────── */
+  --ui-page-gap:         var(--ui-space-6);
+  --ui-card-gap:         var(--ui-space-4);
+  --ui-section-gap:      var(--ui-space-8);
+  --ui-form-gap:         var(--ui-space-5);
+  --ui-toolbar-height:   3rem;
+  --ui-filter-bar-height:3.5rem;
+
+  /* ─── Admin / Platform Surface ────────────────────────────────── */
+  --ui-admin-bg:           #f1f5f9;
+  --ui-admin-surface:      #ffffff;
+  --ui-admin-primary:      var(--ui-indigo);
+  --ui-admin-primary-hover:var(--ui-indigo-hover);
+  --ui-admin-border:       #e2e8f0;
+  --ui-admin-shadow:       var(--ui-shadow-card);
+  --ui-admin-radius:       var(--ui-radius-2xl);
+
+  /* ─── RTL Support ─────────────────────────────────────────────── */
+  --ui-text-align: right;
+  --ui-dir:        rtl;
+  --ui-float:      right;
+  --ui-start:      right;
+  --ui-end:        left;
+
+  /* ─── Accessibility: High-Contrast Overrides ──────────────────── */
+  --ui-hc-text:     #000000;
+  --ui-hc-bg:       #ffffff;
+  --ui-hc-border:   #000000;
+  --ui-hc-focus:    #0000ff;
+  --ui-hc-link:     #0000ee;
+
+  /* ─── Backward-Compatible Aliases (forms module) ──────────────── */
+  --forms-primary:        var(--ui-indigo);
+  --forms-primary-hover:  var(--ui-indigo-hover);
+  --forms-primary-light:  var(--ui-indigo-light);
+  --forms-primary-ring:   var(--ui-indigo-ring);
+  --forms-shadow-sm:      var(--ui-shadow-sm);
+  --forms-shadow-md:      var(--ui-shadow-md);
+  --forms-shadow-lg:      var(--ui-shadow-lg);
+  --forms-shadow-focus:   var(--ui-shadow-focus);
+  --forms-radius-sm:      var(--ui-radius-lg);
+  --forms-radius-md:      var(--ui-radius-xl);
+  --forms-radius-lg:      var(--ui-radius-2xl);
+  --forms-radius-xl:      1.25rem;
+  --forms-radius-2xl:     var(--ui-radius-3xl);
+  --forms-radius-full:    var(--ui-radius-full);
+  --forms-anim-fast:      var(--ui-duration-fast);
+  --forms-anim-normal:    var(--ui-duration-normal);
+  --forms-anim-slow:      var(--ui-duration-slow);
+  --forms-font-persian:   var(--ui-font-persian);
+  --forms-size-xs:        var(--ui-text-xs);
+  --forms-size-sm:        var(--ui-text-sm);
+  --forms-size-base:      var(--ui-text-base);
+  --forms-size-lg:        var(--ui-text-lg);
+  --forms-size-xl:        var(--ui-text-xl);
+  --forms-z-dropdown:     var(--ui-z-dropdown);
+  --forms-z-modal:        var(--ui-z-modal);
+  --forms-z-toast:        var(--ui-z-toast);
+  --forms-z-tooltip:      var(--ui-z-tooltip);
+  --forms-space-xs:       var(--ui-space-1);
+  --forms-space-sm:       var(--ui-space-2);
+  --forms-space-md:       var(--ui-space-4);
+  --forms-space-lg:       var(--ui-space-6);
+  --forms-space-xl:       var(--ui-space-8);
+  --forms-space-2xl:      var(--ui-space-12);
+  --forms-status-active-bg:     var(--ui-success-bg);
+  --forms-status-active-text:   var(--ui-success-text);
+  --forms-status-active-border: var(--ui-success-border);
+  --forms-status-inactive-bg:   var(--ui-neutral-bg);
+  --forms-status-inactive-text: var(--ui-neutral-text);
+  --forms-status-inactive-border:var(--ui-neutral-border);
+  --forms-status-draft-bg:      var(--ui-warning-bg);
+  --forms-status-draft-text:    var(--ui-warning-text);
+  --forms-status-draft-border:  var(--ui-warning-border);
+  --forms-status-error-bg:      var(--ui-danger-bg);
+  --forms-status-error-text:    var(--ui-danger-text);
+  --forms-status-error-border:  var(--ui-danger-border);
+  --forms-status-info-bg:       var(--ui-info-bg);
+  --forms-status-info-text:     var(--ui-info-text);
+  --forms-status-info-border:   var(--ui-info-border);
+
+  /* ─── Backward-Compatible Aliases (admin layout) ──────────────── */
+  --admin-bg:           var(--ui-admin-bg);
+  --admin-surface:      var(--ui-admin-surface);
+  --admin-surface-soft: var(--ui-surface-soft);
+  --admin-primary:      var(--ui-admin-primary);
+  --admin-primary-hover:var(--ui-admin-primary-hover);
+  --admin-border:       var(--ui-admin-border);
+  --admin-shadow:       var(--ui-admin-shadow);
+  --admin-radius:       var(--ui-admin-radius);
+}
+
+/* ─── Canonical Keyframe Animations ─────────────────────────────── */
+
+@keyframes ui-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ui-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes ui-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ui-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ui-slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ui-slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ui-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ui-scale-in-spring {
+  0%   { opacity: 0; transform: scale(0.90); }
+  60%  { opacity: 1; transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ui-skeleton-wave {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes ui-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(1.6); }
+}
+
+@keyframes ui-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ui-bounce-in {
+  0%   { transform: scale(0.9); opacity: 0; }
+  60%  { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes ui-alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.08); }
+}
+
+@keyframes ui-toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ui-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); max-height: 100px; }
+  to   { opacity: 0; transform: translateY(-8px) scale(0.95); max-height: 0; }
+}
+
+@keyframes ui-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes ui-drawer-in-left {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes ui-shimmer {
+  0%   { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes ui-progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* ─── Reduced Motion Support ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ui-skeleton {
+    animation: none !important;
+    background: var(--ui-skeleton-bg) !important;
+  }
+}
+
+/* ─── High Contrast Mode Support ─────────────────────────────────── */
+@media (forced-colors: active) {
+  :root {
+    --ui-focus-ring-color: Highlight;
+    --ui-text-primary: ButtonText;
+    --ui-surface: ButtonFace;
+    --ui-border: ButtonBorder;
+  }
+
+  .ui-focus-ring:focus-visible,
+  *:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* ─── Compact Density Mode ───────────────────────────────────────── */
+[data-density="compact"] {
+  --ui-density-current: var(--ui-density-compact-factor);
+  --ui-table-row-height-default: var(--ui-table-row-height-compact);
+  --ui-input-height-md:  1.875rem;
+  --ui-btn-height-md:    1.875rem;
+  --ui-space-4: 0.75rem;
+  --ui-space-6: 1.25rem;
+}
+
+/* ─── Canonical Utility Classes ──────────────────────────────────── */
+
+.ui-skeleton {
+  background: linear-gradient(90deg, var(--ui-skeleton-bg) 25%, var(--ui-skeleton-shine) 50%, var(--ui-skeleton-bg) 75%);
+  background-size: 200% 100%;
+  animation: ui-skeleton-wave 1.4s ease infinite;
+  border-radius: var(--ui-radius-md);
+}
+
+.ui-glass {
+  background: var(--ui-glass-bg);
+  backdrop-filter: var(--ui-glass-blur);
+  -webkit-backdrop-filter: var(--ui-glass-blur);
+  border: 1px solid var(--ui-glass-border);
+}
+
+.ui-glass-strong {
+  background: var(--ui-glass-bg-strong);
+  backdrop-filter: var(--ui-glass-blur);
+  -webkit-backdrop-filter: var(--ui-glass-blur);
+  border: 1px solid var(--ui-glass-border);
+}
+
+.ui-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus-ring);
+}
+
+.ui-focus-ring-offset:focus-visible {
+  outline: var(--ui-focus-ring-width) solid var(--ui-focus-ring-color);
+  outline-offset: var(--ui-focus-ring-offset);
+}
+
+.ui-card {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-2xl);
+  box-shadow: var(--ui-shadow-card);
+  transition: var(--ui-transition);
+}
+
+.ui-card:hover {
+  box-shadow: var(--ui-shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--ui-radius-full);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.ui-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ui-loading-overlay-bg);
+  border-radius: inherit;
+  z-index: var(--ui-z-raised);
+  backdrop-filter: var(--ui-blur-xs);
+}
+
+.ui-spinner {
+  width: var(--ui-loading-spinner-size);
+  height: var(--ui-loading-spinner-size);
+  border: 2px solid var(--ui-border);
+  border-top-color: var(--ui-indigo);
+  border-radius: var(--ui-radius-full);
+  animation: ui-spin 0.7s linear infinite;
+}
+
+.ui-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ui-modal-overlay-bg);
+  backdrop-filter: var(--ui-modal-backdrop-blur);
+  -webkit-backdrop-filter: var(--ui-modal-backdrop-blur);
+  z-index: var(--ui-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ui-space-4);
+}
+
+.ui-touch-target {
+  min-height: var(--ui-touch-target-min);
+  min-width: var(--ui-touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Phase 10.2: Extended Indigo Palette (builder/sortable tokens) ─ */
+  --ui-indigo-200:        #c7d2fe;
+  --ui-indigo-300:        #a5b4fc;
+  --ui-indigo-400:        #818cf8;
+  --ui-indigo-500:        #6366f1;
+  --ui-indigo-600:        #4f46e5;
+  --ui-indigo-700:        #4338ca;
+  --ui-indigo-ring-sm:    0 0 0 1px rgb(99 102 241 / 0.40);
+  --ui-indigo-ring-md:    0 0 0 2px rgb(99 102 241 / 0.30);
+  --ui-indigo-ring-lg:    0 0 0 3px rgb(99 102 241 / 0.25);
+
+  /* ─── Phase 10.2: Warning palette extension ─────────────────────── */
+  --ui-warning-400:       #fbbf24;
+  --ui-warning-500:       #f59e0b;
+  --ui-warning-light:     #fffbeb;
+
+  /* ─── Phase 10.2: Builder / Palette panel tokens ─────────────────── */
+  --ui-palette-bg:        #334155;   /* slate-700 */
+  --ui-palette-bg-hover:  #3f4f64;
+  --ui-palette-border:    #475569;   /* slate-600 */
+  --ui-palette-text:      #e2e8f0;   /* slate-200 */
+  --ui-palette-text-muted:#94a3b8;   /* slate-400 */
+  --ui-palette-input-bg:  rgb(51,65,85);
+  --ui-palette-input-border: rgb(71,85,105);
+  --ui-palette-input-text: rgb(226,232,240);
+
+  /* ─── Phase 10.2: Sortable / Drag-Drop tokens ────────────────────── */
+  --ui-sortable-ghost-bg:       var(--ui-indigo-light);
+  --ui-sortable-ghost-opacity:  0.35;
+  --ui-sortable-drag-shadow:    0 20px 60px -10px rgb(79 70 229 / 0.35);
+  --ui-drop-hint-border:        var(--ui-indigo-200);
+  --ui-drop-hint-hover-border:  var(--ui-indigo-500);
+  --ui-drop-hint-hover-bg:      var(--ui-indigo-light);
+  --ui-field-card-hover-shadow: 0 2px 12px rgb(79 70 229 / 0.12);
+  --ui-field-card-selected-ring:0 0 0 2px var(--ui-indigo-500), 0 4px 16px rgb(79 70 229 / 0.15);
+
+  /* ─── Phase 10.2: Canvas grid token ─────────────────────────────── */
+  --ui-canvas-grid-color:       #e5e7eb;
+  --ui-canvas-grid-size:        24px;
+
+  /* ─── Phase 10.2: Star rating token ─────────────────────────────── */
+  --ui-star-color:              var(--ui-warning-500);
+  --ui-star-empty-color:        #d1d5db;
+
+  /* ─── Phase 10.2: Inspector tab tokens ──────────────────────────── */
+  --ui-inspector-tab-active-border: var(--ui-indigo-500);
+  --ui-inspector-tab-active-color:  var(--ui-indigo-600);
+
+  /* ─── Phase 10.2: Width button (field span) tokens ──────────────── */
+  --ui-width-btn-active-bg:       var(--ui-indigo-light);
+  --ui-width-btn-active-color:    var(--ui-indigo-600);
+  --ui-width-btn-active-border:   var(--ui-indigo-300);
+
+/* ─── Dark mode readiness (no-op in light-only deployments) ──────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-bg:           #0f172a;
+    --ui-surface:      #1e293b;
+    --ui-surface-soft: #334155;
+    --ui-border:       #334155;
+    --ui-border-soft:  #1e293b;
+    --ui-border-strong:#475569;
+    --ui-text-primary:   #f1f5f9;
+    --ui-text-secondary: #cbd5e1;
+    --ui-text-muted:     #94a3b8;
+    --ui-text-subtle:    #64748b;
+    --ui-glass-bg:        rgba(30, 41, 59, 0.84);
+    --ui-glass-bg-strong: rgba(30, 41, 59, 0.92);
+    --ui-glass-border:    rgba(255, 255, 255, 0.08);
+    --ui-skeleton-bg:     #1e293b;
+    --ui-skeleton-shine:  #334155;
+    --ui-loading-overlay-bg: rgba(15, 23, 42, 0.80);
+    --ui-modal-overlay-bg:   rgba(0, 0, 0, 0.75);
+    --ui-table-header-bg:    #1e293b;
+  }
+}

@@ -787,6 +787,72 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 9.5-A — AI config
         $this->mergeConfigFrom(__DIR__ . '/../../config/ai.php', 'ai');
 
+        // PHASE 10.0 — Frontend Authority System
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendAuthorityValidationService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendRuntimeRecoveryService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\DesignTokenGovernanceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\CanonicalComponentRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendDriftDetector::class);
+
+        // PHASE 10.1 — Enterprise Frontend Governance
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendComponentGovernanceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendStateGovernanceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\ResponsiveExperienceValidationService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendNormalizationRecoveryService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\EnterpriseFrontendGovernanceValidationService::class);
+
+        // PHASE 10.2 — Zero-Drift Canonical Frontend Enforcement
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\CanonicalComponentAuthorityService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\DesignTokenEnforcementService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\ResponsiveGovernanceValidationService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\AccessibilityGovernanceValidationService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendDriftAutoRecoveryService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\ModuleFrontendInheritanceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\ZeroDriftFrontendValidationService::class);
+
+        // PHASE 10.2.5 — Cross-Project CI Enforcement & Frontend Governance Lockdown
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendCrossRepositoryGovernanceValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendStaticGovernanceScanner::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendDriftLockdownService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\ModuleFrontendInheritanceBootstrapper::class);
+
+        // PHASE 9.5-B — AI Safety
+        $this->app->singleton(\SaaSPlatform\CoreUtils\AI\Safety\AiRuntimeSafetyEngine::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\AI\Safety\AiResponseRiskAnalyzer::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\AI\Safety\AiTenantBoundaryValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\AI\Safety\AiEmergencyCircuitBreaker::class);
+
+        // PHASE 9.5-B — Realtime Runtime
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Realtime\GracefulPollingFallback::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Realtime\ReconnectionEngine::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Realtime\HeartbeatMonitor::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Realtime\TenantChannelManager::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Realtime\WebSocketAbstractionLayer::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Realtime\RealtimeRuntimeCoordinator::class);
+
+        // PHASE 9.5-B — Notifications
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Notifications\NotificationDeliveryTracker::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Notifications\NotificationDigestService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Notifications\NotificationPreferenceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Notifications\NotificationChannelManager::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Notifications\EscalationRuleEngine::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Notifications\UnifiedNotificationService::class);
+
+        // PHASE 9.5-B — Frontend Parity
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Services\FrontendCanonicalParityEnforcer::class);
+
+        // PHASE 9.5-B — Runtime Recovery
+        $this->app->singleton(\SaaSPlatform\CoreUtils\RuntimeRecovery\FrontendSelfHealingEngine::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\RuntimeRecovery\RealtimeRecoveryCoordinator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\RuntimeRecovery\RuntimeRecoveryOrchestrator::class);
+
+        // PHASE 9.5-B — Analytics Expansion
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Analytics\AiUsageAnalyticsService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Analytics\UxInteractionTelemetryService::class);
+
+        // PHASE 9.5-B — Security Patch Dashboard
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Security\SecurityPatchDashboardService::class);
+
         // PHASE 9.4 — Search & Command Center
         $this->app->singleton(GlobalSearchEngine::class, function ($app) {
             $engine = new GlobalSearchEngine();
@@ -862,10 +928,25 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 7.15 — TASK 4: Register core-ui shared Blade components
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'core-ui');
 
+        // PHASE 10.0 — Canonical core-ui anonymous component namespace.
+        // Registered FIRST in this provider so core-utils components have authority priority.
+        // FormsServiceProvider also calls anonymousComponentPath for the same prefix — Blade
+        // resolves both directories in registration order, so core-utils components win on conflict.
+        Blade::anonymousComponentPath(__DIR__ . '/../../resources/views/components', 'core-ui');
+
+        // PHASE 10.2 — Auto-register all discovered module view namespaces at boot
+        $this->app->make(\SaaSPlatform\CoreUtils\Frontend\ModuleFrontendInheritanceService::class)
+                  ->bootInheritance();
+
         // Publish shared components for consuming projects
         $this->publishes([
             __DIR__ . '/../../resources/views' => resource_path('views/vendor/core-ui'),
         ], 'core-ui-views');
+
+        // Publish canonical CSS tokens
+        $this->publishes([
+            __DIR__ . '/../../resources/css/design-tokens.css' => public_path('vendor/core-ui/css/design-tokens.css'),
+        ], 'core-ui-tokens');
 
         // Register Blade directive @asset_module
         AssetModuleDirective::register();
@@ -940,6 +1021,29 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 TestAiProviderCommand::class,
                 AiDiagnosticsCommand::class,
                 AiQuotaReportCommand::class,
+                // PHASE 9.5-B — AI runtime, frontend parity, realtime, enterprise, UX commands
+                \SaaSPlatform\CoreUtils\Console\Commands\AI\ValidateAiRuntimeCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateCanonicalParityCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\EnforceParityCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Realtime\ValidateRealtimeRuntimeCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Enterprise\ValidateRuntimeHealthCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Enterprise\ValidateUxReadinessCommand::class,
+                // PHASE 10.0 — Frontend Authority System
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateFrontendAuthorityCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\FrontendRecoveryCommand::class,
+                // PHASE 10.1 — Enterprise Frontend Governance
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateComponentsCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateResponsiveCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\RecoverNormalizationCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateEnterpriseGovernanceCommand::class,
+                // PHASE 10.2 — Zero-Drift Canonical Frontend Enforcement
+                \SaaSPlatform\CoreUtils\Console\Commands\ValidateComponentAuthorityCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\ValidateResponsiveGovernanceCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\ValidateFrontendParityCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\FrontendAutoHealCommand::class,
+                // PHASE 10.2.5 — Cross-Project CI Enforcement & Frontend Governance Lockdown
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateCrossRepositoryGovernanceCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\FrontendLockdownReportCommand::class,
             ]);
         }
 

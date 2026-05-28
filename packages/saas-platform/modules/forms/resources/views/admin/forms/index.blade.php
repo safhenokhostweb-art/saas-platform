@@ -2,19 +2,15 @@
 
 @section('header', 'فرم‌ها')
 
-@push('head')
-<style>
-  .form-card { transition: box-shadow .18s, border-color .18s, transform .18s; }
-  .form-card:hover { transform: translateY(-1px); }
-  .form-card-action { transition: opacity .15s, color .15s, background .15s; }
-</style>
-@endpush
+{{-- Phase 10.2: .form-card styles migrated to app.css with --ui-* design tokens --}}
 
 @section('content')
+{{-- Phase 10.0: Inject canonical design tokens once per page --}}
+<x-core-ui::design-tokens />
 <x-core-ui::toast />
 
 {{-- ═══ PAGE HEADER ═══ --}}
-<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6" role="banner" aria-label="مدیریت فرم‌ها">
   <div>
     <p class="text-slate-500 text-sm">ساخت و مدیریت فرم‌های حرفه‌ای برای سایت</p>
   </div>

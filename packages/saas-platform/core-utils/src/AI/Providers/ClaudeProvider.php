@@ -19,13 +19,13 @@ class ClaudeProvider implements AiProviderInterface
 
     public function __construct()
     {
-        $this->apiKey        = config('ai.claude.api_key', '');
-        $this->baseUrl       = rtrim(config('ai.claude.base_url', 'https://api.anthropic.com/v1'), '/');
-        $this->model         = config('ai.claude.model', 'claude-haiku-4-5-20251001');
-        $this->modelAdvanced = config('ai.claude.model_advanced', 'claude-sonnet-4-6');
-        $this->maxTokens     = config('ai.claude.max_tokens', 2000);
-        $this->timeout       = config('ai.claude.timeout', 30);
-        $this->apiVersion    = config('ai.claude.api_version', '2023-06-01');
+        $this->apiKey        = (string) (config('ai.claude.api_key') ?? '');
+        $this->baseUrl       = rtrim((string) (config('ai.claude.base_url') ?? 'https://api.anthropic.com/v1'), '/');
+        $this->model         = (string) (config('ai.claude.model') ?? 'claude-haiku-4-5-20251001');
+        $this->modelAdvanced = (string) (config('ai.claude.model_advanced') ?? 'claude-sonnet-4-6');
+        $this->maxTokens     = (int)    (config('ai.claude.max_tokens') ?? 2000);
+        $this->timeout       = (int)    (config('ai.claude.timeout') ?? 30);
+        $this->apiVersion    = (string) (config('ai.claude.api_version') ?? '2023-06-01');
     }
 
     public function getName(): string

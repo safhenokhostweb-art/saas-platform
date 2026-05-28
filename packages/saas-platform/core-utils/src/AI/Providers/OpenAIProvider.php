@@ -19,13 +19,13 @@ class OpenAIProvider implements AiProviderInterface
 
     public function __construct()
     {
-        $this->apiKey        = config('ai.openai.api_key', '');
-        $this->baseUrl       = rtrim(config('ai.openai.base_url', 'https://api.openai.com/v1'), '/');
-        $this->model         = config('ai.openai.model', 'gpt-4o-mini');
-        $this->modelAdvanced = config('ai.openai.model_advanced', 'gpt-4o');
-        $this->maxTokens     = config('ai.openai.max_tokens', 2000);
-        $this->temperature   = config('ai.openai.temperature', 0.7);
-        $this->timeout       = config('ai.openai.timeout', 30);
+        $this->apiKey        = (string) (config('ai.openai.api_key') ?? '');
+        $this->baseUrl       = rtrim((string) (config('ai.openai.base_url') ?? 'https://api.openai.com/v1'), '/');
+        $this->model         = (string) (config('ai.openai.model') ?? 'gpt-4o-mini');
+        $this->modelAdvanced = (string) (config('ai.openai.model_advanced') ?? 'gpt-4o');
+        $this->maxTokens     = (int)    (config('ai.openai.max_tokens') ?? 2000);
+        $this->temperature   = (float)  (config('ai.openai.temperature') ?? 0.7);
+        $this->timeout       = (int)    (config('ai.openai.timeout') ?? 30);
     }
 
     public function getName(): string

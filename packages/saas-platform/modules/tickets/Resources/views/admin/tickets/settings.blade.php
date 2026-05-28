@@ -163,12 +163,14 @@
                 </h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">بستن خودکار تیکت پس از (روز)</label>
-                        <input type="number" name="auto_close_days" value="{{ $settings['auto_close_days'] }}" min="0" max="365"
-                               class="form-input" placeholder="7">
-                        <p class="text-xs text-gray-400 mt-1">۰ = غیرفعال</p>
-                    </div>
+                    <x-core-ui::input
+                        type="number"
+                        name="auto_close_days"
+                        :value="$settings['auto_close_days']"
+                        label="بستن خودکار تیکت پس از (روز)"
+                        placeholder="7"
+                        hint="۰ = غیرفعال"
+                        min="0" max="365" />
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">اولویت پیش‌فرض تیکت‌های جدید</label>
@@ -179,11 +181,13 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">حداکثر طول پیام (کاراکتر)</label>
-                        <input type="number" name="max_message_length" value="{{ $settings['max_message_length'] }}" min="100" max="10000"
-                               class="form-input" placeholder="5000">
-                    </div>
+                    <x-core-ui::input
+                        type="number"
+                        name="max_message_length"
+                        :value="$settings['max_message_length']"
+                        label="حداکثر طول پیام (کاراکتر)"
+                        placeholder="5000"
+                        min="100" max="10000" />
                 </div>
             </div>
         </div>
@@ -213,11 +217,13 @@
                     </div>
 
                     {{-- Admin phone --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">شماره ادمین برای دریافت اعلان</label>
-                        <input type="text" name="sms_admin_phone" value="{{ $settings['sms_admin_phone'] }}" maxlength="20"
-                               class="form-input" placeholder="09xxxxxxxxx" dir="ltr">
-                    </div>
+                    <x-core-ui::input
+                        name="sms_admin_phone"
+                        :value="$settings['sms_admin_phone']"
+                        label="شماره ادمین برای دریافت اعلان"
+                        placeholder="09xxxxxxxxx"
+                        maxlength="20"
+                        dir="ltr" />
 
                     {{-- Event toggles --}}
                     <p class="text-sm font-semibold text-gray-700 mt-2">رویدادهای فعال پیامک:</p>

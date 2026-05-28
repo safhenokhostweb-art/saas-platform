@@ -264,12 +264,24 @@
                             <svg id="admin-sidebar-toggle-icon-expand" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/></svg>
                             <svg id="admin-sidebar-toggle-icon-collapse" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
                         </button>
-                        <!-- دکمه منوی موبایل (فقط در صفحات کوچک) -->
-                        <details class="md:hidden relative group">
-                            <summary class="list-none p-2 rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer" aria-label="منو">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                            </summary>
-                            <div class="absolute right-0 top-full mt-2 w-64 max-h-[80vh] overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                        <!-- دکمه منوی موبایل (فقط در صفحات کوچک) — Alpine-driven -->
+                        <div class="md:hidden relative" x-data="{ mobileMenuOpen: false }" @keydown.escape.window="mobileMenuOpen = false" @click.outside="mobileMenuOpen = false">
+                            <button type="button"
+                                    @click="mobileMenuOpen = !mobileMenuOpen"
+                                    class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors"
+                                    aria-label="منوی ناوبری"
+                                    :aria-expanded="mobileMenuOpen">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                            </button>
+                            <div x-show="mobileMenuOpen"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                                 class="absolute right-0 top-full mt-2 w-64 max-h-[80vh] overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50"
+                                 role="menu" aria-label="منوی موبایل">
                                 @if(auth()->user()->is_admin)
                                     @foreach(\App\Helpers\AdminMenu::getGroups() as $groupLabel => $keys)
                                         @php $hasVisible = false; foreach ($keys as $k) { if (\App\Helpers\AdminMenu::isMenuItemVisible($k)) { $hasVisible = true; break; } } @endphp
@@ -277,25 +289,25 @@
                                             <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100">{{ $groupLabel }}</div>
                                             @foreach($keys as $key)
                                                 @if(\App\Helpers\AdminMenu::isMenuItemVisible($key))
-                                                    <a href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</a>
+                                                    <a href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50" role="menuitem">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</a>
                                                 @endif
                                             @endforeach
                                         @endif
                                     @endforeach
                                     <hr class="my-2">
-                                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">بازگشت به داشبورد</a>
+                                    <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50" role="menuitem">بازگشت به داشبورد</a>
                                 @else
                                     @foreach(\App\Helpers\CustomerMenu::getGroups() as $groupLabel => $keys)
                                         <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100">{{ $groupLabel }}</div>
                                         @foreach($keys as $key)
                                             @if(\App\Helpers\CustomerMenu::isVisible($key))
-                                                <a href="{{ route(\App\Helpers\CustomerMenu::getRoute($key)) }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</a>
+                                                <a href="{{ route(\App\Helpers\CustomerMenu::getRoute($key)) }}" class="block px-4 py-2 text-gray-700 hover:bg-blue-50" role="menuitem">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</a>
                                             @endif
                                         @endforeach
                                     @endforeach
                                 @endif
                             </div>
-                        </details>
+                        </div>
                         <h1 class="text-2xl font-bold text-gray-900">@yield('header', 'پنل مدیریت')</h1>
                     </div>
                     <div class="flex items-center space-x-4 space-x-reverse">

@@ -170,3 +170,51 @@ Route::prefix('users')->middleware(['auth:sanctum', 'throttle:30,1'])->group(fun
     Route::post('{user}/tags',        [TagApiController::class, 'assignTags'])->name('api.users.tags.assign');
     Route::delete('{user}/tags',       [TagApiController::class, 'removeTags'])->name('api.users.tags.remove');
 });
+
+/*
+|--------------------------------------------------------------------------
+| PHASE 9.5-B — AI Runtime API (tenant-safe, governed, rate-limited)
+|--------------------------------------------------------------------------
+| All endpoints require auth:sanctum. Tenant isolation via middleware.
+| Quota enforcement, rate limiting, prompt sanitization applied per request.
+|--------------------------------------------------------------------------
+*/
+Route::prefix('ai')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::post('suggest',              [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'suggest'])->name('api.ai.suggest');
+    Route::post('chat',                 [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'chat'])->name('api.ai.chat');
+    Route::post('complete',             [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'complete'])->name('api.ai.complete');
+    Route::post('analyze',              [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'analyze'])->name('api.ai.analyze');
+    Route::post('generate',             [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'generate'])->name('api.ai.generate');
+    Route::post('translate',            [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'translate'])->name('api.ai.translate');
+    Route::post('summarize',            [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'summarize'])->name('api.ai.summarize');
+    Route::post('form-assistant',       [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'formAssistant'])->name('api.ai.form-assistant');
+    Route::post('ticket-assistant',     [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'ticketAssistant'])->name('api.ai.ticket-assistant');
+    Route::post('automation-assistant', [\SaaSPlatform\CoreUtils\Http\Controllers\AiApiController::class, 'automationAssistant'])->name('api.ai.automation-assistant');
+});
+
+/*
+|--------------------------------------------------------------------------
+| PHASE 9.5-B — Notifications API
+|--------------------------------------------------------------------------
+*/
+Route::prefix('notifications')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::get('/',                    [\SaaSPlatform\CoreUtils\Http\Controllers\NotificationApiController::class, 'index'])->name('api.notifications.index');
+    Route::post('{id}/read',           [\SaaSPlatform\CoreUtils\Http\Controllers\NotificationApiController::class, 'markRead'])->name('api.notifications.mark-read');
+    Route::post('mark-all-read',       [\SaaSPlatform\CoreUtils\Http\Controllers\NotificationApiController::class, 'markAllRead'])->name('api.notifications.mark-all-read');
+    Route::put('preferences',          [\SaaSPlatform\CoreUtils\Http\Controllers\NotificationApiController::class, 'updatePreferences'])->name('api.notifications.preferences');
+});
+
+/*
+|--------------------------------------------------------------------------
+| PHASE 9.5-B — Realtime Polling Fallback + UX Telemetry
+|--------------------------------------------------------------------------
+*/
+Route::prefix('realtime')->middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
+    Route::get('poll', [\SaaSPlatform\CoreUtils\Http\Controllers\RealtimePollController::class, 'poll'])->name('api.realtime.poll');
+});
+
+Route::prefix('ux')->middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
+    Route::post('rage-click',    [\SaaSPlatform\CoreUtils\Http\Controllers\RealtimePollController::class, 'recordRageClick'])->name('api.ux.rage-click');
+    Route::post('interaction',   [\SaaSPlatform\CoreUtils\Http\Controllers\RealtimePollController::class, 'recordInteraction'])->name('api.ux.interaction');
+    Route::post('performance',   [\SaaSPlatform\CoreUtils\Http\Controllers\RealtimePollController::class, 'recordPerformance'])->name('api.ux.performance');
+});

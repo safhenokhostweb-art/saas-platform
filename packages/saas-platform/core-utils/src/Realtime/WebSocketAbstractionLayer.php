@@ -50,7 +50,7 @@ class WebSocketAbstractionLayer
 
     public function getConnectionHealth(): array
     {
-        return $this->healthMonitor->status();
+        return $this->healthMonitor->getTransportCapabilities();
     }
 
     private function normalizeEvent(string $event, array $data, string $tenantId): array

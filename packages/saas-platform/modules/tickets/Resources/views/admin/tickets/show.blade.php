@@ -2,51 +2,13 @@
 
 @section('title', 'تیکت ' . $ticket->ticket_number)
 
-@push('head')
-<style>
-/* ── Base ─────────────────────────────── */
-.glass-card{background:rgba(255,255,255,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.3);border-radius:1.25rem;box-shadow:0 8px 32px rgba(15,23,42,.06)}
-.btn-gradient{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.75rem;border-radius:.85rem;font-weight:700;font-size:.875rem;transition:all .25s ease;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.25);text-decoration:none}
-.btn-gradient:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,.35)}
-.btn-ghost{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.75rem;border-radius:.85rem;font-weight:700;font-size:.875rem;transition:all .2s ease;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;cursor:pointer;text-decoration:none}
-.btn-ghost:hover{background:#f8fafc;border-color:#cbd5e1}
-/* ── Tabs ─────────────────────────────── */
-.tkt-tab{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.1rem;border-radius:.75rem .75rem 0 0;font-size:.8rem;font-weight:600;transition:all .2s ease;cursor:pointer;border:1px solid transparent;border-bottom:none;color:#64748b;white-space:nowrap}
-.tkt-tab.active{background:#fff;color:#6366f1;border-color:#e2e8f0;margin-bottom:-1px;z-index:2;position:relative}
-.tkt-tab:not(.active):hover{background:rgba(99,102,241,.05);color:#6366f1}
-.tkt-tab-badge{font-size:.65rem;font-weight:700;background:#6366f1;color:#fff;padding:.1rem .45rem;border-radius:9999px;min-width:18px;text-align:center}
-/* ── Chat Background ──────────────────── */
-.chat-bg{background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%)}
-/* ── Chat Bubbles ─────────────────────── */
-.bubble-customer{background:#e3f2fd;color:#1a1a2e;border-radius:1.25rem 1.25rem 1.25rem .25rem}
-.bubble-staff{background:#dcf8c6;color:#1a1a2e;border-radius:1.25rem 1.25rem .25rem 1.25rem}
-.bubble-internal{background:#fef3c7;color:#78350f;border-radius:1.25rem 1.25rem 1.25rem .25rem;border:1px dashed #f59e0b}
-/* ── Status Badges ────────────────────── */
-.tkt-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .85rem;border-radius:9999px;font-size:.72rem;font-weight:700;border:1px solid transparent}
-/* ── Assignment Timeline ──────────────── */
-.timeline-item{position:relative;padding-right:1.5rem}
-.timeline-item::before{content:'';position:absolute;right:.35rem;top:1.5rem;bottom:-0.5rem;width:1px;background:#e2e8f0}
-.timeline-item:last-child::before{display:none}
-.timeline-dot{position:absolute;right:0;top:.35rem;width:.85rem;height:.85rem;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #e2e8f0;flex-shrink:0}
-/* ── Watcher chips ────────────────────── */
-.watcher-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .75rem;border-radius:9999px;font-size:.7rem;font-weight:600;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;transition:all .2s}
-.watcher-chip:hover{background:#e0e7ff;border-color:#a5b4fc;color:#4338ca}
-/* ── Form inputs ──────────────────────── */
-.form-input{width:100%!important;padding:.65rem .875rem!important;border:1px solid #e2e8f0!important;border-radius:.75rem!important;font-size:.875rem!important;transition:all .2s ease;background:rgba(255,255,255,.7)}
-.form-input:focus{outline:none!important;border-color:#a5b4fc!important;box-shadow:0 0 0 3px rgba(99,102,241,.1)!important}
-/* ── Internal note textarea ───────────── */
-.note-area{background:rgba(254,243,199,.6)!important;border-color:#fcd34d!important}
-.note-area:focus{border-color:#f59e0b!important;box-shadow:0 0 0 3px rgba(245,158,11,.1)!important}
-/* ── Sidebar sections ─────────────────── */
-.sidebar-section{padding:1rem}
-.sidebar-title{font-weight:700;font-size:.8125rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;color:#374151}
-/* ── SLA Ring ─────────────────────────── */
-.sla-ok{color:#10b981}.sla-warn{color:#f59e0b}.sla-breach{color:#ef4444}
-</style>
-@endpush
+{{-- Phase 10.1 — Module styles migrated to resources/css/app.css (canonical bundle) --}}
 
 @section('content')
-<div class="max-w-7xl mx-auto"
+{{-- Phase 10.0: Inject canonical design tokens once per page --}}
+<x-core-ui::design-tokens />
+
+<div class="max-w-7xl mx-auto" role="main" aria-label="جزئیات تیکت {{ $ticket->ticket_number }}"
      x-data="{
         activeTab: 'chat',
         noteMode: false,
@@ -247,7 +209,7 @@
                             <div class="flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4 {{ $isStaff ? 'flex-row-reverse' : '' }}"
                                  style="align-self: {{ $isStaff ? 'flex-end' : 'flex-start' }}">
                                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm"
-                                     style="background-color: {{ $isStaff ? '#10b981' : '#6366f1' }}">
+                                     style="background-color: {{ $isStaff ? 'var(--ui-success)' : 'var(--ui-indigo)' }}">
                                     {{ mb_substr($authorName, 0, 1) }}
                                 </div>
                                 <div>

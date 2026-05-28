@@ -1,0 +1,105 @@
+{
+  "version": "1.0.0",
+  "description": "Mandatory CI checks that must pass before any merge to protected branches",
+  "phase": "10.2.5",
+  "repositories": {
+    "saas-platform": {
+      "protected_branches": ["main", "develop"],
+      "required_checks": [
+        {
+          "name": "Static Blade Analysis (fast)",
+          "workflow": "frontend-governance.yml",
+          "job": "static-blade-analysis",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Component Authority",
+          "workflow": "frontend-governance.yml",
+          "job": "component-authority",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Responsive Governance",
+          "workflow": "frontend-governance.yml",
+          "job": "responsive-governance",
+          "blocking": true,
+          "severity": "HIGH"
+        },
+        {
+          "name": "Enterprise Frontend Governance (≥95)",
+          "workflow": "frontend-governance.yml",
+          "job": "enterprise-governance",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Frontend Parity (Zero Drift)",
+          "workflow": "frontend-governance.yml",
+          "job": "frontend-parity",
+          "blocking": true,
+          "severity": "HIGH"
+        }
+      ],
+      "bypass_policy": {
+        "admins_exempt": false,
+        "exception_environment": "governance-exception",
+        "exception_requires_approval": true
+      }
+    },
+    "customer-site": {
+      "protected_branches": ["main", "master", "develop"],
+      "required_checks": [
+        {
+          "name": "Static Blade Analysis (fast)",
+          "workflow": "frontend-governance.yml",
+          "job": "static-blade-analysis",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Component Authority",
+          "workflow": "frontend-governance.yml",
+          "job": "component-authority",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Responsive Governance",
+          "workflow": "frontend-governance.yml",
+          "job": "responsive-governance",
+          "blocking": true,
+          "severity": "HIGH"
+        },
+        {
+          "name": "Enterprise Frontend Governance (≥95)",
+          "workflow": "frontend-governance.yml",
+          "job": "enterprise-governance",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Frontend Parity (Zero Drift)",
+          "workflow": "frontend-governance.yml",
+          "job": "frontend-parity",
+          "blocking": true,
+          "severity": "HIGH"
+        }
+      ],
+      "bypass_policy": {
+        "admins_exempt": false,
+        "exception_environment": "governance-exception",
+        "exception_requires_approval": true
+      }
+    }
+  },
+  "global_policy": {
+    "force_push_allowed": false,
+    "deletions_allowed": false,
+    "require_pr_before_merge": true,
+    "require_conversation_resolution": true,
+    "dismiss_stale_reviews": true,
+    "require_up_to_date_branch": true
+  }
+}
