@@ -71,6 +71,27 @@ return [
         'max_latency_samples'    => (int) env('MOBILE_TELEMETRY_MAX_LATENCY', 500),
     ],
 
+    // ─── Unified Client Runtime — Phase M1.1 ─────────────────────────────────
+    // Supported client platforms (no platform-specific assumptions beyond this list)
+    'client' => [
+        'supported_platforms' => ['android', 'ios', 'windows', 'linux', 'macos', 'web'],
+        'desktop_platforms'   => ['windows', 'linux', 'macos'],
+        'mobile_platforms'    => ['android', 'ios'],
+    ],
+
+    // ─── Notification Transport Priority ─────────────────────────────────────
+    // Priority 1: Reverb Realtime (WebSocket) — all platforms
+    // Priority 2: Firebase Push (optional, mobile only)
+    // Priority 3: Local Notification Recovery (desktop)
+    // Priority 4: Offline Sync Recovery (all platforms, last resort)
+    'notification_transport' => [
+        'firebase_optional'          => true,   // system operates without Firebase
+        'local_notification_desktop' => true,   // desktop OS notifications enabled
+        'sync_recovery_ttl_hours'    => 24,     // offline notification TTL
+        'local_pending_limit'        => 100,    // max pending per device
+        'sync_missed_limit'          => 200,    // max missed per device
+    ],
+
     // ─── Feature Flags (platform-level defaults, overridable per tenant) ──────
     'feature_flags' => [
         'chat'            => (bool) env('MOBILE_FEATURE_CHAT', true),

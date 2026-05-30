@@ -34,7 +34,7 @@ class TicketNotificationService
                     'ticket_number' => $ticket->ticket_number,
                     'subject'       => $ticket->subject,
                     'priority'      => $this->priorityLabel($ticket->priority),
-                    'customer'      => $ticket->customer_name ?? $ticket->customer_email ?? '—',
+                    'customer'      => $ticket->customer_name ?? $ticket->customer_mobile ?? '—',
                 ],
                 'تیکت جدید {ticket_number} با موضوع «{subject}» از طرف {customer} ثبت شد.'
             );

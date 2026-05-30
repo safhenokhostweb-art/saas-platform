@@ -42,8 +42,8 @@ class TicketSubmissionController extends Controller
         }
 
         $data = array_merge($request->validated(), [
-            'customer_email' => auth()->user()->email,
-            'customer_name'  => auth()->user()->name,
+            'customer_mobile' => auth()->user()->mobile,
+            'customer_name'   => auth()->user()->name,
         ]);
 
         $files = $this->gateService->canUploadAttachments()

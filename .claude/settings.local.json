@@ -111,11 +111,15 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan mobile:validate-runtime-governance --strict 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan mobile:validate-realtime --strict 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan mobile:validate-ota --strict 2>&1)",
-      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan mobile:validate-security --strict 2>&1)"
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan mobile:validate-security --strict 2>&1)",
+      "Bash(grep -r \"'email'\\\\|\\\\\"email\\\\\"\" \"c:\\\\laragon\\\\www\\\\saas-platform\\\\packages\\\\saas-platform\\\\core-utils\\\\src\\\\Contracts\\\\Platform\" --include=\"*.php\" 2>nul)",
+      "Bash(grep -r \"->email\\\\|'email'\\\\|customer_email\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Models\" --include=\"*.php\" 2>nul | head -20)",
+      "Bash(grep -r \"email\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\auth\" --include=\"*.blade.php\" 2>nul)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",
-      "c:\\laragon\\www\\saas-platform\\docs\\phase-9.1"
+      "c:\\laragon\\www\\saas-platform\\docs\\phase-9.1",
+      "c:\\laragon\\www\\saas-platform"
     ]
   }
 }

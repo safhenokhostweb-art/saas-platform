@@ -76,8 +76,8 @@ class CustomerSupportTicketController extends Controller
         $user = $request->user();
 
         $data = $request->validated();
-        $data['customer_email'] = $user->email ?? '';
-        $data['customer_name'] = $user->name ?? $user->email;
+        $data['customer_mobile'] = $user->mobile ?? '';
+        $data['customer_name']   = $user->name ?? $user->mobile;
         $data['status'] = SupportTicket::STATUS_OPEN;
 
         unset($data['attachments']);
@@ -140,8 +140,8 @@ class CustomerSupportTicketController extends Controller
             'user_id' => $user->id,
             'message' => $validated['message'],
             'author_type' => SupportTicketReply::AUTHOR_CUSTOMER,
-            'customer_email' => $user->email,
-            'customer_name' => $user->name,
+            'customer_mobile' => $user->mobile,
+            'customer_name'   => $user->name,
         ], $request->file('attachments'));
 
         return back()->with('success', 'پاسخ شما با موفقیت ثبت شد.');

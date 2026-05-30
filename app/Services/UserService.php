@@ -795,13 +795,12 @@ class UserService
         $handle = fopen($path, 'w');
         // BOM برای UTF-8
         fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'موبایل', 'ایمیل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
+        fputcsv($handle, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
 
         foreach ($users as $user) {
             fputcsv($handle, [
                 $user->id,
                 $user->mobile,
-                $user->email ?? '',
                 $user->profile?->full_name ?? '',
                 $user->is_active ? 'فعال' : 'غیرفعال',
                 $user->is_admin ? 'بله' : 'خیر',

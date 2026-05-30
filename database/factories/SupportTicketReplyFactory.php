@@ -35,7 +35,7 @@ class SupportTicketReplyFactory extends Factory
         return $this->state(fn(array $attributes) => [
             'author_type' => SupportTicketReply::AUTHOR_CUSTOMER,
             'user_id' => null,
-            'customer_email' => fake()->safeEmail(),
+            'customer_mobile' => '09' . fake()->numerify('#########'),
             'customer_name' => fake()->name(),
         ]);
     }

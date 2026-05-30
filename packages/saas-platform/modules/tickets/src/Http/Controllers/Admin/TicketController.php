@@ -57,8 +57,8 @@ class TicketController extends Controller
         $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
         $userModel = config('tickets.user_model', \App\Models\User::class);
-        $users     = $userModel::orderBy('mobile')->get(['id', 'email', 'mobile']);
-        $customers = \App\Models\Customer::orderBy('name')->get(['id', 'name', 'email', 'mobile', 'user_id']);
+        $users     = $userModel::orderBy('mobile')->get(['id', 'mobile']);
+        $customers = \App\Models\Customer::orderBy('name')->get(['id', 'name', 'mobile', 'user_id']);
         $sites     = $this->getActiveSites();
 
         $people = $users->map(fn($u) => [
@@ -66,9 +66,8 @@ class TicketController extends Controller
             'type'        => 'user',
             'user_id'     => $u->id,
             'customer_id' => null,
-            'name'        => $u->name ?? $u->mobile ?? $u->email ?? '',
+            'name'        => $u->name ?? $u->mobile ?? '',
             'mobile'      => $u->mobile ?? '',
-            'email'       => $u->email ?? '',
             'badge'       => 'کاربر پلتفرم',
         ])->merge(
             $customers->map(fn($c) => [
@@ -78,7 +77,6 @@ class TicketController extends Controller
                 'customer_id' => $c->id,
                 'name'        => $c->name ?? $c->mobile ?? '',
                 'mobile'      => $c->mobile ?? '',
-                'email'       => $c->email ?? '',
                 'badge'       => 'مشتری',
             ])
         )->values();
@@ -101,17 +99,17 @@ class TicketController extends Controller
             $customer = \App\Models\Customer::find($data['for_customer_id']);
             if ($customer) {
                 $data['customer_id']    = $customer->user_id ?? null;
-                $data['customer_name']  = $data['customer_name']  ?? $customer->name;
-                $data['customer_email'] = $data['customer_email'] ?? $customer->email;
+                $data['customer_name']   = $data['customer_name']   ?? $customer->name;
+                $data['customer_mobile'] = $data['customer_mobile'] ?? $customer->mobile;
             }
             unset($data['for_customer_id']);
         } elseif (!empty($data['for_user_id'])) {
             $userModel = config('tickets.user_model', \App\Models\User::class);
             $user = $userModel::find($data['for_user_id']);
             if ($user) {
-                $data['customer_id']    = $user->id;
-                $data['customer_name']  = $data['customer_name']  ?? $user->name;
-                $data['customer_email'] = $data['customer_email'] ?? $user->email;
+                $data['customer_id']     = $user->id;
+                $data['customer_name']   = $data['customer_name']   ?? $user->name;
+                $data['customer_mobile'] = $data['customer_mobile'] ?? $user->mobile;
             }
         }
         unset($data['for_user_id'], $data['for_customer_id']);

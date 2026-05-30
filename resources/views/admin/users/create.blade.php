@@ -35,15 +35,6 @@
                         <div x-show=\"errors.mobile\" class=\"text-red-500 text-xs mt-1\" x-text=\"errors.mobile\"></div>
                     </div>
 
-                    {{-- Email --}}
-                    <div class=\"mb-3 text-end\">
-                        <label class=\"form-label\">ایمیل</label>
-                        <input type=\"email\" x-model=\"form.email\" name=\"email\"
-                               class=\"form-control\"
-                               :class=\"{'is-invalid': errors.email}\"
-                               placeholder=\"email@example.com\">
-                        <div x-show=\"errors.email\" class=\"text-red-500 text-xs mt-1\" x-text=\"errors.email\"></div>
-                    </div>
 
                     {{-- Password --}}
                     <div class=\"mb-3 text-end\">
@@ -155,7 +146,6 @@
         return {
             form: {
                 mobile: '{{ old('mobile') }}',
-                email: '{{ old('email') }}',
                 password: '',
                 first_name: '{{ old('first_name') }}',
                 last_name: '{{ old('last_name') }}',
@@ -207,11 +197,6 @@
                     valid = false;
                 } else if (!mobileRegex.test(this.form.mobile)) {
                     this.errors.mobile = 'فرمت موبایل معتبر نیست (مثال: ۰۹۱۲۳۴۵۶۷۸۹)';
-                    valid = false;
-                }
-
-                if (this.form.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(this.form.email)) {
-                    this.errors.email = 'فرمت ایمیل معتبر نیست';
                     valid = false;
                 }
 

@@ -66,10 +66,10 @@
                         placeholder="نام مشتری">
                 </div>
                 <div>
-                    <label for="customer_email" class="block text-sm font-medium text-gray-700 mb-1">ایمیل مشتری</label>
-                    <input type="email" name="customer_email" id="customer_email" value="{{ old('customer_email') }}"
+                    <label for="customer_mobile" class="block text-sm font-medium text-gray-700 mb-1">موبایل مشتری</label>
+                    <input type="text" name="customer_mobile" id="customer_mobile" value="{{ old('customer_mobile') }}"
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all"
-                        placeholder="ایمیل مشتری">
+                        placeholder="09xxxxxxxxx">
                 </div>
             </div>
 

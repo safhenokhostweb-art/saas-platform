@@ -7,7 +7,24 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\customer-site\"; & $php artisan config:clear 2>&1)",
       "Bash(Select-String \"form\")",
       "Read(//c/laragon/www/saas-platform/**)",
-      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\customer-site\" -Recurse -Include \"*.css\")"
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\customer-site\" -Recurse -Include \"*.css\")",
+      "Bash(git commit -m ' *)",
+      "Bash(php -l app/Http/Controllers/Admin/UnifiedSupportController.php)",
+      "PowerShell(php -l \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\UnifiedSupportController.php\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php8.3.14\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\UnifiedSupportController.php\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\UnifiedSupportController.php\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\saas-platform\\\\packages\\\\saas-platform\\\\modules\\\\tickets\\\\src\\\\Dto\\\\TicketProxyData.php\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\saas-platform\\\\packages\\\\saas-platform\\\\modules\\\\tickets\\\\src\\\\Dto\\\\TicketReplyProxyData.php\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\artisan\" route:list --name=admin.inbox 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\saas-platform\\\\packages\\\\saas-platform\\\\modules\\\\tickets\\\\Resources\\\\views\\\\admin\\\\tickets\\\\show.blade.php\" 2>&1)",
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\customer-site\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Format-Table FullName)",
+      "Read(//mnt/c/Users/FARSHA~1/AppData/Local/Temp/claude/c--laragon-www-saas-platform/c8bb1fe7-7473-44e3-8fb1-f529f461b5dc/tasks/**)",
+      "Bash(grep -r \"email.*channel\\\\|channel.*email\" \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\" --include=\"*.php\" 2>nul | head -20)"
+    ],
+    "additionalDirectories": [
+      "c:\\laragon\\www\\saas-platform"
     ]
   }
 }

@@ -17,7 +17,7 @@ class SupportTicket extends Model
 
     protected $fillable = [
         'site_id', 'ticket_number', 'subject', 'message', 'status', 'priority',
-        'support_level', 'customer_email', 'customer_name',
+        'support_level', 'customer_mobile', 'customer_name',
         'assigned_to', 'closed_at', 'first_response_at', 'resolved_at',
         'category', 'tags', 'attachments',
     ];

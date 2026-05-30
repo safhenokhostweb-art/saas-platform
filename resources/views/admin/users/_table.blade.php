@@ -74,7 +74,6 @@
                             @endif
                         </td>
                         <td class="p-3 font-medium">{{ $user->mobile }}</td>
-                        <td class="p-3 text-sm text-gray-600">{{ $user->email ?? '—' }}</td>
                         <td class="p-3">
                             <div class="flex flex-col">
                                 <span class="font-medium">{{ $user->profile->full_name ?? '—' }}</span>

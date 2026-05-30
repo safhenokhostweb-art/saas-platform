@@ -42,14 +42,14 @@ class InstallController extends Controller
     public function saveAdmin(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:6'
+            'name'     => 'required',
+            'mobile'   => 'required|regex:/^09[0-9]{9}$/',
+            'password' => 'required|min:6',
         ]);
 
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'mobile'   => $request->mobile,
             'password' => Hash::make($request->password),
             'is_admin' => 1,
         ]);

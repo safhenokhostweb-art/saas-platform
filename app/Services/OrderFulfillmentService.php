@@ -165,11 +165,8 @@ class OrderFulfillmentService
      */
     protected function notifyTenantModuleActivated(Site $site, ?Module $module, Invoice $invoice): void
     {
-        $customer = $invoice->customer;
-        $email = $customer->email ?? $customer->user?->email;
-        if (empty($email) || ! $module) {
-            return;
-        }
+        // Email notifications removed — system uses SMS/mobile only
+        return;
         try {
             Mail::to($email)->send(new \App\Mail\ModuleActivatedMail(
                 siteTitle: $site->title ?? $site->domain,
@@ -222,11 +219,8 @@ class OrderFulfillmentService
 
     protected function sendLicenseEmail(Invoice $invoice, string $licenseKey, Site $site): void
     {
-        $customer = $invoice->customer;
-        $email = $customer->email ?: ($customer->user?->email ?? null);
-        if (empty($email)) {
-            return;
-        }
+        // Email notifications removed — system uses SMS/mobile only
+        return;
 
         $platformLicense = $site->platformLicenses()->latest()->first();
         $expiresAt = $platformLicense?->expires_at

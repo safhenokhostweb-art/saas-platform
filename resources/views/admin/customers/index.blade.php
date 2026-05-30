@@ -14,7 +14,6 @@
         <tr>
             <th class="p-3 text-right">نام / شرکت</th>
             <th class="p-3 text-right">موبایل</th>
-            <th class="p-3 text-right">ایمیل</th>
             <th class="p-3 text-right">تعداد سایت‌ها</th>
             <th class="p-3 text-right">عملیات</th>
         </tr>
@@ -29,7 +28,6 @@
                     @endif
                 </td>
                 <td class="p-3">{{ $customer->mobile }}</td>
-                <td class="p-3">{{ $customer->email ?? '—' }}</td>
                 <td class="p-3">
                     @php $count = $customer->sites()->count(); @endphp
                     @if($count > 0)

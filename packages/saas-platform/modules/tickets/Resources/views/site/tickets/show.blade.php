@@ -91,13 +91,19 @@
             const time = d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
             const bubbleCls = isStaff ? 'bubble-staff' : 'bubble-customer';
             const color = isStaff ? 'var(--ui-success)' : 'var(--ui-indigo)';
+            const attBase = '{{ url("tickets/attachments") }}';
+            const isImgAtt = att => /^image\//i.test(att.mime||'') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(att.name||'');
             let attHtml = '';
             if (r.attachments && r.attachments.length > 0) {
-                attHtml = '<div class="flex flex-wrap gap-1.5 mt-2">' + r.attachments.map(att => {
-                    const aUrl = att.url || '#';
+                const parts = r.attachments.filter(att => att.url || att.path).map(att => {
+                    const aUrl  = att.url || (attBase + '/' + att.path);
                     const aName = (att.name || 'فایل').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                    return `<a href="${aUrl}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">${aName}</a>`;
-                }).join('') + '</div>';
+                    if (isImgAtt(att)) {
+                        return `<a href='${aUrl}' target='_blank' class='block mt-1.5'><img src='${aUrl}' loading='lazy' alt='${aName}' class='rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border cursor-pointer'></a>`;
+                    }
+                    return `<a href='${aUrl}' target='_blank' class='inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all'>${aName}</a>`;
+                });
+                if (parts.length) attHtml = `<div class='flex flex-wrap gap-1.5 mt-2'>${parts.join('')}</div>`;
             }
             const wrapper = document.createElement('div');
             wrapper.className = 'flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4' + (isStaff ? ' flex-row-reverse' : '');
@@ -233,8 +239,8 @@
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ auth()->user()?->name ?? $ticket->customer_name ?? 'شما' }}</p>
-                                @if(auth()->user()?->email)
-                                <p class="text-xs text-gray-400" dir="ltr">{{ auth()->user()->email }}</p>
+                                @if(auth()->user()?->mobile)
+                                <p class="text-xs text-gray-400" dir="ltr">{{ auth()->user()->mobile }}</p>
                                 @endif
                             </div>
                         </div>
@@ -274,11 +280,23 @@
                                     <div class="flex flex-wrap gap-1.5 mt-2">
                                         @foreach($ticket->attachments as $file)
                                             @if(isset($file['path']) || isset($file['url']))
-                                            <a href="{{ $file['url'] ?? asset('storage/' . $file['path']) }}" target="_blank"
-                                               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
-                                                <span class="truncate max-w-25">{{ $file['name'] ?? 'فایل' }}</span>
+                                            @php
+                                                $attUrl  = $file['url'] ?? route('tickets.site.attachment.download', ['path' => $file['path']]);
+                                                $attName = $file['name'] ?? 'فایل';
+                                                $attIsImg = preg_match('/^image\//i', $file['mime'] ?? '') || preg_match('/\.(jpg|jpeg|png|gif|webp|bmp)$/i', $attName);
+                                            @endphp
+                                            @if($attIsImg)
+                                            <a href="{{ $attUrl }}" target="_blank" class="block mt-1">
+                                                <img src="{{ $attUrl }}" loading="lazy" alt="{{ $attName }}"
+                                                     class="rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border border-white/60 cursor-pointer">
                                             </a>
+                                            @else
+                                            <a href="{{ $attUrl }}" target="_blank"
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
+                                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+                                                <span class="truncate max-w-[100px]">{{ $attName }}</span>
+                                            </a>
+                                            @endif
                                             @endif
                                         @endforeach
                                     </div>
@@ -333,11 +351,23 @@
                                         <div class="flex flex-wrap gap-1.5 mt-2">
                                             @foreach($reply->attachments as $file)
                                                 @if(isset($file['path']) || isset($file['url']))
-                                                <a href="{{ $file['url'] ?? asset('storage/' . $file['path']) }}" target="_blank"
-                                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
-                                                    <span class="truncate max-w-25">{{ $file['name'] ?? 'فایل' }}</span>
+                                                @php
+                                                    $attUrl  = $file['url'] ?? route('tickets.site.attachment.download', ['path' => $file['path']]);
+                                                    $attName = $file['name'] ?? 'فایل';
+                                                    $attIsImg = preg_match('/^image\//i', $file['mime'] ?? '') || preg_match('/\.(jpg|jpeg|png|gif|webp|bmp)$/i', $attName);
+                                                @endphp
+                                                @if($attIsImg)
+                                                <a href="{{ $attUrl }}" target="_blank" class="block mt-1">
+                                                    <img src="{{ $attUrl }}" loading="lazy" alt="{{ $attName }}"
+                                                         class="rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border border-white/60 cursor-pointer">
                                                 </a>
+                                                @else
+                                                <a href="{{ $attUrl }}" target="_blank"
+                                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
+                                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+                                                    <span class="truncate max-w-[100px]">{{ $attName }}</span>
+                                                </a>
+                                                @endif
                                                 @endif
                                             @endforeach
                                         </div>

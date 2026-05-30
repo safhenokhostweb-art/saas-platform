@@ -20,14 +20,14 @@ class MobileAuthController extends Controller
     public function token(Request $request): JsonResponse
     {
         $request->validate([
-            'email'      => 'required|email',
-            'password'   => 'required|string',
-            'device_id'  => 'required|string',
-            'platform'   => 'required|in:ios,android',
+            'mobile'      => 'required|string|regex:/^09[0-9]{9}$/',
+            'password'    => 'required|string',
+            'device_id'   => 'required|string',
+            'platform'    => 'required|in:ios,android',
             'app_version' => 'required|string',
         ]);
 
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = \App\Models\User::where('mobile', $request->mobile)->first();
         if (! $user || ! \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
             $this->trustManager->recordLoginAttempt($request->device_id, false);
             return response()->json(['message' => 'Invalid credentials'], 401);
@@ -60,7 +60,7 @@ class MobileAuthController extends Controller
             'data' => [
                 'token'      => $token,
                 'session'    => $session,
-                'user'       => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+                'user'       => ['id' => $user->id, 'name' => $user->name, 'mobile' => $user->mobile],
                 'expires_at' => $session['expires_at'],
             ],
             'meta' => ['tenant_id' => $tenantId],

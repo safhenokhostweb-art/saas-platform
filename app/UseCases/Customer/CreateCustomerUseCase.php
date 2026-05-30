@@ -38,7 +38,6 @@ class CreateCustomerUseCase
     {
         $validator = Validator::make($data, [
             'name'         => 'required|string|max:255',
-            'email'        => 'nullable|email|max:255',
             'mobile'       => 'required|string|unique:customers,mobile|regex:/^09[0-9]{9}$/',
             'company_name' => 'nullable|string|max:255',
             'notes'        => 'nullable|string|max:5000',
@@ -49,7 +48,6 @@ class CreateCustomerUseCase
             'mobile.required'  => 'شماره موبایل الزامی است.',
             'mobile.unique'    => 'این شماره موبایل قبلاً ثبت شده است.',
             'mobile.regex'     => 'شماره موبایل معتبر نیست.',
-            'email.email'      => 'ایمیل معتبر نیست.',
         ]);
 
         if ($validator->fails()) {

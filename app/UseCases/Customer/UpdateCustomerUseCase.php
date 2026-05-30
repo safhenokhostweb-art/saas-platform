@@ -34,7 +34,6 @@ class UpdateCustomerUseCase
     {
         $validator = Validator::make($data, [
             'name'         => 'sometimes|required|string|max:255',
-            'email'        => 'sometimes|nullable|email|max:255',
             'mobile'       => ['sometimes', 'required', 'string', "unique:customers,mobile,{$customerId}", 'regex:/^09[0-9]{9}$/'],
             'company_name' => 'sometimes|nullable|string|max:255',
             'notes'        => 'sometimes|nullable|string|max:5000',

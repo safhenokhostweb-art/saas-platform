@@ -60,8 +60,8 @@ class TicketsController extends Controller
             'description' => 'required|string',
             'priority' => 'nullable|in:low,normal,high',
             'site_id' => 'nullable|exists:sites,id',
-            'customer_email' => 'nullable|email|max:255',
-            'customer_name' => 'nullable|string|max:255',
+            'customer_mobile' => 'nullable|string|regex:/^09[0-9]{9}$/',
+            'customer_name'  => 'nullable|string|max:255',
             'category' => 'nullable|string|max:255',
         ]);
 

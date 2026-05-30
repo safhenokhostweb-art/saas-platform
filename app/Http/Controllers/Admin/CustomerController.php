@@ -40,7 +40,7 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['name', 'mobile', 'email', 'reseller_id', 'has_site', 'created_from', 'created_to', 'q']);
+        $filters = $request->only(['name', 'mobile', 'reseller_id', 'has_site', 'created_from', 'created_to', 'q']);
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('direction', 'desc');
 
@@ -142,7 +142,7 @@ class CustomerController extends Controller
      */
     public function exportCsv(Request $request)
     {
-        $filters = $request->only(['name', 'mobile', 'email']);
+        $filters = $request->only(['name', 'mobile']);
         $customers = $this->customerRepository->getAllForExport($filters);
 
         $filename = 'customers_export_' . now()->format('Ymd_His') . '.csv';
@@ -154,7 +154,7 @@ class CustomerController extends Controller
 
         $handle = fopen($path, 'w');
         fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'ایمیل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
+        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
 
         foreach ($customers as $customer) {
             fputcsv($handle, [
@@ -162,7 +162,6 @@ class CustomerController extends Controller
                 $customer->name,
                 $customer->company_name ?? '',
                 $customer->mobile,
-                $customer->email ?? '',
                 $customer->sites->count(),
                 $customer->reseller?->company_name ?? '',
                 $customer->created_at->format('Y-m-d H:i'),
@@ -209,7 +208,6 @@ class CustomerController extends Controller
                         'name'         => $row[1] ?? '',
                         'company_name' => $row[2] ?? '',
                         'mobile'       => $row[3] ?? '',
-                        'email'        => $row[4] ?? '',
                     ];
 
                     if (empty($data['mobile'])) {

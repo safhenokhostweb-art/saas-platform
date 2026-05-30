@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('site_id')->nullable()->constrained('sites')->nullOnDelete();
-            $table->string('customer_email')->nullable();
+            $table->string('customer_mobile')->nullable();
             $table->string('customer_name')->nullable();
             $table->string('category')->nullable();
             $table->text('tags')->nullable();

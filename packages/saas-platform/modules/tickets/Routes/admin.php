@@ -32,26 +32,11 @@ Route::middleware(['web', 'auth', 'admin'])
         // ─── SLA dashboard (feature-flagged) ─────────────────────────
         Route::get('/sla/dashboard', [TicketSlaController::class, 'index'])->name('sla.index');
 
-        // ─── Core ticket CRUD ────────────────────────────────────────
-        Route::get('/',           [TicketController::class, 'index'])->name('index');
-        Route::get('/create',     [TicketController::class, 'create'])->name('create');
-        Route::post('/',          [TicketController::class, 'store'])->name('store');
-        Route::post('/bulk',      [TicketController::class, 'bulkAction'])->name('bulk');
-        Route::get('/{id}',       [TicketController::class, 'show'])->name('show');
-        Route::get('/{id}/poll',  [TicketController::class, 'poll'])->name('poll');
-
-        // ─── Status / Assignment / Priority ──────────────────────────
-        Route::patch('/{id}/status',   [TicketStatusController::class,    'update'])->name('status.update');
-        Route::patch('/{id}/assign',   [TicketAssignmentController::class, 'update'])->name('assign');
-        Route::patch('/{id}/priority', [TicketPriorityController::class,   'update'])->name('priority.update');
-        Route::patch('/{id}/site',     [TicketSiteAssignController::class, 'update'])->name('site.update');
-
-        // ─── Replies ─────────────────────────────────────────────────
-        Route::post('/{id}/replies', [TicketReplyController::class, 'store'])->name('replies.store');
-
-        // ─── SMS ─────────────────────────────────────────────────────
-        Route::post('/{id}/sms',          [TicketSmsController::class, 'send'])->name('sms.send');
-        Route::get('/{id}/sms/templates', [TicketSmsController::class, 'templates'])->name('sms.templates');
+        // ─── Core ticket CRUD (static routes before wildcard /{id}) ──
+        Route::get('/',       [TicketController::class, 'index'])->name('index');
+        Route::get('/create', [TicketController::class, 'create'])->name('create');
+        Route::post('/',      [TicketController::class, 'store'])->name('store');
+        Route::post('/bulk',  [TicketController::class, 'bulkAction'])->name('bulk');
 
         // ─── Attachments (private disk streaming) ────────────────────
         Route::get('/attachments/{path}', [TicketAdminAttachmentController::class, 'download'])
@@ -61,4 +46,21 @@ Route::middleware(['web', 'auth', 'admin'])
         // ─── Phase 9.4: Operational Analytics Dashboard ───────────
         Route::get('/analytics',      [\SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class, 'index'])->name('analytics');
         Route::get('/analytics/data', [\SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class, 'data'])->name('analytics.data');
+
+        // ─── Wildcard ticket routes (integers only) ───────────────────
+        Route::get('/{id}',       [TicketController::class, 'show'])->name('show')->where('id', '[0-9]+');
+        Route::get('/{id}/poll',  [TicketController::class, 'poll'])->name('poll')->where('id', '[0-9]+');
+
+        // ─── Status / Assignment / Priority ──────────────────────────
+        Route::patch('/{id}/status',   [TicketStatusController::class,    'update'])->name('status.update')->where('id', '[0-9]+');
+        Route::patch('/{id}/assign',   [TicketAssignmentController::class, 'update'])->name('assign')->where('id', '[0-9]+');
+        Route::patch('/{id}/priority', [TicketPriorityController::class,   'update'])->name('priority.update')->where('id', '[0-9]+');
+        Route::patch('/{id}/site',     [TicketSiteAssignController::class, 'update'])->name('site.update')->where('id', '[0-9]+');
+
+        // ─── Replies ─────────────────────────────────────────────────
+        Route::post('/{id}/replies', [TicketReplyController::class, 'store'])->name('replies.store')->where('id', '[0-9]+');
+
+        // ─── SMS ─────────────────────────────────────────────────────
+        Route::post('/{id}/sms',          [TicketSmsController::class, 'send'])->name('sms.send')->where('id', '[0-9]+');
+        Route::get('/{id}/sms/templates', [TicketSmsController::class, 'templates'])->name('sms.templates')->where('id', '[0-9]+');
     });

@@ -19,7 +19,6 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'mobile'     => ['required', 'string', 'unique:users,mobile', 'regex:/^09[0-9]{9}$/'],
-            'email'      => ['nullable', 'email', 'unique:users,email'],
             'password'   => ['nullable', 'string', 'min:8'],
             'first_name' => ['nullable', 'string', 'max:255'],
             'last_name'  => ['nullable', 'string', 'max:255'],
@@ -41,8 +40,6 @@ class StoreUserRequest extends FormRequest
             'mobile.required' => 'شماره موبایل الزامی است.',
             'mobile.unique'   => 'این شماره موبایل قبلاً ثبت شده است.',
             'mobile.regex'    => 'شماره موبایل باید با 09 شروع شود و 11 رقم باشد.',
-            'email.email'     => 'ایمیل معتبر نیست.',
-            'email.unique'    => 'این ایمیل قبلاً ثبت شده است.',
             'password.min'    => 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
         ];
     }

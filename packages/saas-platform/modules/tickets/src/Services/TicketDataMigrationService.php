@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
  * Divergences handled:
  *  D1: message → description (column rename)
  *  D2: attachments stored as plain text → canonical json column
- *  D3: customer_id derived by matching customer_email + site_id against users table
+ *  D3: customer_id derived by matching customer_mobile + site_id against users table
  *  D4: resolved_at derived from closed_at where status = 'closed'
  *  D5: support_level column dropped (not in canonical schema)
  *  R1: support_ticket_id → ticket_id resolved via ticket_number lookup
@@ -86,9 +86,9 @@ class TicketDataMigrationService
     private function buildTicketRow(object $legacy): array
     {
         $customerId = null;
-        if (!empty($legacy->customer_email)) {
+        if (!empty($legacy->customer_mobile)) {
             $user = DB::table('users')
-                ->where('email', $legacy->customer_email)
+                ->where('mobile', $legacy->customer_mobile)
                 ->where('site_id', $legacy->site_id)
                 ->value('id');
             $customerId = $user ?: null;
@@ -105,7 +105,7 @@ class TicketDataMigrationService
             'customer_id'       => $customerId,
             'assigned_to'       => $legacy->assigned_to ?? null,
             'site_id'           => $legacy->site_id,
-            'customer_email'    => $legacy->customer_email,
+            'customer_mobile'   => $legacy->customer_mobile ?? null,
             'customer_name'     => $legacy->customer_name ?? null,
             'category'          => $legacy->category ?? null,
             'tags'              => $legacy->tags ?? null,
@@ -151,7 +151,7 @@ class TicketDataMigrationService
                         'user_id'        => $reply->user_id ?? null,
                         'message'        => $reply->message,
                         'author_type'    => $reply->author_type ?? 'staff',
-                        'customer_email' => $reply->customer_email ?? null,
+                        'customer_mobile' => $reply->customer_mobile ?? null,
                         'customer_name'  => $reply->customer_name ?? null,
                         'attachments'    => $this->castAttachments($reply->attachments ?? null),
                         'deleted_at'     => $reply->deleted_at ?? null,

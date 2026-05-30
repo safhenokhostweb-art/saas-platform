@@ -188,14 +188,14 @@
                 </div>
                 <div>
                     <label class="form-label">
-                        ایمیل مشتری
+                        موبایل مشتری
                         <span class="text-gray-400 text-xs">(اختیاری)</span>
                     </label>
-                    <input type="email" name="customer_email"
-                           :value="selected ? selected.email : '{{ old('customer_email') }}'"
+                    <input type="text" name="customer_mobile"
+                           :value="selected ? selected.mobile : '{{ old('customer_mobile') }}'"
                            :readonly="!!selected"
                            :class="selected ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
-                           class="form-input" placeholder="email@example.com" dir="ltr">
+                           class="form-input" placeholder="09xxxxxxxxx" dir="ltr">
                 </div>
             </div>
 

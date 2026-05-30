@@ -60,8 +60,8 @@ class TicketApiController extends Controller
             'priority'      => ['nullable', 'in:low,normal,high'],
             'site_id'       => ['nullable', 'integer'],
             'category'      => ['nullable', 'string'],
-            'customer_email' => ['nullable', 'email'],
-            'customer_name'  => ['nullable', 'string'],
+            'customer_mobile' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
+            'customer_name'   => ['nullable', 'string'],
         ]);
 
         $ticket = $this->ticketService->create($validated);

@@ -17,7 +17,7 @@ class TicketReply extends Model
         'message',
         'author_type',
         'is_internal',
-        'customer_email',
+        'customer_mobile',
         'customer_name',
         'attachments',
     ];

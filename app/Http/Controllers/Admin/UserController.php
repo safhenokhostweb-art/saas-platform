@@ -43,7 +43,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['mobile', 'email', 'name', 'status', 'role', 'group_id', 'tag_id', 'two_factor', 'created_from', 'created_to']);
+        $filters = $request->only(['mobile', 'name', 'status', 'role', 'group_id', 'tag_id', 'two_factor', 'created_from', 'created_to']);
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('direction', 'desc');
 
@@ -165,7 +165,7 @@ class UserController extends Controller
      */
     public function exportCsv(Request $request)
     {
-        $filters = $request->only(['mobile', 'email', 'status']);
+        $filters = $request->only(['mobile', 'status']);
         $users = $this->userRepository->getAllForExport($filters);
 
         $filename = 'users_export_' . now()->format('Ymd_His') . '.csv';
@@ -177,13 +177,12 @@ class UserController extends Controller
 
         $handle = fopen($path, 'w');
         fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'موبایل', 'ایمیل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
+        fputcsv($handle, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
 
         foreach ($users as $user) {
             fputcsv($handle, [
                 $user->id,
                 $user->mobile,
-                $user->email ?? '',
                 $user->profile?->full_name ?? '',
                 $user->is_active ? 'فعال' : 'غیرفعال',
                 $user->is_admin ? 'بله' : 'خیر',
@@ -232,10 +231,9 @@ class UserController extends Controller
                 try {
                     $data = [
                         'mobile'    => $row[1] ?? '',
-                        'email'     => $row[2] ?? '',
-                        'first_name'=> $row[3] ?? '',
+                        'first_name'=> $row[2] ?? '',
                         'last_name' => '',
-                        'is_active' => ($row[4] ?? 'فعال') === 'فعال',
+                        'is_active' => ($row[3] ?? 'فعال') === 'فعال',
                     ];
 
                     if (empty($data['mobile'])) {

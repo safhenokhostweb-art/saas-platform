@@ -145,8 +145,8 @@
                     <span class="font-medium">{{ $supportTicket->customer_name ?? '—' }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-500">ایمیل</span>
-                    <span class="font-medium text-left" dir="ltr">{{ $supportTicket->customer_email }}</span>
+                    <span class="text-gray-500">موبایل</span>
+                    <span class="font-medium text-left" dir="ltr">{{ $supportTicket->customer_mobile }}</span>
                 </div>
                 @if($supportTicket->category)
                 <div class="flex justify-between">

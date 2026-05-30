@@ -166,7 +166,7 @@ return [
         App\Providers\InfrastructureServiceProvider::class, // MUST be first — binds all contracts before package providers
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
+        App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class, // ← Repository DI

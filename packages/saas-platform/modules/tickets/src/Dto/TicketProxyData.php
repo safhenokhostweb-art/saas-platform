@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
  *
  * Canonical views use: $ticket->subject, $ticket->ticket_number, $ticket->status,
  *   $ticket->priority, $ticket->description, $ticket->customer_name,
- *   $ticket->customer_email, $ticket->created_at, $ticket->id,
+ *   $ticket->customer_mobile, $ticket->created_at, $ticket->id,
  *   $ticket->site?->name, $ticket->assignee?->name, $ticket->replies,
  *   $ticket->attachments, $ticket->category, $ticket->tags
  */
@@ -26,7 +26,7 @@ final class TicketProxyData
     public readonly string     $status;
     public readonly string     $priority;
     public readonly ?string    $customer_name;
-    public readonly ?string    $customer_email;
+    public readonly ?string    $customer_mobile;
     public readonly ?string    $category;
     public readonly ?array     $tags;
     public readonly ?array     $attachments;
@@ -38,6 +38,9 @@ final class TicketProxyData
     public readonly Collection $replies;
     public readonly Collection $publicReplies;
 
+    /** Set after construction: 'platform' | 'user' */
+    public ?string $channel = null;
+
     public function __construct(array $data)
     {
         $this->id             = $data['id'] ?? 0;
@@ -46,8 +49,8 @@ final class TicketProxyData
         $this->description    = $data['description'] ?? $data['message'] ?? '';
         $this->status         = $data['status'] ?? 'open';
         $this->priority       = $data['priority'] ?? 'normal';
-        $this->customer_name  = $data['customer_name'] ?? null;
-        $this->customer_email = $data['customer_email'] ?? $data['email'] ?? null;
+        $this->customer_name   = $data['customer_name'] ?? null;
+        $this->customer_mobile = $data['customer_mobile'] ?? $data['mobile'] ?? null;
         $this->category       = $data['category'] ?? null;
         $this->tags           = is_array($data['tags'] ?? null) ? $data['tags'] : null;
         $this->attachments    = is_array($data['attachments'] ?? null) ? $data['attachments'] : null;
@@ -83,6 +86,41 @@ final class TicketProxyData
         }
 
         return collect((array) $tickets)->map(fn($t) => new self(is_array($t) ? $t : (array) $t));
+    }
+
+    /**
+     * Build a TicketProxyData from an Eloquent Ticket model (for unified inbox).
+     * Requires 'replies' and 'assignee' relations to be eager-loaded.
+     */
+    public static function fromEloquent(\SaaSPlatform\Modules\Tickets\Models\Ticket $model): self
+    {
+        $replies = $model->relationLoaded('replies')
+            ? $model->replies->map(fn($r) => [
+                'id'          => $r->id,
+                'message'     => $r->message,
+                'author_type' => $r->author_type,
+                'author_name' => $r->user?->name ?? $r->customer_name ?? null,
+                'is_internal' => (bool) ($r->is_internal ?? false),
+                'created_at'  => $r->created_at->toIso8601String(),
+                'attachments' => $r->attachments,
+            ])->toArray()
+            : [];
+
+        return new self([
+            'id'             => $model->id,
+            'ticket_number'  => $model->ticket_number,
+            'subject'        => $model->subject,
+            'description'    => $model->description,
+            'status'         => $model->status,
+            'priority'       => $model->priority,
+            'customer_name'   => $model->customer_name,
+            'customer_mobile' => $model->customer_mobile,
+            'category'       => $model->category,
+            'created_at'     => $model->created_at->toIso8601String(),
+            'updated_at'     => $model->updated_at->toIso8601String(),
+            'assignee_name'  => $model->assignee?->name,
+            'replies'        => $replies,
+        ]);
     }
 
     /** Build summary stats from a collection of TicketProxyData. */

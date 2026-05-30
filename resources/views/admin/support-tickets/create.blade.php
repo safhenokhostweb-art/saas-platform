@@ -91,8 +91,8 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-                <label class="form-label">ایمیل مشتری <span class="required">*</span></label>
-                <input type="email" name="customer_email" value="{{ old('customer_email') }}" required class="form-input" placeholder="email@example.com" dir="ltr">
+                <label class="form-label">موبایل مشتری <span class="required">*</span></label>
+                <input type="text" name="customer_mobile" value="{{ old('customer_mobile') }}" required class="form-input" placeholder="09xxxxxxxxx">
             </div>
             <div>
                 <label class="form-label">نام مشتری <span class="text-gray-400 text-xs">(اختیاری)</span></label>

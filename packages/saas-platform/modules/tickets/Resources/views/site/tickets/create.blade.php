@@ -18,7 +18,7 @@
 @section('content')
 <div class="max-w-3xl mx-auto px-4 py-6"
      x-data="{
-         users: {{ json_encode($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email ?? '', 'mobile' => $u->mobile ?? ''])->values()) }},
+         users: {{ json_encode($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'mobile' => $u->mobile ?? ''])->values()) }},
          selectedUserId: '{{ old('for_user_id') }}',
          get selectedUser() { return this.users.find(u => u.id == this.selectedUserId) ?? null; }
      }">
@@ -83,7 +83,7 @@
                     <option value="">— انتخاب کاربر (اختیاری) —</option>
                     @foreach($users as $u)
                     <option value="{{ $u->id }}" @selected(old('for_user_id') == $u->id)>
-                        {{ $u->name }}{{ $u->email ? ' — ' . $u->email : '' }}{{ $u->mobile ? ' — ' . $u->mobile : '' }}
+                        {{ $u->name }}{{ $u->mobile ? ' — ' . $u->mobile : '' }}
                     </option>
                     @endforeach
                 </select>
@@ -134,12 +134,12 @@
                            class="form-input" placeholder="مثال: علی رضایی">
                 </div>
                 <div>
-                    <label class="form-label">ایمیل مشتری <span class="text-gray-400 text-xs">(اختیاری)</span></label>
-                    <input type="email" name="email"
-                           :value="selectedUser ? selectedUser.email : '{{ old('email') }}'"
+                    <label class="form-label">موبایل مشتری <span class="text-gray-400 text-xs">(اختیاری)</span></label>
+                    <input type="text" name="mobile"
+                           :value="selectedUser ? selectedUser.mobile : '{{ old('mobile') }}'"
                            :readonly="!!selectedUser"
                            :class="selectedUser ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
-                           class="form-input" placeholder="email@example.com" dir="ltr">
+                           class="form-input" placeholder="09xxxxxxxxx" dir="ltr">
                 </div>
             </div>
 

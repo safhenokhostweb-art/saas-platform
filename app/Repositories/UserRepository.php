@@ -29,10 +29,6 @@ class UserRepository implements UserRepositoryInterface
                 $query->where('mobile', 'like', '%' . $filters['mobile'] . '%');
             }
 
-            if (!empty($filters['email'])) {
-                $query->where('email', 'like', '%' . $filters['email'] . '%');
-            }
-
             if (!empty($filters['name'])) {
                 $query->whereHas('profile', function ($q) use ($filters) {
                     $q->where(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', '%' . $filters['name'] . '%');
@@ -93,7 +89,6 @@ class UserRepository implements UserRepositoryInterface
     {
         return User::create([
             'mobile'    => $data['mobile'],
-            'email'     => $data['email'] ?? null,
             'password'  => isset($data['password']) ? bcrypt($data['password']) : bcrypt(random_int(100000, 999999)),
             'is_active' => $data['is_active'] ?? true,
             'is_admin'  => $data['is_admin'] ?? false,
@@ -103,7 +98,7 @@ class UserRepository implements UserRepositoryInterface
     public function update(User $user, array $data): User
     {
         $updatable = array_intersect_key($data, array_flip([
-            'mobile', 'email', 'password', 'is_active', 'is_admin',
+            'mobile', 'password', 'is_active', 'is_admin',
             'is_locked', 'failed_login_attempts', 'locked_until',
             'two_factor_enabled', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
             'last_login_at', 'last_login_ip',
@@ -170,9 +165,6 @@ class UserRepository implements UserRepositoryInterface
 
         if (!empty($filters['mobile'])) {
             $query->where('mobile', 'like', '%' . $filters['mobile'] . '%');
-        }
-        if (!empty($filters['email'])) {
-            $query->where('email', 'like', '%' . $filters['email'] . '%');
         }
         if (!empty($filters['status'])) {
             if ($filters['status'] === 'active') {

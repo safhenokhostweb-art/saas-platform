@@ -17,7 +17,6 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'mobile'     => ['sometimes', 'required', 'string', Rule::unique('users', 'mobile')->ignore($userId), 'regex:/^09[0-9]{9}$/'],
-            'email'      => ['sometimes', 'nullable', 'email', Rule::unique('users', 'email')->ignore($userId)],
             'password'   => ['sometimes', 'nullable', 'string', 'min:8'],
             'first_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'last_name'  => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -38,7 +37,6 @@ class UpdateUserRequest extends FormRequest
         return [
             'mobile.unique' => 'این شماره موبایل قبلاً ثبت شده است.',
             'mobile.regex'  => 'شماره موبایل معتبر نیست.',
-            'email.email'   => 'ایمیل معتبر نیست.',
             'password.min'  => 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
         ];
     }

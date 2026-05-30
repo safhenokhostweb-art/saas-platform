@@ -112,7 +112,6 @@ class CustomerService
         return DB::transaction(function () use ($customer, $data) {
             $customer->update([
                 'name'         => $data['name'] ?? $customer->name,
-                'email'        => $data['email'] ?? $customer->email,
                 'mobile'       => $data['mobile'] ?? $customer->mobile,
                 'company_name' => $data['company_name'] ?? $customer->company_name,
                 'notes'        => $data['notes'] ?? $customer->notes,
@@ -187,7 +186,7 @@ class CustomerService
 
         $handle = fopen($path, 'w');
         fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'ایمیل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
+        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
 
         foreach ($customers as $customer) {
             fputcsv($handle, [
@@ -195,7 +194,6 @@ class CustomerService
                 $customer->name,
                 $customer->company_name ?? '',
                 $customer->mobile,
-                $customer->email ?? '',
                 $customer->sites->count(),
                 $customer->reseller?->company_name ?? '',
                 $customer->created_at->format('Y-m-d H:i'),

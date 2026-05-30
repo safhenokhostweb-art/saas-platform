@@ -7,10 +7,6 @@
             <input type="text" x-model="filters.mobile" class="form-control w-36" placeholder="موبایل">
         </div>
         <div>
-            <label class="block text-xs text-gray-500 mb-1">ایمیل</label>
-            <input type="text" x-model="filters.email" class="form-control w-36" placeholder="ایمیل">
-        </div>
-        <div>
             <label class="block text-xs text-gray-500 mb-1">نام</label>
             <input type="text" x-model="filters.name" class="form-control w-36" placeholder="نام">
         </div>

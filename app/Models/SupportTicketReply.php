@@ -19,7 +19,7 @@ class SupportTicketReply extends Model
 
     protected $fillable = [
         'support_ticket_id', 'user_id', 'message',
-        'author_type', 'customer_email', 'customer_name',
+        'author_type', 'customer_mobile', 'customer_name',
         'attachments',
     ];
 

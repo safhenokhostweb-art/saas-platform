@@ -147,7 +147,7 @@ class SupportTicketController extends Controller
             'priority'          => $ticket->priority,
             'support_level'     => $ticket->support_level,
             'assigned_to'       => $ticket->assigned_to,
-            'customer_email'    => $ticket->customer_email,
+            'customer_mobile'   => $ticket->customer_mobile,
             'category'          => $ticket->category,
             'tags'              => $ticket->tags,
             'attachments'       => $ticket->attachments,

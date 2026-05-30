@@ -50,7 +50,7 @@ class TicketSmsController extends Controller
         $vars = [
             'ticket_number' => $ticket->ticket_number,
             'subject'       => $ticket->subject,
-            'customer'      => $ticket->customer_name ?? $ticket->customer_email ?? 'مشتری',
+            'customer'      => $ticket->customer_name ?? $ticket->customer_mobile ?? 'مشتری',
         ];
 
         return response()->json([

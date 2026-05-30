@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('message');
             $table->string('author_type')->default('staff');
-            $table->string('customer_email')->nullable();
+            $table->string('customer_mobile')->nullable();
             $table->string('customer_name')->nullable();
             $table->json('attachments')->nullable();
             $table->timestamps();

@@ -23,7 +23,7 @@ class Ticket extends Model
         'customer_id',
         'assigned_to',
         'site_id',
-        'customer_email',
+        'customer_mobile',
         'customer_name',
         'category',
         'tags',

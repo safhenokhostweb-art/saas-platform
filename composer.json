@@ -27,8 +27,10 @@
         "guzzlehttp/guzzle": "^7.2",
         "hekmatinasser/verta": "8.5",
         "laravel/framework": "^10.10",
+        "laravel/reverb": "^1.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "predis/predis": "^3.4",
         "saas-platform/modules-forms": "@dev",
         "saas-platform/modules-tickets": "@dev"
     },

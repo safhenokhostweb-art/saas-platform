@@ -13,20 +13,19 @@ class User extends Authenticatable implements UserModelInterface
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    public function getId(): int        { return (int) $this->id; }
-    public function getKey(): mixed     { return $this->id; }
-    public function getName(): ?string  { return $this->profile?->full_name ?? $this->email ?? $this->mobile; }
-    public function getEmail(): ?string { return $this->email; }
-    public function isAdmin(): bool     { return (bool) $this->is_admin; }
+    public function getId(): int         { return (int) $this->id; }
+    public function getKey(): mixed      { return $this->id; }
+    public function getName(): ?string   { return $this->profile?->full_name ?? $this->mobile; }
+    public function getMobile(): ?string { return $this->mobile; }
+    public function isAdmin(): bool      { return (bool) $this->is_admin; }
 
     public function getNameAttribute(): ?string
     {
-        return $this->profile?->full_name ?? $this->email ?? $this->mobile;
+        return $this->profile?->full_name ?? $this->mobile;
     }
 
     protected $fillable = [
         'mobile',
-        'email',
         'password',
         'is_admin',
         'is_active',

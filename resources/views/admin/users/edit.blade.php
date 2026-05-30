@@ -39,13 +39,6 @@
                         <div x-show=\"errors.mobile\" class=\"invalid-feedback d-block\" x-text=\"errors.mobile\"></div>
                     </div>
 
-                    {{-- Email --}}
-                    <div class=\"col-md-6 mb-3\">
-                        <label class=\"form-label\">ایمیل</label>
-                        <input type=\"email\" x-model=\"form.email\" name=\"email\"
-                               class=\"form-control\" :class=\"{'is-invalid': errors.email}\">
-                        <div x-show=\"errors.email\" class=\"invalid-feedback d-block\" x-text=\"errors.email\"></div>
-                    </div>
 
                     {{-- First Name --}}
                     <div class=\"col-md-6 mb-3\">
@@ -165,7 +158,6 @@
         return {
             form: {
                 mobile: '',
-                email: '',
                 first_name: '',
                 last_name: '',
                 password: '',
@@ -184,7 +176,6 @@
 
             initForm() {
                 this.form.mobile = '{{ addslashes($user->mobile) }}';
-                this.form.email = '{{ addslashes($user->email ?? '') }}';
                 this.form.first_name = '{{ addslashes($user->profile?->first_name ?? '') }}';
                 this.form.last_name = '{{ addslashes($user->profile?->last_name ?? '') }}';
                 this.form.avatar_url = '{{ $user->profile?->avatar ?? '' }}';
@@ -241,10 +232,6 @@
                     valid = false;
                 }
 
-                if (this.form.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(this.form.email)) {
-                    this.errors.email = 'فرمت ایمیل معتبر نیست';
-                    valid = false;
-                }
 
                 if (this.form.password && this.form.password.length > 0 && this.form.password.length < 8) {
                     this.errors.password = 'رمز عبور باید حداقل ۸ کاراکتر باشد';

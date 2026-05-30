@@ -12,6 +12,6 @@ interface UserModelInterface
     public function getId(): int;
     public function getKey(): mixed;
     public function getName(): ?string;
-    public function getEmail(): ?string;
+    public function getMobile(): ?string;
     public function isAdmin(): bool;
 }

@@ -58,7 +58,7 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
             $query->where(function ($query) use ($likeTerm) {
                 $query->where('subject', 'like', $likeTerm)
                     ->orWhere('ticket_number', 'like', $likeTerm)
-                    ->orWhere('customer_email', 'like', $likeTerm)
+                    ->orWhere('customer_mobile', 'like', $likeTerm)
                     ->orWhere('customer_name', 'like', $likeTerm);
             });
         }

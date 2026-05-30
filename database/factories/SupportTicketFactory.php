@@ -25,7 +25,7 @@ class SupportTicketFactory extends Factory
             'status' => SupportTicket::STATUS_OPEN,
             'priority' => SupportTicket::PRIORITY_NORMAL,
             'support_level' => 'basic',
-            'customer_email' => fake()->safeEmail(),
+            'customer_mobile' => '09' . fake()->numerify('#########'),
             'customer_name' => fake()->name(),
         ];
     }

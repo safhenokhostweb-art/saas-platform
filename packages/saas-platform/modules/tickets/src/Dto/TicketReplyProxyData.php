@@ -19,6 +19,7 @@ final class TicketReplyProxyData
     public readonly ?string $customer_name;
     public readonly Carbon  $created_at;
     public readonly ?array  $attachments;
+    public readonly bool    $is_internal;
 
     public readonly ?object $user;
 
@@ -29,6 +30,7 @@ final class TicketReplyProxyData
         $this->author_type   = $data['author_type'] ?? 'customer';
         $this->customer_name = $data['customer_name'] ?? null;
         $this->attachments   = is_array($data['attachments'] ?? null) ? $data['attachments'] : null;
+        $this->is_internal   = (bool) ($data['is_internal'] ?? false);
 
         $rawTs = $data['created_at'] ?? now()->toIso8601String();
         $this->created_at = $rawTs instanceof Carbon ? $rawTs : Carbon::parse($rawTs);

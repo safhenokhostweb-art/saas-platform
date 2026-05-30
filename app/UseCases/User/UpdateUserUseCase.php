@@ -74,7 +74,6 @@ class UpdateUserUseCase
     {
         $rules = [
             'mobile'     => ['sometimes', 'required', 'string', "unique:users,mobile,{$userId}", 'regex:/^09[0-9]{9}$/'],
-            'email'      => "sometimes|nullable|email|unique:users,email,{$userId}",
             'password'   => 'sometimes|nullable|string|min:8',
             'first_name' => 'sometimes|nullable|string|max:255',
             'last_name'  => 'sometimes|nullable|string|max:255',
@@ -92,7 +91,6 @@ class UpdateUserUseCase
         $validator = Validator::make($data, $rules, [
             'mobile.unique' => 'این شماره موبایل قبلاً ثبت شده است.',
             'mobile.regex'  => 'شماره موبایل معتبر نیست.',
-            'email.email'   => 'ایمیل معتبر نیست.',
             'password.min'  => 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
         ]);
 

@@ -8,17 +8,20 @@
 {{-- Phase 10.0: Inject canonical design tokens once per page --}}
 <x-core-ui::design-tokens />
 
-<div class="max-w-7xl mx-auto" role="main" aria-label="جزئیات تیکت {{ $ticket->ticket_number }}"
-     data-poll-url="{{ route('tickets.admin.poll', $ticket->id) }}"
-     data-poll-last-id="{{ $ticket->replies->last()?->id ?? 0 }}"
-     x-data="{
+{{--
+    Alpine.data() pattern: all JS with < > / regex chars lives in a <script> block,
+    never inside an HTML attribute. This prevents the HTML parser from breaking the JS.
+--}}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('ticketChat', () => ({
         activeTab: 'chat',
         noteMode: false,
         message: '',
         noteText: '',
         isSending: false,
         showScrollBtn: false,
-        watchers: {{ json_encode($watchers ?? []) }},
+        watchers: @json($watchers ?? []),
         newWatcher: '',
         pollLastId: 0,
         pollTimer: null,
@@ -26,21 +29,24 @@
         toastText: '',
         notifPerm: ('Notification' in window) ? Notification.permission : 'unsupported',
         _polling: false,
+        _toastTimer: null,
+
         addWatcher() {
-            if(this.newWatcher.trim() && !this.watchers.includes(this.newWatcher.trim())) {
-                this.watchers.push(this.newWatcher.trim());
+            const w = this.newWatcher.trim();
+            if (w && !this.watchers.includes(w)) {
+                this.watchers.push(w);
                 this.newWatcher = '';
             }
         },
         removeWatcher(w) { this.watchers = this.watchers.filter(x => x !== w); },
         scrollDown() {
-            let el = this.$refs.chatMessages;
-            if(el) el.scrollTop = el.scrollHeight;
+            const el = this.$refs.chatMessages;
+            if (el) el.scrollTop = el.scrollHeight;
             this.showScrollBtn = false;
         },
         handleScroll() {
-            let el = this.$refs.chatMessages;
-            if(!el) return;
+            const el = this.$refs.chatMessages;
+            if (!el) return;
             this.showScrollBtn = el.scrollHeight - el.scrollTop - el.clientHeight > 80;
         },
         enableNotifications() {
@@ -75,7 +81,7 @@
             if (this.isSending) return;
             const text = this.noteMode ? this.noteText.trim() : this.message.trim();
             if (!text) return;
-            if (this.notifPerm === 'default') { this.enableNotifications(); }
+            if (this.notifPerm === 'default') this.enableNotifications();
             this.isSending = true;
             try {
                 const res = await fetch(form.action, {
@@ -83,11 +89,9 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
                     body: new FormData(form)
                 });
-                if (!res.ok) { const e = await res.json().catch(()=>({})); alert(e.message || 'خطا در ارسال'); return; }
+                if (!res.ok) { const e = await res.json().catch(() => ({})); alert(e.message || 'خطا در ارسال'); return; }
                 const data = await res.json();
-                if (data.reply) {
-                    this.appendReply(data.reply);
-                }
+                if (data.reply) this.appendReply(data.reply);
                 if (this.noteMode) { this.noteText = ''; } else { this.message = ''; }
                 const fi = form.querySelector('input[type=file]'); if (fi) fi.value = '';
             } catch(e) { console.error(e); }
@@ -98,38 +102,70 @@
             if (r.id && r.id > this.pollLastId) this.pollLastId = r.id;
             const container = this.$refs.chatMessages;
             if (!container) return;
-            const isStaff = r.author_type === 'staff';
+
+            const isStaff    = r.author_type === 'staff';
             const isInternal = !!r.is_internal;
-            const name = (r.author_name || (isStaff ? 'پشتیبان' : 'مشتری')).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const name    = esc(r.author_name || (isStaff ? 'پشتیبان' : 'مشتری'));
             const initial = name.charAt(0);
-            const msg = (r.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-            const d = new Date(r.created_at);
-            const time = d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
+            const msg     = esc(r.message || '').replace(/\n/g, '<br>');
+            const d    = new Date(r.created_at);
+            const time = d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+
             const bubbleCls = isInternal ? 'bubble-internal' : (isStaff ? 'bubble-staff' : 'bubble-customer');
             const color = isInternal ? 'var(--ui-warning)' : (isStaff ? 'var(--ui-success)' : 'var(--ui-indigo)');
-            const badge = isInternal ? ' <span class=\'text-[9px] bg-amber-200/60 px-1.5 py-0.5 rounded-full mr-1\'>یادداشت</span>' : (isStaff ? ' <span class=\'text-[9px] bg-green-200/60 px-1.5 py-0.5 rounded-full mr-1\'>پشتیبان</span>' : '');
+            const badge = isInternal
+                ? '<span class="text-[9px] bg-amber-200/60 px-1.5 py-0.5 rounded-full mr-1">یادداشت</span>'
+                : (isStaff ? '<span class="text-[9px] bg-green-200/60 px-1.5 py-0.5 rounded-full mr-1">پشتیبان</span>' : '');
+
+            const attBase = '{{ url("admin/tickets/attachments") }}';
+            const isImgAtt = att => /^image\//i.test(att.mime||'') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(att.name||'');
             let attHtml = '';
             if (r.attachments && r.attachments.length > 0) {
-                const attBase = '{{ url("admin/tickets/attachments") }}';
-                attHtml = '<div class="flex flex-wrap gap-1.5 mt-2">' + r.attachments.map(att => {
-                    const aUrl = att.url || (attBase + '/' + (att.path || ''));
-                    const aName = (att.name || 'فایل').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                    return `<a href="${aUrl}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">${aName}</a>`;
-                }).join('') + '</div>';
+                const parts = r.attachments
+                    .filter(att => att.url || att.path)
+                    .map(att => {
+                        const aUrl  = att.url || (attBase + '/' + att.path);
+                        const aName = esc(att.name || 'فایل');
+                        if (isImgAtt(att)) {
+                            return '<a href="' + aUrl + '" target="_blank" class="block mt-1.5"><img src="' + aUrl + '" loading="lazy" alt="' + aName + '" class="rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border border-white/60 cursor-pointer"></a>';
+                        }
+                        return '<a href="' + aUrl + '" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">' + aName + '</a>';
+                    });
+                if (parts.length) {
+                    const hasImg = r.attachments.some(isImgAtt);
+                    attHtml = '<div class="' + (hasImg ? 'flex flex-col gap-1 mt-1' : 'flex flex-wrap gap-1.5 mt-2') + '">' + parts.join('') + '</div>';
+                }
             }
+
             const wrapper = document.createElement('div');
             wrapper.className = 'flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4' + (isStaff || isInternal ? ' flex-row-reverse' : '');
-            wrapper.style.cssText = 'align-self:' + ((isStaff||isInternal)?'flex-end':'flex-start') + ';opacity:0;transform:translateY(8px)';
-            wrapper.innerHTML = `<div class='w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm' style='background-color:${color}'>${initial}</div><div><div class='${bubbleCls} px-4 py-2.5 shadow-sm'><p class='text-xs font-bold mb-1 opacity-70'>${name}${badge}</p><p class='text-sm leading-relaxed whitespace-pre-wrap'>${msg}</p>${attHtml}</div><span class='text-[10px] text-gray-400 mt-1 px-1'>${time}</span></div>`;
+            wrapper.style.cssText = 'align-self:' + ((isStaff || isInternal) ? 'flex-end' : 'flex-start') + ';opacity:0;transform:translateY(8px)';
+            wrapper.innerHTML =
+                '<div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm" style="background-color:' + color + '">' + initial + '</div>' +
+                '<div>' +
+                    '<div class="' + bubbleCls + ' px-4 py-2.5 shadow-sm">' +
+                        '<p class="text-xs font-bold mb-1 opacity-70">' + name + badge + '</p>' +
+                        '<p class="text-sm leading-relaxed whitespace-pre-wrap">' + msg + '</p>' +
+                        attHtml +
+                    '</div>' +
+                    '<span class="text-[10px] text-gray-400 mt-1 px-1">' + time + '</span>' +
+                '</div>';
+
             container.appendChild(wrapper);
-            requestAnimationFrame(() => { wrapper.style.transition='opacity .3s,transform .3s'; wrapper.style.opacity='1'; wrapper.style.transform='translateY(0)'; });
+            requestAnimationFrame(() => {
+                wrapper.style.transition = 'opacity .3s,transform .3s';
+                wrapper.style.opacity = '1';
+                wrapper.style.transform = 'translateY(0)';
+            });
             container.scrollTop = container.scrollHeight;
-            if (r.author_type === 'customer') { this.notify(r.author_name || 'مشتری', r.message); }
+            if (r.author_type === 'customer') this.notify(r.author_name || 'مشتری', r.message);
         },
         playSound() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const o = ctx.createOscillator(); const g = ctx.createGain();
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
                 o.connect(g); g.connect(ctx.destination);
                 o.type = 'sine'; o.frequency.value = 520;
                 g.gain.setValueAtTime(0, ctx.currentTime);
@@ -145,10 +181,22 @@
             clearTimeout(this._toastTimer);
             this._toastTimer = setTimeout(() => { this.showToast = false; }, 6000);
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('تیکت پشتیبانی — پیام جدید', { body: (body||'').substring(0,120), icon:'/favicon.ico', dir:'rtl', tag:'ticket-reply' });
+                new Notification('تیکت پشتیبانی — پیام جدید', {
+                    body: (body || '').substring(0, 120),
+                    icon: '/favicon.ico',
+                    dir: 'rtl',
+                    tag: 'ticket-reply'
+                });
             }
         }
-     }">
+    }));
+});
+</script>
+
+<div class="max-w-7xl mx-auto" role="main" aria-label="جزئیات تیکت {{ $ticket->ticket_number }}"
+     data-poll-url="{{ route('tickets.admin.poll', $ticket->id) }}"
+     data-poll-last-id="{{ $ticket->replies->last()?->id ?? 0 }}"
+     x-data="ticketChat">
 
     {{-- Real-time toast notification --}}
     <div x-show="showToast" x-transition
@@ -251,12 +299,12 @@
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                {{ mb_substr($ticket->customer_name ?? $ticket->customer_email ?? 'م', 0, 1) }}
+                                {{ mb_substr($ticket->customer_name ?? $ticket->customer_mobile ?? 'م', 0, 1) }}
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-gray-900">{{ $ticket->customer_name ?? 'مشتری' }}</p>
-                                @if($ticket->customer_email)
-                                <p class="text-xs text-gray-400" dir="ltr">{{ $ticket->customer_email }}</p>
+                                @if($ticket->customer_mobile)
+                                <p class="text-xs text-gray-400" dir="ltr">{{ $ticket->customer_mobile }}</p>
                                 @endif
                             </div>
                         </div>
@@ -282,7 +330,7 @@
                          class="flex-1 overflow-y-auto p-4 space-y-1 chat-bg flex flex-col"
                          style="max-height:460px; scroll-behavior:smooth">
 
-                        @php $customerInitial = mb_substr($ticket->customer_name ?? $ticket->customer_email ?? 'م', 0, 1); @endphp
+                        @php $customerInitial = mb_substr($ticket->customer_name ?? $ticket->customer_mobile ?? 'م', 0, 1); @endphp
 
                         {{-- Initial message --}}
                         <div class="flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4" style="align-self:flex-start">
@@ -291,17 +339,29 @@
                             </div>
                             <div>
                                 <div class="bubble-customer px-4 py-2.5 shadow-sm">
-                                    <p class="text-xs font-bold mb-1 opacity-70">{{ $ticket->customer_name ?? $ticket->customer_email ?? 'مشتری' }}</p>
+                                    <p class="text-xs font-bold mb-1 opacity-70">{{ $ticket->customer_name ?? $ticket->customer_mobile ?? 'مشتری' }}</p>
                                     <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ $ticket->description }}</p>
                                     @if($ticket->attachments && is_array($ticket->attachments))
                                     <div class="flex flex-wrap gap-1.5 mt-2">
                                         @foreach($ticket->attachments as $file)
                                             @if(isset($file['path']) || isset($file['url']))
-                                            <a href="{{ $file['url'] ?? route('tickets.admin.attachment.download', ['path' => $file['path']]) }}" target="_blank"
-                                               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
-                                                <span class="truncate max-w-[100px]">{{ $file['name'] ?? 'فایل' }}</span>
+                                            @php
+                                                $attUrl  = $file['url'] ?? route('tickets.admin.attachment.download', ['path' => $file['path']]);
+                                                $attName = $file['name'] ?? 'فایل';
+                                                $attIsImg = preg_match('/^image\//i', $file['mime'] ?? '') || preg_match('/\.(jpg|jpeg|png|gif|webp|bmp)$/i', $attName);
+                                            @endphp
+                                            @if($attIsImg)
+                                            <a href="{{ $attUrl }}" target="_blank" class="block mt-1">
+                                                <img src="{{ $attUrl }}" loading="lazy" alt="{{ $attName }}"
+                                                     class="rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border border-white/60 cursor-pointer">
                                             </a>
+                                            @else
+                                            <a href="{{ $attUrl }}" target="_blank"
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
+                                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+                                                <span class="truncate max-w-[100px]">{{ $attName }}</span>
+                                            </a>
+                                            @endif
                                             @endif
                                         @endforeach
                                     </div>
@@ -355,11 +415,23 @@
                                         <div class="flex flex-wrap gap-1.5 mt-2">
                                             @foreach($reply->attachments as $file)
                                                 @if(isset($file['path']) || isset($file['url']))
-                                                <a href="{{ $file['url'] ?? route('tickets.admin.attachment.download', ['path' => $file['path']]) }}" target="_blank"
-                                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
-                                                    <span class="truncate max-w-[100px]">{{ $file['name'] ?? 'فایل' }}</span>
+                                                @php
+                                                    $attUrl  = $file['url'] ?? route('tickets.admin.attachment.download', ['path' => $file['path']]);
+                                                    $attName = $file['name'] ?? 'فایل';
+                                                    $attIsImg = preg_match('/^image\//i', $file['mime'] ?? '') || preg_match('/\.(jpg|jpeg|png|gif|webp|bmp)$/i', $attName);
+                                                @endphp
+                                                @if($attIsImg)
+                                                <a href="{{ $attUrl }}" target="_blank" class="block mt-1">
+                                                    <img src="{{ $attUrl }}" loading="lazy" alt="{{ $attName }}"
+                                                         class="rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border border-white/60 cursor-pointer">
                                                 </a>
+                                                @else
+                                                <a href="{{ $attUrl }}" target="_blank"
+                                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
+                                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+                                                    <span class="truncate max-w-[100px]">{{ $attName }}</span>
+                                                </a>
+                                                @endif
                                                 @endif
                                             @endforeach
                                         </div>
@@ -513,7 +585,7 @@
                                 <div class="pr-3">
                                     <p class="text-xs font-semibold text-gray-700">تیکت ایجاد شد</p>
                                     <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Helpers\Jalali::formatFa($ticket->created_at, 'Y/m/d H:i') }}</p>
-                                    <p class="text-[10px] text-gray-500 mt-0.5">توسط: {{ $ticket->customer_name ?? $ticket->customer_email ?? 'مشتری' }}</p>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">توسط: {{ $ticket->customer_name ?? $ticket->customer_mobile ?? 'مشتری' }}</p>
                                 </div>
                             </div>
                             @if($ticket->assignee)
@@ -578,8 +650,8 @@
                         <dd class="font-semibold text-xs text-gray-700">{{ $ticket->assignee?->name ?? 'تخصیص نیافته' }}</dd>
                     </div>
                     <div class="flex justify-between gap-2">
-                        <dt class="text-gray-400 text-xs">ایمیل</dt>
-                        <dd class="font-semibold text-xs text-gray-700 truncate" dir="ltr">{{ $ticket->customer_email ?? '—' }}</dd>
+                        <dt class="text-gray-400 text-xs">موبایل</dt>
+                        <dd class="font-semibold text-xs text-gray-700 truncate" dir="ltr">{{ $ticket->customer_mobile ?? '—' }}</dd>
                     </div>
                     @if($ticket->category)
                     <div class="flex justify-between gap-2">

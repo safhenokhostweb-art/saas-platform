@@ -12,12 +12,6 @@
            value="{{ old('mobile', $customer->mobile ?? '') }}" required dir="rtl">
 </div>
 
-<div class="mb-3 text-end">
-    <label class="form-label">ایمیل</label>
-    <input type="email" name="email" class="form-control"
-           placeholder="example@email.com"
-           value="{{ old('email', $customer->email ?? '') }}">
-</div>
 
 <div class="mb-3 text-end">
     <label class="form-label">نام شرکت</label>

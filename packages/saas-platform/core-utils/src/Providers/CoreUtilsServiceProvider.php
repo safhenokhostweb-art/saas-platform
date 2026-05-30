@@ -981,6 +981,31 @@ class CoreUtilsServiceProvider extends ServiceProvider
         $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Validation\MobileEnvironmentValidator::class);
         $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Validation\MobileProductionReadinessService::class);
 
+        // PHASE M1.1 — Unified Client Runtime (platform-agnostic: Android, iOS, Windows, Linux, macOS)
+        // Desktop capability registry
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Desktop\DesktopCapabilityRegistry::class);
+        // Desktop validation
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Desktop\DesktopRuntimeValidationService::class);
+        // Notification transport providers (registered individually — provider registry wires them)
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\ReverbRealtimeProvider::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\FirebasePushProvider::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\LocalNotificationProvider::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\SyncRecoveryProvider::class);
+        // Notification provider registry — registers all four providers in priority order
+        $this->app->singleton(
+            \SaaSPlatform\CoreUtils\ClientRuntime\Notifications\NotificationProviderRegistry::class,
+            function ($app) {
+                $registry = new \SaaSPlatform\CoreUtils\ClientRuntime\Notifications\NotificationProviderRegistry();
+                $registry->register($app->make(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\ReverbRealtimeProvider::class));
+                $registry->register($app->make(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\FirebasePushProvider::class));
+                $registry->register($app->make(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\LocalNotificationProvider::class));
+                $registry->register($app->make(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\Providers\SyncRecoveryProvider::class));
+                return $registry;
+            },
+        );
+        // Notification transport coordinator (orchestrates all providers)
+        $this->app->singleton(\SaaSPlatform\CoreUtils\ClientRuntime\Notifications\NotificationTransportCoordinator::class);
+
         // Mobile config
         $this->mergeConfigFrom(__DIR__ . '/../../config/mobile.php', 'mobile');
 
@@ -1137,6 +1162,8 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidatePatchDistributionCommand::class,
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\RealtimeHealthCommand::class,
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\PushHealthCommand::class,
+                // PHASE M1.1 — Unified Client Runtime & Desktop Governance
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateDesktopRuntimeCommand::class,
                 // PHASE M1.0 — Self-Hosted Mobile Communication Runtime Foundation
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateRuntimeGovernanceCommand::class,
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateRealtimeCommand::class,

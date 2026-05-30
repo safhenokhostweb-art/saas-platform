@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Site\TicketPortalController;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Site\TicketSubmissionController;
+use SaaSPlatform\Modules\Tickets\Http\Controllers\Site\TicketSiteAttachmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,12 +21,17 @@ Route::middleware(['web', 'auth'])
     ->name('tickets.site.')
     ->group(function () {
 
-        // Listing and viewing
-        Route::get('/',          [TicketPortalController::class, 'index'])->name('index');
-        Route::get('/{id}',      [TicketPortalController::class, 'show'])->name('show');
+        // Static routes first (before wildcard /{id})
+        Route::get('/',        [TicketPortalController::class,   'index'])->name('index');
+        Route::get('/create',  [TicketSubmissionController::class, 'create'])->name('create');
+        Route::post('/',       [TicketSubmissionController::class, 'store'])->name('store');
 
-        // Submission
-        Route::get('/create',    [TicketSubmissionController::class, 'create'])->name('create');
-        Route::post('/',         [TicketSubmissionController::class, 'store'])->name('store');
-        Route::post('/{id}/reply', [TicketSubmissionController::class, 'storeReply'])->name('replies.store');
+        // Private-disk attachment streaming
+        Route::get('/attachments/{path}', [TicketSiteAttachmentController::class, 'download'])
+            ->where('path', '.*')
+            ->name('attachment.download');
+
+        // Wildcard ticket routes (integers only)
+        Route::get('/{id}',          [TicketPortalController::class,   'show'])->whereNumber('id')->name('show');
+        Route::post('/{id}/reply',   [TicketSubmissionController::class, 'storeReply'])->whereNumber('id')->name('replies.store');
     });

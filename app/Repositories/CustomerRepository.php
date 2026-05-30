@@ -100,7 +100,6 @@ class CustomerRepository implements CustomerRepositoryInterface
     {
         $customer->update([
             'name'         => $data['name'] ?? $customer->name,
-            'email'        => $data['email'] ?? $customer->email,
             'mobile'       => $data['mobile'] ?? $customer->mobile,
             'company_name' => $data['company_name'] ?? $customer->company_name,
             'notes'        => $data['notes'] ?? $customer->notes,
