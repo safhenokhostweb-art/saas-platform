@@ -129,6 +129,39 @@ class TenantTicketController extends Controller
         ]);
     }
 
+    public function poll(Request $request, int $id): JsonResponse
+    {
+        $site   = $request->attributes->get('tenant_site');
+        $ticket = $this->ticketService->getByIdForSite($id, $site->id);
+
+        if (! $ticket) {
+            return response()->json(['replies' => [], 'last_reply_at' => null]);
+        }
+
+        $lastId = (int) $request->query('last_id', 0);
+        $query  = $ticket->replies()
+            ->where(fn($q) => $q->where('is_internal', false)->orWhereNull('is_internal'))
+            ->orderBy('id');
+
+        if ($lastId > 0) {
+            $query->where('id', '>', $lastId);
+        }
+
+        $replies = $query->get();
+
+        return response()->json([
+            'replies' => $replies->map(fn(TicketReply $r) => [
+                'id'          => $r->id,
+                'message'     => $r->message,
+                'author_type' => $r->author_type,
+                'author_name' => $r->customer_name ?? ($r->author_type === 'staff' ? 'پشتیبان' : 'مشتری'),
+                'created_at'  => $r->created_at->toIso8601String(),
+                'attachments' => $r->attachments ?? [],
+            ])->values(),
+            'last_id' => $replies->last()?->id ?? $lastId,
+        ]);
+    }
+
     private function ticketPayload(Ticket $ticket): array
     {
         return [
@@ -139,6 +172,7 @@ class TenantTicketController extends Controller
             'status'           => $ticket->status,
             'priority'         => $ticket->priority,
             'assigned_to'      => $ticket->assigned_to,
+            'assignee_name'    => $ticket->assignee?->name,
             'customer_email'   => $ticket->customer_email,
             'category'         => $ticket->category,
             'tags'             => $ticket->tags,
@@ -159,6 +193,7 @@ class TenantTicketController extends Controller
             'id'            => $reply->id,
             'message'       => $reply->message,
             'author_type'   => $reply->author_type,
+            'author_name'   => $reply->customer_name ?? ($reply->author_type === 'staff' ? 'پشتیبان' : 'مشتری'),
             'customer_name' => $reply->customer_name,
             'attachments'   => $reply->attachments,
             'created_at'    => $reply->created_at?->toISOString(),

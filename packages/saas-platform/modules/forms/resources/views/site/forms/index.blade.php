@@ -39,12 +39,12 @@
 </div>
 
 @push('json-ld')
-<script type="application/ld+json">@json([
+<script type="application/ld+json">{!! json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'CollectionPage',
     'name' => 'فرم‌های سایت',
     'url' => route('forms.index'),
     'inLanguage' => 'fa-IR',
-], JSON_UNESCAPED_UNICODE)</script>
+], JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush
 @endsection

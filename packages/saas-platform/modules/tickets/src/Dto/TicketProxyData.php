@@ -36,6 +36,7 @@ final class TicketProxyData
     public readonly ?object    $site;
     public readonly ?object    $assignee;
     public readonly Collection $replies;
+    public readonly Collection $publicReplies;
 
     public function __construct(array $data)
     {
@@ -66,6 +67,8 @@ final class TicketProxyData
         $this->replies = TicketReplyProxyData::collectionFrom(
             is_array($rawReplies) ? $rawReplies : []
         );
+        // All API-sourced replies are public; publicReplies mirrors replies for view compatibility.
+        $this->publicReplies = $this->replies;
     }
 
     public static function fromArray(array $data): self

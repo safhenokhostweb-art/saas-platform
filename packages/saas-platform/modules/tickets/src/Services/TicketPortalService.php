@@ -40,7 +40,7 @@ class TicketPortalService
     public function findForSite(int $ticketId, int $siteId): Ticket
     {
         $ticket = $this->ticketRepository->findByIdForSite(
-            $ticketId, $siteId, ['site', 'assignee', 'replies.user']
+            $ticketId, $siteId, ['site', 'assignee', 'publicReplies.user']
         );
 
         if (!$ticket) {
@@ -89,7 +89,14 @@ class TicketPortalService
 
     public function getSiteStats(int $siteId): array
     {
-        return $this->ticketRepository->getStats();
+        $base = Ticket::withoutTenantIsolation()->where('site_id', $siteId);
+
+        return [
+            'total'       => (clone $base)->count(),
+            'open'        => (clone $base)->where('status', Ticket::STATUS_OPEN)->count(),
+            'in_progress' => (clone $base)->where('status', Ticket::STATUS_IN_PROGRESS)->count(),
+            'closed'      => (clone $base)->where('status', Ticket::STATUS_CLOSED)->count(),
+        ];
     }
 
     public function countUnread(int $siteId): int

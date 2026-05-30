@@ -76,6 +76,7 @@ Route::prefix('tenant/tickets')->middleware(['throttle:30,1', 'tenant.api'])->gr
     Route::get('/', [ApiTenantTicketController::class, 'index'])->name('api.tenant-tickets.index');
     Route::post('/', [ApiTenantTicketController::class, 'store'])->name('api.tenant-tickets.store');
     Route::get('{id}', [ApiTenantTicketController::class, 'show'])->name('api.tenant-tickets.show');
+    Route::get('{id}/poll', [ApiTenantTicketController::class, 'poll'])->name('api.tenant-tickets.poll');
     Route::post('{id}/reply', [ApiTenantTicketController::class, 'reply'])->name('api.tenant-tickets.reply');
 });
 

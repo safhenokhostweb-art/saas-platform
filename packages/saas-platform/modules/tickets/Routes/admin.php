@@ -10,6 +10,7 @@ use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSlaController;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSettingsController;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSmsController;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSiteAssignController;
+use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAdminAttachmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,7 @@ Route::middleware(['web', 'auth', 'admin'])
         Route::post('/',          [TicketController::class, 'store'])->name('store');
         Route::post('/bulk',      [TicketController::class, 'bulkAction'])->name('bulk');
         Route::get('/{id}',       [TicketController::class, 'show'])->name('show');
+        Route::get('/{id}/poll',  [TicketController::class, 'poll'])->name('poll');
 
         // ─── Status / Assignment / Priority ──────────────────────────
         Route::patch('/{id}/status',   [TicketStatusController::class,    'update'])->name('status.update');
@@ -50,6 +52,11 @@ Route::middleware(['web', 'auth', 'admin'])
         // ─── SMS ─────────────────────────────────────────────────────
         Route::post('/{id}/sms',          [TicketSmsController::class, 'send'])->name('sms.send');
         Route::get('/{id}/sms/templates', [TicketSmsController::class, 'templates'])->name('sms.templates');
+
+        // ─── Attachments (private disk streaming) ────────────────────
+        Route::get('/attachments/{path}', [TicketAdminAttachmentController::class, 'download'])
+            ->where('path', '.*')
+            ->name('attachment.download');
 
         // ─── Phase 9.4: Operational Analytics Dashboard ───────────
         Route::get('/analytics',      [\SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class, 'index'])->name('analytics');

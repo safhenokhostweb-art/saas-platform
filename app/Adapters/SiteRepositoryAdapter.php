@@ -21,7 +21,7 @@ class SiteRepositoryAdapter implements SiteRepositoryInterface
     public function allActive(): Collection
     {
         try {
-            return Site::where('is_active', true)->orderBy('name')->get();
+            return Site::where('is_active', true)->orderBy('title')->get();
         } catch (\Throwable $e) {
             return collect();
         }

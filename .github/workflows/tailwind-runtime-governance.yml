@@ -1,0 +1,222 @@
+name: Tailwind Runtime Governance — Phase 10.2.8
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
+      - 'postcss.config.js'
+      - 'resources/css/**'
+      - 'packages/saas-platform/core-utils/resources/css/**'
+      - 'packages/saas-platform/**/*.blade.php'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
+      - 'postcss.config.js'
+      - 'resources/css/**'
+      - 'packages/saas-platform/core-utils/resources/css/**'
+      - 'packages/saas-platform/**/*.blade.php'
+
+env:
+  MIN_TAILWIND_MAJOR: 4
+  MIN_PARITY_SCORE: 95
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Tailwind Version Parity: both projects MUST be on Tailwind v4.x
+  # ─────────────────────────────────────────────────────────────────────────────
+  tailwind-version-parity:
+    name: Tailwind Version Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install saas-platform dependencies
+        run: npm ci
+
+      - name: Verify Tailwind v4 installed in saas-platform
+        run: |
+          TW_VERSION=$(node -e "const p=JSON.parse(require('fs').readFileSync('node_modules/tailwindcss/package.json')); console.log(p.version)")
+          TW_MAJOR=$(echo "$TW_VERSION" | cut -d. -f1)
+          echo "Installed tailwindcss: $TW_VERSION (major: $TW_MAJOR)"
+          if [ "$TW_MAJOR" -lt "$MIN_TAILWIND_MAJOR" ]; then
+            echo "❌ FAIL: tailwindcss $TW_VERSION is not v4.x — upgrade required"
+            exit 1
+          fi
+          echo "✅ tailwindcss $TW_VERSION is v4.x — OK"
+
+      - name: Verify @tailwindcss/vite present in saas-platform
+        run: |
+          if [ ! -f "node_modules/@tailwindcss/vite/package.json" ]; then
+            echo "❌ FAIL: @tailwindcss/vite not installed in saas-platform"
+            exit 1
+          fi
+          VITE_PLUGIN_VER=$(node -e "const p=JSON.parse(require('fs').readFileSync('node_modules/@tailwindcss/vite/package.json')); console.log(p.version)")
+          echo "✅ @tailwindcss/vite $VITE_PLUGIN_VER installed"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Legacy Directive Detection: BLOCK if @tailwind base/components/utilities found
+  # ─────────────────────────────────────────────────────────────────────────────
+  legacy-directive-detection:
+    name: Legacy Directive Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for @tailwind v3 directives in CSS
+        run: |
+          LEGACY_FOUND=0
+
+          while IFS= read -r -d '' file; do
+            if grep -qE '@tailwind\s+(base|components|utilities)' "$file"; then
+              echo "❌ LEGACY DIRECTIVE in: $file"
+              grep -nE '@tailwind\s+(base|components|utilities)' "$file"
+              LEGACY_FOUND=1
+            fi
+          done < <(find . -name "*.css" -not -path "*/node_modules/*" -not -path "*/vendor/*" -print0)
+
+          if [ "$LEGACY_FOUND" -eq 1 ]; then
+            echo ""
+            echo "❌ BUILD BLOCKED — Legacy @tailwind directives found."
+            echo "   Replace with: @import \"tailwindcss\";"
+            exit 1
+          fi
+
+          echo "✅ No legacy @tailwind directives found — v4 clean"
+
+      - name: Scan for tailwind.config.js (v3 config format)
+        run: |
+          if find . -name "tailwind.config.js" -not -path "*/node_modules/*" -not -path "*/vendor/*" | grep -q .; then
+            echo "❌ FAIL: tailwind.config.js found — v4 uses CSS @theme instead"
+            find . -name "tailwind.config.js" -not -path "*/node_modules/*" -not -path "*/vendor/*"
+            exit 1
+          fi
+          echo "✅ No tailwind.config.js found — v4 CSS-based config confirmed"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 3 — Build Pipeline Parity: verify vite.config.js uses @tailwindcss/vite
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-pipeline-parity:
+    name: Build Pipeline Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify @tailwindcss/vite in vite.config.js
+        run: |
+          if ! grep -q "@tailwindcss/vite" vite.config.js; then
+            echo "❌ FAIL: vite.config.js does not import @tailwindcss/vite"
+            echo "   Add: import tailwindcss from '@tailwindcss/vite'"
+            echo "   Add: tailwindcss() to plugins[]"
+            exit 1
+          fi
+          echo "✅ vite.config.js uses @tailwindcss/vite"
+
+      - name: Verify @import tailwindcss in app.css
+        run: |
+          if ! grep -qE "@import ['\"]tailwindcss['\"]" resources/css/app.css; then
+            echo "❌ FAIL: resources/css/app.css missing @import \"tailwindcss\""
+            exit 1
+          fi
+          echo "✅ app.css uses @import \"tailwindcss\" (v4 canonical)"
+
+      - name: Verify @source directives in app.css
+        run: |
+          if ! grep -q "@source" resources/css/app.css; then
+            echo "❌ FAIL: resources/css/app.css missing @source content scanning directives"
+            exit 1
+          fi
+          echo "✅ app.css has @source directives for content scanning"
+
+      - name: Verify @theme block in app.css
+        run: |
+          if ! grep -q "@theme" resources/css/app.css; then
+            echo "❌ FAIL: resources/css/app.css missing @theme configuration block"
+            exit 1
+          fi
+          echo "✅ app.css has @theme CSS configuration block"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 4 — Token Parity: canonical design-tokens.css must be imported in both CSS files
+  # ─────────────────────────────────────────────────────────────────────────────
+  token-parity:
+    name: Token Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify design-tokens.css exists
+        run: |
+          TOKEN_FILE="packages/saas-platform/core-utils/resources/css/design-tokens.css"
+          if [ ! -f "$TOKEN_FILE" ]; then
+            echo "❌ FAIL: Canonical design-tokens.css not found at $TOKEN_FILE"
+            exit 1
+          fi
+          echo "✅ Canonical design-tokens.css exists"
+
+      - name: Verify design-tokens.css imported in saas-platform app.css
+        run: |
+          if ! grep -q "design-tokens.css" resources/css/app.css; then
+            echo "❌ FAIL: design-tokens.css not imported in resources/css/app.css"
+            exit 1
+          fi
+          echo "✅ design-tokens.css imported in saas-platform/resources/css/app.css"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 5 — PHP Parity Validation: run forms:validate-tailwind-parity and require score ≥ 95
+  # ─────────────────────────────────────────────────────────────────────────────
+  php-parity-validation:
+    name: PHP Tailwind Parity Validation
+    runs-on: ubuntu-latest
+    needs: [tailwind-version-parity, legacy-directive-detection, build-pipeline-parity, token-parity]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_sqlite
+
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy environment
+        run: cp .env.example .env && php artisan key:generate
+
+      - name: Run Tailwind Governance Validation
+        run: |
+          php artisan frontend:validate-tailwind-runtime --json | tee /tmp/tailwind-governance.json
+          SCORE=$(cat /tmp/tailwind-governance.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('overall_score',0))")
+          echo "Tailwind Runtime Governance Score: $SCORE/100"
+          if [ "$SCORE" -lt "$MIN_PARITY_SCORE" ]; then
+            echo "❌ BLOCKED: Score $SCORE < minimum $MIN_PARITY_SCORE"
+            exit 1
+          fi
+          echo "✅ Tailwind runtime governance score $SCORE/100 — PASS"
+
+      - name: Run Forms Tailwind Parity Validation
+        run: |
+          php artisan forms:validate-tailwind-parity --fail-below=95

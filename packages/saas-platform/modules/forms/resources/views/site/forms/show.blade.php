@@ -276,13 +276,13 @@ document.addEventListener('alpine:init', () => {
 @endpush
 
 @push('json-ld')
-<script type="application/ld+json">@json([
+<script type="application/ld+json">{!! json_encode([
     '@context'    => 'https://schema.org',
     '@type'       => 'WebPage',
     'name'        => $pageTitle,
     'description' => \Illuminate\Support\Str::limit(strip_tags($pageDesc), 300),
     'url'         => url()->current(),
     'inLanguage'  => 'fa-IR',
-], JSON_UNESCAPED_UNICODE)</script>
+], JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush
 @endsection

@@ -95,7 +95,7 @@ class FormFrontendController extends Controller
 
         $forms = \SaaSPlatform\Modules\Forms\Models\Form::whereHas(
             'sites',
-            fn ($q) => $q->where('sites.id', $siteModel->getId())->wherePivot('is_active', true)
+            fn ($q) => $q->where('sites.id', $siteModel->getId())->where('form_site.is_active', true)
         )->get();
 
         return view('forms::site.forms.index', compact('siteModel', 'forms'));
@@ -107,7 +107,7 @@ class FormFrontendController extends Controller
         abort_unless($siteModel, 404);
 
         $form = \SaaSPlatform\Modules\Forms\Models\Form::where('slug', $slug)
-            ->whereHas('sites', fn ($q) => $q->where('sites.id', $siteModel->getId())->wherePivot('is_active', true))
+            ->whereHas('sites', fn ($q) => $q->where('sites.id', $siteModel->getId())->where('form_site.is_active', true))
             ->with('fields')
             ->firstOrFail();
 
@@ -122,7 +122,7 @@ class FormFrontendController extends Controller
         abort_unless($siteModel, 404);
 
         $form = \SaaSPlatform\Modules\Forms\Models\Form::where('slug', $slug)
-            ->whereHas('sites', fn ($q) => $q->where('sites.id', $siteModel->getId())->wherePivot('is_active', true))
+            ->whereHas('sites', fn ($q) => $q->where('sites.id', $siteModel->getId())->where('form_site.is_active', true))
             ->with('fields')
             ->firstOrFail();
 

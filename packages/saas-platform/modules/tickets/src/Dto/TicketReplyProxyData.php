@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
  */
 final class TicketReplyProxyData
 {
+    public readonly int|string $id;
     public readonly string  $message;
     public readonly string  $author_type;
     public readonly ?string $customer_name;
@@ -23,6 +24,7 @@ final class TicketReplyProxyData
 
     public function __construct(array $data)
     {
+        $this->id            = $data['id'] ?? 0;
         $this->message       = $data['message'] ?? '';
         $this->author_type   = $data['author_type'] ?? 'customer';
         $this->customer_name = $data['customer_name'] ?? null;

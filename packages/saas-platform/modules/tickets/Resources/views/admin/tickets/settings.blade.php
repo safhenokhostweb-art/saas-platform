@@ -71,6 +71,10 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
             قالب‌های پیامک
         </button>
+        <button class="tab-btn" :class="{ 'active': tab === 'attachments' }" @click="tab = 'attachments'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+            پیوست‌ها
+        </button>
     </div>
 
     <form method="POST" action="{{ route('tickets.admin.settings.update') }}">
@@ -285,6 +289,73 @@
                                   placeholder="متن قالب پیامک را بنویسید...">{{ $settings[$key] }}</textarea>
                     </div>
                     @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- ═══ TAB: Attachments ══════════════════════════════════════════ --}}
+        <div x-show="tab === 'attachments'" x-transition>
+            <div class="glass-card p-6">
+                <h3 class="font-bold text-gray-800 mb-5 flex items-center gap-2">
+                    <span class="w-8 h-8 bg-gradient-to-r from-sky-400 to-cyan-500 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+                    </span>
+                    تنظیمات پیوست فایل
+                </h3>
+
+                <div class="space-y-5">
+
+                    {{-- Enable toggle --}}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-700">فعال‌سازی آپلود فایل</p>
+                            <p class="text-xs text-gray-400 mt-0.5">امکان پیوست فایل هنگام ایجاد تیکت و ارسال پاسخ</p>
+                        </div>
+                        <label class="toggle-pill">
+                            <input type="checkbox" name="attachment_enabled" value="1"
+                                   {{ $settings['attachment_enabled'] ? 'checked' : '' }}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                        {{-- Max file size --}}
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                حداکثر حجم هر فایل <span class="text-gray-400 font-normal">(کیلوبایت)</span>
+                            </label>
+                            <input type="number" name="attachment_max_size" min="256" max="102400" step="256"
+                                   value="{{ $settings['attachment_max_size'] }}"
+                                   class="form-input" dir="ltr">
+                            <p class="text-[11px] text-gray-400 mt-1">مقدار پیش‌فرض: ۵۱۲۰ کیلوبایت (۵ مگابایت)</p>
+                        </div>
+
+                        {{-- Max files per upload --}}
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                حداکثر تعداد فایل
+                            </label>
+                            <input type="number" name="attachment_max_files" min="1" max="20"
+                                   value="{{ $settings['attachment_max_files'] }}"
+                                   class="form-input" dir="ltr">
+                            <p class="text-[11px] text-gray-400 mt-1">تعداد فایل‌های مجاز در هر بار آپلود</p>
+                        </div>
+
+                    </div>
+
+                    {{-- Allowed extensions --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                            پسوندهای مجاز
+                        </label>
+                        <input type="text" name="attachment_allowed"
+                               value="{{ $settings['attachment_allowed'] }}"
+                               class="form-input font-mono text-xs" dir="ltr"
+                               placeholder="jpg,jpeg,png,pdf,doc,docx,zip">
+                        <p class="text-[11px] text-gray-400 mt-1">پسوندها را با ویرگول انگلیسی جدا کنید. مثال: jpg,png,pdf,zip</p>
+                    </div>
+
                 </div>
             </div>
         </div>

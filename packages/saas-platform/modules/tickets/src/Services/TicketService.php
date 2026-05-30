@@ -221,22 +221,60 @@ class TicketService implements TicketServiceInterface
             return [];
         }
 
-        // Allowed MIME types — executable types explicitly blocked
-        $allowedMimes = [
+        $settingsModel = config('tickets.settings_model');
+        $getDbSetting  = fn(string $key, mixed $default) =>
+            ($settingsModel && class_exists($settingsModel))
+                ? $settingsModel::get($key, $default)
+                : $default;
+
+        $enabled  = (bool) $getDbSetting('tickets.attachment_enabled', true);
+        if (! $enabled) {
+            return [];
+        }
+
+        $maxSizeKb = (int) $getDbSetting('tickets.attachment_max_size', config('tickets.attachments.max_size', 5120));
+        $maxFiles  = (int) $getDbSetting('tickets.attachment_max_files', config('tickets.attachments.max_files', 5));
+        $allowedExts = array_filter(array_map(
+            'trim',
+            explode(',', (string) $getDbSetting('tickets.attachment_allowed', implode(',', config('tickets.attachments.allowed', []))))
+        ));
+
+        // Extension → MIME whitelist (executable types explicitly blocked)
+        $extToMime = [
+            'jpg'  => ['image/jpeg'],
+            'jpeg' => ['image/jpeg'],
+            'png'  => ['image/png'],
+            'gif'  => ['image/gif'],
+            'webp' => ['image/webp'],
+            'pdf'  => ['application/pdf'],
+            'txt'  => ['text/plain'],
+            'csv'  => ['text/plain', 'text/csv', 'application/csv'],
+            'zip'  => ['application/zip', 'application/x-zip-compressed'],
+            'doc'  => ['application/msword'],
+            'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            'xls'  => ['application/vnd.ms-excel'],
+            'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+        ];
+
+        $allowedMimes = [];
+        foreach ($allowedExts as $ext) {
+            if (isset($extToMime[$ext])) {
+                array_push($allowedMimes, ...$extToMime[$ext]);
+            }
+        }
+        $allowedMimes = array_unique($allowedMimes) ?: [
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-            'application/pdf',
-            'text/plain', 'text/csv',
-            'application/zip', 'application/x-zip-compressed',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/pdf', 'text/plain',
         ];
 
         $uploadedFiles = [];
         $sitePrefix    = $siteId ? "site-{$siteId}/" : 'unscoped/';
 
         foreach ($files as $file) {
+            if (count($uploadedFiles) >= $maxFiles) {
+                break;
+            }
+
             // Skip invalid or missing files
             if (!$file instanceof UploadedFile || !$file->isValid() || $file->getSize() === 0) {
                 continue;
@@ -244,6 +282,11 @@ class TicketService implements TicketServiceInterface
 
             // Verify file actually exists
             if (!$file->getRealPath() || !file_exists($file->getRealPath())) {
+                continue;
+            }
+
+            // Enforce per-file size limit from settings
+            if ($file->getSize() > $maxSizeKb * 1024) {
                 continue;
             }
 

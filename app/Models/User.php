@@ -15,9 +15,14 @@ class User extends Authenticatable implements UserModelInterface
 
     public function getId(): int        { return (int) $this->id; }
     public function getKey(): mixed     { return $this->id; }
-    public function getName(): ?string  { return $this->profile?->full_name ?? $this->email; }
+    public function getName(): ?string  { return $this->profile?->full_name ?? $this->email ?? $this->mobile; }
     public function getEmail(): ?string { return $this->email; }
     public function isAdmin(): bool     { return (bool) $this->is_admin; }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->profile?->full_name ?? $this->email ?? $this->mobile;
+    }
 
     protected $fillable = [
         'mobile',

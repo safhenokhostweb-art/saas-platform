@@ -162,9 +162,10 @@ class TicketsServiceProvider extends ServiceProvider
 
     protected function registerRoutes(): void
     {
-        // Three canonical route files replace the legacy Routes/web.php
         $this->loadRoutesFrom(__DIR__ . '/../../Routes/admin.php');
-        $this->loadRoutesFrom(__DIR__ . '/../../Routes/site.php');
+        if (config('tickets.routes.site', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../../Routes/site.php');
+        }
         $this->loadRoutesFrom(__DIR__ . '/../../Routes/api.php');
     }
 

@@ -15,6 +15,8 @@ class Site extends Model implements SiteModelInterface
     public function getTitle(): ?string  { return $this->title; }
     public function isActive(): bool     { return (bool) $this->is_active; }
 
+    public function getNameAttribute(): ?string { return $this->title; }
+
     protected $fillable = [
         'customer_id',
         'title',

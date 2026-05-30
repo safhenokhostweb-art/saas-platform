@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php8.2.23\\\\php.exe\" -r \"echo 'ok';\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php8.4.16\\\\php.exe\" -r \"echo 'ok';\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -r \"echo 'ok';\" 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\customer-site\"; & $php artisan config:clear 2>&1)",
+      "Bash(Select-String \"form\")",
+      "Read(//c/laragon/www/saas-platform/**)",
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\customer-site\" -Recurse -Include \"*.css\")"
+    ]
+  }
+}

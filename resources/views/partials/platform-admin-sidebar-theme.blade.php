@@ -140,4 +140,50 @@
 #admin-sidebar .pt-4.mt-4.border-t {
   border-top: 1px solid var(--platform-sidebar-border) !important;
 }
+
+/* ═══ رنگ‌بندی گروه‌های منو (هر گروه رنگ منحصر‌به‌فرد دارد) ═══ */
+#admin-sidebar .admin-sidebar-group { --grp-color: var(--platform-sidebar-accent); }
+
+/* ۱ داشبورد → indigo */
+#admin-sidebar .admin-sidebar-group:nth-child(1) { --grp-color: #6366f1; }
+/* ۲ مشتریان / کاربران → violet */
+#admin-sidebar .admin-sidebar-group:nth-child(2) { --grp-color: #7c3aed; }
+/* ۳ سایت‌ها / پروژه‌ها → sky */
+#admin-sidebar .admin-sidebar-group:nth-child(3) { --grp-color: #0284c7; }
+/* ۴ فروش / صورتحساب → emerald */
+#admin-sidebar .admin-sidebar-group:nth-child(4) { --grp-color: #059669; }
+/* ۵ پشتیبانی / تیکت‌ها → rose */
+#admin-sidebar .admin-sidebar-group:nth-child(5) { --grp-color: #e11d48; }
+/* ۶ فرم‌ها / برگه‌ها → amber */
+#admin-sidebar .admin-sidebar-group:nth-child(6) { --grp-color: #d97706; }
+/* ۷ محتوا / مقالات → teal */
+#admin-sidebar .admin-sidebar-group:nth-child(7) { --grp-color: #0d9488; }
+/* ۸ تنظیمات سیستم → slate */
+#admin-sidebar .admin-sidebar-group:nth-child(8) { --grp-color: #64748b; }
+/* ۹ بازاریابی → orange */
+#admin-sidebar .admin-sidebar-group:nth-child(9) { --grp-color: #ea580c; }
+/* ۱۰ گزارش‌ها / آمار → purple */
+#admin-sidebar .admin-sidebar-group:nth-child(10) { --grp-color: #9333ea; }
+
+#admin-sidebar .admin-sidebar-group .sidebar-group-label {
+  color: var(--grp-color) !important;
+  border-bottom-color: color-mix(in srgb, var(--grp-color) 30%, transparent) !important;
+}
+#admin-sidebar .admin-sidebar-group .sidebar-group-caret {
+  color: var(--grp-color) !important;
+  opacity: 0.7;
+}
+#admin-sidebar .admin-sidebar-group .sidebar-link:hover {
+  background: color-mix(in srgb, var(--grp-color) 18%, transparent) !important;
+  color: #fff !important;
+}
+#admin-sidebar .admin-sidebar-group .sidebar-link.active {
+  background: color-mix(in srgb, var(--grp-color) 28%, transparent) !important;
+  color: #fff !important;
+  box-shadow: inset -3px 0 0 var(--grp-color) !important;
+}
+#admin-sidebar .admin-sidebar-group .sidebar-link:hover svg,
+#admin-sidebar .admin-sidebar-group .sidebar-link.active svg {
+  color: var(--grp-color) !important;
+}
 </style>

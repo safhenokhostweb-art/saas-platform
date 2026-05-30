@@ -32,8 +32,8 @@
 @section('content')
 <div class="max-w-3xl mx-auto"
      x-data="ticketCreate({
-         users: {{ json_encode($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email ?? ''])->values()) }},
-         oldUserId: {{ old('for_user_id', 'null') }}
+         people: {{ json_encode($people) }},
+         oldKey: '{{ old('for_user_id') ? 'u_'.old('for_user_id') : (old('for_customer_id') ? 'c_'.old('for_customer_id') : '') }}'
      })">
 
     {{-- Header --}}
@@ -93,44 +93,53 @@
                     <span class="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">اختیاری</span>
                 </div>
 
-                {{-- Selected user chip --}}
-                <div x-show="selectedUser" x-transition class="flex items-center gap-3 mb-3">
+                {{-- Selected chip --}}
+                <div x-show="selected" x-transition class="flex items-center gap-3 mb-3">
                     <div class="user-chip">
-                        <div class="u-avatar-sm" x-text="selectedUser ? selectedUser.name.charAt(0).toUpperCase() : ''"></div>
-                        <span x-text="selectedUser ? selectedUser.name : ''"></span>
-                        <span class="text-indigo-400 text-xs" x-text="selectedUser ? selectedUser.email : ''"></span>
+                        <div class="u-avatar-sm" x-text="selected ? (selected.name || '?').charAt(0).toUpperCase() : ''"></div>
+                        <span x-text="selected ? (selected.name || selected.mobile) : ''"></span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full mr-1"
+                              :class="selected && selected.type === 'customer' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'"
+                              x-text="selected ? selected.badge : ''"></span>
+                        <span class="text-indigo-400 text-xs" x-text="selected ? (selected.email || selected.mobile) : ''"></span>
                     </div>
-                    <button type="button" @click="clearUser()"
+                    <button type="button" @click="clearSelected()"
                             class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                         حذف انتخاب
                     </button>
                 </div>
 
-                {{-- User search --}}
-                <div x-show="!selectedUser" class="user-selector-wrap">
-                    <input type="text" x-model="userSearch" @focus="showUserDrop = true" @input="showUserDrop = true"
-                           @keydown.escape="showUserDrop = false"
-                           class="form-input" placeholder="جستجوی کاربر بر اساس نام یا ایمیل..."
+                {{-- Search --}}
+                <div x-show="!selected" class="user-selector-wrap">
+                    <input type="text" x-model="search" @focus="showDrop = true" @input="showDrop = true"
+                           @keydown.escape="showDrop = false"
+                           class="form-input" placeholder="جستجو بر اساس نام، موبایل یا ایمیل..."
                            autocomplete="off">
-                    <div class="user-dropdown" x-show="showUserDrop && filteredUsers.length > 0"
-                         @click.outside="showUserDrop = false" x-transition>
-                        <template x-for="u in filteredUsers" :key="u.id">
-                            <div class="user-option" @click="selectUser(u)">
-                                <div class="u-avatar" x-text="u.name.charAt(0).toUpperCase()"></div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-800" x-text="u.name"></div>
-                                    <div class="text-xs text-gray-400" x-text="u.email"></div>
+                    <div class="user-dropdown" x-show="showDrop && filtered.length > 0"
+                         @click.outside="showDrop = false" x-transition>
+                        <template x-for="p in filtered" :key="p.key">
+                            <div class="user-option" @click="pick(p)">
+                                <div class="u-avatar" x-text="(p.name || '?').charAt(0).toUpperCase()"></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-medium text-gray-800 truncate" x-text="p.name || p.mobile"></span>
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded-full shrink-0"
+                                              :class="p.type === 'customer' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'"
+                                              x-text="p.badge"></span>
+                                    </div>
+                                    <div class="text-xs text-gray-400 truncate" x-text="p.email || p.mobile"></div>
                                 </div>
                             </div>
                         </template>
-                        <div x-show="filteredUsers.length === 0 && userSearch.length > 0"
-                             class="px-4 py-3 text-sm text-gray-400 text-center">کاربری یافت نشد</div>
+                        <div x-show="filtered.length === 0 && search.length > 0"
+                             class="px-4 py-3 text-sm text-gray-400 text-center">موردی یافت نشد</div>
                     </div>
                 </div>
 
-                <input type="hidden" name="for_user_id" :value="selectedUser ? selectedUser.id : ''">
-                <p class="text-xs text-indigo-400 mt-2">با انتخاب کاربر، اطلاعات مشتری به‌صورت خودکار تکمیل می‌شود.</p>
+                <input type="hidden" name="for_user_id"     :value="selected && selected.type === 'user'     ? selected.user_id     : ''">
+                <input type="hidden" name="for_customer_id" :value="selected && selected.type === 'customer' ? selected.customer_id : ''">
+                <p class="text-xs text-indigo-400 mt-2">با انتخاب مشتری یا کاربر، اطلاعات به‌صورت خودکار تکمیل می‌شود.</p>
             </div>
 
             {{-- موضوع --}}
@@ -169,12 +178,12 @@
                     <label class="form-label">
                         نام مشتری
                         <span class="text-gray-400 text-xs">(اختیاری)</span>
-                        <span x-show="selectedUser" class="text-indigo-400 text-xs mr-1">— از کاربر انتخابی</span>
+                        <span x-show="selected" class="text-indigo-400 text-xs mr-1">— از انتخاب شده</span>
                     </label>
                     <input type="text" name="customer_name"
-                           :value="selectedUser ? selectedUser.name : '{{ old('customer_name') }}'"
-                           :readonly="!!selectedUser"
-                           :class="selectedUser ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
+                           :value="selected ? (selected.name || selected.mobile) : '{{ old('customer_name') }}'"
+                           :readonly="!!selected"
+                           :class="selected ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
                            class="form-input" placeholder="مثال: علی رضایی">
                 </div>
                 <div>
@@ -183,9 +192,9 @@
                         <span class="text-gray-400 text-xs">(اختیاری)</span>
                     </label>
                     <input type="email" name="customer_email"
-                           :value="selectedUser ? selectedUser.email : '{{ old('customer_email') }}'"
-                           :readonly="!!selectedUser"
-                           :class="selectedUser ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
+                           :value="selected ? selected.email : '{{ old('customer_email') }}'"
+                           :readonly="!!selected"
+                           :class="selected ? '!bg-indigo-50/50 !border-indigo-200 !text-indigo-700' : ''"
                            class="form-input" placeholder="email@example.com" dir="ltr">
                 </div>
             </div>
@@ -215,9 +224,11 @@
 
             {{-- یادداشت داخلی اولیه --}}
             <div>
-                <label class="internal-note-toggle" :class="{ active: internalNote }"
-                       @click="internalNote = !internalNote; if(internalNote) $nextTick(() => $refs.noteRef.focus())">
-                    <input type="checkbox" class="hidden" x-model="internalNote">
+                <div class="internal-note-toggle" :class="{ active: internalNote }"
+                     role="button" tabindex="0"
+                     @click="internalNote = !internalNote; if(internalNote) $nextTick(() => $refs.noteRef.focus())"
+                     @keydown.enter.prevent="internalNote = !internalNote; if(internalNote) $nextTick(() => $refs.noteRef.focus())"
+                     @keydown.space.prevent="internalNote = !internalNote; if(internalNote) $nextTick(() => $refs.noteRef.focus())">
                     <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded"
                          :class="internalNote ? 'bg-amber-400' : 'border-2 border-gray-300'">
                         <svg x-show="internalNote" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -226,7 +237,7 @@
                         <p class="text-sm font-medium" :class="internalNote ? 'text-amber-800' : 'text-gray-600'">یادداشت داخلی اولیه</p>
                         <p class="text-xs text-gray-400">یادداشتی که فقط تیم پشتیبانی می‌بیند</p>
                     </div>
-                </label>
+                </div>
                 <div x-show="internalNote" x-transition class="mt-3">
                     <textarea x-ref="noteRef" name="initial_note" rows="3"
                               class="form-input resize-y min-h-[80px]"
@@ -270,37 +281,39 @@
 
 @push('scripts')
 <script>
-function ticketCreate({ users, oldUserId }) {
+function ticketCreate({ people, oldKey }) {
     return {
-        users,
-        userSearch: '',
-        showUserDrop: false,
-        selectedUser: null,
+        people,
+        search: '',
+        showDrop: false,
+        selected: null,
         internalNote: false,
 
-        get filteredUsers() {
-            const q = this.userSearch.toLowerCase().trim();
-            if (!q) return this.users.slice(0, 12);
-            return this.users.filter(u =>
-                u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-            ).slice(0, 12);
+        get filtered() {
+            const q = this.search.toLowerCase().trim();
+            if (!q) return this.people.slice(0, 14);
+            return this.people.filter(p =>
+                (p.name   && p.name.toLowerCase().includes(q))  ||
+                (p.email  && p.email.toLowerCase().includes(q)) ||
+                (p.mobile && p.mobile.includes(q))
+            ).slice(0, 14);
         },
 
-        selectUser(u) {
-            this.selectedUser = u;
-            this.userSearch   = '';
-            this.showUserDrop = false;
+        pick(p) {
+            this.selected = p;
+            this.search   = '';
+            this.showDrop = false;
         },
 
-        clearUser() {
-            this.selectedUser = null;
-            this.userSearch   = '';
+        clearSelected() {
+            this.selected = null;
+            this.search   = '';
         },
 
         init() {
-            if (oldUserId) {
-                const found = this.users.find(u => u.id == oldUserId);
-                if (found) this.selectUser(found);
+            if (oldKey) {
+                const found = this.people.find(p => p.key === oldKey);
+                if (found) this.pick(found);
             }
         },
     };

@@ -21,6 +21,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Route Registration
+    |--------------------------------------------------------------------------
+    |
+    | Set 'routes.site' to false in consuming apps that provide their own
+    | site-facing ticket routes (e.g. customer-site uses AdminSupportController).
+    |
+    */
+
+    'routes' => [
+        'site' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Site View Container
+    |--------------------------------------------------------------------------
+    |
+    | CSS classes applied to the outer wrapper div in site/* views.
+    | Set to '' in consuming apps that use a full-width admin layout.
+    |
+    */
+
+    'site_container' => 'max-w-4xl mx-auto',
+
+    /*
+    |--------------------------------------------------------------------------
     | Core Settings
     |--------------------------------------------------------------------------
     */
@@ -46,8 +72,8 @@ return [
         'max_files' => 5,
         'max_size'  => 5120, // KB
         'allowed'   => ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'zip', 'txt'],
-        'disk'      => 'public',
-        'path'      => 'tickets',
+        'disk'      => 'private',
+        'path'      => 'ticket-attachments',
     ],
 
     /*

@@ -27,10 +27,19 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('mobile-api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
+
+            // Phase M1.0 — Self-Hosted Mobile Runtime API
+            Route::middleware('api')
+                ->prefix('api/mobile')
+                ->group(base_path('packages/saas-platform/core-utils/Routes/mobile-api.php'));
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));

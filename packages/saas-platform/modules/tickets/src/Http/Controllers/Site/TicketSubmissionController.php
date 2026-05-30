@@ -66,10 +66,25 @@ class TicketSubmissionController extends Controller
             ? array_filter((array) $request->file('attachments'))
             : null;
 
-        $this->portalService->addCustomerReply($ticket, $siteId, array_merge(
+        $updatedTicket = $this->portalService->addCustomerReply($ticket, $siteId, array_merge(
             $request->validated(),
             ['author_type' => TicketReply::AUTHOR_CUSTOMER]
         ), $files);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $lastReply = $updatedTicket->replies->last();
+            return response()->json([
+                'success' => true,
+                'reply'   => $lastReply ? [
+                    'id'          => $lastReply->id,
+                    'message'     => $lastReply->message,
+                    'author_type' => $lastReply->author_type,
+                    'author_name' => auth()->user()?->name ?? 'شما',
+                    'created_at'  => $lastReply->created_at->toIso8601String(),
+                    'attachments' => $lastReply->attachments ?? [],
+                ] : null,
+            ]);
+        }
 
         return back()->with('success', 'پیام شما ارسال شد.');
     }

@@ -1,0 +1,327 @@
+name: Forms Builder — Frontend Governance (Phase 10.2.7)
+
+on:
+  push:
+    paths:
+      - 'packages/saas-platform/modules/forms/resources/views/**'
+      - 'packages/saas-platform/modules/forms/src/**'
+      - 'resources/css/app.css'
+      - 'routes/web.php'
+  pull_request:
+    paths:
+      - 'packages/saas-platform/modules/forms/resources/views/**'
+      - 'packages/saas-platform/modules/forms/src/**'
+      - 'resources/css/app.css'
+      - 'routes/web.php'
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # 1. Alpine.js Static Governance
+  # ──────────────────────────────────────────────────────────────────────────
+  alpine-governance:
+    name: Alpine.js Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check alpine:init registration pattern
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if ! grep -q "alpine:init" "$FILE"; then
+            echo "::error file=$FILE::Alpine.data must be registered inside document.addEventListener('alpine:init')"
+            exit 1
+          fi
+          echo "✓ alpine:init listener found"
+
+      - name: Check x-cloak on root Alpine element
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if ! grep -q "x-cloak" "$FILE"; then
+            echo "::error file=$FILE::x-cloak missing on root Alpine element — FOUC will occur"
+            exit 1
+          fi
+          echo "✓ x-cloak found"
+
+      - name: Check x-data scope completeness
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if ! grep -q 'x-data="formBuilder(' "$FILE"; then
+            echo "::error file=$FILE::Root x-data=\"formBuilder(...)\" scope missing"
+            exit 1
+          fi
+          echo "✓ x-data formBuilder scope found"
+
+      - name: Detect duplicate Alpine listeners (alpine:init must appear exactly once)
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          COUNT=$(grep -c "alpine:init" "$FILE" || true)
+          if [ "$COUNT" -gt 1 ]; then
+            echo "::warning file=$FILE::Multiple alpine:init listeners found ($COUNT) — may cause duplicate Alpine.data registration"
+          fi
+          echo "✓ alpine:init count: $COUNT"
+
+      - name: Check Escape key handler
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if ! grep -qE "key === 'Escape'|@keydown\.escape" "$FILE"; then
+            echo "::error file=$FILE::Escape key handler missing — modals will not close on Escape"
+            exit 1
+          fi
+          echo "✓ Escape handler found"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 2. Modal Safety Governance
+  # ──────────────────────────────────────────────────────────────────────────
+  modal-safety:
+    name: Modal State Machine Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check all modal state variables
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          MISSING=()
+          for VAR in showDeleteConfirm showTemplateModal showKeyboardHelp showTemplateApplyConfirm; do
+            if ! grep -q "$VAR" "$FILE"; then
+              MISSING+=("$VAR")
+            fi
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error file=$FILE::Missing modal state variables: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "✓ All modal state variables present"
+
+      - name: Detect unsafe confirm() usage
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if grep -qE "\bconfirm\s*\(" "$FILE"; then
+            echo "::error file=$FILE::Native confirm() usage detected — use canonical modal pattern instead"
+            exit 1
+          fi
+          echo "✓ No native confirm() usage"
+
+      - name: Detect unsafe alert() usage
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if grep -qE "\balert\s*\(" "$FILE"; then
+            echo "::error file=$FILE::Native alert() usage detected — use toast/modal pattern instead"
+            exit 1
+          fi
+          echo "✓ No native alert() usage"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 3. SortableJS Safety
+  # ──────────────────────────────────────────────────────────────────────────
+  sortablejs-safety:
+    name: SortableJS CDN Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SortableJS CDN guard
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if ! grep -q "typeof Sortable === 'undefined'" "$FILE"; then
+            echo "::error file=$FILE::SortableJS CDN guard missing — builder will crash if CDN is unavailable"
+            exit 1
+          fi
+          echo "✓ SortableJS CDN guard found"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 4. Async / AbortController Safety
+  # ──────────────────────────────────────────────────────────────────────────
+  async-safety:
+    name: AbortController & Debounce Patterns
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check AbortController pattern
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          MISSING=()
+          grep -q "_saveController" "$FILE" || MISSING+=("_saveController")
+          grep -q "_fieldSaveController" "$FILE" || MISSING+=("_fieldSaveController")
+          grep -q "new AbortController()" "$FILE" || MISSING+=("new AbortController()")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error file=$FILE::AbortController pattern incomplete — missing: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "✓ AbortController pattern complete"
+
+      - name: Check debounce timers
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          MISSING=()
+          grep -q "_saveTimer" "$FILE" || MISSING+=("_saveTimer")
+          grep -q "_fieldSaveTimer" "$FILE" || MISSING+=("_fieldSaveTimer")
+          grep -q "clearTimeout" "$FILE" || MISSING+=("clearTimeout")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error file=$FILE::Debounce pattern incomplete — missing: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "✓ Debounce timers complete"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 5. CSS Parity (cross-repository)
+  # ──────────────────────────────────────────────────────────────────────────
+  css-parity:
+    name: Builder CSS Cross-Context Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check saas-platform x-cloak rule
+        run: |
+          FILE="resources/css/app.css"
+          if ! grep -q "\[x-cloak\]" "$FILE"; then
+            echo "::error file=$FILE::[x-cloak]{display:none!important} missing — Alpine FOUC"
+            exit 1
+          fi
+          echo "✓ [x-cloak] rule found in saas-platform app.css"
+
+      - name: Check design-tokens.css import
+        run: |
+          FILE="resources/css/app.css"
+          if ! grep -q "design-tokens.css" "$FILE"; then
+            echo "::error file=$FILE::design-tokens.css not imported — --ui-* tokens undefined"
+            exit 1
+          fi
+          echo "✓ design-tokens.css imported in saas-platform"
+
+      - name: Check builder CSS classes in saas-platform
+        run: |
+          FILE="resources/css/app.css"
+          MISSING=()
+          for CLASS in "#forms-builder" ".builder-palette" ".builder-canvas" ".builder-inspector" ".canvas-grid" ".inspector-tab" ".autosave-pulse"; do
+            grep -q "$CLASS" "$FILE" || MISSING+=("$CLASS")
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error file=$FILE::Missing builder CSS classes: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "✓ All builder CSS classes in saas-platform app.css"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 6. Artisan Parity Validation (requires PHP + Composer)
+  # ──────────────────────────────────────────────────────────────────────────
+  artisan-parity:
+    name: Artisan Builder Parity Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Copy .env
+        run: cp .env.example .env && php artisan key:generate
+
+      - name: Run builder parity validation
+        run: php artisan forms:validate-builder-parity --strict
+
+      - name: Run visual parity engine
+        run: php artisan forms:validate-visual-parity --strict --fail-below=95
+
+      - name: Run module inheritance audit
+        run: php artisan frontend:validate-module-inheritance
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 7. Phase 10.2.7 — Builder Runtime Perfection
+  # ──────────────────────────────────────────────────────────────────────────
+  builder-runtime-perfection:
+    name: Builder Runtime Perfection (Phase 10.2.7)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "CRITICAL: No PHP-evaluated Alpine variables in Blade component props"
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          # Detect :disabled="..." or :class="..." using Alpine variables on Blade components
+          # These cause "Undefined constant" Fatal Errors in PHP 8
+          ALPINE_VARS="historyIndex|history\.length|fields\.|form\.|saveStatus|toasts\.|selectedField\.|activeTab|paletteSearch|previewMode"
+          # Look for :attr="expr" (PHP-evaluated) containing Alpine vars inside <x- component lines
+          if grep -E '<x-[a-z]' "$FILE" | grep -P ":(disabled|class|loading|href)=\"[^\"]*($ALPINE_VARS)"; then
+            echo "::error file=$FILE::CRITICAL: Alpine variable used with PHP-evaluated Blade :attr binding — causes Fatal Error in PHP 8. Use x-bind:attr instead of :attr on Blade components."
+            exit 1
+          fi
+          echo "✓ No PHP-evaluated Alpine bindings found on Blade component props"
+
+      - name: Check _persistController AbortController in persistSort
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          if ! grep -q "_persistController" "$FILE"; then
+            echo "::error file=$FILE::persistSort() lacks AbortController — rapid drags cause stale reorder requests"
+            exit 1
+          fi
+          echo "✓ _persistController AbortController present in persistSort()"
+
+      - name: Check Sortable re-init after drag end
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          # onEnd must call $nextTick(() => this.initSortable())
+          if ! grep -A5 "onEnd:" "$FILE" | grep -q "initSortable"; then
+            echo "::warning file=$FILE::onEnd does not re-init Sortable via nextTick — DOM/Alpine may desync after rapid drags"
+          else
+            echo "✓ initSortable() called in onEnd via nextTick"
+          fi
+
+      - name: Check saveCurrentField does not replace entire field on save
+        run: |
+          FILE="packages/saas-platform/modules/forms/resources/views/admin/forms/builder.blade.php"
+          # The dangerous pattern: this.fields[idx] = json.field
+          if grep -qP "this\.fields\[idx\]\s*=\s*json\.field" "$FILE"; then
+            echo "::error file=$FILE::saveCurrentField() replaces entire field from server response — concurrent edits will be lost. Only sync sort_order/updated_at."
+            exit 1
+          fi
+          echo "✓ saveCurrentField() does not replace entire field object — safe for concurrent edits"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 8. Phase 10.2.7 — Artisan Runtime Validation
+  # ──────────────────────────────────────────────────────────────────────────
+  artisan-runtime-validation:
+    name: Artisan Runtime Validation (Phase 10.2.7)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Copy .env
+        run: cp .env.example .env && php artisan key:generate
+
+      - name: Validate Alpine bindings
+        run: php artisan forms:validate-builder-alpine --strict
+
+      - name: Validate field ordering engine
+        run: php artisan forms:validate-builder-ordering --strict
+
+      - name: Validate field state synchronization
+        run: php artisan forms:validate-field-state-sync --strict
+
+      - name: Validate builder runtime stability
+        run: php artisan forms:validate-builder-runtime-stability --strict
+
+      - name: Validate zero visual drift
+        run: php artisan forms:validate-zero-drift
+
+      - name: Run builder self-healing check
+        run: php artisan forms:heal-builder-runtime

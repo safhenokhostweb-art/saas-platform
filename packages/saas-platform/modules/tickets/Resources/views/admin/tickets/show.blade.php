@@ -9,6 +9,8 @@
 <x-core-ui::design-tokens />
 
 <div class="max-w-7xl mx-auto" role="main" aria-label="جزئیات تیکت {{ $ticket->ticket_number }}"
+     data-poll-url="{{ route('tickets.admin.poll', $ticket->id) }}"
+     data-poll-last-id="{{ $ticket->replies->last()?->id ?? 0 }}"
      x-data="{
         activeTab: 'chat',
         noteMode: false,
@@ -18,6 +20,12 @@
         showScrollBtn: false,
         watchers: {{ json_encode($watchers ?? []) }},
         newWatcher: '',
+        pollLastId: 0,
+        pollTimer: null,
+        showToast: false,
+        toastText: '',
+        notifPerm: ('Notification' in window) ? Notification.permission : 'unsupported',
+        _polling: false,
         addWatcher() {
             if(this.newWatcher.trim() && !this.watchers.includes(this.newWatcher.trim())) {
                 this.watchers.push(this.newWatcher.trim());
@@ -35,8 +43,123 @@
             if(!el) return;
             this.showScrollBtn = el.scrollHeight - el.scrollTop - el.clientHeight > 80;
         },
-        init() { this.$nextTick(() => this.scrollDown()); }
+        enableNotifications() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(p => { this.notifPerm = p; });
+            }
+        },
+        init() {
+            this.$nextTick(() => this.scrollDown());
+            this.pollLastId = parseInt(this.$el.dataset.pollLastId || '0', 10);
+            this.pollTimer = setInterval(() => this.doPoll(), 4000);
+            window.addEventListener('beforeunload', () => clearInterval(this.pollTimer));
+        },
+        async doPoll() {
+            if (this._polling) return;
+            this._polling = true;
+            const url = this.$el.dataset.pollUrl;
+            if (!url) { this._polling = false; return; }
+            try {
+                const res = await fetch(url + '?last_id=' + this.pollLastId, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.replies && data.replies.length > 0) {
+                    data.replies.forEach(r => this.appendReply(r));
+                }
+            } catch(e) {}
+            finally { this._polling = false; }
+        },
+        async sendReply(form) {
+            if (this.isSending) return;
+            const text = this.noteMode ? this.noteText.trim() : this.message.trim();
+            if (!text) return;
+            if (this.notifPerm === 'default') { this.enableNotifications(); }
+            this.isSending = true;
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                    body: new FormData(form)
+                });
+                if (!res.ok) { const e = await res.json().catch(()=>({})); alert(e.message || 'خطا در ارسال'); return; }
+                const data = await res.json();
+                if (data.reply) {
+                    this.appendReply(data.reply);
+                }
+                if (this.noteMode) { this.noteText = ''; } else { this.message = ''; }
+                const fi = form.querySelector('input[type=file]'); if (fi) fi.value = '';
+            } catch(e) { console.error(e); }
+            finally { this.isSending = false; }
+        },
+        appendReply(r) {
+            if (r.id && r.id <= this.pollLastId) return;
+            if (r.id && r.id > this.pollLastId) this.pollLastId = r.id;
+            const container = this.$refs.chatMessages;
+            if (!container) return;
+            const isStaff = r.author_type === 'staff';
+            const isInternal = !!r.is_internal;
+            const name = (r.author_name || (isStaff ? 'پشتیبان' : 'مشتری')).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const initial = name.charAt(0);
+            const msg = (r.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+            const d = new Date(r.created_at);
+            const time = d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
+            const bubbleCls = isInternal ? 'bubble-internal' : (isStaff ? 'bubble-staff' : 'bubble-customer');
+            const color = isInternal ? 'var(--ui-warning)' : (isStaff ? 'var(--ui-success)' : 'var(--ui-indigo)');
+            const badge = isInternal ? ' <span class=\'text-[9px] bg-amber-200/60 px-1.5 py-0.5 rounded-full mr-1\'>یادداشت</span>' : (isStaff ? ' <span class=\'text-[9px] bg-green-200/60 px-1.5 py-0.5 rounded-full mr-1\'>پشتیبان</span>' : '');
+            let attHtml = '';
+            if (r.attachments && r.attachments.length > 0) {
+                const attBase = '{{ url("admin/tickets/attachments") }}';
+                attHtml = '<div class="flex flex-wrap gap-1.5 mt-2">' + r.attachments.map(att => {
+                    const aUrl = att.url || (attBase + '/' + (att.path || ''));
+                    const aName = (att.name || 'فایل').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    return `<a href="${aUrl}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">${aName}</a>`;
+                }).join('') + '</div>';
+            }
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4' + (isStaff || isInternal ? ' flex-row-reverse' : '');
+            wrapper.style.cssText = 'align-self:' + ((isStaff||isInternal)?'flex-end':'flex-start') + ';opacity:0;transform:translateY(8px)';
+            wrapper.innerHTML = `<div class='w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm' style='background-color:${color}'>${initial}</div><div><div class='${bubbleCls} px-4 py-2.5 shadow-sm'><p class='text-xs font-bold mb-1 opacity-70'>${name}${badge}</p><p class='text-sm leading-relaxed whitespace-pre-wrap'>${msg}</p>${attHtml}</div><span class='text-[10px] text-gray-400 mt-1 px-1'>${time}</span></div>`;
+            container.appendChild(wrapper);
+            requestAnimationFrame(() => { wrapper.style.transition='opacity .3s,transform .3s'; wrapper.style.opacity='1'; wrapper.style.transform='translateY(0)'; });
+            container.scrollTop = container.scrollHeight;
+            if (r.author_type === 'customer') { this.notify(r.author_name || 'مشتری', r.message); }
+        },
+        playSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const o = ctx.createOscillator(); const g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'sine'; o.frequency.value = 520;
+                g.gain.setValueAtTime(0, ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.5);
+            } catch(e) {}
+        },
+        notify(from, body) {
+            this.playSound();
+            this.toastText = 'پیام جدید از ' + from;
+            this.showToast = true;
+            clearTimeout(this._toastTimer);
+            this._toastTimer = setTimeout(() => { this.showToast = false; }, 6000);
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('تیکت پشتیبانی — پیام جدید', { body: (body||'').substring(0,120), icon:'/favicon.ico', dir:'rtl', tag:'ticket-reply' });
+            }
+        }
      }">
+
+    {{-- Real-time toast notification --}}
+    <div x-show="showToast" x-transition
+         class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium"
+         style="display:none">
+        <svg class="w-4 h-4 shrink-0 animate-bounce" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span x-text="toastText"></span>
+        <button @click="showToast=false" class="mr-2 opacity-70 hover:opacity-100">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
 
     {{-- ─── Page Header ────────────────────────────────────────────── --}}
     <div class="flex items-center gap-4 mb-6 flex-wrap">
@@ -137,13 +260,17 @@
                                 @endif
                             </div>
                         </div>
-                        {{-- Auto-refresh indicator --}}
-                        <div class="mr-auto flex items-center gap-1.5 text-xs text-gray-400"
-                             x-data="{ fresh: false }"
-                             x-init="setInterval(() => { fresh = true; setTimeout(() => fresh = false, 1500) }, 30000)">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                            <span x-show="!fresh">پشتیبانی آنلاین</span>
-                            <span x-show="fresh" x-transition class="text-green-600 font-medium">به‌روز شد ✓</span>
+                        {{-- Real-time status indicator --}}
+                        <div class="mr-auto flex items-center gap-2 flex-wrap">
+                            <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                                <span>به‌روزرسانی خودکار هر ۴ ثانیه</span>
+                            </div>
+                            <button x-show="notifPerm === 'default'" @click="enableNotifications()"
+                                    class="text-[10px] text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded-lg px-2 py-1 transition-all">
+                                🔔 فعال‌سازی اعلان
+                            </button>
+                            <span x-show="notifPerm === 'granted'" class="text-[10px] text-green-600">🔔 اعلان فعال</span>
                         </div>
                     </div>
                 </div>
@@ -169,8 +296,8 @@
                                     @if($ticket->attachments && is_array($ticket->attachments))
                                     <div class="flex flex-wrap gap-1.5 mt-2">
                                         @foreach($ticket->attachments as $file)
-                                            @if(isset($file['path']))
-                                            <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
+                                            @if(isset($file['path']) || isset($file['url']))
+                                            <a href="{{ $file['url'] ?? route('tickets.admin.attachment.download', ['path' => $file['path']]) }}" target="_blank"
                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
                                                 <span class="truncate max-w-[100px]">{{ $file['name'] ?? 'فایل' }}</span>
@@ -227,8 +354,8 @@
                                         @if($reply->attachments && is_array($reply->attachments))
                                         <div class="flex flex-wrap gap-1.5 mt-2">
                                             @foreach($reply->attachments as $file)
-                                                @if(isset($file['path']))
-                                                <a href="{{ asset('storage/' . $file['path']) }}" target="_blank"
+                                                @if(isset($file['path']) || isset($file['url']))
+                                                <a href="{{ $file['url'] ?? route('tickets.admin.attachment.download', ['path' => $file['path']]) }}" target="_blank"
                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
                                                     <span class="truncate max-w-[100px]">{{ $file['name'] ?? 'فایل' }}</span>
@@ -278,7 +405,7 @@
 
                         <form method="POST"
                               action="{{ route('tickets.admin.replies.store', $ticket->id) }}"
-                              @submit="isSending=true; setTimeout(()=>{isSending=false},5000)"
+                              @submit.prevent="sendReply($event.target)"
                               enctype="{{ $attachmentsEnabled ? 'multipart/form-data' : 'application/x-www-form-urlencoded' }}">
                             @csrf
                             <input type="hidden" name="is_internal" :value="noteMode ? '1' : '0'">
@@ -291,7 +418,7 @@
                                               style="background:rgba(255,255,255,.85)"
                                               rows="2" required maxlength="5000"
                                               :placeholder="noteMode ? 'یادداشت داخلی (فقط کارشناسان می‌بینند)...' : 'پاسخ خود را بنویسید...'"
-                                              @keydown.enter.prevent="if(!$event.shiftKey) $el.closest('form').submit()"></textarea>
+                                              @keydown.enter.prevent="if(!$event.shiftKey) sendReply($el.closest('form'))"></textarea>
                                     <small class="text-[10px] text-gray-400 mt-1 block mr-2">اینتر = ارسال | Shift+Enter = خط جدید</small>
                                     @if($attachmentsEnabled)
                                     <input type="file" name="attachments[]" multiple class="mt-2 text-xs text-gray-500">

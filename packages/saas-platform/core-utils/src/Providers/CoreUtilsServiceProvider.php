@@ -816,6 +816,10 @@ class CoreUtilsServiceProvider extends ServiceProvider
         $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendDriftLockdownService::class);
         $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\ModuleFrontendInheritanceBootstrapper::class);
 
+        // PHASE 10.2.8 — Tailwind v4 Runtime Migration & Frontend Engine Unification
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\TailwindRuntimeGovernanceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\Frontend\FrontendRuntimeUnificationRecoveryService::class);
+
         // PHASE 9.5-B — AI Safety
         $this->app->singleton(\SaaSPlatform\CoreUtils\AI\Safety\AiRuntimeSafetyEngine::class);
         $this->app->singleton(\SaaSPlatform\CoreUtils\AI\Safety\AiResponseRiskAnalyzer::class);
@@ -903,6 +907,83 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 9.4 — Analytics
         $this->app->singleton(OperationalDashboardService::class);
 
+        // PHASE M1.0 — Self-Hosted Mobile Communication Runtime Foundation
+        // Governance core
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileRuntimeRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileFeatureFlagService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileRuntimeCompatibilityEngine::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileRuntimeValidationService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileRuntimeGovernanceService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileRuntimeManifestBuilder::class);
+        // Versioning
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Versioning\MobileVersionPolicyManager::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Versioning\MobileUpdateChannelManager::class);
+        // Capabilities
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Capabilities\MobileCapabilityRegistry::class);
+        // Security
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Security\MobileSecurityPatchCoordinator::class);
+        // Realtime
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\MobileRealtimeCoordinator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\ConversationChannelRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\TypingIndicatorRuntime::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\RealtimeConnectionTelemetry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\RuntimeSocketAuthorizationService::class);
+        // Presence
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Presence\PresenceRuntimeManager::class);
+        // Communication
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Communication\ConversationService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Communication\ConversationRepository::class);
+        // Device Management
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\DeviceManagement\MobileDeviceRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\DeviceManagement\DeviceTrustManager::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\DeviceManagement\MobileSessionCoordinator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\DeviceManagement\MobilePushTokenRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\DeviceManagement\DeviceSecurityValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\DeviceManagement\DeviceCapabilityResolver::class);
+        // OTA
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileUpdateManifestBuilder::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileFeatureBundleRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileUiSchemaRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileThemeRuntime::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileVersionEnforcementService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileMandatoryUpdatePolicy::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\OTA\MobileSecurityPatchRuntime::class);
+        // Notifications
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\MobileNotificationCoordinator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\PushDeliveryRuntime::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\NotificationPriorityEngine::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\NotificationRoutingService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\MobileNotificationPolicyManager::class);
+        // Telemetry
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Telemetry\MobileRuntimeTelemetryService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Telemetry\MobileConnectionMetrics::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Telemetry\MobileCrashTelemetry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Telemetry\MobileDeliveryAnalytics::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Telemetry\MobileRealtimeDiagnostics::class);
+        // PHASE M1.0.2 — Production Runtime Enablement
+        // Infrastructure validators
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Infrastructure\RedisRuntimeValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Infrastructure\PresenceStorageValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Infrastructure\QueueHealthInspector::class);
+        // Realtime health
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\ReverbRuntimeValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\RealtimeConfigurationInspector::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\MobileRealtimeHealthService::class);
+        // Security patch governance
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Security\SecurityPatchRegistry::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Security\MobilePatchRegistryAdapter::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Security\PatchDistributionValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Security\PatchGovernanceHealthService::class);
+        // Push governance
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\PushTransportValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Notifications\NotificationDeliveryHealthService::class);
+        // Unified validation
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Validation\MobileEnvironmentValidator::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Validation\MobileProductionReadinessService::class);
+
+        // Mobile config
+        $this->mergeConfigFrom(__DIR__ . '/../../config/mobile.php', 'mobile');
+
         // Merge configs
         $this->mergeConfigFrom(
             __DIR__ . '/../../config/saas-platform.php',
@@ -937,6 +1018,9 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 10.2 — Auto-register all discovered module view namespaces at boot
         $this->app->make(\SaaSPlatform\CoreUtils\Frontend\ModuleFrontendInheritanceService::class)
                   ->bootInheritance();
+
+        // PHASE M1.0.2 — Bootstrap mobile security patch registry (idempotent, Cache-backed)
+        $this->app->make(\SaaSPlatform\CoreUtils\MobileRuntime\Security\MobilePatchRegistryAdapter::class);
 
         // Publish shared components for consuming projects
         $this->publishes([
@@ -1044,6 +1128,22 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 // PHASE 10.2.5 — Cross-Project CI Enforcement & Frontend Governance Lockdown
                 \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateCrossRepositoryGovernanceCommand::class,
                 \SaaSPlatform\CoreUtils\Console\Commands\Frontend\FrontendLockdownReportCommand::class,
+                // PHASE 10.2.8 — Tailwind v4 Runtime Migration & Frontend Engine Unification
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\ValidateTailwindRuntimeCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Frontend\RecoverTailwindRuntimeCommand::class,
+                // PHASE M1.0.2 — Production Runtime Enablement
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateProductionReadinessCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateEnvironmentCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidatePatchDistributionCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\RealtimeHealthCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\PushHealthCommand::class,
+                // PHASE M1.0 — Self-Hosted Mobile Communication Runtime Foundation
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateRuntimeGovernanceCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateRealtimeCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\RuntimeStatusCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateOtaCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateSecurityCommand::class,
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\DiagnosticsCommand::class,
             ]);
         }
 

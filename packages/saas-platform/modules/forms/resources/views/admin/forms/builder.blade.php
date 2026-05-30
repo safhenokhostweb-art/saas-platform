@@ -37,6 +37,29 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
 <script>window.__formBuilderInitialData = @json($formData);</script>
 <div id="forms-builder" class="flex flex-col bg-slate-50" x-data="formBuilder(window.__formBuilderInitialData)" x-cloak>
 
+  {{-- ═══════════════════ DRAFT RECOVERY BANNER (Phase 10.2.6) ════════════════════════════════════════════════════ --}}
+  <div x-show="hasDraft"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 -translate-y-2"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-3 shrink-0 z-20"
+       role="alert" aria-live="polite"
+       style="display:none">
+    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>
+    <span class="text-sm text-amber-800 flex-1">
+      پیش‌نویس ذخیره نشده از <span x-text="draftTimestamp" class="font-medium"></span> یافت شد.
+    </span>
+    <button @click="restoreDraft()"
+            class="text-xs font-medium text-amber-700 border border-amber-300 bg-amber-100 hover:bg-amber-200 rounded-lg px-3 py-1 transition focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none">
+      بازیابی پیش‌نویس
+    </button>
+    <button @click="discardDraft()"
+            class="text-xs text-amber-600 hover:text-amber-800 px-2 py-1 transition focus-visible:outline-none"
+            aria-label="نادیده گرفتن پیش‌نویس">
+      نادیده بگیر
+    </button>
+  </div>
+
   {{-- ═══════════════════════════════════════════════ TOP TOOLBAR ═════════════════════════════════════════════════ --}}
   <div class="flex items-center gap-3 px-4 h-14 bg-white border-b border-slate-200 shadow-sm shrink-0 z-10">
 
@@ -60,12 +83,16 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
       />
     </div>
 
-    {{-- Status Toggle — dynamic :class + Alpine; passes through $attributes --}}
+    {{--
+      Status Toggle — x-bind:class used (NOT :class) because the value is an Alpine expression.
+      Blade's :class is PHP-evaluated; form.is_active is an Alpine variable → would crash PHP 8.
+      x-bind:class passes through $attributes untouched; Alpine handles it reactively.
+    --}}
     <x-core-ui::button
       variant="ghost"
       size="sm"
       @click="toggleFormStatus"
-      :class="form.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+      x-bind:class="form.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
       class="!rounded-full !px-3 !py-1 !text-xs"
     >
       <span class="w-1.5 h-1.5 rounded-full" :class="form.is_active ? 'bg-emerald-500' : 'bg-slate-400'"></span>
@@ -97,10 +124,23 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
 
     {{-- Undo/Redo --}}
     <div class="flex items-center gap-0.5">
-      <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="undo" :disabled="historyIndex <= 0" aria-label="برگشت (Ctrl+Z)" title="برگشت (Ctrl+Z)">
+      {{--
+        Undo/Redo: x-bind:disabled + x-bind:class used (NOT :disabled/:class).
+        Blade's :disabled is a PHP-evaluated prop on x-core-ui::button (declared in @props).
+        historyIndex/history are Alpine variables — evaluating them as PHP throws
+        "Undefined constant historyIndex" and crashes the builder on open.
+        x-bind:* passes through $attributes to the rendered <button>; Alpine handles reactivity.
+      --}}
+      <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="undo"
+        x-bind:disabled="historyIndex <= 0"
+        x-bind:class="{'opacity-50 cursor-not-allowed pointer-events-none': historyIndex <= 0}"
+        aria-label="برگشت (Ctrl+Z)" title="برگشت (Ctrl+Z)">
         <svg class="w-4 h-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
       </x-core-ui::button>
-      <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="redo" :disabled="historyIndex >= history.length - 1" aria-label="انجام دوباره (Ctrl+Y)" title="انجام دوباره (Ctrl+Y)">
+      <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="redo"
+        x-bind:disabled="historyIndex >= history.length - 1"
+        x-bind:class="{'opacity-50 cursor-not-allowed pointer-events-none': historyIndex >= history.length - 1}"
+        aria-label="انجام دوباره (Ctrl+Y)" title="انجام دوباره (Ctrl+Y)">
         <svg class="w-4 h-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
       </x-core-ui::button>
     </div>
@@ -111,6 +151,27 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
     <x-core-ui::button variant="ghost" size="sm" :icon="true" @click="showKeyboardHelp = !showKeyboardHelp" aria-label="کلیدهای میانبر" title="کلیدهای میانبر (?)">
       <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
     </x-core-ui::button>
+
+    <div class="w-px h-5 bg-slate-200"></div>
+
+    {{-- Responsive Preview Modes (Phase 10.2.6) --}}
+    <div class="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5" role="group" aria-label="حالت پیش‌نمایش">
+      <button @click="setPreviewMode('desktop')"
+              :class="previewMode === 'desktop' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'"
+              class="p-1.5 rounded-md transition" aria-label="دسکتاپ" title="پیش‌نمایش دسکتاپ">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25z"/></svg>
+      </button>
+      <button @click="setPreviewMode('tablet')"
+              :class="previewMode === 'tablet' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'"
+              class="p-1.5 rounded-md transition" aria-label="تبلت" title="پیش‌نمایش تبلت">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-15a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 4.5v15a2.25 2.25 0 0 0 2.25 2.25z"/></svg>
+      </button>
+      <button @click="setPreviewMode('mobile')"
+              :class="previewMode === 'mobile' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'"
+              class="p-1.5 rounded-md transition" aria-label="موبایل" title="پیش‌نمایش موبایل">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18h3"/></svg>
+      </button>
+    </div>
 
     <div class="w-px h-5 bg-slate-200"></div>
 
@@ -196,7 +257,14 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
          @dragleave="onCanvasDragLeave"
          @drop.prevent="onCanvasDrop($event)">
 
-      <div class="max-w-2xl mx-auto py-8 px-6">
+      {{-- Responsive preview width constraint (Phase 10.2.6) --}}
+      <div class="mx-auto py-8 px-6 transition-all duration-300"
+           :class="{
+             'max-w-2xl': previewMode === 'desktop',
+             'max-w-xl':  previewMode === 'tablet',
+             'max-w-sm':  previewMode === 'mobile',
+           }"
+           :aria-label="'نمایش ' + {desktop: 'دسکتاپ', tablet: 'تبلت', mobile: 'موبایل'}[previewMode]">
 
         {{-- Form header on canvas --}}
         <div class="mb-6 text-center">
@@ -631,7 +699,7 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
       </div>
       <div class="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         @foreach($templates as $tpl)
-        <button @click="applyBuiltInTemplate(@js($tpl))"
+        <button @click="requestApplyTemplate(@js($tpl))"
                 class="text-right flex flex-col gap-2 p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition group">
           <span class="font-semibold text-slate-800 group-hover:text-indigo-700">{{ $tpl['title'] }}</span>
           <span class="text-xs text-slate-500">{{ $tpl['description'] }}</span>
@@ -676,6 +744,45 @@ foreach (array_keys(config('forms.field_types', [])) as $_t) {
         <button type="button" @click="deleteField(deleteTargetFieldId)"
                 class="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-xl transition active:scale-95 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:outline-none">
           بله، حذف شود
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {{-- ══════════════════════════ TEMPLATE APPLY CONFIRM MODAL ════════════════════════════════════════════════════ --}}
+  <div x-show="showTemplateApplyConfirm"
+       x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-100"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @keydown.escape.window="showTemplateApplyConfirm = false; pendingTemplateData = null"
+       class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+       role="alertdialog" aria-modal="true" aria-labelledby="template-confirm-title"
+       style="display:none">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showTemplateApplyConfirm = false; pendingTemplateData = null" aria-hidden="true"></div>
+    <div x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 z-10 p-6">
+      <div class="flex items-start gap-4">
+        <div class="shrink-0 w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>
+        </div>
+        <div>
+          <h3 id="template-confirm-title" class="font-semibold text-slate-800 mb-1">اعمال قالب</h3>
+          <p class="text-sm text-slate-500">فیلدهای فعلی فرم جایگزین می‌شوند. این عملیات قابل بازگشت است (Ctrl+Z).</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 mt-6">
+        <button type="button" @click="showTemplateApplyConfirm = false; pendingTemplateData = null"
+                class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none">
+          انصراف
+        </button>
+        <button type="button" @click="applyBuiltInTemplate(null)"
+                class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition active:scale-95 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none">
+          بله، اعمال شود
         </button>
       </div>
     </div>
@@ -757,7 +864,9 @@ document.addEventListener('alpine:init', () => {
     paletteSearch:    '',
     isDraggingOver:   false,
     draggingType:     null,
-    showTemplateModal:    false,
+    showTemplateModal:       false,
+    showTemplateApplyConfirm: false,
+    pendingTemplateData:     null,
     showVersionHistory:   false,
     showDeleteConfirm:    false,
     showKeyboardHelp:     false,
@@ -767,7 +876,13 @@ document.addEventListener('alpine:init', () => {
     _fieldSaveTimer:      null,
     _saveController:      null,
     _fieldSaveController: null,
+    _persistController:   null,
+    _crashSaveTimer:      null,
     sortableInstance:     null,
+    // Phase 10.2.6 — Enterprise UX
+    previewMode:          'desktop',
+    hasDraft:             false,
+    draftTimestamp:       '',
     _paletteCategories:   @json($paletteCategories),
     _paletteIcons:        @json($paletteIconMap),
 
@@ -793,6 +908,7 @@ document.addEventListener('alpine:init', () => {
     init() {
       this.$nextTick(() => this.initSortable());
       this.pushHistory();
+      this.checkDraftRecovery();
       document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); }
         if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); this.redo(); }
@@ -803,6 +919,15 @@ document.addEventListener('alpine:init', () => {
         if (e.key === 'Escape') {
           this.showKeyboardHelp = false;
           this.showTemplateModal = false;
+          this.showTemplateApplyConfirm = false;
+          this.pendingTemplateData = null;
+        }
+      });
+      // Unsaved changes protection
+      window.addEventListener('beforeunload', (e) => {
+        if (this.saveStatus === 'unsaved') {
+          e.preventDefault();
+          e.returnValue = '';
         }
       });
     },
@@ -823,6 +948,10 @@ document.addEventListener('alpine:init', () => {
           this.updateFieldOrderFromDom();
           this.persistSort();
           this.pushHistory();
+          // Re-attach Sortable after Alpine's x-for reconciles the DOM.
+          // Without this, adding/removing fields after a drag leaves Sortable
+          // with stale element references, causing subsequent drags to fail silently.
+          this.$nextTick(() => this.initSortable());
         },
       });
     },
@@ -939,8 +1068,14 @@ document.addEventListener('alpine:init', () => {
         });
         const json = await resp.json();
         if (! resp.ok) throw new Error(json.message || 'Error');
+        // Sync only server-generated fields (sort_order, updated_at).
+        // Do NOT replace the entire object: a concurrent user edit would be overwritten
+        // if the server response arrives after the user has already changed a property.
         const idx = this.fields.findIndex(f => f.id === field.id);
-        if (idx >= 0) this.fields[idx] = json.field;
+        if (idx >= 0 && json.field) {
+          if (json.field.sort_order !== undefined) this.fields[idx].sort_order = json.field.sort_order;
+          if (json.field.updated_at !== undefined) this.fields[idx].updated_at = json.field.updated_at;
+        }
         this.saveStatus = 'saved';
         this._fieldSaveController = null;
         this.pushHistory();
@@ -988,6 +1123,7 @@ document.addEventListener('alpine:init', () => {
     async saveAll() {
       if (this.selectedField) await this.saveCurrentField();
       await this.saveFormSettings();
+      this.clearDraftFromStorage();
       this.showToast('همه تغییرات ذخیره شد', 'success');
     },
 
@@ -1037,16 +1173,25 @@ document.addEventListener('alpine:init', () => {
     },
 
     async persistSort() {
+      // Cancel any in-flight sort request — only the latest order is authoritative.
+      if (this._persistController) { this._persistController.abort(); }
+      this._persistController = new AbortController();
       const order = this.fields.map(f => f.id);
-      await fetch(`{{ route('admin.forms.builder.sort', $form) }}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ order }),
-      });
+      try {
+        await fetch(`{{ route('admin.forms.builder.sort', $form) }}`, {
+          method: 'POST',
+          signal: this._persistController.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({ order }),
+        });
+        this._persistController = null;
+      } catch (e) {
+        if (e.name !== 'AbortError') { this.showToast('خطا در ذخیره ترتیب', 'error'); }
+      }
     },
 
     toggleFormStatus() {
@@ -1086,9 +1231,17 @@ document.addEventListener('alpine:init', () => {
       this.debouncedFieldSave();
     },
 
-    applyBuiltInTemplate(template) {
-      if (! confirm('این قالب فیلدهای فعلی را جایگزین می‌کند. ادامه می‌دهید؟')) return;
+    requestApplyTemplate(template) {
+      this.pendingTemplateData = template;
       this.showTemplateModal = false;
+      this.showTemplateApplyConfirm = true;
+    },
+
+    applyBuiltInTemplate(template) {
+      this.showTemplateApplyConfirm = false;
+      const tpl = template || this.pendingTemplateData;
+      this.pendingTemplateData = null;
+      if (!tpl) return;
       fetch(`{{ route('admin.forms.templates.apply', $form) }}`, {
         method: 'POST',
         headers: {
@@ -1103,6 +1256,66 @@ document.addEventListener('alpine:init', () => {
       });
     },
 
+    // Phase 10.2.6 — Responsive preview
+    setPreviewMode(mode) {
+      this.previewMode = mode;
+    },
+
+    // Phase 10.2.6 — Crash recovery via localStorage
+    _draftKey() {
+      return `forms_builder_draft_{{ $form->id }}`;
+    },
+
+    checkDraftRecovery() {
+      try {
+        const raw = localStorage.getItem(this._draftKey());
+        if (! raw) return;
+        const draft = JSON.parse(raw);
+        if (! draft || ! draft.fields || ! draft.savedAt) return;
+        // Only show recovery banner if draft is newer than 10 seconds (skip trivial cases)
+        const age = Date.now() - new Date(draft.savedAt).getTime();
+        if (age < 10000) return;
+        const d = new Date(draft.savedAt);
+        this.draftTimestamp = d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+        this.hasDraft = true;
+      } catch (_) {}
+    },
+
+    restoreDraft() {
+      try {
+        const raw = localStorage.getItem(this._draftKey());
+        if (! raw) { this.hasDraft = false; return; }
+        const draft = JSON.parse(raw);
+        if (draft && draft.fields) {
+          this.fields = draft.fields;
+          this.pushHistory();
+          this.$nextTick(() => this.initSortable());
+          this.showToast('پیش‌نویس بازیابی شد', 'success');
+        }
+      } catch (_) {
+        this.showToast('خطا در بازیابی پیش‌نویس', 'error');
+      }
+      this.hasDraft = false;
+    },
+
+    discardDraft() {
+      try { localStorage.removeItem(this._draftKey()); } catch (_) {}
+      this.hasDraft = false;
+    },
+
+    saveDraftToStorage() {
+      try {
+        localStorage.setItem(this._draftKey(), JSON.stringify({
+          fields:  JSON.parse(JSON.stringify(this.fields)),
+          savedAt: new Date().toISOString(),
+        }));
+      } catch (_) {}
+    },
+
+    clearDraftFromStorage() {
+      try { localStorage.removeItem(this._draftKey()); } catch (_) {}
+    },
+
     pushHistory() {
       if (this.historyIndex < this.history.length - 1) {
         this.history = this.history.slice(0, this.historyIndex + 1);
@@ -1110,6 +1323,9 @@ document.addEventListener('alpine:init', () => {
       this.history.push(JSON.parse(JSON.stringify(this.fields)));
       if (this.history.length > 50) this.history.shift();
       this.historyIndex = this.history.length - 1;
+      // Crash-save to localStorage on every history push
+      clearTimeout(this._crashSaveTimer);
+      this._crashSaveTimer = setTimeout(() => this.saveDraftToStorage(), 500);
     },
 
     undo() {

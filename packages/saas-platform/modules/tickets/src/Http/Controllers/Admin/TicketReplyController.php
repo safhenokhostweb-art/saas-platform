@@ -48,6 +48,21 @@ class TicketReplyController extends Controller
             $this->notificationService->onReplyAdded($updatedTicket, $lastReply);
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'reply'   => $lastReply ? [
+                    'id'          => $lastReply->id,
+                    'message'     => $lastReply->message,
+                    'author_type' => $lastReply->author_type,
+                    'author_name' => auth()->user()?->name ?? 'پشتیبان',
+                    'is_internal' => (bool) ($lastReply->is_internal ?? false),
+                    'created_at'  => $lastReply->created_at->toIso8601String(),
+                    'attachments' => $lastReply->attachments ?? [],
+                ] : null,
+            ]);
+        }
+
         return back()->with('success', 'پاسخ با موفقیت ثبت شد.');
     }
 }

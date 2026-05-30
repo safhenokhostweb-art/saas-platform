@@ -43,6 +43,18 @@ use SaaSPlatform\Modules\Forms\Services\FormsRuntimeStabilizationService;
 use SaaSPlatform\Modules\Forms\Services\FrontendVisualParityEngine;
 use SaaSPlatform\Modules\Forms\Services\FrontendRuntimeRecoveryService;
 use SaaSPlatform\Modules\Forms\Services\CrossContextRuntimeValidationService;
+// Phase 10.2.6 — Builder Parity, Recovery, Visual Engine, Auto-Inheritance
+use SaaSPlatform\Modules\Forms\Services\FormsBuilderParityValidationService;
+use SaaSPlatform\Modules\Forms\Services\FormsBuilderRuntimeRecoveryService;
+use SaaSPlatform\Modules\Forms\Services\FormsVisualParityEngine;
+use SaaSPlatform\Modules\Forms\Services\ModuleFrontendAutoInheritanceService;
+// Phase 10.2.7 — Builder Runtime Perfection & State Synchronization
+use SaaSPlatform\Modules\Forms\Services\BuilderAlpineValidationService;
+use SaaSPlatform\Modules\Forms\Services\FormsBuilderOrderingEngine;
+use SaaSPlatform\Modules\Forms\Services\FormsFieldStateSynchronizationService;
+use SaaSPlatform\Modules\Forms\Services\FormsBuilderRuntimeStabilityService;
+use SaaSPlatform\Modules\Forms\Services\FormsZeroDriftParityService;
+use SaaSPlatform\Modules\Forms\Services\FormsBuilderSelfHealingService;
 use SaaSPlatform\Modules\Forms\Services\NullSiteRepository;
 use SaaSPlatform\Modules\Forms\Services\NullTenantContext;
 use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
@@ -117,6 +129,23 @@ class FormsServiceProvider extends ServiceProvider
         $this->app->singleton(FrontendRuntimeRecoveryService::class);
         $this->app->singleton(CrossContextRuntimeValidationService::class);
 
+        // Phase 10.2.6 — Builder Parity, Recovery, Visual Engine, Auto-Inheritance
+        $this->app->singleton(FormsBuilderParityValidationService::class);
+        $this->app->singleton(FormsBuilderRuntimeRecoveryService::class);
+        $this->app->singleton(FormsVisualParityEngine::class);
+        $this->app->singleton(ModuleFrontendAutoInheritanceService::class);
+
+        // Phase 10.2.7 — Builder Runtime Perfection & State Synchronization
+        $this->app->singleton(BuilderAlpineValidationService::class);
+        $this->app->singleton(FormsBuilderOrderingEngine::class);
+        $this->app->singleton(FormsFieldStateSynchronizationService::class);
+        $this->app->singleton(FormsBuilderRuntimeStabilityService::class);
+        $this->app->singleton(FormsZeroDriftParityService::class);
+        $this->app->singleton(FormsBuilderSelfHealingService::class);
+
+        // Phase 10.2.8 — Tailwind v4 Runtime Migration & Frontend Engine Unification
+        $this->app->singleton(\SaaSPlatform\Modules\Forms\Services\FormsTailwindParityValidationService::class);
+
         // Provide a no-op fallback when the host app doesn't bind SiteRepositoryInterface
         // (e.g. customer-site has no multi-site concept). Saas-platform overrides via
         // InfrastructureServiceProvider, which registers before this provider boots.
@@ -165,6 +194,20 @@ class FormsServiceProvider extends ServiceProvider
                 // Phase 9.3 — Cross-Context Parity + Runtime Recovery commands
                 \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFrontendParityCommand::class,
                 \SaaSPlatform\Modules\Forms\Console\Commands\FrontendRuntimeDiagnosticsCommand::class,
+                // Phase 10.2.6 — Builder Parity Validation, Recovery, Visual Parity, Auto-Inheritance
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsBuilderParityCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\RecoverBuilderRuntimeCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsVisualParityCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateModuleFrontendInheritanceCommand::class,
+                // Phase 10.2.7 — Builder Runtime Perfection & State Synchronization
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateBuilderAlpineCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateBuilderOrderingCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFieldStateSyncCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateBuilderRuntimeStabilityCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateZeroDriftCommand::class,
+                \SaaSPlatform\Modules\Forms\Console\Commands\HealBuilderRuntimeCommand::class,
+                // Phase 10.2.8 — Tailwind v4 Runtime Migration & Frontend Engine Unification
+                \SaaSPlatform\Modules\Forms\Console\Commands\ValidateFormsTailwindParityCommand::class,
             ]);
         }
 

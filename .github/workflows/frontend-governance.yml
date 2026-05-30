@@ -8,6 +8,8 @@ on:
       - 'resources/views/**/*.blade.php'
       - 'resources/css/**'
       - 'packages/saas-platform/core-utils/resources/css/**'
+      - 'package.json'
+      - 'vite.config.js'
   pull_request:
     branches: [main, develop]
     paths:
@@ -15,6 +17,8 @@ on:
       - 'resources/views/**/*.blade.php'
       - 'resources/css/**'
       - 'packages/saas-platform/core-utils/resources/css/**'
+      - 'package.json'
+      - 'vite.config.js'
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -332,3 +336,109 @@ jobs:
           fi
 
           echo "✓ No hardcoded colors in changed Blade files."
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 6 — Phase 10.2.8: Tailwind v4 Directive Enforcement (fast, no boot)
+  # Blocks PRs that introduce legacy @tailwind v3 directives or tailwind.config.js
+  # ─────────────────────────────────────────────────────────────────────────────
+  tailwind-v4-directive-enforcement:
+    name: Tailwind v4 Directive Enforcement
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Block legacy @tailwind directives in CSS files
+        run: |
+          VIOLATIONS=0
+          while IFS= read -r -d '' file; do
+            if grep -qE '@tailwind\s+(base|components|utilities)' "$file"; then
+              echo "❌ LEGACY DIRECTIVE in: $file"
+              grep -nE '@tailwind\s+(base|components|utilities)' "$file"
+              VIOLATIONS=$((VIOLATIONS + 1))
+            fi
+          done < <(find . -name "*.css" -not -path "*/node_modules/*" -not -path "*/vendor/*" -print0)
+          if [ "$VIOLATIONS" -gt 0 ]; then
+            echo ""
+            echo "❌ BUILD BLOCKED — Legacy @tailwind directives detected."
+            echo "   Replace ALL with: @import \"tailwindcss\";"
+            exit 1
+          fi
+          echo "✅ No legacy @tailwind directives — v4 clean"
+
+      - name: Block tailwind.config.js (v3 format)
+        run: |
+          if find . -name "tailwind.config.js" -not -path "*/node_modules/*" -not -path "*/vendor/*" | grep -q .; then
+            echo "❌ BUILD BLOCKED — tailwind.config.js found (v3 config format)"
+            echo "   Migrate theme to @theme {} block in app.css"
+            exit 1
+          fi
+          echo "✅ No tailwind.config.js — CSS-based v4 config confirmed"
+
+      - name: Verify @import tailwindcss entrypoint
+        run: |
+          if [ ! -f "resources/css/app.css" ]; then
+            echo "❌ resources/css/app.css not found"
+            exit 1
+          fi
+          if ! grep -qE "@import ['\"]tailwindcss['\"]" resources/css/app.css; then
+            echo "❌ resources/css/app.css is missing @import \"tailwindcss\""
+            echo "   Remove: @tailwind base; @tailwind components; @tailwind utilities;"
+            echo "   Add:    @import \"tailwindcss\";"
+            exit 1
+          fi
+          echo "✅ @import \"tailwindcss\" confirmed in app.css"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 7 — Phase 10.2.8: Frontend Engine Parity Check
+  # Verifies both projects share identical Tailwind v4 config structure
+  # ─────────────────────────────────────────────────────────────────────────────
+  frontend-engine-parity:
+    name: Frontend Engine Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check @tailwindcss/vite in package.json
+        run: |
+          if ! grep -q '"@tailwindcss/vite"' package.json; then
+            echo "❌ @tailwindcss/vite missing from package.json devDependencies"
+            exit 1
+          fi
+          TW_VER=$(node -e "const p=JSON.parse(require('fs').readFileSync('package.json')); console.log(p.devDependencies?.tailwindcss || 'missing')")
+          MAJOR=$(echo "$TW_VER" | grep -oP '[\d]+' | head -1)
+          echo "Declared tailwindcss: $TW_VER (major: $MAJOR)"
+          if [ "$MAJOR" -lt 4 ] 2>/dev/null; then
+            echo "❌ package.json declares tailwindcss $TW_VER — must be ^4.x"
+            exit 1
+          fi
+          echo "✅ package.json correctly declares tailwindcss $TW_VER and @tailwindcss/vite"
+
+      - name: Verify @source content scanning in app.css
+        run: |
+          SOURCE_COUNT=$(grep -c "@source" resources/css/app.css || true)
+          if [ "$SOURCE_COUNT" -lt 1 ]; then
+            echo "❌ No @source directives in app.css — content scanning will fail"
+            exit 1
+          fi
+          echo "✅ Found $SOURCE_COUNT @source directive(s) in app.css"
+
+      - name: Verify @theme block in app.css
+        run: |
+          if ! grep -q "@theme" resources/css/app.css; then
+            echo "❌ @theme block missing from app.css — font/color tokens will not generate"
+            exit 1
+          fi
+          echo "✅ @theme block present in app.css"
+
+      - name: Verify design-tokens.css is the single source of truth
+        run: |
+          TOKEN="packages/saas-platform/core-utils/resources/css/design-tokens.css"
+          if [ ! -f "$TOKEN" ]; then
+            echo "❌ Canonical design-tokens.css not found at $TOKEN"
+            exit 1
+          fi
+          if ! grep -q "design-tokens.css" resources/css/app.css; then
+            echo "❌ design-tokens.css not imported in saas-platform app.css"
+            exit 1
+          fi
+          echo "✅ Canonical design-tokens.css exists and is imported"

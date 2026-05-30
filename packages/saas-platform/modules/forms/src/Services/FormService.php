@@ -5,7 +5,6 @@ namespace SaaSPlatform\Modules\Forms\Services;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use SaaSPlatform\CoreUtils\Contracts\Services\CaptchaServiceInterface;
-use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
 use SaaSPlatform\Modules\Forms\Contracts\FormRepositoryInterface;
 use SaaSPlatform\Modules\Forms\Contracts\FormServiceInterface;
 use SaaSPlatform\Modules\Forms\Models\Form;
@@ -14,8 +13,7 @@ class FormService implements FormServiceInterface
 {
     public function __construct(
         protected FormRepositoryInterface $repository,
-        protected CaptchaServiceInterface $captchaService,
-        protected SiteRepositoryInterface $siteRepository
+        protected CaptchaServiceInterface $captchaService
     ) {}
 
     public function getAll(array $filters = []): LengthAwarePaginator
@@ -107,7 +105,7 @@ class FormService implements FormServiceInterface
             }
         }
 
-        $firstSite = $form->sites()->first() ?? $this->siteRepository->allForDisplay()->first();
+        $firstSite = $form->sites()->wherePivot('is_active', true)->first();
 
         return compact('form', 'captcha', 'firstSite');
     }

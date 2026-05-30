@@ -2,8 +2,10 @@
 
 namespace SaaSPlatform\Modules\Tickets\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
 use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
@@ -55,11 +57,34 @@ class TicketController extends Controller
         $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
         $userModel = config('tickets.user_model', \App\Models\User::class);
-        $users     = $userModel::where('is_admin', false)->orderBy('name')->get(['id', 'name', 'email']);
+        $users     = $userModel::orderBy('mobile')->get(['id', 'email', 'mobile']);
+        $customers = \App\Models\Customer::orderBy('name')->get(['id', 'name', 'email', 'mobile', 'user_id']);
         $sites     = $this->getActiveSites();
 
+        $people = $users->map(fn($u) => [
+            'key'         => 'u_' . $u->id,
+            'type'        => 'user',
+            'user_id'     => $u->id,
+            'customer_id' => null,
+            'name'        => $u->name ?? $u->mobile ?? $u->email ?? '',
+            'mobile'      => $u->mobile ?? '',
+            'email'       => $u->email ?? '',
+            'badge'       => 'کاربر پلتفرم',
+        ])->merge(
+            $customers->map(fn($c) => [
+                'key'         => 'c_' . $c->id,
+                'type'        => 'customer',
+                'user_id'     => $c->user_id,
+                'customer_id' => $c->id,
+                'name'        => $c->name ?? $c->mobile ?? '',
+                'mobile'      => $c->mobile ?? '',
+                'email'       => $c->email ?? '',
+                'badge'       => 'مشتری',
+            ])
+        )->values();
+
         return view('tickets::admin.tickets.create', [
-            'users'               => $users,
+            'people'              => $people,
             'sites'               => $sites,
             'attachmentsEnabled'  => $this->gateService->canUploadAttachments(),
             'autoAssignEnabled'   => $this->gateService->isAutoAssignEnabled(),
@@ -72,7 +97,15 @@ class TicketController extends Controller
 
         $data = $request->validated();
 
-        if (!empty($data['for_user_id'])) {
+        if (!empty($data['for_customer_id'])) {
+            $customer = \App\Models\Customer::find($data['for_customer_id']);
+            if ($customer) {
+                $data['customer_id']    = $customer->user_id ?? null;
+                $data['customer_name']  = $data['customer_name']  ?? $customer->name;
+                $data['customer_email'] = $data['customer_email'] ?? $customer->email;
+            }
+            unset($data['for_customer_id']);
+        } elseif (!empty($data['for_user_id'])) {
             $userModel = config('tickets.user_model', \App\Models\User::class);
             $user = $userModel::find($data['for_user_id']);
             if ($user) {
@@ -80,8 +113,8 @@ class TicketController extends Controller
                 $data['customer_name']  = $data['customer_name']  ?? $user->name;
                 $data['customer_email'] = $data['customer_email'] ?? $user->email;
             }
-            unset($data['for_user_id']);
         }
+        unset($data['for_user_id'], $data['for_customer_id']);
 
         $files = $this->gateService->canUploadAttachments()
             ? array_filter((array) $request->file('attachments'))
@@ -108,7 +141,7 @@ class TicketController extends Controller
         $this->authorize('view', $ticket);
 
         $userModel  = config('tickets.user_model', \App\Models\User::class);
-        $adminUsers = $userModel::where('is_admin', true)->get(['id', 'name']);
+        $adminUsers = $userModel::where('is_admin', true)->with('profile')->get(['id', 'email', 'mobile']);
         $sites      = $this->siteRepository->allActive();
         $smsEnabled = (bool) Setting::get('tickets.sms_enabled', false);
 
@@ -130,6 +163,35 @@ class TicketController extends Controller
             'watchers'           => $ticket->watchers ?? [],
             'activities'         => $activities,
             'internalNotes'      => $internalNotes,
+        ]);
+    }
+
+    public function poll(Request $request, int $id): JsonResponse
+    {
+        $ticket = $this->ticketService->getById($id);
+        if (! $ticket) {
+            abort(404);
+        }
+        $this->authorize('view', $ticket);
+
+        $lastId = (int) $request->query('last_id', 0);
+        $query  = $ticket->replies()->with('user')->orderBy('id');
+        if ($lastId > 0) {
+            $query->where('id', '>', $lastId);
+        }
+        $replies = $query->get();
+
+        return response()->json([
+            'replies' => $replies->map(fn($r) => [
+                'id'          => $r->id,
+                'message'     => $r->message,
+                'author_type' => $r->author_type,
+                'author_name' => $r->user?->name ?? $r->customer_name ?? ($r->author_type === 'staff' ? 'پشتیبان' : 'مشتری'),
+                'is_internal' => (bool) ($r->is_internal ?? false),
+                'created_at'  => $r->created_at->toIso8601String(),
+                'attachments' => $r->attachments ?? [],
+            ])->values(),
+            'last_id' => $replies->last()?->id ?? $lastId,
         ]);
     }
 

@@ -15,17 +15,20 @@
     <p class="text-slate-500 text-sm">ساخت و مدیریت فرم‌های حرفه‌ای برای سایت</p>
   </div>
   <div class="flex items-center gap-2">
+    @platform
     <a href="{{ route('admin.forms.templates.index') }}"
        class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 0 1-1.125-1.125v-3.75z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-2.25z"/></svg>
       قالب‌ها
     </a>
+    @endplatform
     <a href="{{ route('admin.forms.submissions.index') }}"
        class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75z"/></svg>
       همه ارسال‌ها
     </a>
     <a href="{{ route('admin.forms.create') }}"
+       style="color:#fff"
        class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm hover:opacity-90 active:scale-95 transition shadow-sm shadow-indigo-200 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
       فرم جدید
@@ -153,10 +156,12 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
         ساخت اولین فرم
       </a>
+      @platform
       <a href="{{ route('admin.forms.templates.index') }}"
          class="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm hover:bg-slate-50 transition focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none">
         مشاهده قالب‌ها
       </a>
+      @endplatform
     </x-core-ui::empty-state>
   </div>
 @endif

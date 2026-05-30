@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use SaaSPlatform\Modules\Tickets\Services\TicketPortalService;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
+use SaaSPlatform\Modules\Tickets\Models\TicketActivity;
 
 /**
  * PHASE 7.1 — TASK 3: Site Ticket Portal Controller (canonical)
@@ -16,6 +17,16 @@ use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
  */
 class TicketPortalController extends Controller
 {
+    // Activity types visible to customers (internal ops excluded)
+    private const CUSTOMER_VISIBLE_ACTIONS = [
+        TicketActivity::ACTION_CREATED,
+        TicketActivity::ACTION_STATUS_CHANGED,
+        TicketActivity::ACTION_REPLIED,
+        TicketActivity::ACTION_PRIORITY_CHANGED,
+        TicketActivity::ACTION_CLOSED,
+        TicketActivity::ACTION_REOPENED,
+    ];
+
     public function __construct(
         protected TicketPortalService $portalService,
         protected TicketGateService   $gateService,
@@ -54,8 +65,15 @@ class TicketPortalController extends Controller
 
         $ticket = $this->portalService->findForSite($ticketId, $siteId);
 
+        $activities = TicketActivity::where('ticket_id', $ticket->id)
+            ->whereIn('action_type', self::CUSTOMER_VISIBLE_ACTIONS)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
         return view('tickets::site.tickets.show', [
-            'ticket' => $ticket,
+            'ticket'             => $ticket,
+            'activities'         => $activities,
+            'attachmentsEnabled' => $this->gateService->canUploadAttachments(),
         ]);
     }
 

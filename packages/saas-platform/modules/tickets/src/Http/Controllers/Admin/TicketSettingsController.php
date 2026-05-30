@@ -37,6 +37,12 @@ class TicketSettingsController extends Controller
         'sms_template_customer_reply' => 'tickets.sms_template_customer_reply',
         'sms_template_status'         => 'tickets.sms_template_status',
         'sms_template_assigned'       => 'tickets.sms_template_assigned',
+
+        // Attachments
+        'attachment_enabled'   => 'tickets.attachment_enabled',
+        'attachment_max_size'  => 'tickets.attachment_max_size',
+        'attachment_max_files' => 'tickets.attachment_max_files',
+        'attachment_allowed'   => 'tickets.attachment_allowed',
     ];
 
     public function index()
@@ -66,6 +72,12 @@ class TicketSettingsController extends Controller
                 'وضعیت تیکت {ticket_number} از {from_status} به {to_status} تغییر کرد.'),
             'sms_template_assigned'       => $this->setting('tickets.sms_template_assigned',
                 'تیکت {ticket_number} با موضوع «{subject}» به شما تخصیص یافت.'),
+
+            'attachment_enabled'   => (bool) $this->setting('tickets.attachment_enabled', true),
+            'attachment_max_size'  => (int) $this->setting('tickets.attachment_max_size',  5120),
+            'attachment_max_files' => (int) $this->setting('tickets.attachment_max_files', 5),
+            'attachment_allowed'   => $this->setting('tickets.attachment_allowed',
+                'jpg,jpeg,png,gif,pdf,doc,docx,zip,txt'),
         ];
 
         return view('tickets::admin.tickets.settings', compact('settings'));
@@ -94,10 +106,15 @@ class TicketSettingsController extends Controller
             'sms_template_customer_reply' => 'nullable|string|max:500',
             'sms_template_status'         => 'nullable|string|max:500',
             'sms_template_assigned'       => 'nullable|string|max:500',
+
+            'attachment_enabled'   => 'nullable|boolean',
+            'attachment_max_size'  => 'nullable|integer|min:256|max:102400',
+            'attachment_max_files' => 'nullable|integer|min:1|max:20',
+            'attachment_allowed'   => 'nullable|string|max:500',
         ]);
 
         // Checkboxes come as null when unchecked — force boolean
-        foreach (['sms_enabled', 'sms_on_created', 'sms_on_reply', 'sms_on_status', 'sms_on_assigned'] as $boolKey) {
+        foreach (['sms_enabled', 'sms_on_created', 'sms_on_reply', 'sms_on_status', 'sms_on_assigned', 'attachment_enabled'] as $boolKey) {
             $data[$boolKey] = $request->boolean($boolKey) ? '1' : '0';
         }
 
