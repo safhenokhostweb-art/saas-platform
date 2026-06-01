@@ -59,7 +59,7 @@ class WindowsUpdateRuntime {
   Future<void> checkAndDownload() async {
     if (_noop || _service == null) return;
 
-    final manifest = await _service!.checkForUpdates();
+    final manifest = await _service.checkForUpdates();
     if (manifest == null || !manifest.updateAvailable) return;
 
     await download(

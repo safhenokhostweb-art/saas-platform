@@ -175,11 +175,11 @@
 
     <div class="flex h-screen overflow-hidden min-h-0" id="admin-layout-root">
         <!-- Sidebar: با دکمه تاگل در دسکتاپ جمع می‌شود (فقط آیکن‌ها). همبرگر فقط موبایل. -->
-        <aside id="admin-sidebar" class="hidden md:flex md:flex-shrink-0 transition-[width] duration-300 ease-in-out w-64 min-h-0" data-collapsed="false">
+        <aside id="admin-sidebar" class="hidden md:flex md:shrink-0 transition-[width] duration-300 ease-in-out w-64 min-h-0" data-collapsed="false">
             <div class="admin-sidebar-inner flex flex-col w-64 min-w-0 flex-1 min-h-0">
                 <div class="admin-sidebar-scroll-area flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <!-- Logo / عنوان -->
-                    <div class="flex items-center flex-shrink-0 px-4 py-5 border-b min-h-[4rem]">
+                    <div class="flex items-center shrink-0 px-4 py-5 border-b min-h-16">
                         <svg class="w-6 h-6 shrink-0" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="max-width:24px;max-height:24px">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
@@ -329,7 +329,7 @@
                             @if($__adminAvatar)
                                 <img src="{{ $__adminAvatar }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm admin-avatar-img" alt="{{ $__adminName }}">
                             @else
-                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center ring-2 ring-white shadow-sm admin-avatar-initials">
+                                <div class="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center ring-2 ring-white shadow-sm admin-avatar-initials">
                                     <span class="text-xs font-bold text-white">{{ $__adminInitial }}</span>
                                 </div>
                             @endif
@@ -356,7 +356,7 @@
                                     @if($__adminAvatar)
                                         <img src="{{ $__adminAvatar }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100 admin-avatar-img">
                                     @else
-                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center admin-avatar-initials">
+                                        <div class="w-10 h-10 rounded-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center admin-avatar-initials">
                                             <span class="text-sm font-bold text-white">{{ $__adminInitial }}</span>
                                         </div>
                                     @endif

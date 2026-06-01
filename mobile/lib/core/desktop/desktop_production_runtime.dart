@@ -12,7 +12,6 @@ import 'package:window_manager/window_manager.dart';
 import '../realtime/realtime_client_service.dart';
 import '../realtime/realtime_event.dart';
 import '../offline/offline_sync_service.dart';
-import 'desktop_service.dart';
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -219,7 +218,7 @@ class DesktopProductionRuntime with WindowListener {
   void _bindRealtimeReconnect() {
     if (_noop || _ref == null) return;
     try {
-      final rt = _ref!.read(realtimeClientServiceProvider);
+      final rt = _ref.read(realtimeClientServiceProvider);
       _realtimeSub = rt.events.listen((event) {
         if (event.eventName == 'connection.restored') {
           _reconnectTimer?.cancel();
@@ -231,7 +230,7 @@ class DesktopProductionRuntime with WindowListener {
   void _bindOfflineRecovery() {
     if (_noop || _ref == null) return;
     try {
-      final sync = _ref!.read(offlineSyncServiceProvider);
+      final sync = _ref.read(offlineSyncServiceProvider);
       _syncSub = sync.stateStream.listen((state) {
         if (state.online && !state.syncing) {
           _triggerReconnect();

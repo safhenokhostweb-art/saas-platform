@@ -107,7 +107,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
       final result = await api.mergeConversations(targetId: targetId, sourceIds: sourceIds);
       if (!mounted) return;
       _exitSelectMode();
-      ref.refresh(conversationsProvider);
+      ref.invalidate(conversationsProvider);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('${result.mergedCount} مکالمه ادغام شد — ${result.messagesMoved} پیام منتقل شد.'),
         backgroundColor: Colors.green.shade700,
@@ -194,7 +194,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
           // نوار راهنما در حالت انتخاب
           if (_selectMode)
             ColoredBox(
-              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.25),
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .25),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(children: [
@@ -337,7 +337,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                 final userId = ref.read(authStateProvider).user?.id ?? '';
                 final conv   = await api.createConversation(participants: [userId], type: 'support');
                 if (mounted) context.go('/conversations/${conv.id}');
-                ref.refresh(conversationsProvider);
+                ref.invalidate(conversationsProvider);
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
@@ -384,7 +384,9 @@ class _MergeTargetDialogState extends State<_MergeTargetDialog> {
                   dense:         true,
                   contentPadding: EdgeInsets.zero,
                   value:          c.id,
+                  // ignore: deprecated_member_use
                   groupValue:     _targetId,
+                  // ignore: deprecated_member_use
                   onChanged: (v) => setState(() => _targetId = v),
                   title:    Text(c.title.isEmpty ? 'مکالمه بدون عنوان' : c.title,
                       style: const TextStyle(fontSize: 14)),

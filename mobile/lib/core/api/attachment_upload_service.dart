@@ -5,7 +5,6 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 
 import 'client_api_service.dart';
-import 'models/conversation_models.dart';
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 

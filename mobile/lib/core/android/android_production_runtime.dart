@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../realtime/realtime_client_service.dart';
 import '../offline/offline_sync_service.dart';
-import '../notifications/client_notification_runtime.dart';
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -192,7 +191,7 @@ class AndroidProductionRuntime {
   void _bindBackgroundSync() {
     if (_noop || _ref == null) return;
     try {
-      final sync = _ref!.read(offlineSyncServiceProvider);
+      final sync = _ref.read(offlineSyncServiceProvider);
       _syncSub = sync.stateStream.listen((state) {
         if (state.online && !state.syncing) {
           _scheduleReconnect();
@@ -207,7 +206,7 @@ class AndroidProductionRuntime {
     if (_noop || _ref == null) return;
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       try {
-        _ref!.read(realtimeClientServiceProvider).sendHeartbeat();
+        _ref.read(realtimeClientServiceProvider).sendHeartbeat();
       } catch (_) {}
     });
   }

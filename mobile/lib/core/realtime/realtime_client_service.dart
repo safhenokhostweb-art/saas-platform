@@ -162,8 +162,8 @@ class RealtimeClientService {
     try {
       final payload = event.data != null ? json.decode(event.data!) as Map<String, dynamic> : <String, dynamic>{};
       final rt = RealtimeEvent(
-        channel: event.channelName ?? '',
-        eventName: event.eventName ?? '',
+        channel: event.channelName,
+        eventName: event.eventName,
         payload: payload,
         receivedAt: DateTime.now(),
       );

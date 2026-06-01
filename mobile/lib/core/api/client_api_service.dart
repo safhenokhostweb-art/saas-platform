@@ -6,7 +6,6 @@ export 'package:dio/dio.dart' show FormData, MultipartFile, Options, DioMediaTyp
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../security/secure_token_service.dart';
-import 'models/api_response.dart';
 import 'models/conversation_models.dart';
 import 'models/notification_models.dart';
 import 'models/presence_models.dart';

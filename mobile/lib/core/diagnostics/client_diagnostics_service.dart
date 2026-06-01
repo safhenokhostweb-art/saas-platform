@@ -142,7 +142,7 @@ class ClientDiagnosticsService {
         dimension: 'OTA',
         passed: passed,
         score: passed ? 10 : 0,
-        detail: passed ? 'Channel: ${manifest!.channel}, updateAvailable: ${manifest.updateAvailable}' : 'OTA manifest unavailable',
+        detail: passed ? 'Channel: ${manifest.channel}, updateAvailable: ${manifest.updateAvailable}' : 'OTA manifest unavailable',
       );
     } catch (e) {
       return DiagnosticResult(dimension: 'OTA', passed: false, score: 0, detail: 'OTA check failed: $e');
