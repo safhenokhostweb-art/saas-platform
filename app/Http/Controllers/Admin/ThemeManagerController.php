@@ -101,15 +101,17 @@ class ThemeManagerController extends Controller
 
     public function update(Request $request, ThemeProfile $themeProfile)
     {
+        // For each group, MERGE submitted values into existing — prevents losing derived
+        // fields (hover, bg, text, border, light) that are not shown in the edit form.
         $data = [
             'name'        => $request->input('name', $themeProfile->name),
             'description' => $request->input('description', $themeProfile->description),
-            'colors'      => $this->buildColorGroup($request) ?: $themeProfile->colors,
-            'surfaces'    => $request->input('surfaces', $themeProfile->surfaces),
-            'typography'  => $request->input('typography', $themeProfile->typography),
-            'borders'     => $request->input('borders', $themeProfile->borders),
-            'sidebar'     => $request->input('sidebar', $themeProfile->sidebar),
-            'header'      => $request->input('header', $themeProfile->header),
+            'colors'      => $this->mergeColorGroup($request, $themeProfile->colors ?? []),
+            'surfaces'    => $this->mergeGroup($request->input('surfaces', []), $themeProfile->surfaces ?? []),
+            'typography'  => $this->mergeGroup($request->input('typography', []), $themeProfile->typography ?? []),
+            'borders'     => $this->mergeGroup($request->input('borders', []), $themeProfile->borders ?? []),
+            'sidebar'     => $this->mergeGroup($request->input('sidebar', []), $themeProfile->sidebar ?? []),
+            'header'      => $this->mergeGroup($request->input('header', []), $themeProfile->header ?? []),
         ];
 
         $this->manager->update($themeProfile, $data);
@@ -222,11 +224,50 @@ class ThemeManagerController extends Controller
         if (empty($raw)) {
             return [];
         }
-        // Derive primary shades from a single hex if shades not provided
         if (!empty($raw['primary']['500']) && empty($raw['primary']['50'])) {
             $raw['primary'] = $this->deriveShades($raw['primary']['500']);
         }
         return $raw;
+    }
+
+    /**
+     * Merge submitted color group with existing data.
+     * For color sub-groups (primary, accent, etc.) merge recursively so that
+     * fields not in the form (hover, bg, text, border, light) are preserved.
+     */
+    private function mergeColorGroup(Request $request, array $existing): array
+    {
+        $submitted = $request->input('colors', []);
+        if (empty($submitted)) {
+            return $existing;
+        }
+        // Derive primary shades if only 500 was submitted
+        if (!empty($submitted['primary']['500']) && empty($submitted['primary']['50'])) {
+            $submitted['primary'] = $this->deriveShades($submitted['primary']['500']);
+        }
+        // Deep merge: existing as base, submitted overrides specific keys
+        $merged = $existing;
+        foreach ($submitted as $group => $values) {
+            if (!isset($merged[$group])) {
+                $merged[$group] = $values;
+            } elseif (is_array($values) && is_array($merged[$group])) {
+                $merged[$group] = array_merge($merged[$group], $values);
+            } else {
+                $merged[$group] = $values;
+            }
+        }
+        return $merged;
+    }
+
+    /**
+     * Merge a flat submitted group with existing data.
+     */
+    private function mergeGroup(array $submitted, array $existing): array
+    {
+        if (empty($submitted)) {
+            return $existing;
+        }
+        return array_merge($existing, $submitted);
     }
 
     /**
