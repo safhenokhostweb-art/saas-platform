@@ -9,11 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mobile_conversations', function (Blueprint $table) {
-            $table->uuid('merged_into_id')->nullable()->after('status');
-            $table->index('merged_into_id');
+            if (!Schema::hasColumn('mobile_conversations', 'merged_into_id')) {
+                $table->uuid('merged_into_id')->nullable()->after('status');
+                $table->index('merged_into_id');
+            }
         });
 
-        Schema::create('mobile_conversation_merge_log', function (Blueprint $table) {
+        if (!Schema::hasTable('mobile_conversation_merge_log')) Schema::create('mobile_conversation_merge_log', function (Blueprint $table) {
             $table->id();
             $table->string('tenant_id');
             $table->uuid('target_conversation_id');
@@ -24,11 +26,11 @@ return new class extends Migration
             $table->integer('participants_added')->default(0);
             $table->timestamps();
 
-            $table->index(['tenant_id', 'target_conversation_id']);
-            $table->index('merged_by');
+            $table->index(['tenant_id', 'target_conversation_id'], 'merge_log_tenant_target_idx');
+            $table->index('merged_by', 'merge_log_merged_by_idx');
         });
 
-        Schema::create('mobile_conversation_merge_permissions', function (Blueprint $table) {
+        if (!Schema::hasTable('mobile_conversation_merge_permissions')) Schema::create('mobile_conversation_merge_permissions', function (Blueprint $table) {
             $table->id();
             $table->string('tenant_id');
             $table->string('user_id');
@@ -47,7 +49,7 @@ return new class extends Migration
         Schema::dropIfExists('mobile_conversation_merge_permissions');
         Schema::dropIfExists('mobile_conversation_merge_log');
         Schema::table('mobile_conversations', function (Blueprint $table) {
-            $table->dropIndex(['merged_into_id']);
+            $table->dropIndex('mobile_conversations_merged_into_id_index');
             $table->dropColumn('merged_into_id');
         });
     }

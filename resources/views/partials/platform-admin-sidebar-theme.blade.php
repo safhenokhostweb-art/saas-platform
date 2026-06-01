@@ -26,7 +26,7 @@
   box-shadow: -4px 0 24px color-mix(in srgb, var(--platform-sidebar-bg-bottom) 50%, transparent) !important;
 }
 #admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center.flex-shrink-0 {
-  background: color-mix(in srgb, var(--platform-sidebar-bg-bottom) 78%, #0f172a 22%) !important;
+  background: color-mix(in srgb, var(--platform-sidebar-bg-bottom) 78%, rgba(0,0,0,0.85) 22%) !important;
   border-bottom-color: color-mix(in srgb, var(--platform-sidebar-border) 45%, transparent) !important;
 }
 #admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center .text-slate-100,
@@ -118,11 +118,11 @@
 }
 #admin-sidebar .sidebar-link:hover {
   background: var(--platform-sidebar-hover) !important;
-  color: #fff !important;
+  color: var(--platform-sidebar-text) !important;
 }
 #admin-sidebar .sidebar-link.active {
   background: var(--platform-sidebar-active) !important;
-  color: #fff !important;
+  color: var(--platform-sidebar-text) !important;
   font-weight: 600 !important;
   box-shadow: inset -3px 0 0 var(--platform-sidebar-accent) !important;
 }
@@ -141,29 +141,29 @@
   border-top: 1px solid var(--platform-sidebar-border) !important;
 }
 
-/* ═══ رنگ‌بندی گروه‌های منو (هر گروه رنگ منحصر‌به‌فرد دارد) ═══ */
+/* ═══ رنگ‌بندی گروه‌های منو — از Design Token Authority ═══ */
 #admin-sidebar .admin-sidebar-group { --grp-color: var(--platform-sidebar-accent); }
 
-/* ۱ داشبورد → indigo */
-#admin-sidebar .admin-sidebar-group:nth-child(1) { --grp-color: #6366f1; }
-/* ۲ مشتریان / کاربران → violet */
-#admin-sidebar .admin-sidebar-group:nth-child(2) { --grp-color: #7c3aed; }
-/* ۳ سایت‌ها / پروژه‌ها → sky */
-#admin-sidebar .admin-sidebar-group:nth-child(3) { --grp-color: #0284c7; }
-/* ۴ فروش / صورتحساب → emerald */
-#admin-sidebar .admin-sidebar-group:nth-child(4) { --grp-color: #059669; }
-/* ۵ پشتیبانی / تیکت‌ها → rose */
-#admin-sidebar .admin-sidebar-group:nth-child(5) { --grp-color: #e11d48; }
-/* ۶ فرم‌ها / برگه‌ها → amber */
-#admin-sidebar .admin-sidebar-group:nth-child(6) { --grp-color: #d97706; }
-/* ۷ محتوا / مقالات → teal */
-#admin-sidebar .admin-sidebar-group:nth-child(7) { --grp-color: #0d9488; }
-/* ۸ تنظیمات سیستم → slate */
-#admin-sidebar .admin-sidebar-group:nth-child(8) { --grp-color: #64748b; }
-/* ۹ بازاریابی → orange */
-#admin-sidebar .admin-sidebar-group:nth-child(9) { --grp-color: #ea580c; }
-/* ۱۰ گزارش‌ها / آمار → purple */
-#admin-sidebar .admin-sidebar-group:nth-child(10) { --grp-color: #9333ea; }
+/* ۱ داشبورد → accent تم */
+#admin-sidebar .admin-sidebar-group:nth-child(1)  { --grp-color: var(--ui-indigo);       }
+/* ۲ مشتریان / کاربران → secondary */
+#admin-sidebar .admin-sidebar-group:nth-child(2)  { --grp-color: var(--ui-purple);        }
+/* ۳ سایت‌ها / پروژه‌ها → info */
+#admin-sidebar .admin-sidebar-group:nth-child(3)  { --grp-color: var(--ui-info);          }
+/* ۴ فروش / صورتحساب → success */
+#admin-sidebar .admin-sidebar-group:nth-child(4)  { --grp-color: var(--ui-success);       }
+/* ۵ پشتیبانی / تیکت‌ها → danger */
+#admin-sidebar .admin-sidebar-group:nth-child(5)  { --grp-color: var(--ui-danger);        }
+/* ۶ فرم‌ها / برگه‌ها → warning */
+#admin-sidebar .admin-sidebar-group:nth-child(6)  { --grp-color: var(--ui-warning);       }
+/* ۷ محتوا / مقالات → info-hover */
+#admin-sidebar .admin-sidebar-group:nth-child(7)  { --grp-color: var(--ui-info-hover);    }
+/* ۸ تنظیمات سیستم → neutral */
+#admin-sidebar .admin-sidebar-group:nth-child(8)  { --grp-color: var(--ui-neutral);       }
+/* ۹ بازاریابی → warning-hover */
+#admin-sidebar .admin-sidebar-group:nth-child(9)  { --grp-color: var(--ui-warning-hover); }
+/* ۱۰ گزارش‌ها / آمار → purple-hover */
+#admin-sidebar .admin-sidebar-group:nth-child(10) { --grp-color: var(--ui-purple-hover);  }
 
 #admin-sidebar .admin-sidebar-group .sidebar-group-label {
   color: var(--grp-color) !important;
@@ -175,11 +175,11 @@
 }
 #admin-sidebar .admin-sidebar-group .sidebar-link:hover {
   background: color-mix(in srgb, var(--grp-color) 18%, transparent) !important;
-  color: #fff !important;
+  color: var(--platform-sidebar-text) !important;
 }
 #admin-sidebar .admin-sidebar-group .sidebar-link.active {
   background: color-mix(in srgb, var(--grp-color) 28%, transparent) !important;
-  color: #fff !important;
+  color: var(--platform-sidebar-text) !important;
   box-shadow: inset -3px 0 0 var(--grp-color) !important;
 }
 #admin-sidebar .admin-sidebar-group .sidebar-link:hover svg,

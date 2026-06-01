@@ -1032,6 +1032,27 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // Mobile config
         $this->mergeConfigFrom(__DIR__ . '/../../config/mobile.php', 'mobile');
 
+        // ── PHASE UI-THEME.1 — Enterprise Theme Engine (saas-platform only) ─
+        if (\class_exists(\App\Services\ThemeEngine\ThemePresetRegistry::class)) {
+            $this->app->singleton(\App\Services\ThemeEngine\ThemePresetRegistry::class);
+            $this->app->singleton(\App\Services\ThemeEngine\ThemeProfileManager::class, function ($app) {
+                return new \App\Services\ThemeEngine\ThemeProfileManager(
+                    $app->make(\App\Services\ThemeEngine\ThemePresetRegistry::class)
+                );
+            });
+            $this->app->singleton(\App\Services\ThemeEngine\ThemeTokenRenderer::class, function ($app) {
+                return new \App\Services\ThemeEngine\ThemeTokenRenderer(
+                    $app->make(\App\Services\ThemeEngine\ThemeProfileManager::class)
+                );
+            });
+            // Upgrade DesignSystemService to use ThemeProfileManager
+            $this->app->singleton(\App\Services\DesignSystemService::class, function ($app) {
+                return new \App\Services\DesignSystemService(
+                    $app->make(\App\Services\ThemeEngine\ThemeProfileManager::class)
+                );
+            });
+        }
+
         // Merge configs
         $this->mergeConfigFrom(
             __DIR__ . '/../../config/saas-platform.php',
@@ -1196,6 +1217,9 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\DiagnosticsCommand::class,
                 // PHASE M2.1 — Production Client Governance
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateProductionClientCommand::class,
+                // PHASE UI-THEME.1 — Enterprise Theme Engine governance (saas-platform only)
+                ...(\class_exists(\App\Console\Commands\ValidateThemeGovernanceCommand::class) ? [\App\Console\Commands\ValidateThemeGovernanceCommand::class] : []),
+                ...(\class_exists(\App\Console\Commands\ValidateThemeParityCommand::class)    ? [\App\Console\Commands\ValidateThemeParityCommand::class]    : []),
             ]);
         }
 

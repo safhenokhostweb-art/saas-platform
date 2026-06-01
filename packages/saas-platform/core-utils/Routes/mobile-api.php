@@ -115,4 +115,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('conversations/{id}/presence/join',     [MobilePresenceController::class, 'joinConversation']);
     Route::post('conversations/{id}/presence/leave',    [MobilePresenceController::class, 'leaveConversation']);
     Route::get('conversations/{id}/presence',           [MobilePresenceController::class, 'getConversationPresence']);
+
+    // ── Theme Engine (Phase UI-THEME.1) ─────────────────────────────────────
+    // Flutter / Electron clients call this on launch and after login to sync colors.
+    Route::get('theme/tokens',    [\App\Http\Controllers\Api\Mobile\MobileThemeController::class, 'tokens']);
+    Route::get('theme/css-vars',  [\App\Http\Controllers\Api\Mobile\MobileThemeController::class, 'cssVars']);
 });

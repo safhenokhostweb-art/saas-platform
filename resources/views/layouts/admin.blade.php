@@ -11,38 +11,41 @@
     @else
         <script src="https://cdn.tailwindcss.com"></script>
         <script>tailwind.config = { theme: { extend: { fontFamily: { vazir: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <style>
             @include('partials.vazirmatn-font-faces-inline')
             :root{
-                --admin-bg:#f1f5f9;
-                --admin-surface:#ffffff;
-                --admin-surface-soft:#f8fafc;
-                --admin-primary:#2563eb;
-                --admin-primary-hover:#1d4ed8;
-                --admin-border:#e2e8f0;
-                --admin-shadow:0 8px 24px rgba(15, 23, 42, 0.06);
-                --admin-radius:14px;
+                --admin-bg:var(--ui-bg,#f1f5f9);
+                --admin-surface:var(--ui-surface,#ffffff);
+                --admin-surface-soft:var(--ui-surface-soft,#f8fafc);
+                --admin-primary:var(--ui-indigo,#4f46e5);
+                --admin-primary-hover:var(--ui-indigo-hover,#4338ca);
+                --admin-border:var(--ui-border,#e2e8f0);
+                --admin-shadow:var(--ui-shadow-card,0 8px 24px rgba(15,23,42,0.06));
+                --admin-radius:var(--ui-radius-xl,14px);
             }
             body{ font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; }
             .btn{ display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.625rem; font-weight: 500; }
-            .btn-primary{ background: var(--admin-primary); color: #fff; }
-            .btn-secondary,.btn-outline-secondary{ background: transparent; color: #374151; border: 2px solid #9ca3af; }
-            .btn-outline-primary{ background: transparent; color: var(--admin-primary); border: 2px solid var(--admin-primary); }
-            .btn-outline-primary:hover{ background: #eff6ff; }
-            .form-control,.form-select{ width: 100%; padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; text-align: right; }
-            .form-label{ display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem; text-align: right; }
-            .form-check-input{ width: 1rem; height: 1rem; accent-color: #2563eb; }
-            .card{ background: var(--admin-surface); border-radius: var(--admin-radius); box-shadow: var(--admin-shadow); border: 1px solid var(--admin-border); }
+            .btn-primary{ background: var(--ui-indigo,#4f46e5); color: #fff; }
+            .btn-secondary,.btn-outline-secondary{ background: transparent; color: var(--ui-text-secondary,#374151); border: 2px solid var(--ui-border-strong,#9ca3af); }
+            .btn-outline-primary{ background: transparent; color: var(--ui-indigo,#4f46e5); border: 2px solid var(--ui-indigo,#4f46e5); }
+            .btn-outline-primary:hover{ background: var(--ui-indigo-light,#eef2ff); }
+            .form-control,.form-select{ width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--ui-border,#e2e8f0); border-radius: 0.5rem; text-align: right; }
+            .form-label{ display: block; font-size: 0.875rem; font-weight: 500; color: var(--ui-text-secondary,#374151); margin-bottom: 0.5rem; text-align: right; }
+            .form-check-input{ width: 1rem; height: 1rem; accent-color: var(--ui-indigo,#4f46e5); }
+            .card{ background: var(--ui-surface,#fff); border-radius: var(--ui-radius-xl,14px); box-shadow: var(--ui-shadow-card); border: 1px solid var(--ui-border,#e2e8f0); }
             .card-body{ padding: 1rem 1.5rem; }
             .alert{ padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid; }
-            .alert-success{ background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-            .alert-danger{ background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+            .alert-success{ background: var(--ui-success-light,#f0fdf4); border-color: var(--ui-success-border,#bbf7d0); color: var(--ui-success-text,#166534); }
+            .alert-danger{ background: var(--ui-danger-light,#fef2f2); border-color: var(--ui-danger-border,#fecaca); color: var(--ui-danger-text,#991b1b); }
             .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; }
-            form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: #fca5a5; }
-            form.mt-2 button:hover{ background: rgba(220,38,38,0.2); color: #fecaca; }
+            form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: var(--ui-danger-border,#fca5a5); }
+            form.mt-2 button:hover{ background: var(--ui-danger-bg,rgba(220,38,38,0.1)); color: var(--ui-danger,#dc2626); }
             .admin-sidebar-scroll-area{ scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; }
             .admin-sidebar-scroll-area::-webkit-scrollbar{ width: 8px; }
             .admin-sidebar-scroll-area::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.35); border-radius: 8px; }
+            button,[type=button],[type=submit],[role=button],a.btn,.btn{ cursor: pointer; }
+            [x-cloak]{ display:none !important; }
         </style>
     @endif
     @include('partials.platform-styles')
@@ -65,7 +68,7 @@
 
         /* ─── Sidebar Logo ─── */
         .admin-sidebar-inner .border-b {
-            border-color: rgba(226, 232, 240, 0.5);
+            border-color: color-mix(in srgb, var(--ui-border) 50%, transparent);
         }
 
         /* ─── Sidebar Links ─── */
@@ -76,20 +79,20 @@
             font-size: 0.875rem;
             font-weight: 500;
             border-radius: 0.75rem;
-            color: #475569;
+            color: var(--ui-text-muted);
             transition: all 0.2s ease;
             margin-bottom: 1px;
         }
         .sidebar-link:hover {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05));
-            color: #6366f1;
+            background: var(--ui-hover-bg);
+            color: var(--ui-indigo);
             transform: translateX(-2px);
         }
         .sidebar-link.active {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08));
-            color: #6366f1;
+            background: var(--ui-active-bg);
+            color: var(--ui-indigo);
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+            box-shadow: var(--ui-shadow-focus);
         }
         .sidebar-link svg { transition: transform 0.2s ease; }
         .sidebar-link:hover svg { transform: scale(1.1); }
@@ -104,7 +107,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #94a3b8;
+            color: var(--ui-text-subtle);
             background: transparent;
             border: none;
             cursor: pointer;
@@ -113,7 +116,7 @@
             text-align: right;
             gap: 0.5rem;
         }
-        .sidebar-group-toggle:hover { color: #64748b; }
+        .sidebar-group-toggle:hover { color: var(--ui-text-muted); }
 
         /* ─── Group Items ─── */
         .sidebar-group-items {
@@ -164,6 +167,8 @@
         .admin-sidebar-scroll-area::-webkit-scrollbar-thumb{ background: rgba(148,163,184,0.2); border-radius: 8px; }
         .admin-sidebar-scroll-area::-webkit-scrollbar-thumb:hover{ background: rgba(148,163,184,0.35); }
     </style>
+    {{-- Theme Engine: must be LAST to override all static CSS vars above --}}
+    @include('partials.theme-engine-tokens')
     @stack('head')
 </head>
 <body class="min-h-screen bg-gray-50" style="background: var(--admin-bg);">

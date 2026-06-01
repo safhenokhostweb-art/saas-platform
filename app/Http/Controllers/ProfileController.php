@@ -119,13 +119,13 @@ class ProfileController extends Controller
         if (!$profile) {
             $profile = Profile::create([
                 'user_id' => $user->id,
-                'mobile' => $user->mobile
+                'mobile'  => $user->mobile,
             ]);
         }
 
         $fields = ProfileField::where('enabled', 1)->get();
 
-        $rules = [];
+        $rules = ['avatar' => ['nullable', 'image', 'max:2048']];
         $attributes = [];
         foreach ($fields as $field) {
             if ($field->type === 'map') continue;
@@ -146,16 +146,9 @@ class ProfileController extends Controller
         $request->validate($rules, [], $attributes);
 
         foreach ($fields as $field) {
-            $value = $request->input("fields.{$field->id}");
-
             ProfileFieldValue::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'profile_field_id' => $field->id,
-                ],
-                [
-                    'value' => $value,
-                ]
+                ['user_id' => $user->id, 'profile_field_id' => $field->id],
+                ['value'   => $request->input("fields.{$field->id}")]
             );
         }
 
@@ -169,9 +162,26 @@ class ProfileController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('profiles', 'map_address')) {
             $profile->map_address = $request->map_address;
         }
-
         if ($request->filled('full_name')) {
             $profile->full_name = $request->full_name;
+        }
+
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
+                try {
+                    $destDir = public_path('uploads/avatars');
+                    if (!is_dir($destDir)) {
+                        mkdir($destDir, 0775, true);
+                    }
+                    $ext      = $file->guessExtension() ?: 'jpg';
+                    $filename = 'user_' . $user->id . '_' . time() . '.' . $ext;
+                    $file->move($destDir, $filename);
+                    $profile->avatar = 'uploads/avatars/' . $filename;
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Profile avatar upload: ' . $e->getMessage());
+                }
+            }
         }
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('profiles', 'is_complete')) {

@@ -8,7 +8,7 @@
     padding: 1.25rem;
     box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.12), 0 4px 6px -4px rgba(15, 23, 42, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    color: #ffffff !important;
+    color: var(--ui-text-inverse) !important;
     text-decoration: none;
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
@@ -48,18 +48,18 @@
     opacity: 0.88;
 }
 .dashboard-stat-tile--violet {
-    background: linear-gradient(135deg, #7c3aed 0%, #1e1b4b 100%);
+    background: linear-gradient(135deg, var(--ui-purple) 0%, var(--ui-purple-hover) 100%);
 }
 .dashboard-stat-tile--sky {
-    background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+    background: linear-gradient(135deg, var(--ui-info) 0%, var(--ui-info-hover) 100%);
 }
 .dashboard-stat-tile--emerald {
-    background: linear-gradient(135deg, #059669 0%, #022c22 100%);
+    background: linear-gradient(135deg, var(--ui-success) 0%, var(--ui-success-hover) 100%);
 }
 .dashboard-stat-tile--rose {
-    background: linear-gradient(135deg, #e11d48 0%, #4c0519 100%);
+    background: linear-gradient(135deg, var(--ui-danger) 0%, var(--ui-danger-hover) 100%);
 }
 .dashboard-stat-tile--amber {
-    background: linear-gradient(135deg, #d97706 0%, #451a03 100%);
+    background: linear-gradient(135deg, var(--ui-warning) 0%, var(--ui-warning-hover) 100%);
 }
 </style>

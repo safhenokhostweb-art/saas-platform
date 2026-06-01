@@ -145,9 +145,17 @@ class SiteConfigController extends Controller
             }
         }
 
+        // Resolve assigned ThemeProfile for this tenant site
+        $themePresetSlug = null;
+        if ($siteId && \Illuminate\Support\Facades\Schema::hasTable('theme_profiles') && \Illuminate\Support\Facades\Schema::hasTable('tenant_theme_overrides')) {
+            $override = \App\Models\TenantThemeOverride::forSite($siteId);
+            $themePresetSlug = $override?->preset_key;
+        }
+
         $payload = [
-            'allowed' => true,
-            'site_title' => $result['site_title'] ?? null,
+            'allowed'            => true,
+            'theme_preset_slug'  => $themePresetSlug,
+            'site_title'         => $result['site_title'] ?? null,
             'modules' => $result['modules'] ?? [],
             'menus' => $menus,
             'notifications' => $notifications,

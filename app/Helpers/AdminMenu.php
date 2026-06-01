@@ -36,7 +36,8 @@ class AdminMenu
         'module_licenses' => 'لایسنس‌های ماژول',
         'licenses' => 'لایسنس‌ها',
         'updates' => 'داشبورد بروزرسانی‌ها',
-        'theme_builder' => 'ساختار تم (Theme Builder)',
+        'theme_builder'  => 'ساختار تم (Theme Builder)',
+        'theme_manager'  => 'مدیریت تم (Theme Engine)',
     ];
 
     /** مسیر هر آیتم منو */
@@ -68,7 +69,8 @@ class AdminMenu
         'module_licenses' => 'admin.module-licenses.index',
         'licenses' => 'admin.licenses.index',
         'updates' => 'admin.updates.index',
-        'theme_builder' => 'admin.theme-builder.index',
+        'theme_builder'  => 'admin.theme-builder.index',
+        'theme_manager'  => 'admin.theme-manager.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -100,7 +102,8 @@ class AdminMenu
         'module_licenses' => 'admin.module-licenses.*',
         'licenses' => 'admin.licenses.*',
         'updates' => 'admin.updates.*',
-        'theme_builder' => 'admin.theme-builder.*',
+        'theme_builder'  => 'admin.theme-builder.*',
+        'theme_manager'  => 'admin.theme-manager.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -119,7 +122,7 @@ class AdminMenu
             'پشتیبانی / تیکت‌ها'                => ['support_tickets'],
             'فرم‌ها / برگه‌ها'                  => ['forms', 'forms_submissions', 'profile_fields', 'settings_profile', 'pages'],
             'محتوا / مقالات'                    => ['theme_builder'],
-            'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings'],
+            'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'بازاریابی / دانش‌محور'             => [],
             'گزارش‌ها / آمار'                   => ['activity_log'],
         ];

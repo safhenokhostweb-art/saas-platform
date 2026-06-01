@@ -512,6 +512,25 @@ Route::prefix('admin')
             Route::post('theme-revisions/{revision}/restore', [ThemeBuilderController::class, 'restoreRevision'])->name('theme-builder.restore-revision');
         });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Theme Manager (Enterprise Theme Engine — Phase UI-THEME.1)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('theme-manager')->name('theme-manager.')->group(function () {
+            Route::get('/',                                                   [\App\Http\Controllers\Admin\ThemeManagerController::class, 'index'])->name('index');
+            Route::get('/create',                                             [\App\Http\Controllers\Admin\ThemeManagerController::class, 'create'])->name('create');
+            Route::post('/',                                                  [\App\Http\Controllers\Admin\ThemeManagerController::class, 'store'])->name('store');
+            Route::get('/{themeProfile}/edit',                                [\App\Http\Controllers\Admin\ThemeManagerController::class, 'edit'])->name('edit');
+            Route::put('/{themeProfile}',                                     [\App\Http\Controllers\Admin\ThemeManagerController::class, 'update'])->name('update');
+            Route::delete('/{themeProfile}',                                  [\App\Http\Controllers\Admin\ThemeManagerController::class, 'destroy'])->name('destroy');
+            Route::post('/{themeProfile}/activate',                           [\App\Http\Controllers\Admin\ThemeManagerController::class, 'activate'])->name('activate');
+            Route::post('/{themeProfile}/clone',                              [\App\Http\Controllers\Admin\ThemeManagerController::class, 'clone'])->name('clone');
+            Route::post('/{themeProfile}/assign-to-sites',                    [\App\Http\Controllers\Admin\ThemeManagerController::class, 'assignToSites'])->name('assign-to-sites');
+            Route::post('/reset-default',                                     [\App\Http\Controllers\Admin\ThemeManagerController::class, 'resetDefault'])->name('reset-default');
+            Route::get('/{themeProfile}/preview-tokens',                      [\App\Http\Controllers\Admin\ThemeManagerController::class, 'previewTokens'])->name('preview-tokens');
+        });
+
         Route::get('guide-search', [GuideSearchController::class, 'index'])->name('guide-search');
 
         /*

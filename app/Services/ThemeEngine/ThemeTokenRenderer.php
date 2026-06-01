@@ -19,7 +19,14 @@ class ThemeTokenRenderer
 
     /**
      * Render a full <style> block for a resolved ThemeProfile.
-     * If no profile is active, returns an empty string (design-tokens.css defaults apply).
+     *
+     * Emits TWO blocks:
+     *  1. :root { ... }  — all tokens (low specificity, covers global vars)
+     *  2. #admin-sidebar { ... }  — sidebar-scoped vars at same or higher specificity
+     *     than platform-admin-sidebar-theme.blade.php which scopes to #admin-sidebar.
+     *
+     * Without block 2, the scoped vars from platform-admin-sidebar-theme would win
+     * because #admin-sidebar has higher specificity than :root.
      */
     public function renderCssBlock(?ThemeProfile $profile): string
     {
@@ -30,13 +37,43 @@ class ThemeTokenRenderer
         if (empty($vars)) {
             return '';
         }
-        $lines = [];
+
+        // Block 1: :root — all vars
+        $rootLines = [];
         foreach ($vars as $key => $value) {
-            $lines[] = "  {$key}: {$value};";
+            $rootLines[] = "  {$key}: {$value};";
         }
-        $body = implode("\n", $lines);
+
+        // Block 2: #admin-sidebar — override sidebar-scoped vars
+        // platform-admin-sidebar-theme.blade.php scopes these to #admin-sidebar,
+        // so we must match or exceed that specificity.
+        $sidebarKeys = [
+            '--platform-sidebar-bg-top', '--platform-sidebar-bg-bottom',
+            '--platform-sidebar-text',   '--platform-sidebar-muted',
+            '--platform-sidebar-accent', '--platform-sidebar-border',
+        ];
+        $sidebarLines = [];
+        foreach ($sidebarKeys as $key) {
+            if (isset($vars[$key])) {
+                $sidebarLines[] = "  {$key}: {$vars[$key]};";
+            }
+        }
+        // Recompute hover/active from the new accent value
+        $accent = $vars['--platform-sidebar-accent'] ?? null;
+        if ($accent && !empty($sidebarLines)) {
+            $sidebarLines[] = "  --platform-sidebar-hover: color-mix(in srgb, {$accent} 20%, transparent);";
+            $sidebarLines[] = "  --platform-sidebar-active: color-mix(in srgb, {$accent} 32%, transparent);";
+        }
+
         $name = htmlspecialchars($profile->name, ENT_QUOTES, 'UTF-8');
-        return "<style id=\"theme-engine-tokens\" data-preset=\"{$profile->preset_key}\" data-theme=\"{$name}\">\n:root {\n{$body}\n}\n</style>";
+        $out  = "<style id=\"theme-engine-tokens\" data-preset=\"{$profile->preset_key}\" data-theme=\"{$name}\">\n";
+        $out .= ":root {\n" . implode("\n", $rootLines) . "\n}\n";
+        if (!empty($sidebarLines)) {
+            $out .= "#admin-sidebar {\n" . implode("\n", $sidebarLines) . "\n}\n";
+        }
+        $out .= "</style>";
+
+        return $out;
     }
 
     /**

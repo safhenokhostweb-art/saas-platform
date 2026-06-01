@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ProfileFieldSeeder::class,
             ModuleSeeder::class,
             ProfessionalThemesSeeder::class,
+            ThemeProfileSeeder::class,
         ]);
 
         // \App\Models\User::factory(10)->create();
