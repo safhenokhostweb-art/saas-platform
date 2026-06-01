@@ -202,75 +202,114 @@
 </div>
 
 {{-- ═══ Assign to Sites Modal ════════════════════════════════════════════════ --}}
-<div x-data="{
+{{--
+  سایت‌های اختصاص‌داده‌شده به هر پروفایل — به صورت JSON برای Alpine
+  ساختار: { site_id: theme_profile_id, ... }
+--}}
+@php
+  $assignMap = $siteAssignments->mapWithKeys(fn($o, $k) => [(string)$k => (int)$o->theme_profile_id])->toArray();
+@endphp
+
+<div id="assign-modal-root"
+     x-data="{
        show: false,
-       profileId: null,
+       profileId: 0,
        profileName: '',
-       init() { this.$watch('show', v => { if(v) document.body.style.overflow='hidden'; else document.body.style.overflow=''; }) }
+       assignMap: @js($assignMap),
+       get formAction() { return '{{ url('admin/theme-manager') }}/' + this.profileId + '/assign-to-sites'; },
+       open(id, name) {
+         this.profileId   = id;
+         this.profileName = name;
+         // Update checkbox states
+         this.$nextTick(() => {
+           document.querySelectorAll('#assign-modal-form input[type=checkbox]').forEach(cb => {
+             cb.checked = this.assignMap[cb.value] === id;
+           });
+         });
+         this.show = true;
+         document.body.style.overflow = 'hidden';
+       },
+       close() { this.show = false; document.body.style.overflow = ''; }
      }"
-     @open-assign-modal.window="profileId=$event.detail.id; profileName=$event.detail.name; show=true">
+     @open-assign-modal.window="open($event.detail.id, $event.detail.name)">
 
-  <div x-show="show" x-transition.opacity class="tm-modal-overlay fixed inset-0 z-40" @click="show=false" x-cloak></div>
+  {{-- Overlay --}}
+  <div x-show="show" x-transition.opacity
+       class="tm-modal-overlay fixed inset-0 z-40"
+       @click="close()" x-cloak></div>
 
+  {{-- Modal --}}
   <div x-show="show" x-transition
        class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
     <div class="w-full max-w-md rounded-2xl overflow-hidden"
          style="background:var(--ui-surface);box-shadow:var(--ui-shadow-modal);border:1px solid var(--ui-border);"
          @click.stop>
+
+      {{-- Header --}}
       <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color:var(--ui-border);">
-        <h3 class="font-semibold" style="color:var(--ui-text-primary);">
-          اختصاص تم به سایت‌ها
-          <span class="text-sm font-normal" style="color:var(--ui-text-muted);" x-text="'— ' + profileName"></span>
-        </h3>
+        <div>
+          <h3 class="font-semibold text-sm" style="color:var(--ui-text-primary);">اختصاص تم به سایت‌ها</h3>
+          <p class="text-xs mt-0.5" style="color:var(--ui-text-muted);" x-text="profileName"></p>
+        </div>
         <button type="button" class="tm-dot-btn w-8 h-8 flex items-center justify-center rounded-lg"
-                style="color:var(--ui-text-muted);" @click="show=false">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                style="color:var(--ui-text-muted);" @click="close()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         </button>
       </div>
 
-      <template x-for="profile in {{ json_encode($profiles->map(fn($p) => ['id'=>$p->id, 'name'=>$p->name])->values()) }}" :key="profile.id">
-        <form :action="'{{ url('admin/theme-manager') }}/' + profileId + '/assign-to-sites'" method="POST" x-show="profile.id === profileId">
-          @csrf
-          <div class="px-6 py-4 max-h-64 overflow-y-auto">
-            @if($sites->isEmpty())
-              <p class="text-sm text-center py-4" style="color:var(--ui-text-muted);">هیچ سایتی ثبت نشده است.</p>
-            @else
-              <p class="text-xs mb-3" style="color:var(--ui-text-muted);">سایت‌هایی را که این تم باید برای آن‌ها فعال باشد انتخاب کنید:</p>
-              <div class="flex flex-col gap-2">
-                @foreach($sites as $site)
-                @php
-                  $assignedProfileId = $siteAssignments[$site->id]->theme_profile_id ?? null;
-                @endphp
-                <label class="flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition"
-                       style="border-color:var(--ui-border);background:var(--ui-surface-soft);"
-                       x-bind:style="profileId === {{ $site->id }} ? 'border-color:var(--ui-indigo)' : ''">
-                  <input type="checkbox" name="site_ids[]" value="{{ $site->id }}" class="w-4 h-4 rounded"
-                         style="accent-color:var(--ui-indigo);"
-                         {{ $assignedProfileId ? 'data-assigned="' . $assignedProfileId . '"' : '' }}
-                         x-bind:checked="profileId !== null && document.querySelector('input[name=\'site_ids[]\'][value=\'{{ $site->id }}\']') && {{ $assignedProfileId ?? 0 }} > 0 && {{ $assignedProfileId ?? 0 }} === profileId">
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate" style="color:var(--ui-text-primary);">{{ $site->title }}</p>
-                    <p class="text-xs truncate" style="color:var(--ui-text-muted);">{{ $site->domain }}</p>
-                  </div>
-                  @if($assignedProfileId)
-                  <span class="text-xs px-2 py-0.5 rounded-full" style="background:var(--ui-indigo-light);color:var(--ui-indigo);">
-                    {{ $siteAssignments[$site->id]->themeProfile->name ?? '—' }}
-                  </span>
-                  @endif
-                </label>
-                @endforeach
-              </div>
-            @endif
-          </div>
-          <div class="flex items-center justify-between px-6 py-4 border-t gap-3" style="border-color:var(--ui-border);">
-            <button type="button" class="tm-btn-ghost px-4 py-2 text-sm rounded-lg border"
-                    style="border-color:var(--ui-border);color:var(--ui-text-muted);"
-                    @click="show=false">انصراف</button>
-            <button type="submit" class="tm-btn px-5 py-2 text-sm font-semibold rounded-lg text-white"
-                    style="background:var(--ui-indigo);">ذخیره اختصاص</button>
-          </div>
-        </form>
-      </template>
+      {{-- Form --}}
+      <form id="assign-modal-form" method="POST" :action="formAction">
+        @csrf
+        <div class="px-6 py-4 max-h-72 overflow-y-auto">
+          @if($sites->isEmpty())
+            <p class="text-sm text-center py-6" style="color:var(--ui-text-muted);">هیچ سایتی ثبت نشده است.</p>
+          @else
+            <p class="text-xs mb-4" style="color:var(--ui-text-muted);">
+              سایت‌هایی را که این تم باید برای آن‌ها فعال باشد انتخاب کنید.
+              حذف تیک = برگشت به تم پلتفرم.
+            </p>
+            <div class="flex flex-col gap-2">
+              @foreach($sites as $site)
+              @php $curAssignedId = (int)($siteAssignments[$site->id]->theme_profile_id ?? 0); @endphp
+              <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                     style="border-color:var(--ui-border);background:var(--ui-surface-soft);"
+                     onmouseover="this.style.borderColor='var(--ui-indigo-ring)'"
+                     onmouseout="this.style.borderColor='var(--ui-border)'">
+                <input type="checkbox"
+                       name="site_ids[]"
+                       value="{{ $site->id }}"
+                       class="w-4 h-4 rounded"
+                       style="accent-color:var(--ui-indigo);"
+                       {{ $curAssignedId > 0 ? 'data-assigned="'.$curAssignedId.'"' : '' }}>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium truncate" style="color:var(--ui-text-primary);">{{ $site->title }}</p>
+                  <p class="text-xs truncate" style="color:var(--ui-text-muted);">{{ $site->domain }}</p>
+                </div>
+                @if($curAssignedId)
+                <span class="text-xs px-2 py-0.5 rounded-full shrink-0"
+                      style="background:var(--ui-indigo-light);color:var(--ui-indigo);">
+                  {{ $siteAssignments[$site->id]->themeProfile->name ?? '—' }}
+                </span>
+                @endif
+              </label>
+              @endforeach
+            </div>
+          @endif
+        </div>
+
+        {{-- Footer --}}
+        <div class="flex items-center justify-between px-6 py-4 border-t gap-3" style="border-color:var(--ui-border);background:var(--ui-surface-soft);">
+          <button type="button" class="tm-btn-ghost px-4 py-2 text-sm rounded-lg border"
+                  style="border-color:var(--ui-border);color:var(--ui-text-muted);"
+                  @click="close()">انصراف</button>
+          <button type="submit" class="tm-btn px-5 py-2 text-sm font-semibold rounded-lg text-white"
+                  style="background:var(--ui-indigo);">
+            ذخیره اختصاص
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

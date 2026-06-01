@@ -79,7 +79,7 @@
           <div>
             <label class="block text-xs font-medium mb-1.5" style="color:var(--ui-text-muted);">{{ $label }}</label>
             <div class="flex items-center gap-2">
-              <input type="color" name="{{ $name }}" value="{{ old($name, $value) }}"
+              <input type="color" value="{{ old($name, $value) }}"
                      class="w-10 h-10 rounded-lg border cursor-pointer"
                      style="border-color:var(--ui-border);padding:2px;">
               <input type="text" name="{{ $name }}" value="{{ old($name, $value) }}"
@@ -105,7 +105,7 @@
           <div>
             <label class="block text-xs font-medium mb-1.5" style="color:var(--ui-text-muted);">{{ $label }}</label>
             <div class="flex items-center gap-2">
-              <input type="color" name="{{ $name }}" value="{{ old($name, $value) }}"
+              <input type="color" value="{{ old($name, $value) }}"
                      class="w-10 h-10 rounded-lg border cursor-pointer"
                      style="border-color:var(--ui-border);padding:2px;">
               <input type="text" name="{{ $name }}" value="{{ old($name, $value) }}"
@@ -133,7 +133,7 @@
           <div>
             <label class="block text-xs font-medium mb-1.5" style="color:var(--ui-text-muted);">{{ $label }}</label>
             <div class="flex items-center gap-2">
-              <input type="color" name="{{ $name }}" value="{{ old($name, $value) }}"
+              <input type="color" value="{{ old($name, $value) }}"
                      class="w-10 h-10 rounded-lg border cursor-pointer"
                      style="border-color:var(--ui-border);padding:2px;">
               <input type="text" name="{{ $name }}" value="{{ old($name, $value) }}"
@@ -168,7 +168,7 @@
           <div>
             <label class="block text-xs font-medium mb-1.5" style="color:var(--ui-text-muted);">{{ $label }}</label>
             <div class="flex items-center gap-2">
-              <input type="color" name="{{ $name }}" value="{{ old($name, $value) }}"
+              <input type="color" value="{{ old($name, $value) }}"
                      class="w-10 h-10 rounded-lg border cursor-pointer"
                      style="border-color:var(--ui-border);padding:2px;">
               <input type="text" name="{{ $name }}" value="{{ old($name, $value) }}"
@@ -195,7 +195,7 @@
           <div>
             <label class="block text-xs font-medium mb-1.5" style="color:var(--ui-text-muted);">{{ $label }}</label>
             <div class="flex items-center gap-2">
-              <input type="color" name="{{ $name }}" value="{{ old($name, $value) }}"
+              <input type="color" value="{{ old($name, $value) }}"
                      class="w-10 h-10 rounded-lg border cursor-pointer"
                      style="border-color:var(--ui-border);padding:2px;">
               <input type="text" name="{{ $name }}" value="{{ old($name, $value) }}"
@@ -220,7 +220,7 @@
           <div>
             <label class="block text-xs font-medium mb-1.5" style="color:var(--ui-text-muted);">{{ $label }}</label>
             <div class="flex items-center gap-2">
-              <input type="color" name="{{ $name }}" value="{{ old($name, $value) }}"
+              <input type="color" value="{{ old($name, $value) }}"
                      class="w-10 h-10 rounded-lg border cursor-pointer"
                      style="border-color:var(--ui-border);padding:2px;">
               <input type="text" name="{{ $name }}" value="{{ old($name, $value) }}"
@@ -236,11 +236,15 @@
       {{-- Submit --}}
       <div class="flex items-center justify-between">
         <a href="{{ route('admin.theme-manager.index') }}"
-           class="px-6 py-2.5 rounded-lg border text-sm font-medium transition"
-           style="border-color:var(--ui-border);color:var(--ui-text-muted);background:var(--ui-surface);">انصراف</a>
+           class="px-6 py-2.5 rounded-lg border text-sm font-medium transition-colors"
+           style="border-color:var(--ui-border);color:var(--ui-text-muted);background:var(--ui-surface);cursor:pointer;"
+           onmouseover="this.style.background='var(--ui-surface-muted)'"
+           onmouseout="this.style.background='var(--ui-surface)'">انصراف</a>
         <button type="submit"
-                class="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition"
-                style="background:var(--ui-indigo);">
+                class="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors"
+                style="background:var(--ui-indigo);cursor:pointer;"
+                onmouseover="this.style.background='var(--ui-indigo-hover)'"
+                onmouseout="this.style.background='var(--ui-indigo)'">
           {{ $isNew ? 'ایجاد تم' : 'ذخیره تغییرات' }}
         </button>
       </div>
@@ -250,28 +254,53 @@
 </div>
 
 <script>
-// Keep color picker and text input in sync
-function syncColor(textInput) {
-  const name = textInput.getAttribute('name');
-  // Find paired color input
-  const picker = textInput.previousElementSibling;
-  if (picker && picker.type === 'color' && /^#[0-9a-fA-F]{6}$/.test(textInput.value)) {
-    picker.value = textInput.value;
-  }
-}
-
+// Color picker ↔ text input sync (bi-directional)
 document.querySelectorAll('input[type=color]').forEach(picker => {
+  const text = picker.nextElementSibling;
+  if (!text || text.type !== 'text') return;
+  // picker → text
   picker.addEventListener('input', () => {
-    const text = picker.nextElementSibling;
-    if (text && text.type === 'text') {
-      text.value = picker.value;
+    text.value = picker.value;
+    // Live preview the change
+    previewSingleToken(text.name, picker.value);
+  });
+  // text → picker (on valid hex)
+  text.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(text.value)) {
+      picker.value = text.value;
     }
   });
 });
 
-// Remove duplicate name attributes (keep only the text ones for form submission)
-document.querySelectorAll('input[type=color]').forEach(picker => {
-  picker.removeAttribute('name');
-});
+function previewSingleToken(fieldName, hex) {
+  // Map form field names to CSS vars for instant preview
+  const map = {
+    'colors[primary][500]': '--ui-primary-500',
+    'colors[accent][base]': '--ui-indigo',
+    'colors[secondary][base]': '--ui-purple',
+    'colors[success][base]': '--ui-success',
+    'colors[warning][base]': '--ui-warning',
+    'colors[danger][base]': '--ui-danger',
+    'colors[info][base]': '--ui-info',
+    'surfaces[bg]': '--ui-bg',
+    'surfaces[surface]': '--ui-surface',
+    'sidebar[bg]': '--platform-sidebar-bg-top',
+    'sidebar[bg_bottom]': '--platform-sidebar-bg-bottom',
+    'sidebar[text]': '--platform-sidebar-text',
+    'sidebar[accent]': '--platform-sidebar-accent',
+    'header[bg]': '--ds-menu-bg',
+    'header[link_active]': '--ds-menu-link-active',
+    'typography[text_primary]': '--ui-text-primary',
+    'typography[link]': '--ui-indigo',
+  };
+  const cssVar = map[fieldName];
+  if (cssVar) {
+    document.documentElement.style.setProperty(cssVar, hex);
+    const sidebar = document.getElementById('admin-sidebar');
+    if (sidebar && ['--platform-sidebar-bg-top','--platform-sidebar-bg-bottom','--platform-sidebar-text','--platform-sidebar-accent'].includes(cssVar)) {
+      sidebar.style.setProperty(cssVar, hex);
+    }
+  }
+}
 </script>
 @endsection
