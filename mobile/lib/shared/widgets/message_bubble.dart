@@ -51,14 +51,14 @@ class MessageBubble extends StatelessWidget {
                     children: [
                       Text(
                         _formatTime(message.sentAt),
-                        style: TextStyle(fontSize: 10, color: isMe ? cs.onPrimary.withOpacity(0.7) : cs.outline),
+                        style: TextStyle(fontSize: 10, color: isMe ? cs.onPrimary.withValues(alpha: 0.7) : cs.outline),
                       ),
                       if (isMe) ...[
                         const SizedBox(width: 4),
                         Icon(
                           message.readAt != null ? Icons.done_all : Icons.done,
                           size: 12,
-                          color: message.readAt != null ? cs.inversePrimary : cs.onPrimary.withOpacity(0.7),
+                          color: message.readAt != null ? cs.inversePrimary : cs.onPrimary.withValues(alpha: 0.7),
                         ),
                       ],
                     ],

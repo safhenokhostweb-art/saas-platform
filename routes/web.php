@@ -281,6 +281,9 @@ Route::prefix('admin')
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
+        Route::get('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'update'])->name('profile.update');
+
         /*
         |--------------------------------------------------------------------------
         | مدیریت ماژول‌ها، لایسنس‌ها و بروزرسانی‌ها

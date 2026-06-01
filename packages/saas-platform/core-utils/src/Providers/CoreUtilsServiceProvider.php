@@ -907,6 +907,29 @@ class CoreUtilsServiceProvider extends ServiceProvider
         // PHASE 9.4 — Analytics
         $this->app->singleton(OperationalDashboardService::class);
 
+        // PHASE M2.1 — Production Support Client
+        $this->app->singleton(
+            \SaaSPlatform\CoreUtils\MobileRuntime\Inbox\TenantInboxService::class,
+            fn ($app) => new \SaaSPlatform\CoreUtils\MobileRuntime\Inbox\TenantInboxService(
+                $app->make(\SaaSPlatform\CoreUtils\MobileRuntime\Presence\PresenceRuntimeManager::class)
+            )
+        );
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Inbox\ConversationHubService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Assignment\ConversationAssignmentService::class);
+        $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\ReadReceipts\ConversationReadReceiptService::class);
+        $this->app->singleton(
+            \SaaSPlatform\CoreUtils\MobileRuntime\Typing\ConversationTypingService::class,
+            fn ($app) => new \SaaSPlatform\CoreUtils\MobileRuntime\Typing\ConversationTypingService(
+                $app->make(\SaaSPlatform\CoreUtils\MobileRuntime\Realtime\TypingIndicatorRuntime::class)
+            )
+        );
+        $this->app->singleton(
+            \SaaSPlatform\CoreUtils\MobileRuntime\Presence\ConversationPresenceService::class,
+            fn ($app) => new \SaaSPlatform\CoreUtils\MobileRuntime\Presence\ConversationPresenceService(
+                $app->make(\SaaSPlatform\CoreUtils\MobileRuntime\Presence\PresenceRuntimeManager::class)
+            )
+        );
+
         // PHASE M1.0 — Self-Hosted Mobile Communication Runtime Foundation
         // Governance core
         $this->app->singleton(\SaaSPlatform\CoreUtils\MobileRuntime\Governance\MobileRuntimeRegistry::class);
@@ -1171,6 +1194,8 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateOtaCommand::class,
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateSecurityCommand::class,
                 \SaaSPlatform\CoreUtils\Console\Commands\Mobile\DiagnosticsCommand::class,
+                // PHASE M2.1 — Production Client Governance
+                \SaaSPlatform\CoreUtils\Console\Commands\Mobile\ValidateProductionClientCommand::class,
             ]);
         }
 

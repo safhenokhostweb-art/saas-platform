@@ -1,4 +1,4 @@
-name: Mobile Client Build — Phase M2.0
+name: Mobile Client Build — Phase M2.1
 
 on:
   push:
@@ -6,9 +6,11 @@ on:
     paths:
       - 'mobile/**'
       - '.github/workflows/mobile-build.yml'
+      - 'packages/saas-platform/core-utils/src/MobileRuntime/**'
   pull_request:
     paths:
       - 'mobile/**'
+      - 'packages/saas-platform/core-utils/src/MobileRuntime/**'
   workflow_dispatch:
     inputs:
       build_android:
@@ -23,9 +25,14 @@ on:
         description: 'Build Linux'
         type: boolean
         default: true
+      skip_governance:
+        description: 'Skip governance check (emergency only)'
+        type: boolean
+        default: false
 
 env:
   FLUTTER_VERSION: '3.22.3'
+  GOVERNANCE_THRESHOLD: 95
 
 # ─── Job 1: Analysis & Tests ──────────────────────────────────────────────────
 jobs:
@@ -56,12 +63,89 @@ jobs:
       - name: Check formatting
         run: dart format --set-exit-if-changed lib/
 
-# ─── Job 2: Android (APK + AAB) ──────────────────────────────────────────────
+# ─── Job 2: Production Client Governance Gate ────────────────────────────────
 
-  build-android:
-    name: 'Build Android'
+  governance:
+    name: 'Production Client Governance (≥95/100 required)'
     runs-on: ubuntu-latest
     needs: analyze
+    if: github.event.inputs.skip_governance != 'true'
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, redis, sqlite3
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Validate client runtime (M1.0 baseline)
+        run: php artisan mobile:validate-client-runtime --json
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:dGVzdF9rZXlfZm9yX2NpX3BsYWNlaG9sZGVyX18=
+
+      - name: Validate client security (M1.0 baseline)
+        run: php artisan mobile:validate-client-security --json
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:dGVzdF9rZXlfZm9yX2NpX3BsYWNlaG9sZGVyX18=
+
+      - name: Validate client governance (M1.0 baseline)
+        run: php artisan mobile:validate-client-governance --json
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:dGVzdF9rZXlfZm9yX2NpX3BsYWNlaG9sZGVyX18=
+
+      - name: ⚡ Validate production client M2.1 (REQUIRED — score ≥ 95)
+        id: production_governance
+        run: |
+          RESULT=$(php artisan mobile:validate-production-client --json \
+            APP_ENV=testing \
+            APP_KEY=base64:dGVzdF9rZXlfZm9yX2NpX3BsYWNlaG9sZGVyX18=)
+          echo "$RESULT"
+          SCORE=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['score'])")
+          echo "production_score=$SCORE" >> $GITHUB_OUTPUT
+          if [ "$SCORE" -lt "$GOVERNANCE_THRESHOLD" ]; then
+            echo "::error::Production client governance FAILED — score $SCORE < $GOVERNANCE_THRESHOLD"
+            exit 1
+          fi
+          echo "::notice::Production client governance PASSED — score $SCORE / 100"
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:dGVzdF9rZXlfZm9yX2NpX3BsYWNlaG9sZGVyX18=
+
+      - name: Post governance score as PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const score = '${{ steps.production_governance.outputs.production_score }}';
+            const pass  = parseInt(score) >= parseInt('${{ env.GOVERNANCE_THRESHOLD }}');
+            const icon  = pass ? '✅' : '❌';
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              body:         `## ${icon} M2.1 Production Client Governance\n\n` +
+                            `**Score:** ${score} / 100  \n` +
+                            `**Threshold:** ${{ env.GOVERNANCE_THRESHOLD }} / 100  \n` +
+                            `**Result:** ${pass ? 'PASS' : 'FAIL'}`,
+            });
+
+# ─── Job 3: Android (APK + AAB) ──────────────────────────────────────────────
+
+  build-android:
+    name: 'Build Android (APK + AAB)'
+    runs-on: ubuntu-latest
+    needs: [analyze, governance]
     if: github.event.inputs.build_android != 'false'
     defaults:
       run:
@@ -84,17 +168,25 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK (release)
+      - name: Build APK (release, split by ABI)
         run: flutter build apk --release --split-per-abi
 
       - name: Build AAB (release)
         run: flutter build appbundle --release
 
+      - name: Compute APK checksums
+        run: |
+          for f in build/app/outputs/flutter-apk/*.apk; do
+            sha256sum "$f" >> build/app/outputs/flutter-apk/checksums.sha256
+          done
+
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: android-apks
-          path: mobile/build/app/outputs/flutter-apk/*.apk
+          path: |
+            mobile/build/app/outputs/flutter-apk/*.apk
+            mobile/build/app/outputs/flutter-apk/checksums.sha256
           retention-days: 30
 
       - name: Upload AAB
@@ -104,12 +196,12 @@ jobs:
           path: mobile/build/app/outputs/bundle/release/*.aab
           retention-days: 30
 
-# ─── Job 3: Windows EXE ───────────────────────────────────────────────────────
+# ─── Job 4: Windows EXE ───────────────────────────────────────────────────────
 
   build-windows:
-    name: 'Build Windows'
+    name: 'Build Windows EXE'
     runs-on: windows-latest
-    needs: analyze
+    needs: [analyze, governance]
     if: github.event.inputs.build_windows != 'false'
     defaults:
       run:
@@ -132,23 +224,28 @@ jobs:
       - name: Build Windows release
         run: flutter build windows --release
 
-      - name: Package installer
+      - name: Package installer archive + checksum
         run: |
-          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "build\saas-client-windows.zip"
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" `
+            -DestinationPath "build\saas-client-windows.zip"
+          $hash = (Get-FileHash "build\saas-client-windows.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  saas-client-windows.zip" | Out-File -FilePath "build\saas-client-windows.zip.sha256" -Encoding utf8
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: mobile/build/saas-client-windows.zip
+          path: |
+            mobile/build/saas-client-windows.zip
+            mobile/build/saas-client-windows.zip.sha256
           retention-days: 30
 
-# ─── Job 4: Linux AppImage ────────────────────────────────────────────────────
+# ─── Job 5: Linux AppImage ────────────────────────────────────────────────────
 
   build-linux:
     name: 'Build Linux'
     runs-on: ubuntu-latest
-    needs: analyze
+    needs: [analyze, governance]
     if: github.event.inputs.build_linux != 'false'
     defaults:
       run:
@@ -156,7 +253,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Linux dependencies
+      - name: Install Linux build dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ninja-build libgtk-3-dev libblkid-dev liblzma-dev \
@@ -177,24 +274,28 @@ jobs:
       - name: Build Linux release
         run: flutter build linux --release
 
-      - name: Package as tar.gz
+      - name: Package as tar.gz + checksum
         run: |
           cd build/linux/x64/release
           tar -czf ../../../../saas-client-linux.tar.gz bundle/
+          cd ../../../..
+          sha256sum saas-client-linux.tar.gz > saas-client-linux.tar.gz.sha256
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: mobile/saas-client-linux.tar.gz
+          path: |
+            mobile/saas-client-linux.tar.gz
+            mobile/saas-client-linux.tar.gz.sha256
           retention-days: 30
 
-# ─── Job 5: macOS (self-hosted or macOS runner) ───────────────────────────────
+# ─── Job 6: macOS (main branch only) ─────────────────────────────────────────
 
   build-macos:
     name: 'Build macOS'
     runs-on: macos-latest
-    needs: analyze
+    needs: [analyze, governance]
     if: github.ref == 'refs/heads/main'
     defaults:
       run:
@@ -221,43 +322,42 @@ jobs:
         run: |
           cd build/macos/Build/Products/Release
           zip -r ../../../../saas-client-macos.zip "saas_platform_client.app"
+          cd ../../../..
+          sha256sum saas-client-macos.zip > saas-client-macos.zip.sha256
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: mobile/saas-client-macos.zip
+          path: |
+            mobile/saas-client-macos.zip
+            mobile/saas-client-macos.zip.sha256
           retention-days: 30
 
-# ─── Job 6: Governance validation ─────────────────────────────────────────────
+# ─── Job 7: Build summary ─────────────────────────────────────────────────────
 
-  governance:
-    name: 'Client Governance Validation'
+  summary:
+    name: 'Build Summary'
     runs-on: ubuntu-latest
-    needs: analyze
-    defaults:
-      run:
-        working-directory: .
+    needs: [build-android, build-windows]
+    if: always()
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP 8.4
-        uses: shivammathur/setup-php@v2
+      - name: Report build results
+        uses: actions/github-script@v7
         with:
-          php-version: '8.4'
-          extensions: mbstring, pdo, redis, sqlite3
+          script: |
+            const android = '${{ needs.build-android.result }}';
+            const windows = '${{ needs.build-windows.result }}';
+            const gov     = '${{ needs.governance.result }}';
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+            const allOk = [android, windows, gov].every(r => r === 'success');
+            const icon  = allOk ? '✅' : '⚠️';
 
-      - name: Validate client runtime
-        run: php artisan mobile:validate-client-runtime --json
-        env:
-          APP_ENV: testing
-          APP_KEY: base64:test_key_for_ci_placeholder_32chars==
+            console.log(`${icon} Build Summary`);
+            console.log(`  Android: ${android}`);
+            console.log(`  Windows: ${windows}`);
+            console.log(`  Governance: ${gov}`);
 
-      - name: Validate client security
-        run: php artisan mobile:validate-client-security --json
-
-      - name: Validate client governance
-        run: php artisan mobile:validate-client-governance --json
+            if (!allOk) {
+              core.setFailed('One or more build jobs failed.');
+            }

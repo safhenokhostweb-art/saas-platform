@@ -67,7 +67,7 @@ class ConversationTile extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(type, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }

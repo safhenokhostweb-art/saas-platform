@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../shared/providers/conversation_provider.dart';
+import '../../core/api/client_api_service.dart';
+import '../../shared/providers/auth_provider.dart';
 import '../../shared/providers/realtime_provider.dart';
 import '../../shared/widgets/message_bubble.dart';
 import '../../shared/widgets/typing_indicator.dart';

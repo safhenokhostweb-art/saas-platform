@@ -38,7 +38,7 @@ class DesktopService with WindowListener {
     await _tray.setContextMenu(Menu()
       ..buildFrom([
         MenuItemLabel(label: 'Open', onClicked: (_) => _showWindow()),
-        MenuItemSeparator(),
+        MenuSeparator(),
         MenuItemLabel(label: 'Quit', onClicked: (_) => _quit()),
       ]));
 

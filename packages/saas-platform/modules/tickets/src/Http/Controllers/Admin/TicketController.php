@@ -139,7 +139,7 @@ class TicketController extends Controller
         $this->authorize('view', $ticket);
 
         $userModel  = config('tickets.user_model', \App\Models\User::class);
-        $adminUsers = $userModel::where('is_admin', true)->with('profile')->get(['id', 'email', 'mobile']);
+        $adminUsers = $userModel::where('is_admin', true)->with('profile')->get(['id', 'mobile']);
         $sites      = $this->siteRepository->allActive();
         $smsEnabled = (bool) Setting::get('tickets.sms_enabled', false);
 
@@ -147,6 +147,12 @@ class TicketController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
         $internalNotes = $ticket->internalNotes()->get();
+
+        $sidebarTickets = Ticket::query()
+            ->select(['id', 'ticket_number', 'subject', 'status', 'priority', 'customer_name', 'updated_at'])
+            ->orderByDesc('updated_at')
+            ->limit(60)
+            ->get();
 
         return view('tickets::admin.tickets.show', [
             'ticket'             => $ticket,
@@ -161,6 +167,7 @@ class TicketController extends Controller
             'watchers'           => $ticket->watchers ?? [],
             'activities'         => $activities,
             'internalNotes'      => $internalNotes,
+            'sidebarTickets'     => $sidebarTickets,
         ]);
     }
 

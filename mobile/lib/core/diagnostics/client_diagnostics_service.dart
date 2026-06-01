@@ -13,7 +13,7 @@ final clientDiagnosticsServiceProvider = Provider<ClientDiagnosticsService>((ref
   return ClientDiagnosticsService(
     api: ref.watch(clientApiServiceProvider),
     realtime: ref.watch(realtimeClientServiceProvider),
-    ota: ref.watch(otaUpdateServiceProvider),
+    ota: ref.watch(otaUpdateServiceProvider.notifier),
     tokens: ref.watch(secureTokenServiceProvider),
   );
 });

@@ -82,7 +82,8 @@ class ClientDesignTokenBridge {
     // Compare primary color from server manifest (hex string)
     final serverPrimary = serverTokens['primary_color'] as String?;
     if (serverPrimary != null && serverPrimary.isNotEmpty) {
-      final local = '#${light().primaryColor.value.toRadixString(16).substring(2).toUpperCase()}';
+      final argb  = light().primaryColor.toARGB32();
+      final local = '#${argb.toRadixString(16).substring(2).toUpperCase()}';
       if (local.toLowerCase() != serverPrimary.toLowerCase()) {
         issues.add('primary_color mismatch: local=$local server=$serverPrimary');
       }

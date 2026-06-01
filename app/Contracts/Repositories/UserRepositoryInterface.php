@@ -95,4 +95,11 @@ interface UserRepositoryInterface
      * @return array
      */
     public function getStats(): array;
+
+    /**
+     * روند ثبت‌نام روزانه
+     * @param int $days
+     * @return array
+     */
+    public function getRegistrationTrend(int $days = 30): array;
 }

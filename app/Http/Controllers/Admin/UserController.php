@@ -43,15 +43,17 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['mobile', 'name', 'status', 'role', 'group_id', 'tag_id', 'two_factor', 'created_from', 'created_to']);
-        $sortBy = $request->get('sort', 'created_at');
+        $filters = $request->only(['mobile', 'name', 'status', 'role', 'group_id', 'tag_id', 'two_factor', 'created_from', 'created_to', 'trashed']);
+        $sortBy  = $request->get('sort', 'created_at');
         $sortDir = $request->get('direction', 'desc');
+        $perPage = max(10, min(100, (int) $request->get('perPage', 25)));
 
-        $users = $this->searchUsersUseCase->execute($filters, $sortBy, $sortDir);
+        $users = $this->searchUsersUseCase->execute($filters, $sortBy, $sortDir, $perPage);
         $stats = $this->userRepository->getStats();
         $roles = Role::orderBy('name')->get();
+        $trend = $this->userRepository->getRegistrationTrend(30);
 
-        return view('admin.users.index', compact('users', 'filters', 'sortBy', 'sortDir', 'stats', 'roles'));
+        return view('admin.users.index', compact('users', 'filters', 'sortBy', 'sortDir', 'stats', 'roles', 'trend'));
     }
 
     /**
@@ -89,10 +91,40 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
-        $this->updateUserUseCase->execute($user, $request->validated());
+        $data = $request->validated();
+
+        // آپلود آواتار با $file->move() (بدون Flysystem)
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
+                try {
+                    $subdir  = 'avatars/' . $user->id;
+                    $destDir = public_path('uploads/' . $subdir);
+                    if (!is_dir($destDir)) {
+                        mkdir($destDir, 0775, true);
+                    }
+                    $ext      = $file->guessExtension() ?: ($file->getClientOriginalExtension() ?: 'jpg');
+                    $filename = \Illuminate\Support\Str::random(24) . '.' . $ext;
+                    $file->move($destDir, $filename);
+                    $data['avatar_path'] = 'uploads/' . $subdir . '/' . $filename;
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Avatar upload error: ' . $e->getMessage());
+                }
+            }
+        }
+
+        $updated = $this->updateUserUseCase->execute($user, $data);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'message'  => "کاربر {$updated->mobile} با موفقیت به‌روزرسانی شد.",
+                'redirect' => route('admin.users.index'),
+            ]);
+        }
 
         return redirect()->route('admin.users.index')
-            ->with('success', "کاربر {$user->mobile} با موفقیت به‌روزرسانی شد.");
+            ->with('success', "کاربر {$updated->mobile} با موفقیت به‌روزرسانی شد.");
     }
 
     /**

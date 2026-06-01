@@ -114,12 +114,22 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan mobile:validate-security --strict 2>&1)",
       "Bash(grep -r \"'email'\\\\|\\\\\"email\\\\\"\" \"c:\\\\laragon\\\\www\\\\saas-platform\\\\packages\\\\saas-platform\\\\core-utils\\\\src\\\\Contracts\\\\Platform\" --include=\"*.php\" 2>nul)",
       "Bash(grep -r \"->email\\\\|'email'\\\\|customer_email\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Models\" --include=\"*.php\" 2>nul | head -20)",
-      "Bash(grep -r \"email\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\auth\" --include=\"*.blade.php\" 2>nul)"
+      "Bash(grep -r \"email\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\auth\" --include=\"*.blade.php\" 2>nul)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location C:\\\\laragon\\\\www\\\\saas-platform; & $php -r \"require 'vendor/autoload.php'; echo 'OK';\" 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location C:\\\\laragon\\\\www\\\\saas-platform; & $php artisan config:clear 2>&1; & $php artisan view:clear 2>&1; & $php artisan cache:clear 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location C:\\\\laragon\\\\www\\\\saas-platform; & $php artisan tinker --execute=\"echo app\\(\\\\App\\\\Contracts\\\\Repositories\\\\UserRepositoryInterface::class\\)->getStats\\(\\)['new_today'] ?? 'key missing';\" 2>&1 | Select-Object -Last 5)",
+      "Bash(Get-ChildItem -Path . -Name)",
+      "Bash(Get-ChildItem -Path . -Directory)",
+      "Bash(Select-Object -First 15)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\admin\\\\conversation-merge\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\admin\\\\conversation-merge\")",
+      "PowerShell(\"done\")"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",
       "c:\\laragon\\www\\saas-platform\\docs\\phase-9.1",
-      "c:\\laragon\\www\\saas-platform"
+      "c:\\laragon\\www\\saas-platform",
+      "C:\\Users\\Farshad-IT\\AppData\\Local\\Temp"
     ]
   }
 }

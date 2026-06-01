@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+export 'package:dio/dio.dart' show FormData, MultipartFile, Options, DioMediaType;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../security/secure_token_service.dart';
@@ -171,6 +172,26 @@ class ClientApiService {
     return ConversationDetail.fromJson(resp.data['data'] as Map<String, dynamic>);
   }
 
+  // ─── Conversation merge ───────────────────────────────────────────────────
+
+  Future<MergePermission> getMyMergePermission() async {
+    final base = await _baseUrl;
+    final resp = await _dio.get('$base/api/mobile/conversations/merge/my-permission');
+    return MergePermission.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<ConversationMergeResult> mergeConversations({
+    required String targetId,
+    required List<String> sourceIds,
+  }) async {
+    final base = await _baseUrl;
+    final resp = await _dio.post(
+      '$base/api/mobile/conversations/$targetId/merge',
+      data: {'source_ids': sourceIds},
+    );
+    return ConversationMergeResult.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
   // ─── Notifications ────────────────────────────────────────────────────────
 
   Future<List<AppNotification>> getNotifications() async {
@@ -221,6 +242,31 @@ class ClientApiService {
       'channel': channel,
     });
     return OtaManifest.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  // ─── Attachment upload (multipart) ───────────────────────────────────────
+
+  Future<Map<String, dynamic>> uploadAttachment(
+    String conversationId,
+    FormData formData, {
+    void Function(int, int)? onProgress,
+  }) async {
+    final base = await _baseUrl;
+    final resp = await _dio.post(
+      '$base/api/mobile/conversations/$conversationId/attachments',
+      data: formData,
+      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      onSendProgress: onProgress,
+    );
+    return resp.data['data'] as Map<String, dynamic>;
+  }
+
+  // ─── Dashboard ───────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    final base = await _baseUrl;
+    final resp = await _dio.get('$base/api/mobile/dashboard');
+    return resp.data['data'] as Map<String, dynamic>? ?? {};
   }
 
   // ─── Runtime manifest (feature flags + capabilities) ─────────────────────

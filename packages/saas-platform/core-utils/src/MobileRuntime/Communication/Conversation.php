@@ -19,6 +19,7 @@ class Conversation extends Model
     public const STATUS_ACTIVE   = 'active';
     public const STATUS_ARCHIVED = 'archived';
     public const STATUS_CLOSED   = 'closed';
+    public const STATUS_MERGED   = 'merged';
 
     protected $fillable = [
         'tenant_id',
@@ -27,6 +28,7 @@ class Conversation extends Model
         'status',
         'metadata',
         'created_by',
+        'merged_into_id',
     ];
 
     protected $casts = [

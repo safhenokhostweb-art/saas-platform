@@ -16,14 +16,19 @@ class UserRepository implements UserRepositoryInterface
 
     private const RELATIONS_DEFAULT = ['profile', 'customer', 'roles', 'groups', 'tags'];
 
-    public function search(array $filters, string $sortBy, string $sortDir, int $perPage = 50): LengthAwarePaginator
+    public function search(array $filters, string $sortBy, string $sortDir, int $perPage = 25): LengthAwarePaginator
     {
         $cacheKey = 'users_search_' . md5(serialize($filters) . $sortBy . $sortDir . request('page', 1) . $perPage);
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir, $perPage) {
-            $query = User::with(self::RELATIONS_DEFAULT)
-                ->select('users.*')
-                ->orderBy($sortBy, $sortDir);
+            $trashed = $filters['trashed'] ?? '0';
+            if ($trashed === '1') {
+                $query = User::onlyTrashed()->with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy($sortBy, $sortDir);
+            } elseif ($trashed === 'all') {
+                $query = User::withTrashed()->with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy($sortBy, $sortDir);
+            } else {
+                $query = User::with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy($sortBy, $sortDir);
+            }
 
             if (!empty($filters['mobile'])) {
                 $query->where('mobile', 'like', '%' . $filters['mobile'] . '%');
@@ -104,8 +109,10 @@ class UserRepository implements UserRepositoryInterface
             'last_login_at', 'last_login_ip',
         ]));
 
-        if (isset($updatable['password'])) {
+        if (!empty($updatable['password'])) {
             $updatable['password'] = bcrypt($updatable['password']);
+        } else {
+            unset($updatable['password']);
         }
 
         $user->update($updatable);
@@ -181,15 +188,39 @@ class UserRepository implements UserRepositoryInterface
     {
         return Cache::remember('user_stats', self::CACHE_TTL, function () {
             return [
-                'total'          => User::count(),
-                'active'         => User::where('is_active', true)->count(),
-                'inactive'       => User::where('is_active', false)->count(),
-                'locked'         => User::whereNotNull('locked_until')->where('locked_until', '>', now())->count(),
-                'admins'         => User::where('is_admin', true)->count(),
-                'two_factor'     => User::where('two_factor_enabled', true)->count(),
-                'new_this_month' => User::whereMonth('created_at', now()->month)
+                'total'              => User::count(),
+                'active'             => User::where('is_active', true)->count(),
+                'inactive'           => User::where('is_active', false)->count(),
+                'locked'             => User::whereNotNull('locked_until')->where('locked_until', '>', now())->count(),
+                'admins'             => User::where('is_admin', true)->count(),
+                'two_factor_enabled' => User::where('two_factor_enabled', true)->count(),
+                'new_today'          => User::whereDate('created_at', today())->count(),
+                'new_this_month'     => User::whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)->count(),
             ];
+        });
+    }
+
+    public function getRegistrationTrend(int $days = 30): array
+    {
+        return Cache::remember("user_registration_trend_{$days}", self::CACHE_TTL, function () use ($days) {
+            $results = User::select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
+                ->where('created_at', '>=', now()->subDays($days - 1)->startOfDay())
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get()
+                ->keyBy('date');
+
+            $trend = [];
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $date = now()->subDays($i)->format('Y-m-d');
+                $trend[] = [
+                    'date'  => $date,
+                    'label' => now()->subDays($i)->format('m/d'),
+                    'count' => (int) ($results->get($date)?->count ?? 0),
+                ];
+            }
+            return $trend;
         });
     }
 

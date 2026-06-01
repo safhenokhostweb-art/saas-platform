@@ -7,7 +7,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'app/app.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/offline/offline_cache_service.dart';
-import 'core/security/secure_token_service.dart';
 import 'core/ota/ota_update_service.dart';
 import 'shared/platform/platform_info.dart';
 
@@ -42,7 +41,7 @@ Future<void> main() async {
 
   // Prime OTA check after first frame
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    await container.read(otaUpdateServiceProvider).checkForUpdates();
+    await container.read(otaUpdateServiceProvider.notifier).checkForUpdates();
   });
 
   runApp(UncontrolledProviderScope(container: container, child: const SaasPlatformApp()));

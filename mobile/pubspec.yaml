@@ -16,11 +16,9 @@ dependencies:
 
   # State management
   flutter_riverpod: ^2.5.1
-  riverpod_annotation: ^2.3.5
 
   # HTTP client
   dio: ^5.4.3
-  retrofit: ^4.1.0
 
   # WebSocket (Reverb / Pusher protocol)
   pusher_channels_flutter: ^2.0.3
@@ -46,15 +44,12 @@ dependencies:
   # Launch at startup (desktop)
   launch_at_startup: ^0.3.0
 
-  # Image / file handling
-  image_picker: ^1.1.2
+  # File handling
   file_picker: ^8.1.2
-  cached_network_image: ^3.3.1
+  mime: ^1.0.4
 
   # Crypto / encoding
   crypto: ^3.0.3
-  convert: ^3.1.1
-  jose: ^0.3.4
 
   # Package info (version checking for OTA)
   package_info_plus: ^8.0.2
@@ -62,8 +57,11 @@ dependencies:
   # Connectivity
   connectivity_plus: ^6.0.3
 
-  # App lifecycle
-  app_lifecycle: ^0.0.5
+  # Device info (for device ID generation)
+  device_info_plus: ^10.1.0
+
+  # Deep linking
+  app_links: ^6.1.1
 
   # Shared preferences (non-sensitive)
   shared_preferences: ^2.3.2
@@ -71,31 +69,31 @@ dependencies:
   # URL launcher
   url_launcher: ^6.3.0
 
+  # Audio for voice notifications
+  audioplayers: ^6.1.0
+
+  # OTA: Open files (APK install)
+  open_file: ^3.3.2
+
+  # Android permissions
+  permission_handler: ^11.3.1
+
   # Intl / RTL (Persian support)
-  intl: ^0.19.0
+  intl: ^0.20.0
   flutter_localizations:
     sdk: flutter
-
-  # Icons
-  flutter_svg: ^2.0.10+1
-
-  # Badges
-  badges: ^3.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  build_runner: ^2.4.11
-  riverpod_generator: ^2.4.3
-  retrofit_generator: ^8.1.0
-  drift_dev: ^2.18.0
-  json_serializable: ^6.8.0
-  json_annotation: ^4.9.0
+
+# Force compatible uuid version across system_tray and other deps
+dependency_overrides:
+  uuid: ^4.5.1
 
 flutter:
   uses-material-design: true
-  generate: true
 
   assets:
     - assets/icons/

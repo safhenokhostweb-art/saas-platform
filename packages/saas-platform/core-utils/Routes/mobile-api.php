@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\Mobile\MobileNotificationController;
 use App\Http\Controllers\Api\Mobile\MobileDeviceController;
 use App\Http\Controllers\Api\Mobile\MobileOtaController;
 use App\Http\Controllers\Api\Mobile\MobileRealtimeController;
+use App\Http\Controllers\Api\Mobile\MobileTenantInboxController;
+use App\Http\Controllers\Api\Mobile\MobileConversationAssignmentController;
+use App\Http\Controllers\Api\Mobile\MobileConversationMergeController;
 
 // ─── Public routes (no auth) ────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
@@ -72,4 +75,44 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('realtime/config',           [MobileRealtimeController::class, 'getConnectionConfig']);
     Route::post('realtime/auth',            [MobileRealtimeController::class, 'authorizeChannel']);
     Route::get('realtime/stats',            [MobileRealtimeController::class, 'getStats']);
+
+    // ── M2.1: Multi-tenant inbox ────────────────────────────────────────────
+    Route::get('inbox',                     [MobileTenantInboxController::class, 'index']);
+    Route::get('inbox/tenants',             [MobileTenantInboxController::class, 'tenants']);
+    Route::get('inbox/summary',             [MobileTenantInboxController::class, 'summary']);
+    Route::get('inbox/sla',                 [MobileTenantInboxController::class, 'sla']);
+
+    // ── M2.1: Unified conversation hub ──────────────────────────────────────
+    Route::get('hub',                       [MobileTenantInboxController::class, 'hub']);
+    Route::post('hub/bulk-read',            [MobileTenantInboxController::class, 'bulkMarkRead']);
+
+    // ── M2.1: Support dashboard ─────────────────────────────────────────────
+    Route::get('dashboard',                 [MobileTenantInboxController::class, 'dashboard']);
+
+    // ── M2.1: Conversation assignment engine ────────────────────────────────
+    Route::post('conversations/{id}/assign',            [MobileConversationAssignmentController::class, 'assign']);
+    Route::post('conversations/{id}/reassign',          [MobileConversationAssignmentController::class, 'reassign']);
+    Route::post('conversations/{id}/unassign',          [MobileConversationAssignmentController::class, 'unassign']);
+    Route::post('conversations/{id}/escalate',          [MobileConversationAssignmentController::class, 'escalate']);
+    Route::get('conversations/{id}/assignment',         [MobileConversationAssignmentController::class, 'current']);
+    Route::get('conversations/{id}/assignment/history', [MobileConversationAssignmentController::class, 'history']);
+
+    // ── ادغام مکالمات ───────────────────────────────────────────────────────
+    Route::get('conversations/merge/my-permission',                     [MobileConversationMergeController::class, 'myPermission']);
+    Route::post('conversations/{id}/merge',                             [MobileConversationMergeController::class, 'merge']);
+
+    // ── مدیریت مجوز ادغام (فقط ادمین) ──────────────────────────────────────
+    Route::get('admin/merge-permissions',                               [MobileConversationMergeController::class, 'listPermissions']);
+    Route::post('admin/merge-permissions',                              [MobileConversationMergeController::class, 'grantPermission']);
+    Route::delete('admin/merge-permissions/{userId}',                   [MobileConversationMergeController::class, 'revokePermission']);
+    Route::get('admin/merge-permissions/check/{userId}',                [MobileConversationMergeController::class, 'checkPermission']);
+
+    // ── M2.1: Read receipts ─────────────────────────────────────────────────
+    Route::get('conversations/{id}/receipts',           [MobileConversationController::class, 'receipts']);
+    Route::post('conversations/{id}/delivered',         [MobileConversationController::class, 'markDelivered']);
+
+    // ── M2.1: Conversation-level presence ───────────────────────────────────
+    Route::post('conversations/{id}/presence/join',     [MobilePresenceController::class, 'joinConversation']);
+    Route::post('conversations/{id}/presence/leave',    [MobilePresenceController::class, 'leaveConversation']);
+    Route::get('conversations/{id}/presence',           [MobilePresenceController::class, 'getConversationPresence']);
 });

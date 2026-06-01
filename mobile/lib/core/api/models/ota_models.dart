@@ -6,6 +6,7 @@ class OtaManifest {
     required this.mandatory,
     required this.channel,
     required this.downloadUrl,
+    this.checksum,
     required this.changelog,
     required this.minOsVersion,
   });
@@ -16,6 +17,7 @@ class OtaManifest {
   final bool mandatory;
   final String channel;
   final String? downloadUrl;
+  final String? checksum;
   final String changelog;
   final String? minOsVersion;
 
@@ -26,6 +28,7 @@ class OtaManifest {
         mandatory: json['mandatory'] as bool? ?? false,
         channel: json['channel'] as String? ?? 'stable',
         downloadUrl: json['download_url'] as String?,
+        checksum: json['checksum'] as String?,
         changelog: json['changelog'] as String? ?? '',
         minOsVersion: json['min_os_version'] as String?,
       );

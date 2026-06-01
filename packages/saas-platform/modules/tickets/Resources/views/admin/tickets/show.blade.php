@@ -30,6 +30,41 @@ document.addEventListener('alpine:init', () => {
         notifPerm: ('Notification' in window) ? Notification.permission : 'unsupported',
         _polling: false,
         _toastTimer: null,
+        convSearch: '',
+        selectedFiles: [],
+        _rawFiles: [],
+
+        get imgFiles() { return this.selectedFiles.filter(f => f.isImage); },
+        get docFiles() { return this.selectedFiles.filter(f => !f.isImage); },
+        get mosaicCls() { const n=this.imgFiles.length; return n===1?'n1':n===2?'n2':n===3?'n3':'n4'; },
+
+        handleFileChange(e) {
+            const files = Array.from(e.target.files || []);
+            this._rawFiles = files;
+            this.selectedFiles = files.map((f,i) => ({
+                _pos: i,
+                name: f.name,
+                size: f.size>1048576 ? (f.size/1048576).toFixed(1)+' MB' : Math.round(f.size/1024)+' KB',
+                isImage: f.type.startsWith('image/'),
+                preview: null,
+            }));
+            files.forEach((f,i) => {
+                if (f.type.startsWith('image/')) {
+                    const r = new FileReader();
+                    r.onload = ev => { const item=this.selectedFiles.find(x=>x._pos===i); if(item) item.preview=ev.target.result; };
+                    r.readAsDataURL(f);
+                }
+            });
+        },
+        removeFile(pos) {
+            this.selectedFiles = this.selectedFiles.filter(f => f._pos !== pos);
+            const inp = this.$refs.mainFileInput;
+            if (inp) {
+                const dt = new DataTransfer();
+                this.selectedFiles.forEach(f => { if (this._rawFiles[f._pos]) dt.items.add(this._rawFiles[f._pos]); });
+                inp.files = dt.files;
+            }
+        },
 
         addWatcher() {
             const w = this.newWatcher.trim();
@@ -93,7 +128,8 @@ document.addEventListener('alpine:init', () => {
                 const data = await res.json();
                 if (data.reply) this.appendReply(data.reply);
                 if (this.noteMode) { this.noteText = ''; } else { this.message = ''; }
-                const fi = form.querySelector('input[type=file]'); if (fi) fi.value = '';
+                this.selectedFiles = [];
+                if (this.$refs.mainFileInput) this.$refs.mainFileInput.value = '';
             } catch(e) { console.error(e); }
             finally { this.isSending = false; }
         },
@@ -122,20 +158,23 @@ document.addEventListener('alpine:init', () => {
             const isImgAtt = att => /^image\//i.test(att.mime||'') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(att.name||'');
             let attHtml = '';
             if (r.attachments && r.attachments.length > 0) {
-                const parts = r.attachments
-                    .filter(att => att.url || att.path)
-                    .map(att => {
-                        const aUrl  = att.url || (attBase + '/' + att.path);
-                        const aName = esc(att.name || 'فایل');
-                        if (isImgAtt(att)) {
-                            return '<a href="' + aUrl + '" target="_blank" class="block mt-1.5"><img src="' + aUrl + '" loading="lazy" alt="' + aName + '" class="rounded-xl max-h-52 max-w-[220px] object-cover hover:opacity-90 transition-opacity shadow-sm border border-white/60 cursor-pointer"></a>';
-                        }
-                        return '<a href="' + aUrl + '" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 transition-all">' + aName + '</a>';
+                const atts = r.attachments.filter(a => a.url || a.path);
+                const imgs = atts.filter(isImgAtt);
+                const docs = atts.filter(a => !isImgAtt(a));
+                if (imgs.length > 0) {
+                    const n=imgs.length, mc=n===1?'n1':n===2?'n2':n===3?'n3':'n4';
+                    const cells = imgs.slice(0,Math.min(n,4)).map((att,i) => {
+                        const aUrl = att.url||(attBase+'/'+att.path);
+                        const aName = esc(att.name||'تصویر');
+                        const more = (i===3&&n>4)?'<div class="att-more">+'+(n-3)+'</div>':'';
+                        return '<div class="att-cell"><a href="'+aUrl+'" target="_blank"><img src="'+aUrl+'" loading="lazy" alt="'+aName+'"></a>'+more+'</div>';
                     });
-                if (parts.length) {
-                    const hasImg = r.attachments.some(isImgAtt);
-                    attHtml = '<div class="' + (hasImg ? 'flex flex-col gap-1 mt-1' : 'flex flex-wrap gap-1.5 mt-2') + '">' + parts.join('') + '</div>';
+                    attHtml += '<div class="att-mosaic '+mc+'">'+cells.join('')+'</div>';
                 }
+                docs.forEach(att => {
+                    const aUrl=att.url||(attBase+'/'+att.path), aName=esc(att.name||'فایل');
+                    attHtml += '<a href="'+aUrl+'" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-white/60 hover:bg-white border border-gray-200 mt-1 mr-1">'+aName+'</a>';
+                });
             }
 
             const wrapper = document.createElement('div');
@@ -192,8 +231,45 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 </script>
+<style>
+.att-mosaic{display:flex;flex-wrap:wrap;gap:2px;border-radius:.75rem;overflow:hidden;margin-top:.5rem}
+.att-mosaic .att-cell{position:relative;overflow:hidden;flex-shrink:0}
+.att-mosaic .att-cell a{display:block;height:100%}
+.att-mosaic .att-cell img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;transition:opacity .18s}
+.att-mosaic .att-cell img:hover{opacity:.88}
+.att-more{position:absolute;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem;pointer-events:none}
+.att-mosaic.n1{max-width:230px}.att-mosaic.n1 .att-cell{width:100%}.att-mosaic.n1 .att-cell img{max-height:180px;border-radius:.75rem}
+.att-mosaic.n2{max-width:280px}.att-mosaic.n2 .att-cell{width:calc(50% - 1px)}.att-mosaic.n2 .att-cell img{height:148px}
+.att-mosaic.n3{max-width:280px}.att-mosaic.n3 .att-cell:first-child{width:100%}.att-mosaic.n3 .att-cell:first-child img{height:148px}.att-mosaic.n3 .att-cell:not(:first-child){width:calc(50% - 1px)}.att-mosaic.n3 .att-cell:not(:first-child) img{height:108px}
+.att-mosaic.n4{max-width:280px}.att-mosaic.n4 .att-cell{width:calc(50% - 1px)}.att-mosaic.n4 .att-cell img{height:108px}
+/* ── Messenger 3-col frame ── */
+.sp-msgr{display:flex;height:calc(100vh - 4.5rem);min-height:580px;border-radius:1.125rem;overflow:hidden;border:1px solid rgba(226,232,240,.6);background:#fff;box-shadow:0 4px 32px rgba(15,23,42,.07)}
+.sp-sidebar{width:248px;min-width:210px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid #e2e8f0;background:#f8fafc}
+.sp-sidebar-head{padding:.8rem .9rem;border-bottom:1px solid #e2e8f0;background:#fff;flex-shrink:0}
+.sp-conv-search{width:100%;padding:.38rem .7rem .38rem 2rem;border:1px solid #e2e8f0;border-radius:.6rem;font-size:.78rem;background:#f8fafc;outline:none;transition:all .2s}
+.sp-conv-search:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(99,102,241,.1);background:#fff}
+.sp-conv-list{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#c7d2fe transparent}
+.sp-conv-item{display:flex;align-items:flex-start;gap:.6rem;padding:.65rem .85rem;border-bottom:1px solid rgba(226,232,240,.4);cursor:pointer;text-decoration:none;color:inherit;transition:background .15s;position:relative}
+.sp-conv-item:hover{background:rgba(99,102,241,.04)}
+.sp-conv-item.active{background:rgba(99,102,241,.1);border-right:3px solid #6366f1}
+.sp-conv-av{width:2rem;height:2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;color:#fff;flex-shrink:0}
+.sp-conv-body{flex:1;min-width:0}
+.sp-conv-subj{font-size:.76rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.sp-conv-item.active .sp-conv-subj{color:#4f46e5}
+.sp-conv-meta{display:flex;align-items:center;gap:.3rem;margin-top:.15rem;font-size:.67rem;color:#94a3b8}
+.sp-conv-sdot{width:.33rem;height:.33rem;border-radius:50%;flex-shrink:0}
+.sp-chat{flex:1;min-width:0;display:flex;flex-direction:column;background:#fff}
+.sp-chat-head{padding:.7rem 1rem;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.97);display:flex;align-items:center;gap:.7rem;flex-shrink:0}
+.sp-info{width:218px;min-width:190px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid #e2e8f0;background:#f8fafc;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#c7d2fe transparent}
+.sp-info-sec{padding:.8rem .9rem;border-bottom:1px solid #e2e8f0}
+.sp-info-lbl{font-size:.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.45rem}
+.sp-scroll-pill{position:absolute;bottom:.75rem;left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:.35rem;padding:.33rem .8rem;border-radius:9999px;background:#6366f1;color:#fff;font-size:.7rem;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.35);z-index:20;white-space:nowrap;transition:all .2s}
+.sp-scroll-pill:hover{background:#4f46e5}
+@media(max-width:1200px){.sp-info{display:none}}
+@media(max-width:900px){.sp-sidebar{display:none}.sp-msgr{border-radius:0;height:100dvh}}
+</style>
 
-<div class="max-w-7xl mx-auto" role="main" aria-label="جزئیات تیکت {{ $ticket->ticket_number }}"
+<div style="margin:-1rem" role="main" aria-label="جزئیات تیکت {{ $ticket->ticket_number }}"
      data-poll-url="{{ route('tickets.admin.poll', $ticket->id) }}"
      data-poll-last-id="{{ $ticket->replies->last()?->id ?? 0 }}"
      x-data="ticketChat">
@@ -209,67 +285,98 @@ document.addEventListener('alpine:init', () => {
         </button>
     </div>
 
-    {{-- ─── Page Header ────────────────────────────────────────────── --}}
-    <div class="flex items-center gap-4 mb-6 flex-wrap">
-        <a href="{{ route('tickets.admin.index') }}"
-           class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 bg-white/80 hover:bg-white border border-gray-200 transition-all hover:shadow-sm shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            بازگشت به لیست
-        </a>
-        <div class="flex-1 min-w-0">
-            <h2 class="text-xl font-bold text-gray-900 truncate">{{ $ticket->subject }}</h2>
-            <div class="flex items-center gap-3 mt-1 flex-wrap">
-                <span class="text-xs text-gray-500 font-mono">{{ $ticket->ticket_number }}</span>
-                <span class="text-gray-300">·</span>
-                @if($ticket->status === 'open')
-                    <span class="tkt-badge bg-yellow-50 text-yellow-700 border-yellow-200"><span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>باز</span>
-                @elseif($ticket->status === 'in_progress')
-                    <span class="tkt-badge bg-blue-50 text-blue-700 border-blue-200"><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>در حال بررسی</span>
-                @else
-                    <span class="tkt-badge bg-green-50 text-green-700 border-green-200"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>بسته</span>
-                @endif
-                @if($ticket->priority === 'high')
-                    <span class="tkt-badge bg-red-50 text-red-600 border-red-200"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>اولویت بالا</span>
-                @elseif($ticket->priority === 'low')
-                    <span class="tkt-badge bg-gray-50 text-gray-500 border-gray-200">اولویت کم</span>
-                @else
-                    <span class="tkt-badge bg-blue-50 text-blue-600 border-blue-200">اولویت عادی</span>
-                @endif
+    <div class="sp-msgr">
+
+        {{-- ═══ LEFT SIDEBAR: Ticket list ════════════════════════════ --}}
+        <div class="sp-sidebar">
+            <div class="sp-sidebar-head">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-700">گفتگوها</span>
+                    <a href="{{ route('tickets.admin.create') }}"
+                       class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-all"
+                       style="color:#fff;font-size:11px;font-weight:600;white-space:nowrap">
+                        <svg style="width:12px;height:12px;stroke:#fff;stroke-width:2.5;fill:none;flex-shrink:0" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        جدید
+                    </a>
+                </div>
+                <div class="relative">
+                    <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" x-model="convSearch" placeholder="جستجو..." class="sp-conv-search" style="padding-right:1.875rem">
+                </div>
+            </div>
+            <div class="sp-conv-list">
+                @forelse($sidebarTickets as $st)
+                @php
+                    $stActive = $st->id === $ticket->id;
+                    $stColor  = match($st->status) { 'open'=>'#f59e0b','in_progress'=>'#3b82f6',default=>'#10b981' };
+                    $stGrad   = match($st->status) { 'open'=>'linear-gradient(135deg,#f59e0b,#f97316)','in_progress'=>'linear-gradient(135deg,#6366f1,#3b82f6)',default=>'linear-gradient(135deg,#10b981,#059669)' };
+                    $stLabel  = match($st->status) { 'open'=>'باز','in_progress'=>'در بررسی',default=>'بسته' };
+                    $stInit   = mb_substr($st->subject ?? '#', 0, 1);
+                    $stTime   = $st->updated_at?->format('H:i') ?? '';
+                @endphp
+                <a href="{{ route('tickets.admin.show', $st->id) }}"
+                   class="sp-conv-item {{ $stActive ? 'active' : '' }}"
+                   x-show="!convSearch || '{{ addslashes($st->subject) }}'.includes(convSearch) || '{{ $st->ticket_number }}'.includes(convSearch) || '{{ addslashes($st->customer_name ?? '') }}'.includes(convSearch)">
+                    <div class="sp-conv-av" style="background:{{ $stGrad }}">{{ $stInit }}</div>
+                    <div class="sp-conv-body">
+                        <span class="sp-conv-subj">{{ $st->subject }}</span>
+                        <div class="sp-conv-meta">
+                            <span class="sp-conv-sdot" style="background:{{ $stColor }}"></span>
+                            <span>{{ $stLabel }}</span>
+                            @if($st->priority === 'high')<span class="bg-red-100 text-red-600 px-1 rounded text-[9px] font-bold">فوری</span>@endif
+                            <span class="mr-auto">{{ $stTime }}</span>
+                        </div>
+                        @if($st->customer_name)<div class="text-[10px] text-slate-400 truncate mt-0.5">{{ $st->customer_name }}</div>@endif
+                    </div>
+                </a>
+                @empty
+                <div class="p-4 text-center text-xs text-slate-400">هیچ تیکتی نیست</div>
+                @endforelse
             </div>
         </div>
-    </div>
 
-    {{-- ─── Flash Messages ─────────────────────────────────────────── --}}
-    @foreach(['success' => 'green', 'sms_success' => 'green', 'sms_error' => 'red', 'error' => 'red'] as $flashKey => $fc)
-    @if(session($flashKey))
-    <div class="glass-card mb-4 p-4 border-r-4 border-r-{{ $fc }}-400 flex items-center gap-3"
-         x-data="{ show: true }" x-show="show" x-transition>
-        @if($fc === 'green')
-        <svg class="w-5 h-5 text-{{ $fc }}-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        @else
-        <svg class="w-5 h-5 text-{{ $fc }}-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        @endif
-        <span class="text-sm text-{{ $fc }}-800 font-medium flex-1">{{ session($flashKey) }}</span>
-        <button @click="show=false" class="text-{{ $fc }}-400 hover:text-{{ $fc }}-600 transition-colors shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-    </div>
-    @endif
-    @endforeach
+        {{-- ═══ MIDDLE: Chat area ══════════════════════════════════════ --}}
+        <div class="sp-chat">
 
-    @if($errors->any())
-    <div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-2xl">
-        <ul class="list-disc list-inside space-y-1 text-sm text-red-700">
-            @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-        </ul>
-    </div>
-    @endif
+            {{-- Chat header --}}
+            <div class="sp-chat-head">
+                <a href="{{ route('tickets.admin.index') }}"
+                   class="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-all text-slate-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+                </a>
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                     style="background:linear-gradient(135deg,#6366f1,#a855f7)">{{ mb_substr($ticket->subject,0,1) }}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-slate-800 truncate">{{ $ticket->subject }}</p>
+                    <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span class="font-mono bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded">{{ $ticket->ticket_number }}</span>
+                        @if($ticket->status==='open')<span class="tkt-badge bg-yellow-50 text-yellow-700 border-yellow-200 !text-[10px] !py-0"><span class="pdot bg-yellow-400"></span>باز</span>
+                        @elseif($ticket->status==='in_progress')<span class="tkt-badge bg-blue-50 text-blue-700 border-blue-200 !text-[10px] !py-0"><span class="pdot bg-blue-400"></span>در بررسی</span>
+                        @else<span class="tkt-badge bg-green-50 text-green-700 border-green-200 !text-[10px] !py-0">بسته</span>@endif
+                        @if($ticket->priority==='high')<span class="tkt-badge bg-red-50 text-red-600 border-red-200 !text-[10px] !py-0">فوری</span>@endif
+                        @if($ticket->customer_name)<span class="text-[10px] text-slate-500">{{ $ticket->customer_name }}</span>@endif
+                    </div>
+                </div>
+                <span class="text-xs text-slate-400 shrink-0 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>زنده
+                </span>
+            </div>
 
-    {{-- ─── Main Grid ──────────────────────────────────────────────── --}}
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
-
-        {{-- ═══ LEFT: Chat + Notes Panel ══════════════════════════════ --}}
-        <div class="xl:col-span-2 flex flex-col">
+            {{-- Flash messages (compact, inside chat) --}}
+            @foreach(['success'=>'green','sms_success'=>'green','sms_error'=>'red','error'=>'red'] as $fk=>$fc)
+            @if(session($fk))
+            <div class="px-4 py-2 flex items-center gap-2 border-b text-xs font-medium {{ $fc==='green' ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800' }}"
+                 x-data="{show:true}" x-show="show">
+                <span class="flex-1">{{ session($fk) }}</span>
+                <button @click="show=false" class="opacity-60 hover:opacity-100">✕</button>
+            </div>
+            @endif
+            @endforeach
+            @if($errors->any())
+            <div class="px-4 py-2 bg-red-50 border-b border-red-100 text-xs text-red-700">
+                {{ implode(' · ', $errors->all()) }}
+            </div>
+            @endif
 
             {{-- Tabs --}}
             <div class="flex items-end gap-1 border-b border-gray-200 overflow-x-auto pb-0">
@@ -292,10 +399,10 @@ document.addEventListener('alpine:init', () => {
             </div>
 
             {{-- ── TAB: Chat ──────────────────────────────────────── --}}
-            <div x-show="activeTab==='chat'" class="flex-1 flex flex-col" style="min-height:500px">
+            <div x-show="activeTab==='chat'" class="flex-1 flex flex-col overflow-hidden">
 
                 {{-- Chat Header --}}
-                <div class="bg-white border border-gray-200 border-b-0 p-4 rounded-none">
+                <div class="bg-white border border-gray-200 border-b-0 p-4 rounded-none shrink-0">
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -324,11 +431,11 @@ document.addEventListener('alpine:init', () => {
                 </div>
 
                 {{-- Messages --}}
-                <div class="bg-white border border-gray-200 border-t-0 flex-1 flex flex-col">
+                <div class="bg-white border border-gray-200 border-t-0 flex-1 flex flex-col overflow-hidden">
                     <div x-ref="chatMessages"
                          @scroll="handleScroll"
                          class="flex-1 overflow-y-auto p-4 space-y-1 chat-bg flex flex-col"
-                         style="max-height:460px; scroll-behavior:smooth">
+                         style="min-height:0; scroll-behavior:smooth">
 
                         @php $customerInitial = mb_substr($ticket->customer_name ?? $ticket->customer_mobile ?? 'م', 0, 1); @endphp
 
@@ -444,20 +551,18 @@ document.addEventListener('alpine:init', () => {
                             </div>
                         @endforeach
 
-                        {{-- Scroll button --}}
+                        {{-- Compact scroll pill --}}
                         <div x-show="showScrollBtn" x-transition
-                             class="sticky bottom-2 flex justify-center w-full">
-                            <button @click="scrollDown"
-                                    class="bg-white text-gray-600 rounded-full px-4 py-2 shadow-lg border border-gray-200 hover:bg-gray-50 transition-all text-xs font-medium flex items-center gap-1.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-                                پیام‌های جدید
-                            </button>
+                             @click="scrollDown()"
+                             class="sp-scroll-pill">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            پیام‌های جدید
                         </div>
                     </div>
 
                     {{-- Reply form --}}
                     @if($ticket->status !== 'closed')
-                    <div class="border-t border-gray-200 bg-white/90 p-3">
+                    <div class="border-t border-gray-200 bg-white/90 p-3 shrink-0">
                         {{-- Note / Reply toggle --}}
                         <div class="flex items-center gap-2 mb-2.5">
                             <button @click="noteMode=false"
@@ -493,12 +598,42 @@ document.addEventListener('alpine:init', () => {
                                               @keydown.enter.prevent="if(!$event.shiftKey) sendReply($el.closest('form'))"></textarea>
                                     <small class="text-[10px] text-gray-400 mt-1 block mr-2">اینتر = ارسال | Shift+Enter = خط جدید</small>
                                     @if($attachmentsEnabled)
-                                    <input type="file" name="attachments[]" multiple class="mt-2 text-xs text-gray-500">
+                                    <label class="inline-flex items-center gap-1.5 mt-2 cursor-pointer text-slate-500 hover:text-indigo-600 transition-colors text-xs">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32"/></svg>
+                                        پیوست فایل
+                                        <input type="file" name="attachments[]" multiple x-ref="mainFileInput"
+                                               accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.zip,.txt"
+                                               class="hidden" @change="handleFileChange($event)">
+                                    </label>
+                                    <div x-show="selectedFiles.length > 0" x-transition class="mt-2 space-y-1.5">
+                                        <div x-show="imgFiles.length > 0" class="att-mosaic" :class="mosaicCls">
+                                            <template x-for="(f,i) in imgFiles.slice(0,4)" :key="f._pos">
+                                                <div class="att-cell" style="position:relative">
+                                                    <template x-if="f.preview"><a :href="f.preview" target="_blank"><img :src="f.preview" :alt="f.name"></a></template>
+                                                    <template x-if="!f.preview"><div style="width:100%;height:100%;min-height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center"><span style="font-size:.6rem;color:#94a3b8">...</span></div></template>
+                                                    <div x-show="i===3&&imgFiles.length>4" class="att-more" x-text="'+'+(imgFiles.length-3)"></div>
+                                                    <button type="button" @click.stop="removeFile(f._pos)" style="position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:9999px;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;border:none;z-index:5">×</button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div x-show="docFiles.length > 0" class="flex flex-wrap gap-1">
+                                            <template x-for="f in docFiles" :key="f._pos">
+                                                <div class="flex items-center gap-1 bg-white border border-emerald-200 rounded-lg px-2 py-1" style="max-width:160px">
+                                                    <div style="min-width:0;flex:1"><div x-text="f.name" style="font-size:.65rem;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div><div x-text="f.size" style="font-size:.6rem;color:#94a3b8"></div></div>
+                                                    <button type="button" @click.stop="removeFile(f._pos)" style="width:14px;height:14px;border-radius:9999px;background:#fee2e2;color:#ef4444;display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;border:none;flex-shrink:0">×</button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="flex items-center gap-1" style="font-size:.65rem;color:#059669;font-weight:600">
+                                            <svg style="width:11px;height:11px" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span x-text="selectedFiles.length + ' فایل آماده ارسال'"></span>
+                                        </div>
+                                    </div>
                                     @endif
                                 </div>
                                 <button type="submit"
                                         :disabled="isSending || (!noteMode && !message.trim()) || (noteMode && !noteText.trim())"
-                                        class="flex items-center justify-center rounded-full p-3 min-w-[48px] h-[48px] transition-all shrink-0"
+                                        class="flex items-center justify-center rounded-full w-10 h-10 transition-all shrink-0"
                                         :class="(isSending || (!noteMode && !message.trim()) || (noteMode && !noteText.trim())) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : (noteMode ? 'bg-amber-400 text-white shadow-md hover:bg-amber-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg')">
                                     <template x-if="!isSending">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
@@ -625,14 +760,14 @@ document.addEventListener('alpine:init', () => {
                 </div>
             </div>
 
-        </div>
+        </div>{{-- /sp-chat --}}
 
-        {{-- ═══ RIGHT: Sidebar ═════════════════════════════════════════ --}}
-        <div class="space-y-4">
+        {{-- ═══ RIGHT: Info panel ══════════════════════════════════════ --}}
+        <div class="sp-info">
 
             {{-- ── Ticket Info ─────────────────────────────────────── --}}
-            <div class="glass-card sidebar-section">
-                <h3 class="sidebar-title">
+            <div class="sp-info-sec">
+                <h3 class="sp-info-lbl">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
                     اطلاعات تیکت
                 </h3>
@@ -689,8 +824,8 @@ document.addEventListener('alpine:init', () => {
             </div>
 
             {{-- ── Status Control ──────────────────────────────────── --}}
-            <div class="glass-card sidebar-section">
-                <h3 class="sidebar-title">
+            <div class="sp-info-sec">
+                <h3 class="sp-info-lbl">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     وضعیت تیکت
                 </h3>
@@ -728,8 +863,8 @@ document.addEventListener('alpine:init', () => {
             </div>
 
             {{-- ── Priority Control ────────────────────────────────── --}}
-            <div class="glass-card sidebar-section">
-                <h3 class="sidebar-title">
+            <div class="sp-info-sec">
+                <h3 class="sp-info-lbl">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
                     اولویت
                 </h3>
@@ -747,8 +882,8 @@ document.addEventListener('alpine:init', () => {
             </div>
 
             {{-- ── Agent Assignment ────────────────────────────────── --}}
-            <div class="glass-card sidebar-section">
-                <h3 class="sidebar-title">
+            <div class="sp-info-sec">
+                <h3 class="sp-info-lbl">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
                     تخصیص کارشناس
                 </h3>
@@ -779,8 +914,8 @@ document.addEventListener('alpine:init', () => {
 
             {{-- ── Site Assignment ─────────────────────────────────── --}}
             @if($sites->count())
-            <div class="glass-card sidebar-section">
-                <h3 class="sidebar-title">
+            <div class="sp-info-sec">
+                <h3 class="sp-info-lbl">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"/></svg>
                     تخصیص سایت
                 </h3>
@@ -802,8 +937,8 @@ document.addEventListener('alpine:init', () => {
             @endif
 
             {{-- ── Watchers (CC) ───────────────────────────────────── --}}
-            <div class="glass-card sidebar-section">
-                <h3 class="sidebar-title">
+            <div class="sp-info-sec">
+                <h3 class="sp-info-lbl">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     ناظران (CC)
                 </h3>
@@ -831,7 +966,7 @@ document.addEventListener('alpine:init', () => {
 
             {{-- ── SMS ────────────────────────────────────────────── --}}
             @if($smsEnabled)
-            <div class="glass-card sidebar-section"
+            <div class="sp-info-sec"
                  x-data="{
                     open: false,
                     phone: '',
@@ -919,8 +1054,8 @@ document.addEventListener('alpine:init', () => {
                 بازگشت به لیست
             </a>
 
-        </div>
-    </div>
+        </div>{{-- /sp-info --}}
+    </div>{{-- /sp-msgr --}}
 
 </div>
 @endsection

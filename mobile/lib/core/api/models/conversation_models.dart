@@ -142,3 +142,32 @@ class MessagePage {
         hasMore: json['meta']?['has_more'] as bool? ?? false,
       );
 }
+
+class ConversationMergeResult {
+  const ConversationMergeResult({
+    required this.targetId,
+    required this.mergedCount,
+    required this.messagesMoved,
+    required this.participantsAdded,
+  });
+
+  final String targetId;
+  final int mergedCount;
+  final int messagesMoved;
+  final int participantsAdded;
+
+  factory ConversationMergeResult.fromJson(Map<String, dynamic> json) =>
+      ConversationMergeResult(
+        targetId:          json['target_id'] as String? ?? '',
+        mergedCount:       json['merged_count'] as int? ?? 0,
+        messagesMoved:     json['messages_moved'] as int? ?? 0,
+        participantsAdded: json['participants_added'] as int? ?? 0,
+      );
+}
+
+class MergePermission {
+  const MergePermission({required this.canMerge});
+  final bool canMerge;
+  factory MergePermission.fromJson(Map<String, dynamic> json) =>
+      MergePermission(canMerge: json['can_merge'] as bool? ?? false);
+}

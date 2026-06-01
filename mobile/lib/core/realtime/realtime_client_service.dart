@@ -67,21 +67,19 @@ class RealtimeClientService {
 
     await _pusher.init(
       apiKey: appKey,
-      cluster: 'mt1', // not used by Reverb, but required by SDK
+      cluster: 'mt1', // not used by self-hosted Reverb, required by SDK
       onConnectionStateChange: _onConnectionStateChange,
       onError: _onError,
       onEvent: _handlePusherEvent,
       onSubscriptionSucceeded: _onSubscriptionSucceeded,
-      authEndpoint: 'https://$host/api/mobile/realtime/socket-auth',
+      // Reverb auth endpoint for private/presence channels
+      authEndpoint: 'https://$host/api/mobile/realtime/auth',
       onAuthorizer: (channelName, socketId, options) async {
-        return {
-          'auth': await _socketAuth(channelName, socketId, host, token),
-        };
+        return {'auth': await _socketAuth(channelName, socketId, host, token)};
       },
-      host: host,
-      wsPort: 8080,
-      wssPort: 8080,
-      useTLS: true,
+      // Android: use proxy to reach self-hosted Reverb
+      proxy: 'ws://$host:8080',
+      useTLS: false,
       activityTimeout: 30000,
       pongTimeout: 5000,
     );
@@ -239,6 +237,27 @@ class RealtimeClientService {
   void _setState(RealtimeConnectionState state) {
     _currentState = state;
     _stateController.add(state);
+  }
+
+  // ── Public reconnect (called by DesktopProductionRuntime / Android) ──────
+
+  Future<void> reconnect() async {
+    _reconnectAttempts = 0;
+    try {
+      await _pusher.connect();
+    } catch (_) {
+      _scheduleReconnect();
+    }
+  }
+
+  // ── Public heartbeat (called by AndroidProductionRuntime) ─────────────────
+
+  Future<void> sendHeartbeat() async {
+    if (_currentState == RealtimeConnectionState.connected) {
+      try {
+        await _api.updateMyPresence('online');
+      } catch (_) {}
+    }
   }
 
   // ── Disconnect ────────────────────────────────────────────────────────────
