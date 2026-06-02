@@ -23,7 +23,7 @@ class MobileAuthController extends Controller
             'mobile'      => 'required|string|regex:/^09[0-9]{9}$/',
             'password'    => 'required|string',
             'device_id'   => 'required|string',
-            'platform'    => 'required|in:ios,android',
+            'platform'    => 'required|in:ios,android,windows,linux,macos',
             'app_version' => 'required|string',
         ]);
 
@@ -39,11 +39,11 @@ class MobileAuthController extends Controller
         // Register device if not already registered
         if (! $this->deviceRegistry->isRegistered($request->device_id)) {
             $this->deviceRegistry->register($tenantId, (string) $user->id, [
-                'device_id'   => $request->device_id,
-                'platform'    => $request->platform,
-                'app_version' => $request->app_version,
-                'timezone'    => $request->timezone ?? 'UTC',
-                'locale'      => $request->locale ?? 'en',
+                'device_id'    => $request->device_id,
+                'platform'     => $request->platform,
+                'app_version'  => $request->app_version,
+                'os_version'   => $request->os_version ?? 'unknown',
+                'device_model' => $request->device_model ?? null,
             ]);
         }
 
@@ -60,7 +60,14 @@ class MobileAuthController extends Controller
             'data' => [
                 'token'      => $token,
                 'session'    => $session,
-                'user'       => ['id' => $user->id, 'name' => $user->name, 'mobile' => $user->mobile],
+                'user'       => [
+                'id'            => $user->id,
+                'name'          => $user->mobile,
+                'mobile'        => $user->mobile,
+                'is_admin'      => (bool) $user->is_admin,
+                'is_site_admin' => (bool) $user->is_site_admin,
+                'site_id'       => $user->site_id,
+            ],
                 'expires_at' => $session['expires_at'],
             ],
             'meta' => ['tenant_id' => $tenantId],

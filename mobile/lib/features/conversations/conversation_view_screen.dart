@@ -159,7 +159,7 @@ class _ConversationViewScreenState extends ConsumerState<ConversationViewScreen>
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Send failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا در ارسال: $e')));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -177,7 +177,7 @@ class _ConversationViewScreenState extends ConsumerState<ConversationViewScreen>
           children: [
             Text(widget.conversationId, style: const TextStyle(fontSize: 16)),
             if (_typingUsers.isNotEmpty)
-              Text('typing…', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+              Text('در حال تایپ...', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
           ],
         ),
         actions: [
@@ -233,7 +233,7 @@ class _ConversationViewScreenState extends ConsumerState<ConversationViewScreen>
                       maxLines: null,
                       textInputAction: TextInputAction.send,
                       decoration: InputDecoration(
-                        hintText: 'Type a message…',
+                        hintText: 'پیام بنویسید...',
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),

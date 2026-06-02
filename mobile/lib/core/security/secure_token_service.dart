@@ -18,7 +18,9 @@ class SecureKey {
   static const String baseUrl = 'base_url';
   static const String reverbAppKey = 'reverb_app_key';
   static const String deviceId = 'device_id';
-  static const String updateChannel = 'update_channel';
+  static const String updateChannel    = 'update_channel';
+  // PHASE M3.2 — stores RuntimeContext JSON after login
+  static const String runtimeContext   = 'runtime_context';
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────

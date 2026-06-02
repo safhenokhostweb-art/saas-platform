@@ -117,7 +117,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('conversations/{id}/presence',           [MobilePresenceController::class, 'getConversationPresence']);
 
     // ── Theme Engine (Phase UI-THEME.1) ─────────────────────────────────────
-    // Flutter / Electron clients call this on launch and after login to sync colors.
     Route::get('theme/tokens',    [\App\Http\Controllers\Api\Mobile\MobileThemeController::class, 'tokens']);
     Route::get('theme/css-vars',  [\App\Http\Controllers\Api\Mobile\MobileThemeController::class, 'cssVars']);
+
+    // ── SP-2.0: Support Tickets ─────────────────────────────────────────────
+    Route::get('tickets',                               [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'index']);
+    Route::post('tickets',                              [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'store']);
+    Route::get('tickets/{id}',                          [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'show'])->where('id', '[0-9]+');
+    Route::post('tickets/{id}/reply',                   [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'reply'])->where('id', '[0-9]+');
+    Route::patch('tickets/{id}/status',                 [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'updateStatus'])->where('id', '[0-9]+');
+    Route::post('tickets/{id}/attachments',             [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'uploadAttachment'])->where('id', '[0-9]+');
+    Route::get('tickets/{id}/attachments/{path}',       [\App\Http\Controllers\Api\Mobile\MobileTicketController::class, 'downloadAttachment'])->where(['id' => '[0-9]+', 'path' => '.+']);
 });

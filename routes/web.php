@@ -460,7 +460,32 @@ Route::prefix('admin')
         Route::patch('payout-requests/{payout_request}/mark-paid', [AdminPayoutRequestController::class, 'markPaid'])->name('payout-requests.mark-paid');
         Route::patch('payout-requests/{payout_request}/reject', [AdminPayoutRequestController::class, 'reject'])->name('payout-requests.reject');
         Route::resource('support-plans', AdminSupportPlanController::class)->except('show');
+
+        // SP-5.0 — Knowledge Base
+        Route::prefix('kb')->name('kb.')->group(function () {
+            Route::get('/',                  [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'index'])->name('index');
+            Route::get('/create',            [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'create'])->name('create');
+            Route::post('/',                 [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'store'])->name('store');
+            Route::get('/{article}',         [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'show'])->name('show');
+            Route::get('/{article}/edit',    [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'edit'])->name('edit');
+            Route::put('/{article}',         [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'update'])->name('update');
+            Route::delete('/{article}',      [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'destroy'])->name('destroy');
+            // Categories
+            Route::get('/categories',        [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'categories'])->name('categories');
+            Route::post('/categories',       [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'storeCategory'])->name('categories.store');
+            Route::patch('/categories/{category}', [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'updateCategory'])->name('categories.update');
+            Route::delete('/categories/{category}', [\App\Http\Controllers\Admin\KnowledgeBaseController::class, 'destroyCategory'])->name('categories.destroy');
+        });
         Route::resource('payment-gateways', PaymentGatewayController::class)->except('show');
+
+        // App Releases — دانلود اپلیکیشن
+        Route::prefix('app-releases')->name('app-releases.')->group(function () {
+            Route::get('/',                              [\App\Http\Controllers\Admin\AppReleaseController::class, 'index'])->name('index');
+            Route::post('/',                             [\App\Http\Controllers\Admin\AppReleaseController::class, 'store'])->name('store');
+            Route::get('/{release}/download',            [\App\Http\Controllers\Admin\AppReleaseController::class, 'download'])->name('download');
+            Route::patch('/{release}/set-latest',        [\App\Http\Controllers\Admin\AppReleaseController::class, 'setLatest'])->name('set-latest');
+            Route::delete('/{release}',                  [\App\Http\Controllers\Admin\AppReleaseController::class, 'destroy'])->name('destroy');
+        });
         // PHASE 7.2 — Legacy admin support-tickets routes redirected to canonical /admin/tickets/* routes.
         // AdminSupportTicketController has been removed from active routing.
         Route::get('support-tickets',                fn() => redirect()->route('tickets.admin.index', [], 301))->name('support-tickets.index');

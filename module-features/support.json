@@ -1,10 +1,10 @@
 {
   "module_name": "پشتیبانی و تیکت‌ها",
   "module_slug": "support",
-  "version": "1.2.0",
-  "last_updated": "2026-05-18 23:30:00",
-  "session_id": "session_001",
-  "completion_status": "in_progress",
+  "version": "2.0.0",
+  "last_updated": "2026-06-02 00:00:00",
+  "session_id": "session_sp2",
+  "completion_status": "active",
   "features": [
     {
       "id": "feat_sp_001",
@@ -12,10 +12,8 @@
       "category": "core",
       "status": "active",
       "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
       "implemented": true,
-      "implementation_details": "SupportTicketController با index, create, show, updateStatus - view با pagination"
+      "implementation_details": "TicketController (canonical module) با index, create, show, updateStatus - view با pagination"
     },
     {
       "id": "feat_sp_002",
@@ -23,20 +21,17 @@
       "category": "core",
       "status": "active",
       "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
       "implemented": true,
-      "implementation_details": "فیلد priority در SupportTicket model (low/normal/high)"
+      "implementation_details": "فیلد priority در Ticket model (low/normal/high) + TicketPriorityController"
     },
     {
       "id": "feat_sp_003",
-      "title": "پیوست فایل (PDF)",
+      "title": "پیوست فایل",
       "category": "core",
       "status": "active",
       "priority": "high",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
+      "implemented": true,
+      "implementation_details": "SP-2.0: ticket_attachments migration + upload endpoint در MobileTicketController + TicketAdminAttachmentController برای download. private disk با path validation."
     },
     {
       "id": "feat_sp_004",
@@ -44,19 +39,17 @@
       "category": "core",
       "status": "active",
       "priority": "medium",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
+      "implemented": true,
+      "implementation_details": "SP-2.0: فیلد category + JSON tags در جدول tickets. فیلتر در MobileTicketController."
     },
     {
       "id": "feat_sp_005",
-      "title": "تمدیدپشتیبانی دانشنامه",
+      "title": "دانشنامه پشتیبانی",
       "category": "knowledge",
       "status": "active",
       "priority": "medium",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
+      "implemented": true,
+      "implementation_details": "SP-5.0: جداول kb_categories + kb_articles، مدل‌های KbCategory و KbArticle، KnowledgeBaseController با CRUD کامل، views: index/create/edit/show/categories، routes: /admin/kb/*"
     },
     {
       "id": "feat_sp_006",
@@ -64,9 +57,8 @@
       "category": "analytics",
       "status": "active",
       "priority": "medium",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
-      "implemented": false
+      "implemented": true,
+      "implementation_details": "TicketAnalyticsController (canonical module) + analytics.blade.php. مسیر: /admin/tickets/analytics"
     },
     {
       "id": "feat_sp_007",
@@ -74,28 +66,52 @@
       "category": "core",
       "status": "active",
       "priority": "medium",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
       "implemented": true,
-      "implementation_details": "assigned_to در SupportTicket + متد assign در Controller"
+      "implementation_details": "assigned_to در Ticket model + TicketAssignmentController + MobileTicketController"
     },
     {
       "id": "feat_sp_008",
       "title": "پاسخ زمانبندی و خودکار",
       "category": "automation",
-      "status": "active",
+      "status": "planned",
       "priority": "low",
-      "created_at": "2026-05-16",
-      "updated_at": "2026-05-16",
       "implemented": false
     }
   ],
   "upcoming_features": [
     {
       "id": "upc_sp_001",
-      "title": "پاسخ هوشمند با AI"
+      "title": "پاسخ هوشمند با AI",
+      "status": "planned",
+      "implementation_details": "AiSupportReplyAssistant در core-utils آماده است. نیاز به wire کردن به reply flow."
     }
   ],
+  "mobile_platforms": {
+    "android": { "status": "ready", "notes": "Gradle 9.0.1, compileSdk 36, NDK configured" },
+    "windows": { "status": "ready", "notes": "CMake 3.14+, desktop build configured" },
+    "linux":   { "status": "ready", "notes": "CMake 3.14+, desktop build configured" },
+    "ios":     { "status": "config_ready", "notes": "SP-4.0: ios_setup/ دایرکتوری با Podfile.patch و Info.plist.additions آماده. نیاز به Mac + Xcode برای flutter create --platforms=ios ." },
+    "macos":   { "status": "planned", "notes": "نیاز به Mac + Xcode" },
+    "web":     { "status": "planned", "notes": "نیاز به flutter create --platforms=web ." }
+  },
+  "flutter_screens": {
+    "support_dashboard": { "file": "mobile/lib/features/support/support_dashboard_screen.dart", "status": "complete" },
+    "ticket_list":       { "file": "mobile/lib/features/support/ticket_list_screen.dart", "status": "complete" },
+    "create_ticket":     { "file": "mobile/lib/features/support/create_ticket_screen.dart", "status": "complete" },
+    "ticket_view":       { "file": "mobile/lib/features/support/ticket_view_screen.dart", "status": "complete" }
+  },
+  "mobile_api_endpoints": {
+    "prefix": "/api/mobile/tickets",
+    "endpoints": [
+      "GET  /               — لیست تیکت‌ها با فیلتر",
+      "POST /               — ایجاد تیکت جدید",
+      "GET  /{id}           — نمایش یک تیکت",
+      "POST /{id}/reply     — پاسخ به تیکت",
+      "PATCH/{id}/status    — تغییر وضعیت",
+      "POST /{id}/attachments — آپلود فایل",
+      "GET  /{id}/attachments/{path} — دانلود فایل"
+    ]
+  },
   "changelog": [
     {
       "date": "2026-05-16",
@@ -110,16 +126,21 @@
     {
       "date": "2026-05-18",
       "version": "1.1.0",
-      "description": "رفع باگ‌های Controller + اضافه شدن HasFactory و Casts + ۳۰ تست اختصاصی (ماژول تست)"
+      "description": "رفع باگ‌های Controller + اضافه شدن HasFactory و Casts + ۳۰ تست اختصاصی"
     },
     {
       "date": "2026-05-18",
       "version": "1.2.0",
-      "description": "Business Hours در SLA + رابطه SupportPlan→Product + پنل مشتری (ایجاد، مشاهده و پاسخ تیکت)"
+      "description": "Business Hours در SLA + رابطه SupportPlan→Product + پنل مشتری"
+    },
+    {
+      "date": "2026-06-02",
+      "version": "2.0.0",
+      "description": "SP-2.0/3.0/4.0/5.0: ticket_attachments migration، MobileTicketController، 3 صفحه Flutter (لیست/ایجاد/نمایش تیکت)، iOS config files، Knowledge Base کامل (model+migration+controller+views+routes)"
     }
   ],
   "last_checkpoint": {
-    "step": "گام 3",
-    "message": "به‌روزرسانی support.json"
+    "step": "SP-5.0 Knowledge Base",
+    "message": "همه مراحل SP-2.0 تا SP-5.0 تکمیل شد"
   }
 }

@@ -15,19 +15,24 @@ class MobileDeviceRegistry
     public function register(string $tenantId, string $userId, array $deviceInfo): array
     {
         $deviceId = $deviceInfo['device_id'] ?? Str::uuid()->toString();
-        $record   = array_merge($deviceInfo, [
-            'id'         => $deviceId,
-            'tenant_id'  => $tenantId,
-            'user_id'    => $userId,
-            'is_active'  => true,
-            'registered_at' => now()->toDateTimeString(),
-            'last_seen_at'  => now()->toDateTimeString(),
-        ]);
+
+        // Only keep columns that exist in the mobile_devices table
+        $record = [
+            'id'           => $deviceId,
+            'tenant_id'    => $tenantId,
+            'user_id'      => $userId,
+            'platform'     => $deviceInfo['platform']     ?? 'unknown',
+            'os_version'   => $deviceInfo['os_version']   ?? 'unknown',
+            'app_version'  => $deviceInfo['app_version']  ?? '1.0.0',
+            'device_model' => $deviceInfo['device_model'] ?? null,
+            'is_active'    => true,
+            'last_seen_at' => now()->toDateTimeString(),
+        ];
 
         DB::table('mobile_devices')->upsert(
             [array_merge($record, ['created_at' => now(), 'updated_at' => now()])],
             ['id'],
-            ['tenant_id', 'user_id', 'platform', 'os_version', 'app_version', 'device_model', 'timezone', 'locale', 'is_active', 'last_seen_at', 'updated_at']
+            ['platform', 'os_version', 'app_version', 'device_model', 'is_active', 'last_seen_at', 'updated_at']
         );
 
         Cache::put(self::CACHE_PREFIX . $deviceId, $record, self::CACHE_TTL);

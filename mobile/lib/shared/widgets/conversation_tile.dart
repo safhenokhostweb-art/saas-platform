@@ -38,7 +38,7 @@ class ConversationTile extends StatelessWidget {
         ],
       ),
       title: Text(
-        conversation.title.isNotEmpty ? conversation.title : 'Conversation ${conversation.id}',
+        conversation.title.isNotEmpty ? conversation.title : 'مکالمه',
         style: TextStyle(fontWeight: hasUnread ? FontWeight.w700 : FontWeight.normal),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

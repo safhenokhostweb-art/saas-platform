@@ -9,7 +9,7 @@ class AttachmentPickerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.attach_file),
-      tooltip: 'Attach file',
+      tooltip: 'پیوست فایل',
       onPressed: () => _pick(context),
     );
   }
@@ -20,7 +20,7 @@ class AttachmentPickerButton extends StatelessWidget {
     // TODO: upload via ClientApiService and send attachment message
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('File selected: ${result.files.first.name}. Upload coming in M2.1.')),
+        SnackBar(content: Text('فایل انتخاب شد: ${result.files.first.name}')),
       );
     }
   }

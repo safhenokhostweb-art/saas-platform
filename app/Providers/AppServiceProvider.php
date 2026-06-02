@@ -21,6 +21,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SupportTicketReplyRepositoryInterface::class, SupportTicketReplyRepository::class);
         $this->app->bind(SupportTicketServiceInterface::class, SupportTicketService::class);
 
+        // PHASE M3.2 — DOMAIN B: Platform Messaging Runtime
+        $this->app->singleton(\App\Services\PlatformMessaging\PlatformParticipantService::class);
+        $this->app->singleton(\App\Services\PlatformMessaging\PlatformMessageService::class);
+        $this->app->singleton(\App\Services\PlatformMessaging\PlatformConversationService::class);
+        $this->app->singleton(\App\Services\PlatformMessaging\PlatformBoundaryValidator::class);
+
         // Payment Gateway
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
             $driver = config('payment.default', 'zarinpal');

@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Gate;
 class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
-        //
+        // PHASE M3.2 — DOMAIN B Platform Conversation Policy
+        \App\Models\PlatformConversation::class => \App\Policies\PlatformConversationPolicy::class,
     ];
 
     public function boot(): void

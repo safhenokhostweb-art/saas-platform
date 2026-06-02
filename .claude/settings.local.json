@@ -123,7 +123,17 @@
       "Bash(Select-Object -First 15)",
       "Bash(New-Item -ItemType Directory -Force \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\admin\\\\conversation-merge\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\admin\\\\conversation-merge\")",
-      "PowerShell(\"done\")"
+      "PowerShell(\"done\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SELECT id, domain, title FROM laravel.sites;\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW TABLES FROM laravel LIKE '%customer%';\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW TABLES FROM laravel LIKE '%user_site%';\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW COLUMNS FROM laravel.customers;\" 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\\\\mobile\"; $env:PUB_HOSTED_URL=\"https://pub.flutter-io.cn\"; $env:FLUTTER_STORAGE_BASE_URL=\"https://storage.flutter-io.cn\"; & \"C:\\\\flutter\\\\bin\\\\flutter.bat\" build windows --release 2>&1 | Select-Object -Last 8)",
+      "PowerShell($log = Get-Content \"c:\\\\laragon\\\\www\\\\saas-platform\\\\storage\\\\logs\\\\laravel.log\" -Tail 200; $errors = @\\(\\); for \\($i=0; $i -lt $log.Count; $i++\\) { if \\($log[$i] -match \"local.ERROR\"\\) { $errors += $log[$i]; if \\($i+1 -lt $log.Count\\) { $errors += $log[$i+1] } } }; $errors | Select-Object -Last 10)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\\\\Http\\\\Controllers\\\\Api\\\\Mobile\\\\MobileTicketController.php\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -l \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\\\\Http\\\\Controllers\\\\Api\\\\Mobile\\\\MobileAuthController.php\" 2>&1)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"UPDATE laravel.users SET is_site_admin = 1 WHERE mobile = '09927530317'; SELECT id, mobile, is_admin, is_site_admin, site_id FROM laravel.users;\" 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\\\\mobile\"; $env:PUB_HOSTED_URL=\"https://pub.flutter-io.cn\"; $env:FLUTTER_STORAGE_BASE_URL=\"https://storage.flutter-io.cn\"; & \"C:\\\\flutter\\\\bin\\\\flutter.bat\" build windows --release 2>&1 | Select-Object -Last 6)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",

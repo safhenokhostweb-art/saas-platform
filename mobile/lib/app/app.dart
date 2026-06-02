@@ -10,24 +10,25 @@ class SaasPlatformApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+    final router    = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: 'Support Client',
+      title:                      'پشتیبان',
       debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      routerConfig: router,
+      themeMode:                  themeMode,
+      theme:                      AppTheme.light(),
+      darkTheme:                  AppTheme.dark(),
+      routerConfig:               router,
+      locale:                     const Locale('fa', 'IR'),
+      supportedLocales: const [
+        Locale('fa', 'IR'),
+        Locale('en'),
+      ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('fa'),
       ],
     );
   }

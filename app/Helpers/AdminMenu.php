@@ -38,6 +38,7 @@ class AdminMenu
         'updates' => 'داشبورد بروزرسانی‌ها',
         'theme_builder'  => 'ساختار تم (Theme Builder)',
         'theme_manager'  => 'مدیریت تم (Theme Engine)',
+        'app_releases'   => 'دانلود اپلیکیشن',
     ];
 
     /** مسیر هر آیتم منو */
@@ -71,6 +72,7 @@ class AdminMenu
         'updates' => 'admin.updates.index',
         'theme_builder'  => 'admin.theme-builder.index',
         'theme_manager'  => 'admin.theme-manager.index',
+        'app_releases'   => 'admin.app-releases.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -104,6 +106,7 @@ class AdminMenu
         'updates' => 'admin.updates.*',
         'theme_builder'  => 'admin.theme-builder.*',
         'theme_manager'  => 'admin.theme-manager.*',
+        'app_releases'   => 'admin.app-releases.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -125,6 +128,7 @@ class AdminMenu
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'بازاریابی / دانش‌محور'             => [],
             'گزارش‌ها / آمار'                   => ['activity_log'],
+            'اپلیکیشن‌ها'                        => ['app_releases'],
         ];
     }
 

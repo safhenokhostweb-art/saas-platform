@@ -174,8 +174,8 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'settings', child: Text('Settings')),
-                const PopupMenuItem(value: 'logout',   child: Text('Sign Out')),
+                const PopupMenuItem(value: 'settings', child: Text('تنظیمات')),
+                const PopupMenuItem(value: 'logout',   child: Text('خروج از حساب')),
               ],
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -325,10 +325,10 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('New Conversation'),
-        content: const Text('Create a new support conversation'),
+        title: const Text('مکالمه جدید'),
+        content: const Text('یک مکالمه پشتیبانی جدید ایجاد شود؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('انصراف')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -340,11 +340,11 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                 ref.invalidate(conversationsProvider);
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا: $e')));
                 }
               }
             },
-            child: const Text('Create'),
+            child: const Text('ایجاد'),
           ),
         ],
       ),

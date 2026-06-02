@@ -31,6 +31,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "predis/predis": "^3.4",
+        "pusher/pusher-php-server": "^7.2",
         "saas-platform/modules-forms": "@dev",
         "saas-platform/modules-tickets": "@dev"
     },

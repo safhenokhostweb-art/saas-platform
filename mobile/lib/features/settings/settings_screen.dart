@@ -34,27 +34,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('تنظیمات')),
       body: ListView(
         children: [
-          const _SectionHeader('Appearance'),
+          const _SectionHeader('ظاهر'),
           ListTile(
-            title: const Text('Theme'),
+            title: const Text('پوسته'),
             trailing: SegmentedButton<ThemeMode>(
               segments: const [
-                ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('Light')),
-                ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto_outlined), label: Text('Auto')),
-                ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Dark')),
+                ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_outlined),  label: Text('روشن')),
+                ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto_outlined), label: Text('خودکار')),
+                ButtonSegment(value: ThemeMode.dark,  icon: Icon(Icons.dark_mode_outlined),   label: Text('تاریک')),
               ],
               selected: {themeMode},
               onSelectionChanged: (s) => ref.read(themeModeProvider.notifier).state = s.first,
             ),
           ),
           if (PlatformInfo.isDesktop) ...[
-            const _SectionHeader('Desktop'),
+            const _SectionHeader('دسکتاپ'),
             SwitchListTile(
-              title: const Text('Launch at startup'),
-              subtitle: const Text('Start automatically when you log in'),
+              title: const Text('اجرا در هنگام روشن شدن ویندوز'),
+              subtitle: const Text('اپلیکیشن به صورت خودکار هنگام ورود اجرا می‌شود'),
               value: _launchAtStartup,
               onChanged: (v) async {
                 await ref.read(desktopServiceProvider).setLaunchAtStartup(v);
@@ -62,20 +62,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ],
-          const _SectionHeader('Connection'),
+          const _SectionHeader('اتصال'),
           ListTile(
-            title: const Text('Server URL'),
+            title: const Text('آدرس سرور'),
             subtitle: FutureBuilder<String?>(
               future: ref.read(secureTokenServiceProvider).read(SecureKey.baseUrl),
-              builder: (_, snap) => Text(snap.data ?? 'Not configured', style: const TextStyle(fontSize: 12)),
+              builder: (_, snap) => Text(
+                snap.data ?? 'تنظیم نشده',
+                style: const TextStyle(fontSize: 12),
+                textDirection: TextDirection.ltr,
+              ),
             ),
             trailing: const Icon(Icons.edit_outlined),
           ),
-          const _SectionHeader('Update Channel'),
+          const _SectionHeader('کانال بروزرسانی'),
           _UpdateChannelTile(),
-          const _SectionHeader('About'),
+          const _SectionHeader('درباره'),
           ListTile(
-            title: const Text('Platform'),
+            title: const Text('پلتفرم'),
             trailing: Text(PlatformInfo.name, style: const TextStyle(fontSize: 13)),
           ),
         ],
@@ -92,7 +96,10 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      child: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
+      ),
     );
   }
 }
@@ -104,17 +111,23 @@ class _UpdateChannelTile extends ConsumerWidget {
       future: ref.read(secureTokenServiceProvider).read(SecureKey.updateChannel),
       builder: (context, snap) {
         final channel = snap.data ?? 'stable';
+        final label = switch (channel) {
+          'stable' => 'پایدار',
+          'beta'   => 'آزمایشی',
+          'canary' => 'کناری',
+          _        => channel,
+        };
         return ListTile(
-          title: const Text('Update channel'),
-          subtitle: Text(channel),
+          title: const Text('کانال بروزرسانی'),
+          subtitle: Text(label),
           trailing: PopupMenuButton<String>(
             onSelected: (v) async {
               await ref.read(secureTokenServiceProvider).write(SecureKey.updateChannel, v);
             },
-            itemBuilder: (_) => [
-              const PopupMenuItem(value: 'stable', child: Text('Stable')),
-              const PopupMenuItem(value: 'beta', child: Text('Beta')),
-              const PopupMenuItem(value: 'canary', child: Text('Canary')),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'stable', child: Text('پایدار (Stable)')),
+              PopupMenuItem(value: 'beta',   child: Text('آزمایشی (Beta)')),
+              PopupMenuItem(value: 'canary', child: Text('کناری (Canary)')),
             ],
             child: const Icon(Icons.expand_more),
           ),

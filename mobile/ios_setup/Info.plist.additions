@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  این کلیدها را در ios/Runner/Info.plist اضافه کنید
+  بعد از <dict> اول:
+-->
+<plist version="1.0">
+<dict>
+    <!-- Minimum iOS version -->
+    <key>MinimumOSVersion</key>
+    <string>14.0</string>
+
+    <!-- App display name -->
+    <key>CFBundleDisplayName</key>
+    <string>Support Client</string>
+
+    <!-- Bundle ID — باید با App Store Connect تطابق داشته باشد -->
+    <key>CFBundleIdentifier</key>
+    <string>com.yourcompany.saasPlatformClient</string>
+
+    <!-- Camera permission (for photo attachments) -->
+    <key>NSCameraUsageDescription</key>
+    <string>برای پیوست تصویر به تیکت‌های پشتیبانی نیاز است.</string>
+
+    <!-- Photo library permission -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>برای انتخاب تصویر از گالری جهت پیوست نیاز است.</string>
+
+    <!-- Microphone (optional — voice notes) -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>برای ارسال پیام صوتی نیاز است.</string>
+
+    <!-- Face ID -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>برای احراز هویت سریع‌تر استفاده می‌شود.</string>
+
+    <!-- Background fetch for notifications -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Push notifications -->
+    <key>aps-environment</key>
+    <string>production</string>
+
+    <!-- Deep links -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>saas-support</string>
+    </array>
+
+    <!-- Supported orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+</dict>
+</plist>

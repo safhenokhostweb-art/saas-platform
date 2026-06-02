@@ -15,32 +15,51 @@ class TicketRepository implements TicketRepositoryInterface
 
     public function search(array $filters, string $sortBy = 'created_at', string $sortDir = 'desc', int $perPage = 20): LengthAwarePaginator
     {
-        // Admin context: bypass scope, allow explicit site_id filter from caller.
-        $query = Ticket::withoutTenantIsolation();
+        $query = Ticket::withoutTenantIsolation()
+            ->select(['id','ticket_number','subject','status','priority','category',
+                      'customer_name','customer_mobile','assigned_to','site_id',
+                      'created_at','updated_at','closed_at','first_response_at','resolved_at'])
+            ->with(['assignee:id,mobile']);
 
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
-
         if (!empty($filters['priority'])) {
             $query->where('priority', $filters['priority']);
         }
-
-        if (!empty($filters['site_id'])) {
-            $query->where('site_id', $filters['site_id']);
+        // site_id=null → تیکت‌های پلتفرمی (بدون site)
+        // site_id=X → تیکت‌های یک site خاص
+        if (array_key_exists('site_id', $filters)) {
+            if ($filters['site_id'] === null) {
+                $query->whereNull('site_id');
+            } elseif (! empty($filters['site_id'])) {
+                $query->where('site_id', $filters['site_id']);
+            }
         }
-
         if (!empty($filters['category'])) {
             $query->where('category', $filters['category']);
         }
-
+        if (!empty($filters['assigned_to'])) {
+            $query->where('assigned_to', $filters['assigned_to']);
+        }
+        // کاربر عادی: فقط تیکت‌های خودش
+        if (!empty($filters['customer_mobile'])) {
+            $query->where('customer_mobile', $filters['customer_mobile']);
+        }
+        if (!empty($filters['search'])) {
+            $s = $filters['search'];
+            $query->where(fn($q) =>
+                $q->where('subject', 'like', "%{$s}%")
+                  ->orWhere('ticket_number', 'like', "%{$s}%")
+            );
+        }
         if (!empty($filters['q'])) {
-            $search = $filters['q'];
-            $query->where(function ($q) use ($search) {
-                $q->where('subject', 'like', "%{$search}%")
-                  ->orWhere('ticket_number', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
+            $s = $filters['q'];
+            $query->where(fn($q) =>
+                $q->where('subject', 'like', "%{$s}%")
+                  ->orWhere('ticket_number', 'like', "%{$s}%")
+                  ->orWhere('description', 'like', "%{$s}%")
+            );
         }
 
         $allowedSorts = ['created_at', 'updated_at', 'priority', 'status', 'subject'];

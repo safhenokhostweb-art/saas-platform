@@ -17,11 +17,11 @@ Future<void> main() async {
   if (PlatformInfo.isDesktop) {
     await windowManager.ensureInitialized();
     await windowManager.setMinimumSize(const Size(900, 600));
-    await windowManager.setTitle('Support Client');
+    await windowManager.setTitle('پشتیبان');
 
     final info = await PackageInfo.fromPlatform();
     launchAtStartup.setup(
-      appName: 'Support Client',
+      appName: 'پشتیبان',
       appPath: info.packageName,
     );
   }

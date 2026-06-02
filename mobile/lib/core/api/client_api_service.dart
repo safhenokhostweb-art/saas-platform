@@ -11,6 +11,8 @@ import 'models/notification_models.dart';
 import 'models/presence_models.dart';
 import 'models/ota_models.dart';
 import 'models/auth_models.dart';
+import 'models/ticket_models.dart';
+export 'models/ticket_models.dart';
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -31,9 +33,14 @@ class ClientApiService {
   final SecureTokenService _tokenService;
   late final Dio _dio;
 
-  // ── Base URL is tenant-aware, loaded from secure storage ──────────────────
+  // ── Base URL — can be overridden immediately to avoid secure-storage cache ──
+
+  String? _immediateBaseUrl;
+
+  void setBaseUrl(String url) => _immediateBaseUrl = url;
 
   Future<String> get _baseUrl async {
+    if (_immediateBaseUrl != null) return _immediateBaseUrl!;
     final url = await _tokenService.read(SecureKey.baseUrl);
     return url ?? 'https://platform.example.com';
   }
@@ -274,6 +281,99 @@ class ClientApiService {
     final base = await _baseUrl;
     final resp = await _dio.get('$base/api/mobile/runtime/manifest');
     return resp.data['data'] as Map<String, dynamic>;
+  }
+
+  // ─── Tickets ─────────────────────────────────────────────────────────────
+
+  Future<TicketPage> getTickets({
+    String? status,
+    String? priority,
+    String? assigned,
+    String? search,
+    int perPage = 20,
+  }) async {
+    final base = await _baseUrl;
+    final resp = await _dio.get(
+      '$base/api/mobile/tickets',
+      queryParameters: {
+        if (status != null)   'status':   status,
+        if (priority != null) 'priority': priority,
+        if (assigned != null) 'assigned': assigned,
+        if (search != null)   'search':   search,
+        'per_page':           perPage,
+      },
+    );
+    return TicketPage.fromJson(resp.data as Map<String, dynamic>);
+  }
+
+  Future<TicketDetail> getTicket(int id) async {
+    final base = await _baseUrl;
+    final resp = await _dio.get('$base/api/mobile/tickets/$id');
+    return TicketDetail.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<TicketDetail> createTicket({
+    required String subject,
+    required String description,
+    required String customerMobile,
+    String? customerName,
+    String priority = 'normal',
+    String? category,
+    int? siteId,
+  }) async {
+    final base = await _baseUrl;
+    final resp = await _dio.post('$base/api/mobile/tickets', data: {
+      'subject':          subject,
+      'description':      description,
+      'customer_mobile':  customerMobile,
+      if (customerName != null) 'customer_name': customerName,
+      'priority':         priority,
+      if (category != null) 'category': category,
+      if (siteId != null) 'site_id':   siteId,
+    });
+    return TicketDetail.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<TicketDetail> replyToTicket(
+    int ticketId,
+    String message, {
+    bool isInternal = false,
+  }) async {
+    final base = await _baseUrl;
+    final resp = await _dio.post('$base/api/mobile/tickets/$ticketId/reply', data: {
+      'message':     message,
+      'is_internal': isInternal,
+    });
+    return TicketDetail.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<TicketSummary> updateTicketStatus(int ticketId, String status) async {
+    final base = await _baseUrl;
+    final resp = await _dio.patch(
+      '$base/api/mobile/tickets/$ticketId/status',
+      data: {'status': status},
+    );
+    return TicketSummary.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  Future<TicketAttachment> uploadTicketAttachment(
+    int ticketId,
+    String filePath,
+    String fileName,
+    String mimeType, {
+    void Function(int, int)? onProgress,
+  }) async {
+    final base = await _baseUrl;
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: fileName, contentType: DioMediaType.parse(mimeType)),
+    });
+    final resp = await _dio.post(
+      '$base/api/mobile/tickets/$ticketId/attachments',
+      data: formData,
+      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      onSendProgress: onProgress,
+    );
+    return TicketAttachment.fromJson(resp.data['data'] as Map<String, dynamic>);
   }
 
   // ─── Auth header helper (used by interceptor) ────────────────────────────

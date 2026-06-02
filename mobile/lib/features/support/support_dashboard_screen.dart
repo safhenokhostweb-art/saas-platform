@@ -135,7 +135,7 @@ class SupportDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Support Dashboard'),
+        title: const Text('داشبورد پشتیبانی'),
         actions: [
           if (stats.loading)
             const Padding(
@@ -163,7 +163,7 @@ class SupportDashboardScreen extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
-                          'Updated ${_formatTime(stats.lastUpdated!)}',
+                          'بروزرسانی: ${_formatTime(stats.lastUpdated!)}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -182,9 +182,9 @@ class SupportDashboardScreen extends ConsumerWidget {
 
   String _formatTime(DateTime t) {
     final diff = DateTime.now().difference(t);
-    if (diff.inSeconds < 60)  return 'just now';
-    if (diff.inMinutes < 60)  return '${diff.inMinutes}m ago';
-    return '${diff.inHours}h ago';
+    if (diff.inSeconds < 60)  return 'همین الان';
+    if (diff.inMinutes < 60)  return '${diff.inMinutes} دقیقه پیش';
+    return '${diff.inHours} ساعت پیش';
   }
 }
 
@@ -204,48 +204,12 @@ class _DashboardGrid extends StatelessWidget {
       mainAxisSpacing:  12,
       childAspectRatio: 1.4,
       children: [
-        _StatWidget(
-          label:       'Open',
-          value:       stats.openConversations,
-          icon:        Icons.chat_bubble_outline,
-          color:       Colors.blue,
-          urgent:      false,
-        ),
-        _StatWidget(
-          label:       'Assigned',
-          value:       stats.assignedConversations,
-          icon:        Icons.assignment_ind,
-          color:       Colors.green,
-          urgent:      false,
-        ),
-        _StatWidget(
-          label:       'Unresolved',
-          value:       stats.unresolvedConversations,
-          icon:        Icons.pending_actions,
-          color:       Colors.orange,
-          urgent:      stats.unresolvedConversations > 10,
-        ),
-        _StatWidget(
-          label:       'Online',
-          value:       stats.onlineCustomers,
-          icon:        Icons.circle,
-          color:       Colors.teal,
-          urgent:      false,
-        ),
-        _StatWidget(
-          label:       'SLA Warnings',
-          value:       stats.slaWarnings,
-          icon:        Icons.warning_amber,
-          color:       stats.slaWarnings > 0 ? Colors.red : Colors.grey,
-          urgent:      stats.slaWarnings > 0,
-        ),
-        _StatWidget(
-          label:       'Unread',
-          value:       stats.unreadMessages,
-          icon:        Icons.mark_chat_unread,
-          color:       Colors.purple,
-          urgent:      stats.unreadMessages > 0,
-        ),
+        _StatWidget(label: 'باز',           value: stats.openConversations,     icon: Icons.chat_bubble_outline, color: Colors.blue,   urgent: false),
+        _StatWidget(label: 'تخصیص یافته',   value: stats.assignedConversations,  icon: Icons.assignment_ind,      color: Colors.green,  urgent: false),
+        _StatWidget(label: 'بی‌پاسخ',       value: stats.unresolvedConversations,icon: Icons.pending_actions,     color: Colors.orange, urgent: stats.unresolvedConversations > 10),
+        _StatWidget(label: 'آنلاین',        value: stats.onlineCustomers,        icon: Icons.circle,              color: Colors.teal,   urgent: false),
+        _StatWidget(label: 'هشدار SLA',     value: stats.slaWarnings,            icon: Icons.warning_amber,       color: stats.slaWarnings > 0 ? Colors.red : Colors.grey, urgent: stats.slaWarnings > 0),
+        _StatWidget(label: 'خوانده‌نشده',   value: stats.unreadMessages,         icon: Icons.mark_chat_unread,    color: Colors.purple, urgent: stats.unreadMessages > 0),
       ],
     );
   }
@@ -337,8 +301,7 @@ class _SlaWarningBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$count conversation${count > 1 ? "s" : ""} approaching SLA breach. '
-              'Immediate action required.',
+              '$count مکالمه در آستانه نقض SLA هستند — اقدام فوری لازم است.',
               style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w500),
             ),
           ),
@@ -363,14 +326,14 @@ class _ErrorView extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: Colors.red),
           const SizedBox(height: 16),
-          Text('Failed to load dashboard', style: Theme.of(context).textTheme.titleMedium),
+          Text('خطا در بارگذاری داشبورد', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(error, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: const Text('تلاش مجدد'),
           ),
         ],
       ),
