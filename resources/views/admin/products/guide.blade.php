@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'products',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای محصولات فروشگاه پلتفرم', 'updated' => '۱۴۰۴/۱۲/۰۵', 'id' => 'products'])
     <p class="font-medium text-gray-800">محصولات و فروشگاه پلتفرم</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -7,3 +17,4 @@
         <li>قیمت، موجودی و وضعیت انتشار هر محصول در اینجا مدیریت می‌شود.</li>
     </ul>
 @endcomponent
+@endif

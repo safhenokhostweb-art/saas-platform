@@ -19,14 +19,14 @@ class TicketNotificationService
 
     /**
      * Fired when a new ticket is created.
-     * → SMS to admin phone
+     * → SMS to site admin (for site tickets) or platform admin (for platform tickets)
      */
     public function onCreated(Ticket $ticket): void
     {
         if (!$this->smsService->isEnabled()) return;
         if (!$this->setting('tickets.sms_on_created', false)) return;
 
-        $adminPhone = $this->smsService->getAdminPhone();
+        $adminPhone = $this->getNotificationPhone($ticket);
         if ($adminPhone) {
             $message = $this->smsService->renderTemplate(
                 'tickets.sms_template_created',
@@ -44,14 +44,14 @@ class TicketNotificationService
 
     /**
      * Fired on status change.
-     * → SMS to admin (on reopen) or customer (on close)
+     * → SMS to site admin (for site tickets) or platform admin (for platform tickets)
      */
     public function onStatusChanged(Ticket $ticket, string $from, string $to): void
     {
         if (!$this->smsService->isEnabled()) return;
         if (!$this->setting('tickets.sms_on_status', false)) return;
 
-        $adminPhone = $this->smsService->getAdminPhone();
+        $adminPhone = $this->getNotificationPhone($ticket);
         if ($adminPhone) {
             $message = $this->smsService->renderTemplate(
                 'tickets.sms_template_status',
@@ -108,8 +108,8 @@ class TicketNotificationService
         $isCustomer = $reply->author_type === TicketReply::AUTHOR_CUSTOMER;
 
         if ($isCustomer) {
-            // Customer replied → notify admin
-            $adminPhone = $this->smsService->getAdminPhone();
+            // Customer replied → notify site admin (or platform admin for platform tickets)
+            $adminPhone = $this->getNotificationPhone($ticket);
             if ($adminPhone) {
                 $message = $this->smsService->renderTemplate(
                     'tickets.sms_template_customer_reply',
@@ -132,7 +132,7 @@ class TicketNotificationService
     {
         if (!$this->smsService->isEnabled()) return;
 
-        $adminPhone = $this->smsService->getAdminPhone();
+        $adminPhone = $this->getNotificationPhone($ticket);
         if ($adminPhone) {
             $message = "هشدار SLA: تیکت {$ticket->ticket_number} از زمان مجاز پاسخ‌دهی تجاوز کرده است.";
             $this->smsService->send($adminPhone, $message);
@@ -140,6 +140,36 @@ class TicketNotificationService
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the correct notification phone based on ticket ownership:
+     * - Site ticket → site admin's mobile
+     * - Platform ticket (site_id=null) → global admin phone from settings
+     */
+    private function getNotificationPhone(Ticket $ticket): ?string
+    {
+        if ($ticket->site_id) {
+            return $this->getSiteAdminPhone((int) $ticket->site_id);
+        }
+        return $this->smsService->getAdminPhone();
+    }
+
+    private function getSiteAdminPhone(int $siteId): ?string
+    {
+        try {
+            $userModel = config('tickets.user_model');
+            if (!$userModel || !class_exists($userModel)) {
+                return null;
+            }
+            $siteAdmin = $userModel::where('site_id', $siteId)
+                ->where('is_site_admin', true)
+                ->where('is_active', true)
+                ->first();
+            return $siteAdmin?->mobile ?? null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
 
     private function setting(string $key, mixed $default = null): mixed
     {

@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'activity-log',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای لاگ فعالیت', 'updated' => '۱۴۰۵/۰۲/۲۴', 'id' => 'activity-log'])
     <p class="font-medium text-gray-800">ثبت فعالیت‌های کاربران</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -8,3 +18,4 @@
         <li>با هر تغییر در نوع رویدادهای ثبت‌شده یا قابلیت‌های این صفحه، این راهنما و تاریخ آخرین بروزرسانی در عنوان به‌روز می‌شود.</li>
     </ul>
 @endcomponent
+@endif

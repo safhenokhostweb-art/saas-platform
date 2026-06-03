@@ -85,9 +85,15 @@ class TicketRepository implements TicketRepositoryInterface
         return Ticket::withoutTenantIsolation()->where('ticket_number', $ticketNumber)->first();
     }
 
-    public function getStats(): array
+    public function getStats(?int $siteId = null, bool $platformOnly = false): array
     {
         $base = Ticket::withoutTenantIsolation();
+
+        if ($platformOnly) {
+            $base = $base->whereNull('site_id');
+        } elseif ($siteId !== null) {
+            $base = $base->where('site_id', $siteId);
+        }
 
         return [
             'total'       => (clone $base)->count(),

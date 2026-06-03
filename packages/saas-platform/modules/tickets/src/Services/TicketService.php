@@ -179,9 +179,9 @@ class TicketService implements TicketServiceInterface
     /**
      * {@inheritDoc}
      */
-    public function getStats(): array
+    public function getStats(?int $siteId = null, bool $platformOnly = false): array
     {
-        return $this->ticketRepository->getStats();
+        return $this->ticketRepository->getStats($siteId, $platformOnly);
     }
 
     /**

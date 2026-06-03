@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2d34fdbf06c5f100284697563524330b",
+    "content-hash": "0acd66ac140a450ae00f650d67fd38c4",
     "packages": [
         {
             "name": "anhskohbo/no-captcha",
@@ -4409,6 +4409,40 @@
                 "MIT"
             ],
             "description": "Shared Core Utilities for SaaS Platform modules",
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "saas-platform/modules-education",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/saas-platform/modules/education",
+                "reference": "08f3c612fcb216b1c7f9163bd528dc2d661f26cb"
+            },
+            "require": {
+                "laravel/framework": "^10.0|^11.0|^12.0",
+                "php": "^8.1",
+                "saas-platform/core-utils": "@dev"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "SaaSPlatform\\Modules\\Education\\Providers\\EducationServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "SaaSPlatform\\Modules\\Education\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Enterprise Education & Guidance Module for SaaS Platform",
             "transport-options": {
                 "relative": true
             }
@@ -9534,6 +9568,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "saas-platform/modules-education": 20,
         "saas-platform/modules-forms": 20,
         "saas-platform/modules-tickets": 20
     },

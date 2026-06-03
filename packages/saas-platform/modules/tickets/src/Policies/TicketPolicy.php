@@ -19,10 +19,15 @@ class TicketPolicy
 
     public function view($user, Ticket $ticket): bool
     {
-        if ($user->is_admin) {
+        // Platform admin: همه تیکت‌های سیستم (super admin)
+        if ($user->is_admin && !$user->is_site_admin) {
             return true;
         }
-        // Customer can only view tickets belonging to their site
+        // Site admin: فقط تیکت‌های site خودش
+        if ($user->is_site_admin) {
+            return $ticket->site_id == $user->site_id;
+        }
+        // Customer: فقط تیکت‌های سایت خودش
         if (method_exists($user, 'sites')) {
             $siteIds = $user->sites()->pluck('sites.id')->toArray();
             return in_array($ticket->site_id, $siteIds, true);
@@ -56,5 +61,18 @@ class TicketPolicy
     public function changePriority($user, Ticket $ticket): bool
     {
         return $user->is_admin;
+    }
+
+    public function delete($user, Ticket $ticket): bool
+    {
+        // Platform admin: می‌تواند هر تیکتی را حذف کند
+        if ($user->is_admin && !$user->is_site_admin) {
+            return true;
+        }
+        // Site admin: فقط تیکت‌های سایت خودش
+        if ($user->is_site_admin) {
+            return $ticket->site_id == $user->site_id;
+        }
+        return false;
     }
 }

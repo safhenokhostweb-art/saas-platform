@@ -28,18 +28,28 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   Future<void> _restore() async {
     final token = await _tokens.read(SecureKey.accessToken);
     if (token != null) {
-      // Attempt a manifest fetch as a lightweight auth check
       try {
         final manifest = await _api.getRuntimeManifest();
-        final userId = manifest['user_id'] as String? ?? '';
-        final name = manifest['user_name'] as String? ?? '';
-        final roles = (manifest['roles'] as List<dynamic>?)?.cast<String>() ?? [];
+        final userId      = manifest['user_id']       as String? ?? '';
+        final name        = manifest['user_name']      as String? ?? '';
+        final mobile      = manifest['mobile']         as String? ?? '';
+        final isAdmin     = manifest['is_admin']       as bool?   ?? false;
+        final isSiteAdmin = manifest['is_site_admin']  as bool?   ?? false;
+        final siteId      = manifest['site_id']        as int?;
+        final roles       = (manifest['roles'] as List<dynamic>?)?.cast<String>() ?? [];
         state = AuthState(
           isAuthenticated: true,
-          user: AuthUser(id: userId, name: name, mobile: '', roles: roles),
+          user: AuthUser(
+            id:          userId,
+            name:        name,
+            mobile:      mobile,
+            roles:       roles,
+            isAdmin:     isAdmin,
+            isSiteAdmin: isSiteAdmin,
+            siteId:      siteId,
+          ),
         );
       } catch (_) {
-        // Token expired or invalid — stay logged out
         await _tokens.deleteAll();
       }
     }

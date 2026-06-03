@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_file/open_file.dart';
 
 import '../../core/api/client_api_service.dart';
+import '../../shared/providers/auth_provider.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -22,16 +26,13 @@ class TicketViewScreen extends ConsumerStatefulWidget {
 }
 
 class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
-  final _replyCtrl     = TextEditingController();
-  final _scrollCtrl    = ScrollController();
-  bool _isInternal     = false;
-  bool _isSending      = false;
+  final _scrollCtrl = ScrollController();
+  bool _isSending   = false;
   Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
-    // Poll for new replies every 30s (fallback when WebSocket unavailable)
     _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       ref.invalidate(ticketDetailProvider(widget.ticketId));
     });
@@ -39,28 +40,23 @@ class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
 
   @override
   void dispose() {
-    _replyCtrl.dispose();
     _scrollCtrl.dispose();
     _pollTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _sendReply() async {
-    final text = _replyCtrl.text.trim();
-    if (text.isEmpty) return;
-
+  Future<void> _sendReply(String text, bool isInternal, List<PlatformFile> files) async {
     setState(() => _isSending = true);
-
     try {
       await ref.read(clientApiServiceProvider).replyToTicket(
         widget.ticketId,
         text,
-        isInternal: _isInternal,
+        isInternal: isInternal,
+        filePaths: files.where((f) => f.path != null).map((f) => f.path!).toList(),
+        fileNames: files.map((f) => f.name).toList(),
       );
-      _replyCtrl.clear();
+      // Always refresh regardless of response parsing
       ref.invalidate(ticketDetailProvider(widget.ticketId));
-
-      // Scroll to bottom after refresh
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollCtrl.hasClients) {
           _scrollCtrl.animateTo(
@@ -73,12 +69,25 @@ class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطا: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(_friendlyError(e)),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  String _friendlyError(Object e) {
+    final s = e.toString();
+    if (s.contains('404')) return 'تیکت یافت نشد یا دسترسی ندارید.';
+    if (s.contains('403')) return 'دسترسی کافی نیست.';
+    if (s.contains('422')) return 'خطای اعتبارسنجی. لطفاً متن پیام را وارد کنید.';
+    if (s.contains('SocketException') || s.contains('connection')) return 'خطای اتصال. اتصال اینترنت را بررسی کنید.';
+    return 'خطا در ارسال پیام. لطفاً مجدداً تلاش کنید.';
   }
 
   Future<void> _changeStatus(TicketDetail ticket, String newStatus) async {
@@ -93,7 +102,7 @@ class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطا: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(_friendlyError(e)), backgroundColor: Colors.red),
         );
       }
     }
@@ -107,37 +116,50 @@ class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
       loading: () => Scaffold(appBar: AppBar(), body: const Center(child: CircularProgressIndicator())),
       error:   (e, _) => Scaffold(
         appBar: AppBar(title: const Text('خطا')),
-        body: Center(child: Text('$e')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('$e'),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(ticketDetailProvider(widget.ticketId)),
+                child: const Text('تلاش مجدد'),
+              ),
+            ],
+          ),
+        ),
       ),
       data: (ticket) => _buildContent(ticket),
     );
   }
 
   Widget _buildContent(TicketDetail ticket) {
+    final user        = ref.watch(authStateProvider).user;
+    final isStaffUser = !(user?.isEndUser ?? true);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(ticket.ticketNumber, style: const TextStyle(fontSize: 16)),
         actions: [
-          PopupMenuButton<String>(
-            tooltip: 'تغییر وضعیت',
-            onSelected: (s) => _changeStatus(ticket, s),
-            itemBuilder: (_) => [
-              if (!ticket.isOpen)
-                const PopupMenuItem(value: 'open', child: Text('بازگشایی')),
-              if (!ticket.isInProgress)
-                const PopupMenuItem(value: 'in_progress', child: Text('در حال بررسی')),
-              if (!ticket.isClosed)
-                const PopupMenuItem(value: 'closed', child: Text('بستن تیکت')),
-            ],
-          ),
+          if (isStaffUser)
+            PopupMenuButton<String>(
+              tooltip: 'تغییر وضعیت',
+              onSelected: (s) => _changeStatus(ticket, s),
+              itemBuilder: (_) => [
+                if (!ticket.isOpen)
+                  const PopupMenuItem(value: 'open', child: Text('بازگشایی')),
+                if (!ticket.isInProgress)
+                  const PopupMenuItem(value: 'in_progress', child: Text('در حال بررسی')),
+                if (!ticket.isClosed)
+                  const PopupMenuItem(value: 'closed', child: Text('بستن تیکت')),
+              ],
+            ),
         ],
       ),
       body: Column(
         children: [
-          // ── Header ──────────────────────────────────────────────────
           _TicketHeader(ticket: ticket),
-
-          // ── Replies list ─────────────────────────────────────────────
           Expanded(
             child: ticket.replies.isEmpty
                 ? const Center(
@@ -150,16 +172,12 @@ class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
                     itemBuilder: (_, i) => _ReplyBubble(reply: ticket.replies[i]),
                   ),
           ),
-
-          // ── Reply box ────────────────────────────────────────────────
-          if (!ticket.isClosed) _ReplyBox(
-            controller: _replyCtrl,
-            isSending: _isSending,
-            isInternal: _isInternal,
-            onToggleInternal: () => setState(() => _isInternal = !_isInternal),
-            onSend: _sendReply,
-          ),
-
+          if (!ticket.isClosed)
+            _ReplyBox(
+              isSending:          _isSending,
+              canToggleInternal:  isStaffUser,
+              onSend:             _sendReply,
+            ),
           if (ticket.isClosed)
             Container(
               padding: const EdgeInsets.all(12),
@@ -205,7 +223,7 @@ class _TicketHeader extends StatelessWidget {
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 4, children: [
             _InfoChip(icon: Icons.circle, label: ticket.statusLabel, color: _statusColor(ticket.status)),
-            _InfoChip(icon: Icons.flag, label: ticket.priorityLabel, color: _priorityColor(ticket.priority)),
+            _InfoChip(icon: Icons.flag,   label: ticket.priorityLabel, color: _priorityColor(ticket.priority)),
             if (ticket.category != null)
               _InfoChip(icon: Icons.category, label: ticket.category!, color: Colors.purple),
           ]),
@@ -240,24 +258,9 @@ class _TicketHeader extends StatelessWidget {
     );
   }
 
-  String get statusLabel => switch (ticket.status) {
-    'open'        => 'باز',
-    'in_progress' => 'در حال بررسی',
-    'closed'      => 'بسته',
-    _             => ticket.status,
-  };
-
-  String get priorityLabel => switch (ticket.priority) {
-    'low'    => 'پایین',
-    'normal' => 'عادی',
-    'high'   => 'بالا',
-    _        => ticket.priority,
-  };
-
   Color _statusColor(String s) => switch (s) {
     'open'        => Colors.blue,
     'in_progress' => Colors.orange,
-    'closed'      => Colors.grey,
     _             => Colors.grey,
   };
 
@@ -300,13 +303,36 @@ class _ReplyBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isStaff = reply.isStaff;
-    final align   = isStaff ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final color   = reply.isInternal
-        ? Colors.yellow.shade100
-        : isStaff
-            ? Colors.blue.shade50
-            : Colors.grey.shade100;
+    final isLeft = reply.isLeftSide; // staff یا site_admin → سمت چپ
+    // RTL: start = راست، end = چپ
+    final align = isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+
+    Color bubbleColor;
+    Color avatarBgColor;
+    Color avatarIconColor;
+    IconData avatarIcon;
+
+    if (reply.isInternal) {
+      bubbleColor    = Colors.yellow.shade100;
+      avatarBgColor  = Colors.orange.shade100;
+      avatarIconColor = Colors.orange;
+      avatarIcon     = Icons.lock_outline;
+    } else if (reply.isSiteAdmin) {
+      bubbleColor    = Colors.green.shade50;
+      avatarBgColor  = Colors.green.shade100;
+      avatarIconColor = Colors.green.shade700;
+      avatarIcon     = Icons.admin_panel_settings;
+    } else if (reply.isStaff) {
+      bubbleColor    = Colors.blue.shade50;
+      avatarBgColor  = Colors.blue.shade100;
+      avatarIconColor = Colors.blue;
+      avatarIcon     = Icons.support_agent;
+    } else {
+      bubbleColor    = Colors.grey.shade100;
+      avatarBgColor  = Colors.grey.shade300;
+      avatarIconColor = Colors.grey.shade600;
+      avatarIcon     = Icons.person;
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -314,14 +340,23 @@ class _ReplyBubble extends StatelessWidget {
         crossAxisAlignment: align,
         children: [
           Row(
-            mainAxisAlignment: isStaff ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
             children: [
-              if (!isStaff) ...[
-                CircleAvatar(radius: 12, backgroundColor: Colors.grey.shade300,
-                  child: const Icon(Icons.person, size: 14)),
+              if (!isLeft) ...[
+                CircleAvatar(radius: 12, backgroundColor: avatarBgColor,
+                  child: Icon(avatarIcon, size: 14, color: avatarIconColor)),
                 const SizedBox(width: 6),
               ],
-              Text(reply.authorName, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+              Text(reply.authorName,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+              if (reply.isSiteAdmin) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(color: Colors.green.shade600, borderRadius: BorderRadius.circular(3)),
+                  child: const Text('سایت', style: TextStyle(fontSize: 9, color: Colors.white)),
+                ),
+              ],
               if (reply.isInternal) ...[
                 const SizedBox(width: 4),
                 Container(
@@ -330,10 +365,10 @@ class _ReplyBubble extends StatelessWidget {
                   child: const Text('داخلی', style: TextStyle(fontSize: 9, color: Colors.white)),
                 ),
               ],
-              if (isStaff) ...[
+              if (isLeft) ...[
                 const SizedBox(width: 6),
-                CircleAvatar(radius: 12, backgroundColor: Colors.blue.shade100,
-                  child: const Icon(Icons.support_agent, size: 14, color: Colors.blue)),
+                CircleAvatar(radius: 12, backgroundColor: avatarBgColor,
+                  child: Icon(avatarIcon, size: 14, color: avatarIconColor)),
               ],
             ],
           ),
@@ -343,22 +378,23 @@ class _ReplyBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: color,
+                color: bubbleColor,
                 borderRadius: BorderRadius.only(
                   topLeft:     const Radius.circular(12),
                   topRight:    const Radius.circular(12),
-                  bottomLeft:  Radius.circular(isStaff ? 12 : 0),
-                  bottomRight: Radius.circular(isStaff ? 0 : 12),
+                  bottomLeft:  Radius.circular(isLeft ? 12 : 0),
+                  bottomRight: Radius.circular(isLeft ? 0 : 12),
                 ),
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(reply.message),
+                  if (reply.message.isNotEmpty) Text(reply.message),
                   if (reply.attachments.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Wrap(spacing: 6, children: reply.attachments.map((a) => _AttachmentChip(attachment: a)).toList()),
+                    Wrap(spacing: 6, children:
+                      reply.attachments.map((a) => _AttachmentChip(attachment: a)).toList()),
                   ],
                   const SizedBox(height: 4),
                   Text(
@@ -383,45 +419,167 @@ class _ReplyBubble extends StatelessWidget {
   }
 }
 
-class _AttachmentChip extends StatelessWidget {
+class _AttachmentChip extends ConsumerStatefulWidget {
   const _AttachmentChip({required this.attachment});
   final TicketAttachment attachment;
 
   @override
+  ConsumerState<_AttachmentChip> createState() => _AttachmentChipState();
+}
+
+class _AttachmentChipState extends ConsumerState<_AttachmentChip> {
+  bool _downloading = false;
+
+  Future<void> _openAttachment() async {
+    final url = widget.attachment.downloadUrl;
+    if (url == null || url.isEmpty) {
+      _showSnack('لینک دانلود موجود نیست.');
+      return;
+    }
+
+    setState(() => _downloading = true);
+    try {
+      final api      = ref.read(clientApiServiceProvider);
+      final filePath = await api.downloadAttachment(url, widget.attachment.name);
+      final result   = await OpenFile.open(filePath);
+      if (result.type != ResultType.done && mounted) {
+        _showSnack('باز کردن فایل ناموفق: ${result.message}');
+      }
+    } catch (e) {
+      if (mounted) _showSnack('خطا در دانلود فایل.');
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
+  }
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(
-        attachment.isImage ? Icons.image : attachment.isPdf ? Icons.picture_as_pdf : Icons.attach_file,
-        size: 14,
+    final att = widget.attachment;
+    return GestureDetector(
+      onTap: _downloading ? null : _openAttachment,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: att.isImage ? Colors.blue.shade50 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_downloading)
+              const SizedBox(
+                width: 14, height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                att.isImage ? Icons.image
+                    : att.isPdf ? Icons.picture_as_pdf
+                    : Icons.attach_file,
+                size: 14,
+                color: att.isImage ? Colors.blue : Colors.grey.shade700,
+              ),
+            const SizedBox(width: 4),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 120),
+              child: Text(
+                att.name,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: att.downloadUrl != null ? Colors.blue.shade700 : Colors.grey.shade700,
+                  decoration: att.downloadUrl != null ? TextDecoration.underline : null,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (att.size > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                att.sizeLabel,
+                style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+              ),
+            ],
+          ],
+        ),
       ),
-      label: Text(attachment.name, style: const TextStyle(fontSize: 11)),
-      padding: EdgeInsets.zero,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
 
-// ─── Reply box ────────────────────────────────────────────────────────────────
+// ─── Reply box (stateful — manages text + files + internal toggle) ─────────────
 
-class _ReplyBox extends StatelessWidget {
+typedef _ReplySubmit = Future<void> Function(String message, bool isInternal, List<PlatformFile> files);
+
+class _ReplyBox extends StatefulWidget {
   const _ReplyBox({
-    required this.controller,
     required this.isSending,
-    required this.isInternal,
-    required this.onToggleInternal,
+    required this.canToggleInternal,
     required this.onSend,
   });
 
-  final TextEditingController controller;
-  final bool isSending;
-  final bool isInternal;
-  final VoidCallback onToggleInternal;
-  final VoidCallback onSend;
+  final bool          isSending;
+  final bool          canToggleInternal;
+  final _ReplySubmit  onSend;
+
+  @override
+  State<_ReplyBox> createState() => _ReplyBoxState();
+}
+
+class _ReplyBoxState extends State<_ReplyBox> {
+  final _ctrl               = TextEditingController();
+  bool _isInternal          = false;
+  final List<PlatformFile> _files = [];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf',
+                            'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip'],
+      );
+      if (result != null && mounted) {
+        setState(() => _files.addAll(result.files));
+      }
+    } catch (_) {}
+  }
+
+  void _removeFile(int index) => setState(() => _files.removeAt(index));
+
+  Future<void> _submit() async {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty && _files.isEmpty) return;
+    if (widget.isSending) return;
+
+    final filesCopy = List<PlatformFile>.from(_files);
+    await widget.onSend(text, _isInternal, filesCopy);
+
+    // Clear only on successful send (parent resets isSending to false on finish)
+    if (mounted) {
+      _ctrl.clear();
+      setState(() {
+        _isInternal = false;
+        _files.clear();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(top: BorderSide(color: Colors.grey.shade300)),
@@ -429,53 +587,118 @@ class _ReplyBox extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isInternal)
+          // ── Internal note banner ─────────────────────────────────────
+          if (_isInternal)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              margin: const EdgeInsets.only(bottom: 6),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange.shade200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              color: Colors.orange.shade50,
+              child: const Text(
+                'یادداشت داخلی — برای مشتری نمایش داده نمی‌شود',
+                style: TextStyle(fontSize: 11, color: Colors.orange),
               ),
-              child: const Text('یادداشت داخلی — برای مشتری نمایش داده نمی‌شود',
-                  style: TextStyle(fontSize: 11, color: Colors.orange)),
             ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              IconButton(
-                icon: Icon(
-                  isInternal ? Icons.lock : Icons.lock_open,
-                  color: isInternal ? Colors.orange : Colors.grey,
-                ),
-                tooltip: isInternal ? 'داخلی' : 'عمومی',
-                onPressed: onToggleInternal,
+
+          // ── Selected files preview ────────────────────────────────────
+          if (_files.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              color: Colors.grey.shade50,
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: _files.asMap().entries.map((e) {
+                  final f = e.value;
+                  final isImage = ['jpg','jpeg','png','gif','webp']
+                      .contains(f.extension?.toLowerCase());
+                  return Chip(
+                    avatar: Icon(isImage ? Icons.image : Icons.attach_file, size: 14),
+                    label: Text(f.name,
+                      style: const TextStyle(fontSize: 11),
+                      overflow: TextOverflow.ellipsis),
+                    deleteIcon: const Icon(Icons.close, size: 14),
+                    onDeleted: () => _removeFile(e.key),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: EdgeInsets.zero,
+                  );
+                }).toList(),
               ),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: isInternal ? 'یادداشت داخلی...' : 'پاسخ خود را بنویسید...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    isDense: true,
+            ),
+
+          // ── Input row ─────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Internal toggle (staff only)
+                if (widget.canToggleInternal)
+                  IconButton(
+                    icon: Icon(
+                      _isInternal ? Icons.lock : Icons.lock_open,
+                      color: _isInternal ? Colors.orange : Colors.grey,
+                      size: 20,
+                    ),
+                    tooltip: _isInternal ? 'یادداشت داخلی' : 'پیام عمومی',
+                    onPressed: () => setState(() => _isInternal = !_isInternal),
+                    visualDensity: VisualDensity.compact,
+                  ),
+
+                // Attach file button
+                IconButton(
+                  icon: const Icon(Icons.attach_file, size: 20),
+                  tooltip: 'پیوست فایل',
+                  onPressed: widget.isSending ? null : _pickFiles,
+                  color: _files.isNotEmpty ? Colors.blue : Colors.grey,
+                  visualDensity: VisualDensity.compact,
+                ),
+
+                // Text field
+                Expanded(
+                  child: TextField(
+                    controller: _ctrl,
+                    maxLines: null,
+                    minLines: 1,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    enabled: !widget.isSending,
+                    decoration: InputDecoration(
+                      hintText: _isInternal ? 'یادداشت داخلی...' : 'پاسخ خود را بنویسید...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) {
+                      // Ctrl+Enter on desktop behaves as newline; send only via button
+                    },
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              isSending
-                  ? const SizedBox(width: 40, height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-                  : IconButton.filled(
-                      onPressed: onSend,
-                      icon: const Icon(Icons.send),
-                      tooltip: 'ارسال',
-                    ),
-            ],
+
+                const SizedBox(width: 6),
+
+                // Send button
+                widget.isSending
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: SizedBox(
+                          width: 24, height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : IconButton.filled(
+                        onPressed: _submit,
+                        icon: const Icon(Icons.send, size: 18),
+                        tooltip: 'ارسال',
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(38, 38),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+              ],
+            ),
           ),
         ],
       ),

@@ -334,17 +334,36 @@ class ClientApiService {
     return TicketDetail.fromJson(resp.data['data'] as Map<String, dynamic>);
   }
 
-  Future<TicketDetail> replyToTicket(
+  Future<void> replyToTicket(
     int ticketId,
     String message, {
     bool isInternal = false,
+    List<String> filePaths = const [],
+    List<String> fileNames = const [],
   }) async {
     final base = await _baseUrl;
-    final resp = await _dio.post('$base/api/mobile/tickets/$ticketId/reply', data: {
-      'message':     message,
-      'is_internal': isInternal,
-    });
-    return TicketDetail.fromJson(resp.data['data'] as Map<String, dynamic>);
+
+    if (filePaths.isEmpty) {
+      await _dio.post('$base/api/mobile/tickets/$ticketId/reply', data: {
+        'message':     message,
+        'is_internal': isInternal,
+      });
+    } else {
+      final files = await Future.wait(filePaths.asMap().entries.map((e) async {
+        final name = e.key < fileNames.length ? fileNames[e.key] : e.value.split(Platform.pathSeparator).last;
+        return MapEntry('files[]', await MultipartFile.fromFile(e.value, filename: name));
+      }));
+      final formData = FormData.fromMap({
+        'message':     message,
+        'is_internal': isInternal ? '1' : '0',
+        ...Map.fromEntries(files),
+      });
+      await _dio.post(
+        '$base/api/mobile/tickets/$ticketId/reply',
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
+    }
   }
 
   Future<TicketSummary> updateTicketStatus(int ticketId, String status) async {
@@ -374,6 +393,38 @@ class ClientApiService {
       onSendProgress: onProgress,
     );
     return TicketAttachment.fromJson(resp.data['data'] as Map<String, dynamic>);
+  }
+
+  /// دانلود فایل پیوست با احراز هویت — مسیر فایل ذخیره‌شده را برمی‌گرداند
+  Future<String> downloadAttachment(
+    String downloadUrl,
+    String fileName, {
+    void Function(int, int)? onProgress,
+  }) async {
+    final dir = await _getTempDir();
+    final safeName = fileName.replaceAll(RegExp(r'[^\w\.\-]'), '_');
+    final savePath = '${dir.path}/$safeName';
+
+    await _dio.download(
+      downloadUrl,
+      savePath,
+      onReceiveProgress: onProgress,
+    );
+    return savePath;
+  }
+
+  Future<Directory> _getTempDir() async {
+    // path_provider را اینجا import نمی‌کنیم — مستقیم از Platform استفاده می‌شود
+    if (Platform.isWindows) {
+      final temp = Directory.systemTemp;
+      final dir  = Directory('${temp.path}\\saas_attachments');
+      if (!dir.existsSync()) dir.createSync(recursive: true);
+      return dir;
+    }
+    final temp = Directory.systemTemp;
+    final dir  = Directory('${temp.path}/saas_attachments');
+    if (!dir.existsSync()) dir.createSync(recursive: true);
+    return dir;
   }
 
   // ─── Auth header helper (used by interceptor) ────────────────────────────

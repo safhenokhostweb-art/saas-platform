@@ -239,6 +239,17 @@
                                     </svg>
                                 </a>
 
+                                @if(auth()->id() !== $user->id)
+                                    <button @click.stop="openDeleteModal('{{ $user->id }}')"
+                                            class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                            title="حذف کاربر">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                @endif
+
                                 @if($user->is_admin)
                                     <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-md font-medium">ادمین</span>
                                 @endif
@@ -329,10 +340,11 @@
                                     @endif
                                 </div>
 
+                                {{-- فرم حذف: route جداگانه برای تک‌حذف --}}
                                 <form id="delete-form-{{ $user->id }}"
-                                      action="{{ route('admin.users.bulk-delete') }}" method="POST" class="hidden">
+                                      action="{{ route('admin.users.destroy', $user) }}" method="POST" class="hidden">
                                     @csrf
-                                    <input type="hidden" name="user_ids[]" value="{{ $user->id }}">
+                                    @method('DELETE')
                                 </form>
                             </div>
                         </td>

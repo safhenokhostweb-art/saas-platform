@@ -140,7 +140,12 @@ class TicketListScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'تیکت جدید',
-            onPressed: () => context.push('/tickets/create'),
+            onPressed: () async {
+              await context.push('/tickets/create');
+              if (context.mounted) {
+                ref.read(ticketListProvider.notifier).load(refresh: true);
+              }
+            },
           ),
         ],
       ),
@@ -155,7 +160,12 @@ class TicketListScreen extends ConsumerWidget {
                   ? _EmptyView(
                       hasFilters: state.statusFilter != null || state.priorityFilter != null,
                       onClearFilters: () => ref.read(ticketListProvider.notifier).clearFilters(),
-                      onCreate: () => context.push('/tickets/create'),
+                      onCreate: () async {
+                        await context.push('/tickets/create');
+                        if (context.mounted) {
+                          ref.read(ticketListProvider.notifier).load(refresh: true);
+                        }
+                      },
                     )
                   : RefreshIndicator(
                       onRefresh: () => ref.read(ticketListProvider.notifier).load(refresh: true),

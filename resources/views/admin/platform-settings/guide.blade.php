@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'platform-settings',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای تنظیمات عمومی پلتفرم', 'updated' => '۱۴۰۴/۱۲/۰۷', 'id' => 'platform-settings'])
     <p class="font-medium text-gray-800">نام، لوگو، تم، فونت، ویجت‌ها و تنظیمات Enterprise</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -10,3 +20,4 @@
         <li><strong>Enterprise:</strong> تنظیمات ایمیل (SMTP)، پیامک (ملی‌پیامک، کاوه‌نگار، قاصدک)، کلیدهای API (Google Maps، reCAPTCHA)، Feature flags (همگام‌سازی مارکت‌پلیس، چندارزی، کیف پول، تحلیل پیشرفته).</li>
     </ul>
 @endcomponent
+@endif

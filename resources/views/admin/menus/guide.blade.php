@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'menus',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای منو و ناوبری', 'updated' => '۱۴۰۴/۱۲/۰۷', 'id' => 'menus'])
     <p class="font-medium text-gray-800">مدیریت منوهای هدر، فوتر و سایدبار هر سایت</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -7,3 +17,4 @@
         <li>منوها از لیست سایت‌ها → عملیات → منوها قابل دسترسی هستند.</li>
     </ul>
 @endcomponent
+@endif

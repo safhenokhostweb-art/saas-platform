@@ -19,6 +19,10 @@
         {
             "type": "path",
             "url": "packages/saas-platform/modules/forms"
+        },
+        {
+            "type": "path",
+            "url": "packages/saas-platform/modules/education"
         }
     ],
     "require": {
@@ -32,6 +36,7 @@
         "laravel/tinker": "^2.8",
         "predis/predis": "^3.4",
         "pusher/pusher-php-server": "^7.2",
+        "saas-platform/modules-education": "@dev",
         "saas-platform/modules-forms": "@dev",
         "saas-platform/modules-tickets": "@dev"
     },

@@ -345,6 +345,7 @@ Route::prefix('admin')
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('users/{user}/toggle', [UserController::class, 'toggleActive'])->name('users.toggle');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::post('users/bulk-toggle', [UserController::class, 'bulkToggle'])->name('users.bulk-toggle');
         Route::post('users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
         Route::post('users/bulk-restore', [UserController::class, 'bulkRestore'])->name('users.bulk-restore');

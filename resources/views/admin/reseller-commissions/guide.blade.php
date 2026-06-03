@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'reseller-commissions',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای تسویه کمیسیون', 'updated' => '۱۴۰۴/۱۲/۰۵', 'id' => 'reseller-commissions'])
     <p class="font-medium text-gray-800">تسویه کمیسیون نمایندگان</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -6,3 +16,4 @@
         <li>از منوی نمایندگان می‌توانید به لیست نمایندگان و مدیریت آن‌ها دسترسی داشته باشید.</li>
     </ul>
 @endcomponent
+@endif

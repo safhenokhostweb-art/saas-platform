@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'support-tickets',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای تیکت‌های پشتیبانی', 'updated' => '۱۴۰۴/۱۲/۰۵', 'id' => 'support-tickets'])
     <p class="font-medium text-gray-800">مدیریت تیکت‌های پشتیبانی</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -6,3 +16,4 @@
         <li>مشتریان از طریق API با لایسنس معتبر تیکت ارسال می‌کنند.</li>
     </ul>
 @endcomponent
+@endif

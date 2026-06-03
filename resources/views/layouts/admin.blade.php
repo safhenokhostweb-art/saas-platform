@@ -440,7 +440,7 @@
 
     </div>
 
-    @include('partials.guide-widget')
+    @include('partials.floating-search-widget')
     @stack('scripts')
     @yield('scripts')
     <script>

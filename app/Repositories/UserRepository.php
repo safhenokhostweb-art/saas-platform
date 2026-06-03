@@ -30,6 +30,31 @@ class UserRepository implements UserRepositoryInterface
                 $query = User::with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy($sortBy, $sortDir);
             }
 
+            // فقط کاربران پلتفرم نشان داده شود — کاربران نهایی سایت‌های مشتری مخفی باشند
+            $query->where(fn($q) =>
+                $q->whereNull('users.site_id')
+                  ->orWhere('users.is_admin', true)
+                  ->orWhere('users.is_site_admin', true)
+            );
+
+            // کاربرانی که customer هم هستند فقط در لیست مشتریان نمایش داده می‌شوند
+            $customerUserIds = DB::table('customers')
+                ->whereNotNull('user_id')
+                ->whereNull('deleted_at')
+                ->pluck('user_id')
+                ->toArray();
+            $customerMobiles = DB::table('customers')
+                ->whereNull('user_id')
+                ->whereNull('deleted_at')
+                ->pluck('mobile')
+                ->toArray();
+            if (!empty($customerUserIds)) {
+                $query->whereNotIn('users.id', $customerUserIds);
+            }
+            if (!empty($customerMobiles)) {
+                $query->whereNotIn('users.mobile', $customerMobiles);
+            }
+
             if (!empty($filters['mobile'])) {
                 $query->where('mobile', 'like', '%' . $filters['mobile'] . '%');
             }
@@ -92,12 +117,14 @@ class UserRepository implements UserRepositoryInterface
 
     public function create(array $data): User
     {
-        return User::create([
+        $user = User::create([
             'mobile'    => $data['mobile'],
             'password'  => isset($data['password']) ? bcrypt($data['password']) : bcrypt(random_int(100000, 999999)),
             'is_active' => $data['is_active'] ?? true,
             'is_admin'  => $data['is_admin'] ?? false,
         ]);
+        $this->clearCache();
+        return $user;
     }
 
     public function update(User $user, array $data): User
@@ -168,7 +195,12 @@ class UserRepository implements UserRepositoryInterface
 
     public function getAllForExport(array $filters): Collection
     {
-        $query = User::with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy('created_at', 'desc');
+        $query = User::with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy('created_at', 'desc')
+            ->where(fn($q) =>
+                $q->whereNull('site_id')
+                  ->orWhere('is_admin', true)
+                  ->orWhere('is_site_admin', true)
+            );
 
         if (!empty($filters['mobile'])) {
             $query->where('mobile', 'like', '%' . $filters['mobile'] . '%');
@@ -187,15 +219,20 @@ class UserRepository implements UserRepositoryInterface
     public function getStats(): array
     {
         return Cache::remember('user_stats', self::CACHE_TTL, function () {
+            $base = User::where(fn($q) =>
+                $q->whereNull('site_id')
+                  ->orWhere('is_admin', true)
+                  ->orWhere('is_site_admin', true)
+            );
             return [
-                'total'              => User::count(),
-                'active'             => User::where('is_active', true)->count(),
-                'inactive'           => User::where('is_active', false)->count(),
-                'locked'             => User::whereNotNull('locked_until')->where('locked_until', '>', now())->count(),
-                'admins'             => User::where('is_admin', true)->count(),
-                'two_factor_enabled' => User::where('two_factor_enabled', true)->count(),
-                'new_today'          => User::whereDate('created_at', today())->count(),
-                'new_this_month'     => User::whereMonth('created_at', now()->month)
+                'total'              => (clone $base)->count(),
+                'active'             => (clone $base)->where('is_active', true)->count(),
+                'inactive'           => (clone $base)->where('is_active', false)->count(),
+                'locked'             => (clone $base)->whereNotNull('locked_until')->where('locked_until', '>', now())->count(),
+                'admins'             => (clone $base)->where('is_admin', true)->count(),
+                'two_factor_enabled' => (clone $base)->where('two_factor_enabled', true)->count(),
+                'new_today'          => (clone $base)->whereDate('created_at', today())->count(),
+                'new_this_month'     => (clone $base)->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)->count(),
             ];
         });

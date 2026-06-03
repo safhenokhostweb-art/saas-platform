@@ -40,9 +40,20 @@ class TicketController extends Controller
     {
         $this->authorize('viewAny', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
+        $user    = $request->user();
         $filters = $request->only(['status', 'priority', 'site_id', 'category', 'q', 'sort_by', 'sort_dir', 'per_page']);
+
+        // platform admin = همه تیکت‌های سیستم (super admin)
+        // site admin = فقط تیکت‌های سایت خودش
+        if ($user->is_site_admin && !$user->is_admin) {
+            $filters['site_id'] = $user->site_id;
+        }
+        // platform admin: بدون فیلتر site_id — همه تیکت‌ها را می‌بیند
+
         $tickets = $this->ticketService->getAll($filters);
-        $stats   = $this->ticketService->getStats();
+        $stats   = ($user->is_admin && !$user->is_site_admin)
+            ? $this->ticketService->getStats()          // همه تیکت‌ها
+            : $this->ticketService->getStats(siteId: $user->site_id);
 
         return view('tickets::admin.tickets.index', [
             'tickets'    => $tickets,
@@ -56,10 +67,25 @@ class TicketController extends Controller
     {
         $this->authorize('create', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
-        $userModel = config('tickets.user_model', \App\Models\User::class);
-        $users     = $userModel::orderBy('mobile')->get(['id', 'mobile']);
-        $customers = \App\Models\Customer::orderBy('name')->get(['id', 'name', 'mobile', 'user_id']);
-        $sites     = $this->getActiveSites();
+        $userModel   = config('tickets.user_model', \App\Models\User::class);
+        $authUser    = auth()->user();
+        $customers   = \App\Models\Customer::orderBy('name')->get(['id', 'name', 'mobile', 'user_id']);
+        $sites       = $this->getActiveSites();
+
+        // کاربرانی که customer هم هستند فقط یک‌بار در لیست نشان داده می‌شوند
+        $customerUserIds  = $customers->pluck('user_id')->filter()->toArray();
+        $customerMobiles  = $customers->pluck('mobile')->filter()->toArray();
+
+        // ادمین پلتفرم فقط ادمین/سایت‌ادمین می‌بیند — ادمین سایت فقط اعضای سایت خودش
+        $usersQuery = $userModel::orderBy('mobile')
+            ->whereNotIn('id', $customerUserIds)
+            ->whereNotIn('mobile', $customerMobiles); // جلوگیری از نمایش دوباره کسانی که customer هم هستند
+        if ($authUser->is_admin && !$authUser->is_site_admin) {
+            $usersQuery->where(fn($q) => $q->where('is_admin', true)->orWhere('is_site_admin', true));
+        } elseif ($authUser->is_site_admin) {
+            $usersQuery->where('site_id', $authUser->site_id);
+        }
+        $users = $usersQuery->get(['id', 'mobile', 'is_admin', 'is_site_admin']);
 
         $people = $users->map(fn($u) => [
             'key'         => 'u_' . $u->id,
@@ -68,17 +94,29 @@ class TicketController extends Controller
             'customer_id' => null,
             'name'        => $u->name ?? $u->mobile ?? '',
             'mobile'      => $u->mobile ?? '',
-            'badge'       => 'کاربر پلتفرم',
+            'badge'       => $u->is_admin && !$u->is_site_admin
+                                ? 'ادمین پلتفرم'
+                                : ($u->is_site_admin ? 'ادمین سایت' : 'کاربر عادی'),
         ])->merge(
-            $customers->map(fn($c) => [
-                'key'         => 'c_' . $c->id,
-                'type'        => 'customer',
-                'user_id'     => $c->user_id,
-                'customer_id' => $c->id,
-                'name'        => $c->name ?? $c->mobile ?? '',
-                'mobile'      => $c->mobile ?? '',
-                'badge'       => 'مشتری',
-            ])
+            $customers->map(function ($c) use ($userModel) {
+                // اگر customer یک user با نقش ادمین سایت دارد، badge را صحیح نشان بده
+                $linkedUser = $c->user_id ? $userModel::find($c->user_id) : null;
+                $badge = 'مشتری';
+                if ($linkedUser?->is_site_admin) {
+                    $badge = 'ادمین سایت';
+                } elseif ($linkedUser?->is_admin) {
+                    $badge = 'ادمین پلتفرم';
+                }
+                return [
+                    'key'         => 'c_' . $c->id,
+                    'type'        => 'customer',
+                    'user_id'     => $c->user_id,
+                    'customer_id' => $c->id,
+                    'name'        => $c->name ?? $c->mobile ?? '',
+                    'mobile'      => $c->mobile ?? '',
+                    'badge'       => $badge,
+                ];
+            })
         )->values();
 
         return view('tickets::admin.tickets.create', [
@@ -95,12 +133,16 @@ class TicketController extends Controller
 
         $data = $request->validated();
 
+        $customerSiteId = null; // site_id سایت مشتری انتخاب‌شده
+
         if (!empty($data['for_customer_id'])) {
-            $customer = \App\Models\Customer::find($data['for_customer_id']);
+            $customer = \App\Models\Customer::with('sites')->find($data['for_customer_id']);
             if ($customer) {
                 $data['customer_id']    = $customer->user_id ?? null;
                 $data['customer_name']   = $data['customer_name']   ?? $customer->name;
                 $data['customer_mobile'] = $data['customer_mobile'] ?? $customer->mobile;
+                // اگر مشتری سایت دارد، تیکت باید به سایت او تعلق داشته باشد تا از طریق API دریافت شود
+                $customerSiteId = $customer->sites()->first()?->id;
             }
             unset($data['for_customer_id']);
         } elseif (!empty($data['for_user_id'])) {
@@ -110,6 +152,8 @@ class TicketController extends Controller
                 $data['customer_id']     = $user->id;
                 $data['customer_name']   = $data['customer_name']   ?? $user->name;
                 $data['customer_mobile'] = $data['customer_mobile'] ?? $user->mobile;
+                // اگر کاربر site_id دارد، تیکت به سایت او تعلق دارد
+                $customerSiteId = $user->site_id ?? null;
             }
         }
         unset($data['for_user_id'], $data['for_customer_id']);
@@ -118,6 +162,18 @@ class TicketController extends Controller
             ? array_filter((array) $request->file('attachments'))
             : null;
         $files = empty($files) ? null : array_values($files);
+
+        $authUser = $request->user();
+        if ($customerSiteId) {
+            // تیکت برای مشتری خاص → site_id سایت آن مشتری تا از طریق tenant API دریافت شود
+            $data['site_id'] = $customerSiteId;
+        } elseif ($authUser->is_admin && !$authUser->is_site_admin) {
+            // تیکت عمومی ادمین پلتفرم بدون مشتری خاص → پلتفرمی
+            $data['site_id'] = $data['site_id'] ?? null;
+        } elseif ($authUser->is_site_admin && empty($data['site_id'])) {
+            $data['site_id'] = $authUser->site_id;
+        }
+        $data['status'] = $data['status'] ?? \SaaSPlatform\Modules\Tickets\Models\Ticket::STATUS_OPEN;
 
         $ticket = $this->ticketService->create($data, $files);
 
@@ -148,11 +204,14 @@ class TicketController extends Controller
             ->get();
         $internalNotes = $ticket->internalNotes()->get();
 
-        $sidebarTickets = Ticket::query()
-            ->select(['id', 'ticket_number', 'subject', 'status', 'priority', 'customer_name', 'updated_at'])
-            ->orderByDesc('updated_at')
-            ->limit(60)
-            ->get();
+        $sidebarUser = auth()->user();
+        $sidebarQuery = Ticket::withoutTenantIsolation()
+            ->select(['id', 'ticket_number', 'subject', 'status', 'priority', 'customer_name', 'updated_at']);
+        // platform admin: همه تیکت‌ها در sidebar
+        if ($sidebarUser->is_site_admin && !$sidebarUser->is_admin) {
+            $sidebarQuery->where('site_id', $sidebarUser->site_id);
+        }
+        $sidebarTickets = $sidebarQuery->orderByDesc('updated_at')->limit(60)->get();
 
         return view('tickets::admin.tickets.show', [
             'ticket'             => $ticket,
@@ -250,6 +309,23 @@ class TicketController extends Controller
     private function applyBulkDelete(Ticket $ticket): void
     {
         $ticket->delete();
+    }
+
+    public function destroy(int $id)
+    {
+        $ticket = $this->ticketService->getById($id);
+
+        if (!$ticket) {
+            abort(404);
+        }
+
+        $this->authorize('delete', $ticket);
+
+        $ticket->delete();
+
+        return redirect()
+            ->route('tickets.admin.index')
+            ->with('success', 'تیکت #' . $ticket->ticket_number . ' با موفقیت حذف شد.');
     }
 
     protected function getActiveSites()

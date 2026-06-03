@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'sites',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', ['guideTitle' => 'راهنمای سایت‌ها', 'updated' => '۱۴۰۴/۱۲/۰۵', 'id' => 'sites'])
     <p class="font-medium text-gray-800">مدیریت سایت‌های مشتری</p>
     <ul class="list-disc list-inside space-y-1 pr-2">
@@ -11,3 +21,4 @@
         <li>لایسنس و بروزرسانی برای هر سایت از همین بخش قابل مدیریت است.</li>
     </ul>
 @endcomponent
+@endif

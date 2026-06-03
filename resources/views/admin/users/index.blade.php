@@ -338,9 +338,6 @@
     setActiveBtn(30);
 })();
 
-document.addEventListener('alpine:init', () => {
-    Alpine.data('usersIndex', usersIndex);
-});
 </script>
 @endpush
 
@@ -353,4 +350,5 @@ function sortByClick(field) {
     window.location.href = url.toString();
 }
 </script>
+@include('admin.users.guide')
 @endsection

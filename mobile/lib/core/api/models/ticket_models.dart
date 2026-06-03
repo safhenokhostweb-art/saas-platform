@@ -95,8 +95,10 @@ class TicketReply {
   final List<TicketAttachment> attachments;
   final DateTime createdAt;
 
-  bool get isStaff    => authorType == 'staff';
-  bool get isCustomer => authorType == 'customer';
+  bool get isStaff      => authorType == 'staff';
+  bool get isSiteAdmin  => authorType == 'site_admin';
+  bool get isCustomer   => authorType == 'customer';
+  bool get isLeftSide   => authorType == 'staff' || authorType == 'site_admin';
 
   factory TicketReply.fromJson(Map<String, dynamic> j) => TicketReply(
         id:          j['id'] as int? ?? 0,
@@ -121,15 +123,21 @@ class TicketAttachment {
     required this.path,
     required this.size,
     required this.mime,
+    this.url,
   });
 
-  final String name;
-  final String path;
-  final int size;
-  final String mime;
+  final String  name;
+  final String  path;
+  final int     size;
+  final String  mime;
+  final String? url;
 
-  bool get isImage => mime.startsWith('image/');
-  bool get isPdf   => mime == 'application/pdf';
+  bool get isImage => mime.startsWith('image/') ||
+      RegExp(r'\.(jpg|jpeg|png|gif|webp|bmp)$', caseSensitive: false).hasMatch(name);
+  bool get isPdf   => mime == 'application/pdf' || name.toLowerCase().endsWith('.pdf');
+
+  /// URL قابل دانلود (اگر موجود باشد از سرور می‌آید)
+  String? get downloadUrl => url?.isNotEmpty == true ? url : null;
 
   String get sizeLabel {
     if (size < 1024) return '$size B';
@@ -138,10 +146,11 @@ class TicketAttachment {
   }
 
   factory TicketAttachment.fromJson(Map<String, dynamic> j) => TicketAttachment(
-        name: j['name'] as String,
-        path: j['path'] as String,
+        name: (j['name'] as String?) ?? 'فایل',
+        path: (j['path'] as String?) ?? '',
         size: j['size'] as int? ?? 0,
-        mime: j['mime'] as String? ?? 'application/octet-stream',
+        mime: (j['mime'] as String?) ?? 'application/octet-stream',
+        url:  j['url']  as String?,
       );
 }
 

@@ -48,8 +48,9 @@ Route::middleware(['web', 'auth', 'admin'])
         Route::get('/analytics/data', [\SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class, 'data'])->name('analytics.data');
 
         // ─── Wildcard ticket routes (integers only) ───────────────────
-        Route::get('/{id}',       [TicketController::class, 'show'])->name('show')->where('id', '[0-9]+');
-        Route::get('/{id}/poll',  [TicketController::class, 'poll'])->name('poll')->where('id', '[0-9]+');
+        Route::get('/{id}',        [TicketController::class, 'show'])->name('show')->where('id', '[0-9]+');
+        Route::get('/{id}/poll',   [TicketController::class, 'poll'])->name('poll')->where('id', '[0-9]+');
+        Route::delete('/{id}',     [TicketController::class, 'destroy'])->name('destroy')->where('id', '[0-9]+');
 
         // ─── Status / Assignment / Priority ──────────────────────────
         Route::patch('/{id}/status',   [TicketStatusController::class,    'update'])->name('status.update')->where('id', '[0-9]+');

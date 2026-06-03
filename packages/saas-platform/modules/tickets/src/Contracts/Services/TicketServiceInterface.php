@@ -59,5 +59,5 @@ interface TicketServiceInterface
     /**
      * Get ticket statistics.
      */
-    public function getStats(): array;
+    public function getStats(?int $siteId = null, bool $platformOnly = false): array;
 }

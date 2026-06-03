@@ -72,6 +72,14 @@ class UserController extends Controller
     {
         $user = $this->createUserUseCase->execute($request->validated());
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'message'  => "کاربر {$user->mobile} با موفقیت ایجاد شد.",
+                'redirect' => route('admin.users.index'),
+            ]);
+        }
+
         return redirect()->route('admin.users.index')
             ->with('success', "کاربر {$user->mobile} با موفقیت ایجاد شد.");
     }
@@ -142,6 +150,23 @@ class UserController extends Controller
         $this->userRepository->clearCache();
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * حذف تک‌کاربر
+     */
+    public function destroy(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'نمی‌توانید اکانت خودتان را حذف کنید.');
+        }
+
+        $mobile = $user->mobile;
+        $this->deleteUserUseCase->execute($user);
+        $this->userRepository->clearCache();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "کاربر {$mobile} با موفقیت حذف شد.");
     }
 
     /**

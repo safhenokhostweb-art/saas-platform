@@ -107,8 +107,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تیکت با موفقیت ثبت شد.'), backgroundColor: Colors.green),
       );
-      // از go استفاده می‌کنیم تا مشکل pop با object در GoRouter v14 پیش نیاید
-      context.go('/tickets');
+      context.pop();
     }
   }
 

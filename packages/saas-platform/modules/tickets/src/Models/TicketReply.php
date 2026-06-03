@@ -27,8 +27,9 @@ class TicketReply extends Model
         'is_internal' => 'boolean',
     ];
 
-    public const AUTHOR_STAFF = 'staff';
-    public const AUTHOR_CUSTOMER = 'customer';
+    public const AUTHOR_STAFF      = 'staff';
+    public const AUTHOR_CUSTOMER   = 'customer';
+    public const AUTHOR_SITE_ADMIN = 'site_admin';
 
     /**
      * Get the ticket that owns the reply.

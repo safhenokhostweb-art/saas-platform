@@ -1,0 +1,39 @@
+{
+    "name": "Education Module",
+    "module_slug": "education",
+    "version": "1.0.0",
+    "schema_version": "1",
+    "type": "core",
+    "description": "Unified Education & Guidance ecosystem. Covers Articles, Knowledge Base, Walkthroughs, Learning Paths, Release Notes, and contextual Help — serving all platform roles across all tenants.",
+    "namespace": "SaaSPlatform\\Modules\\Education",
+    "provider": "SaaSPlatform\\Modules\\Education\\Providers\\EducationServiceProvider",
+    "compatibility": {
+        "php": "^8.1",
+        "laravel": "^10.0",
+        "saas-platform": ">=1.0.0"
+    },
+    "update_type": "minor",
+    "dependencies": {
+        "packages": [],
+        "modules": []
+    },
+    "publish_tags": [
+        "education-config",
+        "education-views",
+        "education-migrations",
+        "education-manifest",
+        "education-assets"
+    ],
+    "config": {
+        "legacy_kb_compat": true,
+        "search_driver": "fulltext",
+        "walkthroughs_enabled": true,
+        "learning_paths_enabled": true
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "SaaS Platform Team"
+        }
+    ]
+}

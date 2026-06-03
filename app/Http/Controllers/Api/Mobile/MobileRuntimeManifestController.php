@@ -34,8 +34,18 @@ class MobileRuntimeManifestController extends Controller
 
         $manifest = $this->manifestBuilder->build($tenantId, $appVersion, $role);
 
+        // Embed user profile so the client can restore role/identity after restart
+        $userProfile = [
+            'user_id'       => (string) ($user?->id ?? ''),
+            'user_name'     => $user?->name ?? '',
+            'mobile'        => $user?->mobile ?? '',
+            'is_admin'      => (bool) ($user?->is_admin ?? false),
+            'is_site_admin' => (bool) ($user?->is_site_admin ?? false),
+            'site_id'       => $user?->site_id,
+        ];
+
         return response()->json([
-            'data' => $manifest,
+            'data' => array_merge($manifest, $userProfile),
             'meta' => [
                 'tenant_id'   => $tenantId,
                 'role'        => $role,

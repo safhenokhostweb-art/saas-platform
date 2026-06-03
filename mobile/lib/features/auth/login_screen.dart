@@ -38,10 +38,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _initServerUrl() async {
-    final svc = ref.read(secureTokenServiceProvider);
+    final svc   = ref.read(secureTokenServiceProvider);
     final saved = await svc.read(SecureKey.baseUrl);
-    // اگر آدرس ذخیره نشده یا اشتباه است، آدرس پیش‌فرض را تنظیم کن
-    if (saved == null || saved.isEmpty || saved == 'http://customer-site.test') {
+    if (saved == null || saved.isEmpty) {
       await svc.write(SecureKey.baseUrl, AppConfig.defaultServerUrl);
       ref.read(clientApiServiceProvider).setBaseUrl(AppConfig.defaultServerUrl);
     } else {
@@ -401,6 +400,56 @@ class _ServerUrlHint extends ConsumerWidget {
   }
 }
 
+// ─── Quick Server Tile ────────────────────────────────────────────────────────
+
+class _QuickServerTile extends StatelessWidget {
+  const _QuickServerTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: cs.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: cs.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: TextStyle(fontSize: 11, color: cs.outline),
+                      textDirection: TextDirection.ltr),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: cs.outline),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Server URL Sheet ─────────────────────────────────────────────────────────
 
 class _ServerUrlSheet extends ConsumerStatefulWidget {
@@ -426,66 +475,81 @@ class _ServerUrlSheetState extends ConsumerState<_ServerUrlSheet> {
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
 
+  Future<void> _save(BuildContext context, String url) async {
+    if (url.trim().isEmpty) return;
+    final svc = ref.read(secureTokenServiceProvider);
+    await svc.write(SecureKey.baseUrl, url.trim());
+    ref.read(clientApiServiceProvider).setBaseUrl(url.trim());
+    if (context.mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 20,
-          MediaQuery.of(context).viewInsets.bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2))),
-          ),
-          const SizedBox(height: 16),
-          const Text('آدرس سرور', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          const Text('این تنظیم توسط مدیر سیستم پیکربندی می‌شود.',
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _ctrl,
-            textDirection: TextDirection.ltr,
-            decoration: InputDecoration(
-              labelText: 'آدرس سرور',
-              hintText: 'https://platform.example.com',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Icons.dns_outlined),
+          MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2))),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () async {
-                  final svc = ref.read(secureTokenServiceProvider);
-                  await svc.write(SecureKey.baseUrl, AppConfig.defaultServerUrl);
-                  ref.read(clientApiServiceProvider).setBaseUrl(AppConfig.defaultServerUrl);
-                  setState(() => _ctrl.text = AppConfig.defaultServerUrl);
-                  if (context.mounted) Navigator.pop(context);
-                },
-                child: const Text('بازنشانی'),
+            const SizedBox(height: 16),
+            const Text('انتخاب سرور', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('بسته به نوع کاربری خود سرور مناسب را انتخاب کنید.',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 16),
+
+            // ── گزینه‌های سریع ───────────────────────────────────────────
+            _QuickServerTile(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'ادمین پلتفرم / ادمین سایت',
+              subtitle: AppConfig.defaultServerUrl,
+              onTap: () => _save(context, AppConfig.defaultServerUrl),
+            ),
+            const SizedBox(height: 8),
+            _QuickServerTile(
+              icon: Icons.person_outlined,
+              title: 'کاربر نهایی (سایت مشتری)',
+              subtitle: 'http://customer-site.test',
+              onTap: () => _save(context, 'http://customer-site.test'),
+            ),
+            const SizedBox(height: 16),
+
+            const Divider(),
+            const SizedBox(height: 8),
+            const Text('یا آدرس سفارشی وارد کنید:',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 8),
+
+            // ── ورود دستی ────────────────────────────────────────────────
+            TextField(
+              controller: _ctrl,
+              textDirection: TextDirection.ltr,
+              decoration: InputDecoration(
+                labelText: 'آدرس سرور',
+                hintText: 'https://your-server.com',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.dns_outlined),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: () async {
-                  final url = _ctrl.text.trim();
-                  if (url.isEmpty) return;
-                  final svc = ref.read(secureTokenServiceProvider);
-                  await svc.write(SecureKey.baseUrl, url);
-                  ref.read(clientApiServiceProvider).setBaseUrl(url);
-                  if (context.mounted) Navigator.pop(context);
-                },
-                child: const Text('ذخیره'),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.save_outlined, size: 18),
+                label: const Text('ذخیره آدرس'),
+                onPressed: () => _save(context, _ctrl.text),
               ),
             ),
-          ]),
-        ],
+          ],
+        ),
       ),
     );
   }

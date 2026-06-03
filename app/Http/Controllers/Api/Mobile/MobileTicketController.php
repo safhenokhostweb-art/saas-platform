@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
 use SaaSPlatform\Modules\Tickets\Models\Ticket;
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
+use SaaSPlatform\Modules\Tickets\Services\TicketNotificationService;
 
 /**
  * SP-2.0 — Mobile Ticket API
@@ -20,7 +21,8 @@ use SaaSPlatform\Modules\Tickets\Models\TicketReply;
 class MobileTicketController extends Controller
 {
     public function __construct(
-        private readonly TicketServiceInterface $ticketService
+        private readonly TicketServiceInterface $ticketService,
+        private readonly TicketNotificationService $notificationService,
     ) {}
 
     // ── GET /api/mobile/tickets ────────────────────────────────────────────
@@ -104,6 +106,8 @@ class MobileTicketController extends Controller
             'site_id'         => $user->site_id, // همیشه site کاربر
         ]);
 
+        $this->notificationService->onCreated($ticket);
+
         return response()->json([
             'data'    => $this->ticketDetail($ticket),
             'message' => 'تیکت با موفقیت ثبت شد.',
@@ -122,19 +126,35 @@ class MobileTicketController extends Controller
         }
 
         $validated = $request->validate([
-            'message'     => ['required', 'string'],
+            'message'     => ['nullable', 'string'],
             'is_internal' => ['nullable', 'boolean'],
+            'files.*'     => ['nullable', 'file', 'max:10240',
+                              'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,zip,txt'],
         ]);
 
-        $role = $this->getUserRole($user);
+        if (empty($validated['message']) && !$request->hasFile('files')) {
+            return response()->json(['message' => 'پیام یا فایل الزامی است.'], 422);
+        }
+
+        $role  = $this->getUserRole($user);
+        $files = $request->hasFile('files')
+            ? array_values(array_filter((array) $request->file('files')))
+            : null;
+
+        $authorType = match($role) {
+            'end_user'       => TicketReply::AUTHOR_CUSTOMER,
+            'site_admin'     => TicketReply::AUTHOR_SITE_ADMIN,
+            'platform_admin' => TicketReply::AUTHOR_STAFF,
+            default          => TicketReply::AUTHOR_STAFF,
+        };
 
         $ticket = $this->ticketService->addReply($ticket, [
-            'message'       => $validated['message'],
-            'author_type'   => $role === 'end_user' ? TicketReply::AUTHOR_CUSTOMER : TicketReply::AUTHOR_STAFF,
+            'message'       => $validated['message'] ?? '',
+            'author_type'   => $authorType,
             'user_id'       => $user->id,
             'customer_name' => $user->mobile ?? ($role === 'end_user' ? 'مشتری' : 'پشتیبان'),
             'is_internal'   => $validated['is_internal'] ?? false,
-        ]);
+        ], $files ?: null);
 
         return response()->json([
             'data'    => $this->ticketDetail($ticket),
@@ -329,7 +349,7 @@ class MobileTicketController extends Controller
         return array_merge($this->ticketSummary($ticket), [
             'description'       => $ticket->description,
             'tags'              => $ticket->tags,
-            'attachments'       => $ticket->attachments ?? [],
+            'attachments'       => $this->resolveAttachmentUrls($ticket->id, $ticket->attachments ?? []),
             'closed_at'         => $ticket->closed_at?->toIso8601String(),
             'first_response_at' => $ticket->first_response_at?->toIso8601String(),
             'resolved_at'       => $ticket->resolved_at?->toIso8601String(),
@@ -345,10 +365,24 @@ class MobileTicketController extends Controller
             'id'          => $reply->id,
             'message'     => $reply->message,
             'author_type' => $reply->author_type,
-            'author_name' => $reply->customer_name ?? ($reply->author_type === 'staff' ? 'پشتیبان' : 'مشتری'),
+            'author_name' => $reply->customer_name ?? match($reply->author_type) {
+                'staff'      => 'پشتیبان',
+                'site_admin' => 'ادمین سایت',
+                default      => 'مشتری',
+            },
             'is_internal' => (bool) ($reply->is_internal ?? false),
-            'attachments' => $reply->attachments ?? [],
+            'attachments' => $this->resolveAttachmentUrls($reply->ticket_id, $reply->attachments ?? []),
             'created_at'  => $reply->created_at?->toIso8601String(),
         ];
+    }
+
+    private function resolveAttachmentUrls(int $ticketId, array $attachments): array
+    {
+        return array_map(function ($att) use ($ticketId) {
+            if (!empty($att['path'])) {
+                $att['url'] = url("/api/mobile/tickets/{$ticketId}/attachments/" . ltrim($att['path'], '/'));
+            }
+            return $att;
+        }, $attachments);
     }
 }

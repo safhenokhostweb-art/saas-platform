@@ -1,3 +1,13 @@
+@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+    @php $eduArticle = $eduGuides->first(); @endphp
+    @component('admin.partials.module-guide-box', [
+        'guideTitle' => $eduArticle->title,
+        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'id'         => 'payment-gateways',
+    ])
+        {!! $eduArticle->body !!}
+    @endcomponent
+@else
 @component('admin.partials.module-guide-box', [
     'guideTitle' => 'راهنمای درگاه‌های پرداخت بانکی',
     'updated' => '۱۴۰۴/۱۲/۰۵',
@@ -11,3 +21,4 @@
     <li><strong>حالت سندباکس:</strong> برای تست بدون پرداخت واقعی فعال کنید.</li>
 </ul>
 @endcomponent
+@endif

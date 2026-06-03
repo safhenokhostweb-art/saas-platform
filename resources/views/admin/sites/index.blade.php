@@ -77,4 +77,5 @@
         </table>
     </div>
 </div>
+@include('admin.sites.guide')
 @endsection
