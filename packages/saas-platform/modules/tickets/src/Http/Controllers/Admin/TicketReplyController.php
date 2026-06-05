@@ -8,6 +8,7 @@ use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterfac
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
 use SaaSPlatform\Modules\Tickets\Services\TicketNotificationService;
+use SaaSPlatform\Modules\Tickets\Services\TicketPushService;
 use SaaSPlatform\Modules\Tickets\Http\Requests\Admin\StoreTicketReplyRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -22,6 +23,7 @@ class TicketReplyController extends Controller
         protected TicketRepositoryInterface $ticketRepository,
         protected TicketGateService         $gateService,
         protected TicketNotificationService $notificationService,
+        protected TicketPushService         $pushService,
     ) {}
 
     public function store(StoreTicketReplyRequest $request, int $ticketId)
@@ -46,9 +48,18 @@ class TicketReplyController extends Controller
         $lastReply = $updatedTicket->replies->last();
         if ($lastReply) {
             $this->notificationService->onReplyAdded($updatedTicket, $lastReply);
+            // Section E: Web Push to all subscribed admins
+            $this->pushService->notifyNewReply($updatedTicket, $lastReply);
         }
 
         if ($request->ajax() || $request->wantsJson()) {
+            $attachments = collect($lastReply?->attachments ?? [])->map(function ($att) {
+                if (empty($att['url']) && !empty($att['path'])) {
+                    $att['url'] = route('tickets.admin.attachment.download', ['path' => $att['path']]);
+                }
+                return $att;
+            })->values()->all();
+
             return response()->json([
                 'success' => true,
                 'reply'   => $lastReply ? [
@@ -58,7 +69,7 @@ class TicketReplyController extends Controller
                     'author_name' => auth()->user()?->name ?? 'پشتیبان',
                     'is_internal' => (bool) ($lastReply->is_internal ?? false),
                     'created_at'  => $lastReply->created_at->toIso8601String(),
-                    'attachments' => $lastReply->attachments ?? [],
+                    'attachments' => $attachments,
                 ] : null,
             ]);
         }

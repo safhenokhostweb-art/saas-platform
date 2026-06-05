@@ -28,8 +28,13 @@ class TicketSubmissionController extends Controller
             abort(403);
         }
 
+        $userModel = config('tickets.user_model', \App\Models\User::class);
+        $users     = collect(); // default: empty (site admins pass real users via their own controller)
+
         return view('tickets::site.tickets.create', [
-            'attachmentsEnabled' => $this->gateService->canUploadAttachments(),
+            'attachmentsEnabled'  => $this->gateService->canUploadAttachments(),
+            'users'               => $users,
+            'isSiteAdminContext'  => (bool) (auth()->user()?->is_site_admin ?? false),
         ]);
     }
 
@@ -41,7 +46,15 @@ class TicketSubmissionController extends Controller
             abort(403);
         }
 
-        $data = array_merge($request->validated(), [
+        $validated = $request->validated();
+
+        // customer-site form uses 'message'; canonical model needs 'description'
+        if (empty($validated['description']) && !empty($validated['message'])) {
+            $validated['description'] = $validated['message'];
+        }
+        unset($validated['message']);
+
+        $data = array_merge($validated, [
             'customer_mobile' => auth()->user()->mobile,
             'customer_name'   => auth()->user()->name,
         ]);

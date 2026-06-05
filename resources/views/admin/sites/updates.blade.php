@@ -11,10 +11,6 @@
         → توزیع بروزرسانی
     </p>
 
-    @if (session('success'))
-        <div class="alert alert-success mb-4">{{ session('success') }}</div>
-    @endif
-
     <div class="card p-4 shadow-sm rounded-xl mb-4">
         <h5 class="font-bold mb-3">ثبت توزیع بروزرسانی جدید</h5>
         <form method="POST" action="{{ route('admin.sites.updates.store', $site) }}">

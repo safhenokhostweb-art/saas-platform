@@ -3,16 +3,6 @@
 @section('header', 'لایسنس‌های ماژول')
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger mb-4">{{ session('error') }}</div>
-@endif
-@if(session('info'))
-    <div class="alert alert-info mb-4">{{ session('info') }}</div>
-@endif
-
 <form method="get" class="mb-4 flex flex-wrap gap-2 items-end">
     <select name="site_id" class="form-control w-auto">
         <option value="">همهٔ سایت‌ها</option>

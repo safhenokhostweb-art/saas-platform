@@ -3,10 +3,6 @@
 @section('header', 'ویرایش تم: ' . $theme->name)
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-
 <div class="flex flex-wrap gap-2 items-center mb-4">
     <a href="{{ route('admin.theme-builder.index') }}" class="btn btn-outline-secondary">← فهرست تم‌ها</a>
     <a href="{{ route('admin.theme-builder.export', $theme) }}" class="btn btn-outline-secondary">خروجی JSON</a>

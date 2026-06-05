@@ -4,10 +4,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">{{ session('success') }}</div>
-@endif
-
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
     {{-- List --}}

@@ -8,10 +8,6 @@
         <a href="{{ route('admin.sites.index') }}" class="text-indigo-600 hover:underline">← بازگشت به سایت‌ها</a>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success mb-4">{{ session('success') }}</div>
-    @endif
-
     {{-- خلاصه --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow p-4">

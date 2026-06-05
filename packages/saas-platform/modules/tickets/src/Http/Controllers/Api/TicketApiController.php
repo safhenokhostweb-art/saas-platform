@@ -8,7 +8,9 @@ use Illuminate\Routing\Controller;
 use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
 use SaaSPlatform\Modules\Tickets\Contracts\Repositories\TicketRepositoryInterface;
 use SaaSPlatform\Modules\Tickets\Services\TicketGateService;
+use SaaSPlatform\Modules\Tickets\Models\Ticket;
 use SaaSPlatform\Modules\Tickets\Models\TicketReply;
+use SaaSPlatform\Modules\Tickets\Models\TicketVote;
 
 /**
  * PHASE 7.1 — TASK 3: Ticket API Controller (canonical)
@@ -55,18 +57,49 @@ class TicketApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'subject'       => ['required', 'string', 'max:255'],
-            'description'   => ['required', 'string'],
-            'priority'      => ['nullable', 'in:low,normal,high'],
-            'site_id'       => ['nullable', 'integer'],
-            'category'      => ['nullable', 'string'],
-            'customer_mobile' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
-            'customer_name'   => ['nullable', 'string'],
+            'subject'        => ['required', 'string', 'max:255'],
+            'description'    => ['required', 'string'],
+            'priority'       => ['nullable', 'in:low,normal,high'],
+            'site_id'        => ['nullable', 'integer'],
+            'category'       => ['nullable', 'string'],
+            'type'           => ['nullable', 'in:support,feature_request'],
+            'customer_mobile'=> ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
+            'customer_name'  => ['nullable', 'string'],
         ]);
 
         $ticket = $this->ticketService->create($validated);
 
         return response()->json(['data' => $ticket], 201);
+    }
+
+    public function updateStatus(Request $request, int $id): JsonResponse
+    {
+        $ticket = $this->ticketRepository->findById($id);
+        if (!$ticket) {
+            return response()->json(['error' => 'Ticket not found.'], 404);
+        }
+        $validated = $request->validate(['status' => ['required', 'in:open,in_progress,closed']]);
+        $ticket    = $this->ticketService->updateStatus($ticket, $validated['status']);
+        return response()->json(['data' => $ticket]);
+    }
+
+    public function vote(Request $request, int $id): JsonResponse
+    {
+        $ticket = Ticket::withoutTenantIsolation()->findOrFail($id);
+        if (!$ticket->isFeatureRequest()) {
+            return response()->json(['error' => 'Only feature requests can be voted.'], 422);
+        }
+        $userId = auth()->id();
+        $mobile = $request->user()?->mobile;
+        $existing = TicketVote::where('ticket_id', $ticket->id)
+            ->where(fn($q) => $q->where('voter_id', $userId)->when($mobile, fn($q2) => $q2->orWhere('voter_mobile', $mobile)))
+            ->first();
+        if ($existing) {
+            $existing->delete();
+            return response()->json(['voted' => false, 'vote_count' => $ticket->votes()->count()]);
+        }
+        TicketVote::create(['ticket_id' => $ticket->id, 'voter_id' => $userId, 'voter_mobile' => $mobile]);
+        return response()->json(['voted' => true, 'vote_count' => $ticket->votes()->count()]);
     }
 
     public function addReply(Request $request, int $id): JsonResponse

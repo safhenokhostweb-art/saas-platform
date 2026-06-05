@@ -7,16 +7,6 @@
     <p>لیست لایسنس‌های صادرشده برای سایت‌های مشتری. کلید لایسنس فقط یک‌بار هنگام صدور نمایش داده می‌شود. برای صدور لایسنس جدید، از منوی <strong>سایت‌ها</strong> وارد سایت موردنظر شوید و از لینک «لایسنس» استفاده کنید. از این صفحه می‌توانید لایسنس را <strong>غیرفعال (ابطال)</strong> یا دوباره <strong>فعال</strong> کنید؛ لایسنس‌های ابطال‌شده را می‌توان حذف دائمی کرد.</p>
 @endcomponent
 
-@if(session('success'))
-    <div class="alert alert-success mt-4">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger mt-4">{{ session('error') }}</div>
-@endif
-@if(session('info'))
-    <div class="alert alert-info mt-4">{{ session('info') }}</div>
-@endif
-
 <div class="flex flex-wrap gap-2 mt-4 mb-4">
     <a href="{{ route('admin.licenses.index') }}" class="px-3 py-1.5 rounded text-sm {{ !request('status') ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">همه</a>
     <a href="{{ route('admin.licenses.index', ['status' => 'active']) }}" class="px-3 py-1.5 rounded text-sm {{ request('status') === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">فعال</a>

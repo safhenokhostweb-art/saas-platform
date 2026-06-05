@@ -11,6 +11,8 @@ use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSettingsController
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSmsController;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketSiteAssignController;
 use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAdminAttachmentController;
+use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\PushSubscriptionController;
+use SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\FeatureRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,10 +35,11 @@ Route::middleware(['web', 'auth', 'admin'])
         Route::get('/sla/dashboard', [TicketSlaController::class, 'index'])->name('sla.index');
 
         // ─── Core ticket CRUD (static routes before wildcard /{id}) ──
-        Route::get('/',       [TicketController::class, 'index'])->name('index');
-        Route::get('/create', [TicketController::class, 'create'])->name('create');
-        Route::post('/',      [TicketController::class, 'store'])->name('store');
-        Route::post('/bulk',  [TicketController::class, 'bulkAction'])->name('bulk');
+        Route::get('/',            [TicketController::class, 'index'])->name('index');
+        Route::get('/create',      [TicketController::class, 'create'])->name('create');
+        Route::post('/',           [TicketController::class, 'store'])->name('store');
+        Route::post('/bulk',       [TicketController::class, 'bulkAction'])->name('bulk');
+        Route::get('/check-new',   [TicketController::class, 'checkNew'])->name('check.new');
 
         // ─── Attachments (private disk streaming) ────────────────────
         Route::get('/attachments/{path}', [TicketAdminAttachmentController::class, 'download'])
@@ -64,4 +67,14 @@ Route::middleware(['web', 'auth', 'admin'])
         // ─── SMS ─────────────────────────────────────────────────────
         Route::post('/{id}/sms',          [TicketSmsController::class, 'send'])->name('sms.send')->where('id', '[0-9]+');
         Route::get('/{id}/sms/templates', [TicketSmsController::class, 'templates'])->name('sms.templates')->where('id', '[0-9]+');
+
+        // ─── Section E: Web Push subscriptions ───────────────────────
+        Route::post('/push/subscribe',   [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+        Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
+        Route::get('/push/vapid-key',    [PushSubscriptionController::class, 'vapidKey'])->name('push.vapid_key');
+
+        // ─── Section K: Feature Request workflow ─────────────────────
+        Route::patch('/feature-requests/{id}/status', [FeatureRequestController::class, 'updateStatus'])->name('fr.status.update')->where('id', '[0-9]+');
+        Route::post('/feature-requests/{id}/vote',    [FeatureRequestController::class, 'vote'])->name('fr.vote')->where('id', '[0-9]+');
+        Route::get('/feature-requests',               [FeatureRequestController::class, 'index'])->name('fr.index');
     });

@@ -4,9 +4,6 @@
 
 @section('content')
 @include('admin.reseller-commissions.guide')
-@if(session('success'))<div class="alert alert-success mt-2">{{ session('success') }}</div>@endif
-@if(session('error'))<div class="alert alert-danger mt-2">{{ session('error') }}</div>@endif
-
 <div class="card p-4 mb-4">
     <strong>جمع کمیسیون در انتظار:</strong> <span class="text-amber-600 font-bold">{{ \App\Helpers\NumberHelper::formatFa($totalPending) }} ریال</span>
 </div>

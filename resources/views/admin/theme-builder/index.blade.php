@@ -29,13 +29,6 @@
     </form>
 </div>
 
-@if(session('success'))
-    <div class="mt-4 alert alert-success">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-    <div class="mt-4 alert alert-danger">{{ session('error') }}</div>
-@endif
-
 <div class="mt-4 bg-white rounded shadow overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50">

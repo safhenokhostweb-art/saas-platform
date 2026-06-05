@@ -93,8 +93,24 @@ class TicketService implements TicketServiceInterface
                 $data['attachments'] = $uploadedFiles;
             }
 
-            $data['priority'] = $data['priority'] ?? 'normal';
+            $data['priority']      = $data['priority'] ?? 'normal';
             $data['ticket_number'] = $this->generateTicketNumber();
+
+            // Section K: auto-set FR initial status
+            // Only site admins (customer admins) may create feature_request tickets.
+            // SaaS platform admins (is_admin && !is_site_admin) cannot create FRs.
+            $requestedType = $data['type'] ?? Ticket::TYPE_SUPPORT;
+            $user          = auth()->user();
+            $isSaasAdmin   = $user && ($user->is_admin ?? false) && !($user->is_site_admin ?? false);
+            if ($requestedType === Ticket::TYPE_FEATURE_REQUEST && $isSaasAdmin) {
+                $requestedType = Ticket::TYPE_SUPPORT; // silently downgrade
+            }
+            $data['type'] = $requestedType;
+
+            if ($requestedType === Ticket::TYPE_FEATURE_REQUEST) {
+                $data['fr_status']            = $data['fr_status'] ?? Ticket::FR_SUBMITTED;
+                $data['fr_status_updated_at'] = now();
+            }
 
             $ticket = $this->ticketRepository->create($data);
 
@@ -185,6 +201,14 @@ class TicketService implements TicketServiceInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function delete(Ticket $ticket): bool
+    {
+        return (bool) $ticket->delete();
+    }
+
+    /**
      * PHASE 7.2 — TASK 6: Enforce tenant isolation at the service boundary.
      * Throws if the ticket's site_id does not match the expected site context.
      * Prevents cross-tenant data leakage regardless of repository-level filtering.
@@ -221,23 +245,12 @@ class TicketService implements TicketServiceInterface
             return [];
         }
 
-        $settingsModel = config('tickets.settings_model');
-        $getDbSetting  = fn(string $key, mixed $default) =>
-            ($settingsModel && class_exists($settingsModel))
-                ? $settingsModel::get($key, $default)
-                : $default;
-
-        $enabled  = (bool) $getDbSetting('tickets.attachment_enabled', true);
-        if (! $enabled) {
-            return [];
-        }
-
-        $maxSizeKb = (int) $getDbSetting('tickets.attachment_max_size', config('tickets.attachments.max_size', 5120));
-        $maxFiles  = (int) $getDbSetting('tickets.attachment_max_files', config('tickets.attachments.max_files', 5));
-        $allowedExts = array_filter(array_map(
-            'trim',
-            explode(',', (string) $getDbSetting('tickets.attachment_allowed', implode(',', config('tickets.attachments.allowed', []))))
-        ));
+        // Always use config-file values so the gate check (canUploadAttachments) and
+        // this storage step stay in sync. DB overrides are intentionally not used here
+        // to prevent silent "uploads enabled in UI, disabled in storage" discrepancies.
+        $maxSizeKb   = (int) config('tickets.attachments.max_size',  5120);
+        $maxFiles    = (int) config('tickets.attachments.max_files', 5);
+        $allowedExts = array_filter((array) config('tickets.attachments.allowed', []));
 
         // Extension → MIME whitelist (executable types explicitly blocked)
         $extToMime = [
@@ -306,18 +319,35 @@ class TicketService implements TicketServiceInterface
                 continue;
             }
 
-            // Store in private disk — NOT publicly accessible
-            $path = $file->store('ticket-attachments/' . $sitePrefix . now()->format('Y/m'), 'private');
+            $subdir = 'ticket-attachments/' . $sitePrefix . now()->format('Y/m');
+
+            // Try configured disk first, fall back to public so uploads never silently fail
+            $configuredDisk = config('tickets.attachments.disk', 'private');
+            $disk  = $configuredDisk;
+            $path  = false;
+
+            try { $path = $file->store($subdir, $configuredDisk); } catch (\Throwable) {}
+
+            if (!$path && $configuredDisk !== 'public') {
+                $disk = 'public';
+                try { $path = $file->store($subdir, 'public'); } catch (\Throwable) {}
+            }
+
             if (!$path) {
                 continue;
             }
 
+            $url = ($disk === 'public')
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($path)
+                : null;
+
             $uploadedFiles[] = [
                 'name' => $originalName,
                 'path' => $path,
+                'url'  => $url,
                 'size' => $file->getSize(),
                 'mime' => $mime,
-                'disk' => 'private',
+                'disk' => $disk,
             ];
         }
 

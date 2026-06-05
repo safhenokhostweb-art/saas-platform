@@ -18,6 +18,7 @@ class StoreTicketRequest extends FormRequest
             'customer_mobile' => ['nullable', 'string', 'regex:/^09[0-9]{9}$/'],
             'customer_name'   => ['nullable', 'string', 'max:255'],
             'category'       => ['nullable', 'string', 'max:100'],
+            'type'           => ['nullable', 'string', 'in:support,feature_request'],
             'for_user_id'     => ['nullable', 'integer'],
             'for_customer_id' => ['nullable', 'integer'],
             'initial_note'   => ['nullable', 'string', 'max:5000'],

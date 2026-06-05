@@ -30,6 +30,15 @@ document.addEventListener('alpine:init', () => {
         notifPerm: ('Notification' in window) ? Notification.permission : 'unsupported',
         _polling: false,
         _toastTimer: null,
+        _pageLoadMaxId: 0,
+        _lastSoundAt: 0,
+        _seenIds: null,
+
+        // Section G — in-page alerts
+        unreadCount: 0,
+        soundMuted: false,
+        notifBannerDismissed: false,
+
         convSearch: '',
         selectedFiles: [],
         _rawFiles: [],
@@ -86,14 +95,47 @@ document.addEventListener('alpine:init', () => {
         },
         enableNotifications() {
             if ('Notification' in window) {
-                Notification.requestPermission().then(p => { this.notifPerm = p; });
+                Notification.requestPermission().then(p => {
+                    this.notifPerm = p;
+                    if (p === 'granted') {
+                        window.dispatchEvent(new Event('sp:notif-granted'));
+                    }
+                });
             }
         },
         init() {
             this.$nextTick(() => this.scrollDown());
-            this.pollLastId = parseInt(this.$el.dataset.pollLastId || '0', 10);
+
+            // Set the page-load baseline — replies already on page must NEVER trigger notifications
+            const rawLastId = parseInt(this.$el.dataset.pollLastId || '0', 10);
+            this.pollLastId      = rawLastId;
+            this._pageLoadMaxId  = rawLastId;   // immutable — never reassigned after init
+            this._seenIds        = new Set();
+
+            // Populate _seenIds from any reply IDs embedded in the DOM
+            // Each rendered reply bubble has data-reply-id to let us track them
+            this.$el.querySelectorAll('[data-reply-id]').forEach(el => {
+                const rid = parseInt(el.dataset.replyId, 10);
+                if (rid > 0) this._seenIds.add(rid);
+            });
+
+            // Restore mute preference from localStorage
+            this.soundMuted = localStorage.getItem('sp_ticket_mute') === '1';
+
+            // Guard: never start two timers if Alpine re-inits this component
+            if (this.pollTimer) clearInterval(this.pollTimer);
             this.pollTimer = setInterval(() => this.doPoll(), 4000);
             window.addEventListener('beforeunload', () => clearInterval(this.pollTimer));
+
+            // Reset unread counter when tab becomes active
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) { this.unreadCount = 0; document.title = document.title.replace(/^\(\d+\)\s*/, ''); }
+            });
+        },
+
+        toggleMute() {
+            this.soundMuted = !this.soundMuted;
+            localStorage.setItem('sp_ticket_mute', this.soundMuted ? '1' : '0');
         },
         async doPoll() {
             if (this._polling) return;
@@ -147,8 +189,14 @@ document.addEventListener('alpine:init', () => {
             finally { this.isSending = false; }
         },
         appendReply(r) {
+            // Guard 1: never process a reply with ID ≤ page-load baseline
+            if (r.id && r.id <= this._pageLoadMaxId) return;
+            // Guard 2: never process a reply already seen this session
+            if (r.id && this._seenIds && this._seenIds.has(r.id)) return;
+            // Guard 3: classic watermark dedup
             if (r.id && r.id <= this.pollLastId) return;
             if (r.id && r.id > this.pollLastId) this.pollLastId = r.id;
+            if (r.id) { if (this._seenIds) this._seenIds.add(r.id); }
             const container = this.$refs.chatMessages;
             if (!container) return;
 
@@ -214,31 +262,63 @@ document.addEventListener('alpine:init', () => {
             if (r.author_type === 'customer') this.notify(r.author_name || 'مشتری', r.message);
         },
         playSound() {
+            if (this.soundMuted) return;
+            // Hard cooldown: max 1 sound per 8 seconds to prevent spam
+            const now = Date.now();
+            if (now - this._lastSoundAt < 8000) return;
+            this._lastSoundAt = now;
+
+            if (window.CS) { window.CS.play('receive'); return; }
+            // fallback: cached AudioContext
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const o = ctx.createOscillator();
-                const g = ctx.createGain();
+                if (!window._spACtx) {
+                    window._spACtx = new (window.AudioContext || window.webkitAudioContext)();
+                    document.addEventListener('click', () => { if (window._spACtx?.state === 'suspended') window._spACtx.resume(); }, { once: true });
+                }
+                const ctx = window._spACtx;
+                if (ctx.state === 'suspended') { ctx.resume(); return; }
+                const o = ctx.createOscillator(), g = ctx.createGain();
                 o.connect(g); g.connect(ctx.destination);
                 o.type = 'sine'; o.frequency.value = 520;
                 g.gain.setValueAtTime(0, ctx.currentTime);
                 g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
                 g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.5);
+                o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.55);
             } catch(e) {}
         },
         notify(from, body) {
             this.playSound();
+
+            // Section G: increment unread counter + animate header badge
+            this.unreadCount++;
+            const badge = document.getElementById('sp-unread-badge');
+            if (badge) {
+                badge.textContent = this.unreadCount;
+                badge.classList.remove('hidden');
+                badge.classList.add('animate-bounce');
+                setTimeout(() => badge.classList.remove('animate-bounce'), 1200);
+            }
+
+            // Toast
             this.toastText = 'پیام جدید از ' + from;
             this.showToast = true;
             clearTimeout(this._toastTimer);
             this._toastTimer = setTimeout(() => { this.showToast = false; }, 6000);
+
+            // Title badge (update when window not focused)
+            const baseTitle = document.title.replace(/^\(\d+\)\s*/, '');
+            document.title = '(' + this.unreadCount + ') ' + baseTitle;
+            if (document.hidden) {
+                // Reset on focus is handled in init's visibilitychange listener
+            }
+
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('تیکت پشتیبانی — پیام جدید', {
-                    body: (body || '').substring(0, 120),
-                    icon: '/favicon.ico',
-                    dir: 'rtl',
-                    tag: 'ticket-reply'
-                });
+                try {
+                    new Notification('تیکت پشتیبانی — پیام جدید', {
+                        body: (body || '').substring(0, 120),
+                        icon: '/favicon.ico', dir: 'rtl', tag: 'ticket-reply'
+                    });
+                } catch(e) {}
             }
         }
     }));
@@ -286,6 +366,51 @@ document.addEventListener('alpine:init', () => {
      data-poll-url="{{ route('tickets.admin.poll', $ticket->id) }}"
      data-poll-last-id="{{ $ticket->replies->last()?->id ?? 0 }}"
      x-data="ticketChat">
+
+    {{-- Section D: Smart notification permission onboarding banner --}}
+    <div x-show="notifPerm === 'default' && !notifBannerDismissed"
+         x-transition
+         class="fixed bottom-4 left-4 z-50 max-w-sm bg-white border border-indigo-200 rounded-2xl shadow-xl p-4 flex items-start gap-3"
+         style="display:none">
+        <div class="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm font-bold text-gray-800">دریافت اعلان‌های فوری</p>
+            <p class="text-xs text-gray-500 mt-0.5">تا پیام مشتری را از دست ندهید، اعلان مرورگر را فعال کنید.</p>
+            <div class="flex gap-2 mt-2.5">
+                <button @click="enableNotifications(); notifBannerDismissed=true"
+                        class="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all">
+                    🔔 فعال‌سازی
+                </button>
+                <button @click="notifBannerDismissed=true"
+                        class="px-3 py-1.5 rounded-xl text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all">
+                    بعداً
+                </button>
+            </div>
+        </div>
+        <button @click="notifBannerDismissed=true" class="text-gray-400 hover:text-gray-600 -mt-1 -mr-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    {{-- Section D: Permission denied — guided recovery banner --}}
+    <div x-show="notifPerm === 'denied' && !notifBannerDismissed"
+         x-transition
+         class="fixed bottom-4 left-4 z-50 max-w-sm bg-red-50 border border-red-200 rounded-2xl shadow-xl p-4 flex items-start gap-3"
+         style="display:none">
+        <div class="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 text-lg">🔕</div>
+        <div class="flex-1">
+            <p class="text-sm font-bold text-red-800">اعلان‌ها مسدود شده‌اند</p>
+            <p class="text-xs text-red-600 mt-0.5">برای فعال‌سازی: آیکون قفل در نوار آدرس → اعلان‌ها → مجاز</p>
+            <div class="flex gap-2 mt-2.5">
+                <button @click="notifBannerDismissed=true"
+                        class="px-3 py-1.5 rounded-xl text-xs font-medium text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-all">
+                    متوجه شدم
+                </button>
+            </div>
+        </div>
+    </div>
 
     {{-- Real-time toast notification --}}
     <div x-show="showToast" x-transition
@@ -367,6 +492,12 @@ document.addEventListener('alpine:init', () => {
                         @elseif($ticket->status==='in_progress')<span class="tkt-badge bg-blue-50 text-blue-700 border-blue-200 !text-[10px] !py-0"><span class="pdot bg-blue-400"></span>در بررسی</span>
                         @else<span class="tkt-badge bg-green-50 text-green-700 border-green-200 !text-[10px] !py-0">بسته</span>@endif
                         @if($ticket->priority==='high')<span class="tkt-badge bg-red-50 text-red-600 border-red-200 !text-[10px] !py-0">فوری</span>@endif
+                        @if($ticket->isFeatureRequest())
+                            <span class="tkt-badge bg-purple-50 text-purple-700 border-purple-200 !text-[10px] !py-0">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                درخواست ویژگی
+                            </span>
+                        @endif
                         @if($ticket->customer_name)<span class="text-[10px] text-slate-500">{{ $ticket->customer_name }}</span>@endif
                     </div>
                 </div>
@@ -428,17 +559,52 @@ document.addEventListener('alpine:init', () => {
                                 @endif
                             </div>
                         </div>
-                        {{-- Real-time status indicator --}}
+                        {{-- Real-time status indicator + Section G controls --}}
                         <div class="mr-auto flex items-center gap-2 flex-wrap">
+                            {{-- Unread counter badge --}}
+                            <div class="relative inline-flex items-center">
+                                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                                <span id="sp-unread-badge"
+                                      class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center"
+                                      x-text="unreadCount"
+                                      :class="unreadCount > 0 ? '' : 'hidden'"
+                                      x-show="unreadCount > 0"></span>
+                            </div>
+
                             <div class="flex items-center gap-1.5 text-xs text-gray-400">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                                <span>به‌روزرسانی خودکار هر ۴ ثانیه</span>
+                                <span>زنده</span>
                             </div>
+
+                            {{-- Mute toggle --}}
+                            <button @click="toggleMute()"
+                                    :title="soundMuted ? 'صدا خاموش است — کلیک برای روشن کردن' : 'خاموش کردن صدا'"
+                                    class="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border transition-all"
+                                    :class="soundMuted ? 'bg-red-50 text-red-500 border-red-200' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'">
+                                <template x-if="!soundMuted">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m0 0L9 16m3 2l3-2m-3-8V4L9 8H5a1 1 0 00-1 1v6a1 1 0 001 1h4l3 4V6z"/></svg>
+                                </template>
+                                <template x-if="soundMuted">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zm8.707-3.293a4 4 0 000-5.656M17 3L3 21"/></svg>
+                                </template>
+                                <span x-text="soundMuted ? 'صدا خاموش' : 'صدا'"></span>
+                            </button>
+
+                            {{-- Notification permission --}}
                             <button x-show="notifPerm === 'default'" @click="enableNotifications()"
                                     class="text-[10px] text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded-lg px-2 py-1 transition-all">
                                 🔔 فعال‌سازی اعلان
                             </button>
-                            <span x-show="notifPerm === 'granted'" class="text-[10px] text-green-600">🔔 اعلان فعال</span>
+                            <span x-show="notifPerm === 'granted'" class="text-[10px] text-green-600 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
+                                اعلان فعال
+                            </span>
+                            {{-- Section D: permission denied recovery --}}
+                            <button x-show="notifPerm === 'denied'"
+                                    @click="notifBannerDismissed=false"
+                                    class="text-[10px] text-red-500 border border-red-200 rounded-lg px-2 py-1 bg-red-50 hover:bg-red-100 transition-all">
+                                🔕 اعلان مسدود
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -453,7 +619,7 @@ document.addEventListener('alpine:init', () => {
                         @php $customerInitial = mb_substr($ticket->customer_name ?? $ticket->customer_mobile ?? 'م', 0, 1); @endphp
 
                         {{-- Initial message --}}
-                        <div class="flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4" style="align-self:flex-start">
+                        <div class="flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4" data-reply-id="0" style="align-self:flex-start">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm bg-indigo-500">
                                 {{ $customerInitial }}
                             </div>
@@ -514,6 +680,7 @@ document.addEventListener('alpine:init', () => {
                             @endif
 
                             <div class="flex items-end gap-2 max-w-[85%] sm:max-w-[75%] mb-4 {{ $isStaff ? 'flex-row-reverse' : '' }}"
+                                 data-reply-id="{{ $reply->id }}"
                                  style="align-self: {{ $isStaff ? 'flex-end' : 'flex-start' }}">
                                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm"
                                      style="background-color: {{ $isStaff ? 'var(--ui-success)' : 'var(--ui-indigo)' }}">
@@ -596,19 +763,35 @@ document.addEventListener('alpine:init', () => {
                         <form method="POST"
                               action="{{ route('tickets.admin.replies.store', $ticket->id) }}"
                               @submit.prevent="sendReply($event.target)"
-                              enctype="{{ $attachmentsEnabled ? 'multipart/form-data' : 'application/x-www-form-urlencoded' }}">
+                              enctype="multipart/form-data"
+                              novalidate>
                             @csrf
                             <input type="hidden" name="is_internal" :value="noteMode ? '1' : '0'">
                             <div class="flex items-end gap-2">
                                 <div class="flex-1">
-                                    <textarea name="message"
-                                              x-model="noteMode ? noteText : message"
-                                              :class="noteMode ? 'note-area' : ''"
-                                              class="form-input w-full rounded-2xl border resize-none py-3 px-4 text-sm transition-all"
-                                              style="background:rgba(255,255,255,.85)"
-                                              rows="2" required maxlength="5000"
-                                              :placeholder="noteMode ? 'یادداشت داخلی (فقط کارشناسان می‌بینند)...' : 'پاسخ خود را بنویسید...'"
-                                              @keydown.enter.prevent="if(!$event.shiftKey) sendReply($el.closest('form'))"></textarea>
+                                    {{-- Regular reply textarea --}}
+                                    <div x-show="!noteMode">
+                                        <textarea name="message"
+                                                  x-model="message"
+                                                  class="form-input w-full rounded-2xl border resize-none py-3 px-4 text-sm transition-all"
+                                                  style="background:rgba(255,255,255,.85)"
+                                                  rows="2" maxlength="5000"
+                                                  placeholder="پاسخ خود را بنویسید..."
+                                                  @keydown.enter.prevent="if(!$event.shiftKey) sendReply($el.closest('form'))"></textarea>
+                                    </div>
+                                    {{-- Internal note textarea --}}
+                                    <div x-show="noteMode" x-cloak>
+                                        <textarea name="note_message"
+                                                  x-model="noteText"
+                                                  class="form-input note-area w-full rounded-2xl border resize-none py-3 px-4 text-sm transition-all"
+                                                  rows="2" maxlength="5000"
+                                                  placeholder="یادداشت داخلی (فقط کارشناسان می‌بینند)..."
+                                                  @keydown.enter.prevent="if(!$event.shiftKey) sendReply($el.closest('form'))"></textarea>
+                                    </div>
+                                    {{-- Copy noteText into message field when in note mode --}}
+                                    <template x-if="noteMode">
+                                        <input type="hidden" name="message" :value="noteText">
+                                    </template>
                                     <small class="text-[10px] text-gray-400 mt-1 block mr-2">اینتر = ارسال | Shift+Enter = خط جدید</small>
                                     @if($attachmentsEnabled)
                                     <label class="inline-flex items-center gap-1.5 mt-2 cursor-pointer text-slate-500 hover:text-indigo-600 transition-colors text-xs">
@@ -645,9 +828,9 @@ document.addEventListener('alpine:init', () => {
                                     @endif
                                 </div>
                                 <button type="submit"
-                                        :disabled="isSending || ((!noteMode && !message.trim()) && (!noteMode && !selectedFiles.length)) || (noteMode && !noteText.trim())"
+                                        :disabled="isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))"
                                         class="flex items-center justify-center rounded-full w-10 h-10 transition-all shrink-0"
-                                        :class="(isSending || (!noteMode && !message.trim()) || (noteMode && !noteText.trim())) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : (noteMode ? 'bg-amber-400 text-white shadow-md hover:bg-amber-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg')">
+                                        :class="(isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : (noteMode ? 'bg-amber-400 text-white shadow-md hover:bg-amber-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg')">
                                     <template x-if="!isSending">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                     </template>
@@ -678,7 +861,7 @@ document.addEventListener('alpine:init', () => {
                             <p class="text-xs text-gray-400">فقط کارشناسان پشتیبانی این یادداشت‌ها را می‌بینند</p>
                         </div>
                     </div>
-                    @php $internalNotes = $ticket->replies->where('author_type', 'internal'); @endphp
+                    @php $internalNotes = isset($internalNotes) ? $internalNotes : $ticket->replies->where('is_internal', true); @endphp
                     @if($internalNotes->isEmpty())
                     <div class="flex-1 flex flex-col items-center justify-center text-gray-400 py-8">
                         <svg class="w-10 h-10 mb-3 opacity-30" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
@@ -835,6 +1018,27 @@ document.addEventListener('alpine:init', () => {
                     @endif
                 </dl>
             </div>
+
+            {{-- ── Section L: Feature Request Timeline ────────────── --}}
+            @if(isset($ticket) && $ticket->isFeatureRequest())
+            <div class="sp-info-sec">
+                @include('tickets::admin.feature-requests._timeline', ['ticket' => $ticket])
+            </div>
+            @endif
+
+            {{-- ── Section M: Customer Notice (when FR first opened) ── --}}
+            @if(isset($ticket) && $ticket->isFeatureRequest() && $ticket->status === 'open')
+            @php
+                $frNotice = \App\Models\Setting::get('tickets.fr_customer_notice',
+                    'این درخواست صرفاً به عنوان پیشنهاد دریافت می‌گردد و پس از امکان‌سنجی، بررسی فنی و تأیید نهایی، نتیجه از طریق همین تیکت یا سایر کانال‌های اطلاع‌رسانی به شما اعلام خواهد شد.'
+                );
+            @endphp
+            <div class="sp-info-sec">
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <p class="text-[11px] text-amber-800 leading-relaxed">{{ $frNotice }}</p>
+                </div>
+            </div>
+            @endif
 
             {{-- ── Status Control ──────────────────────────────────── --}}
             <div class="sp-info-sec">
@@ -1087,4 +1291,69 @@ document.addEventListener('alpine:init', () => {
     </div>{{-- /sp-msgr --}}
 
 </div>
+
+{{-- Section E: Web Push service worker registration + VAPID subscription ── --}}
+@push('scripts')
+<script>
+(function() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    const PUSH_SUBSCRIBE_URL  = '{{ route("tickets.admin.push.subscribe") }}';
+    const PUSH_VAPID_KEY_URL  = '{{ route("tickets.admin.push.vapid_key") }}';
+    const SW_PATH             = '/sw-tickets.js';
+
+    async function urlB64ToUint8Array(base64String) {
+        const padding     = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64      = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData     = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+        return outputArray;
+    }
+
+    async function subscribeWebPush(registration) {
+        try {
+            const res     = await fetch(PUSH_VAPID_KEY_URL, { headers: { Accept: 'application/json' } });
+            const { vapid_public_key } = await res.json();
+            if (!vapid_public_key) return; // VAPID not configured yet
+
+            const applicationServerKey = await urlB64ToUint8Array(vapid_public_key);
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly:      true,
+                applicationServerKey,
+            });
+
+            const json = subscription.toJSON();
+            await fetch(PUSH_SUBSCRIBE_URL, {
+                method:  'POST',
+                headers: {
+                    'Content-Type':     'application/json',
+                    'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    endpoint:    json.endpoint,
+                    public_key:  json.keys?.p256dh,
+                    auth_token:  json.keys?.auth,
+                    encoding:    (subscription.options?.applicationServerKey) ? 'aes128gcm' : 'aesgcm',
+                }),
+            });
+        } catch (e) {
+            // User may have denied push — gracefully ignored
+        }
+    }
+
+    navigator.serviceWorker.register(SW_PATH, { scope: '/' })
+        .then(reg => {
+            // Only subscribe if browser notifications are already granted
+            if (Notification.permission === 'granted') {
+                subscribeWebPush(reg);
+            }
+            // Re-subscribe after user grants permission
+            window.addEventListener('sp:notif-granted', () => subscribeWebPush(reg));
+        })
+        .catch(() => {});
+})();
+</script>
+@endpush
 @endsection

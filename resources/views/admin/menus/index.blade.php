@@ -10,10 +10,6 @@
         <a href="{{ route('admin.sites.menus.create', $site) }}" class="btn btn-primary">افزودن منو</a>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success mb-4">{{ session('success') }}</div>
-    @endif
-
     @if($menus->isEmpty())
         <div class="bg-white rounded-xl shadow p-8 text-center text-gray-500">
             <p>هنوز منویی ایجاد نشده است.</p>

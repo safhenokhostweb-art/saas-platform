@@ -138,4 +138,20 @@ return [
         'on_sla_breach'     => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Section E — Web Push / VAPID
+    |--------------------------------------------------------------------------
+    | Generate keys with: php artisan ticket:generate-vapid
+    | Or use: vendor/bin/web-push vapid:generate
+    |
+    | Set these in .env:
+    |   TICKETS_VAPID_PUBLIC_KEY=...
+    |   TICKETS_VAPID_PRIVATE_KEY=...
+    */
+    'push' => [
+        'vapid_public_key'  => env('TICKETS_VAPID_PUBLIC_KEY', ''),
+        'vapid_private_key' => env('TICKETS_VAPID_PRIVATE_KEY', ''),
+    ],
+
 ];

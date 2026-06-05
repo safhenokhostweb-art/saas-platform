@@ -11,7 +11,8 @@ use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationFeatureContro
 use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationRecommendationController;
 use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationAdoptionController;
 
-Route::middleware(['web', 'auth'])->prefix('admin/education')->name('admin.education.')->group(function () {
+// F-13: education.track scoped to admin routes only — not pushed to the global web group
+Route::middleware(['web', 'auth', 'education.track'])->prefix('admin/education')->name('admin.education.')->group(function () {
 
     // Dashboard
     Route::get('/', [EducationCenterController::class, 'index'])->name('index');
@@ -44,6 +45,29 @@ Route::middleware(['web', 'auth'])->prefix('admin/education')->name('admin.educa
         Route::get('/{walkthrough}/edit',    [EducationWalkthroughController::class, 'edit'])->name('edit');
         Route::put('/{walkthrough}',         [EducationWalkthroughController::class, 'update'])->name('update');
         Route::delete('/{walkthrough}',      [EducationWalkthroughController::class, 'destroy'])->name('destroy');
+        // Frontend: mark a walkthrough as completed by the current user.
+        // EDU-13.7 BLOCKER #2: enforce EducationWalkthroughPolicy::update() before proceeding.
+        // EDU-13.7 BLOCKER #1: include user->site_id as siteId fallback for site admins.
+        Route::post('/{walkthrough}/complete', function (\Illuminate\Http\Request $request, int $walkthrough) {
+            $wt = \SaaSPlatform\Modules\Education\Models\EducationWalkthrough::findOrFail($walkthrough);
+
+            // Policy gate — only users authorised to 'update' walkthroughs may mark them complete
+            abort_if(! $request->user()?->can('update', $wt), 403);
+
+            // Resolve siteId: explicit POST param → tenant_site middleware attr → user's own site_id
+            $siteId = (int) ($request->input('site_id')
+                ?? $request->attributes->get('tenant_site')?->id
+                ?? $request->user()?->site_id
+                ?? 0);
+
+            if (! $siteId) {
+                return response()->json(['error' => 'site_id required'], 422);
+            }
+
+            $svc = app(\SaaSPlatform\Modules\Education\Contracts\Services\WalkthroughTriggerServiceInterface::class);
+            $svc->markCompleted($walkthrough, auth()->id(), $siteId);
+            return response()->json(['ok' => true]);
+        })->name('complete');
     });
 
     // Learning Paths

@@ -55,6 +55,9 @@ class EducationRecommendation extends Model
 
     public function scopeForSite($query, ?int $siteId)
     {
+        if ($siteId === null) {
+            return $query->whereNull('site_id');
+        }
         return $query->where('site_id', $siteId);
     }
 

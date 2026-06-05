@@ -4,9 +4,6 @@
 
 @section('content')
 <x-module-features module='products' />
-@if(session('success'))<div class='alert alert-success mb-4'>{{ session('success') }}</div>@endif
-@if(session('error'))<div class='alert alert-danger mb-4'>{{ session('error') }}</div>@endif
-
 <p class='mb-4'>
     <a href="{{ route('admin.products.create') }}" class='btn btn-primary'>افزودن محصول جدید</a>
 </p>

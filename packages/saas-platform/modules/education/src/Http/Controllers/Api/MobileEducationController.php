@@ -46,9 +46,15 @@ class MobileEducationController extends Controller
 
     public function show(int $id, Request $request): JsonResponse
     {
+        $siteId  = $request->attributes->get('tenant_site')?->id;
         $article = $this->articles->find($id);
 
         if (! $article || $article->status !== 'published') {
+            return response()->json(['message' => 'not found'], 404);
+        }
+
+        // F-03: Enforce cross-tenant isolation — article must belong to this site or be global
+        if ($article->site_id !== null && $article->site_id !== $siteId) {
             return response()->json(['message' => 'not found'], 404);
         }
 

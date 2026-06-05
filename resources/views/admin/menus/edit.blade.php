@@ -19,10 +19,6 @@
         </form>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success mb-4">{{ session('success') }}</div>
-    @endif
-
     {{-- فرم افزودن آیتم --}}
     <div class="bg-white rounded-xl shadow p-6 mb-6">
         <h3 class="font-bold mb-4">افزودن آیتم منو</h3>

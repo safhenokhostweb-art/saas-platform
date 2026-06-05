@@ -5,13 +5,6 @@
 @section('content')
 <div class="max-w-4xl mx-auto">
     <h2 class="text-xl font-bold mb-4">سبد خرید</h2>
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
     @if(empty($items))
         <p class="text-gray-500">سبد خرید خالی است.</p>
         <p class="mt-2"><a href="{{ route('store.index') }}" class="btn btn-primary">بازگشت به فروشگاه</a></p>

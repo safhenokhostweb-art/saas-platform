@@ -17,6 +17,7 @@ class TicketRepository implements TicketRepositoryInterface
     {
         $query = Ticket::withoutTenantIsolation()
             ->select(['id','ticket_number','subject','status','priority','category',
+                      'type','fr_status',
                       'customer_name','customer_mobile','assigned_to','site_id',
                       'created_at','updated_at','closed_at','first_response_at','resolved_at'])
             ->with(['assignee:id,mobile']);
@@ -38,6 +39,11 @@ class TicketRepository implements TicketRepositoryInterface
         }
         if (!empty($filters['category'])) {
             $query->where('category', $filters['category']);
+        }
+        // type=feature_request → فقط درخواست‌های ویژگی
+        // type=support → فقط تیکت‌های پشتیبانی
+        if (!empty($filters['type'])) {
+            $query->where('type', $filters['type']);
         }
         if (!empty($filters['assigned_to'])) {
             $query->where('assigned_to', $filters['assigned_to']);

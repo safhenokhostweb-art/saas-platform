@@ -3,9 +3,6 @@
 @section('header', 'درخواست‌های تسویه نمایندگان')
 
 @section('content')
-@if(session('success'))<div class="alert alert-success mb-4">{{ session('success') }}</div>@endif
-@if(session('error'))<div class="alert alert-danger mb-4">{{ session('error') }}</div>@endif
-
 <div class="bg-white rounded shadow overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50">

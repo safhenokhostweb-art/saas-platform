@@ -4,9 +4,6 @@
 
 @section('content')
 <x-module-features module='modules' />
-@if(session('success'))<div class='alert alert-success mb-4'>{{ session('success') }}</div>@endif
-@if(session('error'))<div class='alert alert-danger mb-4'>{{ session('error') }}</div>@endif
-
 <p class='mb-4'>
     <span class='text-sm text-gray-500'>تعداد سایت‌ها: {{ $sitesCount ?? 0 }}</span>
 </p>

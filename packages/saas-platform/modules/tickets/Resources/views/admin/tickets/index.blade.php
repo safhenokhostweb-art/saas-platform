@@ -4,14 +4,55 @@
 
 {{-- Phase 10.1 — Module styles migrated to resources/css/app.css (canonical bundle) --}}
 
+@push('head')
+<style>
+/* ── Section F: Multi-color ticket attention system ────────────────────── */
+
+/* Color A — پیام از SaaS Admin (کارمند پشتیبان) → برای site_admin/مشتری */
+@keyframes blinkStaff{0%,100%{background-color:transparent}50%{background-color:rgba(99,102,241,.09)}}
+.ticket-unread-staff{animation:blinkStaff 2.2s ease-in-out infinite;border-right:3px solid #6366f1!important}
+.ticket-unread-staff:hover{animation:none}
+
+/* Color B — پیام از Customer Admin (site_admin) → برای saas admin */
+@keyframes blinkSiteAdmin{0%,100%{background-color:transparent}50%{background-color:rgba(16,185,129,.09)}}
+.ticket-unread-site-admin{animation:blinkSiteAdmin 2.2s ease-in-out infinite;border-right:3px solid #10b981!important}
+.ticket-unread-site-admin:hover{animation:none}
+
+/* Color C — پیام از End User (customer) → برای همه */
+@keyframes blinkCustomer{0%,100%{background-color:transparent}50%{background-color:rgba(245,158,11,.09)}}
+.ticket-unread-customer{animation:blinkCustomer 2.0s ease-in-out infinite;border-right:3px solid #f59e0b!important}
+.ticket-unread-customer:hover{animation:none}
+
+@keyframes badgeFade{0%,100%{opacity:1}50%{opacity:.45}}
+.awaits-reply-badge{animation:badgeFade 1.6s ease-in-out infinite}
+
+/* Last message preview row */
+.ticket-last-msg{font-size:.67rem;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+
+/* ── Feature Request row identity ── */
+.ticket-row-fr{border-right:3px solid #8b5cf6!important;background:linear-gradient(to left,rgba(139,92,246,.03),transparent)}
+.ticket-row-fr:hover{background:rgba(139,92,246,.07)!important}
+.fr-type-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.18rem .6rem;border-radius:9999px;font-size:.62rem;font-weight:700;background:#f3e8ff;color:#7c3aed;border:1px solid #ddd6fe;white-space:nowrap;vertical-align:middle}
+
+/* ── Type quick-tabs ── */
+.type-tab{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem 1.1rem;border-radius:.75rem;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .18s;white-space:nowrap;text-decoration:none}
+.type-tab.tab-all{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+.type-tab.tab-all.tab-active,.type-tab.tab-all:hover{background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
+.type-tab.tab-support{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+.type-tab.tab-support.tab-active,.type-tab.tab-support:hover{background:#e0f2fe;color:#0369a1;border-color:#bae6fd}
+.type-tab.tab-fr{background:#f1f5f9;color:#475569;border-color:#e2e8f0}
+.type-tab.tab-fr.tab-active,.type-tab.tab-fr:hover{background:#f3e8ff;color:#6d28d9;border-color:#ddd6fe}
+</style>
+@endpush
 @section('content')
 {{-- Phase 10.0: Inject canonical design tokens once per page --}}
 <x-core-ui::design-tokens />
 
 <div class="admin-page" style="gap:0" role="main" aria-label="داشبورد پشتیبانی" x-data="{
-    search: '',
-    status: '',
-    priority: '',
+    search: '{{ request('q', '') }}',
+    status: '{{ request('status', '') }}',
+    priority: '{{ request('priority', '') }}',
+    ticketType: '{{ request('type', '') }}',
     bulkSelected: [],
     get allIds() { return Array.from(document.querySelectorAll('.ticket-check')).map(el=>el.value); },
     toggleAll(checked) { this.bulkSelected = checked ? this.allIds : []; },
@@ -209,13 +250,12 @@
             $lowOpen    = $tickets->where('priority','low')->where('status','open')->count();
             $lowInProg  = $tickets->where('priority','low')->where('status','in_progress')->count();
             $heatMax    = max(1, $highOpen, $highInProg, $normOpen, $normInProg, $lowOpen, $lowInProg);
-            function heatColor($v, $max, $base) {
-                $pct = $v / $max;
-                if($pct === 0) return 'bg-gray-100 text-gray-400';
-                if($pct < .33) return "bg-{$base}-100 text-{$base}-700";
-                if($pct < .66) return "bg-{$base}-200 text-{$base}-800";
-                return "bg-{$base}-400 text-white";
-            }
+            $heatColor = fn($v, $max, $base) => match(true) {
+                $v / $max === 0.0   => 'bg-gray-100 text-gray-400',
+                $v / $max < .33     => "bg-{$base}-100 text-{$base}-700",
+                $v / $max < .66     => "bg-{$base}-200 text-{$base}-800",
+                default             => "bg-{$base}-400 text-white",
+            };
             @endphp
             <div class="overflow-x-auto">
             <table class="w-full text-xs text-center">
@@ -229,18 +269,18 @@
                 <tbody class="space-y-2">
                     <tr>
                         <td class="text-right text-red-600 font-bold py-1.5 pr-1">بالا</td>
-                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ heatColor($highOpen, $heatMax, 'red') }}">{{ $highOpen }}</div></td>
-                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ heatColor($highInProg, $heatMax, 'red') }}">{{ $highInProg }}</div></td>
+                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ $heatColor($highOpen, $heatMax, 'red') }}">{{ $highOpen }}</div></td>
+                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ $heatColor($highInProg, $heatMax, 'red') }}">{{ $highInProg }}</div></td>
                     </tr>
                     <tr>
                         <td class="text-right text-blue-600 font-bold py-1.5 pr-1">عادی</td>
-                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ heatColor($normOpen, $heatMax, 'blue') }}">{{ $normOpen }}</div></td>
-                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ heatColor($normInProg, $heatMax, 'blue') }}">{{ $normInProg }}</div></td>
+                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ $heatColor($normOpen, $heatMax, 'blue') }}">{{ $normOpen }}</div></td>
+                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ $heatColor($normInProg, $heatMax, 'blue') }}">{{ $normInProg }}</div></td>
                     </tr>
                     <tr>
                         <td class="text-right text-gray-500 font-bold py-1.5 pr-1">کم</td>
-                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ heatColor($lowOpen, $heatMax, 'gray') }}">{{ $lowOpen }}</div></td>
-                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ heatColor($lowInProg, $heatMax, 'gray') }}">{{ $lowInProg }}</div></td>
+                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ $heatColor($lowOpen, $heatMax, 'gray') }}">{{ $lowOpen }}</div></td>
+                        <td class="py-1.5 px-2"><div class="heatmap-cell h-10 flex items-center justify-center font-bold {{ $heatColor($lowInProg, $heatMax, 'gray') }}">{{ $lowInProg }}</div></td>
                     </tr>
                 </tbody>
             </table>
@@ -330,6 +370,46 @@
 
     {{-- ─── Filter + Table ────────────────────────────────────────────── --}}
 
+    {{-- Type quick-tabs — همه / پشتیبانی / درخواست ویژگی ─────────────── --}}
+    @php
+        $currentType = request('type', '');
+        $frCount     = $frOpenCount ?? 0;
+    @endphp
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+        <a href="{{ request()->fullUrlWithQuery(['type' => '']) }}"
+           class="type-tab tab-all {{ $currentType === '' ? 'tab-active' : '' }}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/></svg>
+            همه تیکت‌ها
+        </a>
+        <a href="{{ request()->fullUrlWithQuery(['type' => 'support']) }}"
+           class="type-tab tab-support {{ $currentType === 'support' ? 'tab-active' : '' }}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            پشتیبانی
+        </a>
+        <a href="{{ request()->fullUrlWithQuery(['type' => 'feature_request']) }}"
+           class="type-tab tab-fr {{ $currentType === 'feature_request' ? 'tab-active' : '' }}">
+            💡
+            درخواست ویژگی
+            @if($frCount > 0)
+            <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold
+                {{ $currentType === 'feature_request' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700' }}">
+                {{ $frCount }}
+            </span>
+            @endif
+        </a>
+
+        {{-- جستجوی اختصاصی درخواست ویژگی --}}
+        @if($currentType === 'feature_request')
+        <div class="flex items-center gap-1.5 mr-2 text-xs text-purple-600 font-semibold bg-purple-50 border border-purple-200 px-3 py-2 rounded-xl">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            نمایش درخواست‌های ویژگی
+            <a href="{{ route('tickets.admin.fr.index') }}" class="mr-1 text-purple-700 hover:text-purple-900 underline underline-offset-2">
+                داشبورد کامل
+            </a>
+        </div>
+        @endif
+    </div>
+
     {{-- Filter Bar --}}
     <div class="glass-filter-bar mb-5">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -350,7 +430,13 @@
                 <option value="normal">🔵 عادی</option>
                 <option value="low">⚪ کم</option>
             </select>
-            <button @click="search=''; status=''; priority=''"
+            {{-- فیلتر نوع تیکت (کلاینت‌ساید) --}}
+            <select x-model="ticketType" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/80 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-400 transition-all w-full sm:w-auto">
+                <option value="">💬 همه انواع</option>
+                <option value="support">🔧 پشتیبانی</option>
+                <option value="feature_request">💡 درخواست ویژگی</option>
+            </select>
+            <button @click="search=''; status=''; priority=''; ticketType=''"
                     class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white/80 text-sm text-gray-500 hover:bg-gray-50 transition-all w-full sm:w-auto justify-center">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 پاک کردن
@@ -386,16 +472,44 @@
         $pBg   = $p === 'high' ? 'bg-red-50 text-red-700 border-red-200' : ($p === 'low' ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-blue-50 text-blue-600 border-blue-200');
         $pDot  = $p === 'high' ? 'bg-red-500' : ($p === 'low' ? 'bg-gray-400' : 'bg-blue-500');
         $pLbl  = $p === 'high' ? 'بالا' : ($p === 'low' ? 'کم' : 'عادی');
+        $lastReply  = ($lastReplies ?? collect())->get($ticket->id);
+        $lastAuthor = $lastReply?->author_type;
+        $lastMsgPreview = $lastReply ? Str::limit($lastReply->preview ?? '', 55) : null;
+        $lastMsgTime    = $lastReply?->created_at;
+
+        // Section F: three-color attention classes
+        $isOpen   = $ticket->status !== 'closed';
+        $isFR     = ($ticket->type ?? 'support') === 'feature_request';
+        $attnClass      = '';
+        $attnBadgeLabel = '';
+        $attnBadgeColor = '';
+        if ($isOpen && $lastAuthor === 'customer') {
+            $attnClass      = 'ticket-unread-customer';
+            $attnBadgeLabel = 'پیام مشتری';
+            $attnBadgeColor = 'bg-amber-100 text-amber-700 border-amber-200';
+        } elseif ($isOpen && $lastAuthor === 'site_admin') {
+            $attnClass      = 'ticket-unread-site-admin';
+            $attnBadgeLabel = 'پیام ادمین سایت';
+            $attnBadgeColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        } elseif ($isOpen && $lastAuthor === 'staff') {
+            $attnClass      = 'ticket-unread-staff';
+            $attnBadgeLabel = 'پیام پشتیبان';
+            $attnBadgeColor = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+        }
+        // FR rows always carry their own purple border identity class
+        $rowBaseClass = $isFR ? 'ticket-row-fr' : '';
     @endphp
-    <tr class="ticket-row border-b border-gray-50"
+    <tr class="ticket-row border-b border-gray-50 {{ $rowBaseClass }} {{ $attnClass }}"
         data-subject="{{ $ticket->subject }}"
         data-ticket-no="{{ $ticket->ticket_number }}"
         data-status="{{ $ticket->status }}"
         data-priority="{{ $p }}"
+        data-type="{{ $ticket->type ?? 'support' }}"
         x-show="
             (!search || $el.dataset.subject.toLowerCase().includes(search.toLowerCase()) || $el.dataset.ticketNo.includes(search)) &&
-            (!status || $el.dataset.status === status) &&
-            (!priority || $el.dataset.priority === priority)
+            (!status   || $el.dataset.status   === status)   &&
+            (!priority || $el.dataset.priority === priority) &&
+            (!ticketType || $el.dataset.type === ticketType)
         "
         x-transition:enter="transition ease-out duration-150"
         x-transition:enter-start="opacity-0 translate-y-1"
@@ -425,12 +539,41 @@
             @endif
         </td>
 
-        {{-- موضوع --}}
+        {{-- موضوع + last message preview ──────────────────────────── --}}
         <td class="p-3">
-            <a href="{{ route('tickets.admin.show', $ticket->id) }}" class="group">
-                <span class="text-sm font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors">{{ Str::limit($ticket->subject, 45) }}</span>
+            <a href="{{ route('tickets.admin.show', $ticket->id) }}" class="group block">
+                {{-- سطر اول: بج FR --}}
+                @if($isFR)
+                <div class="mb-1">
+                    <span class="fr-type-badge">
+                        💡 درخواست ویژگی
+                        @if($ticket->fr_status)
+                        <span class="opacity-70">· {{ $ticket->frStatusLabel() }}</span>
+                        @endif
+                    </span>
+                </div>
+                @endif
+                {{-- سطر دوم: عنوان + بج اعلان --}}
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-sm font-semibold {{ $isFR ? 'text-purple-900 group-hover:text-purple-700' : 'text-gray-800 group-hover:text-indigo-700' }} transition-colors">{{ Str::limit($ticket->subject, 45) }}</span>
+                    @if($attnBadgeLabel)
+                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold border awaits-reply-badge shrink-0 {{ $attnBadgeColor }}">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                        {{ $attnBadgeLabel }}
+                    </span>
+                    @endif
+                </div>
+                {{-- Last message preview + time ──────────────────────────── --}}
+                @if($lastMsgPreview)
+                <div class="ticket-last-msg flex items-center gap-1 mt-1">
+                    <span class="truncate">{{ $lastMsgPreview }}</span>
+                    @if($lastMsgTime)
+                    <span class="shrink-0 text-[10px] text-gray-400 mr-auto pr-1">· {{ \App\Helpers\Jalali::formatFa($lastMsgTime, 'H:i') }}</span>
+                    @endif
+                </div>
+                @endif
                 @if($ticket->category)
-                <span class="ml-2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{{ $ticket->category }}</span>
+                <span class="inline-block mt-0.5 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{{ $ticket->category }}</span>
                 @endif
             </a>
         </td>

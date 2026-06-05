@@ -48,6 +48,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | EDU-15: AI Content Generation Provider
+    |--------------------------------------------------------------------------
+    | Provider used by AiContentProviderInterface.
+    | Options: 'null' (no-op), 'claude', 'openai'
+    |
+    | EDUCATION_AI_PROVIDER=claude also requires EDUCATION_CLAUDE_API_KEY.
+    | EDUCATION_AI_PROVIDER=openai also requires EDUCATION_OPENAI_API_KEY.
+    */
+    'ai_provider' => env('EDUCATION_AI_PROVIDER', 'null'),
+
+    'ai_generation' => [
+        'claude_api_key'  => env('EDUCATION_CLAUDE_API_KEY', ''),
+        'claude_model'    => env('EDUCATION_CLAUDE_MODEL', 'claude-sonnet-4-6'),
+        'openai_api_key'  => env('EDUCATION_OPENAI_API_KEY', ''),
+        'openai_model'    => env('EDUCATION_OPENAI_MODEL', 'gpt-4o'),
+        'max_tokens'      => env('EDUCATION_AI_MAX_TOKENS', 2048),
+        'author_id'       => env('EDUCATION_AI_AUTHOR_ID', 1),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Recommendation Engine Thresholds
     |--------------------------------------------------------------------------
     */

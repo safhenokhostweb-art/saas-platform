@@ -105,37 +105,64 @@
     </div>
 
     {{-- Status Actions --}}
-    @if($ticket->status !== 'closed')
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100" x-data="{ confirmDelete: false }">
         <h3 class="text-sm font-medium text-gray-700 mb-3">عملیات</h3>
         <div class="flex flex-wrap gap-2">
-            @if($ticket->status === 'open')
-            <form action="{{ route('admin.tickets.update-status', $ticket->id) }}" method="POST" class="inline">
-                @csrf
-                @method('PATCH')
-                <input type="hidden" name="status" value="in_progress">
-                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-all">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    شروع بررسی
-                </button>
-            </form>
+            @if($ticket->status !== 'closed')
+                @if($ticket->status === 'open')
+                <form action="{{ route('admin.tickets.update-status', $ticket->id) }}" method="POST" class="inline">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="in_progress">
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-all">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        شروع بررسی
+                    </button>
+                </form>
+                @endif
+                <form action="{{ route('admin.tickets.update-status', $ticket->id) }}" method="POST" class="inline">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="closed">
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-all">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        بستن تیکت
+                    </button>
+                </form>
             @endif
-            <form action="{{ route('admin.tickets.update-status', $ticket->id) }}" method="POST" class="inline">
-                @csrf
-                @method('PATCH')
-                <input type="hidden" name="status" value="closed">
-                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-all">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    بستن تیکت
-                </button>
-            </form>
+
+            {{-- Delete --}}
+            <div class="mr-auto flex items-center gap-2">
+                <template x-if="!confirmDelete">
+                    <button @click="confirmDelete = true" type="button" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        حذف تیکت
+                    </button>
+                </template>
+                <template x-if="confirmDelete">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">آیا مطمئن هستید؟</span>
+                        <form action="{{ route('admin.tickets.destroy', $ticket->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition-all">
+                                بله، حذف شود
+                            </button>
+                        </form>
+                        <button @click="confirmDelete = false" type="button" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">
+                            انصراف
+                        </button>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
-    @endif
 
     {{-- Replies --}}
     <div class="space-y-4">

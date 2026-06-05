@@ -3,10 +3,6 @@
 @section('header', 'ویرایش ماژول: ' . $module->title)
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-
 <div class="mb-6 p-4 rounded-xl bg-indigo-50 border border-indigo-200">
     <h3 class="font-semibold text-indigo-900 mb-2">فروشگاه (مارکت‌پلیس)</h3>
     @if(isset($productInStore) && $productInStore)

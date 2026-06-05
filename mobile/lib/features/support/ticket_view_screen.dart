@@ -5,8 +5,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_file/open_file.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../core/api/client_api_service.dart';
+import '../../core/notifications/voice_notification_runtime.dart';
 import '../../shared/providers/auth_provider.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -26,16 +28,40 @@ class TicketViewScreen extends ConsumerStatefulWidget {
 }
 
 class _TicketViewScreenState extends ConsumerState<TicketViewScreen> {
-  final _scrollCtrl = ScrollController();
-  bool _isSending   = false;
+  final _scrollCtrl  = ScrollController();
+  bool  _isSending   = false;
   Timer? _pollTimer;
+  int   _lastReplyId = 0;
 
   @override
   void initState() {
     super.initState();
-    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      // Track last seen reply id before refresh
+      final prev = ref.read(ticketDetailProvider(widget.ticketId));
+      final prevLastId = prev.value?.replies.lastOrNull?.id ?? 0;
       ref.invalidate(ticketDetailProvider(widget.ticketId));
+      // Wait for new data then check if a new staff reply arrived
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
+      final next = ref.read(ticketDetailProvider(widget.ticketId));
+      final newReplies = next.value?.replies.where(
+        (r) => r.id > prevLastId && r.isStaff && !r.isInternal,
+      ).toList() ?? [];
+      if (newReplies.isNotEmpty) {
+        _onNewStaffReply();
+      }
     });
+  }
+
+  void _onNewStaffReply() {
+    // صدا
+    final voice = ref.read(voiceNotificationRuntimeProvider);
+    voice.play(SoundType.incomingMessage);
+    // taskbar blink در ویندوز/دسکتاپ
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      try { windowManager.requestAttention(AppWindowAttentionType.informational); } catch (_) {}
+    }
   }
 
   @override
@@ -297,6 +323,56 @@ class _InfoChip extends StatelessWidget {
 
 // ─── Reply bubble ─────────────────────────────────────────────────────────────
 
+class _InlineImage extends StatelessWidget {
+  const _InlineImage({required this.attachment});
+  final TicketAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = attachment.downloadUrl;
+    if (url == null || url.isEmpty) return const SizedBox.shrink();
+    return GestureDetector(
+      onTap: () => _openUrl(context, url),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          url,
+          width: 200,
+          fit: BoxFit.cover,
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
+            return Container(
+              width: 200, height: 120,
+              color: Colors.grey.shade200,
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+          },
+          errorBuilder: (_, __, ___) => Container(
+            width: 200, height: 60, color: Colors.grey.shade200,
+            child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openUrl(BuildContext context, String url) async {
+    // openUrl or show full-screen image dialog
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: InteractiveViewer(
+            child: Image.network(url, fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReplyBubble extends StatelessWidget {
   const _ReplyBubble({required this.reply});
   final TicketReply reply;
@@ -393,8 +469,16 @@ class _ReplyBubble extends StatelessWidget {
                   if (reply.message.isNotEmpty) Text(reply.message),
                   if (reply.attachments.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Wrap(spacing: 6, children:
-                      reply.attachments.map((a) => _AttachmentChip(attachment: a)).toList()),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: reply.attachments.map((a) {
+                        if (a.isImage && a.downloadUrl != null) {
+                          return _InlineImage(attachment: a);
+                        }
+                        return _AttachmentChip(attachment: a);
+                      }).toList(),
+                    ),
                   ],
                   const SizedBox(height: 4),
                   Text(

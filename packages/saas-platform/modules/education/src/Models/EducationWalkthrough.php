@@ -12,14 +12,22 @@ class EducationWalkthrough extends Model
     protected $fillable = [
         'title', 'slug', 'description', 'site_id',
         'trigger_route', 'trigger_selector', 'trigger_condition',
-        'target_roles', 'module_slug', 'is_active', 'sort_order', 'meta',
+        'target_roles', 'module_slug', 'feature_key', 'auto_generated',
+        'is_active', 'sort_order', 'meta',
+        'documentation_version', 'documentation_hash',
+        'last_generated_at', 'last_synced_at', 'needs_regeneration',
     ];
 
     protected $casts = [
-        'target_roles' => 'array',
-        'meta'         => 'array',
-        'is_active'    => 'boolean',
-        'sort_order'   => 'integer',
+        'target_roles'          => 'array',
+        'meta'                  => 'array',
+        'is_active'             => 'boolean',
+        'auto_generated'        => 'boolean',
+        'needs_regeneration'    => 'boolean',
+        'sort_order'            => 'integer',
+        'documentation_version' => 'integer',
+        'last_generated_at'     => 'datetime',
+        'last_synced_at'        => 'datetime',
     ];
 
     public function steps(): HasMany

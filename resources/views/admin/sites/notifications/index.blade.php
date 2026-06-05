@@ -11,10 +11,6 @@
         → اعلان‌ها
     </p>
 
-    @if (session('success'))
-        <div class="alert alert-success mb-4">{{ session('success') }}</div>
-    @endif
-
     <div class="card p-4 shadow-sm rounded-xl mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <h5 class="font-bold mb-0">اعلان‌های ارسالی از پلتفرم</h5>

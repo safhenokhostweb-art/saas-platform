@@ -17,17 +17,23 @@ class EducationLearningPathController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', EducationLearningPath::class);
+
         $items = $this->paths->paginate($request->only(['is_active']), config('education.pagination', 20));
         return view('education::admin.education.learning-paths.index', compact('items'));
     }
 
     public function create(): View
     {
+        $this->authorize('create', EducationLearningPath::class);
+
         return view('education::admin.education.learning-paths.edit', ['path' => null]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', EducationLearningPath::class);
+
         $data = $this->validatePath($request);
         $this->paths->create($data);
         return redirect()->route('admin.education.learning-paths.index')->with('success', 'مسیر یادگیری ایجاد شد.');
@@ -35,12 +41,16 @@ class EducationLearningPathController extends Controller
 
     public function edit(EducationLearningPath $learningPath): View
     {
+        $this->authorize('update', $learningPath);
+
         $learningPath->load('steps');
         return view('education::admin.education.learning-paths.edit', ['path' => $learningPath]);
     }
 
     public function update(Request $request, EducationLearningPath $learningPath): RedirectResponse
     {
+        $this->authorize('update', $learningPath);
+
         $data = $this->validatePath($request);
         $this->paths->update($learningPath, $data);
         return back()->with('success', 'مسیر یادگیری بروز شد.');
@@ -48,6 +58,8 @@ class EducationLearningPathController extends Controller
 
     public function destroy(EducationLearningPath $learningPath): RedirectResponse
     {
+        $this->authorize('delete', $learningPath);
+
         $this->paths->delete($learningPath);
         return redirect()->route('admin.education.learning-paths.index')->with('success', 'مسیر یادگیری حذف شد.');
     }

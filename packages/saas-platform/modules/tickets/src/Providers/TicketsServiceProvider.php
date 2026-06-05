@@ -124,6 +124,12 @@ class TicketsServiceProvider extends ServiceProvider
         $this->app->singleton(TicketTimelineService::class);
         $this->app->singleton(TicketInternalNotesService::class);
 
+        // SUPPORT-SUITE-01 — Section E: Web Push service
+        $this->app->singleton(\SaaSPlatform\Modules\Tickets\Services\TicketPushService::class);
+
+        // SUPPORT-SUITE-01 — Section K/N: Feature Request controllers (auto-resolved by container)
+        // TicketVote, TicketFrSubscriber, PushSubscription models auto-bind (Eloquent)
+
         // PHASE 9.4 — Analytics dashboard
         $this->app->bind(
             \SaaSPlatform\Modules\Tickets\Http\Controllers\Admin\TicketAnalyticsController::class,

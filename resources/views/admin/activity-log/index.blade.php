@@ -4,10 +4,6 @@
 
 @section('content')
 @include('admin.activity-log.guide')
-@if(session('error'))
-<div class="alert alert-danger mb-6">{{ session('error') }}</div>
-@endif
-
 <div class="mb-6 flex flex-wrap items-end gap-3">
     <form method="GET" action="{{ route('admin.activity-log.index') }}" class="flex flex-wrap items-end gap-3">
         <div>

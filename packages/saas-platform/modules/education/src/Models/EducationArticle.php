@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class EducationArticle extends Model
@@ -22,20 +23,26 @@ class EducationArticle extends Model
         'edu_category_id', 'site_id', 'author_id',
         'title', 'slug', 'excerpt', 'body',
         'status', 'content_type', 'target_roles',
-        'module_slug', 'route_pattern', 'auto_generated',
+        'module_slug', 'route_pattern', 'feature_key', 'auto_generated',
+        'documentation_version', 'documentation_hash',
+        'last_generated_at', 'last_synced_at', 'needs_regeneration',
         'view_count', 'helpful_count', 'not_helpful_count',
         'tags', 'meta', 'published_at',
     ];
 
     protected $casts = [
-        'target_roles'   => 'array',
-        'tags'           => 'array',
-        'meta'           => 'array',
-        'published_at'     => 'datetime',
-        'auto_generated'   => 'boolean',
-        'view_count'       => 'integer',
-        'helpful_count'  => 'integer',
-        'not_helpful_count' => 'integer',
+        'target_roles'          => 'array',
+        'tags'                  => 'array',
+        'meta'                  => 'array',
+        'published_at'          => 'datetime',
+        'last_generated_at'     => 'datetime',
+        'last_synced_at'        => 'datetime',
+        'auto_generated'        => 'boolean',
+        'needs_regeneration'    => 'boolean',
+        'documentation_version' => 'integer',
+        'view_count'            => 'integer',
+        'helpful_count'         => 'integer',
+        'not_helpful_count'     => 'integer',
     ];
 
     protected static function booted(): void
@@ -51,13 +58,23 @@ class EducationArticle extends Model
 
         static::updated(function (self $article) {
             if ($article->wasChanged(['title', 'body', 'excerpt'])) {
-                $article->revisions()->create([
-                    'author_id'       => auth()->id(),
-                    'title'           => $article->title,
-                    'excerpt'         => $article->excerpt,
-                    'body'            => $article->body,
-                    'revision_number' => $article->revisions()->count() + 1,
-                ]);
+                // F-09: Use MAX + lockForUpdate inside a transaction to prevent duplicate
+                // revision_number when two updates race. The lock serializes revision inserts
+                // for this article without blocking unrelated articles.
+                DB::transaction(function () use ($article) {
+                    $maxRevision = DB::table('edu_article_revisions')
+                        ->where('edu_article_id', $article->id)
+                        ->lockForUpdate()
+                        ->max('revision_number') ?? 0;
+
+                    $article->revisions()->create([
+                        'author_id'       => auth()->id(),
+                        'title'           => $article->title,
+                        'excerpt'         => $article->excerpt,
+                        'body'            => $article->body,
+                        'revision_number' => $maxRevision + 1,
+                    ]);
+                });
             }
         });
     }
@@ -140,5 +157,30 @@ class EducationArticle extends Model
     {
         $total = $this->helpful_count + $this->not_helpful_count;
         return $total > 0 ? (int) round($this->helpful_count / $total * 100) : null;
+    }
+
+    public function getLastUpdatedLabelAttribute(): string
+    {
+        $date = $this->updated_at ?? $this->last_generated_at ?? $this->created_at;
+        return 'آخرین بروزرسانی: ' . ($date ? $date->format('Y-m-d') : '—');
+    }
+
+    /**
+     * F-05: Canonical hash function — single source of truth used by model,
+     * DocumentationGeneratorService, and EducationSyncService.
+     */
+    public static function computeHashFromParts(string $title, string $body, string $excerpt = ''): string
+    {
+        return hash('sha256', $title . '|' . $body . '|' . $excerpt);
+    }
+
+    public function computeHash(): string
+    {
+        return static::computeHashFromParts($this->title, $this->body ?? '', $this->excerpt ?? '');
+    }
+
+    public function isHashStale(): bool
+    {
+        return $this->documentation_hash !== $this->computeHash();
     }
 }

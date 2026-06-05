@@ -32,6 +32,20 @@ use SaaSPlatform\Modules\Education\Contracts\Services\EducationRecommendationSer
 use SaaSPlatform\Modules\Education\Contracts\Services\WalkthroughTriggerServiceInterface;
 use SaaSPlatform\Modules\Education\Contracts\Services\EducationAiContentGeneratorInterface;
 use SaaSPlatform\Modules\Education\Contracts\Services\EducationAiRecommendationInterface;
+// EDU-14A — AI Education Engine contracts
+use SaaSPlatform\Modules\Education\Contracts\Services\UserLearningProfileServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\KnowledgeGapServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\AIRecommendationScoreServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\ContentReadinessServiceInterface;
+// EDU-14B — Intelligence Orchestration Layer contracts
+use SaaSPlatform\Modules\Education\Contracts\Services\RecommendationRefreshServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\KnowledgeGapQueueServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\ContentDeficitQueueServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\EducationAnalyticsServiceInterface;
+// EDU-15 — AI Content Generation contracts
+use SaaSPlatform\Modules\Education\Contracts\Ai\AiContentProviderInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\EducationAiContentGenerationServiceInterface;
+use SaaSPlatform\Modules\Education\Contracts\Services\EducationDraftPersistenceServiceInterface;
 
 // Implementations — repositories
 use SaaSPlatform\Modules\Education\Repositories\EducationArticleRepository;
@@ -63,13 +77,39 @@ use SaaSPlatform\Modules\Education\Services\EducationRecommendationService;
 use SaaSPlatform\Modules\Education\Services\WalkthroughTriggerService;
 use SaaSPlatform\Modules\Education\Services\EducationAiContentGeneratorStub;
 use SaaSPlatform\Modules\Education\Services\EducationAiRecommendationStub;
+// EDU-14A — AI Education Engine implementations
+use SaaSPlatform\Modules\Education\Services\Education\UserLearningProfileService;
+use SaaSPlatform\Modules\Education\Services\Education\KnowledgeGapService;
+use SaaSPlatform\Modules\Education\Services\Education\AIRecommendationScoreService;
+use SaaSPlatform\Modules\Education\Services\Education\ContentReadinessService;
+// EDU-14B — Intelligence Orchestration Layer implementations
+use SaaSPlatform\Modules\Education\Services\Education\RecommendationRefreshService;
+use SaaSPlatform\Modules\Education\Services\Education\KnowledgeGapQueueService;
+use SaaSPlatform\Modules\Education\Services\Education\ContentDeficitQueueService;
+use SaaSPlatform\Modules\Education\Services\Education\EducationAnalyticsService;
+// EDU-15 — AI Content Generation implementations
+use SaaSPlatform\Modules\Education\Ai\Providers\NullAiContentProvider;
+use SaaSPlatform\Modules\Education\Ai\Providers\ClaudeAiContentProvider;
+use SaaSPlatform\Modules\Education\Ai\Providers\OpenAiContentProvider;
+use SaaSPlatform\Modules\Education\Services\Education\EducationAiContentGenerationService;
+use SaaSPlatform\Modules\Education\Services\Education\GeneratedContentValidator;
+use SaaSPlatform\Modules\Education\Services\Education\EducationDraftPersistenceService;
 
 // Models & policies
 use SaaSPlatform\Modules\Education\Models\EducationArticle;
 use SaaSPlatform\Modules\Education\Models\EducationLearningPath;
+use SaaSPlatform\Modules\Education\Models\EducationWalkthrough;
 use SaaSPlatform\Modules\Education\Policies\EducationArticlePolicy;
 use SaaSPlatform\Modules\Education\Policies\EducationLearningPathPolicy;
+use SaaSPlatform\Modules\Education\Policies\EducationWalkthroughPolicy;
 
+// Commands (EDU-14B)
+use SaaSPlatform\Modules\Education\Console\Commands\RefreshRecommendationsCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\BuildGapQueueCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\BuildContentDeficitQueueCommand;
+// Commands (EDU-15)
+use SaaSPlatform\Modules\Education\Console\Commands\GenerateContentCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\GenerateGapContentCommand;
 // Commands
 use SaaSPlatform\Modules\Education\Console\Commands\MigrateKbToEducationCommand;
 use SaaSPlatform\Modules\Education\Console\Commands\ValidateEducationCommand;
@@ -78,6 +118,11 @@ use SaaSPlatform\Modules\Education\Console\Commands\DiscoverFeaturesCommand;
 use SaaSPlatform\Modules\Education\Console\Commands\GenerateDocumentationCommand;
 use SaaSPlatform\Modules\Education\Console\Commands\GenerateRecommendationsCommand;
 use SaaSPlatform\Modules\Education\Console\Commands\AdoptionReportCommand;
+// Phase EDU-12 commands
+use SaaSPlatform\Modules\Education\Console\Commands\SyncCustomerEducationCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\SyncAllCustomersEducationCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\VerifyEducationSyncCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\ListSitesCommand;
 
 class EducationServiceProvider extends ServiceProvider
 {
@@ -123,6 +168,24 @@ class EducationServiceProvider extends ServiceProvider
         $this->app->singleton(EducationRecommendationService::class);
         $this->app->singleton(WalkthroughTriggerService::class);
 
+        // --- Service singletons (Phase EDU-12) ---
+        $this->app->singleton(\SaaSPlatform\Modules\Education\Services\EducationWalkthroughGeneratorService::class);
+        $this->app->singleton(\SaaSPlatform\Modules\Education\Services\EducationLearningPathGeneratorService::class);
+        $this->app->singleton(\SaaSPlatform\Modules\Education\Services\EducationChangeDetectorService::class);
+        $this->app->singleton(\SaaSPlatform\Modules\Education\Services\EducationSyncService::class);
+
+        // --- Service singletons (Phase EDU-14A) ---
+        $this->app->singleton(UserLearningProfileService::class);
+        $this->app->singleton(KnowledgeGapService::class);
+        $this->app->singleton(AIRecommendationScoreService::class);
+        $this->app->singleton(ContentReadinessService::class);
+
+        // --- Service singletons (Phase EDU-14B) ---
+        $this->app->singleton(RecommendationRefreshService::class);
+        $this->app->singleton(KnowledgeGapQueueService::class);
+        $this->app->singleton(ContentDeficitQueueService::class);
+        $this->app->singleton(EducationAnalyticsService::class);
+
         // --- Interface → concrete bindings (original) ---
         $this->app->bind(EducationServiceInterface::class,       EducationArticleService::class);
         $this->app->bind(EducationSearchServiceInterface::class,  EducationSearchService::class);
@@ -134,6 +197,46 @@ class EducationServiceProvider extends ServiceProvider
         $this->app->bind(FeatureUsageServiceInterface::class,            FeatureUsageService::class);
         $this->app->bind(EducationRecommendationServiceInterface::class, EducationRecommendationService::class);
         $this->app->bind(WalkthroughTriggerServiceInterface::class,      WalkthroughTriggerService::class);
+
+        // --- Interface → concrete bindings (Phase EDU-14A) ---
+        $this->app->bind(UserLearningProfileServiceInterface::class,  UserLearningProfileService::class);
+        $this->app->bind(KnowledgeGapServiceInterface::class,          KnowledgeGapService::class);
+        $this->app->bind(AIRecommendationScoreServiceInterface::class, AIRecommendationScoreService::class);
+        $this->app->bind(ContentReadinessServiceInterface::class,      ContentReadinessService::class);
+
+        // --- Interface → concrete bindings (Phase EDU-14B) ---
+        $this->app->bind(RecommendationRefreshServiceInterface::class, RecommendationRefreshService::class);
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class,     KnowledgeGapQueueService::class);
+        $this->app->bind(ContentDeficitQueueServiceInterface::class,   ContentDeficitQueueService::class);
+        $this->app->bind(EducationAnalyticsServiceInterface::class,    EducationAnalyticsService::class);
+
+        // --- EDU-15: AI Content Generation ---
+        // Provider selected via config('education.ai_provider') — no provider-specific code in module
+        $this->app->singleton(AiContentProviderInterface::class, function ($app) {
+            $provider = config('education.ai_provider', 'null');
+            $cfg      = config('education.ai_generation', []);
+
+            return match ($provider) {
+                'claude' => new ClaudeAiContentProvider(
+                    apiKey:    $cfg['claude_api_key'] ?? '',
+                    model:     $cfg['claude_model']   ?? 'claude-sonnet-4-6',
+                    maxTokens: (int) ($cfg['max_tokens'] ?? 2048),
+                ),
+                'openai' => new OpenAiContentProvider(
+                    apiKey:    $cfg['openai_api_key'] ?? '',
+                    model:     $cfg['openai_model']   ?? 'gpt-4o',
+                    maxTokens: (int) ($cfg['max_tokens'] ?? 2048),
+                ),
+                default => new NullAiContentProvider(),
+            };
+        });
+
+        $this->app->singleton(GeneratedContentValidator::class);
+        $this->app->singleton(EducationAiContentGenerationService::class);
+        $this->app->singleton(EducationDraftPersistenceService::class);
+
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, EducationAiContentGenerationService::class);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class,    EducationDraftPersistenceService::class);
     }
 
     public function boot(): void
@@ -172,6 +275,7 @@ class EducationServiceProvider extends ServiceProvider
     {
         Gate::policy(EducationArticle::class,      EducationArticlePolicy::class);
         Gate::policy(EducationLearningPath::class, EducationLearningPathPolicy::class);
+        Gate::policy(EducationWalkthrough::class,  EducationWalkthroughPolicy::class);
     }
 
     protected function registerPublishables(): void
@@ -208,6 +312,18 @@ class EducationServiceProvider extends ServiceProvider
                 GenerateDocumentationCommand::class,
                 GenerateRecommendationsCommand::class,
                 AdoptionReportCommand::class,
+                // Phase EDU-12
+                ListSitesCommand::class,
+                SyncCustomerEducationCommand::class,
+                SyncAllCustomersEducationCommand::class,
+                VerifyEducationSyncCommand::class,
+                // Phase EDU-14B — Intelligence Orchestration Layer
+                RefreshRecommendationsCommand::class,
+                BuildGapQueueCommand::class,
+                BuildContentDeficitQueueCommand::class,
+                // Phase EDU-15 — AI Content Generation
+                GenerateContentCommand::class,
+                GenerateGapContentCommand::class,
             ]);
         }
     }
@@ -216,15 +332,15 @@ class EducationServiceProvider extends ServiceProvider
     {
         /** @var Router $router */
         $router = $this->app['router'];
+        // F-13: Register as a named alias only — applied explicitly on admin routes,
+        // not pushed to the global 'web' group (which would run it on every public request).
         $router->aliasMiddleware('education.track', TrackFeatureUsageMiddleware::class);
-
-        // Attach to all admin web routes so every page visit is tracked automatically
-        $router->pushMiddlewareToGroup('web', TrackFeatureUsageMiddleware::class);
     }
 
     protected function registerViewComposers(): void
     {
         // Inject $eduGuides, $walkthroughTriggers, $eduRecommendationCount into every admin.* view
-        View::composer('admin.*', EducationGuideComposer::class);
+        // AND into the layout so the walkthrough runner + recommendation badge render at layout level.
+        View::composer(['admin.*', 'layouts.admin'], EducationGuideComposer::class);
     }
 }

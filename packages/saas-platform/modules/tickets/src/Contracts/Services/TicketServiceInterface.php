@@ -60,4 +60,9 @@ interface TicketServiceInterface
      * Get ticket statistics.
      */
     public function getStats(?int $siteId = null, bool $platformOnly = false): array;
+
+    /**
+     * Soft-delete a ticket.
+     */
+    public function delete(Ticket $ticket): bool;
 }

@@ -16,10 +16,12 @@ class EducationLearningPath extends Model
 
     protected $fillable = [
         'title', 'slug', 'description', 'site_id',
-        'target_roles', 'module_slug',
+        'target_roles', 'module_slug', 'feature_key', 'auto_generated',
         'prerequisite_path_ids', 'path_type',
         'is_active', 'sort_order',
         'estimated_minutes', 'completion_reward', 'meta',
+        'documentation_version', 'documentation_hash',
+        'last_generated_at', 'last_synced_at', 'needs_regeneration',
     ];
 
     protected $casts = [
@@ -28,8 +30,13 @@ class EducationLearningPath extends Model
         'completion_reward'     => 'array',
         'meta'                  => 'array',
         'is_active'             => 'boolean',
+        'auto_generated'        => 'boolean',
+        'needs_regeneration'    => 'boolean',
         'sort_order'            => 'integer',
         'estimated_minutes'     => 'integer',
+        'documentation_version' => 'integer',
+        'last_generated_at'     => 'datetime',
+        'last_synced_at'        => 'datetime',
     ];
 
     protected static function booted(): void

@@ -28,6 +28,8 @@ final class TicketProxyData
     public readonly ?string    $customer_name;
     public readonly ?string    $customer_mobile;
     public readonly ?string    $category;
+    public readonly string     $type;
+    public readonly ?string    $fr_status;
     public readonly ?array     $tags;
     public readonly ?array     $attachments;
     public readonly Carbon     $created_at;
@@ -41,6 +43,31 @@ final class TicketProxyData
     /** Set after construction: 'platform' | 'user' */
     public ?string $channel = null;
 
+    /** author_type of the last non-internal reply (set after construction) */
+    public ?string $last_reply_author = null;
+
+    public function isFeatureRequest(): bool
+    {
+        return $this->type === 'feature_request';
+    }
+
+    public function frStatusLabel(): string
+    {
+        $labels = [
+            'submitted'            => 'ارسال شده',
+            'received'             => 'دریافت شده',
+            'under_review'         => 'در حال بررسی',
+            'feasibility_analysis' => 'امکان‌سنجی',
+            'approved'             => 'تأیید شده',
+            'rejected'             => 'رد شده',
+            'scheduled'            => 'برنامه‌ریزی شده',
+            'in_development'       => 'در حال توسعه',
+            'testing'              => 'تست',
+            'released'             => 'منتشر شده',
+        ];
+        return $labels[$this->fr_status ?? 'submitted'] ?? 'نامشخص';
+    }
+
     public function __construct(array $data)
     {
         $this->id             = $data['id'] ?? 0;
@@ -52,6 +79,8 @@ final class TicketProxyData
         $this->customer_name   = $data['customer_name'] ?? null;
         $this->customer_mobile = $data['customer_mobile'] ?? $data['mobile'] ?? null;
         $this->category       = $data['category'] ?? null;
+        $this->type           = $data['type'] ?? 'support';
+        $this->fr_status      = $data['fr_status'] ?? null;
         $this->tags           = is_array($data['tags'] ?? null) ? $data['tags'] : null;
         $this->attachments    = is_array($data['attachments'] ?? null) ? $data['attachments'] : null;
 
@@ -116,6 +145,8 @@ final class TicketProxyData
             'customer_name'   => $model->customer_name,
             'customer_mobile' => $model->customer_mobile,
             'category'       => $model->category,
+            'type'           => $model->type ?? 'support',
+            'fr_status'      => $model->fr_status,
             'created_at'     => $model->created_at->toIso8601String(),
             'updated_at'     => $model->updated_at->toIso8601String(),
             'assignee_name'  => $model->assignee?->name,

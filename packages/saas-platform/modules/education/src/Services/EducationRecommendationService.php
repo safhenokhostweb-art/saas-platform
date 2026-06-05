@@ -23,8 +23,15 @@ class EducationRecommendationService implements EducationRecommendationServiceIn
 
     public function generateForUser(int $userId, ?int $siteId): int
     {
-        $created = 0;
+        // C-03: Enforce max_active_per_user — never exceed the configured cap.
+        $maxActive = (int) config('education.recommendation.max_active_per_user', 10);
+        $current   = $this->recommendations->countActiveForUser($userId, $siteId);
 
+        if ($current >= $maxActive) {
+            return 0;
+        }
+
+        $created = 0;
         $created += $this->recommendUnusedFeatures($userId, $siteId);
         $created += $this->recommendAvailableArticles($userId, $siteId);
         $created += $this->recommendLearningPaths($userId, $siteId);
@@ -87,8 +94,9 @@ class EducationRecommendationService implements EducationRecommendationServiceIn
     {
         $created = 0;
 
-        // Find features with low usage and matching articles
-        $lowUsage = $this->usage->unusedFeatures($siteId)->take(3);
+        // C-05: Use per-user unused features — not site-wide aggregate.
+        // neverUsedFeatures() is scoped to $userId so each user sees personalised recommendations.
+        $lowUsage = $this->usage->neverUsedFeatures($userId, $siteId)->take(3);
 
         foreach ($lowUsage as $feature) {
             $article = EducationArticle::published()

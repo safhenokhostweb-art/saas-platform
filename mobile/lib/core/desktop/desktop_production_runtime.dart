@@ -176,9 +176,13 @@ class DesktopProductionRuntime with WindowListener {
         payload: payload,
       );
     } else if (Platform.isWindows) {
-      // Windows: update tray title to indicate new notification
       try { await _tray.setTitle('Support Client (!)'); } catch (_) {}
     }
+
+    // درخواست توجه پنجره (taskbar blink) در تمام پلتفرم‌های دسکتاپ
+    try {
+      await windowManager.requestAttention(AppWindowAttentionType.informational);
+    } catch (_) {}
 
     await updateUnreadBadge(_unreadCount + 1);
   }

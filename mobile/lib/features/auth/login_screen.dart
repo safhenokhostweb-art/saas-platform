@@ -74,18 +74,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   String _toFarsiError(String raw) {
-    if (raw.contains('401') || raw.contains('Invalid') || raw.contains('credentials'))
+    if (raw.contains('401') || raw.contains('Invalid') || raw.contains('credentials')) {
       return 'شماره موبایل یا رمز عبور اشتباه است.';
-    if (raw.contains('404'))
+    }
+    if (raw.contains('404')) {
       return 'سرور پیدا نشد. لطفاً اتصال اینترنت را بررسی کنید.';
-    if (raw.contains('422'))
+    }
+    if (raw.contains('422')) {
       return 'اطلاعات وارد شده نادرست است.';
-    if (raw.contains('500'))
+    }
+    if (raw.contains('500')) {
       return 'خطای داخلی سرور. لطفاً دوباره تلاش کنید.';
-    if (raw.contains('SocketException') || raw.contains('connection'))
+    }
+    if (raw.contains('SocketException') || raw.contains('connection')) {
       return 'اتصال به سرور ممکن نیست. اتصال اینترنت را بررسی کنید.';
-    if (raw.contains('timeout'))
+    }
+    if (raw.contains('timeout')) {
       return 'زمان انتظار تمام شد. دوباره تلاش کنید.';
+    }
     return 'خطا در ورود. لطفاً دوباره تلاش کنید.';
   }
 

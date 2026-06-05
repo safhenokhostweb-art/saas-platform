@@ -19,6 +19,8 @@ class EducationArticleController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', EducationArticle::class);
+
         $articles   = $this->articles->paginate($request->only(['search', 'status', 'category_id', 'module_slug', 'content_type']), config('education.pagination', 20));
         $categories = $this->categories->all();
 
@@ -27,6 +29,8 @@ class EducationArticleController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', EducationArticle::class);
+
         $categories   = $this->categories->all();
         $contentTypes = ['article', 'guide', 'tutorial', 'faq', 'reference'];
 
@@ -35,6 +39,7 @@ class EducationArticleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', EducationArticle::class);
         $data = $request->validate([
             'edu_category_id' => ['required', 'exists:edu_categories,id'],
             'title'           => ['required', 'string', 'max:255'],
@@ -56,12 +61,16 @@ class EducationArticleController extends Controller
 
     public function show(EducationArticle $article): View
     {
+        $this->authorize('view', $article);
+
         $article->load('category', 'author', 'revisions', 'media');
         return view('education::admin.education.articles.show', compact('article'));
     }
 
     public function edit(EducationArticle $article): View
     {
+        $this->authorize('update', $article);
+
         $categories   = $this->categories->all();
         $contentTypes = ['article', 'guide', 'tutorial', 'faq', 'reference'];
 
@@ -70,6 +79,7 @@ class EducationArticleController extends Controller
 
     public function update(Request $request, EducationArticle $article): RedirectResponse
     {
+        $this->authorize('update', $article);
         $data = $request->validate([
             'edu_category_id' => ['required', 'exists:edu_categories,id'],
             'title'           => ['required', 'string', 'max:255'],
@@ -90,12 +100,16 @@ class EducationArticleController extends Controller
 
     public function destroy(EducationArticle $article): RedirectResponse
     {
+        $this->authorize('delete', $article);
+
         $this->articles->delete($article);
         return redirect()->route('admin.education.articles.index')->with('success', 'مقاله حذف شد.');
     }
 
     public function publish(EducationArticle $article): RedirectResponse
     {
+        $this->authorize('update', $article);
+
         $this->articles->publish($article);
         return back()->with('success', 'مقاله منتشر شد.');
     }

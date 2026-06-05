@@ -27,8 +27,9 @@ class WalkthroughTriggerService implements WalkthroughTriggerServiceInterface
             return collect();
         }
 
-        // Filter out already-completed walkthroughs for this user
+        // F-15: Scope completed walkthrough lookup by site_id to prevent cross-tenant suppression
         $completedIds = EducationWalkthroughProgress::where('user_id', $userId)
+            ->where('site_id', $siteId)
             ->whereNotNull('completed_at')
             ->pluck('edu_walkthrough_id')
             ->toArray();
@@ -59,14 +60,18 @@ class WalkthroughTriggerService implements WalkthroughTriggerServiceInterface
             ->values();
     }
 
-    public function markCompleted(int $walkthroughId, int $userId): void
+    public function markCompleted(int $walkthroughId, int $userId, int $siteId): void
     {
+        // F-01: site_id is part of the unique key — prevents cross-tenant progress leakage.
+        // The DB has a unique index on (user_id, site_id, edu_walkthrough_id).
         EducationWalkthroughProgress::updateOrCreate(
             [
                 'edu_walkthrough_id' => $walkthroughId,
                 'user_id'            => $userId,
+                'site_id'            => $siteId,
             ],
             [
+                'status'       => EducationWalkthroughProgress::STATUS_COMPLETED,
                 'completed_at' => now(),
             ]
         );

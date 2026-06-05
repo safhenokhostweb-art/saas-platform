@@ -55,14 +55,6 @@
       </div>
     </div>
 
-    @if(session('success'))
-    <div class="mb-6 px-4 py-3 rounded-lg text-sm flex items-center gap-2"
-         style="background:var(--ui-success-light);color:var(--ui-success-text);border:1px solid var(--ui-success-border);">
-      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-      {{ session('success') }}
-    </div>
-    @endif
-
     {{-- Active Theme Banner --}}
     @if($active)
     <div class="mb-6 p-4 rounded-xl flex items-center gap-4"

@@ -349,19 +349,18 @@ class ClientApiService {
         'is_internal': isInternal,
       });
     } else {
-      final files = await Future.wait(filePaths.asMap().entries.map((e) async {
+      final multipartFiles = await Future.wait(filePaths.asMap().entries.map((e) async {
         final name = e.key < fileNames.length ? fileNames[e.key] : e.value.split(Platform.pathSeparator).last;
-        return MapEntry('files[]', await MultipartFile.fromFile(e.value, filename: name));
+        return await MultipartFile.fromFile(e.value, filename: name);
       }));
       final formData = FormData.fromMap({
         'message':     message,
         'is_internal': isInternal ? '1' : '0',
-        ...Map.fromEntries(files),
+        'files[]':     multipartFiles,
       });
       await _dio.post(
         '$base/api/mobile/tickets/$ticketId/reply',
         data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
     }
   }
@@ -425,6 +424,36 @@ class ClientApiService {
     final dir  = Directory('${temp.path}/saas_attachments');
     if (!dir.existsSync()) dir.createSync(recursive: true);
     return dir;
+  }
+
+  // ─── Section J: FCM push token registration ──────────────────────────────
+
+  Future<void> registerPushToken(String fcmToken) async {
+    final base = await _baseUrl;
+    try {
+      await _dio.post(
+        '$base/api/mobile/push/register',
+        data: {
+          'token':    fcmToken,
+          'platform': _platformName(),
+        },
+      );
+    } catch (_) {}
+  }
+
+  Future<void> unregisterPushToken(String fcmToken) async {
+    final base = await _baseUrl;
+    try {
+      await _dio.delete('$base/api/mobile/push/unregister', data: {'token': fcmToken});
+    } catch (_) {}
+  }
+
+  // ─── Section K: Feature Request vote ─────────────────────────────────────
+
+  Future<Map<String, dynamic>> voteFeatureRequest(int ticketId) async {
+    final base = await _baseUrl;
+    final resp = await _dio.post('$base/api/mobile/tickets/$ticketId/vote');
+    return (resp.data as Map<String, dynamic>);
   }
 
   // ─── Auth header helper (used by interceptor) ────────────────────────────

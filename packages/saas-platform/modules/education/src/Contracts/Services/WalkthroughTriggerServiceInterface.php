@@ -13,6 +13,9 @@ interface WalkthroughTriggerServiceInterface
      */
     public function triggersForRoute(string $routeName, int $userId, ?int $siteId): Collection;
 
-    /** Mark a walkthrough as completed for the user so it is never triggered again. */
-    public function markCompleted(int $walkthroughId, int $userId): void;
+    /**
+     * Mark a walkthrough as completed for the user+site so it is never triggered again on that site.
+     * site_id is required — without it the progress record leaks across tenants.
+     */
+    public function markCompleted(int $walkthroughId, int $userId, int $siteId): void;
 }

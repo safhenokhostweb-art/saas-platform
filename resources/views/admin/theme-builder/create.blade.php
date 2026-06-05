@@ -3,10 +3,6 @@
 @section('header', 'ایجاد تم جدید')
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-
 <form action="{{ route('admin.theme-builder.store') }}" method="post" class="max-w-xl">
     @csrf
     <div class="card">

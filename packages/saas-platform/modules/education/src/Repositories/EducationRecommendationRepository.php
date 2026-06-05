@@ -3,6 +3,7 @@
 namespace SaaSPlatform\Modules\Education\Repositories;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use SaaSPlatform\Modules\Education\Contracts\Repositories\EducationRecommendationRepositoryInterface;
 use SaaSPlatform\Modules\Education\Models\EducationRecommendation;
 
@@ -21,7 +22,25 @@ class EducationRecommendationRepository implements EducationRecommendationReposi
 
     public function create(array $data): EducationRecommendation
     {
-        return EducationRecommendation::create($data);
+        // F-07: Wrap in a serializable transaction with a SELECT ... FOR UPDATE to prevent
+        // duplicate recommendations when two queue workers run generateForUser concurrently.
+        $keys = array_intersect_key($data, array_flip([
+            'user_id', 'site_id', 'recommendation_type',
+            'article_id', 'walkthrough_id', 'learning_path_id',
+        ]));
+        if (! array_key_exists('site_id', $keys)) {
+            $keys['site_id'] = null;
+        }
+
+        return DB::transaction(function () use ($keys, $data) {
+            $existing = EducationRecommendation::where($keys)
+                ->whereNull('dismissed_at')
+                ->whereNull('completed_at')
+                ->lockForUpdate()
+                ->first();
+
+            return $existing ?? EducationRecommendation::create($data);
+        });
     }
 
     public function dismiss(int $recommendationId, int $userId): bool

@@ -16,6 +16,11 @@ class TicketSummary {
     required this.status,
     required this.priority,
     this.category,
+    this.type,
+    this.frStatus,
+    this.lastReplyPreview,
+    this.lastReplyAuthorType,
+    this.lastReplyAt,
     this.customerName,
     this.customerMobile,
     this.assigneeName,
@@ -29,30 +34,52 @@ class TicketSummary {
   final String status;
   final String priority;
   final String? category;
+
+  // Section K: Feature Request support
+  final String? type;
+  final String? frStatus;
+
+  // Section F/J: attention system
+  final String? lastReplyPreview;
+  final String? lastReplyAuthorType;
+  final DateTime? lastReplyAt;
+
   final String? customerName;
   final String? customerMobile;
   final String? assigneeName;
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  bool get isFeatureRequest => type == 'feature_request';
+
   factory TicketSummary.fromJson(Map<String, dynamic> j) => TicketSummary(
-        id:              j['id'] as int? ?? 0,
-        ticketNumber:    (j['ticket_number'] as String?) ?? '',
-        subject:         (j['subject'] as String?) ?? '',
-        status:          (j['status'] as String?) ?? 'open',
-        priority:        (j['priority'] as String?) ?? 'normal',
-        category:        j['category'] as String?,
-        customerName:    j['customer_name'] as String?,
-        customerMobile:  j['customer_mobile'] as String?,
-        assigneeName:    j['assignee_name'] as String?,
-        createdAt:       _parseDate(j['created_at']),
-        updatedAt:       _parseDate(j['updated_at']),
+        id:                  j['id'] as int? ?? 0,
+        ticketNumber:        (j['ticket_number'] as String?) ?? '',
+        subject:             (j['subject'] as String?) ?? '',
+        status:              (j['status'] as String?) ?? 'open',
+        priority:            (j['priority'] as String?) ?? 'normal',
+        category:            j['category'] as String?,
+        type:                j['type'] as String?,
+        frStatus:            j['fr_status'] as String?,
+        lastReplyPreview:    j['last_reply_preview'] as String?,
+        lastReplyAuthorType: j['last_reply_author_type'] as String?,
+        lastReplyAt:         j['last_reply_at'] != null ? _parseDate(j['last_reply_at']) : null,
+        customerName:        j['customer_name'] as String?,
+        customerMobile:      j['customer_mobile'] as String?,
+        assigneeName:        j['assignee_name'] as String?,
+        createdAt:           _parseDate(j['created_at']),
+        updatedAt:           _parseDate(j['updated_at']),
       );
 
   bool get isOpen       => status == 'open';
   bool get isInProgress => status == 'in_progress';
   bool get isClosed     => status == 'closed';
   bool get isHigh       => priority == 'high';
+
+  // Section F/J: attention indicator
+  bool get hasUnreadCustomer  => !isClosed && lastReplyAuthorType == 'customer';
+  bool get hasUnreadSiteAdmin => !isClosed && lastReplyAuthorType == 'site_admin';
+  bool get hasUnreadStaff     => !isClosed && lastReplyAuthorType == 'staff';
 
   String get statusLabel {
     switch (status) {
@@ -166,6 +193,11 @@ class TicketDetail {
     required this.status,
     required this.priority,
     this.category,
+    this.type,
+    this.frStatus,
+    this.frStatusUpdatedAt,
+    this.frImpactScore,
+    this.frEstimatedQuarter,
     this.customerName,
     this.customerMobile,
     this.assigneeName,
@@ -186,6 +218,14 @@ class TicketDetail {
   final String status;
   final String priority;
   final String? category;
+
+  // Section K: Feature Request
+  final String? type;
+  final String? frStatus;
+  final DateTime? frStatusUpdatedAt;
+  final int? frImpactScore;
+  final String? frEstimatedQuarter;
+
   final String? customerName;
   final String? customerMobile;
   final String? assigneeName;
@@ -197,6 +237,8 @@ class TicketDetail {
   final DateTime? closedAt;
   final DateTime? firstResponseAt;
   final DateTime? resolvedAt;
+
+  bool get isFeatureRequest => type == 'feature_request';
 
   bool get isOpen       => status == 'open';
   bool get isInProgress => status == 'in_progress';
@@ -217,30 +259,35 @@ class TicketDetail {
   };
 
   factory TicketDetail.fromJson(Map<String, dynamic> j) => TicketDetail(
-        id:              j['id'] as int? ?? 0,
-        ticketNumber:    (j['ticket_number'] as String?) ?? '',
-        subject:         (j['subject'] as String?) ?? '',
-        description:     (j['description'] as String?) ?? (j['message'] as String?) ?? '',
-        status:          (j['status'] as String?) ?? 'open',
-        priority:        (j['priority'] as String?) ?? 'normal',
-        category:        j['category'] as String?,
-        customerName:    j['customer_name'] as String?,
-        customerMobile:  j['customer_mobile'] as String?,
-        assigneeName:    j['assignee_name'] as String?,
-        tags:            (j['tags'] as List<dynamic>? ?? []).whereType<String>().toList(),
-        attachments:     (j['attachments'] as List<dynamic>? ?? [])
+        id:                  j['id'] as int? ?? 0,
+        ticketNumber:        (j['ticket_number'] as String?) ?? '',
+        subject:             (j['subject'] as String?) ?? '',
+        description:         (j['description'] as String?) ?? (j['message'] as String?) ?? '',
+        status:              (j['status'] as String?) ?? 'open',
+        priority:            (j['priority'] as String?) ?? 'normal',
+        category:            j['category'] as String?,
+        type:                j['type'] as String?,
+        frStatus:            j['fr_status'] as String?,
+        frStatusUpdatedAt:   j['fr_status_updated_at'] != null ? _parseDate(j['fr_status_updated_at']) : null,
+        frImpactScore:       j['fr_impact_score'] as int?,
+        frEstimatedQuarter:  j['fr_estimated_quarter'] as String?,
+        customerName:        j['customer_name'] as String?,
+        customerMobile:      j['customer_mobile'] as String?,
+        assigneeName:        j['assignee_name'] as String?,
+        tags:                (j['tags'] as List<dynamic>? ?? []).whereType<String>().toList(),
+        attachments:         (j['attachments'] as List<dynamic>? ?? [])
             .whereType<Map<String, dynamic>>()
             .map(TicketAttachment.fromJson)
             .toList(),
-        replies:         (j['replies'] as List<dynamic>? ?? [])
+        replies:             (j['replies'] as List<dynamic>? ?? [])
             .whereType<Map<String, dynamic>>()
             .map(TicketReply.fromJson)
             .toList(),
-        createdAt:       _parseDate(j['created_at']),
-        updatedAt:       _parseDate(j['updated_at']),
-        closedAt:        j['closed_at'] != null ? _parseDate(j['closed_at']) : null,
-        firstResponseAt: j['first_response_at'] != null ? _parseDate(j['first_response_at']) : null,
-        resolvedAt:      j['resolved_at'] != null ? _parseDate(j['resolved_at']) : null,
+        createdAt:           _parseDate(j['created_at']),
+        updatedAt:           _parseDate(j['updated_at']),
+        closedAt:            j['closed_at'] != null ? _parseDate(j['closed_at']) : null,
+        firstResponseAt:     j['first_response_at'] != null ? _parseDate(j['first_response_at']) : null,
+        resolvedAt:          j['resolved_at'] != null ? _parseDate(j['resolved_at']) : null,
       );
 }
 

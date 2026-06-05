@@ -4,9 +4,6 @@
 
 @section('content')
 <x-module-features module='sites' />
-@if(session('success'))<div class='alert alert-success mb-4'>{{ session('success') }}</div>@endif
-@if(session('error'))<div class='alert alert-danger mb-4'>{{ session('error') }}</div>@endif
-
 <p class='mb-4'>
     <a href="{{ route('admin.sites.create') }}" class='btn btn-primary'>ایجاد سایت جدید</a>
 </p>

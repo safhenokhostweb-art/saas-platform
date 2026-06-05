@@ -17,17 +17,23 @@ class EducationWalkthroughController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', EducationWalkthrough::class);
+
         $items = $this->walkthroughs->paginate($request->only(['module_slug', 'is_active']), config('education.pagination', 20));
         return view('education::admin.education.walkthroughs.index', compact('items'));
     }
 
     public function create(): View
     {
+        $this->authorize('create', EducationWalkthrough::class);
+
         return view('education::admin.education.walkthroughs.edit', ['walkthrough' => null]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', EducationWalkthrough::class);
+
         $data = $this->validateWalkthrough($request);
         $this->walkthroughs->create($data);
         return redirect()->route('admin.education.walkthroughs.index')->with('success', 'راهنمای گام‌به‌گام ایجاد شد.');
@@ -35,12 +41,16 @@ class EducationWalkthroughController extends Controller
 
     public function edit(EducationWalkthrough $walkthrough): View
     {
+        $this->authorize('update', $walkthrough);
+
         $walkthrough->load('steps');
         return view('education::admin.education.walkthroughs.edit', compact('walkthrough'));
     }
 
     public function update(Request $request, EducationWalkthrough $walkthrough): RedirectResponse
     {
+        $this->authorize('update', $walkthrough);
+
         $data = $this->validateWalkthrough($request);
         $this->walkthroughs->update($walkthrough, $data);
         return back()->with('success', 'راهنما بروز شد.');
@@ -48,6 +58,8 @@ class EducationWalkthroughController extends Controller
 
     public function destroy(EducationWalkthrough $walkthrough): RedirectResponse
     {
+        $this->authorize('delete', $walkthrough);
+
         $this->walkthroughs->delete($walkthrough);
         return redirect()->route('admin.education.walkthroughs.index')->with('success', 'راهنما حذف شد.');
     }

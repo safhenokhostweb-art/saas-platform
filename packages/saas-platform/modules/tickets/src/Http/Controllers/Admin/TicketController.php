@@ -41,7 +41,7 @@ class TicketController extends Controller
         $this->authorize('viewAny', \SaaSPlatform\Modules\Tickets\Models\Ticket::class);
 
         $user    = $request->user();
-        $filters = $request->only(['status', 'priority', 'site_id', 'category', 'q', 'sort_by', 'sort_dir', 'per_page']);
+        $filters = $request->only(['status', 'priority', 'site_id', 'category', 'type', 'q', 'sort_by', 'sort_dir', 'per_page']);
 
         // platform admin = همه تیکت‌های سیستم (super admin)
         // site admin = فقط تیکت‌های سایت خودش
@@ -51,15 +51,39 @@ class TicketController extends Controller
         // platform admin: بدون فیلتر site_id — همه تیکت‌ها را می‌بیند
 
         $tickets = $this->ticketService->getAll($filters);
+
+        // آخرین پاسخ عمومی هر تیکت — نویسنده + پیام کوتاه + زمان
+        // برای سیستم توجه رنگی (Section F — SUPPORT-SUITE-01)
+        $lastReplies = \SaaSPlatform\Modules\Tickets\Models\TicketReply::query()
+            ->selectRaw('ticket_id, id, author_type, LEFT(message, 80) as preview, created_at')
+            ->whereIn('ticket_id', $tickets->pluck('id'))
+            ->where('is_internal', false)
+            ->orderByDesc('created_at')
+            ->get()
+            ->unique('ticket_id')
+            ->keyBy('ticket_id');
+
+        $lastReplyAuthors = $lastReplies->pluck('author_type', 'ticket_id');
+
         $stats   = ($user->is_admin && !$user->is_site_admin)
             ? $this->ticketService->getStats()          // همه تیکت‌ها
             : $this->ticketService->getStats(siteId: $user->site_id);
 
+        // تعداد درخواست‌های ویژگی باز — برای badge در تب فیلتر
+        $frOpenCount = \SaaSPlatform\Modules\Tickets\Models\Ticket::withoutTenantIsolation()
+            ->where('type', 'feature_request')
+            ->whereIn('status', ['open', 'in_progress'])
+            ->when($user->is_site_admin && !$user->is_admin, fn($q) => $q->where('site_id', $user->site_id))
+            ->count();
+
         return view('tickets::admin.tickets.index', [
-            'tickets'    => $tickets,
-            'stats'      => $stats,
-            'filters'    => $filters,
-            'slaEnabled' => $this->gateService->isSlaEnabled(),
+            'tickets'          => $tickets,
+            'stats'            => $stats,
+            'filters'          => $filters,
+            'slaEnabled'       => $this->gateService->isSlaEnabled(),
+            'lastReplyAuthors' => $lastReplyAuthors,
+            'lastReplies'      => $lastReplies,
+            'frOpenCount'      => $frOpenCount,
         ]);
     }
 
@@ -256,6 +280,50 @@ class TicketController extends Controller
                 'attachments' => $r->attachments ?? [],
             ])->values(),
             'last_id' => $replies->last()?->id ?? $lastId,
+        ]);
+    }
+
+    public function checkNew(Request $request): JsonResponse
+    {
+        $lastId  = (int) $request->query('last_id', 0);
+        $user    = $request->user();
+
+        $query = Ticket::withoutTenantIsolation()->where('id', '>', $lastId);
+        if ($user->is_site_admin && !$user->is_admin) {
+            $query->where('site_id', $user->site_id);
+        }
+
+        $tickets = $query->orderBy('id')->limit(10)
+            ->get(['id', 'ticket_number', 'subject', 'customer_name', 'created_at']);
+
+        // تیکت‌های باز/در جریان که آخرین پاسخ عمومی از customer بوده (نیاز به پاسخ ادمین)
+        // نکته: $lastId یک ticket ID است، نه reply ID — مقایسه‌ی قبلی اشتباه بود.
+        // این کوئری وضعیت فعلی را بدون نسبت به lastId برمی‌گرداند؛
+        // منطق "تازه یا قدیمی" در سمت client مدیریت می‌شود.
+        $awaitingReply = \Illuminate\Support\Facades\DB::table('tickets as t')
+            ->join('ticket_replies as r', function ($join) {
+                $join->on('r.ticket_id', '=', 't.id')
+                     ->where('r.is_internal', false)
+                     ->whereRaw('r.id = (SELECT MAX(r2.id) FROM ticket_replies r2 WHERE r2.ticket_id = t.id AND r2.is_internal = 0 AND r2.deleted_at IS NULL)');
+            })
+            ->whereIn('t.status', ['open', 'in_progress'])
+            ->whereNull('t.deleted_at')
+            ->where('r.author_type', 'customer')
+            ->when($user->is_site_admin && !$user->is_admin,
+                fn($q) => $q->where('t.site_id', $user->site_id))
+            ->count();
+
+        return response()->json([
+            'new_count'      => $tickets->count(),
+            'awaiting_reply' => $awaitingReply,
+            'last_id'        => $tickets->last()?->id ?? $lastId,
+            'tickets'        => $tickets->map(fn($t) => [
+                'id'            => $t->id,
+                'ticket_number' => $t->ticket_number,
+                'subject'       => $t->subject,
+                'customer_name' => $t->customer_name,
+                'url'           => route('tickets.admin.show', $t->id),
+            ])->values(),
         ]);
     }
 

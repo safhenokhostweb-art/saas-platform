@@ -4,9 +4,6 @@
 
 @section('content')
 <a href="{{ route('admin.payment-gateways.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded">افزودن درگاه</a>
-@if(session('success'))<div class="alert alert-success mt-2">{{ session('success') }}</div>@endif
-@if(session('error'))<div class="alert alert-danger mt-2">{{ session('error') }}</div>@endif
-
 <div class="mt-4 bg-white rounded shadow overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50">

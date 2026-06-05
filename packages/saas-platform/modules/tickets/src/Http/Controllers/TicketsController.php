@@ -120,6 +120,16 @@ class TicketsController extends Controller
     }
 
     /**
+     * Soft-delete the specified ticket.
+     */
+    public function destroy(Ticket $ticket)
+    {
+        $this->ticketService->delete($ticket);
+
+        return redirect()->route('admin.tickets.index')->with('success', 'تیکت با موفقیت حذف شد.');
+    }
+
+    /**
      * Assign a ticket to a user.
      */
     public function assign(Request $request, Ticket $ticket)

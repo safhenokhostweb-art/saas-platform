@@ -107,7 +107,11 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تیکت با موفقیت ثبت شد.'), backgroundColor: Colors.green),
       );
-      context.pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/support');
+      }
     }
   }
 

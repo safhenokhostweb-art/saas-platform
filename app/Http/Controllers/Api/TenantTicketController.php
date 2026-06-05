@@ -61,27 +61,34 @@ class TenantTicketController extends Controller
     {
         $site = $request->attributes->get('tenant_site');
 
+        $isFeatureRequest = $request->input('type') === 'feature_request';
+
         $validated = $request->validate([
-            'subject'        => ['required', 'string', 'max:255'],
-            'message'        => ['required', 'string'],
-            'customer_mobile' => ['required', 'string', 'regex:/^09[0-9]{9}$/'],
+            'subject'         => ['required', 'string', 'max:255'],
+            'message'         => ['required', 'string'],
+            // موبایل برای درخواست ویژگی اختیاری است — ادمین سایت خودش ارسال‌کننده است
+            'customer_mobile' => $isFeatureRequest
+                ? ['nullable', 'string', 'regex:/^09[0-9]{9}$/']
+                : ['required', 'string', 'regex:/^09[0-9]{9}$/'],
             'customer_name'   => ['nullable', 'string', 'max:255'],
-            'priority'       => ['nullable', 'in:low,normal,high'],
-            'category'       => ['nullable', 'string', 'max:100'],
-            'tags'           => ['nullable', 'array'],
-            'attachments'    => ['nullable', 'array'],
+            'priority'        => ['nullable', 'in:low,normal,high'],
+            'category'        => ['nullable', 'string', 'max:100'],
+            'type'            => ['nullable', 'in:support,feature_request'],
+            'tags'            => ['nullable', 'array'],
+            'attachments'     => ['nullable', 'array'],
         ]);
 
         $ticket = $this->ticketService->create([
-            'site_id'        => $site->id,
-            'subject'        => $validated['subject'],
-            'description'    => $validated['message'],
-            'customer_mobile' => $validated['customer_mobile'],
+            'site_id'         => $site->id,
+            'subject'         => $validated['subject'],
+            'description'     => $validated['message'],
+            'customer_mobile' => $validated['customer_mobile'] ?? null,
             'customer_name'   => $validated['customer_name'] ?? null,
-            'priority'       => $validated['priority'] ?? Ticket::PRIORITY_NORMAL,
-            'category'       => $validated['category'] ?? null,
-            'tags'           => $validated['tags'] ?? null,
-            'attachments'    => $validated['attachments'] ?? [],
+            'priority'        => $validated['priority'] ?? Ticket::PRIORITY_NORMAL,
+            'category'        => $validated['category'] ?? null,
+            'type'            => $validated['type'] ?? 'support',
+            'tags'            => $validated['tags'] ?? null,
+            'attachments'     => $validated['attachments'] ?? [],
         ]);
 
         return response()->json([
@@ -171,6 +178,8 @@ class TenantTicketController extends Controller
             'message'          => $ticket->description,
             'status'           => $ticket->status,
             'priority'         => $ticket->priority,
+            'type'             => $ticket->type ?? 'support',
+            'fr_status'        => $ticket->fr_status,
             'assigned_to'      => $ticket->assigned_to,
             'assignee_name'    => $ticket->assignee?->name,
             'customer_mobile'  => $ticket->customer_mobile,
