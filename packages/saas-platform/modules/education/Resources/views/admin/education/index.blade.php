@@ -137,16 +137,17 @@
     </div>
 
     {{-- Quick Navigation --}}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9">
         @foreach([
-            ['route' => 'admin.education.articles.index',      'label' => 'مقالات',           'color' => 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'],
-            ['route' => 'admin.education.categories.index',    'label' => 'دسته‌بندی‌ها',      'color' => 'bg-slate-50 text-slate-700 hover:bg-slate-100'],
-            ['route' => 'admin.education.walkthroughs.index',  'label' => 'راهنماها',          'color' => 'bg-violet-50 text-violet-700 hover:bg-violet-100'],
-            ['route' => 'admin.education.learning-paths.index','label' => 'مسیر یادگیری',     'color' => 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'],
-            ['route' => 'admin.education.release-notes.index', 'label' => 'یادداشت انتشار',   'color' => 'bg-orange-50 text-orange-700 hover:bg-orange-100'],
-            ['route' => 'admin.education.features.index',      'label' => 'ویژگی‌ها',          'color' => 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'],
-            ['route' => 'admin.education.recommendations.index','label' => 'توصیه‌ها',         'color' => 'bg-pink-50 text-pink-700 hover:bg-pink-100'],
-            ['route' => 'admin.education.adoption.index',      'label' => 'آمار پذیرش',       'color' => 'bg-teal-50 text-teal-700 hover:bg-teal-100'],
+            ['route' => 'admin.education.articles.index',               'label' => 'مقالات',           'color' => 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'],
+            ['route' => 'admin.education.categories.index',             'label' => 'دسته‌بندی‌ها',      'color' => 'bg-slate-50 text-slate-700 hover:bg-slate-100'],
+            ['route' => 'admin.education.walkthroughs.index',           'label' => 'راهنماها',          'color' => 'bg-violet-50 text-violet-700 hover:bg-violet-100'],
+            ['route' => 'admin.education.learning-paths.index',         'label' => 'مسیر یادگیری',     'color' => 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'],
+            ['route' => 'admin.education.release-notes.index',          'label' => 'یادداشت انتشار',   'color' => 'bg-orange-50 text-orange-700 hover:bg-orange-100'],
+            ['route' => 'admin.education.features.index',               'label' => 'ویژگی‌ها',          'color' => 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'],
+            ['route' => 'admin.education.recommendations.index',        'label' => 'توصیه‌ها',          'color' => 'bg-pink-50 text-pink-700 hover:bg-pink-100'],
+            ['route' => 'admin.education.adoption.index',               'label' => 'آمار پذیرش',       'color' => 'bg-teal-50 text-teal-700 hover:bg-teal-100'],
+            ['route' => 'admin.education.generated-content.review',     'label' => 'بررسی AI',          'color' => 'bg-amber-50 text-amber-700 hover:bg-amber-100'],
         ] as $nav)
         <a href="{{ route($nav['route']) }}"
            class="rounded-xl border border-transparent px-3 py-3 text-center text-xs font-medium transition-colors {{ $nav['color'] }}">

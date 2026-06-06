@@ -315,6 +315,19 @@
                         </div>
                         <h1 class="text-2xl font-bold text-gray-900">@yield('header', 'پنل مدیریت')</h1>
                     </div>
+                    {{-- ─── Education Recommendation Badge ────────────── --}}
+                    @if(!empty($eduRecommendationCount) && $eduRecommendationCount > 0)
+                    <a href="{{ route('admin.education.recommendations.index') }}"
+                       class="relative inline-flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                       title="{{ $eduRecommendationCount }} پیشنهاد آموزشی">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span class="absolute -top-0.5 -left-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-indigo-600 rounded-full px-1">
+                            {{ $eduRecommendationCount > 9 ? '9+' : $eduRecommendationCount }}
+                        </span>
+                    </a>
+                    @endif
                     {{-- ─── Profile Dropdown ─────────────────────────── --}}
                     @php
                         $__adminUser    = auth()->user();
@@ -423,6 +436,28 @@
                     </div>
                 @endif
 
+                @if(session('info'))
+                    <div class="alert alert-info mb-6" role="status">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 ml-2 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ session('info') }}
+                        </div>
+                    </div>
+                @endif
+
+                @if(session('warning'))
+                    <div class="alert alert-warning mb-6" role="alert">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 ml-2 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ session('warning') }}
+                        </div>
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="alert alert-danger mb-6" role="alert">
                         <div class="font-bold mb-2">خطاهای زیر رخ داد:</div>
@@ -441,8 +476,115 @@
     </div>
 
     @include('partials.floating-search-widget')
+    @include('partials.notification-permission', ['context' => 'platform_admin'])
+    @include('partials.admin-ticket-notifier')
     @stack('scripts')
     @yield('scripts')
+
+    {{-- ─── Education: Walkthrough Runner ──────────────────────────────────── --}}
+    @if(!empty($walkthroughTriggers) && $walkthroughTriggers->isNotEmpty() && config('education.walkthroughs_enabled', true))
+    <div x-data="eduWalkthroughRunner({{ json_encode($walkthroughTriggers->values()->map(fn($w) => [
+        'id'    => $w->id,
+        'title' => $w->title,
+        'steps' => $w->steps->map(fn($s) => ['title' => $s->title, 'body' => $s->body, 'selector' => $s->target_selector])->values(),
+    ])->values()) }})" x-init="init()" x-cloak>
+        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+             class="fixed bottom-6 left-6 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-indigo-100 overflow-hidden"
+             role="dialog" aria-modal="true" :aria-label="'راهنمای گام‌به‌گام: ' + current().title"
+             style="direction:rtl">
+            <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    <span class="text-white text-sm font-semibold truncate max-w-[180px]" x-text="current().title"></span>
+                </div>
+                <button @click="dismiss()" class="text-white/70 hover:text-white transition-colors p-1 rounded" aria-label="بستن">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-xs text-gray-400" x-text="'گام ' + (stepIndex+1) + ' از ' + current().steps.length"></span>
+                    <div class="flex gap-1">
+                        <template x-for="(s, i) in current().steps" :key="i">
+                            <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="i <= stepIndex ? 'bg-indigo-500' : 'bg-gray-200'"></div>
+                        </template>
+                    </div>
+                </div>
+                <h4 class="text-sm font-semibold text-gray-800 mb-1" x-text="currentStep().title"></h4>
+                <p class="text-xs text-gray-500 leading-relaxed" x-html="currentStep().body"></p>
+            </div>
+            <div class="px-4 pb-4 flex justify-between gap-2">
+                <button @click="prev()" x-show="stepIndex > 0"
+                        class="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    قبلی
+                </button>
+                <div class="flex-1"></div>
+                <button @click="next()"
+                        class="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                        x-text="stepIndex < current().steps.length - 1 ? 'بعدی' : 'فهمیدم'"></button>
+            </div>
+        </div>
+
+        <script>
+        function eduWalkthroughRunner(walkthroughs) {
+            return {
+                open: false,
+                walkthroughs: walkthroughs,
+                wtIndex: 0,
+                stepIndex: 0,
+                csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
+                init() {
+                    if (!this.walkthroughs.length) return;
+                    const seen = JSON.parse(localStorage.getItem('edu_seen_wts') || '[]');
+                    const idx = this.walkthroughs.findIndex(w => !seen.includes(w.id));
+                    if (idx === -1) return;
+                    this.wtIndex = idx;
+                    this.stepIndex = 0;
+                    this.open = true;
+                    this.$nextTick(() => { if (this.currentStep().selector) this.highlight(this.currentStep().selector); });
+                },
+                current() { return this.walkthroughs[this.wtIndex] || { title: '', steps: [] }; },
+                currentStep() { return this.current().steps[this.stepIndex] || { title: '', body: '', selector: null }; },
+                next() {
+                    if (this.stepIndex < this.current().steps.length - 1) {
+                        this.stepIndex++;
+                        this.$nextTick(() => { if (this.currentStep().selector) this.highlight(this.currentStep().selector); });
+                    } else {
+                        this.complete();
+                    }
+                },
+                prev() { if (this.stepIndex > 0) { this.stepIndex--; } },
+                complete() {
+                    const id = this.current().id;
+                    this.markSeen(id);
+                    fetch(`/admin/education/walkthroughs/${id}/complete`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' }
+                    }).catch(() => {});
+                    const next = this.walkthroughs.findIndex((w, i) => i > this.wtIndex && !JSON.parse(localStorage.getItem('edu_seen_wts') || '[]').includes(w.id));
+                    if (next !== -1) { this.wtIndex = next; this.stepIndex = 0; } else { this.open = false; }
+                },
+                dismiss() {
+                    this.markSeen(this.current().id);
+                    this.open = false;
+                },
+                markSeen(id) {
+                    const seen = JSON.parse(localStorage.getItem('edu_seen_wts') || '[]');
+                    if (!seen.includes(id)) { seen.push(id); localStorage.setItem('edu_seen_wts', JSON.stringify(seen)); }
+                },
+                highlight(selector) {
+                    document.querySelectorAll('.edu-wt-highlight').forEach(el => el.classList.remove('edu-wt-highlight'));
+                    const el = document.querySelector(selector);
+                    if (el) { el.classList.add('edu-wt-highlight'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+                },
+            };
+        }
+        </script>
+        <style>[x-cloak]{display:none!important}.edu-wt-highlight{outline:2px solid #4f46e5;outline-offset:3px;border-radius:6px;}</style>
+    </div>
+    @endif
     <script>
         (function() {
             var sidebar = document.getElementById('admin-sidebar');

@@ -21,12 +21,6 @@
             <div class="alert alert-success mb-4">شما برای سایت «{{ \App\Helpers\NumberHelper::toPersianNumbers($preselectedSite->title) }}» خرید می‌کنید. سایت از قبل انتخاب شده است.</div>
         @endif
     @endif
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
 
     @if($products->isEmpty())
         <div class="card p-8 text-center">

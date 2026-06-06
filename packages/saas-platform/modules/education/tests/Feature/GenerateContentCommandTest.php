@@ -3,7 +3,6 @@
 namespace SaaSPlatform\Modules\Education\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Log;
 use Orchestra\Testbench\TestCase;
 use SaaSPlatform\Modules\Education\Ai\Providers\NullAiContentProvider;
 use SaaSPlatform\Modules\Education\Contracts\Ai\AiContentProviderInterface;
@@ -19,7 +18,10 @@ use SaaSPlatform\Modules\Education\Services\Education\EducationAiContentGenerati
 use SaaSPlatform\Modules\Education\Services\Education\GeneratedContentValidator;
 
 /**
- * EDU-15 Phase 6a — education:generate-content command
+ * EDU-15 — education:generate-content command
+ *
+ * After F-01 fix: command consumes queue directly and calls executeJob() per item,
+ * so tests must reflect that — no longer mock generateFromDeficits().
  */
 class GenerateContentCommandTest extends TestCase
 {
@@ -45,7 +47,7 @@ class GenerateContentCommandTest extends TestCase
 
     public function test_dry_run_does_not_create_articles(): void
     {
-        $this->bindFakeEnabledGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto());
 
         $this->artisan('education:generate-content', ['--dry-run' => true])
             ->expectsOutputToContain('DRY-RUN')
@@ -56,42 +58,97 @@ class GenerateContentCommandTest extends TestCase
 
     public function test_dry_run_outputs_would_create_message(): void
     {
-        $this->bindFakeEnabledGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto());
 
         $this->artisan('education:generate-content', ['--dry-run' => true])
             ->expectsOutputToContain('Would create draft');
     }
 
-    // ----- Module scoping -----
+    // ----- Module scoping: queue is filtered before executeJob -----
 
-    public function test_module_option_is_passed_to_service(): void
+    public function test_module_option_filters_queue_items(): void
     {
-        $mock = $this->createMock(EducationAiContentGenerationServiceInterface::class);
-        $mock->method('isProviderEnabled')->willReturn(true);
-        $mock->expects($this->once())
-            ->method('generateFromDeficits')
-            ->with($this->anything(), 'invoices')
-            ->willReturn(collect());
+        // Two items in queue; --module=invoices should process only 1
+        $queue = collect([
+            new ContentDeficitQueueItemDto('invoices', 'articles', 20.0, 'Critical'),
+            new ContentDeficitQueueItemDto('reports',  'articles', 30.0, 'High'),
+        ]);
 
-        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $mock);
-        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $this->createMock(EducationDraftPersistenceServiceInterface::class));
+        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
+        $deficitQueue->method('build')->willReturn($queue);
+
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->expects($this->once())  // only 1 job after filter
+            ->method('executeJob')
+            ->willReturn($this->validDto());
+
+        $this->app->bind(ContentDeficitQueueServiceInterface::class, fn() => $deficitQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, function () {
+            $m = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+            $m->method('draftExists')->willReturn(false);
+            $m->method('persist')->willReturnCallback(fn() => $this->makeArticle());
+            return $m;
+        });
 
         $this->artisan('education:generate-content', ['--module' => 'invoices'])
             ->assertSuccessful();
     }
 
+    // ----- module_slug is NOT 'unknown' in persisted article (regression guard for F-01) -----
+
+    public function test_persisted_article_has_correct_module_slug_when_no_module_option(): void
+    {
+        $capturedJob = null;
+
+        $queue = collect([
+            new ContentDeficitQueueItemDto('payments', 'articles', 15.0, 'Critical'),
+        ]);
+
+        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
+        $deficitQueue->method('build')->willReturn($queue);
+
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->method('executeJob')->willReturn($this->validDto());
+
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn(false);
+        $persistence->expects($this->once())
+            ->method('persist')
+            ->willReturnCallback(function ($dto, $job) use (&$capturedJob) {
+                $capturedJob = $job;
+                return $this->makeArticle();
+            });
+
+        $this->app->bind(ContentDeficitQueueServiceInterface::class, fn() => $deficitQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
+
+        $this->artisan('education:generate-content')->assertSuccessful();
+
+        // The critical assertion: module_slug must be 'payments', NOT 'unknown'
+        $this->assertNotNull($capturedJob);
+        $this->assertSame('payments', $capturedJob->moduleSlug);
+        $this->assertNotSame('unknown', $capturedJob->moduleSlug);
+    }
+
     // ----- Site scoping -----
 
-    public function test_site_option_is_passed_as_int(): void
+    public function test_site_option_scopes_deficit_queue_build(): void
     {
-        $mock = $this->createMock(EducationAiContentGenerationServiceInterface::class);
-        $mock->method('isProviderEnabled')->willReturn(true);
-        $mock->expects($this->once())
-            ->method('generateFromDeficits')
-            ->with(5, $this->anything())
+        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
+        $deficitQueue->expects($this->once())
+            ->method('build')
+            ->with(5)
             ->willReturn(collect());
 
-        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $mock);
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+
+        $this->app->bind(ContentDeficitQueueServiceInterface::class, fn() => $deficitQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
         $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $this->createMock(EducationDraftPersistenceServiceInterface::class));
 
         $this->artisan('education:generate-content', ['--site' => '5'])
@@ -102,41 +159,69 @@ class GenerateContentCommandTest extends TestCase
 
     public function test_skips_existing_draft(): void
     {
-        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
-        $persistence->method('draftExists')->willReturn(true);
-        $persistence->expects($this->never())->method('persist');
-
-        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
-        $this->bindFakeEnabledGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto(), draftExists: true);
 
         $this->artisan('education:generate-content')
             ->expectsOutputToContain('SKIP')
             ->assertSuccessful();
     }
 
+    // ----- Limit option -----
+
+    public function test_limit_option_caps_processing(): void
+    {
+        $queue = collect([
+            new ContentDeficitQueueItemDto('mod1', 'articles', 10.0, 'Critical'),
+            new ContentDeficitQueueItemDto('mod2', 'articles', 20.0, 'High'),
+            new ContentDeficitQueueItemDto('mod3', 'articles', 30.0, 'Medium'),
+        ]);
+
+        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
+        $deficitQueue->method('build')->willReturn($queue);
+
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->expects($this->exactly(2))  // limit=2
+            ->method('executeJob')
+            ->willReturn($this->validDto());
+
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn(false);
+        $persistence->method('persist')->willReturnCallback(fn() => $this->makeArticle());
+
+        $this->app->bind(ContentDeficitQueueServiceInterface::class, fn() => $deficitQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
+
+        $this->artisan('education:generate-content', ['--limit' => '2'])->assertSuccessful();
+    }
+
     // ----- Transaction safety -----
 
     public function test_one_failure_does_not_abort_batch(): void
     {
-        $dto1 = $this->validDto('Title One ');
-        $dto2 = $this->validDto('Title Two ');
+        $queue = collect([
+            new ContentDeficitQueueItemDto('mod1', 'articles', 10.0, 'Critical'),
+            new ContentDeficitQueueItemDto('mod2', 'articles', 20.0, 'High'),
+        ]);
+
+        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
+        $deficitQueue->method('build')->willReturn($queue);
 
         $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
         $generator->method('isProviderEnabled')->willReturn(true);
-        $generator->method('generateFromDeficits')->willReturn(collect([$dto1, $dto2]));
+        $generator->method('executeJob')->willReturn($this->validDto());
 
+        $callCount = 0;
         $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
         $persistence->method('draftExists')->willReturn(false);
-        $persistence->method('persist')
-            ->willReturnCallback(function (GeneratedContentDto $dto) {
-                if ($dto->title === 'Title One ') {
-                    throw new \RuntimeException('DB error');
-                }
-                $article = new EducationArticle(['title' => $dto->title]);
-                $article->id = 99;
-                return $article;
-            });
+        $persistence->method('persist')->willReturnCallback(function () use (&$callCount) {
+            $callCount++;
+            if ($callCount === 1) throw new \RuntimeException('DB error');
+            return $this->makeArticle();
+        });
 
+        $this->app->bind(ContentDeficitQueueServiceInterface::class, fn() => $deficitQueue);
         $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
         $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
 
@@ -152,42 +237,39 @@ class GenerateContentCommandTest extends TestCase
         $this->app->bind(AiContentProviderInterface::class, NullAiContentProvider::class);
     }
 
-    private function bindFakeEnabledGenerator(GeneratedContentDto $dto): void
+    private function bindFakeSetup(GeneratedContentDto $dto, bool $draftExists = false): void
     {
-        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
-        $deficitQueue->method('build')->willReturn(collect([
+        $queue = collect([
             new ContentDeficitQueueItemDto('invoices', 'articles', 20.0, 'Critical'),
-        ]));
+        ]);
 
-        $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
-        $gapQueue->method('buildForSite')->willReturn(collect());
+        $deficitQueue = $this->createMock(ContentDeficitQueueServiceInterface::class);
+        $deficitQueue->method('build')->willReturn($queue);
 
-        $provider = $this->createMock(AiContentProviderInterface::class);
-        $provider->method('isEnabled')->willReturn(true);
-        $provider->method('providerName')->willReturn('mock');
-        $provider->method('generate')->willReturn($dto);
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->method('executeJob')->willReturn($dto);
 
-        $service = new EducationAiContentGenerationService(
-            $provider, $deficitQueue, $gapQueue, new GeneratedContentValidator(),
-        );
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn($draftExists);
+        $persistence->method('persist')->willReturnCallback(fn() => $this->makeArticle());
 
-        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $service);
-        $this->app->bind(EducationDraftPersistenceServiceInterface::class, function () {
-            $mock = $this->createMock(EducationDraftPersistenceServiceInterface::class);
-            $mock->method('draftExists')->willReturn(false);
-            $mock->method('persist')->willReturnCallback(function (GeneratedContentDto $d) {
-                $a = new EducationArticle(['title' => $d->title]);
-                $a->id = 1;
-                return $a;
-            });
-            return $mock;
-        });
+        $this->app->bind(ContentDeficitQueueServiceInterface::class, fn() => $deficitQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
     }
 
-    private function validDto(string $titlePrefix = 'عنوان مقاله '): GeneratedContentDto
+    private function makeArticle(): EducationArticle
+    {
+        $a = new EducationArticle(['title' => 'test']);
+        $a->id = 1;
+        return $a;
+    }
+
+    private function validDto(): GeneratedContentDto
     {
         return new GeneratedContentDto(
-            title:           $titlePrefix . 'آموزشی',
+            title:           'عنوان مقاله آموزشی',
             summary:         'خلاصه',
             body:            str_repeat('محتوا ', 15),
             tags:            [],

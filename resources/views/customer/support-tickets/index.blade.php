@@ -3,9 +3,6 @@
 @section('header', 'تیکت‌های پشتیبانی من')
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
 
 <div class="flex flex-wrap gap-4 items-center justify-between mb-4">
     <div>

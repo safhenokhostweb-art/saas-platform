@@ -10,6 +10,7 @@ use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationReleaseNoteCo
 use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationFeatureController;
 use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationRecommendationController;
 use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationAdoptionController;
+use SaaSPlatform\Modules\Education\Http\Controllers\Admin\EducationGeneratedContentReviewController;
 
 // F-13: education.track scoped to admin routes only — not pushed to the global web group
 Route::middleware(['web', 'auth', 'education.track'])->prefix('admin/education')->name('admin.education.')->group(function () {
@@ -108,6 +109,9 @@ Route::middleware(['web', 'auth', 'education.track'])->prefix('admin/education')
 
     // Phase EDU-11 — Adoption
     Route::get('adoption', [EducationAdoptionController::class, 'index'])->name('adoption.index');
+
+    // EDU-16 — AI Generated Content Review Dashboard
+    Route::get('generated-content/review', [EducationGeneratedContentReviewController::class, 'index'])->name('generated-content.review');
 
     // Legacy KB compat
     if (config('education.legacy_kb_compat', true)) {

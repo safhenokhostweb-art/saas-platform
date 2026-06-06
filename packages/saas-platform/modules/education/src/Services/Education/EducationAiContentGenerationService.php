@@ -106,9 +106,47 @@ class EducationAiContentGenerationService implements EducationAiContentGeneratio
         return $this->provider->isEnabled();
     }
 
+    public function providerName(): string
+    {
+        return $this->provider->providerName();
+    }
+
     // -----------------------------------------------------------------------
 
     /**
+     * Execute a batch of jobs and return only the successful results.
+     *
+     * ┌─────────────────────────────────────────────────────────────────────┐
+     * │ EDU-15.2 HARDENING NOTE — F-02 analytics gap                        │
+     * │                                                                      │
+     * │ This method is called by generateFromDeficits() and                  │
+     * │ generateFromGaps(). It intentionally does NOT write                  │
+     * │ EducationGenerationLog entries for failures because                  │
+     * │ EducationDraftPersistenceServiceInterface is NOT injected into       │
+     * │ this service and the service contract explicitly forbids DB writes.  │
+     * │                                                                      │
+     * │ Current production callers: NONE.                                    │
+     * │ All active commands consume the queue directly and call              │
+     * │ executeJob() + logFailure() themselves, preserving F-02 accuracy.   │
+     * │                                                                      │
+     * │ IF THIS PATH IS WIRED TO A PERSISTENCE WORKFLOW IN THE FUTURE:      │
+     * │  1. Inject EducationDraftPersistenceServiceInterface into the        │
+     * │     constructor (update ServiceProvider binding accordingly).        │
+     * │  2. Replace the InvalidGeneratedContentException catch body with:   │
+     * │       $this->persistence->logFailure(                                │
+     * │           $job,                                                      │
+     * │           EducationGenerationLog::STATUS_VALIDATION_FAILED,          │
+     * │           $this->provider->providerName()                            │
+     * │       );                                                             │
+     * │  3. Replace the AiProviderException catch body with:                │
+     * │       $this->persistence->logFailure(                                │
+     * │           $job,                                                      │
+     * │           EducationGenerationLog::STATUS_PROVIDER_ERROR,             │
+     * │           $this->provider->providerName()                            │
+     * │       );                                                             │
+     * │  4. Update EDU152AggregatePathTest to assert log rows are written.  │
+     * └─────────────────────────────────────────────────────────────────────┘
+     *
      * @param  Collection<int, ContentGenerationJobDto> $jobs
      * @return Collection<int, GeneratedContentDto>
      */
@@ -125,12 +163,14 @@ class EducationAiContentGenerationService implements EducationAiContentGeneratio
                     'reason'  => $job->sourceReason,
                     'errors'  => $e->getErrors(),
                 ]);
+                // No EducationGenerationLog::create() here — see hardening note above.
             } catch (AiProviderException $e) {
                 Log::error('EDU-15: AI provider error', [
                     'module'   => $job->moduleSlug,
                     'provider' => $this->provider->providerName(),
                     'error'    => $e->getMessage(),
                 ]);
+                // No EducationGenerationLog::create() here — see hardening note above.
             }
         }
 

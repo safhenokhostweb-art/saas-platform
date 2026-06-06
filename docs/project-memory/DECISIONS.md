@@ -1,0 +1,260 @@
+# ARCHITECTURAL DECISIONS
+> ADR-style log. Every important decision recorded permanently.
+> Format: Decision ID | Date | Context | Decision | Reason | Impact
+> Last Updated: 2026-06-06
+
+---
+
+## ADR-001
+
+**ID:** ADR-001  
+**Date:** 2026-06-03  
+**Title:** AI Draft Generators Must Never Persist Data
+
+**Context:**  
+EDU-15 introduced three draft generator classes (`ArticleDraftGenerator`, `WalkthroughDraftGenerator`, `LearningPathDraftGenerator`) responsible for producing AI-generated content.
+
+**Decision:**  
+`EducationAiContentGenerationService` and all draft generator classes must never write to the database. They return DTOs only.
+
+**Reason:**  
+Maintain Single Responsibility Principle (SRP) and clean service boundaries. Persistence side effects inside a generation service make it untestable in isolation and violates the contract that "generation" and "storage" are separate concerns.
+
+**Impact:**  
+Persistence remains the calling command's responsibility. Commands call `EducationDraftPersistenceService::persist()`. This enables testing generation logic without a database.
+
+---
+
+## ADR-002
+
+**Date:** 2026-06-03  
+**Title:** No App\ Imports Inside Any Package
+
+**Context:**  
+Packages (`core-utils`, `modules-tickets`, `modules-forms`, `modules-education`) must be distributable and independently deployable.
+
+**Decision:**  
+Zero `App\` namespace imports allowed inside any `packages/` directory. Model references use `config('module.model_class')` pattern.
+
+**Reason:**  
+Phase 8.1 audit found App\ imports causing tight coupling between packages and the host application. This was repaired (commit c23ae02). The rule prevents regression.
+
+**Impact:**  
+All packages reference host models via configuration keys. ServiceProviders bind interfaces to concrete classes at boot time using config-driven resolution.
+
+---
+
+## ADR-003
+
+**Date:** 2026-06-04  
+**Title:** markCompleted() Requires site_id — Breaking Interface Change
+
+**Context:**  
+EDU-13.5 hardening found `WalkthroughTriggerService::markCompleted()` could silently attach progress to the wrong site without a site_id parameter.
+
+**Decision:**  
+`WalkthroughTriggerServiceInterface::markCompleted()` signature changed to require 3 arguments: `(int $walkthroughId, int $userId, int $siteId)`.
+
+**Reason:**  
+Without site_id, progress records could be created with null site_id or attached to the wrong tenant's scope.
+
+**Impact:**  
+Breaking change. All callers must be updated. `EducationGuideComposer` and the admin `complete` route closure were the two affected callers — both fixed in EDU-13.6/13.7.
+
+---
+
+## ADR-004
+
+**Date:** 2026-06-04  
+**Title:** KnowledgeGapService — Use whereNull Guard for Platform Context
+
+**Context:**  
+EDU-14A.1 audit (Finding F-03) found that `KnowledgeGapService` did not distinguish between `site_id = null` (platform admin context) and `site_id = {id}` (tenant context) when querying gaps.
+
+**Decision:**  
+All service methods that accept a nullable `?int $siteId` must use `whereNull('site_id')` when `$siteId === null`, never `where('site_id', null)` (which is a no-op in MySQL with NULL comparisons).
+
+**Reason:**  
+`where('site_id', null)` compiles to `site_id = NULL` which always returns 0 rows. Platform-admin context (siteId=null) must query platform-level records explicitly.
+
+**Impact:**  
+Applied to `KnowledgeGapService`, `AIRecommendationScoreService` (`loadUsageMap`, `loadProgressMap`), and `UserLearningProfileService` (`resolveLastActivity`). All services with nullable site_id must follow this pattern.
+
+---
+
+## ADR-005
+
+**Date:** 2026-06-05  
+**Title:** Concurrent Draft Protection — Two-Layer Dedup Strategy
+
+**Context:**  
+EDU-15.2 audit (Finding RC-01) identified that concurrent command runs could create duplicate AI drafts. Application-level `draftExists()` check has a TOCTOU race condition.
+
+**Decision:**  
+Two-layer protection in `EducationDraftPersistenceService::persist()`:
+1. Layer 1: `lockForUpdate()` re-check inside `DB::transaction()` — catches null-site_id edge cases
+2. Layer 2: Catch `QueryException(1062)` unique constraint violation — catches non-null site_id races
+
+Plus a database-level unique index `edu_articles_ai_draft_unique` on `(auto_generated, module_slug, site_id, title(191))`.
+
+**Reason:**  
+Application-level checks alone are insufficient under concurrent scheduler runs. Database constraints are the final safety net.
+
+**Impact:**  
+New migration: `2026_06_05_000002_add_ai_draft_dedup_index_to_edu_articles.php`. Must be run on all environments before enabling high-frequency scheduling.
+
+---
+
+## ADR-006
+
+**Date:** 2026-06-05  
+**Title:** GenerateContentCommand / GenerateGapContentCommand Must Call executeJob() Directly
+
+**Context:**  
+EDU-15.2 audit (Finding F-01) found that both commands were using `ContentGenerationJobDto(moduleSlug: $module ?? 'unknown')`, setting `module_slug='unknown'` for all articles when run without `--module`.
+
+**Decision:**  
+Both commands must consume their respective queue services (`ContentDeficitQueueService`, `KnowledgeGapQueueService`) directly and call `executeJob()` per queue item, preserving the real `moduleSlug` from each queue item DTO.
+
+**Reason:**  
+The `--module` flag is optional/filtering, not the source of truth for `module_slug`. The queue item's `moduleSlug` is the authoritative value.
+
+**Impact:**  
+`module_slug` is now always accurate in `edu_articles`. Tests updated with regression guard asserting `module_slug != 'unknown'`.
+
+---
+
+## ADR-007
+
+**Date:** 2026-06-05  
+**Title:** Test Isolation — withTenantSite() Helper for Cross-Site Security Tests
+
+**Context:**  
+EDU-15.2 audit (Finding T-01) found `GeneratedContentSecurityTest` was testing cross-site isolation but the `$siteId` field was only stored as a private property the controller could not read. Tests were false positives.
+
+**Decision:**  
+Add a `withTenantSite(int $siteId): static` test helper that injects the `tenant_site` request attribute via a one-time middleware, matching production `AuthenticateTenantApi` middleware behavior exactly.
+
+**Reason:**  
+Security tests must exercise the exact same code path as production. Mocking or bypassing middleware produces false confidence.
+
+**Impact:**  
+All cross-site isolation tests now accurately verify tenant boundary enforcement. Pattern must be used by all future security tests.
+
+---
+
+## ADR-008
+
+**Date:** 2026-05-28  
+**Title:** Alpine Expressions on Blade Components Must Use x-bind, Never :attr
+
+**Context:**  
+Phase 10.2.7 discovered a fatal crash: Blade's `:attr="expr"` syntax evaluates `expr` as PHP at render time. Alpine.js variable names (`historyIndex`, `form.is_active`) are not PHP variables → Fatal Error PHP 8.
+
+**Decision:**  
+NEVER use `:attr="alpineVar"` on Blade components. Always use `x-bind:attr="alpineVar"` for Alpine expressions on Blade components.
+
+**Reason:**  
+`:attr` on a Blade component is evaluated server-side as PHP. `x-bind:attr` passes the expression through `$attributes` and is evaluated client-side by Alpine.
+
+**Impact:**  
+All Blade components that accept dynamic Alpine bindings must use `x-bind:`. CI governance rule added. Documented as architectural exception pattern.
+
+---
+
+## ADR-009
+
+**Date:** 2026-06-01  
+**Title:** Dual Messaging Domain Isolation — End Users Never in Platform DB
+
+**Context:**  
+Phase M3.2 introduced support messaging. Two separate domains were needed: tenant-side (customer-site) and platform-side (saas-platform).
+
+**Decision:**  
+End-user messages are ONLY stored in `customer-site` database. Platform DB (`saas-platform`) stores only admin/platform_staff/customer_admin conversations. Model `boot()` methods throw `InvalidArgumentException` if `end_user|user|tenant_user` participant types are used in Platform models.
+
+**Reason:**  
+Regulatory, architectural, and security isolation. Platform disconnection must not destroy tenant support runtime. Customer A data must never be visible to Customer B.
+
+**Impact:**  
+`PlatformConversationParticipant` and `PlatformMessage` enforce forbidden types at the model layer — impossible to accidentally insert tenant user data into platform DB.
+
+---
+
+## ADR-010
+
+**Date:** 2026-05-29  
+**Title:** Tailwind v4 — No postcss.config.js, No tailwind.config.js
+
+**Context:**  
+Phase 10.2.8 migrated from Tailwind v3.4.19 to v4.3.0.
+
+**Decision:**  
+`tailwind.config.js` deleted. `postcss.config.js` emptied. Configuration moves entirely to CSS `@theme` block inside `app.css`. Build via `@tailwindcss/vite` plugin, not PostCSS.
+
+**Reason:**  
+Tailwind v4 uses Lightning CSS engine with a Vite-native plugin. The PostCSS chain is no longer needed and causes conflicts with the new optimizer.
+
+**Impact:**  
+6 `@source` paths added to `app.css`. Build exit 0, 161KB CSS. Optimizer produces non-breaking shadow-var warnings (cosmetic only).
+
+---
+
+## ADR-011
+
+**Date:** 2026-05-26  
+**Title:** Education Module Uses Stub AI, Not Real Provider
+
+**Context:**  
+The education module was designed before AI provider integration was complete. Real LLM calls were not yet governed or rate-limited.
+
+**Decision:**  
+`EducationAiServiceInterface` is bound to `EducationAiServiceStub` until `EDUCATION_AI_PROVIDER` env is set and EDU-16 review workflow is complete.
+
+**Reason:**  
+Deploying auto-generation without human review creates risk of unreviewed AI content being published to tenants. The stub ensures the pipeline is tested without live AI calls.
+
+**Impact:**  
+No real AI calls until the review workflow (EDU-16) is in place. `EDUCATION_AI_PROVIDER` env acts as the feature gate.
+
+---
+
+## ADR-013
+
+**Date:** 2026-06-06  
+**Title:** Education State Machine — No pending_review State
+
+**Context:**  
+EDU-16 design validation found that `pending_review` was semantically identical to `draft`. `EducationGeneratedContentController` mapped `pending_review = draftCount`; `scopePendingReview()` queried `whereIn(REVIEWABLE_STATUSES)` with two states that had identical business meaning. No actor creates a "draft but not yet pending review" distinction.
+
+**Decision:**  
+Remove `pending_review` entirely. Simplified state machine: `draft → published (approve) | archived (reject)`. Review audit is tracked via `reviewed_at IS NOT NULL` filter on the existing columns.
+
+**Reason:**  
+Adding a state that provides zero additional semantic value creates complexity with no benefit. A draft is already awaiting human review by definition. The review action is the transition, not a state change to "pending review" followed by another state change.
+
+**Impact:**  
+- `STATUS_PENDING_REVIEW` constant removed from `EducationArticle`  
+- `REVIEWABLE_STATUSES` constant removed  
+- `scopePendingReview()` now queries `where(STATUS_DRAFT)` only  
+- No `pending_review` key in any API response  
+- Migration `2026_06_06_000001_add_review_fields_to_edu_articles.php` adds `reviewed_by_id`, `reviewed_at`, `review_note` columns + composite index — no status enum change needed
+
+---
+
+## ADR-012
+
+**Date:** 2026-06-04  
+**Title:** EducationGuideComposer — Skip triggerForRoute When siteId Is Null
+
+**Context:**  
+EDU-13.6 found a regression: `EducationGuideComposer` was passing `null` siteId to `triggerForRoute()`, causing walkthrough guides to fail for platform admins.
+
+**Decision:**  
+`EducationGuideComposer` resolves `$siteId = auth()->user()->site_id`. If `$siteId === null` (platform admin), skip `triggerForRoute()` entirely.
+
+**Reason:**  
+Platform admins do not belong to a site. Walkthroughs are tenant-scoped features. Attempting to load walkthroughs for a platform admin with null site_id would either fail or return incorrect data.
+
+**Impact:**  
+Platform admins see the admin panel without education guide overlays. Tenant users continue to receive contextual walkthroughs. No regression for tenant context.

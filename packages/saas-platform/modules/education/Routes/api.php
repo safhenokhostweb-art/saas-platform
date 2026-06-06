@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use SaaSPlatform\Modules\Education\Http\Controllers\Api\EducationAnalyticsController;
+use SaaSPlatform\Modules\Education\Http\Controllers\Api\EducationGeneratedContentController;
+use SaaSPlatform\Modules\Education\Http\Controllers\Api\EducationReviewController;
 use SaaSPlatform\Modules\Education\Http\Controllers\Api\EducationProfileController;
 use SaaSPlatform\Modules\Education\Http\Controllers\Api\EducationSyncApiController;
 use SaaSPlatform\Modules\Education\Http\Controllers\Api\MobileEducationController;
@@ -18,6 +20,13 @@ Route::middleware(['api', 'auth:sanctum'])->prefix('api/v1/education')->name('ap
 
     // EDU-14B — Intelligence Orchestration Layer: combined analytics snapshot
     Route::get('/analytics', [EducationAnalyticsController::class, 'show'])->name('analytics');
+
+    // EDU-15 — AI Content Generation: draft overview for review workflow
+    Route::get('/generated-content', [EducationGeneratedContentController::class, 'index'])->name('generated-content');
+
+    // EDU-16 — Human Review: approve and reject AI-generated drafts
+    Route::post('/generated-content/{id}/approve', [EducationReviewController::class, 'approve'])->name('generated-content.approve');
+    Route::post('/generated-content/{id}/reject',  [EducationReviewController::class, 'reject'])->name('generated-content.reject');
 });
 
 // Customer-Site Sync API (Rule 12 — Differential Sync)

@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('tickets', function (Blueprint $table) {
-            $table->renameColumn('customer_email', 'customer_mobile');
-        });
+        if (Schema::hasColumn('tickets', 'customer_email')) {
+            Schema::table('tickets', function (Blueprint $table) {
+                $table->renameColumn('customer_email', 'customer_mobile');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('tickets', function (Blueprint $table) {
-            $table->renameColumn('customer_mobile', 'customer_email');
-        });
+        if (Schema::hasColumn('tickets', 'customer_mobile')) {
+            Schema::table('tickets', function (Blueprint $table) {
+                $table->renameColumn('customer_mobile', 'customer_email');
+            });
+        }
     }
 };

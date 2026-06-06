@@ -78,6 +78,13 @@
       0 => 'SaaSPlatform\\CoreUtils\\Providers\\CoreUtilsServiceProvider',
     ),
   ),
+  'saas-platform/modules-education' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'SaaSPlatform\\Modules\\Education\\Providers\\EducationServiceProvider',
+    ),
+  ),
   'saas-platform/modules-forms' => 
   array (
     'providers' => 

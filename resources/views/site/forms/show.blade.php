@@ -5,9 +5,6 @@
 
     <h4 class="font-bold mb-4 text-xl">{{ $form->title }}</h4>
 
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
 
     <form method="POST" action="{{ route('site.forms.submit_for_site', [$site, $form->slug]) }}">
         @csrf

@@ -15,9 +15,9 @@ class EducationArticle extends Model
 
     protected $table = 'edu_articles';
 
-    public const STATUS_DRAFT     = 'draft';
-    public const STATUS_PUBLISHED = 'published';
-    public const STATUS_ARCHIVED  = 'archived';
+    public const STATUS_DRAFT      = 'draft';
+    public const STATUS_PUBLISHED  = 'published';
+    public const STATUS_ARCHIVED   = 'archived';
 
     protected $fillable = [
         'edu_category_id', 'site_id', 'author_id',
@@ -28,6 +28,8 @@ class EducationArticle extends Model
         'last_generated_at', 'last_synced_at', 'needs_regeneration',
         'view_count', 'helpful_count', 'not_helpful_count',
         'tags', 'meta', 'published_at',
+        // EDU-16 review audit
+        'reviewed_by_id', 'reviewed_at', 'review_note',
     ];
 
     protected $casts = [
@@ -43,6 +45,8 @@ class EducationArticle extends Model
         'view_count'            => 'integer',
         'helpful_count'         => 'integer',
         'not_helpful_count'     => 'integer',
+        // EDU-16 review audit
+        'reviewed_at'           => 'datetime',
     ];
 
     protected static function booted(): void
@@ -182,5 +186,38 @@ class EducationArticle extends Model
     public function isHashStale(): bool
     {
         return $this->documentation_hash !== $this->computeHash();
+    }
+
+    // -------------------------------------------------------------------------
+    // EDU-16 review helpers
+    // -------------------------------------------------------------------------
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(
+            config('auth.providers.users.model', 'App\Models\User'),
+            'reviewed_by_id'
+        );
+    }
+
+    public function isReviewable(): bool
+    {
+        return $this->auto_generated
+            && $this->status === self::STATUS_DRAFT;
+    }
+
+    /**
+     * True when this article has already received a review decision.
+     */
+    public function hasBeenReviewed(): bool
+    {
+        return $this->reviewed_at !== null;
+    }
+
+    public function scopePendingReview($query)
+    {
+        return $query
+            ->where('auto_generated', true)
+            ->where('status', self::STATUS_DRAFT);
     }
 }

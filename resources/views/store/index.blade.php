@@ -11,12 +11,6 @@
             <div class="alert alert-success mb-4">شما برای سایت «{{ \App\Helpers\NumberHelper::toPersianNumbers($preselectedSite->title) }}» پشتیبانی یا ماژول خریداری می‌کنید. سایت از قبل انتخاب شده است.</div>
         @endif
     @endif
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
 
     <div class="grid gap-4">
         @forelse($products as $product)

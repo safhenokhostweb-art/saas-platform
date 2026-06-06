@@ -44,4 +44,10 @@ interface EducationAiContentGenerationServiceInterface
      * Returns true when the underlying AI provider is enabled.
      */
     public function isProviderEnabled(): bool;
+
+    /**
+     * Returns the short provider identifier (e.g. 'null', 'claude', 'openai').
+     * Used by commands to write failure log entries.
+     */
+    public function providerName(): string;
 }

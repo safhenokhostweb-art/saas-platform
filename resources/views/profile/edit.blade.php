@@ -35,13 +35,6 @@
     }
 }">
 
-    {{-- Flash --}}
-    @if(session('success'))
-    <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-medium">
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        {{ session('success') }}
-    </div>
-    @endif
 
     @if($errors->any())
     <div class="flex flex-col gap-1 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm">

@@ -10,15 +10,17 @@ use SaaSPlatform\Modules\Education\Contracts\Services\ContentDeficitQueueService
 use SaaSPlatform\Modules\Education\Contracts\Services\EducationAiContentGenerationServiceInterface;
 use SaaSPlatform\Modules\Education\Contracts\Services\EducationDraftPersistenceServiceInterface;
 use SaaSPlatform\Modules\Education\Contracts\Services\KnowledgeGapQueueServiceInterface;
+use SaaSPlatform\Modules\Education\Dto\ContentGenerationJobDto;
 use SaaSPlatform\Modules\Education\Dto\GeneratedContentDto;
 use SaaSPlatform\Modules\Education\Dto\KnowledgeGapQueueItemDto;
 use SaaSPlatform\Modules\Education\Models\EducationArticle;
 use SaaSPlatform\Modules\Education\Providers\EducationServiceProvider;
-use SaaSPlatform\Modules\Education\Services\Education\EducationAiContentGenerationService;
-use SaaSPlatform\Modules\Education\Services\Education\GeneratedContentValidator;
 
 /**
- * EDU-15 Phase 6b — education:generate-gap-content command
+ * EDU-15 — education:generate-gap-content command
+ *
+ * After F-01 fix: command consumes gap queue directly and calls executeJob()
+ * per item, preserving the real module slug and site_id from each queue item.
  */
 class GenerateGapContentCommandTest extends TestCase
 {
@@ -29,6 +31,8 @@ class GenerateGapContentCommandTest extends TestCase
         return [EducationServiceProvider::class];
     }
 
+    // ----- Null provider -----
+
     public function test_command_exits_silently_when_provider_disabled(): void
     {
         $this->app->bind(AiContentProviderInterface::class, NullAiContentProvider::class);
@@ -38,9 +42,11 @@ class GenerateGapContentCommandTest extends TestCase
             ->assertSuccessful();
     }
 
+    // ----- Dry-run -----
+
     public function test_dry_run_does_not_create_articles(): void
     {
-        $this->bindFakeGapGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto());
 
         $this->artisan('education:generate-gap-content', ['--dry-run' => true])
             ->expectsOutputToContain('DRY-RUN')
@@ -51,64 +57,154 @@ class GenerateGapContentCommandTest extends TestCase
 
     public function test_dry_run_outputs_would_create_message(): void
     {
-        $this->bindFakeGapGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto());
 
         $this->artisan('education:generate-gap-content', ['--dry-run' => true])
             ->expectsOutputToContain('Would create gap-remediation draft');
     }
 
-    public function test_site_option_passed_to_service(): void
+    // ----- module_slug is NOT 'unknown' (F-01 regression guard) -----
+
+    public function test_persisted_article_has_correct_module_slug_from_gap_item(): void
     {
-        $mock = $this->createMock(EducationAiContentGenerationServiceInterface::class);
-        $mock->method('isProviderEnabled')->willReturn(true);
-        $mock->expects($this->once())
-            ->method('generateFromGaps')
-            ->with(3, $this->anything())
+        $capturedJob = null;
+        $now = \Carbon\Carbon::now();
+
+        $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
+        $gapQueue->method('buildForSite')->willReturn(collect([
+            new KnowledgeGapQueueItemDto(1, 1, 'payments', 90.0, 'Critical', $now),
+        ]));
+
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->method('executeJob')->willReturn($this->validDto());
+
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn(false);
+        $persistence->expects($this->once())
+            ->method('persist')
+            ->willReturnCallback(function ($dto, $job) use (&$capturedJob) {
+                $capturedJob = $job;
+                return $this->makeArticle();
+            });
+
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class, fn() => $gapQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
+
+        $this->artisan('education:generate-gap-content')->assertSuccessful();
+
+        // Critical: module_slug must be 'payments', NOT 'unknown'
+        $this->assertNotNull($capturedJob);
+        $this->assertSame('payments', $capturedJob->moduleSlug);
+        $this->assertNotSame('unknown', $capturedJob->moduleSlug);
+    }
+
+    // ----- site_id comes from the gap item, not just the --site option -----
+
+    public function test_persisted_article_site_id_comes_from_gap_item(): void
+    {
+        $capturedJob = null;
+        $now = \Carbon\Carbon::now();
+
+        $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
+        // Gap item has siteId=7
+        $gapQueue->method('buildForSite')->willReturn(collect([
+            new KnowledgeGapQueueItemDto(1, 7, 'invoices', 90.0, 'Critical', $now),
+        ]));
+
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->method('executeJob')->willReturn($this->validDto());
+
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn(false);
+        $persistence->method('persist')->willReturnCallback(function ($dto, $job) use (&$capturedJob) {
+            $capturedJob = $job;
+            return $this->makeArticle();
+        });
+
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class, fn() => $gapQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
+
+        $this->artisan('education:generate-gap-content')->assertSuccessful();
+
+        $this->assertSame(7, $capturedJob->siteId);
+    }
+
+    // ----- Site option scopes gap queue -----
+
+    public function test_site_option_passed_to_gap_queue(): void
+    {
+        $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
+        $gapQueue->expects($this->once())
+            ->method('buildForSite')
+            ->with(3)
             ->willReturn(collect());
 
-        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $mock);
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class, fn() => $gapQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
         $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $this->createMock(EducationDraftPersistenceServiceInterface::class));
 
         $this->artisan('education:generate-gap-content', ['--site' => '3'])
             ->assertSuccessful();
     }
 
-    public function test_module_option_passed_to_service(): void
+    // ----- Module filtering -----
+
+    public function test_module_option_filters_gap_items(): void
     {
-        $mock = $this->createMock(EducationAiContentGenerationServiceInterface::class);
-        $mock->method('isProviderEnabled')->willReturn(true);
-        $mock->expects($this->once())
-            ->method('generateFromGaps')
-            ->with($this->anything(), 'payments')
-            ->willReturn(collect());
+        $now = \Carbon\Carbon::now();
+        $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
+        $gapQueue->method('buildForSite')->willReturn(collect([
+            new KnowledgeGapQueueItemDto(1, 1, 'invoices', 90.0, 'Critical', $now),
+            new KnowledgeGapQueueItemDto(2, 1, 'reports',  80.0, 'High',     $now),
+        ]));
 
-        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $mock);
-        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $this->createMock(EducationDraftPersistenceServiceInterface::class));
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->expects($this->once())  // only 'payments' after module filter... wait, filter is 'invoices'
+            ->method('executeJob')
+            ->willReturn($this->validDto());
 
-        $this->artisan('education:generate-gap-content', ['--module' => 'payments'])
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn(false);
+        $persistence->method('persist')->willReturnCallback(fn() => $this->makeArticle());
+
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class, fn() => $gapQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
+
+        $this->artisan('education:generate-gap-content', ['--module' => 'invoices'])
             ->assertSuccessful();
     }
 
+    // ----- Idempotency -----
+
     public function test_skips_existing_gap_draft(): void
     {
-        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
-        $persistence->method('draftExists')->willReturn(true);
-        $persistence->expects($this->never())->method('persist');
-
-        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
-        $this->bindFakeGapGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto(), draftExists: true);
 
         $this->artisan('education:generate-gap-content')
             ->expectsOutputToContain('SKIP')
             ->assertSuccessful();
     }
 
+    // ----- Empty queue -----
+
     public function test_empty_gap_queue_succeeds_silently(): void
     {
+        $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
+        $gapQueue->method('buildForSite')->willReturn(collect());
+
         $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
         $generator->method('isProviderEnabled')->willReturn(true);
-        $generator->method('generateFromGaps')->willReturn(collect());
 
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class, fn() => $gapQueue);
         $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
         $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $this->createMock(EducationDraftPersistenceServiceInterface::class));
 
@@ -117,6 +213,8 @@ class GenerateGapContentCommandTest extends TestCase
             ->assertSuccessful();
     }
 
+    // ----- Failure exit code -----
+
     public function test_failed_persistence_returns_failure_exit_code(): void
     {
         $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
@@ -124,7 +222,7 @@ class GenerateGapContentCommandTest extends TestCase
         $persistence->method('persist')->willThrowException(new \RuntimeException('DB down'));
 
         $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
-        $this->bindFakeGapGenerator($this->validDto());
+        $this->bindFakeSetup($this->validDto());
 
         $this->artisan('education:generate-gap-content')
             ->expectsOutputToContain('FAIL')
@@ -133,37 +231,32 @@ class GenerateGapContentCommandTest extends TestCase
 
     // -----------------------------------------------------------------------
 
-    private function bindFakeGapGenerator(GeneratedContentDto $dto): void
+    private function bindFakeSetup(GeneratedContentDto $dto, bool $draftExists = false): void
     {
-        $now      = \Carbon\Carbon::now();
+        $now = \Carbon\Carbon::now();
         $gapQueue = $this->createMock(KnowledgeGapQueueServiceInterface::class);
         $gapQueue->method('buildForSite')->willReturn(collect([
             new KnowledgeGapQueueItemDto(1, 1, 'invoices', 90.0, 'Critical', $now),
         ]));
 
-        $provider = $this->createMock(AiContentProviderInterface::class);
-        $provider->method('isEnabled')->willReturn(true);
-        $provider->method('providerName')->willReturn('mock');
-        $provider->method('generate')->willReturn($dto);
+        $generator = $this->createMock(EducationAiContentGenerationServiceInterface::class);
+        $generator->method('isProviderEnabled')->willReturn(true);
+        $generator->method('executeJob')->willReturn($dto);
 
-        $service = new EducationAiContentGenerationService(
-            $provider,
-            $this->createMock(ContentDeficitQueueServiceInterface::class),
-            $gapQueue,
-            new GeneratedContentValidator(),
-        );
+        $persistence = $this->createMock(EducationDraftPersistenceServiceInterface::class);
+        $persistence->method('draftExists')->willReturn($draftExists);
+        $persistence->method('persist')->willReturnCallback(fn() => $this->makeArticle());
 
-        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $service);
-        $this->app->bind(EducationDraftPersistenceServiceInterface::class, function () use ($dto) {
-            $mock = $this->createMock(EducationDraftPersistenceServiceInterface::class);
-            $mock->method('draftExists')->willReturn(false);
-            $mock->method('persist')->willReturnCallback(function () use ($dto) {
-                $a = new EducationArticle(['title' => $dto->title]);
-                $a->id = 1;
-                return $a;
-            });
-            return $mock;
-        });
+        $this->app->bind(KnowledgeGapQueueServiceInterface::class, fn() => $gapQueue);
+        $this->app->bind(EducationAiContentGenerationServiceInterface::class, fn() => $generator);
+        $this->app->bind(EducationDraftPersistenceServiceInterface::class, fn() => $persistence);
+    }
+
+    private function makeArticle(): EducationArticle
+    {
+        $a = new EducationArticle(['title' => 'test']);
+        $a->id = 1;
+        return $a;
     }
 
     private function validDto(): GeneratedContentDto

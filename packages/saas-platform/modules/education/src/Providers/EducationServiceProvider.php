@@ -46,6 +46,9 @@ use SaaSPlatform\Modules\Education\Contracts\Services\EducationAnalyticsServiceI
 use SaaSPlatform\Modules\Education\Contracts\Ai\AiContentProviderInterface;
 use SaaSPlatform\Modules\Education\Contracts\Services\EducationAiContentGenerationServiceInterface;
 use SaaSPlatform\Modules\Education\Contracts\Services\EducationDraftPersistenceServiceInterface;
+// EDU-16 — Human Review Workflow contracts + implementations
+use SaaSPlatform\Modules\Education\Contracts\Services\EducationDraftReviewServiceInterface;
+use SaaSPlatform\Modules\Education\Services\Education\EducationDraftReviewService;
 
 // Implementations — repositories
 use SaaSPlatform\Modules\Education\Repositories\EducationArticleRepository;
@@ -110,6 +113,12 @@ use SaaSPlatform\Modules\Education\Console\Commands\BuildContentDeficitQueueComm
 // Commands (EDU-15)
 use SaaSPlatform\Modules\Education\Console\Commands\GenerateContentCommand;
 use SaaSPlatform\Modules\Education\Console\Commands\GenerateGapContentCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\GenerateArticlesCommand;
+use SaaSPlatform\Modules\Education\Console\Commands\GenerateWalkthroughsCommand;
+// Generators (EDU-15)
+use SaaSPlatform\Modules\Education\Generation\ArticleDraftGenerator;
+use SaaSPlatform\Modules\Education\Generation\WalkthroughDraftGenerator;
+use SaaSPlatform\Modules\Education\Generation\LearningPathDraftGenerator;
 // Commands
 use SaaSPlatform\Modules\Education\Console\Commands\MigrateKbToEducationCommand;
 use SaaSPlatform\Modules\Education\Console\Commands\ValidateEducationCommand;
@@ -237,6 +246,29 @@ class EducationServiceProvider extends ServiceProvider
 
         $this->app->bind(EducationAiContentGenerationServiceInterface::class, EducationAiContentGenerationService::class);
         $this->app->bind(EducationDraftPersistenceServiceInterface::class,    EducationDraftPersistenceService::class);
+
+        // --- EDU-16: Human Review Workflow ---
+        $this->app->bind(EducationDraftReviewServiceInterface::class, EducationDraftReviewService::class);
+
+        // --- EDU-15: Typed draft generators (each resolved with the shared provider) ---
+        $this->app->singleton(ArticleDraftGenerator::class, function ($app) {
+            return new ArticleDraftGenerator(
+                $app->make(AiContentProviderInterface::class),
+                $app->make(GeneratedContentValidator::class),
+            );
+        });
+        $this->app->singleton(WalkthroughDraftGenerator::class, function ($app) {
+            return new WalkthroughDraftGenerator(
+                $app->make(AiContentProviderInterface::class),
+                $app->make(GeneratedContentValidator::class),
+            );
+        });
+        $this->app->singleton(LearningPathDraftGenerator::class, function ($app) {
+            return new LearningPathDraftGenerator(
+                $app->make(AiContentProviderInterface::class),
+                $app->make(GeneratedContentValidator::class),
+            );
+        });
     }
 
     public function boot(): void
@@ -324,6 +356,8 @@ class EducationServiceProvider extends ServiceProvider
                 // Phase EDU-15 — AI Content Generation
                 GenerateContentCommand::class,
                 GenerateGapContentCommand::class,
+                GenerateArticlesCommand::class,
+                GenerateWalkthroughsCommand::class,
             ]);
         }
     }

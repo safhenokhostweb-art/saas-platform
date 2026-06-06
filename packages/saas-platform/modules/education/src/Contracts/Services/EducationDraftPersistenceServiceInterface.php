@@ -27,4 +27,20 @@ interface EducationDraftPersistenceServiceInterface
      * Used by commands to enforce idempotency before calling persist().
      */
     public function draftExists(ContentGenerationJobDto $job, string $title): bool;
+
+    /**
+     * Write a generation failure log entry without creating any article.
+     *
+     * Called by commands when executeJob() throws AiProviderException
+     * (status = STATUS_PROVIDER_ERROR) or InvalidGeneratedContentException
+     * (status = STATUS_VALIDATION_FAILED).
+     *
+     * The status argument MUST be one of EducationGenerationLog::STATUS_VALIDATION_FAILED
+     * or EducationGenerationLog::STATUS_PROVIDER_ERROR.
+     */
+    public function logFailure(
+        ContentGenerationJobDto $job,
+        string                  $status,
+        string                  $providerName,
+    ): void;
 }
