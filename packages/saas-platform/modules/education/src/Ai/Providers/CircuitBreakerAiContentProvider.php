@@ -3,6 +3,7 @@
 namespace SaaSPlatform\Modules\Education\Ai\Providers;
 
 use Illuminate\Support\Facades\Cache;
+use SaaSPlatform\CoreUtils\AI\Governance\TenantAiQuotaManager;
 use SaaSPlatform\Modules\Education\Contracts\Ai\AiContentProviderInterface;
 use SaaSPlatform\Modules\Education\Dto\ContentGenerationJobDto;
 use SaaSPlatform\Modules\Education\Dto\GeneratedContentDto;
@@ -57,6 +58,7 @@ class CircuitBreakerAiContentProvider implements AiContentProviderInterface
 
     public function __construct(
         private readonly AiContentProviderInterface $inner,
+        private readonly ?TenantAiQuotaManager      $quotaManager = null,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -65,8 +67,26 @@ class CircuitBreakerAiContentProvider implements AiContentProviderInterface
 
     public function generate(ContentGenerationJobDto $job): GeneratedContentDto
     {
+        // 1. Per-tenant quota check — must happen before the circuit to avoid
+        //    counting quota failures as circuit-breaker failures.
+        $tenantKey = $this->resolveQuotaKey($job);
+        if ($tenantKey !== null) {
+            $quota = $this->quotaManager->check($tenantKey);
+            if (! $quota['allowed']) {
+                throw new AiProviderException(sprintf(
+                    'AI quota exceeded for "%s". Daily limit: %s, used: %d.',
+                    $tenantKey,
+                    $quota['limit'],
+                    $quota['used'],
+                ));
+            }
+        }
+
+        // 2. Circuit-breaker guard
         if (! $this->circuitEnabled()) {
-            return $this->inner->generate($job);
+            $result = $this->inner->generate($job);
+            $this->trackQuotaUsage($tenantKey);
+            return $result;
         }
 
         if ($this->isOpen()) {
@@ -86,6 +106,7 @@ class CircuitBreakerAiContentProvider implements AiContentProviderInterface
         }
 
         $this->recordSuccess();
+        $this->trackQuotaUsage($tenantKey);
 
         return $result;
     }
@@ -164,5 +185,27 @@ class CircuitBreakerAiContentProvider implements AiContentProviderInterface
     private function key(string $template): string
     {
         return sprintf($template, $this->inner->providerName());
+    }
+
+    // ── Quota helpers ─────────────────────────────────────────────────────────
+
+    private function resolveQuotaKey(ContentGenerationJobDto $job): ?string
+    {
+        if ($this->quotaManager === null) {
+            return null;
+        }
+        if (! config('education.ai.quota.enabled', false)) {
+            return null;
+        }
+        return 'edu_site_' . ($job->siteId ?? 'platform');
+    }
+
+    private function trackQuotaUsage(?string $tenantKey): void
+    {
+        if ($tenantKey === null || $this->quotaManager === null) {
+            return;
+        }
+        $this->quotaManager->increment($tenantKey);
+        $this->quotaManager->incrementSystemTotal();
     }
 }

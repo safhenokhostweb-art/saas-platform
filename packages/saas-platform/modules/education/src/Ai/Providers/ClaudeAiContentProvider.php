@@ -25,12 +25,12 @@ class ClaudeAiContentProvider implements AiContentProviderInterface
     private const CONNECT_TIMEOUT = 10;
 
     public function __construct(
-        private readonly string                      $apiKey,
-        private readonly PersianEducationPromptBuilder $promptBuilder,
-        private readonly string                      $model          = 'claude-haiku-4-5-20251001',
-        private readonly int                         $maxTokens      = 2048,
-        private readonly int                         $timeoutSeconds = 60,
-        private readonly ?HttpClient                 $httpClient     = null,
+        private readonly string                        $apiKey         = '',
+        private readonly PersianEducationPromptBuilder $promptBuilder  = new PersianEducationPromptBuilder(),
+        private readonly string                        $model          = 'claude-haiku-4-5-20251001',
+        private readonly int                           $maxTokens      = 2048,
+        private readonly int                           $timeoutSeconds = 60,
+        private readonly ?HttpClient                   $httpClient     = null,
     ) {}
 
     public function generate(ContentGenerationJobDto $job): GeneratedContentDto

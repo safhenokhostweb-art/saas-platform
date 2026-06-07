@@ -60,7 +60,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "SaaSPlatform\\Modules\\Education\\Tests\\": "packages/saas-platform/modules/education/tests/"
         }
     },
     "scripts": {

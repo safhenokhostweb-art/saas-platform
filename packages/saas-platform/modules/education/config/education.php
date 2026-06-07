@@ -95,6 +95,23 @@ return [
 
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Per-tenant AI quota enforcement (EDU-17 Task 4)
+        |----------------------------------------------------------------------
+        | enabled           — master switch; set EDUCATION_AI_QUOTA_ENABLED=true
+        |                      in production to enforce limits.
+        | default_daily     — calls per site per day when no custom plan is set.
+        |                      Mirrors ai.quotas.default_daily from core-utils config.
+        */
+        'quota' => [
+
+            'enabled'       => env('EDUCATION_AI_QUOTA_ENABLED', false),
+
+            'default_daily' => env('EDUCATION_AI_QUOTA_DEFAULT_DAILY', 50),
+
+        ],
+
     ],
 
     /*

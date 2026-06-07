@@ -94,7 +94,8 @@ use SaaSPlatform\Modules\Education\Services\Education\EducationAnalyticsService;
 use SaaSPlatform\Modules\Education\Ai\Providers\NullAiContentProvider;
 use SaaSPlatform\Modules\Education\Ai\Providers\ClaudeAiContentProvider;
 use SaaSPlatform\Modules\Education\Ai\Providers\OpenAiContentProvider;
-// EDU-17 — Circuit-breaker decorator + Persian prompt builder
+// EDU-17 — Circuit-breaker decorator + Persian prompt builder + quota
+use SaaSPlatform\CoreUtils\AI\Governance\TenantAiQuotaManager;
 use SaaSPlatform\Modules\Education\Ai\Providers\CircuitBreakerAiContentProvider;
 use SaaSPlatform\Modules\Education\Ai\Prompts\PersianEducationPromptBuilder;
 use SaaSPlatform\Modules\Education\Services\Education\EducationAiContentGenerationService;
@@ -252,7 +253,11 @@ class EducationServiceProvider extends ServiceProvider
                 default => new NullAiContentProvider(),
             };
 
-            return new CircuitBreakerAiContentProvider($inner);
+            $quotaManager = config('education.ai.quota.enabled', false)
+                ? $app->make(TenantAiQuotaManager::class)
+                : null;
+
+            return new CircuitBreakerAiContentProvider($inner, $quotaManager);
         });
 
         $this->app->singleton(GeneratedContentValidator::class);
