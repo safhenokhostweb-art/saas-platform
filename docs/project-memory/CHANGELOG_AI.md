@@ -5,6 +5,34 @@
 
 ---
 
+## 2026-06-06 — Auto-renew Scheduler (P2)
+
+**Reason:** `auto_renew` field existed on Subscription but no job processed it — subscriptions expired without renewal.
+**Design decision:** Iranian gateways don't support card-on-file/stored credentials. Free plans renew directly; paid plans get an invoice + SMS so user pays manually.
+**Files Changed (customer-site):**
+- app/Console/Commands/ProcessRenewalsCommand.php (new — `subscriptions:process-renewals`, --dry-run, --window)
+- app/Models/SubscriptionLog.php: ACTION_AUTO_RENEWED + ACTION_AUTO_RENEW_INVOICE
+- bootstrap/app.php: dailyAt('08:00') scheduler entry
+- tests/Feature/ProcessRenewalsTest.php (13 tests)
+**Impact:** 13/13 pass | 29 assertions. Idempotent (renewed_at today = skip; pending invoice today = skip).
+
+---
+
+## 2026-06-06 — Payment Gateway Integration (P1)
+
+**Reason:** Wire real payment gateways (Zarinpal + IDPay) to subscription flow — replace manual activation with real online payment.
+**Files Changed (customer-site):**
+- config/payment.php (new — PAYMENT_GATEWAY, zarinpal, idpay settings)
+- app/Services/Payment/: PaymentGatewayInterface, PaymentResult, GatewayException, ZarinpalGateway, IdpayGateway, PaymentGatewayFactory (all new)
+- SubscriptionPaymentController: pay() → redirect to gateway, callback() → verify + activate, confirm() → blocked when gateway active
+- front/subscriptions/pay.blade.php: gateway-aware CTA
+- routes/web.php: GET /subscription/callback/{invoiceNumber} added
+- .env.example: payment env vars added
+- tests/Feature/SubscriptionPaymentGatewayTest.php (18 tests, all mocked HTTP)
+**Impact:** 18/18 tests pass | 32 assertions. Gateway fully wired. isConfigured() guard keeps fallback for manual activation when no gateway set.
+
+---
+
 ## 2026-06-06 — Growth Engine (Faz 4)
 
 **Reason:** Referral program (link+QR+reward both parties), public pricing page /plans, MRR+Churn admin dashboard.

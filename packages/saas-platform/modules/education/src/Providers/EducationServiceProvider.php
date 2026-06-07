@@ -94,6 +94,9 @@ use SaaSPlatform\Modules\Education\Services\Education\EducationAnalyticsService;
 use SaaSPlatform\Modules\Education\Ai\Providers\NullAiContentProvider;
 use SaaSPlatform\Modules\Education\Ai\Providers\ClaudeAiContentProvider;
 use SaaSPlatform\Modules\Education\Ai\Providers\OpenAiContentProvider;
+// EDU-17 — Circuit-breaker decorator + Persian prompt builder
+use SaaSPlatform\Modules\Education\Ai\Providers\CircuitBreakerAiContentProvider;
+use SaaSPlatform\Modules\Education\Ai\Prompts\PersianEducationPromptBuilder;
 use SaaSPlatform\Modules\Education\Services\Education\EducationAiContentGenerationService;
 use SaaSPlatform\Modules\Education\Services\Education\GeneratedContentValidator;
 use SaaSPlatform\Modules\Education\Services\Education\EducationDraftPersistenceService;
@@ -219,17 +222,27 @@ class EducationServiceProvider extends ServiceProvider
         $this->app->bind(ContentDeficitQueueServiceInterface::class,   ContentDeficitQueueService::class);
         $this->app->bind(EducationAnalyticsServiceInterface::class,    EducationAnalyticsService::class);
 
-        // --- EDU-15: AI Content Generation ---
-        // Provider selected via config('education.ai_provider') — no provider-specific code in module
-        $this->app->singleton(AiContentProviderInterface::class, function ($app) {
-            $provider = config('education.ai_provider', 'null');
-            $cfg      = config('education.ai_generation', []);
+        // --- EDU-17: Persian prompt builder ---
+        $this->app->singleton(PersianEducationPromptBuilder::class);
 
-            return match ($provider) {
+        // --- EDU-17: AI Content Generation — provider + circuit-breaker wiring ---
+        // Primary config key: education.ai.provider (EDU-17).
+        // Falls back to legacy education.ai_provider key for backward compatibility.
+        // Every provider is wrapped in CircuitBreakerAiContentProvider.
+        $this->app->singleton(AiContentProviderInterface::class, function ($app) {
+            $providerName  = config('education.ai.provider')
+                          ?? config('education.ai_provider', 'null');
+            $cfg           = config('education.ai_generation', []);
+            $timeout       = (int) config('education.ai.timeout_seconds', 60);
+            $promptBuilder = $app->make(PersianEducationPromptBuilder::class);
+
+            $inner = match ($providerName) {
                 'claude' => new ClaudeAiContentProvider(
-                    apiKey:    $cfg['claude_api_key'] ?? '',
-                    model:     $cfg['claude_model']   ?? 'claude-sonnet-4-6',
-                    maxTokens: (int) ($cfg['max_tokens'] ?? 2048),
+                    apiKey:         $cfg['claude_api_key'] ?? '',
+                    promptBuilder:  $promptBuilder,
+                    model:          $cfg['claude_model']   ?? 'claude-haiku-4-5-20251001',
+                    maxTokens:      (int) ($cfg['max_tokens'] ?? 2048),
+                    timeoutSeconds: $timeout,
                 ),
                 'openai' => new OpenAiContentProvider(
                     apiKey:    $cfg['openai_api_key'] ?? '',
@@ -238,6 +251,8 @@ class EducationServiceProvider extends ServiceProvider
                 ),
                 default => new NullAiContentProvider(),
             };
+
+            return new CircuitBreakerAiContentProvider($inner);
         });
 
         $this->app->singleton(GeneratedContentValidator::class);

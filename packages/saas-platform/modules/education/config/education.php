@@ -69,6 +69,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | EDU-17: AI Runtime Configuration
+    |--------------------------------------------------------------------------
+    | Controls provider selection, HTTP timeout, and circuit breaker behaviour.
+    |
+    | circuit_breaker.failure_threshold  — consecutive failures before OPEN
+    | circuit_breaker.open_ttl_seconds   — how long the circuit stays OPEN
+    | circuit_breaker.recovery_window_seconds — window in which failures accumulate
+    */
+    'ai' => [
+
+        'provider' => env('EDUCATION_AI_PROVIDER', null),
+
+        'timeout_seconds' => env('EDUCATION_AI_TIMEOUT_SECONDS', 60),
+
+        'circuit_breaker' => [
+
+            'enabled'                  => env('EDUCATION_AI_CIRCUIT_ENABLED', true),
+
+            'failure_threshold'        => env('EDUCATION_AI_CIRCUIT_FAILURE_THRESHOLD', 5),
+
+            'open_ttl_seconds'         => env('EDUCATION_AI_CIRCUIT_OPEN_TTL_SECONDS', 300),
+
+            'recovery_window_seconds'  => env('EDUCATION_AI_CIRCUIT_RECOVERY_WINDOW_SECONDS', 60),
+
+        ],
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Recommendation Engine Thresholds
     |--------------------------------------------------------------------------
     */

@@ -47,7 +47,11 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan route:list --name=tickets.admin --columns=Method,URI,Name 2>&1 | Select-Object -Last 50)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan route:list --name=tickets. 2>&1 | Select-Object -Last 60)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan tinker --execute=\"echo 'ticket_votes: '.DB::table\\('ticket_votes'\\)->count\\(\\).' rows'; echo PHP_EOL; echo 'ticket_fr_subscribers: '.DB::table\\('ticket_fr_subscribers'\\)->count\\(\\).' rows'; echo PHP_EOL; echo 'push_subscriptions: '.DB::table\\('push_subscriptions'\\)->count\\(\\).' rows'; echo PHP_EOL; echo 'tickets with type col: '.DB::table\\('tickets'\\)->count\\(\\).' rows'; echo PHP_EOL; echo 'Schema OK';\" 2>&1)",
-      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan db:table ticket_replies --count 2>&1 | Select-Object -First 5)"
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"C:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan db:table ticket_replies --count 2>&1 | Select-Object -First 5)",
+      "PowerShell($phpPath = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $phpPath artisan test tests/Feature/ProcessRenewalsTest.php --env=testing 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\laragon\\\\bin\\\\php\\\\php8.3.0;\" + $env:PATH; cd c:\\\\laragon\\\\www\\\\customer-site; php artisan migrate --path=database/migrations/2026_06_07_100000_add_shipping_cost_to_orders_table.php 2>&1)",
+      "Bash(grep -rn \"App\\\\\\\\\" /c/laragon/www/saas-platform/packages/saas-platform/modules/education/src/Ai/Prompts/ /c/laragon/www/saas-platform/packages/saas-platform/modules/education/src/Ai/Providers/)",
+      "Bash(Get-ChildItem \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\" -Recurse -Filter \"*.php\")"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"

@@ -92,28 +92,38 @@
 
 ---
 
-### 🔴 P1 — Payment Gateway وصل نیست
+### ✅ COMPLETED — Payment Gateway Integration (P1 — 2026-06-06)
 
-**مشکل:**
-در `SubscriptionPaymentController::confirm()` یک comment وجود دارد:
-```php
-// NOTE: وقتی ماژول bank_gateway اضافه شود، اینجا به ریدایرکت به درگاه تبدیل می‌شود.
+**فایل‌های جدید:**
+- `config/payment.php` — PAYMENT_GATEWAY, PAYMENT_SANDBOX, zarinpal, idpay config
+- `app/Services/Payment/PaymentGatewayInterface.php` — contract (request/verify/name)
+- `app/Services/Payment/PaymentResult.php` — DTO (success, refId, cardPan, message)
+- `app/Services/Payment/GatewayException.php` — domain exception
+- `app/Services/Payment/ZarinpalGateway.php` — Zarinpal v4 API (request + verify)
+- `app/Services/Payment/IdpayGateway.php` — IDPay v1.1 API (request + verify)
+- `app/Services/Payment/PaymentGatewayFactory.php` — env-driven selector + isConfigured()
+- `tests/Feature/SubscriptionPaymentGatewayTest.php` — 18 tests (18/18 pass, mocked HTTP)
+
+**فایل‌های تغییریافته:**
+- `app/Http/Controllers/Front/SubscriptionPaymentController.php` — pay() → gateway redirect | callback() → verify + activate | confirm() → blocked if gateway configured
+- `resources/views/front/subscriptions/pay.blade.php` — gateway-aware CTA (آنلاین vs دستی)
+- `routes/web.php` — `GET /subscription/callback/{invoiceNumber}` → subscriptions.callback
+- `.env.example` — PAYMENT_GATEWAY, PAYMENT_SANDBOX, ZARINPAL_MERCHANT_ID, IDPAY_API_KEY
+
+**نتیجه:** 18/18 tests pass | 32 assertions | تمام HTTP calls مکارانه mock شدند
+
+**Flow جدید:**
 ```
-الان confirm بدون پرداخت واقعی subscription را فعال می‌کند.
-
-**باید:**
-- redirect به IDPay یا Zarinpal
-- handle کردن callback از درگاه
-- وصل شدن به `PaymentCallbackController` که در routes/web.php موجود است
-
-**فایل‌های مرتبط:**
+pay() → isConfigured? YES → request() → redirect به درگاه → callback() → verify() → activateSubscription()
+pay() → isConfigured? NO  → manual page → confirm() → activateSubscription()
 ```
-app/Http/Controllers/Front/SubscriptionPaymentController.php  ← confirm() باید اصلاح شود
-app/Http/Controllers/PaymentCallbackController.php            ← موجود، باید به sub وصل شود
-app/Services/Payment/PaymentGatewayFactory.php               ← موجود
-app/Services/Payment/ZarinpalGateway.php                     ← موجود
-app/Services/Payment/IdpayGateway.php                        ← موجود
-routes/web.php → Route::get('/payment/callback', ...)        ← موجود
+
+**تنظیم:**
+```env
+PAYMENT_GATEWAY=zarinpal   # یا idpay
+ZARINPAL_MERCHANT_ID=xxxx  # اگر zarinpal
+IDPAY_API_KEY=xxxx         # اگر idpay
+PAYMENT_SANDBOX=false      # true برای تست
 ```
 
 ---
@@ -157,15 +167,20 @@ routes/web.php → Route::get('/payment/callback', ...)        ← موجود
 
 ---
 
-### 🟡 P2 — Auto-renew Scheduler پیاده‌سازی نشده
+### ✅ COMPLETED — Auto-renew Scheduler (P2 — 2026-06-06)
 
-**مشکل:**
-فیلد `auto_renew` روی `Subscription` model وجود دارد اما هیچ scheduler job آن را پردازش نمی‌کند.
+**فایل‌های جدید / تغییریافته:**
+- `app/Console/Commands/ProcessRenewalsCommand.php` — NEW (`subscriptions:process-renewals`, `--dry-run`, `--window`)
+- `app/Models/SubscriptionLog.php` — ACTION_AUTO_RENEWED + ACTION_AUTO_RENEW_INVOICE اضافه شد
+- `bootstrap/app.php` — scheduler `->dailyAt('08:00')` ثبت شد
+- `tests/Feature/ProcessRenewalsTest.php` — 13 tests (13/13 pass)
 
-**باید:**
-- یک Artisan command: `subscription:process-renewals`
-- در `app/Console/Kernel.php` زمان‌بندی شود (daily)
-- اشتراک‌هایی که `auto_renew=true` هستند و فردا منقضی می‌شوند را تمدید کند
+**منطق:**
+- `auto_renew=true` + `status=active/trial` + `ends_at ≤ now+24h` + `ends_at > now-1h`
+- پلن رایگان: مستقیم `SubscriptionService::renew()` → ACTION_AUTO_RENEWED
+- پلن پولی: فاکتور pending ایجاد + SMS با لینک پرداخت → ACTION_AUTO_RENEW_INVOICE
+- charge کارت خودکار در ایران ممکن نیست — کاربر باید خودش پرداخت کند
+- idempotent: renewed_at امروز = skip | فاکتور pending امروز = skip
 
 ---
 
@@ -252,9 +267,9 @@ customer-site/
 ✅ Faz 3 (مهم):     Retention Engine (SMS reminders + birthday gift)
 ✅ Faz 4 (ارزش):    Growth Engine (referral + /plans public page + MRR/Churn)
 
-⬜ مرحله بعدی:      وصل کردن Payment Gateway (P1 — بدون پرداخت واقعی)
-⬜ مرحله بعدی:      Auto-renew Scheduler (P2)
-⬜ مرحله بعدی:      Benefit Enforcement در Shop (P3)
+✅ P1 (حیاتی):      Payment Gateway (Zarinpal + IDPay) — 18/18 tests
+✅ P2 (مهم):        Auto-renew Scheduler — 13/13 tests | رایگان→مستقیم | پولی→فاکتور+SMS
+⬜ P3 (مهم):        Benefit Enforcement در Shop Checkout
 ```
 
 ---
