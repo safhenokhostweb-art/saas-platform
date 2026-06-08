@@ -99,15 +99,16 @@ class PageController extends Controller
         if ($request->hasFile('icon')) {
             $maxKb = PlatformSettings::uploadImageMaxKb();
             $request->validate(['icon' => 'file|mimes:jpeg,jpg,png,gif,webp,svg|max:' . $maxKb]);
-            if ($page->icon && Storage::disk('public')->exists($page->icon)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($page->icon);
+            $uploadDisk = config('filesystems.upload_disk', 'public');
+            if ($page->icon && Storage::disk($uploadDisk)->exists($page->icon)) {
+                Storage::disk($uploadDisk)->delete($page->icon);
             }
-            $data['icon'] = $request->file('icon')->store('pages', 'public');
+            $data['icon'] = $request->file('icon')->store('pages', $uploadDisk);
         }
 
         if ($request->has('remove_icon') && $request->boolean('remove_icon')) {
             if ($page->icon) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($page->icon);
+                Storage::disk(config('filesystems.upload_disk', 'public'))->delete($page->icon);
             }
             $data['icon'] = null;
         } elseif (!$request->hasFile('icon') && $request->filled('icon_path')) {
@@ -127,7 +128,7 @@ class PageController extends Controller
     public function destroy(Page $page)
     {
         if ($page->icon) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($page->icon);
+            Storage::disk(config('filesystems.upload_disk', 'public'))->delete($page->icon);
         }
         $page->delete();
         return redirect()->route('admin.pages.index')->with('success', 'صفحه حذف شد.');

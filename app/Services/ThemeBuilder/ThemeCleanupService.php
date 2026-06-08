@@ -78,8 +78,9 @@ class ThemeCleanupService
             return;
         }
         $path = str_replace(['storage/', 'public/'], '', $path);
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        $uploadDisk = config('filesystems.upload_disk', 'public');
+        if (Storage::disk($uploadDisk)->exists($path)) {
+            Storage::disk($uploadDisk)->delete($path);
         }
     }
 

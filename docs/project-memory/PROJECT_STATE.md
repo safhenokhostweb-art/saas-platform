@@ -24,10 +24,10 @@ Namespace: `SaaSPlatform\Modules\Education`
 
 ## Current Phase
 
-**EDU-16 — CERTIFIED COMPLETE (2026-06-06)**  
-Human review workflow implemented with simplified state machine: `draft → published | archived`.  
-`pending_review` state removed entirely — architectural decision confirmed.  
-**EDU-17 — READY TO BEGIN (EDUCATION_AI_PROVIDER env decision required)**
+**CACHE-1 — COMPLETE (2026-06-08)**  
+Redis cache architecture implemented. Named stores, CacheManager, zero `Cache::flush()`.  
+All 15 tests pass.  
+**Next: SUBSCRIPTION_CHECKOUT_PAYMENT or INFRA-2**
 
 ---
 
@@ -91,10 +91,7 @@ EDU-16 complete. AI-generated drafts now have a full human review gate. Next pha
 
 ## In Progress Work
 
-**EDU-17** — Live AI Provider Integration (pending env decision)  
-- Requires EDUCATION_AI_PROVIDER env to be set
-- AiProviderManager integration (circuit breaker + fallback) needed
-- TenantAiQuotaManager integration needed
+None active. Last completed: CACHE-1 (2026-06-08).
 
 ---
 

@@ -121,6 +121,31 @@
 
 ---
 
+## COMPLETED: CACHE-1 — Redis Cache Architecture ✅ (2026-06-08)
+
+**Status:** CERTIFIED COMPLETE  
+**Tests:** 15/15 CacheManager tests pass. Zero regressions from CACHE-1.
+
+**Delivered:**
+- `app/Services/Infrastructure/CacheManager.php` — central cache abstraction
+  - `key($name, ?$siteId)` — tenant-isolated key builder
+  - `store($name)` — named store access
+  - `remember/forget/put/get/flushStore` — per-store ops (never global flush)
+- `config/database.php` — 7 new Redis connections (DB2–DB8) for named stores
+- `config/cache.php` — 6 named stores: users(DB4), customers(DB5), themes(DB6), tickets(DB7), modules(DB8), rate_limit(DB3)
+- Eliminated all `Cache::flush()` calls — replaced with `Cache::store('X')->flush()`
+- Migrated all cache `remember/forget` calls to named stores:
+  - `UserRepository` + `UserService` → `Cache::store('users')`
+  - `CustomerRepository` + `CustomerService` → `Cache::store('customers')`
+  - `SupportTicketRepository` → `Cache::store('tickets')`
+  - `ModuleFeatureService` → `Cache::store('modules')`
+  - `ThemeProfileManager` → `Cache::store('themes')`
+- `tests/Feature/Infrastructure/CacheManagerTest.php` — 15 tests
+
+**Architecture:** Each named store = own Redis DB → `flushStore('users')` only flushes DB4, never touches DB5+ 
+
+---
+
 ## INFRASTRUCTURE BACKLOG
 
 ### Phase 8.x Remaining
@@ -132,9 +157,10 @@
 | 8.3c | GitHub Actions CI pipeline | ✅ DONE (2026-06-07) |
 | 8.3d | Slack webhook alerting for deployment/anomaly events | Medium |
 | 8.4a | DB indexes on site_id columns (all tables) | ✅ DONE (2026-06-07) |
-| 8.4b | Cache for domain resolution in TenantContext | Medium |
+| 8.4b | Cache for domain resolution in TenantContext | ✅ DONE (CACHE-1) |
 | 8.4c | External alerting: critical anomaly → Slack | Medium |
 | 8.4d | OpenTelemetry export to Jaeger/Tempo | Low |
+| CACHE-1 | Redis named stores + CacheManager + no global flush | ✅ DONE (2026-06-08) |
 
 ### Infrastructure Remediation Backlog (from INFRA audit 2026-06-08)
 

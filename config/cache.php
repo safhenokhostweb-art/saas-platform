@@ -93,6 +93,47 @@ return [
             'driver' => 'octane',
         ],
 
+        // ── Named application cache stores (CACHE-1) ──────────────────────────
+        // Each store maps to its own Redis DB so Cache::store('users')->flush()
+        // only flushes user-related cache, not the entire application cache.
+        // Falls back to array/file driver when CACHE_STORE is not 'redis' (tests).
+
+        'users' => [
+            'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
+            'connection' => 'cache_users',
+            'lock_connection' => 'default',
+        ],
+
+        'customers' => [
+            'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
+            'connection' => 'cache_customers',
+            'lock_connection' => 'default',
+        ],
+
+        'themes' => [
+            'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
+            'connection' => 'cache_themes',
+            'lock_connection' => 'default',
+        ],
+
+        'tickets' => [
+            'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
+            'connection' => 'cache_tickets',
+            'lock_connection' => 'default',
+        ],
+
+        'modules' => [
+            'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
+            'connection' => 'cache_modules',
+            'lock_connection' => 'default',
+        ],
+
+        'rate_limit' => [
+            'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
+            'connection' => 'cache_rate_limit',
+            'lock_connection' => 'default',
+        ],
+
     ],
 
     /*

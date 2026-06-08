@@ -21,7 +21,7 @@ class ModuleFeatureService
     {
         $cacheKey = "module_features_{$moduleSlug}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($moduleSlug) {
+        return Cache::store('modules')->remember($cacheKey, self::CACHE_TTL, function () use ($moduleSlug) {
             // Read from canonical config only
             $configKey = "module-manifest-{$moduleSlug}";
             $canonicalConfig = config($configKey);
@@ -104,7 +104,7 @@ class ModuleFeatureService
      */
     public function clearCache(string $moduleSlug): void
     {
-        Cache::forget("module_features_{$moduleSlug}");
+        Cache::store('modules')->forget("module_features_{$moduleSlug}");
     }
 
     /**

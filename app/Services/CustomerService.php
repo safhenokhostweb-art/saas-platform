@@ -24,7 +24,7 @@ class CustomerService
     {
         $cacheKey = 'customers_search_' . md5(serialize($filters) . $sortBy . $sortDir . request('page', 1));
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir) {
+        return Cache::store('customers')->remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir) {
             $query = Customer::with(['user.profile', 'sites', 'reseller.user.profile', 'activeEntitlements'])
                 ->select('customers.*')
                 ->orderBy($sortBy, $sortDir);
@@ -202,7 +202,7 @@ class CustomerService
      */
     public function getStats(): array
     {
-        return Cache::remember('customer_stats', self::CACHE_TTL, function () {
+        return Cache::store('customers')->remember('customer_stats', self::CACHE_TTL, function () {
             return [
                 'total'            => Customer::count(),
                 'with_sites'       => Customer::has('sites')->count(),
@@ -219,6 +219,6 @@ class CustomerService
      */
     public function clearCache(): void
     {
-        Cache::flush();
+        Cache::store('customers')->flush();
     }
 }

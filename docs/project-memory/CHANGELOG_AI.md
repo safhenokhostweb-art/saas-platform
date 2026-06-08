@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-06-08 — CACHE-1: Redis Cache Architecture + CacheManager
+
+**Reason:** `Cache::flush()` was a nuclear option — wiping the entire cache on every user/customer write. Named stores with per-store flush isolation needed.
+
+**Delivered:**
+- `app/Services/Infrastructure/CacheManager.php` (NEW) — `key()`, `store()`, `remember()`, `forget()`, `put()`, `get()`, `flushStore()`, `isKnownStore()`, `storeNames()`
+- `config/database.php` — 7 new Redis connections: `cache_sessions` (DB2), `cache_rate_limit` (DB3), `cache_users` (DB4), `cache_customers` (DB5), `cache_themes` (DB6), `cache_tickets` (DB7), `cache_modules` (DB8)
+- `config/cache.php` — 6 named stores: `users`, `customers`, `themes`, `tickets`, `modules`, `rate_limit` — each on its own Redis DB, driver falls back to env CACHE_STORE
+- `app/Repositories/UserRepository.php` — all `Cache::remember/flush` → `Cache::store('users')`
+- `app/Repositories/CustomerRepository.php` — all `Cache::remember/flush` → `Cache::store('customers')`
+- `app/Services/UserService.php` — `Cache::flush()` → `Cache::store('users')->flush()`
+- `app/Services/CustomerService.php` — `Cache::flush()` → `Cache::store('customers')->flush()`
+- `app/Repositories/SupportTicketRepository.php` → `Cache::store('tickets')`
+- `app/Services/ModuleFeatureService.php` → `Cache::store('modules')`
+- `app/Services/ThemeEngine/ThemeProfileManager.php` → `Cache::store('themes')` (all 6 Cache calls)
+- `tests/Feature/Infrastructure/CacheManagerTest.php` (NEW) — 15 tests / 33 assertions, all pass
+
+**Redis DB Map:**
+- DB0: default (queues, Reverb) | DB1: legacy cache | DB2: sessions | DB3: rate_limit
+- DB4: users | DB5: customers | DB6: themes | DB7: tickets | DB8: modules
+
+**Regression:** 15 new CacheManager tests pass. All pre-existing failures are unrelated email-column issues from prior phases.
+
+---
+
 ## 2026-06-08 — SaaS Infrastructure Foundation
 
 **Reason:** Prepare platform for future deployment to remote/separated servers without code changes.

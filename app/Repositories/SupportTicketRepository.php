@@ -76,7 +76,7 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
     public function findById(int $id, array $relations = []): ?SupportTicket
     {
         $relations = $relations ?: self::RELATIONS_DEFAULT;
-        return Cache::remember("support_ticket_{$id}_" . md5(implode(',', $relations)), self::CACHE_TTL, function () use ($id, $relations) {
+        return Cache::store('tickets')->remember("support_ticket_{$id}_" . md5(implode(',', $relations)), self::CACHE_TTL, function () use ($id, $relations) {
             return SupportTicket::with($relations)->find($id);
         });
     }
@@ -130,7 +130,7 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
 
     public function getStats(): array
     {
-        return Cache::remember('support_ticket_stats', self::CACHE_TTL, function () {
+        return Cache::store('tickets')->remember('support_ticket_stats', self::CACHE_TTL, function () {
             return [
                 'total'           => SupportTicket::count(),
                 'open'            => SupportTicket::where('status', SupportTicket::STATUS_OPEN)->count(),
@@ -145,7 +145,7 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface
 
     public function clearCache(): void
     {
-        Cache::forget('support_ticket_stats');
+        Cache::store('tickets')->forget('support_ticket_stats');
     }
 
     private function escapeLikeTerm(string $term): string

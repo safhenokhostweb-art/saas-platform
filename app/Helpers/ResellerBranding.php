@@ -43,7 +43,7 @@ class ResellerBranding
                 return $path;
             }
             $path = PlatformSettings::normalizeStoragePath($path);
-            if ($path !== '' && Storage::disk('public')->exists($path)) {
+            if ($path !== '' && Storage::disk(config('filesystems.upload_disk', 'public'))->exists($path)) {
                 return '/storage/' . $path;
             }
         }

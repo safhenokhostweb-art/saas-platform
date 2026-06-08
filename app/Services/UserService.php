@@ -46,7 +46,7 @@ class UserService
     {
         $cacheKey = 'users_search_' . md5(serialize($filters) . $sortBy . $sortDir . request('page', 1));
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir) {
+        return Cache::store('users')->remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir) {
             $query = User::with(['profile', 'customer', 'roles', 'groups', 'tags'])
                 ->select('users.*')
                 ->orderBy($sortBy, $sortDir);
@@ -860,7 +860,7 @@ class UserService
      */
     public function clearCache(): void
     {
-        Cache::flush();
+        Cache::store('users')->flush();
     }
 
     /**

@@ -20,7 +20,7 @@ class UserRepository implements UserRepositoryInterface
     {
         $cacheKey = 'users_search_' . md5(serialize($filters) . $sortBy . $sortDir . request('page', 1) . $perPage);
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir, $perPage) {
+        return Cache::store('users')->remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir, $perPage) {
             $trashed = $filters['trashed'] ?? '0';
             if ($trashed === '1') {
                 $query = User::onlyTrashed()->with(self::RELATIONS_DEFAULT)->select('users.*')->orderBy($sortBy, $sortDir);
@@ -105,7 +105,7 @@ class UserRepository implements UserRepositoryInterface
     public function findById(int $id, array $relations = []): ?User
     {
         $relations = $relations ?: self::RELATIONS_DEFAULT;
-        return Cache::remember("user_{$id}_" . md5(implode(',', $relations)), self::CACHE_TTL, function () use ($id, $relations) {
+        return Cache::store('users')->remember("user_{$id}_" . md5(implode(',', $relations)), self::CACHE_TTL, function () use ($id, $relations) {
             return User::with($relations)->find($id);
         });
     }
@@ -218,7 +218,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function getStats(): array
     {
-        return Cache::remember('user_stats', self::CACHE_TTL, function () {
+        return Cache::store('users')->remember('user_stats', self::CACHE_TTL, function () {
             $base = User::where(fn($q) =>
                 $q->whereNull('site_id')
                   ->orWhere('is_admin', true)
@@ -240,7 +240,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function getRegistrationTrend(int $days = 30): array
     {
-        return Cache::remember("user_registration_trend_{$days}", self::CACHE_TTL, function () use ($days) {
+        return Cache::store('users')->remember("user_registration_trend_{$days}", self::CACHE_TTL, function () use ($days) {
             $results = User::select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
                 ->where('created_at', '>=', now()->subDays($days - 1)->startOfDay())
                 ->groupBy('date')
@@ -263,6 +263,6 @@ class UserRepository implements UserRepositoryInterface
 
     public function clearCache(): void
     {
-        Cache::flush();
+        Cache::store('users')->flush();
     }
 }

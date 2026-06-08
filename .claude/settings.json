@@ -58,7 +58,13 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan test packages/saas-platform/modules/education/tests/Feature/PersianEducationPromptBuilderTest.php --no-coverage 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; $composer = \"C:\\\\laragon\\\\bin\\\\composer\\\\composer.phar\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php $composer dump-autoload 2>&1 | Select-Object -Last 5)",
       "PowerShell($php = \"c:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $php artisan test tests/Feature/SubscriptionUpgradeTest.php tests/Feature/EarlyAccessGatingTest.php tests/Feature/SubscriptionCheckoutFlowTest.php tests/Feature/SubscriptionLifecycleTest.php tests/Feature/BenefitEnforcementCheckoutTest.php --colors=never 2>&1 | Select-String -Pattern \"Tests:|FAIL|PASS|✓|⨯|Duration\" | Select-Object -Last 20)",
-      "Bash(xargs grep -l '$table->.*site_id\\\\|->integer.*site_id\\\\|->unsignedBigInteger.*site_id\\\\|->bigInteger.*site_id')"
+      "Bash(xargs grep -l '$table->.*site_id\\\\|->integer.*site_id\\\\|->unsignedBigInteger.*site_id\\\\|->bigInteger.*site_id')",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php vendor/bin/phpunit packages/ --colors=never 2>&1 | Select-String -Pattern \"\\(email|Cache::\\)\" | Select-Object -First 5)",
+      "PowerShell(git -C \"c:\\\\laragon\\\\www\\\\saas-platform\" diff --stat HEAD 2>&1)",
+      "PowerShell(git -C \"c:\\\\laragon\\\\www\\\\saas-platform\" status --short 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan config:clear 2>&1; & $php vendor/bin/phpunit tests/Feature/Infrastructure/ --colors=never 2>&1)",
+      "Bash(git -C \"c:\\\\laragon\\\\www\\\\saas-platform\" status)",
+      "Bash(git -C \"c:\\\\laragon\\\\www\\\\customer-site\" status)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"

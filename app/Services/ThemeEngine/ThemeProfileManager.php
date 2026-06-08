@@ -30,7 +30,7 @@ class ThemeProfileManager
     {
         if ($siteId !== null) {
             $key = self::TENANT_CACHE_PREFIX . $siteId;
-            return Cache::remember($key, self::CACHE_TTL, function () use ($siteId) {
+            return Cache::store('themes')->remember($key, self::CACHE_TTL, function () use ($siteId) {
                 return TenantThemeOverride::forSite($siteId)
                     ?? $this->resolvePlatform();
             });
@@ -40,7 +40,7 @@ class ThemeProfileManager
 
     public function resolvePlatform(): ?ThemeProfile
     {
-        return Cache::remember(self::PLATFORM_CACHE_KEY, self::CACHE_TTL, function () {
+        return Cache::store('themes')->remember(self::PLATFORM_CACHE_KEY, self::CACHE_TTL, function () {
             return ThemeProfile::activePlatform()
                 ?? ThemeProfile::defaultPreset();
         });
@@ -171,7 +171,7 @@ class ThemeProfileManager
      */
     public function storePreview(string $previewKey, ThemeProfile $profile): void
     {
-        Cache::put(
+        Cache::store('themes')->put(
             'theme_preview:' . $previewKey,
             $profile->toCssVars(),
             1800
@@ -180,24 +180,24 @@ class ThemeProfileManager
 
     public function getPreview(string $previewKey): ?array
     {
-        return Cache::get('theme_preview:' . $previewKey);
+        return Cache::store('themes')->get('theme_preview:' . $previewKey);
     }
 
     public function clearPreview(string $previewKey): void
     {
-        Cache::forget('theme_preview:' . $previewKey);
+        Cache::store('themes')->forget('theme_preview:' . $previewKey);
     }
 
     // ── Cache ────────────────────────────────────────────────────────────────
 
     public function clearPlatformCache(): void
     {
-        Cache::forget(self::PLATFORM_CACHE_KEY);
+        Cache::store('themes')->forget(self::PLATFORM_CACHE_KEY);
     }
 
     public function clearTenantCache(int $siteId): void
     {
-        Cache::forget(self::TENANT_CACHE_PREFIX . $siteId);
+        Cache::store('themes')->forget(self::TENANT_CACHE_PREFIX . $siteId);
     }
 
     private function clearRelatedCache(ThemeProfile $profile): void

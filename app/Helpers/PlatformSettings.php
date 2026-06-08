@@ -421,8 +421,9 @@ class PlatformSettings
     public static function storeLogo(UploadedFile $file): string
     {
         $old = self::get('platform_logo', '');
-        if ($old !== '' && Storage::disk('public')->exists($old)) {
-            Storage::disk('public')->delete($old);
+        $uploadDisk = config('filesystems.upload_disk', 'public');
+        if ($old !== '' && Storage::disk($uploadDisk)->exists($old)) {
+            Storage::disk($uploadDisk)->delete($old);
         }
 
         /** @var \App\Services\Infrastructure\StorageManager $storage */

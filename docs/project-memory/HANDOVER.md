@@ -21,15 +21,30 @@
 
 ## CURRENT STATE (2026-06-08)
 
-**Last completed phase:** SaaS Infrastructure Foundation  
-**Status:** Infrastructure Management Module delivered + Audit complete  
+**Last completed phase:** CACHE-1 — Redis Cache Architecture  
+**Status:** Named stores + CacheManager delivered, zero Cache::flush() remaining  
 **Education module status:** MATURE — all EDU phases complete  
-**Previous milestone:** EDU-17 CERTIFIED COMPLETE (2026-06-07)  
+**Previous milestone:** SaaS Infrastructure Foundation (2026-06-08)  
 **Next recommended milestone:** SUBSCRIPTION_CHECKOUT_PAYMENT or INFRA-2 (Storage facade migration)
 
 ---
 
 ## LAST COMPLETED SPRINT
+
+### CACHE-1: Redis Cache Architecture — COMPLETE (2026-06-08)
+
+Named stores, isolated flush, CacheManager service. Full implementation.
+
+**Delivered:**
+- `CacheManager.php` — `key()`, `store()`, `remember/forget/put/get/flushStore`
+- 6 named Redis stores on separate DBs (DB3–DB8): users, customers, themes, tickets, modules, rate_limit
+- Eliminated all `Cache::flush()` — replaced with per-store flush
+- 7 services/repositories refactored to use named stores
+- 15/15 tests pass
+
+**Redis DB Map:** DB0=queues, DB1=legacy, DB2=sessions, DB3=rate_limit, DB4=users, DB5=customers, DB6=themes, DB7=tickets, DB8=modules
+
+---
 
 ### EDU-17: Live AI Provider Integration — CERTIFIED COMPLETE (2026-06-07)
 

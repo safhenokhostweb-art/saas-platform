@@ -20,7 +20,7 @@ class CustomerRepository implements CustomerRepositoryInterface
     {
         $cacheKey = 'customers_search_' . md5(serialize($filters) . $sortBy . $sortDir . request('page', 1) . $perPage);
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir, $perPage) {
+        return Cache::store('customers')->remember($cacheKey, self::CACHE_TTL, function () use ($filters, $sortBy, $sortDir, $perPage) {
             $query = Customer::with(self::RELATIONS_DEFAULT)
                 ->select('customers.*')
                 ->orderBy($sortBy, $sortDir);
@@ -76,7 +76,7 @@ class CustomerRepository implements CustomerRepositoryInterface
     public function findById(int $id, array $relations = []): ?Customer
     {
         $relations = $relations ?: self::RELATIONS_DEFAULT;
-        return Cache::remember("customer_{$id}_" . md5(implode(',', $relations)), self::CACHE_TTL, function () use ($id, $relations) {
+        return Cache::store('customers')->remember("customer_{$id}_" . md5(implode(',', $relations)), self::CACHE_TTL, function () use ($id, $relations) {
             return Customer::with($relations)->find($id);
         });
     }
@@ -160,7 +160,7 @@ class CustomerRepository implements CustomerRepositoryInterface
 
     public function getStats(): array
     {
-        return Cache::remember('customer_stats', self::CACHE_TTL, function () {
+        return Cache::store('customers')->remember('customer_stats', self::CACHE_TTL, function () {
             return [
                 'total'          => Customer::count(),
                 'with_sites'     => Customer::has('sites')->count(),
@@ -174,6 +174,6 @@ class CustomerRepository implements CustomerRepositoryInterface
 
     public function clearCache(): void
     {
-        Cache::flush();
+        Cache::store('customers')->flush();
     }
 }

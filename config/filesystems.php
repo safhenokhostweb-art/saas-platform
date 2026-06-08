@@ -15,6 +15,12 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    // دیسک آپلود (uploads + avatars). در VPS: public — در S3: s3 یا minio
+    'upload_disk' => env('UPLOAD_DISK', 'public'),
+
+    // دیسک export موقت CSV. همیشه local (web-accessible نباشد)
+    'export_disk' => env('EXPORT_DISK', 'exports'),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
