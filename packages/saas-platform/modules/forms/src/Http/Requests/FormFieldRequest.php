@@ -3,6 +3,7 @@
 namespace SaaSPlatform\Modules\Forms\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class FormFieldRequest extends FormRequest
 {
@@ -20,7 +21,10 @@ class FormFieldRequest extends FormRequest
             'is_required' => 'nullable|boolean',
             'placeholder' => 'nullable|string|max:255',
             'help_text' => 'nullable|string|max:500',
-            'options_raw' => 'nullable|string|max:8000',
+            'options_raw' => [
+                Rule::requiredIf(fn () => in_array($this->input('type'), ['select', 'radio', 'checkbox'], true)),
+                'nullable', 'string', 'max:8000',
+            ],
         ];
     }
 

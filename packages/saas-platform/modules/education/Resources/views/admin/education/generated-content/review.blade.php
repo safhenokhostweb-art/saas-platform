@@ -3,7 +3,7 @@
 @section('title', 'بررسی محتوای هوش مصنوعی')
 
 @section('content')
-<div class="space-y-5" dir="rtl">
+<div class="space-y-5" dir="rtl" x-data="bulkReview()">
 
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
     <div class="flex items-center justify-between">
@@ -38,7 +38,7 @@
             <p class="text-xs font-medium text-gray-500">میانگین زمان بررسی</p>
             <p class="mt-1 text-2xl font-bold text-indigo-600">
                 @if($analytics['avg_review_hours'] !== null)
-                    {{ number_format($analytics['avg_review_hours'], ۱) }} ساعت
+                    {{ number_format($analytics['avg_review_hours'], 1) }} ساعت
                 @else
                     —
                 @endif
@@ -76,11 +76,39 @@
         </a>
     </form>
 
+    {{-- ── Bulk action toolbar ──────────────────────────────────────────────── --}}
+    <div x-show="selected.length > 0" x-cloak
+         class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <span class="text-sm font-medium text-emerald-800">
+            <span x-text="selected.length"></span> مورد انتخاب شده
+        </span>
+        <button x-on:click="bulkApprove()"
+                x-bind:disabled="bulkLoading"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            تأیید گروهی
+        </button>
+        <button x-on:click="selected = []"
+                class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-white transition-colors">
+            لغو انتخاب
+        </button>
+        <span x-show="bulkFeedback" x-cloak
+              x-bind:class="bulkOk ? 'text-emerald-700' : 'text-rose-600'"
+              class="text-sm font-medium" x-text="bulkFeedback"></span>
+    </div>
+
     {{-- ── Queue table ──────────────────────────────────────────────────────── --}}
     <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-gray-100 text-sm">
             <thead class="bg-gray-50">
                 <tr>
+                    <th class="px-4 py-3 w-10">
+                        <input type="checkbox"
+                               x-on:change="toggleAll($event.target.checked)"
+                               class="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                    </th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-600">عنوان مقاله</th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-600">ماژول</th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-600">نوع</th>
@@ -91,7 +119,15 @@
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @forelse($pending as $article)
-                <tr x-data="reviewRow({{ $article->id }})" class="hover:bg-gray-50 transition-colors">
+                <tr x-data="reviewRow({{ $article->id }})"
+                    x-bind:class="removed ? 'hidden' : ''"
+                    class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 w-10">
+                        <input type="checkbox"
+                               x-bind:value="{{ $article->id }}"
+                               x-model="$root.selected"
+                               class="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                    </td>
                     <td class="px-4 py-3">
                         <a href="{{ route('admin.education.articles.show', $article) }}"
                            class="font-medium text-gray-900 hover:text-cyan-600 hover:underline line-clamp-2">
@@ -183,7 +219,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-4 py-12 text-center">
+                    <td colspan="7" class="px-4 py-12 text-center">
                         <div class="flex flex-col items-center gap-3 text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -209,36 +245,93 @@
 
 @push('scripts')
 <script>
+const CSRF = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+function bulkReview() {
+    return {
+        selected:      [],
+        bulkLoading:   false,
+        bulkFeedback:  '',
+        bulkOk:        true,
+
+        toggleAll(checked) {
+            if (checked) {
+                this.selected = Array.from(
+                    document.querySelectorAll('input[type=checkbox][x-bind\\:value]')
+                ).map(el => parseInt(el.value));
+            } else {
+                this.selected = [];
+            }
+        },
+
+        async bulkApprove() {
+            if (! this.selected.length) return;
+            this.bulkLoading  = true;
+            this.bulkFeedback = '';
+            try {
+                const res  = await fetch('{{ route('admin.education.generated-content.bulk-approve') }}', {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF(),
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify({ ids: this.selected }),
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    this.bulkFeedback = json.message;
+                    this.bulkOk       = true;
+                    // hide approved rows
+                    this.selected.forEach(id => {
+                        const cb = document.querySelector(`input[x-bind\\:value="${id}"]`);
+                        cb?.closest('tr')?.classList.add('hidden');
+                    });
+                    this.selected = [];
+                } else {
+                    this.bulkFeedback = json.message ?? 'خطا در تأیید گروهی';
+                    this.bulkOk       = false;
+                }
+            } catch {
+                this.bulkFeedback = 'خطای شبکه';
+                this.bulkOk       = false;
+            }
+            this.bulkLoading = false;
+        },
+    };
+}
+
 function reviewRow(articleId) {
     return {
         loading:     false,
+        removed:     false,
         showReject:  false,
         rejectNote:  '',
         feedback:    '',
         feedbackOk:  true,
 
         async approve() {
-            this.loading = true;
+            this.loading  = true;
             this.feedback = '';
             try {
-                const res = await fetch(`/api/v1/education/generated-content/${articleId}/approve`, {
+                const res  = await fetch(`/admin/education/generated-content/${articleId}/approve`, {
                     method:  'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                        'X-CSRF-TOKEN': CSRF(),
                         'Accept':       'application/json',
                     },
                 });
                 const json = await res.json();
                 if (res.ok) {
-                    this.feedback = 'تأییدشد — منتشر گردید';
+                    this.feedback   = 'تأییدشد — منتشر گردید';
                     this.feedbackOk = true;
-                    setTimeout(() => this.$el.closest('tr').remove(), 900);
+                    setTimeout(() => { this.removed = true; }, 900);
                 } else {
-                    this.feedback = json.message ?? 'خطا در تأیید';
+                    this.feedback   = json.message ?? 'خطا در تأیید';
                     this.feedbackOk = false;
                 }
             } catch {
-                this.feedback = 'خطای شبکه';
+                this.feedback   = 'خطای شبکه';
                 this.feedbackOk = false;
             }
             this.loading = false;
@@ -246,30 +339,30 @@ function reviewRow(articleId) {
 
         async reject() {
             if (this.rejectNote.trim().length < 5) return;
-            this.loading = true;
+            this.loading  = true;
             this.feedback = '';
             try {
-                const res = await fetch(`/api/v1/education/generated-content/${articleId}/reject`, {
+                const res  = await fetch(`/admin/education/generated-content/${articleId}/reject`, {
                     method:  'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                        'X-CSRF-TOKEN': CSRF(),
                         'Accept':       'application/json',
                     },
                     body: JSON.stringify({ review_note: this.rejectNote }),
                 });
                 const json = await res.json();
                 if (res.ok) {
-                    this.feedback = 'ردشد — بایگانی گردید';
+                    this.feedback   = 'ردشد — بایگانی گردید';
                     this.feedbackOk = true;
                     this.showReject = false;
-                    setTimeout(() => this.$el.closest('tr').remove(), 900);
+                    setTimeout(() => { this.removed = true; }, 900);
                 } else {
-                    this.feedback = json.message ?? 'خطا در رد';
+                    this.feedback   = json.message ?? 'خطا در رد';
                     this.feedbackOk = false;
                 }
             } catch {
-                this.feedback = 'خطای شبکه';
+                this.feedback   = 'خطای شبکه';
                 this.feedbackOk = false;
             }
             this.loading = false;

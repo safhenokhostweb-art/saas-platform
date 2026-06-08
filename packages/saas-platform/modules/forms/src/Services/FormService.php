@@ -29,10 +29,27 @@ class FormService implements FormServiceInterface
     public function create(array $data): Form
     {
         if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['title']) . '-' . time();
+            $base = Str::slug((string) ($data['title'] ?? 'frm'));
+            if ($base === '') {
+                $base = 'frm';
+            }
+            $data['slug'] = $this->uniqueSlug($base);
         }
 
         return $this->repository->create($data);
+    }
+
+    private function uniqueSlug(string $base): string
+    {
+        $slug = $base;
+        if (! Form::query()->where('slug', $slug)->exists()) {
+            return $slug;
+        }
+        $i = 1;
+        while (Form::query()->where('slug', $slug . '-' . $i)->exists()) {
+            $i++;
+        }
+        return $slug . '-' . $i;
     }
 
     public function update(Form $form, array $data): Form

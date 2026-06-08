@@ -1,7 +1,11 @@
 <?php
 
 return [
-    'default' => env('SMS_PROVIDER', 'meli_payamak'),
+    'default'  => env('SMS_PROVIDER', 'meli_payamak'),
+
+    // Secondary provider used automatically when primary send() fails.
+    // Set to null (or omit) to disable automatic failover.
+    'failover' => env('SMS_FAILOVER_PROVIDER', null),
 
     /*
     |--------------------------------------------------------------------------

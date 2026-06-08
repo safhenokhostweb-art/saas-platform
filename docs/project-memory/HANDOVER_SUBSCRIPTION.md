@@ -2,7 +2,7 @@
 > فایل اختصاصی ماژول Subscription.
 > اگر فقط یک چت باز است: این فایل + HANDOVER.md را بخوان.
 > اگر چند چت همزمان باز است: فقط این فایل را بخوان.
-> Last Updated: 2026-06-06
+> Last Updated: 2026-06-07
 
 ---
 
@@ -184,6 +184,98 @@ PAYMENT_SANDBOX=false      # true برای تست
 
 ---
 
+### ✅ COMPLETED — Group Subscription (P9 — 2026-06-07)
+
+**فایل‌های جدید:**
+- `database/migrations/2026_06_07_400000_create_subscription_members_table.php` — ✅ migrated
+- `app/Models/SubscriptionMember.php` — STATUS constants, relationships
+- `app/Services/GroupSubscriptionService.php` — invite/accept/reject/remove/availableSeats/pendingInvites/getActiveMemberSubscription
+- `app/Http/Controllers/Account/GroupSubscriptionController.php` — index/invite/remove/accept/reject
+- `resources/views/account/subscriptions/members.blade.php` — RTL, invite form, member list
+- `tests/Feature/GroupSubscriptionTest.php` — 12 tests ✅
+
+**فایل‌های تغییریافته:**
+- `app/Models/Subscription.php` — `members()` + `activeMembers()` relations
+- `app/Services/SubscriptionService.php` — `getActivePlan()` fallback به group membership
+- `app/Http/Controllers/Account/SubscriptionController.php` — `index()` اضافه کرد `$pendingInvites`؛ constructor GroupSubscriptionService
+- `resources/views/account/subscriptions/index.blade.php` — دعوت‌نامه‌های pending + دکمه "اعضای گروه"
+- `app/Providers/AppServiceProvider.php` — singleton GroupSubscriptionService
+- `routes/web.php` — 5 route جدید
+
+**نتیجه:** 12/12 tests pass | 66/66 regression pass
+
+**منطق صندلی:**
+- `availableSeats = max_users - 1 - (active+pending members count)`
+- اگر `max_users ≤ 1`: پلن group نیست → صفر صندلی
+
+**مزایا برای اعضا:**
+- `SubscriptionService::getActivePlan()` ابتدا اشتراک شخصی را چک می‌کند، سپس group membership را
+- تمام مزایای پلن (discount, free_shipping, early_access, points multiplier) به اعضا می‌رسد
+
+**Routes:**
+- `GET  /account/subscriptions/{id}/members` → `subscriptions.members`
+- `POST /account/subscriptions/{id}/members/invite` → `subscriptions.members.invite`
+- `POST /account/subscriptions/{id}/members/{m}/remove` → `subscriptions.members.remove`
+- `POST /account/subscriptions/invites/{m}/accept` → `subscriptions.invites.accept`
+- `POST /account/subscriptions/invites/{m}/reject` → `subscriptions.invites.reject`
+
+---
+
+### ✅ COMPLETED — Plan Upgrade/Downgrade Engine (P8 — 2026-06-07)
+
+**فایل‌های جدید:**
+- `database/migrations/2026_06_07_300000_add_upgrade_fields_to_subscriptions_table.php` — `upgrade_from_subscription_id` + `credit_amount` ✅ migrated
+- `tests/Feature/SubscriptionUpgradeTest.php` — 11 tests ✅
+- `resources/views/account/subscriptions/upgrade-plans.blade.php` — view کامل RTL
+
+**فایل‌های تغییریافته:**
+- `app/Models/Subscription.php` — `upgrade_from_subscription_id`, `credit_amount` در fillable/casts + `upgradedFrom()` + `upgradedTo()`
+- `app/Models/SubscriptionLog.php` — `ACTION_UPGRADED` + `ACTION_DOWNGRADED`
+- `app/Models/MembershipPoint.php` — `SOURCE_PLAN_CHANGE` + label
+- `app/Services/SubscriptionService.php` — `calculateCredit()`, `upgradePreview()`, `upgrade()`, `createUpgradeInvoice()`, `notifyPlanChanged()`
+- `app/Services/MembershipPointsService.php` — `earnFromPlanChange()`
+- `app/Http/Controllers/Account/SubscriptionController.php` — `upgradePlans()` + `upgrade()`
+- `app/Http/Controllers/Front/SubscriptionPaymentController.php` — `activateSubscription()` آپدیت (cancel old sub + award leftover points)
+- `routes/web.php` — `subscriptions.upgrade-plans` + `subscriptions.upgrade`
+
+**نتیجه:** 11/11 tests pass | 54/54 regression pass
+
+**منطق credit:**
+- اشتراک رایگان یا Trial: credit = 0
+- اشتراک پولی فعال: `round((daysRemaining / planDurationDays) * effectivePrice)`
+- نرخ تبدیل credit مازاد به امتیاز: 1000 تومان = 1 امتیاز
+
+**Flow:**
+```
+credit >= newPlanPrice  → تغییر فوری (رایگان، بدون پرداخت)
+credit < newPlanPrice   → invoice(newPrice - credit) → payment → old sub cancel
+پلن رایگان هدف        → تغییر فوری، credit → امتیاز
+```
+
+**Routes:**
+- `GET  /account/subscriptions/{id}/upgrade-plans` → `subscriptions.upgrade-plans`
+- `POST /account/subscriptions/{id}/upgrade`       → `subscriptions.upgrade`
+
+---
+
+### ✅ COMPLETED — P7 Early Access Product Gating (2026-06-07)
+
+**نتیجه:** 8/8 tests pass | `products.early_access` column | gate در `show()` + `addToCart()` | badge در listing/detail
+
+---
+
+### ✅ COMPLETED — P6 Test Coverage (2026-06-07)
+
+**نتیجه:** 27/27 tests (checkout flow + lifecycle) | SubscriptionCheckoutFlowTest + SubscriptionLifecycleTest
+
+---
+
+### ✅ COMPLETED — P3 Benefit Enforcement (2026-06-07)
+
+**نتیجه:** 10/10 tests | shipping_cost در orders | earlyAccess در DTO | free_shipping gate
+
+---
+
 ### 🟡 P3 — Benefit Enforcement در Shop Checkout
 
 **مشکل:**
@@ -269,7 +361,11 @@ customer-site/
 
 ✅ P1 (حیاتی):      Payment Gateway (Zarinpal + IDPay) — 18/18 tests
 ✅ P2 (مهم):        Auto-renew Scheduler — 13/13 tests | رایگان→مستقیم | پولی→فاکتور+SMS
-⬜ P3 (مهم):        Benefit Enforcement در Shop Checkout
+✅ P3 (مهم):        Benefit Enforcement در Shop Checkout — 10/10 tests
+✅ P6 (مهم):        Test Coverage — 27/27 tests (checkout flow + lifecycle)
+✅ P7 (ارزش):       Early Access Product Gating — 8/8 tests
+✅ P8 (ارزش):       Upgrade/Downgrade Plan با credit — 11/11 tests
+✅ P9 (ارزش):       Group Subscription — دعوت/قبول/رد/حذف، ارث‌بری مزایا — 12/12 tests
 ```
 
 ---

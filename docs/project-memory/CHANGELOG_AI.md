@@ -1,7 +1,348 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-06
+> Last Updated: 2026-06-08
+
+---
+
+## 2026-06-08 — SaaS Infrastructure Foundation
+
+**Reason:** Prepare platform for future deployment to remote/separated servers without code changes.
+
+**Infrastructure Audit:**
+- 23 findings categorized (CRITICAL/HIGH/MEDIUM/LOW) across domains, storage, DB, SMS, AI
+- Full report: `docs/infrastructure/INFRASTRUCTURE_READINESS_REPORT.md`
+- Deployment architecture: `docs/infrastructure/DEPLOYMENT_ARCHITECTURE.md`
+
+**Fixes Applied:**
+- `config/cors.php` — hardcoded `customer-site.test` replaced with `CORS_ALLOWED_ORIGINS` env (F1.3 fixed)
+- `config/sms.php` — added `failover` key driven by `SMS_FAILOVER_PROVIDER` env
+- `app/Services/Sms/KavenegarGateway.php` — new Kavenegar provider
+- `app/Services/Sms/GhasedakGateway.php` — new Ghasedak provider
+- `app/Services/Sms/FailoverSmsGateway.php` — automatic primary→secondary failover with cache health tracking
+- `app/Services/Sms/SmsGatewayResolver.php` — updated to support failover wiring
+
+**Infrastructure Management Module (new):**
+- 5 migrations: `infra_servers`, `infra_domains`, `infra_hosting`, `infra_storage_providers`, `infra_database_servers`
+- 5 Eloquent models: `InfraServer`, `InfraDomain`, `InfraHosting`, `InfraStorageProvider`, `InfraDatabaseServer`
+- 6 admin controllers under `App\Http\Controllers\Admin\Infrastructure\`
+- 14 Blade views (overview dashboard + CRUD for all 5 sections)
+- 31 admin routes under `admin/infrastructure/*`
+- `AdminMenu` updated: `infrastructure` key, group `زیرساخت / DevOps`
+
+**Files Changed:**
+- config/cors.php, config/sms.php
+- app/Services/Sms/{KavenegarGateway,GhasedakGateway,FailoverSmsGateway,SmsGatewayResolver}.php
+- app/Models/Infrastructure/{InfraServer,InfraDomain,InfraHosting,InfraStorageProvider,InfraDatabaseServer}.php
+- app/Http/Controllers/Admin/Infrastructure/{Overview,Server,Domain,Hosting,Storage,Database}Controller.php
+- database/migrations/2026_06_08_100001..100005_create_infra_*.php
+- resources/views/admin/infrastructure/* (14 views)
+- routes/web.php — infrastructure route group
+- app/Helpers/AdminMenu.php — infrastructure menu key + group
+- docs/infrastructure/INFRASTRUCTURE_READINESS_REPORT.md (new)
+- docs/infrastructure/DEPLOYMENT_ARCHITECTURE.md (new)
+
+---
+
+## 2026-06-08 — Subscription UX: Auto-renew Toggle + Post-expiry CTA
+
+**Reason:** Auto-renew had a DB column but no UI. Expired subscriptions showed no clear next action.
+
+**Auto-renew Toggle:**
+- `SubscriptionController::toggleAutoRenew()` — flips `auto_renew` boolean, validates ownership + active status
+- Route `POST /account/subscriptions/{subscription}/toggle-auto-renew` → `account.subscriptions.toggle-auto-renew`
+- `account/subscriptions/show.blade.php` — toggle button (green when on, gray when off)
+- `account/subscriptions/index.blade.php` — "↻ تمدید خودکار فعال" badge on active subscription bar
+
+**Post-expiry CTA:**
+- `account/subscriptions/show.blade.php` — amber warning card with "تمدید / انتخاب پلن جدید" button when expired
+- `account/subscriptions/index.blade.php` — amber bar when user has no active sub but has expired ones; "تمدید" button on each expired row in history table
+- Differentiated from "never subscribed" (keeps the original dashed-border CTA)
+
+**Admin CSV Export:**
+- Already complete — `SubscriberController::export()` + CSV button in subscribers view (verified, no changes needed)
+
+**Tests:** 13/13 pass (SubscriptionUXTest)
+
+**Files Changed (customer-site):**
+- app/Http/Controllers/Account/SubscriptionController.php — toggleAutoRenew()
+- routes/web.php — account.subscriptions.toggle-auto-renew route
+- resources/views/account/subscriptions/show.blade.php — auto-renew toggle + expired CTA
+- resources/views/account/subscriptions/index.blade.php — expired bar + auto-renew badge + renew row button
+- tests/Feature/SubscriptionUXTest.php — new (13 tests)
+
+---
+
+## 2026-06-08 — Invoice PDF + Subscription Webhook + Time-based Coupon Verify
+
+**Reason:** Three new user-requested features.
+**Invoice PDF:**
+- Installed `barryvdh/laravel-dompdf` v3.1
+- `resources/views/invoice/pdf.blade.php` — RTL professional template with DejaVu Sans, HMAC stamp, discount section, notes
+- `Front/InvoiceController::download()` + `Admin/InvoiceController::download()` — PDF download via Pdf::loadView
+- Route `invoice.download` (front) + `admin.invoices.download` (admin)
+- Download button added to `invoice/show.blade.php` + `admin/invoices/show.blade.php`
+- 5/5 tests pass (InvoicePdfTest)
+
+**Subscription Webhook:**
+- Migration `2026_06_08_100000_create_webhook_tables.php` — `webhook_endpoints` + `webhook_events`
+- `App\Models\WebhookEndpoint` — subscribesTo(), EVENTS map
+- `App\Models\WebhookEvent` — STATUS constants
+- `App\Services\WebhookDispatchService` — dispatch() finds active endpoints, creates events, queues jobs
+- `App\Jobs\DispatchWebhookJob` — HMAC-signed HTTP POST, 3 retries, 60s backoff
+- `SubscriptionService` injected with `WebhookDispatchService` — fires on subscribed/renewed/upgraded/downgraded/cancelled/expired
+- Admin UI: `admin/webhooks/` (index, create, edit, show) + routes + WebhookController
+- 16/16 tests pass (WebhookTest)
+
+**Time-based Coupons:**
+- Already fully implemented: `starts_at`/`expires_at` in DB, `isValid()` checks both, admin forms show both fields
+- No changes needed.
+
+**Total: 406/406 tests pass (0 failures)**
+
+**Files Changed (customer-site):**
+- composer.json — barryvdh/laravel-dompdf added
+- resources/views/invoice/pdf.blade.php — new PDF template
+- resources/views/invoice/show.blade.php — download button
+- resources/views/admin/invoices/show.blade.php — download button
+- resources/views/admin/webhooks/{index,create,edit,show}.blade.php — new views
+- app/Http/Controllers/Front/InvoiceController.php — download()
+- app/Http/Controllers/Admin/InvoiceController.php — download()
+- app/Http/Controllers/Admin/WebhookController.php — new
+- app/Models/WebhookEndpoint.php — new
+- app/Models/WebhookEvent.php — new
+- app/Services/WebhookDispatchService.php — new
+- app/Jobs/DispatchWebhookJob.php — new
+- app/Services/SubscriptionService.php — webhook dispatch integration
+- database/migrations/2026_06_08_100000_create_webhook_tables.php — new
+- routes/web.php — invoice.download + admin.invoices.download + admin webhooks routes
+- tests/Feature/InvoicePdfTest.php — new (5 tests)
+- tests/Feature/WebhookTest.php — new (16 tests)
+
+---
+
+## 2026-06-08 — 8.3b DB Backup + Fix 52 Broken Tests
+
+**Reason:** (1) No automated DB backup existed before deploy. (2) 52 pre-existing test failures blocked CI.
+**8.3b Backup:**
+- `BackupDatabaseCommand` — mysqldump + optional gzip + retention (1-365 days) + integrity row-count check + `MYSQLDUMP_PATH` env override
+- Scheduled daily at 02:00 in `bootstrap/app.php` with `DB_BACKUP_RETENTION` env
+- 8/8 tests pass (dry-run, dir creation, retention pruning, humanSize, artisan registration)
+
+**52 → 0 Fixes (customer-site):**
+- `Tag::posts()` — missing `BelongsToMany` relationship added (BlogController used `withCount('posts')`)
+- `admin/coupons/index.blade.php` — had invoice template content; rewritten as coupon admin list + guide include
+- `CaptchaService` static calls in Wave53ShopGuardsTest — replaced with `app(CaptchaService::class)->method()`
+- `orders.customer_mobile` required field — added to all test Order::create() calls in Wave61, ShopModuleFeatureTest
+- `forms.deleted_at` / `form_fields.deleted_at` / `form_submissions.deleted_at` — migration added
+- `tags.deleted_at` / `tags.color` / `tags.is_active` — migration added
+- `FormService::create()` — replaced `time()` with unique slug helper (concurrent slug collision fixed)
+- `FormController::store()` redirect — changed `admin.forms.builder` → `admin.forms.edit`
+- `FormFieldRequest` `options_raw` — added `Rule::requiredIf` for select/radio/checkbox types
+- `App\Models\Form`, `FormField`, `FormSubmission` — added `SoftDeletes` trait
+- Forms index view — added breadcrumb + guide partial (راهنمای ماژول فرم‌ساز + ۱۴۰۵/۰۲/۲۳)
+- `ModuleInvoiceTest` — replaced `customer_email` with `customer_mobile`
+**Files Changed (customer-site):**
+- app/Models/Tag.php — posts() BelongsToMany
+- app/Models/Form.php + FormField.php + FormSubmission.php — SoftDeletes
+- resources/views/admin/coupons/index.blade.php — rewritten
+- tests/Feature/Wave53ShopGuardsTest.php — static → app() calls
+- tests/Feature/Wave61ShopDataIntegrityTest.php — customer_mobile, customer_email removed
+- tests/Feature/ShopModuleFeatureTest.php — customer_mobile
+- tests/Feature/ModuleInvoiceTest.php — customer_mobile
+- database/migrations/2026_06_07_100000_add_missing_columns_to_tags_table.php (NEW)
+- database/migrations/2026_06_07_100001_add_soft_deletes_to_forms_table.php (NEW)
+- app/Console/Commands/BackupDatabaseCommand.php (NEW)
+- tests/Feature/BackupDatabaseCommandTest.php (NEW — 8/8)
+- bootstrap/app.php — db:backup schedule
+**Files Changed (saas-platform/forms module):**
+- FormService.php — uniqueSlug() replaces time()
+- FormController.php — redirect store → admin.forms.edit
+- FormFieldRequest.php — Rule::requiredIf for options_raw
+- forms/resources/views/admin/forms/index.blade.php — breadcrumb + guide
+
+---
+
+## 2026-06-07 — Admin Subscription Panel + installed.lock Bug Fix
+
+**Reason:** Admin lacked force-extend, manual plan-change, and group-member removal. Also: tests were deleting `storage/installed.lock`, requiring site reinstall after every test run.
+**Design:**
+- `SubscriberController::extend()` — تمدید دستی N روز + log ACTION_RENEWED
+- `SubscriberController::changePlan()` — تغییر پلن + log ACTION_PLAN_CHANGED, رد same-plan
+- `SubscriberController::removeMember()` — خروج عضو از گروه (403 if wrong subscription)
+- `subscriber-show.blade.php` — سه بخش جدید در sidebar (تمدید) و main column (اعضا) و sidebar (تغییر پلن)
+- `tests/TestCase.php` — حفظ وضعیت installed.lock قبل از تست و بازیابی بعد از tearDown
+- `tests/Feature/AdminSubscriberActionsTest.php` — 12 تست جدید (12/12 پاس)
+**Files Changed (customer-site):**
+- app/Http/Controllers/Admin/SubscriberController.php — extend + changePlan + removeMember + updated show()
+- resources/views/admin/subscriptions/subscriber-show.blade.php — force-extend UI + plan-change UI + group members UI
+- routes/web.php — 3 new admin subscriber routes
+- tests/TestCase.php — installed.lock preservation fix
+- tests/Feature/AdminSubscriberActionsTest.php — (NEW) 12 tests, 32 assertions
+
+---
+
+## 2026-06-07 — Infrastructure 8.3c: GitHub Actions CI Pipeline
+
+**Reason:** No automated test gate existed for PHP code — regressions could reach main branch undetected.
+**Design:**
+- **customer-site**: Improved existing php-tests.yml with 2 jobs:
+  - `lint`: PHP syntax (ci-lint.php) + composer validate + `composer audit --no-dev` — fast gate, no DB
+  - `feature-tests`: Full test suite on MySQL 8.0, `needs: lint` to skip DB spin-up on lint failure
+- **saas-platform**: New php-tests.yml with 3 parallel jobs after `lint`:
+  - `lint`: syntax check (app/ + packages/) + validate + audit
+  - `platform-tests`: `tests/Feature/` on MySQL 8.0 + migrate
+  - `edu-ai-tests`: Education AI provider tests only (no DB — mocked HTTP + array cache)
+- Both repos: `required-checks.json` updated — PHP test jobs now blocking on main/master
+- Composer caching on `composer.lock` hash — avoids re-downloading on every run
+- Test env vars passed explicitly: `PAYMENT_GATEWAY=""`, `EDUCATION_AI_PROVIDER=null` to prevent external calls
+**Files Changed:**
+- customer-site/.github/workflows/php-tests.yml (updated — lint + feature-tests jobs)
+- saas-platform/.github/workflows/php-tests.yml (new — lint + platform-tests + edu-ai-tests)
+- saas-platform/.github/required-checks.json (updated — 3 PHP checks added for saas, 2 for customer)
+
+---
+
+## 2026-06-07 — Payment Webhook Signature Validation
+
+**Reason:** IDPay sends X-IDPAY-SIGNATURE header (HMAC-SHA256) in callbacks that was ignored — a forged callback could activate a subscription without real payment. Zarinpal Authority was also not format-validated.
+**Design decisions:**
+- Added `validateCallback(array $params, array $headers, string $rawBody): void` to `PaymentGatewayInterface` — called in controller before `verify()`
+- Zarinpal: validates Authority format (`A` + ≥19 alphanumeric chars). No HMAC from Zarinpal — protection is via verify API.
+- IDPay: validates `X-IDPAY-SIGNATURE = HMAC-SHA256(raw_body, api_key)` using `hash_equals()` for timing-safety. Skipped in sandbox mode (IDPay sandbox doesn't sign).
+- Controller extracts raw body + lowercased headers before calling gateway — gateways stay HTTP-agnostic.
+**Files Changed (customer-site):**
+- app/Services/Payment/PaymentGatewayInterface.php: `validateCallback()` added
+- app/Services/Payment/ZarinpalGateway.php: Authority format validation
+- app/Services/Payment/IdpayGateway.php: X-IDPAY-SIGNATURE HMAC validation + extractHeader() helper
+- app/Http/Controllers/Front/SubscriptionPaymentController.php: calls validateCallback() before verify()
+- tests/Feature/PaymentSignatureValidationTest.php (7 new tests)
+- tests/Feature/SubscriptionPaymentGatewayTest.php: 2 Authority params updated to valid format
+**Impact:** 7/7 new tests + 18/18 existing = 25/25 pass. Forged IDPay callbacks now blocked; invalid Zarinpal Authority rejected before any API call.
+
+---
+
+## 2026-06-07 — Infrastructure 8.4a: Composite site_id Indexes
+
+**Reason:** Multi-tenant tables queried with `WHERE site_id = X AND status = Y` had only plain FK indexes on site_id. Composite indexes enable covering index scans for the most common filter patterns.
+**Audit result:**
+- Education module (12 tables): all already had correct composite site_id indexes ✅
+- Tickets package: `site_id` index existed ✅
+- `support_tickets` (main): `(site_id, status, created_at)` added by 2026_05_21 migration ✅
+- **Missing composites added:**
+  - `form_submissions`: `(site_id, form_id, created_at)`
+  - `platform_site_notifications`: `(site_id, is_active, expires_at)`
+  - `site_updates`: `(site_id, distributed_at)`
+  - `site_support_subscriptions`: `(site_id, status)`
+- EDU-14A tables: computed from existing tables via DTOs — no dedicated tables, no action needed
+**Files Changed (saas-platform):**
+- database/migrations/2026_06_07_000001_add_composite_site_id_indexes.php (new — migrated 217ms)
+**Impact:** 8.4a backlog item closed. No test changes needed (index changes don't affect query results).
+
+---
+
+## 2026-06-07 — Bug Fix: Group Member Cache Invalidation on Subscription Expire/Cancel
+
+**Reason:** When owner's subscription expired or was cancelled, group members' `membership_plan_{id}` benefit cache was not flushed. Members continued to receive plan benefits for up to 5 minutes (cache TTL) after the subscription ended.
+**Root cause:** `SubscriptionService::expire()` and `cancel()` had no group member cache invalidation. `upgrade()` and `SubscriptionPaymentController::activateSubscription()` also bypassed it.
+**Fix:**
+- `SubscriptionService::invalidateGroupMemberCaches(Subscription)` — new public method: loads active members, calls `MembershipBenefitService::invalidateCache()` per member
+- Called in: `cancel()`, `expire()`, `upgrade()` (for old subscription)
+- `SubscriptionPaymentController::activateSubscription()` — calls `service->invalidateGroupMemberCaches($oldSub)` on payment-based upgrade
+**Files Changed (customer-site):**
+- app/Services/SubscriptionService.php: invalidateGroupMemberCaches() public method + 3 call sites
+- app/Http/Controllers/Front/SubscriptionPaymentController.php: call site on upgrade payment
+- tests/Feature/GroupSubscriptionTest.php: 2 new regression tests
+**Impact:** 14/14 group subscription tests pass | 54/54 regression pass. Bug confirmed fixed.
+
+---
+
+## 2026-06-07 — EDU-17 CERTIFIED COMPLETE
+
+**Certification:** EDU17_CERTIFIED_COMPLETE  
+**Commits:** `da0cbbc` (Phases 2–3) · `4fa6905` (config/docs) · `18e218c` (Phases 4–5)  
+**Tests:** 57 passed / 0 failed / 77 assertions  
+**Validation score:** 100/100  
+**Technical Debt:** M-01 (LOW) — `education:validate` does not yet include EDU-17-specific checks. Future maintenance only. EDU-17 CLOSED.  
+**Next recommended milestone:** SUBSCRIPTION_CHECKOUT_PAYMENT
+
+---
+
+## 2026-06-07 — EDU-17 Task 4: TenantAiQuotaManager Integration
+
+**Reason:** CircuitBreakerAiContentProvider had quota integration documented but deferred — Task 4 of EDU-17 spec.
+**Design decisions:**
+- Quota check happens BEFORE the circuit breaker — quota exhaustion is not a circuit-breaker failure
+- Quota key format: `edu_site_{siteId}` — platform-level jobs use `edu_site_platform`
+- Both per-tenant and system-total counters are incremented after each successful generation
+- TenantAiQuotaManager injected only when `EDUCATION_AI_QUOTA_ENABLED=true` (default: false) — zero overhead in existing deployments
+**Files Changed (saas-platform):**
+- packages/education/config/education.php: `ai.quota.*` section added (EDUCATION_AI_QUOTA_ENABLED, EDUCATION_AI_QUOTA_DEFAULT_DAILY)
+- packages/education/src/Ai/Providers/CircuitBreakerAiContentProvider.php: TenantAiQuotaManager injected, resolveQuotaKey() + trackQuotaUsage() methods
+- packages/education/src/Providers/EducationServiceProvider.php: inject TenantAiQuotaManager conditionally
+- packages/education/tests/Feature/TenantAiQuotaIntegrationTest.php (5 tests)
+**Impact:** 5/5 new tests pass | 46/46 AI provider regression pass. EDU-17 fully complete.
+
+---
+
+## 2026-06-07 — Group Subscription (P9)
+
+**Reason:** `max_users` field on `SubscriptionPlan` existed with no logic — subscription owners couldn't add team members to share plan benefits.
+**Design decisions:**
+- `availableSeats = max_users - 1 - (active+pending members)`. Owner occupies 1 seat.
+- `SubscriptionService::getActivePlan()` checks group membership as fallback after own subscription
+- Invite workflow: owner sends invite by mobile → invitee accepts/rejects from their dashboard
+- Member removed: SMS + cache invalidation
+- No double-benefit: user already in another group subscription cannot accept a second invite
+**Files Changed (customer-site):**
+- migrations/2026_06_07_400000_create_subscription_members_table.php (new)
+- app/Models/SubscriptionMember.php (new)
+- app/Services/GroupSubscriptionService.php (new)
+- app/Http/Controllers/Account/GroupSubscriptionController.php (new)
+- resources/views/account/subscriptions/members.blade.php (new)
+- app/Services/SubscriptionService.php: getActivePlan() extended with group fallback
+- SubscriptionController: pending invites in index() + GroupSubscriptionService injected
+- account/subscriptions/index.blade.php: pending invites panel + group members button
+- AppServiceProvider: GroupSubscriptionService singleton
+- routes/web.php: 5 new group routes
+- tests/Feature/GroupSubscriptionTest.php (12 tests)
+**Impact:** 12/12 pass | 66/66 regression pass.
+
+---
+
+## 2026-06-07 — Plan Upgrade/Downgrade Engine (P8)
+
+**Reason:** Users couldn't change their active plan — they had to cancel and re-subscribe, losing remaining days. This adds prorated credit calculation so remaining days translate to a discount on the new plan.
+**Design decisions:**
+- Trial subscriptions have no credit (no money was paid)
+- Credit = round((daysRemaining / planDurationDays) * effectivePrice)
+- Leftover credit when downgrading → converted to loyalty points at 1000 toman = 1 point
+- Paid upgrades: create invoice(newPrice - credit), pending sub with `upgrade_from_subscription_id`, old sub cancelled on payment confirmation
+- Free target or credit >= newPrice: direct activation (no payment)
+**Files Changed (customer-site):**
+- migrations/2026_06_07_300000_add_upgrade_fields_to_subscriptions_table.php (new — `upgrade_from_subscription_id`, `credit_amount`)
+- app/Models/Subscription.php: new fields in fillable/casts, `upgradedFrom()`, `upgradedTo()`
+- app/Models/SubscriptionLog.php: ACTION_UPGRADED + ACTION_DOWNGRADED
+- app/Models/MembershipPoint.php: SOURCE_PLAN_CHANGE
+- app/Services/SubscriptionService.php: calculateCredit(), upgradePreview(), upgrade(), createUpgradeInvoice(), notifyPlanChanged()
+- app/Services/MembershipPointsService.php: earnFromPlanChange()
+- app/Http/Controllers/Account/SubscriptionController.php: upgradePlans() + upgrade()
+- app/Http/Controllers/Front/SubscriptionPaymentController.php: activateSubscription() handles upgrade (cancel old + award leftover points)
+- routes/web.php: subscriptions.upgrade-plans + subscriptions.upgrade
+- resources/views/account/subscriptions/upgrade-plans.blade.php (new — RTL, credit calc display)
+- tests/Feature/SubscriptionUpgradeTest.php (11 tests)
+**Impact:** 11/11 pass | 54/54 regression pass.
+
+---
+
+## 2026-06-07 — P3/P6/P7 Subscription Phases
+
+**Reason:** P3: benefit fields existed but weren't enforced in checkout. P6: test coverage was minimal. P7: early_access product gating.
+**Files Changed (customer-site):**
+- P3: shipping_cost in orders, earlyAccess in MembershipDiscountResult DTO, ShopController updated
+- P6: SubscriptionCheckoutFlowTest + SubscriptionLifecycleTest (27 tests)
+- P7: products.early_access column, gate in show()+addToCart(), EarlyAccessGatingTest (8 tests)
+**Impact:** P3=10/10, P6=27/27, P7=8/8 pass.
 
 ---
 

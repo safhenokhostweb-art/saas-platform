@@ -111,7 +111,10 @@ Route::middleware(['web', 'auth', 'education.track'])->prefix('admin/education')
     Route::get('adoption', [EducationAdoptionController::class, 'index'])->name('adoption.index');
 
     // EDU-16 — AI Generated Content Review Dashboard
-    Route::get('generated-content/review', [EducationGeneratedContentReviewController::class, 'index'])->name('generated-content.review');
+    Route::get('generated-content/review',              [EducationGeneratedContentReviewController::class, 'index'])->name('generated-content.review');
+    Route::post('generated-content/bulk-approve',        [EducationGeneratedContentReviewController::class, 'bulkApprove'])->name('generated-content.bulk-approve');
+    Route::post('generated-content/{id}/approve',        [EducationGeneratedContentReviewController::class, 'approve'])->name('generated-content.approve');
+    Route::post('generated-content/{id}/reject',         [EducationGeneratedContentReviewController::class, 'reject'])->name('generated-content.reject');
 
     // Legacy KB compat
     if (config('education.legacy_kb_compat', true)) {

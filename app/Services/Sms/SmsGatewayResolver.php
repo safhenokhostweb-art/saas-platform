@@ -2,18 +2,38 @@
 namespace App\Services\Sms;
 
 use App\Contracts\SmsGatewayInterface;
-use Illuminate\Support\Facades\App;
 
+/**
+ * Resolves the active SMS gateway and applies automatic failover.
+ *
+ * Primary provider is driven by SMS_PROVIDER env.
+ * Failover provider is driven by SMS_FAILOVER_PROVIDER env.
+ * When the primary send() returns false, the failover provider is tried automatically.
+ */
 class SmsGatewayResolver
 {
-    public static function resolve(): ?SmsGatewayInterface
+    public static function resolve(): SmsGatewayInterface
     {
-        $provider = config('sms.default', 'meli_payamak');
-        $credentials = config('sms.credentials.' . $provider, []);
+        $primary  = config('sms.default', 'meli_payamak');
+        $failover = config('sms.failover', null);
 
-        if ($provider === 'meli_payamak') {
-            return new MeliPayamakGateway($credentials);
+        $primaryGateway = self::make($primary);
+
+        if ($failover && $failover !== $primary) {
+            return new FailoverSmsGateway($primaryGateway, self::make($failover));
         }
-        return App::bound('sms.gateway') ? App::make('sms.gateway') : new MeliPayamakGateway($credentials);
+
+        return $primaryGateway;
+    }
+
+    public static function make(string $provider): SmsGatewayInterface
+    {
+        $credentials = config("sms.credentials.{$provider}", []);
+
+        return match ($provider) {
+            'kavenegar'    => new KavenegarGateway($credentials),
+            'ghasedak'     => new GhasedakGateway($credentials),
+            default        => new MeliPayamakGateway($credentials),
+        };
     }
 }

@@ -71,6 +71,20 @@
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
     ),
   ),
+  'orchestra/canvas' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Orchestra\\Canvas\\LaravelServiceProvider',
+    ),
+  ),
+  'orchestra/canvas-core' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Orchestra\\Canvas\\Core\\LaravelServiceProvider',
+    ),
+  ),
   'saas-platform/core-utils' => 
   array (
     'providers' => 

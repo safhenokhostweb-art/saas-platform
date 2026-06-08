@@ -40,6 +40,7 @@ class AdminMenu
         'theme_manager'  => 'مدیریت تم (Theme Engine)',
         'app_releases'   => 'دانلود اپلیکیشن',
         'education'      => 'مرکز آموزش',
+        'infrastructure' => 'مدیریت زیرساخت',
     ];
 
     /** مسیر هر آیتم منو */
@@ -75,6 +76,7 @@ class AdminMenu
         'theme_manager'  => 'admin.theme-manager.index',
         'app_releases'   => 'admin.app-releases.index',
         'education'      => 'admin.education.index',
+        'infrastructure' => 'admin.infrastructure.overview',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -110,6 +112,7 @@ class AdminMenu
         'theme_manager'  => 'admin.theme-manager.*',
         'app_releases'   => 'admin.app-releases.*',
         'education'      => 'admin.education.*',
+        'infrastructure' => 'admin.infrastructure.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -129,6 +132,7 @@ class AdminMenu
             'فرم‌ها / برگه‌ها'                  => ['forms', 'forms_submissions', 'profile_fields', 'settings_profile', 'pages'],
             'محتوا / مقالات'                    => ['theme_builder', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
+            'زیرساخت / DevOps'                  => ['infrastructure'],
             'بازاریابی / دانش‌محور'             => [],
             'گزارش‌ها / آمار'                   => ['activity_log'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

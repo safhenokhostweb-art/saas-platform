@@ -9,6 +9,40 @@
 <x-core-ui::design-tokens />
 <x-core-ui::toast />
 
+{{-- Breadcrumb --}}
+<nav class="admin-breadcrumb" aria-label="مسیر صفحه" style="margin:0 0 .85rem;font-size:.78rem;color:#64748b;font-family:Vazirmatn,Tahoma,sans-serif">
+    <ol class="admin-breadcrumb-list" style="list-style:none;padding:0;margin:0;display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:.35rem">
+        <li class="admin-breadcrumb-item" style="display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:.35rem">
+            <a href="{{ route('admin.dashboard') }}" class="admin-breadcrumb-link" style="color:#4f46e5;text-decoration:none">داشبورد</a>
+            <span class="admin-breadcrumb-sep" aria-hidden="true">›</span>
+        </li>
+        <li class="admin-breadcrumb-item" style="display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:.35rem">
+            <span class="admin-breadcrumb-current" aria-current="page">فرم‌ساز</span>
+        </li>
+    </ol>
+</nav>
+
+{{-- Guide --}}
+<details class="mb-6 bg-white border border-slate-200 rounded-xl" style="margin-bottom:1.25rem">
+    <summary style="padding:.75rem 1rem;cursor:pointer;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;font-family:Vazirmatn,Tahoma,sans-serif">
+        <div style="display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:.5rem">
+            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="width:1rem;height:1rem;color:#4f46e5">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span style="font-weight:600;font-size:.875rem">راهنمای ماژول فرم‌ساز (آخرین بروزرسانی: ۱۴۰۵/۰۲/۲۳)</span>
+        </div>
+        <span style="font-size:.75rem;color:#64748b">کلیک برای باز و بسته کردن</span>
+    </summary>
+    <div style="padding:.75rem 1rem;border-top:1px solid #e2e8f0;font-size:.875rem;color:#334155;font-family:Vazirmatn,Tahoma,sans-serif">
+        <ul style="list-style:disc;padding-right:1.25rem;margin:0;line-height:2">
+            <li>فرم‌های حرفه‌ای بسازید و فیلدها، پیام تأیید، و تنظیمات را سفارشی کنید.</li>
+            <li>هر فرم را به یک یا چند سایت اختصاص دهید.</li>
+            <li>گزارش ارسال‌ها از منوی «همه ارسال‌ها» قابل مشاهده است.</li>
+            <li>متا سئو (عنوان، توضیح، canonical، robots) هر فرم را در بخش ویرایش تنظیم کنید.</li>
+        </ul>
+    </div>
+</details>
+
 {{-- ═══ PAGE HEADER ═══ --}}
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6" role="banner" aria-label="مدیریت فرم‌ها">
   <div>

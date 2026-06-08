@@ -1,0 +1,158 @@
+name: PHP Tests — SaaS Platform
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Lint + Security  (fast gate, no DB, ~30s)
+  # ──────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, bcmath
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: saas-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: saas-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: PHP syntax lint — app/
+        run: find app/ -name "*.php" | xargs -P4 -I{} php -l {} | grep -v "^No syntax" || true
+
+      - name: PHP syntax lint — packages/
+        run: find packages/ -name "*.php" | grep -v vendor | xargs -P4 -I{} php -l {} | grep -v "^No syntax" || true
+
+      - name: Security audit
+        run: composer audit --no-dev
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Platform Feature Tests (MySQL)
+  # ──────────────────────────────────────────────────────────────────────────
+  platform-tests:
+    name: Platform Feature Tests (MySQL 8.0)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: saas_platform_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, bcmath, pdo_mysql, gd, intl, pcntl
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: saas-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: saas-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Generate app key
+        run: php artisan key:generate --env=testing --force
+
+      - name: Run migrations
+        env:
+          APP_ENV: testing
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: saas_platform_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan migrate --env=testing --force
+
+      - name: Run platform tests
+        env:
+          APP_ENV: testing
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: saas_platform_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          CACHE_DRIVER: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+          PULSE_ENABLED: "false"
+          TELESCOPE_ENABLED: "false"
+        run: vendor/bin/phpunit tests/ --no-coverage --stop-on-failure
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-platform
+          path: storage/logs/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 3 — Education AI Tests  (no DB — mocked HTTP, array cache)
+  # ──────────────────────────────────────────────────────────────────────────
+  edu-ai-tests:
+    name: Education AI Provider Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, bcmath
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: saas-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: saas-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run Education AI provider tests (no DB required)
+        run: |
+          vendor/bin/phpunit --no-coverage \
+            packages/saas-platform/modules/education/tests/Feature/ClaudeProviderHttpTest.php \
+            packages/saas-platform/modules/education/tests/Feature/CircuitBreakerProviderTest.php \
+            packages/saas-platform/modules/education/tests/Feature/AiContentProviderTest.php \
+            packages/saas-platform/modules/education/tests/Feature/TenantAiQuotaIntegrationTest.php \
+            packages/saas-platform/modules/education/tests/Feature/ContentGenerationDtoTest.php \
+            packages/saas-platform/modules/education/tests/Feature/GeneratedContentValidatorTest.php

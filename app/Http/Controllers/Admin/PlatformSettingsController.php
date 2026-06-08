@@ -50,7 +50,7 @@ class PlatformSettingsController extends Controller
             array_keys(PlatformSettings::FEATURE_FLAGS_KEYS)
         ));
 
-        if ($request->hasFile('platform_logo')) {
+        if ($request->hasFile('platform_logo') && $request->file('platform_logo')->isValid()) {
             $request->validate(['platform_logo' => 'image|max:2048']);
             PlatformSettings::storeLogo($request->file('platform_logo'));
             unset($data['platform_logo']);

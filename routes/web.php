@@ -561,6 +561,32 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | مدیریت زیرساخت — Infrastructure Management
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('infrastructure')->name('infrastructure.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\InfrastructureOverviewController::class, 'index'])->name('overview');
+
+            Route::resource('servers', \App\Http\Controllers\Admin\Infrastructure\InfraServerController::class)
+                ->except(['show']);
+
+            Route::resource('domains', \App\Http\Controllers\Admin\Infrastructure\InfraDomainController::class)
+                ->except(['show']);
+
+            Route::resource('hosting', \App\Http\Controllers\Admin\Infrastructure\InfraHostingController::class)
+                ->except(['show']);
+
+            Route::resource('storage', \App\Http\Controllers\Admin\Infrastructure\InfraStorageController::class)
+                ->except(['show'])
+                ->parameters(['storage' => 'storage']);
+
+            Route::resource('databases', \App\Http\Controllers\Admin\Infrastructure\InfraDatabaseController::class)
+                ->except(['show'])
+                ->parameters(['databases' => 'database']);
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | ریدایرکت /admin به داشبورد
         |--------------------------------------------------------------------------
         */

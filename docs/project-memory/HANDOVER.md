@@ -19,36 +19,34 @@
 
 ---
 
-## CURRENT STATE (2026-06-06)
+## CURRENT STATE (2026-06-08)
 
-**Last completed phase:** EDU-16 — Human Review & Approval Workflow  
-**Certification status:** EDU-16 COMPLETE  
-**Next phase:** EDU-17 — Live AI Provider Integration  
-**Next phase status:** BLOCKED (requires EDUCATION_AI_PROVIDER env decision)
+**Last completed phase:** SaaS Infrastructure Foundation  
+**Status:** Infrastructure Management Module delivered + Audit complete  
+**Education module status:** MATURE — all EDU phases complete  
+**Previous milestone:** EDU-17 CERTIFIED COMPLETE (2026-06-07)  
+**Next recommended milestone:** SUBSCRIPTION_CHECKOUT_PAYMENT or INFRA-2 (Storage facade migration)
 
 ---
 
-## CURRENT SPRINT
+## LAST COMPLETED SPRINT
 
-### EDU-17: Live AI Provider Integration
+### EDU-17: Live AI Provider Integration — CERTIFIED COMPLETE (2026-06-07)
 
-EDU-16 is complete. The human review gate is live. EDU-17 wires the real AI provider to replace the NullAiContentProvider stub.
+All 5 tasks delivered. AI provider layer fully operational.
 
-**What needs to be built:**
+**Commits:** `da0cbbc` (Phase 2/3) · `18e218c` (Phase 4/5)  
+**Tests:** 57 passed / 0 failed / 77 assertions  
+**Validation score:** 100/100
 
-1. Implement real AI provider adapter (Claude or OpenAI) in `EducationAiContentGenerationService`
-2. Wire `EDUCATION_AI_PROVIDER` env to `EducationServiceProvider` provider selection
-3. Connect to existing `AiProviderManager` (Phase 9.5-A) — circuit breaker + fallback
-4. `TenantAiQuotaManager` integration — rate limits per site
-5. Tests: mocked HTTP round-trip (no live API in CI)
+**Delivered:**
+- `ClaudeAiContentProvider` — real Claude API HTTP adapter
+- `CircuitBreakerAiContentProvider` — CLOSED/OPEN/HALF_OPEN state machine
+- `PersianEducationPromptBuilder` — Persian-language prompt construction
+- `TenantAiQuotaManager` integration — quota check before circuit, key: `edu_site_{siteId}`
+- `EDUCATION_AI_PROVIDER` env drives provider selection in `EducationServiceProvider`
 
-**EDU-16 completed (2026-06-06):**
-- State machine: `draft → published (approve) | archived (reject)` — `pending_review` eliminated
-- Migration: `reviewed_by_id`, `reviewed_at`, `review_note` columns + composite index
-- API: `POST .../approve` + `POST .../reject` with Gate checks + 422 on bad state
-- Admin dashboard: RTL, Vazirmatn, FIFO queue, inline Alpine approve/reject
-- 30 new tests (DraftReviewServiceTest + ReviewEndpointTest)
-- KI-001: confirmed already resolved in EDU-15.2
+**Technical Debt M-01 (LOW):** `education:validate` does not yet check EDU-17-specific components. Future maintenance pass only — EDU-17 is CLOSED.
 
 ---
 

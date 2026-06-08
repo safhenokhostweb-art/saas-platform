@@ -424,7 +424,21 @@ class PlatformSettings
         if ($old && Storage::disk('public')->exists($old)) {
             Storage::disk('public')->delete($old);
         }
-        $path = $file->store('platform', 'public');
+        // PHP 8.4: fopen(false, 'r') throws ValueError when getRealPath() returns false.
+        // Symfony's move() uses move_uploaded_file() natively and avoids Flysystem's fopen path.
+        try {
+            $ext = $file->guessExtension();
+        } catch (\Throwable $e) {
+            $ext = null;
+        }
+        $ext = $ext ?? 'jpg';
+        $destDir = storage_path('app/public/platform');
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+        $basename = \Illuminate\Support\Str::random(40) . '.' . $ext;
+        $file->move($destDir, $basename);
+        $path = 'platform/' . $basename;
         Setting::updateOrCreate(['key' => 'platform_logo'], ['value' => $path]);
         return $path;
     }

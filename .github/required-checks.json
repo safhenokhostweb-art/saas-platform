@@ -1,11 +1,32 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Mandatory CI checks that must pass before any merge to protected branches",
-  "phase": "10.2.5",
+  "phase": "8.3c",
   "repositories": {
     "saas-platform": {
       "protected_branches": ["main", "develop"],
       "required_checks": [
+        {
+          "name": "Lint & Security Audit",
+          "workflow": "php-tests.yml",
+          "job": "lint",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Platform Feature Tests (MySQL 8.0)",
+          "workflow": "php-tests.yml",
+          "job": "platform-tests",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Education AI Provider Tests",
+          "workflow": "php-tests.yml",
+          "job": "edu-ai-tests",
+          "blocking": true,
+          "severity": "HIGH"
+        },
         {
           "name": "Static Blade Analysis (fast)",
           "workflow": "frontend-governance.yml",
@@ -51,6 +72,20 @@
     "customer-site": {
       "protected_branches": ["main", "master", "develop"],
       "required_checks": [
+        {
+          "name": "Lint & Security Audit",
+          "workflow": "php-tests.yml",
+          "job": "lint",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "Feature Tests (MySQL 8.0)",
+          "workflow": "php-tests.yml",
+          "job": "feature-tests",
+          "blocking": true,
+          "severity": "CRITICAL"
+        },
         {
           "name": "Static Blade Analysis (fast)",
           "workflow": "frontend-governance.yml",

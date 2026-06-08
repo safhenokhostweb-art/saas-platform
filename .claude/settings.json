@@ -51,7 +51,14 @@
       "PowerShell($phpPath = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $phpPath artisan test tests/Feature/ProcessRenewalsTest.php --env=testing 2>&1)",
       "PowerShell($env:PATH = \"C:\\\\laragon\\\\bin\\\\php\\\\php8.3.0;\" + $env:PATH; cd c:\\\\laragon\\\\www\\\\customer-site; php artisan migrate --path=database/migrations/2026_06_07_100000_add_shipping_cost_to_orders_table.php 2>&1)",
       "Bash(grep -rn \"App\\\\\\\\\" /c/laragon/www/saas-platform/packages/saas-platform/modules/education/src/Ai/Prompts/ /c/laragon/www/saas-platform/packages/saas-platform/modules/education/src/Ai/Providers/)",
-      "Bash(Get-ChildItem \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\" -Recurse -Filter \"*.php\")"
+      "Bash(Get-ChildItem \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\" -Recurse -Filter \"*.php\")",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan education:validate 2>&1)",
+      "PowerShell($php = \"c:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $php artisan migrate --path=database/migrations/2026_06_07_300000_add_upgrade_fields_to_subscriptions_table.php 2>&1)",
+      "PowerShell($php = \"c:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $php artisan test tests/Feature/SubscriptionUpgradeTest.php --colors=never 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan test packages/saas-platform/modules/education/tests/Feature/PersianEducationPromptBuilderTest.php --no-coverage 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; $composer = \"C:\\\\laragon\\\\bin\\\\composer\\\\composer.phar\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php $composer dump-autoload 2>&1 | Select-Object -Last 5)",
+      "PowerShell($php = \"c:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $php artisan test tests/Feature/SubscriptionUpgradeTest.php tests/Feature/EarlyAccessGatingTest.php tests/Feature/SubscriptionCheckoutFlowTest.php tests/Feature/SubscriptionLifecycleTest.php tests/Feature/BenefitEnforcementCheckoutTest.php --colors=never 2>&1 | Select-String -Pattern \"Tests:|FAIL|PASS|✓|⨯|Duration\" | Select-Object -Last 20)",
+      "Bash(xargs grep -l '$table->.*site_id\\\\|->integer.*site_id\\\\|->unsignedBigInteger.*site_id\\\\|->bigInteger.*site_id')"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"

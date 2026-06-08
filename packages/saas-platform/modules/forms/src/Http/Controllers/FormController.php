@@ -62,7 +62,7 @@ class FormController extends Controller
 
         $this->activityLogger->log('form.created', 'ایجاد فرم: ' . $form->title, $form);
 
-        return redirect()->route('admin.forms.builder', $form)
+        return redirect()->route('admin.forms.edit', $form)
             ->with('success', 'فرم ساخته شد. فیلدها را سفارشی کنید.');
     }
 

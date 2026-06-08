@@ -19,20 +19,105 @@
 
 ---
 
-## CURRENT EPIC: EDU-17 — Live AI Provider Integration
+## CERTIFIED EPIC: EDU-17 — Live AI Provider Integration ✅
 
-**Status:** BLOCKED (depends on EDU-16 ✅ + EDUCATION_AI_PROVIDER env decision)  
-**Depends On:** EDU-16 ✅ + `EDUCATION_AI_PROVIDER` env decision
+**Status:** CERTIFIED COMPLETE (2026-06-07)  
+**Certification:** EDU17_CERTIFIED_COMPLETE  
+**Tests:** 57 passed / 0 failed / 77 assertions  
+**Validation score:** 100/100
+
+### Commit Evidence
+
+| Phase | Commit | Description |
+|-------|--------|-------------|
+| Phase 2 — Circuit Breaker | `da0cbbc` | feat(edu-17): add circuit breaker and Persian prompt builder |
+| Phase 3 — Persian Prompt Builder | `da0cbbc` | feat(edu-17): add circuit breaker and Persian prompt builder |
+| Phase 4 — TenantAiQuota + Integration | `18e218c` | feat(edu-17): complete AI provider integration — Phases 2-5 |
+| Phase 5 — Tests (mocked HTTP) | `18e218c` | feat(edu-17): complete AI provider integration — Phases 2-5 |
 
 ### Task List
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Implement real AI provider adapter (Claude or OpenAI) for education | Pending |
-| 2 | Wire `EDUCATION_AI_PROVIDER` env to `EducationServiceProvider` binding | Pending |
-| 3 | Connect to existing `AiProviderManager` (Phase 9.5-A) for circuit breaker + fallback | Pending |
-| 4 | Set rate limits: `TenantAiQuotaManager` integration | Pending |
-| 5 | Test real generation round-trip with mocked HTTP (no live API calls in CI) | Pending |
+| 1 | Implement real AI provider adapter (Claude + OpenAI) for education | ✅ Done (prev session) |
+| 2 | Wire `EDUCATION_AI_PROVIDER` env to `EducationServiceProvider` binding | ✅ Done (prev session) |
+| 3 | Connect to CircuitBreakerAiContentProvider (CLOSED/OPEN/HALF_OPEN) | ✅ Done (prev session) |
+| 4 | Set rate limits: `TenantAiQuotaManager` integration | ✅ Done (2026-06-07) |
+| 5 | Test real generation round-trip with mocked HTTP (no live API calls in CI) | ✅ Done — 57/57 pass |
+
+### Delivered
+
+- `education.ai.quota.*` config section added (`EDUCATION_AI_QUOTA_ENABLED`, `EDUCATION_AI_QUOTA_DEFAULT_DAILY`)
+- `CircuitBreakerAiContentProvider`: optional `TenantAiQuotaManager` injected — quota check before circuit, increment after success
+- `ClaudeAiContentProvider`: real Claude API HTTP adapter
+- `PersianEducationPromptBuilder`: Persian-language prompt construction
+- `EducationServiceProvider`: env-driven provider selection, `TenantAiQuotaManager` injected when quota enabled
+- `TenantAiQuotaIntegrationTest.php`: 5 tests (quota disabled, within limit, exceeded, key format, null siteId)
+- 57/57 AI provider tests pass (CircuitBreaker + Claude HTTP + Quota + NullProvider)
+
+### Technical Debt — EDU-17
+
+| ID | Severity | Description | Action |
+|----|----------|-------------|--------|
+| M-01 | LOW | `education:validate` does not check EDU-17-specific components (ClaudeAiContentProvider, CircuitBreaker config, PersianEducationPromptBuilder registration, EDU-17 test presence) | Add EDU-17 checks to validation command in a future maintenance pass — do NOT reopen EDU-17 |
+
+---
+
+## COMPLETED: Subscription UX — Auto-renew Toggle + Post-expiry CTA ✅ (2026-06-08)
+
+**Auto-renew:** toggleAutoRenew() controller method + route + toggle button in show/index views (badge).
+**Post-expiry:** amber warning bar on index + expired CTA card on show page + "تمدید" row button in history.
+**Admin CSV:** already existed; verified.
+**Tests:** 13/13 pass.
+
+---
+
+## COMPLETED: Invoice PDF + Subscription Webhook ✅ (2026-06-08)
+
+**Invoice PDF:** barryvdh/laravel-dompdf, RTL template, front+admin download routes. 5/5 tests.
+**Subscription Webhook:** webhook_endpoints + webhook_events tables, WebhookDispatchService, DispatchWebhookJob (HMAC-signed, 3 retries), SubscriptionService integration (6 events), admin CRUD UI. 16/16 tests.
+**Time-based Coupons:** Already complete — starts_at/expires_at exist and are validated.
+**Total tests:** 406/406 pass.
+
+---
+
+## COMPLETED: 8.3b DB Backup + 52 Test Fixes ✅ (2026-06-08)
+
+**8.3b:** BackupDatabaseCommand — daily 02:00, retention, gzip, integrity check. 8/8 tests.
+**Test fixes:** 52 → 0 failures — Tag::posts(), coupons view, CaptchaService static calls, customer_mobile, SoftDeletes migrations (tags, forms), FormService slug, FormController redirect, FormFieldRequest validation, forms breadcrumb+guide.
+**Result:** 385/385 pass, 0 failures, installed.lock preserved.
+
+---
+
+## COMPLETED: Admin Subscription Panel ✅ (2026-06-07)
+
+**Status:** COMPLETE — 12/12 tests, installed.lock fix delivered
+- force-extend (N days) + manual plan-change + group member remove
+- Tests: AdminSubscriberActionsTest — 12 passed / 32 assertions
+- Bug fixed: TestCase.php now preserves installed.lock across test runs
+
+---
+
+## COMPLETED: SaaS Infrastructure Foundation ✅ (2026-06-08)
+
+**Infrastructure Audit + Readiness:**
+- 23 findings (CRITICAL/HIGH/MEDIUM/LOW) — see `docs/infrastructure/INFRASTRUCTURE_READINESS_REPORT.md`
+- CORS fixed (F1.3) — now env-driven via `CORS_ALLOWED_ORIGINS`
+- SMS failover: KavenegarGateway + GhasedakGateway + FailoverSmsGateway deployed
+- 5 deployment scenarios designed — see `docs/infrastructure/DEPLOYMENT_ARCHITECTURE.md`
+
+**Infrastructure Management Module (admin panel):**
+- 5 migrations: infra_servers, infra_domains, infra_hosting, infra_storage_providers, infra_database_servers
+- 5 models, 6 controllers, 14 Blade views (RTL, Persian, professional)
+- 31 routes under `admin/infrastructure/*`
+- Menu: group `زیرساخت / DevOps` in admin sidebar
+
+**Remaining from audit (open):**
+- F2.1: PlatformSettings.php — use Storage facade for logo uploads (INFRA-2)
+- F2.3–F2.6: CSV export services — use Storage streams (INFRA-2)
+- F2.2: InstallController — .env file_put_contents (INFRA-3)
+- `UPLOAD_DISK` / `EXPORT_DISK` env vars (INFRA-2)
+- Deploy migrations to production: `php artisan migrate` (5 new tables)
 
 ---
 
@@ -44,12 +129,23 @@
 |----|------|----------|
 | 8.3a | Private Satis/Packagist for package distribution | Medium |
 | 8.3b | Automated DB backup before deploy | High |
-| 8.3c | GitHub Actions / Envoyer CI pipeline | High |
+| 8.3c | GitHub Actions CI pipeline | ✅ DONE (2026-06-07) |
 | 8.3d | Slack webhook alerting for deployment/anomaly events | Medium |
-| 8.4a | DB indexes on site_id columns (all tables) | High |
+| 8.4a | DB indexes on site_id columns (all tables) | ✅ DONE (2026-06-07) |
 | 8.4b | Cache for domain resolution in TenantContext | Medium |
 | 8.4c | External alerting: critical anomaly → Slack | Medium |
 | 8.4d | OpenTelemetry export to Jaeger/Tempo | Low |
+
+### Infrastructure Remediation Backlog (from INFRA audit 2026-06-08)
+
+| ID | Task | Priority |
+|----|------|----------|
+| INFRA-1 | Production .env setup checklist + run 5 new migrations | Critical |
+| INFRA-2 | Storage facade migration (PlatformSettings, CSV exports) | High |
+| INFRA-3 | InstallController .env safety + LocalAI endpoint guard | Medium |
+| INFRA-4 | DB backup command + scheduler integration | Medium |
+| INFRA-5 | SMS delivery statistics dashboard | Low |
+| INFRA-6 | Remote Agent Layer (Scenario E) — design only complete | Future |
 
 ---
 
