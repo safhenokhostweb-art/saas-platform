@@ -64,6 +64,36 @@ return [
             'throw' => false,
         ],
 
+        // INFRA-2: MinIO / compatible object storage (path-style endpoint required)
+        'minio' => [
+            'driver'                  => 's3',
+            'key'                     => env('MINIO_ACCESS_KEY_ID'),
+            'secret'                  => env('MINIO_SECRET_ACCESS_KEY'),
+            'region'                  => env('MINIO_REGION', 'us-east-1'),
+            'bucket'                  => env('MINIO_BUCKET'),
+            'endpoint'                => env('MINIO_ENDPOINT'),
+            'url'                     => env('MINIO_URL'),
+            'use_path_style_endpoint' => true,
+            'throw'                   => false,
+        ],
+
+        // INFRA-2: Dedicated disk for temporary CSV exports (never web-accessible)
+        'exports' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/exports'),
+            'throw'  => false,
+        ],
+
+        // INFRA-2: Legacy public avatar storage (web-accessible via /uploads URL)
+        // Maps to public/uploads so existing avatar URLs continue to resolve.
+        'uploads' => [
+            'driver'     => 'local',
+            'root'       => public_path('uploads'),
+            'url'        => env('APP_URL') . '/uploads',
+            'visibility' => 'public',
+            'throw'      => false,
+        ],
+
     ],
 
     /*

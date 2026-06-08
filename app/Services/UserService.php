@@ -9,6 +9,7 @@ use App\Models\TwoFactor;
 use App\Models\LoginAttempt;
 use App\Models\PasswordReset;
 use App\Services\ActivityLogger;
+use App\Services\Infrastructure\StorageManager;
 use App\Services\Sms\SmsGatewayResolver;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -23,6 +24,8 @@ class UserService
 {
     private const CACHE_TTL = 900; // 15 دقیقه
     private const PER_PAGE = 50;
+
+    public function __construct(private StorageManager $storage) {}
 
     // --- Lock constants ---
     private const MAX_FAILED_ATTEMPTS = 5;
@@ -786,47 +789,39 @@ class UserService
         $users = $this->searchQuery($filters, $sortBy, $sortDir)->get();
 
         $filename = 'users_export_' . now()->format('Ymd_His') . '.csv';
-        $path = storage_path("app/exports/{$filename}");
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
 
-        $handle = fopen($path, 'w');
-        // BOM برای UTF-8
-        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
+        $rows = $users->map(fn ($u) => [
+            $u->id,
+            $u->mobile,
+            $u->profile?->full_name ?? '',
+            $u->is_active ? 'فعال' : 'غیرفعال',
+            $u->is_admin ? 'بله' : 'خیر',
+            $u->hasTwoFactorEnabled() ? 'فعال' : 'غیرفعال',
+            $u->groups->pluck('name')->implode('، '),
+            $u->tags->pluck('name')->implode('، '),
+            $u->created_at->format('Y-m-d H:i'),
+        ]);
 
-        foreach ($users as $user) {
-            fputcsv($handle, [
-                $user->id,
-                $user->mobile,
-                $user->profile?->full_name ?? '',
-                $user->is_active ? 'فعال' : 'غیرفعال',
-                $user->is_admin ? 'بله' : 'خیر',
-                $user->hasTwoFactorEnabled() ? 'فعال' : 'غیرفعال',
-                $user->groups->pluck('name')->implode('، '),
-                $user->tags->pluck('name')->implode('، '),
-                $user->created_at->format('Y-m-d H:i'),
-            ]);
-        }
+        $this->storage->writeCsv('', $filename, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام'], $rows, 'exports');
 
-        fclose($handle);
         return $filename;
     }
 
     /**
-     * Import کاربران از CSV (از طریق Queue)
+     * Import کاربران از CSV
+     *
+     * @param string $path  مسیر نسبی فایل در دیسک $disk
+     * @param string $disk  نام دیسک Laravel (پیش‌فرض: local)
      */
-    public function importCsv(string $filepath): array
+    public function importCsv(string $path, string $disk = 'local'): array
     {
         $result = ['imported' => 0, 'failed' => []];
 
-        if (!file_exists($filepath)) {
+        if (!$this->storage->exists($path, $disk)) {
             throw new \RuntimeException('فایل یافت نشد.');
         }
 
-        $handle = fopen($filepath, 'r');
+        $handle = $this->storage->readStream($path, $disk);
         $header = fgetcsv($handle);
 
         DB::transaction(function () use ($handle, &$result) {
@@ -853,7 +848,10 @@ class UserService
             }
         });
 
-        fclose($handle);
+        if (is_resource($handle)) {
+            fclose($handle);
+        }
+
         return $result;
     }
 

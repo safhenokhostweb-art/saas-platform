@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use SaaSPlatform\Modules\Tickets\Contracts\Services\TicketServiceInterface;
@@ -23,6 +24,7 @@ class MobileTicketController extends Controller
     public function __construct(
         private readonly TicketServiceInterface $ticketService,
         private readonly TicketNotificationService $notificationService,
+        private readonly StorageManager $storage,
     ) {}
 
     // ── GET /api/mobile/tickets ────────────────────────────────────────────
@@ -211,15 +213,8 @@ class MobileTicketController extends Controller
         $size     = $file->getSize();
         $mime     = $file->getMimeType();
 
-        $targetDir = storage_path('app' . DIRECTORY_SEPARATOR . 'private'
-            . DIRECTORY_SEPARATOR . 'ticket-attachments'
-            . DIRECTORY_SEPARATOR . $ticket->id);
-
-        if (! is_dir($targetDir)) mkdir($targetDir, 0755, true);
-
         $storedName = now()->format('YmdHis') . '_' . $file->hashName();
-        $file->move($targetDir, $storedName);
-        $path = "ticket-attachments/{$ticket->id}/{$storedName}";
+        $path = $this->storage->storeUploadedFile($file, "ticket-attachments/{$ticket->id}", 'private', $storedName);
 
         $attachments   = $ticket->attachments ?? [];
         $attachments[] = ['name' => $filename, 'path' => $path, 'size' => $size, 'mime' => $mime];
@@ -255,12 +250,11 @@ class MobileTicketController extends Controller
         $safePath = ltrim($path, '/');
         if (str_contains($safePath, '..')) abort(403);
 
-        $abs = storage_path('app' . DIRECTORY_SEPARATOR . 'private'
-            . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $safePath));
+        if (!$this->storage->exists($safePath, 'private')) {
+            abort(404);
+        }
 
-        if (! file_exists($abs)) abort(404);
-
-        return response()->download($abs);
+        return $this->storage->download($safePath, 'private');
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

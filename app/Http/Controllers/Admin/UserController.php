@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Services\ActivityLogger;
+use App\Services\Infrastructure\StorageManager;
 use App\UseCases\User\BulkDeleteUserUseCase;
 use App\UseCases\User\BulkRestoreUserUseCase;
 use App\UseCases\User\BulkToggleUserStatusUseCase;
@@ -36,6 +37,7 @@ class UserController extends Controller
         private BulkRestoreUserUseCase $bulkRestoreUserUseCase,
         private SearchUsersUseCase $searchUsersUseCase,
         private UserRepositoryInterface $userRepository,
+        private StorageManager $storage,
     ) {}
 
     /**
@@ -101,20 +103,12 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        // آپلود آواتار با $file->move() (بدون Flysystem)
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
                 try {
-                    $subdir  = 'avatars/' . $user->id;
-                    $destDir = public_path('uploads/' . $subdir);
-                    if (!is_dir($destDir)) {
-                        mkdir($destDir, 0775, true);
-                    }
-                    $ext      = $file->guessExtension() ?: ($file->getClientOriginalExtension() ?: 'jpg');
-                    $filename = \Illuminate\Support\Str::random(24) . '.' . $ext;
-                    $file->move($destDir, $filename);
-                    $data['avatar_path'] = 'uploads/' . $subdir . '/' . $filename;
+                    $diskPath            = $this->storage->storeUploadedFile($file, 'avatars/' . $user->id, 'uploads');
+                    $data['avatar_path'] = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Avatar upload error: ' . $e->getMessage());
                 }
@@ -223,36 +217,25 @@ class UserController extends Controller
     public function exportCsv(Request $request)
     {
         $filters = $request->only(['mobile', 'status']);
-        $users = $this->userRepository->getAllForExport($filters);
+        $users   = $this->userRepository->getAllForExport($filters);
 
         $filename = 'users_export_' . now()->format('Ymd_His') . '.csv';
-        $path = storage_path("app/exports/{$filename}");
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
 
-        $handle = fopen($path, 'w');
-        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام']);
+        $rows = collect($users)->map(fn ($u) => [
+            $u->id,
+            $u->mobile,
+            $u->profile?->full_name ?? '',
+            $u->is_active ? 'فعال' : 'غیرفعال',
+            $u->is_admin ? 'بله' : 'خیر',
+            $u->hasTwoFactorEnabled() ? 'فعال' : 'غیرفعال',
+            $u->groups->pluck('name')->implode('، '),
+            $u->tags->pluck('name')->implode('، '),
+            $u->created_at->format('Y-m-d H:i'),
+        ]);
 
-        foreach ($users as $user) {
-            fputcsv($handle, [
-                $user->id,
-                $user->mobile,
-                $user->profile?->full_name ?? '',
-                $user->is_active ? 'فعال' : 'غیرفعال',
-                $user->is_admin ? 'بله' : 'خیر',
-                $user->hasTwoFactorEnabled() ? 'فعال' : 'غیرفعال',
-                $user->groups->pluck('name')->implode('، '),
-                $user->tags->pluck('name')->implode('، '),
-                $user->created_at->format('Y-m-d H:i'),
-            ]);
-        }
+        $this->storage->writeCsv('', $filename, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام'], $rows, 'exports');
 
-        fclose($handle);
-
-        return Storage::disk('local')->download("exports/{$filename}");
+        return $this->storage->download($filename, 'exports', $filename);
     }
 
     /**
@@ -272,15 +255,14 @@ class UserController extends Controller
             'file' => 'required|file|mimes:csv,txt|max:2048',
         ]);
 
-        $path = $request->file('file')->store('imports');
-        $fullPath = storage_path("app/{$path}");
+        $diskPath = $request->file('file')->store('imports');
 
-        if (!file_exists($fullPath)) {
+        if (!$this->storage->exists($diskPath, 'local')) {
             return back()->with('error', 'فایل یافت نشد.');
         }
 
         $result = ['imported' => 0, 'failed' => []];
-        $handle = fopen($fullPath, 'r');
+        $handle = $this->storage->readStream($diskPath, 'local');
         $header = fgetcsv($handle);
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($handle, &$result) {
@@ -306,7 +288,9 @@ class UserController extends Controller
             }
         });
 
-        fclose($handle);
+        if (is_resource($handle)) {
+            fclose($handle);
+        }
 
         $message = "{$result['imported']} کاربر با موفقیت وارد شدند.";
         if (!empty($result['failed'])) {

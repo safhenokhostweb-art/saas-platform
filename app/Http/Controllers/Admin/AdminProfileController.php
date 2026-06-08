@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AdminProfileController extends Controller
 {
+    public function __construct(private StorageManager $storage) {}
+
     public function index()
     {
         $user = auth()->user()->load('profile');
@@ -43,14 +46,10 @@ class AdminProfileController extends Controller
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
                 try {
-                    $destDir = public_path('uploads/admin-avatars');
-                    if (!is_dir($destDir)) {
-                        mkdir($destDir, 0775, true);
-                    }
                     $ext      = $file->guessExtension() ?: 'jpg';
                     $filename = 'admin_' . $user->id . '_' . time() . '.' . $ext;
-                    $file->move($destDir, $filename);
-                    $profileData['avatar'] = 'uploads/admin-avatars/' . $filename;
+                    $diskPath = $this->storage->storeUploadedFile($file, 'admin-avatars', 'uploads', $filename);
+                    $profileData['avatar'] = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Admin avatar upload: ' . $e->getMessage());
                 }

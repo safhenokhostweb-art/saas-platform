@@ -421,24 +421,14 @@ class PlatformSettings
     public static function storeLogo(UploadedFile $file): string
     {
         $old = self::get('platform_logo', '');
-        if ($old && Storage::disk('public')->exists($old)) {
+        if ($old !== '' && Storage::disk('public')->exists($old)) {
             Storage::disk('public')->delete($old);
         }
-        // PHP 8.4: fopen(false, 'r') throws ValueError when getRealPath() returns false.
-        // Symfony's move() uses move_uploaded_file() natively and avoids Flysystem's fopen path.
-        try {
-            $ext = $file->guessExtension();
-        } catch (\Throwable $e) {
-            $ext = null;
-        }
-        $ext = $ext ?? 'jpg';
-        $destDir = storage_path('app/public/platform');
-        if (!is_dir($destDir)) {
-            mkdir($destDir, 0755, true);
-        }
-        $basename = \Illuminate\Support\Str::random(40) . '.' . $ext;
-        $file->move($destDir, $basename);
-        $path = 'platform/' . $basename;
+
+        /** @var \App\Services\Infrastructure\StorageManager $storage */
+        $storage = app(\App\Services\Infrastructure\StorageManager::class);
+        $path = $storage->storeUploadedFile($file, 'platform', 'public');
+
         Setting::updateOrCreate(['key' => 'platform_logo'], ['value' => $path]);
         return $path;
     }

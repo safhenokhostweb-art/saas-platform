@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppRelease;
+use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AppReleaseController extends Controller
 {
+    public function __construct(private StorageManager $storage) {}
+
     // ── GET /admin/app-releases ───────────────────────────────────────────────
 
     public function index(): View
@@ -56,17 +59,7 @@ class AppReleaseController extends Controller
         $fileSize     = $file->getSize();
         $mimeType     = $file->getMimeType() ?? 'application/octet-stream';
 
-        // PHP native move — avoids Flysystem/dirname() bug on PHP 8.4 + Windows
-        $targetDir = storage_path('app' . DIRECTORY_SEPARATOR . 'private'
-            . DIRECTORY_SEPARATOR . 'app-releases'
-            . DIRECTORY_SEPARATOR . $platform);
-
-        if (! is_dir($targetDir)) {
-            mkdir($targetDir, 0755, true);
-        }
-
-        $file->move($targetDir, $filename);
-        $stored = "app-releases/{$platform}/{$filename}";
+        $stored = $this->storage->storeUploadedFile($file, "app-releases/{$platform}", 'private', $filename);
 
         $setLatest = $request->boolean('set_latest', true);
 
@@ -94,19 +87,13 @@ class AppReleaseController extends Controller
 
     public function download(AppRelease $release): mixed
     {
-        $absolutePath = storage_path('app' . DIRECTORY_SEPARATOR . 'private'
-            . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $release->file_path));
-
-        if (! file_exists($absolutePath)) {
+        if (!$this->storage->exists($release->file_path, 'private')) {
             abort(404, 'فایل یافت نشد.');
         }
 
         $release->increment('download_count');
 
-        return response()->download($absolutePath, $release->file_name, [
-            'Content-Type'        => $release->mime_type,
-            'Content-Disposition' => 'attachment; filename="' . $release->file_name . '"',
-        ]);
+        return $this->storage->download($release->file_path, 'private', $release->file_name);
     }
 
     // ── PATCH /admin/app-releases/{release}/set-latest ────────────────────────
@@ -123,13 +110,7 @@ class AppReleaseController extends Controller
 
     public function destroy(AppRelease $release): RedirectResponse
     {
-        $absolutePath = storage_path('app' . DIRECTORY_SEPARATOR . 'private'
-            . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $release->file_path));
-
-        if (file_exists($absolutePath)) {
-            unlink($absolutePath);
-        }
-
+        $this->storage->delete($release->file_path, 'private');
         $release->delete();
 
         return back()->with('success', 'نسخه حذف شد.');

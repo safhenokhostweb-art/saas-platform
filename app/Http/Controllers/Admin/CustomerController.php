@@ -7,6 +7,7 @@ use App\Models\Reseller;
 use App\Models\User;
 use App\Contracts\Repositories\CustomerRepositoryInterface;
 use App\Services\ActivityLogger;
+use App\Services\Infrastructure\StorageManager;
 use App\UseCases\Customer\BulkDeleteCustomerUseCase;
 use App\UseCases\Customer\BulkRestoreCustomerUseCase;
 use App\UseCases\Customer\CreateCustomerUseCase;
@@ -14,7 +15,6 @@ use App\UseCases\Customer\DeleteCustomerUseCase;
 use App\UseCases\Customer\SearchCustomersUseCase;
 use App\UseCases\Customer\UpdateCustomerUseCase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -33,6 +33,7 @@ class CustomerController extends Controller
         private BulkRestoreCustomerUseCase $bulkRestoreCustomerUseCase,
         private SearchCustomersUseCase $searchCustomersUseCase,
         private CustomerRepositoryInterface $customerRepository,
+        private StorageManager $storage,
     ) {}
 
     /**
@@ -142,35 +143,24 @@ class CustomerController extends Controller
      */
     public function exportCsv(Request $request)
     {
-        $filters = $request->only(['name', 'mobile']);
+        $filters   = $request->only(['name', 'mobile']);
         $customers = $this->customerRepository->getAllForExport($filters);
 
         $filename = 'customers_export_' . now()->format('Ymd_His') . '.csv';
-        $path = storage_path("app/exports/{$filename}");
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
 
-        $handle = fopen($path, 'w');
-        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
+        $rows = collect($customers)->map(fn ($c) => [
+            $c->id,
+            $c->name,
+            $c->company_name ?? '',
+            $c->mobile,
+            $c->sites->count(),
+            $c->reseller?->company_name ?? '',
+            $c->created_at->format('Y-m-d H:i'),
+        ]);
 
-        foreach ($customers as $customer) {
-            fputcsv($handle, [
-                $customer->id,
-                $customer->name,
-                $customer->company_name ?? '',
-                $customer->mobile,
-                $customer->sites->count(),
-                $customer->reseller?->company_name ?? '',
-                $customer->created_at->format('Y-m-d H:i'),
-            ]);
-        }
+        $this->storage->writeCsv('', $filename, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت'], $rows, 'exports');
 
-        fclose($handle);
-
-        return Storage::disk('local')->download("exports/{$filename}");
+        return $this->storage->download($filename, 'exports', $filename);
     }
 
     /**
@@ -190,15 +180,14 @@ class CustomerController extends Controller
             'file' => 'required|file|mimes:csv,txt|max:2048',
         ]);
 
-        $path = $request->file('file')->store('imports');
-        $fullPath = storage_path("app/{$path}");
+        $diskPath = $request->file('file')->store('imports');
 
-        if (!file_exists($fullPath)) {
+        if (!$this->storage->exists($diskPath, 'local')) {
             return back()->with('error', 'فایل یافت نشد.');
         }
 
         $result = ['imported' => 0, 'failed' => []];
-        $handle = fopen($fullPath, 'r');
+        $handle = $this->storage->readStream($diskPath, 'local');
         $header = fgetcsv($handle);
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($handle, &$result) {
@@ -223,7 +212,9 @@ class CustomerController extends Controller
             }
         });
 
-        fclose($handle);
+        if (is_resource($handle)) {
+            fclose($handle);
+        }
 
         $message = "{$result['imported']} مشتری وارد شدند.";
         if (!empty($result['failed'])) {

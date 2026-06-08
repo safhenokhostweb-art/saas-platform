@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\Site;
 use App\Services\ActivityLogger;
+use App\Services\Infrastructure\StorageManager;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,8 @@ class CustomerService
 {
     private const CACHE_TTL = 900; // 15 دقیقه
     private const PER_PAGE = 50;
+
+    public function __construct(private StorageManager $storage) {}
 
     /**
      * جستجوی مشتریان با فیلترهای پیشرفته و کش هوشمند
@@ -178,29 +181,19 @@ class CustomerService
             ->get();
 
         $filename = 'customers_export_' . now()->format('Ymd_His') . '.csv';
-        $path = storage_path("app/exports/{$filename}");
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
 
-        $handle = fopen($path, 'w');
-        fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-        fputcsv($handle, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت']);
+        $rows = $customers->map(fn ($c) => [
+            $c->id,
+            $c->name,
+            $c->company_name ?? '',
+            $c->mobile,
+            $c->sites->count(),
+            $c->reseller?->company_name ?? '',
+            $c->created_at->format('Y-m-d H:i'),
+        ]);
 
-        foreach ($customers as $customer) {
-            fputcsv($handle, [
-                $customer->id,
-                $customer->name,
-                $customer->company_name ?? '',
-                $customer->mobile,
-                $customer->sites->count(),
-                $customer->reseller?->company_name ?? '',
-                $customer->created_at->format('Y-m-d H:i'),
-            ]);
-        }
+        $this->storage->writeCsv('', $filename, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت'], $rows, 'exports');
 
-        fclose($handle);
         return $filename;
     }
 

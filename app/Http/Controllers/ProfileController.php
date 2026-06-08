@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\Request;
 use App\Models\Profile;
 use App\Models\ProfileField;
@@ -11,6 +12,8 @@ use App\Rules\IranianPostalCode;
 
 class ProfileController extends Controller
 {
+    public function __construct(private StorageManager $storage) {}
+
     public function show()
     {
         $user = Auth::user();
@@ -170,14 +173,10 @@ class ProfileController extends Controller
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
                 try {
-                    $destDir = public_path('uploads/avatars');
-                    if (!is_dir($destDir)) {
-                        mkdir($destDir, 0775, true);
-                    }
                     $ext      = $file->guessExtension() ?: 'jpg';
                     $filename = 'user_' . $user->id . '_' . time() . '.' . $ext;
-                    $file->move($destDir, $filename);
-                    $profile->avatar = 'uploads/avatars/' . $filename;
+                    $diskPath = $this->storage->storeUploadedFile($file, 'avatars', 'uploads', $filename);
+                    $profile->avatar = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Profile avatar upload: ' . $e->getMessage());
                 }
