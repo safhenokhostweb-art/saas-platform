@@ -59,7 +59,7 @@
                         @elseif($domain->is_expiring)
                             <span class="text-amber-600">{{ \App\Helpers\NumberHelper::formatFa($domain->days_until_expiry) }} روز</span>
                         @else
-                            <span class="text-gray-500">{{ \App\Helpers\DateHelper::toJalali($domain->expires_at) }}</span>
+                            <span class="text-gray-500">{{ \App\Helpers\Jalali::formatFa($domain->expires_at, 'Y/m/d') }}</span>
                         @endif
                     @else
                         <span class="text-gray-400">—</span>

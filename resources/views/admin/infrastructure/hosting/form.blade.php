@@ -104,15 +104,21 @@
                     </div>
                     <div>
                         <label class="form-label">تاریخ تجدید بعدی</label>
-                        <input type="date" name="next_renewal_at" class="form-control" value="{{ old('next_renewal_at', $hosting->next_renewal_at?->format('Y-m-d')) }}">
+                        <x-jalali-datepicker
+                            name="next_renewal_at"
+                            :value="old('next_renewal_at', $hosting->next_renewal_at ? \App\Helpers\Jalali::format($hosting->next_renewal_at, 'Y/m/d') : '')" />
                     </div>
                     <div>
-                        <label class="form-label">شروع دوره</label>
-                        <input type="date" name="billing_cycle_start" class="form-control" value="{{ old('billing_cycle_start', $hosting->billing_cycle_start?->format('Y-m-d')) }}">
+                        <label class="form-label">شروع دوره صورتحساب</label>
+                        <x-jalali-datepicker
+                            name="billing_cycle_start"
+                            :value="old('billing_cycle_start', $hosting->billing_cycle_start ? \App\Helpers\Jalali::format($hosting->billing_cycle_start, 'Y/m/d') : '')" />
                     </div>
                     <div>
-                        <label class="form-label">پایان دوره</label>
-                        <input type="date" name="billing_cycle_end" class="form-control" value="{{ old('billing_cycle_end', $hosting->billing_cycle_end?->format('Y-m-d')) }}">
+                        <label class="form-label">پایان دوره صورتحساب</label>
+                        <x-jalali-datepicker
+                            name="billing_cycle_end"
+                            :value="old('billing_cycle_end', $hosting->billing_cycle_end ? \App\Helpers\Jalali::format($hosting->billing_cycle_end, 'Y/m/d') : '')" />
                     </div>
                 </div>
                 <div class="mt-3">

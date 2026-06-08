@@ -28,7 +28,7 @@ class InfraHostingController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['billing_cycle_start', 'billing_cycle_end', 'next_renewal_at']);
         InfraHosting::create($data);
 
         return redirect()->route('admin.infrastructure.hosting.index')
@@ -43,7 +43,7 @@ class InfraHostingController extends Controller
 
     public function update(Request $request, InfraHosting $hosting)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['billing_cycle_start', 'billing_cycle_end', 'next_renewal_at']);
         $hosting->update($data);
 
         return redirect()->route('admin.infrastructure.hosting.index')
@@ -54,6 +54,17 @@ class InfraHostingController extends Controller
     {
         $hosting->delete();
         return back()->with('success', 'هاستینگ حذف شد.');
+    }
+
+    private function convertJalaliDates(array $data, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (!empty($data[$field])) {
+                $carbon = \App\Helpers\Jalali::toCarbon($data[$field]);
+                $data[$field] = $carbon ? $carbon->format('Y-m-d') : null;
+            }
+        }
+        return $data;
     }
 
     private function validated(Request $request): array
@@ -72,9 +83,9 @@ class InfraHostingController extends Controller
             'bandwidth_gb_allocated'  => 'nullable|integer|min:0',
             'monthly_cost'            => 'nullable|numeric|min:0',
             'currency'                => 'nullable|string|size:3',
-            'billing_cycle_start'     => 'nullable|date',
-            'billing_cycle_end'       => 'nullable|date',
-            'next_renewal_at'         => 'nullable|date',
+            'billing_cycle_start'     => 'nullable|string|max:20',
+            'billing_cycle_end'       => 'nullable|string|max:20',
+            'next_renewal_at'         => 'nullable|string|max:20',
             'status'                  => 'required|in:active,suspended,cancelled,pending',
             'notes'                   => 'nullable|string',
         ]);

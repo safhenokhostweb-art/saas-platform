@@ -101,7 +101,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="form-label">آخرین پشتیبان‌گیری</label>
-                        <input type="datetime-local" name="last_backup_at" class="form-control" value="{{ old('last_backup_at', $database->last_backup_at?->format('Y-m-d\TH:i')) }}">
+                        <x-jalali-datepicker
+                            name="last_backup_at"
+                            :with-time="true"
+                            placeholder="۱۴۰۳/۰۱/۰۱ ۱۴:۳۰"
+                            :value="old('last_backup_at', $database->last_backup_at ? \App\Helpers\Jalali::format($database->last_backup_at, 'Y/m/d H:i') : '')" />
                     </div>
                     <div>
                         <label class="form-label">مقصد پشتیبان</label>
@@ -122,7 +126,7 @@
                                {{ old('replication_enabled', $database->replication_enabled) ? 'checked' : '' }} class="rounded border-gray-300">
                         <span class="text-sm text-gray-700">رپلیکاسیون فعال است</span>
                     </label>
-                    <select name="replication_role" class="form-select max-w-[160px]">
+                    <select name="replication_role" class="form-select max-w-40">
                         <option value="">— نقش —</option>
                         <option value="primary" {{ old('replication_role', $database->replication_role) === 'primary' ? 'selected' : '' }}>Primary</option>
                         <option value="replica" {{ old('replication_role', $database->replication_role) === 'replica' ? 'selected' : '' }}>Replica</option>

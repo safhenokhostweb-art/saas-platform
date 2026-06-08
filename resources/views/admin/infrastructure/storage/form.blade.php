@@ -91,7 +91,9 @@
                 </div>
                 <div class="mt-3">
                     <label class="form-label">تاریخ آخرین اندازه‌گیری</label>
-                    <input type="date" name="last_measured_at" class="form-control max-w-xs" value="{{ old('last_measured_at', $provider->last_measured_at?->format('Y-m-d')) }}">
+                    <x-jalali-datepicker
+                        name="last_measured_at"
+                        :value="old('last_measured_at', $provider->last_measured_at ? \App\Helpers\Jalali::format($provider->last_measured_at, 'Y/m/d') : '')" />
                 </div>
             </div>
 

@@ -100,7 +100,7 @@
                     </span>
                 </td>
                 <td class="py-3 px-4 text-xs text-gray-500">
-                    {{ $server->last_backup_at ? \App\Helpers\DateHelper::toJalali($server->last_backup_at) : '—' }}
+                    {{ $server->last_backup_at ? \App\Helpers\Jalali::formatFa($server->last_backup_at, 'Y/m/d') : '—' }}
                 </td>
                 <td class="py-3 px-4">
                     <div class="flex items-center gap-2">

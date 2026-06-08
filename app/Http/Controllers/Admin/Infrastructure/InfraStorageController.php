@@ -24,7 +24,7 @@ class InfraStorageController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['last_measured_at']);
         InfraStorageProvider::create($data);
 
         return redirect()->route('admin.infrastructure.storage.index')
@@ -38,7 +38,7 @@ class InfraStorageController extends Controller
 
     public function update(Request $request, InfraStorageProvider $storage)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['last_measured_at']);
         $storage->update($data);
 
         return redirect()->route('admin.infrastructure.storage.index')
@@ -49,6 +49,17 @@ class InfraStorageController extends Controller
     {
         $storage->delete();
         return back()->with('success', 'سرویس استوریج حذف شد.');
+    }
+
+    private function convertJalaliDates(array $data, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (!empty($data[$field])) {
+                $carbon = \App\Helpers\Jalali::toCarbon($data[$field]);
+                $data[$field] = $carbon ? $carbon->format('Y-m-d') : null;
+            }
+        }
+        return $data;
     }
 
     private function validated(Request $request): array
@@ -67,7 +78,7 @@ class InfraStorageController extends Controller
             'monthly_cost'         => 'nullable|numeric|min:0',
             'currency'             => 'nullable|string|size:3',
             'status'               => 'required|in:active,degraded,full,inactive',
-            'last_measured_at'     => 'nullable|date',
+            'last_measured_at'     => 'nullable|string|max:20',
             'notes'                => 'nullable|string',
             'is_active'            => 'boolean',
         ]);

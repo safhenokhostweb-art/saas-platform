@@ -39,7 +39,7 @@ class InfraServerController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['last_backup_at', 'last_deployment_at']);
         InfraServer::create($data);
 
         return redirect()->route('admin.infrastructure.servers.index')
@@ -53,7 +53,7 @@ class InfraServerController extends Controller
 
     public function update(Request $request, InfraServer $server)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['last_backup_at', 'last_deployment_at']);
         $server->update($data);
 
         return redirect()->route('admin.infrastructure.servers.index')
@@ -64,6 +64,17 @@ class InfraServerController extends Controller
     {
         $server->delete();
         return back()->with('success', 'سرور حذف شد.');
+    }
+
+    private function convertJalaliDates(array $data, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (!empty($data[$field])) {
+                $carbon = \App\Helpers\Jalali::toCarbon($data[$field]);
+                $data[$field] = $carbon ? $carbon->format('Y-m-d') : null;
+            }
+        }
+        return $data;
     }
 
     private function validated(Request $request): array
@@ -86,8 +97,8 @@ class InfraServerController extends Controller
             'os'                 => 'nullable|string|max:100',
             'status'             => 'required|in:online,offline,degraded,maintenance,unknown',
             'uptime_percent'     => 'nullable|integer|min:0|max:100',
-            'last_backup_at'     => 'nullable|date',
-            'last_deployment_at' => 'nullable|date',
+            'last_backup_at'     => 'nullable|string|max:20',
+            'last_deployment_at' => 'nullable|string|max:20',
             'notes'              => 'nullable|string',
             'is_active'          => 'boolean',
         ]);

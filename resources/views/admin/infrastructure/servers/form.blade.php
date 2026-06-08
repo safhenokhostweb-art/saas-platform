@@ -120,11 +120,15 @@
                     </div>
                     <div>
                         <label class="form-label">آخرین پشتیبان‌گیری</label>
-                        <input type="date" name="last_backup_at" class="form-control" value="{{ old('last_backup_at', $server->last_backup_at?->format('Y-m-d')) }}">
+                        <x-jalali-datepicker
+                            name="last_backup_at"
+                            :value="old('last_backup_at', $server->last_backup_at ? \App\Helpers\Jalali::format($server->last_backup_at, 'Y/m/d') : '')" />
                     </div>
                     <div>
                         <label class="form-label">آخرین استقرار (دیپلوی)</label>
-                        <input type="date" name="last_deployment_at" class="form-control" value="{{ old('last_deployment_at', $server->last_deployment_at?->format('Y-m-d')) }}">
+                        <x-jalali-datepicker
+                            name="last_deployment_at"
+                            :value="old('last_deployment_at', $server->last_deployment_at ? \App\Helpers\Jalali::format($server->last_deployment_at, 'Y/m/d') : '')" />
                     </div>
                 </div>
                 <div class="mt-3">

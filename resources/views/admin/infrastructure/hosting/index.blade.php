@@ -56,7 +56,7 @@
                         @elseif($h->days_until_renewal !== null && $h->days_until_renewal <= 7)
                             <span class="text-amber-600 font-semibold">{{ \App\Helpers\NumberHelper::formatFa($h->days_until_renewal) }} روز</span>
                         @else
-                            <span class="text-gray-500">{{ \App\Helpers\DateHelper::toJalali($h->next_renewal_at) }}</span>
+                            <span class="text-gray-500">{{ \App\Helpers\Jalali::formatFa($h->next_renewal_at, 'Y/m/d') }}</span>
                         @endif
                     @else—@endif
                 </td>

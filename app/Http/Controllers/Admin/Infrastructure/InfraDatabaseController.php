@@ -26,7 +26,7 @@ class InfraDatabaseController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['last_backup_at']);
         InfraDatabaseServer::create($data);
 
         return redirect()->route('admin.infrastructure.databases.index')
@@ -41,7 +41,7 @@ class InfraDatabaseController extends Controller
 
     public function update(Request $request, InfraDatabaseServer $database)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['last_backup_at']);
         $database->update($data);
 
         return redirect()->route('admin.infrastructure.databases.index')
@@ -52,6 +52,27 @@ class InfraDatabaseController extends Controller
     {
         $database->delete();
         return back()->with('success', 'سرور دیتابیس حذف شد.');
+    }
+
+    private function convertJalaliDates(array $data, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (!empty($data[$field])) {
+                // support both date-only "1403/01/01" and datetime "1403/01/01 14:30"
+                $parts  = explode(' ', trim($data[$field]), 2);
+                $carbon = \App\Helpers\Jalali::toCarbon($parts[0]);
+                if ($carbon) {
+                    if (isset($parts[1])) {
+                        [$h, $m] = array_pad(explode(':', $parts[1]), 2, '00');
+                        $carbon->setTime((int) $h, (int) $m);
+                    }
+                    $data[$field] = $carbon->format('Y-m-d H:i:s');
+                } else {
+                    $data[$field] = null;
+                }
+            }
+        }
+        return $data;
     }
 
     private function validated(Request $request): array
@@ -69,7 +90,7 @@ class InfraDatabaseController extends Controller
             'active_connections'    => 'nullable|integer|min:0',
             'max_connections'       => 'nullable|integer|min:0',
             'status'                => 'required|in:online,offline,degraded,maintenance',
-            'last_backup_at'        => 'nullable|date',
+            'last_backup_at'        => 'nullable|string|max:25',
             'backup_storage'        => 'nullable|string|max:191',
             'backup_frequency'      => 'nullable|string|max:100',
             'replication_enabled'   => 'boolean',

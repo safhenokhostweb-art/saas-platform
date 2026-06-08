@@ -187,7 +187,8 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan migrate --path=database/migrations/2026_06_08_100002_create_infra_domains_table.php --pretend 2>&1; & $php artisan migrate --path=database/migrations/2026_06_08_100003_create_infra_hosting_table.php --pretend 2>&1; & $php artisan migrate --path=database/migrations/2026_06_08_100004_create_infra_storage_providers_table.php --pretend 2>&1; & $php artisan migrate --path=database/migrations/2026_06_08_100005_create_infra_database_servers_table.php --pretend 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan route:list --name=admin.infrastructure 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan view:clear 2>&1; & $php artisan view:cache 2>&1 | Select-String -Pattern \"error|Error|ERROR|Exception\" | Select-Object -First 20)",
-      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan view:cache 2>&1)"
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan view:cache 2>&1)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan view:clear 2>&1; & $php artisan view:cache 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",

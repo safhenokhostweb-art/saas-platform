@@ -50,7 +50,7 @@ class InfraDomainController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->convertJalaliDates($this->validated($request), ['registered_at', 'expires_at', 'ssl_expires_at']);
         InfraDomain::create($data);
 
         return redirect()->route('admin.infrastructure.domains.index')
@@ -66,7 +66,7 @@ class InfraDomainController extends Controller
 
     public function update(Request $request, InfraDomain $domain)
     {
-        $data = $this->validated($request, $domain->id);
+        $data = $this->convertJalaliDates($this->validated($request, $domain->id), ['registered_at', 'expires_at', 'ssl_expires_at']);
         $domain->update($data);
 
         return redirect()->route('admin.infrastructure.domains.index')
@@ -79,6 +79,17 @@ class InfraDomainController extends Controller
         return back()->with('success', 'دامنه حذف شد.');
     }
 
+    private function convertJalaliDates(array $data, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (!empty($data[$field])) {
+                $carbon = \App\Helpers\Jalali::toCarbon($data[$field]);
+                $data[$field] = $carbon ? $carbon->format('Y-m-d') : null;
+            }
+        }
+        return $data;
+    }
+
     private function validated(Request $request, ?int $excludeId = null): array
     {
         return $request->validate([
@@ -87,11 +98,11 @@ class InfraDomainController extends Controller
             'site_id'            => 'nullable|exists:sites,id',
             'server_id'          => 'nullable|exists:infra_servers,id',
             'registrar'          => 'nullable|string|max:100',
-            'registered_at'      => 'nullable|date',
-            'expires_at'         => 'nullable|date',
+            'registered_at'      => 'nullable|string|max:20',
+            'expires_at'         => 'nullable|string|max:20',
             'ssl_enabled'        => 'boolean',
             'ssl_provider'       => 'nullable|string|max:100',
-            'ssl_expires_at'     => 'nullable|date',
+            'ssl_expires_at'     => 'nullable|string|max:20',
             'ssl_status'         => 'required|in:valid,expiring_soon,expired,unknown',
             'dns_provider'       => 'nullable|string|max:100',
             'dns_notes'          => 'nullable|string',

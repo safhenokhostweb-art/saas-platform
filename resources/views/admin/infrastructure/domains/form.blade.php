@@ -64,11 +64,15 @@
                     </div>
                     <div>
                         <label class="form-label">تاریخ ثبت</label>
-                        <input type="date" name="registered_at" class="form-control" value="{{ old('registered_at', $domain->registered_at?->format('Y-m-d')) }}">
+                        <x-jalali-datepicker
+                            name="registered_at"
+                            :value="old('registered_at', $domain->registered_at ? \App\Helpers\Jalali::format($domain->registered_at, 'Y/m/d') : '')" />
                     </div>
                     <div>
                         <label class="form-label">تاریخ انقضا</label>
-                        <input type="date" name="expires_at" class="form-control" value="{{ old('expires_at', $domain->expires_at?->format('Y-m-d')) }}">
+                        <x-jalali-datepicker
+                            name="expires_at"
+                            :value="old('expires_at', $domain->expires_at ? \App\Helpers\Jalali::format($domain->expires_at, 'Y/m/d') : '')" />
                     </div>
                 </div>
                 <div class="mt-3">
@@ -90,7 +94,9 @@
                     </div>
                     <div>
                         <label class="form-label">انقضای SSL</label>
-                        <input type="date" name="ssl_expires_at" class="form-control" value="{{ old('ssl_expires_at', $domain->ssl_expires_at?->format('Y-m-d')) }}">
+                        <x-jalali-datepicker
+                            name="ssl_expires_at"
+                            :value="old('ssl_expires_at', $domain->ssl_expires_at ? \App\Helpers\Jalali::format($domain->ssl_expires_at, 'Y/m/d') : '')" />
                     </div>
                     <div>
                         <label class="form-label">وضعیت SSL <span class="text-red-500">*</span></label>

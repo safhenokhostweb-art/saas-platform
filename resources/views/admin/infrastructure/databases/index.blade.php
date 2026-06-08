@@ -54,7 +54,7 @@
                     @else —@endif
                 </td>
                 <td class="py-3 px-4 text-xs text-gray-600">
-                    {{ $db->last_backup_at ? \App\Helpers\DateHelper::toJalali($db->last_backup_at) : '—' }}
+                    {{ $db->last_backup_at ? \App\Helpers\Jalali::formatFa($db->last_backup_at, 'Y/m/d') : '—' }}
                     @if($db->backup_frequency)<div class="text-gray-400">{{ $db->backup_frequency }}</div>@endif
                 </td>
                 <td class="py-3 px-4">
