@@ -194,7 +194,9 @@
       "PowerShell(Stop-Service -Name \"WSearch\" -Force -ErrorAction SilentlyContinue)",
       "PowerShell(cmd /c \"rd /s /q C:\\\\laragon\\\\www\\\\customer-site\\\\vendor\" 2>&1; Write-Host \"Exit: $LASTEXITCODE\")",
       "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/customer-site && php artisan migrate --force && php artisan config:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache && echo 'ALL DONE'\" 2>&1)",
-      "PowerShell(Start-Service -Name \"WSearch\" -ErrorAction SilentlyContinue)"
+      "PowerShell(Start-Service -Name \"WSearch\" -ErrorAction SilentlyContinue)",
+      "PowerShell(head)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"rm -f /var/www/customer-site/bootstrap/cache/packages.php && cd /var/www/customer-site && php artisan package:discover --ansi && php artisan config:cache && php artisan route:cache && echo 'FIXED'\")"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",
