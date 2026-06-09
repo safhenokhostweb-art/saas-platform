@@ -9,6 +9,10 @@
 /storage/framework/sessions/
 /storage/logs/
 /vendor
+/bootstrap/cache/*.php
+/public/vendor/leaflet/*.map
+/public/debug-*.php
+/public/uploads/
 vendor.zip
 deploy.zip
 .env
