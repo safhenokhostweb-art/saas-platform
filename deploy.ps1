@@ -36,7 +36,7 @@ Write-Host "`n[2/4] Building vendor & creating archive..." -ForegroundColor Yell
 & $PHP $COMPOSER install --no-dev --optimize-autoloader --no-scripts --no-interaction --quiet
 if (Test-Path $ZIPFILE) { Remove-Item $ZIPFILE }
 # آرشیو از روی فایل‌های واقعی (شامل vendor) نه git archive
-$exclude = @('.git', 'mobile', 'node_modules', 'tests', 'storage', 'bootstrap')
+$exclude = @('.git', 'mobile', 'node_modules', 'tests', 'storage', 'bootstrap', '.env', '.env.local', '.env.testing')
 $items   = Get-ChildItem -Path $DIR | Where-Object { $_.Name -notin $exclude }
 Compress-Archive -Path ($items | ForEach-Object { $_.FullName }) -DestinationPath $ZIPFILE -Force
 Write-Host "     Archive: $ZIPFILE ($('{0:N1}' -f ((Get-Item $ZIPFILE).Length / 1MB)) MB)" -ForegroundColor Green
