@@ -71,7 +71,20 @@
       "Bash(findstr \"vite\\\\|node\\\\|build\" package.json)",
       "PowerShell($keyPath = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; ssh-keygen -t ed25519 -C \"deploy@safhenokhost\" -f $keyPath -N '\"\"' 2>&1; Get-Content \"$keyPath.pub\")",
       "PowerShell(scp -P 9011 -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -o StrictHostKeyChecking=no \"C:\\\\Users\\\\Farshad-IT\\\\deploy_server.sh\" root@87.107.12.81:/var/www/deploy.sh 2>&1)",
-      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"chmod +x /var/www/deploy.sh && echo 'deploy.sh ready'\" 2>&1)"
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"chmod +x /var/www/deploy.sh && echo 'deploy.sh ready'\" 2>&1)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"grep PLATFORM_URL /var/www/customer-site/.env\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/customer-site && php artisan config:clear && php artisan config:cache\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 http://panel.safhenokhost.ir\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 https://panel.safhenokhost.ir/api/license/validate 2>&1 || echo 'FAILED'\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"sed -i 's|PLATFORM_URL=https://panel.safhenokhost.ir|PLATFORM_URL=http://panel.safhenokhost.ir|' /var/www/customer-site/.env && cd /var/www/customer-site && php artisan config:clear && php artisan config:cache && echo 'Done'\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/saas-platform && php artisan db:seed --class=ThemeProfileSeeder --force 2>&1\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"mysql -u root saas_platform -e 'SHOW TABLES LIKE \\\\\"%tenant_theme%\\\\\"' 2>/dev/null\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/customer-site && php artisan config:clear && php artisan config:cache && php artisan cache:clear && echo done\" 2>&1)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cat -n /var/www/deploy.sh\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"bash /var/www/deploy.sh customer\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/customer-site && composer install --no-dev --optimize-autoloader 2>&1 | tail -5\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"php --version && nginx -v 2>&1\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"ls /etc/php/ && ls /etc/nginx/sites-enabled/\")"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"

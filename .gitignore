@@ -9,6 +9,8 @@
 /storage/framework/sessions/
 /storage/logs/
 /vendor
+vendor.zip
+deploy.zip
 .env
 .env.backup
 .env.backup-*
