@@ -190,7 +190,11 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan view:cache 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan view:clear 2>&1; & $php artisan view:cache 2>&1)",
       "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 root@87.107.12.81 \"ls /etc/apt/sources.list.d/ 2>&1\")",
-      "Bash(/c/laragon/bin/composer/composer update *)"
+      "Bash(/c/laragon/bin/composer/composer update *)",
+      "PowerShell(Stop-Service -Name \"WSearch\" -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(cmd /c \"rd /s /q C:\\\\laragon\\\\www\\\\customer-site\\\\vendor\" 2>&1; Write-Host \"Exit: $LASTEXITCODE\")",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/customer-site && php artisan migrate --force && php artisan config:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache && echo 'ALL DONE'\" 2>&1)",
+      "PowerShell(Start-Service -Name \"WSearch\" -ErrorAction SilentlyContinue)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",
