@@ -64,7 +64,11 @@
       "PowerShell(git -C \"c:\\\\laragon\\\\www\\\\saas-platform\" status --short 2>&1)",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan config:clear 2>&1; & $php vendor/bin/phpunit tests/Feature/Infrastructure/ --colors=never 2>&1)",
       "Bash(git -C \"c:\\\\laragon\\\\www\\\\saas-platform\" status)",
-      "Bash(git -C \"c:\\\\laragon\\\\www\\\\customer-site\" status)"
+      "Bash(git -C \"c:\\\\laragon\\\\www\\\\customer-site\" status)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('PHP:', d.get\\('require',{}\\).get\\('php',''\\)\\); [print\\(k,':',v\\) for k,v in d.get\\('require',{}\\).items\\(\\) if 'laravel' in k]\")",
+      "Bash(findstr /i \"\\\\\"php\\\\\"\\\\|\\\\\"laravel/framework\\\\\"\\\\|\\\\\"laravel/reverb\\\\\"\")",
+      "Bash(findstr /i \"php\" composer.json)",
+      "Bash(findstr \"vite\\\\|node\\\\|build\" package.json)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"
