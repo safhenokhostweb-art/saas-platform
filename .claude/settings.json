@@ -68,7 +68,10 @@
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('PHP:', d.get\\('require',{}\\).get\\('php',''\\)\\); [print\\(k,':',v\\) for k,v in d.get\\('require',{}\\).items\\(\\) if 'laravel' in k]\")",
       "Bash(findstr /i \"\\\\\"php\\\\\"\\\\|\\\\\"laravel/framework\\\\\"\\\\|\\\\\"laravel/reverb\\\\\"\")",
       "Bash(findstr /i \"php\" composer.json)",
-      "Bash(findstr \"vite\\\\|node\\\\|build\" package.json)"
+      "Bash(findstr \"vite\\\\|node\\\\|build\" package.json)",
+      "PowerShell($keyPath = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; ssh-keygen -t ed25519 -C \"deploy@safhenokhost\" -f $keyPath -N '\"\"' 2>&1; Get-Content \"$keyPath.pub\")",
+      "PowerShell(scp -P 9011 -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -o StrictHostKeyChecking=no \"C:\\\\Users\\\\Farshad-IT\\\\deploy_server.sh\" root@87.107.12.81:/var/www/deploy.sh 2>&1)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"chmod +x /var/www/deploy.sh && echo 'deploy.sh ready'\" 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"
