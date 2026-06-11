@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/deeplink/conversation_deep_link_service.dart';
 import '../features/auth/login_screen.dart';
 import '../features/conversations/conversation_list_screen.dart';
 import '../features/conversations/conversation_view_screen.dart';
@@ -13,10 +14,33 @@ import '../features/support/support_dashboard_screen.dart';
 import '../shared/providers/auth_provider.dart';
 import 'main_shell.dart';
 
+// ── Converts a DeepLinkTarget to a GoRouter path ─────────────────────────────
+String? deepLinkToPath(DeepLinkTarget target) => switch (target) {
+  ConversationDeepLink(:final conversationId) => '/conversations/$conversationId',
+  TicketDeepLink(:final ticketId)             => '/tickets/$ticketId',
+  CreateTicketDeepLink()                      => '/tickets/create',
+  DashboardDeepLink()                         => '/dashboard',
+  TenantDeepLink()                            => null, // tenant switch handled separately
+  UnknownDeepLink()                           => null,
+};
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+  final navigatorKey = GlobalKey<NavigatorState>();
+
+  // Wire deep link service to router navigation
+  final deepLinkService = ref.read(conversationDeepLinkServiceProvider);
+  deepLinkService.initialize().then((_) {
+    deepLinkService.onDeepLink.listen((target) {
+      final path = deepLinkToPath(target);
+      if (path != null && navigatorKey.currentContext != null) {
+        navigatorKey.currentContext!.go(path);
+      }
+    });
+  });
 
   return GoRouter(
+    navigatorKey:    navigatorKey,
     initialLocation: '/conversations',
     redirect: (context, state) {
       final isLoggedIn  = authState.isAuthenticated;

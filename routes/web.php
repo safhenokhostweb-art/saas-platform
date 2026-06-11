@@ -592,6 +592,15 @@ Route::prefix('admin')
 
             // INFRA-5: SMS delivery statistics
             Route::get('sms', [\App\Http\Controllers\Admin\Infrastructure\InfraSmsController::class, 'index'])->name('sms');
+
+            // INFRA-6: Remote Agent Layer
+            Route::resource('remote-agents', \App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class)
+                ->parameters(['remote-agents' => 'remoteAgent']);
+            Route::get('remote-agents/{remoteAgent}/health',  [\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'checkHealth'])->name('remote-agents.health');
+            Route::post('remote-agents/{remoteAgent}/backup', [\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'triggerBackup'])->name('remote-agents.backup');
+            Route::post('remote-agents/{remoteAgent}/deploy', [\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'triggerDeploy'])->name('remote-agents.deploy');
+            Route::post('remote-agents/{remoteAgent}/restart',[\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'triggerRestart'])->name('remote-agents.restart');
+            Route::get('remote-agents/generate-secret',       [\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'generateSecret'])->name('remote-agents.generate-secret');
         });
 
         /*

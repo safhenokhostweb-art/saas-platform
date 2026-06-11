@@ -30,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
         // 8.3d: Slack alert service — singleton so all callers share one instance
         $this->app->singleton(\App\Services\Infrastructure\SlackAlertService::class);
 
+        // INFRA-6: Remote Agent client
+        $this->app->singleton(\App\Services\Infrastructure\RemoteAgentClient::class);
+
         // Payment Gateway
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
             $driver = config('payment.default', 'zarinpal');

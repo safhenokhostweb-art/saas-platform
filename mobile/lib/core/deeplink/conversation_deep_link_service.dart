@@ -12,6 +12,14 @@ final conversationDeepLinkServiceProvider = Provider<ConversationDeepLinkService
 });
 
 // ─── Deep link targets ────────────────────────────────────────────────────────
+//
+// Supported URI schemes (M2.1-d):
+//   support://conversation/{id}  → open conversation
+//   support://ticket/{id}        → open support ticket
+//   support://ticket/create      → open create-ticket form
+//   support://tenant/{id}        → switch tenant context
+//   support://dashboard          → open support dashboard
+//   saas-support://...           → alternate scheme (same routing)
 
 sealed class DeepLinkTarget {
   const DeepLinkTarget();
@@ -20,6 +28,19 @@ sealed class DeepLinkTarget {
 class ConversationDeepLink extends DeepLinkTarget {
   const ConversationDeepLink(this.conversationId);
   final String conversationId;
+}
+
+class TicketDeepLink extends DeepLinkTarget {
+  const TicketDeepLink(this.ticketId);
+  final int ticketId;
+}
+
+class CreateTicketDeepLink extends DeepLinkTarget {
+  const CreateTicketDeepLink();
+}
+
+class DashboardDeepLink extends DeepLinkTarget {
+  const DashboardDeepLink();
 }
 
 class TenantDeepLink extends DeepLinkTarget {
@@ -73,15 +94,22 @@ class ConversationDeepLinkService {
     if (uri != null) _dispatch(uri);
   }
 
-  // ── Build deep link URIs (for sharing / QR codes) ────────────────────────
+  // ── Build deep link URIs (for sharing / notifications / QR codes) ──────────
 
   static String conversationUri(String conversationId) =>
       'support://conversation/$conversationId';
 
+  static String ticketUri(int ticketId) =>
+      'support://ticket/$ticketId';
+
+  static String createTicketUri() => 'support://ticket/create';
+
+  static String dashboardUri() => 'support://dashboard';
+
   static String tenantUri(String tenantId) =>
       'support://tenant/$tenantId';
 
-  // ── Parse a URI string to a target ───────────────────────────────────────
+  // ── Parse a URI string to a typed target ─────────────────────────────────
 
   static DeepLinkTarget parse(String uriString) {
     final uri = Uri.tryParse(uriString);
@@ -96,19 +124,28 @@ class ConversationDeepLinkService {
 
   // ── Private ───────────────────────────────────────────────────────────────
 
-  void _dispatch(Uri uri) {
-    _controller.add(_parseUri(uri));
-  }
+  void _dispatch(Uri uri) => _controller.add(_parseUri(uri));
 
   static DeepLinkTarget _parseUri(Uri uri) {
-    if (uri.scheme != 'support') return UnknownDeepLink(uri.toString());
+    // Accept both 'support://' and 'saas-support://'
+    if (uri.scheme != 'support' && uri.scheme != 'saas-support') {
+      return UnknownDeepLink(uri.toString());
+    }
 
-    return switch (uri.host) {
+    final host     = uri.host;
+    final segments = uri.pathSegments;
+
+    return switch (host) {
       'conversation' => ConversationDeepLink(
-          uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '',
+          segments.isNotEmpty ? segments.first : '',
         ),
+      'ticket' when segments.isNotEmpty && segments.first == 'create' =>
+          const CreateTicketDeepLink(),
+      'ticket' when segments.isNotEmpty =>
+          TicketDeepLink(int.tryParse(segments.first) ?? 0),
+      'dashboard' => const DashboardDeepLink(),
       'tenant' => TenantDeepLink(
-          uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '',
+          segments.isNotEmpty ? segments.first : '',
         ),
       _ => UnknownDeepLink(uri.toString()),
     };

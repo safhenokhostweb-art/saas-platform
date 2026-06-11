@@ -106,7 +106,9 @@
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; $files = @\\(\"app\\\\Services\\\\Sms\\\\FailoverSmsGateway.php\",\"app\\\\Console\\\\Commands\\\\TestSlackAlertCommand.php\",\"app\\\\Services\\\\Infrastructure\\\\SlackAlertService.php\",\"app\\\\Console\\\\Commands\\\\BackupDatabaseCommand.php\",\"app\\\\Providers\\\\AppServiceProvider.php\",\"config\\\\services.php\"\\); foreach \\($f in $files\\) { $r = & $php -l $f 2>&1; Write-Host \"$\\([System.IO.Path]::GetFileName\\($f\\)\\): $r\" })",
       "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; $files = @\\(\"resources\\\\views\\\\admin\\\\partials\\\\sidebar-icon-bare.blade.php\", \"resources\\\\views\\\\admin\\\\partials\\\\customer-sidebar-icon-bare.blade.php\"\\); foreach \\($f in $files\\) { if \\(Test-Path $f\\) { Write-Host \"$f : EXISTS \\($\\(\\(\\(Get-Content $f | Measure-Object -Line\\).Lines\\)\\) lines\\)\" } else { Write-Host \"$f : MISSING\" } })",
       "Bash(.\\\\deploy.ps1 \"feat: platform site agent — provision platform admin in customer site DB\")",
-      "PowerShell($KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; ssh -i $KEY -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/saas-platform && php artisan migrate:status 2>/dev/null | tail -20\")"
+      "PowerShell($KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; ssh -i $KEY -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/saas-platform && php artisan migrate:status 2>/dev/null | tail -20\")",
+      "Bash(ssh -p 9011 root@87.107.12.81 \"df -h && echo '---' && du -sh /var/www/html /var/log /var/backups 2>/dev/null && echo '---' && du -sh /root 2>/dev/null\")",
+      "Bash(git -C c:\\\\laragon\\\\www\\\\saas-platform status)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"

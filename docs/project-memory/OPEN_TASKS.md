@@ -194,7 +194,7 @@ php artisan migrate
 | INFRA-3 | InstallController .env safety + LocalAI endpoint guard | ✅ DONE (2026-06-11) |
 | INFRA-4 | DB backup command + scheduler integration | ✅ DONE (2026-06-11) |
 | INFRA-5 | SMS delivery statistics dashboard | ✅ DONE (2026-06-11) |
-| INFRA-6 | Remote Agent Layer (Scenario E) — design only complete | Future |
+| INFRA-6 | Remote Agent Layer (Scenario E) | ✅ DONE (2026-06-11) |
 
 ---
 
@@ -202,10 +202,10 @@ php artisan migrate
 
 | ID | Task | Priority |
 |----|------|----------|
-| M2.1-a | File attachment upload flow | Medium |
+| M2.1-a | File attachment upload flow | ✅ DONE (2026-06-11) |
 | M2.1-b | iOS code signing pipeline | ✅ DONE (2026-06-11) |
-| M2.1-c | Firebase FCM injection (optional, not required) | Low |
-| M2.1-d | Deep-link routing | Medium |
+| M2.1-c | Firebase FCM injection | ✅ DONE (2026-06-11) |
+| M2.1-d | Deep-link routing | ✅ DONE (2026-06-11) |
 | M2.1-e | AppImage packaging (Linux) | Low |
 | M2.1-f | System tray icon assets | Low |
 
@@ -216,10 +216,10 @@ php artisan migrate
 | ID | Task | Priority |
 |----|------|----------|
 | FE-01 | Wire x-core-ui::navigation-item/sidebar-group into layout files | ✅ DONE (2026-06-11) |
-| FE-02 | Retrofit admin views to x-core-ui::button | Low |
-| FE-03 | Resolve Tailwind v4 shadow-var optimizer warnings | Low |
-| FE-04 | Remaining raw controls in forms/analytics, forms/create, forms/submissions | Low |
-| FE-05 | Retrofit tickets/show to x-core-ui::button | Low |
+| FE-02 | Retrofit admin views to x-core-ui::button | ✅ DONE (2026-06-11) |
+| FE-03 | Resolve Tailwind v4 shadow-var optimizer warnings | ✅ DONE (2026-06-11) |
+| FE-04 | Remaining raw controls in forms/analytics, forms/create, forms/submissions | ✅ DONE (2026-06-11) |
+| FE-05 | Retrofit tickets/show to x-core-ui::button | ✅ DONE (2026-06-11) |
 
 ---
 

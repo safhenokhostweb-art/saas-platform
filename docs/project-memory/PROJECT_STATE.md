@@ -27,7 +27,7 @@ Namespace: `SaaSPlatform\Modules\Education`
 **Infrastructure Hardening Batch — COMPLETE (2026-06-11)**  
 INFRA-3 (InstallController security, LocalAI guard), INFRA-4 (BackupDatabaseCommand + scheduler), INFRA-5 (SMS stats dashboard), 8.3d (SlackAlertService + wiring).  
 All syntax checks pass.  
-**Next: FE-02 to FE-05 (low-priority retrofits), M2.1-a/c/d (mobile), or customer-site work**
+**Next: ALL BACKLOG ITEMS COMPLETE — شروع فاز جدید یا کار روی customer-site**
 
 ---
 

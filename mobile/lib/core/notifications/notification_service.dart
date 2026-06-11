@@ -1,26 +1,32 @@
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/client_api_service.dart';
+import '../deeplink/conversation_deep_link_service.dart';
 import '../realtime/realtime_client_service.dart';
 
-// ─── Provider hierarchy (matches config/mobile.php notification_transport) ───
-// Priority 1: Reverb Realtime (WebSocket) — all platforms
-// Priority 2: Firebase Push (optional, mobile only)
-// Priority 3: Local Notification (desktop OS notifications)
-// Priority 4: Sync Recovery (offline, all platforms, last resort)
+// Background message handler — must be a top-level function (M2.1-c)
+@pragma('vm:entry-point')
+Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  // OS already shows the notification tray entry for background messages.
+}
+
+// ─── Provider hierarchy ───────────────────────────────────────────────────────
+// Priority 1: Reverb Realtime (WebSocket) — all platforms, always primary
+// Priority 2: Firebase FCM (optional, mobile only, background push)
+// Priority 3: Local Notification (desktop OS tray / in-app fallback)
+// Priority 4: Sync Recovery (offline safety net, all platforms)
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   throw StateError('Override notificationServiceProvider in main()');
 });
 
-// ─── Transport enum ───────────────────────────────────────────────────────────
-
 enum NotificationTransport { reverb, firebase, local, syncRecovery }
-
-// ─── Service ─────────────────────────────────────────────────────────────────
 
 class NotificationService {
   NotificationService(this._ref);
@@ -34,22 +40,17 @@ class NotificationService {
     if (_initialized) return;
     _initialized = true;
 
-    // 1. Try Reverb (always primary)
     _bindReverbTransport();
-
-    // 2. Local notifications (desktop OS tray / mobile fallback)
     await _initLocalNotifications();
 
-    // 3. Firebase Push — optional, mobile only, injected if available
     if (Platform.isAndroid || Platform.isIOS) {
-      _tryFirebaseTransport();
+      await _tryFirebaseTransport();
     }
 
-    // 4. Sync recovery — always registered as safety net
     _scheduleOfflineSyncRecovery();
   }
 
-  // ── Priority 1: Reverb realtime ───────────────────────────────────────────
+  // ── Priority 1: Reverb realtime WebSocket ─────────────────────────────────
 
   void _bindReverbTransport() {
     final rt = _ref.read(realtimeClientServiceProvider);
@@ -57,31 +58,77 @@ class NotificationService {
       if (!event.isNotificationEvent) return;
       _activeTransport = NotificationTransport.reverb;
       _showLocal(
-        title: event.payload['title'] as String? ?? 'New notification',
+        title: event.payload['title'] as String? ?? 'اعلان جدید',
         body: event.payload['body'] as String? ?? '',
         payload: event.payload,
       );
     });
   }
 
-  // ── Priority 2: Firebase (optional carrier) ───────────────────────────────
+  // ── Priority 2: Firebase FCM (M2.1-c) ────────────────────────────────────
+  // Requires google-services.json (Android) + GoogleService-Info.plist (iOS)
+  // Falls back silently to Reverb if Firebase is not configured.
 
-  void _tryFirebaseTransport() {
-    // Firebase is OPTIONAL. When firebase_messaging is available via separate
-    // integration, inject its token into the backend via updatePushToken().
-    // This stub lets the system operate fully without Firebase.
-    //
-    // To enable: add firebase_messaging to pubspec.yaml and call:
-    //   final token = await FirebaseMessaging.instance.getToken();
-    //   await _ref.read(clientApiServiceProvider).updatePushToken(token!, 'fcm');
+  Future<void> _tryFirebaseTransport() async {
+    try {
+      await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+
+      final messaging = FirebaseMessaging.instance;
+      final settings  = await messaging.requestPermission(
+        alert: true, badge: true, sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+
+      final token = await messaging.getToken();
+      if (token != null) await _registerFcmToken(token);
+
+      messaging.onTokenRefresh.listen(_registerFcmToken);
+
+      // Foreground: Firebase suppresses notification UI — show it manually
+      FirebaseMessaging.onMessage.listen((message) {
+        _activeTransport = NotificationTransport.firebase;
+        final n = message.notification;
+        if (n != null) {
+          _showLocal(
+            title: n.title ?? 'اعلان جدید',
+            body: n.body ?? '',
+            payload: Map<String, dynamic>.from(message.data),
+          );
+        }
+      });
+
+      // Background tap: app was in background but not terminated
+      FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        _onTap(NotificationResponse(
+          notificationResponseType: NotificationResponseType.selectedNotification,
+          payload: message.data.toString(),
+          id: 0,
+        ));
+      });
+
+      _activeTransport = NotificationTransport.firebase;
+    } catch (_) {
+      // Firebase not configured or google-services.json missing — no-op
+    }
+  }
+
+  Future<void> _registerFcmToken(String token) async {
+    try {
+      await _ref.read(clientApiServiceProvider).registerPushToken(token);
+    } catch (_) {}
   }
 
   // ── Priority 3: Local notifications ──────────────────────────────────────
 
   Future<void> _initLocalNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings(requestAlertPermission: true, requestBadgePermission: true, requestSoundPermission: true);
-    const linux = LinuxInitializationSettings(defaultActionName: 'Open');
+    const ios     = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true);
+    const linux   = LinuxInitializationSettings(defaultActionName: 'Open');
 
     await _localPlugin.initialize(
       const InitializationSettings(android: android, iOS: ios, macOS: ios, linux: linux),
@@ -89,33 +136,41 @@ class NotificationService {
     );
   }
 
-  Future<void> _showLocal({required String title, required String body, Map<String, dynamic> payload = const {}}) async {
+  Future<void> _showLocal({
+    required String title,
+    required String body,
+    Map<String, dynamic> payload = const {},
+  }) async {
     await _localPlugin.show(
       payload.hashCode,
       title,
       body,
       const NotificationDetails(
-        android: AndroidNotificationDetails('messages', 'Messages', importance: Importance.high, priority: Priority.high),
-        iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+        android: AndroidNotificationDetails('messages', 'پیام‌ها',
+            importance: Importance.high, priority: Priority.high),
+        iOS: DarwinNotificationDetails(
+            presentAlert: true, presentBadge: true, presentSound: true),
       ),
     );
   }
 
   void _onTap(NotificationResponse response) {
-    // Navigate to conversation from payload
+    final raw = response.payload;
+    if (raw == null || raw.isEmpty) return;
+    // Dispatch any support:// URI from notification payload to the deep link service
+    _ref.read(conversationDeepLinkServiceProvider).handleUri(raw);
   }
 
   // ── Priority 4: Offline sync recovery ────────────────────────────────────
 
   void _scheduleOfflineSyncRecovery() {
-    // When app comes back online, sync missed notifications from API
-    // Handled by OfflineCacheService.syncOnReconnect()
+    // Missed notifications synced by OfflineCacheService.syncOnReconnect()
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
   Future<void> syncMissedNotifications() async {
-    final api = _ref.read(clientApiServiceProvider);
+    final api    = _ref.read(clientApiServiceProvider);
     final notifs = await api.getNotifications();
     for (final n in notifs.where((n) => !n.isRead)) {
       await _showLocal(title: n.title, body: n.body);

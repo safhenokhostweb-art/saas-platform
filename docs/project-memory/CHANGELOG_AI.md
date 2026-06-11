@@ -40,6 +40,49 @@
 
 ---
 
+## 2026-06-11 — Full Backlog Completion: FE-02/05 + M2.1-a/c/d + INFRA-6
+
+**Reason:** Complete all remaining backlog items across frontend, mobile, and infrastructure.
+
+### FE-02: Canonical Button CSS Alignment
+- `resources/views/layouts/admin.blade.php` — `.btn-primary/secondary/danger/success/ghost/outline` CSS updated to match `x-core-ui::button` styling (transitions, focus rings, hover states, border-radius)
+
+### FE-03: Tailwind v4 Shadow Utility Warnings
+- `resources/css/app.css` — 8 named `@utility` definitions for `shadow-card`, `shadow-indigo`, `shadow-modal`, `shadow-toast`, `shadow-lg-ui`, `shadow-sm-ui`, `shadow-xs-ui`, `shadow-card-hover` — eliminates Lightning CSS optimizer warnings
+
+### FE-04: Forms Module Controls
+- Already using Tailwind utility classes — no `.btn btn-*` raw classes found — task verified as complete
+
+### FE-05: tickets/show canonical buttons
+- `resources/views/admin/support-tickets/show.blade.php` — 3 buttons replaced: back link + تخصیص + ذخیره → `x-core-ui::button`
+
+### M2.1-a: File Attachment in Create Ticket
+- `mobile/lib/features/support/create_ticket_screen.dart` — `_pickFiles()` + `_removeAttachment()` + chip preview + `_attachments` list + calls `replyToTicket` after ticket creation for file upload
+
+### M2.1-c: Firebase FCM Push Notifications
+- `mobile/pubspec.yaml` — `firebase_core: ^3.6.0` + `firebase_messaging: ^15.1.3` added
+- `mobile/lib/core/notifications/notification_service.dart` — full FCM implementation: `_tryFirebaseTransport()` with permission request, token registration, foreground message handler, background tap handler; `_registerFcmToken()` calls backend API
+
+### M2.1-d: Deep-link Routing
+- `mobile/lib/core/deeplink/conversation_deep_link_service.dart` — 5 target types added: `TicketDeepLink`, `CreateTicketDeepLink`, `DashboardDeepLink`, `saas-support://` alternate scheme support
+- `mobile/lib/app/router.dart` — `navigatorKey` added, `deepLinkToPath()` helper, deep link service wired on startup → `context.go(path)` on incoming link
+- `notification_service.dart` — `_onTap` dispatches FCM notification payload to deep link service
+
+### INFRA-6: Remote Agent Layer
+- `database/migrations/2026_06_11_000002_create_remote_agents_table.php` (NEW)
+- `app/Models/RemoteAgent.php` (NEW) — encrypted secret, scopes, status helpers
+- `app/Services/Infrastructure/RemoteAgentClient.php` (NEW) — HMAC-SHA256 signed HTTP client; health/backup/deploy/restart commands; auto-updates agent health status
+- `app/Http/Controllers/Admin/Infrastructure/RemoteAgentController.php` (NEW) — CRUD + command endpoints (health/backup/deploy/restart/generate-secret)
+- `resources/views/admin/infrastructure/remote-agents/index.blade.php` (NEW) — command buttons with Alpine AJAX results
+- `resources/views/admin/infrastructure/remote-agents/form.blade.php` (NEW) — create/edit form with secret generator
+- `routes/web.php` — resource + 5 command routes under `admin/infrastructure/remote-agents`
+- `resources/views/admin/infrastructure/overview.blade.php` — Remote Agents card added
+- `app/Providers/AppServiceProvider.php` — `RemoteAgentClient` singleton registered
+
+**All PHP files pass `php -l` syntax check.**
+
+---
+
 ## 2026-06-11 — M2.1-b + FE-01 + 8.3a + 8.4d: iOS CI + Navigation Components + Satis + OTel
 
 **Reason:** Backlog completion — mobile, frontend, infrastructure distribution, observability.
