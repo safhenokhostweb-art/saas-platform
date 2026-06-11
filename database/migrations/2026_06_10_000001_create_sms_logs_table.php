@@ -14,7 +14,7 @@ return new class extends Migration
             $table->text('message');
             $table->boolean('success')->default(false)->index();
             $table->string('error_message', 512)->nullable();
-            $table->unsignedSmallInt('response_time_ms')->nullable();
+            $table->unsignedSmallInteger('response_time_ms')->nullable();
             $table->timestamps();
 
             $table->index(['provider', 'success']);
