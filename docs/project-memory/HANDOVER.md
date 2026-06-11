@@ -19,17 +19,37 @@
 
 ---
 
-## CURRENT STATE (2026-06-11)
+## CURRENT STATE (2026-06-12)
 
-**Last completed phase:** Platform Site Agent  
-**Status:** ادمین پلتفرم در سایت مشتری — provisioning، deletion guard، dual logging، UI کامل  
-**Education module status:** MATURE — all EDU phases complete through EDU-17  
-**Previous milestone:** Infrastructure Hardening Batch (INFRA-3/4/5 + 8.3d)  
-**Next recommended milestone:** Migration اجرا در production + customer-site deployment
+**Last completed phase:** TB-1 — Visual Canvas Builder (Phase 1)  
+**Status:** قالب‌ساز بصری 3-panel کامل شد. Migration اجرا شد. 37+ بلوک ماژول در BlockRegistry. Alpine.js + SortableJS canvas.  
+**Previous milestone:** Public Learning Portal (customer-site) — 423/423 tests  
+**Next recommended milestone:** TB-2 Theme Marketplace یا TB-3 AI URL Analysis
 
 ---
 
 ## LAST COMPLETED SPRINT
+
+### Public Learning Portal (customer-site) — COMPLETE (2026-06-11)
+
+**CourseClassCompletion:** جدول جدید برای tracking پیشرفت کلاس‌ها  
+**Front\CourseController:** index, show, enroll (رایگان)، myLearning، learn، markComplete  
+**4 view:** courses/index (grid+filter+search), courses/show (detail+class list+progress), courses/learn (sidebar+AJAX complete), courses/my-learning (progress per course)  
+**Routes:** 13 route زیر `module:courses` middleware  
+**Env:** `MODULE_COURSES_ENABLED=true` در production  
+**Tests:** 423/423 pass
+
+**URLs:**
+```
+GET  /courses                              → لیست دوره‌ها
+GET  /courses/{slug}                       → جزئیات دوره
+POST /courses/{slug}/enroll               → ثبت‌نام (auth)
+GET  /my-learning                          → داشبورد دانشجو
+GET  /courses/{slug}/learn/{classOrder?}  → محیط یادگیری
+POST /courses/{slug}/learn/{classId}/complete → تکمیل جلسه (AJAX)
+```
+
+---
 
 ### Infrastructure Hardening Batch — COMPLETE (2026-06-11)
 

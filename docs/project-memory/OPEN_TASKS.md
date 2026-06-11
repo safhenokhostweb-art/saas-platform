@@ -146,6 +146,29 @@
 
 ---
 
+## COMPLETED: Public Learning Portal (customer-site) ✅ (2026-06-11)
+
+**پورتال یادگیری عمومی در customer-site**
+
+- `CourseClassCompletion` migration + model (course_class_completions جدول)
+- `Front\CourseController` — 6 action: index, show, enroll, myLearning, learn, markComplete
+- 4 view کامل: courses/index, courses/show, courses/learn, courses/my-learning
+- Routes زیر `module:courses` middleware (13 route)
+- `SiteHelper::coursesEnabled()` helper
+- `MODULE_COURSES_ENABLED=true` در production env
+- 423/423 tests pass
+- Deploy شد به سرور production
+
+**URL های جدید:**
+- `GET /courses` — لیست دوره‌های فعال
+- `GET /courses/{slug}` — جزئیات دوره
+- `POST /courses/{slug}/enroll` — ثبت‌نام (auth لازم، رایگان = فوری)
+- `GET /my-learning` — داشبورد دانشجو
+- `GET /courses/{slug}/learn/{classOrder?}` — محیط یادگیری
+- `POST /courses/{slug}/learn/{classId}/complete` — تکمیل جلسه (AJAX)
+
+---
+
 ## COMPLETED: Platform Site Agent ✅ (2026-06-11)
 
 **ادمین پلتفرم در سایت مشتری — کامل شد**

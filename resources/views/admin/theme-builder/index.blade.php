@@ -63,8 +63,12 @@
                     </td>
                     <td class="p-3 text-gray-600">{{ $theme->updated_at?->format('Y/m/d H:i') }}</td>
                     <td class="p-3">
-                        <a href="{{ route('admin.theme-builder.edit', $theme) }}" class="text-indigo-600 hover:underline ml-2">ویرایش</a>
-                        <a href="{{ route('admin.theme-builder.export', $theme) }}" class="text-indigo-600 hover:underline ml-2">خروجی JSON</a>
+                        <a href="{{ route('admin.theme-builder.canvas', $theme) }}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition ml-2">
+                            🎨 قالب‌ساز بصری
+                        </a>
+                        <a href="{{ route('admin.theme-builder.edit', $theme) }}" class="text-indigo-600 hover:underline ml-2">ویرایش پایه</a>
+                        <a href="{{ route('admin.theme-builder.export', $theme) }}" class="text-indigo-600 hover:underline ml-2">JSON</a>
                         <a href="{{ route('admin.theme-builder.clone-form', $theme) }}" class="text-indigo-600 hover:underline ml-2">کپی</a>
                         <form action="{{ route('admin.theme-builder.destroy', $theme) }}" method="post" class="inline" onsubmit="return confirm('حذف این تم؟');">
                             @csrf

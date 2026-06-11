@@ -18,25 +18,32 @@ class Theme extends Model
         'slug',
         'description',
         'thumbnail',
+        'preview_image',
         'type',
         'source',
         'site_id',
         'header_blocks',
         'footer_blocks',
+        'pages',
         'global_styles',
         'settings',
         'status',
         'published_at',
         'version',
+        'is_marketplace',
+        'marketplace_price',
     ];
 
     protected $casts = [
         'header_blocks' => 'array',
         'footer_blocks' => 'array',
+        'pages' => 'array',
         'global_styles' => 'array',
         'settings' => 'array',
         'published_at' => 'datetime',
         'version' => 'integer',
+        'is_marketplace' => 'boolean',
+        'marketplace_price' => 'integer',
     ];
 
     public const TYPE_FULL = 'full';
@@ -85,6 +92,53 @@ class Theme extends Model
     public function isDraft(): bool
     {
         return $this->status === self::STATUS_DRAFT;
+    }
+
+    // ─── Page Management ────────────────────────────────────────────────────
+
+    public function getPageList(): array
+    {
+        $pages = $this->pages ?? [];
+        if (empty($pages)) {
+            return [
+                'home' => ['title' => 'صفحه اصلی', 'slug' => '', 'blocks' => []],
+            ];
+        }
+        return $pages;
+    }
+
+    public function getPageBlocks(string $key): array
+    {
+        return ($this->pages ?? [])[$key]['blocks'] ?? [];
+    }
+
+    public function setPageBlocks(string $key, array $blocks): void
+    {
+        $pages = $this->pages ?? [];
+        if (!isset($pages[$key])) {
+            $pages[$key] = ['title' => $key, 'slug' => $key, 'blocks' => []];
+        }
+        $pages[$key]['blocks'] = $blocks;
+        $this->update(['pages' => $pages]);
+    }
+
+    public function addPage(string $key, string $title, string $slug = ''): void
+    {
+        $pages = $this->pages ?? [];
+        $pages[$key] = ['title' => $title, 'slug' => $slug ?: $key, 'blocks' => []];
+        $this->update(['pages' => $pages]);
+    }
+
+    public function removePage(string $key): void
+    {
+        $pages = $this->pages ?? [];
+        unset($pages[$key]);
+        $this->update(['pages' => $pages]);
+    }
+
+    public function scopeMarketplace($query)
+    {
+        return $query->where('is_marketplace', true)->published();
     }
 
     /** Get payload for front-end (header + footer + global_styles + metadata). */

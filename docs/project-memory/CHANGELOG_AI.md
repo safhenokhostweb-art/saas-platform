@@ -1,7 +1,116 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-11
+> Last Updated: 2026-06-12
+
+---
+
+## 2026-06-12 — ICONS-1: SaaS Platform Duotone Icon System
+
+**Reason:** ایجاد کتابخانه آیکن منحصر‌به‌فرد Duotone برای کل پلتفرم و سایت‌های مشتریان
+
+**New Files:**
+- `packages/saas-platform/core-utils/src/Icons/IconRegistry.php` — رجیستری ۱۰۲ آیکن SVG Duotone (background fill-opacity 0.12 + 2px stroke)
+- `packages/saas-platform/core-utils/resources/views/components/icon.blade.php` — Blade component `<x-core-ui::icon />`
+- `packages/saas-platform/core-utils/src/Console/Commands/IconListCommand.php` — `php artisan icons:list`
+- `resources/views/admin/design-system/icons.blade.php` — صفحه gallery با جستجو و کپی کد
+
+**Modified Files:**
+- `packages/saas-platform/core-utils/src/Providers/CoreUtilsServiceProvider.php` — ثبت IconListCommand
+- `routes/web.php` — route `admin.design.icons` (GET /admin/design/icons)
+
+**Icon Categories (102 icons):**
+Navigation (19) · Actions (21) · Users/Auth (11) · Education (14) · Commerce (15) · Communication (10) · Files/Media (9) · Analytics (9) · Status (9) · Infrastructure (14) · Misc (11)
+
+**Style:** Duotone — background fill (currentColor, opacity 0.12) + 2px rounded stroke foreground. 24×24 viewBox. `currentColor` برای سازگاری با همه رنگ‌بندی‌ها.
+
+**Usage:** `<x-core-ui::icon name="home" class="w-5 h-5 text-blue-600" />`
+
+---
+
+## 2026-06-12 — TB-1: Visual Canvas Builder (Phase 1)
+
+**Reason:** پیاده‌سازی قالب‌ساز بصری حرفه‌ای (Gutenberg-style 3-panel canvas builder) با ۳۷+ بلوک ماژول
+
+**saas-platform — New Files:**
+
+- `database/migrations/2026_06_12_000001_add_pages_to_themes_table.php` — `pages`, `preview_image`, `is_marketplace`, `marketplace_price` columns
+- `app/Http/Controllers/Admin/ThemeCanvasController.php` — canvas show/save/preview/addPage/removePage
+- `resources/views/layouts/canvas.blade.php` — minimal full-screen layout (no sidebar)
+- `resources/views/admin/theme-builder/canvas.blade.php` — 3-panel RTL canvas builder
+- `resources/views/admin/theme-builder/canvas-preview.blade.php` — standalone page preview
+
+**saas-platform — Modified Files:**
+
+- `app/Models/Theme.php` — added `pages/preview_image/is_marketplace/marketplace_price` to fillable/casts + `getPageList()`, `getPageBlocks()`, `setPageBlocks()`, `addPage()`, `removePage()`, `scopeMarketplace()`
+- `app/Services/ThemeBuilder/BlockRegistry.php` — added `CATEGORY_MODULE` constant + 37 module blocks (blog ×3, shop ×7, courses ×3, forms ×2, subscription ×3, support ×2, reviews ×2, display ×7, utility ×8) + `categoryIcons()` + `moduleBlocksByModule()`
+- `app/Services/ThemeBuilder/BlockRenderer.php` — `renderModulePlaceholder()` with color-coded mock HTML per module
+- `routes/web.php` — 6 canvas routes under admin auth middleware
+- `resources/views/admin/theme-builder/index.blade.php` — "قالب‌ساز بصری" button per theme row
+
+**Architecture:**
+- Canvas = 3-panel (Library ← Canvas ← Props) full-screen Alpine.js app
+- Block Library: 7 categories + search + expand/collapse
+- Canvas: SortableJS drag-and-drop, move up/down, delete
+- Props Panel: dynamic form per block schema (string/number/boolean/select/color/textarea)
+- Page Manager: add/remove pages (except 'home'), switch with auto-save
+- Preview: opens in new tab at `/canvas/{page}/preview`
+- Save: PUT /canvas/save + Ctrl+S shortcut + unsaved changes warning
+
+**Migration status:** DONE (878ms)
+
+---
+
+## 2026-06-11 — Module UI/UX Upgrades — customer-site Admin Panel
+
+**Reason:** تمام ماژول‌های پنل ادمین customer-site نیاز به ارتقاء فیچر، UI/UX و حرفه‌ای شدن داشتند.
+
+**Delivered (customer-site):**
+
+- `OrderController.php` — search + status filter + date range + KPI stats (total/paid/pending/revenue)
+- `resources/views/admin/orders/index.blade.php` — KPI cards (gradient revenue), status pill filters, searchable table, clickable rows
+- `resources/views/admin/orders/show.blade.php` — کامل ساخته شد (قبلاً = index): order items، price breakdown (coupon/membership/points)، status timeline، change status form، customer info
+- `OrderModuleTest.php` — 10 new tests (auth, KPI, filter, search, show, status change, cancelled guard) — 10/10 pass
+- `CategoryController.php` — `withCount('posts')` added
+- `resources/views/admin/categories/index.blade.php` — card view با post count + KPIs + colored icons + empty state
+- `ReferralController.php` — stats (total_codes, active, referrals, rewarded, pending, points_awarded) + withCount
+- `resources/views/admin/referrals/index.blade.php` — gradient KPI + code cards با referral history per code
+- `CourseController.php` — `withCount(['classes','enrollments'])` + stats
+- `resources/views/admin/courses/index.blade.php` — card view with thumbnail, chips (active/free/classes/enrollments), KPIs
+- `CouponController.php` — stats (total/active/expired/usages) added
+- `resources/views/admin/coupons/index.blade.php` — progress bar برای usage_limit، expiry color, badge وضعیت (scheduled/expired/active)، fixed wrong field names (type→discount_type، value→discount_percent/discount_amount، max_uses→usage_limit)
+- `ReviewController.php` — stats (total/pending/approved/avg_rating) + rating filter
+- `resources/views/admin/reviews/index.blade.php` — KPI cards، star rating display، pending alert banner، approve/reject buttons، filter by rating
+- `AccountingController.php` — monthly revenue (last 6 months) via `DATE_FORMAT` GROUP BY
+- `resources/views/admin/accounting/index.blade.php` — gradient KPI cards، bar chart ماهانه، quick links to orders/invoices
+- `resources/views/admin/sms/index.blade.php` — provider selection cards، connection status، API key hidden، help text
+- `resources/views/admin/seo-advanced/index.blade.php` — 4 KPI cards، SEO checklist، config table، sitemap link، quick content links
+
+**Tests:** 429/429 pass (customer-site). Commit: `4243de2`
+
+---
+
+## 2026-06-11 — Public Learning Portal: پورتال یادگیری عمومی در customer-site
+
+**Reason:** customer-site فقط admin CRUD برای دوره‌ها داشت ولی هیچ صفحه عمومی‌ای نداشت. کاربر نهایی نمی‌توانست دوره‌ها را ببیند یا ثبت‌نام کند.
+
+**Delivered (customer-site):**
+
+- `database/migrations/2026_06_11_100000_create_course_class_completions_table.php` (NEW) — `course_class_completions`: course_class_id, user_id, course_id, completed_at + unique(class+user) index
+- `app/Models/CourseClassCompletion.php` (NEW) — BelongsTo: courseClass, user, course
+- `app/Models/Course.php` — `scopeActive()`, `isFree()`, `completions()`, `progressForUser()`
+- `app/Models/CourseClass.php` — `completions()` relation
+- `app/Http/Controllers/Front/CourseController.php` (NEW) — 6 actions: index, show, enroll, myLearning, learn, markComplete
+- `resources/views/themes/default/courses/index.blade.php` (NEW) — grid با filter free/paid/all، search، enrolled badges
+- `resources/views/themes/default/courses/show.blade.php` — جزئیات + class list + progress bar + enroll button
+- `resources/views/themes/default/courses/learn.blade.php` — محیط یادگیری با sidebar navigation + AJAX markComplete
+- `resources/views/themes/default/courses/my-learning.blade.php` — داشبورد دانشجو با progress bar per course
+- `routes/web.php` — 13 route جدید زیر `module:courses` middleware
+- `app/Helpers/SiteHelper.php` — `coursesEnabled()` helper
+- production env: `MODULE_COURSES_ENABLED=true`
+
+**Tests:** 423/423 pass (customer-site). 4 risky (output buffer - pre-existing).
+**Deploy:** ✅ هر دو پروژه deploy شدند (pending در صورت تأیید)
 
 ---
 

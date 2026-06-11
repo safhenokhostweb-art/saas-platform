@@ -49,6 +49,7 @@ use App\Http\Controllers\Admin\SupportPlanController as AdminSupportPlanControll
 // use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
 use App\Http\Controllers\Admin\ThemeBuilderController;
+use App\Http\Controllers\Admin\ThemeCanvasController;
 use App\Http\Controllers\PageController;
 
 use App\Http\Middleware\EnsureProfileIsComplete;
@@ -542,6 +543,14 @@ Route::prefix('admin')
             })->name('theme-builder.clone-form');
             Route::post('theme-builder/{theme_builder}/clone', [ThemeBuilderController::class, 'cloneTheme'])->name('theme-builder.clone');
             Route::post('theme-revisions/{revision}/restore', [ThemeBuilderController::class, 'restoreRevision'])->name('theme-builder.restore-revision');
+
+            // ─── Canvas Builder ──────────────────────────────────────────────
+            Route::get('theme-builder/{theme}/canvas', [ThemeCanvasController::class, 'show'])->name('theme-builder.canvas');
+            Route::put('theme-builder/{theme}/canvas/save', [ThemeCanvasController::class, 'save'])->name('theme-builder.canvas.save');
+            Route::post('theme-builder/{theme}/canvas/preview-ajax', [ThemeCanvasController::class, 'previewAjax'])->name('theme-builder.canvas.preview-ajax');
+            Route::post('theme-builder/{theme}/canvas/pages', [ThemeCanvasController::class, 'addPage'])->name('theme-builder.canvas.pages.add');
+            Route::delete('theme-builder/{theme}/canvas/pages/{key}', [ThemeCanvasController::class, 'removePage'])->name('theme-builder.canvas.pages.remove')->where('key', '[a-z0-9_-]+');
+            Route::get('theme-builder/{theme}/canvas/{pageKey}/preview', [ThemeCanvasController::class, 'preview'])->name('theme-builder.canvas.page-preview')->where('pageKey', '[a-z0-9_-]+');
         });
 
         /*
@@ -612,4 +621,15 @@ Route::prefix('admin')
         Route::get('/', function () {
             return redirect()->route('admin.dashboard');
         });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Design System — Icon Gallery
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/design/icons', function () {
+            return view('admin.design-system.icons', [
+                'icons' => \SaaSPlatform\CoreUtils\Icons\IconRegistry::all(),
+            ]);
+        })->name('design.icons');
     });

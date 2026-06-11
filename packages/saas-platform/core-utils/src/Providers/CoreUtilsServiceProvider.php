@@ -17,6 +17,7 @@ use SaaSPlatform\CoreUtils\Console\Commands\ModuleVersionCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleBuildCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleReleaseCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleListCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\IconListCommand;
 use SaaSPlatform\CoreUtils\Support\ModuleVersionRegistry;
 use SaaSPlatform\CoreUtils\Support\ReleaseManifest;
 use SaaSPlatform\CoreUtils\Services\ModuleUpdateOrchestrator;
@@ -1125,6 +1126,7 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 ModuleBuildCommand::class,
                 ModuleReleaseCommand::class,
                 ModuleListCommand::class,
+                IconListCommand::class,
                 // PHASE 7.15 — TASK 8: UI authority validation command
                 ValidateUiAuthorityCommand::class,
                 // PHASE 7.25 — TASK 9: Tenant runtime authority command

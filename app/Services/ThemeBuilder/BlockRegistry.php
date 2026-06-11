@@ -16,6 +16,7 @@ final class BlockRegistry
     public const CATEGORY_ECOMMERCE = 'ecommerce';
     public const CATEGORY_MARKETING = 'marketing';
     public const CATEGORY_UTILITY = 'utility';
+    public const CATEGORY_MODULE = 'module';
 
     /**
      * All block definitions: type => [ name, category, icon, schema, defaultProps ]
@@ -428,6 +429,441 @@ final class BlockRegistry
                 'schema' => [],
                 'defaultProps' => [],
             ],
+
+            // ─── MODULE: وبلاگ ───────────────────────────────────────────────
+            'module:blog_posts' => [
+                'name' => 'پست‌های وبلاگ',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'blog',
+                'requires' => 'blog',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'آخرین مطالب'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد پست', 'default' => 6],
+                    'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['grid' => 'گرید', 'list' => 'لیست', 'slider' => 'اسلایدر'], 'default' => 'grid'],
+                    'show_excerpt' => ['type' => 'boolean', 'label' => 'نمایش خلاصه', 'default' => true],
+                    'show_date' => ['type' => 'boolean', 'label' => 'نمایش تاریخ', 'default' => true],
+                    'category_slug' => ['type' => 'string', 'label' => 'فیلتر دسته‌بندی (اختیاری)', 'default' => ''],
+                ],
+                'defaultProps' => ['title' => 'آخرین مطالب', 'limit' => 6, 'layout' => 'grid', 'show_excerpt' => true, 'show_date' => true, 'category_slug' => ''],
+            ],
+            'module:blog_featured' => [
+                'name' => 'پست ویژه وبلاگ',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'star',
+                'requires' => 'blog',
+                'schema' => [
+                    'post_slug' => ['type' => 'string', 'label' => 'اسلاگ پست', 'default' => ''],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['full' => 'کامل', 'compact' => 'فشرده'], 'default' => 'full'],
+                ],
+                'defaultProps' => ['post_slug' => '', 'style' => 'full'],
+            ],
+            'module:blog_categories' => [
+                'name' => 'دسته‌بندی‌های وبلاگ',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'tags',
+                'requires' => 'blog',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'دسته‌بندی‌ها'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'list' => 'لیست', 'badges' => 'نشان'], 'default' => 'cards'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 8],
+                ],
+                'defaultProps' => ['title' => 'دسته‌بندی‌ها', 'style' => 'cards', 'limit' => 8],
+            ],
+
+            // ─── MODULE: فروشگاه ─────────────────────────────────────────────
+            'module:shop_product_grid' => [
+                'name' => 'گرید محصولات فروشگاه',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'grid',
+                'requires' => 'shop',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'محصولات'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد محصول', 'default' => 8],
+                    'columns' => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲ ستون', '3' => '۳ ستون', '4' => '۴ ستون'], 'default' => '4'],
+                    'source' => ['type' => 'select', 'label' => 'منبع', 'options' => ['recent' => 'جدیدترین', 'featured' => 'ویژه', 'bestselling' => 'پرفروش'], 'default' => 'recent'],
+                    'category_slug' => ['type' => 'string', 'label' => 'دسته‌بندی (اختیاری)', 'default' => ''],
+                ],
+                'defaultProps' => ['title' => 'محصولات', 'limit' => 8, 'columns' => '4', 'source' => 'recent', 'category_slug' => ''],
+            ],
+            'module:shop_product_slider' => [
+                'name' => 'اسلایدر محصولات',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'slider',
+                'requires' => 'shop',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'محصولات پیشنهادی'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
+                    'source' => ['type' => 'select', 'label' => 'منبع', 'options' => ['recent' => 'جدیدترین', 'featured' => 'ویژه'], 'default' => 'featured'],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'محصولات پیشنهادی', 'limit' => 6, 'source' => 'featured', 'autoplay' => true],
+            ],
+            'module:shop_categories' => [
+                'name' => 'دسته‌بندی‌های فروشگاه',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'category',
+                'requires' => 'shop',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'دسته‌بندی‌ها'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['grid' => 'گرید', 'list' => 'لیست', 'horizontal' => 'افقی'], 'default' => 'grid'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
+                    'show_count' => ['type' => 'boolean', 'label' => 'نمایش تعداد محصول', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'دسته‌بندی‌ها', 'style' => 'grid', 'limit' => 6, 'show_count' => true],
+            ],
+            'module:shop_cart_button' => [
+                'name' => 'دکمه سبد خرید',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'cart',
+                'requires' => 'shop',
+                'schema' => [
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['icon' => 'آیکون', 'button' => 'دکمه', 'full' => 'کامل با قیمت'], 'default' => 'button'],
+                    'label' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'سبد خرید'],
+                ],
+                'defaultProps' => ['style' => 'button', 'label' => 'سبد خرید'],
+            ],
+            'module:shop_countdown' => [
+                'name' => 'شمارش معکوس تخفیف',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'clock',
+                'requires' => 'shop',
+                'schema' => [
+                    'promo_text' => ['type' => 'string', 'label' => 'متن تبلیغ', 'default' => 'پیشنهاد ویژه — فرصت محدود!'],
+                    'end_date' => ['type' => 'string', 'label' => 'تاریخ پایان (Y-m-d)', 'default' => ''],
+                    'bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ef4444'],
+                ],
+                'defaultProps' => ['promo_text' => 'پیشنهاد ویژه — فرصت محدود!', 'end_date' => '', 'bg_color' => '#ef4444'],
+            ],
+            'module:shop_search_box' => [
+                'name' => 'جستجوی فروشگاه',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'search',
+                'requires' => 'shop',
+                'schema' => [
+                    'placeholder' => ['type' => 'string', 'label' => 'متن placeholder', 'default' => 'جستجو در محصولات...'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['bar' => 'نوار', 'box' => 'باکس'], 'default' => 'bar'],
+                ],
+                'defaultProps' => ['placeholder' => 'جستجو در محصولات...', 'style' => 'bar'],
+            ],
+
+            // ─── MODULE: دوره‌ها ─────────────────────────────────────────────
+            'module:courses_grid' => [
+                'name' => 'گرید دوره‌ها',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'courses',
+                'requires' => 'courses',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'دوره‌های آموزشی'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد دوره', 'default' => 6],
+                    'columns' => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
+                    'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['grid' => 'گرید', 'list' => 'لیست'], 'default' => 'grid'],
+                    'show_price' => ['type' => 'boolean', 'label' => 'نمایش قیمت', 'default' => true],
+                    'show_instructor' => ['type' => 'boolean', 'label' => 'نمایش مدرس', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'دوره‌های آموزشی', 'limit' => 6, 'columns' => '3', 'layout' => 'grid', 'show_price' => true, 'show_instructor' => true],
+            ],
+            'module:course_enroll_cta' => [
+                'name' => 'دعوت به ثبت‌نام دوره',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'graduation',
+                'requires' => 'courses',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'همین الان شروع کن!'],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => 'به هزاران دانشجو بپیوند'],
+                    'button_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'مشاهده دوره‌ها'],
+                    'bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#4f46e5'],
+                ],
+                'defaultProps' => ['title' => 'همین الان شروع کن!', 'subtitle' => 'به هزاران دانشجو بپیوند', 'button_text' => 'مشاهده دوره‌ها', 'bg_color' => '#4f46e5'],
+            ],
+            'module:my_learning_link' => [
+                'name' => 'لینک یادگیری من',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'bookmark',
+                'requires' => 'courses',
+                'schema' => [
+                    'label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => 'یادگیری من'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['button' => 'دکمه', 'link' => 'لینک ساده', 'card' => 'کارت'], 'default' => 'button'],
+                ],
+                'defaultProps' => ['label' => 'یادگیری من', 'style' => 'button'],
+            ],
+
+            // ─── MODULE: فرم‌ها ──────────────────────────────────────────────
+            'module:form_embed' => [
+                'name' => 'درج فرم',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'form',
+                'requires' => 'forms',
+                'schema' => [
+                    'form_id' => ['type' => 'string', 'label' => 'شناسه فرم (ID)', 'default' => ''],
+                    'title' => ['type' => 'string', 'label' => 'عنوان نمایشی', 'default' => ''],
+                    'show_title' => ['type' => 'boolean', 'label' => 'نمایش عنوان', 'default' => true],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['card' => 'کارت', 'minimal' => 'مینیمال', 'full' => 'تمام عرض'], 'default' => 'card'],
+                ],
+                'defaultProps' => ['form_id' => '', 'title' => '', 'show_title' => true, 'style' => 'card'],
+            ],
+            'module:contact_quick' => [
+                'name' => 'فرم تماس سریع',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'phone',
+                'requires' => null,
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'تماس با ما'],
+                    'show_phone' => ['type' => 'boolean', 'label' => 'نمایش شماره تلفن', 'default' => true],
+                    'show_address' => ['type' => 'boolean', 'label' => 'نمایش آدرس', 'default' => true],
+                    'show_map' => ['type' => 'boolean', 'label' => 'نمایش نقشه', 'default' => false],
+                ],
+                'defaultProps' => ['title' => 'تماس با ما', 'show_phone' => true, 'show_address' => true, 'show_map' => false],
+            ],
+
+            // ─── MODULE: اشتراک ──────────────────────────────────────────────
+            'module:pricing_table' => [
+                'name' => 'جدول اشتراک / تعرفه',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'price',
+                'requires' => 'subscription',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'پلن‌های اشتراک'],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => 'پلنی که مناسب شماست را انتخاب کنید'],
+                    'highlight_plan' => ['type' => 'string', 'label' => 'پلن برجسته (slug)', 'default' => ''],
+                    'show_annual_toggle' => ['type' => 'boolean', 'label' => 'کلید ماهانه/سالانه', 'default' => false],
+                ],
+                'defaultProps' => ['title' => 'پلن‌های اشتراک', 'subtitle' => 'پلنی که مناسب شماست را انتخاب کنید', 'highlight_plan' => '', 'show_annual_toggle' => false],
+            ],
+            'module:plan_cta' => [
+                'name' => 'دعوت به اشتراک',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'crown',
+                'requires' => 'subscription',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'به کاربران ویژه بپیوند'],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                    'button_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'مشاهده پلن‌ها'],
+                    'bg_color' => ['type' => 'color', 'label' => 'رنگ', 'default' => '#7c3aed'],
+                ],
+                'defaultProps' => ['title' => 'به کاربران ویژه بپیوند', 'subtitle' => '', 'button_text' => 'مشاهده پلن‌ها', 'bg_color' => '#7c3aed'],
+            ],
+            'module:subscriber_stats' => [
+                'name' => 'آمار مشترکین',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'users',
+                'requires' => 'subscription',
+                'schema' => [
+                    'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => 'کاربر فعال'],
+                    'show_count' => ['type' => 'boolean', 'label' => 'نمایش تعداد', 'default' => true],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['badge' => 'نشان', 'card' => 'کارت'], 'default' => 'badge'],
+                ],
+                'defaultProps' => ['label' => 'کاربر فعال', 'show_count' => true, 'style' => 'badge'],
+            ],
+
+            // ─── MODULE: پشتیبانی و تعامل ───────────────────────────────────
+            'module:support_button' => [
+                'name' => 'دکمه پشتیبانی / تیکت',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'support',
+                'requires' => null,
+                'schema' => [
+                    'label' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'پشتیبانی آنلاین'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['button' => 'دکمه ثابت', 'floating' => 'شناور'], 'default' => 'floating'],
+                    'position' => ['type' => 'select', 'label' => 'موقعیت', 'options' => ['bottom-right' => 'پایین راست', 'bottom-left' => 'پایین چپ'], 'default' => 'bottom-right'],
+                    'bg_color' => ['type' => 'color', 'label' => 'رنگ', 'default' => '#4f46e5'],
+                ],
+                'defaultProps' => ['label' => 'پشتیبانی آنلاین', 'style' => 'floating', 'position' => 'bottom-right', 'bg_color' => '#4f46e5'],
+            ],
+            'module:whatsapp_widget' => [
+                'name' => 'ویجت واتساپ',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'whatsapp',
+                'requires' => 'whatsapp',
+                'schema' => [
+                    'label' => ['type' => 'string', 'label' => 'متن', 'default' => 'پشتیبانی واتساپ'],
+                    'phone' => ['type' => 'string', 'label' => 'شماره واتساپ', 'default' => ''],
+                    'position' => ['type' => 'select', 'label' => 'موقعیت', 'options' => ['bottom-right' => 'پایین راست', 'bottom-left' => 'پایین چپ'], 'default' => 'bottom-right'],
+                ],
+                'defaultProps' => ['label' => 'پشتیبانی واتساپ', 'phone' => '', 'position' => 'bottom-right'],
+            ],
+            'module:reviews_grid' => [
+                'name' => 'نمایش نظرات کاربران',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'star',
+                'requires' => 'reviews',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'نظرات مشتریان'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'minimal' => 'مینیمال', 'carousel' => 'چرخشی'], 'default' => 'cards'],
+                    'show_avatar' => ['type' => 'boolean', 'label' => 'نمایش آواتار', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'نظرات مشتریان', 'limit' => 6, 'style' => 'cards', 'show_avatar' => true],
+            ],
+            'module:referral_widget' => [
+                'name' => 'ویجت معرفی به دوستان',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'share',
+                'requires' => 'referral',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'دوستانت را دعوت کن'],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => 'با معرفی دوستان جایزه بگیر'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['banner' => 'بنر', 'card' => 'کارت', 'minimal' => 'مینیمال'], 'default' => 'banner'],
+                    'show_link' => ['type' => 'boolean', 'label' => 'نمایش لینک معرفی', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'دوستانت را دعوت کن', 'subtitle' => 'با معرفی دوستان جایزه بگیر', 'style' => 'banner', 'show_link' => true],
+            ],
+
+            // ─── MODULE: محتوا و نمایش ──────────────────────────────────────
+            'module:content_cards' => [
+                'name' => 'کارت‌های محتوا (دستیار AI)',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'ai',
+                'requires' => null,
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'مطالب'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 3],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'grid' => 'گرید', 'list' => 'لیست'], 'default' => 'cards'],
+                    'show_excerpt' => ['type' => 'boolean', 'label' => 'نمایش خلاصه', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'مطالب', 'limit' => 3, 'style' => 'cards', 'show_excerpt' => true],
+            ],
+            'module:gallery_widget' => [
+                'name' => 'گالری تصاویر',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'gallery',
+                'requires' => 'gallery',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'گالری'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['masonry' => 'ماسونری', 'grid' => 'گرید', 'carousel' => 'چرخشی'], 'default' => 'grid'],
+                    'columns' => ['type' => 'select', 'label' => 'ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
+                ],
+                'defaultProps' => ['title' => 'گالری', 'style' => 'grid', 'columns' => '3'],
+            ],
+            'module:portfolio_grid' => [
+                'name' => 'گرید نمونه‌کار (پورتفولیو)',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'portfolio',
+                'requires' => 'portfolio',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'نمونه کارها'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
+                    'columns' => ['type' => 'select', 'label' => 'ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
+                    'show_filter' => ['type' => 'boolean', 'label' => 'نمایش فیلتر', 'default' => true],
+                ],
+                'defaultProps' => ['title' => 'نمونه کارها', 'limit' => 6, 'columns' => '3', 'show_filter' => true],
+            ],
+            'module:services_section' => [
+                'name' => 'بخش خدمات',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'services',
+                'requires' => 'services',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'خدمات ما'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'list' => 'لیست', 'icons' => 'آیکون‌دار'], 'default' => 'cards'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
+                    'columns' => ['type' => 'select', 'label' => 'ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
+                ],
+                'defaultProps' => ['title' => 'خدمات ما', 'style' => 'cards', 'limit' => 6, 'columns' => '3'],
+            ],
+            'module:advertisement_zone' => [
+                'name' => 'ناحیه تبلیغات',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'megaphone',
+                'requires' => 'advertisements',
+                'schema' => [
+                    'zone_name' => ['type' => 'string', 'label' => 'نام ناحیه', 'default' => 'banner-main'],
+                    'position' => ['type' => 'select', 'label' => 'موقعیت', 'options' => ['banner' => 'بنر', 'sidebar' => 'کنار', 'popup' => 'پاپ‌آپ'], 'default' => 'banner'],
+                ],
+                'defaultProps' => ['zone_name' => 'banner-main', 'position' => 'banner'],
+            ],
+            'module:faq_dynamic' => [
+                'name' => 'سوالات متداول پویا',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'faq',
+                'requires' => null,
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'سوالات متداول'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 10],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['accordion' => 'آکوردئون', 'list' => 'لیست'], 'default' => 'accordion'],
+                ],
+                'defaultProps' => ['title' => 'سوالات متداول', 'limit' => 10, 'style' => 'accordion'],
+            ],
+            'module:notifications_bar' => [
+                'name' => 'نوار اعلان سایت',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'bell',
+                'requires' => null,
+                'schema' => [
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['top-bar' => 'نوار بالا', 'floating' => 'شناور'], 'default' => 'top-bar'],
+                    'show_dismiss' => ['type' => 'boolean', 'label' => 'دکمه بستن', 'default' => true],
+                ],
+                'defaultProps' => ['style' => 'top-bar', 'show_dismiss' => true],
+            ],
+            'module:account_quick_links' => [
+                'name' => 'لینک‌های سریع حساب کاربری',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'user-circle',
+                'requires' => null,
+                'schema' => [
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['buttons' => 'دکمه', 'list' => 'لیست', 'dropdown' => 'منو کشویی'], 'default' => 'buttons'],
+                    'show_avatar' => ['type' => 'boolean', 'label' => 'نمایش آواتار', 'default' => true],
+                    'show_notifications' => ['type' => 'boolean', 'label' => 'نمایش اعلان‌ها', 'default' => true],
+                ],
+                'defaultProps' => ['style' => 'buttons', 'show_avatar' => true, 'show_notifications' => true],
+            ],
+            'module:social_links_bar' => [
+                'name' => 'نوار شبکه‌های اجتماعی',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'share',
+                'requires' => 'social_links',
+                'schema' => [
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['horizontal' => 'افقی', 'vertical' => 'عمودی', 'icons-only' => 'فقط آیکون'], 'default' => 'horizontal'],
+                    'color' => ['type' => 'select', 'label' => 'رنگ', 'options' => ['brand' => 'رنگ برند', 'white' => 'سفید', 'dark' => 'تیره'], 'default' => 'brand'],
+                    'size' => ['type' => 'select', 'label' => 'اندازه', 'options' => ['sm' => 'کوچک', 'md' => 'متوسط', 'lg' => 'بزرگ'], 'default' => 'md'],
+                ],
+                'defaultProps' => ['style' => 'horizontal', 'color' => 'brand', 'size' => 'md'],
+            ],
+            'module:site_search' => [
+                'name' => 'جستجوی پیشرفته سایت',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'search',
+                'requires' => 'advanced_search',
+                'schema' => [
+                    'placeholder' => ['type' => 'string', 'label' => 'متن راهنما', 'default' => 'جستجو در سایت...'],
+                    'show_suggestions' => ['type' => 'boolean', 'label' => 'پیشنهاد جستجو', 'default' => true],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['bar' => 'نوار', 'card' => 'کارت', 'hero' => 'قهرمان'], 'default' => 'bar'],
+                ],
+                'defaultProps' => ['placeholder' => 'جستجو در سایت...', 'show_suggestions' => true, 'style' => 'bar'],
+            ],
+            'module:business_card_embed' => [
+                'name' => 'کارت ویزیت دیجیتال',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'card',
+                'requires' => 'business_card',
+                'schema' => [
+                    'card_slug' => ['type' => 'string', 'label' => 'اسلاگ کارت', 'default' => ''],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['full' => 'کامل', 'compact' => 'فشرده'], 'default' => 'full'],
+                ],
+                'defaultProps' => ['card_slug' => '', 'style' => 'full'],
+            ],
+            'module:edu_article_grid' => [
+                'name' => 'مقالات آموزشی',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'book',
+                'requires' => null,
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'مقالات آموزشی'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
+                    'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['grid' => 'گرید', 'list' => 'لیست'], 'default' => 'grid'],
+                ],
+                'defaultProps' => ['title' => 'مقالات آموزشی', 'limit' => 6, 'layout' => 'grid'],
+            ],
+            'module:invoice_quick_pay' => [
+                'name' => 'پرداخت سریع فاکتور',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'invoice',
+                'requires' => 'invoice',
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'پرداخت فاکتور'],
+                    'placeholder' => ['type' => 'string', 'label' => 'راهنمای ورودی', 'default' => 'شماره فاکتور را وارد کنید'],
+                ],
+                'defaultProps' => ['title' => 'پرداخت فاکتور', 'placeholder' => 'شماره فاکتور را وارد کنید'],
+            ],
         ];
 
         return self::$blocks;
@@ -463,12 +899,39 @@ final class BlockRegistry
     public static function categoryLabels(): array
     {
         return [
-            self::CATEGORY_LAYOUT => 'چیدمان',
-            self::CATEGORY_CONTENT => 'محتوای ثابت',
-            self::CATEGORY_DYNAMIC => 'محتوای پویا',
+            self::CATEGORY_LAYOUT    => 'چیدمان',
+            self::CATEGORY_CONTENT   => 'محتوای ثابت',
+            self::CATEGORY_DYNAMIC   => 'محتوای پویا',
             self::CATEGORY_ECOMMERCE => 'فروشگاه',
             self::CATEGORY_MARKETING => 'بازاریابی',
-            self::CATEGORY_UTILITY => 'ابزار',
+            self::CATEGORY_UTILITY   => 'ابزار',
+            self::CATEGORY_MODULE    => 'ماژول‌ها',
         ];
+    }
+
+    /** Category icons for canvas sidebar. */
+    public static function categoryIcons(): array
+    {
+        return [
+            self::CATEGORY_LAYOUT    => '📐',
+            self::CATEGORY_CONTENT   => '📝',
+            self::CATEGORY_DYNAMIC   => '🔄',
+            self::CATEGORY_ECOMMERCE => '🛒',
+            self::CATEGORY_MARKETING => '📣',
+            self::CATEGORY_UTILITY   => '🔧',
+            self::CATEGORY_MODULE    => '🧩',
+        ];
+    }
+
+    /** Get all module blocks grouped by their required module. */
+    public static function moduleBlocksByModule(): array
+    {
+        $grouped = [];
+        foreach (self::all() as $type => $def) {
+            if ($def['category'] !== self::CATEGORY_MODULE) continue;
+            $mod = $def['requires'] ?? '_core';
+            $grouped[$mod][$type] = $def;
+        }
+        return $grouped;
     }
 }

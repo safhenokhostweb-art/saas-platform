@@ -24,17 +24,17 @@ Namespace: `SaaSPlatform\Modules\Education`
 
 ## Current Phase
 
-**Infrastructure Hardening Batch — COMPLETE (2026-06-11)**  
-INFRA-3 (InstallController security, LocalAI guard), INFRA-4 (BackupDatabaseCommand + scheduler), INFRA-5 (SMS stats dashboard), 8.3d (SlackAlertService + wiring).  
-All syntax checks pass.  
-**Next: ALL BACKLOG ITEMS COMPLETE — شروع فاز جدید یا کار روی customer-site**
+**Public Learning Portal — COMPLETE (2026-06-11)**  
+پورتال عمومی دوره‌ها در customer-site: index/show/learn/my-learning + enrollment + progress tracking  
+423/423 tests pass. Deployed to production.  
+**Next: Tenant Analytics Dashboard یا Module Marketplace**
 
 ---
 
 ## Current Sprint
 
-EDU-17: Live AI Provider Integration  
-Target: Wire EDUCATION_AI_PROVIDER env to real AI adapter, circuit breaker, rate limits
+**Public Learning Portal (customer-site) — COMPLETE**  
+Target: پورتال عمومی دوره‌ها — تمام شد
 
 ---
 

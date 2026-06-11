@@ -53,7 +53,16 @@ class BlockRenderer
             $inner = $this->renderBlocks($props['slides']);
         }
 
-        $method = 'render' . Str::studly($type);
+        // Module blocks: render as styled placeholder (admin preview) or delegate (customer-site)
+        if (str_starts_with($type, 'module:')) {
+            $renderer = $this->context['module_renderer'] ?? null;
+            if (is_callable($renderer)) {
+                return $renderer($type, $props, $id);
+            }
+            return $this->renderModulePlaceholder($type, $props, $id);
+        }
+
+        $method = 'render' . Str::studly(str_replace(':', '_', $type));
         if (method_exists($this, $method)) {
             return $this->{$method}($props, $inner, $id);
         }
@@ -207,6 +216,42 @@ class BlockRenderer
             $out[] = "<details class=\"tb-accordion-item\"><summary>{$title}</summary><div class=\"tb-accordion-body\">{$content}</div></details>";
         }
         return "<div class=\"tb-accordion\">" . implode('', $out) . "</div>";
+    }
+
+    protected function renderModulePlaceholder(string $type, array $props, string $id): string
+    {
+        $moduleLabels = \App\Services\ThemeBuilder\BlockRegistry::all();
+        $def = $moduleLabels[$type] ?? null;
+        $name = $def['name'] ?? $type;
+        $requires = $def['requires'] ?? null;
+
+        $moduleColors = [
+            'blog'            => ['bg' => '#dbeafe', 'border' => '#3b82f6', 'text' => '#1d4ed8', 'badge' => '#eff6ff'],
+            'shop'            => ['bg' => '#d1fae5', 'border' => '#10b981', 'text' => '#065f46', 'badge' => '#ecfdf5'],
+            'courses'         => ['bg' => '#ede9fe', 'border' => '#7c3aed', 'text' => '#4c1d95', 'badge' => '#f5f3ff'],
+            'forms'           => ['bg' => '#fef3c7', 'border' => '#f59e0b', 'text' => '#92400e', 'badge' => '#fffbeb'],
+            'subscription'    => ['bg' => '#fce7f3', 'border' => '#ec4899', 'text' => '#9d174d', 'badge' => '#fdf2f8'],
+            'reviews'         => ['bg' => '#fff7ed', 'border' => '#f97316', 'text' => '#7c2d12', 'badge' => '#fff7ed'],
+            'whatsapp'        => ['bg' => '#dcfce7', 'border' => '#22c55e', 'text' => '#14532d', 'badge' => '#f0fdf4'],
+            'referral'        => ['bg' => '#fef9c3', 'border' => '#eab308', 'text' => '#713f12', 'badge' => '#fefce8'],
+            'social_links'    => ['bg' => '#e0f2fe', 'border' => '#0ea5e9', 'text' => '#0c4a6e', 'badge' => '#f0f9ff'],
+            'advanced_search' => ['bg' => '#f1f5f9', 'border' => '#64748b', 'text' => '#1e293b', 'badge' => '#f8fafc'],
+        ];
+
+        $c = $moduleColors[$requires] ?? ['bg' => '#f3f4f6', 'border' => '#6366f1', 'text' => '#312e81', 'badge' => '#eef2ff'];
+
+        $title = $this->escape($props['title'] ?? $name);
+        $reqLabel = $requires ? '<span style="font-size:10px;background:' . $c['badge'] . ';color:' . $c['text'] . ';border:1px solid ' . $c['border'] . ';border-radius:4px;padding:1px 6px;margin-right:6px;">' . $this->escape($requires) . '</span>' : '';
+
+        $extraInfo = '';
+        if (!empty($props['limit'])) $extraInfo .= '<span style="font-size:11px;color:#6b7280;margin-left:8px;">تعداد: ' . (int)$props['limit'] . '</span>';
+        if (!empty($props['layout'])) $extraInfo .= '<span style="font-size:11px;color:#6b7280;margin-left:8px;">چیدمان: ' . $this->escape($props['layout']) . '</span>';
+        if (!empty($props['style']))  $extraInfo .= '<span style="font-size:11px;color:#6b7280;margin-left:8px;">استایل: ' . $this->escape($props['style']) . '</span>';
+
+        return '<div id="tb-' . $id . '" style="border:2px dashed ' . $c['border'] . ';background:' . $c['bg'] . ';border-radius:10px;padding:20px 16px;text-align:center;direction:rtl;" data-module-block="' . $this->escape($type) . '">'
+            . '<div style="margin-bottom:8px;">' . $reqLabel . '<strong style="color:' . $c['text'] . ';font-size:14px;">' . $title . '</strong></div>'
+            . '<div style="font-size:12px;color:#9ca3af;">' . $this->escape($name) . ($extraInfo ? ' &nbsp;·&nbsp; ' . $extraInfo : '') . '</div>'
+            . '</div>';
     }
 
     protected function renderFallback(string $type, array $props, string $inner, string $id): string
