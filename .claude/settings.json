@@ -108,7 +108,17 @@
       "Bash(.\\\\deploy.ps1 \"feat: platform site agent — provision platform admin in customer site DB\")",
       "PowerShell($KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; ssh -i $KEY -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/saas-platform && php artisan migrate:status 2>/dev/null | tail -20\")",
       "Bash(ssh -p 9011 root@87.107.12.81 \"df -h && echo '---' && du -sh /var/www/html /var/log /var/backups 2>/dev/null && echo '---' && du -sh /root 2>/dev/null\")",
-      "Bash(git -C c:\\\\laragon\\\\www\\\\saas-platform status)"
+      "Bash(git -C c:\\\\laragon\\\\www\\\\saas-platform status)",
+      "PowerShell(Get-ChildItem \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\\\\Http\\\\Controllers\\\\Admin\" -Recurse | Where-Object {$_.PSIsContainer -eq $false} | Select-Object Name | Sort-Object Name | Where-Object {$_.Name -match \"Subscription|Coupon|Invoice|Plan|Referral|Webhook\"})",
+      "PowerShell(Get-ChildItem \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\\\\Models\" -Recurse | Where-Object {$_.PSIsContainer -eq $false} | Select-Object Name | Sort-Object Name | Where-Object {$_.Name -match \"Subscription|Coupon|Invoice|Plan|Referral|Webhook|Renew\"})",
+      "PowerShell(Get-ChildItem \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\\\\Models\" -Recurse | Where-Object {$_.PSIsContainer -eq $false} | Select-Object Name | Sort-Object Name)",
+      "PowerShell(Get-ChildItem \"c:\\\\laragon\\\\www\\\\saas-platform\\\\app\\\\Http\\\\Controllers\\\\Admin\" -Recurse | Where-Object {$_.PSIsContainer -eq $false} | Select-Object Name | Sort-Object Name)",
+      "PowerShell(Select-String -Path \"c:\\\\laragon\\\\www\\\\saas-platform\\\\routes\\\\web.php\" -Pattern \"subscription|coupon|plan|referral\" -CaseSensitive:$false)",
+      "PowerShell(Get-ChildItem \"c:\\\\laragon\\\\www\\\\customer-site\\\\routes\\\\web.php\" | Select-Object Name; \\(Get-Content \"c:\\\\laragon\\\\www\\\\customer-site\\\\routes\\\\web.php\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no -o ConnectTimeout=15 root@87.107.12.81 \"cd /var/www/saas-platform && php artisan migrate --force 2>&1\")",
+      "Bash(which php8*)",
+      "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $PHP \"vendor\\\\phpunit\\\\phpunit\\\\phpunit\" --stop-on-failure 2>&1 | Select-Object -First 60)",
+      "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $PHP \"vendor\\\\phpunit\\\\phpunit\\\\phpunit\" --filter \"test_regular_product_accessible_to_everyone\" --no-coverage 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"
