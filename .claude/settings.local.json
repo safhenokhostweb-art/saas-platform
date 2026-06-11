@@ -196,7 +196,9 @@
       "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"cd /var/www/customer-site && php artisan migrate --force && php artisan config:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache && echo 'ALL DONE'\" 2>&1)",
       "PowerShell(Start-Service -Name \"WSearch\" -ErrorAction SilentlyContinue)",
       "PowerShell(head)",
-      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"rm -f /var/www/customer-site/bootstrap/cache/packages.php && cd /var/www/customer-site && php artisan package:discover --ansi && php artisan config:cache && php artisan route:cache && echo 'FIXED'\")"
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"rm -f /var/www/customer-site/bootstrap/cache/packages.php && cd /var/www/customer-site && php artisan package:discover --ansi && php artisan config:cache && php artisan route:cache && echo 'FIXED'\")",
+      "PowerShell(scp -P 9011 -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -o StrictHostKeyChecking=no \"c:\\\\laragon\\\\www\\\\customer-site\\\\app\\\\Http\\\\Controllers\\\\Api\\\\AiQueueController.php\" root@87.107.12.81:/var/www/customer-site/app/Http/Controllers/Api/AiQueueController.php 2>&1)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 \"mysql -u root customer_site -e 'UPDATE ai_generation_jobs SET status=\\\\\"pending\\\\\", picked_at=NULL WHERE status=\\\\\"processing\\\\\"; SELECT ROW_COUNT\\(\\) as reset_count; SELECT id,status FROM ai_generation_jobs ORDER BY id DESC LIMIT 5;'\" 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",

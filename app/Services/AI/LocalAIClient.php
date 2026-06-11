@@ -11,12 +11,16 @@ class LocalAIClient
 
     public function __construct()
     {
-        $this->endpoint = config('services.local_ai.endpoint', 'http://127.0.0.1:11434/api/generate');
-        $this->model = config('services.local_ai.model', 'llama3');
+        $this->endpoint = config('services.local_ai.endpoint');
+        $this->model    = config('services.local_ai.model');
     }
 
     public function ask(string $prompt): string
     {
+        if (!config('services.local_ai.enabled', false)) {
+            throw new Exception('Local AI is disabled. Set LOCAL_AI_ENABLED=true to enable.');
+        }
+
         try {
 
             $response = Http::timeout(120)->post($this->endpoint, [

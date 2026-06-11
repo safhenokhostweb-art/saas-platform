@@ -70,8 +70,25 @@ return [
     */
 
     'deepseek' => [
-        // مقدار صحیح: env('DEEPSEEK_API_KEY')
         'key' => env('DEEPSEEK_API_KEY'),
+    ],
+
+    'local_ai' => [
+        'enabled'  => filter_var(env('LOCAL_AI_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'endpoint' => env('LOCAL_AI_ENDPOINT', 'http://127.0.0.1:11434/api/generate'),
+        'model'    => env('LOCAL_AI_MODEL', 'llama3'),
+    ],
+
+    // 8.3d: Slack webhook alerting for critical anomalies + deployment events
+    'slack_alert' => [
+        'webhook' => env('SLACK_ALERT_WEBHOOK'),
+        'channel' => env('SLACK_ALERT_CHANNEL', '#alerts'),
+    ],
+
+    // 8.4d: OpenTelemetry OTLP export to Jaeger/Tempo
+    // Set OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 to enable
+    'otel' => [
+        'endpoint' => env('OTEL_EXPORTER_OTLP_ENDPOINT'),
     ],
 
 ];

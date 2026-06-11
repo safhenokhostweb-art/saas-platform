@@ -207,6 +207,9 @@
             <a href="{{ route('admin.sites.notifications.index', $site) }}" class="btn btn-outline-primary">اعلان‌های این سایت</a>
             @endif
             <a href="{{ route('admin.sites.updates.index', $site) }}" class="btn btn-outline-primary">توزیع بروزرسانی</a>
+            <a href="{{ route('admin.sites.agents.show', $site) }}" class="btn btn-outline-primary" style="border-color:#6366f1;color:#4f46e5">
+                🔑 ادمین پلتفرم
+            </a>
             <a href="{{ route('admin.access.index') }}" class="btn btn-outline-secondary">دسترسی و منو (ماژول‌های پلتفرم)</a>
         </div>
     </form>

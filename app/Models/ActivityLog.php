@@ -60,8 +60,12 @@ class ActivityLog extends Model
             'module.activated' => 'فعال‌سازی ماژول پس از پرداخت',
             'module.updated' => 'ویرایش ماژول',
             'module.bulk_updated' => 'بروزرسانی گروهی ماژول‌ها',
-            'entitlement_granted' => 'اعطای entitlement',
-            'entitlement_revoked' => 'لغو entitlement',
+            'entitlement_granted'          => 'اعطای entitlement',
+            'entitlement_revoked'          => 'لغو entitlement',
+            'site_agent.provisioned'       => 'ایجاد ادمین پلتفرم در سایت مشتری',
+            'site_agent.revoked'           => 'لغو دسترسی ادمین پلتفرم از سایت مشتری',
+            'site_agent.password_viewed'   => 'مشاهده رمز عبور ادمین پلتفرم',
+            'site_agent.access_logged'     => 'ثبت دسترسی ادمین پلتفرم به سایت مشتری',
         ];
         return $labels[$action] ?? $action;
     }

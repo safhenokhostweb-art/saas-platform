@@ -1,7 +1,79 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-08
+> Last Updated: 2026-06-11
+
+---
+
+## 2026-06-11 — Platform Site Agent: ادمین پلتفرم در سایت مشتری
+
+**Reason:** پلتفرم باید بتواند در صورت نیاز، یک ادمین از تیم پلتفرم را در دیتابیس هر سایت مشتری provision کند بدون اینکه ادمین مشتری بتواند این کاربر را حذف کند. همه عملیات در دو طرف لاگ می‌شود.
+
+**Delivered:**
+
+### saas-platform
+
+- `database/migrations/2026_06_11_000001_create_platform_site_agents_table.php` (NEW) — جدول `platform_site_agents`: site_id (UNIQUE), provisioned_by, mobile, agent_password_enc (Crypt), customer_site_user_id, is_active, provisioned_at, last_access_logged_at
+- `app/Models/PlatformSiteAgent.php` (NEW) — model با `getDecryptedPassword()`
+- `app/Services/PlatformSiteAgentService.php` (NEW) — provision, revoke, recordAccess, decryptPassword, testConnection; اتصال داینامیک MySQL به دیتابیس سایت مشتری (`site_agent_{id}`)
+- `app/Http/Controllers/Admin/PlatformSiteAgentController.php` (NEW) — show/provision/revealPassword/logAccess/revoke
+- `resources/views/admin/sites/agents/show.blade.php` (NEW) — UI کامل RTL: connection status، وضعیت agent، فرم provision، نمایش رمز (AJAX)، ثبت دسترسی، لغو
+- `routes/web.php` — 5 route جدید: GET/POST/GET/POST/DELETE `/admin/sites/{site}/agent`
+- `app/Models/ActivityLog.php` — 4 label جدید: site_agent.provisioned/revoked/password_viewed/access_logged
+- `app/Models/Site.php` — `platformAgent()` relationship
+- `resources/views/admin/sites/edit.blade.php` — دکمه "ادمین پلتفرم" اضافه شد
+
+### customer-site
+
+- `database/migrations/2026_06_11_000001_add_is_platform_agent_to_users_table.php` (NEW) — ستون `is_platform_agent` boolean
+- `app/Models/User.php` — `is_platform_agent` به fillable و casts اضافه شد
+- `app/Observers/UserObserver.php` (NEW) — `deleting()` guard: اگر `is_platform_agent = true` → RuntimeException
+- `app/Providers/AppServiceProvider.php` — `User::observe(UserObserver::class)` ثبت شد
+- `app/Http/Controllers/Auth/LoginController.php` — اگر `is_platform_agent = true` → `logPlatformAgentLogin()` → AdminActivityLog ثبت می‌شود
+- `app/Models/AdminActivityLog.php` — 5 label جدید: platform_agent.login/provisioned/reprovisioned/revoked/access_recorded
+
+**Security notes:**
+- رمز عبور agent با `Crypt::encryptString()` در platform DB ذخیره می‌شود
+- اتصال داینامیک با `DB::purge()` قبل از هر استفاده پاک می‌شود
+- `is_platform_agent` column existence check قبل از INSERT/UPDATE — سازگار با سایت‌هایی که migration هنوز اجرا نشده
+- ورود agent در `admin_activity_log` سایت مشتری ثبت می‌شود (action: platform_agent.login)
+
+---
+
+## 2026-06-11 — INFRA-3/4/5 + 8.3d: Security Hardening + Backup + SMS Stats + Slack Alerting
+
+**Reason:** Infrastructure backlog completion — security findings from INFRA audit + operational readiness.
+
+**Delivered:**
+
+### INFRA-3: InstallController Security
+- `app/Http/Controllers/InstallController.php` — regex validation on DB fields, path traversal guard (`realpath` check), atomic `.env` write (write-to-tmp + rename), proper env value quoting
+
+### INFRA-3: LocalAI Endpoint Guard
+- `app/Services/AI/LocalAIClient.php` — `LOCAL_AI_ENABLED` guard prevents accidental calls to localhost Ollama
+- `config/services.php` — `services.local_ai` config block added (`enabled`, `endpoint`, `model`)
+
+### INFRA-4: Database Backup Command
+- `app/Console/Commands/BackupDatabaseCommand.php` (NEW) — `db:backup --retention=N --dry-run`, gzip mysqldump, retention pruning, Slack alert on failure
+- `app/Console/Kernel.php` — `db:backup --retention=7` scheduled at 02:00 daily; education AI commands (generate-content, generate-gap-content, refresh-recommendations) added to scheduler
+
+### INFRA-5: SMS Delivery Statistics Dashboard
+- `database/migrations/2026_06_10_000001_create_sms_logs_table.php` (NEW) — `sms_logs` table (provider, recipient, message, success, error_message, response_time_ms)
+- `app/Models/SmsLog.php` (NEW) — scopes: `success()`, `failed()`, `provider()`, static `successRateFor()`
+- `app/Services/Sms/FailoverSmsGateway.php` — `trySend()` helper: DB logging + cache health + Slack on total failure
+- `app/Http/Controllers/Admin/Infrastructure/InfraSmsController.php` (NEW) — today stats, 30-day rate, provider rates, daily chart, recent failures
+- `resources/views/admin/infrastructure/sms/index.blade.php` (NEW) — professional RTL dashboard
+- `routes/web.php` — `GET admin/infrastructure/sms` → `infrastructure.sms`
+- `resources/views/admin/infrastructure/overview.blade.php` — SMS stats card added to navigation grid
+
+### 8.3d: Slack Webhook Alerting
+- `app/Services/Infrastructure/SlackAlertService.php` (NEW) — `critical()`, `high()`, `warning()`, `info()`, `deploymentEvent()` — color-coded Slack attachments, context fields, silent no-op when webhook unset
+- `config/services.php` — `SLACK_ALERT_WEBHOOK` + `SLACK_ALERT_CHANNEL` env vars
+- `app/Providers/AppServiceProvider.php` — `SlackAlertService` registered as singleton
+- `app/Console/Commands/TestSlackAlertCommand.php` (NEW) — `php artisan slack:test --level=critical|high|warning|info`
+- Wired: BackupDatabaseCommand failure → Slack CRITICAL; SMS both-provider failure → Slack CRITICAL
+
+**Regression:** All 7 new/modified PHP files pass `php -l` syntax check. No breaking changes to existing routes or tests.
 
 ---
 

@@ -193,19 +193,28 @@
                                 @php $visibleKeys = array_values(array_filter($keys, fn ($k) => \App\Helpers\AdminMenu::isMenuItemVisible($k))); @endphp
                                 @if(count($visibleKeys) > 0)
                                     <div class="admin-sidebar-group" data-group-index="{{ $loop->index }}">
+                                        {{-- Group toggle button — JS-driven collapse (Alpine Collapse plugin not loaded) --}}
                                         <button type="button" class="sidebar-group-toggle" data-group-toggle="{{ $loop->index }}" aria-expanded="false">
                                             <span class="sidebar-group-label sidebar-text">{{ $groupLabel }}</span>
                                             <svg class="sidebar-group-caret" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                                 <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                         </button>
+                                        {{-- Collapsible items wrapper (JS-toggled); canonical x-core-ui::sidebar-group wraps items --}}
                                         <div class="admin-sidebar-item-list sidebar-group-items is-collapsed" data-group-items="{{ $loop->index }}">
-                                            @foreach($visibleKeys as $key)
-                                                <a href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\AdminMenu::isActive($key) ? 'active' : '' }}">
-                                                    @include('admin.partials.sidebar-icon', ['key' => $key])
-                                                    <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key, null) }}</span>
-                                                </a>
-                                            @endforeach
+                                            <x-core-ui::sidebar-group>
+                                                @foreach($visibleKeys as $key)
+                                                    <x-core-ui::navigation-item
+                                                        href="{{ route(\App\Helpers\AdminMenu::getRoute($key)) }}"
+                                                        :active="\App\Helpers\AdminMenu::isActive($key)"
+                                                        class="sidebar-link">
+                                                        <x-slot:icon>
+                                                            @include('admin.partials.sidebar-icon-bare', ['key' => $key])
+                                                        </x-slot:icon>
+                                                        <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key, null) }}</span>
+                                                    </x-core-ui::navigation-item>
+                                                @endforeach
+                                            </x-core-ui::sidebar-group>
                                         </div>
                                     </div>
                                 @endif
@@ -222,12 +231,19 @@
                                             </svg>
                                         </button>
                                         <div class="admin-sidebar-item-list sidebar-group-items is-collapsed" data-group-items="{{ $loop->index }}">
-                                            @foreach($visibleKeys as $key)
-                                                <a href="{{ route(\App\Helpers\CustomerMenu::getRoute($key)) }}" class="sidebar-link {{ \App\Helpers\CustomerMenu::isActive($key) ? 'active' : '' }}">
-                                                    @include('admin.partials.customer-sidebar-icon', ['key' => $key])
-                                                    <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</span>
-                                                </a>
-                                            @endforeach
+                                            <x-core-ui::sidebar-group>
+                                                @foreach($visibleKeys as $key)
+                                                    <x-core-ui::navigation-item
+                                                        href="{{ route(\App\Helpers\CustomerMenu::getRoute($key)) }}"
+                                                        :active="\App\Helpers\CustomerMenu::isActive($key)"
+                                                        class="sidebar-link">
+                                                        <x-slot:icon>
+                                                            @include('admin.partials.customer-sidebar-icon-bare', ['key' => $key])
+                                                        </x-slot:icon>
+                                                        <span class="sidebar-text">{{ \App\Helpers\ModuleLabels::getTitle($key) }}</span>
+                                                    </x-core-ui::navigation-item>
+                                                @endforeach
+                                            </x-core-ui::sidebar-group>
                                         </div>
                                     </div>
                                 @endif
@@ -236,12 +252,14 @@
 
                         <div class="pt-4 mt-4 border-t border-slate-600/40">
                             @if(auth()->user()->is_admin)
-                            <a href="{{ route('dashboard') }}" class="sidebar-link">
-                                <svg class="w-4 h-4 ml-2 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                                </svg>
+                            <x-core-ui::navigation-item href="{{ route('dashboard') }}" class="sidebar-link">
+                                <x-slot:icon>
+                                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                    </svg>
+                                </x-slot:icon>
                                 <span class="sidebar-text">بازگشت به داشبورد</span>
-                            </a>
+                            </x-core-ui::navigation-item>
                             @endif
                             <form method="POST" action="{{ route('logout') }}" class="mt-2">
                                 @csrf

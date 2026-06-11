@@ -1,0 +1,91 @@
+name: Satis Private Package Repository — Phase 8.3a
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'satis.json'
+      - '.github/workflows/satis-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build-satis:
+    name: 'Build Satis Index'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, zip, curl
+          coverage: none
+
+      - name: Install Satis
+        run: composer global require composer/satis --no-progress
+
+      - name: Build Satis index
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
+        run: |
+          ~/.composer/vendor/bin/satis build satis.json satis-public/ \
+            --no-interaction \
+            --skip-errors
+          echo "Built packages index at satis-public/"
+          ls -la satis-public/
+
+      - name: Upload Satis artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: satis-index
+          path: satis-public/
+          retention-days: 7
+
+      # ── Deploy to packages server via rsync over SSH ───────────────────────
+      - name: Deploy to packages server
+        if: secrets.SATIS_DEPLOY_KEY != ''
+        env:
+          SATIS_DEPLOY_KEY:  ${{ secrets.SATIS_DEPLOY_KEY }}
+          SATIS_SERVER_HOST: ${{ secrets.SATIS_SERVER_HOST }}
+          SATIS_SERVER_USER: ${{ secrets.SATIS_SERVER_USER }}
+          SATIS_SERVER_PATH: ${{ secrets.SATIS_SERVER_PATH }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SATIS_DEPLOY_KEY" > ~/.ssh/satis_deploy_key
+          chmod 600 ~/.ssh/satis_deploy_key
+          ssh-keyscan -H "$SATIS_SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/satis_deploy_key -o StrictHostKeyChecking=no" \
+            satis-public/ \
+            "${SATIS_SERVER_USER}@${SATIS_SERVER_HOST}:${SATIS_SERVER_PATH}/"
+          rm -f ~/.ssh/satis_deploy_key
+          echo "Deployed to packages server: https://$SATIS_SERVER_HOST"
+
+  notify:
+    name: 'Notify on failure'
+    runs-on: ubuntu-latest
+    needs: build-satis
+    if: failure()
+    steps:
+      - name: Slack alert on Satis build failure
+        if: secrets.SLACK_ALERT_WEBHOOK != ''
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": ":red_circle: Satis package build FAILED on `${{ github.ref_name }}`",
+              "attachments": [{
+                "color": "#dc2626",
+                "fields": [
+                  {"title": "Repository", "value": "${{ github.repository }}", "short": true},
+                  {"title": "Run", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

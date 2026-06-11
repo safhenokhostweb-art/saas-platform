@@ -146,6 +146,29 @@
 
 ---
 
+## COMPLETED: Platform Site Agent ✅ (2026-06-11)
+
+**ادمین پلتفرم در سایت مشتری — کامل شد**
+
+- `platform_site_agents` جدول در saas-platform
+- `PlatformSiteAgentService` — اتصال داینامیک به DB مشتری + provision/revoke/log
+- UI کامل در `/admin/sites/{site}/agent`
+- `is_platform_agent` column در customer-site + UserObserver (deletion guard)
+- لاگ دوطرفه: platform (activity_logs) + customer (admin_activity_log)
+- نمایش رمز عبور (AJAX, یک‌بار) + بازنشانی رمز
+- دکمه "ادمین پلتفرم" در صفحه ویرایش سایت
+
+**Migration لازم:**
+```bash
+# saas-platform:
+php artisan migrate
+
+# customer-site (هر سایت مشتری باید اجرا شود):
+php artisan migrate
+```
+
+---
+
 ## INFRASTRUCTURE BACKLOG
 
 ### Phase 8.x Remaining
@@ -153,12 +176,12 @@
 | ID | Task | Priority |
 |----|------|----------|
 | 8.3a | Private Satis/Packagist for package distribution | Medium |
-| 8.3b | Automated DB backup before deploy | High |
+| 8.3b | Automated DB backup before deploy | ✅ DONE (2026-06-11) |
 | 8.3c | GitHub Actions CI pipeline | ✅ DONE (2026-06-07) |
-| 8.3d | Slack webhook alerting for deployment/anomaly events | Medium |
+| 8.3d | Slack webhook alerting for deployment/anomaly events | ✅ DONE (2026-06-11) |
 | 8.4a | DB indexes on site_id columns (all tables) | ✅ DONE (2026-06-07) |
 | 8.4b | Cache for domain resolution in TenantContext | ✅ DONE (CACHE-1) |
-| 8.4c | External alerting: critical anomaly → Slack | Medium |
+| 8.4c | External alerting: critical anomaly → Slack | ✅ DONE (2026-06-11) — via SlackAlertService |
 | 8.4d | OpenTelemetry export to Jaeger/Tempo | Low |
 | CACHE-1 | Redis named stores + CacheManager + no global flush | ✅ DONE (2026-06-08) |
 
@@ -167,10 +190,10 @@
 | ID | Task | Priority |
 |----|------|----------|
 | INFRA-1 | Production .env setup checklist + run 5 new migrations | Critical |
-| INFRA-2 | Storage facade migration (PlatformSettings, CSV exports) | High |
-| INFRA-3 | InstallController .env safety + LocalAI endpoint guard | Medium |
-| INFRA-4 | DB backup command + scheduler integration | Medium |
-| INFRA-5 | SMS delivery statistics dashboard | Low |
+| INFRA-2 | Storage facade migration (PlatformSettings, CSV exports) | ✅ DONE (pre-existing + verified 2026-06-11) |
+| INFRA-3 | InstallController .env safety + LocalAI endpoint guard | ✅ DONE (2026-06-11) |
+| INFRA-4 | DB backup command + scheduler integration | ✅ DONE (2026-06-11) |
+| INFRA-5 | SMS delivery statistics dashboard | ✅ DONE (2026-06-11) |
 | INFRA-6 | Remote Agent Layer (Scenario E) — design only complete | Future |
 
 ---

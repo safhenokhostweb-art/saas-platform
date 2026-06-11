@@ -215,6 +215,11 @@ class Site extends Model implements SiteModelInterface
     /**
      * آیا سایت ماژول PAID را خریده/دارای لایسنس معتبر دارد؟
      */
+    public function platformAgent()
+    {
+        return $this->hasOne(\App\Models\PlatformSiteAgent::class)->where('is_active', true);
+    }
+
     public function hasPurchasedModule(string $moduleSlug): bool
     {
         return app(\App\Services\ModuleLicenseService::class)->hasValidLicenseBySlug($this, $moduleSlug);

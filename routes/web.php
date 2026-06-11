@@ -412,6 +412,12 @@ Route::prefix('admin')
         */
 
         Route::resource('sites', SiteController::class);
+        // Platform Site Agent
+        Route::get('sites/{site}/agent', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'show'])->name('sites.agents.show');
+        Route::post('sites/{site}/agent', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'provision'])->name('sites.agents.provision');
+        Route::get('sites/{site}/agent/password', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'revealPassword'])->name('sites.agents.reveal-password');
+        Route::post('sites/{site}/agent/log-access', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'logAccess'])->name('sites.agents.log-access');
+        Route::delete('sites/{site}/agent', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'revoke'])->name('sites.agents.revoke');
         Route::get('sites/{site}/modules', [SiteModuleController::class, 'edit'])->name('sites.modules.edit');
         Route::put('sites/{site}/modules', [SiteModuleController::class, 'update'])->name('sites.modules.update');
         Route::post('sites/{site}/modules/toggle', [SiteModuleController::class, 'toggle'])->name('sites.modules.toggle');
@@ -583,6 +589,9 @@ Route::prefix('admin')
             Route::resource('databases', \App\Http\Controllers\Admin\Infrastructure\InfraDatabaseController::class)
                 ->except(['show'])
                 ->parameters(['databases' => 'database']);
+
+            // INFRA-5: SMS delivery statistics
+            Route::get('sms', [\App\Http\Controllers\Admin\Infrastructure\InfraSmsController::class, 'index'])->name('sms');
         });
 
         /*

@@ -19,17 +19,41 @@
 
 ---
 
-## CURRENT STATE (2026-06-08)
+## CURRENT STATE (2026-06-11)
 
-**Last completed phase:** CACHE-1 — Redis Cache Architecture  
-**Status:** Named stores + CacheManager delivered, zero Cache::flush() remaining  
-**Education module status:** MATURE — all EDU phases complete  
-**Previous milestone:** SaaS Infrastructure Foundation (2026-06-08)  
-**Next recommended milestone:** SUBSCRIPTION_CHECKOUT_PAYMENT or INFRA-2 (Storage facade migration)
+**Last completed phase:** Platform Site Agent  
+**Status:** ادمین پلتفرم در سایت مشتری — provisioning، deletion guard، dual logging، UI کامل  
+**Education module status:** MATURE — all EDU phases complete through EDU-17  
+**Previous milestone:** Infrastructure Hardening Batch (INFRA-3/4/5 + 8.3d)  
+**Next recommended milestone:** Migration اجرا در production + customer-site deployment
 
 ---
 
 ## LAST COMPLETED SPRINT
+
+### Infrastructure Hardening Batch — COMPLETE (2026-06-11)
+
+**INFRA-3:** InstallController path-traversal guard + atomic `.env` write + LocalAI `LOCAL_AI_ENABLED` gate  
+**INFRA-4:** `BackupDatabaseCommand` (`db:backup --retention=N`) + scheduled at 02:00 + Slack on failure  
+**INFRA-5:** `sms_logs` table + `SmsLog` model + `InfraSmsController` + dashboard view + route  
+**8.3d:** `SlackAlertService` singleton (`critical/high/warning/info/deploymentEvent`) + `slack:test` command + wired to backup failure + SMS dual-failure  
+**scheduler:** Education AI commands (generate-content, generate-gap-content, refresh-recommendations) added to Kernel.php
+
+**Key new files:**
+- `app/Console/Commands/BackupDatabaseCommand.php`
+- `app/Console/Commands/TestSlackAlertCommand.php`
+- `app/Services/Infrastructure/SlackAlertService.php`
+- `app/Models/SmsLog.php`
+- `app/Http/Controllers/Admin/Infrastructure/InfraSmsController.php`
+- `resources/views/admin/infrastructure/sms/index.blade.php`
+- `database/migrations/2026_06_10_000001_create_sms_logs_table.php`
+
+**Env vars required:**
+- `SLACK_ALERT_WEBHOOK=https://hooks.slack.com/...`
+- `SLACK_ALERT_CHANNEL=#alerts`
+- `LOCAL_AI_ENABLED=false` (default)
+
+---
 
 ### CACHE-1: Redis Cache Architecture — COMPLETE (2026-06-08)
 

@@ -24,10 +24,10 @@ Namespace: `SaaSPlatform\Modules\Education`
 
 ## Current Phase
 
-**CACHE-1 — COMPLETE (2026-06-08)**  
-Redis cache architecture implemented. Named stores, CacheManager, zero `Cache::flush()`.  
-All 15 tests pass.  
-**Next: SUBSCRIPTION_CHECKOUT_PAYMENT or INFRA-2**
+**Infrastructure Hardening Batch — COMPLETE (2026-06-11)**  
+INFRA-3 (InstallController security, LocalAI guard), INFRA-4 (BackupDatabaseCommand + scheduler), INFRA-5 (SMS stats dashboard), 8.3d (SlackAlertService + wiring).  
+All syntax checks pass.  
+**Next: M2.1-b (iOS code signing pipeline) or 8.3a (Satis/Packagist)**
 
 ---
 
@@ -91,7 +91,7 @@ EDU-16 complete. AI-generated drafts now have a full human review gate. Next pha
 
 ## In Progress Work
 
-None active. Last completed: CACHE-1 (2026-06-08).
+None active. Last completed: Infrastructure Hardening Batch (2026-06-11).
 
 ---
 

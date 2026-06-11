@@ -27,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\PlatformMessaging\PlatformConversationService::class);
         $this->app->singleton(\App\Services\PlatformMessaging\PlatformBoundaryValidator::class);
 
+        // 8.3d: Slack alert service — singleton so all callers share one instance
+        $this->app->singleton(\App\Services\Infrastructure\SlackAlertService::class);
+
         // Payment Gateway
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
             $driver = config('payment.default', 'zarinpal');
