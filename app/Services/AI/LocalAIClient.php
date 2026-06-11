@@ -11,8 +11,8 @@ class LocalAIClient
 
     public function __construct()
     {
-        $this->endpoint = config('services.local_ai.endpoint');
-        $this->model    = config('services.local_ai.model');
+        $this->endpoint = config('services.local_ai.endpoint', '');
+        $this->model    = config('services.local_ai.model', '');
     }
 
     public function ask(string $prompt): string

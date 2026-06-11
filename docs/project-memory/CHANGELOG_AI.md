@@ -40,6 +40,50 @@
 
 ---
 
+## 2026-06-11 — M2.1-b + FE-01 + 8.3a + 8.4d: iOS CI + Navigation Components + Satis + OTel
+
+**Reason:** Backlog completion — mobile, frontend, infrastructure distribution, observability.
+
+**Delivered:**
+
+### M2.1-b: iOS Code Signing Pipeline
+- `.github/workflows/mobile-build.yml` — Job 6: `build-ios` added
+  - macOS runner, Flutter 3.22.3
+  - Temporary keychain + P12 certificate import + provisioning profile install
+  - `flutter build ipa --release`
+  - Conditional App Store Connect upload via `xcrun altool` (main branch + API key secret set)
+  - Keychain cleanup on `always()`
+  - `workflow_dispatch.inputs.build_ios` toggle added
+  - Summary job updated to include iOS result
+- **GitHub Secrets needed:** `IOS_SIGNING_CERTIFICATE_P12_BASE64`, `IOS_SIGNING_CERTIFICATE_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_BUNDLE_ID`, `IOS_TEAM_ID`, `KEYCHAIN_PASSWORD`
+- **Optional:** `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_PRIVATE_KEY`
+
+### FE-01: Canonical Navigation Components in Admin Layout
+- `resources/views/layouts/admin.blade.php` — desktop sidebar nav replaced:
+  - `<a class="sidebar-link">` → `<x-core-ui::navigation-item :href :active class="sidebar-link">`
+  - Items wrapped in `<x-core-ui::sidebar-group>` (no label/collapsible — JS toggle preserved)
+  - Icon partials: `sidebar-icon-bare.blade.php` + `customer-sidebar-icon-bare.blade.php` (without `ml-2 shrink-0`)
+- `resources/views/admin/partials/sidebar-icon-bare.blade.php` (NEW) — admin icons without spacing classes
+- `resources/views/admin/partials/customer-sidebar-icon-bare.blade.php` (NEW) — customer icons without spacing
+- Existing JS-driven group collapse preserved (`data-group-toggle`/`data-group-items`)
+- `sidebar-text` class on slot text preserves icon-only collapsed state
+
+### 8.3a: Private Satis Repository
+- `satis.json` — updated with all 4 packages (core-utils, tickets, forms, education), archive config, output-dir
+- `.github/workflows/satis-build.yml` (NEW) — builds Satis index on `main` push when packages/* change; rsync deploy to packages server; Slack notification on failure
+- **GitHub Secrets needed:** `SATIS_DEPLOY_KEY`, `SATIS_SERVER_HOST`, `SATIS_SERVER_USER`, `SATIS_SERVER_PATH`
+
+### 8.4d: OpenTelemetry OTLP Export
+- `app/Services/Infrastructure/OtelExportService.php` (NEW) — builds OTLP JSON payload from `telemetry_events` rows; ships via `POST /v1/traces`; silent no-op when endpoint not configured
+- `app/Console/Commands/ExportTelemetryOtlpCommand.php` (NEW) — `telemetry:export-otlp --from --limit --batch --dry-run`
+- `config/services.php` — `services.otel.endpoint` driven by `OTEL_EXPORTER_OTLP_ENDPOINT`
+- `app/Console/Kernel.php` — scheduled every 30 min when endpoint configured
+- **Env var needed:** `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318`
+
+**Regression:** All 4 new PHP files pass `php -l`. No existing tests affected.
+
+---
+
 ## 2026-06-11 — INFRA-3/4/5 + 8.3d: Security Hardening + Backup + SMS Stats + Slack Alerting
 
 **Reason:** Infrastructure backlog completion — security findings from INFRA audit + operational readiness.

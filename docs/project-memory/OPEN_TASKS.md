@@ -175,14 +175,14 @@ php artisan migrate
 
 | ID | Task | Priority |
 |----|------|----------|
-| 8.3a | Private Satis/Packagist for package distribution | Medium |
+| 8.3a | Private Satis/Packagist for package distribution | ✅ DONE (2026-06-11) |
 | 8.3b | Automated DB backup before deploy | ✅ DONE (2026-06-11) |
 | 8.3c | GitHub Actions CI pipeline | ✅ DONE (2026-06-07) |
 | 8.3d | Slack webhook alerting for deployment/anomaly events | ✅ DONE (2026-06-11) |
 | 8.4a | DB indexes on site_id columns (all tables) | ✅ DONE (2026-06-07) |
 | 8.4b | Cache for domain resolution in TenantContext | ✅ DONE (CACHE-1) |
 | 8.4c | External alerting: critical anomaly → Slack | ✅ DONE (2026-06-11) — via SlackAlertService |
-| 8.4d | OpenTelemetry export to Jaeger/Tempo | Low |
+| 8.4d | OpenTelemetry export to Jaeger/Tempo | ✅ DONE (2026-06-11) |
 | CACHE-1 | Redis named stores + CacheManager + no global flush | ✅ DONE (2026-06-08) |
 
 ### Infrastructure Remediation Backlog (from INFRA audit 2026-06-08)
@@ -203,7 +203,7 @@ php artisan migrate
 | ID | Task | Priority |
 |----|------|----------|
 | M2.1-a | File attachment upload flow | Medium |
-| M2.1-b | iOS code signing pipeline | High |
+| M2.1-b | iOS code signing pipeline | ✅ DONE (2026-06-11) |
 | M2.1-c | Firebase FCM injection (optional, not required) | Low |
 | M2.1-d | Deep-link routing | Medium |
 | M2.1-e | AppImage packaging (Linux) | Low |
@@ -215,7 +215,7 @@ php artisan migrate
 
 | ID | Task | Priority |
 |----|------|----------|
-| FE-01 | Wire x-core-ui::navigation-item/sidebar-group into layout files | Medium |
+| FE-01 | Wire x-core-ui::navigation-item/sidebar-group into layout files | ✅ DONE (2026-06-11) |
 | FE-02 | Retrofit admin views to x-core-ui::button | Low |
 | FE-03 | Resolve Tailwind v4 shadow-var optimizer warnings | Low |
 | FE-04 | Remaining raw controls in forms/analytics, forms/create, forms/submissions | Low |
