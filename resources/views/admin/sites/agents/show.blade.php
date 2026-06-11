@@ -60,7 +60,7 @@
             <p class="text-sm text-indigo-700 mb-3">این رمز را در جای امنی ذخیره کنید. پس از بارگذاری مجدد صفحه قابل مشاهده نیست.</p>
             <div class="flex items-center gap-3">
                 <span class="pw-mask text-lg" id="pw-display">{{ session('agent_password') }}</span>
-                <button onclick="navigator.clipboard.writeText('{{ session('agent_password') }}');this.textContent='✓ کپی شد'"
+                <button onclick="safeCopy('{{ addslashes(session('agent_password')) }}', this)"
                         class="action-btn action-btn--outline text-xs">
                     کپی رمز
                 </button>
@@ -323,6 +323,30 @@
 
 @push('scripts')
 <script>
+function safeCopy(text, btn) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+            if (btn) { var orig = btn.textContent; btn.textContent = '✓ کپی شد'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+        }).catch(function() { fallbackCopy(text, btn); });
+    } else {
+        fallbackCopy(text, btn);
+    }
+}
+function fallbackCopy(text, btn) {
+    var el = document.createElement('textarea');
+    el.value = text;
+    el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    try {
+        document.execCommand('copy');
+        if (btn) { var orig = btn.textContent; btn.textContent = '✓ کپی شد'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+    } catch(e) {
+        alert('کپی خودکار پشتیبانی نمی‌شود. لطفاً متن را دستی کپی کنید.');
+    }
+    document.body.removeChild(el);
+}
 async function revealPassword() {
     try {
         const res = await fetch('{{ route('admin.sites.agents.reveal-password', $site) }}', {
@@ -339,10 +363,8 @@ async function revealPassword() {
     }
 }
 function copyPw() {
-    const pw = document.getElementById('pwValue').textContent;
-    navigator.clipboard.writeText(pw).then(() => {
-        document.getElementById('copyBtn').textContent = '✓ کپی شد';
-    });
+    var pw = document.getElementById('pwValue').textContent;
+    safeCopy(pw, document.getElementById('copyBtn'));
 }
 </script>
 @endpush

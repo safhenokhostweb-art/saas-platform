@@ -25,19 +25,74 @@
                 --admin-radius:var(--ui-radius-xl,14px);
             }
             body{ font-family: Vazirmatn, Tahoma, sans-serif; direction: rtl; }
-            .btn{ display: inline-flex; align-items: center; padding: 0.5rem 1rem; border-radius: 0.625rem; font-weight: 500; }
-            .btn-primary{ background: var(--ui-indigo,#4f46e5); color: #fff; }
-            .btn-secondary,.btn-outline-secondary{ background: transparent; color: var(--ui-text-secondary,#374151); border: 2px solid var(--ui-border-strong,#9ca3af); }
-            .btn-outline-primary{ background: transparent; color: var(--ui-indigo,#4f46e5); border: 2px solid var(--ui-indigo,#4f46e5); }
+
+            /* ── FE-02: Canonical button styles — mirrors x-core-ui::button ── */
+            .btn{
+                display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+                padding: .5rem 1rem; border-radius: .75rem; font-weight: 600; font-size: .875rem;
+                border: 1px solid transparent; cursor: pointer; transition: all .15s ease;
+                text-decoration: none; line-height: 1.25;
+            }
+            .btn-sm{ padding: .375rem .75rem; font-size: .8125rem; border-radius: .625rem; }
+            .btn-lg{ padding: .625rem 1.25rem; font-size: 1rem; border-radius: .875rem; }
+            .btn-primary{
+                background: var(--ui-indigo,#4f46e5); color: #fff;
+                box-shadow: 0 1px 3px rgba(79,70,229,.25);
+            }
+            .btn-primary:hover{ background: var(--ui-indigo-hover,#4338ca); }
+            .btn-primary:focus-visible{ outline: 2px solid var(--ui-indigo,#4f46e5); outline-offset: 2px; }
+            .btn-secondary{
+                background: #f1f5f9; color: #475569; border-color: #e2e8f0;
+            }
+            .btn-secondary:hover{ background: #e2e8f0; }
+            .btn-outline-secondary{
+                background: transparent; color: var(--ui-text-secondary,#374151); border: 1px solid var(--ui-border-strong,#9ca3af);
+            }
+            .btn-outline-secondary:hover{ background: #f8fafc; }
+            .btn-outline-primary{
+                background: transparent; color: var(--ui-indigo,#4f46e5); border: 1px solid var(--ui-indigo,#4f46e5);
+            }
             .btn-outline-primary:hover{ background: var(--ui-indigo-light,#eef2ff); }
-            .form-control,.form-select{ width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--ui-border,#e2e8f0); border-radius: 0.5rem; text-align: right; }
-            .form-label{ display: block; font-size: 0.875rem; font-weight: 500; color: var(--ui-text-secondary,#374151); margin-bottom: 0.5rem; text-align: right; }
+            .btn-danger{
+                background: var(--ui-danger,#dc2626); color: #fff; border-color: transparent;
+                box-shadow: 0 1px 3px rgba(220,38,38,.25);
+            }
+            .btn-danger:hover{ background: var(--ui-danger-hover,#b91c1c); }
+            .btn-success{
+                background: var(--ui-success,#059669); color: #fff; border-color: transparent;
+            }
+            .btn-success:hover{ background: var(--ui-success-hover,#047857); }
+            .btn-ghost{
+                background: transparent; color: #64748b; border-color: transparent;
+            }
+            .btn-ghost:hover{ background: #f1f5f9; color: #374151; }
+            .btn:disabled,.btn[disabled]{ opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+            /* ── FE-02: Form controls — canonical style ── */
+            .form-control,.form-select{
+                width: 100%; padding: .5rem 1rem; border: 1px solid var(--ui-border,#e2e8f0);
+                border-radius: .625rem; text-align: right; background: #fff;
+                font-family: inherit; font-size: .875rem; color: #1e293b;
+                transition: border-color .15s, box-shadow .15s;
+            }
+            .form-control:focus,.form-select:focus{
+                outline: none; border-color: var(--ui-indigo,#4f46e5);
+                box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+            }
+            .form-label{
+                display: block; font-size: .875rem; font-weight: 500;
+                color: var(--ui-text-secondary,#374151); margin-bottom: .5rem; text-align: right;
+            }
             .form-check-input{ width: 1rem; height: 1rem; accent-color: var(--ui-indigo,#4f46e5); }
-            .card{ background: var(--ui-surface,#fff); border-radius: var(--ui-radius-xl,14px); box-shadow: var(--ui-shadow-card); border: 1px solid var(--ui-border,#e2e8f0); }
+
+            /* ── Card & Alert ── */
+            .card{ background: var(--ui-surface,#fff); border-radius: var(--ui-radius-xl,14px); box-shadow: 0 2px 8px rgba(15,23,42,.06); border: 1px solid var(--ui-border,#e2e8f0); }
             .card-body{ padding: 1rem 1.5rem; }
-            .alert{ padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid; }
+            .alert{ padding: .75rem 1rem; border-radius: .625rem; margin-bottom: 1rem; border: 1px solid; }
             .alert-success{ background: var(--ui-success-light,#f0fdf4); border-color: var(--ui-success-border,#bbf7d0); color: var(--ui-success-text,#166534); }
             .alert-danger{ background: var(--ui-danger-light,#fef2f2); border-color: var(--ui-danger-border,#fecaca); color: var(--ui-danger-text,#991b1b); }
+            .alert-warning{ background: #fffbeb; border-color: #fde68a; color: #92400e; }
+            .alert-info{ background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
             .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; }
             form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: var(--ui-danger-border,#fca5a5); }
             form.mt-2 button:hover{ background: var(--ui-danger-bg,rgba(220,38,38,0.1)); color: var(--ui-danger,#dc2626); }

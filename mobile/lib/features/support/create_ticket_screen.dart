@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +34,7 @@ class CreateTicketNotifier extends StateNotifier<CreateTicketState> {
     String? customerName,
     String priority = 'normal',
     String? category,
+    List<PlatformFile> attachments = const [],
   }) async {
     state = const CreateTicketState(isSubmitting: true);
 
@@ -46,6 +50,22 @@ class CreateTicketNotifier extends StateNotifier<CreateTicketState> {
         priority:       priority,
         category:       category,
       );
+
+      // Upload attachments after ticket creation
+      if (attachments.isNotEmpty) {
+        final validPaths = attachments
+            .where((f) => f.path != null && File(f.path!).existsSync())
+            .toList();
+        if (validPaths.isNotEmpty) {
+          await api.replyToTicket(
+            ticket.id,
+            '',
+            filePaths: validPaths.map((f) => f.path!).toList(),
+            fileNames: validPaths.map((f) => f.name).toList(),
+          );
+        }
+      }
+
       state = const CreateTicketState(success: true);
       return ticket;
     } catch (e) {
@@ -77,6 +97,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
   final _categoryCtrl  = TextEditingController();
 
   String _priority = 'normal';
+  final List<PlatformFile> _attachments = [];
 
   @override
   void dispose() {
@@ -87,6 +108,22 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
     _categoryCtrl.dispose();
     super.dispose();
   }
+
+  Future<void> _pickFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf',
+                            'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip'],
+      );
+      if (result != null && mounted) {
+        setState(() => _attachments.addAll(result.files));
+      }
+    } catch (_) {}
+  }
+
+  void _removeAttachment(int index) => setState(() => _attachments.removeAt(index));
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -101,6 +138,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
       customerName:   _nameCtrl.text.trim().isEmpty ? null : _nameCtrl.text.trim(),
       priority:       _priority,
       category:       _categoryCtrl.text.trim().isEmpty ? null : _categoryCtrl.text.trim(),
+      attachments:    List.from(_attachments),
     );
 
     if (mounted && ticket != null) {
@@ -204,6 +242,46 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 ),
                 textInputAction: TextInputAction.done,
               ),
+              const SizedBox(height: 16),
+
+              // ── پیوست‌ها ──────────────────────────────────────────────
+              Row(
+                children: [
+                  Text('پیوست‌ها',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: formState.isSubmitting ? null : _pickFiles,
+                    icon: const Icon(Icons.attach_file, size: 18),
+                    label: const Text('افزودن فایل'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      textStyle: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              if (_attachments.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: _attachments.asMap().entries.map((e) {
+                    final f = e.value;
+                    final isImg = ['jpg','jpeg','png','gif','webp']
+                        .contains(f.extension?.toLowerCase());
+                    return Chip(
+                      avatar: Icon(isImg ? Icons.image : Icons.attach_file, size: 14),
+                      label: Text(f.name,
+                        style: const TextStyle(fontSize: 11),
+                        overflow: TextOverflow.ellipsis),
+                      deleteIcon: const Icon(Icons.close, size: 14),
+                      onDeleted: () => _removeAttachment(e.key),
+                    );
+                  }).toList(),
+                ),
+              ],
+
               const SizedBox(height: 32),
 
               // ── ثبت ───────────────────────────────────────────────────

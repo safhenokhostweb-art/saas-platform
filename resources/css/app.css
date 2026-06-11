@@ -31,6 +31,33 @@
     font-family: var(--font-vazir);
 }
 
+/* ─── FE-03: Named shadow utilities — prevents Lightning CSS optimizer warnings
+   for shadow-[var(--ui-shadow-*)] patterns in canonical components ─────────── */
+@utility shadow-card {
+    box-shadow: var(--ui-shadow-card, 0 2px 8px rgba(15,23,42,.06));
+}
+@utility shadow-card-hover {
+    box-shadow: var(--ui-shadow-card-hover, 0 8px 24px rgba(15,23,42,.12));
+}
+@utility shadow-indigo {
+    box-shadow: var(--ui-shadow-indigo, 0 1px 3px rgba(79,70,229,.25));
+}
+@utility shadow-modal {
+    box-shadow: var(--ui-shadow-modal, 0 20px 60px rgba(15,23,42,.18));
+}
+@utility shadow-toast {
+    box-shadow: var(--ui-shadow-toast, 0 8px 24px rgba(15,23,42,.14));
+}
+@utility shadow-lg-ui {
+    box-shadow: var(--ui-shadow-lg, 0 10px 32px rgba(15,23,42,.12));
+}
+@utility shadow-sm-ui {
+    box-shadow: var(--ui-shadow-sm, 0 1px 2px rgba(15,23,42,.06));
+}
+@utility shadow-xs-ui {
+    box-shadow: var(--ui-shadow-xs, 0 0 0 1px rgba(15,23,42,.04));
+}
+
 /* ─── Typography ──────────────────────────────────────────────────────── */
 
 @font-face {
