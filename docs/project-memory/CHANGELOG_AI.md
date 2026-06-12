@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-06-12 — ICONS-2: Customer-Site Complete Icon Migration
+
+**Reason:** جایگزینی تمام آیکن‌های inline SVG با `<x-core-ui::icon>` در کل customer-site
+
+**Scope:**
+- **۶۴۹ استفاده** از `<x-core-ui::icon>` در تمام فایل‌های customer-site
+- فایل‌های اصلاح‌شده: **۱۵۰+ فایل blade** در customer-site
+- SVG های باقی‌مانده (۹ عدد): فقط Laravel decorative logos و JS innerHTML strings — قابل جایگزینی نیستند
+
+**Categories replaced:**
+- account/layout, account/dashboard → sidebar groups, flash messages, header, profile dropdown
+- account/partials/sidebar-icon → PHP array به icon map تبدیل شد
+- account/tickets, account/subscriptions, account/points, account/referrals, account/notifications
+- admin/layout → sidebar icons, navigation, flash messages
+- admin/user-tickets, admin/users, admin/education-center → full replacement
+- admin/unified-support, admin/support/_legacy → full replacement
+- admin/subscriptions (all 8 sub-pages), admin/orders, admin/accounting, admin/referrals
+- admin/theme-marketplace (index + my-licenses), admin/categories, admin/site-content
+- admin/posts, admin/products, admin/notifications, admin/settings, admin/dashboard
+- admin/partials, admin/modules, admin/invoices, admin/reviews, admin/seo-advanced
+- themes/default/layout, themes/default/courses (show/index/my-learning)
+- themes/default/shop/cart, themes/default/blog/show, themes/default/search
+- front/pricing, front/subscriptions/pay, welcome.blade.php (partial)
+- partials (notification bell, ticket notifier, guide widget, messaging icons)
+
+**Architecture notes:**
+- `account/partials/sidebar-icon.blade.php` → PHP map از icon name + `<x-core-ui::icon :name="$iconName" />`
+- Dynamic icons in PHP arrays → `$iconMap` pattern
+- Benefit badges in subscription/pricing → `$bim = ['tag'=>'price-tag','truck'=>'package'...]` pattern
+
+---
+
 ## 2026-06-13 — TB-4: Customer-site Canvas Theme Renderer
 
 **Reason:** پس از نصب قالب canvas در سایت مشتری (از مارکت‌پلیس یا canvas editor)، صفحات عمومی باید با داده زنده رندر شوند — نه placeholder ادمین.
