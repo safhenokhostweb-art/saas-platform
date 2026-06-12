@@ -1,7 +1,52 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-12
+> Last Updated: 2026-06-13
+
+---
+
+## 2026-06-13 — CRITICAL FIX: core-ui::icon production component resolution
+
+**Reason:** خطای 500 "Unable to locate a class or view for component [core-ui::icon]" روی production. `saas-platform/core-utils` در path repository تعریف شده بود و روی سرور boot نمی‌شد → همه صفحات crash می‌کردند.
+
+**Root cause:** `CoreUtilsServiceProvider` در production discover نمی‌شد → namespace `core-ui` هرگز register نمی‌شد.
+
+**Fix (customer-site):**
+- `app/Icons/LocalIconRegistry.php` — کپی standalone تمام icon SVGها (٧٠+ آیکون) + aliases اضافه (`layout`, `document`, `document-text`, `swatch`, `color-swatch`, `palette`)
+- `resources/views/components/core-ui/icon.blade.php` — fallback component با `class_exists` guard (از package registry استفاده می‌کند اگر نصب باشد، در غیر اینصورت از LocalIconRegistry)
+- `app/Providers/AppServiceProvider.php` — `Blade::anonymousComponentPath(resource_path('views/components/core-ui'), 'core-ui')` در boot()
+
+**Result:** در dev، package path اول register می‌شود (package component استفاده می‌شود). در production، local fallback path تنها registration است → LocalIconRegistry همه icons را render می‌کند. view:cache در production موفق شد.
+
+**Deployed:** ✅ 2026-06-13 — "Blade templates cached successfully" تایید شد.
+
+---
+
+## 2026-06-13 — TB-5: Canvas Theme Admin Preview
+
+**Reason:** مدیریت و پیش‌نمایش قالب Canvas از پنل ادمین customer-site — امکان مشاهده، مدیریت صفحات، و غیرفعال‌سازی بدون نیاز به پنل platform.
+
+**New Files (customer-site):**
+- `resources/views/admin/theme-design/canvas.blade.php` — صفحه مدیریت قالب Canvas با پالت رنگ، لیست صفحات، بلاک‌های هدر/فوتر، دکمه پیش‌نمایش و غیرفعال‌سازی
+
+**Modified Files (customer-site):**
+- `app/Http/Controllers/Admin/ThemeDesignController.php` — متدهای `canvasTheme()` و `canvasDeactivate()` + `$canvasActive`/`$canvasName` به index() اضافه شد
+- `routes/web.php` — 2 route جدید: `GET admin/theme-design/canvas` و `POST admin/theme-design/canvas/deactivate`
+- `resources/views/admin/theme-design/index.blade.php` — بنر وضعیت Canvas (فعال: gradient بنفش | غیرفعال: آبی آسمانی)
+
+**Features delivered:**
+- وقتی canvas فعال است: بنر gradient با نام قالب + لینک مدیریت در صفحه theme-design
+- وقتی canvas نیست: بنر آبی با لینک مارکت‌پلیس
+- صفحه مدیریت canvas: نام قالب، stats (تعداد صفحه / هدر / فوتر)، پالت رنگ
+- لیست صفحات با آدرس، تعداد بلاک، و لینک پیش‌نمایش (new tab)
+- بلاک‌های هدر و فوتر (نوع هر بلاک)
+- غیرفعال‌سازی (با confirm dialog) → پاک‌سازی settings + cache
+
+**Routes:**
+```
+GET  /admin/theme-design/canvas             → admin.theme-design.canvas
+POST /admin/theme-design/canvas/deactivate  → admin.theme-design.canvas-deactivate
+```
 
 ---
 

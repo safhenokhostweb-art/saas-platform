@@ -8,6 +8,20 @@
 
 ## ACTIVE BUGS
 
+### KI-007 — CRITICAL | RESOLVED (2026-06-13)
+
+**Title:** x-core-ui::icon — Unable to locate component on production  
+**Module:** customer-site — all pages (admin + public)  
+**Discovered:** 2026-06-12 production error on `safhenokhost.ir/admin/dashboard`  
+**Root Cause:** `saas-platform/core-utils` defined as path repository in customer-site/composer.json. On production, `../saas-platform` path doesn't exist → `CoreUtilsServiceProvider` never boots → `core-ui` Blade namespace never registered → 500 on all pages using `x-core-ui::icon`.  
+**Resolution:** Added local fallback in `AppServiceProvider::boot()`:
+- `Blade::anonymousComponentPath(resource_path('views/components/core-ui'), 'core-ui')`
+- Created `app/Icons/LocalIconRegistry.php` (standalone copy, 70+ icons)
+- Created `resources/views/components/core-ui/icon.blade.php` (class_exists guard)
+- Deployed to production 2026-06-13; `view:cache` succeeded, error resolved.
+
+---
+
 ### KI-001 — MEDIUM | RESOLVED (EDU-16, 2026-06-06)
 
 **Title:** generation_success_rate Always Reports 1.0  
