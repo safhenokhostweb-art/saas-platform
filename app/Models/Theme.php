@@ -141,6 +141,21 @@ class Theme extends Model
         return $query->where('is_marketplace', true)->published();
     }
 
+    public function marketplaceMeta()
+    {
+        return $this->hasOne(ThemeMarketplace::class);
+    }
+
+    public function licenses()
+    {
+        return $this->hasMany(ThemeLicense::class);
+    }
+
+    public function hasLicenseForSite(int $siteId): bool
+    {
+        return $this->licenses()->where('site_id', $siteId)->exists();
+    }
+
     /** Get payload for front-end (header + footer + global_styles + metadata). */
     public function getPayload(): array
     {

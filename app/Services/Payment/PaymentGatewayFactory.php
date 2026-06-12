@@ -30,4 +30,10 @@ class PaymentGatewayFactory
         $model = PaymentGatewayModel::find($id);
         return $model ? $this->fromModel($model) : null;
     }
+
+    public function fromName(string $name): ?PaymentGatewayInterface
+    {
+        $model = PaymentGatewayModel::where('driver', $name)->where('is_active', true)->first();
+        return $model ? $this->fromModel($model) : null;
+    }
 }

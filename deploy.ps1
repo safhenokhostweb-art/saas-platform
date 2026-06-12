@@ -34,6 +34,25 @@ if ($status) {
 # ── ۲. Build vendor + Archive ────────────────────────────────
 Write-Host "`n[2/4] Building vendor & creating archive..." -ForegroundColor Yellow
 & $PHP $COMPOSER install --no-dev --optimize-autoloader --no-scripts --no-interaction --quiet
+
+# Sync local path-repositories into vendor (Compress-Archive does not follow junctions/symlinks)
+$localPackages = @(
+    'packages\saas-platform\core-utils',
+    'packages\saas-platform\modules\education',
+    'packages\saas-platform\modules\forms',
+    'packages\saas-platform\modules\tickets'
+)
+foreach ($pkg in $localPackages) {
+    $src = Join-Path $DIR $pkg
+    # vendor name = last two path segments of the package path
+    $parts   = $pkg -replace '\\','/' -split '/'
+    $vendor  = Join-Path $DIR "vendor\$($parts[-2])\$($parts[-1])"
+    if ((Test-Path $src) -and (Test-Path $vendor)) {
+        Write-Host "     Syncing $pkg → vendor" -ForegroundColor DarkGray
+        robocopy $src $vendor /E /XD .git /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+    }
+}
+
 if (Test-Path $ZIPFILE) { Remove-Item $ZIPFILE }
 # آرشیو از روی فایل‌های واقعی (شامل vendor) نه git archive
 $exclude = @('.git', 'mobile', 'node_modules', 'tests', 'storage', 'bootstrap', '.env', '.env.local', '.env.testing')

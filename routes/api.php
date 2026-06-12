@@ -72,6 +72,20 @@ Route::prefix('tenant/attachments')->middleware(['throttle:30,1', 'tenant.api'])
         ->name('api.tenant-attachments.download');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Theme Marketplace API (برای customer-site) — TB-2
+|--------------------------------------------------------------------------
+| Auth: license_key + domain (tenant.api middleware)
+*/
+Route::prefix('theme-marketplace')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
+    Route::get('/',                         [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'index'])->name('api.theme-marketplace.index');
+    Route::get('/my-licenses',              [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'myLicenses'])->name('api.theme-marketplace.my-licenses');
+    Route::get('/{theme}',                  [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'show'])->name('api.theme-marketplace.show');
+    Route::post('/{theme}/initiate-purchase', [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'initiatePurchase'])->name('api.theme-marketplace.initiate-purchase');
+    Route::get('/{theme}/download',         [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'download'])->name('api.theme-marketplace.download');
+});
+
 Route::prefix('tenant/tickets')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
     Route::get('/', [ApiTenantTicketController::class, 'index'])->name('api.tenant-tickets.index');
     Route::post('/', [ApiTenantTicketController::class, 'store'])->name('api.tenant-tickets.store');

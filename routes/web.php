@@ -50,6 +50,8 @@ use App\Http\Controllers\Admin\SupportPlanController as AdminSupportPlanControll
 use App\Http\Controllers\Admin\PaymentGatewayController;
 use App\Http\Controllers\Admin\ThemeBuilderController;
 use App\Http\Controllers\Admin\ThemeCanvasController;
+use App\Http\Controllers\Admin\ThemeMarketplaceAdminController;
+use App\Http\Controllers\ThemeMarketplacePaymentController;
 use App\Http\Controllers\PageController;
 
 use App\Http\Middleware\EnsureProfileIsComplete;
@@ -219,6 +221,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/store/cart/remove/{key}', [StoreController::class, 'removeFromCart'])->name('store.cart.remove');
     Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('/checkout/callback/{invoice}', [CheckoutController::class, 'callback'])->name('checkout.callback');
+
+    // Theme Marketplace payment callback (no CSRF, public — called by payment gateway)
+    Route::get('/theme-marketplace/callback', [ThemeMarketplacePaymentController::class, 'callback'])->name('theme-marketplace.payment-callback')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
     // پنل نمایندگی (فقط برای کاربران دارای رکورد Reseller)
     Route::prefix('reseller')->name('reseller.')->middleware('reseller')->group(function () {
@@ -551,6 +556,16 @@ Route::prefix('admin')
             Route::post('theme-builder/{theme}/canvas/pages', [ThemeCanvasController::class, 'addPage'])->name('theme-builder.canvas.pages.add');
             Route::delete('theme-builder/{theme}/canvas/pages/{key}', [ThemeCanvasController::class, 'removePage'])->name('theme-builder.canvas.pages.remove')->where('key', '[a-z0-9_-]+');
             Route::get('theme-builder/{theme}/canvas/{pageKey}/preview', [ThemeCanvasController::class, 'preview'])->name('theme-builder.canvas.page-preview')->where('pageKey', '[a-z0-9_-]+');
+        });
+
+        // ─── Theme Marketplace (TB-2) ────────────────────────────────────────
+        Route::prefix('theme-marketplace')->name('theme-marketplace.')->group(function () {
+            Route::get('/',                                         [ThemeMarketplaceAdminController::class, 'index'])->name('index');
+            Route::put('/{theme}/listing',                          [ThemeMarketplaceAdminController::class, 'updateListing'])->name('update-listing');
+            Route::post('/{theme}/featured',                        [ThemeMarketplaceAdminController::class, 'toggleFeatured'])->name('featured');
+            Route::get('/licenses',                                 [ThemeMarketplaceAdminController::class, 'licenses'])->name('licenses');
+            Route::delete('/licenses/{license}',                    [ThemeMarketplaceAdminController::class, 'revokeLicense'])->name('revoke-license');
+            Route::post('/licenses/grant',                          [ThemeMarketplaceAdminController::class, 'grantLicense'])->name('grant-license');
         });
 
         /*
