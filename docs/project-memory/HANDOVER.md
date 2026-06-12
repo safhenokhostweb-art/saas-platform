@@ -21,14 +21,28 @@
 
 ## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-2 — Theme Marketplace  
-**Status:** فروشگاه قالب‌ها کامل شد. 3 migration، 3 model، platform admin+API، payment callback، customer-site browse+buy+install.  
-**Previous milestone:** TB-1 Visual Canvas Builder (2026-06-12)  
-**Next recommended milestone:** TB-3 AI URL Analysis یا Customer-site ThemeCanvasPageController
+**Last completed phase:** TB-3 — AI URL Analyzer  
+**Status:** ادمین URL وارد می‌کند → Claude آن را تحلیل می‌کند → قالب canvas-ready می‌سازد. Alpine.js live progress. 6 روت جدید.  
+**Previous milestone:** TB-2 Theme Marketplace (2026-06-13)  
+**Next recommended milestone:** Customer-site ThemeCanvasPageController (نمایش صفحات قالب با داده زنده)
 
 ---
 
 ## LAST COMPLETED SPRINT
+
+### TB-3 AI URL Analyzer — COMPLETE (2026-06-13)
+
+**ThemeAiAnalyzerService:**
+- `analyzeUrl(url, notes)` → fetches URL, DOMXPath extracts (title/h1/h2/nav/footer/og/colors) → Claude `claude-sonnet-4-6` → parsed theme JSON
+- `createFromJson(json, name)` → `Theme::create()` with full blocks structure
+
+**ThemeAiController:** form / analyze / analyzeAjax / confirm / generate / generatePrepare
+
+**UI:** 3-step Alpine.js (form → progress bar → block preview + color swatch → ذخیره و باز کردن canvas)
+
+**Env:** `ANTHROPIC_API_KEY` / `services.anthropic.key`
+
+---
 
 ### TB-2 Theme Marketplace — COMPLETE (2026-06-13)
 

@@ -5,6 +5,45 @@
 
 ---
 
+## 2026-06-13 — TB-3: AI URL Analyzer (Theme Generation from URL)
+
+**Reason:** ادمین پلتفرم می‌تواند URL هر سایتی را وارد کند و Claude آن را تحلیل و یک قالب کامل canvas-ready می‌سازد.
+
+**New Files:**
+- `app/Services/ThemeBuilder/ThemeAiAnalyzerService.php` — URL fetch + HTML parse + Claude claude-sonnet-4-6 call + JSON parse
+- `app/Http/Controllers/Admin/ThemeAiController.php` — form/analyze/analyzeAjax/confirm/generate/generatePrepare
+- `resources/views/admin/theme-builder/ai-analyze.blade.php` — 3-step Alpine.js UI (form → live progress → block preview)
+- `resources/views/admin/theme-builder/ai-confirm.blade.php` — fallback confirm page (no-JS)
+
+**Modified Files:**
+- `routes/web.php` — 6 new TB-3 routes under admin middleware
+- `resources/views/admin/theme-builder/index.blade.php` — دکمه "ساخت با AI" به toolbar اضافه شد
+- `app/Providers/AppServiceProvider.php` — singleton binding for ThemeAiAnalyzerService
+
+**Flow:**
+1. ادمین URL وارد می‌کند
+2. Alpine.js → `POST /admin/theme-builder/ai-analyze-ajax` (progress bar زنده)
+3. سرور: HTTP fetch URL → DOMXPath extraction (title, h1, h2, nav, colors, og:image)
+4. Claude `claude-sonnet-4-6` → max 4096 tokens → theme JSON
+5. Preview: block list + color swatch + stats cards
+6. ادمین نام می‌دهد → `POST ai-generate-prepare` (JSON به session) → `POST ai-generate` → Theme::create → redirect به canvas
+7. قالب draft در `/admin/theme-builder/{id}/canvas` آماده ویرایش
+
+**Env required:** `ANTHROPIC_API_KEY=sk-ant-...`
+**Config key:** `services.anthropic.key`
+
+**Routes (6):**
+```
+GET  /admin/theme-builder/ai-analyze           → فرم
+POST /admin/theme-builder/ai-analyze           → تحلیل + redirect
+POST /admin/theme-builder/ai-analyze-ajax      → تحلیل JSON (Alpine.js)
+GET  /admin/theme-builder/ai-confirm           → تأیید (no-JS fallback)
+POST /admin/theme-builder/ai-generate-prepare  → JSON به session
+POST /admin/theme-builder/ai-generate          → ایجاد Theme + redirect به canvas
+```
+
+---
+
 ## 2026-06-13 — TB-2: Theme Marketplace
 
 **Reason:** فروشگاه قالب‌ها — ادمین پلتفرم قالب می‌فروشد، ادمین سایت مشتری می‌خرد، لایسنس دائمی صادر می‌شود.

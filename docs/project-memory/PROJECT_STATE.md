@@ -24,10 +24,10 @@ Namespace: `SaaSPlatform\Modules\Education`
 
 ## Current Phase
 
-**TB-2 Theme Marketplace — COMPLETE (2026-06-13)**  
-فروشگاه قالب‌ها: platform admin مدیریت + API + payment callback. Customer-site browse+buy+install.  
-3 migrations applied. 12 routes active.  
-**Next: TB-3 AI URL Analysis یا Customer-site ThemeCanvasPageController**
+**TB-3 AI URL Analyzer — COMPLETE (2026-06-13)**  
+ادمین URL وارد می‌کند → Claude تحلیل → قالب canvas-ready ایجاد می‌شود.  
+Alpine.js 3-step UI. 6 روت. Env: `ANTHROPIC_API_KEY`.  
+**Next: Customer-site ThemeCanvasPageController (نمایش صفحات قالب با داده زنده)**
 
 ---
 

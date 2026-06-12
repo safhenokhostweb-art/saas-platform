@@ -33,6 +33,13 @@ class AppServiceProvider extends ServiceProvider
         // INFRA-6: Remote Agent client
         $this->app->singleton(\App\Services\Infrastructure\RemoteAgentClient::class);
 
+        // TB-3: Theme AI Analyzer (reads ANTHROPIC_API_KEY at resolve time)
+        $this->app->singleton(\App\Services\ThemeBuilder\ThemeAiAnalyzerService::class, function () {
+            return new \App\Services\ThemeBuilder\ThemeAiAnalyzerService(
+                (string) config('services.anthropic.key', env('ANTHROPIC_API_KEY', ''))
+            );
+        });
+
         // Payment Gateway
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
             $driver = config('payment.default', 'zarinpal');
