@@ -51,6 +51,7 @@ use App\Http\Controllers\Admin\PaymentGatewayController;
 use App\Http\Controllers\Admin\ThemeBuilderController;
 use App\Http\Controllers\Admin\ThemeCanvasController;
 use App\Http\Controllers\Admin\ThemeMarketplaceAdminController;
+use App\Http\Controllers\Admin\ThemeAiController;
 use App\Http\Controllers\ThemeMarketplacePaymentController;
 use App\Http\Controllers\PageController;
 
@@ -556,6 +557,19 @@ Route::prefix('admin')
             Route::post('theme-builder/{theme}/canvas/pages', [ThemeCanvasController::class, 'addPage'])->name('theme-builder.canvas.pages.add');
             Route::delete('theme-builder/{theme}/canvas/pages/{key}', [ThemeCanvasController::class, 'removePage'])->name('theme-builder.canvas.pages.remove')->where('key', '[a-z0-9_-]+');
             Route::get('theme-builder/{theme}/canvas/{pageKey}/preview', [ThemeCanvasController::class, 'preview'])->name('theme-builder.canvas.page-preview')->where('pageKey', '[a-z0-9_-]+');
+
+            // ─── TB-3: AI URL Analyzer ──────────────────────────────────────
+            Route::get('theme-builder/ai-analyze',         [ThemeAiController::class, 'form'])->name('theme-builder.ai-form');
+            Route::post('theme-builder/ai-analyze',        [ThemeAiController::class, 'analyze'])->name('theme-builder.ai-analyze');
+            Route::post('theme-builder/ai-analyze-ajax',   [ThemeAiController::class, 'analyzeAjax'])->name('theme-builder.ai-analyze-ajax');
+            Route::get('theme-builder/ai-confirm',         [ThemeAiController::class, 'confirm'])->name('theme-builder.ai-confirm');
+            Route::post('theme-builder/ai-generate-prepare', function (\Illuminate\Http\Request $req) {
+                $data = $req->validate(['theme_json' => 'required|array', 'name' => 'required|string|max:255']);
+                $data['theme_json']['suggested_name'] = $data['name'];
+                session(['tb3_pending_theme' => $data['theme_json']]);
+                return response()->json(['success' => true]);
+            })->name('theme-builder.ai-generate-prepare');
+            Route::post('theme-builder/ai-generate',       [ThemeAiController::class, 'generate'])->name('theme-builder.ai-generate');
         });
 
         // ─── Theme Marketplace (TB-2) ────────────────────────────────────────

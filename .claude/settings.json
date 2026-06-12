@@ -127,7 +127,8 @@
       "Bash(ssh -i __TRACKED_VAR__/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'sed -i '\\\\''s/\"dont-discover\": \\\\[\\\\]/\"dont-discover\": [\"laravel\\\\/pail\",\"laravel\\\\/sail\",\"nunomaduro\\\\/collision\"]/'\\\\'' /var/www/customer-site/composer.json && grep \"dont-discover\" /var/www/customer-site/composer.json')",
       "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $PHP \"vendor\\\\phpunit\\\\phpunit\\\\phpunit\" --filter \"Module\" 2>&1 | Select-Object -Last 10)",
       "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; & $PHP \"c:\\\\laragon\\\\www\\\\customer-site\\\\vendor\\\\phpunit\\\\phpunit\\\\phpunit\" --filter \"ShopModuleFeatureTest|EarlyAccessGating\" --no-coverage 2>&1 | Select-Object -Last 8)",
-      "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; $COMPOSER = \"C:\\\\laragon\\\\bin\\\\composer\\\\composer.phar\"; & $PHP $COMPOSER install --working-dir=\"c:\\\\laragon\\\\www\\\\customer-site\" --no-interaction --quiet 2>&1 | Select-Object -Last 5)"
+      "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; $COMPOSER = \"C:\\\\laragon\\\\bin\\\\composer\\\\composer.phar\"; & $PHP $COMPOSER install --working-dir=\"c:\\\\laragon\\\\www\\\\customer-site\" --no-interaction --quiet 2>&1 | Select-Object -Last 5)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('extra',{}\\).get\\('laravel',{}\\), indent=2\\)\\)\")"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"

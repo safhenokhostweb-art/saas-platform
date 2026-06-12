@@ -19,16 +19,43 @@
 
 ---
 
-## CURRENT STATE (2026-06-12)
+## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-1 — Visual Canvas Builder (Phase 1)  
-**Status:** قالب‌ساز بصری 3-panel کامل شد. Migration اجرا شد. 37+ بلوک ماژول در BlockRegistry. Alpine.js + SortableJS canvas.  
-**Previous milestone:** Public Learning Portal (customer-site) — 423/423 tests  
-**Next recommended milestone:** TB-2 Theme Marketplace یا TB-3 AI URL Analysis
+**Last completed phase:** TB-2 — Theme Marketplace  
+**Status:** فروشگاه قالب‌ها کامل شد. 3 migration، 3 model، platform admin+API، payment callback، customer-site browse+buy+install.  
+**Previous milestone:** TB-1 Visual Canvas Builder (2026-06-12)  
+**Next recommended milestone:** TB-3 AI URL Analysis یا Customer-site ThemeCanvasPageController
 
 ---
 
 ## LAST COMPLETED SPRINT
+
+### TB-2 Theme Marketplace — COMPLETE (2026-06-13)
+
+**New Tables:** `theme_marketplace`, `theme_licenses`, `theme_purchase_orders`  
+**Platform:** `ThemeMarketplaceAdminController` (manage listings, grant/revoke licenses), `ThemeMarketplaceApiController` (tenant API), `ThemeMarketplacePaymentController` (Zarinpal/IDPay callback → grant license)  
+**Customer-site:** `PlatformApiService` + marketplace methods (tenantGet/tenantPost with license_key Bearer), `ThemeMarketplaceController`, 2 views (index + my-licenses)  
+**Purchase Flow:** customer-site API call → platform creates ThemePurchaseOrder → payment gateway → callback → ThemeLicense::grant() → redirect back → install  
+**Routes:** 12 total (6 admin, 5 API, 1 public callback)  
+**Migrations:** ✅ All 3 applied
+
+**URLs (platform admin):**
+```
+GET  /admin/theme-marketplace              → مدیریت فروشگاه
+PUT  /admin/theme-marketplace/{id}/listing → به‌روزرسانی قیمت/اطلاعات
+GET  /admin/theme-marketplace/licenses     → مدیریت لایسنس‌ها
+GET  /theme-marketplace/callback           → callback درگاه (public)
+```
+
+**URLs (customer-site admin):**
+```
+GET  /admin/theme-marketplace              → مرور فروشگاه
+POST /admin/theme-marketplace/{id}/purchase → شروع خرید
+GET  /admin/theme-marketplace/my-licenses  → قالب‌های من
+POST /admin/theme-marketplace/{id}/install → نصب قالب
+```
+
+---
 
 ### Public Learning Portal (customer-site) — COMPLETE (2026-06-11)
 

@@ -214,13 +214,20 @@
       "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'mysql -u saas_user -pSaas2026Xk9#Pq customer_site -e \"SHOW TABLES LIKE '\"'\"'course%'\"'\"';\" 2>/dev/null')",
       "PowerShell(ssh -i \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\" -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'mysql --defaults-extra-file=/var/www/.mysql_deploy.cnf customer_site -e \"SHOW TABLES LIKE '\"'\"'course%'\"'\"';\" 2>&1 || echo \"file not found, trying direct\"')",
       "Bash(ssh -i __TRACKED_VAR__/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'printf \"[client]\\\\nuser=saas_user\\\\npassword=Saas2026Xk9#Pq\\\\n\" > /tmp/mycnf && mysql --defaults-file=/tmp/mycnf customer_site -e \"SHOW TABLES LIKE '\\\\''course%'\\\\'';\" 2>&1; rm -f /tmp/mycnf')",
-      "Bash(ssh -i __TRACKED_VAR__/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'printf \"[client]\\\\nuser=root\\\\npassword=\\\\n\" > /tmp/mycnf && mysql --defaults-file=/tmp/mycnf customer_site -e \"SHOW TABLES LIKE '\\\\''course%'\\\\''; SELECT migration FROM migrations WHERE migration LIKE '\\\\''%course%'\\\\'' ORDER BY id DESC;\" 2>&1; rm -f /tmp/mycnf')"
+      "Bash(ssh -i __TRACKED_VAR__/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'printf \"[client]\\\\nuser=root\\\\npassword=\\\\n\" > /tmp/mycnf && mysql --defaults-file=/tmp/mycnf customer_site -e \"SHOW TABLES LIKE '\\\\''course%'\\\\''; SELECT migration FROM migrations WHERE migration LIKE '\\\\''%course%'\\\\'' ORDER BY id DESC;\" 2>&1; rm -f /tmp/mycnf')",
+      "Bash(findstr /i \"saas-platform\\\\|core-utils\\\\|core_utils\")",
+      "Bash(findstr /i \"saas-platform core-utils\" \"c:\\\\laragon\\\\www\\\\customer-site\\\\composer.json\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\laragon\\\\www\\\\customer-site\\\\resources\\\\views\\\\admin\\\\theme-marketplace\")",
+      "PowerShell($env:Path = \"C:\\\\laragon\\\\bin\\\\php\\\\php8.4.7;\" + $env:Path; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; php artisan migrate --path=database/migrations/2026_06_13_000001_create_theme_marketplace_table.php --force; php artisan migrate --path=database/migrations/2026_06_13_000002_create_theme_licenses_table.php --force; php artisan migrate --path=database/migrations/2026_06_13_000003_create_theme_purchase_orders_table.php --force)",
+      "PowerShell($php = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\saas-platform\"; & $php artisan migrate --path=database/migrations/2026_06_13_000001_create_theme_marketplace_table.php --force; & $php artisan migrate --path=database/migrations/2026_06_13_000002_create_theme_licenses_table.php --force; & $php artisan migrate --path=database/migrations/2026_06_13_000003_create_theme_purchase_orders_table.php --force)"
     ],
+    "defaultMode": "bypassPermissions",
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform\\docs",
       "c:\\laragon\\www\\saas-platform\\docs\\phase-9.1",
       "c:\\laragon\\www\\saas-platform",
-      "C:\\Users\\Farshad-IT\\AppData\\Local\\Temp"
+      "C:\\Users\\Farshad-IT\\AppData\\Local\\Temp",
+      "C:\\Users\\Farshad-IT\\.claude"
     ]
   }
 }

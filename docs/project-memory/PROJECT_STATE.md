@@ -24,10 +24,10 @@ Namespace: `SaaSPlatform\Modules\Education`
 
 ## Current Phase
 
-**Public Learning Portal — COMPLETE (2026-06-11)**  
-پورتال عمومی دوره‌ها در customer-site: index/show/learn/my-learning + enrollment + progress tracking  
-423/423 tests pass. Deployed to production.  
-**Next: Tenant Analytics Dashboard یا Module Marketplace**
+**TB-2 Theme Marketplace — COMPLETE (2026-06-13)**  
+فروشگاه قالب‌ها: platform admin مدیریت + API + payment callback. Customer-site browse+buy+install.  
+3 migrations applied. 12 routes active.  
+**Next: TB-3 AI URL Analysis یا Customer-site ThemeCanvasPageController**
 
 ---
 

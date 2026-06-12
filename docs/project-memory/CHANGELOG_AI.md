@@ -5,6 +5,56 @@
 
 ---
 
+## 2026-06-13 — TB-2: Theme Marketplace
+
+**Reason:** فروشگاه قالب‌ها — ادمین پلتفرم قالب می‌فروشد، ادمین سایت مشتری می‌خرد، لایسنس دائمی صادر می‌شود.
+
+**New Files — Platform (saas-platform):**
+- `database/migrations/2026_06_13_000001_create_theme_marketplace_table.php`
+- `database/migrations/2026_06_13_000002_create_theme_licenses_table.php`
+- `database/migrations/2026_06_13_000003_create_theme_purchase_orders_table.php`
+- `app/Models/ThemeMarketplace.php`
+- `app/Models/ThemeLicense.php` — `grant()` static helper
+- `app/Models/ThemePurchaseOrder.php`
+- `app/Http/Controllers/Admin/ThemeMarketplaceAdminController.php` — manage listings + licenses + grant/revoke
+- `app/Http/Controllers/Api/ThemeMarketplaceApiController.php` — API (list/show/initiate-purchase/download/my-licenses)
+- `app/Http/Controllers/ThemeMarketplacePaymentController.php` — callback از Zarinpal/IDPay → grant license
+- `resources/views/admin/theme-marketplace/index.blade.php`
+- `resources/views/admin/theme-marketplace/licenses.blade.php`
+
+**Modified Files — Platform:**
+- `app/Models/Theme.php` — `marketplaceMeta()`, `licenses()`, `hasLicenseForSite()` relations
+- `app/Services/Payment/PaymentGatewayFactory.php` — `fromName()` method
+- `routes/web.php` — 6 admin routes + payment callback route
+- `routes/api.php` — 5 tenant API routes (theme-marketplace)
+
+**New Files — Customer-site:**
+- `app/Http/Controllers/Admin/ThemeMarketplaceController.php` — index/purchase/myLicenses/install
+- `resources/views/admin/theme-marketplace/index.blade.php` — فروشگاه با grid + featured banner
+- `resources/views/admin/theme-marketplace/my-licenses.blade.php` — لایسنس‌های من + دکمه نصب
+
+**Modified Files — Customer-site:**
+- `app/Services/PlatformApiService.php` — 5 marketplace methods + tenantGet/tenantPost helpers
+- `routes/web.php` — 4 marketplace routes under admin group
+
+**Purchase Flow:**
+1. Customer-site → `POST /api/theme-marketplace/{id}/initiate-purchase` (license_key auth)
+2. Platform creates ThemePurchaseOrder → initiates Zarinpal/IDPay → returns redirect_url
+3. User pays → gateway callback → `GET /theme-marketplace/callback?order={id}`
+4. Platform verifies → ThemeLicense::grant() → redirects to customer-site with ?purchased=1
+5. Customer-site admin installs: `POST /admin/theme-marketplace/{id}/install`
+6. Platform API returns theme JSON → saved to Setting `active_canvas_theme_data`
+
+**Routes (12 total):**
+- Platform admin: GET /admin/theme-marketplace + 5 sub-routes
+- Platform API: GET/POST /api/theme-marketplace + 4 sub-routes (tenant.api auth)
+- Public callback: GET /theme-marketplace/callback
+- Customer-site: GET/POST /admin/theme-marketplace + 3 sub-routes
+
+**Migrations run:** ✅ All 3 applied
+
+---
+
 ## 2026-06-12 — ICONS-1: SaaS Platform Duotone Icon System
 
 **Reason:** ایجاد کتابخانه آیکن منحصر‌به‌فرد Duotone برای کل پلتفرم و سایت‌های مشتریان
