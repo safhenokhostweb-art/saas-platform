@@ -16,18 +16,17 @@
 
 ## Current Module
 
-**Education Module**  
-`packages/saas-platform/modules/education/`  
-Namespace: `SaaSPlatform\Modules\Education`
+**Theme Builder — TB-4 (customer-site canvas renderer)**  
+`app/Services/ThemeCanvas/` و `app/Http/Controllers/Front/` در customer-site
 
 ---
 
 ## Current Phase
 
-**TB-3 AI URL Analyzer — COMPLETE (2026-06-13)**  
-ادمین URL وارد می‌کند → Claude تحلیل → قالب canvas-ready ایجاد می‌شود.  
-Alpine.js 3-step UI. 6 روت. Env: `ANTHROPIC_API_KEY`.  
-**Next: Customer-site ThemeCanvasPageController (نمایش صفحات قالب با داده زنده)**
+**TB-4 Customer-site Canvas Renderer — COMPLETE (2026-06-13)**  
+صفحات canvas با داده زنده رندر می‌شوند.  
+ThemeCanvasRenderer + ThemeCanvasPageController + canvas-theme layout.  
+**Next: Canvas Theme Admin Preview (پیش‌نمایش قالب canvas از پنل ادمین)**
 
 ---
 

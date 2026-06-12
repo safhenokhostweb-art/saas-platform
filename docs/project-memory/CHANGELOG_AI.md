@@ -5,6 +5,27 @@
 
 ---
 
+## 2026-06-13 — TB-4: Customer-site Canvas Theme Renderer
+
+**Reason:** پس از نصب قالب canvas در سایت مشتری (از مارکت‌پلیس یا canvas editor)، صفحات عمومی باید با داده زنده رندر شوند — نه placeholder ادمین.
+
+**New Files (customer-site):**
+- `app/Services/ThemeCanvas/ThemeCanvasRenderer.php` — extends BlockRenderer، module:* blocks با داده واقعی رندر می‌کند (Post, Product, Course)
+- `app/Http/Controllers/Front/ThemeCanvasPageController.php` — GET / و GET /page/{slug} با fallback به HomeController/PageController
+- `resources/views/layouts/canvas-theme.blade.php` — full-page RTL layout (Vazirmatn، بدون admin sidebar)
+
+**Modified Files (customer-site):**
+- `routes/web.php` — `home` و `page.show` به ThemeCanvasPageController منتقل شدند
+
+**معماری:**
+- اگر `active_canvas_theme_data` در Setting وجود داشته باشد → canvas رندر
+- اگر نباشد → fallback شفاف به HomeController/PageController
+- Module blocks: blog_posts, shop_product_grid, courses_grid, pricing_table, contact_quick, faq_dynamic, support_button, social_links_bar, plan_cta, course_enroll_cta و ۱۰+ block دیگر
+- Cache: theme data با 300s TTL
+- Mobile menu: JavaScript خالص (بدون Alpine dependency)
+
+---
+
 ## 2026-06-13 — TB-3: AI URL Analyzer (Theme Generation from URL)
 
 **Reason:** ادمین پلتفرم می‌تواند URL هر سایتی را وارد کند و Claude آن را تحلیل و یک قالب کامل canvas-ready می‌سازد.

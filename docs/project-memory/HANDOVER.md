@@ -21,10 +21,35 @@
 
 ## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-3 — AI URL Analyzer  
-**Status:** ادمین URL وارد می‌کند → Claude آن را تحلیل می‌کند → قالب canvas-ready می‌سازد. Alpine.js live progress. 6 روت جدید.  
-**Previous milestone:** TB-2 Theme Marketplace (2026-06-13)  
-**Next recommended milestone:** Customer-site ThemeCanvasPageController (نمایش صفحات قالب با داده زنده)
+**Last completed phase:** TB-4 — Customer-site Canvas Theme Page Renderer  
+**Status:** `ThemeCanvasRenderer` + `ThemeCanvasPageController` + `layouts/canvas-theme.blade.php` + routes. صفحات canvas با داده زنده (Post, Product, Course) رندر می‌شوند. fallback به HomeController/PageController وقتی قالب نصب نیست.  
+**Previous milestone:** TB-3 AI URL Analyzer (2026-06-13)  
+**Next recommended milestone:** Canvas Theme Admin Preview (پیش‌نمایش قالب canvas از پنل ادمین)
+
+---
+
+### TB-4 Customer-site Canvas Theme Renderer — COMPLETE (2026-06-13)
+
+**فایل‌های جدید (customer-site):**
+- `app/Services/ThemeCanvas/ThemeCanvasRenderer.php` — extends BlockRenderer، module:* blocks را با داده زنده رندر می‌کند
+- `app/Http/Controllers/Front/ThemeCanvasPageController.php` — GET / و GET /page/{slug} با fallback
+- `resources/views/layouts/canvas-theme.blade.php` — full-page RTL Vazirmatn بدون admin sidebar
+- `routes/web.php` — `home` و `page.show` به ThemeCanvasPageController منتقل شدند
+
+**معماری:**
+- `ThemeCanvasRenderer` از `BlockRenderer` ارث می‌برد
+- `renderBlock()` override می‌کند تا `module:*` types را قبل از schema validation جداسازی کند
+- Module blocks: `module:blog_posts`, `module:shop_product_grid`, `module:courses_grid`, `module:pricing_table`, `module:contact_quick`, `module:faq_dynamic`, `module:support_button` و ده‌ها block دیگر
+- Module blocks با داده زنده: Post::published(), Product::active(), Course::active()
+- Controller fallback: اگر `active_canvas_theme_data` در Setting خالی باشد → HomeController/PageController
+- Page resolution: پشتیبانی از هر دو فرمت pages (indexed و associative)
+- Cache: theme data با Cache::remember 300 ثانیه کش می‌شود
+
+**URLs:**
+```
+GET  /          → ThemeCanvasPageController@index (canvas home → HomeController fallback)
+GET  /page/{slug} → ThemeCanvasPageController@show (canvas page → FrontPageController fallback)
+```
 
 ---
 
