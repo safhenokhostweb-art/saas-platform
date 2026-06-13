@@ -5,6 +5,80 @@
 
 ---
 
+## 2026-06-13 — TB-7 + Sales & Support Pro Theme
+
+**Reason:** درخواست کاربر برای canvas editor در customer-site و ایجاد قالب حرفه‌ای فروش و پشتیبانی
+
+### TB-7 — Canvas Drag-and-Drop Editor (customer-site)
+- `BlockRegistry.php` با ۴۰+ بلاک در ۷ دسته
+- `layouts/canvas-editor.blade.php` — layout تمام‌صفحه بدون sidebar
+- `admin/theme-design/canvas-editor.blade.php` — ویرایشگر ۳ پنل با SortableJS
+- `ThemeDesignController` — 5 متد جدید (canvasEdit, canvasSaveBlocks, canvasAddPage, canvasDeletePage, canvasSaveGlobalStyles)
+- 5 route جدید در web.php
+
+### قالب "فروش و پشتیبانی حرفه‌ای" (SalesSupportThemeSeeder)
+- `database/seeders/SalesSupportThemeSeeder.php` — قالب کامل با ۷ صفحه
+- صفحات: خانه، فروشگاه، آموزشگاه، پشتیبانی، پلن‌ها، درباره ما، وبلاگ
+- هدر: nav_menu + cart_button + login_register
+- فوتر: columns + social_links_bar + copyright
+- بلاک‌های ماژول: shop_product_grid, courses_grid, pricing_table, reviews_grid, blog_posts, referral_widget, contact_quick, faq_dynamic, support_button, و ۱۵+ بلاک دیگر
+- ثبت در ThemeMarketplace با is_featured=true
+- Seeded روی production (ID: 2)
+- Deploy: هر دو repo deploy شدند
+
+---
+
+## 2026-06-13 — 5 New Modules: INSTALL + LANG + VPLAY + FORM-EXT + IMG
+
+**Reason:** درخواست کاربر برای ۵ ماژول جدید در customer-site
+
+### INSTALL — خرید قسطی
+- Migration: `installment_plans`, `installment_orders`, `installment_payments`
+- Models: `InstallmentPlan`, `InstallmentOrder`, `InstallmentPayment`
+- Service: `InstallmentService` (eligiblePlans, createOrder, activateOrder, recordInstallmentPayment, markOverdue)
+- Front controller: `InstallmentController` (plans, initiate, downPaymentCallback, payInstallment, installmentCallback)
+- Account panel: `InstallmentAccountController` + views (`account.installments.index`, `account.installments.show`)
+- Admin panel: `InstallmentAdminController` (plans CRUD + orders browse/show + markOverdue)
+- Admin views: `admin/installments/plans-index`, `plans-form`, `orders-index`, `orders-show`
+- `AccountMenu.php`: installments added to "خرید و اشتراک" group
+
+### LANG — چند زبانه با AI
+- Migration: `content_translations` + `translation_queue`
+- Models: `ContentTranslation`, `TranslationQueue`
+- Trait: `HasTranslations` (bootHasTranslations → queueTranslations on save, hash-based invalidation)
+- Applied to: `Post`, `Product`, `Course`
+- Service: `ContentTranslationService` (Claude Haiku API, processQueue, hash check)
+- Command: `translations:process --batch=20`
+- Middleware: `SetLocale` (session('site_locale', 'fa'))
+- Component: `language-switcher` (dropdown با ۳ پرچم)
+- Admin: `TranslationController` + view
+
+### VPLAY — پخش فیلم حرفه‌ای
+- Migration + Model: `HomepageVideo` (youtube/mp4/cloudflare, embedUrl(), youtubeId())
+- Controller: `HomepageVideoController` (CRUD + reorder)
+- Views: admin index (drag reorder) + _form (smart-image-picker)
+- Component: `video-player.blade.php` (Alpine.js, custom MP4 controls, overlay)
+- Wired to homepage + ThemeCanvasRenderer `module:hero_video` block
+
+### FORM-EXT — لیست سفید دسترسی با Excel
+- Migration: `access_lists`, `access_list_entries`, `access_gates`, `access_verifications`
+- Models: `AccessList` (verify()), `AccessListEntry`, `AccessGate`, `AccessVerification`
+- Service: `AccessListImportService` (PhpSpreadsheet v5.8, batch 500, auto-detect columns FA/EN)
+- Public: `AccessGateController` (show, verify → session grant)
+- Admin: `AccessListController` (lists CRUD + import + gates CRUD)
+- Views: admin/access-lists/{lists-index, lists-form, gates-index, gates-form}
+- Public view: `front/access-gate/verify.blade.php` (standalone RTL form)
+- Routes: `/gate/{slug}` (GET+POST public) + admin prefix `access-lists/`
+
+### IMG — آپلود تصویر هوشمند
+- Service: `SmartImageUploadService` (15 contexts, WebP, GD, AI hook)
+- Component: `smart-image-picker.blade.php` (drag-drop, progress, metadata badges)
+- Applied to: products, posts, courses
+
+**Deployed:** ✅ 2026-06-13
+
+---
+
 ## 2026-06-13 — TB-8: Header/Footer Block Editor (Virtual Pages)
 
 **Reason:** امکان ویرایش `header_blocks` و `footer_blocks` تم Canvas از همان canvas editor، بدون نیاز به route یا UI جدید.

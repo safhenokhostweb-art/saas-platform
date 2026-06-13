@@ -21,10 +21,44 @@
 
 ## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-7 — Canvas Drag-and-Drop Editor in Customer-Site Admin  
-**Status:** ویرایشگر Canvas کامل ۳-پانلی با drag-and-drop (SortableJS)، ویرایش props ویجت‌ها، افزودن/حذف ویجت (گالری + ۴۰+ ویجت)، تغییر رنگ‌های سراسری، مدیریت صفحات — همه در customer-site admin پنل. BlockRegistry جدید در customer-site.  
-**Previous milestone:** TB-6 Canvas Theme Export/Import (2026-06-13)  
-**Next recommended milestone:** TB-8 — Header/Footer Block Editor (ویرایش بلاک‌های header_blocks و footer_blocks در canvas editor)
+**Last completed phase:** 5-Module Batch: INSTALL + LANG + VPLAY + FORM-EXT + IMG  
+**Status:** همه ۵ ماژول پیاده‌سازی، routes wire شده، admin panels ایجاد شده (FORM-EXT فقط customer-site)، deploy شده.  
+**Previous milestone:** TB-8 — Header/Footer Block Editor (2026-06-13)  
+**Next recommended milestone:** تعیین فاز بعدی توسط کاربر
+
+### 5-Module Summary (2026-06-13)
+
+**INSTALL — خرید قسطی:**
+- Migration/Models: `installment_plans`, `installment_orders`, `installment_payments`
+- `InstallmentService`, `InstallmentController` (front), `InstallmentAccountController` (account panel)
+- Admin: `InstallmentAdminController` (plans CRUD + orders browse)
+- Routes: `/installment/plans`, `/account/installments`, `admin/installments/*`
+- Compound interest formula implemented in `InstallmentPlan::calculate()`
+
+**LANG — چند زبانه AI:**
+- Migration: `content_translations` (hash check) + `translation_queue`
+- `HasTranslations` trait applied to Post, Product, Course
+- `ContentTranslationService` — Claude Haiku-4-5, lazy translate on queue, hash invalidation
+- Command: `translations:process --batch=20` (every 15 min via scheduler)
+- `SetLocale` middleware + `language-switcher` component + `/lang/{locale}` route
+
+**VPLAY — پخش فیلم حرفه‌ای:**
+- `HomepageVideo` model (youtube/mp4/cloudflare, autoplay/loop/muted)
+- `HomepageVideoController` + admin CRUD + drag-reorder
+- `video-player` Blade component (Alpine.js, custom MP4 controls bar RTL)
+- Wired to homepage and `ThemeCanvasRenderer` (`module:hero_video` block)
+
+**FORM-EXT — لیست سفید Excel:**
+- Migration: `access_lists`, `access_list_entries`, `access_gates`, `access_verifications`
+- `AccessListImportService` (PhpSpreadsheet v5.8, batch 500, auto-detect FA/EN headers)
+- `AccessGateController` (public `/gate/{slug}` show+verify, session grant)
+- Admin: `AccessListController` (lists CRUD + Excel import + gates CRUD) — customer-site only, NOT saas-platform admin
+- Public verify page: standalone RTL minimal form
+
+**IMG — آپلود تصویر هوشمند:**
+- `SmartImageUploadService` (15 contexts, WebP GD, AI hook via `LOCAL_AI_ENABLED`)
+- `smart-image-picker` Blade component (drag-drop, XHR progress, metadata badges)
+- Applied to: products, posts, courses admin forms
 
 ---
 

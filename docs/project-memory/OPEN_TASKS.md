@@ -1,6 +1,20 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-06
+> Last Updated: 2026-06-13
+
+---
+
+## COMPLETE: 5-Module Batch — 2026-06-13 ✅
+
+| Module | Description | Status |
+|--------|-------------|--------|
+| INSTALL | خرید قسطی — migrations, models, InstallmentService, checkout, account panel, admin panel | ✅ DONE |
+| LANG | چند زبانه AI — HasTranslations trait, ContentTranslationService (Claude Haiku), queue, middleware, admin | ✅ DONE |
+| VPLAY | پخش فیلم حرفه‌ای — HomepageVideo, admin CRUD, video-player component, canvas block | ✅ DONE |
+| FORM-EXT | لیست سفید Excel — AccessList/Gate models, AccessListImportService, public verify, admin UI (customer-site only) | ✅ DONE |
+| IMG | آپلود هوشمند — SmartImageUploadService, smart-image-picker component, applied to posts/products/courses | ✅ DONE |
+
+---
 
 ---
 

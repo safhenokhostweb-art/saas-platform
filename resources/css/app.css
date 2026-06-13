@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
 /* Phase 10.0 — Canonical design token system (single source of truth) */
 @import '../../packages/saas-platform/core-utils/resources/css/design-tokens.css';

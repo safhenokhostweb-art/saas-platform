@@ -29,7 +29,7 @@
                             @endif
                         </td>
 
-                        <td class="p-2">{{ \App\Helpers\NumberHelper::formatFa($row['line_total'])) }} ریال</td>
+                        <td class="p-2">{{ \App\Helpers\NumberHelper::formatFa($row['line_total']) }} ریال</td>
                         <td class="p-2">
                             <a href="{{ route('store.cart.remove', $row['key']) }}" onclick="return confirm('حذف شود؟');" class="text-red-600">حذف</a>
                         </td>
@@ -38,7 +38,7 @@
             </tbody>
         </table>
 
-        <p class="font-bold">جمع: {{ \App\Helpers\NumberHelper::formatFa($total)) }} ریال</p>
+        <p class="font-bold">جمع: {{ \App\Helpers\NumberHelper::formatFa($total) }} ریال</p>
         <button type="submit" class="btn btn-primary mt-4">پرداخت و انتقال به درگاه</button>
     </form>
 

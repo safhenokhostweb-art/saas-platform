@@ -16,30 +16,27 @@
 
 ## Current Module
 
-**Theme Builder — TB-4 (customer-site canvas renderer)**  
-`app/Services/ThemeCanvas/` و `app/Http/Controllers/Front/` در customer-site
+**5 New Modules: INSTALL / LANG / VPLAY / FORM-EXT / IMG — COMPLETE (2026-06-13)**
 
 ---
 
 ## Current Phase
 
-**TB-4 Customer-site Canvas Renderer — COMPLETE (2026-06-13)**  
-صفحات canvas با داده زنده رندر می‌شوند.  
-ThemeCanvasRenderer + ThemeCanvasPageController + canvas-theme layout.  
-**Next: Canvas Theme Admin Preview (پیش‌نمایش قالب canvas از پنل ادمین)**
+**5-Module Batch — COMPLETE (2026-06-13)**  
+All 5 modules implemented, routes wired, admin panels created (customer-site only for FORM-EXT), deployed.
 
 ---
 
 ## Current Sprint
 
-**Public Learning Portal (customer-site) — COMPLETE**  
-Target: پورتال عمومی دوره‌ها — تمام شد
+**New Module Batch — COMPLETE**  
+INSTALL (installment purchase), LANG (AI multilingual), VPLAY (video player), FORM-EXT (Excel whitelist), IMG (smart image upload).
 
 ---
 
 ## Current Objective
 
-EDU-16 complete. AI-generated drafts now have a full human review gate. Next phase (EDU-17) wires the live AI provider to replace the NullAiContentProvider stub.
+All 5 requested modules delivered. Platform ready for next feature batch.
 
 ---
 
