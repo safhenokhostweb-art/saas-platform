@@ -198,8 +198,9 @@ class BlockRenderer
     protected function renderTabs(array $tabs): string
     {
         $out = [];
+        $idx = 0;
         foreach ($tabs as $i => $tab) {
-            $title = $this->escape($tab['title'] ?? "تب " . ($i + 1));
+            $title = $this->escape($tab['title'] ?? "تب " . (++$idx));
             $blocks = $tab['blocks'] ?? [];
             $content = $this->renderBlocks($blocks);
             $out[] = "<div class=\"tb-tab-panel\" data-tab=\"{$i}\"><h3 class=\"tb-tab-title\">{$title}</h3><div class=\"tb-tab-content\">{$content}</div></div>";

@@ -21,10 +21,10 @@
 
 ## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-6 — Canvas Theme Export/Import  
-**Status:** export (دانلود JSON فایل) و import (آپلود JSON برای نصب مستقیم) در customer-site admin کامل شد. بدون مارکت‌پلیس.  
-**Previous milestone:** TB-5 Canvas Theme Admin Preview (2026-06-13)  
-**Next recommended milestone:** TB-7 یا backlog items دیگر
+**Last completed phase:** TB-7 — Canvas Drag-and-Drop Editor in Customer-Site Admin  
+**Status:** ویرایشگر Canvas کامل ۳-پانلی با drag-and-drop (SortableJS)، ویرایش props ویجت‌ها، افزودن/حذف ویجت (گالری + ۴۰+ ویجت)، تغییر رنگ‌های سراسری، مدیریت صفحات — همه در customer-site admin پنل. BlockRegistry جدید در customer-site.  
+**Previous milestone:** TB-6 Canvas Theme Export/Import (2026-06-13)  
+**Next recommended milestone:** TB-8 — Header/Footer Block Editor (ویرایش بلاک‌های header_blocks و footer_blocks در canvas editor)
 
 ---
 
