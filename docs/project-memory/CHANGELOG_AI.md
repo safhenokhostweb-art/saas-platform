@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-06-13 — TB-7: Canvas Block Inline Editor
+
+**Reason:** ادمین customer-site باید بتواند blocks قالب Canvas فعال را مستقیماً ویرایش، مرتب‌سازی، اضافه/حذف کند و props هر block را inline تنظیم نماید.
+
+**Files Modified (customer-site):**
+- `resources/views/admin/theme-design/canvas-editor.blade.php` — ویرایشگر سه‌پنل (پالت بلاک‌ها | بوم صفحه | ویرایشگر props)
+
+**Architecture:**
+- **Panel A (راست):** پالت بلاک‌ها با accordion دسته‌بندی‌شده، جستجوی live، emoji آیکون‌ها، click-to-add
+- **Panel B (مرکز):** تب‌های صفحات، لیست بلاک‌های sortable (SortableJS drag-and-drop)، بلاک‌های inline با نشانگر دسته رنگی، آپ/داون buttons
+- **Panel C (چپ):** ویرایشگر props داینامیک بر اساس BlockRegistry schema — 6 نوع فیلد: string, number, textarea, boolean toggle, select, color
+- **Layout:** `@extends('layouts.canvas-editor')` — full-page RTL بدون admin sidebar
+- **Keyboard:** Ctrl+S برای ذخیره سریع
+- **SortableJS:** drag handle + ghostClass + onEnd callback برای reorder بلاک‌ها
+- **Bug Fix:** `block.data` → `block.props` normalization در `init()` (از `ThemeCanvasRenderer` `$block['props'] ?? $block['data']` پشتیبانی می‌کند)
+
+**API Endpoints:**
+- `PUT  /admin/theme-design/canvas/save-blocks` — ذخیره بلاک‌های صفحه جاری
+- `POST /admin/theme-design/canvas/pages` — افزودن صفحه جدید
+- `DELETE /admin/theme-design/canvas/pages/{key}` — حذف صفحه
+- `PUT  /admin/theme-design/canvas/global-styles` — ذخیره رنگ‌ها/فونت
+
+**Deployed:** ✅ 2026-06-13
+
+---
+
 ## 2026-06-13 — CRITICAL FIX: core-ui::icon production component resolution
 
 **Reason:** خطای 500 "Unable to locate a class or view for component [core-ui::icon]" روی production. `saas-platform/core-utils` در path repository تعریف شده بود و روی سرور boot نمی‌شد → همه صفحات crash می‌کردند.
