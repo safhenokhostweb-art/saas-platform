@@ -1,48 +1,80 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'سبد خرید')
+@section('header', 'درخواست‌های تسویه نمایندگان')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <h2 class="text-xl font-bold mb-4">سبد خرید</h2>
-    @if(empty($items))
-        <p class="text-gray-500">سبد خرید خالی است.</p>
-        <p class="mt-2"><a href="{{ route('store.index') }}" class="btn btn-primary">بازگشت به فروشگاه</a></p>
-    @else
-    <form action="{{ route('checkout.process') }}" method="post" class="card p-4">
-        @csrf
-        <table class="w-full text-sm mb-4">
-            <thead><tr class="border-b"><th class="p-2 text-right">محصول</th><th class="p-2 text-right">سایت</th><th class="p-2 text-right">قیمت</th><th></th></tr></thead>
-            <tbody>
-                    <tr class="border-b">
-                        <td class="p-2">{{ \App\Helpers\NumberHelper::toPersianNumbers($row['product']->name_fa) }}</td>
-                        <td class="p-2">
-                            @if($row['product']->type === \App\Models\Product::TYPE_LICENSE_TEMPLATE)
-                                <input type="text" name="new_site_title" class="form-control" placeholder="عنوان سایت جدید" value="{{ old('new_site_title') }}">
-                                <input type="text" name="new_site_domain" class="form-control mt-1" placeholder="دامنه (اختیاری)" value="{{ old('new_site_domain') }}">
-                            @else
-                                <select name="site_id[{{ $row['key'] }}]" class="form-control">
-                                    @foreach($sites as $site)
-                                        <option value="{{ $site->id }}" {{ $row['site_id'] == $site->id ? 'selected' : '' }}>{{ \App\Helpers\NumberHelper::toPersianNumbers($site->title) }}</option>
-                                    @endforeach
-                                </select>
-                            @endif
-                        </td>
-
-                        <td class="p-2">{{ \App\Helpers\NumberHelper::formatFa($row['line_total']) }} ریال</td>
-                        <td class="p-2">
-                            <a href="{{ route('store.cart.remove', $row['key']) }}" onclick="return confirm('حذف شود؟');" class="text-red-600">حذف</a>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <p class="font-bold">جمع: {{ \App\Helpers\NumberHelper::formatFa($total) }} ریال</p>
-        <button type="submit" class="btn btn-primary mt-4">پرداخت و انتقال به درگاه</button>
-    </form>
-
-    <p class="mt-4"><a href="{{ route('store.index') }}" class="text-indigo-600">ادامه خرید</a></p>
-    @endif
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold text-gray-800">درخواست‌های تسویه حساب</h1>
+    <a href="{{ route('admin.payout-requests.index') }}" class="text-sm text-indigo-600 hover:underline">بروزرسانی</a>
 </div>
+
+@if(session('success'))
+    <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{ session('error') }}</div>
+@endif
+
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="p-3 text-right text-gray-600 font-medium">نماینده</th>
+                <th class="p-3 text-right text-gray-600 font-medium">مبلغ (ریال)</th>
+                <th class="p-3 text-right text-gray-600 font-medium">وضعیت</th>
+                <th class="p-3 text-right text-gray-600 font-medium">تاریخ ثبت</th>
+                <th class="p-3 text-right text-gray-600 font-medium">عملیات</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            @forelse($requests as $req)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="p-3 font-medium text-gray-800">{{ $req->reseller->company_name ?? $req->reseller->user->mobile ?? '—' }}</td>
+                    <td class="p-3 font-medium text-gray-700">{{ \App\Helpers\NumberHelper::formatFa($req->amount_irr) }}</td>
+                    <td class="p-3">
+                        @if($req->status === 'pending')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">در انتظار</span>
+                        @elseif($req->status === 'approved')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">تأیید شده</span>
+                        @elseif($req->status === 'paid')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">پرداخت شده</span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">{{ $req->status }}</span>
+                        @endif
+                    </td>
+                    <td class="p-3 text-gray-500">{{ \App\Helpers\Jalali::format($req->created_at) }}</td>
+                    <td class="p-3">
+                        @if(!in_array($req->status, ['paid', 'rejected']))
+                            <div class="flex items-center gap-3">
+                                <form method="post" action="{{ route('admin.payout-requests.mark-paid', $req) }}" class="inline" onsubmit="return confirm('تسویه انجام شود؟');">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" class="text-green-600 hover:text-green-800 text-xs font-medium">تسویه شد</button>
+                                </form>
+                                <span class="text-gray-300">|</span>
+                                <form method="post" action="{{ route('admin.payout-requests.reject', $req) }}" class="inline flex items-center gap-1" onsubmit="return confirm('رد شود؟');">
+                                    @csrf @method('PATCH')
+                                    <input type="text" name="admin_note" placeholder="دلیل رد" class="border border-gray-200 rounded px-2 py-1 text-xs w-32 focus:outline-none focus:ring-1 focus:ring-red-300">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium">رد</button>
+                                </form>
+                            </div>
+                        @else
+                            <span class="text-gray-400 text-xs">—</span>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="p-8 text-center text-gray-400">
+                        <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        درخواست تسویه‌ای وجود ندارد.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+
+@if($requests->hasPages())
+    <div class="mt-4">{{ $requests->links() }}</div>
+@endif
 @endsection
