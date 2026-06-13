@@ -98,7 +98,7 @@ class ThemeCanvasController extends Controller
 
         $blocks = $page['blocks'] ?? [];
         $html   = $this->renderer->renderBlocks($blocks);
-        $css    = $this->styleEngine->generate($theme->global_styles ?? []);
+        $css    = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
 
         return view('admin.theme-builder.canvas-preview', compact('theme', 'page', 'html', 'css', 'pageKey'));
     }
@@ -111,7 +111,7 @@ class ThemeCanvasController extends Controller
         ]);
 
         $html = $this->renderer->renderBlocks($data['blocks']);
-        $css  = $this->styleEngine->generate($theme->global_styles ?? []);
+        $css  = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
 
         return response()->json(['html' => $html, 'css' => $css]);
     }
