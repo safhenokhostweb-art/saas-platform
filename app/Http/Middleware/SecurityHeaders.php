@@ -58,10 +58,10 @@ class SecurityHeaders
 
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$appUrl}",   // unsafe-inline needed for Alpine.js inline handlers
-            "style-src 'self' 'unsafe-inline' {$appUrl}",                   // unsafe-inline needed for Tailwind JIT
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$appUrl}",
+            "style-src 'self' 'unsafe-inline' {$appUrl} https://fonts.googleapis.com",
             "img-src 'self' data: blob: {$appUrl}",
-            "font-src 'self' data: {$appUrl}",
+            "font-src 'self' data: {$appUrl} https://fonts.gstatic.com",
             "connect-src 'self' {$appUrl}",
             "form-action 'self'",
             "frame-ancestors 'self'",

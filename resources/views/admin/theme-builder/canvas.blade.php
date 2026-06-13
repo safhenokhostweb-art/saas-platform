@@ -2,9 +2,6 @@
 
 @section('title', 'قالب‌ساز — ' . $theme->name)
 
-@push('head')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-@endpush
 
 @section('content')
 @php
