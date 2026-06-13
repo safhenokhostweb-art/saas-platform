@@ -5,6 +5,20 @@
 
 ---
 
+## 2026-06-13 — TB-8: Header/Footer Block Editor (Virtual Pages)
+
+**Reason:** امکان ویرایش `header_blocks` و `footer_blocks` تم Canvas از همان canvas editor، بدون نیاز به route یا UI جدید.
+
+**Pattern:** Virtual pages — کلیدهای `__header__` و `__footer__` به ابتدای لیست صفحات اضافه می‌شوند تا سیستم تب/بلاک/props موجود را reuse کنند.
+
+**Files Modified (customer-site):**
+- `app/Http/Controllers/Admin/ThemeDesignController.php` — `canvasEdit()` prepends virtual pages; `canvasSaveBlocks()` early-returns for `__header__`/`__footer__`; `canvasAddPage()` guards `__` prefix
+- `resources/views/admin/theme-design/canvas-editor.blade.php` — تب‌های ویژه با رنگ teal/purple + emoji 🔝🔚، guard در delete button + `deletePage()` JS، badge اطلاعاتی در info bar
+
+**Deployed:** ✅ 2026-06-13
+
+---
+
 ## 2026-06-13 — TB-7: Canvas Block Inline Editor
 
 **Reason:** ادمین customer-site باید بتواند blocks قالب Canvas فعال را مستقیماً ویرایش، مرتب‌سازی، اضافه/حذف کند و props هر block را inline تنظیم نماید.
