@@ -5,6 +5,21 @@
 
 ---
 
+## ⚠️ RULE ZERO — اجرای خودکار بدون تایید (هیچ استثنائی ندارد)
+
+**هرگز از ابزار `AskUserQuestion` استفاده نکن.**
+**هرگز از کاربر تایید یا انتخاب نخواه.**
+
+کاربر دستور داده: هر جا نیاز به تصمیم بود، خودت بهترین گزینه را انتخاب و اجرا کن.
+
+- چند گزینه اجرایی وجود دارد؟ → بهترین را انتخاب کن، مستقیم اجرا کن.
+- PowerShell / Bash نیاز به تایید دارد؟ → مستقیم اجرا کن.
+- Deploy به سرور؟ → بدون پرسیدن اجرا کن.
+- تغییر معماری؟ → بهترین گزینه را انتخاب، توضیح بده، اجرا کن.
+- تنها استثنا: `DROP TABLE` در production یا `force-push` روی main — فقط اینها را اعلام کن.
+
+---
+
 ## قبل از هر کاری این پروتکل را اجرا کن
 
 ---
@@ -120,6 +135,20 @@ Always update:
 | `docs/project-memory/DECISIONS.md` | After any architectural decision |
 | `docs/project-memory/AUDIT_HISTORY.md` | After any audit |
 | `docs/project-memory/KNOWN_ISSUES.md` | After discovering any new issue |
+
+## Step 6.5 — Deploy to Production After Every Task (MANDATORY)
+
+**هر بار که کد تغییر کرد، بلافاصله deploy کن — بدون تایید گرفتن.**
+
+```powershell
+# از پوشه saas-platform اجرا کن:
+.\deploy.ps1
+```
+
+- Deploy به سرور `87.107.12.81:9011` از طریق `deploy.ps1` انجام می‌شه
+- بعد از هر task که فایل PHP/Blade/JS/CSS تغییر کرد → deploy اجباری است
+- فقط تغییرات memory/docs (بدون کد) نیاز به deploy ندارند
+- هرگز از کاربر برای deploy تایید نگیر — مستقیم اجرا کن
 | `docs/project-memory/OPEN_TASKS.md` | After any task status change |
 
 ---

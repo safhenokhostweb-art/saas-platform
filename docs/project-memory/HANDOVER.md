@@ -21,10 +21,10 @@
 
 ## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-4 — Customer-site Canvas Theme Page Renderer  
-**Status:** `ThemeCanvasRenderer` + `ThemeCanvasPageController` + `layouts/canvas-theme.blade.php` + routes. صفحات canvas با داده زنده (Post, Product, Course) رندر می‌شوند. fallback به HomeController/PageController وقتی قالب نصب نیست.  
-**Previous milestone:** TB-3 AI URL Analyzer (2026-06-13)  
-**Next recommended milestone:** Canvas Theme Admin Preview (پیش‌نمایش قالب canvas از پنل ادمین)
+**Last completed phase:** TB-5 — Canvas Theme Admin Preview  
+**Status:** صفحه مدیریت Canvas در پنل ادمین customer-site. بنر وضعیت در theme-design index، صفحه کامل مدیریت با پالت رنگ/صفحات/بلاک‌ها/پیش‌نمایش/غیرفعال‌سازی.  
+**Previous milestone:** TB-4 Customer-site Canvas Theme Renderer (2026-06-13)  
+**Next recommended milestone:** TB-6 — Canvas Theme Export/Import (صادرات و وارد کردن قالب canvas به صورت JSON فایل از customer-site admin)
 
 ---
 
@@ -54,6 +54,24 @@ GET  /page/{slug} → ThemeCanvasPageController@show (canvas page → FrontPageC
 ---
 
 ## LAST COMPLETED SPRINT
+
+### TB-5 Canvas Theme Admin Preview — COMPLETE (2026-06-13)
+
+**فایل‌های جدید (customer-site):**
+- `resources/views/admin/theme-design/canvas.blade.php` — مدیریت قالب Canvas (پالت رنگ، صفحات، هدر/فوتر blocks، preview link، deactivate)
+
+**فایل‌های تغییریافته (customer-site):**
+- `app/Http/Controllers/Admin/ThemeDesignController.php` — `canvasTheme()` + `canvasDeactivate()` + `$canvasActive`/`$canvasName` در index()
+- `routes/web.php` — 2 route: `GET admin/theme-design/canvas` + `POST admin/theme-design/canvas/deactivate`
+- `resources/views/admin/theme-design/index.blade.php` — بنر وضعیت Canvas در بالای صفحه
+
+**URLs:**
+```
+GET  /admin/theme-design/canvas             → مدیریت قالب Canvas
+POST /admin/theme-design/canvas/deactivate  → غیرفعال‌سازی قالب Canvas
+```
+
+---
 
 ### TB-3 AI URL Analyzer — COMPLETE (2026-06-13)
 
