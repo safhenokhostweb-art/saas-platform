@@ -1,6 +1,12 @@
 {
   "permissions": {
     "allow": [
+      "Edit(//c/laragon/www/**)",
+      "Write(//c/laragon/www/**)",
+      "Read(//c/laragon/www/customer-site/**)",
+      "Bash(.\\deploy.ps1 *)",
+      "PowerShell(.\\deploy.ps1 *)",
+      "PowerShell(ssh -i \"$env:USERPROFILE\\.ssh\\deploy_saas\" -p 9011 *)",
       "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php8.2.23\\\\php.exe\" -r \"echo 'ok';\" 2>&1)",
       "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php8.4.16\\\\php.exe\" -r \"echo 'ok';\" 2>&1)",
       "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\" -r \"echo 'ok';\" 2>&1)",

@@ -21,10 +21,10 @@
 
 ## CURRENT STATE (2026-06-13)
 
-**Last completed phase:** TB-5 — Canvas Theme Admin Preview  
-**Status:** صفحه مدیریت Canvas در پنل ادمین customer-site. بنر وضعیت در theme-design index، صفحه کامل مدیریت با پالت رنگ/صفحات/بلاک‌ها/پیش‌نمایش/غیرفعال‌سازی.  
-**Previous milestone:** TB-4 Customer-site Canvas Theme Renderer (2026-06-13)  
-**Next recommended milestone:** TB-6 — Canvas Theme Export/Import (صادرات و وارد کردن قالب canvas به صورت JSON فایل از customer-site admin)
+**Last completed phase:** TB-6 — Canvas Theme Export/Import  
+**Status:** export (دانلود JSON فایل) و import (آپلود JSON برای نصب مستقیم) در customer-site admin کامل شد. بدون مارکت‌پلیس.  
+**Previous milestone:** TB-5 Canvas Theme Admin Preview (2026-06-13)  
+**Next recommended milestone:** TB-7 یا backlog items دیگر
 
 ---
 
