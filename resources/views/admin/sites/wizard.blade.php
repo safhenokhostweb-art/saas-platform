@@ -104,7 +104,7 @@
                            :class="form.modules.includes({{ $mod->id }}) ? 'border-indigo-400 bg-indigo-50' : ''">
                         <input type="checkbox" name="modules[]" value="{{ $mod->id }}"
                                x-model="form.modules" class="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-300 border-slate-300">
-                        <span class="text-xs font-medium text-slate-700 truncate">{{ $mod->name }}</span>
+                        <span class="text-xs font-medium text-slate-700 truncate">{{ $mod->title }}</span>
                     </label>
                     @endforeach
                 </div>

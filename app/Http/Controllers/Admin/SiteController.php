@@ -59,7 +59,7 @@ class SiteController extends Controller
     public function wizard()
     {
         $customers = Customer::orderBy('name')->get(['id', 'name', 'mobile']);
-        $modules   = Module::where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug', 'category']);
+        $modules   = Module::where('is_active', true)->orderBy('title')->get(['id', 'title', 'slug', 'category']);
         $modulesByCategory = $modules->groupBy('category');
         return view('admin.sites.wizard', compact('customers', 'modules', 'modulesByCategory'));
     }
