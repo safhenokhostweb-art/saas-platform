@@ -118,7 +118,8 @@ class SiteHealthChecker
             );
 
             if (! $conn) {
-                return ['status' => 'invalid', 'error' => $errstr];
+                // Connection refused or no port 443 — SSL simply not configured
+                return ['status' => 'unknown'];
             }
 
             $cert = stream_context_get_params($conn)['options']['ssl']['peer_certificate'] ?? null;
