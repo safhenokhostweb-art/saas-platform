@@ -2,6 +2,8 @@
 # deploy.ps1 — SaaS Platform Deploy Script
 # Usage: .\deploy.ps1 "توضیح تغییر"
 # vendor از لوکال آپلود می‌شود — سرور نیازی به دانلود ندارد
+# NOTE: برای SCP مستقیم فایل PHP از .NET UTF8Encoding($false) استفاده کن
+#       تا BOM اضافه نشود (Out-File -Encoding utf8 در PS 5.1 BOM اضافه می‌کند)
 # ================================================================
 
 param([string]$Message = "deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')")
