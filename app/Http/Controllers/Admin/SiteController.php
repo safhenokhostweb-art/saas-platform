@@ -54,6 +54,17 @@ class SiteController extends Controller
     }
 
     /**
+     * Wizard چند مرحله‌ای برای ایجاد سایت جدید
+     */
+    public function wizard()
+    {
+        $customers = Customer::orderBy('name')->get(['id', 'name', 'mobile']);
+        $modules   = Module::where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug', 'category']);
+        $modulesByCategory = $modules->groupBy('category');
+        return view('admin.sites.wizard', compact('customers', 'modules', 'modulesByCategory'));
+    }
+
+    /**
      * ذخیره سایت جدید
      */
     public function store(Request $request)

@@ -418,6 +418,7 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
+        Route::get('sites/wizard', [SiteController::class, 'wizard'])->name('sites.wizard');
         Route::resource('sites', SiteController::class);
         // Platform Site Agent
         Route::get('sites/{site}/agent', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'show'])->name('sites.agents.show');

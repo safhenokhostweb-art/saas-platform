@@ -4,9 +4,13 @@
 
 @section('content')
 <x-module-features module='sites' />
-<p class='mb-4'>
-    <a href="{{ route('admin.sites.create') }}" class='btn btn-primary'>ایجاد سایت جدید</a>
-</p>
+<div class='mb-4 flex items-center gap-2'>
+    <a href="{{ route('admin.sites.wizard') }}" class='btn btn-primary flex items-center gap-1.5'>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        افزودن سایت (Wizard)
+    </a>
+    <a href="{{ route('admin.sites.create') }}" class='btn btn-secondary text-sm'>فرم ساده</a>
+</div>
 
 @if(isset($filterCustomer) || isset($filterModule))
 <div class='mb-4 p-3 bg-blue-50 rounded border border-blue-200 text-sm'>
