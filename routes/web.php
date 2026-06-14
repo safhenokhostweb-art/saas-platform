@@ -650,6 +650,23 @@ Route::prefix('admin')
             Route::post('remote-agents/{remoteAgent}/deploy', [\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'triggerDeploy'])->name('remote-agents.deploy');
             Route::post('remote-agents/{remoteAgent}/restart',[\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'triggerRestart'])->name('remote-agents.restart');
             Route::get('remote-agents/generate-secret',       [\App\Http\Controllers\Admin\Infrastructure\RemoteAgentController::class, 'generateSecret'])->name('remote-agents.generate-secret');
+
+            // INFRA-MONITORING-01: Central Monitoring & Health Center
+            Route::prefix('monitoring')->name('monitoring.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'index'])->name('index');
+            });
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Monitoring Admin API (JSON — no blade, inside admin middleware)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('api/monitoring')->name('api.monitoring.')->group(function () {
+            Route::get('summary',                 [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'summary'])->name('summary');
+            Route::get('sites',                   [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'sites'])->name('sites');
+            Route::get('incidents',               [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'incidents'])->name('incidents');
+            Route::post('incidents/{id}/resolve', [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'resolveIncident'])->name('incidents.resolve');
         });
 
         /*

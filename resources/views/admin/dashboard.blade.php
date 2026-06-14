@@ -190,7 +190,7 @@ details[open]>summary .chevron{transform:rotate(180deg)}
                             @endforeach
                             <td class="whitespace-nowrap">
                                 <a href="{{ route('admin.forms.sites.edit', $form) }}" class="text-indigo-600 hover:underline text-xs">سایت‌ها</a>
-                                <span class="mx-1 text-gray-300">|</span>
+                                <span class="mx-1 text-gray-400">|</span>
                                 <a href="{{ route('admin.forms.edit', $form) }}" class="text-indigo-600 hover:underline text-xs">ویرایش</a>
                             </td>
                         </tr>

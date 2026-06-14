@@ -35,6 +35,12 @@ class Kernel extends ConsoleKernel
                 ->everyThirtyMinutes()
                 ->withoutOverlapping();
         }
+
+        // INFRA-MONITORING-01: Health check all active sites every 5 minutes
+        $schedule->command('monitor:sites')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/monitor-sites.log'));
     }
 
     /**

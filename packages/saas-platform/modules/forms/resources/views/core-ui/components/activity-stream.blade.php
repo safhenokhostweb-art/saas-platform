@@ -8,7 +8,7 @@
 <div {{ $attributes->merge(['class' => 'flow-root']) }}>
     @if(count($activities) === 0)
     <div class="text-center py-8">
-        <svg class="w-10 h-10 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
         </svg>
         <p class="text-sm text-gray-400">هیچ فعالیتی ثبت نشده</p>
