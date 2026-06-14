@@ -321,7 +321,7 @@ class ThemePresetRegistry
                     '600' => '#0d9488', '700' => '#0f766e', '800' => '#115e59', '900' => '#134e4a',
                 ],
                 'secondary' => ['base' => '#0891b2', 'hover' => '#0e7490', 'light' => '#ecfeff'],
-                'accent'    => ['base' => '#0d9488', 'hover' => '#0f766e', 'light' => '#f0fdfa', 'ring' => 'rgb(13 148 136 / 0.25)'],
+                'accent'    => ['base' => '#0d9488', 'hover' => '#0f766e', 'light' => '#ccfbf1', 'ring' => 'rgb(13 148 136 / 0.25)'],
                 'success'   => ['base' => '#16a34a', 'hover' => '#15803d', 'bg' => '#d1fae5', 'text' => '#065f46', 'border' => '#6ee7b7', 'light' => '#f0fdf4'],
                 'warning'   => ['base' => '#d97706', 'hover' => '#b45309', 'bg' => '#fef3c7', 'text' => '#92400e', 'border' => '#fcd34d', 'light' => '#fffbeb'],
                 'danger'    => ['base' => '#dc2626', 'hover' => '#b91c1c', 'bg' => '#fee2e2', 'text' => '#991b1b', 'border' => '#fca5a5', 'light' => '#fef2f2'],
@@ -329,13 +329,13 @@ class ThemePresetRegistry
             ],
             'surfaces' => [
                 'bg' => '#f0fdfa', 'surface' => '#ffffff', 'surface_soft' => '#f7fffe',
-                'surface_muted' => '#ccfbf1', 'card' => '#ffffff',
+                'surface_muted' => '#e6fff9', 'card' => '#ffffff',
             ],
             'typography' => [
                 'text_primary' => '#042f2e', 'text_secondary' => '#134e4a',
                 'text_muted' => '#0f766e', 'link' => '#0d9488', 'link_hover' => '#0f766e',
             ],
-            'borders' => ['border' => '#99f6e4', 'divider' => '#ccfbf1', 'strong' => '#5eead4'],
+            'borders' => ['border' => '#5eead4', 'divider' => '#ccfbf1', 'strong' => '#2dd4bf'],
             'sidebar' => [
                 'bg' => '#134e4a', 'bg_bottom' => '#042f2e',
                 'text' => '#ccfbf1', 'muted' => '#5eead4', 'accent' => '#2dd4bf', 'border' => '#0f766e',
@@ -364,7 +364,7 @@ class ThemePresetRegistry
                     '600' => '#d97706', '700' => '#b45309', '800' => '#92400e', '900' => '#78350f',
                 ],
                 'secondary' => ['base' => '#ea580c', 'hover' => '#c2410c', 'light' => '#fff7ed'],
-                'accent'    => ['base' => '#b45309', 'hover' => '#92400e', 'light' => '#fffbeb', 'ring' => 'rgb(180 83 9 / 0.25)'],
+                'accent'    => ['base' => '#b45309', 'hover' => '#92400e', 'light' => '#fde68a', 'ring' => 'rgb(180 83 9 / 0.25)'],
                 'success'   => ['base' => '#16a34a', 'hover' => '#15803d', 'bg' => '#d1fae5', 'text' => '#065f46', 'border' => '#6ee7b7', 'light' => '#f0fdf4'],
                 'warning'   => ['base' => '#f59e0b', 'hover' => '#d97706', 'bg' => '#fef3c7', 'text' => '#78350f', 'border' => '#fcd34d', 'light' => '#fffbeb'],
                 'danger'    => ['base' => '#dc2626', 'hover' => '#b91c1c', 'bg' => '#fee2e2', 'text' => '#991b1b', 'border' => '#fca5a5', 'light' => '#fef2f2'],
@@ -378,7 +378,7 @@ class ThemePresetRegistry
                 'text_primary' => '#1c1917', 'text_secondary' => '#44403c',
                 'text_muted' => '#78716c', 'link' => '#b45309', 'link_hover' => '#92400e',
             ],
-            'borders' => ['border' => '#fde68a', 'divider' => '#fef3c7', 'strong' => '#fcd34d'],
+            'borders' => ['border' => '#fcd34d', 'divider' => '#fef3c7', 'strong' => '#fbbf24'],
             'sidebar' => [
                 'bg' => '#292524', 'bg_bottom' => '#1c1917',
                 'text' => '#fef3c7', 'muted' => '#fbbf24', 'accent' => '#fcd34d', 'border' => '#44403c',

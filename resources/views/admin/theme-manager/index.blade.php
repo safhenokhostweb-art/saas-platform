@@ -55,10 +55,10 @@
       </div>
     </div>
 
-    {{-- Active Theme Banner --}}
+    {{-- Active Theme Banner — always white surface + accent start-border (works on any theme) --}}
     @if($active)
     <div class="mb-6 p-4 rounded-xl flex items-center gap-4"
-         style="background:var(--ui-indigo-light);border:1px solid var(--ui-indigo-ring);">
+         style="background:var(--ui-surface);border:1px solid var(--ui-border);border-inline-start:4px solid var(--ui-indigo);box-shadow:var(--ui-shadow-sm);">
       <div class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center"
            style="background:var(--ui-indigo);color:#fff;">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>

@@ -97,6 +97,20 @@ class ThemeProfile extends Model
         if (!empty($accent['light'])) $vars['--ui-indigo-light']  = $accent['light'];
         if (!empty($accent['ring']))  $vars['--ui-indigo-ring']   = $accent['ring'];
 
+        // Derive interactive state colors from accent hex (rgba values)
+        if (!empty($accent['base']) && preg_match('/^#([0-9a-f]{6})$/i', $accent['base'], $m)) {
+            [$r, $g, $b] = array_map('hexdec', str_split($m[1], 2));
+            $vars['--ui-hover-overlay']   = "rgba($r,$g,$b,0.04)";
+            $vars['--ui-hover-bg']        = "rgba($r,$g,$b,0.06)";
+            $vars['--ui-active-overlay']  = "rgba($r,$g,$b,0.08)";
+            $vars['--ui-active-bg']       = "rgba($r,$g,$b,0.10)";
+            $vars['--ui-selected-bg']     = "rgba($r,$g,$b,0.08)";
+            if (empty($accent['ring'])) {
+                $vars['--ui-indigo-ring'] = "rgb($r $g $b / 0.25)";
+            }
+            $vars['--ui-focus-ring']      = "0 0 0 3px rgb($r $g $b / 0.25)";
+        }
+
         // ── Secondary / Purple ───────────────────────────────────────────
         if (!empty($secondary['base']))  $vars['--ui-purple']       = $secondary['base'];
         if (!empty($secondary['hover'])) $vars['--ui-purple-hover']  = $secondary['hover'];
