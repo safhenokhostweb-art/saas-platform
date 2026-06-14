@@ -8,46 +8,75 @@ use Illuminate\Support\Str;
 
 /**
  * TB-3 — AI URL Analyzer: fetches a URL, extracts design signals, and calls
- * Claude API to produce a ready-to-use Theme JSON compatible with the canvas builder.
+ * an AI API (GapGPT or Claude) to produce a ready-to-use Theme JSON.
+ *
+ * Provider selection via THEME_AI_PROVIDER env:
+ *   gapgpt  → OpenAI-compatible (default when GAPGPT_API_KEY is set)
+ *   claude  → Anthropic Messages API
  */
 class ThemeAiAnalyzerService
 {
-    private const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
-    private const API_VERSION = '2023-06-01';
-    private const MODEL = 'claude-sonnet-4-6';
+    // ── GapGPT (OpenAI-compatible) ────────────────────────────────────────────
+    private const GAPGPT_DEFAULT_URL   = 'https://api.gapgpt.app/v1/chat/completions';
+    private const GAPGPT_DEFAULT_MODEL = 'gpt-4o-mini';
+
+    // ── Claude (Anthropic) ────────────────────────────────────────────────────
+    private const CLAUDE_API     = 'https://api.anthropic.com/v1/messages';
+    private const CLAUDE_VERSION = '2023-06-01';
+    private const CLAUDE_MODEL   = 'claude-sonnet-4-6';
+
     private const MAX_TOKENS = 4096;
-    private const TIMEOUT = 60;
+    private const TIMEOUT    = 60;
 
-    private string $resolvedKey;
+    private string $provider;
+    private string $apiKey;
+    private string $baseUrl;
+    private string $model;
 
-    public function __construct(string $apiKey = '')
+    public function __construct()
     {
-        $this->resolvedKey = $apiKey ?: (string) config('services.anthropic.key', env('ANTHROPIC_API_KEY', ''));
+        $this->provider = strtolower((string) env('THEME_AI_PROVIDER', 'gapgpt'));
+
+        if ($this->provider === 'claude') {
+            $this->apiKey  = (string) env('ANTHROPIC_API_KEY', config('services.anthropic.key', ''));
+            $this->baseUrl = self::CLAUDE_API;
+            $this->model   = (string) env('THEME_AI_MODEL', self::CLAUDE_MODEL);
+        } else {
+            // GapGPT (default)
+            $this->apiKey  = (string) env('GAPGPT_API_KEY', '');
+            $this->baseUrl = rtrim((string) env('GAPGPT_BASE_URL', self::GAPGPT_DEFAULT_URL), '/');
+            $this->model   = (string) env('THEME_AI_MODEL', self::GAPGPT_DEFAULT_MODEL);
+        }
     }
 
     public function isEnabled(): bool
     {
-        return !empty($this->resolvedKey);
+        return !empty($this->apiKey);
+    }
+
+    public function getProviderLabel(): string
+    {
+        return $this->provider === 'claude' ? 'Claude AI' : 'GapGPT AI';
+    }
+
+    public function getEnvKeyName(): string
+    {
+        return $this->provider === 'claude' ? 'ANTHROPIC_API_KEY' : 'GAPGPT_API_KEY';
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    /**
-     * Analyze a URL and return a theme JSON array ready for createFromJson().
-     * @return array{ suggested_name: string, header_blocks: array, footer_blocks: array, pages: array, global_styles: array, settings: array }
-     */
     public function analyzeUrl(string $url, string $notes = ''): array
     {
         $pageData = $this->fetchPage($url);
         $prompt   = $this->buildPrompt($url, $pageData, $notes);
-        $raw      = $this->callClaude($prompt);
+        $raw      = $this->provider === 'claude'
+                        ? $this->callClaude($prompt)
+                        : $this->callGapGpt($prompt);
 
         return $this->parseThemeJson($raw);
     }
 
-    /**
-     * Create a Theme model from the JSON returned by analyzeUrl().
-     */
     public function createFromJson(array $json, ?string $overrideName = null): Theme
     {
         $name = $overrideName ?: ($json['suggested_name'] ?? 'قالب هوش مصنوعی');
@@ -95,7 +124,6 @@ class ThemeAiAnalyzerService
 
     private function extractPageData(string $html, string $url): array
     {
-        // Suppress parse errors from malformed HTML
         $prev = libxml_use_internal_errors(true);
         $doc  = new \DOMDocument();
         @$doc->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NOERROR);
@@ -103,25 +131,23 @@ class ThemeAiAnalyzerService
 
         $xpath = new \DOMXPath($doc);
 
-        $title = $this->xpathText($xpath, '//title');
-        $desc  = $this->xpathAttr($xpath, '//meta[@name="description"]', 'content');
-        $h1    = $this->xpathTextAll($xpath, '//h1', 3);
-        $h2    = $this->xpathTextAll($xpath, '//h2', 6);
-        $navLinks = $this->xpathTextAll($xpath, '//nav//a', 8);
+        $title       = $this->xpathText($xpath, '//title');
+        $desc        = $this->xpathAttr($xpath, '//meta[@name="description"]', 'content');
+        $h1          = $this->xpathTextAll($xpath, '//h1', 3);
+        $h2          = $this->xpathTextAll($xpath, '//h2', 6);
+        $navLinks    = $this->xpathTextAll($xpath, '//nav//a', 8);
         $footerLinks = $this->xpathTextAll($xpath, '//footer//a', 8);
-        $metaKw = $this->xpathAttr($xpath, '//meta[@name="keywords"]', 'content');
-        $ogImage = $this->xpathAttr($xpath, '//meta[@property="og:image"]', 'content');
-        $themeColor = $this->xpathAttr($xpath, '//meta[@name="theme-color"]', 'content');
+        $metaKw      = $this->xpathAttr($xpath, '//meta[@name="keywords"]', 'content');
+        $ogImage     = $this->xpathAttr($xpath, '//meta[@property="og:image"]', 'content');
+        $themeColor  = $this->xpathAttr($xpath, '//meta[@name="theme-color"]', 'content');
 
-        // Extract inline styles for color hints
         $styleAttr = [];
         foreach ($xpath->query('//*[@style]') as $node) {
             $styleAttr[] = $node->getAttribute('style');
             if (count($styleAttr) >= 20) break;
         }
 
-        // Detect language
-        $lang = 'fa';
+        $lang     = 'fa';
         $htmlNode = $doc->documentElement;
         if ($htmlNode && $htmlNode->getAttribute('lang')) {
             $lang = strtolower(substr($htmlNode->getAttribute('lang'), 0, 2));
@@ -168,7 +194,7 @@ class ThemeAiAnalyzerService
         return $result;
     }
 
-    // ── Private: Claude call ─────────────────────────────────────────────────
+    // ── Private: Prompt ───────────────────────────────────────────────────────
 
     private function buildPrompt(string $url, array $page, string $notes): array
     {
@@ -242,16 +268,45 @@ USR;
         return ['system' => $system, 'user' => $user];
     }
 
+    // ── Private: GapGPT call (OpenAI-compatible) ──────────────────────────────
+
+    private function callGapGpt(array $prompt): string
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Content-Type'  => 'application/json',
+        ])
+        ->timeout(self::TIMEOUT)
+        ->post($this->baseUrl, [
+            'model'       => $this->model,
+            'max_tokens'  => self::MAX_TOKENS,
+            'messages'    => [
+                ['role' => 'system', 'content' => $prompt['system']],
+                ['role' => 'user',   'content' => $prompt['user']],
+            ],
+        ]);
+
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? $response->body();
+            Log::error('TB-3: GapGPT API error', ['status' => $response->status(), 'body' => $response->body()]);
+            throw new \RuntimeException("GapGPT API error: {$err}");
+        }
+
+        return $response->json('choices.0.message.content') ?? '';
+    }
+
+    // ── Private: Claude call ──────────────────────────────────────────────────
+
     private function callClaude(array $prompt): string
     {
         $response = Http::withHeaders([
-            'x-api-key'         => $this->resolvedKey,
-            'anthropic-version' => self::API_VERSION,
+            'x-api-key'         => $this->apiKey,
+            'anthropic-version' => self::CLAUDE_VERSION,
             'content-type'      => 'application/json',
         ])
         ->timeout(self::TIMEOUT)
         ->post(self::CLAUDE_API, [
-            'model'      => self::MODEL,
+            'model'      => $this->model,
             'max_tokens' => self::MAX_TOKENS,
             'system'     => $prompt['system'],
             'messages'   => [
@@ -273,12 +328,10 @@ USR;
     {
         $raw = trim($raw);
 
-        // Strip markdown fences
         if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $raw, $m)) {
             $raw = $m[1];
         }
 
-        // Find outermost {}
         $start = strpos($raw, '{');
         $end   = strrpos($raw, '}');
         if ($start !== false && $end !== false && $end > $start) {
@@ -288,10 +341,9 @@ USR;
         try {
             $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new \RuntimeException("Claude returned invalid JSON: {$e->getMessage()}");
+            throw new \RuntimeException("AI returned invalid JSON: {$e->getMessage()}");
         }
 
-        // Ensure required keys exist
         $data['header_blocks'] = $this->normalizeBlocks($data['header_blocks'] ?? []);
         $data['footer_blocks'] = $this->normalizeBlocks($data['footer_blocks'] ?? []);
 
@@ -304,10 +356,10 @@ USR;
         }
 
         $data['global_styles'] = array_merge([
-            'primary_color'    => '#3b82f6',
-            'font_family'      => 'Vazirmatn',
-            'border_radius'    => 'md',
-            'direction'        => 'rtl',
+            'primary_color' => '#3b82f6',
+            'font_family'   => 'Vazirmatn',
+            'border_radius' => 'md',
+            'direction'     => 'rtl',
         ], $data['global_styles'] ?? []);
 
         $data['settings'] = $data['settings'] ?? [];

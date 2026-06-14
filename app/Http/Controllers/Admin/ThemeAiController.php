@@ -12,8 +12,10 @@ class ThemeAiController extends Controller
     /** GET /admin/theme-builder/ai-analyze */
     public function form()
     {
-        $enabled = $this->analyzer->isEnabled();
-        return view('admin.theme-builder.ai-analyze', compact('enabled'));
+        $enabled       = $this->analyzer->isEnabled();
+        $providerLabel = $this->analyzer->getProviderLabel();
+        $envKeyName    = $this->analyzer->getEnvKeyName();
+        return view('admin.theme-builder.ai-analyze', compact('enabled', 'providerLabel', 'envKeyName'));
     }
 
     /**
@@ -29,10 +31,12 @@ class ThemeAiController extends Controller
         ]);
 
         if (!$this->analyzer->isEnabled()) {
+            $envKey = $this->analyzer->getEnvKeyName();
+            $msg = "{$envKey} تنظیم نشده است.";
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'error' => 'ANTHROPIC_API_KEY تنظیم نشده است.'], 503);
+                return response()->json(['success' => false, 'error' => $msg], 503);
             }
-            return back()->with('error', 'ANTHROPIC_API_KEY تنظیم نشده است.');
+            return back()->with('error', $msg);
         }
 
         try {
