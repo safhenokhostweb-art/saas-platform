@@ -258,3 +258,65 @@ Platform admins do not belong to a site. Walkthroughs are tenant-scoped features
 
 **Impact:**  
 Platform admins see the admin panel without education guide overlays. Tenant users continue to receive contextual walkthroughs. No regression for tenant context.
+
+---
+
+## ADR-014
+
+**Date:** 2026-06-14  
+**Title:** Module Operational Boundary — Platform Admin Is Stats-Only for Tenant Modules
+
+**Context:**  
+Audit revealed that two tenant-operational features were available in the saas-platform admin panel:
+1. Forms module: package routes loaded admin CRUD in both saas-platform and customer-site
+2. Menu management: `admin/sites/{site}/menus/*` routes in saas-platform stored menus in the platform DB, but customer-site reads menus from its own DB (making these routes useless and architecturally wrong)
+
+**Decision:**  
+- Tenant-operational modules (forms, menus, payment gateways for shop, subscriptions, etc.) are managed **exclusively** from customer-site admin panel
+- Platform admin only sees **aggregate statistics** for modules (which sites have them enabled, version info)
+- `FORMS_PLATFORM_MODE=true` env flag disables forms admin CRUD in saas-platform; only the platform-overview stats page is accessible
+- Menu management routes removed from `admin/sites/{site}/menus/*` in saas-platform
+
+**Reason:**  
+- Each customer site is an independent SaaS tenant. The platform admin's role is infrastructure management, module licensing, and oversight — not operational management of tenant content
+- Menus in saas-platform DB were never consumed by customer-site (which reads from its own DB), making them dead data
+- Forms CRUD in platform admin duplicated functionality already fully available in customer-site admin
+
+**Impact:**  
+- `packages/modules/forms/routes/web.php`: admin CRUD block wrapped in `if (!config('forms.platform_mode', false))`
+- `packages/modules/forms/config/forms.php`: `platform_mode` key added
+- saas-platform `.env`: `FORMS_PLATFORM_MODE=true`
+- saas-platform `routes/web.php`: menu routes removed; `/admin/forms` now maps to read-only overview
+- saas-platform `FormController`: converted to stats-only (shows sites with forms module enabled)
+- **No impact** on customer-site (full forms + menu management unchanged)
+
+---
+
+## ADR-015
+
+**Date:** 2026-06-14  
+**Title:** Correct Module Placement Map
+
+**Context:**  
+Clear definition of which modules belong where, to prevent future architectural drift.
+
+**Decision — Module Placement Rules:**
+
+| Module | Code Lives In | Admin Managed By | Rationale |
+|--------|--------------|-----------------|-----------|
+| Forms | `packages/modules/forms` | customer-site only | Tenant creates their own forms |
+| Menus | App\ (each) | customer-site only | Each tenant manages their own nav |
+| Payment Gateway (shop) | customer-site App\ | customer-site only | Tenant's own payment methods |
+| Payment Gateway (platform) | saas-platform App\ | saas-platform only | Platform collects money from customers |
+| Education | `packages/modules/education` | saas-platform (content) + customer-site (portal) | AI content managed centrally, portal is tenant-facing |
+| Tickets | `packages/modules/tickets` | customer-site only | Tenant manages support with their users |
+| Subscription | customer-site App\ | customer-site only | Tenant's subscription plans for end-users |
+| Theme Builder | saas-platform App\ | saas-platform only | Platform creates themes, assigns to tenants |
+| Infrastructure | saas-platform App\ | saas-platform only | Server/domain/backup management |
+| Blog / Shop / Courses | customer-site App\ | customer-site only | Tenant content |
+
+**Reason:**  
+Prevent platform admin from doing operational work on behalf of tenants. Platform admin = infrastructure + licensing + oversight. Tenant admin = all operational content.
+
+**Impact:**  
+This map is the authoritative reference for any future module development decisions.

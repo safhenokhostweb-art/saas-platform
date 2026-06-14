@@ -18,7 +18,7 @@
     <div class="flex items-center gap-1">
         {{-- Previous --}}
         @if($paginator->onFirstPage())
-            <span class="px-3 py-1.5 text-xs text-gray-300 border border-gray-100 rounded-lg cursor-not-allowed">قبلی</span>
+            <span class="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg cursor-not-allowed opacity-60">قبلی</span>
         @else
             <a href="{{ $paginator->previousPageUrl() }}"
                class="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
@@ -45,7 +45,7 @@
                 بعدی
             </a>
         @else
-            <span class="px-3 py-1.5 text-xs text-gray-300 border border-gray-100 rounded-lg cursor-not-allowed">بعدی</span>
+            <span class="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg cursor-not-allowed opacity-60">بعدی</span>
         @endif
     </div>
 </div>

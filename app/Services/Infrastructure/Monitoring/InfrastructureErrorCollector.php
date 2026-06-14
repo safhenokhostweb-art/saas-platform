@@ -1,0 +1,146 @@
+<?php
+namespace App\Services\Infrastructure\Monitoring;
+
+use App\Models\Infrastructure\InfraIncident;
+use App\Services\ExpirySmsService;
+use App\Services\Infrastructure\SlackAlertService;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Central collector for infrastructure errors.
+ * Creates or updates infra_incidents, throttles SMS, fires Slack alerts.
+ */
+class InfrastructureErrorCollector
+{
+    private SlackAlertService $slack;
+
+    public function __construct(SlackAlertService $slack)
+    {
+        $this->slack = $slack;
+    }
+
+    public function collect(
+        string  $type,
+        string  $title,
+        string  $message,
+        ?int    $siteId   = null,
+        string  $severity = 'warning'
+    ): InfraIncident {
+        $incident = InfraIncident::where('site_id', $siteId)
+            ->where('type', $type)
+            ->whereNull('resolved_at')
+            ->latest()
+            ->first();
+
+        if ($incident) {
+            $incident->update(['message' => $message]);
+        } else {
+            $incident = InfraIncident::create([
+                'site_id'  => $siteId,
+                'severity' => $severity,
+                'type'     => $type,
+                'title'    => $title,
+                'message'  => $message,
+            ]);
+        }
+
+        $this->maybeNotify($incident);
+
+        return $incident;
+    }
+
+    public function resolveForSite(int $siteId, string $type): void
+    {
+        InfraIncident::where('site_id', $siteId)
+            ->where('type', $type)
+            ->whereNull('resolved_at')
+            ->update(['resolved_at' => now()]);
+    }
+
+    public function collectQueueFailure(string $jobName, string $error): void
+    {
+        $this->collect(
+            type:     'queue_dead',
+            title:    "Queue Job Failed: {$jobName}",
+            message:  $error,
+            siteId:   null,
+            severity: 'critical'
+        );
+    }
+
+    public function collectSchedulerFailure(string $command, string $error): void
+    {
+        $this->collect(
+            type:     'scheduler_failure',
+            title:    "Scheduled Task Failed: {$command}",
+            message:  $error,
+            siteId:   null,
+            severity: 'warning'
+        );
+    }
+
+    private function maybeNotify(InfraIncident $incident): void
+    {
+        if (! $incident->needsSmsAlert()) {
+            return;
+        }
+
+        $severityLabel = $incident->isCritical() ? 'بحرانی' : 'هشدار';
+        $smsText = "[{$severityLabel}] {$incident->title}. {$incident->message}";
+
+        $this->trySendSms($smsText);
+
+        if ($incident->isCritical()) {
+            $this->slack->critical($incident->title, $incident->message ?? '', [
+                'Type'     => $incident->type,
+                'Site ID'  => $incident->site_id ?? 'platform',
+                'Severity' => $incident->severity,
+            ]);
+        } else {
+            $this->slack->warning($incident->title, $incident->message ?? '', [
+                'Type'     => $incident->type,
+                'Site ID'  => $incident->site_id ?? 'platform',
+            ]);
+        }
+
+        $incident->markSmsSent();
+    }
+
+    private function trySendSms(string $text): void
+    {
+        try {
+            $resolver = new \App\Services\Sms\SmsGatewayResolver();
+            $gateway  = \App\Services\Sms\SmsGatewayResolver::resolve();
+            if (! $gateway) {
+                return;
+            }
+
+            $adminMobiles = \App\Models\User::where('is_active', true)
+                ->where('is_admin', true)
+                ->whereNotNull('mobile')
+                ->where('mobile', '!=', '')
+                ->pluck('mobile')
+                ->unique()
+                ->values()
+                ->all();
+
+            foreach ($adminMobiles as $mobile) {
+                $mobile = $this->normalizeMobile((string) $mobile);
+                if ($mobile) {
+                    $gateway->send($mobile, $text);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('InfrastructureErrorCollector: SMS send failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function normalizeMobile(string $m): string
+    {
+        $m = preg_replace('/\D/', '', $m);
+        if (str_starts_with($m, '98')) return $m;
+        if (str_starts_with($m, '0'))  return '98' . substr($m, 1);
+        if (strlen($m) === 10)         return '98' . $m;
+        return $m;
+    }
+}

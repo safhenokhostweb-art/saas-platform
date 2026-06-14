@@ -2,20 +2,40 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Site;
 use App\Models\Form;
 use App\Models\FormField;
-use App\Models\Site;
 use App\Services\ActivityLogger;
 use App\Services\CaptchaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+/**
+ * ADR-015: Forms are managed exclusively by each customer-site admin panel.
+ * This controller provides a read-only overview for platform admins
+ * showing which sites have the forms module enabled. No CRUD here.
+ */
 class FormController extends Controller
 {
     public function index()
     {
-        $forms = Form::latest()->get();
-        return view('admin.forms.index', compact('forms'));
+        $sitesWithForms = Site::with('modules')
+            ->where('is_active', true)
+            ->get()
+            ->map(function (Site $site) {
+                $module = $site->modules->firstWhere('slug', 'forms');
+                return [
+                    'site'    => $site,
+                    'enabled' => $module && ($module->pivot->is_active ?? false),
+                    'version' => $module->pivot->installed_version ?? null,
+                ];
+            })
+            ->sortByDesc('enabled')
+            ->values();
+
+        $enabledCount = $sitesWithForms->where('enabled', true)->count();
+
+        return view('admin.forms.platform-overview', compact('sitesWithForms', 'enabledCount'));
     }
 
     public function create()

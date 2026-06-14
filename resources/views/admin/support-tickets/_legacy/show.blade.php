@@ -259,7 +259,7 @@
                         <button type="submit"
                                 :disabled="isSending || !message.trim()"
                                 class="btn !rounded-full !p-3 !min-w-[48px] !h-[48px] flex items-center justify-center transition-all"
-                                :class="isSending || !message.trim() ? '!bg-gray-300 !text-gray-500 !cursor-not-allowed' : '!bg-green-600 !text-white hover:!bg-green-700'">
+                                :class="isSending || !message.trim() ? '!bg-gray-200 !text-gray-600 !cursor-not-allowed' : '!bg-green-600 !text-white hover:!bg-green-700'">
                             <template x-if="!isSending">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                             </template>
