@@ -498,6 +498,10 @@ Route::prefix('admin')
         });
         Route::resource('payment-gateways', PaymentGatewayController::class)->except('show');
 
+        // ADR-015: Forms overview — read-only, shows which sites have forms module enabled.
+        // Full form management is done in each site's own admin panel (customer-site).
+        Route::get('forms', [\App\Http\Controllers\Admin\FormController::class, 'index'])->name('forms.index');
+
         // App Releases — دانلود اپلیکیشن
         Route::prefix('app-releases')->name('app-releases.')->group(function () {
             Route::get('/',                              [\App\Http\Controllers\Admin\AppReleaseController::class, 'index'])->name('index');
