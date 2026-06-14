@@ -2,11 +2,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Site;
 use App\Models\Theme;
 use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ThemeCanvasController extends Controller
@@ -114,5 +117,72 @@ class ThemeCanvasController extends Controller
         $css  = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
 
         return response()->json(['html' => $html, 'css' => $css]);
+    }
+
+    /**
+     * نصب مستقیم قالب روی دیتابیس سایت مشتری از پنل پلتفرم.
+     * Platform admin can assign any canvas theme to any site directly.
+     */
+    public function installToSite(Request $request, Theme $theme)
+    {
+        $request->validate(['site_id' => 'required|integer|exists:sites,id']);
+
+        $site = Site::findOrFail($request->site_id);
+
+        if (!$site->db_host || !$site->db_name) {
+            return back()->with('error', 'اطلاعات دیتابیس سایت "' . $site->title . '" تنظیم نشده است.');
+        }
+
+        // باز کردن اتصال به دیتابیس سایت مشتری
+        $connKey = 'theme_install_' . $site->id;
+        Config::set("database.connections.{$connKey}", [
+            'driver'    => 'mysql',
+            'host'      => $site->db_host,
+            'port'      => '3306',
+            'database'  => $site->db_name,
+            'username'  => $site->db_user,
+            'password'  => $site->db_password ?? '',
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => false,
+        ]);
+        DB::purge($connKey);
+        $conn = DB::connection($connKey);
+
+        $themeJson = json_encode([
+            'name'          => $theme->name,
+            'slug'          => $theme->slug,
+            'header_blocks' => $theme->header_blocks ?? [],
+            'footer_blocks' => $theme->footer_blocks ?? [],
+            'pages'         => $theme->pages ?? [],
+            'global_styles' => $theme->global_styles ?? [],
+        ], JSON_UNESCAPED_UNICODE);
+
+        // upsert در جدول settings سایت مشتری
+        $existing = $conn->table('settings')->where('key', 'active_canvas_theme_data')->first();
+        if ($existing) {
+            $conn->table('settings')
+                ->where('key', 'active_canvas_theme_data')
+                ->update(['value' => $themeJson, 'updated_at' => now()]);
+        } else {
+            $conn->table('settings')->insert([
+                'key'        => 'active_canvas_theme_data',
+                'value'      => $themeJson,
+                'group'      => 'theme',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // پاکسازی کش سایت مشتری (در صورت وجود جدول cache)
+        try {
+            $conn->table('cache')->where('key', 'like', '%canvas_theme%')->delete();
+        } catch (\Throwable) {}
+
+        DB::purge($connKey);
+
+        return redirect()->route('admin.theme-builder.index')
+            ->with('success', 'قالب "' . $theme->name . '" با موفقیت روی سایت "' . $site->title . '" نصب شد.');
     }
 }
