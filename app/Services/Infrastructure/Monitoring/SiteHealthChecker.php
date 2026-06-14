@@ -60,26 +60,39 @@ class SiteHealthChecker
     private function fetchHealth(string $baseUrl): array
     {
         $start = microtime(true);
-        try {
-            $response = Http::timeout(10)
-                ->withoutVerifying()
-                ->get("{$baseUrl}/api/health");
 
-            $ms = (int) ((microtime(true) - $start) * 1000);
-            $payload = null;
+        $candidates = [$baseUrl];
 
-            if ($response->successful()) {
-                $decoded = $response->json();
-                if (is_array($decoded) && isset($decoded['app'])) {
-                    $payload = $decoded;
-                }
-            }
-
-            return [$response->status(), $ms, $payload];
-        } catch (\Throwable $e) {
-            $ms = (int) ((microtime(true) - $start) * 1000);
-            throw $e;
+        // If trying HTTPS, also add HTTP fallback for sites without SSL
+        if (str_starts_with($baseUrl, 'https://')) {
+            $candidates[] = 'http://' . substr($baseUrl, 8);
         }
+
+        $lastException = null;
+        foreach ($candidates as $url) {
+            try {
+                $response = Http::timeout(10)
+                    ->withoutVerifying()
+                    ->get("{$url}/api/health");
+
+                $ms      = (int) ((microtime(true) - $start) * 1000);
+                $payload = null;
+
+                if ($response->successful()) {
+                    $decoded = $response->json();
+                    if (is_array($decoded) && isset($decoded['app'])) {
+                        $payload = $decoded;
+                    }
+                }
+
+                return [$response->status(), $ms, $payload];
+            } catch (\Throwable $e) {
+                $lastException = $e;
+            }
+        }
+
+        $ms = (int) ((microtime(true) - $start) * 1000);
+        throw $lastException;
     }
 
     private function checkSsl(string $domain): array

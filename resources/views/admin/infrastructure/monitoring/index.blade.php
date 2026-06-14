@@ -113,7 +113,7 @@
         </svg>
     </div>
     <div>
-        <p class="font-bold text-red-800">{{ $criticalCount }} رویداد بحرانی باز وجود دارد</p>
+        <p class="font-bold text-red-800">{{ \App\Helpers\NumberHelper::formatFa($criticalCount) }} رویداد بحرانی باز وجود دارد</p>
         <p class="text-red-600 text-sm">فوری بررسی کنید — جزئیات در بخش رویدادها</p>
     </div>
 </div>
@@ -123,22 +123,22 @@
 <div class="mon-grid-4 mb-6">
     <div class="mon-stat mon-stat--blue">
         <div class="mon-stat__label">کل سایت‌ها</div>
-        <div class="mon-stat__value">{{ $totalSites }}</div>
+        <div class="mon-stat__value">{{ \App\Helpers\NumberHelper::formatFa($totalSites) }}</div>
         <div class="mon-stat__sub">سایت فعال</div>
     </div>
     <div class="mon-stat mon-stat--green">
         <div class="mon-stat__label">سالم</div>
-        <div class="mon-stat__value">{{ $healthySites }}</div>
+        <div class="mon-stat__value">{{ \App\Helpers\NumberHelper::formatFa($healthySites) }}</div>
         <div class="mon-stat__sub">سایت سالم</div>
     </div>
     <div class="mon-stat mon-stat--amber">
         <div class="mon-stat__label">هشدار</div>
-        <div class="mon-stat__value">{{ $warningSites }}</div>
+        <div class="mon-stat__value">{{ \App\Helpers\NumberHelper::formatFa($warningSites) }}</div>
         <div class="mon-stat__sub">نیازمند توجه</div>
     </div>
     <div class="mon-stat {{ $criticalSites > 0 ? 'mon-stat--red' : 'mon-stat--violet' }}">
         <div class="mon-stat__label">بحرانی</div>
-        <div class="mon-stat__value">{{ $criticalSites }}</div>
+        <div class="mon-stat__value">{{ \App\Helpers\NumberHelper::formatFa($criticalSites) }}</div>
         <div class="mon-stat__sub">سایت در مشکل</div>
     </div>
 </div>
@@ -164,14 +164,16 @@
             'web'      => 'وب‌سرور',
         ];
         $statusIcons = [
-            'online'   => 'ph-dot--online',
-            'warning'  => 'ph-dot--warning',
-            'critical' => 'ph-dot--critical',
+            'online'    => 'ph-dot--online',
+            'warning'   => 'ph-dot--warning',
+            'critical'  => 'ph-dot--critical',
+            'disabled'  => 'ph-dot--unknown',
         ];
         $statusLabels = [
-            'online'   => 'آنلاین',
-            'warning'  => 'هشدار',
-            'critical' => 'بحرانی',
+            'online'    => 'آنلاین',
+            'warning'   => 'هشدار',
+            'critical'  => 'بحرانی',
+            'disabled'  => 'غیرفعال',
         ];
         @endphp
 
@@ -181,7 +183,8 @@
                 <div class="ph-item">
                     <span class="ph-dot {{ $statusIcons[$st] ?? 'ph-dot--unknown' }}"></span>
                     <span class="ph-name">{{ $label }}</span>
-                    <span class="badge-status badge-status--{{ $st === 'online' ? 'healthy' : $st }}">
+                    @php $badgeClass = match($st) { 'online' => 'healthy', 'warning' => 'warning', 'critical' => 'critical', default => 'unknown' }; @endphp
+                    <span class="badge-status badge-status--{{ $badgeClass }}">
                         {{ $statusLabels[$st] ?? $st }}
                     </span>
                     <span class="ph-msg">{{ Str::limit($check['message'] ?? '', 40) }}</span>
@@ -255,7 +258,7 @@
             </svg>
             وضعیت سایت‌ها
         </h3>
-        <span class="text-sm text-gray-400">{{ $latestLogs->count() }} سایت بررسی‌شده</span>
+        <span class="text-sm text-gray-400">{{ \App\Helpers\NumberHelper::formatFa($latestLogs->count()) }} سایت بررسی‌شده</span>
     </div>
 
     @if($latestLogs->isEmpty())
@@ -361,7 +364,7 @@
             </svg>
             رویدادهای باز
             @if($openIncidents->isNotEmpty())
-                <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">{{ $openIncidents->count() }}</span>
+                <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">{{ \App\Helpers\NumberHelper::formatFa($openIncidents->count()) }}</span>
             @endif
         </h3>
         <a href="{{ route('admin.api.monitoring.incidents') }}" target="_blank"

@@ -1,7 +1,44 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-13
+> Last Updated: 2026-06-14
+
+---
+
+## 2026-06-14 — INFRA-MONITORING-01 + NOTIFICATION-2 Notification Center
+
+**Reason:** درخواست کاربر برای مرکز مانیتورینگ زیرساخت و سیستم اطلاع‌رسانی یکپارچه
+
+### INFRA-MONITORING-01 — Central Monitoring & Health Center
+- `database/migrations/2026_06_14_100001_create_infra_site_health_logs_table.php`
+- `database/migrations/2026_06_14_100002_create_infra_incidents_table.php`
+- `app/Models/Infrastructure/InfraSiteHealthLog.php` — latestPerSite, recent scopes
+- `app/Models/Infrastructure/InfraIncident.php` — needsSmsAlert, markResolved, markSmsSent
+- `app/Services/Infrastructure/Monitoring/HealthCheckService.php` — DB/Redis/Queue/Reverb/Web
+- `app/Services/Infrastructure/Monitoring/SiteHealthChecker.php` — HTTP + SSL + /api/health
+- `app/Services/Infrastructure/Monitoring/DeploymentVerificationService.php`
+- `app/Services/Infrastructure/Monitoring/InfrastructureErrorCollector.php` — dedup incidents, SMS throttle
+- `app/Console/Commands/MonitorSitesCommand.php` — every 5 min via scheduler
+- `app/Http/Controllers/Admin/Infrastructure/MonitoringController.php`
+- `resources/views/admin/infrastructure/monitoring/index.blade.php` — RTL dashboard
+- `customer-site/routes/api.php` — GET /health endpoint (no auth)
+- `routes/web.php` — monitoring routes + API routes
+- `app/Helpers/AdminMenu.php` — monitoring_center key + زیرساخت/DevOps group
+- `app/Console/Kernel.php` — monitor:sites every 5 min
+- `docs/infrastructure/MONITORING_CENTER_AUDIT.md`
+
+### NOTIFICATION-2 — Unified Notification Center
+- `database/migrations/2026_06_14_300001_create_notification_center_logs_table.php`
+- `app/Models/NotificationCenterLog.php` — TYPES/PRIORITIES/CHANNELS/AUDIENCES constants, helpers, scopes
+- `app/Services/Notification/NotificationDispatcher.php` — SMS routing by audience_type
+- `app/Services/Notification/NotificationCenterService.php` — notify(), siteDown(), siteRecovery(), infrastructure(), supportTicket(), purchase(), renewal(), deploy(), stats()
+- `app/Http/Controllers/Admin/Notification/NotificationCenterController.php`
+- `resources/views/admin/notification-center/index.blade.php` — history, filters, charts
+- `resources/views/admin/notification-center/create.blade.php` — send form + Alpine live preview
+- `routes/web.php` — 7 notification-center routes
+- `app/Helpers/AdminMenu.php` — notification_center key + اطلاع‌رسانی/ارتباطات group
+- `app/Services/Infrastructure/Monitoring/InfrastructureErrorCollector.php` — wired to NC
+- `app/Console/Commands/MonitorSitesCommand.php` — siteDown/siteRecovery NC calls
 
 ---
 

@@ -61,6 +61,11 @@ class HealthCheckService
 
     public function checkReverb(): array
     {
+        // If Reverb is not the configured broadcast driver, skip
+        if (config('broadcasting.default') !== 'reverb') {
+            return ['status' => 'disabled', 'message' => 'WebSocket غیرفعال'];
+        }
+
         $host = config('reverb.servers.reverb.host', '0.0.0.0');
         $port = config('reverb.servers.reverb.port', 8080);
 
@@ -73,23 +78,40 @@ class HealthCheckService
             fclose($connection);
             return ['status' => 'online', 'message' => "Reverb listening on {$host}:{$port}"];
         }
-        return ['status' => 'warning', 'message' => "Reverb not reachable on {$host}:{$port} — {$errstr}"];
+        return ['status' => 'warning', 'message' => "Reverb not reachable on {$host}:{$port}"];
     }
 
     public function checkWebServer(): array
     {
-        try {
-            $start = microtime(true);
-            $response = Http::timeout(5)->get(config('app.url'));
-            $ms = (int) ((microtime(true) - $start) * 1000);
+        // Support explicit override via env, then fall back to APP_URL
+        $primaryUrl = config('app.health_check_url', config('app.url'));
 
-            if ($response->successful()) {
-                return ['status' => 'online', 'message' => "HTTP {$response->status()} in {$ms}ms"];
+        // For dev-only hostnames (.test / .local), also try localhost
+        $parsedHost = parse_url($primaryUrl, PHP_URL_HOST) ?? '';
+        $isDevUrl   = str_ends_with($parsedHost, '.test')
+                   || str_ends_with($parsedHost, '.local')
+                   || $parsedHost === 'localhost';
+
+        $candidates = array_filter(array_unique(array_merge(
+            [$primaryUrl],
+            $isDevUrl ? ['http://127.0.0.1'] : []
+        )));
+
+        foreach ($candidates as $url) {
+            try {
+                $start    = microtime(true);
+                $response = Http::timeout(5)->get($url);
+                $ms       = (int) ((microtime(true) - $start) * 1000);
+
+                if ($response->status() < 500) {
+                    return ['status' => 'online', 'message' => "HTTP {$response->status()} in {$ms}ms"];
+                }
+            } catch (\Throwable) {
+                continue;
             }
-            return ['status' => 'warning', 'message' => "HTTP {$response->status()}"];
-        } catch (\Throwable $e) {
-            return ['status' => 'critical', 'message' => $e->getMessage()];
         }
+
+        return ['status' => 'warning', 'message' => 'وب‌سرور در دسترس نیست'];
     }
 
     public function overallStatus(array $checks): string
@@ -99,10 +121,13 @@ class HealthCheckService
             'status'
         );
 
-        if (in_array('critical', $statuses, true)) {
+        // Disabled components do not affect overall status
+        $active = array_filter($statuses, fn ($s) => $s !== 'disabled');
+
+        if (in_array('critical', $active, true)) {
             return 'critical';
         }
-        if (in_array('warning', $statuses, true)) {
+        if (in_array('warning', $active, true)) {
             return 'warning';
         }
         return 'online';

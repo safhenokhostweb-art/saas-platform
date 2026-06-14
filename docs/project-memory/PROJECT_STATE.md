@@ -1,6 +1,6 @@
 # PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-06-06
+> Last Updated: 2026-06-14
 
 ---
 
@@ -16,27 +16,29 @@
 
 ## Current Module
 
-**5 New Modules: INSTALL / LANG / VPLAY / FORM-EXT / IMG — COMPLETE (2026-06-13)**
+**INFRA-MONITORING-01 + NOTIFICATION-2 — COMPLETE (2026-06-14)**
 
 ---
 
 ## Current Phase
 
-**5-Module Batch — COMPLETE (2026-06-13)**  
-All 5 modules implemented, routes wired, admin panels created (customer-site only for FORM-EXT), deployed.
+**Infrastructure Monitoring + Unified Notification Center — COMPLETE (2026-06-14)**  
+Central monitoring dashboard with per-site health checks, incident tracking, SSL monitoring, scheduler.  
+Unified notification center with 8 types, 4 priorities, 4 channels, 4 audience types, full history, send form.
 
 ---
 
 ## Current Sprint
 
-**New Module Batch — COMPLETE**  
-INSTALL (installment purchase), LANG (AI multilingual), VPLAY (video player), FORM-EXT (Excel whitelist), IMG (smart image upload).
+**Monitoring + Notifications — COMPLETE**  
+INFRA-MONITORING-01: `infra_site_health_logs` + `infra_incidents`, HealthCheckService, SiteHealthChecker, `monitor:sites` command, RTL dashboard with charts.  
+NOTIFICATION-2: `notification_center_logs`, NotificationCenterService, NotificationDispatcher, admin index/create views, integrated with InfrastructureErrorCollector + MonitorSitesCommand.
 
 ---
 
 ## Current Objective
 
-All 5 requested modules delivered. Platform ready for next feature batch.
+Platform monitoring and unified notification system fully deployed. Ready for next feature batch.
 
 ---
 

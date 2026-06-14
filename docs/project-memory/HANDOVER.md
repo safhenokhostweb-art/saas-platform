@@ -19,11 +19,11 @@
 
 ---
 
-## CURRENT STATE (2026-06-13)
+## CURRENT STATE (2026-06-14)
 
-**Last completed phase:** 5-Module Batch: INSTALL + LANG + VPLAY + FORM-EXT + IMG  
-**Status:** همه ۵ ماژول پیاده‌سازی، routes wire شده، admin panels ایجاد شده (FORM-EXT فقط customer-site)، deploy شده.  
-**Previous milestone:** TB-8 — Header/Footer Block Editor (2026-06-13)  
+**Last completed phase:** INFRA-MONITORING-01 + NOTIFICATION-2 Notification Center  
+**Status:** مانیتورینگ سایت‌ها، incidents، SSL، مرکز اطلاع‌رسانی با تاریخچه و ارسال دستی — همه deploy شده.  
+**Previous milestone:** NOTIFICATION-1 — admin bell icon (2026-06-14)  
 **Next recommended milestone:** تعیین فاز بعدی توسط کاربر
 
 ### 5-Module Summary (2026-06-13)
