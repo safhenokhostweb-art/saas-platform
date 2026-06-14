@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 class ThemeAiAnalyzerService
 {
     // ── GapGPT (OpenAI-compatible) ────────────────────────────────────────────
-    private const GAPGPT_DEFAULT_URL   = 'https://api.gapgpt.app/v1/chat/completions';
+    private const GAPGPT_DEFAULT_BASE  = 'https://api.gapgpt.app/v1';
     private const GAPGPT_DEFAULT_MODEL = 'gpt-4o-mini';
 
     // ── Claude (Anthropic) ────────────────────────────────────────────────────
