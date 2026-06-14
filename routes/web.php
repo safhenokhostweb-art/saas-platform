@@ -671,6 +671,21 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | Notification Center
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('notification-center')->name('notification-center.')->group(function () {
+            Route::get('/',          [\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'index'])->name('index');
+            Route::get('/create',    [\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'create'])->name('create');
+            Route::post('/',         [\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'store'])->name('store');
+            Route::post('/{id}/read',[\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'markRead'])->name('read');
+            Route::post('/read-all', [\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'markAllRead'])->name('read-all');
+            Route::delete('/{id}',   [\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'destroy'])->name('destroy');
+            Route::get('/stats',     [\App\Http\Controllers\Admin\Notification\NotificationCenterController::class, 'stats'])->name('stats');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | ریدایرکت /admin به داشبورد
         |--------------------------------------------------------------------------
         */

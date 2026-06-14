@@ -4,6 +4,7 @@ namespace App\Services\Infrastructure\Monitoring;
 use App\Models\Infrastructure\InfraIncident;
 use App\Services\ExpirySmsService;
 use App\Services\Infrastructure\SlackAlertService;
+use App\Services\Notification\NotificationCenterService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -104,6 +105,19 @@ class InfrastructureErrorCollector
         }
 
         $incident->markSmsSent();
+
+        // Mirror to Notification Center
+        try {
+            $priority = $incident->isCritical() ? 'critical' : 'high';
+            app(NotificationCenterService::class)->infrastructure(
+                $incident->title,
+                $incident->message ?? '',
+                $priority,
+                $incident->site_id
+            );
+        } catch (\Throwable $e) {
+            Log::warning('InfrastructureErrorCollector: NC notify failed', ['error' => $e->getMessage()]);
+        }
     }
 
     private function trySendSms(string $text): void

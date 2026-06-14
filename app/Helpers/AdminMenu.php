@@ -39,8 +39,9 @@ class AdminMenu
         'theme_manager'  => 'مدیریت تم (Theme Engine)',
         'app_releases'   => 'دانلود اپلیکیشن',
         'education'      => 'مرکز آموزش',
-        'infrastructure'    => 'مدیریت زیرساخت',
-        'monitoring_center' => 'مرکز مانیتورینگ',
+        'infrastructure'       => 'مدیریت زیرساخت',
+        'monitoring_center'   => 'مرکز مانیتورینگ',
+        'notification_center' => 'مرکز اطلاع‌رسانی',
     ];
 
     /** مسیر هر آیتم منو */
@@ -75,8 +76,9 @@ class AdminMenu
         'theme_manager'  => 'admin.theme-manager.index',
         'app_releases'   => 'admin.app-releases.index',
         'education'      => 'admin.education.index',
-        'infrastructure'    => 'admin.infrastructure.overview',
-        'monitoring_center' => 'admin.infrastructure.monitoring.index',
+        'infrastructure'       => 'admin.infrastructure.overview',
+        'monitoring_center'   => 'admin.infrastructure.monitoring.index',
+        'notification_center' => 'admin.notification-center.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -111,8 +113,9 @@ class AdminMenu
         'theme_manager'  => 'admin.theme-manager.*',
         'app_releases'   => 'admin.app-releases.*',
         'education'      => 'admin.education.*',
-        'infrastructure'    => 'admin.infrastructure.*',
-        'monitoring_center' => 'admin.infrastructure.monitoring.*',
+        'infrastructure'       => 'admin.infrastructure.*',
+        'monitoring_center'   => 'admin.infrastructure.monitoring.*',
+        'notification_center' => 'admin.notification-center.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -132,6 +135,7 @@ class AdminMenu
             'فرم‌ها / برگه‌ها'                  => ['forms', 'forms_submissions', 'profile_fields', 'settings_profile', 'pages'],
             'محتوا / مقالات'                    => ['theme_builder', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
+            'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
             'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center'],
             'بازاریابی / دانش‌محور'             => [],
             'گزارش‌ها / آمار'                   => ['activity_log'],

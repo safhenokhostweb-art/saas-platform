@@ -5,6 +5,7 @@ use App\Models\Site;
 use App\Models\Infrastructure\InfraIncident;
 use App\Services\Infrastructure\Monitoring\SiteHealthChecker;
 use App\Services\Infrastructure\Monitoring\InfrastructureErrorCollector;
+use App\Services\Notification\NotificationCenterService;
 use Illuminate\Console\Command;
 
 class MonitorSitesCommand extends Command
@@ -47,7 +48,7 @@ class MonitorSitesCommand extends Command
                 default    => null,
             };
 
-            $this->handleIncidents($log);
+            $this->handleIncidents($log, $site);
 
             $statusIcon = match ($log->status) {
                 'healthy'  => '✓',
@@ -64,7 +65,7 @@ class MonitorSitesCommand extends Command
         return self::SUCCESS;
     }
 
-    private function handleIncidents($log): void
+    private function handleIncidents($log, Site $site): void
     {
         if ($log->status === 'critical') {
             $this->collector->collect(
@@ -74,8 +75,25 @@ class MonitorSitesCommand extends Command
                 siteId:   $log->site_id,
                 severity: 'critical'
             );
+            try {
+                app(NotificationCenterService::class)->siteDown(
+                    $site,
+                    $log->error_message ?? "HTTP {$log->http_status} — سایت پاسخگو نیست"
+                );
+            } catch (\Throwable) {}
         } else {
+            $wasDown = InfraIncident::where('site_id', $log->site_id)
+                ->where('type', 'site_down')
+                ->whereNull('resolved_at')
+                ->exists();
+
             $this->collector->resolveForSite((int) $log->site_id, 'site_down');
+
+            if ($wasDown) {
+                try {
+                    app(NotificationCenterService::class)->siteRecovery($site);
+                } catch (\Throwable) {}
+            }
         }
 
         if ($log->db_status === 'error') {
