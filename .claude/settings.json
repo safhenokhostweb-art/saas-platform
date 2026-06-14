@@ -1,6 +1,14 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Bash(*)",
+      "PowerShell(*)",
       "Edit(//c/laragon/www/**)",
       "Write(//c/laragon/www/**)",
       "Read(//c/laragon/www/customer-site/**)",

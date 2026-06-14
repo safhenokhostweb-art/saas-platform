@@ -5,6 +5,50 @@
 
 ---
 
+## 2026-06-14 — NEXUS PRO — Multi-Mode Premium Theme Template
+
+**Reason:** درخواست کاربر برای قالب همه‌کاره حرفه‌ای با ۳ حالت (شرکتی، شخصی، فروشگاهی) ساخته شده روی پلتفرم Canvas
+
+### فایل‌های تغییر یافته
+**saas-platform:**
+- `app/Services/ThemeBuilder/BlockRegistry.php` — ۱۵ block پریمیوم جدید (hero_split, hero_gradient, features_grid, stats_row, client_logos, process_steps, team_cards, skills_bars, testimonials_slider, trust_badges, pricing_cards, newsletter_form, bento_grid, services_cards, contact_split)
+- `app/Services/ThemeBuilder/BlockRenderer.php` — ۱۵ متد render جدید با XSS protection، JSON decode، CSS class system
+- `app/Console/Commands/NexusSeedCommand.php` — **جدید**: Artisan command با `nexus:seed` signature. ۳ قالب کامل (Corporate/Personal/Store) با صفحات کامل
+
+**customer-site:**
+- `app/Services/ThemeCanvas/BlockRegistry.php` — ۱۵ block پریمیوم مطابق platform (قبل از module:form_embed)
+- `resources/views/layouts/canvas-theme.blade.php` — CSS کامل همه ۱۵ block + IntersectionObserver JS برای skills bar animation
+
+### سه حالت قالب
+- **NEXUS PRO Corporate** (slug: nexus-pro-corporate): ۶ صفحه — home/about/services/blog/contact/pricing. رنگ: Indigo #4f46e5
+- **NEXUS PRO Personal** (slug: nexus-pro-personal): ۴ صفحه — home/portfolio/blog/contact. رنگ: Violet #7c3aed، پس‌زمینه تاریک
+- **NEXUS PRO Store** (slug: nexus-pro-store): ۴ صفحه — home/shop/blog/contact. رنگ: Orange #ea580c
+
+### Block‌های جدید (ویژگی‌ها)
+- **hero_split**: hero با تصویر کنار، badge، دو دکمه، image_side
+- **hero_gradient**: hero گرادیانت با gradient_from/to/text_color
+- **features_grid**: گرید امکانات با style=cards/bordered/minimal، columns 2/3/4
+- **stats_row**: آمار با counter animation (data-count)، dividers
+- **client_logos**: لوگوهای مشتریان با marquee بی‌نهایت CSS
+- **process_steps**: مراحل numbered با خطوط اتصال
+- **team_cards**: کارت‌های تیم با columns 2/3/4
+- **skills_bars**: مهارت‌ها با IntersectionObserver animation
+- **testimonials_slider**: نظرات با columns 1/2/3، rating stars
+- **trust_badges**: اعتمادسازی با آیکون
+- **pricing_cards**: تعرفه با highlight + transform
+- **newsletter_form**: فرم عضویت
+- **bento_grid**: گرید مدرن با large/tall/featured/small cells
+- **services_cards**: خدمات با style=bordered/filled/minimal
+- **contact_split**: تماس دو ستونه با فرم
+
+### تکنیک‌های کلیدی
+- IntersectionObserver + CSS custom property `--skill-w` برای skills animation
+- Marquee لوگو با content تکرار شده + `@keyframes tb-marquee`
+- بهترین گزینه JSON fallback: `is_array($raw) ? $raw : (json_decode($raw, true) ?? [])`
+- RTL بدون نیاز به تغییر layout (کلاس‌های tb-* RTL-safe هستند)
+
+---
+
 ## 2026-06-14 — INFRA-MONITORING-01 + NOTIFICATION-2 Notification Center
 
 **Reason:** درخواست کاربر برای مرکز مانیتورینگ زیرساخت و سیستم اطلاع‌رسانی یکپارچه
