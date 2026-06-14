@@ -74,6 +74,16 @@ return [
         'section_header' => 'minus',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Platform Mode
+    |--------------------------------------------------------------------------
+    | When true (saas-platform context), admin CRUD routes are NOT registered.
+    | Only public form-serving routes are active. Tenant admin (customer-site)
+    | manages all forms independently in their own panel.
+    */
+    'platform_mode' => env('FORMS_PLATFORM_MODE', false),
+
     'pagination'    => env('FORMS_PAGINATION', 25),
     'export_limit'  => env('FORMS_EXPORT_LIMIT', 10000),
     'seo_enabled'   => env('FORMS_SEO_ENABLED', true),

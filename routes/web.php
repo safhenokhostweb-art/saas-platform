@@ -21,7 +21,6 @@ use App\Http\Controllers\Admin\ProfileFieldController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\SiteModuleController;
-use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\SeoController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\ModuleLicenseController as AdminModuleLicenseController;
@@ -289,6 +288,19 @@ Route::prefix('admin')
             ->name('dashboard');
 
         Route::get('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('profile.index');
+
+        /*
+        |--------------------------------------------------------------------------
+        | اعلان‌های سیستمی پلتفرم
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('system-alerts')->name('system-alerts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'index'])->name('index');
+            Route::get('/unread-count', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'unreadCount'])->name('unread-count');
+            Route::post('/{id}/read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markRead'])->name('mark-read');
+            Route::post('/read-all', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAllRead'])->name('read-all');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'destroy'])->name('destroy');
+        });
         Route::put('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'update'])->name('profile.update');
 
         /*
@@ -429,16 +441,9 @@ Route::prefix('admin')
         Route::get('sites/{site}/modules', [SiteModuleController::class, 'edit'])->name('sites.modules.edit');
         Route::put('sites/{site}/modules', [SiteModuleController::class, 'update'])->name('sites.modules.update');
         Route::post('sites/{site}/modules/toggle', [SiteModuleController::class, 'toggle'])->name('sites.modules.toggle');
-        Route::get('sites/{site}/menus', [MenuController::class, 'index'])->name('sites.menus.index');
-        Route::get('sites/{site}/menus/create', [MenuController::class, 'create'])->name('sites.menus.create');
-        Route::post('sites/{site}/menus', [MenuController::class, 'store'])->name('sites.menus.store');
-        Route::get('sites/{site}/menus/{menu}/edit', [MenuController::class, 'edit'])->name('sites.menus.edit');
-        Route::put('sites/{site}/menus/{menu}', [MenuController::class, 'update'])->name('sites.menus.update');
-        Route::delete('sites/{site}/menus/{menu}', [MenuController::class, 'destroy'])->name('sites.menus.destroy');
-        Route::post('sites/{site}/menus/{menu}/items', [MenuController::class, 'storeItem'])->name('sites.menus.items.store');
-        Route::put('sites/{site}/menus/{menu}/items/{item}', [MenuController::class, 'updateItem'])->name('sites.menus.items.update');
-        Route::delete('sites/{site}/menus/{menu}/items/{item}', [MenuController::class, 'destroyItem'])->name('sites.menus.items.destroy');
-        Route::post('sites/{site}/menus/{menu}/reorder', [MenuController::class, 'reorderItems'])->name('sites.menus.reorder');
+        // ADR-015: Menu management removed from platform admin.
+        // Each customer site manages its own menus in its own admin panel (customer-site /admin/menus/*).
+        // Platform admin has no role in tenant menu structure.
         Route::get('sites/{site}/seo', [SeoController::class, 'index'])->name('sites.seo.index');
         Route::post('sites/{site}/seo/redirects', [SeoController::class, 'storeRedirect'])->name('sites.seo.redirects.store');
         Route::put('sites/{site}/seo/redirects/{redirect}', [SeoController::class, 'updateRedirect'])->name('sites.seo.redirects.update');

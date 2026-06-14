@@ -25,7 +25,10 @@ Route::middleware(['web', 'module:forms'])->group(function () {
         ->name('forms.submit');
 });
 
-// Admin routes
+// Admin routes — only registered in tenant context (customer-site).
+// In platform context (saas-platform, FORMS_PLATFORM_MODE=true), these routes
+// are NOT loaded. Each customer-site manages its own forms independently.
+if (!config('forms.platform_mode', false)) {
 Route::middleware(['web', 'auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Forms CRUD
@@ -78,3 +81,4 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin')->name('admin.')->gr
     Route::post('forms/{form}/apply-template', [FormTemplateController::class, 'apply'])->name('forms.templates.apply');
     Route::delete('forms/templates/{template}', [FormTemplateController::class, 'destroy'])->name('forms.templates.destroy');
 });
+} // end platform_mode guard

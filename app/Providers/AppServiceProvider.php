@@ -3,7 +3,11 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Product;
+use App\Models\Site;
+use App\Models\ThemePurchaseOrder;
 use App\Observers\ProductObserver;
+use App\Observers\SiteObserver;
+use App\Observers\ThemePurchaseOrderObserver;
 use App\Contracts\Repositories\SupportTicketRepositoryInterface;
 use App\Contracts\Repositories\SupportTicketReplyRepositoryInterface;
 use App\Contracts\Services\SupportTicketServiceInterface;
@@ -54,6 +58,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Product::observe(ProductObserver::class);
+        Site::observe(SiteObserver::class);
+        ThemePurchaseOrder::observe(ThemePurchaseOrderObserver::class);
 
         // ثبت directive برای تبدیل اعداد انگلیسی به فارسی در Blade
         \Blade::directive('persianNumber', function ($expression) {

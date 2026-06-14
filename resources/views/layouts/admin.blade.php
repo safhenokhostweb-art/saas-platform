@@ -401,6 +401,54 @@
                         </span>
                     </a>
                     @endif
+                    {{-- ─── Notification Bell ───────────────────────── --}}
+                    <div x-data="platformBell()" x-init="init()" @click.outside="open = false" class="relative" style="z-index:60">
+                        <button @click="toggle()" type="button"
+                                class="relative inline-flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                title="اعلان‌های سیستمی">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span x-show="unreadCount > 0" x-text="unreadCount > 99 ? '99+' : unreadCount"
+                                  class="absolute -top-0.5 -left-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1 pointer-events-none"
+                                  style="display:none"></span>
+                        </button>
+                        {{-- Dropdown --}}
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                             class="absolute left-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+                             style="display:none">
+                            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+                                <span class="text-xs font-bold text-gray-700">اعلان‌های سیستمی</span>
+                                <button x-show="unreadCount > 0" @click="markAllRead()" class="text-xs text-indigo-600 hover:underline font-semibold">همه را خواندم</button>
+                            </div>
+                            <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                                <template x-if="items.length === 0">
+                                    <div class="text-center py-8 text-gray-400 text-sm">اعلان جدیدی ندارید 🎉</div>
+                                </template>
+                                <template x-for="n in items" :key="n.id">
+                                    <div class="flex items-start gap-3 px-4 py-3 hover:bg-indigo-50/60 transition-colors cursor-pointer" @click="markRead(n)">
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm"
+                                             :class="{'bg-blue-50': n.type==='info','bg-emerald-50': n.type==='success','bg-amber-50': n.type==='warning','bg-red-50': n.type==='error'}">
+                                            <span x-text="n.type==='success'?'✅':n.type==='warning'?'⚠️':n.type==='error'?'🚨':'📢'"></span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-gray-800 leading-snug" x-text="n.title"></p>
+                                            <p class="text-[11px] text-gray-500 mt-0.5 truncate" x-text="n.body || ''"></p>
+                                            <p class="text-[10px] text-gray-400 mt-0.5" x-text="n.created_at"></p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="px-4 py-2.5 border-t border-gray-100 bg-gray-50 text-center">
+                                <a href="{{ route('admin.system-alerts.index') }}" class="text-xs font-semibold text-indigo-600 hover:underline">مشاهده همه اعلان‌ها →</a>
+                            </div>
+                        </div>
+                    </div>
                     {{-- ─── Profile Dropdown ─────────────────────────── --}}
                     @php
                         $__adminUser    = auth()->user();
@@ -715,6 +763,49 @@
                 });
             });
         })();
+    </script>
+    <script>
+    function platformBell() {
+        return {
+            open: false,
+            unreadCount: 0,
+            items: [],
+            csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
+            _timer: null,
+            init() {
+                this.fetch();
+                this._timer = setInterval(() => this.fetch(), 30000);
+            },
+            fetch() {
+                fetch('{{ route('admin.system-alerts.unread-count') }}', {
+                    headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
+                })
+                .then(r => r.json())
+                .then(d => { this.unreadCount = d.count || 0; this.items = d.items || []; })
+                .catch(() => {});
+            },
+            toggle() {
+                this.open = !this.open;
+                if (this.open) this.fetch();
+            },
+            markRead(n) {
+                fetch('/admin/system-alerts/' + n.id + '/read', {
+                    method: 'POST',
+                    headers: {'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json'}
+                }).then(() => {
+                    this.items = this.items.filter(i => i.id !== n.id);
+                    this.unreadCount = Math.max(0, this.unreadCount - 1);
+                    if (n.link) window.location.href = n.link;
+                }).catch(() => {});
+            },
+            markAllRead() {
+                fetch('{{ route('admin.system-alerts.read-all') }}', {
+                    method: 'POST',
+                    headers: {'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json'}
+                }).then(() => { this.unreadCount = 0; this.items = []; this.open = false; }).catch(() => {});
+            },
+        };
+    }
     </script>
 </body>
 </html>
