@@ -830,7 +830,7 @@ document.addEventListener('alpine:init', () => {
                                 <button type="submit"
                                         :disabled="isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))"
                                         class="flex items-center justify-center rounded-full w-10 h-10 transition-all shrink-0"
-                                        :class="(isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : (noteMode ? 'bg-amber-400 text-white shadow-md hover:bg-amber-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg')">
+                                        :class="(isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))) ? 'bg-gray-200 text-gray-600 cursor-not-allowed' : (noteMode ? 'bg-amber-400 text-white shadow-md hover:bg-amber-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg')">
                                     <template x-if="!isSending">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                     </template>
