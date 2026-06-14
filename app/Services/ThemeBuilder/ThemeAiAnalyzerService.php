@@ -42,9 +42,10 @@ class ThemeAiAnalyzerService
             $this->baseUrl = self::CLAUDE_API;
             $this->model   = (string) env('THEME_AI_MODEL', self::CLAUDE_MODEL);
         } else {
-            // GapGPT (default)
+            // GapGPT (default) — base URL + /chat/completions
             $this->apiKey  = (string) env('GAPGPT_API_KEY', '');
-            $this->baseUrl = rtrim((string) env('GAPGPT_BASE_URL', self::GAPGPT_DEFAULT_URL), '/');
+            $base          = rtrim((string) env('GAPGPT_BASE_URL', self::GAPGPT_DEFAULT_BASE), '/');
+            $this->baseUrl = $base . '/chat/completions';
             $this->model   = (string) env('THEME_AI_MODEL', self::GAPGPT_DEFAULT_MODEL);
         }
     }
