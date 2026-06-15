@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class ThemeCanvasController extends Controller
 {
@@ -180,9 +181,79 @@ class ThemeCanvasController extends Controller
             $conn->table('cache')->where('key', 'like', '%canvas_theme%')->delete();
         } catch (\Throwable) {}
 
+        // ── Provision theme pages into customer site's pages table ─────────────
+        $this->provisionThemePagesIntoDb($conn, $theme);
+
         DB::purge($connKey);
 
         return redirect()->route('admin.theme-builder.index')
-            ->with('success', 'قالب "' . $theme->name . '" با موفقیت روی سایت "' . $site->title . '" نصب شد.');
+            ->with('success', 'قالب "' . $theme->name . '" با موفقیت روی سایت "' . $site->title . '" نصب شد و صفحات قالب ایجاد شدند.');
+    }
+
+    /**
+     * Directly write theme pages into the customer site's pages table via DB connection.
+     * Pages are marked as is_protected=1, theme_id=slug so they cannot be accidentally deleted.
+     */
+    protected function provisionThemePagesIntoDb($conn, \App\Models\Theme $theme): void
+    {
+        $pages   = $theme->getPageList();
+        $themeId = $theme->slug ?? (string) $theme->id;
+
+        try {
+            // Check if pages table has the is_protected column
+            $hasProtection = \Illuminate\Support\Facades\Schema::connection($conn->getName())->hasColumn('pages', 'is_protected');
+        } catch (\Throwable) {
+            $hasProtection = false;
+        }
+
+        foreach ($pages as $pageKey => $pageDef) {
+            $title  = $pageDef['title'] ?? $pageKey;
+            $slug   = $pageDef['slug'] ?? Str::slug($title) ?: $pageKey;
+            $blocks = json_encode(['blocks' => $pageDef['blocks'] ?? []], JSON_UNESCAPED_UNICODE);
+            $now    = now()->toDateTimeString();
+
+            // Skip if already provisioned for this theme
+            $exists = $conn->table('pages')
+                ->where('theme_page_key', $pageKey)
+                ->where('theme_id', $themeId)
+                ->exists();
+            if ($exists) {
+                continue;
+            }
+
+            // Ensure unique slug
+            $baseSlug = $slug;
+            $i = 1;
+            while ($conn->table('pages')->where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $i++;
+            }
+
+            $row = [
+                'title'              => $title,
+                'slug'               => $slug,
+                'is_published'       => 1,
+                'show_in_menu'       => ($pageKey === 'home') ? 1 : 0,
+                'builder_type'       => 'builder',
+                'builder_content_v2' => $blocks,
+                'order'              => ($conn->table('pages')->max('order') ?? 0) + 1,
+                'created_at'         => $now,
+                'updated_at'         => $now,
+            ];
+
+            if ($hasProtection) {
+                $row['is_protected']    = 1;
+                $row['theme_id']        = $themeId;
+                $row['theme_page_key']  = $pageKey;
+            }
+
+            try {
+                $conn->table('pages')->insert($row);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('ThemeInstall: page insert failed', [
+                    'key'     => $pageKey,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 }
