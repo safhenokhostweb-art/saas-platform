@@ -371,9 +371,13 @@ USR;
     private function normalizeBlocks(array $blocks): array
     {
         return array_map(function (array $block): array {
-            $block['id']    = $block['id']    ?? (string) Str::uuid();
-            $block['type']  = $block['type']  ?? 'text';
-            $block['props'] = $block['props'] ?? [];
+            $block['id']   = $block['id']   ?? (string) Str::uuid();
+            $block['type'] = $block['type'] ?? 'text';
+            // Canvas editor stores props under 'data'; BlockRenderer reads 'props' ?? 'data'
+            // Normalise to 'data' so the canvas editor can read/write immediately.
+            $props         = $block['props'] ?? $block['data'] ?? [];
+            unset($block['props']);
+            $block['data'] = $props;
             return $block;
         }, $blocks);
     }

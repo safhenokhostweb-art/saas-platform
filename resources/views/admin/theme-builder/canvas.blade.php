@@ -687,8 +687,28 @@ function themeCanvas() {
             this.toast = { show: true, msg, type, _timer: setTimeout(() => this.toast.show = false, 3000) };
         },
 
+        // ── Normalize blocks: 'props' → 'data' (AI-generated themes use props) ─
+        normalizeBlock(block) {
+            if (block && block.props !== undefined && block.data === undefined) {
+                block.data = block.props;
+                delete block.props;
+            } else if (block.data === undefined) {
+                block.data = {};
+            }
+            return block;
+        },
+        normalizePages(pages) {
+            Object.values(pages).forEach(page => {
+                if (Array.isArray(page.blocks)) {
+                    page.blocks = page.blocks.map(b => this.normalizeBlock(b));
+                }
+            });
+        },
+
         // ── Init ────────────────────────────────
         init() {
+            this.normalizePages(this.pages);
+
             this.$nextTick(() => {
                 const el = document.getElementById('canvas-blocks');
                 if (el && typeof Sortable !== 'undefined') {
