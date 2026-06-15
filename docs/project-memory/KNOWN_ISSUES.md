@@ -193,6 +193,6 @@ The `/health/release` endpoint is public with no IP allowlist.
 | FI-005 | OpenTelemetry export to Jaeger/Tempo | Low |
 | FI-006 | Queue worker auto-scaling trigger (currently advisor recommends, doesn't act) | Medium |
 | FI-007 | CDN cache invalidation after asset rebuild | Medium |
-| FI-008 | Schedule RuntimeAnomalyEngine::scan() via Laravel scheduler | High |
+| FI-008 | Schedule RuntimeAnomalyEngine::scan() via Laravel scheduler | ✅ DONE (2026-06-15) |
 | FI-009 | Hallucination reporting UI in AI forms/ticket assistant | Low |
 | FI-010 | SSE streaming endpoint for AI generation (AI_FEATURE_STREAMING=true) | Low |
