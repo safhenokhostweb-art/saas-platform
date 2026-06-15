@@ -191,6 +191,44 @@ class ThemeCanvasController extends Controller
     }
 
     /**
+     * همگام‌سازی صفحات قالب برای سایتی که قبلاً قالب رویش نصب شده بود
+     * (re-provision without overwriting theme settings).
+     */
+    public function syncPagesForSite(Request $request, Theme $theme)
+    {
+        $request->validate(['site_id' => 'required|integer|exists:sites,id']);
+
+        $site = Site::findOrFail($request->site_id);
+
+        if (!$site->db_host || !$site->db_name) {
+            return back()->with('error', 'اطلاعات دیتابیس سایت "' . $site->title . '" تنظیم نشده است.');
+        }
+
+        $connKey = 'theme_sync_' . $site->id . '_' . time();
+        Config::set("database.connections.{$connKey}", [
+            'driver'    => 'mysql',
+            'host'      => $site->db_host,
+            'port'      => '3306',
+            'database'  => $site->db_name,
+            'username'  => $site->db_user,
+            'password'  => $site->db_password ?? '',
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => false,
+        ]);
+        DB::purge($connKey);
+        $conn = DB::connection($connKey);
+
+        $this->provisionThemePagesIntoDb($conn, $theme);
+
+        DB::purge($connKey);
+
+        return redirect()->route('admin.theme-builder.index')
+            ->with('success', 'صفحات قالب "' . $theme->name . '" با موفقیت در سایت "' . $site->title . '" همگام‌سازی شدند.');
+    }
+
+    /**
      * Directly write theme pages into the customer site's pages table via DB connection.
      * Pages are marked as is_protected=1, theme_id=slug so they cannot be accidentally deleted.
      */
@@ -212,13 +250,15 @@ class ThemeCanvasController extends Controller
             $blocks = json_encode(['blocks' => $pageDef['blocks'] ?? []], JSON_UNESCAPED_UNICODE);
             $now    = now()->toDateTimeString();
 
-            // Skip if already provisioned for this theme
-            $exists = $conn->table('pages')
-                ->where('theme_page_key', $pageKey)
-                ->where('theme_id', $themeId)
-                ->exists();
-            if ($exists) {
-                continue;
+            // Skip if already provisioned for this theme (only safe when columns exist)
+            if ($hasProtection) {
+                try {
+                    $exists = $conn->table('pages')
+                        ->where('theme_page_key', $pageKey)
+                        ->where('theme_id', $themeId)
+                        ->exists();
+                    if ($exists) continue;
+                } catch (\Throwable) {}
             }
 
             // Ensure unique slug

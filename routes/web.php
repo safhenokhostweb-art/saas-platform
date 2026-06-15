@@ -568,6 +568,7 @@ Route::prefix('admin')
             Route::delete('theme-builder/{theme}/canvas/pages/{key}', [ThemeCanvasController::class, 'removePage'])->name('theme-builder.canvas.pages.remove')->where('key', '[a-z0-9_-]+');
             Route::get('theme-builder/{theme}/canvas/{pageKey}/preview', [ThemeCanvasController::class, 'preview'])->name('theme-builder.canvas.page-preview')->where('pageKey', '[a-z0-9_-]+');
             Route::post('theme-builder/{theme}/install-to-site', [ThemeCanvasController::class, 'installToSite'])->name('theme-builder.install-to-site');
+            Route::post('theme-builder/{theme}/sync-pages', [ThemeCanvasController::class, 'syncPagesForSite'])->name('theme-builder.sync-pages');
 
             // ─── TB-3: AI URL Analyzer ──────────────────────────────────────
             Route::get('theme-builder/ai-analyze',         [ThemeAiController::class, 'form'])->name('theme-builder.ai-form');

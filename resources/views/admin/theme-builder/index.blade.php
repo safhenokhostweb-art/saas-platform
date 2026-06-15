@@ -80,6 +80,12 @@
                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
                             🚀 نصب روی سایت
                         </button>
+                        <button type="button"
+                            onclick="openSyncModal({{ $theme->id }}, '{{ addslashes($theme->name) }}')"
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
+                            title="اگر صفحات قالب در سایت مشتری نمایش نمی‌یابد، از این دکمه استفاده کنید">
+                            🔄 همگام‌سازی صفحات
+                        </button>
                         <a href="{{ route('admin.theme-builder.edit', $theme) }}" class="text-indigo-600 hover:underline text-xs">ویرایش</a>
                         <a href="{{ route('admin.theme-builder.export', $theme) }}" class="text-indigo-600 hover:underline text-xs">JSON</a>
                         <a href="{{ route('admin.theme-builder.clone-form', $theme) }}" class="text-indigo-600 hover:underline text-xs">کپی</a>
@@ -164,6 +170,53 @@
     </div>
 </div>
 
+{{-- ── Modal همگام‌سازی صفحات ───────────────────────────────────────────── --}}
+<div id="sync-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center text-white text-lg">🔄</div>
+                <div>
+                    <h3 class="text-white font-bold text-base">همگام‌سازی صفحات قالب</h3>
+                    <p id="sync-modal-theme-name" class="text-blue-100 text-xs mt-0.5"></p>
+                </div>
+            </div>
+            <button onclick="closeSyncModal()" class="text-white/70 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="sync-form" method="POST" action="">
+            @csrf
+            <div class="p-6 space-y-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start gap-2 text-sm text-blue-800">
+                    <svg class="w-4 h-4 mt-0.5 shrink-0 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    اگر بعد از نصب قالب، صفحات در ماژول صفحات سایت مشتری نمایش نمی‌یابد، از این گزینه برای ایجاد مجدد صفحات استفاده کنید. صفحات موجود دست‌نخورده می‌مانند.
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">سایت مقصد را انتخاب کنید</label>
+                    <select name="site_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">— انتخاب سایت —</option>
+                        @foreach($sites as $s)
+                            <option value="{{ $s->id }}">{{ $s->title }}@if($s->domain) — {{ $s->domain }}@endif</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="border-t px-6 py-4 flex items-center justify-between bg-gray-50">
+                <button type="button" onclick="closeSyncModal()"
+                    class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                    انصراف
+                </button>
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    همگام‌سازی صفحات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openInstallModal(themeId, themeName) {
     document.getElementById('modal-theme-name').textContent = themeName;
@@ -177,9 +230,24 @@ function closeInstallModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 }
-// بستن با کلیک روی پس‌زمینه
 document.getElementById('install-modal').addEventListener('click', function(e) {
     if (e.target === this) closeInstallModal();
+});
+
+function openSyncModal(themeId, themeName) {
+    document.getElementById('sync-modal-theme-name').textContent = themeName;
+    document.getElementById('sync-form').action = '/admin/theme-builder/' + themeId + '/sync-pages';
+    const modal = document.getElementById('sync-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeSyncModal() {
+    const modal = document.getElementById('sync-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('sync-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeSyncModal();
 });
 </script>
 

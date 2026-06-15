@@ -830,7 +830,7 @@ document.addEventListener('alpine:init', () => {
                                 <button type="submit"
                                         :disabled="isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))"
                                         class="flex items-center justify-center rounded-full w-10 h-10 transition-all shrink-0"
-                                        :class="(isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))) ? 'bg-gray-200 text-gray-600 cursor-not-allowed' : (noteMode ? 'bg-amber-400 text-white shadow-md hover:bg-amber-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg')">
+                                        :style="(isSending || (noteMode ? !noteText.trim() : (!message.trim() && !selectedFiles.length))) ? 'background:#e2e8f0;color:#4b5563;cursor:not-allowed' : (noteMode ? 'background:#f59e0b;color:#fff;box-shadow:0 4px 12px rgba(245,158,11,.35)' : 'background:linear-gradient(135deg,#4f46e5,#9333ea);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.4)')">
                                     <template x-if="!isSending">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                     </template>
@@ -1250,8 +1250,8 @@ document.addEventListener('alpine:init', () => {
                             <div class="flex gap-2">
                                 <button type="submit"
                                         :disabled="loading || !phone.trim() || !smsMessage.trim()"
-                                        class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition"
-                                        :class="loading || !phone.trim() || !smsMessage.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md'">
+                                        class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition"
+                                        :class="loading || !phone.trim() || !smsMessage.trim() ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-md'">
                                     ارسال
                                 </button>
                                 <button type="button" @click="open=false"
