@@ -35,18 +35,18 @@ class ThemeAiAnalyzerService
 
     public function __construct()
     {
-        $this->provider = strtolower((string) env('THEME_AI_PROVIDER', 'gapgpt'));
+        $this->provider = strtolower((string) config('services.theme_ai.provider', 'gapgpt'));
 
         if ($this->provider === 'claude') {
-            $this->apiKey  = (string) env('ANTHROPIC_API_KEY', config('services.anthropic.key', ''));
+            $this->apiKey  = (string) config('services.anthropic.key', '');
             $this->baseUrl = self::CLAUDE_API;
-            $this->model   = (string) env('THEME_AI_MODEL', self::CLAUDE_MODEL);
+            $this->model   = (string) config('services.theme_ai.model', self::CLAUDE_MODEL);
         } else {
             // GapGPT (default) — base URL + /chat/completions
-            $this->apiKey  = (string) env('GAPGPT_API_KEY', '');
-            $base          = rtrim((string) env('GAPGPT_BASE_URL', self::GAPGPT_DEFAULT_BASE), '/');
+            $this->apiKey  = (string) config('services.gapgpt.key', '');
+            $base          = rtrim((string) config('services.gapgpt.base_url', self::GAPGPT_DEFAULT_BASE), '/');
             $this->baseUrl = $base . '/chat/completions';
-            $this->model   = (string) env('THEME_AI_MODEL', self::GAPGPT_DEFAULT_MODEL);
+            $this->model   = (string) config('services.theme_ai.model', self::GAPGPT_DEFAULT_MODEL);
         }
     }
 

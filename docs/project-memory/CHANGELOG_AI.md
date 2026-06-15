@@ -1,7 +1,61 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-14
+> Last Updated: 2026-06-15
+
+---
+
+## 2026-06-15 — Visual Page Builder Complete (customer-site)
+
+**Reason:** ارتقاء ویرایشگر صفحه customer-site به همان UI ویرایشگر Canvas پلتفرم اصلی (TB-7)
+
+### builder/edit.blade.php — Vite CDN Fix + Full Rewrite
+- **Root cause:** `@extends('layouts.canvas-editor')` → `@vite()` → error `http://[::1]:4000/@vite/client` در production
+- `customer-site/resources/views/builder/edit.blade.php` — تبدیل به standalone HTML با Tailwind CDN Play (بدون Vite)
+- 3-panel layout: کتابخانه ویجت (راست) + Canvas (وسط) + Props Panel (چپ)
+- SortableJS drag-and-drop، schema-driven props form، device toggle، live preview iframe
+- Alpine.js `pageContentBuilder()` function، flat blocks format `{blocks:[...]}`
+
+### ContentBuilderController — Admin Visual Builder for Posts & Products
+- `customer-site/app/Http/Controllers/Admin/ContentBuilderController.php` — ویرایشگر بصری برای Posts + Products
+- `editPost()`, `savePost()`, `editProduct()`, `saveProduct()` — همان view `builder.edit` با route متفاوت
+- `registryData()` + `enabledModuleSlugs()` — فیلتر ویجت‌ها بر اساس ماژول‌های فعال سایت
+
+### مدل‌ها و Migration
+- `customer-site/app/Models/Post.php` — `builder_content` در fillable + cast
+- `customer-site/app/Models/Product.php` — `builder_content` در fillable + cast
+- Migration `2026_06_14_200000_add_builder_content_to_posts_and_products` — applied در production
+
+### Routes
+- `admin.builder.post.edit` / `admin.builder.post.save` → ContentBuilderController
+- `admin.builder.product.edit` / `admin.builder.product.save` → ContentBuilderController
+- دکمه "✏️ سازنده بصری" در فرم‌های ویرایش posts و products
+
+---
+
+## 2026-06-15 — Bug Fixes + KI Resolutions (FI-008, KI-002, KI-006)
+
+**Reason:** Fix production bugs در installment module + resolve 3 open Known Issues
+
+### Bug Fix — NumberHelper::formatFa() PHP 8.3 TypeError
+- **Root cause:** `formatFa(number_format($x))` — PHP 8.3 rejects string in number_format()
+- `customer-site/app/Helpers/NumberHelper.php` — `formatFa()` حالا string با کاما را accept می‌کند (strip commas → float)
+- `customer-site/resources/views/admin/installments/plans-index.blade.php` — حذف double number_format
+
+### FI-008 — ScanRuntimeAnomaliesCommand
+- `app/Console/Commands/ScanRuntimeAnomaliesCommand.php` — **جدید**: هر 5 دقیقه 4 detector را اجرا، critical/high → Slack
+- `app/Console/Kernel.php` — scheduled هر 5 دقیقه با `withoutOverlapping()`
+- `tests/Feature/Infrastructure/ScanRuntimeAnomaliesCommandTest.php` — 6/6 tests
+
+### KI-006 — Domain Resolution Cache
+- `app/Services/ResellerDetectionService.php` — Redis cache per host (TTL 300s), `false` برای "not found"
+- `customer-site/app/Http/Middleware/SetTenantContext.php` — cache `License::current()` (TTL 300s) + schema check (TTL 3600s)
+- `customer-site/app/Services/LicenseActivationService.php` — `forgetLicenseCache()` بعد از هر update
+
+### KI-002 — Tailwind v4 Canonical Syntax
+- 9 shadow references در core-ui components → named `@utility` classes (`shadow-card`, `shadow-modal`, etc.)
+- **301 replacement** در 27 component files: `[var(--token)]` → `(--token)` (Tailwind v4 shorthand)
+- Lightning CSS optimizer warnings حذف شدند
 
 ---
 

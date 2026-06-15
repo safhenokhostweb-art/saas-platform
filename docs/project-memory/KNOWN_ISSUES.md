@@ -104,13 +104,13 @@ Circuit breaker state and governance cache are stored via Laravel's Cache facade
 
 ---
 
-### TD-002 — LOW
+### TD-002 — LOW | CLARIFIED (2026-06-15)
 
-**Title:** Legacy KB Routes Still Exist  
-**Module:** Education  
+**Title:** KB Module — Not Legacy Redirects  
+**Module:** SP-5.0 Knowledge Base  
 **Description:**  
-`admin/education/kb/*` routes redirect to `edu_*` equivalents. These are legacy redirects from the KB → Education migration. They add routing overhead and could confuse developers.  
-**Plan:** Remove after confirming no external links reference them.
+The KB routes (`admin/kb/*`) point to a real, fully-functional `KnowledgeBaseController` using `KbArticle`/`KbCategory` models. This is NOT a redirect layer — it is the original SP-5.0 Knowledge Base module still active. The Education module is a separate, newer system. No removal action needed until user explicitly decides to deprecate SP-5.0 KB in favor of Education.  
+**Plan:** Decision by user when migrating KB data to Education module.
 
 ---
 

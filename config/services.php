@@ -91,4 +91,19 @@ return [
         'endpoint' => env('OTEL_EXPORTER_OTLP_ENDPOINT'),
     ],
 
+    // Theme Builder AI — GapGPT (OpenAI-compatible) or Claude
+    'theme_ai' => [
+        'provider'  => env('THEME_AI_PROVIDER', 'gapgpt'),
+        'model'     => env('THEME_AI_MODEL', 'gpt-4o-mini'),
+    ],
+
+    'gapgpt' => [
+        'key'       => env('GAPGPT_API_KEY', ''),
+        'base_url'  => env('GAPGPT_BASE_URL', 'https://api.gapgpt.app/v1'),
+    ],
+
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY', ''),
+    ],
+
 ];

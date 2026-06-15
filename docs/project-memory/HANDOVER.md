@@ -19,12 +19,33 @@
 
 ---
 
-## CURRENT STATE (2026-06-14)
+## CURRENT STATE (2026-06-15)
 
-**Last completed phase:** NEXUS PRO — Multi-Mode Premium Theme Template  
-**Status:** قالب همه‌کاره با ۳ حالت (Corporate/Personal/Store) — ۱۵ block پریمیوم — در marketplace موجود — deploy شده.  
-**Previous milestone:** INFRA-MONITORING-01 + NOTIFICATION-2 (2026-06-14)  
-**Next recommended milestone:** تعیین فاز بعدی توسط کاربر
+**Last completed phase:** KI/FI Resolution Batch — COMPLETE  
+**Status:** Production bug fix + 3 Known Issues resolved (FI-008, KI-002, KI-006). Platform stable.  
+**Previous milestone:** NEXUS PRO Template (2026-06-14)  
+**Next recommended milestone:** فاز جدید در انتظار تصمیم کاربر
+
+### KI/FI Resolution Batch (2026-06-15)
+
+**Bug Fix — NumberHelper TypeError:**
+- `customer-site/app/Helpers/NumberHelper.php` — `formatFa()` accepts pre-formatted strings (strips commas)
+- Affected: all 5 installment views (account/admin/front), 19 occurrences total
+
+**FI-008 — Runtime Anomaly Scanner:**
+- `app/Console/Commands/ScanRuntimeAnomaliesCommand.php` — NEW
+- Scheduled every 5 minutes in `Kernel.php`, Slack alert for critical/high
+- 6/6 tests
+
+**KI-006 — Domain Resolution Cache:**
+- `app/Services/ResellerDetectionService.php` — Redis cache per host (TTL 300s)
+- `customer-site/app/Http/Middleware/SetTenantContext.php` — License + schema caching
+- `customer-site/app/Services/LicenseActivationService.php` — cache invalidation on update
+
+**KI-002 — Tailwind v4 Syntax:**
+- 301 replacements: `[var(--token)]` → `(--token)` across 27 core-ui components
+- Shadow arbitrary values replaced with named `@utility` classes
+- Lightning CSS warnings eliminated
 
 ### NEXUS PRO Summary (2026-06-14)
 
