@@ -7,14 +7,21 @@
 
 <div class="flex flex-wrap gap-2 items-center justify-between">
     <div class="flex flex-wrap gap-2 items-center">
-        <a href="{{ route('admin.theme-builder.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+        <a href="{{ route('admin.theme-builder.create') }}"
+           class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+           style="background:#4f46e5;color:#fff;box-shadow:0 1px 4px rgba(79,70,229,.3)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             ایجاد تم جدید
         </a>
-        <a href="{{ route('admin.theme-builder.create', ['site_id' => 0]) }}" class="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded hover:bg-slate-50">
+        <a href="{{ route('admin.theme-builder.create', ['site_id' => 0]) }}"
+           class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all"
+           style="background:#f8fafc;color:#374151;border-color:#d1d5db">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
             قالب پلتفرم
         </a>
         <a href="{{ route('admin.theme-builder.ai-form') }}"
-           class="inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded hover:from-indigo-600 hover:to-purple-700 font-medium shadow-sm">
+           class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+           style="background:linear-gradient(135deg,#6366f1,#9333ea);color:#fff;box-shadow:0 1px 4px rgba(99,102,241,.35)">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
             ساخت با AI
         </a>
@@ -22,7 +29,12 @@
             @csrf
             <input type="file" name="file" accept=".json" class="form-control w-auto max-w-50" required>
             <input type="hidden" name="site_id" value="{{ $siteId ?? 0 }}">
-            <button type="submit" class="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded hover:bg-slate-50">وارد کردن تم</button>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all"
+                    style="background:#f8fafc;color:#374151;border-color:#d1d5db">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                وارد کردن تم
+            </button>
         </form>
     </div>
     <form method="get" class="flex items-center gap-2">
