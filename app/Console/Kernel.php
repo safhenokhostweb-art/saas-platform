@@ -41,6 +41,12 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/monitor-sites.log'));
+
+        // FI-008: Scan runtime anomalies every 5 minutes (queue stalls, tenant isolation, security)
+        $schedule->command('runtime:scan-anomalies')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/runtime-anomalies.log'));
     }
 
     /**
