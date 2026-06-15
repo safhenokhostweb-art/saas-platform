@@ -21,9 +21,9 @@
 
 ## CURRENT STATE (2026-06-15)
 
-**Last completed phase:** KI/FI Resolution Batch — COMPLETE  
-**Status:** Production bug fix + 3 Known Issues resolved (FI-008, KI-002, KI-006). Platform stable.  
-**Previous milestone:** NEXUS PRO Template (2026-06-14)  
+**Last completed phase:** 5-Phase Business Features Batch — COMPLETE  
+**Status:** CRM + Inventory in customer-site; Customer Portal enhanced; Platform Module Adoption dashboard in saas-platform.  
+**Previous milestone:** KI/FI Resolution Batch (2026-06-15)  
 **Next recommended milestone:** فاز جدید در انتظار تصمیم کاربر
 
 ### KI/FI Resolution Batch (2026-06-15)

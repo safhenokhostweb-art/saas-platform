@@ -1,7 +1,95 @@
 # AUDIT HISTORY
 > All findings recorded permanently. Resolved findings marked Fixed — never deleted.
 > Format: Finding ID | Severity | Status | Evidence | Resolution
-> Last Updated: 2026-06-06 (memory sync)
+> Last Updated: 2026-06-15
+
+---
+
+## EDU-INFRA AUDIT — Platform vs Customer Module Separation (2026-06-15)
+
+**Scope:** Complete classification of all modules across both repositories — Platform Admin (saas-platform) and Customer Site (customer-site).
+
+### ARC-001 — CRITICAL | FIXED
+
+**Title:** `forms_submissions` in Platform Admin menu → route not registered in platform mode  
+**Severity:** CRITICAL  
+**Status:** FIXED  
+**Evidence:**  
+- `AdminMenu::MENU_KEYS` contained `'forms_submissions' => 'ارسال‌های فرم'`
+- `AdminMenu::MENU_ROUTES` contained `'forms_submissions' => 'admin.forms.submissions.index'`
+- Forms package `routes/web.php` guards all admin routes with `if (!config('forms.platform_mode', false))`
+- `FORMS_PLATFORM_MODE=true` in `.env` → route `admin.forms.submissions.index` is NEVER registered
+- Blade sidebar generates `route('admin.forms.submissions.index')` → `RouteNotFoundException`
+- Form submissions are tenant-owned data; Customer Site has full CRUD under `admin/forms/submissions`
+**Resolution:**  
+Removed `forms_submissions` from `AdminMenu::MENU_KEYS`, `MENU_ROUTES`, `MENU_ROUTE_PATTERNS`, and `getGroups()`. Removed icon entries from `sidebar-icon.blade.php` and `sidebar-icon-bare.blade.php`.  
+**Regression Risk:** LOW — removal only. No functional loss; the route was broken already.  
+**Final Verdict:** PASS
+
+### ARC-002 — LOW | NOTED (no action required)
+
+**Title:** KB (Knowledge Base) routes registered but no menu entry in Platform Admin  
+**Severity:** LOW  
+**Status:** NOTED  
+**Evidence:** `admin.kb.*` routes registered in `routes/web.php` with full CRUD; `KnowledgeBaseController` exists; but `kb` key is absent from `AdminMenu::MENU_KEYS`. KB is reachable by direct URL but invisible in the sidebar.  
+**Decision:** Not a misclassification. KB is a legitimate platform-level feature. Missing menu entry is tech debt, not an architecture violation.  
+**Final Verdict:** PASS (noted for future menu wiring)
+
+### ARC-003 — LOW | NOTED (no action required)
+
+**Title:** Orphaned App-level form controllers in Platform Admin with no routes  
+**Severity:** LOW  
+**Status:** NOTED  
+**Evidence:** `App\Http\Controllers\Admin\FormFieldController`, `FormSiteController`, `FormSubmissionController` exist in saas-platform but have zero registered routes.  
+**Decision:** Dead code only. No routing exposure. Safe to leave until a cleanup sprint.  
+**Final Verdict:** PASS (noted as dead code)
+
+### CLASSIFICATION TABLE — ALL MODULES
+
+| Module / Feature | Platform Admin | Customer Site | Notes |
+|-----------------|:-:|:-:|-------|
+| Platform users/customers/sites | ✅ | | Core SaaS operator function |
+| Module + license registry | ✅ | | |
+| Platform products (SaaS licenses) | ✅ | | Different entity from tenant products |
+| Resellers / commissions / payouts | ✅ | | |
+| Support plans | ✅ | | |
+| Platform payment gateways | ✅ | | Different credentials from tenant gateways |
+| Support tickets (platform↔tenant) | ✅ | | Each side sees only their channel |
+| Profile fields | ✅ | | |
+| Platform settings / captcha / access | ✅ | | |
+| Platform static pages | ✅ | | Different content from tenant pages |
+| Module labels | ✅ | | |
+| Theme Builder (create themes) | ✅ | | Wizard-only |
+| Theme Manager (engine) | ✅ | | |
+| Theme Marketplace (sell themes) | ✅ | ✅ | Operator manages; tenant buys |
+| Education module (teach tenants) | ✅ | | |
+| Education center (read content) | | ✅ | Sync from platform |
+| Infrastructure / monitoring | ✅ | | |
+| Notification center | ✅ | | |
+| Module adoption dashboard | ✅ | | |
+| App releases | ✅ | | |
+| Forms (read-only ADR-015 overview) | ✅ | | Overview only — no CRUD |
+| forms_submissions | ~~✅~~ ❌ REMOVED | ✅ | Tenant data only |
+| Blog / posts / categories | | ✅ | |
+| Shop / orders / coupons | | ✅ | |
+| Subscription management | | ✅ | |
+| CRM | | ✅ | |
+| Inventory | | ✅ | |
+| Courses (tenant-offered) | | ✅ | |
+| Invoices | | ✅ | |
+| Theme design / canvas | | ✅ | Tenant applies themes |
+| Tenant payment gateways | | ✅ | |
+| Tenant settings | | ✅ | |
+| Site content assistant | | ✅ | |
+| Analytics | | ✅ | |
+| User notifications | | ✅ | |
+| Installments / access lists | | ✅ | |
+| Account panel (end users) | | ✅ | |
+| Business cards / ads / referrals | | ✅ | |
+| WhatsApp / SMS | | ✅ | |
+| Activity log | ✅ | ✅ | Separate scopes |
+| Pages | ✅ | ✅ | Separate content |
+| Payment gateways | ✅ | ✅ | Different contexts |
 
 ---
 

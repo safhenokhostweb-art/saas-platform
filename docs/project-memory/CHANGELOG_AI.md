@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-06-15 — EDU-INFRA Audit: Platform vs Customer Module Separation
+
+**Reason:** Architecture audit to classify all modules and remove Customer-Only items from Platform Admin nav.
+
+### Finding: `forms_submissions` misclassified in Platform Admin
+- `app/Helpers/AdminMenu.php` — removed `forms_submissions` from MENU_KEYS, MENU_ROUTES, MENU_ROUTE_PATTERNS, getGroups()
+- `resources/views/admin/partials/sidebar-icon.blade.php` — removed `forms_submissions` icon block
+- `resources/views/admin/partials/sidebar-icon-bare.blade.php` — removed `forms_submissions` icon block
+
+**Root cause:** `FORMS_PLATFORM_MODE=true` prevents the forms package from registering `admin.forms.submissions.index` in platform context. The menu entry pointed to a non-existent route → RouteNotFoundException. Form submissions are tenant-owned data; Customer Site has full CRUD.
+
+**Impact:** Platform Admin sidebar and mobile menu no longer include a broken link. AccessMenuController's toggle panel for `forms_submissions` is also removed.
+
+**No other misclassifications found.** Full classification table documented in AUDIT_HISTORY.md.
+
+---
+
+## 2026-06-15 — 5-Phase Batch: CRM + Inventory + Customer Portal + Module Adoption
+
+**Reason:** تکمیل ۵ فاز کامل در customer-site + داشبورد پلتفرم
+
+### Phase 1 — CRM Module (customer-site)
+- `2026_06_15_100000_create_crm_tables.php` — crm_contacts, crm_deals, crm_activities
+- `app/Models/CrmContact.php`, `CrmDeal.php`, `CrmActivity.php`
+- `app/Services/CrmService.php` — dashboardStats, importFromOrders, pipeline, moveDeal
+- `app/Http/Controllers/Admin/CrmController.php` — 15 routes
+- Views: crm/dashboard, contacts/index, contacts/show, contacts/form, deals/pipeline (Kanban)
+
+### Phase 2 — Analytics (already existed, confirmed complete)
+- AnalyticsDashboardController + AnalyticsService + Chart.js — already in production
+
+### Phase 3 — Customer Portal Enhancement (customer-site)
+- `app/Http/Controllers/Account/DashboardController.php` — course progress + installments
+- `resources/views/account/dashboard.blade.php` — courses tile + progress cards + installments
+
+### Phase 4 — Blog/SEO (already existed, confirmed complete)
+- OG meta + JSON-LD in default theme layout — already in production
+
+### Phase 5 — Inventory/Warehouse Module (customer-site)
+- `2026_06_15_200000_create_inventory_tables.php` — warehouses, inventory_items, stock_movements
+- `app/Models/Warehouse.php`, `InventoryItem.php`, `StockMovement.php`
+- `app/Services/InventoryService.php` — dashboardStats, adjustStock, lowStockAlerts
+- `app/Http/Controllers/Admin/InventoryController.php` — 13 routes
+- Views: inventory/dashboard, warehouses/index, warehouses/form, items/index, movements/index, alerts
+
+### Platform Admin — Module Adoption Dashboard (saas-platform)
+- `app/Http/Controllers/Admin/ModuleAdoptionController.php` — queries site_modules by slug
+- `resources/views/admin/module-adoption/index.blade.php` — 6 KPI cards + CRM/Inventory site lists + recent activations
+- `app/Helpers/AdminMenu.php` — `module_adoption` added to MENU_KEYS, routes, patterns, 'گزارش‌ها / آمار' group
+- Route: `GET /admin/module-adoption` → `admin.module-adoption.index`
+
+---
+
 ## 2026-06-15 — Visual Page Builder Complete (customer-site)
 
 **Reason:** ارتقاء ویرایشگر صفحه customer-site به همان UI ویرایشگر Canvas پلتفرم اصلی (TB-7)

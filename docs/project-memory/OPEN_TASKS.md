@@ -1,6 +1,41 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-13
+> Last Updated: 2026-06-15
+
+---
+
+## COMPLETE: EDU-INFRA Audit — Platform vs Customer Module Separation — 2026-06-15 ✅
+
+**Status:** COMPLETE (2026-06-15)  
+**Scope:** Full architecture audit of all modules across both repositories.
+
+### Findings
+| ID | Severity | Finding | Status |
+|----|----------|---------|--------|
+| ARC-001 | CRITICAL | `forms_submissions` in Platform Admin menu — route never registered in platform mode | FIXED |
+| ARC-002 | LOW | KB routes registered but absent from AdminMenu — tech debt, not misclassification | NOTED |
+| ARC-003 | LOW | Orphaned `FormFieldController`/`FormSiteController`/`FormSubmissionController` in saas-platform with no routes | NOTED |
+
+### Changes Made
+1. `app/Helpers/AdminMenu.php` — removed `forms_submissions` from MENU_KEYS, MENU_ROUTES, MENU_ROUTE_PATTERNS, getGroups()
+2. `resources/views/admin/partials/sidebar-icon.blade.php` — removed `forms_submissions` icon block
+3. `resources/views/admin/partials/sidebar-icon-bare.blade.php` — removed `forms_submissions` icon block
+
+### Result
+All 30+ modules correctly classified. Full classification table in `AUDIT_HISTORY.md`.
+
+---
+
+## COMPLETE: 5-Phase Business Features Batch — 2026-06-15 ✅
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| CRM | crm_contacts + crm_deals + crm_activities + CrmService + CrmController + 5 views + Kanban pipeline | ✅ DONE |
+| Analytics | Already existed (AnalyticsDashboardController + Chart.js) | ✅ CONFIRMED |
+| Customer Portal | DashboardController + account/dashboard enhanced with course progress + installments | ✅ DONE |
+| Blog/SEO | Already existed (OG meta + JSON-LD + sitemap) | ✅ CONFIRMED |
+| Inventory | warehouses + inventory_items + stock_movements + InventoryService + InventoryController + 6 views | ✅ DONE |
+| Platform Admin | Module Adoption overview (6 KPI cards, site lists, recent activations) in saas-platform | ✅ DONE |
 
 ---
 
