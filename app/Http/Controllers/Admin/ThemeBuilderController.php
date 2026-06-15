@@ -110,15 +110,21 @@ class ThemeBuilderController extends Controller
         return redirect()->route('admin.theme-builder.index')->with('success', 'تم حذف شد.');
     }
 
-    public function publish(Theme $theme_builder)
+    public function publish(Request $request, Theme $theme_builder)
     {
         $this->themeService->publish($theme_builder);
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'قالب منتشر شد.']);
+        }
         return redirect()->route('admin.theme-builder.edit', $theme_builder)->with('success', 'تم منتشر شد.');
     }
 
-    public function unpublish(Theme $theme_builder)
+    public function unpublish(Request $request, Theme $theme_builder)
     {
         $this->themeService->unpublish($theme_builder);
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'قالب از انتشار خارج شد.']);
+        }
         return redirect()->route('admin.theme-builder.edit', $theme_builder)->with('success', 'تم از حالت انتشار خارج شد.');
     }
 
