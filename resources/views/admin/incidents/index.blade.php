@@ -114,11 +114,6 @@
     <a href="{{ route('admin.incidents.index') }}" class="btn-reset">پاک کردن</a>
 </form>
 
-@if(session('success'))
-<div style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:.75rem;padding:.75rem 1.25rem;margin-bottom:1rem;font-size:.875rem;">
-    {{ session('success') }}
-</div>
-@endif
 
 {{-- Table --}}
 <div class="card-wrap">

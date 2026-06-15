@@ -60,9 +60,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="alert-box alert-success">{{ session('success') }}</div>
-@endif
 
 {{-- Header --}}
 <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
