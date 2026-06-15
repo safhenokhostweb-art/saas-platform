@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::modal — Canonical modal dialog with full enterprise features:
     - Stacked modal support via z-index layering
     - Escape key hierarchy
@@ -39,11 +39,11 @@
 
 @php
 $sizes = [
-    'sm'   => 'max-w-[var(--ui-modal-max-width-sm)]',
-    'md'   => 'max-w-[var(--ui-modal-max-width-md)]',
-    'lg'   => 'max-w-[var(--ui-modal-max-width-lg)]',
-    'xl'   => 'max-w-[var(--ui-modal-max-width-xl)]',
-    'full' => 'max-w-[var(--ui-modal-max-width-full)]',
+    'sm'   => 'max-w-(--ui-modal-max-width-sm)',
+    'md'   => 'max-w-(--ui-modal-max-width-md)',
+    'lg'   => 'max-w-(--ui-modal-max-width-lg)',
+    'xl'   => 'max-w-(--ui-modal-max-width-xl)',
+    'full' => 'max-w-(--ui-modal-max-width-full)',
 ];
 $maxW = $sizes[$size] ?? $sizes['md'];
 $zOverlay = match($level) { 2 => 'var(--ui-z-modal-2)', 3 => 'var(--ui-z-modal-3)', default => 'var(--ui-z-modal)' };
@@ -78,14 +78,14 @@ $modalId  = $name ?? 'modal-' . uniqid();
     {{-- Overlay --}}
     <div
         x-show="open"
-        x-transition:enter="transition ease-[var(--ui-ease-out)] duration-[var(--ui-duration-moderate)]"
+        x-transition:enter="transition ease-(--ui-ease-out) duration-(--ui-duration-moderate)"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-[var(--ui-ease-default)] duration-[var(--ui-duration-normal)]"
+        x-transition:leave="transition ease-(--ui-ease-default) duration-(--ui-duration-normal)"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         class="fixed inset-0 flex items-center justify-center p-4
-               bg-[var(--ui-modal-overlay-bg)]
+               bg-(--ui-modal-overlay-bg)
                sm:items-center"
         style="z-index: {{ $zOverlay }}; backdrop-filter: var(--ui-modal-backdrop-blur); -webkit-backdrop-filter: var(--ui-modal-backdrop-blur);"
         @click="{{ $persistent ? '' : 'open = false' }}"
@@ -96,10 +96,10 @@ $modalId  = $name ?? 'modal-' . uniqid();
     <div
         x-show="open"
         x-ref="dialog"
-        x-transition:enter="transition ease-[var(--ui-ease-spring)] duration-[var(--ui-duration-moderate)]"
+        x-transition:enter="transition ease-(--ui-ease-spring) duration-(--ui-duration-moderate)"
         x-transition:enter-start="opacity-0 scale-95 translate-y-2"
         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-        x-transition:leave="transition ease-[var(--ui-ease-default)] duration-[var(--ui-duration-normal)]"
+        x-transition:leave="transition ease-(--ui-ease-default) duration-(--ui-duration-normal)"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         @click.stop
@@ -107,18 +107,18 @@ $modalId  = $name ?? 'modal-' . uniqid();
         aria-modal="true"
         @if($title) aria-labelledby="{{ $modalId }}-title" @endif
         class="fixed inset-x-4 mx-auto {{ $maxW }} w-full
-               bg-[var(--ui-surface)] rounded-[var(--ui-modal-radius)]
-               shadow-[var(--ui-shadow-modal)] flex flex-col
+               bg-(--ui-surface) rounded-(--ui-modal-radius)
+               shadow-modal flex flex-col
                max-h-[calc(100dvh-2rem)] overflow-hidden
                top-1/2 -translate-y-1/2"
         style="z-index: calc({{ $zOverlay }} + 1);"
     >
         {{-- Header --}}
         @if($title || $closeable)
-            <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--ui-border)] shrink-0">
+            <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-(--ui-border) shrink-0">
                 @if($title)
                     <h2 id="{{ $modalId }}-title"
-                        class="text-base font-semibold text-[var(--ui-text-primary)] truncate">
+                        class="text-base font-semibold text-(--ui-text-primary) truncate">
                         {{ $title }}
                     </h2>
                 @else
@@ -128,11 +128,11 @@ $modalId  = $name ?? 'modal-' . uniqid();
                 @if($closeable)
                     <button type="button"
                             @click="open = false"
-                            class="shrink-0 rounded-[var(--ui-radius-lg)] p-1.5
-                                   text-[var(--ui-text-muted)] hover:text-[var(--ui-text-primary)]
-                                   hover:bg-[var(--ui-surface-muted)]
-                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus-ring-color)]
-                                   transition-colors duration-[var(--ui-duration-fast)]"
+                            class="shrink-0 rounded-(--ui-radius-lg) p-1.5
+                                   text-(--ui-text-muted) hover:text-(--ui-text-primary)
+                                   hover:bg-(--ui-surface-muted)
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ui-focus-ring-color)
+                                   transition-colors duration-(--ui-duration-fast)"
                             aria-label="بستن">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
@@ -143,13 +143,13 @@ $modalId  = $name ?? 'modal-' . uniqid();
         @endif
 
         {{-- Body --}}
-        <div class="flex-1 overflow-y-auto p-6 text-sm text-[var(--ui-text-secondary)]">
+        <div class="flex-1 overflow-y-auto p-6 text-sm text-(--ui-text-secondary)">
             {{ $slot }}
         </div>
 
         {{-- Footer --}}
         @if(isset($footer))
-            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--ui-border)] shrink-0 bg-[var(--ui-surface-soft)]">
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-(--ui-border) shrink-0 bg-(--ui-surface-soft)">
                 {{ $footer }}
             </div>
         @endif

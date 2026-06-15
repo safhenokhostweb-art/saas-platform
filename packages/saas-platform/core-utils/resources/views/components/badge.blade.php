@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::badge — Canonical status/category badge.
   Props:
     variant : success | danger | warning | info | neutral | primary | purple (default: neutral)
@@ -15,23 +15,23 @@
 
 @php
 $variants = [
-    'success' => 'bg-[var(--ui-success-bg)] text-[var(--ui-success-text)] border-[var(--ui-success-border)]',
-    'danger'  => 'bg-[var(--ui-danger-bg)]  text-[var(--ui-danger-text)]  border-[var(--ui-danger-border)]',
-    'warning' => 'bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)] border-[var(--ui-warning-border)]',
-    'info'    => 'bg-[var(--ui-info-bg)]    text-[var(--ui-info-text)]    border-[var(--ui-info-border)]',
-    'neutral' => 'bg-[var(--ui-neutral-bg)] text-[var(--ui-neutral-text)] border-[var(--ui-neutral-border)]',
-    'primary' => 'bg-[var(--ui-indigo-light)] text-[var(--ui-indigo)] border-[var(--ui-indigo)]',
-    'purple'  => 'bg-[var(--ui-purple-light)] text-[var(--ui-purple)] border-purple-200',
+    'success' => 'bg-(--ui-success-bg) text-(--ui-success-text) border-(--ui-success-border)',
+    'danger'  => 'bg-(--ui-danger-bg)  text-(--ui-danger-text)  border-(--ui-danger-border)',
+    'warning' => 'bg-(--ui-warning-bg) text-(--ui-warning-text) border-(--ui-warning-border)',
+    'info'    => 'bg-(--ui-info-bg)    text-(--ui-info-text)    border-(--ui-info-border)',
+    'neutral' => 'bg-(--ui-neutral-bg) text-(--ui-neutral-text) border-(--ui-neutral-border)',
+    'primary' => 'bg-(--ui-indigo-light) text-(--ui-indigo) border-(--ui-indigo)',
+    'purple'  => 'bg-(--ui-purple-light) text-(--ui-purple) border-purple-200',
 ];
 
 $dotColors = [
-    'success' => 'bg-[var(--ui-success)]',
-    'danger'  => 'bg-[var(--ui-danger)]',
-    'warning' => 'bg-[var(--ui-warning)]',
-    'info'    => 'bg-[var(--ui-info)]',
-    'neutral' => 'bg-[var(--ui-neutral)]',
-    'primary' => 'bg-[var(--ui-indigo)]',
-    'purple'  => 'bg-[var(--ui-purple)]',
+    'success' => 'bg-(--ui-success)',
+    'danger'  => 'bg-(--ui-danger)',
+    'warning' => 'bg-(--ui-warning)',
+    'info'    => 'bg-(--ui-info)',
+    'neutral' => 'bg-(--ui-neutral)',
+    'primary' => 'bg-(--ui-indigo)',
+    'purple'  => 'bg-(--ui-purple)',
 ];
 
 $sizes = [
@@ -39,7 +39,7 @@ $sizes = [
     'md' => 'px-2.5 py-1 text-xs gap-1.5',
 ];
 
-$radius = $pill ? 'rounded-[var(--ui-radius-full)]' : 'rounded-[var(--ui-radius-md)]';
+$radius = $pill ? 'rounded-(--ui-radius-full)' : 'rounded-(--ui-radius-md)';
 $cls = implode(' ', [
     'inline-flex items-center font-semibold border whitespace-nowrap',
     $radius,

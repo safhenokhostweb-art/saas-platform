@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::checkbox — Canonical checkbox with optional label.
   Props: name, value, label, checked, disabled, error
 --}}
@@ -25,16 +25,16 @@ $id = 'cb-' . ($name ?? uniqid());
             @if($checked) checked @endif
             @if($disabled) disabled @endif
             {{ $attributes->except(['class', 'name', 'value', 'label', 'checked', 'disabled', 'error']) }}
-            class="w-4 h-4 rounded border-[var(--ui-border)] text-[var(--ui-indigo)] focus:ring-[var(--ui-indigo-ring)] transition"
+            class="w-4 h-4 rounded border-(--ui-border) text-(--ui-indigo) focus:ring-(--ui-indigo-ring) transition"
         />
         @if($label)
-            <span class="text-sm text-[var(--ui-text-secondary)]">{{ $label }}</span>
+            <span class="text-sm text-(--ui-text-secondary)">{{ $label }}</span>
         @endif
         @if($slot->isNotEmpty())
-            <span class="text-sm text-[var(--ui-text-secondary)]">{{ $slot }}</span>
+            <span class="text-sm text-(--ui-text-secondary)">{{ $slot }}</span>
         @endif
     </label>
     @if($error)
-        <p class="mt-1 text-xs text-[var(--ui-danger)]">{{ $error }}</p>
+        <p class="mt-1 text-xs text-(--ui-danger)">{{ $error }}</p>
     @endif
 </div>

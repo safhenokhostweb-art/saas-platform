@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::content-container — Canonical page content wrapper.
   Enforces max-width, padding, and responsive spacing.
   Props:
@@ -12,7 +12,7 @@
 
 <div {{ $attributes->class([
     'mx-auto w-full',
-    $narrow ? 'max-w-[var(--ui-content-max-width-narrow)]' : 'max-w-[var(--ui-content-max-width)]',
+    $narrow ? 'max-w-(--ui-content-max-width-narrow)' : 'max-w-(--ui-content-max-width)',
     $flush  ? '' : 'px-4 sm:px-6 py-6',
 ]) }}>
     {{ $slot }}

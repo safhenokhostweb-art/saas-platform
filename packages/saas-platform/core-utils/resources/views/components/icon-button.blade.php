@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::icon-button — Square icon-only button.
   Props: variant, size, type, disabled, href, loading, label (aria-label)
 --}}
@@ -15,11 +15,11 @@
 @php
 $sizes = ['sm' => 'p-1.5', 'md' => 'p-2', 'lg' => 'p-2.5'];
 $variants = [
-    'ghost'   => 'text-[var(--ui-text-subtle)] hover:bg-slate-100 hover:text-[var(--ui-text-secondary)]',
-    'primary' => 'bg-[var(--ui-indigo)] text-white hover:bg-[var(--ui-indigo-hover)]',
-    'danger'  => 'text-[var(--ui-danger)] hover:bg-[var(--ui-danger-bg)]',
+    'ghost'   => 'text-(--ui-text-subtle) hover:bg-slate-100 hover:text-(--ui-text-secondary)',
+    'primary' => 'bg-(--ui-indigo) text-white hover:bg-(--ui-indigo-hover)',
+    'danger'  => 'text-(--ui-danger) hover:bg-(--ui-danger-bg)',
 ];
-$base = 'inline-flex items-center justify-center rounded-[var(--ui-radius-lg)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus-ring-color)]';
+$base = 'inline-flex items-center justify-center rounded-(--ui-radius-lg) transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ui-focus-ring-color)';
 $dis  = ($disabled || $loading) ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
 $cls  = implode(' ', array_filter([$base, $sizes[$size] ?? $sizes['md'], $variants[$variant] ?? $variants['ghost'], $dis]));
 @endphp

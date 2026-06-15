@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::sidebar-group — Canonical collapsible sidebar section.
   Groups navigation items under a labelled section.
 
@@ -24,7 +24,7 @@ $groupId = 'sidebar-group-' . md5($label ?? uniqid());
     <button
         type="button"
         @click="open = !open"
-        class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--ui-sidebar-text)] opacity-60 hover:opacity-90 transition select-none mb-1"
+        class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-(--ui-sidebar-text) opacity-60 hover:opacity-90 transition select-none mb-1"
     >
         <span class="flex items-center gap-2">
             @if(isset($icon))<span class="w-3.5 h-3.5">{{ $icon }}</span>@endif
@@ -42,7 +42,7 @@ $groupId = 'sidebar-group-' . md5($label ?? uniqid());
 @else
 <div class="mb-4">
     @if($label)
-    <p class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--ui-sidebar-text)] opacity-50 mb-1 select-none">
+    <p class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-(--ui-sidebar-text) opacity-50 mb-1 select-none">
         @if(isset($icon))<span class="inline-block w-3.5 h-3.5 mr-1.5 align-middle">{{ $icon }}</span>@endif
         {{ $label }}
     </p>

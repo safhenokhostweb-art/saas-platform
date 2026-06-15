@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::dropdown-item — Row inside a dropdown.
   Props: href, variant (default | danger | warning)
 --}}
@@ -9,9 +9,9 @@
 
 @php
 $variants = [
-    'default' => 'text-[var(--ui-text-secondary)] hover:bg-slate-50 hover:text-[var(--ui-text-primary)]',
-    'danger'  => 'text-[var(--ui-danger)] hover:bg-[var(--ui-danger-bg)]',
-    'warning' => 'text-[var(--ui-warning)] hover:bg-[var(--ui-warning-bg)]',
+    'default' => 'text-(--ui-text-secondary) hover:bg-slate-50 hover:text-(--ui-text-primary)',
+    'danger'  => 'text-(--ui-danger) hover:bg-(--ui-danger-bg)',
+    'warning' => 'text-(--ui-warning) hover:bg-(--ui-warning-bg)',
 ];
 $base = 'flex items-center gap-2.5 w-full px-4 py-2 text-sm font-medium transition text-right';
 $cls  = $base . ' ' . ($variants[$variant] ?? $variants['default']);

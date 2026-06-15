@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::data-table — Enterprise canonical table component.
   Features:
     - Sticky headers
@@ -85,27 +85,27 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
     {{-- Bulk actions bar --}}
     @if($selectable)
         <div x-show="selected.length > 0"
-             x-transition:enter="transition ease-[var(--ui-ease-default)] duration-[var(--ui-duration-normal)]"
+             x-transition:enter="transition ease-(--ui-ease-default) duration-(--ui-duration-normal)"
              x-transition:enter-start="opacity-0 -translate-y-1"
              x-transition:enter-end="opacity-100 translate-y-0"
-             class="flex items-center gap-3 px-4 py-2 mb-2 bg-[var(--ui-indigo-light)]
-                    border border-[var(--ui-indigo)]/20 rounded-[var(--ui-radius-xl)]
-                    text-sm font-medium text-[var(--ui-indigo)]">
+             class="flex items-center gap-3 px-4 py-2 mb-2 bg-(--ui-indigo-light)
+                    border border-(--ui-indigo)/20 rounded-(--ui-radius-xl)
+                    text-sm font-medium text-(--ui-indigo)">
             <span x-text="`${selected.length} آیتم انتخاب شده`"></span>
             <div class="flex-1"></div>
             {{ $bulkActions ?? '' }}
             <button type="button" @click="selected = []; selectedAll = false;"
-                    class="text-xs text-[var(--ui-text-muted)] hover:text-[var(--ui-text-primary)]
-                           underline underline-offset-2 transition-colors duration-[var(--ui-duration-fast)]">
+                    class="text-xs text-(--ui-text-muted) hover:text-(--ui-text-primary)
+                           underline underline-offset-2 transition-colors duration-(--ui-duration-fast)">
                 لغو انتخاب
             </button>
         </div>
     @endif
 
     {{-- Table wrapper --}}
-    <div class="overflow-hidden rounded-[var(--ui-radius-xl)] border border-[var(--ui-border)] shadow-[var(--ui-shadow-xs)]">
+    <div class="overflow-hidden rounded-(--ui-radius-xl) border border-(--ui-border) shadow-xs-ui">
         <div class="overflow-x-auto" role="region" aria-label="جدول داده">
-            <table class="w-full text-sm text-[var(--ui-text-primary)]"
+            <table class="w-full text-sm text-(--ui-text-primary)"
                    role="grid"
                    @keydown.arrow-down.prevent="
                        const next = $el.querySelector('[role=row]:focus')?.nextElementSibling;
@@ -118,7 +118,7 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
 
                 {{-- Header --}}
                 @if(count($headers) > 0)
-                    <thead class="bg-[var(--ui-table-header-bg)] border-b border-[var(--ui-border)] sticky top-0 z-[var(--ui-z-raised)]">
+                    <thead class="bg-(--ui-table-header-bg) border-b border-(--ui-border) sticky top-0 z-(--ui-z-raised)">
                         <tr role="row">
                             {{-- Select-all checkbox --}}
                             @if($selectable)
@@ -126,8 +126,8 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
                                     <input type="checkbox"
                                            x-model="selectedAll"
                                            @change="toggleAll({{ count($headers) }})"
-                                           class="rounded border-[var(--ui-border-strong)] text-[var(--ui-indigo)]
-                                                  focus:ring-2 focus:ring-[var(--ui-indigo)] focus:ring-offset-1
+                                           class="rounded border-(--ui-border-strong) text-(--ui-indigo)
+                                                  focus:ring-2 focus:ring-(--ui-indigo) focus:ring-offset-1
                                                   cursor-pointer w-4 h-4"
                                            aria-label="انتخاب همه">
                                 </th>
@@ -142,9 +142,9 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
                                 @endphp
                                 <th
                                     scope="col"
-                                    class="{{ $padX }} {{ $padY }} text-[var(--ui-table-header-font)] font-[var(--ui-table-header-weight)]
-                                           text-[var(--ui-table-header-text)] text-right {{ $hCls }}
-                                           {{ $hSort ? 'cursor-pointer select-none hover:text-[var(--ui-text-primary)] transition-colors duration-[var(--ui-duration-fast)]' : '' }}"
+                                    class="{{ $padX }} {{ $padY }} text-(--ui-table-header-font) font-(--ui-table-header-weight)
+                                           text-(--ui-table-header-text) text-right {{ $hCls }}
+                                           {{ $hSort ? 'cursor-pointer select-none hover:text-(--ui-text-primary) transition-colors duration-(--ui-duration-fast)' : '' }}"
                                     @if($hSort && $hKey)
                                         @click="requestSort('{{ $hKey }}')"
                                         :aria-sort="sortKey === '{{ $hKey }}' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'"
@@ -153,10 +153,10 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
                                     <div class="flex items-center gap-1.5 {{ $hSort ? 'group' : '' }}">
                                         <span>{{ $hLabel }}</span>
                                         @if($hSort && $hKey)
-                                            <svg class="w-3.5 h-3.5 shrink-0 transition-all duration-[var(--ui-duration-fast)]"
+                                            <svg class="w-3.5 h-3.5 shrink-0 transition-all duration-(--ui-duration-fast)"
                                                  :class="{
-                                                     'text-[var(--ui-table-sort-active-color)]': sortKey === '{{ $hKey }}',
-                                                     'text-[var(--ui-table-sort-icon-color)] opacity-0 group-hover:opacity-100': sortKey !== '{{ $hKey }}',
+                                                     'text-(--ui-table-sort-active-color)': sortKey === '{{ $hKey }}',
+                                                     'text-(--ui-table-sort-icon-color) opacity-0 group-hover:opacity-100': sortKey !== '{{ $hKey }}',
                                                      'rotate-180': sortKey === '{{ $hKey }}' && sortDir === 'desc',
                                                  }"
                                                  fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -171,7 +171,7 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
                 @endif
 
                 {{-- Body --}}
-                <tbody class="bg-[var(--ui-surface)] divide-y divide-[var(--ui-table-row-border)]">
+                <tbody class="bg-(--ui-surface) divide-y divide-(--ui-table-row-border)">
                     @if($loading)
                         {{-- Skeleton rows --}}
                         @for($i = 0; $i < $rows; $i++)
@@ -203,7 +203,7 @@ $colCount = count($headers) + ($selectable ? 1 : 0);
             </div>
         @elseif(!$loading && !isset($emptyState))
             <div x-show="{{ isset($showEmpty) ? 'true' : 'false' }}"
-                 class="py-12 px-4 text-center text-sm text-[var(--ui-text-muted)]">
+                 class="py-12 px-4 text-center text-sm text-(--ui-text-muted)">
                 {{ $empty }}
             </div>
         @endif

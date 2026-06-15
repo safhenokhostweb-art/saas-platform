@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::switch — Canonical toggle switch.
   Props:
     name      : string — input name attribute
@@ -43,19 +43,19 @@ $s = $sizes[$size] ?? $sizes['md'];
         @keydown.space.prevent="{{ $disabled ? '' : 'checked = !checked' }}"
         @keydown.enter.prevent="{{ $disabled ? '' : 'checked = !checked' }}"
         :class="checked
-            ? 'bg-[var(--ui-indigo)]'
-            : 'bg-[var(--ui-border-strong)]'"
+            ? 'bg-(--ui-indigo)'
+            : 'bg-(--ui-border-strong)'"
         class="{{ $s['track'] }} relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent
-               transition-colors duration-[var(--ui-duration-moderate)] ease-[var(--ui-ease-default)]
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus-ring-color)] focus-visible:ring-offset-2
+               transition-colors duration-(--ui-duration-moderate) ease-(--ui-ease-default)
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ui-focus-ring-color) focus-visible:ring-offset-2
                {{ $disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '' }}"
         {{ $disabled ? 'aria-disabled=true' : '' }}
     >
         {{-- Thumb --}}
         <span
             :class="checked ? '{{ $s['translate'] }}' : 'translate-x-0'"
-            class="{{ $s['thumb'] }} pointer-events-none inline-block rounded-full bg-white shadow-[var(--ui-shadow-sm)]
-                   ring-0 transition-transform duration-[var(--ui-duration-moderate)] ease-[var(--ui-ease-spring)]"
+            class="{{ $s['thumb'] }} pointer-events-none inline-block rounded-full bg-white shadow-sm-ui
+                   ring-0 transition-transform duration-(--ui-duration-moderate) ease-(--ui-ease-spring)"
         ></span>
     </button>
 
@@ -69,14 +69,14 @@ $s = $sizes[$size] ?? $sizes['md'];
         <div class="flex flex-col">
             @if($label)
                 <label for="{{ $switchId }}"
-                       class="{{ $s['label'] }} font-medium text-[var(--ui-text-primary)] cursor-pointer select-none
+                       class="{{ $s['label'] }} font-medium text-(--ui-text-primary) cursor-pointer select-none
                               {{ $disabled ? 'opacity-50' : '' }}"
                        @click="{{ $disabled ? '' : 'checked = !checked' }}">
                     {{ $label }}
                 </label>
             @endif
             @if($hint)
-                <span class="text-xs text-[var(--ui-text-muted)] mt-0.5">{{ $hint }}</span>
+                <span class="text-xs text-(--ui-text-muted) mt-0.5">{{ $hint }}</span>
             @endif
         </div>
     @endif

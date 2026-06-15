@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::card — Canonical card container.
   Props:
     padding  : none | sm | md | lg (default: md)
@@ -14,12 +14,12 @@
 
 @php
 $pads = ['none' => '', 'sm' => 'p-4', 'md' => 'p-5', 'lg' => 'p-6 md:p-8'];
-$base = 'rounded-[var(--ui-admin-radius)] border border-[var(--ui-border)]';
+$base = 'rounded-(--ui-admin-radius) border border-(--ui-border)';
 $surface = $glass
-    ? 'bg-[var(--ui-glass-bg)] backdrop-blur-[var(--ui-glass-blur)] border-[var(--ui-glass-border)]'
-    : 'bg-[var(--ui-surface)]';
-$shadow  = 'shadow-[var(--ui-shadow-card)]';
-$hoverCls = $hover ? 'transition-all duration-[var(--ui-duration-moderate)] hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-card-hover)]' : '';
+    ? 'bg-(--ui-glass-bg) backdrop-blur-(--ui-glass-blur) border-(--ui-glass-border)'
+    : 'bg-(--ui-surface)';
+$shadow  = 'shadow-card';
+$hoverCls = $hover ? 'transition-all duration-(--ui-duration-moderate) hover:-translate-y-0.5 hover:shadow-card-hover' : '';
 $cls = implode(' ', array_filter([$base, $surface, $shadow, $hoverCls, $pads[$padding] ?? $pads['md']]));
 @endphp
 

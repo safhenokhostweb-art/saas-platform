@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::toast — Canonical toast notification system.
   Usage: Place once per layout. Dispatch 'ui-toast' browser event to show:
     $dispatch('ui-toast', { message: 'Saved!', variant: 'success', duration: 4000 })
@@ -47,39 +47,39 @@ $pos = $positions[$position] ?? $positions['top-right'];
         },
     }"
     @ui-toast.window="add($event.detail)"
-    class="fixed {{ $pos }} z-[var(--ui-z-toast)] flex flex-col gap-2 pointer-events-none w-full max-w-sm"
+    class="fixed {{ $pos }} z-(--ui-z-toast) flex flex-col gap-2 pointer-events-none w-full max-w-sm"
     aria-live="polite"
     aria-atomic="false"
     role="status"
 >
     <template x-for="toast in toasts" :key="toast.id">
         <div
-            class="pointer-events-auto flex items-start gap-3 w-full rounded-[var(--ui-radius-xl)]
-                   bg-[var(--ui-surface)] border shadow-[var(--ui-shadow-toast)] px-4 py-3
+            class="pointer-events-auto flex items-start gap-3 w-full rounded-(--ui-radius-xl)
+                   bg-(--ui-surface) border shadow-toast px-4 py-3
                    select-none"
             :class="{
-                'border-[var(--ui-success-border)] bg-[var(--ui-success-light)]': toast.variant === 'success',
-                'border-[var(--ui-danger-border)]  bg-[var(--ui-danger-light)]':  toast.variant === 'danger',
-                'border-[var(--ui-warning-border)] bg-[var(--ui-warning-light)]': toast.variant === 'warning',
-                'border-[var(--ui-info-border)]    bg-[var(--ui-info-light)]':    toast.variant === 'info',
-                'border-[var(--ui-border)]':                                       !['success','danger','warning','info'].includes(toast.variant),
+                'border-(--ui-success-border) bg-(--ui-success-light)': toast.variant === 'success',
+                'border-(--ui-danger-border)  bg-(--ui-danger-light)':  toast.variant === 'danger',
+                'border-(--ui-warning-border) bg-(--ui-warning-light)': toast.variant === 'warning',
+                'border-(--ui-info-border)    bg-(--ui-info-light)':    toast.variant === 'info',
+                'border-(--ui-border)':                                       !['success','danger','warning','info'].includes(toast.variant),
             }"
             x-show="!toast.removing"
-            x-transition:enter="transition ease-[var(--ui-ease-spring)] duration-[var(--ui-duration-moderate)]"
+            x-transition:enter="transition ease-(--ui-ease-spring) duration-(--ui-duration-moderate)"
             x-transition:enter-start="opacity-0 -translate-y-2 scale-95"
             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-            x-transition:leave="transition ease-[var(--ui-ease-default)] duration-[var(--ui-duration-normal)]"
+            x-transition:leave="transition ease-(--ui-ease-default) duration-(--ui-duration-normal)"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
         >
             {{-- Icon --}}
             <svg class="w-5 h-5 shrink-0 mt-0.5"
                  :class="{
-                     'text-[var(--ui-success)]': toast.variant === 'success',
-                     'text-[var(--ui-danger)]':  toast.variant === 'danger',
-                     'text-[var(--ui-warning)]': toast.variant === 'warning',
-                     'text-[var(--ui-info)]':    toast.variant === 'info',
-                     'text-[var(--ui-text-muted)]': !['success','danger','warning','info'].includes(toast.variant),
+                     'text-(--ui-success)': toast.variant === 'success',
+                     'text-(--ui-danger)':  toast.variant === 'danger',
+                     'text-(--ui-warning)': toast.variant === 'warning',
+                     'text-(--ui-info)':    toast.variant === 'info',
+                     'text-(--ui-text-muted)': !['success','danger','warning','info'].includes(toast.variant),
                  }"
                  viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <template x-if="toast.variant === 'success'">
@@ -99,16 +99,16 @@ $pos = $positions[$position] ?? $positions['top-right'];
             {{-- Content --}}
             <div class="flex-1 min-w-0">
                 <p x-show="toast.title" x-text="toast.title"
-                   class="text-sm font-semibold text-[var(--ui-text-primary)] mb-0.5"></p>
-                <p x-text="toast.message" class="text-sm text-[var(--ui-text-secondary)]"></p>
+                   class="text-sm font-semibold text-(--ui-text-primary) mb-0.5"></p>
+                <p x-text="toast.message" class="text-sm text-(--ui-text-secondary)"></p>
             </div>
 
             {{-- Dismiss --}}
             <button type="button"
                     @click="remove(toast.id)"
-                    class="shrink-0 rounded-[var(--ui-radius-md)] p-1 hover:bg-black/10
+                    class="shrink-0 rounded-(--ui-radius-md) p-1 hover:bg-black/10
                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current
-                           transition-colors duration-[var(--ui-duration-fast)] text-[var(--ui-text-muted)]"
+                           transition-colors duration-(--ui-duration-fast) text-(--ui-text-muted)"
                     aria-label="بستن">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>

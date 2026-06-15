@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::dashboard-grid — Canonical responsive dashboard grid layout.
   Props:
     cols : int — max columns (default: 3)
@@ -16,6 +16,6 @@ $colClass = match((int)$cols) {
 };
 @endphp
 
-<div {{ $attributes->class(["grid {$colClass} gap-[var(--ui-card-gap)]"]) }}>
+<div {{ $attributes->class(["grid {$colClass} gap-(--ui-card-gap)"]) }}>
     {{ $slot }}
 </div>

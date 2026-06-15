@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::alert — Canonical alert / notification banner.
   Props:
     variant     : success | danger | warning | info (default: info)
@@ -15,10 +15,10 @@
 
 @php
 $variants = [
-    'success' => ['bg' => 'bg-[var(--ui-success-light)]', 'border' => 'border-[var(--ui-success-border)]', 'text' => 'text-[var(--ui-success-text)]', 'icon_color' => 'text-[var(--ui-success)]'],
-    'danger'  => ['bg' => 'bg-[var(--ui-danger-light)]',  'border' => 'border-[var(--ui-danger-border)]',  'text' => 'text-[var(--ui-danger-text)]',  'icon_color' => 'text-[var(--ui-danger)]'],
-    'warning' => ['bg' => 'bg-[var(--ui-warning-light)]', 'border' => 'border-[var(--ui-warning-border)]', 'text' => 'text-[var(--ui-warning-text)]', 'icon_color' => 'text-[var(--ui-warning)]'],
-    'info'    => ['bg' => 'bg-[var(--ui-info-light)]',    'border' => 'border-[var(--ui-info-border)]',    'text' => 'text-[var(--ui-info-text)]',    'icon_color' => 'text-[var(--ui-info)]'],
+    'success' => ['bg' => 'bg-(--ui-success-light)', 'border' => 'border-(--ui-success-border)', 'text' => 'text-(--ui-success-text)', 'icon_color' => 'text-(--ui-success)'],
+    'danger'  => ['bg' => 'bg-(--ui-danger-light)',  'border' => 'border-(--ui-danger-border)',  'text' => 'text-(--ui-danger-text)',  'icon_color' => 'text-(--ui-danger)'],
+    'warning' => ['bg' => 'bg-(--ui-warning-light)', 'border' => 'border-(--ui-warning-border)', 'text' => 'text-(--ui-warning-text)', 'icon_color' => 'text-(--ui-warning)'],
+    'info'    => ['bg' => 'bg-(--ui-info-light)',    'border' => 'border-(--ui-info-border)',    'text' => 'text-(--ui-info-text)',    'icon_color' => 'text-(--ui-info)'],
 ];
 
 $icons = [
@@ -33,11 +33,11 @@ $v = $variants[$variant] ?? $variants['info'];
 
 <div x-data="{ visible: true }"
      x-show="visible"
-     x-transition:leave="transition ease-[var(--ui-ease-default)] duration-[var(--ui-duration-normal)]"
+     x-transition:leave="transition ease-(--ui-ease-default) duration-(--ui-duration-normal)"
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0"
      role="alert"
-     {{ $attributes->class(["flex gap-3 rounded-[var(--ui-radius-xl)] border p-4 {$v['bg']} {$v['border']} {$v['text']}"]) }}>
+     {{ $attributes->class(["flex gap-3 rounded-(--ui-radius-xl) border p-4 {$v['bg']} {$v['border']} {$v['text']}"]) }}>
 
     @if($icon)
         <svg class="w-5 h-5 shrink-0 mt-0.5 {{ $v['icon_color'] }}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -55,9 +55,9 @@ $v = $variants[$variant] ?? $variants['info'];
     @if($dismissible)
         <button type="button"
                 @click="visible = false"
-                class="shrink-0 -mt-0.5 -mr-1 rounded-[var(--ui-radius-md)] p-1
+                class="shrink-0 -mt-0.5 -mr-1 rounded-(--ui-radius-md) p-1
                        hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current
-                       transition-colors duration-[var(--ui-duration-fast)]"
+                       transition-colors duration-(--ui-duration-fast)"
                 aria-label="بستن هشدار">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>

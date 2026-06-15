@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::select — Canonical select input.
   Props: label, name, required, disabled, error, hint, placeholder
   Slot: <option> elements
@@ -15,17 +15,17 @@
 
 @php
 $selectId = $name ? 'select-' . $name : 'select-' . uniqid();
-$base = 'block w-full rounded-[var(--ui-radius-lg)] border px-3 py-2 text-sm text-[var(--ui-text-primary)] bg-[var(--ui-surface)] transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 appearance-none pr-10';
+$base = 'block w-full rounded-(--ui-radius-lg) border px-3 py-2 text-sm text-(--ui-text-primary) bg-(--ui-surface) transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 appearance-none pr-10';
 $state = $error
-    ? 'border-[var(--ui-danger)] focus:border-[var(--ui-danger)] focus:ring-red-200'
-    : 'border-[var(--ui-border)] focus:border-[var(--ui-indigo)] focus:ring-[var(--ui-indigo-ring)]';
+    ? 'border-(--ui-danger) focus:border-(--ui-danger) focus:ring-red-200'
+    : 'border-(--ui-border) focus:border-(--ui-indigo) focus:ring-(--ui-indigo-ring)';
 @endphp
 
 <div {{ $attributes->only('class') }}>
     @if($label)
-        <label for="{{ $selectId }}" class="block text-sm font-medium text-[var(--ui-text-secondary)] mb-1.5">
+        <label for="{{ $selectId }}" class="block text-sm font-medium text-(--ui-text-secondary) mb-1.5">
             {{ $label }}
-            @if($required) <span class="text-[var(--ui-danger)] mr-0.5">*</span> @endif
+            @if($required) <span class="text-(--ui-danger) mr-0.5">*</span> @endif
         </label>
     @endif
 
@@ -43,15 +43,15 @@ $state = $error
             {{ $slot }}
         </select>
         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-            <svg class="w-4 h-4 text-[var(--ui-text-subtle)]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-(--ui-text-subtle)" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
             </svg>
         </div>
     </div>
 
     @if($error)
-        <p class="mt-1 text-xs text-[var(--ui-danger)]">{{ $error }}</p>
+        <p class="mt-1 text-xs text-(--ui-danger)">{{ $error }}</p>
     @elseif($hint)
-        <p class="mt-1 text-xs text-[var(--ui-text-subtle)]">{{ $hint }}</p>
+        <p class="mt-1 text-xs text-(--ui-text-subtle)">{{ $hint }}</p>
     @endif
 </div>

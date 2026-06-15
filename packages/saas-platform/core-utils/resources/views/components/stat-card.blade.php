@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::stat-card — Single stat display card.
   Props:
     value   : string — the stat number/value
@@ -26,10 +26,10 @@ $trendNegative = $trend && str_starts_with(ltrim($trend), '-');
         <div class="ui-skeleton h-3 w-24 rounded-full"></div>
     @else
         <div class="flex items-baseline justify-between gap-2">
-            <span class="text-2xl font-bold text-[var(--ui-text-primary)] leading-none">{{ $value }}</span>
+            <span class="text-2xl font-bold text-(--ui-text-primary) leading-none">{{ $value }}</span>
             @if($trend)
                 <span class="inline-flex items-center gap-0.5 text-xs font-semibold
-                             {{ $trendPositive ? 'text-[var(--ui-success)]' : ($trendNegative ? 'text-[var(--ui-danger)]' : 'text-[var(--ui-text-muted)]') }}">
+                             {{ $trendPositive ? 'text-(--ui-success)' : ($trendNegative ? 'text-(--ui-danger)' : 'text-(--ui-text-muted)') }}">
                     @if($trendPositive)
                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/>
@@ -43,6 +43,6 @@ $trendNegative = $trend && str_starts_with(ltrim($trend), '-');
                 </span>
             @endif
         </div>
-        <p class="text-xs text-[var(--ui-text-muted)]">{{ $label }}</p>
+        <p class="text-xs text-(--ui-text-muted)">{{ $label }}</p>
     @endif
 </div>

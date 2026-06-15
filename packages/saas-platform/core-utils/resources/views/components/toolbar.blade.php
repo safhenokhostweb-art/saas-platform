@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::toolbar — Canonical page toolbar with search/filter left and actions right.
   Props:
     sticky : bool — stick to top on scroll (default: false)
@@ -11,8 +11,8 @@
 
 <div {{ $attributes->class([
     'flex flex-col sm:flex-row sm:items-center gap-3 py-3',
-    $sticky ? 'sticky top-0 z-[var(--ui-z-sticky)] bg-[var(--ui-bg)] px-0 -mx-0' : '',
-    $border ? 'border-b border-[var(--ui-border)] mb-4' : 'mb-4',
+    $sticky ? 'sticky top-0 z-(--ui-z-sticky) bg-(--ui-bg) px-0 -mx-0' : '',
+    $border ? 'border-b border-(--ui-border) mb-4' : 'mb-4',
 ]) }}>
 
     {{-- Left / Search area --}}

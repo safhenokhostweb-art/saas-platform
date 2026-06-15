@@ -1,4 +1,4 @@
-{{--
+﻿{{--
   x-core-ui::skeleton — Canonical loading skeleton.
   Props:
     lines  : int    — number of skeleton text lines (default: 3)
@@ -17,7 +17,7 @@
 
 <div {{ $attributes->class(['animate-pulse']) }} aria-busy="true" aria-label="در حال بارگذاری...">
     @if($image)
-        <div class="ui-skeleton {{ $height }} w-full mb-4 {{ $rounded ? 'rounded-[var(--ui-radius-xl)]' : '' }}"></div>
+        <div class="ui-skeleton {{ $height }} w-full mb-4 {{ $rounded ? 'rounded-(--ui-radius-xl)' : '' }}"></div>
     @endif
 
     @if($avatar)

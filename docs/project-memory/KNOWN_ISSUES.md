@@ -31,16 +31,14 @@
 
 ---
 
-### KI-002 — LOW | OPEN
+### KI-002 — LOW | RESOLVED (2026-06-15)
 
 **Title:** Tailwind v4 Lightning CSS Optimizer Shadow-Var Warnings  
-**Module:** Frontend — resources/css/app.css  
+**Module:** Frontend — core-ui components  
 **Discovered:** Phase 10.2.8 (2026-05-29)  
-**Description:**  
-`shadow-[var(--ui-shadow-*)]` arbitrary value syntax produces optimizer notices from Lightning CSS on every build. Build still exits 0 and CSS is correct.  
-**Impact:** Cosmetic only. Clutters `npm run build` output.  
-**Workaround:** Ignore warnings. Build is functional.  
-**Fix Plan:** Replace arbitrary shadow values with native `@theme` shadow tokens in next frontend phase.
+**Resolution:**
+- All 9 shadow usages in canonical components replaced with named `@utility` classes (`shadow-card`, `shadow-modal`, `shadow-lg-ui`, `shadow-indigo`, `shadow-toast`, `shadow-sm-ui`, `shadow-xs-ui`).
+- Broader Tailwind v4 canonical syntax applied across all 27 core-ui components: `[var(--token)]` → `(--token)` — **301 replacements**. This eliminates all Lightning CSS optimizer warnings.
 
 ---
 
@@ -83,16 +81,16 @@ Circuit breaker state and governance cache are stored via Laravel's Cache facade
 
 ---
 
-### KI-006 — LOW | OPEN
+### KI-006 — LOW | RESOLVED (2026-06-15)
 
 **Title:** Domain Resolution Not Cached in TenantContext  
 **Module:** Platform — TelemetryContext  
 **Discovered:** Phase 8.4b (2026-05-26)  
-**Description:**  
-Every request resolves the `Reseller` from the domain via a database query. Under high traffic this creates N unnecessary DB reads per second.  
-**Impact:** Extra DB load at high request rates.  
-**Workaround:** Acceptable at current traffic.  
-**Fix Plan:** Phase 8.4b — add 5-minute cache on domain → Reseller resolution.
+**Resolution:**
+- `ResellerDetectionService::fromRequest()`: Redis cache per host (`reseller.domain.{md5}`, 5 min). Stores `false` for "no reseller found" to avoid repeated DB hits. Static in-process cache still used as L1.
+- `SetTenantContext` (customer-site): `License::current()` cached (`license.current`, 5 min). `Schema::hasTable('licenses')` cached (`schema.has_table.licenses`, 1 hr).
+- `LicenseActivationService::syncWithPlatform()`: calls `SetTenantContext::forgetLicenseCache()` after update for immediate invalidation.
+- `ResellerDetectionService::forgetCacheForHost()` added for admin-triggered invalidation.
 
 ---
 
