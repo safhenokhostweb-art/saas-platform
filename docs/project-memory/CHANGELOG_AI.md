@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-06-15 — PROD-001: Health Endpoint Security Fix + Deploy Infrastructure Fix
+
+**Reason:** Production safety phase — strip deployment metadata from public health endpoints; fix vendor sync in deploy pipeline  
+**Commit:** `f8846d7`
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `packages/saas-platform/core-utils/src/Services/Health/RuntimeHealthService.php` | Added `isProduction()` helper; production responses now omit git commit, UUID, PHP version, migration count, detail error strings |
+| `/var/www/deploy.sh` (server) | Added rsync packages→vendor step for all 4 local packages; added `systemctl restart php8.3-fpm` |
+
+### Docs Created
+
+| File | Purpose |
+|------|---------|
+| `docs/project-memory/PRODUCTION_MIGRATION_AUDIT.md` | MHC migration status audit (all 6 = Ran, PROD-002 clear) |
+| `docs/project-memory/MHC_MIGRATION_VALIDATION.md` | MHC functional verification + backup confirmation |
+| `docs/project-memory/HEALTH_ENDPOINT_SECURITY_REPORT.md` | PROD-001 fix details and production verification |
+| `docs/project-memory/PRODUCTION_SAFETY_PHASE_REPORT.md` | Full phase report — commands, files, verdict |
+| `PRODUCTION_FIX_PLAN.md` | Pre-execution safety assessment (12 findings, PROD-001/002 prioritized) |
+
+### Impact
+
+- **Security:** Three health endpoints no longer expose internal deployment metadata to unauthenticated internet users
+- **Deploy Pipeline:** All future deploys will correctly update vendor/saas-platform packages and clear PHP opcache
+- **No regressions:** All routes cached, monitoring dashboard and incident management returning 302 (behind auth), monitor:platform command functional
+
+---
+
 ## 2026-06-15 — MHC: Monitoring & Health Center (Complete)
 
 **Reason:** Full enterprise monitoring system — health checks, incident management, uptime tracking, scheduler monitoring, backup status

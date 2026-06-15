@@ -5,6 +5,64 @@
 
 ---
 
+## PRODUCTION SAFETY PHASE — PROD-001 & PROD-002 (2026-06-15)
+
+### PROD-001 — CRITICAL | FIXED
+
+**Title:** Health endpoints expose deployment metadata to public internet  
+**Severity:** CRITICAL  
+**Status:** FIXED  
+**Evidence:**
+- `GET /health/release` returned: `deployment_uuid`, `git_commit` (SHA1), `platform_version`, `schema_drift`, `pending_migrations` — all unauthenticated
+- `GET /health/live` returned: `php` version string
+- `GET /health/ready` returned: `detail` strings including `"140 tables accessible"`, Redis/cache error messages
+
+**Resolution:**
+- Added `isProduction(): bool` helper to `RuntimeHealthService`
+- In production: `/health/release` returns only `{coherent, timestamp}`; `/health/live` omits `php`; `/health/ready` omits all `detail` strings
+- In non-production: full diagnostic data preserved
+- File: `packages/saas-platform/core-utils/src/Services/Health/RuntimeHealthService.php`
+- Commit: `f8846d7`
+
+**Regression Risk:** LOW — change is additive filtering only; all endpoints remain functional
+
+**Final Verdict:** PASS
+
+---
+
+### PROD-002 — CRITICAL | RESOLVED (No Action Required)
+
+**Title:** MHC migrations (2026-06-15) status on production — risk of schema drift  
+**Severity:** CRITICAL  
+**Status:** RESOLVED — all migrations confirmed Ran  
+**Evidence:**
+- All 6 MHC migrations (batch 10) confirmed via `php artisan migrate:status` on production
+- `infra_incidents` table has correct schema (status, severity as medium not warning)
+- `monitor:platform` command completed without exception
+
+**Final Verdict:** PASS — no migration action required
+
+---
+
+### INFRA-DEPLOY-001 — HIGH | FIXED
+
+**Title:** Server deploy.sh did not sync packages/saas-platform/ → vendor/saas-platform/  
+**Severity:** HIGH  
+**Status:** FIXED (2026-06-15 during PROD-001 execution)  
+**Evidence:**
+- PHP Composer autoloader loads from `vendor/` not `packages/`
+- Previous deploys only updated `packages/` — `vendor/` retained stale bytecode
+- Discovered when PROD-001 fix did not take effect despite correct file on disk
+- `vendor/saas-platform/core-utils/src/Services/Health/RuntimeHealthService.php` was dated 2026-06-09 while packages/ was updated to 2026-06-15
+
+**Resolution:**
+- `/var/www/deploy.sh` on production server updated: added `rsync -a --delete packages/saas-platform/$PKG/ vendor/saas-platform/$PKG/` for all 4 local packages
+- Added `systemctl restart php8.3-fpm` at end of deploy.sh to clear opcache on every deploy
+
+**Final Verdict:** PASS — future deploys will correctly update vendor/ and clear bytecode cache
+
+---
+
 ## EDU-INFRA AUDIT — Platform vs Customer Module Separation (2026-06-15)
 
 **Scope:** Complete classification of all modules across both repositories — Platform Admin (saas-platform) and Customer Site (customer-site).
