@@ -154,6 +154,20 @@ class NotificationCenterService
         ]);
     }
 
+    public function incidentResolved(\App\Models\Infrastructure\InfraIncident $incident, \App\Models\Site $site): NotificationCenterLog
+    {
+        return $this->notify([
+            'type'          => 'incident_resolved',
+            'priority'      => 'medium',
+            'title'         => "حادثه برطرف شد: {$incident->title}",
+            'message'       => "مشکل در سایت {$site->domain} رفع گردید. مشتری از طریق SMS مطلع شد.",
+            'audience_type' => 'platform_admin',
+            'channel'       => 'in_app',
+            'site_id'       => $site->id,
+            'link'          => "/admin/incidents/{$incident->id}",
+        ]);
+    }
+
     // ── Read / Delete ─────────────────────────────────────────────────────
 
     public function markRead(int $id): void

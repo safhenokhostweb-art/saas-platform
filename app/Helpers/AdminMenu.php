@@ -39,7 +39,8 @@ class AdminMenu
         'app_releases'   => 'دانلود اپلیکیشن',
         'education'      => 'مرکز آموزش',
         'infrastructure'       => 'مدیریت زیرساخت',
-        'monitoring_center'   => 'مرکز مانیتورینگ',
+        'monitoring_center'   => 'مرکز سلامت',
+        'incidents'           => 'مدیریت حوادث',
         'notification_center' => 'مرکز اطلاع‌رسانی',
         'module_adoption'    => 'پذیرش ماژول‌ها',
     ];
@@ -77,6 +78,7 @@ class AdminMenu
         'education'      => 'admin.education.index',
         'infrastructure'       => 'admin.infrastructure.overview',
         'monitoring_center'   => 'admin.infrastructure.monitoring.index',
+        'incidents'           => 'admin.incidents.index',
         'notification_center' => 'admin.notification-center.index',
         'module_adoption'    => 'admin.module-adoption.index',
     ];
@@ -114,6 +116,7 @@ class AdminMenu
         'education'      => 'admin.education.*',
         'infrastructure'       => 'admin.infrastructure.*',
         'monitoring_center'   => 'admin.infrastructure.monitoring.*',
+        'incidents'           => 'admin.incidents.*',
         'notification_center' => 'admin.notification-center.*',
         'module_adoption'    => 'admin.module-adoption.*',
     ];
@@ -136,7 +139,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents'],
             'بازاریابی / دانش‌محور'             => [],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

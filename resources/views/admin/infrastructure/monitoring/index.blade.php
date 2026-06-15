@@ -54,9 +54,35 @@
 /* ======== Incidents ======== */
 .inc-row{display:flex;align-items:flex-start;gap:.875rem;padding:.875rem 1rem;border-radius:.75rem;margin-bottom:.5rem;border-left:4px solid}
 .inc-row--critical{background:#fff1f2;border-color:#ef4444}
+.inc-row--high{background:#fff7ed;border-color:#f97316}
+.inc-row--medium{background:#fffbeb;border-color:#f59e0b}
+.inc-row--low{background:#f0fdf4;border-color:#22c55e}
 .inc-row--warning{background:#fffbeb;border-color:#f59e0b}
 .inc-icon{width:2rem;height:2rem;border-radius:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .inc-icon--critical{background:#fee2e2;color:#dc2626}
+.inc-icon--high{background:#ffedd5;color:#ea580c}
+.inc-icon--medium{background:#fef3c7;color:#d97706}
+.inc-icon--low{background:#dcfce7;color:#16a34a}
+.inc-icon--warning{background:#fef3c7;color:#d97706}
+
+/* ======== Resource Meters ======== */
+.res-meter-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:.5rem}
+.res-meter{display:flex;flex-direction:column;gap:.3rem}
+.res-meter-label{font-size:.7rem;color:#6b7280;font-weight:600}
+.res-bar{height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden}
+.res-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.res-bar-fill--ok{background:#10b981}
+.res-bar-fill--warning{background:#f59e0b}
+.res-bar-fill--critical{background:#ef4444}
+.res-meter-val{font-size:.78rem;font-weight:700;color:#1f2937}
+
+/* ======== Scheduler + Backup ======== */
+.sch-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.sch-table th{text-align:right;padding:.5rem .75rem;background:#f8fafc;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0}
+.sch-table td{padding:.6rem .75rem;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.sch-table tr:last-child td{border-bottom:none}
+.sch-dot{display:inline-block;width:.55rem;height:.55rem;border-radius:50%;margin-left:.3rem}
+.sch-dot--success{background:#10b981}.sch-dot--failed{background:#ef4444}.sch-dot--never{background:#94a3b8}
 .inc-icon--warning{background:#fef3c7;color:#d97706}
 .inc-title{font-weight:700;font-size:.875rem;color:#1f2937}
 .inc-meta{font-size:.75rem;color:#6b7280;margin-top:.15rem}
@@ -162,6 +188,10 @@
             'queue'    => 'Queue Workers',
             'reverb'   => 'Reverb WebSocket',
             'web'      => 'وب‌سرور',
+            'failed_jobs' => 'Failed Jobs',
+            'sms'      => 'ارسال پیامک',
+            'ai'       => 'سرویس هوش مصنوعی',
+            'storage'  => 'حافظه پشتیبان',
         ];
         $statusIcons = [
             'online'    => 'ph-dot--online',
@@ -191,6 +221,44 @@
                 </div>
             @endif
         @endforeach
+
+        {{-- Resource Metrics from PlatformLog --}}
+        @if($platformLog)
+        <div style="margin-top:.75rem;padding:.875rem 1rem;border-radius:.75rem;border:1px solid #e5e7eb;background:#f9fafb">
+            <div class="ph-name" style="font-size:.78rem;color:#6b7280;font-weight:600;margin-bottom:.6rem;">منابع سرور (آخرین اندازه‌گیری)</div>
+            <div class="res-meter-wrap">
+                @php
+                    $disk = $platformLog->disk_used_percent ?? 0;
+                    $mem  = $platformLog->memory_used_percent ?? 0;
+                    $cpu  = round($platformLog->cpu_load_1m ?? 0, 1);
+                    $diskClass = $disk >= 90 ? 'critical' : ($disk >= 75 ? 'warning' : 'ok');
+                    $memClass  = $mem  >= 90 ? 'critical' : ($mem  >= 75 ? 'warning' : 'ok');
+                    $cpuPct    = min(100, $cpu * 10);
+                    $cpuClass  = $cpu >= 8 ? 'critical' : ($cpu >= 5 ? 'warning' : 'ok');
+                @endphp
+                <div class="res-meter">
+                    <span class="res-meter-label">دیسک</span>
+                    <div class="res-bar"><div class="res-bar-fill res-bar-fill--{{ $diskClass }}" style="width:{{ $disk }}%"></div></div>
+                    <span class="res-meter-val">{{ \App\Helpers\NumberHelper::formatFa($disk) }}٪</span>
+                </div>
+                <div class="res-meter">
+                    <span class="res-meter-label">حافظه RAM</span>
+                    <div class="res-bar"><div class="res-bar-fill res-bar-fill--{{ $memClass }}" style="width:{{ $mem }}%"></div></div>
+                    <span class="res-meter-val">{{ \App\Helpers\NumberHelper::formatFa($mem) }}٪</span>
+                </div>
+                <div class="res-meter">
+                    <span class="res-meter-label">بار CPU</span>
+                    <div class="res-bar"><div class="res-bar-fill res-bar-fill--{{ $cpuClass }}" style="width:{{ $cpuPct }}%"></div></div>
+                    <span class="res-meter-val">{{ \App\Helpers\NumberHelper::formatFa($cpu) }}</span>
+                </div>
+            </div>
+            @if($platformLog->failed_jobs > 0)
+            <div style="margin-top:.6rem;font-size:.75rem;background:#fee2e2;color:#991b1b;padding:.35rem .75rem;border-radius:.5rem;font-weight:600;">
+                ⚠ {{ \App\Helpers\NumberHelper::formatFa($platformLog->failed_jobs) }} کار ناموفق در صف
+            </div>
+            @endif
+        </div>
+        @endif
 
         <div class="mt-4 pt-3 border-t border-gray-100">
             <div class="flex items-center justify-between text-xs text-gray-500">
@@ -249,6 +317,131 @@
 
 </div>
 
+{{-- ======== Scheduler Health + Backup Status ======== --}}
+<div class="mon-grid-2 mb-6">
+
+    {{-- Scheduler Health --}}
+    <div class="ph-card">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            وضعیت زمان‌بند (Scheduler)
+        </h3>
+        @if(empty($schedulerRuns))
+            <p class="text-sm text-gray-400 text-center py-6">هنوز هیچ دستوری ثبت نشده</p>
+        @else
+        <table class="sch-table">
+            <thead>
+                <tr>
+                    <th>دستور</th>
+                    <th>آخرین اجرا</th>
+                    <th>مدت</th>
+                    <th>وضعیت</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($schedulerRuns as $cmd => $run)
+                <tr>
+                    <td style="font-family:monospace;font-size:.73rem;color:#374151;">{{ $cmd }}</td>
+                    <td style="color:#6b7280;font-size:.75rem">
+                        @if($run)
+                            {{ $run->started_at?->diffForHumans() ?? '—' }}
+                        @else
+                            <span style="color:#94a3b8">اجرا نشده</span>
+                        @endif
+                    </td>
+                    <td style="color:#6b7280;font-size:.75rem">
+                        @if($run && $run->duration_ms)
+                            {{ \App\Helpers\NumberHelper::formatFa(number_format($run->duration_ms / 1000, 1)) }}ث
+                        @else —
+                        @endif
+                    </td>
+                    <td>
+                        @if(! $run)
+                            <span class="sch-dot sch-dot--never"></span><span style="color:#94a3b8;font-size:.75rem">بدون سابقه</span>
+                        @elseif($run->status === 'success')
+                            <span class="sch-dot sch-dot--success"></span><span style="color:#059669;font-size:.75rem">موفق</span>
+                        @else
+                            <span class="sch-dot sch-dot--failed"></span><span style="color:#dc2626;font-size:.75rem">خطا</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+    </div>
+
+    {{-- Backup Status --}}
+    <div class="ph-card">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+            </svg>
+            آخرین پشتیبان‌گیری
+        </h3>
+        @if(! $latestBackup)
+            <div class="text-center py-8 text-gray-400">
+                <svg class="w-10 h-10 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+                </svg>
+                <p class="text-sm">هنوز پشتیبانی انجام نشده</p>
+                <p class="text-xs mt-1">دستور <code class="bg-gray-100 px-1 rounded">php artisan db:backup</code> را اجرا کنید</p>
+            </div>
+        @else
+            @php
+                $bStatus = $latestBackup->status;
+                $bColor  = $bStatus === 'success' ? '#059669' : '#dc2626';
+                $bBg     = $bStatus === 'success' ? '#d1fae5' : '#fee2e2';
+            @endphp
+            <div style="display:flex;flex-direction:column;gap:.875rem">
+                <div style="display:flex;align-items:center;gap:.875rem;padding:1rem;border-radius:.75rem;background:{{ $bBg }}">
+                    <div style="width:2.5rem;height:2.5rem;border-radius:.75rem;background:rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        @if($bStatus === 'success')
+                            <svg class="w-5 h-5" style="color:{{ $bColor }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        @else
+                            <svg class="w-5 h-5" style="color:{{ $bColor }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        @endif
+                    </div>
+                    <div>
+                        <div style="font-weight:700;color:{{ $bColor }};font-size:.875rem">{{ $bStatus === 'success' ? 'موفق' : 'ناموفق' }}</div>
+                        <div style="font-size:.75rem;color:#374151;margin-top:.15rem">{{ $latestBackup->started_at?->diffForHumans() }}</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;font-size:.8rem">
+                    <div>
+                        <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">نوع</div>
+                        <div style="color:#1f2937;font-weight:500">{{ $latestBackup->backup_type }}</div>
+                    </div>
+                    @if($latestBackup->file_size_mb)
+                    <div>
+                        <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">حجم فایل</div>
+                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::formatFa(number_format($latestBackup->file_size_mb, 1)) }} MB</div>
+                    </div>
+                    @endif
+                    @if($latestBackup->duration_seconds)
+                    <div>
+                        <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">مدت اجرا</div>
+                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::formatFa($latestBackup->duration_seconds) }}ث</div>
+                    </div>
+                    @endif
+                    <div>
+                        <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">زمان شروع</div>
+                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::formatFa($latestBackup->started_at?->format('Y/m/d H:i')) }}</div>
+                    </div>
+                </div>
+                @if($latestBackup->error_message)
+                <div style="font-size:.75rem;background:#fee2e2;color:#991b1b;padding:.5rem .75rem;border-radius:.5rem;border:1px solid #fca5a5;">
+                    {{ Str::limit($latestBackup->error_message, 120) }}
+                </div>
+                @endif
+            </div>
+        @endif
+    </div>
+
+</div>
+
 {{-- ======== Site Status Table ======== --}}
 <div class="ph-card mb-6">
     <div class="flex items-center justify-between mb-4">
@@ -280,9 +473,11 @@
                     <th>آخرین بررسی</th>
                     <th>زمان پاسخ</th>
                     <th>SSL</th>
+                    <th>دامنه</th>
                     <th>Queue</th>
                     <th>دیتابیس</th>
                     <th>Redis</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -297,7 +492,7 @@
                             @else
                                 <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
                             @endif
-                            <span>{{ $log->site->title ?? "سایت #{$log->site_id}" }}</span>
+                            <a href="{{ route('admin.infrastructure.monitoring.site', $log->site_id) }}" style="color:#1f2937;text-decoration:none;font-weight:600;hover:color:#4f46e5">{{ $log->site->title ?? "سایت #{$log->site_id}" }}</a>
                         </div>
                     </td>
                     <td><span class="col-domain">{{ $log->domain }}</span></td>
@@ -330,6 +525,16 @@
                         </span>
                     </td>
                     <td>
+                        @if($log->domain_days_remaining !== null)
+                            @php $dd = $log->domain_days_remaining; @endphp
+                            <span class="badge-status {{ $dd < 7 ? 'badge-status--critical' : ($dd < 14 ? 'badge-status--warning' : 'badge-status--healthy') }}">
+                                {{ \App\Helpers\NumberHelper::formatFa($dd) }}روز
+                            </span>
+                        @else
+                            <span class="text-gray-400 text-xs">—</span>
+                        @endif
+                    </td>
+                    <td>
                         @php $q = $log->queue_status ?? 'unknown'; @endphp
                         <span class="badge-status {{ $q === 'ok' ? 'badge-status--healthy' : ($q === 'idle' ? 'badge-status--warning' : ($q === 'error' ? 'badge-status--critical' : 'badge-status--unknown')) }}">
                             @if($q === 'ok') فعال @elseif($q === 'idle') خاموش @elseif($q === 'error') خطا @else نامشخص @endif
@@ -346,6 +551,9 @@
                         <span class="badge-status {{ $rd === 'ok' ? 'badge-status--healthy' : ($rd === 'error' ? 'badge-status--critical' : 'badge-status--unknown') }}">
                             @if($rd === 'ok') متصل @elseif($rd === 'error') خطا @else نامشخص @endif
                         </span>
+                    </td>
+                    <td>
+                        <a href="{{ route('admin.infrastructure.monitoring.site', $log->site_id) }}" style="color:#6366f1;font-size:.75rem;text-decoration:none;white-space:nowrap">جزئیات ↗</a>
                     </td>
                 </tr>
                 @endforeach
@@ -367,11 +575,17 @@
                 <span class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">{{ \App\Helpers\NumberHelper::formatFa($openIncidents->count()) }}</span>
             @endif
         </h3>
-        <a href="{{ route('admin.api.monitoring.incidents') }}" target="_blank"
-           class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-            JSON API
-        </a>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.incidents.index') }}"
+               class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
+                مدیریت حوادث ↗
+            </a>
+            <a href="{{ route('admin.api.monitoring.incidents') }}" target="_blank"
+               class="text-xs text-gray-400 hover:underline flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                JSON
+            </a>
+        </div>
     </div>
 
     @if($openIncidents->isEmpty())
@@ -402,7 +616,11 @@
                 <div class="inc-msg">{{ Str::limit($incident->message, 120) }}</div>
                 @endif
             </div>
-            <div class="flex-shrink-0">
+            <div class="flex-shrink-0 flex flex-col gap-1.5">
+                <a href="{{ route('admin.incidents.show', $incident->id) }}"
+                   class="text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors text-center block">
+                    جزئیات
+                </a>
                 <button
                     onclick="resolveIncident({{ $incident->id }}, this)"
                     class="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-white hover:border-green-400 hover:text-green-700 transition-colors">

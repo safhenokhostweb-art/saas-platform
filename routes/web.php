@@ -653,8 +653,24 @@ Route::prefix('admin')
 
             // INFRA-MONITORING-01: Central Monitoring & Health Center
             Route::prefix('monitoring')->name('monitoring.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'index'])->name('index');
+                Route::get('/',         [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'index'])->name('index');
+                Route::get('{siteId}',  [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'show'])->name('site');
             });
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Incident Management
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('incidents')->name('incidents.')->group(function () {
+            Route::get('/',                                  [\App\Http\Controllers\Admin\IncidentController::class, 'index'])->name('index');
+            Route::get('{id}',                               [\App\Http\Controllers\Admin\IncidentController::class, 'show'])->name('show');
+            Route::post('{id}/investigate',                  [\App\Http\Controllers\Admin\IncidentController::class, 'investigate'])->name('investigate');
+            Route::post('{id}/resolve',                      [\App\Http\Controllers\Admin\IncidentController::class, 'resolve'])->name('resolve');
+            Route::post('{id}/close',                        [\App\Http\Controllers\Admin\IncidentController::class, 'close'])->name('close');
+            Route::post('{id}/notes',                        [\App\Http\Controllers\Admin\IncidentController::class, 'addNote'])->name('notes.store');
+            Route::delete('{incidentId}/notes/{noteId}',     [\App\Http\Controllers\Admin\IncidentController::class, 'deleteNote'])->name('notes.delete');
         });
 
         /*
@@ -667,6 +683,7 @@ Route::prefix('admin')
             Route::get('sites',                   [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'sites'])->name('sites');
             Route::get('incidents',               [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'incidents'])->name('incidents');
             Route::post('incidents/{id}/resolve', [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'resolveIncident'])->name('incidents.resolve');
+            Route::get('platform-history',        [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'platformHistory'])->name('platform-history');
         });
 
         /*

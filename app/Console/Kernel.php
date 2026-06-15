@@ -36,6 +36,12 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping();
         }
 
+        // MHC: Platform health snapshot every 2 minutes
+        $schedule->command('monitor:platform')
+            ->everyTwoMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/monitor-platform.log'));
+
         // INFRA-MONITORING-01: Health check all active sites every 5 minutes
         $schedule->command('monitor:sites')
             ->everyFiveMinutes()

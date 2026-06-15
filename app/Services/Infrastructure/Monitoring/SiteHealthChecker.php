@@ -8,13 +8,14 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Performs health check on a single customer site via HTTP.
- * Checks connectivity, /api/health JSON, and SSL certificate.
+ * Checks connectivity, /api/health JSON (db/redis/queue/failed_jobs/disk/memory), SSL certificate,
+ * and domain expiry from the Site model.
  */
 class SiteHealthChecker
 {
     public function check(Site $site): InfraSiteHealthLog
     {
-        $domain = $this->resolveDomain($site);
+        $domain  = $this->resolveDomain($site);
         $baseUrl = $this->buildBaseUrl($domain);
 
         $log = new InfraSiteHealthLog([
@@ -33,6 +34,10 @@ class SiteHealthChecker
                 $log->db_status    = $healthPayload['db']    ?? 'unknown';
                 $log->redis_status = $healthPayload['redis'] ?? 'unknown';
                 $log->queue_status = $healthPayload['queue'] ?? 'unknown';
+                // Extended fields from enhanced /api/health
+                $log->failed_jobs        = isset($healthPayload['failed_jobs']) ? (int) $healthPayload['failed_jobs'] : null;
+                $log->disk_used_percent  = isset($healthPayload['disk_used_percent']) ? (int) $healthPayload['disk_used_percent'] : null;
+                $log->memory_used_percent= isset($healthPayload['memory_used_percent']) ? (int) $healthPayload['memory_used_percent'] : null;
             } else {
                 $log->db_status    = 'unknown';
                 $log->redis_status = 'unknown';
@@ -40,11 +45,18 @@ class SiteHealthChecker
             }
 
             $sslInfo = $this->checkSsl($domain);
-            $log->ssl_status        = $sslInfo['status'];
-            $log->ssl_expires_at    = $sslInfo['expires_at'] ?? null;
+            $log->ssl_status         = $sslInfo['status'];
+            $log->ssl_expires_at     = $sslInfo['expires_at'] ?? null;
             $log->ssl_days_remaining = $sslInfo['days_remaining'] ?? null;
 
-            $log->status = $this->computeStatus($httpStatus, $log->db_status, $log->redis_status, $sslInfo);
+            // Domain expiry from Site model (manually maintained by admin)
+            if ($site->domain_expires_at) {
+                $daysLeft = (int) now()->diffInDays($site->domain_expires_at, false);
+                $log->domain_expires_at     = $site->domain_expires_at;
+                $log->domain_days_remaining = $daysLeft;
+            }
+
+            $log->status = $this->computeStatus($httpStatus, $log->db_status, $log->redis_status, $sslInfo, $log->domain_days_remaining);
         } catch (\Throwable $e) {
             $log->status        = 'critical';
             $log->error_message = $e->getMessage();
@@ -63,7 +75,6 @@ class SiteHealthChecker
 
         $candidates = [$baseUrl];
 
-        // If trying HTTPS, also add HTTP fallback for sites without SSL
         if (str_starts_with($baseUrl, 'https://')) {
             $candidates[] = 'http://' . substr($baseUrl, 8);
         }
@@ -118,7 +129,6 @@ class SiteHealthChecker
             );
 
             if (! $conn) {
-                // Connection refused or no port 443 — SSL simply not configured
                 return ['status' => 'unknown'];
             }
 
@@ -141,32 +151,23 @@ class SiteHealthChecker
             };
 
             return [
-                'status'          => $status,
-                'expires_at'      => $expiresAt->toDateString(),
-                'days_remaining'  => $daysLeft,
+                'status'         => $status,
+                'expires_at'     => $expiresAt->toDateString(),
+                'days_remaining' => $daysLeft,
             ];
         } catch (\Throwable $e) {
             return ['status' => 'unknown', 'error' => $e->getMessage()];
         }
     }
 
-    private function computeStatus(int $httpStatus, string $dbStatus, string $redisStatus, array $sslInfo): string
+    private function computeStatus(int $httpStatus, string $dbStatus, string $redisStatus, array $sslInfo, ?int $domainDaysLeft = null): string
     {
-        if ($httpStatus >= 500) {
-            return 'critical';
-        }
-        if ($dbStatus === 'error' || $redisStatus === 'error') {
-            return 'critical';
-        }
-        if ($httpStatus === 0 || $httpStatus >= 400) {
-            return 'warning';
-        }
-        if (in_array($sslInfo['status'] ?? '', ['critical', 'invalid'], true)) {
-            return 'critical';
-        }
-        if (($sslInfo['status'] ?? '') === 'expiring_soon') {
-            return 'warning';
-        }
+        if ($httpStatus >= 500) return 'critical';
+        if ($dbStatus === 'error' || $redisStatus === 'error') return 'critical';
+        if ($httpStatus === 0 || $httpStatus >= 400) return 'warning';
+        if (in_array($sslInfo['status'] ?? '', ['critical', 'invalid'], true)) return 'critical';
+        if (($sslInfo['status'] ?? '') === 'expiring_soon') return 'warning';
+        if ($domainDaysLeft !== null && $domainDaysLeft < 14) return 'warning';
         return 'healthy';
     }
 

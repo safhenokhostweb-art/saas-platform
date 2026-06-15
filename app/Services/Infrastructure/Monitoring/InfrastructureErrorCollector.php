@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Central collector for infrastructure errors.
- * Creates or updates infra_incidents, throttles SMS, fires Slack alerts.
+ * Creates or updates infra_incidents, fires IncidentLifecycleService::open(),
+ * throttles SMS, fires Slack alerts, and mirrors to NotificationCenter.
  */
 class InfrastructureErrorCollector
 {
@@ -20,16 +21,19 @@ class InfrastructureErrorCollector
         $this->slack = $slack;
     }
 
+    /**
+     * @param string $severity  critical | high | medium | low
+     */
     public function collect(
         string  $type,
         string  $title,
         string  $message,
         ?int    $siteId   = null,
-        string  $severity = 'warning'
+        string  $severity = 'medium'
     ): InfraIncident {
         $incident = InfraIncident::where('site_id', $siteId)
             ->where('type', $type)
-            ->whereNull('resolved_at')
+            ->active()
             ->latest()
             ->first();
 
@@ -42,7 +46,15 @@ class InfrastructureErrorCollector
                 'type'     => $type,
                 'title'    => $title,
                 'message'  => $message,
+                'status'   => InfraIncident::STATUS_OPEN,
             ]);
+
+            // Wire lifecycle: add system note + support ticket for critical/high
+            try {
+                app(IncidentLifecycleService::class)->open($incident);
+            } catch (\Throwable $e) {
+                Log::warning('InfrastructureErrorCollector: lifecycle open failed', ['error' => $e->getMessage()]);
+            }
         }
 
         $this->maybeNotify($incident);
@@ -54,8 +66,11 @@ class InfrastructureErrorCollector
     {
         InfraIncident::where('site_id', $siteId)
             ->where('type', $type)
-            ->whereNull('resolved_at')
-            ->update(['resolved_at' => now()]);
+            ->active()
+            ->update([
+                'status'      => InfraIncident::STATUS_RESOLVED,
+                'resolved_at' => now(),
+            ]);
     }
 
     public function collectQueueFailure(string $jobName, string $error): void
@@ -76,7 +91,7 @@ class InfrastructureErrorCollector
             title:    "Scheduled Task Failed: {$command}",
             message:  $error,
             siteId:   null,
-            severity: 'warning'
+            severity: 'medium'
         );
     }
 
@@ -86,12 +101,17 @@ class InfrastructureErrorCollector
             return;
         }
 
-        $severityLabel = $incident->isCritical() ? 'بحرانی' : 'هشدار';
+        $severityLabel = match ($incident->severity) {
+            'critical' => 'بحرانی',
+            'high'     => 'بالا',
+            'medium'   => 'متوسط',
+            default    => 'پایین',
+        };
         $smsText = "[{$severityLabel}] {$incident->title}. {$incident->message}";
 
         $this->trySendSms($smsText);
 
-        if ($incident->isCritical()) {
+        if (in_array($incident->severity, ['critical', 'high'], true)) {
             $this->slack->critical($incident->title, $incident->message ?? '', [
                 'Type'     => $incident->type,
                 'Site ID'  => $incident->site_id ?? 'platform',
@@ -108,7 +128,7 @@ class InfrastructureErrorCollector
 
         // Mirror to Notification Center
         try {
-            $priority = $incident->isCritical() ? 'critical' : 'high';
+            $priority = in_array($incident->severity, ['critical', 'high'], true) ? $incident->severity : 'medium';
             app(NotificationCenterService::class)->infrastructure(
                 $incident->title,
                 $incident->message ?? '',
@@ -123,8 +143,7 @@ class InfrastructureErrorCollector
     private function trySendSms(string $text): void
     {
         try {
-            $resolver = new \App\Services\Sms\SmsGatewayResolver();
-            $gateway  = \App\Services\Sms\SmsGatewayResolver::resolve();
+            $gateway = \App\Services\Sms\SmsGatewayResolver::resolve();
             if (! $gateway) {
                 return;
             }

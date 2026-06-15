@@ -3,6 +3,7 @@ namespace App\Console\Commands;
 
 use App\Models\Site;
 use App\Models\Infrastructure\InfraIncident;
+use App\Models\Infrastructure\InfraSchedulerRun;
 use App\Services\Infrastructure\Monitoring\SiteHealthChecker;
 use App\Services\Infrastructure\Monitoring\InfrastructureErrorCollector;
 use App\Services\Notification\NotificationCenterService;
@@ -22,6 +23,7 @@ class MonitorSitesCommand extends Command
 
     public function handle(): int
     {
+        $run    = InfraSchedulerRun::startRun('monitor:sites');
         $siteId = $this->option('site');
         $sites  = $siteId
             ? Site::where('id', $siteId)->where('is_active', true)->get()
@@ -29,6 +31,7 @@ class MonitorSitesCommand extends Command
 
         if ($sites->isEmpty()) {
             $this->info('No active sites to check.');
+            $run->endSuccess('No active sites');
             return self::SUCCESS;
         }
 
@@ -60,7 +63,9 @@ class MonitorSitesCommand extends Command
             $this->line("  [{$statusIcon}] Site {$site->id} ({$log->domain}): {$log->status} — {$log->response_time_ms}ms");
         }
 
-        $this->info("Done. Healthy: {$healthy} | Warning: {$warnings} | Critical: {$critical}");
+        $summary = "Done. Healthy: {$healthy} | Warning: {$warnings} | Critical: {$critical}";
+        $this->info($summary);
+        $run->endSuccess($summary);
 
         return self::SUCCESS;
     }
@@ -84,7 +89,7 @@ class MonitorSitesCommand extends Command
         } else {
             $wasDown = InfraIncident::where('site_id', $log->site_id)
                 ->where('type', 'site_down')
-                ->whereNull('resolved_at')
+                ->active()
                 ->exists();
 
             $this->collector->resolveForSite((int) $log->site_id, 'site_down');
@@ -136,10 +141,44 @@ class MonitorSitesCommand extends Command
                 title:    "هشدار SSL: {$log->domain}",
                 message:  "گواهی SSL {$days} روز دیگر منقضی می‌شود",
                 siteId:   $log->site_id,
-                severity: 'warning'
+                severity: 'medium'
             );
         } elseif ($log->ssl_status === 'valid') {
             $this->collector->resolveForSite((int) $log->site_id, 'ssl_expiring');
+        }
+
+        // Domain expiry alert
+        if ($log->domain_days_remaining !== null && $log->domain_days_remaining < 14) {
+            $severity = $log->domain_days_remaining < 7 ? 'high' : 'medium';
+            $this->collector->collect(
+                type:     'domain_expiring',
+                title:    "دامنه در حال انقضا: {$log->domain}",
+                message:  "دامنه {$log->domain_days_remaining} روز دیگر منقضی می‌شود",
+                siteId:   $log->site_id,
+                severity: $severity
+            );
+        }
+
+        // High failed jobs on customer site
+        if ($log->failed_jobs !== null && $log->failed_jobs >= 10) {
+            $this->collector->collect(
+                type:     'queue_dead',
+                title:    "Failed Jobs در سایت: {$log->domain}",
+                message:  "{$log->failed_jobs} job در صف failed_jobs سایت",
+                siteId:   $log->site_id,
+                severity: $log->failed_jobs >= 50 ? 'critical' : 'medium'
+            );
+        }
+
+        // Disk critical on customer site
+        if ($log->disk_used_percent !== null && $log->disk_used_percent >= 90) {
+            $this->collector->collect(
+                type:     'disk_critical',
+                title:    "دیسک پر: {$log->domain}",
+                message:  "دیسک سایت {$log->disk_used_percent}٪ پر شده",
+                siteId:   $log->site_id,
+                severity: 'high'
+            );
         }
     }
 }

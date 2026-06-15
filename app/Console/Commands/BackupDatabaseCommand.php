@@ -1,9 +1,10 @@
 <?php
 namespace App\Console\Commands;
 
+use App\Models\Infrastructure\InfraBackupRun;
+use App\Models\Infrastructure\InfraSchedulerRun;
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 class BackupDatabaseCommand extends Command
 {
@@ -33,9 +34,13 @@ class BackupDatabaseCommand extends Command
             return self::SUCCESS;
         }
 
-        if (!is_dir($backupDir)) {
+        if (! is_dir($backupDir)) {
             mkdir($backupDir, 0750, true);
         }
+
+        $backupRun = InfraBackupRun::startRun('database');
+        $schedRun  = InfraSchedulerRun::startRun('db:backup --retention=7');
+        $startedAt = microtime(true);
 
         $passwordArg = $password !== '' ? '-p' . escapeshellarg($password) : '';
         $cmd = sprintf(
@@ -50,15 +55,21 @@ class BackupDatabaseCommand extends Command
 
         exec($cmd, $output, $exitCode);
 
-        if ($exitCode !== 0 || !file_exists($fullPath) || filesize($fullPath) < 32) {
+        if ($exitCode !== 0 || ! file_exists($fullPath) || filesize($fullPath) < 32) {
             $msg = "Backup failed (exit {$exitCode}). Output: " . implode(' ', $output);
             $this->error($msg);
+            $backupRun->endFailed($msg);
+            $schedRun->endFailed($msg);
             app(SlackAlertService::class)->critical('Database Backup Failed', $msg, ['database' => $db]);
             return self::FAILURE;
         }
 
-        $sizekb = number_format(filesize($fullPath) / 1024, 1);
-        $this->info("Backup created: {$filename} ({$sizekb} KB)");
+        $sizeMb   = round(filesize($fullPath) / 1024 / 1024, 2);
+        $duration = (int) (microtime(true) - $startedAt);
+
+        $this->info("Backup created: {$filename} ({$sizeMb} MB)");
+        $backupRun->endSuccess($fullPath, $sizeMb, $duration);
+        $schedRun->endSuccess("Backup: {$filename} ({$sizeMb} MB)");
 
         $this->pruneOldBackups($backupDir, $retention);
 
@@ -68,7 +79,7 @@ class BackupDatabaseCommand extends Command
     private function pruneOldBackups(string $dir, int $keep): void
     {
         $files = glob($dir . DIRECTORY_SEPARATOR . 'db_backup_*.sql.gz');
-        if (!$files || count($files) <= $keep) {
+        if (! $files || count($files) <= $keep) {
             return;
         }
 
