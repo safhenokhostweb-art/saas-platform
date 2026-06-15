@@ -42,6 +42,7 @@ class AdminMenu
         'infrastructure'       => 'مدیریت زیرساخت',
         'monitoring_center'   => 'مرکز مانیتورینگ',
         'notification_center' => 'مرکز اطلاع‌رسانی',
+        'module_adoption'    => 'پذیرش ماژول‌ها',
     ];
 
     /** مسیر هر آیتم منو */
@@ -79,6 +80,7 @@ class AdminMenu
         'infrastructure'       => 'admin.infrastructure.overview',
         'monitoring_center'   => 'admin.infrastructure.monitoring.index',
         'notification_center' => 'admin.notification-center.index',
+        'module_adoption'    => 'admin.module-adoption.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -116,6 +118,7 @@ class AdminMenu
         'infrastructure'       => 'admin.infrastructure.*',
         'monitoring_center'   => 'admin.infrastructure.monitoring.*',
         'notification_center' => 'admin.notification-center.*',
+        'module_adoption'    => 'admin.module-adoption.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -138,7 +141,7 @@ class AdminMenu
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
             'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center'],
             'بازاریابی / دانش‌محور'             => [],
-            'گزارش‌ها / آمار'                   => ['activity_log'],
+            'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],
         ];
     }
