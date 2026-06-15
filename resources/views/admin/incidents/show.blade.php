@@ -106,24 +106,24 @@
                     </div>
                     <div class="meta-item">
                         <span class="meta-label">ایجاد</span>
-                        <span class="meta-value">{{ \App\Helpers\NumberHelper::formatFa($incident->created_at->format('Y/m/d H:i')) }}</span>
+                        <span class="meta-value">{{ \App\Helpers\NumberHelper::toPersianNumbers($incident->created_at->format('Y/m/d H:i')) }}</span>
                     </div>
                     @if($incident->investigating_at)
                     <div class="meta-item">
                         <span class="meta-label">شروع بررسی</span>
-                        <span class="meta-value">{{ \App\Helpers\NumberHelper::formatFa($incident->investigating_at->format('Y/m/d H:i')) }}</span>
+                        <span class="meta-value">{{ \App\Helpers\NumberHelper::toPersianNumbers($incident->investigating_at->format('Y/m/d H:i')) }}</span>
                     </div>
                     @endif
                     @if($incident->resolved_at)
                     <div class="meta-item">
                         <span class="meta-label">برطرف شد</span>
-                        <span class="meta-value">{{ \App\Helpers\NumberHelper::formatFa($incident->resolved_at->format('Y/m/d H:i')) }}</span>
+                        <span class="meta-value">{{ \App\Helpers\NumberHelper::toPersianNumbers($incident->resolved_at->format('Y/m/d H:i')) }}</span>
                     </div>
                     @endif
                     @if($incident->closed_at)
                     <div class="meta-item">
                         <span class="meta-label">بسته شد</span>
-                        <span class="meta-value">{{ \App\Helpers\NumberHelper::formatFa($incident->closed_at->format('Y/m/d H:i')) }}</span>
+                        <span class="meta-value">{{ \App\Helpers\NumberHelper::toPersianNumbers($incident->closed_at->format('Y/m/d H:i')) }}</span>
                     </div>
                     @endif
                 </div>
@@ -153,7 +153,7 @@
                             <div class="tl-note">{{ $note->note }}</div>
                             <div class="tl-meta">
                                 {{ $note->is_system ? 'سیستم' : ($note->user?->name ?? 'کاربر') }}
-                                · {{ \App\Helpers\NumberHelper::formatFa($note->created_at->format('Y/m/d H:i')) }}
+                                · {{ \App\Helpers\NumberHelper::toPersianNumbers($note->created_at->format('Y/m/d H:i')) }}
                                 @if(! $note->is_system)
                                 <form method="POST" action="{{ route('admin.incidents.notes.delete', [$incident->id, $note->id]) }}" style="display:inline">
                                     @csrf @method('DELETE')
@@ -225,7 +225,7 @@
                 <div style="margin-bottom:.5rem;"><span style="color:#6b7280;">دامنه:</span> <span style="color:#4f46e5;font-weight:600;">{{ $incident->site->domain }}</span></div>
                 <div style="margin-bottom:.5rem;"><span style="color:#6b7280;">نام:</span> {{ $incident->site->title }}</div>
                 @if($incident->site->domain_expires_at)
-                <div style="margin-bottom:.5rem;"><span style="color:#6b7280;">انقضای دامنه:</span> {{ \App\Helpers\NumberHelper::formatFa($incident->site->domain_expires_at->format('Y/m/d')) }}</div>
+                <div style="margin-bottom:.5rem;"><span style="color:#6b7280;">انقضای دامنه:</span> {{ \App\Helpers\NumberHelper::toPersianNumbers($incident->site->domain_expires_at->format('Y/m/d')) }}</div>
                 @endif
                 <a href="{{ route('admin.infrastructure.monitoring.site', $incident->site_id) }}" style="color:#6366f1;font-size:.78rem;text-decoration:none;">مشاهده وضعیت سایت ↗</a>
             </div>

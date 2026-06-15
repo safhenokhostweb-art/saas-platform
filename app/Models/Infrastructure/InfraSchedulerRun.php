@@ -75,14 +75,7 @@ class InfraSchedulerRun extends Model
 
         $result = [];
         foreach ($tracked as $cmd) {
-            $run = static::latestByCommand($cmd);
-            $result[] = [
-                'command'      => $cmd,
-                'status'       => $run?->status ?? 'never',
-                'started_at'   => $run?->started_at,
-                'duration_ms'  => $run?->duration_ms,
-                'has_error'    => $run?->isFailed() ?? false,
-            ];
+            $result[$cmd] = static::latestByCommand($cmd);
         }
         return $result;
     }
