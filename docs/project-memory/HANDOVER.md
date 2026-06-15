@@ -21,10 +21,28 @@
 
 ## CURRENT STATE (2026-06-15)
 
-**Last completed phase:** 5-Phase Business Features Batch — COMPLETE  
-**Status:** CRM + Inventory in customer-site; Customer Portal enhanced; Platform Module Adoption dashboard in saas-platform.  
-**Previous milestone:** KI/FI Resolution Batch (2026-06-15)  
+**Last completed phase:** MHC — Monitoring & Health Center — COMPLETE  
+**Status:** Full enterprise monitoring system across saas-platform. 6 new migrations, 5 new models, 7 services, 2 commands, incident management UI, site drilldown page, all routes wired.  
+**Previous milestone:** 5-Phase Business Features Batch (2026-06-15), KI/FI Resolution Batch (2026-06-15)  
 **Next recommended milestone:** فاز جدید در انتظار تصمیم کاربر
+
+### MHC — Monitoring & Health Center (2026-06-15)
+
+**6 Migrations:** enhance_incidents (4-state lifecycle), incident_notes, platform_health_logs, backup_runs, scheduler_runs, extend_site_health_logs  
+**5 Models:** InfraIncident (rewritten), InfraIncidentNote, InfraPlatformHealthLog, InfraBackupRun, InfraSchedulerRun  
+**7 Services:** IncidentLifecycleService (new), UptimeCalculator (new), SchedulerHealthTracker (new), HealthCheckService (extended), SiteHealthChecker (extended), InfrastructureErrorCollector (extended), NotificationCenterService (extended)  
+**2 Commands:** MonitorPlatformCommand (new, every 2min), MonitorSitesCommand (rewritten, 4-level severity)  
+**Incident UI:** admin/incidents/index.blade.php + admin/incidents/show.blade.php  
+**Monitoring UI:** admin/infrastructure/monitoring/index.blade.php (extended), admin/infrastructure/monitoring/site.blade.php (new)  
+**Routes:** 7 incident routes (admin.incidents.*), site drilldown (admin.infrastructure.monitoring.site), platform-history API  
+**Scheduler:** monitor:platform every 2 minutes  
+
+**Key invariants:**
+- Incident severity: critical / high / medium / low (NOT warning — migrated)
+- Incident status: open / investigating / resolved / closed (4-state)
+- `InfraIncident::active()` = open OR investigating
+- Customer SMS sent on resolve via `IncidentLifecycleService::notifyCustomerOnResolve()`
+- Platform incidents auto-created via `IncidentLifecycleService::open()` from `InfrastructureErrorCollector`
 
 ### KI/FI Resolution Batch (2026-06-15)
 

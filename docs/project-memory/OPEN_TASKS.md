@@ -4,6 +4,29 @@
 
 ---
 
+## COMPLETE: MHC — Monitoring & Health Center — 2026-06-15 ✅
+
+**Status:** COMPLETE (2026-06-15)  
+**Scope:** Full enterprise monitoring + incident management for saas-platform
+
+| Sub-task | Status |
+|----------|--------|
+| MHC-1: 6 migrations | ✅ DONE |
+| MHC-2: 5 models (InfraIncident rewritten, 4 new) | ✅ DONE |
+| MHC-3: 7 services (3 new, 4 extended) | ✅ DONE |
+| MHC-3: 2 commands (MonitorPlatform new, MonitorSites rewritten) | ✅ DONE |
+| MHC-5: Incident UI (index + show with timeline/lifecycle) | ✅ DONE |
+| MHC-4: MonitoringController extended (show + platformHistory) | ✅ DONE |
+| MHC-4: monitoring/index.blade.php extended (SMS/AI/Storage/Scheduler/Backup) | ✅ DONE |
+| MHC-4: monitoring/site.blade.php created (uptime + drilldown) | ✅ DONE |
+| MHC-6: Routes (incident routes + site drilldown + platform-history API) | ✅ DONE |
+| MHC-6: Kernel.php (monitor:platform every 2 min) | ✅ DONE |
+| MHC-6: customer-site /api/health extended (failed_jobs + disk + memory) | ✅ DONE |
+| AdminMenu: incidents key + monitoring_center label + sidebar icons | ✅ DONE |
+| Deploy to production | ✅ DONE |
+
+---
+
 ## COMPLETE: EDU-INFRA Audit — Platform vs Customer Module Separation — 2026-06-15 ✅
 
 **Status:** COMPLETE (2026-06-15)  

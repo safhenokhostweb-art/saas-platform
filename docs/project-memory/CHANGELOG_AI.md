@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-06-15 — MHC: Monitoring & Health Center (Complete)
+
+**Reason:** Full enterprise monitoring system — health checks, incident management, uptime tracking, scheduler monitoring, backup status
+
+### MHC-1: 6 Database Migrations
+- `2026_06_15_200001_enhance_infra_incidents_for_health_center.php` — status enum (open/investigating/resolved/closed), assigned_to_id, investigating_at, closed_at, support_ticket_id, customer_notified_at; migrates severity 'warning'→'medium'
+- `2026_06_15_200002_create_infra_incident_notes_table.php` — incident timeline/notes table
+- `2026_06_15_200003_create_infra_platform_health_logs_table.php` — platform health snapshots (DB/Redis/Queue/SMS/AI/Storage/Disk/Memory/CPU)
+- `2026_06_15_200004_create_infra_backup_runs_table.php` — backup run history
+- `2026_06_15_200005_create_infra_scheduler_runs_table.php` — scheduler command run tracking
+- `2026_06_15_200006_extend_infra_site_health_logs_table.php` — adds failed_jobs, disk_used_percent, memory_used_percent, domain_expires_at, domain_days_remaining
+
+### MHC-2: 5 Models (new/rewritten)
+- `InfraIncident.php` — 4-level severity, 4-state lifecycle, full helpers/scopes/relations
+- `InfraIncidentNote.php` — new, incident timeline
+- `InfraPlatformHealthLog.php` — new, latestCheck() + latest24h()
+- `InfraBackupRun.php` — new, startRun()/endSuccess()/endFailed()
+- `InfraSchedulerRun.php` — new, recentSummary() for 7 tracked commands
+- `InfraSiteHealthLog.php` — extended with new resource fields, uptimePercent/uptimeHistory
+
+### MHC-3: 7 Services (new/extended)
+- `IncidentLifecycleService.php` — NEW: open/investigate/resolve/close lifecycle, auto-creates Ticket for critical/high, notifies customer on resolve (SMS + NC)
+- `UptimeCalculator.php` — NEW: siteUptime/siteUptimeHistory/allSitesUptime/platformUptime
+- `SchedulerHealthTracker.php` — NEW: wraps commands in try/catch, records InfraSchedulerRun
+- `HealthCheckService.php` — EXTENDED: checkFailedJobs/checkSmsProvider/checkAiProvider/checkStorage/checkDisk/checkMemory/checkCpu + checkAndPersist()
+- `SiteHealthChecker.php` — EXTENDED: parses failed_jobs/disk/memory from /api/health, domain expiry from Site model
+- `InfrastructureErrorCollector.php` — EXTENDED: 4-level severity, calls IncidentLifecycleService::open(), uses active() scope
+- `NotificationCenterService.php` — EXTENDED: incidentResolved() method
+
+### MHC-4: 2 New Commands + 1 Extended
+- `MonitorPlatformCommand.php` — NEW: monitor:platform (every 2 min), checkAndPersist, alerts, auto-resolves
+- `MonitorSitesCommand.php` — REWRITTEN: uses InfraSchedulerRun, 4-level severity, domain/disk/failed_jobs checks
+- `BackupDatabaseCommand.php` — EXTENDED: records InfraBackupRun + InfraSchedulerRun
+
+### MHC-5: Incident Management UI
+- `admin/incidents/index.blade.php` — stat cards, filter bar, 4-level severity table, paginated
+- `admin/incidents/show.blade.php` — 2-col: metadata + timeline + lifecycle actions + site summary
+
+### MHC-4 (Views): Monitoring Dashboard Extended
+- `admin/infrastructure/monitoring/index.blade.php` — added SMS/AI/Storage/FailedJobs checks, resource meters (Disk/Memory/CPU), Scheduler Health table, Backup Status card, domain expiry column in site table, site drilldown links
+- `admin/infrastructure/monitoring/site.blade.php` — NEW: uptime 24h/7d/30d cards, uptime history chart, response trend, incident list, health history table, backup history
+
+### MHC-6: Routes + Scheduler
+- `routes/web.php` — 7 incident routes (admin.incidents.*), site drilldown route (admin.infrastructure.monitoring.site), platform-history API endpoint
+- `app/Console/Kernel.php` — monitor:platform every 2 minutes added
+- `app/Http/Controllers/Admin/Infrastructure/MonitoringController.php` — show() + platformHistory() methods
+- `app/Http/Controllers/Admin/IncidentController.php` — full 7-method controller
+- `app/Helpers/AdminMenu.php` — monitoring_center label + incidents key + sidebar icons
+
+**Impact:** Complete monitoring & health center. Platform admin can track all 15+ health dimensions, manage incident lifecycle with customer notifications, view per-site drilldowns, and monitor scheduler/backup health.
+
+---
+
 ## 2026-06-15 — EDU-INFRA Audit: Platform vs Customer Module Separation
 
 **Reason:** Architecture audit to classify all modules and remove Customer-Only items from Platform Admin nav.
