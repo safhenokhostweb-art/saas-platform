@@ -1,6 +1,25 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-15
+> Last Updated: 2026-06-16
+
+---
+
+## COMPLETE: TB3 Sprint 2 — Undo/Redo + Duplication + Per-Block Style — 2026-06-16 ✅
+
+**Status:** COMPLETE (2026-06-16) — both repos updated and deployed
+
+| Sub-task | Status |
+|----------|--------|
+| Undo/Redo history array (25 entries, Ctrl+Z/Y) | ✅ DONE |
+| Block duplication (duplicateBlock + new ID + insert after) | ✅ DONE |
+| 4-button action bar (up/down/duplicate/delete) | ✅ DONE |
+| Content/Style tabs in props panel | ✅ DONE |
+| Per-block style tab (bgColor, textColor, paddingY, paddingX, borderRadius, opacity, reset) | ✅ DONE |
+| `applyBlockStyle()` in PHP BlockRenderer | ✅ DONE |
+| Mirror to customer-site canvas-editor.blade.php | ✅ DONE |
+| Commit + Deploy (both repos) | ✅ DONE |
+
+**Potential Sprint 3 items:** Nested columns, typography overrides, block copy/paste across pages, export theme ZIP
 
 ---
 

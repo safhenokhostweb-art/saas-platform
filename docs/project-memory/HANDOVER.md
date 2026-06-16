@@ -21,10 +21,24 @@
 
 ## CURRENT STATE (2026-06-16)
 
-**Last completed phase:** Production Safety Hardening — ALL 12 PRODUCTION_FIX_PLAN.md findings resolved (2026-06-16)  
-**Before that:** TB3 Sprint 1 — Live Iframe Canvas — COMPLETE (2026-06-16)  
-**Status:** Platform is production-ready. Security hardened, deploy pipeline fixed, KB menu wired, cache assertions in place.  
-**Next recommended milestone:** TB3 Sprint 2 (TB3-04+ nested columns / block styles / block duplication / undo-redo) or other user-requested feature
+**Last completed phase:** TB3 Sprint 2 — Undo/Redo, Block Duplication, Per-Block Style Panel — COMPLETE (2026-06-16)  
+**Before that:** Production Safety Hardening — ALL 12 PRODUCTION_FIX_PLAN.md findings resolved (2026-06-16)  
+**Status:** Theme Builder V3 Sprint 1+2 shipped. Platform production-ready + fully security hardened.  
+**Next recommended milestone:** TB3 Sprint 3 (nested columns, typography overrides, export theme) or other user-requested feature
+
+### TB3 Sprint 2 Summary (2026-06-16)
+
+| Feature | Detail |
+|---------|--------|
+| Undo/Redo | 25-entry JSON snapshot history; Ctrl+Z/Y shortcuts; toolbar buttons |
+| Block Duplication | Clone with new ID; inserted after source; auto-selected |
+| 4-button action bar | up / down / duplicate / delete (icon-only, compact) |
+| Content/Style tabs | Props panel switches context |
+| Per-block Style tab | bgColor, textColor, paddingY, paddingX, borderRadius, opacity, reset |
+| `applyBlockStyle()` PHP | Inline CSS outer div in BlockRenderer; XSS-safe `escapeAttr()` |
+
+Both `saas-platform` and `customer-site` updated in sync.  
+Commits: `046b195` (saas-platform), `1b5bb33` (customer-site)
 
 ### Production Safety Summary (2026-06-16)
 

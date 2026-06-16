@@ -5,6 +5,34 @@
 
 ---
 
+## 2026-06-16 — TB3 Sprint 2: Undo/Redo, Block Duplication, Per-Block Style Panel
+
+**Reason:** Theme Builder V3 Sprint 2 — editing power features  
+**Commits:** 046b195 (saas-platform), 1b5bb33 (customer-site)
+
+### Files Changed
+
+| Repo | File | Change |
+|------|------|--------|
+| saas-platform | `app/Services/ThemeBuilder/BlockRenderer.php` | Added `applyBlockStyle()` — wraps block output with inline CSS div for per-block overrides |
+| saas-platform | `resources/views/admin/theme-builder/canvas.blade.php` | Undo/Redo toolbar buttons, 4-button action bar (up/down/duplicate/delete), Content/Style tabs, Style tab UI, new JS methods |
+| customer-site | `resources/views/admin/theme-design/canvas-editor.blade.php` | Mirror of all saas-platform TB3 Sprint 2 changes |
+
+### Features Added
+
+| Feature | Detail |
+|---------|--------|
+| Undo / Redo | 25-entry JSON snapshot history array; Ctrl+Z / Ctrl+Y shortcuts; toolbar buttons with disabled state |
+| Block Duplication | `duplicateBlock(index)` — deep clones block with new UUID, inserts after source, selects it |
+| Delete in action bar | 4-button row replaces old move+bottom-delete; icons only (compact) |
+| Content/Style tabs | Props panel switches between محتوا and استایل |
+| Per-block Style tab | bgColor, textColor, paddingY, paddingX, borderRadius, opacity, reset; clears key on empty value |
+| `applyBlockStyle()` PHP | Inline CSS outer div wrapper: maps 6 style keys to CSS properties; XSS-safe via `escapeAttr()` |
+| History reset on page switch | `switchPage()` reinitializes history for new page context |
+| `pushPropUpdate` includes `.style` | Sends full block payload (props + style) to render endpoint |
+
+---
+
 ## 2026-06-16 — PROD-003/004/005: Production File & Storage Hardening Phase
 
 **Reason:** Full filesystem audit + defense-in-depth hardening for all file operations in saas-platform  
