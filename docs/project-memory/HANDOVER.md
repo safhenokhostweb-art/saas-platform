@@ -21,10 +21,24 @@
 
 ## CURRENT STATE (2026-06-16)
 
-**Last completed phase:** TB3 Sprint 1 — Live Iframe Canvas — COMPLETE (2026-06-16)  
-**Status:** Both canvas editors (platform + customer-site) upgraded to live iframe preview with postMessage bridge, device toggle, drag-from-library (TB3-03), and block.props unification (TB3-01).  
-**Previous milestone:** MHC Monitoring Center (2026-06-15), Production Safety Phase (2026-06-15)  
-**Next recommended milestone:** TB3 Sprint 2 (TB3-04+ nested columns / block styles) or other user-requested feature
+**Last completed phase:** Production Safety Hardening — ALL 12 PRODUCTION_FIX_PLAN.md findings resolved (2026-06-16)  
+**Before that:** TB3 Sprint 1 — Live Iframe Canvas — COMPLETE (2026-06-16)  
+**Status:** Platform is production-ready. Security hardened, deploy pipeline fixed, KB menu wired, cache assertions in place.  
+**Next recommended milestone:** TB3 Sprint 2 (TB3-04+ nested columns / block styles / block duplication / undo-redo) or other user-requested feature
+
+### Production Safety Summary (2026-06-16)
+
+All 12 PRODUCTION_FIX_PLAN.md findings resolved:
+- PROD-001: Health endpoints strip deployment metadata in production (`RuntimeHealthService`)
+- PROD-002: MHC migrations confirmed ran (batch 10) — no action needed
+- PROD-003/004/005: StorageManager already handles all uploads/CSV — pre-existing
+- PROD-006: Composite `site_id` indexes already exist on all key tables
+- PROD-007: `SitemapService` intentionally uses `public` disk — no change
+- PROD-008: `SANCTUM_STATEFUL_DOMAINS=panel.safhenokhost.ir` set on production server
+- PROD-009: `AppServiceProvider::boot()` throws if `CACHE_DRIVER=file` in production
+- PROD-010: Shadow-var CSS warnings already resolved by KI-002
+- PROD-011: `kb` key added to AdminMenu.php (Knowledge Base now in sidebar)
+- PROD-012: 3 orphaned form controllers deleted (303 LOC removed)
 
 ### MHC — Monitoring & Health Center (2026-06-15)
 
@@ -356,32 +370,32 @@ GET|POST /api/v1/education/sync/{siteId}/... — customer site sync (EDU-12)
 
 ## OPEN TASKS
 
-### Immediate (EDU-17 — BLOCKED on env decision)
-- [ ] Decide `EDUCATION_AI_PROVIDER` env value: `claude` | `openai` | keep stub
-- [ ] Implement real AI provider adapter in `EducationAiContentGenerationService`
-- [ ] Wire `EDUCATION_AI_PROVIDER` env to `EducationServiceProvider` binding
-- [ ] Connect to `AiProviderManager` (Phase 9.5-A) — circuit breaker + fallback
-- [ ] `TenantAiQuotaManager` integration — rate limits per site
-- [ ] Tests: mocked HTTP round-trip (no live API in CI)
+All major epics are complete. Next sprint options:
 
-### Infrastructure Backlog
-- Phase 8.3b: Automated DB backup before deploy
-- Phase 8.4a: DB indexes on site_id columns
-- Phase 8.4c: Slack webhook for critical anomalies
-- Schedule `RuntimeAnomalyEngine::scan()` via Laravel scheduler
+### TB3 Sprint 2 (Theme Builder V3)
+- [ ] TB3-04: Block duplication (right-click or clone button)
+- [ ] TB3-05: Nested columns / grid layouts (2-col, 3-col, sidebar+content)
+- [ ] TB3-06: Per-block style editor (background, padding, border, shadow via right panel)
+- [ ] TB3-07: Undo/redo history (JS state array)
+- [ ] TB3-08: Block locking / hide in mobile
+
+### Low Priority Backlog
+- M2.1-e: AppImage packaging (Linux desktop)
+- M2.1-f: System tray icon assets
+- M-01: `education:validate` EDU-17 component checks (LOW debt)
 
 ---
 
 ## NEXT ACTION
 
-**EDU-16 is COMPLETE.** Next is **EDU-17** (blocked on `EDUCATION_AI_PROVIDER` env decision).
+**All production safety findings resolved.** Platform is production-ready.
 
-Run this to verify current health:
+Next: TB3 Sprint 2 or user-directed feature.
+
+Verify production health:
 ```bash
-cd c:\laragon\www\saas-platform
-php artisan education:validate --json
+ssh -p 9011 root@87.107.12.81 "cd /var/www/saas-platform && php artisan monitor:platform"
 ```
-Score should be ≥ 95/100. If lower, check AUDIT_HISTORY.md for any regressions.
 
 ---
 
