@@ -57,17 +57,38 @@ class BlockRenderer
         if (str_starts_with($type, 'module:')) {
             $renderer = $this->context['module_renderer'] ?? null;
             if (is_callable($renderer)) {
-                return $renderer($type, $props, $id);
+                $html = $renderer($type, $props, $id);
+            } else {
+                $html = $this->renderModulePlaceholder($type, $props, $id);
             }
-            return $this->renderModulePlaceholder($type, $props, $id);
+            return $this->wrapEditorMode($html, $id, $type);
         }
 
         $method = 'render' . Str::studly(str_replace(':', '_', $type));
         if (method_exists($this, $method)) {
-            return $this->{$method}($props, $inner, $id);
+            $html = $this->{$method}($props, $inner, $id);
+        } else {
+            $html = $this->renderFallback($type, $props, $inner, $id);
         }
 
-        return $this->renderFallback($type, $props, $inner, $id);
+        return $this->wrapEditorMode($html, $id, $type);
+    }
+
+    /**
+     * In editor_mode, wraps block HTML with canvas selection overlay.
+     * No-op in production rendering (editor_mode not set).
+     */
+    protected function wrapEditorMode(string $html, string $id, string $type): string
+    {
+        if (!($this->context['editor_mode'] ?? false)) {
+            return $html;
+        }
+        $esc = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $idEsc = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\">"
+            . "<div class=\"tb-block-badge\">{$esc}</div>"
+            . $html
+            . "</div>";
     }
 
     protected function renderSection(array $props, string $inner, string $id): string
