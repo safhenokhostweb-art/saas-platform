@@ -56,10 +56,12 @@ foreach ($pkg in $localPackages) {
 }
 
 if (Test-Path $ZIPFILE) { Remove-Item $ZIPFILE }
-# آرشیو از روی فایل‌های واقعی (شامل vendor) نه git archive
-$exclude = @('.git', '.claude', '.github', 'mobile', 'node_modules', 'tests', 'storage', 'bootstrap', '.env', '.env.local', '.env.testing')
-$items   = Get-ChildItem -Path $DIR | Where-Object { $_.Name -notin $exclude }
-Compress-Archive -Path ($items | ForEach-Object { $_.FullName }) -DestinationPath $ZIPFILE -Force
+# robocopy به tmp اول (از lock شدن فایل‌های Laragon جلوگیری می‌کند) سپس zip
+$TMPDIR = "$env:TEMP\deploy_saas_src"
+if (Test-Path $TMPDIR) { Remove-Item $TMPDIR -Recurse -Force }
+robocopy $DIR $TMPDIR /E /XD .git .claude .github mobile node_modules tests storage bootstrap /XF ".env" ".env.local" ".env.testing" /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+Compress-Archive -Path "$TMPDIR\*" -DestinationPath $ZIPFILE -Force
+Remove-Item $TMPDIR -Recurse -Force
 Write-Host "     Archive: $ZIPFILE ($('{0:N1}' -f ((Get-Item $ZIPFILE).Length / 1MB)) MB)" -ForegroundColor Green
 
 # ── ۳. Upload به سرور ────────────────────────────────────────
