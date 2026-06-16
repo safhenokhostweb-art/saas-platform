@@ -569,6 +569,9 @@ Route::prefix('admin')
             Route::get('theme-builder/{theme}/canvas/{pageKey}/preview', [ThemeCanvasController::class, 'preview'])->name('theme-builder.canvas.page-preview')->where('pageKey', '[a-z0-9_-]+');
             Route::post('theme-builder/{theme}/install-to-site', [ThemeCanvasController::class, 'installToSite'])->name('theme-builder.install-to-site');
             Route::post('theme-builder/{theme}/sync-pages', [ThemeCanvasController::class, 'syncPagesForSite'])->name('theme-builder.sync-pages');
+            // ─── TB3-02: Live Iframe Canvas ───────────────────────────────────────
+            Route::get('theme-builder/{theme}/canvas/live-preview', [ThemeCanvasController::class, 'livePreview'])->name('theme-builder.canvas.live-preview');
+            Route::post('theme-builder/{theme}/canvas/render-block', [ThemeCanvasController::class, 'renderBlockAjax'])->name('theme-builder.canvas.render-block');
 
             // ─── TB-3: AI URL Analyzer ──────────────────────────────────────
             Route::get('theme-builder/ai-analyze',         [ThemeAiController::class, 'form'])->name('theme-builder.ai-form');

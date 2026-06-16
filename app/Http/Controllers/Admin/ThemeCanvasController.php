@@ -121,6 +121,61 @@ class ThemeCanvasController extends Controller
     }
 
     /**
+     * TB3-02: Live iframe canvas endpoint.
+     * Renders the current saved page blocks into a standalone HTML page.
+     * Called as iframe src: GET /admin/theme-builder/{theme}/canvas/live-preview?page={key}
+     */
+    public function livePreview(Request $request, Theme $theme)
+    {
+        $pageKey  = $request->input('page', 'home');
+        $pages    = $theme->getPageList();
+        $pageData = $pages[$pageKey] ?? null;
+        $blocks   = $pageData['blocks'] ?? [];
+
+        $globalStyles = $theme->global_styles ?? [];
+        $css = $this->styleEngine->renderCssBlock($globalStyles, $theme->site_id);
+
+        $this->renderer->setContext(['editor_mode' => true]);
+
+        $renderedBlocks = [];
+        foreach ($blocks as $block) {
+            $bid = $block['id'] ?? '';
+            if ($bid) {
+                $renderedBlocks[$bid] = $this->renderer->renderBlock($block);
+            }
+        }
+
+        return response()
+            ->view('admin.theme-builder.canvas-live-preview', compact('theme', 'css', 'blocks', 'renderedBlocks'))
+            ->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
+    /**
+     * TB3-02: Per-block re-render for live prop updates.
+     * POST body: { block: {id, type, props, ...} }
+     * Returns: { html: "..." }
+     */
+    public function renderBlockAjax(Request $request, Theme $theme)
+    {
+        $blockData = $request->input('block', []);
+
+        if (!is_array($blockData) || empty($blockData['type'])) {
+            return response()->json(['html' => '']);
+        }
+
+        // Normalize block.data → block.props (TB3-01 compat)
+        if (isset($blockData['data']) && !isset($blockData['props'])) {
+            $blockData['props'] = $blockData['data'];
+            unset($blockData['data']);
+        }
+
+        $this->renderer->setContext(['editor_mode' => true]);
+        $html = $this->renderer->renderBlock($blockData);
+
+        return response()->json(['html' => $html]);
+    }
+
+    /**
      * نصب مستقیم قالب روی دیتابیس سایت مشتری از پنل پلتفرم.
      * Platform admin can assign any canvas theme to any site directly.
      */
