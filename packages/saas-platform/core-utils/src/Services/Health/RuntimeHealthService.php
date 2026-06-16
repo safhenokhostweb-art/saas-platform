@@ -119,8 +119,9 @@ class RuntimeHealthService
     {
         try {
             $key = '__health_' . time();
-            Cache::put($key, 1, 5);
-            $ok = Cache::get($key) === 1;
+            $sentinel = 'health_probe_ok';
+            Cache::put($key, $sentinel, 5);
+            $ok = Cache::get($key) === $sentinel;
             Cache::forget($key);
             return ['passed' => $ok, 'detail' => $ok ? 'Read/write OK' : 'Cache probe failed'];
         } catch (\Throwable $e) {
