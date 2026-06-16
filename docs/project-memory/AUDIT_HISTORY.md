@@ -5,6 +5,56 @@
 
 ---
 
+## PRODUCTION SAFETY PHASE — PROD-003–012 (2026-06-16)
+
+### PROD-008 — MEDIUM | FIXED
+
+**Title:** SANCTUM_STATEFUL_DOMAINS not set in production .env  
+**Status:** FIXED  
+**Evidence:** Production .env had no `SANCTUM_STATEFUL_DOMAINS`. Default fallback includes `localhost,127.0.0.1,::1` — local access vectors on the server.  
+**Resolution:** `SANCTUM_STATEFUL_DOMAINS=panel.safhenokhost.ir` added to production .env; `php artisan config:cache` re-run. Localhost no longer in stateful domains list.  
+**Final Verdict:** PASS
+
+---
+
+### PROD-009 — MEDIUM | FIXED
+
+**Title:** No boot-time assertion for CACHE_DRIVER=file on production  
+**Status:** FIXED  
+**Evidence:** If Redis goes down and `.env` is misconfigured to `file`, circuit breakers and 6 named Redis stores would silently degrade.  
+**Resolution:** Added `RuntimeException` in `AppServiceProvider::boot()` when `APP_ENV=production` and `CACHE_DRIVER=file`. File: `app/Providers/AppServiceProvider.php`. Commit: `8ef3a27`.  
+**Final Verdict:** PASS
+
+---
+
+### PROD-011 — LOW | FIXED
+
+**Title:** KB routes registered but absent from admin sidebar menu  
+**Status:** FIXED  
+**Resolution:** `kb` key added to `AdminMenu::MENU_KEYS/ROUTES/ROUTE_PATTERNS/getGroups()`. KnowledgeBase now accessible under بازاریابی/دانش‌محور group in admin sidebar. Commit: `8ef3a27`.  
+**Final Verdict:** PASS
+
+---
+
+### PROD-012 — LOW | FIXED
+
+**Title:** Dead code — orphaned form controllers with no registered routes  
+**Status:** FIXED  
+**Resolution:** `FormFieldController`, `FormSiteController`, `FormSubmissionController` deleted from `app/Http/Controllers/Admin/`. 303 LOC removed. Commit: `8ef3a27`.  
+**Final Verdict:** PASS
+
+---
+
+### PROD-003/004/005/006/007/010 — PRE-RESOLVED
+
+All verified as already resolved by prior infrastructure work:
+- **PROD-003/004/005:** `StorageManager` already handles all file uploads/CSV exports
+- **PROD-006:** `migration 2026_06_07_000001_add_composite_site_id_indexes.php` already covers all key tables
+- **PROD-007:** Only `SitemapService` uses `Storage::disk('public')` — intentionally public, no change needed
+- **PROD-010:** Shadow-var CSS warnings already fixed by KI-002 (0 patterns remaining)
+
+---
+
 ## PRODUCTION SAFETY PHASE — PROD-001 & PROD-002 (2026-06-15)
 
 ### PROD-001 — CRITICAL | FIXED
@@ -88,19 +138,19 @@ Removed `forms_submissions` from `AdminMenu::MENU_KEYS`, `MENU_ROUTES`, `MENU_RO
 
 **Title:** KB (Knowledge Base) routes registered but no menu entry in Platform Admin  
 **Severity:** LOW  
-**Status:** NOTED  
-**Evidence:** `admin.kb.*` routes registered in `routes/web.php` with full CRUD; `KnowledgeBaseController` exists; but `kb` key is absent from `AdminMenu::MENU_KEYS`. KB is reachable by direct URL but invisible in the sidebar.  
-**Decision:** Not a misclassification. KB is a legitimate platform-level feature. Missing menu entry is tech debt, not an architecture violation.  
-**Final Verdict:** PASS (noted for future menu wiring)
+**Status:** FIXED (2026-06-16)  
+**Evidence:** `admin.kb.*` routes registered in `routes/web.php` with full CRUD; `KnowledgeBaseController` exists; but `kb` key was absent from `AdminMenu::MENU_KEYS`.  
+**Resolution:** Added `kb` key to `AdminMenu::MENU_KEYS`, `MENU_ROUTES`, `MENU_ROUTE_PATTERNS`, and `getGroups()` (group: بازاریابی/دانش‌محور). Commit: `8ef3a27`.  
+**Final Verdict:** PASS
 
 ### ARC-003 — LOW | NOTED (no action required)
 
 **Title:** Orphaned App-level form controllers in Platform Admin with no routes  
 **Severity:** LOW  
-**Status:** NOTED  
-**Evidence:** `App\Http\Controllers\Admin\FormFieldController`, `FormSiteController`, `FormSubmissionController` exist in saas-platform but have zero registered routes.  
-**Decision:** Dead code only. No routing exposure. Safe to leave until a cleanup sprint.  
-**Final Verdict:** PASS (noted as dead code)
+**Status:** FIXED (2026-06-16)  
+**Evidence:** `App\Http\Controllers\Admin\FormFieldController`, `FormSiteController`, `FormSubmissionController` existed with zero registered routes.  
+**Resolution:** All 3 files deleted. 303 lines of dead code removed. Commit: `8ef3a27`.  
+**Final Verdict:** PASS
 
 ### CLASSIFICATION TABLE — ALL MODULES
 

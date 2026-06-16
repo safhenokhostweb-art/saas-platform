@@ -4,6 +4,25 @@
 
 ---
 
+## COMPLETE: Production Safety Hardening — 2026-06-16 ✅
+
+**Status:** ALL 12 PRODUCTION_FIX_PLAN.md findings resolved
+
+| Finding | Severity | Resolution |
+|---------|----------|-----------|
+| PROD-001 Health endpoint disclosure | CRITICAL | FIXED |
+| PROD-002 MHC migrations | CRITICAL | RESOLVED (already ran) |
+| PROD-003/004/005 Storage ops | HIGH | PRE-RESOLVED (StorageManager) |
+| PROD-006 site_id indexes | MEDIUM | RESOLVED (already indexed) |
+| PROD-007 Storage disk hardcoding | MEDIUM | RESOLVED (SitemapService intentional) |
+| PROD-008 Sanctum domains | MEDIUM | FIXED (env set on production) |
+| PROD-009 Cache driver assertion | MEDIUM | FIXED (AppServiceProvider boot check) |
+| PROD-010 Tailwind warnings | LOW | RESOLVED (KI-002) |
+| PROD-011 KB menu | LOW | FIXED (AdminMenu.php) |
+| PROD-012 Dead code | LOW | FIXED (3 controllers deleted) |
+
+---
+
 ## COMPLETE: TB3 Sprint 1 — Live Iframe Canvas — 2026-06-16 ✅
 
 **Status:** COMPLETE (2026-06-16)

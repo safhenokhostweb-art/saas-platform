@@ -41,6 +41,26 @@
 
 ---
 
+## 2026-06-16 — PROD-003–012: Production Hardening Batch
+
+**Reason:** Complete remaining PRODUCTION_FIX_PLAN.md findings — PROD-009/011/012 newly applied, rest pre-resolved  
+**Commit:** `8ef3a27` (bundled with TB3 Sprint 1 pre-existing work)
+
+| Finding | Action |
+|---------|--------|
+| PROD-003/004/005 | PRE-RESOLVED — StorageManager was already used (pre-existing fixes committed) |
+| PROD-006 | RESOLVED — All key tables already have composite site_id indexes |
+| PROD-007 | RESOLVED — Only SitemapService (intentionally public disk) — no change needed |
+| PROD-008 | FIXED — `SANCTUM_STATEFUL_DOMAINS=panel.safhenokhost.ir` added to production .env + config:cache |
+| PROD-009 | FIXED — `AppServiceProvider::boot()` throws RuntimeException if `CACHE_DRIVER=file` in production |
+| PROD-010 | RESOLVED — No shadow-[var] patterns found (already resolved by KI-002) |
+| PROD-011 | FIXED — `kb` key added to AdminMenu.php (MENU_KEYS/ROUTES/PATTERNS + بازاریابی/دانش‌محور group) |
+| PROD-012 | FIXED — Deleted FormFieldController, FormSiteController, FormSubmissionController (303 LOC dead code) |
+
+**All 12 PRODUCTION_FIX_PLAN.md findings now RESOLVED.**
+
+---
+
 ## 2026-06-15 — PROD-001: Health Endpoint Security Fix + Deploy Infrastructure Fix
 
 **Reason:** Production safety phase — strip deployment metadata from public health endpoints; fix vendor sync in deploy pipeline  
