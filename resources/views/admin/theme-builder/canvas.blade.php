@@ -76,6 +76,19 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
         {{-- Actions --}}
         <div class="flex items-center gap-2 shrink-0">
+            {{-- Undo / Redo --}}
+            <button @click="undo()" :disabled="historyIndex <= 0"
+                title="واگرد (Ctrl+Z)"
+                class="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 disabled:opacity-30 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6"/></svg>
+            </button>
+            <button @click="redo()" :disabled="historyIndex >= history.length - 1"
+                title="از نو (Ctrl+Y)"
+                class="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 disabled:opacity-30 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a8 8 0 00-8 8v2M21 10l-6 6M21 10l-6-6"/></svg>
+            </button>
+            <div class="h-6 w-px bg-slate-200 shrink-0"></div>
+
             {{-- Dirty indicator --}}
             <span x-show="isDirty" class="text-amber-500 text-xs font-medium flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block"></span>
@@ -346,22 +359,126 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         <p class="text-[11px] text-slate-400 mt-1 font-mono" x-text="selectedBlock.type"></p>
                     </div>
 
-                    {{-- Move Up / Down --}}
-                    <div class="flex items-center gap-2 px-4 py-2 border-b border-slate-50 shrink-0">
+                    {{-- Block Actions (Move / Duplicate / Delete) --}}
+                    <div class="flex items-center gap-1.5 px-3 py-2 border-b border-slate-100 shrink-0">
                         <button @click="moveBlock(selectedIndex, selectedIndex - 1)" :disabled="selectedIndex === 0"
+                            title="بالاتر"
                             class="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                            بالاتر
                         </button>
                         <button @click="moveBlock(selectedIndex, selectedIndex + 1)" :disabled="selectedIndex === blocks.length - 1"
+                            title="پایین‌تر"
                             class="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            پایین‌تر
+                        </button>
+                        <button @click="duplicateBlock(selectedIndex)"
+                            title="کپی بلوک"
+                            class="flex-1 flex items-center justify-center py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        </button>
+                        <button @click="removeBlock(selectedIndex)"
+                            title="حذف بلوک"
+                            class="flex-1 flex items-center justify-center py-1.5 rounded-lg border border-red-200 text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-400 transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </button>
                     </div>
 
-                    {{-- Props Form --}}
-                    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                    {{-- Tabs: Content / Style --}}
+                    <div class="flex border-b border-slate-100 shrink-0">
+                        <button
+                            @click="selectedTab = 'content'"
+                            :class="selectedTab === 'content' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
+                            class="flex-1 py-2 text-xs text-center transition">
+                            محتوا
+                        </button>
+                        <button
+                            @click="selectedTab = 'style'"
+                            :class="selectedTab === 'style' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
+                            class="flex-1 py-2 text-xs text-center transition">
+                            استایل
+                        </button>
+                    </div>
+
+                    {{-- Style Tab --}}
+                    <div x-show="selectedTab === 'style'" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">رنگ پس‌زمینه</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color"
+                                    :value="selectedBlock.style?.bgColor || '#ffffff'"
+                                    @change="updateStyle('bgColor', $event.target.value)"
+                                    class="w-10 h-8 rounded border border-slate-200 cursor-pointer p-0.5">
+                                <input type="text"
+                                    :value="selectedBlock.style?.bgColor || ''"
+                                    @input="updateStyle('bgColor', $event.target.value)"
+                                    placeholder="بدون رنگ"
+                                    class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <button x-show="selectedBlock.style?.bgColor" @click="updateStyle('bgColor', '')"
+                                    class="text-slate-400 hover:text-red-500 text-sm transition">×</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">رنگ متن</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color"
+                                    :value="selectedBlock.style?.textColor || '#000000'"
+                                    @change="updateStyle('textColor', $event.target.value)"
+                                    class="w-10 h-8 rounded border border-slate-200 cursor-pointer p-0.5">
+                                <input type="text"
+                                    :value="selectedBlock.style?.textColor || ''"
+                                    @input="updateStyle('textColor', $event.target.value)"
+                                    placeholder="بدون رنگ"
+                                    class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <button x-show="selectedBlock.style?.textColor" @click="updateStyle('textColor', '')"
+                                    class="text-slate-400 hover:text-red-500 text-sm transition">×</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">پدینگ عمودی (px)</label>
+                                <input type="number" min="0" max="200"
+                                    :value="selectedBlock.style?.paddingY ?? ''"
+                                    @input="updateStyle('paddingY', $event.target.value === '' ? '' : Number($event.target.value))"
+                                    placeholder="پیش‌فرض"
+                                    class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">پدینگ افقی (px)</label>
+                                <input type="number" min="0" max="200"
+                                    :value="selectedBlock.style?.paddingX ?? ''"
+                                    @input="updateStyle('paddingX', $event.target.value === '' ? '' : Number($event.target.value))"
+                                    placeholder="پیش‌فرض"
+                                    class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">گوشه‌های گرد (px)</label>
+                            <input type="number" min="0" max="100"
+                                :value="selectedBlock.style?.borderRadius ?? ''"
+                                @input="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))"
+                                placeholder="۰"
+                                class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">شفافیت</label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" min="0.1" max="1" step="0.05"
+                                    :value="selectedBlock.style?.opacity ?? 1"
+                                    @input="updateStyle('opacity', Number($event.target.value))"
+                                    class="flex-1">
+                                <span class="text-xs text-slate-500 w-8 text-left" x-text="Math.round((selectedBlock.style?.opacity ?? 1) * 100) + '%'"></span>
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <button @click="resetBlockStyle()"
+                                class="w-full text-xs py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500 transition">
+                                پاک کردن همه استایل‌ها
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Content (Props) Form --}}
+                    <div x-show="selectedTab === 'content'" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                         <template x-for="(schemaDef, propKey) in selectedSchema" :key="propKey">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1.5" x-text="schemaDef.label || propKey"></label>
@@ -454,16 +571,6 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </div>
                     </div>
 
-                    {{-- Delete Block --}}
-                    <div class="px-4 py-3 border-t border-slate-100 shrink-0">
-                        <button
-                            @click="removeBlock(selectedIndex)"
-                            class="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 text-xs font-medium transition"
-                        >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            حذف این بلوک
-                        </button>
-                    </div>
                 </div>
             </template>
         </div>
@@ -516,6 +623,7 @@ function themeCanvas() {
         pages:          JSON.parse(JSON.stringify(INITIAL_PAGES)),
         currentPage:    Object.keys(INITIAL_PAGES)[0] ?? 'home',
         selectedIndex:  -1,
+        selectedTab:    'content',
         isDirty:        false,
         saving:         false,
         quickSaving:    false,
@@ -538,6 +646,10 @@ function themeCanvas() {
         draggedBlockLabel:  null,
         dropTargetIndex:    -1,
         dropTargetBeforeId: null,
+        // TB3-S2: undo/redo history
+        history:        [],
+        historyIndex:   -1,
+        maxHistory:     25,
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
@@ -572,6 +684,7 @@ function themeCanvas() {
 
         // ── Canvas Actions ────────────────────────────────────────
         addBlock(type, atIndex = -1) {
+            this.pushHistory();
             const defaults = JSON.parse(JSON.stringify(BLOCK_SCHEMAS[type]?.defaultProps ?? {}));
             const block = {
                 id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
@@ -592,16 +705,30 @@ function themeCanvas() {
         },
 
         removeBlock(index) {
+            this.pushHistory();
             const arr = [...this.blocks];
             arr.splice(index, 1);
             this.pages[this.currentPage].blocks = arr;
-            if (this.selectedIndex >= arr.length) this.selectedIndex = arr.length - 1;
+            this.selectedIndex = arr.length > 0 ? Math.min(index, arr.length - 1) : -1;
+            this.isDirty = true;
+            this.autoSaveAndReload();
+        },
+
+        duplicateBlock(index) {
+            this.pushHistory();
+            const clone = JSON.parse(JSON.stringify(this.blocks[index]));
+            clone.id = 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const arr = [...this.blocks];
+            arr.splice(index + 1, 0, clone);
+            this.pages[this.currentPage].blocks = arr;
+            this.selectedIndex = index + 1;
             this.isDirty = true;
             this.autoSaveAndReload();
         },
 
         selectBlock(index) {
             this.selectedIndex = index;
+            this.selectedTab = 'content';
             if (this.selectedBlock) {
                 this.sendToIframe({ action: 'select', blockId: this.selectedBlock.id });
             }
@@ -609,11 +736,43 @@ function themeCanvas() {
 
         moveBlock(from, to) {
             if (to < 0 || to >= this.blocks.length) return;
+            this.pushHistory();
             const arr = [...this.blocks];
             const [item] = arr.splice(from, 1);
             arr.splice(to, 0, item);
             this.pages[this.currentPage].blocks = arr;
             this.selectedIndex = to;
+            this.isDirty = true;
+            this.autoSaveAndReload();
+        },
+
+        // ── TB3-S2: Undo / Redo ──────────────────────────────────
+        pushHistory() {
+            if (this.historyIndex < this.history.length - 1) {
+                this.history = this.history.slice(0, this.historyIndex + 1);
+            }
+            this.history.push(JSON.parse(JSON.stringify(this.blocks)));
+            if (this.history.length > this.maxHistory) {
+                this.history.shift();
+            } else {
+                this.historyIndex++;
+            }
+        },
+
+        undo() {
+            if (this.historyIndex <= 0) return;
+            this.historyIndex--;
+            this.pages[this.currentPage].blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.selectedIndex = -1;
+            this.isDirty = true;
+            this.autoSaveAndReload();
+        },
+
+        redo() {
+            if (this.historyIndex >= this.history.length - 1) return;
+            this.historyIndex++;
+            this.pages[this.currentPage].blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.selectedIndex = -1;
             this.isDirty = true;
             this.autoSaveAndReload();
         },
@@ -626,11 +785,38 @@ function themeCanvas() {
             this.schedulePropUpdate();
         },
 
+        // ── TB3-S2: Per-block style overrides ────────────────────
+        updateStyle(styleKey, value) {
+            if (!this.selectedBlock) return;
+            if (!this.selectedBlock.style) this.selectedBlock.style = {};
+            if (value === '' || value === null) {
+                delete this.selectedBlock.style[styleKey];
+                if (Object.keys(this.selectedBlock.style).length === 0) {
+                    delete this.selectedBlock.style;
+                }
+            } else {
+                this.selectedBlock.style[styleKey] = value;
+            }
+            this.isDirty = true;
+            this.schedulePropUpdate();
+        },
+
+        resetBlockStyle() {
+            if (!this.selectedBlock) return;
+            delete this.selectedBlock.style;
+            this.isDirty = true;
+            this.autoSaveAndReload();
+        },
+
         // ── Page Management ───────────────────────────────────────
         switchPage(key) {
             if (this.isDirty) this.saveCurrentPage();
             this.currentPage   = key;
             this.selectedIndex = -1;
+            this.selectedTab   = 'content';
+            // Reset history for new page
+            this.history     = [JSON.parse(JSON.stringify(this.pages[key]?.blocks ?? []))];
+            this.historyIndex = 0;
             this.reloadIframe();
         },
 
@@ -762,10 +948,11 @@ function themeCanvas() {
         async pushPropUpdate() {
             if (!this.selectedBlock || !this.iframeReady) return;
             try {
+                const blockPayload = JSON.parse(JSON.stringify(this.selectedBlock)); // includes .style if set
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/render-block`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ block: this.selectedBlock })
+                    body: JSON.stringify({ block: blockPayload })
                 });
                 const d = await r.json();
                 if (d.html) {
@@ -796,7 +983,7 @@ function themeCanvas() {
 
                 case 'blockSelected':
                     const idx = this.blocks.findIndex(b => b.id === d.blockId);
-                    if (idx >= 0) this.selectedIndex = idx;
+                    if (idx >= 0) { this.selectedIndex = idx; this.selectedTab = 'content'; }
                     break;
 
                 case 'dropIndexResult':
@@ -898,8 +1085,26 @@ function themeCanvas() {
             // TB3-01: Normalize all loaded blocks to use props
             this.normalizePages(this.pages);
 
+            // TB3-S2: Initialize undo history with current state
+            this.history = [JSON.parse(JSON.stringify(this.blocks))];
+            this.historyIndex = 0;
+
             // TB3-02: Listen for postMessage from live preview iframe
             window.addEventListener('message', (e) => this.handleIframeMessage(e));
+
+            // TB3-S2: Keyboard shortcuts
+            window.addEventListener('keydown', (e) => {
+                // Skip shortcuts when editing an input/textarea
+                const tag = document.activeElement?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.undo();
+                } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                    e.preventDefault();
+                    this.redo();
+                }
+            });
 
             // Warn on unsaved changes
             window.addEventListener('beforeunload', (e) => {

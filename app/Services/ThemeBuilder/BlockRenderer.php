@@ -61,7 +61,7 @@ class BlockRenderer
             } else {
                 $html = $this->renderModulePlaceholder($type, $props, $id);
             }
-            return $this->wrapEditorMode($html, $id, $type);
+            return $this->applyBlockStyle($this->wrapEditorMode($html, $id, $type), $block['style'] ?? []);
         }
 
         $method = 'render' . Str::studly(str_replace(':', '_', $type));
@@ -71,7 +71,24 @@ class BlockRenderer
             $html = $this->renderFallback($type, $props, $inner, $id);
         }
 
-        return $this->wrapEditorMode($html, $id, $type);
+        return $this->applyBlockStyle($this->wrapEditorMode($html, $id, $type), $block['style'] ?? []);
+    }
+
+    private function applyBlockStyle(string $html, array $style): string
+    {
+        if (empty($style)) {
+            return $html;
+        }
+        $css = [];
+        if (!empty($style['bgColor']))      $css[] = 'background-color:' . $this->escapeAttr($style['bgColor']);
+        if (!empty($style['textColor']))    $css[] = 'color:' . $this->escapeAttr($style['textColor']);
+        if (($style['paddingY'] ?? '') !== '') $css[] = "padding-top:{$style['paddingY']}px;padding-bottom:{$style['paddingY']}px";
+        if (($style['paddingX'] ?? '') !== '') $css[] = "padding-left:{$style['paddingX']}px;padding-right:{$style['paddingX']}px";
+        if (($style['borderRadius'] ?? '') !== '') $css[] = "border-radius:{$style['borderRadius']}px";
+        if (isset($style['opacity']) && $style['opacity'] != 1 && $style['opacity'] !== '') $css[] = "opacity:{$style['opacity']}";
+        if (empty($css)) return $html;
+        $styleStr = implode(';', $css);
+        return "<div data-tb-style-wrap=\"1\" style=\"{$styleStr}\">{$html}</div>";
     }
 
     /**
