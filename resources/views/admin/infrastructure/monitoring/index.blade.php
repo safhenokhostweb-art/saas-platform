@@ -353,7 +353,7 @@
                     </td>
                     <td style="color:#6b7280;font-size:.75rem">
                         @if($run && $run->duration_ms)
-                            {{ \App\Helpers\NumberHelper::formatFa(number_format($run->duration_ms / 1000, 1)) }}ث
+                            {{ \App\Helpers\NumberHelper::formatFa($run->duration_ms / 1000, 1) }}ث
                         @else —
                         @endif
                     </td>
@@ -417,7 +417,7 @@
                     @if($latestBackup->file_size_mb)
                     <div>
                         <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">حجم فایل</div>
-                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::formatFa(number_format($latestBackup->file_size_mb, 1)) }} MB</div>
+                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::formatFa($latestBackup->file_size_mb, 1) }} MB</div>
                     </div>
                     @endif
                     @if($latestBackup->duration_seconds)
@@ -428,7 +428,7 @@
                     @endif
                     <div>
                         <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">زمان شروع</div>
-                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::formatFa($latestBackup->started_at?->format('Y/m/d H:i')) }}</div>
+                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::toPersianNumbers($latestBackup->started_at?->format('Y/m/d H:i') ?? '') }}</div>
                     </div>
                 </div>
                 @if($latestBackup->error_message)

@@ -47,9 +47,12 @@ class NumberHelper
      */
     public static function formatFa($amount, int $decimals = 0): string
     {
-        if ($amount === null) {
+        if ($amount === null || $amount === '') {
             return '۰';
         }
-        return self::toPersianNumbers(number_format($amount, $decimals));
+        if (is_string($amount)) {
+            $amount = (float) str_replace(',', '', $amount);
+        }
+        return self::toPersianNumbers(number_format((float) $amount, $decimals));
     }
 }

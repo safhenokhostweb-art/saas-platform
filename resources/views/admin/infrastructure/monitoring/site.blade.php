@@ -95,15 +95,15 @@
         $u30Color  = $uptime30d  >= 99 ? 'good' : ($uptime30d  >= 90 ? 'warn' : 'bad');
     @endphp
     <div class="uptime-card {{ $u24Color }}">
-        <div class="uptime-pct">{{ \App\Helpers\NumberHelper::formatFa(number_format($uptime24h, 1)) }}٪</div>
+        <div class="uptime-pct">{{ \App\Helpers\NumberHelper::formatFa($uptime24h, 1) }}٪</div>
         <div class="uptime-label">آپتایم ۲۴ ساعت</div>
     </div>
     <div class="uptime-card {{ $u7Color }}">
-        <div class="uptime-pct">{{ \App\Helpers\NumberHelper::formatFa(number_format($uptime7d, 1)) }}٪</div>
+        <div class="uptime-pct">{{ \App\Helpers\NumberHelper::formatFa($uptime7d, 1) }}٪</div>
         <div class="uptime-label">آپتایم ۷ روز</div>
     </div>
     <div class="uptime-card {{ $u30Color }}">
-        <div class="uptime-pct">{{ \App\Helpers\NumberHelper::formatFa(number_format($uptime30d, 1)) }}٪</div>
+        <div class="uptime-pct">{{ \App\Helpers\NumberHelper::formatFa($uptime30d, 1) }}٪</div>
         <div class="uptime-label">آپتایم ۳۰ روز</div>
     </div>
 </div>
@@ -135,7 +135,7 @@
                 <span class="meta-label">زمان پاسخ</span>
                 @php $ms = $latestLog->response_time_ms; @endphp
                 <span class="meta-value {{ $ms > 2000 ? 'text-red-600' : ($ms > 800 ? 'text-amber-600' : 'text-green-600') }}">
-                    {{ $ms ? \App\Helpers\NumberHelper::formatFa(number_format($ms)) . 'ms' : '—' }}
+                    {{ $ms ? \App\Helpers\NumberHelper::formatFa($ms) . 'ms' : '—' }}
                 </span>
             </div>
             <div class="meta-item">
@@ -166,7 +166,7 @@
                         <span class="badge-s badge-s--{{ $dd < 7 ? 'critical' : ($dd < 14 ? 'warning' : 'healthy') }}">{{ \App\Helpers\NumberHelper::formatFa($dd) }}روز</span>
                     @else
                         @if($site->domain_expires_at)
-                            {{ \App\Helpers\NumberHelper::formatFa($site->domain_expires_at->format('Y/m/d')) }}
+                            {{ \App\Helpers\NumberHelper::toPersianNumbers($site->domain_expires_at->format('Y/m/d')) }}
                         @else
                             <span style="color:#94a3b8">—</span>
                         @endif
@@ -451,7 +451,7 @@
                             </span>
                         </td>
                         <td style="font-size:.78rem;color:#6b7280">
-                            {{ $bk->file_size_mb ? \App\Helpers\NumberHelper::formatFa(number_format($bk->file_size_mb, 1)) . ' MB' : '—' }}
+                            {{ $bk->file_size_mb ? \App\Helpers\NumberHelper::formatFa($bk->file_size_mb, 1) . ' MB' : '—' }}
                         </td>
                         <td style="font-size:.78rem;color:#6b7280">
                             {{ $bk->duration_seconds ? \App\Helpers\NumberHelper::formatFa($bk->duration_seconds) . 'ث' : '—' }}
