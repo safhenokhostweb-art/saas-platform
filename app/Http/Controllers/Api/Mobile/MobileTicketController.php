@@ -247,8 +247,23 @@ class MobileTicketController extends Controller
             return response()->json(['message' => 'تیکت یافت نشد.'], 404);
         }
 
-        $safePath = ltrim($path, '/');
-        if (str_contains($safePath, '..')) abort(403);
+        // Full path traversal prevention:
+        // 1. URL-decode to catch encoded sequences like %2e%2e
+        // 2. Strip null bytes
+        // 3. Reject absolute paths (Windows and Unix)
+        // 4. Reject any .. component after normalization
+        // 5. Collapse separators to forward slashes
+        $decoded  = rawurldecode($path);
+        $decoded  = str_replace("\0", '', $decoded);
+        $safePath = ltrim(str_replace('\\', '/', $decoded), '/');
+
+        if (
+            str_contains($safePath, '..')
+            || preg_match('#^[A-Za-z]:#', $safePath)   // Windows absolute (C:\...)
+            || str_starts_with($safePath, '/')           // Unix absolute
+        ) {
+            abort(403, 'مسیر نامعتبر است.');
+        }
 
         if (!$this->storage->exists($safePath, 'private')) {
             abort(404);

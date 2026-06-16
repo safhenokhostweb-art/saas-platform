@@ -140,4 +140,102 @@ class StorageManager
     {
         return Storage::disk($disk)->url($path);
     }
+
+    /**
+     * Remove the file at $path from $disk only if it exists.
+     * Alias for delete() — use this when the semantic is "clean up old file."
+     */
+    public function deleteIfExists(string $path, string $disk): void
+    {
+        if ($path !== '' && Storage::disk($disk)->exists($path)) {
+            Storage::disk($disk)->delete($path);
+        }
+    }
+
+    /**
+     * Sanitize a user-supplied filename so it is safe to use as a storage path component.
+     *
+     * - Strips directory separators (/ and \)
+     * - Strips null bytes and control characters
+     * - Strips leading dots (hidden-file trick)
+     * - Replaces whitespace with underscores
+     * - Collapses multiple consecutive dashes/underscores
+     * - Limits to 200 characters (keeps extension)
+     *
+     * Returns the sanitized basename (no directory component).
+     */
+    public static function sanitizeFilename(string $name): string
+    {
+        // Remove null bytes
+        $name = str_replace("\0", '', $name);
+
+        // Strip directory separators — take only the basename
+        $name = basename(str_replace('\\', '/', $name));
+
+        // Remove control characters
+        $name = preg_replace('/[\x00-\x1F\x7F]/', '', $name);
+
+        // Replace spaces/tabs with underscore
+        $name = preg_replace('/\s+/', '_', $name);
+
+        // Remove characters that are not alphanumeric, dash, underscore, or dot
+        $name = preg_replace('/[^\w.\-]/', '-', $name);
+
+        // Strip leading dots (e.g. ".htaccess", ".env")
+        $name = ltrim($name, '.');
+
+        // Collapse multiple dots (path obfuscation: "file...ext")
+        $name = preg_replace('/\.{2,}/', '.', $name);
+
+        // Collapse consecutive dashes/underscores
+        $name = preg_replace('/[-_]{2,}/', '-', $name);
+
+        // Limit total length to 200 chars, preserving extension
+        if (strlen($name) > 200) {
+            $ext  = pathinfo($name, PATHINFO_EXTENSION);
+            $base = substr(pathinfo($name, PATHINFO_FILENAME), 0, 195 - strlen($ext));
+            $name = $ext !== '' ? "{$base}.{$ext}" : $base;
+        }
+
+        return $name !== '' ? $name : 'file';
+    }
+
+    /**
+     * Validate that an UploadedFile has an allowed extension AND allowed MIME type.
+     *
+     * Throws \InvalidArgumentException on failure — callers should catch this
+     * and return a validation error response.
+     *
+     * @param array<string> $allowedExtensions  e.g. ['jpg','jpeg','png','webp']
+     * @param array<string> $allowedMimes        e.g. ['image/jpeg','image/png','image/webp']
+     */
+    public static function validateUpload(
+        UploadedFile $file,
+        array $allowedExtensions,
+        array $allowedMimes
+    ): void {
+        $ext  = strtolower($file->getClientOriginalExtension());
+        $mime = strtolower((string) $file->getMimeType());
+
+        if ($allowedExtensions !== [] && !in_array($ext, $allowedExtensions, true)) {
+            throw new \InvalidArgumentException(
+                "پسوند فایل مجاز نیست: {$ext}. مجاز: " . implode(', ', $allowedExtensions)
+            );
+        }
+
+        if ($allowedMimes !== [] && !in_array($mime, $allowedMimes, true)) {
+            throw new \InvalidArgumentException(
+                "نوع MIME مجاز نیست: {$mime}. مجاز: " . implode(', ', $allowedMimes)
+            );
+        }
+    }
+
+    /**
+     * Delete a temporary export file from the exports disk.
+     * Silent no-op if file does not exist.
+     */
+    public function deleteExport(string $path): void
+    {
+        $this->deleteIfExists($path, 'exports');
+    }
 }

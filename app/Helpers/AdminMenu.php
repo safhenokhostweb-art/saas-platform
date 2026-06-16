@@ -43,6 +43,7 @@ class AdminMenu
         'incidents'           => 'مدیریت حوادث',
         'notification_center' => 'مرکز اطلاع‌رسانی',
         'module_adoption'    => 'پذیرش ماژول‌ها',
+        'kb'                 => 'مقالات دانش‌نامه',
     ];
 
     /** مسیر هر آیتم منو */
@@ -81,6 +82,7 @@ class AdminMenu
         'incidents'           => 'admin.incidents.index',
         'notification_center' => 'admin.notification-center.index',
         'module_adoption'    => 'admin.module-adoption.index',
+        'kb'                 => 'admin.kb.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -119,6 +121,7 @@ class AdminMenu
         'incidents'           => 'admin.incidents.*',
         'notification_center' => 'admin.notification-center.*',
         'module_adoption'    => 'admin.module-adoption.*',
+        'kb'                 => 'admin.kb.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -140,7 +143,7 @@ class AdminMenu
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
             'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents'],
-            'بازاریابی / دانش‌محور'             => [],
+            'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],
         ];

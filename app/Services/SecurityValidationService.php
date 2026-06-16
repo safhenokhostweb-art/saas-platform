@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -57,9 +58,12 @@ class SecurityValidationService
     public function checkPublicStorageLeaks(): array
     {
         $findings = [];
-        $publicPath = storage_path('app/public/ticket-attachments');
 
-        if (File::isDirectory($publicPath) && count(File::allFiles($publicPath)) > 0) {
+        // Use Storage facade instead of storage_path() so this works on any disk driver
+        // (local, S3, MinIO) without coupling to filesystem layout.
+        $attachmentsDir = Storage::disk('public')->path('ticket-attachments');
+
+        if (File::isDirectory($attachmentsDir) && count(File::allFiles($attachmentsDir)) > 0) {
             $findings[] = [
                 'severity' => 'HIGH',
                 'message'  => 'Ticket attachments found in public storage — should be in private disk',

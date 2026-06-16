@@ -51,16 +51,27 @@ class PlatformSettingsController extends Controller
         ));
 
         if ($request->hasFile('platform_logo') && $request->file('platform_logo')->isValid()) {
-            $request->validate(['platform_logo' => 'image|max:2048']);
-            PlatformSettings::storeLogo($request->file('platform_logo'));
+            $mimes = implode(',', PlatformSettings::LOGO_ALLOWED_EXTENSIONS);
+            $request->validate([
+                'platform_logo' => "image|max:2048|mimes:{$mimes}",
+            ]);
+            try {
+                PlatformSettings::storeLogo($request->file('platform_logo'));
+            } catch (\InvalidArgumentException $e) {
+                return back()->withErrors(['platform_logo' => $e->getMessage()]);
+            }
             unset($data['platform_logo']);
         } elseif ($request->filled('platform_logo_path')) {
             $raw = trim($request->platform_logo_path);
-            if (preg_match('#^https?://#i', $raw) || str_starts_with($raw, '/')) {
+            // Only accept an absolute HTTP/HTTPS URL — never accept local absolute paths
+            // or anything that could be path traversal (e.g. "/etc/passwd").
+            if (preg_match('#^https?://#i', $raw)) {
                 $data['platform_logo'] = $raw;
             } else {
+                // Treat as a relative storage path — normalize and reject traversal.
                 $path = PlatformSettings::normalizeStoragePath($raw);
-                if ($path !== '') {
+                // Reject any path that still contains traversal sequences after normalization.
+                if ($path !== '' && !str_contains($path, '..') && !str_starts_with($path, '/')) {
                     $data['platform_logo'] = $path;
                 }
             }

@@ -57,6 +57,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Prevent silent degradation to file-based circuit breakers in production.
+        // Redis is required for multi-tenant cache isolation (6 named stores, DB3-DB8).
+        if (config('app.env') === 'production' && config('cache.default') === 'file') {
+            throw new \RuntimeException('Production requires CACHE_DRIVER=redis — file cache breaks multi-tenant isolation.');
+        }
+
         Product::observe(ProductObserver::class);
         Site::observe(SiteObserver::class);
         ThemePurchaseOrder::observe(ThemePurchaseOrderObserver::class);

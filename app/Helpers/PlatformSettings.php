@@ -418,17 +418,32 @@ class PlatformSettings
         }
     }
 
+    public const LOGO_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    public const LOGO_ALLOWED_MIMES = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+    ];
+
     public static function storeLogo(UploadedFile $file): string
     {
-        $old = self::get('platform_logo', '');
-        $uploadDisk = config('filesystems.upload_disk', 'public');
-        if ($old !== '' && Storage::disk($uploadDisk)->exists($old)) {
-            Storage::disk($uploadDisk)->delete($old);
-        }
+        // Defense-in-depth: validate extension and MIME inside the method itself,
+        // independent of controller-level validation rules.
+        \App\Services\Infrastructure\StorageManager::validateUpload(
+            $file,
+            self::LOGO_ALLOWED_EXTENSIONS,
+            self::LOGO_ALLOWED_MIMES
+        );
 
         /** @var \App\Services\Infrastructure\StorageManager $storage */
         $storage = app(\App\Services\Infrastructure\StorageManager::class);
-        $path = $storage->storeUploadedFile($file, 'platform', 'public');
+
+        // Delete old logo via StorageManager (consistent boundary).
+        $old        = self::get('platform_logo', '');
+        $uploadDisk = config('filesystems.upload_disk', 'public');
+        if ($old !== '') {
+            $storage->deleteIfExists($old, $uploadDisk);
+        }
+
+        $path = $storage->storeUploadedFile($file, 'platform', $uploadDisk);
 
         Setting::updateOrCreate(['key' => 'platform_logo'], ['value' => $path]);
         return $path;

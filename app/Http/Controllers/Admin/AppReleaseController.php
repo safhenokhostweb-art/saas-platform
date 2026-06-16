@@ -52,7 +52,10 @@ class AppReleaseController extends Controller
         $platform  = $request->input('platform');
         $version   = $request->input('version');
         $build     = $request->input('build_number');
-        $filename  = "v{$version}-build{$build}-" . $file->getClientOriginalName();
+        // Sanitize the client-supplied name: strip path traversal, null bytes, and
+        // non-safe characters before embedding it in the stored filename.
+        $safeClientName = StorageManager::sanitizeFilename($file->getClientOriginalName());
+        $filename  = "v{$version}-build{$build}-{$safeClientName}";
 
         // Capture metadata BEFORE move() — after move, SplFileInfo path changes
         $originalName = $file->getClientOriginalName();
