@@ -86,7 +86,9 @@
 
 ---
 
-## Infrastructure Finding (discovered during deployment)
+## Infrastructure Findings (discovered during deployment)
+
+### INFRA-DEPLOY-001 — vendor/ not synced in deploy.sh (FIXED)
 
 **Finding:** Server-side `deploy.sh` did not sync `packages/saas-platform/` to `vendor/saas-platform/` after zip extraction. PHP's Composer autoloader loads from `vendor/`, not `packages/`. All previous package updates deployed silently with the wrong `vendor/` copy.
 
@@ -94,7 +96,21 @@
 1. `rsync -a --delete packages/saas-platform/$PKG/ vendor/saas-platform/$PKG/` for all 4 local packages
 2. `systemctl restart php8.3-fpm` at end to clear opcache
 
-**Impact:** All future deploys will now correctly update the active vendor code and clear bytecode cache.
+### INFRA-DEPLOY-002 — Race condition in deploy.ps1 corrupts vendor zip (MITIGATED)
+
+**Finding:** The docs deploy (`a8ddeef`) created a zip while `composer install --no-dev` was completing. Two files were corrupted:
+1. `vendor/laravel/prompts/src/Concerns/Scrolling.php` — extracted as 0 bytes (was 2989 bytes). Caused PHP fatal error in all Artisan commands.
+2. `app/Console/Commands/MonitorPlatformCommand.php` — extracted with 1024 bytes (wrong content). Caused class name collision.
+
+**Recovery:**
+- SCP'd correct `Scrolling.php` (2989 bytes) from local to server ✅
+- SCP'd correct `MonitorPlatformCommand.php` (3726 bytes) from local to server ✅
+- Rebuilt all caches: `config:cache`, `route:cache`, `view:cache` ✅
+- All artisan commands restored to functional state ✅
+
+**Root cause:** `Compress-Archive` in PowerShell 5.1 captured files in intermediate states during concurrent `composer install`. 
+
+**Mitigation (future):** The server-side `deploy.sh` now runs `php-fpm restart` after deploy, and the updated `rsync` step handles local packages separately. A proper fix would exclude `vendor/laravel/` from the zip and run `composer install --no-dev` on the server instead.
 
 ---
 
