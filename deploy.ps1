@@ -80,14 +80,13 @@ foreach (`$iter as `$file) {
     foreach (`$exDirs  as `$ex) { if (in_array(trim(`$ex), `$parts)) { `$skip = true; break; } }
     foreach (`$exFiles as `$ex) { if (trim(`$ex) === end(`$parts)) { `$skip = true; break; } }
     if (!`$skip) {
-        `$content = @file_get_contents(`$file->getRealPath());
-        if (`$content !== false) { `$zip->addFromString(`$rel, `$content); }
+        `$zip->addFile(`$file->getRealPath(), `$rel);
     }
 }
 `$zip->close();
 echo round(filesize(`$dest)/1048576, 1) . ' MB' . PHP_EOL;
 "@)
-$archiveSize = & $PHP $ZIPSCRIPT $DIR $ZIPFILE
+$archiveSize = & $PHP -d memory_limit=-1 $ZIPSCRIPT $DIR $ZIPFILE
 Write-Host "     Archive: $ZIPFILE ($archiveSize)" -ForegroundColor Green
 
 # ── ۳. Upload به سرور ────────────────────────────────────────
