@@ -79,7 +79,10 @@ foreach (`$iter as `$file) {
     `$skip  = false;
     foreach (`$exDirs  as `$ex) { if (in_array(trim(`$ex), `$parts)) { `$skip = true; break; } }
     foreach (`$exFiles as `$ex) { if (trim(`$ex) === end(`$parts)) { `$skip = true; break; } }
-    if (!`$skip) { `$zip->addFile(`$file->getRealPath(), `$rel); }
+    if (!`$skip) {
+        `$content = @file_get_contents(`$file->getRealPath());
+        if (`$content !== false) { `$zip->addFromString(`$rel, `$content); }
+    }
 }
 `$zip->close();
 echo round(filesize(`$dest)/1048576, 1) . ' MB' . PHP_EOL;
