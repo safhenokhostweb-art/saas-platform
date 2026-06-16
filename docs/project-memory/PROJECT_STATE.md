@@ -16,26 +16,34 @@
 
 ## Current Module
 
-**MHC: Monitoring & Health Center — COMPLETE (2026-06-15)**
+**THEME BUILDER V3 — Sprint 1 — COMPLETE (2026-06-16)**
 
 ---
 
 ## Current Phase
 
-**MHC: Full Enterprise Monitoring & Health Center — COMPLETE (2026-06-15)**  
-۱۵+ بعد سلامت، مدیریت حوادث ۴-سطحی، آپتایم تاریخچه، درگاه زیرساخت سایت، پانل incidents
+**TB3 Sprint 1: Live Iframe Canvas + block.props unification + Drag from Library**
+
+TB3-01: block.props canonical everywhere (data→props normalization on load)  
+TB3-02: Live iframe center panel replacing block-card-list  
+TB3-03: Drag widget from library directly into canvas  
 
 ---
 
 ## Current Sprint
 
-None active. System در وضعیت stable.
+TB3 Sprint 2 (TB3-04+) — pending, awaiting user decision.
 
 ---
 
 ## Current Objective
 
-MHC کامل شد. پلتفرم اکنون دارای monitoring کامل enterprise-grade است. فاز بعدی در انتظار تصمیم کاربر.
+TB3 Sprint 1 کامل شد. Canvas editor هر دو ریپو (platform + customer-site) اکنون دارای:
+- live iframe preview با postMessage bridge
+- device toggle (desktop/tablet/mobile)
+- drag from library with drop zones
+- 350ms debounce live prop updates (no reload for edits)
+- block.props canonical everywhere
 
 ---
 

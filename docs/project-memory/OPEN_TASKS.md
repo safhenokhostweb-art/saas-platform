@@ -4,6 +4,25 @@
 
 ---
 
+## COMPLETE: TB3 Sprint 1 — Live Iframe Canvas — 2026-06-16 ✅
+
+**Status:** COMPLETE (2026-06-16)
+
+| Sub-task | Status |
+|----------|--------|
+| TB3-01: block.props canonical (data→props normalizer in both repos) | ✅ DONE |
+| TB3-02: `wrapEditorMode()` in BlockRenderer + ThemeCanvasRenderer | ✅ DONE |
+| TB3-02: `livePreview` + `renderBlockAjax` endpoints (both repos) | ✅ DONE |
+| TB3-02: `canvas-live-preview.blade.php` (platform + customer-site) | ✅ DONE |
+| TB3-02: Platform `canvas.blade.php` rewritten (iframe + device toggle) | ✅ DONE |
+| TB3-02: Customer-site `canvas-editor.blade.php` rewritten (iframe) | ✅ DONE |
+| TB3-03: Library items draggable + drop overlay + drop zones | ✅ DONE |
+| Deploy to production | ✅ DONE |
+
+**Pending (Sprint 2):** TB3-04 (nested columns), TB3-05 (block styles), TB3-06 through TB3-15 — awaiting user go-ahead.
+
+---
+
 ## COMPLETE: MHC — Monitoring & Health Center — 2026-06-15 ✅
 
 **Status:** COMPLETE (2026-06-15)  

@@ -19,12 +19,12 @@
 
 ---
 
-## CURRENT STATE (2026-06-15)
+## CURRENT STATE (2026-06-16)
 
-**Last completed phase:** MHC — Monitoring & Health Center — COMPLETE  
-**Status:** Full enterprise monitoring system across saas-platform. 6 new migrations, 5 new models, 7 services, 2 commands, incident management UI, site drilldown page, all routes wired.  
-**Previous milestone:** 5-Phase Business Features Batch (2026-06-15), KI/FI Resolution Batch (2026-06-15)  
-**Next recommended milestone:** فاز جدید در انتظار تصمیم کاربر
+**Last completed phase:** TB3 Sprint 1 — Live Iframe Canvas — COMPLETE (2026-06-16)  
+**Status:** Both canvas editors (platform + customer-site) upgraded to live iframe preview with postMessage bridge, device toggle, drag-from-library (TB3-03), and block.props unification (TB3-01).  
+**Previous milestone:** MHC Monitoring Center (2026-06-15), Production Safety Phase (2026-06-15)  
+**Next recommended milestone:** TB3 Sprint 2 (TB3-04+ nested columns / block styles) or other user-requested feature
 
 ### MHC — Monitoring & Health Center (2026-06-15)
 

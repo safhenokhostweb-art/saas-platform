@@ -5,6 +5,42 @@
 
 ---
 
+## 2026-06-16 — TB3 Sprint 1: Live Iframe Canvas + block.props + Drag from Library
+
+**Reason:** THEME BUILDER V3 Sprint 1 — Elementor-like UX foundation  
+**Commits:** TB3-01 / TB3-02 / TB3-03
+
+### Files Changed
+
+| Repo | File | Change |
+|------|------|--------|
+| saas-platform | `app/Services/ThemeBuilder/BlockRenderer.php` | `wrapEditorMode()` method + `editor_mode` context flag |
+| saas-platform | `app/Http/Controllers/Admin/ThemeCanvasController.php` | `livePreview()` + `renderBlockAjax()` endpoints |
+| saas-platform | `routes/web.php` | 2 new canvas routes (live-preview, render-block) |
+| saas-platform | `resources/views/admin/theme-builder/canvas.blade.php` | Full rewrite: iframe center panel, device toggle, drag library, TB3-01 normalizer |
+| saas-platform | `resources/views/admin/theme-builder/canvas-live-preview.blade.php` | New standalone iframe HTML with postMessage bridge |
+| customer-site | `app/Services/ThemeBuilder/BlockRenderer.php` | `wrapEditorMode()` method |
+| customer-site | `app/Services/ThemeCanvas/ThemeCanvasRenderer.php` | `wrapEditorMode()` on module block path |
+| customer-site | `app/Http/Controllers/Admin/ThemeDesignController.php` | `canvasLivePreview()` + `canvasRenderBlockAjax()` methods |
+| customer-site | `routes/web.php` | 2 new canvas routes (live-preview, render-block) |
+| customer-site | `resources/views/admin/theme-design/canvas-editor.blade.php` | Full rewrite: same iframe/drag UX as platform |
+| customer-site | `resources/views/admin/theme-design/canvas-live-preview.blade.php` | New standalone iframe HTML |
+
+### Key Architecture
+
+- **block.props canonical** (TB3-01): `normalizePages()` converts `data→props` on JS load; `addBlock()` always creates with `props`
+- **Live iframe** (TB3-02): Center panel = `<iframe :src="livePreviewUrl()">`, `iframeTimestamp` drives reactive reload
+- **postMessage bridge**: `ready | blockSelected | iframeHeight | dropIndexResult` ← iframe; `select | updateBlock | showDropZones | setDropTarget | getDropIndex` → iframe
+- **350ms debounce prop update**: POST `/canvas/render-block` → `{html}` → `updateBlock` msg → in-place DOM swap (no reload)
+- **Drag from library** (TB3-03): `draggable="true"` on library buttons; invisible drop receiver div over iframe; `getDropIndex` from iframe Y coordinate
+
+### Impact
+
+- Canvas editor UX upgraded from block-card-list to Elementor-level live preview
+- Zero breaking changes — block.data still accepted (normalized at runtime)
+
+---
+
 ## 2026-06-15 — PROD-001: Health Endpoint Security Fix + Deploy Infrastructure Fix
 
 **Reason:** Production safety phase — strip deployment metadata from public health endpoints; fix vendor sync in deploy pipeline  
