@@ -56,13 +56,33 @@ foreach ($pkg in $localPackages) {
 }
 
 if (Test-Path $ZIPFILE) { Remove-Item $ZIPFILE }
-# robocopy به tmp اول (از lock شدن فایل‌های Laragon جلوگیری می‌کند) سپس zip
-$TMPDIR = "$env:TEMP\deploy_saas_src"
-if (Test-Path $TMPDIR) { Remove-Item $TMPDIR -Recurse -Force }
-robocopy $DIR $TMPDIR /E /XD .git .claude .github mobile node_modules tests storage bootstrap /XF ".env" ".env.local" ".env.testing" /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
-Compress-Archive -Path "$TMPDIR\*" -DestinationPath $ZIPFILE -Force
-Remove-Item $TMPDIR -Recurse -Force
-Write-Host "     Archive: $ZIPFILE ($('{0:N1}' -f ((Get-Item $ZIPFILE).Length / 1MB)) MB)" -ForegroundColor Green
+# PHP ZipArchive — از lock شدن فایل‌های Laragon مصون است
+$ZIPSCRIPT = "$env:TEMP\make_zip.php"
+$EXCLUDED_DIRS = '.git|.claude|.github|mobile|node_modules|tests|storage|bootstrap'
+$EXCLUDED_FILES = '.env|.env.local|.env.testing'
+[System.IO.File]::WriteAllText($ZIPSCRIPT, @"
+<?php
+`$src  = `$argv[1];
+`$dest = `$argv[2];
+`$exDirs  = explode('|', '${EXCLUDED_DIRS}');
+`$exFiles = explode('|', '${EXCLUDED_FILES}');
+`$zip = new ZipArchive();
+`$zip->open(`$dest, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+`$iter = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(`$src, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::LEAVES_ONLY);
+foreach (`$iter as `$file) {
+    if (`$file->isDir()) continue;
+    `$rel   = str_replace('\\\\', '/', substr(`$file->getRealPath(), strlen(`$src) + 1));
+    `$parts = explode('/', `$rel);
+    `$skip  = false;
+    foreach (`$exDirs  as `$ex) { if (in_array(trim(`$ex), `$parts)) { `$skip = true; break; } }
+    foreach (`$exFiles as `$ex) { if (trim(`$ex) === end(`$parts)) { `$skip = true; break; } }
+    if (!`$skip) { `$zip->addFile(`$file->getRealPath(), `$rel); }
+}
+`$zip->close();
+echo round(filesize(`$dest)/1048576, 1) . ' MB' . PHP_EOL;
+"@)
+$archiveSize = & $PHP $ZIPSCRIPT $DIR $ZIPFILE
+Write-Host "     Archive: $ZIPFILE ($archiveSize)" -ForegroundColor Green
 
 # ── ۳. Upload به سرور ────────────────────────────────────────
 Write-Host "`n[3/4] Uploading to server..." -ForegroundColor Yellow
