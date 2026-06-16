@@ -12,7 +12,7 @@
 |---------|----------|-----------|
 | PROD-001 Health endpoint disclosure | CRITICAL | FIXED |
 | PROD-002 MHC migrations | CRITICAL | RESOLVED (already ran) |
-| PROD-003/004/005 Storage ops | HIGH | PRE-RESOLVED (StorageManager) |
+| PROD-003/004/005 Storage ops | HIGH | CLOSED — Full hardening: sanitizeFilename, validateUpload, traversal prevention, 30+ security tests, audit reports |
 | PROD-006 site_id indexes | MEDIUM | RESOLVED (already indexed) |
 | PROD-007 Storage disk hardcoding | MEDIUM | RESOLVED (SitemapService intentional) |
 | PROD-008 Sanctum domains | MEDIUM | FIXED (env set on production) |

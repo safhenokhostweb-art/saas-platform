@@ -1,7 +1,66 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-15
+> Last Updated: 2026-06-16
+
+---
+
+## 2026-06-16 — PROD-003/004/005: Production File & Storage Hardening Phase
+
+**Reason:** Full filesystem audit + defense-in-depth hardening for all file operations in saas-platform  
+**Commits:** Storage Security hardening session
+
+### Files Changed
+
+| Repo | File | Change |
+|------|------|--------|
+| saas-platform | `app/Services/Infrastructure/StorageManager.php` | Added `sanitizeFilename()`, `validateUpload()`, `deleteIfExists()`, `deleteExport()` methods |
+| saas-platform | `app/Helpers/PlatformSettings.php` | Added `LOGO_ALLOWED_EXTENSIONS` + `LOGO_ALLOWED_MIMES` constants; `storeLogo()` now validates extension + MIME (defense-in-depth); delete routes through `StorageManager::deleteIfExists()` |
+| saas-platform | `app/Http/Controllers/Admin/PlatformSettingsController.php` | Explicit `mimes:` validation rule for logo upload; `platform_logo_path` input rejects absolute local paths and traversal sequences |
+| saas-platform | `app/Http/Controllers/Admin/AppReleaseController.php` | `getClientOriginalName()` sanitized via `StorageManager::sanitizeFilename()` before use in filename |
+| saas-platform | `app/Http/Controllers/Api/Mobile/MobileTicketController.php` | Full path traversal prevention: `rawurldecode()` + null-byte strip + absolute-path blocks + backslash collapse |
+| saas-platform | `app/Services/SecurityValidationService.php` | `checkPublicStorageLeaks()` uses `Storage::disk('public')->path()` instead of `storage_path()` |
+| saas-platform | `tests/Feature/Infrastructure/StorageSecurityTest.php` | 30+ security tests: sanitizeFilename (12 cases), validateUpload, deleteIfExists, writeCsv BOM, logo validation, AppRelease sanitization, 7 traversal vectors, 3 safe paths, 4 dangerous logo paths |
+| saas-platform | `docs/PRODUCTION_STORAGE_AUDIT.md` | Full filesystem audit: 21 findings across both repos, risk classifications, replacement strategies |
+| saas-platform | `docs/PRODUCTION_STORAGE_SECURITY_REPORT.md` | Security verification: path traversal, filename injection, arbitrary write, upload path, extension/MIME verification |
+
+### PROD Items
+
+| ID | Status |
+|----|--------|
+| PROD-003 | ✅ CLOSED — PlatformSettings: extension+MIME validation, StorageManager boundary enforced |
+| PROD-004 | ✅ CLOSED — AppReleaseController filename sanitized; MobileTicketController full traversal prevention; SecurityValidationService Storage facade |
+| PROD-005 | ✅ CLOSED — FormSubmissionController: StorageManager.writeCsv + download; exports disk S3-ready |
+
+### Key Security Properties Added
+
+- `sanitizeFilename()`: strips path separators, null bytes, control chars, leading dots, shell chars; collapses double-dots; limits to 200 chars
+- `validateUpload()`: blocks non-allowlisted extensions AND MIMEs — two independent checks (defense in depth)
+- Path traversal: URL-decoded + null-byte stripped + absolute-path blocked at API boundary
+- Logo input: only `https://` URLs or safe relative paths; absolute local paths and `..` sequences rejected at controller
+
+---
+
+## 2026-06-16 — Bugfix: Monitoring View + Incidents View + Deploy Infrastructure
+
+**Reason:** Production 500 errors on /admin/infrastructure/monitoring and /admin/incidents  
+**Commits:** bugfix session
+
+### Files Changed
+
+| Repo | File | Change |
+|------|------|--------|
+| saas-platform | `app/Models/Infrastructure/InfraSchedulerRun.php` | `recentSummary()` now returns `[$cmd => $model\|null]` instead of numerically-indexed arrays of plain arrays |
+| saas-platform | `resources/views/admin/incidents/index.blade.php` | `formatFa(date_string)` → `toPersianNumbers(date_string)` (formatFa requires int|float) |
+| saas-platform | `resources/views/admin/incidents/show.blade.php` | Same fix — 5 occurrences of formatFa with dates |
+| saas-platform | `deploy.ps1` | Added `.claude` and `.github` to zip exclusion; switched from Compress-Archive to PHP ZipArchive (handles Laragon locked files); fixed server deploy.sh `echo >>>` quoting |
+| server | `/var/www/deploy.sh` | All `echo >>> text` → `echo ">>> text"` (unquoted `>>>` is bash redirect syntax error) |
+
+### Root Causes
+
+- `recentSummary()` returned `$result[] = [array]` (numerically keyed), view iterated `$cmd => $run` expecting model objects
+- `NumberHelper::formatFa()` calls `number_format()` which requires int|float; incident views passed date strings
+- `Compress-Archive` fails on locked files (Laragon has `artisan`, `settings.json` etc. open); PHP `ZipArchive` bypasses Windows file locks
 
 ---
 

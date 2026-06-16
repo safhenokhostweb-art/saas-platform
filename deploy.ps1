@@ -12,7 +12,7 @@ $SSH_KEY    = "$env:USERPROFILE\.ssh\deploy_saas"
 $SERVER     = "root@87.107.12.81"
 $PORT       = "9011"
 $DIR        = "c:\laragon\www\saas-platform"
-$ZIPFILE    = "$env:TEMP\deploy_saas_$(Get-Date -Format 'HHmmss').zip"
+$ZIPFILE    = "$DIR\storage\app\deploy_saas_$(Get-Date -Format 'HHmmss').zip"
 $PHP        = "C:\laragon\bin\php\php-8.4.16-nts-Win32-vs17-x64\php.exe"
 $COMPOSER   = "C:\laragon\bin\composer\composer.phar"
 
@@ -54,6 +54,9 @@ foreach ($pkg in $localPackages) {
         robocopy $src $vendor /E /XD .git /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
     }
 }
+
+# پاکسازی zip های قدیمی (بیش از 1 ساعت)
+Get-ChildItem "$DIR\storage\app\deploy_saas_*.zip" -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt (Get-Date).AddHours(-1) } | Remove-Item -Force -ErrorAction SilentlyContinue
 
 if (Test-Path $ZIPFILE) { Remove-Item $ZIPFILE }
 # PHP ZipArchive — از lock شدن فایل‌های Laragon مصون است
