@@ -1,6 +1,6 @@
 # PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-06-14
+> Last Updated: 2026-06-20
 
 ---
 
@@ -16,13 +16,21 @@
 
 ## Current Module
 
-**LIFECYCLE-1 — Customer Site Lifecycle Management — COMPLETE (2026-06-19)**
+**TB3 Sprint 8 — AI Theme Generator — CERTIFIED COMPLETE (2026-06-20)**
 
 ---
 
 ## Current Phase
 
-**LIFECYCLE-1: Full lifecycle state machine for all customer sites**
+**TB3_SPRINT8_CERTIFIED: AI Theme Generator fully deployed — saas-platform updated**
+
+### Sprint 8 Summary
+- 4 input methods: URL, Screenshot (Vision), HTML upload, Text prompt
+- 11 sections detected: header / hero / features / services / pricing / faq / testimonials / blog / products / cta / footer
+- Full ThemePack output with global_styles + responsive_settings + templates
+- Safe mode: SVG placeholder images, original Persian content
+- PHP fallback for invalid AI JSON
+- `ai_generation_jobs` DB table for job lifecycle tracking
 
 TB3-01: block.props canonical everywhere (data→props normalization on load)  
 TB3-02: Live iframe center panel replacing block-card-list  

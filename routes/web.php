@@ -51,6 +51,7 @@ use App\Http\Controllers\Admin\ThemeBuilderController;
 use App\Http\Controllers\Admin\ThemeCanvasController;
 use App\Http\Controllers\Admin\ThemeMarketplaceAdminController;
 use App\Http\Controllers\Admin\ThemeAiController;
+use App\Http\Controllers\Admin\ThemeAiGeneratorController;
 use App\Http\Controllers\ThemeMarketplacePaymentController;
 use App\Http\Controllers\PageController;
 
@@ -607,6 +608,15 @@ Route::prefix('admin')
                 return response()->json(['success' => true]);
             })->name('theme-builder.ai-generate-prepare');
             Route::post('theme-builder/ai-generate',       [ThemeAiController::class, 'generate'])->name('theme-builder.ai-generate');
+
+            // ─── TB8: AI Theme Generator (multi-input pipeline) ────────────────
+            Route::get('theme-builder/ai-generator',                                [ThemeAiGeneratorController::class, 'form'])->name('theme-builder.ai-generator');
+            Route::post('theme-builder/ai-generator/detect',                        [ThemeAiGeneratorController::class, 'detect'])->name('theme-builder.ai-generator.detect');
+            Route::post('theme-builder/ai-generator/{job}/generate',                [ThemeAiGeneratorController::class, 'generate'])->name('theme-builder.ai-generator.generate');
+            Route::get('theme-builder/ai-generator/{job}/result',                   [ThemeAiGeneratorController::class, 'result'])->name('theme-builder.ai-generator.result');
+            Route::get('theme-builder/ai-generator/{job}/export',                   [ThemeAiGeneratorController::class, 'export'])->name('theme-builder.ai-generator.export');
+            Route::get('theme-builder/ai-generator/{job}/install',                  [ThemeAiGeneratorController::class, 'install'])->name('theme-builder.ai-generator.install');
+
             // ─── TB6: Template Library (Canvas) ──────────────────────────────────
             Route::get('theme-builder/{theme}/canvas/templates',        [ThemeCanvasController::class, 'canvasTemplates'])->name('theme-builder.canvas.templates');
             Route::post('theme-builder/{theme}/canvas/save-as-template',[ThemeCanvasController::class, 'canvasSaveAsTemplate'])->name('theme-builder.canvas.save-as-template');

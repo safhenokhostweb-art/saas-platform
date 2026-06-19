@@ -1,7 +1,73 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-19
+> Last Updated: 2026-06-20
+
+---
+
+## 2026-06-20 — TB3 Sprint 8: AI Theme Generator — TB3_SPRINT8_CERTIFIED
+
+**Reason:** Multi-input AI pipeline for generating complete TB3 Theme Packs from URL, screenshot, HTML, or text prompt.
+
+### Files Changed (saas-platform — 10 new + 2 modified)
+- `database/migrations/2026_06_19_800001_create_ai_generation_jobs_table.php` — NEW
+- `app/Models/AiGenerationJob.php` — NEW (5 statuses, 4 input types, enabledSections())
+- `app/Services/ThemeBuilder/ThemeSectionDetectorService.php` — NEW (heuristic + Vision-based detection)
+- `app/Services/ThemeBuilder/ThemePlaceholderService.php` — NEW (SVG placeholders, Persian text banks)
+- `app/Services/ThemeBuilder/ThemeAiGeneratorService.php` — NEW (master orchestrator, 4 input modes)
+- `app/Http/Controllers/Admin/ThemeAiGeneratorController.php` — NEW (6 actions)
+- `resources/views/admin/theme-builder/ai-generator.blade.php` — NEW (5-step Alpine.js UI)
+- `resources/views/admin/theme-builder/ai-generator-result.blade.php` — NEW (result page)
+- `routes/web.php` — MODIFIED (6 new routes + import)
+- `resources/views/admin/theme-builder/index.blade.php` — MODIFIED (new "مولد هوشمند" button)
+- `docs/TB3_SPRINT8_CERTIFICATION.md` — NEW
+
+### Impact
+- 4 input methods: URL crawl, Claude Vision screenshot, HTML upload, text prompt
+- 11 detectable sections with confidence scoring + user enable/disable
+- Full ThemePack output: headers, footers, pages, templates, global_styles, responsive_settings
+- Safe mode: no source code copy, SVG placeholder images, original Persian content
+- PHP fallback when AI returns invalid JSON
+- Claude Vision API integration for screenshot analysis
+- Job lifecycle tracking in `ai_generation_jobs` DB table
+
+---
+
+## 2026-06-19 — TB3 Sprint 6: Professional Template Library — TB3_SPRINT6_CERTIFIED
+
+**Reason:** Elementor-level template library for the theme canvas builder — save, export, import, insert, marketplace-ready.
+
+### Files Changed (saas-platform — 20 files)
+- `database/migrations/2026_06_19_300001_create_theme_templates_table.php`
+- `database/migrations/2026_06_19_300002_create_theme_packs_table.php`
+- `app/Models/ThemeTemplate.php` — TYPES/CATEGORIES/LICENSE_TYPES constants, scopes, labels
+- `app/Models/ThemePack.php` — contentSummary(), toExportArray()
+- `app/Services/ThemeBuilder/ThemeTemplateService.php` — search, listForCanvas, saveTemplate, saveFromCanvas, insertIntoPage, regenIds
+- `app/Services/ThemeBuilder/ThemeTemplateImportExportService.php` — JSON+ZIP export/import, buildPackFromTheme
+- `app/Services/ThemeBuilder/ThemeTemplateDemoDataService.php` — 11 token types with DB::connection fallback
+- `app/Http/Controllers/Admin/ThemeTemplateController.php` — full CRUD + export/import
+- `app/Http/Controllers/Admin/ThemePackController.php` — CRUD + export JSON/ZIP + import JSON/ZIP
+- `app/Http/Controllers/Admin/ThemeCanvasController.php` — +canvasTemplates, +canvasSaveAsTemplate, +canvasInsertTemplate
+- `resources/views/admin/theme-templates/index.blade.php` — grid with thumbnail, filters, import
+- `resources/views/admin/theme-templates/create.blade.php`
+- `resources/views/admin/theme-templates/edit.blade.php`
+- `resources/views/admin/theme-templates/show.blade.php`
+- `resources/views/admin/theme-packs/index.blade.php`
+- `resources/views/admin/theme-packs/create.blade.php`
+- `resources/views/admin/theme-packs/show.blade.php`
+- `resources/views/admin/theme-builder/canvas.blade.php` — Template Library modal + Save As Template modal + toolbar buttons
+- `routes/web.php` — 3 canvas routes + 9 theme-templates routes + 8 theme-packs routes
+- `app/Helpers/AdminMenu.php` — theme_templates + theme_packs entries
+
+### Files Changed (customer-site — 6 files)
+- `database/migrations/2026_06_19_300001_create_site_theme_templates_table.php`
+- `app/Models/SiteThemeTemplate.php`
+- `app/Services/ThemeCanvas/SiteThemeTemplateService.php`
+- `app/Http/Controllers/Admin/ThemeDesignController.php` — +canvasTemplates, +canvasSaveAsTemplate, +canvasInsertTemplate
+- `resources/views/admin/theme-design/canvas-editor.blade.php` — Template Library modal + Save As Template modal + toolbar buttons
+- `routes/web.php` — 3 canvas template routes
+
+**Certification doc:** `docs/TB3_SPRINT6_CERTIFICATION.md`
 
 ---
 

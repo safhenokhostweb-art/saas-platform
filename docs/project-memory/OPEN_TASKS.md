@@ -1,6 +1,46 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-19
+> Last Updated: 2026-06-20
+
+---
+
+## COMPLETE: TB3 Sprint 8 — AI Theme Generator — 2026-06-20 ✅
+
+**Status:** CERTIFIED COMPLETE (2026-06-20) — TB3_SPRINT8_CERTIFIED
+
+| Phase | Status |
+|-------|--------|
+| Migration: ai_generation_jobs | ✅ DONE |
+| Model: AiGenerationJob | ✅ DONE |
+| ThemeSectionDetectorService (11 sections, heuristic + Vision) | ✅ DONE |
+| ThemePlaceholderService (SVG placeholders, Persian text banks) | ✅ DONE |
+| ThemeAiGeneratorService (URL/Screenshot/HTML/Prompt pipelines) | ✅ DONE |
+| ThemeAiGeneratorController (detect/generate/result/export/install) | ✅ DONE |
+| ai-generator.blade.php (5-step Alpine.js UI, 4-tab input) | ✅ DONE |
+| ai-generator-result.blade.php (result + actions) | ✅ DONE |
+| Routes (6 new routes, import in web.php) | ✅ DONE |
+| Theme Builder index — new "مولد هوشمند" button | ✅ DONE |
+| TB3_SPRINT8_CERTIFICATION.md | ✅ DONE |
+| Deploy both repos | ✅ DONE |
+
+---
+
+## COMPLETE: TB3 Sprint 6 — Professional Template Library — 2026-06-19 ✅
+
+**Status:** CERTIFIED COMPLETE (2026-06-19) — TB3_SPRINT6_CERTIFIED
+
+| Phase | Status |
+|-------|--------|
+| Migrations (theme_templates + theme_packs + site_theme_templates) | ✅ DONE |
+| Models (ThemeTemplate + ThemePack + SiteThemeTemplate) | ✅ DONE |
+| Services (ThemeTemplateService + ImportExport + DemoData + SiteThemeTemplateService) | ✅ DONE |
+| Admin views — theme-templates (index/create/edit/show) | ✅ DONE |
+| Admin views — theme-packs (index/create/show) | ✅ DONE |
+| Canvas API endpoints — 3 endpoints × 2 repos | ✅ DONE |
+| Canvas UI — Template Library modal + Save As Template modal × 2 repos | ✅ DONE |
+| Routes + AdminMenu | ✅ DONE |
+| Deploy both repos | ✅ DONE |
+| TB3_SPRINT6_CERTIFICATION.md | ✅ DONE |
 
 ---
 
