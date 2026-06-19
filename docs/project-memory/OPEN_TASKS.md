@@ -1,6 +1,21 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-16
+> Last Updated: 2026-06-19
+
+---
+
+## COMPLETE: TB3 Sprint 3 — Inline Editing + Advanced Style + Media Manager — 2026-06-19 ✅
+
+**Status:** COMPLETE (2026-06-19) — both repos updated and deployed
+
+| Sub-task | Status |
+|----------|--------|
+| TB3-04: `editableAttr()` PHP + dblclick inline editing in iframe JS | ✅ DONE (both repos) |
+| TB3-05: 3-tab panel (محتوا/استایل/پیشرفته), 6 style sections, Advanced tab | ✅ DONE (both repos) |
+| TB3-07: Media Manager — upload/library/delete, ThemeMediaController, 3 routes | ✅ DONE (both repos) |
+| `applyBlockStyle()` expanded to 20+ CSS properties | ✅ DONE (both repos) |
+| Visibility classes, animation @keyframes in iframe CSS | ✅ DONE (both repos) |
+| Deploy both repos | ✅ DONE |
 
 ---
 

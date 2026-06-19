@@ -1,7 +1,41 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-16
+> Last Updated: 2026-06-19
+
+---
+
+## 2026-06-19 — TB3 Sprint 3 Certification Audit — TB3_SPRINT3_CERTIFIED
+
+**Reason:** Independent certification audit of all TB3 Sprint 3 features across both repos.  
+**Output:** `docs/TB3_SPRINT3_CERTIFICATION.md`  
+**Result:** CERTIFIED — no CRITICAL/HIGH findings. 2 MEDIUM + 3 LOW findings documented.
+
+| Finding | Severity | Verdict |
+|---------|----------|---------|
+| Image caption inline editing unreachable when empty | MEDIUM | FAIL (non-blocking) |
+| Style wrapper order differs between repos in editor mode | MEDIUM | FAIL (non-blocking) |
+| Unused `ALLOWED` constant in ThemeMediaController | LOW | PASS |
+| Media selection UX differs between repos | LOW | PASS |
+| Animation duration unit differs between repos | LOW | PASS |
+
+All 3 deploys confirmed complete. Both repos live in production.
+
+---
+
+## 2026-06-19 — TB3 Sprint 3: Inline Editing + Advanced Style + Media Manager (both repos)
+
+**Reason:** Mirror TB3-04/05/07 saas-platform features to customer-site.
+
+### Files Changed (customer-site)
+
+| File | Change |
+|------|--------|
+| `app/Services/ThemeBuilder/BlockRenderer.php` | Added `editableAttr()`, `applyBlockStyle()` (20+ props), updated renderHero/Heading/Text/Image/Button/Cta |
+| `resources/views/admin/theme-design/canvas-live-preview.blade.php` | Added visibility CSS, animation @keyframes, inline editing CSS + full JS bridge (dblclick, blur, input, sendInlineChange) |
+| `resources/views/admin/theme-design/canvas-editor.blade.php` | 3-tab panel (محتوا/استایل/پیشرفته), 6 collapsible style sections, Advanced tab, Media Modal, new JS state + 8 new methods |
+| `app/Http/Controllers/Admin/ThemeDesignMediaController.php` | NEW — 3 media endpoints (index/upload/destroy), `theme-media/` dir, 5MB limit |
+| `routes/web.php` | Added 3 media routes (media-index/media-upload/media-destroy) |
 
 ---
 

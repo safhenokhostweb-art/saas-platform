@@ -21,10 +21,10 @@
 
 ## CURRENT STATE (2026-06-19)
 
-**Last completed phase:** Production Hardening Certification Audit — PRODUCTION_CERTIFIED (2026-06-19)  
-**Before that:** TB3 Sprint 2 — Undo/Redo, Block Duplication, Per-Block Style Panel — COMPLETE (2026-06-16)  
-**Status:** All 12 PROD findings verified. 1 critical cache bug fixed. Platform is PRODUCTION_CERTIFIED.  
-**Next recommended milestone:** TB3 Sprint 3 (TB3-04 inline editing, TB3-05 professional 3-tab panel, TB3-07 media manager). Plan already exists at `docs/TB3_SPRINT2_PLAN.md`.
+**Last completed phase:** TB3 Sprint 3 Certification Audit — `TB3_SPRINT3_CERTIFIED` (2026-06-19)  
+**Before that:** TB3 Sprint 3 — Inline Editing (TB3-04), Advanced Style Panel (TB3-05), Media Manager (TB3-07) — COMPLETE (2026-06-19)  
+**Status:** Both repos updated, deployed, and certified. Certification doc at `docs/TB3_SPRINT3_CERTIFICATION.md`.  
+**Next recommended milestone:** TB3 Sprint 4 — fix 2 MEDIUM findings (caption placeholder + wrap order), then nested containers or mobile preview.
 
 ### Production Certification Summary (2026-06-19)
 

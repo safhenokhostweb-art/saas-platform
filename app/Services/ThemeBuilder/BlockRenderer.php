@@ -37,10 +37,13 @@ class BlockRenderer
         $type = $block['type'] ?? 'text';
         $id = $block['id'] ?? Str::random(8);
         $props = $block['props'] ?? $block['data'] ?? [];
-        $children = $block['blocks'] ?? $block['children'] ?? [];
+        // TB4: children may be at top-level (block.children), legacy top-level (block.blocks),
+        // or inside props (block.props.blocks) — check all three for backward compat.
+        $children = $block['children'] ?? $block['blocks'] ?? ($props['blocks'] ?? []);
 
         $inner = '';
-        if (in_array($type, ['section', 'container', 'grid', 'columns'], true) && !empty($children)) {
+        $containerTypes = ['section', 'container', 'grid', 'columns', 'flex_container'];
+        if (in_array($type, $containerTypes, true) && !empty($children)) {
             $inner = $this->renderBlocks($children);
         }
         if ($type === 'tabs' && !empty($props['tabs'])) {
@@ -189,9 +192,12 @@ class BlockRenderer
         if (!($this->context['editor_mode'] ?? false)) {
             return $html;
         }
-        $esc = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $idEsc = htmlspecialchars($id, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\">"
+        $esc   = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $idEsc = htmlspecialchars($id,   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        // TB4: container blocks get data-tb-container so the iframe can show nested drop zones
+        $containerAttr = in_array($type, ['section', 'container', 'grid', 'columns', 'flex_container'], true)
+            ? ' data-tb-container="1"' : '';
+        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}>"
             . "<div class=\"tb-block-badge\">{$esc}</div>"
             . $html
             . "</div>";
@@ -237,6 +243,34 @@ class BlockRenderer
         }
         $colClass = implode(' ', $classes);
         return "<div id=\"tb-{$id}\" class=\"tb-columns {$colClass}\">{$inner}</div>";
+    }
+
+    protected function renderFlex_container(array $props, string $inner, string $id): string
+    {
+        $allowDir = ['column', 'row', 'column-reverse', 'row-reverse'];
+        $direction = in_array($props['direction'] ?? 'column', $allowDir, true) ? $props['direction'] : 'column';
+
+        $gapMap = ['none' => '0', 'xs' => '4px', 'sm' => '8px', 'md' => '16px', 'lg' => '24px', 'xl' => '40px'];
+        $gap = $gapMap[$props['gap'] ?? 'md'] ?? '16px';
+
+        $wrap = ($props['wrap'] ?? false) ? 'wrap' : 'nowrap';
+
+        $allowAlign = ['stretch', 'flex-start', 'center', 'flex-end', 'baseline'];
+        $align = in_array($props['alignItems'] ?? 'stretch', $allowAlign, true) ? $props['alignItems'] : 'stretch';
+
+        $allowJustify = ['flex-start', 'center', 'flex-end', 'space-between', 'space-around', 'space-evenly'];
+        $justify = in_array($props['justifyContent'] ?? 'flex-start', $allowJustify, true) ? $props['justifyContent'] : 'flex-start';
+
+        $minH = max(0, (int)($props['minHeight'] ?? 0));
+        $minHStyle = $minH > 0 ? "min-height:{$minH}px;" : '';
+
+        $emptyPlaceholder = '';
+        if (empty(trim($inner)) && ($this->context['editor_mode'] ?? false)) {
+            $emptyPlaceholder = '<div class="tb-fc-empty"><span>کانتینر خالی — بلوک اضافه کنید</span></div>';
+        }
+
+        $style = "display:flex;flex-direction:{$direction};gap:{$gap};flex-wrap:{$wrap};align-items:{$align};justify-content:{$justify};{$minHStyle}";
+        return "<div id=\"tb-{$id}\" class=\"tb-flex-container\" style=\"{$style}\">{$inner}{$emptyPlaceholder}</div>";
     }
 
     protected function renderHero(array $props, string $inner, string $id): string

@@ -149,6 +149,30 @@ body.tb-drag-active .tb-drop-zone {
     white-space: pre-wrap;
 }
 
+/* ── TB4: Flex Container ── */
+.tb-flex-container { width: 100%; }
+.tb-fc-empty {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 80px; border: 2px dashed #c7d2fe; border-radius: 8px;
+    color: #818cf8; font-size: 0.8rem; font-weight: 500;
+    background: rgba(99,102,241,0.04); width: 100%;
+}
+
+/* ── TB4: Nested block highlight (selected child inside container) ── */
+.tb-canvas-block[data-tb-container="1"] > .tb-canvas-block:hover {
+    outline: 2px solid rgba(99,102,241,0.45);
+}
+.tb-canvas-block[data-tb-container="1"].tb-selected {
+    outline: 2px solid #10b981;
+    box-shadow: 0 0 0 4px rgba(16,185,129,0.12);
+}
+
+/* ── TB4: Container drop zone during drag ── */
+.tb-canvas-block[data-tb-container="1"].tb-container-drag-over {
+    outline: 2px dashed #6366f1 !important;
+    background: rgba(99,102,241,0.04) !important;
+}
+
 /* ── Module placeholder (admin canvas, no live data) ── */
 .tb-module-placeholder {
     background: linear-gradient(135deg, #f0f4ff 0%, #e8effe 100%);
@@ -337,24 +361,52 @@ body.tb-drag-active .tb-drop-zone {
         if (state.selectedBlockId === blockId) el.classList.add('tb-selected');
     }
 
-    /* ── Drop zone helpers (TB3-03) ───────────────────────────── */
+    /* ── Drop zone helpers (TB3-03 + TB4) ────────────────────── */
     function setDropTarget(beforeId) {
         document.querySelectorAll('.tb-drop-zone').forEach(function (el) {
             el.classList.toggle('tb-drop-active', el.getAttribute('data-before') === beforeId);
         });
     }
 
+    // TB4: highlight a container as the drag target
+    var currentContainerTarget = null;
+    function setContainerTarget(containerId) {
+        if (currentContainerTarget) {
+            currentContainerTarget.classList.remove('tb-container-drag-over');
+            currentContainerTarget = null;
+        }
+        if (containerId) {
+            var el = document.querySelector('[data-tb-block-id="' + containerId + '"][data-tb-container="1"]');
+            if (el) { el.classList.add('tb-container-drag-over'); currentContainerTarget = el; }
+        }
+    }
+
+    // TB4: only searches top-level blocks (direct children of body)
+    function getTopLevelBlocks() {
+        return Array.from(document.body.querySelectorAll(':scope > [data-tb-block-id], :scope > .tb-style-wrap > [data-tb-block-id]'));
+    }
+
     function getDropIndexAtY(clientY) {
-        var blocks = Array.from(document.querySelectorAll('[data-tb-block-id]'));
-        var result = { index: blocks.length, beforeId: '__end__' };
+        var blocks = getTopLevelBlocks();
+        var result = { index: blocks.length, beforeId: '__end__', containerId: null };
         for (var i = 0; i < blocks.length; i++) {
             var rect = blocks[i].getBoundingClientRect();
             if (clientY < rect.top + rect.height / 2) {
-                result = { index: i, beforeId: blocks[i].getAttribute('data-tb-block-id') };
+                result = { index: i, beforeId: blocks[i].getAttribute('data-tb-block-id'), containerId: null };
                 break;
             }
         }
         return result;
+    }
+
+    // TB4: find the innermost container block under the cursor
+    function getContainerAtPoint(x, y) {
+        var els = document.elementsFromPoint(x, y);
+        for (var i = 0; i < els.length; i++) {
+            var el = els[i].closest('[data-tb-container="1"]');
+            if (el) return el.getAttribute('data-tb-block-id');
+        }
+        return null;
     }
 
     /* ── Height notification ──────────────────────────────────── */
@@ -377,14 +429,22 @@ body.tb-drag-active .tb-drop-zone {
                 break;
             case 'showDropZones':
                 document.body.classList.toggle('tb-drag-active', !!d.visible);
-                if (!d.visible) setDropTarget(null);
+                if (!d.visible) { setDropTarget(null); setContainerTarget(null); }
                 break;
             case 'setDropTarget':
                 setDropTarget(d.beforeId || null);
                 break;
+            // TB4: highlight container for drag-into
+            case 'setContainerTarget':
+                setContainerTarget(d.containerId || null);
+                break;
             case 'getDropIndex':
-                var res = getDropIndexAtY(d.clientY || 0);
-                notifyParent({ action: 'dropIndexResult', index: res.index, beforeId: res.beforeId });
+                var clientY = d.clientY || 0;
+                var clientX = d.clientX || 0;
+                var res = getDropIndexAtY(clientY);
+                // TB4: also check if hovering a container
+                var cid = getContainerAtPoint(clientX, clientY);
+                notifyParent({ action: 'dropIndexResult', index: res.index, beforeId: res.beforeId, containerId: cid });
                 break;
         }
     });
