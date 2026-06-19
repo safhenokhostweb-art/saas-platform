@@ -35,10 +35,12 @@ class ThemeAiGeneratorController extends Controller
      */
     public function detect(Request $request)
     {
-        if (!$this->generator->isEnabled()) {
+        // URL / HTML / Prompt detection is pure PHP — no API key needed.
+        // Only screenshot detection needs the AI key (Claude Vision).
+        if ($request->input('input_type') === 'screenshot' && !$this->generator->isEnabled()) {
             return response()->json([
                 'success' => false,
-                'error'   => $this->generator->getEnvKeyName() . ' تنظیم نشده است.',
+                'error'   => $this->generator->getEnvKeyName() . ' تنظیم نشده — تحلیل تصویر نیاز به API key دارد.',
             ], 503);
         }
 
@@ -106,6 +108,13 @@ class ThemeAiGeneratorController extends Controller
      */
     public function generate(Request $request, AiGenerationJob $job)
     {
+        if (!$this->generator->isEnabled()) {
+            return response()->json([
+                'success' => false,
+                'error'   => $this->generator->getEnvKeyName() . ' تنظیم نشده — برای تولید قالب API key لازم است.',
+            ], 503);
+        }
+
         if (!in_array($job->status, [
             AiGenerationJob::STATUS_AWAITING,
             AiGenerationJob::STATUS_FAILED,

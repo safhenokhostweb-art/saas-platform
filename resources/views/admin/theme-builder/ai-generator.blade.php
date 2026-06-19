@@ -230,7 +230,7 @@
       <svg class="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       <div>
         <p class="font-semibold text-amber-800">{{ $envKeyName }} تنظیم نشده</p>
-        <p class="text-sm text-amber-700 mt-1">متغیر <code class="bg-amber-100 px-1 rounded">{{ $envKeyName }}</code> را در <code class="bg-amber-100 px-1 rounded">.env</code> تنظیم کنید تا مولد فعال شود.</p>
+        <p class="text-sm text-amber-700 mt-1">متغیر <code class="bg-amber-100 px-1 rounded">{{ $envKeyName }}</code> را در <code class="bg-amber-100 px-1 rounded">.env</code> تنظیم کنید تا مرحله تولید قالب فعال شود. تحلیل URL، HTML و توضیح متنی بدون API key کار می‌کنند.</p>
       </div>
     </div>
   @endif
@@ -362,7 +362,7 @@
           </div>
         </div>
 
-        <button @click="detect()" :disabled="!isFormValid() || !{{ $enabled ? 'true' : 'false' }}"
+        <button @click="detect()" :disabled="!isFormValid()"
           class="w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl text-base transition shadow-lg shadow-violet-200">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
