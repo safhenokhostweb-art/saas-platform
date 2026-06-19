@@ -5,6 +5,73 @@
 
 ---
 
+## 2026-06-19 — LIFECYCLE-2: Storage & Resource Governance — COMPLETE
+
+**Reason:** Enterprise-grade per-site resource tracking, enforcement, alerting and billing for platform owner hosting sites on shared VPS.
+
+### Files Changed (saas-platform)
+- `database/migrations/2026_06_19_200001_create_site_resource_usage_table.php` — current usage snapshot per site
+- `database/migrations/2026_06_19_200002_create_site_resource_limits_table.php` — per-site or plan-level limits
+- `database/migrations/2026_06_19_200003_create_site_bandwidth_usage_table.php` — monthly traffic tracking
+- `database/migrations/2026_06_19_200004_create_site_storage_snapshots_table.php` — daily history for charts
+- `app/Models/SiteResourceUsage.php` — usage model (formatBytes, storagePercent, scopes)
+- `app/Models/SiteResourceLimit.php` — limits model (defaultForSite lookup chain)
+- `app/Models/SiteBandwidthUsage.php` — monthly bandwidth model (recordRequests, currentMonthForSite)
+- `app/Models/SiteStorageSnapshot.php` — daily snapshot model (upsertToday, last30Days)
+- `config/resource_governance.php` — 13 env-driven config keys
+- `app/Services/ResourceGovernance/SiteResourceCalculatorService.php` — DB/storage/archive/backup/file metrics + push
+- `app/Services/ResourceGovernance/SiteResourceGovernorService.php` — limits lookup + overage fee calc
+- `app/Services/ResourceGovernance/SiteResourceAlertService.php` — 80%/95% alerts + archive anomaly
+- `app/Services/ResourceGovernance/SiteResourceReportService.php` — monthly report + archive scan + cleanup
+- `app/Console/Commands/CalculateSiteResourcesCommand.php` — resource:calculate (daily 06:00)
+- `app/Console/Commands/CleanupResourceDataCommand.php` — resource:cleanup (weekly Sunday 02:00)
+- `app/Console/Commands/ArchiveReportCommand.php` — resource:archive-report (weekly Monday 07:00)
+- `app/Console/Commands/UsageReportCommand.php` — resource:usage-report (monthly 1st 08:00)
+- `app/Console/Kernel.php` — 4 new schedule entries
+- `app/Http/Controllers/Admin/SiteResourceGovernanceController.php` — 6 actions (index, site, settings, recalculate, updateLimits, updateSettings)
+- `resources/views/admin/resource-governance/index.blade.php` — platform overview (KPI, filters, sortable table)
+- `resources/views/admin/resource-governance/site.blade.php` — per-site detail (usage, chart, limits form, snapshots)
+- `resources/views/admin/resource-governance/settings.blade.php` — platform defaults + fees + thresholds
+- `app/Helpers/AdminMenu.php` — resource_governance entry (MENU_KEYS, MENU_ROUTES, MENU_ROUTE_PATTERNS, getGroups)
+- `resources/views/admin/partials/sidebar-icon.blade.php` — resource_governance SVG
+- `resources/views/admin/partials/sidebar-icon-bare.blade.php` — resource_governance SVG
+- `routes/web.php` — 6 resource-governance routes
+- `app/Services/Lifecycle/SiteLifecycleService.php` — archive() now calls releaseActiveResources()
+- `docs/RESOURCE_GOVERNANCE_ARCHITECTURE.md` — full architecture document
+
+### Files Changed (customer-site)
+- `resources/views/admin/partials/resource-widget.blade.php` — quota widget (shows >60% usage, color-coded)
+- `resources/views/admin/account/resources.blade.php` — full resource usage page (/account/resources)
+- `resources/views/admin/dashboard.blade.php` — includes resource-widget after lifecycle-widget
+- `app/Helpers/NumberHelper.php` — added formatBytes() static method
+- `routes/web.php` — GET /account/resources route
+
+### Key Design Decisions
+- Resource summary pushed to customer-site settings table (same pattern as lifecycle status push) — no HTTP overhead
+- 3-tier limit lookup: per-site override → plan default → config fallback
+- alerted_80/alerted_95 flags prevent repeated notifications; reset when usage drops
+- releaseActiveResources() called on archive transition — zeroes active resources, keeps archive_bytes
+- Archive bytes sourced from actual ZIP file size on disk, not estimates
+
+---
+
+## 2026-06-19 — TB3 Sprint 5: Professional Responsive Editor — TB3_SPRINT5_CERTIFIED
+
+**Reason:** Implement Elementor-level responsive editing: every style property supports Desktop / Tablet / Mobile overrides with CSS cascade.
+
+### Files Changed (saas-platform)
+- `app/Services/ThemeBuilder/BlockRenderer.php` — `buildCssDeclarations()` helper extracted; `applyBlockStyle()` now 4-arg: desktop inline CSS + responsive `@media` `<style>` tag per block
+- `resources/views/admin/theme-builder/canvas.blade.php` — `activeBreakpoint` state; `currentBpStyle`/`getCascadedValue()`/`hasResponsiveOverride()` computed; `updateStyle()` + `resetBlockStyle()` breakpoint-aware; `setDevice()` syncs `activeBreakpoint`; D/T/M toggle bar in style tab; all `:value` bindings → `getCascadedValue()`; amber indicator dots; tree badges for hide/responsive
+
+### Files Changed (customer-site)
+- `app/Services/ThemeBuilder/BlockRenderer.php` — same responsive CSS generation as saas-platform
+- `resources/views/admin/theme-design/canvas-editor.blade.php` — full mirror of saas-platform JS+HTML changes
+
+### Certification
+- `docs/TB3_SPRINT5_CERTIFICATION.md` — 5 phases, 3 findings (all LOW/INFO), verdict TB3_SPRINT5_CERTIFIED
+
+---
+
 ## 2026-06-19 — LIFECYCLE-1: Customer Site Lifecycle Management System — COMPLETE
 
 **Reason:** Implement complete lifecycle state machine for customer sites based on subscription/hosting payments.

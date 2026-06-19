@@ -77,6 +77,30 @@ class Kernel extends ConsoleKernel
             ->dailyAt('04:05')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/lifecycle.log'));
+
+        // RESOURCE GOVERNANCE: Calculate resource usage for all sites (daily 06:00)
+        $schedule->command('resource:calculate --push')
+            ->dailyAt('06:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/resource.log'));
+
+        // RESOURCE GOVERNANCE: Purge old snapshots and bandwidth records (weekly Sunday 02:00)
+        $schedule->command('resource:cleanup')
+            ->weeklyOn(0, '02:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/resource.log'));
+
+        // RESOURCE GOVERNANCE: Archive growth anomaly report (weekly Monday 07:00)
+        $schedule->command('resource:archive-report')
+            ->weeklyOn(1, '07:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/resource.log'));
+
+        // RESOURCE GOVERNANCE: Monthly overage fee report (1st of each month 08:00)
+        $schedule->command('resource:usage-report')
+            ->monthlyOn(1, '08:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/resource.log'));
     }
 
     /**

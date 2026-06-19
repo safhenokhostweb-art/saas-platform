@@ -77,6 +77,16 @@ class SiteLifecycleService
             ]);
         }
 
+        // Release active resource usage — keep archive_bytes only
+        try {
+            app(\App\Services\ResourceGovernance\SiteResourceCalculatorService::class)
+                ->releaseActiveResources($site);
+        } catch (\Throwable $e) {
+            Log::warning("SiteLifecycleService: resource release failed for site {$site->id}", [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         $this->notifications->siteArchived($site);
     }
 

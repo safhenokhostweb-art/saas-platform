@@ -21,10 +21,22 @@
 
 ## CURRENT STATE (2026-06-19)
 
-**Last completed phase:** LIFECYCLE-1 — Customer Site Lifecycle Management System — COMPLETE (2026-06-19)  
-**Before that:** TB3 Sprint 4 — Visual Nested Containers & Structure Editor — `TB3_SPRINT4_CERTIFIED` (2026-06-19)  
-**Status:** Both repos updated. Lifecycle state machine, 4 scheduler commands, admin panel (3 views), customer-site middleware + suspended page + dashboard widget. Migrations pending `php artisan migrate` on production.  
-**Next recommended milestone:** TB3 Sprint 5 or additional lifecycle features (customer self-service payment flow).
+**Last completed phase:** LIFECYCLE-2 — Storage & Resource Governance — COMPLETE (2026-06-19)  
+**Before that:** LIFECYCLE-1 — Customer Site Lifecycle Management System — COMPLETE (2026-06-19)  
+**Status:** Both repos updated and deployed. Full resource governance: 4 tables, 4 models, 4 services, 4 scheduler commands, admin panel (3 views), customer-site widget + account/resources page. Lifecycle integration: archive() now releases active resources.  
+**Next recommended milestone:** TB3 Sprint 6 (export theme ZIP / page templates / copy-paste across pages) or additional lifecycle/billing features.
+
+### LIFECYCLE-2 Summary (2026-06-19)
+
+**4 Tables:** site_resource_usage, site_resource_limits, site_bandwidth_usage, site_storage_snapshots  
+**4 Models:** SiteResourceUsage, SiteResourceLimit, SiteBandwidthUsage, SiteStorageSnapshot  
+**4 Services:** SiteResourceCalculatorService (metrics), SiteResourceGovernorService (limits), SiteResourceAlertService (alerts), SiteResourceReportService (reports)  
+**4 Commands:** resource:calculate (06:00 daily), resource:cleanup (Sunday 02:00), resource:archive-report (Monday 07:00), resource:usage-report (1st monthly 08:00)  
+**Admin Panel:** `/admin/resource-governance` overview, `/admin/resource-governance/{site}` per-site, `/admin/resource-governance/settings`  
+**Customer-site:** resource-widget (shows >60%, color-coded), /account/resources page  
+**Config:** `config/resource_governance.php` — 13 env-driven keys  
+**Architecture doc:** `docs/RESOURCE_GOVERNANCE_ARCHITECTURE.md`  
+**Lifecycle integration:** SiteLifecycleService::archive() → releaseActiveResources() after ZIP created
 
 ### LIFECYCLE-1 Summary (2026-06-19)
 

@@ -462,6 +462,15 @@ Route::prefix('admin')
         Route::post('sites/{site}/lifecycle/transition', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'forceTransition'])->name('sites.lifecycle.transition');
         Route::post('sites/{site}/lifecycle/restore', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'forceRestore'])->name('sites.lifecycle.restore');
         Route::post('sites/{site}/lifecycle/invoices/{invoice}/paid', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'markInvoicePaid'])->name('sites.lifecycle.invoice-paid');
+
+        // RESOURCE GOVERNANCE: Storage, DB, bandwidth and quota management
+        Route::get('resource-governance', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'index'])->name('resource-governance.index');
+        Route::get('resource-governance/settings', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'settings'])->name('resource-governance.settings');
+        Route::put('resource-governance/settings', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'updateSettings'])->name('resource-governance.settings.update');
+        Route::get('resource-governance/{site}', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'site'])->name('resource-governance.site');
+        Route::post('resource-governance/{site}/recalculate', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'recalculate'])->name('resource-governance.recalculate');
+        Route::put('resource-governance/{site}/limits', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'updateLimits'])->name('resource-governance.update-limits');
+
         Route::middleware('notifications.enabled')->group(function () {
             Route::get('sites/notifications/create-bulk', [SiteNotificationController::class, 'createBulk'])->name('sites.notifications.create-bulk');
             Route::post('sites/notifications/store-bulk', [SiteNotificationController::class, 'storeBulk'])->name('sites.notifications.store-bulk');

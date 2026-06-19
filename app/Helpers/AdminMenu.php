@@ -44,7 +44,8 @@ class AdminMenu
         'notification_center' => 'مرکز اطلاع‌رسانی',
         'module_adoption'    => 'پذیرش ماژول‌ها',
         'kb'                 => 'مقالات دانش‌نامه',
-        'lifecycle'          => 'چرخه عمر سایت‌ها',
+        'lifecycle'              => 'چرخه عمر سایت‌ها',
+        'resource_governance'    => 'حاکمیت منابع',
     ];
 
     /** مسیر هر آیتم منو */
@@ -84,7 +85,8 @@ class AdminMenu
         'notification_center' => 'admin.notification-center.index',
         'module_adoption'    => 'admin.module-adoption.index',
         'kb'                 => 'admin.kb.index',
-        'lifecycle'          => 'admin.lifecycle.overview',
+        'lifecycle'              => 'admin.lifecycle.overview',
+        'resource_governance'    => 'admin.resource-governance.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -124,7 +126,8 @@ class AdminMenu
         'notification_center' => 'admin.notification-center.*',
         'module_adoption'    => 'admin.module-adoption.*',
         'kb'                 => 'admin.kb.*',
-        'lifecycle'          => 'admin.lifecycle.*',
+        'lifecycle'              => 'admin.lifecycle.*',
+        'resource_governance'    => 'admin.resource-governance.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -145,7 +148,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance'],
             'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],
