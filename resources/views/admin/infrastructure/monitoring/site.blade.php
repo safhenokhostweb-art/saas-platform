@@ -246,17 +246,17 @@
                 <p class="text-sm">داده کافی موجود نیست</p>
             </div>
         @else
-            @php $maxPct = max(array_column($uptimeHistory, 'uptime_percent') ?: [1]); @endphp
+            @php $maxPct = max(array_filter(array_column($uptimeHistory, 'uptime_percent')) ?: [1]); @endphp
             <div class="uptime-hist">
                 @foreach($uptimeHistory as $day)
                     @php
                         $pct = $day['uptime_percent'];
-                        $h   = max(4, (int)($pct / 100 * 44));
-                        $cls = $pct >= 99 ? 'healthy' : ($pct >= 90 ? 'warning' : 'critical');
+                        $h   = $pct !== null ? max(4, (int)($pct / 100 * 44)) : 4;
+                        $cls = $pct === null ? 'unknown' : ($pct >= 99 ? 'healthy' : ($pct >= 90 ? 'warning' : 'critical'));
                     @endphp
                     <div class="uptime-bar uptime-bar--{{ $cls }}"
                          style="height:{{ $h }}px"
-                         title="{{ $day['date'] }}: {{ number_format($pct, 1) }}%"></div>
+                         title="{{ $day['date'] }}: {{ $pct !== null ? number_format($pct, 1).'%' : 'بدون داده' }}"></div>
                 @endforeach
             </div>
             <div class="flex justify-between text-xs text-gray-400 mt-1 px-1">

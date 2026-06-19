@@ -83,8 +83,8 @@ class InfraSiteHealthLog extends Model
                 ? static::where('site_id', $siteId)->whereBetween('checked_at', [$date, $end])->where('status', 'healthy')->count()
                 : 0;
             $result[] = [
-                'date'   => $date->toDateString(),
-                'uptime' => $total > 0 ? round(($ok / $total) * 100, 1) : null,
+                'date'           => $date->toDateString(),
+                'uptime_percent' => $total > 0 ? round(($ok / $total) * 100, 1) : null,
             ];
         }
         return $result;

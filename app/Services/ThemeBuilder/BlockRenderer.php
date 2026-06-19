@@ -64,7 +64,12 @@ class BlockRenderer
             } else {
                 $html = $this->renderModulePlaceholder($type, $props, $id);
             }
-            return $this->applyBlockStyle($this->wrapEditorMode($html, $id, $type), $block['style'] ?? []);
+            return $this->applyBlockStyle(
+                $this->wrapEditorMode($html, $id, $type),
+                $block['style'] ?? [],
+                $block['responsive'] ?? [],
+                $id
+            );
         }
 
         $method = 'render' . Str::studly(str_replace(':', '_', $type));
@@ -74,22 +79,29 @@ class BlockRenderer
             $html = $this->renderFallback($type, $props, $inner, $id);
         }
 
-        return $this->applyBlockStyle($this->wrapEditorMode($html, $id, $type), $block['style'] ?? []);
+        return $this->applyBlockStyle(
+            $this->wrapEditorMode($html, $id, $type),
+            $block['style'] ?? [],
+            $block['responsive'] ?? [],
+            $id
+        );
     }
 
-    private function applyBlockStyle(string $html, array $style): string
+    // TB5: Build CSS declaration array from a style object (shared by desktop + responsive breakpoints)
+    private function buildCssDeclarations(array $style): array
     {
-        if (empty($style)) {
-            return $html;
-        }
-        $css     = [];
-        $classes = ['tb-style-wrap'];
+        $css = [];
+        $shadowMap = [
+            'sm'   => '0 1px 2px 0 rgba(0,0,0,0.05)',
+            'md'   => '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1)',
+            'lg'   => '0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -4px rgba(0,0,0,0.1)',
+            'xl'   => '0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1)',
+            'none' => 'none',
+        ];
 
-        // Colors
         if (!empty($style['bgColor']))   $css[] = 'background-color:' . $this->escapeAttr($style['bgColor']);
         if (!empty($style['textColor'])) $css[] = 'color:' . $this->escapeAttr($style['textColor']);
 
-        // Gradient (overrides bgColor)
         if (!empty($style['bgGradientFrom']) && !empty($style['bgGradientTo'])) {
             $dir  = $this->escapeAttr($style['bgGradientDir'] ?? 'to bottom');
             $from = $this->escapeAttr($style['bgGradientFrom']);
@@ -97,14 +109,12 @@ class BlockRenderer
             $css[] = "background-image:linear-gradient({$dir},{$from},{$to})";
         }
 
-        // Typography
         if (($style['fontSize']      ?? '') !== '') $css[] = 'font-size:'      . (int)$style['fontSize']      . 'px';
         if (!empty($style['fontWeight']))            $css[] = 'font-weight:'    . $this->escapeAttr($style['fontWeight']);
         if (($style['lineHeight']    ?? '') !== '') $css[] = 'line-height:'    . $this->escapeAttr($style['lineHeight']);
         if (!empty($style['textAlign']))             $css[] = 'text-align:'     . $this->escapeAttr($style['textAlign']);
         if (($style['letterSpacing'] ?? '') !== '') $css[] = 'letter-spacing:' . $this->escapeAttr($style['letterSpacing']) . 'px';
 
-        // Individual padding (takes precedence over paddingY/paddingX)
         if (isset($style['paddingTop']) || isset($style['paddingRight']) || isset($style['paddingBottom']) || isset($style['paddingLeft'])) {
             if (($style['paddingTop']    ?? '') !== '') $css[] = 'padding-top:'    . (int)$style['paddingTop']    . 'px';
             if (($style['paddingRight']  ?? '') !== '') $css[] = 'padding-right:'  . (int)$style['paddingRight']  . 'px';
@@ -115,11 +125,9 @@ class BlockRenderer
             if (($style['paddingX'] ?? '') !== '') $css[] = "padding-left:{$style['paddingX']}px;padding-right:{$style['paddingX']}px";
         }
 
-        // Margin
         if (($style['marginTop']    ?? '') !== '') $css[] = 'margin-top:'    . (int)$style['marginTop']    . 'px';
         if (($style['marginBottom'] ?? '') !== '') $css[] = 'margin-bottom:' . (int)$style['marginBottom'] . 'px';
 
-        // Border
         if (($style['borderWidth'] ?? '') !== '' && (int)$style['borderWidth'] > 0) {
             $css[] = 'border-width:' . (int)$style['borderWidth'] . 'px';
             $css[] = 'border-style:' . $this->escapeAttr($style['borderStyle'] ?? 'solid');
@@ -127,30 +135,34 @@ class BlockRenderer
         if (!empty($style['borderColor'])) $css[] = 'border-color:' . $this->escapeAttr($style['borderColor']);
         if (($style['borderRadius']  ?? '') !== '') $css[] = 'border-radius:' . (int)$style['borderRadius'] . 'px';
 
-        // Shadow presets
-        $shadowMap = [
-            'sm'   => '0 1px 2px 0 rgba(0,0,0,0.05)',
-            'md'   => '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1)',
-            'lg'   => '0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -4px rgba(0,0,0,0.1)',
-            'xl'   => '0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1)',
-            'none' => 'none',
-        ];
         if (!empty($style['shadow'])) {
             $shadow = $shadowMap[$style['shadow']] ?? $style['shadow'];
             $css[] = 'box-shadow:' . $this->escapeAttr($shadow);
         }
 
-        // Opacity
         if (isset($style['opacity']) && $style['opacity'] != 1 && $style['opacity'] !== '') {
             $css[] = 'opacity:' . $style['opacity'];
         }
 
-        // Animation duration CSS var
         if (!empty($style['animationDuration'])) {
             $css[] = '--tb-animate-dur:' . (int)$style['animationDuration'] . 'ms';
         }
 
-        // Custom CSS class (sanitized)
+        // TB5: responsive-only — display:none for hidden breakpoint
+        if (!empty($style['hidden'])) {
+            $css[] = 'display:none';
+        }
+
+        return $css;
+    }
+
+    // TB5: Apply desktop + responsive breakpoint styles to a block's HTML wrapper
+    private function applyBlockStyle(string $html, array $style, array $responsive = [], string $id = ''): string
+    {
+        $desktopCss = $this->buildCssDeclarations($style);
+        $classes    = ['tb-style-wrap'];
+
+        // Custom class (sanitized)
         if (!empty($style['customClass'])) {
             foreach (explode(' ', $style['customClass']) as $cls) {
                 $safe = preg_replace('/[^a-zA-Z0-9_\-]/', '', trim($cls));
@@ -158,7 +170,7 @@ class BlockRenderer
             }
         }
 
-        // Visibility classes
+        // Visibility classes (desktop/tablet/mobile hide)
         if (!empty($style['hideDesktop'])) $classes[] = 'tb-hide-desktop';
         if (!empty($style['hideTablet']))  $classes[] = 'tb-hide-tablet';
         if (!empty($style['hideMobile']))  $classes[] = 'tb-hide-mobile';
@@ -169,12 +181,50 @@ class BlockRenderer
             $classes[] = 'tb-animate-' . $anim;
         }
 
-        if (empty($css) && count($classes) <= 1) return $html;
+        // TB5: add block-specific class for responsive targeting
+        $blkClass = '';
+        if ($id !== '' && !empty($responsive)) {
+            $blkId    = preg_replace('/[^a-zA-Z0-9_\-]/', '', $id);
+            $blkClass = " tb-blk-{$blkId}";
+            $classes[] = "tb-blk-{$blkId}";
+        }
+
+        $hasContent = !empty($desktopCss) || count($classes) > 1;
+        if (!$hasContent && empty($responsive)) return $html;
 
         $classAttr = implode(' ', $classes);
-        $styleStr  = implode(';', $css);
+        $styleStr  = implode(';', $desktopCss);
         $styleAttr = $styleStr ? " style=\"{$styleStr}\"" : '';
-        return "<div class=\"{$classAttr}\"{$styleAttr}>{$html}</div>";
+        $wrapped   = "<div class=\"{$classAttr}\"{$styleAttr}>{$html}</div>";
+
+        // TB5: inject responsive breakpoint <style> block
+        if (!empty($responsive) && $id !== '') {
+            $blkId      = preg_replace('/[^a-zA-Z0-9_\-]/', '', $id);
+            $selector   = ".tb-blk-{$blkId}";
+            $mediaCss   = '';
+
+            $tabletStyle = $responsive['tablet'] ?? [];
+            if (!empty($tabletStyle)) {
+                $tabletCss = $this->buildCssDeclarations($tabletStyle);
+                if (!empty($tabletCss)) {
+                    $mediaCss .= "@media(max-width:1024px){{$selector}{" . implode(';', $tabletCss) . "}}";
+                }
+            }
+
+            $mobileStyle = $responsive['mobile'] ?? [];
+            if (!empty($mobileStyle)) {
+                $mobileCss = $this->buildCssDeclarations($mobileStyle);
+                if (!empty($mobileCss)) {
+                    $mediaCss .= "@media(max-width:480px){{$selector}{" . implode(';', $mobileCss) . "}}";
+                }
+            }
+
+            if ($mediaCss !== '') {
+                $wrapped .= "<style data-tb-blk=\"{$blkId}\">{$mediaCss}</style>";
+            }
+        }
+
+        return $wrapped;
     }
 
     private function editableAttr(string $propKey, string $inlineType = 'text'): string

@@ -187,6 +187,13 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
                             {{-- Block name + optional custom label --}}
                             <span class="truncate flex-1" x-text="node.block.props?.label ? (blockLabel(node.block.type) + ': ' + node.block.props.label) : blockLabel(node.block.type)"></span>
+                            {{-- TB5: hide-on-device badges --}}
+                            <span x-show="node.block.style?.hideDesktop" class="text-[9px] bg-slate-200 text-slate-500 px-1 rounded shrink-0">D</span>
+                            <span x-show="node.block.style?.hideTablet"  class="text-[9px] bg-slate-200 text-slate-500 px-1 rounded shrink-0">T</span>
+                            <span x-show="node.block.style?.hideMobile"  class="text-[9px] bg-slate-200 text-slate-500 px-1 rounded shrink-0">M</span>
+                            {{-- TB5: responsive override dot --}}
+                            <span x-show="node.block.responsive && Object.keys(node.block.responsive).length > 0"
+                                class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="دارای override ریسپانسیو"></span>
                         </div>
                     </template>
                 </div>
@@ -471,6 +478,41 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     {{-- ── STYLE TAB ──────────────────────────────────────────── --}}
                     <div x-show="selectedTab === 'style'" class="flex-1 overflow-y-auto">
 
+                        {{-- TB5: Breakpoint Toggle Bar --}}
+                        <div class="flex items-center gap-0.5 bg-slate-50 border-b border-slate-100 p-2">
+                            <span class="text-[10px] text-slate-400 ml-1">ریسپانسیو:</span>
+                            <button @click="activeBreakpoint='desktop'"
+                                :class="activeBreakpoint==='desktop' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'"
+                                class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                D
+                            </button>
+                            <button @click="activeBreakpoint='tablet'"
+                                :class="activeBreakpoint==='tablet' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'"
+                                class="relative flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                T
+                                <span x-show="selectedBlock?.responsive?.tablet && Object.keys(selectedBlock.responsive.tablet).length > 0"
+                                    class="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                            </button>
+                            <button @click="activeBreakpoint='mobile'"
+                                :class="activeBreakpoint==='mobile' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'"
+                                class="relative flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v13a2 2 0 002 2z"/></svg>
+                                M
+                                <span x-show="selectedBlock?.responsive?.mobile && Object.keys(selectedBlock.responsive.mobile).length > 0"
+                                    class="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                            </button>
+                            <span x-show="activeBreakpoint !== 'desktop'" class="mr-auto text-[9px] text-amber-600 font-medium">
+                                override روی <span x-text="activeBreakpoint === 'tablet' ? 'تبلت' : 'موبایل'"></span>
+                            </span>
+                            <button x-show="activeBreakpoint !== 'desktop'"
+                                @click="resetBlockStyle()"
+                                class="mr-1 text-[10px] text-red-500 hover:text-red-700 font-medium underline">
+                                پاک کردن
+                            </button>
+                        </div>
+
                         {{-- Section: Typography --}}
                         <div class="border-b border-slate-100">
                             <button @click="styleSection.typography = !styleSection.typography"
@@ -481,18 +523,26 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <div x-show="styleSection.typography" class="px-4 pb-4 space-y-3">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <p class="text-[10px] text-slate-500 mb-1">سایز فونت (px)</p>
+                                        <p class="text-[10px] text-slate-500 mb-1 flex items-center gap-1">
+                                            سایز فونت (px)
+                                            <span x-show="hasResponsiveOverride('fontSize', activeBreakpoint) && activeBreakpoint !== 'desktop'" class="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span>
+                                        </p>
                                         <input type="number" min="8" max="200"
-                                            :value="selectedBlock.style?.fontSize ?? ''"
+                                            :value="getCascadedValue('fontSize', '')"
                                             @input="updateStyle('fontSize', $event.target.value === '' ? '' : Number($event.target.value))"
-                                            placeholder="پیش‌فرض"
-                                            class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                            :placeholder="activeBreakpoint !== 'desktop' ? (selectedBlock.style?.fontSize ?? 'ارث') : 'پیش‌فرض'"
+                                            class="w-full text-xs px-2 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                            :class="hasResponsiveOverride('fontSize', activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
                                     </div>
                                     <div>
-                                        <p class="text-[10px] text-slate-500 mb-1">وزن فونت</p>
-                                        <select :value="selectedBlock.style?.fontWeight ?? ''"
+                                        <p class="text-[10px] text-slate-500 mb-1 flex items-center gap-1">
+                                            وزن فونت
+                                            <span x-show="hasResponsiveOverride('fontWeight', activeBreakpoint) && activeBreakpoint !== 'desktop'" class="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span>
+                                        </p>
+                                        <select :value="getCascadedValue('fontWeight', '')"
                                             @change="updateStyle('fontWeight', $event.target.value)"
-                                            class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                            class="w-full text-xs px-2 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                            :class="hasResponsiveOverride('fontWeight', activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
                                             <option value="">پیش‌فرض</option>
                                             <option value="300">سبک (300)</option>
                                             <option value="400">معمولی (400)</option>
@@ -507,7 +557,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <div>
                                         <p class="text-[10px] text-slate-500 mb-1">فاصله خطوط</p>
                                         <input type="number" min="1" max="4" step="0.1"
-                                            :value="selectedBlock.style?.lineHeight ?? ''"
+                                            :value="getCascadedValue('lineHeight', '')"
                                             @input="updateStyle('lineHeight', $event.target.value === '' ? '' : $event.target.value)"
                                             placeholder="پیش‌فرض"
                                             class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
@@ -515,7 +565,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <div>
                                         <p class="text-[10px] text-slate-500 mb-1">فاصله حروف (px)</p>
                                         <input type="number" min="-5" max="20" step="0.5"
-                                            :value="selectedBlock.style?.letterSpacing ?? ''"
+                                            :value="getCascadedValue('letterSpacing', '')"
                                             @input="updateStyle('letterSpacing', $event.target.value === '' ? '' : $event.target.value)"
                                             placeholder="پیش‌فرض"
                                             class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
@@ -525,8 +575,8 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <p class="text-[10px] text-slate-500 mb-1">تراز متن</p>
                                     <div class="flex gap-1">
                                         <template x-for="[val, icon, tip] in [['right','←','راست'],['center','↔','وسط'],['left','→','چپ'],['justify','≡','کامل']]" :key="val">
-                                            <button @click="updateStyle('textAlign', selectedBlock.style?.textAlign === val ? '' : val)"
-                                                :class="selectedBlock.style?.textAlign === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'"
+                                            <button @click="updateStyle('textAlign', getCascadedValue('textAlign') === val ? '' : val)"
+                                                :class="getCascadedValue('textAlign') === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'"
                                                 class="flex-1 py-1.5 rounded-lg border text-xs font-mono transition" :title="tip" x-text="icon"></button>
                                         </template>
                                     </div>
@@ -543,23 +593,29 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             </button>
                             <div x-show="styleSection.colors" class="px-4 pb-4 space-y-3">
                                 <div>
-                                    <p class="text-[10px] text-slate-500 mb-1">رنگ پس‌زمینه</p>
+                                    <p class="text-[10px] text-slate-500 mb-1 flex items-center gap-1">
+                                        رنگ پس‌زمینه
+                                        <span x-show="hasResponsiveOverride('bgColor', activeBreakpoint) && activeBreakpoint !== 'desktop'" class="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span>
+                                    </p>
                                     <div class="flex items-center gap-1.5">
-                                        <input type="color" :value="selectedBlock.style?.bgColor || '#ffffff'" @change="updateStyle('bgColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
-                                        <input type="text" :value="selectedBlock.style?.bgColor || ''" @input="updateStyle('bgColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
-                                        <button x-show="selectedBlock.style?.bgColor" @click="updateStyle('bgColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
+                                        <input type="color" :value="getCascadedValue('bgColor', '#ffffff')" @change="updateStyle('bgColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" :value="getCascadedValue('bgColor', '')" @input="updateStyle('bgColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <button x-show="getCascadedValue('bgColor')" @click="updateStyle('bgColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
                                     </div>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] text-slate-500 mb-1">رنگ متن</p>
+                                    <p class="text-[10px] text-slate-500 mb-1 flex items-center gap-1">
+                                        رنگ متن
+                                        <span x-show="hasResponsiveOverride('textColor', activeBreakpoint) && activeBreakpoint !== 'desktop'" class="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span>
+                                    </p>
                                     <div class="flex items-center gap-1.5">
-                                        <input type="color" :value="selectedBlock.style?.textColor || '#1f2937'" @change="updateStyle('textColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
-                                        <input type="text" :value="selectedBlock.style?.textColor || ''" @input="updateStyle('textColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
-                                        <button x-show="selectedBlock.style?.textColor" @click="updateStyle('textColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
+                                        <input type="color" :value="getCascadedValue('textColor', '#1f2937')" @change="updateStyle('textColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" :value="getCascadedValue('textColor', '')" @input="updateStyle('textColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <button x-show="getCascadedValue('textColor')" @click="updateStyle('textColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
                                     </div>
                                 </div>
-                                {{-- Gradient toggle --}}
-                                <div>
+                                {{-- Gradient toggle (desktop only) --}}
+                                <div x-show="activeBreakpoint === 'desktop'">
                                     <label class="flex items-center gap-2 cursor-pointer mb-2">
                                         <input type="checkbox" :checked="!!(selectedBlock.style?.bgGradientFrom)" @change="toggleGradient($event.target.checked)" class="rounded text-indigo-600">
                                         <span class="text-[10px] text-slate-600 font-semibold">گرادیانت پس‌زمینه</span>
@@ -598,9 +654,10 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         <div>
                                             <p class="text-[9px] text-slate-400 text-center mb-1" x-text="label"></p>
                                             <input type="number" min="0" max="300"
-                                                :value="selectedBlock.style?.[key] ?? ''"
+                                                :value="getCascadedValue(key, '')"
                                                 @input="updateStyle(key, $event.target.value === '' ? '' : Number($event.target.value))"
-                                                class="w-full text-xs text-center px-1 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                                class="w-full text-xs text-center px-1 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                                :class="hasResponsiveOverride(key, activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
                                         </div>
                                     </template>
                                 </div>
@@ -608,11 +665,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <p class="text-[9px] text-slate-400 mb-1">بالا</p>
-                                        <input type="number" min="-100" max="300" :value="selectedBlock.style?.marginTop ?? ''" @input="updateStyle('marginTop', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <input type="number" min="-100" max="300" :value="getCascadedValue('marginTop', '')" @input="updateStyle('marginTop', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
                                     <div>
                                         <p class="text-[9px] text-slate-400 mb-1">پایین</p>
-                                        <input type="number" min="-100" max="300" :value="selectedBlock.style?.marginBottom ?? ''" @input="updateStyle('marginBottom', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <input type="number" min="-100" max="300" :value="getCascadedValue('marginBottom', '')" @input="updateStyle('marginBottom', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
                                 </div>
                             </div>
@@ -629,11 +686,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <p class="text-[10px] text-slate-500 mb-1">ضخامت حاشیه (px)</p>
-                                        <input type="number" min="0" max="20" :value="selectedBlock.style?.borderWidth ?? ''" @input="updateStyle('borderWidth', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <input type="number" min="0" max="20" :value="getCascadedValue('borderWidth', '')" @input="updateStyle('borderWidth', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
                                     <div>
                                         <p class="text-[10px] text-slate-500 mb-1">نوع حاشیه</p>
-                                        <select :value="selectedBlock.style?.borderStyle ?? 'solid'" @change="updateStyle('borderStyle', $event.target.value)" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <select :value="getCascadedValue('borderStyle', 'solid')" @change="updateStyle('borderStyle', $event.target.value)" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                             <option value="solid">solid</option>
                                             <option value="dashed">dashed</option>
                                             <option value="dotted">dotted</option>
@@ -644,13 +701,13 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div>
                                     <p class="text-[10px] text-slate-500 mb-1">رنگ حاشیه</p>
                                     <div class="flex items-center gap-1.5">
-                                        <input type="color" :value="selectedBlock.style?.borderColor || '#e5e7eb'" @change="updateStyle('borderColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
-                                        <input type="text" :value="selectedBlock.style?.borderColor || ''" @input="updateStyle('borderColor', $event.target.value)" placeholder="#e5e7eb" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <input type="color" :value="getCascadedValue('borderColor', '#e5e7eb')" @change="updateStyle('borderColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" :value="getCascadedValue('borderColor', '')" @input="updateStyle('borderColor', $event.target.value)" placeholder="#e5e7eb" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
                                     </div>
                                 </div>
                                 <div>
                                     <p class="text-[10px] text-slate-500 mb-1">گوشه‌های گرد (px)</p>
-                                    <input type="number" min="0" max="100" :value="selectedBlock.style?.borderRadius ?? ''" @input="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))" placeholder="۰" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    <input type="number" min="0" max="100" :value="getCascadedValue('borderRadius', '')" @input="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))" placeholder="۰" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                 </div>
                             </div>
                         </div>
@@ -665,8 +722,8 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <div x-show="styleSection.shadow" class="px-4 pb-4">
                                 <div class="flex flex-wrap gap-1.5 mb-3">
                                     <template x-for="[val, label] in [['none','هیچ'],['sm','کوچک'],['md','متوسط'],['lg','بزرگ'],['xl','خیلی بزرگ']]" :key="val">
-                                        <button @click="updateStyle('shadow', selectedBlock.style?.shadow === val ? '' : val)"
-                                            :class="selectedBlock.style?.shadow === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
+                                        <button @click="updateStyle('shadow', getCascadedValue('shadow') === val ? '' : val)"
+                                            :class="getCascadedValue('shadow') === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
                                             class="px-2.5 py-1 rounded-lg border text-xs transition" x-text="label"></button>
                                     </template>
                                 </div>
@@ -677,14 +734,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         <div class="border-b border-slate-100 px-4 py-3">
                             <p class="text-[10px] text-slate-500 mb-2">شفافیت</p>
                             <div class="flex items-center gap-2">
-                                <input type="range" min="0.1" max="1" step="0.05" :value="selectedBlock.style?.opacity ?? 1" @input="updateStyle('opacity', Number($event.target.value))" class="flex-1">
-                                <span class="text-xs text-slate-500 w-8 text-left" x-text="Math.round((selectedBlock.style?.opacity ?? 1) * 100) + '%'"></span>
+                                <input type="range" min="0.1" max="1" step="0.05" :value="getCascadedValue('opacity', 1)" @input="updateStyle('opacity', Number($event.target.value))" class="flex-1">
+                                <span class="text-xs text-slate-500 w-8 text-left" x-text="Math.round(getCascadedValue('opacity', 1) * 100) + '%'"></span>
                             </div>
                         </div>
 
                         <div class="px-4 py-3">
-                            <button @click="resetBlockStyle()" class="w-full text-xs py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500 transition">
-                                پاک کردن همه استایل‌ها
+                            <button @click="resetBlockStyle()" class="w-full text-xs py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500 transition"
+                                x-text="activeBreakpoint === 'desktop' ? 'پاک کردن همه استایل‌ها' : 'پاک کردن override ' + (activeBreakpoint === 'tablet' ? 'تبلت' : 'موبایل')">
                             </button>
                         </div>
                     </div>
@@ -1061,6 +1118,8 @@ function themeCanvas() {
         leftPanelTab:    'blocks',      // 'blocks' | 'tree'
         treeExpanded:    {},            // blockId → bool (default: expanded)
         showAddChildModal: false,
+        // TB5: responsive editor
+        activeBreakpoint: 'desktop',   // 'desktop' | 'tablet' | 'mobile'
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
@@ -1081,6 +1140,34 @@ function themeCanvas() {
         get selectedSchema() {
             if (!this.selectedBlock) return {};
             return BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
+        },
+        // TB5: reactive style object for the active breakpoint
+        get currentBpStyle() {
+            if (!this.selectedBlock) return {};
+            if (this.activeBreakpoint === 'desktop') return this.selectedBlock.style ?? {};
+            if (!this.selectedBlock.responsive) return {};
+            return this.selectedBlock.responsive[this.activeBreakpoint] ?? {};
+        },
+        // TB5: get a value with cascade fallback (mobile → tablet → desktop)
+        getCascadedValue(key, def = '') {
+            if (!this.selectedBlock) return def;
+            if (this.activeBreakpoint === 'mobile') {
+                const m = this.selectedBlock.responsive?.mobile?.[key];
+                if (m !== undefined && m !== '') return m;
+                const t = this.selectedBlock.responsive?.tablet?.[key];
+                if (t !== undefined && t !== '') return t;
+            }
+            if (this.activeBreakpoint === 'tablet') {
+                const t = this.selectedBlock.responsive?.tablet?.[key];
+                if (t !== undefined && t !== '') return t;
+            }
+            return this.selectedBlock.style?.[key] ?? def;
+        },
+        // TB5: true when a breakpoint has an override for this key
+        hasResponsiveOverride(key, bp) {
+            if (!this.selectedBlock?.responsive) return false;
+            const v = this.selectedBlock.responsive[bp]?.[key];
+            return v !== undefined && v !== '';
         },
 
         // ── Block Library ─────────────────────────────────────────
@@ -1358,17 +1445,28 @@ function themeCanvas() {
             this.schedulePropUpdate();
         },
 
-        // ── TB3-S2: Per-block style overrides ────────────────────
+        // ── TB3-S2: Per-block style overrides (TB5: breakpoint-aware) ─
         updateStyle(styleKey, value) {
             if (!this.selectedBlock) return;
-            if (!this.selectedBlock.style) this.selectedBlock.style = {};
-            if (value === '' || value === null) {
-                delete this.selectedBlock.style[styleKey];
-                if (Object.keys(this.selectedBlock.style).length === 0) {
-                    delete this.selectedBlock.style;
+            const bp = this.activeBreakpoint;
+            if (bp === 'desktop') {
+                if (!this.selectedBlock.style) this.selectedBlock.style = {};
+                if (value === '' || value === null) {
+                    delete this.selectedBlock.style[styleKey];
+                    if (Object.keys(this.selectedBlock.style).length === 0) delete this.selectedBlock.style;
+                } else {
+                    this.selectedBlock.style[styleKey] = value;
                 }
             } else {
-                this.selectedBlock.style[styleKey] = value;
+                if (!this.selectedBlock.responsive) this.selectedBlock.responsive = {};
+                if (!this.selectedBlock.responsive[bp]) this.selectedBlock.responsive[bp] = {};
+                if (value === '' || value === null) {
+                    delete this.selectedBlock.responsive[bp][styleKey];
+                    if (Object.keys(this.selectedBlock.responsive[bp]).length === 0) delete this.selectedBlock.responsive[bp];
+                    if (Object.keys(this.selectedBlock.responsive).length === 0) delete this.selectedBlock.responsive;
+                } else {
+                    this.selectedBlock.responsive[bp][styleKey] = value;
+                }
             }
             this.isDirty = true;
             this.schedulePropUpdate();
@@ -1376,7 +1474,15 @@ function themeCanvas() {
 
         resetBlockStyle() {
             if (!this.selectedBlock) return;
-            delete this.selectedBlock.style;
+            const bp = this.activeBreakpoint;
+            if (bp === 'desktop') {
+                delete this.selectedBlock.style;
+            } else {
+                if (this.selectedBlock.responsive?.[bp]) {
+                    delete this.selectedBlock.responsive[bp];
+                    if (Object.keys(this.selectedBlock.responsive).length === 0) delete this.selectedBlock.responsive;
+                }
+            }
             this.isDirty = true;
             this.autoSaveAndReload();
         },
@@ -1666,7 +1772,7 @@ function themeCanvas() {
             finally { this.mediaModal.uploading = false; }
         },
 
-        setDevice(d) { this.device = d; },
+        setDevice(d) { this.device = d; this.activeBreakpoint = d; },
 
         // ── TB3-03: Drag from Library ─────────────────────────────
         startDragBlock(event, blockType) {

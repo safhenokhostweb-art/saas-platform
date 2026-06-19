@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Services\ResourceGovernance;
+
+use App\Models\Site;
+use App\Models\SiteResourceUsage;
+use App\Models\SiteResourceLimit;
+use App\Services\Infrastructure\SlackAlertService;
+use App\Services\Notification\NotificationCenterService;
+use Illuminate\Support\Facades\Log;
+
+class SiteResourceAlertService
+{
+    public function __construct(
+        private NotificationCenterService $nc,
+        private SlackAlertService $slack
+    ) {}
+
+    /**
+     * Check and fire alert if storage > warning threshold (default 80%).
+     */
+    public function checkAndAlertStorage(Site $site, SiteResourceUsage $usage, SiteResourceLimit $limit): void
+    {
+        $pct     = $usage->storagePercent((int) $limit->storage_limit_bytes);
+        $warning = config('resource_governance.alert_warning_percent', 80);
+        $critical = config('resource_governance.alert_critical_percent', 95);
+
+        if ($pct >= $critical && !$usage->alerted_95) {
+            $this->alertStorageCritical($site, $pct);
+            $usage->update(['alerted_95' => true, 'alerted_80' => true]);
+        } elseif ($pct >= $warning && !$usage->alerted_80) {
+            $this->alertStorageWarning($site, $pct);
+            $usage->update(['alerted_80' => true]);
+        }
+    }
+
+    /**
+     * Notify platform admin that storage is approaching limit (80%).
+     */
+    public function alertStorageWarning(Site $site, float $percent): void
+    {
+        $message = "سایت {$site->title} — فضای ذخیره‌سازی به {$percent}٪ رسیده است.";
+
+        $this->nc->notify([
+            'type'          => 'resource_warning',
+            'priority'      => 'medium',
+            'title'         => "⚠️ هشدار فضا: {$site->title}",
+            'message'       => $message,
+            'audience_type' => 'platform_admin',
+            'channel'       => 'dashboard',
+            'site_id'       => $site->id,
+            'link'          => route('admin.resource-governance.site', $site->id),
+        ]);
+
+        try {
+            $this->slack->warning($message);
+        } catch (\Throwable $e) {
+            Log::debug('ResourceAlertService: Slack warning failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify platform admin that storage is critically full (95%).
+     */
+    public function alertStorageCritical(Site $site, float $percent): void
+    {
+        $message = "سایت {$site->title} — فضای ذخیره‌سازی به {$percent}٪ رسیده است! اقدام فوری لازم است.";
+
+        $this->nc->notify([
+            'type'          => 'resource_critical',
+            'priority'      => 'critical',
+            'title'         => "🚨 بحران فضا: {$site->title}",
+            'message'       => $message,
+            'audience_type' => 'platform_admin',
+            'channel'       => 'both',
+            'site_id'       => $site->id,
+            'link'          => route('admin.resource-governance.site', $site->id),
+        ]);
+
+        try {
+            $this->slack->critical($message);
+        } catch (\Throwable $e) {
+            Log::debug('ResourceAlertService: Slack critical failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Alert when an archive is growing unexpectedly.
+     */
+    public function alertAbnormalArchiveGrowth(Site $site, int $bytes): void
+    {
+        $formatted = SiteResourceUsage::formatBytes($bytes);
+        $message   = "سایت {$site->title} — رشد غیرعادی آرشیو: {$formatted} طی ۲۴ ساعت.";
+
+        $this->nc->notify([
+            'type'          => 'archive_anomaly',
+            'priority'      => 'high',
+            'title'         => "آرشیو غیرعادی: {$site->title}",
+            'message'       => $message,
+            'audience_type' => 'platform_admin',
+            'channel'       => 'dashboard',
+            'site_id'       => $site->id,
+            'link'          => route('admin.resource-governance.site', $site->id),
+        ]);
+    }
+
+    /**
+     * Alert when a site has no recent backup.
+     */
+    public function alertBackupMissing(Site $site, int $daysSinceBackup): void
+    {
+        $message = "سایت {$site->title} — آخرین پشتیبان {$daysSinceBackup} روز پیش بود.";
+
+        $this->nc->notify([
+            'type'          => 'backup_missing',
+            'priority'      => 'high',
+            'title'         => "پشتیبان گم‌شده: {$site->title}",
+            'message'       => $message,
+            'audience_type' => 'platform_admin',
+            'channel'       => 'dashboard',
+            'site_id'       => $site->id,
+        ]);
+    }
+}
