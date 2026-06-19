@@ -48,7 +48,7 @@
                     @foreach($site->siteUpdates as $update)
                         <tr class="border-t">
                             <td class="p-3 font-medium">{{ $update->version_label }}</td>
-                            <td class="p-3">{{ $update->distributed_at ? \App\Helpers\Jalali::format($update->distributed_at) : '—' }}</td>
+                            <td class="p-3">{{ $update->distributed_at ? \App\Helpers\Jalali::formatFa($update->distributed_at) : '—' }}</td>
                             <td class="p-3 text-gray-600">{{ $update->notes ?: '—' }}</td>
                         </tr>
                     @endforeach

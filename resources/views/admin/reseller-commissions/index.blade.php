@@ -25,7 +25,7 @@
                     <td class="p-3">{{ $c->reseller->company_name ?: $c->reseller->user->mobile ?? '—' }}</td>
                     <td class="p-3">#{{ $c->invoice_id }}</td>
                     <td class="p-3 font-medium">{{ \App\Helpers\NumberHelper::formatFa($c->amount_irr) }}</td>
-                    <td class="p-3 text-gray-500">{{ $c->created_at->format('Y/m/d') }}</td>
+                    <td class="p-3 text-gray-500">{{ \App\Helpers\Jalali::formatFa($c->created_at, 'Y/m/d') }}</td>
                     <td class="p-3">
                         <form method="POST" action="{{ route('admin.reseller-commissions.mark-paid', $c) }}" class="inline">
                             @csrf

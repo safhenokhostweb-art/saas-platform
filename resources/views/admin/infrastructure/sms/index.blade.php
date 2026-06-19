@@ -104,7 +104,7 @@
             <span>{{ number_format($health['success']) }} موفق</span>
             <span>{{ number_format($health['failure']) }} ناموفق</span>
             @if($health['last_checked_at'])
-            <span>آخرین: {{ \Carbon\Carbon::parse($health['last_checked_at'])->diffForHumans() }}</span>
+            <span>آخرین: {{ \App\Helpers\Jalali::diffForHumansFa(\Carbon\Carbon::parse($health['last_checked_at'])) }}</span>
             @endif
           </div>
         </div>
@@ -155,7 +155,7 @@
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
           <span style="font-weight:600;color:#374151">{{ $log->recipient }}</span>
           <span class="provider-badge badge-gray">{{ $log->provider }}</span>
-          <span style="font-size:.75rem;color:#94a3b8">{{ $log->created_at->diffForHumans() }}</span>
+          <span style="font-size:.75rem;color:#94a3b8">{{ \App\Helpers\Jalali::diffForHumansFa($log->created_at) }}</span>
         </div>
         @if($log->error_message)
         <div style="font-size:.8rem;color:#991b1b;margin-top:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $log->error_message }}</div>

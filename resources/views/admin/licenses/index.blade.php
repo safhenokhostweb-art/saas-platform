@@ -38,8 +38,8 @@
                         @endif
                     </td>
                     <td class="p-3 font-mono text-xs">{{ $license->license_key_prefix ?? '—' }}</td>
-                    <td class="p-3">{{ $license->issued_at ? \App\Helpers\Jalali::format($license->issued_at) : '—' }}</td>
-                    <td class="p-3">{{ $license->expires_at ? \App\Helpers\Jalali::format($license->expires_at) : 'بدون انقضا' }}</td>
+                    <td class="p-3">{{ $license->issued_at ? \App\Helpers\Jalali::formatFa($license->issued_at) : '—' }}</td>
+                    <td class="p-3">{{ $license->expires_at ? \App\Helpers\Jalali::formatFa($license->expires_at) : 'بدون انقضا' }}</td>
                     <td class="p-3">
                         @if($license->isRevoked())
                             <span class="inline-flex px-2 py-0.5 rounded text-xs bg-gray-200 text-gray-700">ابطال‌شده</span>

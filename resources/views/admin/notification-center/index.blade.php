@@ -281,7 +281,7 @@
                     @if($log->sms_sent_at)
                         <span class="nc-badge nc-badge--sms">SMS ✓</span>
                     @endif
-                    <span class="text-xs text-gray-400">{{ $log->created_at->diffForHumans() }}</span>
+                    <span class="text-xs text-gray-400">{{ \App\Helpers\Jalali::diffForHumansFa($log->created_at) }}</span>
                     @if($log->creator)
                         <span class="text-xs text-gray-400">· توسط {{ $log->creator->name ?? 'سیستم' }}</span>
                     @endif

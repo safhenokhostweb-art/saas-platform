@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Jalali;
 use App\Http\Controllers\Controller;
 use App\Models\SystemNotification;
 use App\Services\AdminNotificationService;
@@ -31,7 +32,7 @@ class AdminNotificationController extends Controller
                 'title'      => $n->title,
                 'body'       => $n->body,
                 'link'       => $n->data['link'] ?? null,
-                'created_at' => $n->created_at->diffForHumans(),
+                'created_at' => Jalali::diffForHumansFa($n->created_at),
             ];
         });
 

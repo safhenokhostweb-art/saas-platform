@@ -155,7 +155,7 @@
                 <td style="font-size:.75rem;color:#6b7280;">{{ $inc->typeLabel() }}</td>
                 <td style="font-size:.75rem;color:#374151;">{{ $inc->assignedTo?->name ?? '—' }}</td>
                 <td style="font-size:.72rem;color:#9ca3af;white-space:nowrap;">
-                    {{ \App\Helpers\NumberHelper::toPersianNumbers($inc->created_at->format('Y/m/d')) }}
+                    {{ \App\Helpers\Jalali::formatFa($inc->created_at, 'Y/m/d') }}
                 </td>
                 <td>
                     <div class="inc-actions">

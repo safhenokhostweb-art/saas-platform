@@ -346,7 +346,7 @@
                     <td style="font-family:monospace;font-size:.73rem;color:#374151;">{{ $cmd }}</td>
                     <td style="color:#6b7280;font-size:.75rem">
                         @if($run)
-                            {{ $run->started_at?->diffForHumans() ?? '—' }}
+                            {{ $run->started_at ? \App\Helpers\Jalali::diffForHumansFa($run->started_at) : '—' }}
                         @else
                             <span style="color:#94a3b8">اجرا نشده</span>
                         @endif
@@ -406,7 +406,7 @@
                     </div>
                     <div>
                         <div style="font-weight:700;color:{{ $bColor }};font-size:.875rem">{{ $bStatus === 'success' ? 'موفق' : 'ناموفق' }}</div>
-                        <div style="font-size:.75rem;color:#374151;margin-top:.15rem">{{ $latestBackup->started_at?->diffForHumans() }}</div>
+                        <div style="font-size:.75rem;color:#374151;margin-top:.15rem">{{ $latestBackup->started_at ? \App\Helpers\Jalali::diffForHumansFa($latestBackup->started_at) : '' }}</div>
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;font-size:.8rem">
@@ -428,7 +428,7 @@
                     @endif
                     <div>
                         <div style="color:#9ca3af;font-size:.7rem;font-weight:600;margin-bottom:.2rem">زمان شروع</div>
-                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\NumberHelper::toPersianNumbers($latestBackup->started_at?->format('Y/m/d H:i') ?? '') }}</div>
+                        <div style="color:#1f2937;font-weight:500">{{ \App\Helpers\Jalali::formatFa($latestBackup->started_at, 'Y/m/d H:i') }}</div>
                     </div>
                 </div>
                 @if($latestBackup->error_message)
@@ -505,7 +505,7 @@
                         </span>
                     </td>
                     <td class="text-xs text-gray-500">
-                        {{ $log->checked_at ? $log->checked_at->diffForHumans() : '—' }}
+                        {{ $log->checked_at ? \App\Helpers\Jalali::diffForHumansFa($log->checked_at) : '—' }}
                     </td>
                     <td>
                         @if($log->response_time_ms !== null)
@@ -609,7 +609,7 @@
                 <div class="inc-title">{{ $incident->title }}</div>
                 <div class="inc-meta">
                     {{ $incident->site->title ?? 'پلتفرم' }} ·
-                    {{ $incident->created_at->diffForHumans() }} ·
+                    {{ \App\Helpers\Jalali::diffForHumansFa($incident->created_at) }} ·
                     <span class="font-mono text-xs">{{ $incident->type }}</span>
                 </div>
                 @if($incident->message)

@@ -29,4 +29,9 @@ class Jalali
     {
         return CoreJalali::isJalaliString($value);
     }
+
+    public static function diffForHumansFa($date): string
+    {
+        return CoreJalali::diffForHumansFaStatic($date);
+    }
 }

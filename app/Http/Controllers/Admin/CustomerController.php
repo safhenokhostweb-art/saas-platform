@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Jalali;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Reseller;
@@ -155,7 +156,7 @@ class CustomerController extends Controller
             $c->mobile,
             $c->sites->count(),
             $c->reseller?->company_name ?? '',
-            $c->created_at->format('Y-m-d H:i'),
+            Jalali::formatFa($c->created_at, 'Y/m/d H:i'),
         ]);
 
         $this->storage->writeCsv('', $filename, ['#', 'نام', 'شرکت', 'موبایل', 'تعداد سایت', 'نماینده', 'تاریخ ثبت'], $rows, 'exports');

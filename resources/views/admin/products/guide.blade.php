@@ -1,8 +1,8 @@
-@if(isset($eduGuides) && $eduGuides->isNotEmpty())
+﻿@if(isset($eduGuides) && $eduGuides->isNotEmpty())
     @php $eduArticle = $eduGuides->first(); @endphp
     @component('admin.partials.module-guide-box', [
         'guideTitle' => $eduArticle->title,
-        'updated'    => \App\Helpers\NumberHelper::toPersianNumbers($eduArticle->published_at?->format('Y/m/d') ?? '—'),
+        'updated'    => \App\Helpers\Jalali::formatFa($eduArticle->published_at, 'Y/m/d'),
         'id'         => 'products',
     ])
         {!! $eduArticle->body !!}

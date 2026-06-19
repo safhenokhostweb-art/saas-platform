@@ -78,7 +78,7 @@
       </div>
       @if($agent->last_health_checked_at)
       <div style="margin-top:.75rem;font-size:.78rem;color:#94a3b8">
-        آخرین بررسی: {{ $agent->last_health_checked_at->diffForHumans() }} —
+        آخرین بررسی: {{ \App\Helpers\Jalali::diffForHumansFa($agent->last_health_checked_at) }} —
         وضعیت: <span style="font-weight:700;color:{{ $agent->isHealthy() ? '#16a34a' : '#dc2626' }}">{{ $agent->last_health_status ?? '—' }}</span>
       </div>
       @endif

@@ -128,7 +128,7 @@
             </div>
             <div class="meta-item">
                 <span class="meta-label">آخرین بررسی</span>
-                <span class="meta-value">{{ $latestLog?->checked_at?->diffForHumans() ?? '—' }}</span>
+                <span class="meta-value">{{ $latestLog?->checked_at ? \App\Helpers\Jalali::diffForHumansFa($latestLog->checked_at) : '—' }}</span>
             </div>
             @if($latestLog)
             <div class="meta-item">
@@ -166,7 +166,7 @@
                         <span class="badge-s badge-s--{{ $dd < 7 ? 'critical' : ($dd < 14 ? 'warning' : 'healthy') }}">{{ \App\Helpers\NumberHelper::formatFa($dd) }}روز</span>
                     @else
                         @if($site->domain_expires_at)
-                            {{ \App\Helpers\NumberHelper::toPersianNumbers($site->domain_expires_at->format('Y/m/d')) }}
+                            {{ \App\Helpers\Jalali::formatFa($site->domain_expires_at, 'Y/m/d') }}
                         @else
                             <span style="color:#94a3b8">—</span>
                         @endif
@@ -339,7 +339,7 @@
                         <span class="badge-s ist-{{ $inc->status }}">{{ $inc->statusLabel() }}</span>
                     </td>
                     <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $inc->type }}</td>
-                    <td style="font-size:.75rem;color:#6b7280">{{ $inc->created_at->diffForHumans() }}</td>
+                    <td style="font-size:.75rem;color:#6b7280">{{ \App\Helpers\Jalali::diffForHumansFa($inc->created_at) }}</td>
                     <td style="font-size:.75rem;color:#374151">{{ $inc->assignedTo?->name ?? '—' }}</td>
                     <td>
                         <a href="{{ route('admin.incidents.show', $inc->id) }}" style="color:#4f46e5;font-size:.75rem;text-decoration:none">جزئیات ↗</a>
@@ -457,7 +457,7 @@
                             {{ $bk->duration_seconds ? \App\Helpers\NumberHelper::formatFa($bk->duration_seconds) . 'ث' : '—' }}
                         </td>
                         <td style="font-size:.73rem;color:#6b7280;white-space:nowrap">
-                            {{ $bk->started_at?->diffForHumans() }}
+                            {{ $bk->started_at ? \App\Helpers\Jalali::diffForHumansFa($bk->started_at) : '' }}
                         </td>
                     </tr>
                     @endforeach

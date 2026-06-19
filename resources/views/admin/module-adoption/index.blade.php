@@ -180,7 +180,7 @@
             <span class="font-medium text-gray-800">{{ $act->site_title }}</span>
             <span class="text-gray-400">·</span>
             <span class="text-gray-500 text-xs">{{ $act->domain }}</span>
-            <span class="mr-auto text-gray-400 text-xs">{{ \Carbon\Carbon::parse($act->activated_at)->diffForHumans() }}</span>
+            <span class="mr-auto text-gray-400 text-xs">{{ \App\Helpers\Jalali::diffForHumansFa(\Carbon\Carbon::parse($act->activated_at)) }}</span>
         </div>
         @endforeach
     </div>

@@ -36,7 +36,7 @@
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">{{ $req->status }}</span>
                         @endif
                     </td>
-                    <td class="p-3 text-gray-500">{{ \App\Helpers\Jalali::format($req->created_at) }}</td>
+                    <td class="p-3 text-gray-500">{{ \App\Helpers\Jalali::formatFa($req->created_at) }}</td>
                     <td class="p-3">
                         @if(!in_array($req->status, ['paid', 'rejected']))
                             <div class="flex items-center gap-3">

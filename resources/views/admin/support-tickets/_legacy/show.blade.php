@@ -92,7 +92,7 @@
                                 @elseif(\Carbon\Carbon::parse($reply->created_at)->isYesterday())
                                     دیروز
                                 @else
-                                    {{ Jalali::format($reply->created_at) }}
+                                    {{ Jalali::formatFa($reply->created_at) }}
                                 @endif
                             </span>
                         </div>
@@ -156,7 +156,7 @@
                 @endif
                 <div class="flex justify-between">
                     <span class="text-gray-500">تاریخ ایجاد</span>
-                    <span class="font-medium">{{ Jalali::format($supportTicket->created_at) }}</span>
+                    <span class="font-medium">{{ Jalali::formatFa($supportTicket->created_at) }}</span>
                 </div>
                 @if($supportTicket->resolved_at)
                 <div class="flex justify-between">
@@ -217,7 +217,7 @@
     </div>
 </div>
 @endsection
-                    <span class="font-medium">{{ Jalali::format($supportTicket->resolved_at) }}</span>
+                    <span class="font-medium">{{ Jalali::formatFa($supportTicket->resolved_at) }}</span>
                 </div>
                 @endif
             </div>

@@ -79,7 +79,7 @@
             <div class="text-xs text-gray-500 space-y-1">
                 <div class="flex justify-between"><span>حجم فایل:</span><span class="font-medium text-gray-700">{{ $latest->size_label }}</span></div>
                 <div class="flex justify-between"><span>دانلود:</span><span class="font-medium text-gray-700">{{ number_format($latest->download_count) }} بار</span></div>
-                <div class="flex justify-between"><span>آپلود:</span><span class="font-medium text-gray-700">{{ $latest->created_at->diffForHumans() }}</span></div>
+                <div class="flex justify-between"><span>آپلود:</span><span class="font-medium text-gray-700">{{ \App\Helpers\Jalali::diffForHumansFa($latest->created_at) }}</span></div>
             </div>
             <a href="{{ route('admin.app-releases.download', $latest) }}"
                class="{{ $c['btn'] }} text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
@@ -154,7 +154,7 @@
                             </span>
                         </td>
                         <td class="px-5 py-3 text-gray-500">{{ $release->uploader?->name ?? '—' }}</td>
-                        <td class="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">{{ $release->created_at->diffForHumans() }}</td>
+                        <td class="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">{{ \App\Helpers\Jalali::diffForHumansFa($release->created_at) }}</td>
                         <td class="px-5 py-3">
                             <div class="flex items-center gap-2">
                                 {{-- دانلود --}}

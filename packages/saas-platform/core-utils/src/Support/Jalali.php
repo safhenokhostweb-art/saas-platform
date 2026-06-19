@@ -99,4 +99,61 @@ class Jalali implements DateFormatterInterface
         $value = preg_replace('/[۰-۹]/', '0', trim($value));
         return (bool) preg_match('/^1[34]\d{2}[\-\/]/', $value);
     }
+
+    /**
+     * Persian relative time — replaces Carbon::diffForHumans() for UI.
+     * Returns strings like: همین الان / ۳ دقیقه پیش / دیروز / ۲ ماه پیش
+     */
+    public static function diffForHumansFaStatic(mixed $date): string
+    {
+        if ($date === null || $date === '') {
+            return '';
+        }
+        if (is_string($date)) {
+            try {
+                $date = Carbon::parse($date);
+            } catch (\Throwable $e) {
+                return '';
+            }
+        }
+        if (!$date instanceof Carbon && !$date instanceof \DateTimeInterface) {
+            return '';
+        }
+
+        $now = Carbon::now();
+        $carbon = $date instanceof Carbon ? $date : Carbon::instance($date);
+        $diffSeconds = (int) abs($now->diffInSeconds($carbon));
+        $isAgo = $carbon->lte($now);
+        $suffix = $isAgo ? ' پیش' : ' دیگر';
+
+        $persian = ['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴',
+                    '5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹'];
+
+        $n = fn(int $v): string => strtr((string)$v, $persian);
+
+        if ($diffSeconds < 60) {
+            return 'همین الان';
+        }
+        $diffMinutes = (int) ($diffSeconds / 60);
+        if ($diffMinutes < 60) {
+            return $n($diffMinutes) . ' دقیقه' . $suffix;
+        }
+        $diffHours = (int) ($diffSeconds / 3600);
+        if ($diffHours < 24) {
+            return $n($diffHours) . ' ساعت' . $suffix;
+        }
+        $diffDays = (int) ($diffSeconds / 86400);
+        if ($diffDays === 1) {
+            return $isAgo ? 'دیروز' : 'فردا';
+        }
+        if ($diffDays < 30) {
+            return $n($diffDays) . ' روز' . $suffix;
+        }
+        $diffMonths = (int) round($diffDays / 30);
+        if ($diffMonths < 12) {
+            return $n($diffMonths) . ' ماه' . $suffix;
+        }
+        $diffYears = (int) round($diffDays / 365);
+        return $n($diffYears) . ' سال' . $suffix;
+    }
 }

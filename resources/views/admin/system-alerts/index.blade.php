@@ -77,7 +77,7 @@
             @endif
             <div class="notif-meta">
                 <span class="notif-badge {{ $ic['badge'] }}">{{ $n->type }}</span>
-                <span>{{ $n->created_at->diffForHumans() }}</span>
+                <span>{{ \App\Helpers\Jalali::diffForHumansFa($n->created_at) }}</span>
                 @if($n->isRead())
                 <span class="text-emerald-500 font-medium">✓ خوانده شد</span>
                 @endif

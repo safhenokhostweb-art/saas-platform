@@ -89,7 +89,7 @@
                     @endif
                 </td>
                 <td class="px-4 py-3 text-gray-600">{{ number_format($article->view_count) }}</td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ $article->created_at->diffForHumans() }}</td>
+                <td class="px-4 py-3 text-gray-500 text-xs">{{ \App\Helpers\Jalali::diffForHumansFa($article->created_at) }}</td>
                 <td class="px-4 py-3">
                     <div class="flex gap-2">
                         <a href="{{ route('admin.kb.edit', $article) }}"

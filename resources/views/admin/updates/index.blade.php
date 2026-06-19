@@ -49,7 +49,7 @@
                             <span class="font-medium">{{ $up->version_label }}</span>
                             <span class="text-gray-500 text-sm"> — {{ $up->site->title ?? '—' }}</span>
                         </div>
-                        <span class="text-xs text-gray-500">{{ $up->distributed_at ? \App\Helpers\Jalali::format($up->distributed_at) : '—' }}</span>
+                        <span class="text-xs text-gray-500">{{ $up->distributed_at ? \App\Helpers\Jalali::formatFa($up->distributed_at) : '—' }}</span>
                     </div>
                 @endforeach
             </div>

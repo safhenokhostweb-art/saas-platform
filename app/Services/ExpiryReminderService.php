@@ -87,7 +87,7 @@ class ExpiryReminderService
     public function sendReminder(Site $site, string $type, DateTimeInterface $expiresAt, string $labelFa): void
     {
         $expiresAt = Carbon::instance($expiresAt);
-        $dateFa = Jalali::format($expiresAt);
+        $dateFa = Jalali::formatFa($expiresAt);
         $daysLeft = (int) now()->diffInDays($expiresAt, false);
         $title = "هشدار انقضای {$labelFa}";
         $body = "تاریخ انقضای {$labelFa}: {$dateFa} (حدود {$daysLeft} روز مانده). لطفاً برای تمدید اقدام کنید.";

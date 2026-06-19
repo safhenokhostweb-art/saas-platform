@@ -166,7 +166,7 @@
                 <td class="px-4 py-3 text-center text-gray-700">{{ number_format($usage->file_count) }}</td>
                 <td class="px-4 py-3 text-center text-xs text-gray-400">
                   @if($usage->calculated_at)
-                    {{ $usage->calculated_at->diffForHumans() }}
+                    {{ \App\Helpers\Jalali::diffForHumansFa($usage->calculated_at) }}
                   @else
                     <span class="text-red-400">هنوز نه</span>
                   @endif

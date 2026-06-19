@@ -57,7 +57,7 @@
                             عادی
                         @endif
                     </td>
-                    <td class="p-3">{{ \App\Helpers\Jalali::format($t->created_at) }}</td>
+                    <td class="p-3">{{ \App\Helpers\Jalali::formatFa($t->created_at) }}</td>
                     <td class="p-3">
                         <a href="{{ route('customer.support-tickets.show', $t) }}" class="text-blue-600 hover:underline">مشاهده</a>
                     </td>

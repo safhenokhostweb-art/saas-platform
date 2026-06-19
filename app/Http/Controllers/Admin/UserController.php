@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Jalali;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
@@ -230,7 +231,7 @@ class UserController extends Controller
             $u->hasTwoFactorEnabled() ? 'فعال' : 'غیرفعال',
             $u->groups->pluck('name')->implode('، '),
             $u->tags->pluck('name')->implode('، '),
-            $u->created_at->format('Y-m-d H:i'),
+            Jalali::formatFa($u->created_at, 'Y/m/d H:i'),
         ]);
 
         $this->storage->writeCsv('', $filename, ['#', 'موبایل', 'نام', 'وضعیت', 'ادمین', '2FA', 'گروه‌ها', 'برچسب‌ها', 'تاریخ ثبت‌نام'], $rows, 'exports');

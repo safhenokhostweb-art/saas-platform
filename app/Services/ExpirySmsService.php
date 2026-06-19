@@ -37,7 +37,7 @@ class ExpirySmsService
         }
 
         $expiresAt = Carbon::instance($expiresAt);
-        $dateFa = Jalali::format($expiresAt);
+        $dateFa = Jalali::formatFa($expiresAt);
         $daysLeft = (int) now()->diffInDays($expiresAt, false);
         $platformName = PlatformSettings::platformName();
         $message = $this->buildMessage($platformName, $site->title, $typeFa, $dateFa, $daysLeft);

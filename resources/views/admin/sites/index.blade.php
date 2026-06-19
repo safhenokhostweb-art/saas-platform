@@ -65,7 +65,7 @@
                             <span class='text-gray-400'>—</span>
                         @endif
                     </td>
-                    <td class='p-3 text-gray-500'>{{ $site->created_at->format('Y/m/d') }}</td>
+                    <td class='p-3 text-gray-500'>{{ \App\Helpers\Jalali::formatFa($site->created_at, 'Y/m/d') }}</td>
                     <td class='p-3'>
                         <a href="{{ route('admin.sites.edit', $site) }}" class='text-blue-600 hover:underline text-xs'>ویرایش</a>
                         <a href="{{ route('admin.sites.license.create', $site) }}" class='text-indigo-600 hover:underline text-xs mr-2'>صدور لایسنس</a>

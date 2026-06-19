@@ -105,7 +105,7 @@
         <div class="p-2 bg-gray-50 rounded-lg"><svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
         <div>
           <p class="text-xs text-gray-500">آخرین محاسبه</p>
-          <p class="font-semibold text-gray-900 text-xs">{{ $usage->calculated_at ? $usage->calculated_at->diffForHumans() : 'هنوز نه' }}</p>
+          <p class="font-semibold text-gray-900 text-xs">{{ $usage->calculated_at ? \App\Helpers\Jalali::diffForHumansFa($usage->calculated_at) : 'هنوز نه' }}</p>
         </div>
       </div>
     </div>
@@ -301,7 +301,7 @@
           <tbody class="divide-y divide-gray-100">
             @foreach($snapshots as $snap)
               <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 text-gray-700">{{ $snap->snapshot_date->format('Y-m-d') }}</td>
+                <td class="px-4 py-2 text-gray-700">{{ \App\Helpers\Jalali::formatFa($snap->snapshot_date, 'Y/m/d') }}</td>
                 <td class="px-4 py-2 text-center text-gray-600">\App\Models\SiteResourceUsage::formatBytes($snap->storage_bytes)</td>
                 <td class="px-4 py-2 text-center text-gray-600">{{ \App\Models\SiteResourceUsage::formatBytes($snap->db_bytes) }}</td>
                 <td class="px-4 py-2 text-center text-gray-600">{{ \App\Models\SiteResourceUsage::formatBytes($snap->backup_bytes) }}</td>

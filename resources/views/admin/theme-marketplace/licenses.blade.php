@@ -45,7 +45,7 @@
               <td class="px-6 py-3 font-medium text-gray-800">{{ $lic->theme?->name ?? '—' }}</td>
               <td class="px-6 py-3 text-gray-600">{{ $lic->site?->title ?? '—' }} <span class="text-xs text-gray-400">#{{ $lic->site_id }}</span></td>
               <td class="px-6 py-3 font-mono text-xs text-gray-500 select-all">{{ $lic->license_key }}</td>
-              <td class="px-6 py-3 text-gray-500 text-xs">{{ $lic->purchased_at->format('Y/m/d') }}</td>
+              <td class="px-6 py-3 text-gray-500 text-xs">{{ \App\Helpers\Jalali::formatFa($lic->purchased_at, 'Y/m/d') }}</td>
               <td class="px-6 py-3">
                 <form method="POST" action="{{ route('admin.theme-marketplace.revoke-license', $lic) }}"
                   onsubmit="return confirm('لغو لایسنس؟')">
@@ -99,7 +99,7 @@
               <td class="px-6 py-3 font-mono text-gray-700">{{ number_format($order->amount_rial) }}</td>
               <td class="px-6 py-3 text-gray-500">{{ $order->gateway ?? '—' }}</td>
               <td class="px-6 py-3"><span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $st['cls'] }}">{{ $st['text'] }}</span></td>
-              <td class="px-6 py-3 text-gray-400 text-xs">{{ $order->created_at->format('Y/m/d') }}</td>
+              <td class="px-6 py-3 text-gray-400 text-xs">{{ \App\Helpers\Jalali::formatFa($order->created_at, 'Y/m/d') }}</td>
             </tr>
           @empty
             <tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">سفارشی ثبت نشده</td></tr>

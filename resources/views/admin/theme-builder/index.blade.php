@@ -86,7 +86,7 @@
                             <span class="text-amber-600">پیش‌نویس</span>
                         @endif
                     </td>
-                    <td class="p-3 text-gray-600">{{ $theme->updated_at?->format('Y/m/d H:i') }}</td>
+                    <td class="p-3 text-gray-600">{{ \App\Helpers\Jalali::formatFa($theme->updated_at, 'Y/m/d H:i') }}</td>
                     <td class="p-3 flex flex-wrap items-center gap-1">
                         <a href="{{ route('admin.theme-builder.canvas', $theme) }}"
                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition">
