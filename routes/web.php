@@ -453,6 +453,15 @@ Route::prefix('admin')
         Route::get('sites/{site}/license', [SiteLicenseController::class, 'create'])->name('sites.license.create');
         Route::post('sites/{site}/license', [SiteLicenseController::class, 'store'])->name('sites.license.store');
         Route::get('sites/{site}/license/show', [SiteLicenseController::class, 'show'])->name('sites.license.show');
+
+        // LIFECYCLE: Customer site lifecycle management
+        Route::get('lifecycle', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'overview'])->name('lifecycle.overview');
+        Route::get('lifecycle/settings', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'settings'])->name('lifecycle.settings');
+        Route::put('lifecycle/settings', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'updateSettings'])->name('lifecycle.settings.update');
+        Route::get('sites/{site}/lifecycle', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'index'])->name('sites.lifecycle.index');
+        Route::post('sites/{site}/lifecycle/transition', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'forceTransition'])->name('sites.lifecycle.transition');
+        Route::post('sites/{site}/lifecycle/restore', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'forceRestore'])->name('sites.lifecycle.restore');
+        Route::post('sites/{site}/lifecycle/invoices/{invoice}/paid', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'markInvoicePaid'])->name('sites.lifecycle.invoice-paid');
         Route::middleware('notifications.enabled')->group(function () {
             Route::get('sites/notifications/create-bulk', [SiteNotificationController::class, 'createBulk'])->name('sites.notifications.create-bulk');
             Route::post('sites/notifications/store-bulk', [SiteNotificationController::class, 'storeBulk'])->name('sites.notifications.store-bulk');

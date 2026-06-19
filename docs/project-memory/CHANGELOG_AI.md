@@ -5,6 +5,81 @@
 
 ---
 
+## 2026-06-19 — LIFECYCLE-1: Customer Site Lifecycle Management System — COMPLETE
+
+**Reason:** Implement complete lifecycle state machine for customer sites based on subscription/hosting payments.
+
+### Files Changed (saas-platform)
+- `database/migrations/2026_06_19_100001_add_lifecycle_columns_to_sites_table.php` — 10 new columns on sites
+- `database/migrations/2026_06_19_100002_create_site_lifecycle_logs_table.php` — audit log
+- `database/migrations/2026_06_19_100003_create_site_lifecycle_invoices_table.php` — reactivation invoices
+- `app/Models/Site.php` — 5 constants, lifecycle fillable/casts, 11 lifecycle helper methods + 2 relations
+- `app/Models/SiteLifecycleLog.php` — NEW model
+- `app/Models/SiteLifecycleInvoice.php` — NEW model with type/status constants
+- `app/Services/Lifecycle/SiteLifecycleService.php` — NEW: core state machine, all transition methods, push to customer-site DB
+- `app/Services/Lifecycle/SiteArchiveService.php` — NEW: ZIP archive package creation
+- `app/Services/Lifecycle/SiteLifecycleNotificationService.php` — NEW: SMS + notification center dispatch
+- `app/Console/Commands/CheckExpiredSitesCommand.php` — NEW: lifecycle:check-expired
+- `app/Console/Commands/CheckGracePeriodSitesCommand.php` — NEW: lifecycle:check-grace-period
+- `app/Console/Commands/CheckSuspendedSitesCommand.php` — NEW: lifecycle:check-suspended
+- `app/Console/Commands/CheckArchivedSitesCommand.php` — NEW: lifecycle:check-archived
+- `app/Console/Kernel.php` — 4 new scheduled commands (08:05, 08:10, 03:05, 04:05 daily)
+- `app/Http/Controllers/Admin/SiteLifecycleController.php` — NEW: 7 actions
+- `resources/views/admin/lifecycle/overview.blade.php` — NEW: platform-wide lifecycle KPIs + site tables
+- `resources/views/admin/lifecycle/index.blade.php` — NEW: per-site lifecycle management panel
+- `resources/views/admin/lifecycle/settings.blade.php` — NEW: configurable thresholds and fees
+- `config/lifecycle.php` — NEW: 6 env-driven config keys
+- `routes/web.php` — 7 new lifecycle routes
+- `app/Helpers/AdminMenu.php` — lifecycle key added to MENU_KEYS/ROUTES/PATTERNS + زیرساخت group
+- `resources/views/admin/partials/sidebar-icon.blade.php` — lifecycle icon
+- `resources/views/admin/partials/sidebar-icon-bare.blade.php` — lifecycle icon
+- `docs/CUSTOMER_SITE_LIFECYCLE_ARCHITECTURE.md` — NEW: complete architecture doc
+
+### Files Changed (customer-site)
+- `app/Http/Middleware/CheckSiteLifecycle.php` — NEW: reads site_lifecycle_status setting, shows suspended page
+- `bootstrap/app.php` — CheckSiteLifecycle appended to web middleware group
+- `resources/views/front/suspended.blade.php` — NEW: professional 503 suspended page (RTL, Vazirmatn, indigo)
+- `resources/views/admin/partials/lifecycle-widget.blade.php` — NEW: admin dashboard lifecycle status widget
+- `resources/views/admin/dashboard.blade.php` — @include lifecycle-widget
+
+### Key Design Decisions
+- State machine: active→grace_period→suspended→archived→deleted (no illegal transitions allowed)
+- Status pushed to customer-site settings table via dynamic DB connection on every transition
+- All fees configurable via .env (default 0 = free restore)
+- Archive package captures platform-side config only (site_snapshot.json + theme_data.json)
+- Customer admin panel always accessible even when site is suspended (for invoice payment)
+- Suspended public page returns HTTP 503 (proper for SEO/crawlers)
+- Admin paths (/admin, /login, /api) always bypass lifecycle check
+
+---
+
+## 2026-06-19 — TB3 Sprint 4: Visual Nested Containers & Structure Editor — TB3_SPRINT4_CERTIFIED
+
+**Reason:** Sprint 4 of Theme Builder V3 — add hierarchical nested block editing.
+
+### Files Changed (saas-platform)
+- `app/Services/ThemeBuilder/BlockRegistry.php` — added `flex_container` block type (6 props: label/direction/gap/alignItems/justifyContent/wrap/minHeight)
+- `app/Services/ThemeBuilder/BlockRenderer.php` — `renderFlex_container()`, children lookup with 3-location backward compat, `wrapEditorMode()` adds `data-tb-container`
+- `resources/views/admin/theme-builder/canvas.blade.php` — full TB4 rewrite: structure tree tab, path-based selection, container children panel, 20+ new/updated JS methods
+- `resources/views/admin/theme-builder/canvas-live-preview.blade.php` — container CSS, `setContainerTarget` handler, `getContainerAtPoint()`, top-level-only drop index
+
+### Files Changed (customer-site)
+- `config/builder-element-schemas.php` — `flex_container` schema
+- `app/Services/ThemeBuilder/BlockRenderer.php` — same 3 changes
+- `resources/views/admin/theme-design/canvas-editor.blade.php` — full TB4 mirror of all changes
+- `resources/views/admin/theme-design/canvas-live-preview.blade.php` — same CSS/JS changes
+
+### Key Changes
+- `selectedPath: null | [i0, i1, ...]` replaces `selectedIndex: -1` — selectedIndex now computed getter
+- `getBlockByPath`, `findBlockPath`, `flattenTree`, `getSiblingArray` — tree traversal helpers
+- `normalizeBlock()` recurses into children, migrates `block.blocks`/`block.props.blocks` → `block.children`
+- Container drop: `getContainerAtPoint(x,y)` in iframe, `containerId` in `dropIndexResult`, `setContainerTarget` CSS highlight
+- Both editors: blocks/tree tab toggle, container children panel, add-child modal
+
+**Certification:** 5 findings, all resolved. `docs/TB3_SPRINT4_CERTIFICATION.md` — TB3_SPRINT4_CERTIFIED.
+
+---
+
 ## 2026-06-19 — TB3 Sprint 3 Certification Audit — TB3_SPRINT3_CERTIFIED
 
 **Reason:** Independent certification audit of all TB3 Sprint 3 features across both repos.  

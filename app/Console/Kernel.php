@@ -53,6 +53,30 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/runtime-anomalies.log'));
+
+        // LIFECYCLE: Check expired sites → GRACE_PERIOD (daily 08:05)
+        $schedule->command('lifecycle:check-expired')
+            ->dailyAt('08:05')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/lifecycle.log'));
+
+        // LIFECYCLE: Process GRACE_PERIOD reminders + suspensions (daily 08:10)
+        $schedule->command('lifecycle:check-grace-period')
+            ->dailyAt('08:10')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/lifecycle.log'));
+
+        // LIFECYCLE: Archive SUSPENDED sites past 90 days (daily 03:05)
+        $schedule->command('lifecycle:check-suspended')
+            ->dailyAt('03:05')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/lifecycle.log'));
+
+        // LIFECYCLE: Delete ARCHIVED sites past 365 days (daily 04:05)
+        $schedule->command('lifecycle:check-archived')
+            ->dailyAt('04:05')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/lifecycle.log'));
     }
 
     /**

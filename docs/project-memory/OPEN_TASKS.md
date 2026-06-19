@@ -4,6 +4,39 @@
 
 ---
 
+## COMPLETE: LIFECYCLE-1 — Customer Site Lifecycle Management System — 2026-06-19 ✅
+
+**Status:** COMPLETE (2026-06-19) — both repos updated
+
+| Sub-task | Status |
+|----------|--------|
+| 3 migrations (sites lifecycle columns, logs, invoices) | ✅ DONE |
+| SiteLifecycleLog + SiteLifecycleInvoice models; Site model methods | ✅ DONE |
+| SiteLifecycleService (state machine + push to customer-site DB) | ✅ DONE |
+| SiteArchiveService (ZIP archive package) | ✅ DONE |
+| SiteLifecycleNotificationService (SMS + dashboard) | ✅ DONE |
+| 4 scheduler commands (check-expired/grace/suspended/archived) | ✅ DONE |
+| Kernel.php — 4 daily schedule entries | ✅ DONE |
+| SiteLifecycleController (7 actions) | ✅ DONE |
+| 3 admin views (overview/index/settings) | ✅ DONE |
+| Routes in web.php (7 lifecycle routes) | ✅ DONE |
+| AdminMenu + sidebar icons | ✅ DONE |
+| config/lifecycle.php | ✅ DONE |
+| customer-site: CheckSiteLifecycle middleware | ✅ DONE |
+| customer-site: bootstrap/app.php middleware registration | ✅ DONE |
+| customer-site: suspended.blade.php (professional 503 page) | ✅ DONE |
+| customer-site: lifecycle-widget.blade.php (dashboard component) | ✅ DONE |
+| customer-site: dashboard.blade.php — @include widget | ✅ DONE |
+| CUSTOMER_SITE_LIFECYCLE_ARCHITECTURE.md | ✅ DONE |
+
+**⚠️ PENDING PRODUCTION STEP:**
+```bash
+# Run migrations on production:
+php artisan migrate
+```
+
+---
+
 ## COMPLETE: TB3 Sprint 3 — Inline Editing + Advanced Style + Media Manager — 2026-06-19 ✅
 
 **Status:** COMPLETE (2026-06-19) — both repos updated and deployed

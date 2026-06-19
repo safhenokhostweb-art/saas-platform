@@ -21,10 +21,21 @@
 
 ## CURRENT STATE (2026-06-19)
 
-**Last completed phase:** TB3 Sprint 3 Certification Audit — `TB3_SPRINT3_CERTIFIED` (2026-06-19)  
-**Before that:** TB3 Sprint 3 — Inline Editing (TB3-04), Advanced Style Panel (TB3-05), Media Manager (TB3-07) — COMPLETE (2026-06-19)  
-**Status:** Both repos updated, deployed, and certified. Certification doc at `docs/TB3_SPRINT3_CERTIFICATION.md`.  
-**Next recommended milestone:** TB3 Sprint 4 — fix 2 MEDIUM findings (caption placeholder + wrap order), then nested containers or mobile preview.
+**Last completed phase:** LIFECYCLE-1 — Customer Site Lifecycle Management System — COMPLETE (2026-06-19)  
+**Before that:** TB3 Sprint 4 — Visual Nested Containers & Structure Editor — `TB3_SPRINT4_CERTIFIED` (2026-06-19)  
+**Status:** Both repos updated. Lifecycle state machine, 4 scheduler commands, admin panel (3 views), customer-site middleware + suspended page + dashboard widget. Migrations pending `php artisan migrate` on production.  
+**Next recommended milestone:** TB3 Sprint 5 or additional lifecycle features (customer self-service payment flow).
+
+### LIFECYCLE-1 Summary (2026-06-19)
+
+**5 States:** active → grace_period → suspended → archived → deleted  
+**3 Migrations:** lifecycle columns on sites, site_lifecycle_logs, site_lifecycle_invoices  
+**3 Services:** SiteLifecycleService (state machine + push), SiteArchiveService (ZIP), SiteLifecycleNotificationService (SMS + dashboard)  
+**4 Commands:** check-expired / check-grace-period / check-suspended / check-archived (all daily, Kernel wired)  
+**Admin Panel:** `/admin/lifecycle` overview, `/admin/sites/{site}/lifecycle` per-site, `/admin/lifecycle/settings`  
+**Customer-site:** CheckSiteLifecycle middleware, suspended page (503), dashboard widget  
+**Config:** `config/lifecycle.php` — 6 keys (grace days, archive days, delete days, 3 fees)  
+**Architecture doc:** `docs/CUSTOMER_SITE_LIFECYCLE_ARCHITECTURE.md`
 
 ### Production Certification Summary (2026-06-19)
 

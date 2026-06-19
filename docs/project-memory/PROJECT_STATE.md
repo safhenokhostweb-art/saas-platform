@@ -16,13 +16,13 @@
 
 ## Current Module
 
-**THEME BUILDER V3 — Sprint 1 — COMPLETE (2026-06-16)**
+**LIFECYCLE-1 — Customer Site Lifecycle Management — COMPLETE (2026-06-19)**
 
 ---
 
 ## Current Phase
 
-**TB3 Sprint 1: Live Iframe Canvas + block.props unification + Drag from Library**
+**LIFECYCLE-1: Full lifecycle state machine for all customer sites**
 
 TB3-01: block.props canonical everywhere (data→props normalization on load)  
 TB3-02: Live iframe center panel replacing block-card-list  

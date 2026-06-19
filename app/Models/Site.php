@@ -17,6 +17,20 @@ class Site extends Model implements SiteModelInterface
 
     public function getNameAttribute(): ?string { return $this->title; }
 
+    const LIFECYCLE_ACTIVE        = 'active';
+    const LIFECYCLE_GRACE_PERIOD  = 'grace_period';
+    const LIFECYCLE_SUSPENDED     = 'suspended';
+    const LIFECYCLE_ARCHIVED      = 'archived';
+    const LIFECYCLE_DELETED       = 'deleted';
+
+    const LIFECYCLE_STATES = [
+        self::LIFECYCLE_ACTIVE,
+        self::LIFECYCLE_GRACE_PERIOD,
+        self::LIFECYCLE_SUSPENDED,
+        self::LIFECYCLE_ARCHIVED,
+        self::LIFECYCLE_DELETED,
+    ];
+
     protected $fillable = [
         'customer_id',
         'title',
@@ -36,16 +50,33 @@ class Site extends Model implements SiteModelInterface
         'payment_gateway_id',
         'theme_id',
         'features',
+        'lifecycle_status',
+        'lifecycle_changed_at',
+        'grace_period_started_at',
+        'grace_period_ends_at',
+        'suspended_at',
+        'suspended_reason',
+        'archived_at',
+        'archive_path',
+        'restore_requested_at',
+        'lifecycle_deleted_at',
     ];
 
     protected $casts = [
-        'support_expires_at' => 'date',
-        'host_expires_at' => 'date',
-        'domain_expires_at' => 'date',
-        'support_starts_at' => 'date',
-        'is_active' => 'boolean',
-        'customer_menu_keys' => 'array',
-        'features' => 'array',
+        'support_expires_at'     => 'date',
+        'host_expires_at'        => 'date',
+        'domain_expires_at'      => 'date',
+        'support_starts_at'      => 'date',
+        'is_active'              => 'boolean',
+        'customer_menu_keys'     => 'array',
+        'features'               => 'array',
+        'lifecycle_changed_at'   => 'datetime',
+        'grace_period_started_at'=> 'datetime',
+        'grace_period_ends_at'   => 'datetime',
+        'suspended_at'           => 'datetime',
+        'archived_at'            => 'datetime',
+        'restore_requested_at'   => 'datetime',
+        'lifecycle_deleted_at'   => 'datetime',
     ];
 
     public function customer()
@@ -233,5 +264,103 @@ class Site extends Model implements SiteModelInterface
     public function getPurchasedModuleIds(): array
     {
         return app(\App\Services\ModuleLicenseService::class)->getLicensedModuleIdsForSite($this);
+    }
+
+    // ── Lifecycle Relations ──────────────────────────────────────────────────
+
+    public function lifecycleLogs()
+    {
+        return $this->hasMany(\App\Models\SiteLifecycleLog::class)->orderByDesc('created_at');
+    }
+
+    public function lifecycleInvoices()
+    {
+        return $this->hasMany(\App\Models\SiteLifecycleInvoice::class)->orderByDesc('created_at');
+    }
+
+    // ── Lifecycle State Helpers ──────────────────────────────────────────────
+
+    public function getLifecycleStatus(): string
+    {
+        return $this->lifecycle_status ?? self::LIFECYCLE_ACTIVE;
+    }
+
+    public function isLifecycleActive(): bool
+    {
+        return $this->getLifecycleStatus() === self::LIFECYCLE_ACTIVE;
+    }
+
+    public function isInGracePeriod(): bool
+    {
+        return $this->getLifecycleStatus() === self::LIFECYCLE_GRACE_PERIOD;
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->getLifecycleStatus() === self::LIFECYCLE_SUSPENDED;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->getLifecycleStatus() === self::LIFECYCLE_ARCHIVED;
+    }
+
+    public function isLifecycleDeleted(): bool
+    {
+        return $this->getLifecycleStatus() === self::LIFECYCLE_DELETED;
+    }
+
+    public function isPubliclyAccessible(): bool
+    {
+        return in_array($this->getLifecycleStatus(), [self::LIFECYCLE_ACTIVE, self::LIFECYCLE_GRACE_PERIOD], true);
+    }
+
+    public function lifecycleStatusLabel(): string
+    {
+        return \App\Models\SiteLifecycleInvoice::statusLabel($this->getLifecycleStatus());
+    }
+
+    public function lifecycleStatusBadgeClass(): string
+    {
+        return match ($this->getLifecycleStatus()) {
+            self::LIFECYCLE_ACTIVE        => 'bg-green-100 text-green-800',
+            self::LIFECYCLE_GRACE_PERIOD  => 'bg-yellow-100 text-yellow-800',
+            self::LIFECYCLE_SUSPENDED     => 'bg-red-100 text-red-800',
+            self::LIFECYCLE_ARCHIVED      => 'bg-gray-100 text-gray-700',
+            self::LIFECYCLE_DELETED       => 'bg-black text-white',
+            default                       => 'bg-gray-100 text-gray-600',
+        };
+    }
+
+    /** Days remaining in grace period (null if not in grace period) */
+    public function gracePeriodDaysRemaining(): ?int
+    {
+        if (! $this->isInGracePeriod() || ! $this->grace_period_ends_at) {
+            return null;
+        }
+        return max(0, (int) now()->diffInDays($this->grace_period_ends_at, false));
+    }
+
+    /** Days since suspension (null if not suspended) */
+    public function daysSinceSuspension(): ?int
+    {
+        if (! $this->isSuspended() || ! $this->suspended_at) {
+            return null;
+        }
+        return (int) $this->suspended_at->diffInDays(now());
+    }
+
+    /** Days since archival (null if not archived) */
+    public function daysSinceArchival(): ?int
+    {
+        if (! $this->isArchived() || ! $this->archived_at) {
+            return null;
+        }
+        return (int) $this->archived_at->diffInDays(now());
+    }
+
+    public function pendingLifecycleInvoice(): ?\App\Models\SiteLifecycleInvoice
+    {
+        return $this->lifecycleInvoices()->where('status', 'pending')->first();
     }
 }
