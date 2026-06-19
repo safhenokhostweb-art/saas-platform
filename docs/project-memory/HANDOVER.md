@@ -21,10 +21,11 @@
 
 ## CURRENT STATE (2026-06-19)
 
-**Last completed phase:** LIFECYCLE-2 — Storage & Resource Governance — COMPLETE (2026-06-19)  
-**Before that:** LIFECYCLE-1 — Customer Site Lifecycle Management System — COMPLETE (2026-06-19)  
-**Status:** Both repos updated and deployed. Full resource governance: 4 tables, 4 models, 4 services, 4 scheduler commands, admin panel (3 views), customer-site widget + account/resources page. Lifecycle integration: archive() now releases active resources.  
-**Next recommended milestone:** TB3 Sprint 6 (export theme ZIP / page templates / copy-paste across pages) or additional lifecycle/billing features.
+**Last completed phase:** TB3 Sprint 6 — Professional Template Library — CERTIFIED COMPLETE (2026-06-19)  
+**Before that:** LIFECYCLE-2 — Storage & Resource Governance — COMPLETE (2026-06-19)  
+**Status:** Both repos committed and deployed. Full template library: theme_templates + theme_packs tables, 3 services, 7 admin views, canvas integration (modal + save-as-template), 6 API endpoints, AdminMenu wiring.  
+**Certification:** `docs/TB3_SPRINT6_CERTIFICATION.md` — TB3_SPRINT6_CERTIFIED  
+**Next recommended milestone:** Additional UX improvements, or next sprint from backlog.
 
 ### LIFECYCLE-2 Summary (2026-06-19)
 
