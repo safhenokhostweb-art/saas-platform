@@ -106,4 +106,12 @@ return [
         'key' => env('ANTHROPIC_API_KEY', ''),
     ],
 
+    // Customer-site default DB credentials — auto-filled on new site creation
+    'customer_db' => [
+        'host'     => env('CUSTOMER_DB_HOST', '127.0.0.1'),
+        'user'     => env('CUSTOMER_DB_USER', ''),
+        'password' => env('CUSTOMER_DB_PASSWORD', ''),
+        'name'     => env('CUSTOMER_DB_NAME', 'customer_site'),
+    ],
+
 ];

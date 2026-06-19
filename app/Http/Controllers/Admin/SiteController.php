@@ -109,6 +109,15 @@ class SiteController extends Controller
         if (Schema::hasColumn('sites', 'customer_menu_keys')) {
             $data['customer_menu_keys'] = $request->input('customer_menu_keys', array_keys(CustomerMenu::MENU_KEYS));
         }
+
+        // Auto-fill customer-site DB credentials from platform env if not provided
+        if (empty($data['db_host']) && config('services.customer_db.host')) {
+            $data['db_host']     = config('services.customer_db.host');
+            $data['db_user']     = $data['db_user']     ?: config('services.customer_db.user');
+            $data['db_password'] = $data['db_password'] ?: config('services.customer_db.password');
+            $data['db_name']     = $data['db_name']     ?: config('services.customer_db.name');
+        }
+
         $site = Site::create($data);
 
         // اتصال ماژول‌ها به سایت

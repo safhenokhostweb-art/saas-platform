@@ -320,3 +320,43 @@ Prevent platform admin from doing operational work on behalf of tenants. Platfor
 
 **Impact:**  
 This map is the authoritative reference for any future module development decisions.
+
+---
+
+## ADR-016
+
+**Date:** 2026-06-20
+**Title:** Theme Creation vs. Theme Customization — Permanent Access Boundary
+
+**Context:**
+TB3 Sprints 1–8 built the Theme Builder, Visual Page Builder, Template Library, and AI Generator. The architecture required a formal decision separating what platform admins can do from what customers (tenant admins) can do regarding themes.
+
+**Decision:**
+Two permanently separated access tiers for theme functionality:
+
+**CREATION (Platform Admin only — saas-platform):**
+- Create new themes from scratch
+- Edit theme definitions in the theme catalog
+- Run the AI Theme Generator (all 4 input modes)
+- Create and manage Theme Packs
+- Publish themes to the Marketplace
+- Administer Marketplace listings, featured flags, and license revocations
+
+**CUSTOMIZATION (Customer / Tenant Admin — customer-site):**
+- Edit all blocks, sections, header, footer on any installed theme
+- Change colors, typography, spacing, responsive settings
+- Add, remove, reorder blocks
+- Add, clone, delete pages
+- Replace images and media
+- Save page templates (scoped to their own site)
+- Browse the Marketplace, purchase, and install themes
+- Export/import their customized canvas data
+
+**Reason:**
+Themes are platform intellectual property. Customers buy a license to use and customize a theme, not to build or sell competing themes. This is the same model as Elementor / ThemeForest: install → full customization freedom, but no authoring rights.
+
+**Impact:**
+- `ThemeAiController`, `ThemeAiGeneratorController`, `ThemeBuilderController`, `ThemePackController`, `ThemeMarketplaceAdminController` → registered only in `saas-platform/routes/web.php`
+- `ThemeDesignController`, `ThemeDesignMediaController`, `ThemeMarketplaceController` → registered only in `customer-site/routes/web.php`
+- Full architecture documented in `docs/CUSTOMER_THEME_CUSTOMIZATION_ARCHITECTURE.md`
+- Compliance audit as of 2026-06-20: 10/10 — all rules satisfied in current codebase

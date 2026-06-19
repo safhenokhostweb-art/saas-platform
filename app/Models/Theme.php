@@ -13,6 +13,47 @@ class Theme extends Model
     public const SOURCE_GENERATOR = 'generator';
     public const SOURCE_SEEDER = 'seeder';
 
+    public const CATEGORY_CORPORATE    = 'corporate';
+    public const CATEGORY_PERSONAL     = 'personal';
+    public const CATEGORY_BLOG         = 'blog';
+    public const CATEGORY_NEWS         = 'news';
+    public const CATEGORY_EDUCATIONAL  = 'educational';
+    public const CATEGORY_MEDICAL      = 'medical';
+    public const CATEGORY_LEGAL        = 'legal';
+    public const CATEGORY_REAL_ESTATE  = 'real_estate';
+    public const CATEGORY_RESTAURANT   = 'restaurant';
+    public const CATEGORY_PORTFOLIO    = 'portfolio';
+    public const CATEGORY_AGENCY       = 'agency';
+    public const CATEGORY_MARKETPLACE  = 'marketplace';
+    public const CATEGORY_STORE        = 'store';
+    public const CATEGORY_SAAS         = 'saas';
+    public const CATEGORY_LANDING      = 'landing';
+
+    public const LICENSE_FREE     = 'free';
+    public const LICENSE_PREMIUM  = 'premium';
+    public const LICENSE_BUNDLE   = 'bundle';
+
+    public static function categoryLabel(string $category): string
+    {
+        return [
+            self::CATEGORY_CORPORATE   => 'شرکتی',
+            self::CATEGORY_PERSONAL    => 'شخصی',
+            self::CATEGORY_BLOG        => 'وبلاگ',
+            self::CATEGORY_NEWS        => 'خبری',
+            self::CATEGORY_EDUCATIONAL => 'آموزشی',
+            self::CATEGORY_MEDICAL     => 'پزشکی',
+            self::CATEGORY_LEGAL       => 'حقوقی',
+            self::CATEGORY_REAL_ESTATE => 'مسکن',
+            self::CATEGORY_RESTAURANT  => 'رستوران',
+            self::CATEGORY_PORTFOLIO   => 'پورتفولیو',
+            self::CATEGORY_AGENCY      => 'آژانس',
+            self::CATEGORY_MARKETPLACE => 'مارکت‌پلیس',
+            self::CATEGORY_STORE       => 'فروشگاه',
+            self::CATEGORY_SAAS        => 'SaaS',
+            self::CATEGORY_LANDING     => 'لندینگ پیج',
+        ][$category] ?? $category;
+    }
+
     protected $fillable = [
         'name',
         'slug',
@@ -20,6 +61,7 @@ class Theme extends Model
         'thumbnail',
         'preview_image',
         'type',
+        'category',
         'source',
         'site_id',
         'header_blocks',
@@ -32,18 +74,22 @@ class Theme extends Model
         'version',
         'is_marketplace',
         'marketplace_price',
+        'license_type',
+        'marketplace_badge',
+        'installs_count',
     ];
 
     protected $casts = [
-        'header_blocks' => 'array',
-        'footer_blocks' => 'array',
-        'pages' => 'array',
-        'global_styles' => 'array',
-        'settings' => 'array',
-        'published_at' => 'datetime',
-        'version' => 'integer',
-        'is_marketplace' => 'boolean',
-        'marketplace_price' => 'integer',
+        'header_blocks'    => 'array',
+        'footer_blocks'    => 'array',
+        'pages'            => 'array',
+        'global_styles'    => 'array',
+        'settings'         => 'array',
+        'published_at'     => 'datetime',
+        'version'          => 'integer',
+        'is_marketplace'   => 'boolean',
+        'marketplace_price'=> 'integer',
+        'installs_count'   => 'integer',
     ];
 
     public const TYPE_FULL = 'full';
