@@ -383,136 +383,340 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </button>
                     </div>
 
-                    {{-- Tabs: Content / Style --}}
+                    {{-- 3 Tabs: Content / Style / Advanced --}}
                     <div class="flex border-b border-slate-100 shrink-0">
-                        <button
-                            @click="selectedTab = 'content'"
+                        <button @click="selectedTab = 'content'"
                             :class="selectedTab === 'content' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-                            class="flex-1 py-2 text-xs text-center transition">
-                            محتوا
-                        </button>
-                        <button
-                            @click="selectedTab = 'style'"
+                            class="flex-1 py-2 text-xs text-center transition">محتوا</button>
+                        <button @click="selectedTab = 'style'"
                             :class="selectedTab === 'style' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-                            class="flex-1 py-2 text-xs text-center transition">
-                            استایل
-                        </button>
+                            class="flex-1 py-2 text-xs text-center transition">استایل</button>
+                        <button @click="selectedTab = 'advanced'"
+                            :class="selectedTab === 'advanced' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
+                            class="flex-1 py-2 text-xs text-center transition">پیشرفته</button>
                     </div>
 
-                    {{-- Style Tab --}}
-                    <div x-show="selectedTab === 'style'" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">رنگ پس‌زمینه</label>
+                    {{-- ── STYLE TAB ──────────────────────────────────────────── --}}
+                    <div x-show="selectedTab === 'style'" class="flex-1 overflow-y-auto">
+
+                        {{-- Section: Typography --}}
+                        <div class="border-b border-slate-100">
+                            <button @click="styleSection.typography = !styleSection.typography"
+                                class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <span>تایپوگرافی</span>
+                                <svg :class="styleSection.typography ? 'rotate-180' : ''" class="w-3 h-3 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="styleSection.typography" class="px-4 pb-4 space-y-3">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 mb-1">سایز فونت (px)</p>
+                                        <input type="number" min="8" max="200"
+                                            :value="selectedBlock.style?.fontSize ?? ''"
+                                            @input="updateStyle('fontSize', $event.target.value === '' ? '' : Number($event.target.value))"
+                                            placeholder="پیش‌فرض"
+                                            class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 mb-1">وزن فونت</p>
+                                        <select :value="selectedBlock.style?.fontWeight ?? ''"
+                                            @change="updateStyle('fontWeight', $event.target.value)"
+                                            class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                            <option value="">پیش‌فرض</option>
+                                            <option value="300">سبک (300)</option>
+                                            <option value="400">معمولی (400)</option>
+                                            <option value="500">متوسط (500)</option>
+                                            <option value="600">نیمه‌ضخیم (600)</option>
+                                            <option value="700">ضخیم (700)</option>
+                                            <option value="800">خیلی ضخیم (800)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 mb-1">فاصله خطوط</p>
+                                        <input type="number" min="1" max="4" step="0.1"
+                                            :value="selectedBlock.style?.lineHeight ?? ''"
+                                            @input="updateStyle('lineHeight', $event.target.value === '' ? '' : $event.target.value)"
+                                            placeholder="پیش‌فرض"
+                                            class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 mb-1">فاصله حروف (px)</p>
+                                        <input type="number" min="-5" max="20" step="0.5"
+                                            :value="selectedBlock.style?.letterSpacing ?? ''"
+                                            @input="updateStyle('letterSpacing', $event.target.value === '' ? '' : $event.target.value)"
+                                            placeholder="پیش‌فرض"
+                                            class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 mb-1">تراز متن</p>
+                                    <div class="flex gap-1">
+                                        <template x-for="[val, icon, tip] in [['right','←','راست'],['center','↔','وسط'],['left','→','چپ'],['justify','≡','کامل']]" :key="val">
+                                            <button @click="updateStyle('textAlign', selectedBlock.style?.textAlign === val ? '' : val)"
+                                                :class="selectedBlock.style?.textAlign === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'"
+                                                class="flex-1 py-1.5 rounded-lg border text-xs font-mono transition" :title="tip" x-text="icon"></button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Section: Colors --}}
+                        <div class="border-b border-slate-100">
+                            <button @click="styleSection.colors = !styleSection.colors"
+                                class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <span>رنگ‌ها</span>
+                                <svg :class="styleSection.colors ? 'rotate-180' : ''" class="w-3 h-3 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="styleSection.colors" class="px-4 pb-4 space-y-3">
+                                <div>
+                                    <p class="text-[10px] text-slate-500 mb-1">رنگ پس‌زمینه</p>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="color" :value="selectedBlock.style?.bgColor || '#ffffff'" @change="updateStyle('bgColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" :value="selectedBlock.style?.bgColor || ''" @input="updateStyle('bgColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <button x-show="selectedBlock.style?.bgColor" @click="updateStyle('bgColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 mb-1">رنگ متن</p>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="color" :value="selectedBlock.style?.textColor || '#1f2937'" @change="updateStyle('textColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" :value="selectedBlock.style?.textColor || ''" @input="updateStyle('textColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <button x-show="selectedBlock.style?.textColor" @click="updateStyle('textColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
+                                    </div>
+                                </div>
+                                {{-- Gradient toggle --}}
+                                <div>
+                                    <label class="flex items-center gap-2 cursor-pointer mb-2">
+                                        <input type="checkbox" :checked="!!(selectedBlock.style?.bgGradientFrom)" @change="toggleGradient($event.target.checked)" class="rounded text-indigo-600">
+                                        <span class="text-[10px] text-slate-600 font-semibold">گرادیانت پس‌زمینه</span>
+                                    </label>
+                                    <div x-show="selectedBlock.style?.bgGradientFrom || selectedBlock.style?.bgGradientTo" class="space-y-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <input type="color" :value="selectedBlock.style?.bgGradientFrom || '#4f46e5'" @change="updateStyle('bgGradientFrom', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                            <span class="text-[10px] text-slate-500">شروع</span>
+                                            <input type="color" :value="selectedBlock.style?.bgGradientTo || '#7c3aed'" @change="updateStyle('bgGradientTo', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                            <span class="text-[10px] text-slate-500">پایان</span>
+                                        </div>
+                                        <select :value="selectedBlock.style?.bgGradientDir || 'to bottom'" @change="updateStyle('bgGradientDir', $event.target.value)" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                            <option value="to bottom">بالا به پایین</option>
+                                            <option value="to top">پایین به بالا</option>
+                                            <option value="to right">راست به چپ</option>
+                                            <option value="to left">چپ به راست</option>
+                                            <option value="135deg">مورب ↗</option>
+                                            <option value="45deg">مورب ↖</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Section: Spacing --}}
+                        <div class="border-b border-slate-100">
+                            <button @click="styleSection.spacing = !styleSection.spacing"
+                                class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <span>فاصله‌گذاری</span>
+                                <svg :class="styleSection.spacing ? 'rotate-180' : ''" class="w-3 h-3 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="styleSection.spacing" class="px-4 pb-4 space-y-3">
+                                <p class="text-[10px] text-slate-500">پدینگ (px)</p>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    <template x-for="[key, label] in [['paddingTop','بالا'],['paddingRight','راست'],['paddingBottom','پایین'],['paddingLeft','چپ']]" :key="key">
+                                        <div>
+                                            <p class="text-[9px] text-slate-400 text-center mb-1" x-text="label"></p>
+                                            <input type="number" min="0" max="300"
+                                                :value="selectedBlock.style?.[key] ?? ''"
+                                                @input="updateStyle(key, $event.target.value === '' ? '' : Number($event.target.value))"
+                                                class="w-full text-xs text-center px-1 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        </div>
+                                    </template>
+                                </div>
+                                <p class="text-[10px] text-slate-500">مارجین (px)</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p class="text-[9px] text-slate-400 mb-1">بالا</p>
+                                        <input type="number" min="-100" max="300" :value="selectedBlock.style?.marginTop ?? ''" @input="updateStyle('marginTop', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    </div>
+                                    <div>
+                                        <p class="text-[9px] text-slate-400 mb-1">پایین</p>
+                                        <input type="number" min="-100" max="300" :value="selectedBlock.style?.marginBottom ?? ''" @input="updateStyle('marginBottom', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Section: Border --}}
+                        <div class="border-b border-slate-100">
+                            <button @click="styleSection.border = !styleSection.border"
+                                class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <span>حاشیه</span>
+                                <svg :class="styleSection.border ? 'rotate-180' : ''" class="w-3 h-3 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="styleSection.border" class="px-4 pb-4 space-y-3">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 mb-1">ضخامت حاشیه (px)</p>
+                                        <input type="number" min="0" max="20" :value="selectedBlock.style?.borderWidth ?? ''" @input="updateStyle('borderWidth', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 mb-1">نوع حاشیه</p>
+                                        <select :value="selectedBlock.style?.borderStyle ?? 'solid'" @change="updateStyle('borderStyle', $event.target.value)" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                            <option value="solid">solid</option>
+                                            <option value="dashed">dashed</option>
+                                            <option value="dotted">dotted</option>
+                                            <option value="double">double</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 mb-1">رنگ حاشیه</p>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="color" :value="selectedBlock.style?.borderColor || '#e5e7eb'" @change="updateStyle('borderColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" :value="selectedBlock.style?.borderColor || ''" @input="updateStyle('borderColor', $event.target.value)" placeholder="#e5e7eb" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 mb-1">گوشه‌های گرد (px)</p>
+                                    <input type="number" min="0" max="100" :value="selectedBlock.style?.borderRadius ?? ''" @input="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))" placeholder="۰" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Section: Shadow --}}
+                        <div class="border-b border-slate-100">
+                            <button @click="styleSection.shadow = !styleSection.shadow"
+                                class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <span>سایه</span>
+                                <svg :class="styleSection.shadow ? 'rotate-180' : ''" class="w-3 h-3 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="styleSection.shadow" class="px-4 pb-4">
+                                <div class="flex flex-wrap gap-1.5 mb-3">
+                                    <template x-for="[val, label] in [['none','هیچ'],['sm','کوچک'],['md','متوسط'],['lg','بزرگ'],['xl','خیلی بزرگ']]" :key="val">
+                                        <button @click="updateStyle('shadow', selectedBlock.style?.shadow === val ? '' : val)"
+                                            :class="selectedBlock.style?.shadow === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
+                                            class="px-2.5 py-1 rounded-lg border text-xs transition" x-text="label"></button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Section: Opacity --}}
+                        <div class="border-b border-slate-100 px-4 py-3">
+                            <p class="text-[10px] text-slate-500 mb-2">شفافیت</p>
                             <div class="flex items-center gap-2">
-                                <input type="color"
-                                    :value="selectedBlock.style?.bgColor || '#ffffff'"
-                                    @change="updateStyle('bgColor', $event.target.value)"
-                                    class="w-10 h-8 rounded border border-slate-200 cursor-pointer p-0.5">
-                                <input type="text"
-                                    :value="selectedBlock.style?.bgColor || ''"
-                                    @input="updateStyle('bgColor', $event.target.value)"
-                                    placeholder="بدون رنگ"
-                                    class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                                <button x-show="selectedBlock.style?.bgColor" @click="updateStyle('bgColor', '')"
-                                    class="text-slate-400 hover:text-red-500 text-sm transition">×</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">رنگ متن</label>
-                            <div class="flex items-center gap-2">
-                                <input type="color"
-                                    :value="selectedBlock.style?.textColor || '#000000'"
-                                    @change="updateStyle('textColor', $event.target.value)"
-                                    class="w-10 h-8 rounded border border-slate-200 cursor-pointer p-0.5">
-                                <input type="text"
-                                    :value="selectedBlock.style?.textColor || ''"
-                                    @input="updateStyle('textColor', $event.target.value)"
-                                    placeholder="بدون رنگ"
-                                    class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                                <button x-show="selectedBlock.style?.textColor" @click="updateStyle('textColor', '')"
-                                    class="text-slate-400 hover:text-red-500 text-sm transition">×</button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">پدینگ عمودی (px)</label>
-                                <input type="number" min="0" max="200"
-                                    :value="selectedBlock.style?.paddingY ?? ''"
-                                    @input="updateStyle('paddingY', $event.target.value === '' ? '' : Number($event.target.value))"
-                                    placeholder="پیش‌فرض"
-                                    class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">پدینگ افقی (px)</label>
-                                <input type="number" min="0" max="200"
-                                    :value="selectedBlock.style?.paddingX ?? ''"
-                                    @input="updateStyle('paddingX', $event.target.value === '' ? '' : Number($event.target.value))"
-                                    placeholder="پیش‌فرض"
-                                    class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">گوشه‌های گرد (px)</label>
-                            <input type="number" min="0" max="100"
-                                :value="selectedBlock.style?.borderRadius ?? ''"
-                                @input="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))"
-                                placeholder="۰"
-                                class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">شفافیت</label>
-                            <div class="flex items-center gap-2">
-                                <input type="range" min="0.1" max="1" step="0.05"
-                                    :value="selectedBlock.style?.opacity ?? 1"
-                                    @input="updateStyle('opacity', Number($event.target.value))"
-                                    class="flex-1">
+                                <input type="range" min="0.1" max="1" step="0.05" :value="selectedBlock.style?.opacity ?? 1" @input="updateStyle('opacity', Number($event.target.value))" class="flex-1">
                                 <span class="text-xs text-slate-500 w-8 text-left" x-text="Math.round((selectedBlock.style?.opacity ?? 1) * 100) + '%'"></span>
                             </div>
                         </div>
-                        <div class="pt-2">
-                            <button @click="resetBlockStyle()"
-                                class="w-full text-xs py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500 transition">
+
+                        <div class="px-4 py-3">
+                            <button @click="resetBlockStyle()" class="w-full text-xs py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500 transition">
                                 پاک کردن همه استایل‌ها
                             </button>
                         </div>
                     </div>
 
-                    {{-- Content (Props) Form --}}
+                    {{-- ── ADVANCED TAB ───────────────────────────────────────── --}}
+                    <div x-show="selectedTab === 'advanced'" class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">کلاس CSS سفارشی</label>
+                            <input type="text"
+                                :value="selectedBlock.style?.customClass ?? ''"
+                                @input="updateStyle('customClass', $event.target.value)"
+                                placeholder="مثال: my-hero featured-section"
+                                class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">نمایش در دستگاه‌ها</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2.5 cursor-pointer">
+                                    <input type="checkbox" :checked="selectedBlock.style?.hideDesktop" @change="updateStyle('hideDesktop', $event.target.checked || '')" class="rounded text-indigo-600">
+                                    <span class="text-xs text-slate-700">پنهان در دسکتاپ</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer">
+                                    <input type="checkbox" :checked="selectedBlock.style?.hideTablet" @change="updateStyle('hideTablet', $event.target.checked || '')" class="rounded text-indigo-600">
+                                    <span class="text-xs text-slate-700">پنهان در تبلت</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer">
+                                    <input type="checkbox" :checked="selectedBlock.style?.hideMobile" @change="updateStyle('hideMobile', $event.target.checked || '')" class="rounded text-indigo-600">
+                                    <span class="text-xs text-slate-700">پنهان در موبایل</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">انیمیشن ورود</label>
+                            <select :value="selectedBlock.style?.animation ?? 'none'"
+                                @change="updateStyle('animation', $event.target.value === 'none' ? '' : $event.target.value)"
+                                class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 mb-2">
+                                <option value="none">بدون انیمیشن</option>
+                                <option value="fade-in">محو شدن (Fade In)</option>
+                                <option value="slide-up">از پایین (Slide Up)</option>
+                                <option value="slide-right">از راست (Slide Right)</option>
+                                <option value="zoom-in">بزرگ‌شدن (Zoom In)</option>
+                                <option value="bounce-in">جهش (Bounce In)</option>
+                            </select>
+                            <template x-if="selectedBlock.style?.animation && selectedBlock.style.animation !== 'none'">
+                                <div>
+                                    <label class="block text-[10px] text-slate-500 mb-1">مدت زمان انیمیشن (ms)</label>
+                                    <input type="number" min="200" max="3000" step="100"
+                                        :value="selectedBlock.style?.animationDuration ?? 600"
+                                        @input="updateStyle('animationDuration', Number($event.target.value))"
+                                        class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- ── CONTENT TAB ────────────────────────────────────────── --}}
                     <div x-show="selectedTab === 'content'" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                         <template x-for="(schemaDef, propKey) in selectedSchema" :key="propKey">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1.5" x-text="schemaDef.label || propKey"></label>
 
+                                {{-- image (TB3-07) --}}
+                                <template x-if="schemaDef.type === 'image'">
+                                    <div>
+                                        <div x-show="selectedBlock.props[propKey]" class="mb-2 relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50" style="height:80px;">
+                                            <img :src="selectedBlock.props[propKey]" class="w-full h-full object-cover">
+                                            <button @click="updateProp(propKey, '')" class="absolute top-1 left-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600">×</button>
+                                        </div>
+                                        <div class="flex gap-1.5">
+                                            <input type="text"
+                                                :value="selectedBlock.props[propKey] ?? ''"
+                                                @input="updateProp(propKey, $event.target.value)"
+                                                placeholder="آدرس URL تصویر"
+                                                class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                            <button @click="openMediaPicker(propKey)"
+                                                class="flex items-center justify-center w-8 h-8 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition shrink-0" title="انتخاب از کتابخانه">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+
                                 {{-- string --}}
                                 <template x-if="schemaDef.type === 'string'">
-                                    <input
-                                        type="text"
+                                    <input type="text"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
                                         @input="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
-                                        :placeholder="schemaDef.default ?? ''"
-                                    >
+                                        :placeholder="schemaDef.default ?? ''">
                                 </template>
 
                                 {{-- number --}}
                                 <template x-if="schemaDef.type === 'number'">
-                                    <input
-                                        type="number"
+                                    <input type="number"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? 0"
                                         @input="updateProp(propKey, Number($event.target.value))"
-                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
-                                        :min="0"
-                                    >
+                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" :min="0">
                                 </template>
 
                                 {{-- boolean --}}
                                 <template x-if="schemaDef.type === 'boolean'">
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <div class="relative">
-                                            <input type="checkbox"
-                                                :checked="selectedBlock.props[propKey] ?? false"
-                                                @change="updateProp(propKey, $event.target.checked)"
-                                                class="sr-only peer">
+                                            <input type="checkbox" :checked="selectedBlock.props[propKey] ?? false" @change="updateProp(propKey, $event.target.checked)" class="sr-only peer">
                                             <div class="w-9 h-5 bg-slate-200 peer-checked:bg-indigo-500 rounded-full transition"></div>
                                             <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-full rtl:peer-checked:-translate-x-full transition-transform"></div>
                                         </div>
@@ -522,11 +726,8 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
                                 {{-- select --}}
                                 <template x-if="schemaDef.type === 'select'">
-                                    <select
-                                        :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
-                                        @change="updateProp(propKey, $event.target.value)"
-                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
-                                    >
+                                    <select :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @change="updateProp(propKey, $event.target.value)"
+                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition">
                                         <template x-for="(label, val) in schemaDef.options" :key="val">
                                             <option :value="val" :selected="(selectedBlock.props[propKey] ?? schemaDef.default) == val" x-text="label"></option>
                                         </template>
@@ -536,36 +737,20 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- color --}}
                                 <template x-if="schemaDef.type === 'color'">
                                     <div class="flex items-center gap-2">
-                                        <input
-                                            type="color"
-                                            :value="selectedBlock.props[propKey] ?? '#4f46e5'"
-                                            @input="updateProp(propKey, $event.target.value)"
-                                            class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5"
-                                        >
-                                        <input
-                                            type="text"
-                                            :value="selectedBlock.props[propKey] ?? '#4f46e5'"
-                                            @input="updateProp(propKey, $event.target.value)"
-                                            class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono"
-                                            placeholder="#000000"
-                                        >
+                                        <input type="color" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
+                                        <input type="text" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000">
                                     </div>
                                 </template>
 
                                 {{-- textarea --}}
                                 <template x-if="schemaDef.type === 'textarea'">
-                                    <textarea
-                                        :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
-                                        @input="updateProp(propKey, $event.target.value)"
-                                        rows="3"
+                                    <textarea :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input="updateProp(propKey, $event.target.value)" rows="3"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-y"
-                                        :placeholder="schemaDef.default ?? ''"
-                                    ></textarea>
+                                        :placeholder="schemaDef.default ?? ''"></textarea>
                                 </template>
                             </div>
                         </template>
 
-                        {{-- No props --}}
                         <div x-show="Object.keys(selectedSchema).length === 0" class="text-center py-6">
                             <p class="text-xs text-slate-400">این بلوک تنظیماتی ندارد</p>
                         </div>
@@ -573,6 +758,70 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
                 </div>
             </template>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
+         TB3-07: MEDIA PICKER MODAL
+    ═══════════════════════════════════════════════════════ --}}
+    <div x-show="mediaModal.show" x-transition.opacity class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div @click.outside="mediaModal.show = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh;">
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <h3 class="font-bold text-slate-800">مدیر رسانه</h3>
+                <button @click="mediaModal.show = false" class="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+            </div>
+            {{-- Tabs --}}
+            <div class="flex border-b border-slate-100 shrink-0">
+                <button @click="mediaModal.tab = 'library'" :class="mediaModal.tab === 'library' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500'" class="flex-1 py-2.5 text-sm text-center transition">کتابخانه</button>
+                <button @click="mediaModal.tab = 'upload'; mediaModal.uploadDone = false" :class="mediaModal.tab === 'upload' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500'" class="flex-1 py-2.5 text-sm text-center transition">آپلود</button>
+            </div>
+            {{-- Library tab --}}
+            <div x-show="mediaModal.tab === 'library'" class="flex-1 overflow-y-auto p-4">
+                <div x-show="mediaModal.loading" class="flex items-center justify-center py-12 text-slate-400">
+                    <svg class="w-5 h-5 animate-spin ml-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                    در حال بارگذاری...
+                </div>
+                <div x-show="!mediaModal.loading && mediaModal.images.length === 0" class="text-center py-12 text-slate-400">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <p class="text-sm">کتابخانه خالی است</p>
+                    <p class="text-xs mt-1">تصویری آپلود کنید</p>
+                </div>
+                <div x-show="!mediaModal.loading" class="grid grid-cols-3 gap-3">
+                    <template x-for="img in mediaModal.images" :key="img.url">
+                        <div class="relative group rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-square cursor-pointer hover:border-indigo-400 transition"
+                            @click="selectMedia(img.url)">
+                            <img :src="img.url" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <span class="bg-white text-xs font-semibold text-indigo-700 px-2 py-1 rounded-lg shadow">انتخاب</span>
+                            </div>
+                            <button @click.stop="deleteMedia(img.url)" class="absolute top-1 left-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600">×</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            {{-- Upload tab --}}
+            <div x-show="mediaModal.tab === 'upload'" class="flex-1 p-5 flex flex-col items-center justify-center">
+                <div x-show="!mediaModal.uploadDone"
+                    @dragover.prevent="$el.classList.add('border-indigo-400','bg-indigo-50')"
+                    @dragleave="$el.classList.remove('border-indigo-400','bg-indigo-50')"
+                    @drop.prevent="handleMediaDrop($event)"
+                    class="w-full border-2 border-dashed border-slate-300 rounded-2xl p-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
+                    @click="$refs.mediaFileInput.click()">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p class="text-sm font-semibold text-slate-600 mb-1">فایل را بکشید اینجا</p>
+                    <p class="text-xs text-slate-400">JPG، PNG، WebP، GIF، SVG — حداکثر ۵ مگابایت</p>
+                    <div x-show="mediaModal.uploading" class="mt-4">
+                        <svg class="w-6 h-6 animate-spin mx-auto text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                    </div>
+                </div>
+                <div x-show="mediaModal.uploadDone" class="text-center">
+                    <svg class="w-14 h-14 mx-auto mb-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-sm font-semibold text-green-700">آپلود موفق</p>
+                    <button @click="mediaModal.tab = 'library'; fetchMedia()" class="mt-3 text-xs text-indigo-600 hover:underline">مشاهده در کتابخانه</button>
+                </div>
+                <input x-ref="mediaFileInput" type="file" accept="image/*" class="hidden" @change="uploadMediaFile($event.target.files[0])">
+            </div>
         </div>
     </div>
 
@@ -650,6 +899,12 @@ function themeCanvas() {
         history:        [],
         historyIndex:   -1,
         maxHistory:     25,
+        // TB3-05: style panel sections (open/closed)
+        styleSection: { typography: true, colors: true, spacing: false, border: false, shadow: false },
+        // TB3-04: inline edit auto-save
+        inlineAutoSaveTimer: null,
+        // TB3-07: media manager
+        mediaModal: { show: false, tab: 'library', loading: false, images: [], uploading: false, uploadDone: false, targetPropKey: null },
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
@@ -968,30 +1223,124 @@ function themeCanvas() {
 
             switch (d.action) {
                 case 'ready':
-                    this.iframeReady  = true;
+                    this.iframeReady   = true;
                     this.iframeLoading = false;
-                    // Restore selection in new iframe load
                     if (this.selectedBlock) {
                         this.sendToIframe({ action: 'select', blockId: this.selectedBlock.id });
                     }
                     break;
 
-                case 'iframeHeight':
+                case 'iframeHeight': {
                     const iframe = this.getIframe();
                     if (iframe) iframe.style.height = Math.max(400, d.height || 400) + 'px';
                     break;
+                }
 
-                case 'blockSelected':
+                case 'blockSelected': {
                     const idx = this.blocks.findIndex(b => b.id === d.blockId);
                     if (idx >= 0) { this.selectedIndex = idx; this.selectedTab = 'content'; }
                     break;
+                }
 
                 case 'dropIndexResult':
                     this.dropTargetIndex    = d.index ?? this.blocks.length;
                     this.dropTargetBeforeId = d.beforeId ?? '__end__';
                     this.sendToIframe({ action: 'setDropTarget', beforeId: this.dropTargetBeforeId });
                     break;
+
+                // TB3-04: inline edit prop change from iframe
+                case 'inlinePropChange':
+                    if (this.selectedBlock && d.propKey) {
+                        this.selectedBlock.props[d.propKey] = d.value ?? '';
+                        this.isDirty = true;
+                        if (d.final) {
+                            clearTimeout(this.inlineAutoSaveTimer);
+                            this.inlineAutoSaveTimer = setTimeout(() => this.autoSave(), 1500);
+                        }
+                    }
+                    break;
             }
+        },
+
+        // TB3-05: gradient toggle
+        toggleGradient(enable) {
+            if (enable) {
+                if (!this.selectedBlock.style) this.selectedBlock.style = {};
+                this.selectedBlock.style.bgGradientFrom = this.selectedBlock.style.bgGradientFrom || '#4f46e5';
+                this.selectedBlock.style.bgGradientTo   = this.selectedBlock.style.bgGradientTo   || '#7c3aed';
+                this.isDirty = true;
+                this.schedulePropUpdate();
+            } else {
+                this.updateStyle('bgGradientFrom', '');
+                this.updateStyle('bgGradientTo', '');
+                this.updateStyle('bgGradientDir', '');
+            }
+        },
+
+        // TB3-07: Media Manager
+        openMediaPicker(propKey) {
+            this.mediaModal.targetPropKey = propKey;
+            this.mediaModal.show  = true;
+            this.mediaModal.tab   = 'library';
+            this.mediaModal.uploadDone = false;
+            this.fetchMedia();
+        },
+
+        async fetchMedia() {
+            this.mediaModal.loading = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/media`, {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN }
+                });
+                const d = await r.json();
+                this.mediaModal.images = d.images ?? [];
+            } catch (_) { this.mediaModal.images = []; }
+            finally { this.mediaModal.loading = false; }
+        },
+
+        selectMedia(url) {
+            if (this.mediaModal.targetPropKey && this.selectedBlock) {
+                this.updateProp(this.mediaModal.targetPropKey, url);
+            }
+            this.mediaModal.show = false;
+        },
+
+        async deleteMedia(url) {
+            if (!confirm('این تصویر حذف شود؟')) return;
+            await fetch(`/admin/theme-builder/${THEME_ID}/media`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            this.mediaModal.images = this.mediaModal.images.filter(img => img.url !== url);
+        },
+
+        handleMediaDrop(e) {
+            const file = e.dataTransfer?.files?.[0];
+            if (file && file.type.startsWith('image/')) this.uploadMediaFile(file);
+        },
+
+        async uploadMediaFile(file) {
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { this.showToast('حداکثر ۵ مگابایت', 'error'); return; }
+            this.mediaModal.uploading = true;
+            const fd = new FormData();
+            fd.append('file', file);
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/media/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: fd
+                });
+                const d = await r.json();
+                if (d.url) {
+                    this.mediaModal.uploadDone = true;
+                    this.mediaModal.images.unshift({ url: d.url, name: d.name ?? file.name });
+                } else {
+                    this.showToast(d.error ?? 'خطا در آپلود', 'error');
+                }
+            } catch (_) { this.showToast('خطای شبکه', 'error'); }
+            finally { this.mediaModal.uploading = false; }
         },
 
         setDevice(d) { this.device = d; },

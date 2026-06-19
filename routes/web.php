@@ -572,6 +572,10 @@ Route::prefix('admin')
             // ─── TB3-02: Live Iframe Canvas ───────────────────────────────────────
             Route::get('theme-builder/{theme}/canvas/live-preview', [ThemeCanvasController::class, 'livePreview'])->name('theme-builder.canvas.live-preview');
             Route::post('theme-builder/{theme}/canvas/render-block', [ThemeCanvasController::class, 'renderBlockAjax'])->name('theme-builder.canvas.render-block');
+            // TB3-07: Theme Media Manager
+            Route::get('theme-builder/{theme}/media', [\App\Http\Controllers\Admin\ThemeMediaController::class, 'index'])->name('theme-builder.media.index');
+            Route::post('theme-builder/{theme}/media/upload', [\App\Http\Controllers\Admin\ThemeMediaController::class, 'upload'])->name('theme-builder.media.upload');
+            Route::delete('theme-builder/{theme}/media', [\App\Http\Controllers\Admin\ThemeMediaController::class, 'destroy'])->name('theme-builder.media.destroy');
 
             // ─── TB-3: AI URL Analyzer ──────────────────────────────────────
             Route::get('theme-builder/ai-analyze',         [ThemeAiController::class, 'form'])->name('theme-builder.ai-form');

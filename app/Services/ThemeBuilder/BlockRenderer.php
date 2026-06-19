@@ -79,16 +79,105 @@ class BlockRenderer
         if (empty($style)) {
             return $html;
         }
-        $css = [];
-        if (!empty($style['bgColor']))      $css[] = 'background-color:' . $this->escapeAttr($style['bgColor']);
-        if (!empty($style['textColor']))    $css[] = 'color:' . $this->escapeAttr($style['textColor']);
-        if (($style['paddingY'] ?? '') !== '') $css[] = "padding-top:{$style['paddingY']}px;padding-bottom:{$style['paddingY']}px";
-        if (($style['paddingX'] ?? '') !== '') $css[] = "padding-left:{$style['paddingX']}px;padding-right:{$style['paddingX']}px";
-        if (($style['borderRadius'] ?? '') !== '') $css[] = "border-radius:{$style['borderRadius']}px";
-        if (isset($style['opacity']) && $style['opacity'] != 1 && $style['opacity'] !== '') $css[] = "opacity:{$style['opacity']}";
-        if (empty($css)) return $html;
-        $styleStr = implode(';', $css);
-        return "<div data-tb-style-wrap=\"1\" style=\"{$styleStr}\">{$html}</div>";
+        $css     = [];
+        $classes = ['tb-style-wrap'];
+
+        // Colors
+        if (!empty($style['bgColor']))   $css[] = 'background-color:' . $this->escapeAttr($style['bgColor']);
+        if (!empty($style['textColor'])) $css[] = 'color:' . $this->escapeAttr($style['textColor']);
+
+        // Gradient (overrides bgColor)
+        if (!empty($style['bgGradientFrom']) && !empty($style['bgGradientTo'])) {
+            $dir  = $this->escapeAttr($style['bgGradientDir'] ?? 'to bottom');
+            $from = $this->escapeAttr($style['bgGradientFrom']);
+            $to   = $this->escapeAttr($style['bgGradientTo']);
+            $css[] = "background-image:linear-gradient({$dir},{$from},{$to})";
+        }
+
+        // Typography
+        if (($style['fontSize']      ?? '') !== '') $css[] = 'font-size:'      . (int)$style['fontSize']      . 'px';
+        if (!empty($style['fontWeight']))            $css[] = 'font-weight:'    . $this->escapeAttr($style['fontWeight']);
+        if (($style['lineHeight']    ?? '') !== '') $css[] = 'line-height:'    . $this->escapeAttr($style['lineHeight']);
+        if (!empty($style['textAlign']))             $css[] = 'text-align:'     . $this->escapeAttr($style['textAlign']);
+        if (($style['letterSpacing'] ?? '') !== '') $css[] = 'letter-spacing:' . $this->escapeAttr($style['letterSpacing']) . 'px';
+
+        // Individual padding (takes precedence over paddingY/paddingX)
+        if (isset($style['paddingTop']) || isset($style['paddingRight']) || isset($style['paddingBottom']) || isset($style['paddingLeft'])) {
+            if (($style['paddingTop']    ?? '') !== '') $css[] = 'padding-top:'    . (int)$style['paddingTop']    . 'px';
+            if (($style['paddingRight']  ?? '') !== '') $css[] = 'padding-right:'  . (int)$style['paddingRight']  . 'px';
+            if (($style['paddingBottom'] ?? '') !== '') $css[] = 'padding-bottom:' . (int)$style['paddingBottom'] . 'px';
+            if (($style['paddingLeft']   ?? '') !== '') $css[] = 'padding-left:'   . (int)$style['paddingLeft']   . 'px';
+        } else {
+            if (($style['paddingY'] ?? '') !== '') $css[] = "padding-top:{$style['paddingY']}px;padding-bottom:{$style['paddingY']}px";
+            if (($style['paddingX'] ?? '') !== '') $css[] = "padding-left:{$style['paddingX']}px;padding-right:{$style['paddingX']}px";
+        }
+
+        // Margin
+        if (($style['marginTop']    ?? '') !== '') $css[] = 'margin-top:'    . (int)$style['marginTop']    . 'px';
+        if (($style['marginBottom'] ?? '') !== '') $css[] = 'margin-bottom:' . (int)$style['marginBottom'] . 'px';
+
+        // Border
+        if (($style['borderWidth'] ?? '') !== '' && (int)$style['borderWidth'] > 0) {
+            $css[] = 'border-width:' . (int)$style['borderWidth'] . 'px';
+            $css[] = 'border-style:' . $this->escapeAttr($style['borderStyle'] ?? 'solid');
+        }
+        if (!empty($style['borderColor'])) $css[] = 'border-color:' . $this->escapeAttr($style['borderColor']);
+        if (($style['borderRadius']  ?? '') !== '') $css[] = 'border-radius:' . (int)$style['borderRadius'] . 'px';
+
+        // Shadow presets
+        $shadowMap = [
+            'sm'   => '0 1px 2px 0 rgba(0,0,0,0.05)',
+            'md'   => '0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1)',
+            'lg'   => '0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -4px rgba(0,0,0,0.1)',
+            'xl'   => '0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1)',
+            'none' => 'none',
+        ];
+        if (!empty($style['shadow'])) {
+            $shadow = $shadowMap[$style['shadow']] ?? $style['shadow'];
+            $css[] = 'box-shadow:' . $this->escapeAttr($shadow);
+        }
+
+        // Opacity
+        if (isset($style['opacity']) && $style['opacity'] != 1 && $style['opacity'] !== '') {
+            $css[] = 'opacity:' . $style['opacity'];
+        }
+
+        // Animation duration CSS var
+        if (!empty($style['animationDuration'])) {
+            $css[] = '--tb-animate-dur:' . (int)$style['animationDuration'] . 'ms';
+        }
+
+        // Custom CSS class (sanitized)
+        if (!empty($style['customClass'])) {
+            foreach (explode(' ', $style['customClass']) as $cls) {
+                $safe = preg_replace('/[^a-zA-Z0-9_\-]/', '', trim($cls));
+                if ($safe !== '') $classes[] = $safe;
+            }
+        }
+
+        // Visibility classes
+        if (!empty($style['hideDesktop'])) $classes[] = 'tb-hide-desktop';
+        if (!empty($style['hideTablet']))  $classes[] = 'tb-hide-tablet';
+        if (!empty($style['hideMobile']))  $classes[] = 'tb-hide-mobile';
+
+        // Animation class
+        if (!empty($style['animation']) && $style['animation'] !== 'none') {
+            $anim = preg_replace('/[^a-z\-]/', '', $style['animation']);
+            $classes[] = 'tb-animate-' . $anim;
+        }
+
+        if (empty($css) && count($classes) <= 1) return $html;
+
+        $classAttr = implode(' ', $classes);
+        $styleStr  = implode(';', $css);
+        $styleAttr = $styleStr ? " style=\"{$styleStr}\"" : '';
+        return "<div class=\"{$classAttr}\"{$styleAttr}>{$html}</div>";
+    }
+
+    private function editableAttr(string $propKey, string $inlineType = 'text'): string
+    {
+        if (!($this->context['editor_mode'] ?? false)) return '';
+        return " data-tb-editable=\"{$propKey}\" data-tb-inline-type=\"{$inlineType}\"";
     }
 
     /**
@@ -152,49 +241,55 @@ class BlockRenderer
 
     protected function renderHero(array $props, string $inner, string $id): string
     {
-        $title = $this->escape($props['title'] ?? '');
+        $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
-        $btnText = $this->escape($props['button_text'] ?? '');
-        $btnUrl = $this->escapeAttr($props['button_url'] ?? '#');
-        $bg = $props['background'] ?? 'primary';
+        $btnText  = $this->escape($props['button_text'] ?? '');
+        $btnUrl   = $this->escapeAttr($props['button_url'] ?? '#');
+        $bg    = $props['background'] ?? 'primary';
         $align = $props['align'] ?? 'center';
-        $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\">{$btnText}</a>" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-hero tb-bg-{$bg} tb-align-{$align}\"><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\">{$title}</h1><p class=\"tb-hero-subtitle\">{$subtitle}</p>{$btn}</div></section>";
+        $eaTitle = $this->editableAttr('title', 'text');
+        $eaSub   = $this->editableAttr('subtitle', 'text');
+        $eaBtn   = $this->editableAttr('button_text', 'text');
+        $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\"{$eaBtn}>{$btnText}</a>" : '';
+        return "<section id=\"tb-{$id}\" class=\"tb-hero tb-bg-{$bg} tb-align-{$align}\"><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
     }
 
     protected function renderHeading(array $props, string $inner, string $id): string
     {
         $level = max(1, min(6, (int) ($props['level'] ?? 2)));
-        $text = $this->escape($props['text'] ?? '');
-        return "<h{$level} id=\"tb-{$id}\" class=\"tb-heading\">{$text}</h{$level}>";
+        $text  = $this->escape($props['text'] ?? '');
+        $ea    = $this->editableAttr('text', 'text');
+        return "<h{$level} id=\"tb-{$id}\" class=\"tb-heading\"{$ea}>{$text}</h{$level}>";
     }
 
     protected function renderText(array $props, string $inner, string $id): string
     {
-        $content = $props['content'] ?? '';
-        $content = $this->sanitizeHtml($content);
-        return "<div id=\"tb-{$id}\" class=\"tb-text prose\">{$content}</div>";
+        $content = $this->sanitizeHtml($props['content'] ?? '');
+        $ea = $this->editableAttr('content', 'html');
+        return "<div id=\"tb-{$id}\" class=\"tb-text prose\"{$ea}>{$content}</div>";
     }
 
     protected function renderImage(array $props, string $inner, string $id): string
     {
-        $url = $this->escapeAttr($props['url'] ?? '');
-        $alt = $this->escapeAttr($props['alt'] ?? '');
+        $url     = $this->escapeAttr($props['url'] ?? '');
+        $alt     = $this->escapeAttr($props['alt'] ?? '');
         $caption = $this->escape($props['caption'] ?? '');
         if ($url === '') {
-            return "<figure id=\"tb-{$id}\" class=\"tb-image tb-image-placeholder\"><span>تصویر</span></figure>";
+            return "<figure id=\"tb-{$id}\" class=\"tb-image tb-image-placeholder\"><span>تصویر انتخاب نشده</span></figure>";
         }
-        $img = "<img src=\"{$url}\" alt=\"{$alt}\" loading=\"lazy\" class=\"tb-img\">";
-        $cap = $caption ? "<figcaption class=\"tb-image-caption\">{$caption}</figcaption>" : '';
+        $img   = "<img src=\"{$url}\" alt=\"{$alt}\" loading=\"lazy\" class=\"tb-img\">";
+        $eaCap = $this->editableAttr('caption', 'text');
+        $cap   = $caption ? "<figcaption class=\"tb-image-caption\"{$eaCap}>{$caption}</figcaption>" : '';
         return "<figure id=\"tb-{$id}\" class=\"tb-image\">{$img}{$cap}</figure>";
     }
 
     protected function renderButton(array $props, string $inner, string $id): string
     {
-        $text = $this->escape($props['text'] ?? '');
-        $url = $this->escapeAttr($props['url'] ?? '#');
+        $text  = $this->escape($props['text'] ?? '');
+        $url   = $this->escapeAttr($props['url'] ?? '#');
         $style = $props['style'] ?? 'primary';
-        return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"tb-btn tb-btn-{$style}\">{$text}</a>";
+        $ea    = $this->editableAttr('text', 'text');
+        return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"tb-btn tb-btn-{$style}\"{$ea}>{$text}</a>";
     }
 
     protected function renderDivider(array $props, string $inner, string $id): string
@@ -224,13 +319,16 @@ class BlockRenderer
 
     protected function renderCta(array $props, string $inner, string $id): string
     {
-        $title = $this->escape($props['title'] ?? '');
+        $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
-        $btnText = $this->escape($props['button_text'] ?? '');
-        $btnUrl = $this->escapeAttr($props['button_url'] ?? '#');
-        $bg = $props['background'] ?? 'primary';
-        $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\">{$btnText}</a>" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-cta tb-bg-{$bg}\"><h2 class=\"tb-cta-title\">{$title}</h2><p class=\"tb-cta-subtitle\">{$subtitle}</p>{$btn}</section>";
+        $btnText  = $this->escape($props['button_text'] ?? '');
+        $btnUrl   = $this->escapeAttr($props['button_url'] ?? '#');
+        $bg       = $props['background'] ?? 'primary';
+        $eaTitle  = $this->editableAttr('title', 'text');
+        $eaSub    = $this->editableAttr('subtitle', 'text');
+        $eaBtn    = $this->editableAttr('button_text', 'text');
+        $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\"{$eaBtn}>{$btnText}</a>" : '';
+        return "<section id=\"tb-{$id}\" class=\"tb-cta tb-bg-{$bg}\"><h2 class=\"tb-cta-title\"{$eaTitle}>{$title}</h2><p class=\"tb-cta-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</section>";
     }
 
     protected function renderTabs(array $tabs): string

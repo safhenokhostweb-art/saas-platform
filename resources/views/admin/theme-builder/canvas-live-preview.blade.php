@@ -120,7 +120,36 @@ body.tb-drag-active .tb-drop-zone {
     box-shadow: 0 0 0 2px #4f46e5;
 }
 
-/* Module placeholder (admin canvas, no live data) */
+/* ── Visibility toggles (TB3-05 advanced tab) ── */
+@media (min-width: 1024px) { .tb-hide-desktop { display: none !important; } }
+@media (min-width: 768px) and (max-width: 1023px) { .tb-hide-tablet { display: none !important; } }
+@media (max-width: 767px) { .tb-hide-mobile { display: none !important; } }
+
+/* ── Entrance animations (TB3-05) ── */
+@keyframes tb-fade-in    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tb-slide-up   { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes tb-slide-right{ from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes tb-zoom-in    { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+@keyframes tb-bounce-in  { 0% { opacity:0; transform:scale(0.3); } 50% { opacity:1; transform:scale(1.05); } 70% { transform:scale(0.9); } 100% { transform:scale(1); } }
+.tb-animate-fade-in     { animation: tb-fade-in     var(--tb-animate-dur, 600ms) ease both; }
+.tb-animate-slide-up    { animation: tb-slide-up    var(--tb-animate-dur, 600ms) ease both; }
+.tb-animate-slide-right { animation: tb-slide-right var(--tb-animate-dur, 600ms) ease both; }
+.tb-animate-zoom-in     { animation: tb-zoom-in     var(--tb-animate-dur, 600ms) ease both; }
+.tb-animate-bounce-in   { animation: tb-bounce-in   var(--tb-animate-dur, 700ms) ease both; }
+
+/* ── Inline editing (TB3-04) ── */
+[data-tb-editable][contenteditable="true"] {
+    outline: 2px dashed #6366f1;
+    outline-offset: 2px;
+    border-radius: 3px;
+    cursor: text;
+    min-width: 20px;
+    min-height: 1em;
+    padding: 2px 4px;
+    white-space: pre-wrap;
+}
+
+/* ── Module placeholder (admin canvas, no live data) ── */
 .tb-module-placeholder {
     background: linear-gradient(135deg, #f0f4ff 0%, #e8effe 100%);
     border: 2px dashed #a5b4fc;
@@ -180,8 +209,101 @@ body.tb-drag-active .tb-drop-zone {
         try { parent.postMessage(msg, '*'); } catch (_) {}
     }
 
-    /* ── Block click → select ─────────────────────────────────── */
+    /* ── TB3-04: Inline editing ──────────────────────────────────── */
+    var inlineState = { editing: false, propKey: null, inlineType: null, debounceTimer: null };
+
+    function enableInlineEditing(editableEl) {
+        if (inlineState.editing && inlineState.el === editableEl) return;
+        disableInlineEditing();
+        inlineState.editing   = true;
+        inlineState.el        = editableEl;
+        inlineState.propKey   = editableEl.getAttribute('data-tb-editable');
+        inlineState.inlineType = editableEl.getAttribute('data-tb-inline-type') || 'text';
+        editableEl.contentEditable = 'true';
+        editableEl.setAttribute('spellcheck', 'false');
+        // For plain text, prevent rich paste
+        if (inlineState.inlineType === 'text') {
+            editableEl.addEventListener('paste', onInlinePaste, { once: false });
+        }
+        editableEl.addEventListener('input',   onInlineInput);
+        editableEl.addEventListener('blur',    onInlineBlur);
+        editableEl.addEventListener('keydown', onInlineKeydown);
+        // Place cursor at end
+        var sel = window.getSelection();
+        var range = document.createRange();
+        range.selectNodeContents(editableEl);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    function disableInlineEditing() {
+        if (!inlineState.el) return;
+        var el = inlineState.el;
+        el.contentEditable = 'false';
+        el.removeEventListener('input',   onInlineInput);
+        el.removeEventListener('blur',    onInlineBlur);
+        el.removeEventListener('keydown', onInlineKeydown);
+        el.removeEventListener('paste',   onInlinePaste);
+        inlineState.editing = false;
+        inlineState.el      = null;
+    }
+
+    function onInlinePaste(e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+    }
+
+    function onInlineInput() {
+        clearTimeout(inlineState.debounceTimer);
+        inlineState.debounceTimer = setTimeout(function () {
+            sendInlineChange(false);
+        }, 250);
+    }
+
+    function onInlineBlur() {
+        clearTimeout(inlineState.debounceTimer);
+        sendInlineChange(true);
+        disableInlineEditing();
+    }
+
+    function onInlineKeydown(e) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            disableInlineEditing();
+        } else if (e.key === 'Enter' && inlineState.inlineType === 'text') {
+            e.preventDefault();
+            clearTimeout(inlineState.debounceTimer);
+            sendInlineChange(true);
+            disableInlineEditing();
+        }
+    }
+
+    function sendInlineChange(isFinal) {
+        if (!inlineState.el) return;
+        var val = inlineState.inlineType === 'html'
+            ? inlineState.el.innerHTML
+            : inlineState.el.textContent;
+        notifyParent({ action: 'inlinePropChange', propKey: inlineState.propKey, value: val, final: !!isFinal });
+    }
+
+    /* ── Block click → select (or inline edit on double-click) ─── */
+    document.addEventListener('dblclick', function (e) {
+        var editableEl = e.target.closest('[data-tb-editable]');
+        if (editableEl) {
+            e.stopPropagation();
+            enableInlineEditing(editableEl);
+        }
+    }, true);
+
     document.addEventListener('click', function (e) {
+        // If clicking on active contenteditable, don't re-select block
+        if (inlineState.editing && e.target.closest('[data-tb-editable][contenteditable="true"]')) return;
+        // If clicking outside editable while editing, blur it
+        if (inlineState.editing && !e.target.closest('[data-tb-editable]')) {
+            disableInlineEditing();
+        }
         var blockEl = e.target.closest('[data-tb-block-id]');
         if (blockEl) {
             e.stopPropagation();
@@ -206,13 +328,12 @@ body.tb-drag-active .tb-drop-zone {
 
     /* ── Block HTML update (live prop edit) ───────────────────── */
     function updateBlockHtml(blockId, html) {
+        disableInlineEditing();
         var el = document.querySelector('[data-tb-block-id="' + blockId + '"]');
         if (!el) return;
-        // Preserve badge
         var badge = el.querySelector('.tb-block-badge');
         el.innerHTML = html;
         if (badge) el.insertBefore(badge, el.firstChild);
-        // Restore selected state
         if (state.selectedBlockId === blockId) el.classList.add('tb-selected');
     }
 
