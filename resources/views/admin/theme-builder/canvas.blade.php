@@ -95,6 +95,22 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 ذخیره نشده
             </span>
 
+            {{-- TB6: Template Library button --}}
+            <button @click="openTemplateLibrary()"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-medium transition"
+                title="کتابخانه قالب‌ها">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                قالب‌ها
+            </button>
+            {{-- TB6: Save as Template button (only when block selected) --}}
+            <button x-show="selectedBlock" @click="showSaveAsTemplate = true"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-medium transition"
+                title="ذخیره به‌عنوان قالب">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                ذخیره قالب
+            </button>
+            <div class="h-6 w-px bg-slate-200 shrink-0"></div>
+
             {{-- Preview in new tab --}}
             <button
                 @click="openPreview()"
@@ -1034,6 +1050,153 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     </div>
 
     {{-- ═══════════════════════════════════════════════════════
+         TB6: TEMPLATE LIBRARY MODAL
+    ═══════════════════════════════════════════════════════ --}}
+    <div x-show="showTemplateLibrary" x-transition.opacity class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
+        <div @click.outside="showTemplateLibrary = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col" style="max-height:88vh">
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                    کتابخانه قالب‌ها
+                </h3>
+                <button @click="showTemplateLibrary = false" class="text-slate-400 hover:text-slate-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            {{-- Filters --}}
+            <div class="flex items-center gap-3 px-5 py-3 border-b border-slate-100 shrink-0 bg-slate-50">
+                <input type="text" x-model="templateLibrary.search" @input.debounce.400ms="fetchTemplates()"
+                    placeholder="جستجو…"
+                    class="flex-1 text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-300">
+                <select x-model="templateLibrary.type" @change="fetchTemplates()"
+                    class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
+                    <option value="">همه انواع</option>
+                    <option value="section">بخش</option>
+                    <option value="page">صفحه</option>
+                    <option value="header">هدر</option>
+                    <option value="footer">فوتر</option>
+                    <option value="landing_page">لندینگ پیج</option>
+                </select>
+                <select x-model="templateLibrary.category" @change="fetchTemplates()"
+                    class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
+                    <option value="">همه دسته‌ها</option>
+                    <option value="hero">هیرو</option>
+                    <option value="features">ویژگی‌ها</option>
+                    <option value="pricing">قیمت‌گذاری</option>
+                    <option value="testimonials">نظرات</option>
+                    <option value="contact">تماس</option>
+                    <option value="gallery">گالری</option>
+                    <option value="team">تیم</option>
+                    <option value="blog">وبلاگ</option>
+                    <option value="product">محصول</option>
+                </select>
+            </div>
+            {{-- Grid --}}
+            <div class="flex-1 overflow-y-auto p-5">
+                {{-- Loading --}}
+                <div x-show="templateLibrary.loading" class="flex items-center justify-center py-16">
+                    <svg class="w-8 h-8 text-purple-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                </div>
+                {{-- Empty --}}
+                <div x-show="!templateLibrary.loading && templateLibrary.templates.length === 0" class="text-center py-12 text-slate-400 text-sm">
+                    هیچ قالبی یافت نشد
+                </div>
+                {{-- Cards --}}
+                <div x-show="!templateLibrary.loading && templateLibrary.templates.length > 0"
+                    class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <template x-for="tpl in templateLibrary.templates" :key="tpl.id">
+                        <div class="border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer group flex flex-col"
+                            @click="insertTemplate(tpl.id)">
+                            {{-- Thumb --}}
+                            <div class="aspect-video bg-gradient-to-br from-slate-100 to-purple-50 flex items-center justify-center relative overflow-hidden">
+                                <template x-if="tpl.thumbnail_url">
+                                    <img :src="tpl.thumbnail_url" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!tpl.thumbnail_url">
+                                    <svg class="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"/></svg>
+                                </template>
+                                <span class="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-purple-700" x-text="tpl.type_label"></span>
+                                <div class="absolute inset-0 bg-purple-600/0 group-hover:bg-purple-600/10 transition flex items-center justify-center">
+                                    <span class="opacity-0 group-hover:opacity-100 bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">درج</span>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <p class="text-xs font-semibold text-slate-800 truncate" x-text="tpl.name"></p>
+                                <p class="text-[10px] text-slate-400 mt-0.5" x-text="tpl.category_label"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
+         TB6: SAVE AS TEMPLATE MODAL
+    ═══════════════════════════════════════════════════════ --}}
+    <div x-show="showSaveAsTemplate" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
+        <div @click.outside="showSaveAsTemplate = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-4">ذخیره به‌عنوان قالب</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">نام قالب *</label>
+                    <input type="text" x-model="saveTemplateForm.name" placeholder="نام قالب…"
+                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">نوع</label>
+                        <select x-model="saveTemplateForm.type" class="w-full text-sm px-2 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            <option value="section">بخش</option>
+                            <option value="page">صفحه</option>
+                            <option value="header">هدر</option>
+                            <option value="footer">فوتر</option>
+                            <option value="landing_page">لندینگ پیج</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">دسته</label>
+                        <select x-model="saveTemplateForm.category" class="w-full text-sm px-2 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            <option value="hero">هیرو</option>
+                            <option value="features">ویژگی‌ها</option>
+                            <option value="pricing">قیمت‌گذاری</option>
+                            <option value="testimonials">نظرات</option>
+                            <option value="contact">تماس</option>
+                            <option value="gallery">گالری</option>
+                            <option value="team">تیم</option>
+                            <option value="blog">وبلاگ</option>
+                            <option value="product">محصول</option>
+                            <option value="corporate">شرکتی</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">محدوده ذخیره</label>
+                    <div class="flex gap-2">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" x-model="saveTemplateForm.scope" value="block" class="text-amber-500">
+                            <span class="text-xs text-slate-700">فقط بلوک انتخابی</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" x-model="saveTemplateForm.scope" value="page" class="text-amber-500">
+                            <span class="text-xs text-slate-700">کل صفحه</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-5">
+                <button @click="showSaveAsTemplate = false" class="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">انصراف</button>
+                <button @click="saveAsTemplate()" :disabled="!saveTemplateForm.name || saveTemplateForm.saving"
+                    class="flex-1 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 disabled:opacity-50 transition">
+                    <span x-show="!saveTemplateForm.saving">ذخیره</span>
+                    <span x-show="saveTemplateForm.saving">در حال ذخیره…</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
          ADD PAGE MODAL
     ═══════════════════════════════════════════════════════ --}}
     <div x-show="showAddPage" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -1120,6 +1283,11 @@ function themeCanvas() {
         showAddChildModal: false,
         // TB5: responsive editor
         activeBreakpoint: 'desktop',   // 'desktop' | 'tablet' | 'mobile'
+        // TB6: template library
+        showTemplateLibrary: false,
+        showSaveAsTemplate: false,
+        templateLibrary: { loading: false, templates: [], type: '', category: '', search: '' },
+        saveTemplateForm: { name: '', type: 'section', category: 'hero', scope: 'block', saving: false },
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
@@ -1887,6 +2055,85 @@ function themeCanvas() {
         },
 
         // ── Init ──────────────────────────────────────────────────
+        // TB6: Template Library
+        async openTemplateLibrary() {
+            this.showTemplateLibrary = true;
+            await this.fetchTemplates();
+        },
+        async fetchTemplates() {
+            this.templateLibrary.loading = true;
+            try {
+                const params = new URLSearchParams();
+                if (this.templateLibrary.type)     params.set('type',     this.templateLibrary.type);
+                if (this.templateLibrary.category) params.set('category', this.templateLibrary.category);
+                if (this.templateLibrary.search)   params.set('search',   this.templateLibrary.search);
+
+                const res = await fetch(`{{ route('admin.theme-builder.canvas.templates', $theme) }}?${params}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const json = await res.json();
+                this.templateLibrary.templates = json.templates ?? [];
+            } catch (e) {
+                this.templateLibrary.templates = [];
+            } finally {
+                this.templateLibrary.loading = false;
+            }
+        },
+        async insertTemplate(id) {
+            try {
+                const res = await fetch('{{ route('admin.theme-builder.canvas.insert-template', $theme) }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ template_id: id }),
+                });
+                const json = await res.json();
+                if (json.success && json.blocks) {
+                    this.blocks = [...this.blocks, ...json.blocks];
+                    this.pushHistory();
+                    this.isDirty = true;
+                    this.showTemplateLibrary = false;
+                    this.showToast('قالب درج شد', 'success');
+                }
+            } catch (e) {
+                this.showToast('خطا در درج قالب', 'error');
+            }
+        },
+        async saveAsTemplate() {
+            if (!this.saveTemplateForm.name) return;
+            this.saveTemplateForm.saving = true;
+            try {
+                let blocks = [];
+                if (this.saveTemplateForm.scope === 'block' && this.selectedBlock) {
+                    blocks = [this.selectedBlock];
+                } else {
+                    blocks = this.blocks;
+                }
+
+                const res = await fetch('{{ route('admin.theme-builder.canvas.save-as-template', $theme) }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content, 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        name:     this.saveTemplateForm.name,
+                        type:     this.saveTemplateForm.type,
+                        category: this.saveTemplateForm.category,
+                        scope:    this.saveTemplateForm.scope,
+                        blocks:   blocks,
+                        page_key: this.currentPage,
+                    }),
+                });
+                const json = await res.json();
+                if (json.success) {
+                    this.showSaveAsTemplate = false;
+                    this.saveTemplateForm.name = '';
+                    this.showToast('قالب «' + json.template.name + '» ذخیره شد', 'success');
+                }
+            } catch (e) {
+                this.showToast('خطا در ذخیره قالب', 'error');
+            } finally {
+                this.saveTemplateForm.saving = false;
+            }
+        },
+
         init() {
             // TB3-01: Normalize all loaded blocks to use props
             this.normalizePages(this.pages);

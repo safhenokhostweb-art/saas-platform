@@ -607,6 +607,36 @@ Route::prefix('admin')
                 return response()->json(['success' => true]);
             })->name('theme-builder.ai-generate-prepare');
             Route::post('theme-builder/ai-generate',       [ThemeAiController::class, 'generate'])->name('theme-builder.ai-generate');
+            // ─── TB6: Template Library (Canvas) ──────────────────────────────────
+            Route::get('theme-builder/{theme}/canvas/templates',        [ThemeCanvasController::class, 'canvasTemplates'])->name('theme-builder.canvas.templates');
+            Route::post('theme-builder/{theme}/canvas/save-as-template',[ThemeCanvasController::class, 'canvasSaveAsTemplate'])->name('theme-builder.canvas.save-as-template');
+            Route::post('theme-builder/{theme}/canvas/insert-template', [ThemeCanvasController::class, 'canvasInsertTemplate'])->name('theme-builder.canvas.insert-template');
+        });
+
+        // ─── TB6: Theme Templates Admin (CRUD + import/export) ──────────────
+        Route::prefix('theme-templates')->name('theme-templates.')->group(function () {
+            Route::get('/',                                     [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'index'])->name('index');
+            Route::get('/create',                               [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'create'])->name('create');
+            Route::post('/',                                    [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'store'])->name('store');
+            Route::get('/{themeTemplate}',                      [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'show'])->name('show');
+            Route::get('/{themeTemplate}/edit',                 [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'edit'])->name('edit');
+            Route::put('/{themeTemplate}',                      [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'update'])->name('update');
+            Route::delete('/{themeTemplate}',                   [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'destroy'])->name('destroy');
+            Route::get('/{themeTemplate}/export',               [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'export'])->name('export');
+            Route::post('/import',                              [\App\Http\Controllers\Admin\ThemeTemplateController::class, 'import'])->name('import');
+        });
+
+        // ─── TB6: Theme Packs Admin ──────────────────────────────────────────
+        Route::prefix('theme-packs')->name('theme-packs.')->group(function () {
+            Route::get('/',                                     [\App\Http\Controllers\Admin\ThemePackController::class, 'index'])->name('index');
+            Route::get('/create',                               [\App\Http\Controllers\Admin\ThemePackController::class, 'create'])->name('create');
+            Route::post('/',                                    [\App\Http\Controllers\Admin\ThemePackController::class, 'store'])->name('store');
+            Route::get('/{themePack}',                          [\App\Http\Controllers\Admin\ThemePackController::class, 'show'])->name('show');
+            Route::delete('/{themePack}',                       [\App\Http\Controllers\Admin\ThemePackController::class, 'destroy'])->name('destroy');
+            Route::get('/{themePack}/export-json',              [\App\Http\Controllers\Admin\ThemePackController::class, 'exportJson'])->name('export-json');
+            Route::get('/{themePack}/export-zip',               [\App\Http\Controllers\Admin\ThemePackController::class, 'exportZip'])->name('export-zip');
+            Route::post('/import-json',                         [\App\Http\Controllers\Admin\ThemePackController::class, 'importJson'])->name('import-json');
+            Route::post('/import-zip',                          [\App\Http\Controllers\Admin\ThemePackController::class, 'importZip'])->name('import-zip');
         });
 
         // ─── Theme Marketplace (TB-2) ────────────────────────────────────────

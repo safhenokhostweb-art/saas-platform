@@ -7,7 +7,10 @@ use App\Models\Theme;
 use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
+use App\Services\ThemeBuilder\ThemeTemplateService;
+use App\Models\ThemeTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,7 +20,8 @@ class ThemeCanvasController extends Controller
 {
     public function __construct(
         protected BlockRenderer $renderer,
-        protected GlobalStyleEngine $styleEngine
+        protected GlobalStyleEngine $styleEngine,
+        protected ThemeTemplateService $templateSvc,
     ) {}
 
     public function show(Theme $theme)
@@ -281,6 +285,46 @@ class ThemeCanvasController extends Controller
 
         return redirect()->route('admin.theme-builder.index')
             ->with('success', 'صفحات قالب "' . $theme->name . '" با موفقیت در سایت "' . $site->title . '" همگام‌سازی شدند.');
+    }
+
+    public function canvasTemplates(Request $request): JsonResponse
+    {
+        $templates = $this->templateSvc->listForCanvas(
+            type:     $request->input('type'),
+            category: $request->input('category'),
+            term:     $request->input('search'),
+            siteId:   null,
+        );
+
+        return response()->json(['templates' => $templates]);
+    }
+
+    public function canvasSaveAsTemplate(Request $request, Theme $theme): JsonResponse
+    {
+        $data = $request->validate([
+            'name'       => 'required|string|max:200',
+            'type'       => 'required|in:' . implode(',', array_keys(ThemeTemplate::TYPES)),
+            'category'   => 'required|in:' . implode(',', array_keys(ThemeTemplate::CATEGORIES)),
+            'scope'      => 'required|in:block,page,theme',
+            'blocks'     => 'required|array',
+            'page_key'   => 'nullable|string',
+            'is_public'  => 'nullable|boolean',
+        ]);
+
+        $template = $this->templateSvc->saveFromCanvas($data, null);
+
+        return response()->json(['success' => true, 'template' => ['id' => $template->id, 'name' => $template->name]]);
+    }
+
+    public function canvasInsertTemplate(Request $request, Theme $theme): JsonResponse
+    {
+        $data = $request->validate([
+            'template_id' => 'required|integer|exists:theme_templates,id',
+        ]);
+
+        $blocks = $this->templateSvc->insertIntoPage((int) $data['template_id'], null);
+
+        return response()->json(['success' => true, 'blocks' => $blocks]);
     }
 
     /**
