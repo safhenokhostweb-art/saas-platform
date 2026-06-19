@@ -190,63 +190,85 @@ class ThemeCanvasController extends Controller
         $site = Site::findOrFail($request->site_id);
 
         if (!$site->db_host || !$site->db_name) {
-            return back()->with('error', 'اطلاعات دیتابیس سایت "' . $site->title . '" تنظیم نشده است.');
+            return back()->with('error',
+                'اطلاعات دیتابیس سایت "' . $site->title . '" تنظیم نشده است. ' .
+                'از منوی سایت‌ها → ویرایش سایت، فیلدهای db_host، db_name، db_user و db_password را پر کنید.'
+            );
         }
 
-        // باز کردن اتصال به دیتابیس سایت مشتری
         $connKey = 'theme_install_' . $site->id;
-        Config::set("database.connections.{$connKey}", [
-            'driver'    => 'mysql',
-            'host'      => $site->db_host,
-            'port'      => '3306',
-            'database'  => $site->db_name,
-            'username'  => $site->db_user,
-            'password'  => $site->db_password ?? '',
-            'charset'   => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
-            'strict'    => false,
-        ]);
-        DB::purge($connKey);
-        $conn = DB::connection($connKey);
 
-        $themeJson = json_encode([
-            'name'          => $theme->name,
-            'slug'          => $theme->slug,
-            'header_blocks' => $theme->header_blocks ?? [],
-            'footer_blocks' => $theme->footer_blocks ?? [],
-            'pages'         => $theme->pages ?? [],
-            'global_styles' => $theme->global_styles ?? [],
-        ], JSON_UNESCAPED_UNICODE);
-
-        // upsert در جدول settings سایت مشتری
-        $existing = $conn->table('settings')->where('key', 'active_canvas_theme_data')->first();
-        if ($existing) {
-            $conn->table('settings')
-                ->where('key', 'active_canvas_theme_data')
-                ->update(['value' => $themeJson, 'updated_at' => now()]);
-        } else {
-            $conn->table('settings')->insert([
-                'key'        => 'active_canvas_theme_data',
-                'value'      => $themeJson,
-                'group'      => 'theme',
-                'created_at' => now(),
-                'updated_at' => now(),
+        try {
+            Config::set("database.connections.{$connKey}", [
+                'driver'    => 'mysql',
+                'host'      => $site->db_host,
+                'port'      => '3306',
+                'database'  => $site->db_name,
+                'username'  => $site->db_user,
+                'password'  => $site->db_password ?? '',
+                'charset'   => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix'    => '',
+                'strict'    => false,
             ]);
+            DB::purge($connKey);
+            $conn = DB::connection($connKey);
+            $conn->getPdo(); // force connection — throws if credentials wrong
+        } catch (\Throwable $e) {
+            DB::purge($connKey);
+            return back()->with('error',
+                'اتصال به دیتابیس سایت "' . $site->title . '" ناموفق بود: ' . $e->getMessage()
+            );
         }
 
-        // پاکسازی کش سایت مشتری (در صورت وجود جدول cache)
         try {
-            $conn->table('cache')->where('key', 'like', '%canvas_theme%')->delete();
-        } catch (\Throwable) {}
+            $themeJson = json_encode([
+                'name'          => $theme->name,
+                'slug'          => $theme->slug,
+                'header_blocks' => $theme->header_blocks ?? [],
+                'footer_blocks' => $theme->footer_blocks ?? [],
+                'pages'         => $theme->pages ?? [],
+                'global_styles' => $theme->global_styles ?? [],
+            ], JSON_UNESCAPED_UNICODE);
 
-        // ── Provision theme pages into customer site's pages table ─────────────
-        $this->provisionThemePagesIntoDb($conn, $theme);
+            // upsert در جدول settings سایت مشتری
+            $existing = $conn->table('settings')->where('key', 'active_canvas_theme_data')->first();
+            if ($existing) {
+                $conn->table('settings')
+                    ->where('key', 'active_canvas_theme_data')
+                    ->update(['value' => $themeJson, 'updated_at' => now()]);
+            } else {
+                $conn->table('settings')->insert([
+                    'key'        => 'active_canvas_theme_data',
+                    'value'      => $themeJson,
+                    'group'      => 'theme',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // پاکسازی کش قالب
+            try {
+                $conn->table('cache')->where('key', 'like', '%canvas_theme%')->delete();
+            } catch (\Throwable) {}
+
+            // Provision theme pages into customer site's pages table
+            $this->provisionThemePagesIntoDb($conn, $theme);
+
+        } catch (\Throwable $e) {
+            DB::purge($connKey);
+            \Illuminate\Support\Facades\Log::error('ThemeInstall failed', [
+                'theme_id' => $theme->id,
+                'site_id'  => $site->id,
+                'error'    => $e->getMessage(),
+            ]);
+            return back()->with('error', 'خطا در نصب قالب: ' . $e->getMessage());
+        }
 
         DB::purge($connKey);
 
         return redirect()->route('admin.theme-builder.index')
-            ->with('success', 'قالب "' . $theme->name . '" با موفقیت روی سایت "' . $site->title . '" نصب شد و صفحات قالب ایجاد شدند.');
+            ->with('success', 'قالب "' . $theme->name . '" با موفقیت روی سایت "' . $site->title . '" نصب شد.');
     }
 
     /**

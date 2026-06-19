@@ -145,10 +145,20 @@
 
         <h6 class="font-bold mt-3">اطلاعات هاست و دیتابیس</h6>
 
+        @if(!$site->db_host || !$site->db_name)
+        <div class="alert alert-warning d-flex align-items-start gap-2 mb-3 p-3" style="border-radius:8px; background:#fffbeb; border:1px solid #fcd34d;">
+            <span style="font-size:1.1rem;">⚠️</span>
+            <div>
+                <strong>برای نصب قالب روی این سایت، اطلاعات دیتابیس الزامی است.</strong><br>
+                <small class="text-muted">این اطلاعات را از فایل <code>.env</code> سایت مشتری (<code>DB_HOST</code>, <code>DB_DATABASE</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code>) بخوانید و اینجا وارد کنید.</small>
+            </div>
+        </div>
+        @endif
+
         <input name="hosting_company" class="form-control mb-2" placeholder="نام شرکت هاست" value="{{ old('hosting_company', $site->hosting_company) }}">
-        <input name="db_host" class="form-control mb-2" placeholder="آدرس سرور دیتابیس" value="{{ old('db_host', $site->db_host) }}">
-        <input name="db_name" class="form-control mb-2" placeholder="نام دیتابیس" value="{{ old('db_name', $site->db_name) }}">
-        <input name="db_user" class="form-control mb-2" placeholder="کاربر دیتابیس" value="{{ old('db_user', $site->db_user) }}">
+        <input name="db_host" class="form-control mb-2" placeholder="آدرس سرور دیتابیس — مثلاً: 127.0.0.1" value="{{ old('db_host', $site->db_host) }}">
+        <input name="db_name" class="form-control mb-2" placeholder="نام دیتابیس — مثلاً: customer_site" value="{{ old('db_name', $site->db_name) }}">
+        <input name="db_user" class="form-control mb-2" placeholder="کاربر دیتابیس — مثلاً: root" value="{{ old('db_user', $site->db_user) }}">
         <input name="db_password" class="form-control mb-2" placeholder="رمز عبور دیتابیس" value="{{ old('db_password', $site->db_password) }}" type="password" autocomplete="new-password">
 
         <div class="row mt-3">
