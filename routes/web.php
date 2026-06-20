@@ -649,6 +649,14 @@ Route::prefix('admin')
             Route::post('/import-zip',                          [\App\Http\Controllers\Admin\ThemePackController::class, 'importZip'])->name('import-zip');
         });
 
+        // ─── TB-AI Studio Import Pipeline Admin ─────────────────────────────
+        Route::prefix('studio-imports')->name('studio-imports.')->group(function () {
+            Route::get('/',                [\App\Http\Controllers\Admin\ThemePackStudioAdminController::class, 'index'])->name('index');
+            Route::get('/{pack}',          [\App\Http\Controllers\Admin\ThemePackStudioAdminController::class, 'show'])->name('show');
+            Route::post('/{pack}/publish', [\App\Http\Controllers\Admin\ThemePackStudioAdminController::class, 'publish'])->name('publish');
+            Route::delete('/{pack}',       [\App\Http\Controllers\Admin\ThemePackStudioAdminController::class, 'destroy'])->name('destroy');
+        });
+
         // ─── Theme Marketplace (TB-2) ────────────────────────────────────────
         Route::prefix('theme-marketplace')->name('theme-marketplace.')->group(function () {
             Route::get('/',                                         [ThemeMarketplaceAdminController::class, 'index'])->name('index');

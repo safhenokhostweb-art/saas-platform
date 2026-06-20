@@ -51,5 +51,6 @@ class Kernel extends HttpKernel
         'notifications.enabled' => \App\Http\Middleware\EnsureNotificationsModuleEnabled::class,
         'wizard' => \App\Http\Middleware\EnsureSuperAdminForWizard::class,
         'tenant.api' => \App\Http\Middleware\AuthenticateTenantApi::class,
+        'studio.api' => \App\Http\Middleware\AuthenticateStudioApi::class,
     ];
 }

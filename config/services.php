@@ -106,6 +106,12 @@ return [
         'key' => env('ANTHROPIC_API_KEY', ''),
     ],
 
+    // TB-AI Studio — local developer tool import pipeline
+    'studio' => [
+        'api_key' => env('STUDIO_API_KEY', ''),
+        'secret'  => env('STUDIO_SECRET', ''),
+    ],
+
     // Customer-site default DB credentials — auto-filled on new site creation
     'customer_db' => [
         'host'     => env('CUSTOMER_DB_HOST', '127.0.0.1'),

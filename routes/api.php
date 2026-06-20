@@ -233,3 +233,19 @@ Route::prefix('ux')->middleware(['auth:sanctum', 'throttle:120,1'])->group(funct
     Route::post('interaction',   [\SaaSPlatform\CoreUtils\Http\Controllers\RealtimePollController::class, 'recordInteraction'])->name('api.ux.interaction');
     Route::post('performance',   [\SaaSPlatform\CoreUtils\Http\Controllers\RealtimePollController::class, 'recordPerformance'])->name('api.ux.performance');
 });
+
+/*
+|--------------------------------------------------------------------------
+| TB-AI Studio Import Pipeline
+|--------------------------------------------------------------------------
+| Receives theme pack ZIPs from the local TB-AI Studio desktop tool.
+| Auth: studio.api middleware (Bearer key + optional HMAC).
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/studio')->middleware(['studio.api', 'throttle:30,1'])->name('api.studio.')->group(function () {
+    Route::post('import',          [\App\Http\Controllers\Api\ThemePackStudioController::class, 'import'])->name('import');
+    Route::post('validate',        [\App\Http\Controllers\Api\ThemePackStudioController::class, 'validate'])->name('validate');
+    Route::get('preview/{uuid}',   [\App\Http\Controllers\Api\ThemePackStudioController::class, 'preview'])->name('preview');
+    Route::post('install/{uuid}',  [\App\Http\Controllers\Api\ThemePackStudioController::class, 'install'])->name('install');
+    Route::post('publish/{uuid}',  [\App\Http\Controllers\Api\ThemePackStudioController::class, 'publish'])->name('publish');
+});
