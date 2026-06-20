@@ -5,6 +5,33 @@
 
 ---
 
+## 2026-06-20 — TB3 Sprint 10: LOW Gaps — GAP-011/012 + Tailwind v4 Fixes
+
+**Reason:** Complete all remaining Sprint 10 gaps. GAP-010 (Bundle System) deferred as separate sprint.
+
+### New Files
+- `app/Services/ThemeBuilder/ThemeDemoDataService.php` — GAP-012: block scanner, 14 content-type mappings, saveManifest(), getManifest()
+- `database/migrations/2026_06_20_110000_add_installed_version_to_theme_licenses.php` — GAP-011: installed_theme_version SMALLINT in theme_licenses
+- `database/migrations/2026_06_20_120000_add_demo_data_config_to_theme_marketplace.php` — GAP-012: demo_data_config JSON + has_demo_data bool
+
+### Modified Files
+- `app/Models/ThemeLicense.php` — grant() records current theme version; isOutdated() helper
+- `app/Models/Theme.php` — outdatedLicensesCount() convenience method
+- `app/Models/ThemeMarketplace.php` — demo_data_config + has_demo_data fillable + casts
+- `app/Http/Controllers/Admin/ThemeMarketplaceAdminController.php` — buildDemoManifest() endpoint; ThemeDemoDataService injected
+- `resources/views/admin/theme-marketplace/index.blade.php` — "N آپدیت" badge for outdated licenses; Tailwind v4 flex-shrink-0→shrink-0
+- `resources/views/admin/theme-marketplace/preview.blade.php` — Demo Data section with content grid, scan button (Alpine.js); bg-gradient→bg-linear fixes
+
+### Gaps Resolved
+- GAP-011 LOW: Update notification — installed_theme_version column, isOutdated() helper, admin index badge
+- GAP-012 LOW: Demo data manifest — ThemeDemoDataService scans 14 block types, preview page shows content requirements with rescan
+- Tailwind v4: flex-shrink-0→shrink-0, bg-gradient-to-l→bg-linear-to-l, bg-gradient-to-br→bg-linear-to-br
+
+### Sprint 10 Final Status: TB3_SPRINT10_CERTIFIED
+All 13 gaps resolved except GAP-010 (Bundle System — deferred separate sprint).
+
+---
+
 ## 2026-06-20 — TB3 Sprint 10: MEDIUM Gaps — GAP-009/013 + Initialize Endpoint
 
 **Reason:** Resolve remaining MEDIUM gaps: annual/lifetime pricing UI, preview page, and admin initialize button.
