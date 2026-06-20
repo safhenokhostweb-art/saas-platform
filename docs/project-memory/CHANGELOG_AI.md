@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-06-20 — TB3 Sprint 10: Professional Marketplace Themes — CRITICAL+HIGH GAPS RESOLVED
+
+**Reason:** Sprint 10 audit (TB3_SPRINT10_AUDIT.md + TB3_SPRINT10_GAP_ANALYSIS.md) found 3 CRITICAL + 4 HIGH + 3 MEDIUM gaps. All CRITICAL+HIGH resolved.
+
+### New Files (saas-platform — 3 PHP + 1 Blade)
+- `app/Console/Commands/MarketplaceThemeSeedCommand.php` — NEW: seeds 12 themes across all 15 categories, backfills existing
+- `app/Console/Commands/MarketplaceSeedScoresCommand.php` — NEW: wires orphaned ThemeMarketplaceQualityService, scores all marketplace themes
+- `resources/views/admin/theme-marketplace/scoring.blade.php` — NEW: 5-dimension scoring dashboard with per-theme score bars, AJAX re-score button
+
+### Modified Files
+- `database/migrations/2026_06_20_000001_add_category_and_scoring_to_theme_marketplace.php` — Rewrote to use raw SQL + Schema::hasColumn() guards (fixes opcache-related Blueprint method error)
+- `app/Http/Controllers/Admin/ThemeMarketplaceAdminController.php` — Added scoring(), scoreTheme(), recordInstall() + search/category filter in index()
+- `resources/views/admin/theme-marketplace/index.blade.php` — Added search bar, category filter dropdown, "امتیازدهی" button, bestseller/new-release badges, category label chips
+- `routes/web.php` — 3 new routes: /scoring, /{theme}/score, /{theme}/record-install
+
+### Gaps Resolved
+- GAP-001 CRITICAL: MarketplaceThemeSeedCommand — 12 themes for news/educational/medical/legal/real_estate/restaurant/portfolio/agency/marketplace/saas/landing/blog
+- GAP-002 CRITICAL: Migration fixed (raw SQL bypasses opcache + idempotent hasColumn() guards)
+- GAP-003 CRITICAL: MarketplaceSeedScoresCommand wires quality service
+- BRK-001: ThemeMarketplaceQualityService wired to controller (scoreTheme route)
+- BRK-002: installs_count increment API endpoint (recordInstall) + auto-bestseller at 10+ installs
+- BRK-003: Existing themes backfilled with category in seedCommand
+- GAP-004 HIGH: Scoring dashboard (scoring.blade.php)
+- GAP-005 HIGH: Search filter in marketplace index
+- GAP-006 HIGH: Category filter in marketplace index
+- GAP-007 MEDIUM: Bestseller badge display + auto-promote in recordInstall()
+- GAP-008 MEDIUM: New release badge display in index
+
+---
+
 ## 2026-06-20 — GLOBAL SIDEBAR UI CONSISTENCY FIX — SIDEBAR_UI_CERTIFIED
 
 **Reason:** 3-issue sidebar audit: platform admin too spacious, customer admin background height uncertain, account sidebar cutting off visually.

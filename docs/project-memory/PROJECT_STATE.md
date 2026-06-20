@@ -16,13 +16,33 @@
 
 ## Current Module
 
-**TB3 SPRINT 9.5 — VISUAL REVERSE ENGINEERING ENGINE — TB3_SPRINT9_5_CERTIFIED (2026-06-20)**
+**TB3 SPRINT 10 — PROFESSIONAL MARKETPLACE THEMES — CRITICAL+HIGH GAPS RESOLVED (2026-06-20)**
 
 ---
 
 ## Current Phase
 
-**TB3_SPRINT9_5_CERTIFIED: 7-phase pipeline analyzes websites and generates structurally similar Persian ThemePacks.**
+**TB3 Sprint 10 CRITICAL+HIGH gaps addressed. Migration fixed. 12 new themes seeded. Scoring dashboard live.**
+
+### TB3 Sprint 10 Summary (in progress)
+- **GAP-001 CRITICAL ✅**: `MarketplaceThemeSeedCommand` — 12 themes across all 15 categories
+- **GAP-002 CRITICAL ✅**: Migration rewritten with raw SQL + `Schema::hasColumn()` guards
+- **GAP-003 CRITICAL ✅**: `MarketplaceSeedScoresCommand` + `scoreTheme` HTTP endpoint
+- **BRK-001 ✅**: `ThemeMarketplaceQualityService` wired to `ThemeMarketplaceAdminController`
+- **BRK-002 ✅**: `installs_count` increment endpoint + auto-bestseller at 10+ installs
+- **BRK-003 ✅**: Backfill existing themes with `category` field
+- **GAP-004 HIGH ✅**: Scoring dashboard view (`/admin/theme-marketplace/scoring`)
+- **GAP-005 HIGH ✅**: Marketplace search (name/slug filter in index)
+- **GAP-006 HIGH ✅**: Category filter dropdown in admin marketplace index
+- **GAP-007 MEDIUM ✅**: Bestseller badge display + auto-promote logic
+- **GAP-008 MEDIUM ✅**: New release badge display in index view
+- **Remaining LOW items**: GAP-009 (Annual/Lifetime pricing UI), GAP-010 (bundles), GAP-011 (update notifications), GAP-012 (demo data), GAP-013 (preview page)
+
+### Also completed in this session
+- **SIDEBAR_UI_CERTIFIED**: Platform admin + customer-site sidebar spacing/height fixes
+- **DATE_LOCALIZATION_CERTIFIED**: 72 Jalali/Persian date fixes across both repos
+- **TB3_SPRINT9_5_CERTIFIED**: Visual Reverse Engineering Engine (7-phase pipeline)
+- **Duplicate Notification Fix**: 51 view files cleaned, admin.blade.php auto-dismiss alerts
 
 ### TB3 Sprint 9.5 Summary
 - 7-phase pipeline: DOM Extraction → Layout → Visual → Commerce → Similarity → Reconstruction → Validation
