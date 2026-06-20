@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-06-20 — TB3 Sprint 12: Theme Detail Page + My-Licenses Upgrade
+
+**Reason:** Sprint 11 index had no single-theme detail page; my-licenses had no thumbnails or update indicators.
+
+### saas-platform
+- `ThemeMarketplaceApiController::myLicenses()` — now returns: installed_theme_version, is_outdated, thumbnail, category, version, version_notes
+
+### customer-site
+- `ThemeMarketplaceController::show()` — NEW: loads single theme via platform API + cache
+- `routes/web.php` — GET /{themeId} → show, named theme-marketplace.show
+- `admin/theme-marketplace/show.blade.php` — NEW: hero cover, pricing sidebar (one-time/annual/lifetime), badges, screenshots gallery, requirements, version notes, purchase/install CTA, demo URL
+- `admin/theme-marketplace/my-licenses.blade.php` — UPGRADED: thumbnail, update-available banner, amber badge for outdated, version notes for outdated, "آپدیت و نصب" button text
+- `admin/theme-marketplace/index.blade.php` — theme names now link to detail page
+
+---
+
 ## 2026-06-20 — TB3 Sprint 11: Marketplace API Enrichment + Customer UI Upgrade
 
 **Reason:** Sprint 10 rich data (categories, quality scores, pricing tiers, badges) was not exposed in the tenant-facing API or visible in customer marketplace UI.
