@@ -112,7 +112,7 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4 min-w-0">
               {{-- Thumbnail --}}
-              <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+              <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                 @if($theme->thumbnail)
                   <img src="{{ $theme->thumbnail }}" class="w-full h-full object-cover" alt="">
                 @else
@@ -142,12 +142,18 @@
                   @if($theme->category)
                     <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ \App\Models\Theme::categoryLabel($theme->category) }}</span>
                   @endif
+                  @if($theme->is_marketplace)
+                    @php $outdated = $theme->outdatedLicensesCount(); @endphp
+                    @if($outdated > 0)
+                      <span class="bg-rose-100 text-rose-700 text-xs px-2 py-0.5 rounded-full font-medium" title="{{ $outdated }} سایت نسخه قدیمی دارند">⬆ {{ $outdated }} آپدیت</span>
+                    @endif
+                  @endif
                   <span class="text-xs text-gray-400">{{ $theme->status === 'published' ? 'منتشر' : 'پیش‌نویس' }}</span>
                 </div>
                 <p class="text-xs text-gray-400 mt-0.5">{{ $theme->slug }}</p>
               </div>
             </div>
-            <div class="flex items-center gap-3 flex-shrink-0 mr-4">
+            <div class="flex items-center gap-3 shrink-0 mr-4">
               @if($theme->is_marketplace)
                 <span class="text-sm font-semibold text-gray-800">{{ number_format($theme->marketplace_price) }} ریال</span>
                 <span class="text-xs text-gray-400">{{ $theme->licenses()->count() }} لایسنس</span>

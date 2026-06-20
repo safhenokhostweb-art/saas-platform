@@ -202,6 +202,15 @@ class Theme extends Model
         return $this->licenses()->where('site_id', $siteId)->exists();
     }
 
+    // GAP-011: count licenses where installed version is behind current
+    public function outdatedLicensesCount(): int
+    {
+        return $this->licenses()
+            ->whereNotNull('installed_theme_version')
+            ->where('installed_theme_version', '<', $this->version ?? 1)
+            ->count();
+    }
+
     /** Get payload for front-end (header + footer + global_styles + metadata). */
     public function getPayload(): array
     {
