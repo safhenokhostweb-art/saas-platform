@@ -31,6 +31,8 @@ class ThemeMarketplace extends Model
         'preview_url',
         'category_tags',
         'supported_modules_json',
+        'demo_data_config',
+        'has_demo_data',
     ];
 
     protected $casts = [
@@ -41,6 +43,8 @@ class ThemeMarketplace extends Model
         'is_featured'        => 'boolean',
         'is_new_release'     => 'boolean',
         'is_bestseller'      => 'boolean',
+        'has_demo_data'      => 'boolean',
+        'demo_data_config'   => 'array',
         'sales_count'        => 'integer',
         'design_score'       => 'integer',
         'commerce_score'     => 'integer',

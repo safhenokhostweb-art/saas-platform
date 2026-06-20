@@ -6,13 +6,17 @@ use App\Models\Theme;
 use App\Models\ThemeLicense;
 use App\Models\ThemeMarketplace;
 use App\Models\ThemePurchaseOrder;
+use App\Services\ThemeBuilder\ThemeDemoDataService;
 use App\Services\ThemeBuilder\ThemeMarketplaceQualityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
 class ThemeMarketplaceAdminController extends Controller
 {
-    public function __construct(private ThemeMarketplaceQualityService $quality) {}
+    public function __construct(
+        private ThemeMarketplaceQualityService $quality,
+        private ThemeDemoDataService $demoData,
+    ) {}
 
     public function index(Request $request)
     {
@@ -63,8 +67,21 @@ class ThemeMarketplaceAdminController extends Controller
     // GAP-013: Theme marketplace preview page
     public function preview(Theme $theme)
     {
-        $meta = ThemeMarketplace::where('theme_id', $theme->id)->first();
-        return view('admin.theme-marketplace.preview', compact('theme', 'meta'));
+        $meta     = ThemeMarketplace::where('theme_id', $theme->id)->first();
+        $manifest = $this->demoData->getManifest($theme);
+        return view('admin.theme-marketplace.preview', compact('theme', 'meta', 'manifest'));
+    }
+
+    // GAP-012: Build/refresh demo data manifest for a theme
+    public function buildDemoManifest(Theme $theme)
+    {
+        $manifest = $this->demoData->saveManifest($theme);
+        return response()->json([
+            'success'       => true,
+            'has_demo_data' => count($manifest['detected_content']) > 0,
+            'total_items'   => $manifest['total_items'],
+            'content'       => $manifest['detected_content'],
+        ]);
     }
 
     // GAP-004: Quality scoring dashboard

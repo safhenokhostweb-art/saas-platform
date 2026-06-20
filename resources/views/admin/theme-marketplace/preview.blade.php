@@ -196,6 +196,44 @@
       </div>
     </div>
 
+    {{-- Demo Data Manifest (GAP-012) --}}
+    <div class="px-8 py-6 border-b border-gray-100" x-data="demoManifest()">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm font-semibold text-gray-700">داده‌های نمونه (Demo Data)</h2>
+          @if($meta?->has_demo_data)
+            <span class="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">✓ فعال</span>
+          @else
+            <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">شناسایی نشده</span>
+          @endif
+        </div>
+        <button @click="scan()" :disabled="loading"
+          class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">
+          <svg class="w-3.5 h-3.5" :class="loading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span x-text="loading ? 'در حال اسکن...' : 'اسکن مجدد'"></span>
+        </button>
+      </div>
+      @if($manifest && count($manifest['detected_content'] ?? []) > 0)
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+          @foreach($manifest['detected_content'] as $item)
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center gap-2">
+            <span class="text-xl">{{ $item['icon'] }}</span>
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ $item['count'] }} {{ $item['label'] }}</p>
+              <p class="text-xs text-gray-400 font-mono">{{ $item['type'] }}</p>
+            </div>
+          </div>
+          @endforeach
+        </div>
+        <p class="text-xs text-gray-400">مجموع: {{ $manifest['total_items'] ?? 0 }} آیتم محتوا — اسکن: {{ $manifest['generated_at'] ? \Carbon\Carbon::parse($manifest['generated_at'])->diffForHumans() : '—' }}</p>
+      @else
+        <p class="text-sm text-gray-400">هنوز اسکن نشده یا بلوکی که نیاز به محتوا داشته باشد وجود ندارد. روی «اسکن مجدد» کلیک کنید.</p>
+      @endif
+      <div x-show="result" x-cloak class="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+        <p class="text-sm text-emerald-700" x-text="result"></p>
+      </div>
+    </div>
+
     {{-- Quality Issues --}}
     @if($meta?->quality_issues && count($meta->quality_issues) > 0)
     <div class="px-8 py-6 border-b border-gray-100">
@@ -234,4 +272,34 @@
   </div>
 
 </div>
+
+@push('scripts')
+<script>
+function demoManifest() {
+    return {
+        loading: false,
+        result: null,
+        async scan() {
+            this.loading = true;
+            this.result  = null;
+            try {
+                const res = await fetch('{{ route('admin.theme-marketplace.demo-manifest', $theme) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.result = `اسکن کامل شد: ${data.total_items} آیتم در ${data.content.length} دسته شناسایی شد.`;
+                    setTimeout(() => location.reload(), 1200);
+                }
+            } catch(e) {
+                this.result = 'خطا در اسکن.';
+            } finally {
+                this.loading = false;
+            }
+        }
+    };
+}
+</script>
+@endpush
 @endsection
