@@ -9,7 +9,6 @@
     $border = $t['theme_sidebar_border'] ?? $defaults['theme_sidebar_border'];
 @endphp
 <style id="platform-admin-sidebar-theme">
-/* همان الگوی customer-site: hover/active با شفافیت روی accent (نه پس‌زمینهٔ جدا) */
 #admin-sidebar {
   --platform-sidebar-bg-top: {{ $bgTop }};
   --platform-sidebar-bg-bottom: {{ $bgBottom }};
@@ -17,177 +16,207 @@
   --platform-sidebar-muted: {{ $muted }};
   --platform-sidebar-accent: {{ $accent }};
   --platform-sidebar-border: {{ $border }};
-  --platform-sidebar-hover: color-mix(in srgb, var(--platform-sidebar-accent) 20%, transparent);
-  --platform-sidebar-active: color-mix(in srgb, var(--platform-sidebar-accent) 32%, transparent);
+  --platform-sidebar-hover: color-mix(in srgb, var(--platform-sidebar-accent) 15%, transparent);
+  --platform-sidebar-active: color-mix(in srgb, var(--platform-sidebar-accent) 28%, transparent);
 }
+
+/* ─── پس‌زمینه سایدبار ─── */
 #admin-sidebar .admin-sidebar-scroll-area {
   background: linear-gradient(165deg, var(--platform-sidebar-bg-top) 0%, var(--platform-sidebar-bg-bottom) 100%) !important;
   border-left: 1px solid color-mix(in srgb, var(--platform-sidebar-border) 55%, transparent) !important;
   box-shadow: -4px 0 24px color-mix(in srgb, var(--platform-sidebar-bg-bottom) 50%, transparent) !important;
 }
-#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center.flex-shrink-0 {
+
+/* ─── هدر / لوگو ─── */
+#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center.shrink-0 {
   background: color-mix(in srgb, var(--platform-sidebar-bg-bottom) 78%, rgba(0,0,0,0.85) 22%) !important;
   border-bottom-color: color-mix(in srgb, var(--platform-sidebar-border) 45%, transparent) !important;
 }
-#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center .text-slate-100,
-#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center .sidebar-text {
+#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center.shrink-0 .sidebar-text {
   color: var(--platform-sidebar-text) !important;
 }
-#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center svg {
+#admin-sidebar .admin-sidebar-scroll-area > div.flex.items-center.shrink-0 svg {
   color: var(--platform-sidebar-accent) !important;
 }
-/* گروه‌های منو — جمع‌شونده (مثل customer-site) */
+
+/* ═══════════════════════════════════════════
+   رنگ‌بندی گروه‌ها — هر گروه رنگ اختصاصی دارد
+   ═══════════════════════════════════════════ */
+#admin-sidebar .admin-sidebar-group { --grp-color: var(--platform-sidebar-accent); }
+#admin-sidebar .admin-sidebar-group:nth-child(1)  { --grp-color: var(--ui-indigo);       }
+#admin-sidebar .admin-sidebar-group:nth-child(2)  { --grp-color: var(--ui-purple);        }
+#admin-sidebar .admin-sidebar-group:nth-child(3)  { --grp-color: var(--ui-info);          }
+#admin-sidebar .admin-sidebar-group:nth-child(4)  { --grp-color: var(--ui-success);       }
+#admin-sidebar .admin-sidebar-group:nth-child(5)  { --grp-color: var(--ui-danger);        }
+#admin-sidebar .admin-sidebar-group:nth-child(6)  { --grp-color: var(--ui-warning);       }
+#admin-sidebar .admin-sidebar-group:nth-child(7)  { --grp-color: var(--ui-info-hover);    }
+#admin-sidebar .admin-sidebar-group:nth-child(8)  { --grp-color: var(--ui-neutral, #94a3b8); }
+#admin-sidebar .admin-sidebar-group:nth-child(9)  { --grp-color: var(--ui-warning-hover); }
+#admin-sidebar .admin-sidebar-group:nth-child(10) { --grp-color: var(--ui-purple-hover);  }
+
+/* ─── گروه (wrapper) ─── */
 #admin-sidebar .admin-sidebar-group {
-  margin-bottom: 0.2rem;
-}
-#admin-sidebar .admin-sidebar-group:last-of-type {
   margin-bottom: 0;
 }
-/* حذف mb-4 از x-core-ui::sidebar-group wrapper */
+
+/* ─── حذف mb-4 از sidebar-group.blade.php ─── */
 #admin-sidebar .admin-sidebar-item-list > div {
   margin-bottom: 0 !important;
+  padding-top: 0.1rem !important;
 }
+
+/* ─── لیست آیتم‌ها ─── */
+#admin-sidebar .admin-sidebar-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+#admin-sidebar .sidebar-group-items.is-collapsed {
+  display: none !important;
+}
+
+/* ─── دکمه گروه (toggle) — طراحی جدید ─── */
 #admin-sidebar .sidebar-group-toggle {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
   border: none;
-  background: transparent;
-  padding: 0;
-  margin: 0 0 0.1rem 0;
+  border-right: 3px solid color-mix(in srgb, var(--grp-color) 60%, transparent);
+  background: color-mix(in srgb, var(--grp-color) 8%, transparent);
+  padding: 0.38rem 0.75rem 0.38rem 0.625rem;
+  margin: 0.55rem 0 0.2rem 0;
   cursor: pointer;
-  color: inherit;
   text-align: right;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: inherit;
 }
 #admin-sidebar .sidebar-group-toggle:hover {
-  background: var(--platform-sidebar-hover) !important;
-  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--grp-color) 16%, transparent) !important;
+  border-right-color: var(--grp-color) !important;
 }
+#admin-sidebar .sidebar-group-toggle[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--grp-color) 12%, transparent) !important;
+  border-right-color: var(--grp-color) !important;
+}
+
+/* ─── لیبل گروه — بزرگ‌تر، خوانا، بدون uppercase ─── */
 #admin-sidebar .sidebar-group-label {
   display: block;
   flex: 1;
-  padding: 0.18rem 0.65rem 0.22rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--platform-sidebar-muted) !important;
-  border-bottom: 1px solid var(--platform-sidebar-border) !important;
-  margin-bottom: 0;
+  font-size: 0.82rem !important;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none !important;
+  color: var(--grp-color) !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+  margin: 0;
+  line-height: 1.4;
 }
-#admin-sidebar .sidebar-group-toggle[aria-expanded="true"] .sidebar-group-label {
-  color: var(--platform-sidebar-accent) !important;
-  border-bottom-color: color-mix(in srgb, var(--platform-sidebar-accent) 35%, transparent) !important;
-}
+
+/* ─── فلش گروه ─── */
 #admin-sidebar .sidebar-group-caret {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  min-width: 0.9rem;
   flex-shrink: 0;
-  color: var(--platform-sidebar-muted);
-  transition: transform 0.15s ease, color 0.15s ease;
+  color: color-mix(in srgb, var(--grp-color) 70%, transparent);
+  transition: transform 0.22s ease, color 0.15s ease;
 }
 #admin-sidebar .sidebar-group-caret.is-open {
   transform: rotate(180deg);
-  color: var(--platform-sidebar-accent);
+  color: var(--grp-color);
 }
-#admin-sidebar .sidebar-group-items.is-collapsed {
-  display: none;
-}
-#admin-sidebar .admin-sidebar-item-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-/* نوار کناری جمع‌شده (فقط آیکن): دکمهٔ گروه مخفی، همهٔ لینک‌ها نمایش */
+
+/* ─── سایدبار جمع‌شده (فقط آیکن) ─── */
 #admin-sidebar[data-collapsed="true"] .sidebar-group-toggle {
   display: none;
 }
 #admin-sidebar[data-collapsed="true"] .sidebar-group-items {
   display: flex !important;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 #admin-sidebar[data-collapsed="true"] .admin-sidebar-group {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
+
+/* ─── لینک‌های ناوبری ─── */
 #admin-sidebar .sidebar-link {
   color: var(--platform-sidebar-text) !important;
-  padding: 0.45rem 0.875rem !important;
+  padding: 0.42rem 0.875rem !important;
   gap: 0.6rem;
   align-items: center;
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 0.5rem !important;
 }
 #admin-sidebar .sidebar-link:hover {
-  background: var(--platform-sidebar-hover) !important;
+  background: color-mix(in srgb, var(--grp-color) 15%, transparent) !important;
   color: var(--platform-sidebar-text) !important;
+  transform: none !important;
 }
 #admin-sidebar .sidebar-link.active {
-  background: var(--platform-sidebar-active) !important;
+  background: color-mix(in srgb, var(--grp-color) 25%, transparent) !important;
   color: var(--platform-sidebar-text) !important;
   font-weight: 600 !important;
-  box-shadow: inset -3px 0 0 var(--platform-sidebar-accent) !important;
+  box-shadow: inset -3px 0 0 var(--grp-color) !important;
 }
 #admin-sidebar .sidebar-link svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  min-width: 1.25rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  min-width: 1.1rem;
   flex-shrink: 0;
-  color: var(--platform-sidebar-muted) !important;
+  color: color-mix(in srgb, var(--grp-color) 55%, var(--platform-sidebar-muted)) !important;
 }
 #admin-sidebar .sidebar-link:hover svg,
 #admin-sidebar .sidebar-link.active svg {
-  color: var(--platform-sidebar-accent) !important;
-}
-#admin-sidebar .pt-4.mt-4.border-t {
-  border-top: 1px solid var(--platform-sidebar-border) !important;
+  color: var(--grp-color) !important;
 }
 
-/* ═══ رنگ‌بندی گروه‌های منو — از Design Token Authority ═══ */
-#admin-sidebar .admin-sidebar-group { --grp-color: var(--platform-sidebar-accent); }
+/* ─── جداکننده پایین سایدبار ─── */
+#admin-sidebar .sidebar-bottom-section {
+  border-top: 1px solid color-mix(in srgb, var(--platform-sidebar-border) 50%, transparent);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
 
-/* ۱ داشبورد → accent تم */
-#admin-sidebar .admin-sidebar-group:nth-child(1)  { --grp-color: var(--ui-indigo);       }
-/* ۲ مشتریان / کاربران → secondary */
-#admin-sidebar .admin-sidebar-group:nth-child(2)  { --grp-color: var(--ui-purple);        }
-/* ۳ سایت‌ها / پروژه‌ها → info */
-#admin-sidebar .admin-sidebar-group:nth-child(3)  { --grp-color: var(--ui-info);          }
-/* ۴ فروش / صورتحساب → success */
-#admin-sidebar .admin-sidebar-group:nth-child(4)  { --grp-color: var(--ui-success);       }
-/* ۵ پشتیبانی / تیکت‌ها → danger */
-#admin-sidebar .admin-sidebar-group:nth-child(5)  { --grp-color: var(--ui-danger);        }
-/* ۶ فرم‌ها / برگه‌ها → warning */
-#admin-sidebar .admin-sidebar-group:nth-child(6)  { --grp-color: var(--ui-warning);       }
-/* ۷ محتوا / مقالات → info-hover */
-#admin-sidebar .admin-sidebar-group:nth-child(7)  { --grp-color: var(--ui-info-hover);    }
-/* ۸ تنظیمات سیستم → neutral */
-#admin-sidebar .admin-sidebar-group:nth-child(8)  { --grp-color: var(--ui-neutral);       }
-/* ۹ بازاریابی → warning-hover */
-#admin-sidebar .admin-sidebar-group:nth-child(9)  { --grp-color: var(--ui-warning-hover); }
-/* ۱۰ گزارش‌ها / آمار → purple-hover */
-#admin-sidebar .admin-sidebar-group:nth-child(10) { --grp-color: var(--ui-purple-hover);  }
+/* ─── دکمه collapse داخل سایدبار ─── */
+#admin-sidebar .sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.38rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--platform-sidebar-muted) 70%, transparent);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  text-align: right;
+  margin-bottom: 0.35rem;
+}
+#admin-sidebar .sidebar-collapse-btn:hover {
+  background: color-mix(in srgb, var(--platform-sidebar-muted) 15%, transparent);
+  color: var(--platform-sidebar-text);
+}
+#admin-sidebar[data-collapsed="true"] .sidebar-collapse-btn {
+  justify-content: center;
+  padding: 0.38rem;
+}
+#admin-sidebar[data-collapsed="true"] .sidebar-collapse-btn .sidebar-collapse-text {
+  display: none;
+}
 
-#admin-sidebar .admin-sidebar-group .sidebar-group-label {
-  color: var(--grp-color) !important;
-  border-bottom-color: color-mix(in srgb, var(--grp-color) 30%, transparent) !important;
-}
-#admin-sidebar .admin-sidebar-group .sidebar-group-caret {
-  color: var(--grp-color) !important;
-  opacity: 0.7;
-}
-#admin-sidebar .admin-sidebar-group .sidebar-link:hover {
-  background: color-mix(in srgb, var(--grp-color) 18%, transparent) !important;
-  color: var(--platform-sidebar-text) !important;
-}
-#admin-sidebar .admin-sidebar-group .sidebar-link.active {
-  background: color-mix(in srgb, var(--grp-color) 28%, transparent) !important;
-  color: var(--platform-sidebar-text) !important;
-  box-shadow: inset -3px 0 0 var(--grp-color) !important;
-}
-#admin-sidebar .admin-sidebar-group .sidebar-link:hover svg,
-#admin-sidebar .admin-sidebar-group .sidebar-link.active svg {
-  color: var(--grp-color) !important;
+/* ─── خروج ─── */
+#admin-sidebar .pt-2.mt-2.border-t,
+#admin-sidebar .sidebar-bottom-section {
+  border-top-color: color-mix(in srgb, var(--platform-sidebar-border) 50%, transparent) !important;
 }
 </style>

@@ -13,21 +13,30 @@ class Theme extends Model
     public const SOURCE_GENERATOR = 'generator';
     public const SOURCE_SEEDER = 'seeder';
 
-    public const CATEGORY_CORPORATE    = 'corporate';
-    public const CATEGORY_PERSONAL     = 'personal';
-    public const CATEGORY_BLOG         = 'blog';
-    public const CATEGORY_NEWS         = 'news';
-    public const CATEGORY_EDUCATIONAL  = 'educational';
-    public const CATEGORY_MEDICAL      = 'medical';
-    public const CATEGORY_LEGAL        = 'legal';
-    public const CATEGORY_REAL_ESTATE  = 'real_estate';
-    public const CATEGORY_RESTAURANT   = 'restaurant';
-    public const CATEGORY_PORTFOLIO    = 'portfolio';
-    public const CATEGORY_AGENCY       = 'agency';
-    public const CATEGORY_MARKETPLACE  = 'marketplace';
-    public const CATEGORY_STORE        = 'store';
-    public const CATEGORY_SAAS         = 'saas';
-    public const CATEGORY_LANDING      = 'landing';
+    public const CATEGORY_CORPORATE     = 'corporate';
+    public const CATEGORY_PERSONAL      = 'personal';
+    public const CATEGORY_BLOG          = 'blog';
+    public const CATEGORY_NEWS          = 'news';
+    public const CATEGORY_EDUCATIONAL   = 'educational';
+    public const CATEGORY_MEDICAL       = 'medical';
+    public const CATEGORY_LEGAL         = 'legal';
+    public const CATEGORY_LAWYER        = 'lawyer';
+    public const CATEGORY_REAL_ESTATE   = 'real_estate';
+    public const CATEGORY_RESTAURANT    = 'restaurant';
+    public const CATEGORY_PORTFOLIO     = 'portfolio';
+    public const CATEGORY_AGENCY        = 'agency';
+    public const CATEGORY_MARKETPLACE   = 'marketplace';
+    public const CATEGORY_STORE         = 'store';
+    public const CATEGORY_SAAS          = 'saas';
+    public const CATEGORY_LANDING       = 'landing';
+    public const CATEGORY_BEAUTY        = 'beauty';
+    public const CATEGORY_TRAVEL        = 'travel';
+    public const CATEGORY_AUTOMOTIVE    = 'automotive';
+    public const CATEGORY_INDUSTRIAL    = 'industrial';
+    public const CATEGORY_CONSTRUCTION  = 'construction';
+    public const CATEGORY_FASHION       = 'fashion';
+    public const CATEGORY_ELECTRONICS   = 'electronics';
+    public const CATEGORY_SINGLE_PRODUCT= 'single_product';
 
     public const LICENSE_FREE     = 'free';
     public const LICENSE_PREMIUM  = 'premium';
@@ -36,21 +45,30 @@ class Theme extends Model
     public static function categoryLabel(string $category): string
     {
         return [
-            self::CATEGORY_CORPORATE   => 'شرکتی',
-            self::CATEGORY_PERSONAL    => 'شخصی',
-            self::CATEGORY_BLOG        => 'وبلاگ',
-            self::CATEGORY_NEWS        => 'خبری',
-            self::CATEGORY_EDUCATIONAL => 'آموزشی',
-            self::CATEGORY_MEDICAL     => 'پزشکی',
-            self::CATEGORY_LEGAL       => 'حقوقی',
-            self::CATEGORY_REAL_ESTATE => 'مسکن',
-            self::CATEGORY_RESTAURANT  => 'رستوران',
-            self::CATEGORY_PORTFOLIO   => 'پورتفولیو',
-            self::CATEGORY_AGENCY      => 'آژانس',
-            self::CATEGORY_MARKETPLACE => 'مارکت‌پلیس',
-            self::CATEGORY_STORE       => 'فروشگاه',
-            self::CATEGORY_SAAS        => 'SaaS',
-            self::CATEGORY_LANDING     => 'لندینگ پیج',
+            self::CATEGORY_CORPORATE      => 'شرکتی',
+            self::CATEGORY_PERSONAL       => 'شخصی',
+            self::CATEGORY_BLOG           => 'وبلاگ',
+            self::CATEGORY_NEWS           => 'خبری',
+            self::CATEGORY_EDUCATIONAL    => 'آموزشی',
+            self::CATEGORY_MEDICAL        => 'پزشکی',
+            self::CATEGORY_LEGAL          => 'حقوقی',
+            self::CATEGORY_LAWYER         => 'وکیل',
+            self::CATEGORY_REAL_ESTATE    => 'مسکن',
+            self::CATEGORY_RESTAURANT     => 'رستوران',
+            self::CATEGORY_PORTFOLIO      => 'پورتفولیو',
+            self::CATEGORY_AGENCY         => 'آژانس',
+            self::CATEGORY_MARKETPLACE    => 'مارکت‌پلیس',
+            self::CATEGORY_STORE          => 'فروشگاه',
+            self::CATEGORY_SAAS           => 'SaaS',
+            self::CATEGORY_LANDING        => 'لندینگ پیج',
+            self::CATEGORY_BEAUTY         => 'زیبایی',
+            self::CATEGORY_TRAVEL         => 'گردشگری',
+            self::CATEGORY_AUTOMOTIVE     => 'خودرو',
+            self::CATEGORY_INDUSTRIAL     => 'صنعتی',
+            self::CATEGORY_CONSTRUCTION   => 'ساختمان',
+            self::CATEGORY_FASHION        => 'مد و فشن',
+            self::CATEGORY_ELECTRONICS    => 'الکترونیک',
+            self::CATEGORY_SINGLE_PRODUCT => 'محصول واحد',
         ][$category] ?? $category;
     }
 
