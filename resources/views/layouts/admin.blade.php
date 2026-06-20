@@ -305,7 +305,17 @@
                             @endforeach
                         @endif
 
-                        <div class="pt-2 mt-2 border-t border-slate-600/40">
+                        <div class="sidebar-bottom-section pt-2 mt-2 border-t border-slate-600/40">
+                            {{-- دکمه جمع/باز کردن سایدبار (داخل سایدبار، بالای خروج) --}}
+                            <button type="button" id="admin-sidebar-inner-toggle" class="sidebar-collapse-btn">
+                                <svg id="admin-sidebar-inner-icon-collapse" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                                </svg>
+                                <svg id="admin-sidebar-inner-icon-expand" class="w-4 h-4 shrink-0 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+                                </svg>
+                                <span class="sidebar-text sidebar-collapse-text">جمع کردن منو</span>
+                            </button>
                             @if(auth()->user()->is_admin)
                             <x-core-ui::navigation-item href="{{ route('dashboard') }}" class="sidebar-link">
                                 <x-slot:icon>
@@ -316,10 +326,10 @@
                                 <span class="sidebar-text">بازگشت به داشبورد</span>
                             </x-core-ui::navigation-item>
                             @endif
-                            <form method="POST" action="{{ route('logout') }}" class="mt-2">
+                            <form method="POST" action="{{ route('logout') }}" class="mt-1">
                                 @csrf
-                                <button type="submit" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-red-300 hover:bg-red-950/40 hover:text-red-100 border-0 bg-transparent cursor-pointer text-right">
-                                    <svg class="w-4 h-4 ml-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button type="submit" class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg text-red-300 hover:bg-red-950/40 hover:text-red-100 border-0 bg-transparent cursor-pointer text-right gap-2">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                     </svg>
                                     <span class="sidebar-text">خروج</span>
@@ -704,25 +714,41 @@
     @endif
     <script>
         (function() {
-            var sidebar = document.getElementById('admin-sidebar');
-            var toggle = document.getElementById('admin-sidebar-toggle');
-            var iconExpand = document.getElementById('admin-sidebar-toggle-icon-expand');
-            var iconCollapse = document.getElementById('admin-sidebar-toggle-icon-collapse');
-            var key = 'admin-sidebar-collapsed';
-            if (sidebar && toggle) {
-                var collapsed = localStorage.getItem(key) === 'true';
-                function apply() {
-                    sidebar.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
-                    if (iconExpand) iconExpand.classList.toggle('hidden', !collapsed);
-                    if (iconCollapse) iconCollapse.classList.toggle('hidden', collapsed);
-                }
-                apply();
-                toggle.addEventListener('click', function() {
-                    collapsed = !collapsed;
-                    localStorage.setItem(key, collapsed ? 'true' : 'false');
-                    apply();
-                });
+            var sidebar      = document.getElementById('admin-sidebar');
+            var topToggle    = document.getElementById('admin-sidebar-toggle');
+            var innerToggle  = document.getElementById('admin-sidebar-inner-toggle');
+            var topExpand    = document.getElementById('admin-sidebar-toggle-icon-expand');
+            var topCollapse  = document.getElementById('admin-sidebar-toggle-icon-collapse');
+            var innerExpand  = document.getElementById('admin-sidebar-inner-icon-expand');
+            var innerCollapse= document.getElementById('admin-sidebar-inner-icon-collapse');
+            var innerText    = innerToggle ? innerToggle.querySelector('.sidebar-collapse-text') : null;
+            var key          = 'admin-sidebar-collapsed';
+
+            if (!sidebar) return;
+
+            var collapsed = localStorage.getItem(key) === 'true';
+
+            function apply() {
+                sidebar.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+                /* آیکن‌های topbar */
+                if (topExpand)    topExpand.classList.toggle('hidden', !collapsed);
+                if (topCollapse)  topCollapse.classList.toggle('hidden', collapsed);
+                /* آیکن‌های دکمه داخل سایدبار */
+                if (innerExpand)  innerExpand.classList.toggle('hidden', !collapsed);
+                if (innerCollapse)innerCollapse.classList.toggle('hidden', collapsed);
+                /* متن دکمه داخل سایدبار */
+                if (innerText) innerText.textContent = collapsed ? 'باز کردن منو' : 'جمع کردن منو';
             }
+
+            function doToggle() {
+                collapsed = !collapsed;
+                localStorage.setItem(key, collapsed ? 'true' : 'false');
+                apply();
+            }
+
+            apply();
+            if (topToggle)   topToggle.addEventListener('click', doToggle);
+            if (innerToggle) innerToggle.addEventListener('click', doToggle);
         })();
         (function() {
             var toggles = document.querySelectorAll('#admin-sidebar [data-group-toggle]');
