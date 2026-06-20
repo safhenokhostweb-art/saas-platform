@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-06-20 — TB3 Sprint 10: MEDIUM Gaps — GAP-009/013 + Initialize Endpoint
+
+**Reason:** Resolve remaining MEDIUM gaps: annual/lifetime pricing UI, preview page, and admin initialize button.
+
+### New Files
+- `resources/views/admin/theme-marketplace/preview.blade.php` — GAP-013: full preview page (pricing cards, quality scores, screenshots, requirements, quality issues, preview URL)
+
+### Modified Files
+- `app/Http/Controllers/Admin/ThemeMarketplaceAdminController.php` — Added `initialize()` (Artisan::call marketplace:seed + marketplace:score), `preview()` methods; `updateListing()` now persists annual_price, lifetime_price, preview_url, is_new_release, is_bestseller
+- `resources/views/admin/theme-marketplace/index.blade.php` — "راه‌اندازی" button, "پیش‌نمایش" per-theme link, expanded edit form with category dropdown + license_type + annual/lifetime pricing + preview_url + badge checkboxes
+- `routes/web.php` — 2 new routes: POST /initialize, GET /{theme}/preview
+
+### Gaps Resolved
+- GAP-009 MEDIUM: Annual/Lifetime pricing inputs in inline edit form + updateListing validation + ThemeMarketplace persistence
+- GAP-013: Preview page at /admin/theme-marketplace/{theme}/preview
+- Initialize endpoint: POST /initialize → seed + score in one click from browser (no SSH needed)
+
+---
+
 ## 2026-06-20 — TB3 Sprint 10: Professional Marketplace Themes — CRITICAL+HIGH GAPS RESOLVED
 
 **Reason:** Sprint 10 audit (TB3_SPRINT10_AUDIT.md + TB3_SPRINT10_GAP_ANALYSIS.md) found 3 CRITICAL + 4 HIGH + 3 MEDIUM gaps. All CRITICAL+HIGH resolved.

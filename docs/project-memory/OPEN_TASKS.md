@@ -42,17 +42,14 @@
 | GAP-006 HIGH: Category filter dropdown in admin index | ✅ DONE |
 | GAP-007 MEDIUM: Bestseller badge + auto-promote logic | ✅ DONE |
 | GAP-008 MEDIUM: New release badge display | ✅ DONE |
-| GAP-009 MEDIUM: Annual/Lifetime License Pricing UI | ⏳ PENDING |
+| GAP-009 MEDIUM: Annual/Lifetime License Pricing UI | ✅ DONE (form inputs + validation + persist) |
 | GAP-010 LOW: Theme Bundle System | ⏳ PENDING |
 | GAP-011 LOW: Theme Update Notification System | ⏳ PENDING |
 | GAP-012 LOW: Demo Data Install/Reset | ⏳ PENDING |
-| GAP-013 LOW: Marketplace Preview Page | ⏳ PENDING |
+| GAP-013 LOW: Marketplace Preview Page | ✅ DONE (/admin/theme-marketplace/{theme}/preview) |
 
-**Post-deploy action required:**
-```bash
-php artisan marketplace:seed     # seed 12 themes across 15 categories
-php artisan marketplace:score    # score all marketplace themes
-```
+**Admin "راه‌اندازی" button** now triggers `marketplace:seed` + `marketplace:score` from browser.
+**Remaining LOW:** GAP-010 (bundles), GAP-011 (update alerts), GAP-012 (demo data).
 
 ---
 
