@@ -5,6 +5,20 @@
 
 ---
 
+## 2026-06-20 — TB3 Sprint 11: Marketplace API Enrichment + Customer UI Upgrade
+
+**Reason:** Sprint 10 rich data (categories, quality scores, pricing tiers, badges) was not exposed in the tenant-facing API or visible in customer marketplace UI.
+
+### saas-platform
+- `ThemeMarketplaceApiController::formatTheme()` — now returns: category, license_type, annual_price, lifetime_price, is_bestseller, is_new_release, installs_count, quality_score, quality_badge, preview_url
+- `download()` — auto-records install (installs_count++, installed_theme_version updated, bestseller auto-promote at 10+)
+
+### customer-site
+- `app/Services/ThemeCategoryHelper.php` — NEW: label() helper for 15 Persian category names
+- `resources/views/admin/theme-marketplace/index.blade.php` — REWRITTEN: Alpine.js category filter + search, quality score chip, pricing tiers (one-time/annual/lifetime), bestseller/new/featured/purchased badges, preview URL overlay + button, stats row (installs + sales), category chip per card
+
+---
+
 ## 2026-06-20 — TB3 Sprint 10: LOW Gaps — GAP-011/012 + Tailwind v4 Fixes
 
 **Reason:** Complete all remaining Sprint 10 gaps. GAP-010 (Bundle System) deferred as separate sprint.

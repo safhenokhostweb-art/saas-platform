@@ -16,13 +16,13 @@
 
 ## Current Module
 
-**TB3 SPRINT 10 — TB3_SPRINT10_CERTIFIED (2026-06-20)**
+**TB3 SPRINT 11 — COMPLETE (2026-06-20) — Marketplace API Enrichment + Customer UI Upgrade**
 
 ---
 
 ## Current Phase
 
-**TB3 Sprint 10 CERTIFIED. All 13 gaps resolved (GAP-010 Bundle System deferred). 3 migrations, 2 commands, ThemeDemoDataService, preview page, initialize endpoint.**
+**TB3 Sprint 10 CERTIFIED + Sprint 11 COMPLETE. API exposes all Sprint 10 fields. Customer marketplace UI upgraded with category filter, quality scores, pricing tiers, all badges, Alpine.js search.**
 
 ### TB3 Sprint 10 Summary (in progress)
 - **GAP-001 CRITICAL ✅**: `MarketplaceThemeSeedCommand` — 12 themes across all 15 categories
