@@ -25,6 +25,37 @@
 
 ---
 
+## IN PROGRESS: TB3 Sprint 10 — Professional Marketplace Themes — 2026-06-20 🔄
+
+**Status:** CRITICAL+HIGH GAPS RESOLVED. LOW gaps pending.
+
+| Phase | Status |
+|-------|--------|
+| GAP-001 CRITICAL: MarketplaceThemeSeedCommand (12 themes / 15 categories) | ✅ DONE |
+| GAP-002 CRITICAL: Migration fix (raw SQL + hasColumn guards) | ✅ DONE |
+| GAP-003 CRITICAL: MarketplaceSeedScoresCommand (wire quality service) | ✅ DONE |
+| BRK-001: ThemeMarketplaceQualityService wired to controller | ✅ DONE |
+| BRK-002: installs_count increment endpoint + auto-bestseller | ✅ DONE |
+| BRK-003: Backfill existing themes with category field | ✅ DONE |
+| GAP-004 HIGH: Scoring Dashboard (/admin/theme-marketplace/scoring) | ✅ DONE |
+| GAP-005 HIGH: Marketplace search (name/slug filter) | ✅ DONE |
+| GAP-006 HIGH: Category filter dropdown in admin index | ✅ DONE |
+| GAP-007 MEDIUM: Bestseller badge + auto-promote logic | ✅ DONE |
+| GAP-008 MEDIUM: New release badge display | ✅ DONE |
+| GAP-009 MEDIUM: Annual/Lifetime License Pricing UI | ⏳ PENDING |
+| GAP-010 LOW: Theme Bundle System | ⏳ PENDING |
+| GAP-011 LOW: Theme Update Notification System | ⏳ PENDING |
+| GAP-012 LOW: Demo Data Install/Reset | ⏳ PENDING |
+| GAP-013 LOW: Marketplace Preview Page | ⏳ PENDING |
+
+**Post-deploy action required:**
+```bash
+php artisan marketplace:seed     # seed 12 themes across 15 categories
+php artisan marketplace:score    # score all marketplace themes
+```
+
+---
+
 ## COMPLETE: TB3 Sprint 9.5 — Visual Reverse Engineering Engine — 2026-06-20 ✅
 
 **Status:** CERTIFIED COMPLETE (2026-06-20) — TB3_SPRINT9_5_CERTIFIED
