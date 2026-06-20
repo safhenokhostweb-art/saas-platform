@@ -57,18 +57,24 @@ class ThemeMarketplaceApiController extends Controller
         /** @var Site $site */
         $site = $request->attributes->get('tenant_site');
 
-        $licenses = ThemeLicense::with('theme')
+        $licenses = ThemeLicense::with('theme.marketplaceMeta')
             ->where('site_id', $site->id)
             ->orderByDesc('purchased_at')
             ->get()
             ->map(fn ($lic) => [
-                'license_key' => $lic->license_key,
-                'purchased_at'=> $lic->purchased_at?->toDateString(),
-                'is_permanent'=> $lic->is_permanent,
-                'theme'       => $lic->theme ? [
-                    'id'   => $lic->theme->id,
-                    'name' => $lic->theme->name,
-                    'slug' => $lic->theme->slug,
+                'license_key'             => $lic->license_key,
+                'purchased_at'            => $lic->purchased_at?->toDateString(),
+                'is_permanent'            => $lic->is_permanent,
+                'installed_theme_version' => $lic->installed_theme_version,
+                'is_outdated'             => $lic->isOutdated(),
+                'theme' => $lic->theme ? [
+                    'id'            => $lic->theme->id,
+                    'name'          => $lic->theme->name,
+                    'slug'          => $lic->theme->slug,
+                    'thumbnail'     => $lic->theme->thumbnail,
+                    'category'      => $lic->theme->category,
+                    'version'       => $lic->theme->version ?? 1,
+                    'version_notes' => $lic->theme->marketplaceMeta?->version_notes,
                 ] : null,
             ]);
 
