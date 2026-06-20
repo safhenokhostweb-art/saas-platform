@@ -25,23 +25,18 @@ class AuthenticateStudioApi
             return response()->json(['message' => 'Invalid Studio API key.'], 401);
         }
 
-        // Optional HMAC signature validation (when studio_secret is configured)
+        // HMAC signature validation — only enforced when studio_secret is set AND request has a file
         $secret = config('services.studio.secret', '');
-        if (!empty($secret)) {
-            $sig  = $request->header('X-Studio-Signature', '');
+        if (!empty($secret) && $request->hasFile('pack')) {
+            $sig = $request->header('X-Studio-Signature', '');
             if (empty($sig)) {
-                return response()->json(['message' => 'X-Studio-Signature header required.'], 401);
+                return response()->json(['message' => 'X-Studio-Signature header required for file uploads.'], 401);
             }
-            // Signature valid for ±1 hour window
             $valid = false;
             foreach ([date('Y-m-d-H'), date('Y-m-d-H', strtotime('-1 hour'))] as $window) {
-                if ($request->hasFile('pack')) {
-                    $hash     = hash_file('sha256', $request->file('pack')->path());
-                    $expected = hash_hmac('sha256', $hash . ':' . $window, $secret);
-                    if (hash_equals($expected, $sig)) { $valid = true; break; }
-                } else {
-                    $valid = true; // non-file requests skip hash check
-                }
+                $hash     = hash_file('sha256', $request->file('pack')->path());
+                $expected = hash_hmac('sha256', $hash . ':' . $window, $secret);
+                if (hash_equals($expected, $sig)) { $valid = true; break; }
             }
             if (!$valid) {
                 return response()->json(['message' => 'Invalid Studio signature.'], 401);

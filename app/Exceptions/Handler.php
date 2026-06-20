@@ -1,6 +1,7 @@
 <?php
 namespace App\Exceptions;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -43,6 +44,9 @@ class Handler extends ExceptionHandler
                     'message' => $e->getMessage(),
                     'errors' => $e->errors(),
                 ], 422);
+            }
+            if ($e instanceof ModelNotFoundException) {
+                return response()->json(['message' => 'Resource not found.'], 404);
             }
             $status = 500;
             if (method_exists($e, 'getStatusCode')) {

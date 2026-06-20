@@ -244,7 +244,7 @@ Route::prefix('ux')->middleware(['auth:sanctum', 'throttle:120,1'])->group(funct
 */
 Route::prefix('v1/studio')->middleware(['studio.api', 'throttle:30,1'])->name('api.studio.')->group(function () {
     Route::post('import',          [\App\Http\Controllers\Api\ThemePackStudioController::class, 'import'])->name('import');
-    Route::post('validate',        [\App\Http\Controllers\Api\ThemePackStudioController::class, 'validate'])->name('validate');
+    Route::post('validate',        [\App\Http\Controllers\Api\ThemePackStudioController::class, 'validatePack'])->name('validate');
     Route::get('preview/{uuid}',   [\App\Http\Controllers\Api\ThemePackStudioController::class, 'preview'])->name('preview');
     Route::post('install/{uuid}',  [\App\Http\Controllers\Api\ThemePackStudioController::class, 'install'])->name('install');
     Route::post('publish/{uuid}',  [\App\Http\Controllers\Api\ThemePackStudioController::class, 'publish'])->name('publish');

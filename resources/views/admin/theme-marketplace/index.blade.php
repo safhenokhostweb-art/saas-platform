@@ -11,12 +11,50 @@
       <h1 class="text-2xl font-bold text-gray-900">مارکت‌پلیس قالب‌ها</h1>
       <p class="text-sm text-gray-500 mt-1">قالب‌های قابل فروش را مدیریت کنید</p>
     </div>
-    <a href="{{ route('admin.theme-marketplace.licenses') }}"
-       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-      لایسنس‌ها و خریدها
-    </a>
+    <div class="flex items-center gap-2">
+      <a href="{{ route('admin.theme-marketplace.scoring') }}"
+         class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        امتیازدهی
+      </a>
+      <a href="{{ route('admin.theme-marketplace.licenses') }}"
+         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        لایسنس‌ها
+      </a>
+    </div>
   </div>
+
+  {{-- Search + Category Filter (GAP-005 / GAP-006) --}}
+  <form method="GET" action="{{ route('admin.theme-marketplace.index') }}" class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-48">
+        <label class="block text-xs font-medium text-gray-600 mb-1">جستجو</label>
+        <div class="relative">
+          <svg class="absolute right-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" name="search" value="{{ request('search') }}" placeholder="نام یا slug قالب..."
+                 class="w-full pr-9 pl-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+      </div>
+      <div class="min-w-40">
+        <label class="block text-xs font-medium text-gray-600 mb-1">دسته‌بندی</label>
+        <select name="category" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">همه دسته‌بندی‌ها</option>
+          @foreach($categories as $cat)
+            <option value="{{ $cat }}" {{ request('category') === $cat ? 'selected' : '' }}>
+              {{ \App\Models\Theme::categoryLabel($cat) }}
+            </option>
+          @endforeach
+        </select>
+      </div>
+      <button type="submit" class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+        فیلتر
+      </button>
+      @if(request('search') || request('category'))
+        <a href="{{ route('admin.theme-marketplace.index') }}" class="text-sm text-gray-500 hover:text-gray-700 py-2">× پاک کردن</a>
+      @endif
+    </div>
+  </form>
 
   {{-- Stats --}}
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -82,8 +120,17 @@
                       مارکت
                     </span>
                     @if($meta?->is_featured)
-                      <span class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">ویژه</span>
+                      <span class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">⭐ ویژه</span>
                     @endif
+                    @if($meta?->is_bestseller)
+                      <span class="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-medium">🔥 پرفروش</span>
+                    @endif
+                    @if($meta?->is_new_release)
+                      <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">✨ جدید</span>
+                    @endif
+                  @endif
+                  @if($theme->category)
+                    <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ \App\Models\Theme::categoryLabel($theme->category) }}</span>
                   @endif
                   <span class="text-xs text-gray-400">{{ $theme->status === 'published' ? 'منتشر' : 'پیش‌نویس' }}</span>
                 </div>

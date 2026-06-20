@@ -79,7 +79,7 @@ class ThemePackStudioController extends Controller
      * POST /api/v1/studio/validate
      * Validate a ZIP without importing.
      */
-    public function validate(Request $request): JsonResponse
+    public function validatePack(Request $request): JsonResponse
     {
         $request->validate(['pack' => 'required|file|mimes:zip|max:51200']);
 
