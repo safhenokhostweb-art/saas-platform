@@ -4,6 +4,29 @@
 
 ---
 
+## COMPLETE: GAP-010 Theme Bundle System — 2026-06-20 ✅
+
+**Status:** COMPLETE (2026-06-20)
+
+| Component | Status |
+|-----------|--------|
+| Migration: theme_bundles + theme_bundle_orders | ✅ DONE |
+| Models: ThemeBundle (grantLicensesToSite), ThemeBundleOrder (STATUS_*) | ✅ DONE |
+| Platform Admin: ThemeBundleAdminController (CRUD + orders view) | ✅ DONE |
+| Platform Admin Views: index, create, edit, orders | ✅ DONE |
+| Platform API: ThemeBundleApiController (index/show/purchase + formatBundle) | ✅ DONE |
+| Payment Callback: ThemeBundlePaymentCallbackController (Zarinpal+IDPay) | ✅ DONE |
+| Platform Routes: admin group + API group + callback route | ✅ DONE |
+| Customer API: PlatformApiService::themeBundles/themeBundle/purchaseBundle | ✅ DONE |
+| Customer Controller: ThemeBundleController (index/show/purchase + cache) | ✅ DONE |
+| Customer Views: index (featured banner + grid), show (detail + pricing sidebar) | ✅ DONE |
+| Customer Routes: theme-bundles group in admin routes | ✅ DONE |
+| Customer AdminMenu: theme_marketplace + theme_bundles wired (gated on platform_url) | ✅ DONE |
+| Sidebar icons: store (marketplace), grid (bundles) | ✅ DONE |
+| Both repos deployed | ✅ DONE |
+
+---
+
 ## COMPLETE: GLOBAL DATE LOCALIZATION AUDIT — 2026-06-20 ✅
 
 **Status:** DATE_LOCALIZATION_CERTIFIED (2026-06-20)
@@ -71,15 +94,14 @@
 | GAP-007 MEDIUM: Bestseller badge + auto-promote logic | ✅ DONE |
 | GAP-008 MEDIUM: New release badge display | ✅ DONE |
 | GAP-009 MEDIUM: Annual/Lifetime License Pricing UI | ✅ DONE (form inputs + validation + persist) |
-| GAP-010 LOW: Theme Bundle System | ⏳ PENDING |
-| GAP-011 LOW: Theme Update Notification System | ⏳ PENDING |
+| GAP-010 LOW: Theme Bundle System | ✅ DONE (2026-06-20) |
+| GAP-011 LOW: Theme Update Notification System | ✅ DONE (2026-06-20 — installed_theme_version + outdatedLicensesCount) |
 | GAP-012 LOW: Demo Data Install/Reset | ✅ DONE (ThemeDemoDataService + manifest UI in preview page) |
 | GAP-013 LOW: Marketplace Preview Page | ✅ DONE (/admin/theme-marketplace/{theme}/preview) |
 
-**All CRITICAL/HIGH/MEDIUM/LOW gaps resolved except GAP-010.**
-**GAP-010 (Theme Bundle System)** deferred — requires new purchase flow + theme_bundles table (separate sprint).
+**ALL GAPS RESOLVED — including GAP-010 (Bundle System) and GAP-011 (Update Notifications).**
 
-**TB3 SPRINT 10 STATUS: TB3_SPRINT10_CERTIFIED** (all gaps addressed except bundle system).
+**TB3 SPRINT 10 STATUS: TB3_SPRINT10_FULLY_CERTIFIED** (2026-06-20)
 
 ---
 

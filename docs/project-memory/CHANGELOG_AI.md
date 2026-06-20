@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-06-20 — GAP-010: Theme Bundle System (Full Stack)
+
+**Reason:** Bundles allow selling multiple themes as a discounted package; gap was deferred from Sprint 10.
+
+### saas-platform
+- `database/migrations/2026_06_20_130000_create_theme_bundles_table.php` — NEW: theme_bundles + theme_bundle_orders tables
+- `app/Models/ThemeBundle.php` — NEW: themes(), hasPurchasedBySite(), grantLicensesToSite()
+- `app/Models/ThemeBundleOrder.php` — NEW: STATUS_PENDING/PAID/FAILED, bundle()+site() relations
+- `app/Http/Controllers/Admin/ThemeBundleAdminController.php` — NEW: CRUD (index/create/store/edit/update/destroy) + orders()
+- `app/Http/Controllers/Api/ThemeBundleApiController.php` — NEW: index/show/purchase API with formatBundle() (savings/discount_pct/all_licensed)
+- `app/Http/Controllers/Api/ThemeBundlePaymentCallbackController.php` — NEW: Zarinpal+IDPay callback, auto-grants licenses
+- `resources/views/admin/theme-bundles/index.blade.php` — NEW: grid, revenue stat, featured badges
+- `resources/views/admin/theme-bundles/create.blade.php` — NEW: Alpine theme picker with search
+- `resources/views/admin/theme-bundles/edit.blade.php` — NEW: same picker, slug locked
+- `resources/views/admin/theme-bundles/orders.blade.php` — NEW: paginated status table
+- `routes/web.php` — theme-bundles admin group + payment callback route
+- `routes/api.php` — theme-bundles API group (tenant.api middleware)
+
+### customer-site
+- `app/Services/PlatformApiService.php` — themeBundles(), themeBundle(id), purchaseBundle(id, url) added
+- `app/Http/Controllers/Admin/ThemeBundleController.php` — NEW: index/show/purchase with 5min cache
+- `resources/views/admin/theme-bundles/index.blade.php` — NEW: featured banner, grid with discount badges, purchase CTA
+- `resources/views/admin/theme-bundles/show.blade.php` — NEW: hero, themes list, sticky pricing sidebar
+- `routes/web.php` — theme-bundles admin group (index/show/purchase)
+- `app/Helpers/AdminMenu.php` — theme_marketplace + theme_bundles added to MENU_KEYS, MENU_ROUTES, MENU_ROUTE_PATTERNS, getStaticGroups, isVisible (gated on platform_url)
+- `resources/views/admin/partials/sidebar-icon.blade.php` — store icon (marketplace), grid icon (bundles)
+
+---
+
 ## 2026-06-20 — TB3 Sprint 12: Theme Detail Page + My-Licenses Upgrade
 
 **Reason:** Sprint 11 index had no single-theme detail page; my-licenses had no thumbnails or update indicators.
