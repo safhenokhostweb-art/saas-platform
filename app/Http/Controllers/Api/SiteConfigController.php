@@ -55,7 +55,9 @@ class SiteConfigController extends Controller
         $logoUrl = $logoPath ? (preg_match('#^https?://#i', $logoPath) ? $logoPath : $baseUrl . $logoPath) : null;
 
         $notifications = [];
-        $debug = [];
+        $debug         = [];
+        // Lazy-load site برای backward-compat هشدارهای انقضای قدیمی
+        $siteModel     = null;
         if ($siteId && \Illuminate\Support\Facades\Schema::hasTable('platform_site_notifications')) {
             $totalForSite = \App\Models\PlatformSiteNotification::where('site_id', $siteId)->count();
             $activeForSite = \App\Models\PlatformSiteNotification::where('site_id', $siteId)->active()->count();
@@ -92,19 +94,71 @@ class SiteConfigController extends Controller
                         $imgUrl = $baseUrl . '/storage/' . $path;
                     }
                 }
+
+                $body     = (string) $n->body;
+                $link     = $n->link;
+                $linkText = $n->link_text;
+
+                // هشدارهای انقضا: تعداد روز را پویا محاسبه کن تا هر روز آپدیت بماند
+                // فرمت marker داخلی: __expiry__:{type}:{YYYY-MM-DD}
+                if ($link && str_starts_with((string) $link, '__expiry__:')) {
+                    $parts = explode(':', (string) $link, 3);
+                    if (count($parts) === 3) {
+                        try {
+                            $expiryDate = \Carbon\Carbon::parse($parts[2]);
+                            $daysLeft   = max(0, (int) now()->diffInDays($expiryDate, false));
+                            $body = str_replace(
+                                '. لطفاً برای تمدید اقدام کنید.',
+                                " (حدود {$daysLeft} روز مانده). لطفاً برای تمدید اقدام کنید.",
+                                $body
+                            );
+                        } catch (\Throwable) {}
+                    }
+                    // marker داخلی است؛ به customer-site ارسال نمی‌شود
+                    $link     = null;
+                    $linkText = null;
+                } elseif (! $link && str_starts_with((string) $n->title, 'هشدار انقضای ')) {
+                    // Backward-compat: notification قدیمی بدون marker — تاریخ واقعی را از Site بخوان
+                    // و notification را در DB هم fix کن تا دفعه بعد نیازی به این query نباشد
+                    $siteModel ??= \App\Models\Site::find($siteId);
+                    if ($siteModel) {
+                        $labelMap = [
+                            'هشدار انقضای هاست'       => ['field' => 'host_expires_at',    'type' => 'host'],
+                            'هشدار انقضای دامنه'       => ['field' => 'domain_expires_at',  'type' => 'domain'],
+                            'هشدار انقضای پشتیبانی'   => ['field' => 'support_expires_at', 'type' => 'support'],
+                        ];
+                        $meta = $labelMap[trim((string) $n->title)] ?? null;
+                        if ($meta && $siteModel->{$meta['field']}) {
+                            try {
+                                $expiryDate  = \Carbon\Carbon::instance($siteModel->{$meta['field']});
+                                $daysLeft    = max(0, (int) now()->diffInDays($expiryDate, false));
+                                $expiryLink  = '__expiry__:' . $meta['type'] . ':' . $expiryDate->toDateString();
+                                $labelFa     = str_replace('هشدار انقضای ', '', trim((string) $n->title));
+                                $dateFa      = \App\Helpers\Jalali::formatFa($expiryDate);
+                                $newBody     = "تاریخ انقضای {$labelFa}: {$dateFa} (حدود {$daysLeft} روز مانده). لطفاً برای تمدید اقدام کنید.";
+                                // Fix notification در DB برای request‌های بعدی
+                                $n->updateQuietly(['body' => "تاریخ انقضای {$labelFa}: {$dateFa}. لطفاً برای تمدید اقدام کنید.", 'link' => $expiryLink]);
+                                $body = $newBody;
+                            } catch (\Throwable) {}
+                        }
+                    }
+                    $link     = null;
+                    $linkText = null;
+                }
+
                 $notifications[] = [
-                    'id' => $n->id,
-                    'title' => $n->title,
-                    'body' => $n->body,
-                    'type' => $n->type,
-                    'link' => $n->link,
-                    'link_text' => $n->link_text,
-                    'image_url' => $imgUrl,
-                    'position' => $n->position,
+                    'id'             => $n->id,
+                    'title'          => $n->title,
+                    'body'           => $body,
+                    'type'           => $n->type,
+                    'link'           => $link,
+                    'link_text'      => $linkText,
+                    'image_url'      => $imgUrl,
+                    'position'       => $n->position,
                     'image_position' => $n->image_position,
-                    'audience' => $n->audience ?? 'public',
-                    'priority' => $n->priority ?? 'normal',
-                    'created_at' => $n->created_at?->toIso8601String(),
+                    'audience'       => $n->audience ?? 'public',
+                    'priority'       => $n->priority ?? 'normal',
+                    'created_at'     => $n->created_at?->toIso8601String(),
                 ];
             }
         }

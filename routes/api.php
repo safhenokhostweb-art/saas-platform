@@ -86,6 +86,13 @@ Route::prefix('theme-marketplace')->middleware(['throttle:30,1', 'tenant.api'])-
     Route::get('/{theme}/download',         [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'download'])->name('api.theme-marketplace.download');
 });
 
+// Theme Bundles API (GAP-010)
+Route::prefix('theme-bundles')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
+    Route::get('/',                            [\App\Http\Controllers\Api\ThemeBundleApiController::class, 'index'])->name('api.theme-bundles.index');
+    Route::get('/{themeBundle}',               [\App\Http\Controllers\Api\ThemeBundleApiController::class, 'show'])->name('api.theme-bundles.show');
+    Route::post('/{themeBundle}/purchase',     [\App\Http\Controllers\Api\ThemeBundleApiController::class, 'purchase'])->name('api.theme-bundles.purchase');
+});
+
 Route::prefix('tenant/tickets')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
     Route::get('/', [ApiTenantTicketController::class, 'index'])->name('api.tenant-tickets.index');
     Route::post('/', [ApiTenantTicketController::class, 'store'])->name('api.tenant-tickets.store');

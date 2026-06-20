@@ -226,6 +226,9 @@ Route::middleware('auth')->group(function () {
     // Theme Marketplace payment callback (no CSRF, public — called by payment gateway)
     Route::get('/theme-marketplace/callback', [ThemeMarketplacePaymentController::class, 'callback'])->name('theme-marketplace.payment-callback')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
+    // Theme Bundle payment callback
+    Route::get('/theme-bundles/payment-callback', [\App\Http\Controllers\Api\ThemeBundlePaymentCallbackController::class, 'handle'])->name('theme-bundles.payment-callback')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
     // پنل نمایندگی (فقط برای کاربران دارای رکورد Reseller)
     Route::prefix('reseller')->name('reseller.')->middleware('reseller')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Reseller\DashboardController::class, 'index'])->name('dashboard');
@@ -679,6 +682,17 @@ Route::prefix('admin')
             Route::get('/licenses',                                 [ThemeMarketplaceAdminController::class, 'licenses'])->name('licenses');
             Route::delete('/licenses/{license}',                    [ThemeMarketplaceAdminController::class, 'revokeLicense'])->name('revoke-license');
             Route::post('/licenses/grant',                          [ThemeMarketplaceAdminController::class, 'grantLicense'])->name('grant-license');
+        });
+
+        // ─── Theme Bundles (GAP-010) ─────────────────────────────────────────
+        Route::prefix('theme-bundles')->name('theme-bundles.')->group(function () {
+            Route::get('/',                             [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'index'])->name('index');
+            Route::get('/create',                       [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'create'])->name('create');
+            Route::post('/',                            [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'store'])->name('store');
+            Route::get('/orders',                       [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'orders'])->name('orders');
+            Route::get('/{themeBundle}/edit',           [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'edit'])->name('edit');
+            Route::put('/{themeBundle}',                [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'update'])->name('update');
+            Route::delete('/{themeBundle}',             [\App\Http\Controllers\Admin\ThemeBundleAdminController::class, 'destroy'])->name('destroy');
         });
 
         /*

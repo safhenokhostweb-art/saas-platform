@@ -83,14 +83,20 @@ class ExpiryReminderService
      * اعلان هشدار انقضا را ثبت می‌کند:
      * - در ادمین اصلی پلتفرم (expiry_reminder_logs → داشبورد پلتفرم)
      * - در پنل ادمین سایت مشتری (PlatformSiteNotification → زنگوله و پیشخوان)
+     *
+     * تعداد روزهای باقی‌مانده در body ذخیره نمی‌شود تا روز بعد کهنه نشود؛
+     * بلکه تاریخ انقضا به‌صورت marker داخلی در link نگه‌داری می‌شود و
+     * SiteConfigController هنگام serve کردن آن را به‌صورت پویا محاسبه می‌کند.
      */
     public function sendReminder(Site $site, string $type, DateTimeInterface $expiresAt, string $labelFa): void
     {
         $expiresAt = Carbon::instance($expiresAt);
         $dateFa = Jalali::formatFa($expiresAt);
-        $daysLeft = (int) now()->diffInDays($expiresAt, false);
         $title = "هشدار انقضای {$labelFa}";
-        $body = "تاریخ انقضای {$labelFa}: {$dateFa} (حدود {$daysLeft} روز مانده). لطفاً برای تمدید اقدام کنید.";
+        // Body بدون تعداد روز؛ روز به‌صورت پویا در API محاسبه می‌شود
+        $body = "تاریخ انقضای {$labelFa}: {$dateFa}. لطفاً برای تمدید اقدام کنید.";
+        // Marker داخلی: __expiry__:{type}:{YYYY-MM-DD}
+        $expiryLink = '__expiry__:' . $type . ':' . $expiresAt->toDateString();
 
         ExpiryReminderLog::create([
             'site_id' => $site->id,
@@ -101,24 +107,37 @@ class ExpiryReminderService
         ]);
 
         if (Schema::hasTable('platform_site_notifications')) {
-            $order = PlatformSiteNotification::where('site_id', $site->id)->max('order') + 1;
-            PlatformSiteNotification::create([
-                'site_id' => $site->id,
-                'title' => $title,
-                'body' => $body,
-                'type' => 'warning',
-                'link' => null,
-                'link_text' => null,
-                'image_path' => null,
-                'position' => 'top',
-                'image_position' => 'right',
-                'audience' => 'admin',
-                'priority' => 'high',
-                'starts_at' => null,
-                'expires_at' => null,
-                'is_active' => true,
-                'order' => $order,
-            ]);
+            // Upsert: اگر notification قبلی برای این سایت+عنوان وجود دارد، آپدیت کن
+            $existing = PlatformSiteNotification::where('site_id', $site->id)
+                ->where('title', $title)
+                ->first();
+
+            if ($existing) {
+                $existing->update([
+                    'body'    => $body,
+                    'link'    => $expiryLink,
+                    'is_active' => true,
+                ]);
+            } else {
+                $order = PlatformSiteNotification::where('site_id', $site->id)->max('order') + 1;
+                PlatformSiteNotification::create([
+                    'site_id'        => $site->id,
+                    'title'          => $title,
+                    'body'           => $body,
+                    'type'           => 'warning',
+                    'link'           => $expiryLink,
+                    'link_text'      => null,
+                    'image_path'     => null,
+                    'position'       => 'top',
+                    'image_position' => 'right',
+                    'audience'       => 'admin',
+                    'priority'       => 'high',
+                    'starts_at'      => null,
+                    'expires_at'     => null,
+                    'is_active'      => true,
+                    'order'          => $order,
+                ]);
+            }
         }
 
         app(ExpirySmsService::class)->sendForReminder($site, $labelFa, $expiresAt, $title . ' — ' . $site->title);
