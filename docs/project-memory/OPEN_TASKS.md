@@ -25,7 +25,35 @@
 
 ---
 
-## IN PROGRESS: TB3 Sprint 10 — Professional Marketplace Themes — 2026-06-20 🔄
+## COMPLETE: TB3 Sprint 12 — Theme Detail Page + My-Licenses Upgrade — 2026-06-20 ✅
+
+**Status:** COMPLETE (2026-06-20)
+
+| Phase | Status |
+|-------|--------|
+| Platform API myLicenses(): is_outdated, thumbnail, version, version_notes | ✅ DONE |
+| Customer: ThemeMarketplaceController::show() + cache | ✅ DONE |
+| Customer: GET /{themeId} route → show named theme-marketplace.show | ✅ DONE |
+| Customer: admin/theme-marketplace/show.blade.php (hero, pricing sidebar, screenshots, CTA) | ✅ DONE |
+| Customer: my-licenses upgraded (thumbnails, update banner, amber CTA for outdated) | ✅ DONE |
+| Customer: index — theme names link to detail page | ✅ DONE |
+
+---
+
+## COMPLETE: TB3 Sprint 11 — Marketplace API + Customer UI — 2026-06-20 ✅
+
+**Status:** COMPLETE (2026-06-20)
+
+| Phase | Status |
+|-------|--------|
+| Platform API formatTheme(): Sprint 10 fields (category/badges/quality/pricing/preview_url) | ✅ DONE |
+| Platform API download(): records install + installed_theme_version + bestseller auto-promote | ✅ DONE |
+| Customer: ThemeCategoryHelper service (15 categories) | ✅ DONE |
+| Customer: index rewritten (Alpine.js filter+search, quality score, pricing tiers, all badges) | ✅ DONE |
+
+---
+
+## COMPLETE: TB3 Sprint 10 — Professional Marketplace Themes — 2026-06-20 ✅
 
 **Status:** CRITICAL+HIGH GAPS RESOLVED. LOW gaps pending.
 
