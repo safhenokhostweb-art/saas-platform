@@ -21,12 +21,38 @@
 
 ## CURRENT STATE (2026-06-20)
 
-**Last completed phase:** GLOBAL DATE LOCALIZATION AUDIT — DATE_LOCALIZATION_CERTIFIED (2026-06-20)
+**Last completed phase:** TB3 Sprint 12 — Theme Detail Page + My-Licenses Upgrade (COMPLETE 2026-06-20)
+**Before that:** TB3 Sprint 11 — Marketplace API Enrichment + Customer UI Upgrade (COMPLETE 2026-06-20)
+**Before that:** TB3 Sprint 10 — Professional Marketplace Themes — TB3_SPRINT10_CERTIFIED (2026-06-20)
 **Before that:** TB3 Sprint 9.5 — Visual Reverse Engineering Engine — TB3_SPRINT9_5_CERTIFIED (2026-06-20)
-**Before that:** TB-AI Studio + Import Pipeline — TB_AI_STUDIO_CERTIFIED (2026-06-20)
-**Status:** Both repos committed and deployed. 72 date localization issues fixed across both repos.
-**Certification:** `docs/DATE_LOCALIZATION_FIX_REPORT.md` — DATE_LOCALIZATION_CERTIFIED
-**Next recommended:** TB3 Sprint 10 — AI Theme Iteration (refine generated theme with follow-up prompts), or TB3 Sprint 11 — Live Preview Compare.
+**Status:** All marketplace sprints deployed. Platform admin marketplace fully featured. Customer-site marketplace is now production-ready.
+
+### Theme Marketplace — COMPLETE (Sprints 10–12, 2026-06-20)
+
+**Platform admin (`/admin/theme-marketplace`):**
+- Seed 12 professional themes via "راه‌اندازی" button or `marketplace:seed` command
+- 5-dimension quality scoring dashboard (`/scoring`)
+- Per-theme preview page with full metadata, pricing cards, quality scores, screenshots
+- Demo data manifest (block scanner, `ThemeDemoDataService`)
+- Search + category filter, bestseller/new/featured badges
+- `installs_count` increment + auto-bestseller at 10+
+- `installed_theme_version` tracking on licenses (GAP-011)
+
+**Platform API (`/api/theme-marketplace`):**
+- `GET /` — returns all Sprint 10 fields: category, license_type, annual/lifetime price, badges, quality_score, preview_url
+- `GET /{id}` — single theme detail
+- `GET /my-licenses` — now returns thumbnail, version, is_outdated per license
+- `GET /{id}/download` — records install (installs_count++, installed_theme_version)
+
+**Customer-site admin:**
+- `GET /admin/theme-marketplace` — index with Alpine.js category filter + search, quality score chip, pricing tiers, all badges
+- `GET /admin/theme-marketplace/{id}` — **NEW** full detail page (hero image, pricing sidebar, screenshots, CTA)
+- `GET /admin/theme-marketplace/my-licenses` — thumbnails, "آپدیت موجود" badge, version notes, orange install button for outdated
+
+**Deferred:** GAP-010 Theme Bundle System (requires `theme_bundles` table + separate purchase flow)
+
+### Post-deploy action needed
+Navigate to `/admin/theme-marketplace` and click **"راه‌اندازی"** to seed 12 themes + score them all in one click.
 
 ### DATE LOCALIZATION Summary (2026-06-20)
 
