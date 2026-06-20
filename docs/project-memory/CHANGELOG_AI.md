@@ -5,6 +5,28 @@
 
 ---
 
+## 2026-06-20 — GLOBAL DUPLICATE NOTIFICATION FIX — NOTIFICATION_SYSTEM_CERTIFIED
+
+**Reason:** Success/info/warning/error notifications were displayed twice after every user action (save, create, update, delete, publish, etc.). Admin layouts render flash at the top of `<main>` but individual views were also rendering the same session keys inside `@section('content')`.
+
+### Changes (saas-platform)
+- `resources/views/layouts/admin.blade.php` — Added Alpine auto-dismiss (5s/6s/7s) + close button ✕ to all 4 flash types
+- Removed inline `@if(session(...))` blocks from 15 admin views (lifecycle, resource-governance, studio-imports, theme-templates, theme-packs, theme-builder/ai-*)
+- `docs/DUPLICATE_NOTIFICATION_AUDIT.md` — NEW
+- `docs/NOTIFICATION_ARCHITECTURE.md` — NEW
+- `docs/NOTIFICATION_FIX_REPORT.md` — NEW
+
+### Changes (customer-site)
+- `resources/views/admin/layout.blade.php` — Added Alpine auto-dismiss + `.admin-flash__close` close button to all flash types
+- `public/css/customer-admin-layout.css` — Added `.admin-flash__close` CSS class
+- `resources/views/themes/default/layout.blade.php` — BUG FIX: Added missing `session('warning')` and `session('info')` + auto-dismiss for all 4 keys
+- Removed inline session flash from 36 admin views, 2 account views, 1 cart page
+- Preserved page-specific view variables (`$error`, `$purchased`) where applicable
+
+**Certification:** `NOTIFICATION_SYSTEM_CERTIFIED` — One renderer per layout, auto-dismiss, no duplicates.
+
+---
+
 ## 2026-06-20 — TB3 Sprint 9.5: Visual Reverse Engineering Engine — TB3_SPRINT9_5_CERTIFIED
 
 **Reason:** Build a 7-phase pipeline that analyzes websites (URL/Screenshot/HTML/Prompt) and generates structurally similar Persian ThemePacks targeting Apple, Amazon, Malltina, Digikala, Stripe, Shopify.

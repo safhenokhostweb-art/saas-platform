@@ -93,8 +93,8 @@
             .alert-danger{ background: var(--ui-danger-light,#fef2f2); border-color: var(--ui-danger-border,#fecaca); color: var(--ui-danger-text,#991b1b); }
             .alert-warning{ background: #fffbeb; border-color: #fde68a; color: #92400e; }
             .alert-info{ background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
-            .sidebar-link{ display: flex; align-items: center; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; }
-            form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: var(--ui-danger-border,#fca5a5); }
+            .sidebar-link{ display: flex; align-items: center; padding: 0.45rem 0.875rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; }
+            form.mt-2 button{ display: flex; align-items: center; width: 100%; padding: 0.45rem 0.875rem; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: none; background: transparent; cursor: pointer; text-align: right; color: var(--ui-danger-border,#fca5a5); }
             form.mt-2 button:hover{ background: var(--ui-danger-bg,rgba(220,38,38,0.1)); color: var(--ui-danger,#dc2626); }
             .admin-sidebar-scroll-area{ scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; }
             .admin-sidebar-scroll-area::-webkit-scrollbar{ width: 8px; }
@@ -130,7 +130,7 @@
         .sidebar-link {
             display: flex;
             align-items: center;
-            padding: 0.7rem 1rem;
+            padding: 0.45rem 0.875rem;
             font-size: 0.875rem;
             font-weight: 500;
             border-radius: 0.75rem;
@@ -157,8 +157,8 @@
             display: flex;
             align-items: center;
             width: 100%;
-            padding: 0.6rem 1rem;
-            font-size: 0.75rem;
+            padding: 0.3rem 0.875rem;
+            font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -199,7 +199,7 @@
             display: flex;
             align-items: center;
             width: 100%;
-            padding: 0.7rem 1rem;
+            padding: 0.45rem 0.875rem;
             font-size: 0.875rem;
             font-weight: 500;
             border-radius: 0.75rem;
@@ -234,7 +234,7 @@
             <div class="admin-sidebar-inner flex flex-col w-64 min-w-0 flex-1 min-h-0">
                 <div class="admin-sidebar-scroll-area flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                     <!-- Logo / عنوان -->
-                    <div class="flex items-center shrink-0 px-4 py-5 border-b min-h-16">
+                    <div class="flex items-center shrink-0 px-4 py-3 border-b min-h-14">
                         <svg class="w-6 h-6 shrink-0" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="max-width:24px;max-height:24px">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
@@ -242,7 +242,7 @@
                     </div>
 
                     <!-- Navigation: ادمین = منوی ادمین، مشتری = منوی مشتری -->
-                    <nav class="flex-1 px-4 py-6 min-h-0">
+                    <nav class="flex-1 px-3 py-3 min-h-0">
                         @if(auth()->user()->is_admin)
                             @foreach(\App\Helpers\AdminMenu::getGroups() as $groupLabel => $keys)
                                 @php $visibleKeys = array_values(array_filter($keys, fn ($k) => \App\Helpers\AdminMenu::isMenuItemVisible($k))); @endphp
@@ -305,7 +305,7 @@
                             @endforeach
                         @endif
 
-                        <div class="pt-4 mt-4 border-t border-slate-600/40">
+                        <div class="pt-2 mt-2 border-t border-slate-600/40">
                             @if(auth()->user()->is_admin)
                             <x-core-ui::navigation-item href="{{ route('dashboard') }}" class="sidebar-link">
                                 <x-slot:icon>

@@ -38,10 +38,14 @@
 }
 /* گروه‌های منو — جمع‌شونده (مثل customer-site) */
 #admin-sidebar .admin-sidebar-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.2rem;
 }
 #admin-sidebar .admin-sidebar-group:last-of-type {
   margin-bottom: 0;
+}
+/* حذف mb-4 از x-core-ui::sidebar-group wrapper */
+#admin-sidebar .admin-sidebar-item-list > div {
+  margin-bottom: 0 !important;
 }
 #admin-sidebar .sidebar-group-toggle {
   width: 100%;
@@ -52,7 +56,7 @@
   border: none;
   background: transparent;
   padding: 0;
-  margin: 0 0 0.4rem 0;
+  margin: 0 0 0.1rem 0;
   cursor: pointer;
   color: inherit;
   text-align: right;
@@ -65,8 +69,8 @@
 #admin-sidebar .sidebar-group-label {
   display: block;
   flex: 1;
-  padding: 0.35rem 0.75rem 0.45rem;
-  font-size: 0.72rem;
+  padding: 0.18rem 0.65rem 0.22rem;
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -111,8 +115,8 @@
 }
 #admin-sidebar .sidebar-link {
   color: var(--platform-sidebar-text) !important;
-  padding: 0.7rem 0.9rem !important;
-  gap: 0.7rem;
+  padding: 0.45rem 0.875rem !important;
+  gap: 0.6rem;
   align-items: center;
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }

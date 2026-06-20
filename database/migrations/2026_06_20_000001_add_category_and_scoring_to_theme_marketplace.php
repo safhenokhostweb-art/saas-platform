@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('category', 60)->nullable()->after('type')->index();
             $table->string('license_type', 20)->default('free')->after('marketplace_price'); // free|premium|bundle
             $table->string('marketplace_badge', 60)->nullable()->after('license_type'); // "bestseller"|"new"|"featured"
-            $table->unsignedSmallInt('installs_count')->default(0)->after('marketplace_badge');
+            $table->unsignedSmallInteger('installs_count')->default(0)->after('marketplace_badge');
         });
 
         // Add scoring + commercial metadata to theme_marketplace
