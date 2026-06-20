@@ -21,12 +21,23 @@
 
 ## CURRENT STATE (2026-06-20)
 
-**Last completed phase:** TB3 Sprint 9.5 — Visual Reverse Engineering Engine — TB3_SPRINT9_5_CERTIFIED (2026-06-20)
+**Last completed phase:** GLOBAL DATE LOCALIZATION AUDIT — DATE_LOCALIZATION_CERTIFIED (2026-06-20)
+**Before that:** TB3 Sprint 9.5 — Visual Reverse Engineering Engine — TB3_SPRINT9_5_CERTIFIED (2026-06-20)
 **Before that:** TB-AI Studio + Import Pipeline — TB_AI_STUDIO_CERTIFIED (2026-06-20)
-**Before that:** TB3 Sprint 8 — AI Theme Generator — TB3_SPRINT8_CERTIFIED (2026-06-20)
-**Status:** Both repos committed and deployed. 7-phase reverse engineering pipeline with 6 reference sites.
-**Certification:** `docs/TB3_SPRINT9_5_CERTIFICATION.md` — TB3_SPRINT9_5_CERTIFIED
+**Status:** Both repos committed and deployed. 72 date localization issues fixed across both repos.
+**Certification:** `docs/DATE_LOCALIZATION_FIX_REPORT.md` — DATE_LOCALIZATION_CERTIFIED
 **Next recommended:** TB3 Sprint 10 — AI Theme Iteration (refine generated theme with follow-up prompts), or TB3 Sprint 11 — Live Preview Compare.
+
+### DATE LOCALIZATION Summary (2026-06-20)
+
+**Scope:** 72 findings across both repos (5 CRITICAL, 52 HIGH, 3 MEDIUM, 12 LOW)
+**All CRITICAL + HIGH fixed:** 57 fixes across 46 files
+**New infrastructure:** `diffForHumansFaStatic()` in CoreJalali — Persian relative time (همین الان / ۳ دقیقه پیش / دیروز)
+**Key patterns eliminated:**
+- `NumberHelper::toPersianNumbers(->format('Y/m/d'))` — Gregorian year with Persian digits
+- `->diffForHumans()` — Carbon English relative time
+- `Jalali::format()` in display contexts (was ASCII digits, fixed to `formatFa()`)
+**Reports:** `docs/GLOBAL_DATE_LOCALIZATION_AUDIT.md` + `docs/DATE_LOCALIZATION_FIX_REPORT.md`
 
 ### TB3 Sprint 9.5 Summary (2026-06-20)
 
