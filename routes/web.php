@@ -617,6 +617,14 @@ Route::prefix('admin')
             Route::get('theme-builder/ai-generator/{job}/export',                   [ThemeAiGeneratorController::class, 'export'])->name('theme-builder.ai-generator.export');
             Route::get('theme-builder/ai-generator/{job}/install',                  [ThemeAiGeneratorController::class, 'install'])->name('theme-builder.ai-generator.install');
 
+            // ─── TB9.5: Visual Reverse Engineering Engine ─────────────────────────
+            Route::get('theme-builder/reverse-engineer',                   [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'form'])->name('theme-builder.reverse-engineer');
+            Route::post('theme-builder/reverse-engineer/analyze',          [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'analyze'])->name('theme-builder.reverse-engineer.analyze');
+            Route::get('theme-builder/reverse-engineer/{job}/result',      [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'result'])->name('admin.theme-builder.reverse-engineer.result');
+            Route::get('theme-builder/reverse-engineer/{job}/export',      [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'export'])->name('admin.theme-builder.reverse-engineer.export');
+            Route::post('theme-builder/reverse-engineer/{job}/install',    [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'install'])->name('admin.theme-builder.reverse-engineer.install');
+            Route::delete('theme-builder/reverse-engineer/{job}',          [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'destroy'])->name('admin.theme-builder.reverse-engineer.destroy');
+
             // ─── TB6: Template Library (Canvas) ──────────────────────────────────
             Route::get('theme-builder/{theme}/canvas/templates',        [ThemeCanvasController::class, 'canvasTemplates'])->name('theme-builder.canvas.templates');
             Route::post('theme-builder/{theme}/canvas/save-as-template',[ThemeCanvasController::class, 'canvasSaveAsTemplate'])->name('theme-builder.canvas.save-as-template');
