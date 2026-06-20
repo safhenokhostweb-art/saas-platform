@@ -16,13 +16,13 @@
 
 ## Current Module
 
-**TB3 SPRINT 11 — COMPLETE (2026-06-20) — Marketplace API Enrichment + Customer UI Upgrade**
+**TB3 SPRINT 12 — COMPLETE (2026-06-20) — Theme Detail Page + My-Licenses Upgrade**
 
 ---
 
 ## Current Phase
 
-**TB3 Sprint 10 CERTIFIED + Sprint 11 COMPLETE. API exposes all Sprint 10 fields. Customer marketplace UI upgraded with category filter, quality scores, pricing tiers, all badges, Alpine.js search.**
+**TB3 Sprints 10/11/12 COMPLETE. Marketplace is production-ready. Customer: index (filter/search/badges), detail page, my-licenses (update indicators). API: all Sprint 10 fields + install tracking.**
 
 ### TB3 Sprint 10 Summary (in progress)
 - **GAP-001 CRITICAL ✅**: `MarketplaceThemeSeedCommand` — 12 themes across all 15 categories
