@@ -37,10 +37,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm mb-4">{{ session('success') }}</div>
-    @endif
-
     <div class="grid grid-cols-3 gap-5">
         {{-- Metadata sidebar --}}
         <div class="col-span-1 space-y-4">

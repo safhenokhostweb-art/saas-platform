@@ -105,10 +105,6 @@
     </div>
   @endif
 
-  @if(session('error'))
-    <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ session('error') }}</div>
-  @endif
-
   {{-- ── STEP 1: FORM ── --}}
   <div x-show="step === 'form'" x-cloak>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

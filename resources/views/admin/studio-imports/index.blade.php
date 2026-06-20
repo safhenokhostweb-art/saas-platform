@@ -34,11 +34,6 @@
   </div>
   @endif
 
-  {{-- Success/Error --}}
-  @if(session('success'))
-  <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 text-sm">{{ session('success') }}</div>
-  @endif
-
   {{-- Pack Table --}}
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">

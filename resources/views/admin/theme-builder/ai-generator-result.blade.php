@@ -19,12 +19,6 @@
     </a>
   </div>
 
-  @if(session('success'))
-    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-5 py-4 text-sm font-medium">
-      {{ session('success') }}
-    </div>
-  @endif
-
   {{-- Status banner --}}
   <div class="rounded-2xl p-5 text-white flex items-center gap-4
     {{ $job->isComplete() ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : 'bg-gradient-to-r from-red-500 to-rose-600' }}">

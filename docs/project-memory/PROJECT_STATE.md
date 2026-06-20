@@ -16,21 +16,30 @@
 
 ## Current Module
 
-**TB3 Sprint 8 — AI Theme Generator — CERTIFIED COMPLETE (2026-06-20)**
+**GLOBAL DATE LOCALIZATION AUDIT — DATE_LOCALIZATION_CERTIFIED (2026-06-20)**
 
 ---
 
 ## Current Phase
 
-**TB3_SPRINT8_CERTIFIED: AI Theme Generator fully deployed — saas-platform updated**
+**DATE_LOCALIZATION_CERTIFIED: Full project-wide Jalali/Persian date audit and fix — both repos deployed.**
 
-### Sprint 8 Summary
-- 4 input methods: URL, Screenshot (Vision), HTML upload, Text prompt
-- 11 sections detected: header / hero / features / services / pricing / faq / testimonials / blog / products / cta / footer
-- Full ThemePack output with global_styles + responsive_settings + templates
-- Safe mode: SVG placeholder images, original Persian content
-- PHP fallback for invalid AI JSON
-- `ai_generation_jobs` DB table for job lifecycle tracking
+### TB-AI Studio Summary
+- Standalone PHP app at `c:\laragon\www\tb-ai-studio\`
+- 4 input modes: URL, Screenshot, HTML, Prompt
+- 4 AI providers: Claude, OpenAI, DeepSeek, Custom (all pluggable via .env)
+- ZipExporter: generates theme-pack-v1 ZIP (manifest.json + pack.json + templates/ + pages/)
+- SaasPlatformUploader: Bearer + HMAC upload to /api/v1/studio/import
+- 3-step Alpine.js web UI (Analyze → Select Sections → Result/Upload)
+
+### Import Pipeline (SaaS Platform)
+- `AuthenticateStudioApi` middleware (Bearer token + HMAC)
+- 5 Studio API endpoints: import / validate / preview / install / publish
+- Admin UI: /admin/studio-imports (index + show + publish + destroy)
+- All Studio imports tagged 'studio-import', site_id=null, starts as draft
+
+### Previous: TB3 Sprint 8 — AI Theme Generator — CERTIFIED COMPLETE (2026-06-20)
+- 4 input methods, 11 sections, ThemePack output, safe mode, PHP fallback, ai_generation_jobs table
 
 TB3-01: block.props canonical everywhere (data→props normalization on load)  
 TB3-02: Live iframe center panel replacing block-card-list  

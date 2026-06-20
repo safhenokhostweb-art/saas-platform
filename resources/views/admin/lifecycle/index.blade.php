@@ -14,12 +14,6 @@
         <span class="text-gray-800 font-medium">چرخه عمر</span>
     </div>
 
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
-
     {{-- Site Status Card --}}
     <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <div class="flex items-start justify-between">

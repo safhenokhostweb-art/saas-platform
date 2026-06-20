@@ -22,12 +22,6 @@
         </a>
     </div>
 
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm">
-        {{ session('success') }}
-    </div>
-    @endif
-
     {{-- KPI Cards --}}
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         @php

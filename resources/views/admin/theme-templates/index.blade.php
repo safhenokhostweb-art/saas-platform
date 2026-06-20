@@ -31,10 +31,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm">{{ session('success') }}</div>
-    @endif
-
     {{-- Filters --}}
     <form method="GET" class="flex flex-wrap gap-3 bg-white border border-gray-200 rounded-xl p-4">
         <input type="text" name="search" value="{{ request('search') }}"

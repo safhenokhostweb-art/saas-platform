@@ -12,10 +12,6 @@
     <span class="text-gray-900 font-medium">{{ $site->title }}</span>
   </nav>
 
-  @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">{{ session('success') }}</div>
-  @endif
-
   {{-- Header --}}
   <div class="flex items-center justify-between">
     <div>

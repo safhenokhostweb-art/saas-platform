@@ -24,12 +24,6 @@
       </p>
     </div>
 
-    @if(session('error'))
-    <div class="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">
-      {{ session('error') }}
-    </div>
-    @endif
-
     {{-- Reference Sites Banner --}}
     <div class="bg-white rounded-2xl border border-gray-200 p-5 mb-6 shadow-sm">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">سایت‌های مرجع شباهت‌سنجی</p>

@@ -9,10 +9,6 @@
     <p class="text-sm text-gray-500 mt-1">قالب زیر از تحلیل هوش مصنوعی تولید شده. نام آن را بررسی کنید و ذخیره کنید.</p>
   </div>
 
-  @if(session('error'))
-    <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ session('error') }}</div>
-  @endif
-
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
     <div class="grid grid-cols-2 gap-4 mb-6">
       <div class="bg-indigo-50 rounded-xl p-4 text-center">

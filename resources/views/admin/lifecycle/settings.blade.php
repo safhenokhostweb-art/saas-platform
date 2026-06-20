@@ -18,12 +18,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm mb-6">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <form method="POST" action="{{ route('admin.lifecycle.settings.update') }}" class="space-y-6">
         @csrf
         @method('PUT')

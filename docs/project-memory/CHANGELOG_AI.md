@@ -5,6 +5,68 @@
 
 ---
 
+## 2026-06-20 — Global Date Localization Audit — DATE_LOCALIZATION_CERTIFIED
+
+**Reason:** Platform-wide audit to ensure all dates render as Jalali (Solar Hijri) with Persian digits.
+
+### New Infrastructure
+- `packages/saas-platform/core-utils/src/Support/Jalali.php` — Added `diffForHumansFaStatic()` Persian relative time
+- `app/Helpers/Jalali.php` — Added `diffForHumansFa()` proxy
+
+### saas-platform Fixes (42 files)
+- 5 controllers: `diffForHumans()` → `Jalali::diffForHumansFa()` (CRITICAL)
+- 2 services: `Jalali::format()` → `Jalali::formatFa()` in SMS/notification content
+- 2 controllers: CSV export date format → `Jalali::formatFa()`
+- 16 `guide.blade.php` files: `NumberHelper::toPersianNumbers(->format())` → `Jalali::formatFa()`
+- 7 incident/monitoring views: `NumberHelper::toPersianNumbers()` with Gregorian → `Jalali::formatFa()`
+- 14 support-ticket/license/update views: `Jalali::format()` → `Jalali::formatFa()` (Persian digits)
+- 6 display tables: raw `->format()` → `Jalali::formatFa()`
+- 14 Blade views: `diffForHumans()` → `Jalali::diffForHumansFa()`
+
+### customer-site Fixes (15 files)
+- 3 controllers: `diffForHumans()` → `Jalali::diffForHumansFa()` + `->format()` → `Jalali::formatFa()`
+- Invoice PDF: `verta()->format()` → `Jalali::formatFa()`
+- CRM, education, inventory, notification-center, webhook, user views: all date patterns fixed
+
+### Documents
+- `docs/GLOBAL_DATE_LOCALIZATION_AUDIT.md`
+- `docs/DATE_LOCALIZATION_FIX_REPORT.md`
+
+**Total:** 57 fixes across 57 files. 72 findings (5 CRITICAL, 52 HIGH, 3 MEDIUM, 12 LOW).
+
+---
+
+## 2026-06-20 — TB-AI Studio + Import Pipeline — TB_AI_STUDIO_CERTIFIED
+
+**Reason:** Separate local AI theme generation platform + SaaS Platform import pipeline.
+
+### New Application: c:\laragon\www\tb-ai-studio\
+- `composer.json`, `config.php`, `.env.example`, `index.php` — application core
+- `src/Providers/ProviderInterface.php`, `ProviderFactory.php` — provider abstraction
+- `src/Providers/ClaudeProvider.php`, `OpenAiProvider.php`, `DeepSeekProvider.php`, `CustomProvider.php`
+- `src/Analyzer/HtmlAnalyzer.php`, `SectionDetector.php`, `VisionAnalyzer.php`
+- `src/Generator/ThemePackGenerator.php`, `ZipExporter.php`
+- `src/Uploader/SaasPlatformUploader.php`
+- `views/layout.php`, `views/home.php` — 3-step Alpine.js web UI
+
+### SaaS Platform Changes (saas-platform — 8 files)
+- `app/Http/Middleware/AuthenticateStudioApi.php` — NEW (Bearer + HMAC auth)
+- `app/Http/Controllers/Api/ThemePackStudioController.php` — NEW (import/validate/preview/install/publish)
+- `app/Http/Controllers/Admin/ThemePackStudioAdminController.php` — NEW (admin UI controller)
+- `resources/views/admin/studio-imports/index.blade.php` — NEW
+- `resources/views/admin/studio-imports/show.blade.php` — NEW
+- `app/Http/Kernel.php` — studio.api middleware registered
+- `config/services.php` — studio.api_key + studio.secret config
+- `routes/api.php` — 5 new Studio API routes under /api/v1/studio/
+- `routes/web.php` — 4 new admin studio-imports routes
+
+### Documentation
+- `docs/TB_AI_STUDIO_ARCHITECTURE.md` — full architecture + directory structure + config reference
+- `docs/THEME_PACK_IMPORT_PIPELINE.md` — ZIP format spec, API endpoints, validation rules
+- `docs/LOCAL_THEME_GENERATION_WORKFLOW.md` — end-to-end workflow, provider guide, troubleshooting
+
+---
+
 ## 2026-06-20 — TB3 Sprint 8: AI Theme Generator — TB3_SPRINT8_CERTIFIED
 
 **Reason:** Multi-input AI pipeline for generating complete TB3 Theme Packs from URL, screenshot, HTML, or text prompt.
