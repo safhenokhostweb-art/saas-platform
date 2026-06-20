@@ -16,13 +16,13 @@
 
 ## Current Module
 
-**TB3 SPRINT 10 — PROFESSIONAL MARKETPLACE THEMES — CRITICAL+HIGH GAPS RESOLVED (2026-06-20)**
+**TB3 SPRINT 10 — TB3_SPRINT10_CERTIFIED (2026-06-20)**
 
 ---
 
 ## Current Phase
 
-**TB3 Sprint 10 CRITICAL+HIGH gaps addressed. Migration fixed. 12 new themes seeded. Scoring dashboard live.**
+**TB3 Sprint 10 CERTIFIED. All 13 gaps resolved (GAP-010 Bundle System deferred). 3 migrations, 2 commands, ThemeDemoDataService, preview page, initialize endpoint.**
 
 ### TB3 Sprint 10 Summary (in progress)
 - **GAP-001 CRITICAL ✅**: `MarketplaceThemeSeedCommand` — 12 themes across all 15 categories
@@ -36,7 +36,11 @@
 - **GAP-006 HIGH ✅**: Category filter dropdown in admin marketplace index
 - **GAP-007 MEDIUM ✅**: Bestseller badge display + auto-promote logic
 - **GAP-008 MEDIUM ✅**: New release badge display in index view
-- **Remaining LOW items**: GAP-009 (Annual/Lifetime pricing UI), GAP-010 (bundles), GAP-011 (update notifications), GAP-012 (demo data), GAP-013 (preview page)
+- **GAP-009 MEDIUM ✅**: Annual/Lifetime pricing UI + form inputs + updateListing() validation + persistence
+- **GAP-011 LOW ✅**: Update notifications — installed_theme_version column + isOutdated() + outdatedLicensesCount() + admin badge
+- **GAP-012 LOW ✅**: Demo data manifest — ThemeDemoDataService block scanner (14 types), preview page panel, POST /{theme}/demo-manifest
+- **GAP-013 LOW ✅**: Preview page — /admin/theme-marketplace/{theme}/preview with full metadata, pricing cards, quality scores, screenshots
+- **GAP-010 LOW ⏳**: Theme Bundle System — DEFERRED (requires theme_bundles table + separate purchase flow)
 
 ### Also completed in this session
 - **SIDEBAR_UI_CERTIFIED**: Platform admin + customer-site sidebar spacing/height fixes
