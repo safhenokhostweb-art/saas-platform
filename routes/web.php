@@ -668,7 +668,9 @@ Route::prefix('admin')
         // ─── Theme Marketplace (TB-2) ────────────────────────────────────────
         Route::prefix('theme-marketplace')->name('theme-marketplace.')->group(function () {
             Route::get('/',                                         [ThemeMarketplaceAdminController::class, 'index'])->name('index');
+            Route::post('/initialize',                              [ThemeMarketplaceAdminController::class, 'initialize'])->name('initialize');
             Route::get('/scoring',                                  [ThemeMarketplaceAdminController::class, 'scoring'])->name('scoring');
+            Route::get('/{theme}/preview',                          [ThemeMarketplaceAdminController::class, 'preview'])->name('preview');
             Route::post('/{theme}/score',                           [ThemeMarketplaceAdminController::class, 'scoreTheme'])->name('score-theme');
             Route::post('/{theme}/record-install',                  [ThemeMarketplaceAdminController::class, 'recordInstall'])->name('record-install');
             Route::put('/{theme}/listing',                          [ThemeMarketplaceAdminController::class, 'updateListing'])->name('update-listing');

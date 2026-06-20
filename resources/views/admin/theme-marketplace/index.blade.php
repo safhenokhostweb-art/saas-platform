@@ -11,7 +11,17 @@
       <h1 class="text-2xl font-bold text-gray-900">مارکت‌پلیس قالب‌ها</h1>
       <p class="text-sm text-gray-500 mt-1">قالب‌های قابل فروش را مدیریت کنید</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 flex-wrap">
+      {{-- Initialize marketplace (seed + score) --}}
+      <form method="POST" action="{{ route('admin.theme-marketplace.initialize') }}" class="inline"
+            onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').textContent='در حال اجرا...'">
+        @csrf
+        <button type="submit"
+          class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          راه‌اندازی
+        </button>
+      </form>
       <a href="{{ route('admin.theme-marketplace.scoring') }}"
          class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -151,6 +161,13 @@
                   </button>
                 </form>
               @endif
+              @if($theme->is_marketplace)
+                <a href="{{ route('admin.theme-marketplace.preview', $theme) }}"
+                   class="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  پیش‌نمایش
+                </a>
+              @endif
               <button @click="open = !open"
                 class="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -164,6 +181,7 @@
             <form method="POST" action="{{ route('admin.theme-marketplace.update-listing', $theme) }}">
               @csrf
               @method('PUT')
+              {{-- Row 1: marketplace status + category --}}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">وضعیت مارکت‌پلیس</label>
@@ -173,10 +191,48 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-1.5">قیمت (ریال)</label>
+                  <label class="block text-xs font-medium text-gray-600 mb-1.5">دسته‌بندی</label>
+                  @php $catKeys = ['corporate','personal','blog','news','educational','medical','legal','real_estate','restaurant','portfolio','agency','marketplace','store','saas','landing']; @endphp
+                  <select name="category" class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="">بدون دسته‌بندی</option>
+                    @foreach($catKeys as $key)
+                      <option value="{{ $key }}" {{ $theme->category === $key ? 'selected' : '' }}>{{ \App\Models\Theme::categoryLabel($key) }}</option>
+                    @endforeach
+                  </select>
+                </div>
+              </div>
+              {{-- Row 2: pricing --}}
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1.5">قیمت یک‌بار (ریال)</label>
                   <input type="number" name="marketplace_price" min="0"
                     value="{{ old('marketplace_price', $theme->marketplace_price) }}"
                     class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1.5">قیمت سالانه (ریال) — GAP-009</label>
+                  <input type="number" name="annual_price" min="0"
+                    value="{{ old('annual_price', $meta?->annual_price) }}"
+                    placeholder="اختیاری"
+                    class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1.5">قیمت مادام‌العمر (ریال)</label>
+                  <input type="number" name="lifetime_price" min="0"
+                    value="{{ old('lifetime_price', $meta?->lifetime_price) }}"
+                    placeholder="اختیاری"
+                    class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+              </div>
+              {{-- Row 3: license type + version notes + preview_url --}}
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1.5">نوع لایسنس</label>
+                  <select name="license_type" class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="free"    {{ ($theme->license_type ?? 'free') === 'free'    ? 'selected' : '' }}>رایگان</option>
+                    <option value="premium" {{ ($theme->license_type ?? 'free') === 'premium' ? 'selected' : '' }}>پریمیوم</option>
+                    <option value="bundle"  {{ ($theme->license_type ?? 'free') === 'bundle'  ? 'selected' : '' }}>باندل</option>
+                  </select>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">یادداشت نسخه</label>
@@ -185,12 +241,31 @@
                     placeholder="مثلاً: نسخه ۱.۲ — افزوده‌شده‌ها..."
                     class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
-                <div class="flex items-center gap-3">
-                  <label class="block text-xs font-medium text-gray-600">ویژه (featured)</label>
-                  <input type="hidden" name="is_featured" value="0">
-                  <input type="checkbox" name="is_featured" value="1" {{ $meta?->is_featured ? 'checked' : '' }}
-                    class="rounded text-indigo-600">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1.5">آدرس پیش‌نمایش — GAP-013</label>
+                  <input type="url" name="preview_url" maxlength="500"
+                    value="{{ old('preview_url', $meta?->preview_url) }}"
+                    placeholder="https://..."
+                    class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
+              </div>
+              {{-- Row 4: badges --}}
+              <div class="flex items-center gap-6 mb-4 flex-wrap">
+                <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <input type="hidden" name="is_featured" value="0">
+                  <input type="checkbox" name="is_featured" value="1" {{ $meta?->is_featured ? 'checked' : '' }} class="rounded text-indigo-600">
+                  ⭐ ویژه
+                </label>
+                <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <input type="hidden" name="is_new_release" value="0">
+                  <input type="checkbox" name="is_new_release" value="1" {{ $meta?->is_new_release ? 'checked' : '' }} class="rounded text-green-600">
+                  ✨ جدید
+                </label>
+                <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <input type="hidden" name="is_bestseller" value="0">
+                  <input type="checkbox" name="is_bestseller" value="1" {{ $meta?->is_bestseller ? 'checked' : '' }} class="rounded text-orange-600">
+                  🔥 پرفروش
+                </label>
               </div>
               <div class="mb-4">
                 <label class="block text-xs font-medium text-gray-600 mb-1.5">توضیح مارکت‌پلیس</label>

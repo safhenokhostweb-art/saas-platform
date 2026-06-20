@@ -8,6 +8,7 @@ use App\Models\ThemeMarketplace;
 use App\Models\ThemePurchaseOrder;
 use App\Services\ThemeBuilder\ThemeMarketplaceQualityService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class ThemeMarketplaceAdminController extends Controller
 {
@@ -41,6 +42,29 @@ class ThemeMarketplaceAdminController extends Controller
         return view('admin.theme-marketplace.index', compact(
             'themes', 'categories', 'totalLicenses', 'totalRevenue', 'pendingOrders'
         ));
+    }
+
+    // GAP-001/003: Initialize marketplace data (seed themes + score them)
+    public function initialize(Request $request)
+    {
+        $fresh = $request->boolean('fresh', false);
+
+        Artisan::call('marketplace:seed', $fresh ? ['--fresh' => true] : []);
+        $seedOutput = Artisan::output();
+
+        Artisan::call('marketplace:score');
+        $scoreOutput = Artisan::output();
+
+        $count = Theme::whereNull('site_id')->where('is_marketplace', true)->count();
+
+        return back()->with('success', "مارکت‌پلیس راه‌اندازی شد: {$count} قالب فعال.");
+    }
+
+    // GAP-013: Theme marketplace preview page
+    public function preview(Theme $theme)
+    {
+        $meta = ThemeMarketplace::where('theme_id', $theme->id)->first();
+        return view('admin.theme-marketplace.preview', compact('theme', 'meta'));
     }
 
     // GAP-004: Quality scoring dashboard
@@ -102,13 +126,18 @@ class ThemeMarketplaceAdminController extends Controller
         $data = $request->validate([
             'is_marketplace'         => 'required|boolean',
             'marketplace_price'      => 'required_if:is_marketplace,true|integer|min:0',
+            'annual_price'           => 'nullable|integer|min:0',
+            'lifetime_price'         => 'nullable|integer|min:0',
             'marketplace_description'=> 'nullable|string|max:2000',
             'screenshots'            => 'nullable|array|max:6',
             'screenshots.*'          => 'nullable|string|max:500',
             'requirements'           => 'nullable|array',
             'requirements.*'         => 'nullable|string|max:100',
             'version_notes'          => 'nullable|string|max:500',
+            'preview_url'            => 'nullable|url|max:500',
             'is_featured'            => 'nullable|boolean',
+            'is_new_release'         => 'nullable|boolean',
+            'is_bestseller'          => 'nullable|boolean',
             'category'               => 'nullable|string|max:60',
             'license_type'           => 'nullable|string|in:free,premium,bundle',
         ]);
@@ -128,7 +157,12 @@ class ThemeMarketplaceAdminController extends Controller
                     'screenshots'             => array_filter($data['screenshots'] ?? []),
                     'requirements'            => array_filter($data['requirements'] ?? []),
                     'version_notes'           => $data['version_notes'] ?? null,
+                    'preview_url'             => $data['preview_url'] ?? null,
+                    'annual_price'            => $data['annual_price'] ?? null,
+                    'lifetime_price'          => $data['lifetime_price'] ?? null,
                     'is_featured'             => $data['is_featured'] ?? false,
+                    'is_new_release'          => $data['is_new_release'] ?? false,
+                    'is_bestseller'           => $data['is_bestseller'] ?? false,
                 ]
             );
         } else {
