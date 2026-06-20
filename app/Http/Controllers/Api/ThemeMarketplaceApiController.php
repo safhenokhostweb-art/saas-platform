@@ -161,6 +161,17 @@ class ThemeMarketplaceApiController extends Controller
             return response()->json(['success' => false, 'error' => 'no_license'], 403);
         }
 
+        // Record install: increment installs_count, update installed_theme_version on license
+        $theme->increment('installs_count');
+        ThemeLicense::where('site_id', $site->id)->where('theme_id', $theme->id)
+            ->update(['installed_theme_version' => $theme->version ?? 1]);
+        // Auto-promote to bestseller
+        if ($theme->installs_count >= 10) {
+            \App\Models\ThemeMarketplace::where('theme_id', $theme->id)
+                ->where('is_bestseller', false)
+                ->update(['is_bestseller' => true, 'is_new_release' => false]);
+        }
+
         return response()->json([
             'success'      => true,
             'theme_id'     => $theme->id,
@@ -181,20 +192,36 @@ class ThemeMarketplaceApiController extends Controller
         $meta = $theme->marketplaceMeta;
 
         return [
-            'id'            => $theme->id,
-            'name'          => $theme->name,
-            'slug'          => $theme->slug,
-            'description'   => $meta?->marketplace_description ?? $theme->description,
-            'thumbnail'     => $theme->thumbnail,
-            'preview_image' => $theme->preview_image,
-            'price_rial'    => $theme->marketplace_price,
-            'is_free'       => $theme->marketplace_price === 0,
-            'is_featured'   => (bool) $meta?->is_featured,
-            'screenshots'   => $meta?->screenshots ?? [],
-            'requirements'  => $meta?->requirements ?? [],
-            'version_notes' => $meta?->version_notes,
-            'sales_count'   => $meta?->sales_count ?? 0,
-            'has_license'   => ThemeLicense::where('site_id', $siteId)->where('theme_id', $theme->id)->exists(),
+            // Core
+            'id'             => $theme->id,
+            'name'           => $theme->name,
+            'slug'           => $theme->slug,
+            'description'    => $meta?->marketplace_description ?? $theme->description,
+            'thumbnail'      => $theme->thumbnail,
+            'preview_image'  => $theme->preview_image,
+            // Pricing (Sprint 10)
+            'price_rial'     => $theme->marketplace_price,
+            'annual_price'   => $meta?->annual_price,
+            'lifetime_price' => $meta?->lifetime_price,
+            'is_free'        => $theme->marketplace_price === 0,
+            'license_type'   => $theme->license_type ?? 'free',
+            // Taxonomy (Sprint 10)
+            'category'       => $theme->category,
+            // Badges (Sprint 10)
+            'is_featured'    => (bool) $meta?->is_featured,
+            'is_bestseller'  => (bool) $meta?->is_bestseller,
+            'is_new_release' => (bool) $meta?->is_new_release,
+            'installs_count' => (int) $theme->installs_count,
+            // Quality (Sprint 10)
+            'quality_score'  => $meta?->getOverallScore() ?? 0,
+            'quality_badge'  => $meta?->getScoreBadge() ?? null,
+            'preview_url'    => $meta?->preview_url,
+            // Meta
+            'screenshots'    => $meta?->screenshots ?? [],
+            'requirements'   => $meta?->requirements ?? [],
+            'version_notes'  => $meta?->version_notes,
+            'sales_count'    => $meta?->sales_count ?? 0,
+            'has_license'    => ThemeLicense::where('site_id', $siteId)->where('theme_id', $theme->id)->exists(),
         ];
     }
 
