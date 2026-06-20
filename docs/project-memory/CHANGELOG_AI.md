@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-06-20 — GLOBAL SIDEBAR UI CONSISTENCY FIX — SIDEBAR_UI_CERTIFIED
+
+**Reason:** 3-issue sidebar audit: platform admin too spacious, customer admin background height uncertain, account sidebar cutting off visually.
+
+### Changes (saas-platform)
+- `resources/views/partials/platform-admin-sidebar-theme.blade.php` — Group margin: 1.25rem→0.2rem, link padding: 0.7rem→0.45rem, label padding reduced, added mb-4 neutralizer rule
+- `resources/views/layouts/admin.blade.php` — Logo: py-5→py-3, nav: py-6 px-4→py-3 px-3, footer: pt-4 mt-4→pt-2 mt-2; inline CSS sync
+- `docs/SIDEBAR_UI_AUDIT.md` — NEW (4 findings, all FIXED)
+- `docs/SIDEBAR_LAYOUT_FIX_REPORT.md` — NEW (detailed fix report)
+
+### Changes (customer-site)
+- `public/css/customer-admin-layout.css` — Added `height:100%; align-self:stretch` to `#admin-sidebar`, `height:100%` to `.admin-sidebar-inner`
+- `resources/views/account/layout.blade.php` — Parent: `min-h-screen`→`h-screen overflow-hidden`, aside: removed `self-start md:sticky md:top-0 md:max-h-screen min-h-0`, main: added `overflow-hidden`, brand: `py-5`→`py-3`
+
+**Certification:** `SIDEBAR_UI_CERTIFIED` — All 3 issues resolved. No regressions to RTL, collapse, mobile, design tokens.
+
+---
+
 ## 2026-06-20 — GLOBAL DUPLICATE NOTIFICATION FIX — NOTIFICATION_SYSTEM_CERTIFIED
 
 **Reason:** Success/info/warning/error notifications were displayed twice after every user action (save, create, update, delete, publish, etc.). Admin layouts render flash at the top of `<main>` but individual views were also rendering the same session keys inside `@section('content')`.
