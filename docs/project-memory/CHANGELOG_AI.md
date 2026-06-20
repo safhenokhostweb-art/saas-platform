@@ -5,6 +5,42 @@
 
 ---
 
+## 2026-06-20 — TB3 Sprint 9.5: Visual Reverse Engineering Engine — TB3_SPRINT9_5_CERTIFIED
+
+**Reason:** Build a 7-phase pipeline that analyzes websites (URL/Screenshot/HTML/Prompt) and generates structurally similar Persian ThemePacks targeting Apple, Amazon, Malltina, Digikala, Stripe, Shopify.
+
+### New Files (saas-platform — 12 PHP + 1 migration + 2 views + 4 docs)
+- `database/migrations/2026_06_20_900001_create_reverse_engineering_jobs_table.php` — NEW
+- `app/Models/ReverseEngineeringJob.php` — NEW (8 statuses, 4 input types, qualityPassed())
+- `app/Services/ThemeBuilder/ReverseEngineering/VisualReverseEngineeringService.php` — NEW (orchestrator)
+- `app/Services/ThemeBuilder/ReverseEngineering/DomExtractionService.php` — NEW (Phase 1: DOMXPath, 12 component types)
+- `app/Services/ThemeBuilder/ReverseEngineering/LayoutReconstructionService.php` — NEW (Phase 2: columns, spacing, flow graph)
+- `app/Services/ThemeBuilder/ReverseEngineering/VisualAnalysisService.php` — NEW (Phase 3: colors, typography, radius, shadow)
+- `app/Services/ThemeBuilder/ReverseEngineering/CommerceAnalysisService.php` — NEW (Phase 4: prices, cards, gallery, reviews)
+- `app/Services/ThemeBuilder/ReverseEngineering/SimilarityEngineService.php` — NEW (Phase 5: 4-dimension scoring × 6 sites)
+- `app/Services/ThemeBuilder/ReverseEngineering/ReverseThemeReconstructorService.php` — NEW (Phase 6: AI+PHP fallback, ThemePack persist)
+- `app/Services/ThemeBuilder/ReverseEngineering/ReverseEngineeringQualityService.php` — NEW (Phase 7: 10 checks, PASS/FAIL/PARTIAL)
+- `app/Http/Controllers/Admin/ThemeReverseEngineeringController.php` — NEW (6 actions: form/analyze/result/export/install/destroy)
+- `resources/views/admin/theme-builder/reverse-engineer.blade.php` — NEW (4-tab input form, progress animation)
+- `resources/views/admin/theme-builder/reverse-engineer-result.blade.php` — NEW (score dashboard, per-site similarity, install)
+- `routes/web.php` — MODIFIED (6 new routes)
+- `docs/VISUAL_REVERSE_ENGINEERING_ARCHITECTURE.md` — NEW
+- `docs/SIMILARITY_SCORING_ENGINE.md` — NEW
+- `docs/THEME_RECONSTRUCTION_PIPELINE.md` — NEW
+- `docs/TB3_SPRINT9_5_CERTIFICATION.md` — NEW
+
+### Impact
+- 7-phase pipeline: DOM Extraction → Layout → Visual → Commerce → Similarity → Reconstruction → Validation
+- 4 input modes: URL (HTTP fetch + XPath), Screenshot (Claude Vision), HTML (DOMDocument), Prompt (heuristics)
+- 6 reference sites: Apple, Amazon, Malltina, Digikala, Stripe, Shopify
+- Similarity scoring: 4 dimensions (structure/visual/commerce/layout), Euclidean RGB color distance
+- AI enrichment: Claude claude-sonnet-4-6 + PHP fallback (ThemePlaceholderService)
+- Safe mode: no copyright copy — only design tokens (colors/fonts/layout) extracted
+- Persian RTL + Vazirmatn font in all generated content
+- Canvas install integration (ThemePack → Canvas editor redirect)
+
+---
+
 ## 2026-06-20 — Global Date Localization Audit — DATE_LOCALIZATION_CERTIFIED
 
 **Reason:** Platform-wide audit to ensure all dates render as Jalali (Solar Hijri) with Persian digits.

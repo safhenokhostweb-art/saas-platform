@@ -4,6 +4,34 @@
 
 ---
 
+## COMPLETE: TB3 Sprint 9.5 — Visual Reverse Engineering Engine — 2026-06-20 ✅
+
+**Status:** CERTIFIED COMPLETE (2026-06-20) — TB3_SPRINT9_5_CERTIFIED
+
+| Phase | Status |
+|-------|--------|
+| Migration: reverse_engineering_jobs | ✅ DONE |
+| Model: ReverseEngineeringJob (8 statuses, 4 input types) | ✅ DONE |
+| Phase 1: DomExtractionService (DOMXPath, 12 components) | ✅ DONE |
+| Phase 2: LayoutReconstructionService (columns, spacing, flow graph) | ✅ DONE |
+| Phase 3: VisualAnalysisService (colors, typography, buttons, radius, shadow) | ✅ DONE |
+| Phase 4: CommerceAnalysisService (prices, cards, gallery, reviews) | ✅ DONE |
+| Phase 5: SimilarityEngineService (4 dims × 6 sites, Euclidean RGB) | ✅ DONE |
+| Phase 6: ReverseThemeReconstructorService (AI+PHP fallback, ThemePack) | ✅ DONE |
+| Phase 7: ReverseEngineeringQualityService (10 checks, PASS/FAIL/PARTIAL) | ✅ DONE |
+| Orchestrator: VisualReverseEngineeringService | ✅ DONE |
+| Controller: ThemeReverseEngineeringController (6 actions) | ✅ DONE |
+| View: reverse-engineer.blade.php (4-tab form, progress animation) | ✅ DONE |
+| View: reverse-engineer-result.blade.php (score dashboard, install) | ✅ DONE |
+| Routes (6 endpoints under /admin/theme-builder/reverse-engineer) | ✅ DONE |
+| Docs: VISUAL_REVERSE_ENGINEERING_ARCHITECTURE.md | ✅ DONE |
+| Docs: SIMILARITY_SCORING_ENGINE.md | ✅ DONE |
+| Docs: THEME_RECONSTRUCTION_PIPELINE.md | ✅ DONE |
+| Docs: TB3_SPRINT9_5_CERTIFICATION.md | ✅ DONE |
+| Deploy saas-platform | ✅ DONE |
+
+---
+
 ## COMPLETE: TB-AI Studio + Import Pipeline — 2026-06-20 ✅
 
 **Status:** CERTIFIED COMPLETE (2026-06-20) — TB_AI_STUDIO_CERTIFIED

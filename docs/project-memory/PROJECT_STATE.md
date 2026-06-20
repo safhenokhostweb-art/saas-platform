@@ -16,27 +16,28 @@
 
 ## Current Module
 
-**GLOBAL DATE LOCALIZATION AUDIT — DATE_LOCALIZATION_CERTIFIED (2026-06-20)**
+**TB3 SPRINT 9.5 — VISUAL REVERSE ENGINEERING ENGINE — TB3_SPRINT9_5_CERTIFIED (2026-06-20)**
 
 ---
 
 ## Current Phase
 
-**DATE_LOCALIZATION_CERTIFIED: Full project-wide Jalali/Persian date audit and fix — both repos deployed.**
+**TB3_SPRINT9_5_CERTIFIED: 7-phase pipeline analyzes websites and generates structurally similar Persian ThemePacks.**
 
-### TB-AI Studio Summary
+### TB3 Sprint 9.5 Summary
+- 7-phase pipeline: DOM Extraction → Layout → Visual → Commerce → Similarity → Reconstruction → Validation
+- 4 input modes: URL (HTTP fetch + DOMXPath), Screenshot (Claude Vision API), HTML (DOMDocument), Prompt (keyword heuristics)
+- 6 reference sites for similarity scoring: Apple, Amazon, Malltina, Digikala, Stripe, Shopify
+- Similarity engine: 4 dimensions × 6 sites, Euclidean RGB color distance, type-weighted overall score
+- AI enrichment: Claude claude-sonnet-4-6 + PHP fallback (ThemePlaceholderService)
+- Safe mode: no copyright copy — only design tokens (colors/fonts/layout) extracted
+- Admin panel: `/admin/theme-builder/reverse-engineer` — form, result, export, install into Canvas
+- `reverse_engineering_jobs` DB table with full phase-by-phase JSON columns
+
+### Previous: TB-AI Studio + Import Pipeline — TB_AI_STUDIO_CERTIFIED (2026-06-20)
 - Standalone PHP app at `c:\laragon\www\tb-ai-studio\`
-- 4 input modes: URL, Screenshot, HTML, Prompt
-- 4 AI providers: Claude, OpenAI, DeepSeek, Custom (all pluggable via .env)
-- ZipExporter: generates theme-pack-v1 ZIP (manifest.json + pack.json + templates/ + pages/)
-- SaasPlatformUploader: Bearer + HMAC upload to /api/v1/studio/import
-- 3-step Alpine.js web UI (Analyze → Select Sections → Result/Upload)
-
-### Import Pipeline (SaaS Platform)
-- `AuthenticateStudioApi` middleware (Bearer token + HMAC)
-- 5 Studio API endpoints: import / validate / preview / install / publish
-- Admin UI: /admin/studio-imports (index + show + publish + destroy)
-- All Studio imports tagged 'studio-import', site_id=null, starts as draft
+- 4 AI providers: Claude, OpenAI, DeepSeek, Custom
+- ZipExporter, SaasPlatformUploader, 5 Studio API endpoints, admin UI
 
 ### Previous: TB3 Sprint 8 — AI Theme Generator — CERTIFIED COMPLETE (2026-06-20)
 - 4 input methods, 11 sections, ThemePack output, safe mode, PHP fallback, ai_generation_jobs table

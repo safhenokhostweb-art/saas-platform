@@ -19,7 +19,32 @@
 
 ---
 
-## CURRENT STATE (2026-06-19)
+## CURRENT STATE (2026-06-20)
+
+**Last completed phase:** TB3 Sprint 9.5 — Visual Reverse Engineering Engine — TB3_SPRINT9_5_CERTIFIED (2026-06-20)
+**Before that:** TB-AI Studio + Import Pipeline — TB_AI_STUDIO_CERTIFIED (2026-06-20)
+**Before that:** TB3 Sprint 8 — AI Theme Generator — TB3_SPRINT8_CERTIFIED (2026-06-20)
+**Status:** Both repos committed and deployed. 7-phase reverse engineering pipeline with 6 reference sites.
+**Certification:** `docs/TB3_SPRINT9_5_CERTIFICATION.md` — TB3_SPRINT9_5_CERTIFIED
+**Next recommended:** TB3 Sprint 10 — AI Theme Iteration (refine generated theme with follow-up prompts), or TB3 Sprint 11 — Live Preview Compare.
+
+### TB3 Sprint 9.5 Summary (2026-06-20)
+
+**7-Phase Pipeline:**
+1. DomExtractionService — DOMXPath, 12 component types (header/hero/pricing/testimonials/FAQ/blog/CTA/footer/grid/cards/features/mega-menu)
+2. LayoutReconstructionService — column counts, container config, spacing system, section flow graph, responsive breakpoints
+3. VisualAnalysisService — color palette (hex+RGB extraction), typography, button styles, radius system, shadow, visual density
+4. CommerceAnalysisService — product cards, price blocks (Persian Toman+USD), discount badges, gallery, reviews, specs, cart flow
+5. SimilarityEngineService — 4 scoring dimensions × 6 reference sites, Euclidean RGB color distance, type-weighted overall
+6. ReverseThemeReconstructorService — Claude claude-sonnet-4-6 AI + ThemePlaceholderService fallback, ThemePack+ThemeTemplates DB
+7. ReverseEngineeringQualityService — 10 checks (missing sections/hierarchy/duplicate IDs/block types/scores/commerce/pack), PASS/FAIL/PARTIAL
+
+**New Files:** `reverse_engineering_jobs` migration+model, 8 service classes, controller, 2 Blade views, 6 routes, 4 docs
+**Admin URL:** `/admin/theme-builder/reverse-engineer`
+
+---
+
+## PREVIOUS STATE (2026-06-19)
 
 **Last completed phase:** TB3 Sprint 6 — Professional Template Library — CERTIFIED COMPLETE (2026-06-19)  
 **Before that:** LIFECYCLE-2 — Storage & Resource Governance — COMPLETE (2026-06-19)  
