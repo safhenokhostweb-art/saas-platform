@@ -201,10 +201,9 @@ class AcoolHvacSeedCommand extends Command
         // ── Update theme slug + marketplace fields ─────────────────────────────
         if ($theme) {
             $theme->update([
-                'slug'           => self::SLUG,
-                'status'         => Theme::STATUS_PUBLISHED,
-                'thumbnail_url'  => $this->thumbnailSvg(),
-                'preview_images' => $this->previewImages($kitPath, $manifest),
+                'slug'          => self::SLUG,
+                'status'        => Theme::STATUS_PUBLISHED,
+                'preview_image' => $this->previewImages($kitPath, $manifest)[0] ?? '',
             ]);
 
             ThemeMarketplace::where('theme_id', $theme->id)->update([

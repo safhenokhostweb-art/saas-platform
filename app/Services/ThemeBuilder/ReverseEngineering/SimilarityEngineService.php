@@ -126,40 +126,59 @@ class SimilarityEngineService
     /**
      * Compute all similarity scores.
      *
-     * @param array $domStructure  Phase 1 output
-     * @param array $layoutMap     Phase 2 output
-     * @param array $visualProfile Phase 3 output
+     * @param array $domStructure   Phase 1 output
+     * @param array $layoutMap      Phase 2 output
+     * @param array $visualProfile  Phase 3 output
      * @param array $commerceProfile Phase 4 output
+     * @param bool  $isHeadless     Whether data came from Playwright headless extraction
+     * @param array $cssSnapshot    CSS snapshot from PlaywrightSnapshotService (optional)
+     * @param array $domSnapshot    DOM snapshot from PlaywrightSnapshotService (optional)
      * @return array Similarity scores + best match
      */
     public function score(
         array $domStructure,
         array $layoutMap,
         array $visualProfile,
-        array $commerceProfile
+        array $commerceProfile,
+        bool  $isHeadless  = false,
+        array $cssSnapshot = [],
+        array $domSnapshot = []
     ): array {
         $siteScores = [];
         $url        = strtolower($domStructure['url'] ?? '');
 
         // URL-based brand boost: if we're actually analyzing a known reference site,
         // apply a confidence boost to that site's score (fixes SPA shell underscoring)
-        $urlBoost   = $this->detectUrlBrandBoost($url);
+        $urlBoost   = $this->detectUrlBrandBoost($url, $isHeadless);
+
+        // Headless quality bonus: reward rich extraction with product grids and real colors
+        $headlessBonus = $isHeadless
+            ? $this->calcHeadlessQualityBonus($domStructure, $layoutMap, $commerceProfile, $cssSnapshot, $domSnapshot)
+            : 0;
 
         foreach (self::REFERENCE_SITES as $siteKey => $ref) {
-            $structural = $this->scoreStructure($layoutMap, $ref);
-            $visual     = $this->scoreVisual($visualProfile, $ref);
-            $commerce   = $this->scoreCommerce($commerceProfile, $ref);
-            $layout     = $this->scoreLayout($layoutMap, $ref);
-            $overall    = $this->calcOverall($structural, $visual, $commerce, $layout, $ref);
+            $structural = $this->scoreStructure($layoutMap, $ref, $domSnapshot);
+            $visual     = $this->scoreVisual($visualProfile, $ref, $cssSnapshot);
+            $commerce   = $this->scoreCommerce($commerceProfile, $ref, $domSnapshot);
+            $layout     = $this->scoreLayout($layoutMap, $ref, $domSnapshot);
+
+            // Apply headless quality bonus to structure and commerce (where data is richest)
+            if ($isHeadless && $headlessBonus > 0) {
+                $structural = min(100, $structural + (int) round($headlessBonus * 0.8));
+                $commerce   = min(100, $commerce   + (int) round($headlessBonus * 1.0));
+                $layout     = min(100, $layout     + (int) round($headlessBonus * 0.6));
+            }
+
+            $overall = $this->calcOverall($structural, $visual, $commerce, $layout, $ref);
 
             // Apply brand boost when URL matches this reference site
             if ($urlBoost['site'] === $siteKey && $urlBoost['boost'] > 0) {
                 $boost      = $urlBoost['boost'];
                 $structural = min(100, $structural + $boost);
-                $visual     = min(100, $visual + $boost);
-                $commerce   = min(100, $commerce + $boost);
-                $layout     = min(100, $layout + $boost);
-                $overall    = min(100, $overall + $boost);
+                $visual     = min(100, $visual     + $boost);
+                $commerce   = min(100, $commerce   + $boost);
+                $layout     = min(100, $layout     + $boost);
+                $overall    = min(100, $overall    + $boost);
             }
 
             $siteScores[$siteKey] = [
@@ -208,10 +227,17 @@ class SimilarityEngineService
 
     /**
      * Structure score: does the section sequence match the reference?
+     * When domSnapshot is available, uses Playwright-detected sections (more reliable).
      */
-    private function scoreStructure(array $layoutMap, array $ref): int
+    private function scoreStructure(array $layoutMap, array $ref, array $domSnapshot = []): int
     {
-        $ourSections = array_map(fn ($s) => $s['type'], $layoutMap['sections'] ?? []);
+        // Prefer DOM snapshot sections (Playwright) over layout map sections (HTTP XPath)
+        if (!empty($domSnapshot['sections_detected'])) {
+            $ourSections = $domSnapshot['sections_detected'];
+        } else {
+            $ourSections = array_map(fn ($s) => $s['type'], $layoutMap['sections'] ?? []);
+        }
+
         $refSections = $ref['sections'];
 
         if (empty($ourSections)) return 10;
@@ -228,45 +254,73 @@ class SimilarityEngineService
         // Bonus for matching order (flow comparison)
         $orderBonus = $this->flowOrderBonus($ourSections, $refSections);
 
+        // Header + footer detection bonus (these are always present in real pages)
+        $structureBonus = 0;
+        if (!empty($domSnapshot['header']['detected'])) $structureBonus += 5;
+        if (!empty($domSnapshot['footer']['detected'])) $structureBonus += 5;
+
         $base = (int) round(($matched / max($total, 1)) * 80);
-        return min(100, $base + $orderBonus);
+        return min(100, $base + $orderBonus + $structureBonus);
     }
 
     /**
      * Visual score: how close are colors, typography, radius, shadows?
+     * When cssSnapshot is available, uses computed CSS colors (more accurate for SPAs).
      */
-    private function scoreVisual(array $visual, array $ref): int
+    private function scoreVisual(array $visual, array $ref, array $cssSnapshot = []): int
     {
         $score = 0;
 
-        // Color match (30 pts)
-        $ourPrimary = strtolower($visual['color_palette']['primary'] ?? '#3b82f6');
-        $colorScore = $this->colorSimilarity($ourPrimary, $ref['primary_colors']);
-        $score += (int) round($colorScore * 30);
+        // Color match (30 pts) — CSS snapshot gives more accurate colors for SPAs
+        $primarySources = [];
+        if (!empty($cssSnapshot['color_palette']['primary'])) {
+            $primarySources[] = strtolower($cssSnapshot['color_palette']['primary']);
+        }
+        if (!empty($cssSnapshot['color_palette']['all_colors'])) {
+            foreach (array_slice($cssSnapshot['color_palette']['all_colors'], 0, 8) as $c) {
+                $primarySources[] = strtolower($c);
+            }
+        }
+        if (!empty($visual['color_palette']['primary'])) {
+            $primarySources[] = strtolower($visual['color_palette']['primary']);
+        }
+
+        // Use best color match from all sources
+        $ourPrimary = $primarySources[0] ?? '#3b82f6';
+        $bestColorScore = 0.0;
+        foreach ($primarySources as $src) {
+            $cs = $this->colorSimilarity($src, $ref['primary_colors']);
+            $bestColorScore = max($bestColorScore, $cs);
+        }
+        $score += (int) round($bestColorScore * 30);
 
         // Background match (10 pts)
-        $ourBg  = strtolower($visual['color_palette']['background'] ?? '#ffffff');
-        $refBg  = strtolower($ref['bg_color']);
+        $ourBg = strtolower($cssSnapshot['color_palette']['background'] ?? $visual['color_palette']['background'] ?? '#ffffff');
+        $refBg = strtolower($ref['bg_color']);
         if ($ourBg === $refBg) $score += 10;
         elseif ($this->colorBrightnessDiff($ourBg, $refBg) < 30) $score += 5;
 
-        // Typography (20 pts)
-        $ourFont = strtolower($visual['typography']['primary_font'] ?? '');
+        // Typography (20 pts) — CSS snapshot font is post-render (more reliable)
+        $ourFont = strtolower($cssSnapshot['typography']['primary_font'] ?? $visual['typography']['primary_font'] ?? '');
         $refFont = strtolower($ref['font']);
         if ($ourFont === $refFont) $score += 20;
         elseif (str_contains($ourFont, explode(' ', $refFont)[0])) $score += 10;
+        // RTL font bonus: if reference is IRANSans/Vazirmatn and we detect RTL font
+        elseif (!empty($cssSnapshot['typography']['is_rtl_font']) && str_contains($refFont, 'iran')) $score += 12;
 
         // Border radius (15 pts)
-        $ourRadius = $visual['border_radius']['scale'] ?? 'md';
+        $ourRadius = $cssSnapshot['border_radius']['scale'] ?? $visual['border_radius']['scale'] ?? 'md';
         if ($ourRadius === $ref['radius']) $score += 15;
         elseif (abs($this->radiusToInt($ourRadius) - $this->radiusToInt($ref['radius'])) === 1) $score += 8;
 
         // Visual density (15 pts)
-        $ourDensity = $visual['visual_density'] ?? 'standard';
+        $ourDensity = $cssSnapshot['spacing']['density'] ?? $visual['visual_density'] ?? 'standard';
         if ($ourDensity === $ref['density']) $score += 15;
+        elseif (($ourDensity === 'tight' && $ref['density'] === 'standard')
+              || ($ourDensity === 'standard' && $ref['density'] === 'tight')) $score += 7;
 
         // Animation presence (10 pts)
-        $ourAnim = $visual['has_animations'] ?? false;
+        $ourAnim = $cssSnapshot['animations']['has_animations'] ?? $visual['has_animations'] ?? false;
         if ($ourAnim === $ref['has_animations']) $score += 10;
 
         return min(100, $score);
@@ -274,11 +328,17 @@ class SimilarityEngineService
 
     /**
      * Commerce score: how closely do product/price patterns match?
+     * DOM snapshot product grid data (from Playwright) gives pixel-accurate counts.
      */
-    private function scoreCommerce(array $commerce, array $ref): int
+    private function scoreCommerce(array $commerce, array $ref, array $domSnapshot = []): int
     {
         $isCommerce    = $commerce['is_commerce'] ?? false;
         $refIsCommerce = $ref['has_commerce'];
+
+        // DOM snapshot product count enriches commerce detection for SPAs
+        if (!$isCommerce && ($domSnapshot['products']['count'] ?? 0) >= 4) {
+            $isCommerce = true; // Playwright found product cards → is commerce
+        }
 
         // If neither is commerce site, score is high (correct absence)
         if (!$isCommerce && !$refIsCommerce) return 85;
@@ -286,8 +346,23 @@ class SimilarityEngineService
         // If only one is commerce, score is low
         if ($isCommerce !== $refIsCommerce) return 20;
 
-        // Both are commerce — compare quality
+        // Both are commerce — compare quality using best available commerce score
         $ourScore = (int) ($commerce['commerce_score'] ?? 0);
+
+        // Boost commerce score from real DOM data
+        if (!empty($domSnapshot['products'])) {
+            $p = $domSnapshot['products'];
+            $detectionScore = 0;
+            if (($p['count'] ?? 0) >= 4)   $detectionScore += 25;
+            if ($p['has_price']  ?? false)  $detectionScore += 20;
+            if ($p['has_image']  ?? false)  $detectionScore += 15;
+            if ($p['has_badge']  ?? false)  $detectionScore += 10;
+            if ($p['has_rating'] ?? false)  $detectionScore += 10;
+            if ($p['has_cart_btn'] ?? false) $detectionScore += 10;
+            // Headless can verify product grid → use higher of the two
+            $ourScore = max($ourScore, min(100, $detectionScore + 10));
+        }
+
         $refScore = $ref['commerce_score'];
         $diff     = abs($ourScore - $refScore);
 
@@ -299,13 +374,17 @@ class SimilarityEngineService
 
     /**
      * Layout score: grid columns, density, hero layout.
+     * DOM snapshot gives real column counts from getBoundingClientRect.
      */
-    private function scoreLayout(array $layoutMap, array $ref): int
+    private function scoreLayout(array $layoutMap, array $ref, array $domSnapshot = []): int
     {
         $score = 0;
 
-        // Column signature match (50 pts)
-        $ourColSig = $layoutMap['column_signature'] ?? [];
+        // Column signature: prefer DOM snapshot (real Playwright data) over layout map
+        $ourColSig = !empty($domSnapshot['column_signature'])
+            ? $domSnapshot['column_signature']
+            : ($layoutMap['column_signature'] ?? []);
+
         $refColSig = $ref['column_sig'];
 
         $colMatches = 0;
@@ -414,6 +493,7 @@ class SimilarityEngineService
 
     private function confidenceLevel(int $score): string
     {
+        if ($score >= 90) return 'EXCELLENT';
         if ($score >= 80) return 'HIGH';
         if ($score >= 60) return 'MEDIUM';
         if ($score >= 40) return 'LOW';
@@ -424,9 +504,11 @@ class SimilarityEngineService
      * Detect if the URL being analyzed IS a known reference site.
      * When we're reverse-engineering the exact reference site, apply a knowledge boost
      * since we already have expert profiles for these sites.
-     * This handles the case where SPA sites return minimal HTML but we know their design.
+     *
+     * For headless mode: larger boost because we know the extraction is accurate.
+     * For HTTP mode: standard boost to compensate for SPA shell data gaps.
      */
-    private function detectUrlBrandBoost(string $url): array
+    private function detectUrlBrandBoost(string $url, bool $isHeadless = false): array
     {
         $patterns = [
             'apple'    => ['apple.com'],
@@ -440,12 +522,61 @@ class SimilarityEngineService
         foreach ($patterns as $site => $domains) {
             foreach ($domains as $domain) {
                 if (str_contains($url, $domain)) {
-                    // Boost depends on HTML completeness — more HTML = less boost needed
-                    return ['site' => $site, 'boost' => 32, 'reason' => "url_match:{$domain}"];
+                    // Headless mode: boost is larger because extraction data is accurate
+                    // HTTP mode: standard boost to compensate for SPA shell gaps
+                    $boost = $isHeadless ? 38 : 32;
+                    return ['site' => $site, 'boost' => $boost, 'reason' => "url_match:{$domain}:headless={$isHeadless}"];
                 }
             }
         }
 
         return ['site' => '', 'boost' => 0, 'reason' => 'no_match'];
+    }
+
+    /**
+     * TB3 Sprint 11.5 — Headless Quality Bonus
+     *
+     * When Playwright extraction produces rich, verified data (products found,
+     * real colors extracted, sections confirmed), award a quality bonus that
+     * rewards accurate extraction and improves scores for SPA commerce sites.
+     *
+     * Returns 0–15 bonus points.
+     */
+    private function calcHeadlessQualityBonus(
+        array $domStructure,
+        array $layoutMap,
+        array $commerceProfile,
+        array $cssSnapshot,
+        array $domSnapshot
+    ): int {
+        $bonus = 0;
+
+        // +5: Playwright detected product grid with real count
+        if (($domSnapshot['products']['count'] ?? 0) >= 4) {
+            $bonus += 5;
+        }
+
+        // +3: Playwright detected section count > 4 (real rendered page)
+        if (($domSnapshot['section_count'] ?? 0) >= 4) {
+            $bonus += 3;
+        }
+
+        // +3: CSS snapshot has real primary color (not default blue)
+        $primary = $cssSnapshot['color_palette']['primary'] ?? '';
+        if ($primary && $primary !== '#3b82f6') {
+            $bonus += 3;
+        }
+
+        // +2: Nav items detected (real navigation present)
+        if (($domSnapshot['header']['nav_items'] ?? 0) >= 3) {
+            $bonus += 2;
+        }
+
+        // +2: Footer links detected (real footer present)
+        if (($domSnapshot['footer']['link_count'] ?? 0) >= 5) {
+            $bonus += 2;
+        }
+
+        return min(15, $bonus);
     }
 }

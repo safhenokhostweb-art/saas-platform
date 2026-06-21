@@ -63,10 +63,11 @@ class PlaywrightExtractionService
      *
      * @param  string $url       Target URL
      * @param  int    $timeoutMs Navigation timeout in ms (default 30 000)
+     * @param  string $device    Viewport device: desktop (default) | tablet | mobile | all
      * @return array             Playwright result payload
      * @throws \RuntimeException On Node process failure
      */
-    public function extract(string $url, int $timeoutMs = 30000): array
+    public function extract(string $url, int $timeoutMs = 30000, string $device = 'desktop'): array
     {
         $scriptPath = base_path(self::SCRIPT);
         $node       = $this->findNodeBinary();
@@ -102,7 +103,7 @@ class PlaywrightExtractionService
         putenv('PLAYWRIGHT_BROWSERS_PATH=' . base_path('scripts/headless/.playwright-browsers'));
 
         $process = proc_open(
-            [$node, $scriptPath, $url, (string) $timeoutMs],
+            [$node, $scriptPath, $url, (string) $timeoutMs, $device],
             $descriptors,
             $pipes,
             base_path(),

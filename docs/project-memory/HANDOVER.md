@@ -53,11 +53,11 @@ customer-site/resources/views/admin/partials/sidebar-icon.blade.php (megaphone i
 - Admin panel: index (filter by status, stats cards), create, show (delivery progress bar), edit
 - AdminMenu group: `فرم‌ها و ارتباط با مخاطب` → sms_campaigns
 
-**⚠️ PENDING PRODUCTION STEP:**
-```bash
-# Run in customer-site on production server:
-php artisan migrate
-```
+**✅ PRODUCTION ACTIVATED (2026-06-21):**
+- Migration `2026_06_21_100000_create_sms_campaigns_tables` — Ran [4]
+- Tables `sms_campaigns` + `sms_campaign_recipients` verified with indexes and FK
+- All 12 routes, 4 views, AdminMenu, Service, Job validated
+- Reports: `SMS_CAMPAIGN_DEPLOY_REPORT.md`, `DEPLOY_VALIDATION_REPORT.md`, `DEPLOY_FIX_REPORT.md`
 
 ### JSON Import Engine — COMPLETE (2026-06-21)
 

@@ -37,6 +37,7 @@ class VisualReverseEngineeringService
         private readonly ReverseEngineeringQualityService $qualityService,
         private readonly PlaywrightExtractionService      $playwright,
         private readonly HeadlessComponentExtractor       $headlessExtractor,
+        private readonly PlaywrightSnapshotService        $snapshotService,
     ) {}
 
     public function isEnabled(): bool
@@ -126,12 +127,14 @@ class VisualReverseEngineeringService
     /**
      * Run the RE pipeline using Playwright for the given URL.
      * Called either from fromUrl() auto-detection or directly.
+     * TB3 Sprint 11.5: generates DOM/CSS/Layout snapshots and passes isHeadless=true to similarity engine.
      */
     public function fromUrlHeadless(
         ReverseEngineeringJob $job,
         string $url,
-        string $name  = '',
-        string $notes = ''
+        string $name   = '',
+        string $notes  = '',
+        string $device = 'desktop'
     ): ReverseEngineeringJob {
         $job->update([
             'status'          => ReverseEngineeringJob::STATUS_EXTRACTING,
@@ -139,10 +142,10 @@ class VisualReverseEngineeringService
         ]);
 
         try {
-            // Playwright renders the full page
-            $playwright = $this->playwright->extract($url, 35000);
+            // Playwright renders the full page (with device mode)
+            $playwright = $this->playwright->extract($url, 35000, $device);
 
-            // Store raw headless payload
+            // Store compact headless payload (no HTML/screenshot in DB)
             $job->update(['headless_data' => $this->compactHeadlessData($playwright)]);
 
             // Phase 1: DOM extraction from rendered HTML
@@ -155,17 +158,32 @@ class VisualReverseEngineeringService
 
             $job->update(['dom_structure' => $domStructure, 'suggested_name' => $finalName]);
 
-            // Phases 2–7: run on the richer headless DOM
-            $result = $this->runPipelineFromDom($job, $domStructure, $renderedHtml, $finalName);
+            // Sprint 11.5: Generate DOM/CSS/Layout snapshots
+            $snapshots = $this->snapshotService->generateAll($playwright, $domStructure);
 
-            // Attach screenshot URL if captured
+            // Phases 2–7: run on the richer headless DOM (isHeadless=true)
+            $result = $this->runPipelineFromDom($job, $domStructure, $renderedHtml, $finalName, true, $snapshots);
+
+            // Attach screenshot URL + snapshot paths to meta
+            $meta = $result->meta ?? [];
             if (!empty($playwright['screenshot_base64'])) {
                 $path = 're-screenshots/' . $job->uuid . '.png';
                 Storage::put($path, base64_decode($playwright['screenshot_base64']));
-                $meta = $result->meta ?? [];
                 $meta['headless_screenshot'] = $path;
-                $result->update(['meta' => $meta]);
             }
+            $meta['snapshots'] = [
+                'dom'    => $snapshots['dom']    ?? [],
+                'css'    => $snapshots['css']    ?? [],
+                'layout' => $snapshots['layout'] ?? [],
+            ];
+            $meta['device']     = $device;
+            $meta['playwright'] = [
+                'framework'    => $playwright['framework']   ?? [],
+                'performance'  => $playwright['performance'] ?? [],
+                'css_vars_count' => count($playwright['css_variables'] ?? []),
+                'sections_detected' => $playwright['components']['sections_detected'] ?? [],
+            ];
+            $result->update(['meta' => $meta]);
 
             return $result->fresh();
 
@@ -258,8 +276,14 @@ class VisualReverseEngineeringService
         return $this->runPipelineFromDom($job, $domStructure, $html, $name);
     }
 
-    private function runPipelineFromDom(ReverseEngineeringJob $job, array $domStructure, string $html, string $name): ReverseEngineeringJob
-    {
+    private function runPipelineFromDom(
+        ReverseEngineeringJob $job,
+        array $domStructure,
+        string $html,
+        string $name,
+        bool $isHeadless = false,
+        array $snapshots = []
+    ): ReverseEngineeringJob {
         // Phase 2: Layout Reconstruction
         $job->update(['status' => ReverseEngineeringJob::STATUS_ANALYZING]);
         $layoutMap = empty($html)
@@ -275,13 +299,16 @@ class VisualReverseEngineeringService
         $commerceProfile = $this->analyzeCommerce($html, $domStructure, $job->input_type);
         $job->update(['commerce_profile' => $commerceProfile]);
 
-        // Phase 5: Similarity Scoring
+        // Phase 5: Similarity Scoring (Sprint 11.5: pass isHeadless + snapshots)
         $job->update(['status' => ReverseEngineeringJob::STATUS_SCORING]);
         $similarityScores = $this->similarityEngine->score(
             $domStructure,
             $layoutMap,
             $visualProfile,
             $commerceProfile,
+            $isHeadless,
+            $snapshots['css']    ?? [],
+            $snapshots['dom']    ?? [],
         );
         $job->update(['similarity_scores' => $similarityScores]);
 

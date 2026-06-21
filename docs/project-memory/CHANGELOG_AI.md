@@ -5,6 +5,19 @@
 
 ---
 
+## 2026-06-21 — SMS Campaign Production Activation (SMS_CAMPAIGN_OPERATIONAL)
+
+**Reason:** Production finalization — migration was Pending after deploy. Ran migration, verified tables/indexes/FK, validated all routes+models+service+job, cached views+config+routes.
+
+**Fix Applied:** `php artisan migrate --force` → `2026_06_21_100000_create_sms_campaigns_tables` Ran [4]
+
+**Reports Generated:**
+- `customer-site/SMS_CAMPAIGN_DEPLOY_REPORT.md`
+- `customer-site/DEPLOY_VALIDATION_REPORT.md`
+- `customer-site/DEPLOY_FIX_REPORT.md`
+
+---
+
 ## 2026-06-21 — SMS Campaign Manager (SMS_CAMPAIGN_MANAGER_COMPLETE)
 
 **Reason:** New feature — multi-audience SMS campaign manager for customer-site admin panel. Full lifecycle management (draft→running→completed), Kavenegar+Ghasedak real SMS, queued bulk send, per-recipient delivery tracking.
