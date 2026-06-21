@@ -78,45 +78,32 @@ class PlaywrightExtractionService
             2 => ['pipe', 'w'],  // stderr
         ];
 
-        // Build a clean, minimal environment for Node.js.
-        // Node.js 24 on Windows uses OpenSSL 3.x which relies on Windows CNG (Cryptography
-        // Next Generation) for entropy. CNG requires Windows system env vars (SystemRoot,
-        // USERPROFILE, APPDATA, TEMP …) to be present. When spawned from PHP with a
-        // stripped env these vars are missing → RAND init fails → ncrypto::CSPRNG crash.
-        // Fix: supply exactly the vars needed. OPENSSL_CONF must NOT be included (even an
-        // empty string triggers a failed file-open that breaks RAND init).
-        $userProfile = getenv('USERPROFILE') ?: 'C:\\Users\\Default';
-        $env = [
-            'PATH'            => $this->buildPath(),
-            'HOME'            => PHP_OS_FAMILY === 'Windows' ? $userProfile : (getenv('HOME') ?: '/root'),
-            'PLAYWRIGHT_BROWSERS_PATH' => base_path('scripts/headless/.playwright-browsers'),
-        ];
-        if (PHP_OS_FAMILY === 'Windows') {
-            $env['SystemRoot']   = getenv('SystemRoot') ?: 'C:\\Windows';
-            $env['SYSTEMROOT']   = $env['SystemRoot'];
-            $env['SystemDrive']  = getenv('SystemDrive') ?: 'C:';
-            $env['USERPROFILE']  = $userProfile;
-            $env['APPDATA']      = getenv('APPDATA') ?: $userProfile . '\\AppData\\Roaming';
-            $env['LOCALAPPDATA'] = getenv('LOCALAPPDATA') ?: $userProfile . '\\AppData\\Local';
-            $env['TEMP']         = getenv('TEMP') ?: sys_get_temp_dir();
-            $env['TMP']          = getenv('TMP') ?: sys_get_temp_dir();
-            $env['COMSPEC']      = getenv('COMSPEC') ?: 'C:\\Windows\\System32\\cmd.exe';
-            $env['NUMBER_OF_PROCESSORS'] = getenv('NUMBER_OF_PROCESSORS') ?: '4';
-            $env['PROCESSOR_ARCHITECTURE'] = getenv('PROCESSOR_ARCHITECTURE') ?: 'AMD64';
-        }
+        // Environment strategy: pass null to inherit PHP's full process environment.
+        // We confirmed that OPENSSL_CONF is NOT present in PHP's env when running as CLI
+        // (getenv('OPENSSL_CONF') returns false). So inheriting is safe — Node.js 24
+        // won't see a broken OPENSSL_CONF and won't crash with ncrypto::CSPRNG.
+        // Chrome also needs the full Windows system env (COMPUTERNAME, ProgramData,
+        // WINDIR, PUBLIC, etc.) which would be missing in a hand-built minimal env.
+        // PLAYWRIGHT vars are set on the inherited env via actual putenv() calls so they
+        // take effect for the child.
         if ($chromePath) {
-            $env['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'] = $chromePath;
+            putenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=' . $chromePath);
         }
+        putenv('PLAYWRIGHT_BROWSERS_PATH=' . base_path('scripts/headless/.playwright-browsers'));
 
-        // Array form for proc_open: PHP creates the env block from ONLY our array,
-        // so no PHP-specific vars (OPENSSL_CONF, PHPRC, etc.) leak to the child process.
         $process = proc_open(
             [$node, $scriptPath, $url, (string) $timeoutMs],
             $descriptors,
             $pipes,
             base_path(),
-            $env
+            null  // inherit PHP's full environment
         );
+
+        // Restore env vars we just set temporarily
+        if ($chromePath) {
+            $existingChrome = getenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH');
+            if ($existingChrome === $chromePath) putenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH');
+        }
 
         if (!is_resource($process)) {
             throw new \RuntimeException('Playwright: فرآیند Node.js راه‌اندازی نشد.');

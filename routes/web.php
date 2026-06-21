@@ -628,6 +628,14 @@ Route::prefix('admin')
             Route::post('theme-builder/reverse-engineer/{job}/install',    [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'install'])->name('admin.theme-builder.reverse-engineer.install');
             Route::delete('theme-builder/reverse-engineer/{job}',          [\App\Http\Controllers\Admin\ThemeReverseEngineeringController::class, 'destroy'])->name('admin.theme-builder.reverse-engineer.destroy');
 
+            // ─── JSON Import Engine ───────────────────────────────────────────────
+            Route::get('theme-builder/json-import',                          [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'form'])->name('theme-builder.json-import.form');
+            Route::post('theme-builder/json-import/detect',                  [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'detect'])->name('theme-builder.json-import.detect');
+            Route::post('theme-builder/json-import/import',                  [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'import'])->name('theme-builder.json-import.import');
+            Route::get('theme-builder/json-import/{pack}/result',            [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'result'])->name('theme-builder.json-import.result');
+            Route::post('theme-builder/json-import/{pack}/install',          [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'install'])->name('theme-builder.json-import.install');
+            Route::get('theme-builder/json-import/{pack}/export',            [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'export'])->name('theme-builder.json-import.export');
+
             // ─── TB6: Template Library (Canvas) ──────────────────────────────────
             Route::get('theme-builder/{theme}/canvas/templates',        [ThemeCanvasController::class, 'canvasTemplates'])->name('theme-builder.canvas.templates');
             Route::post('theme-builder/{theme}/canvas/save-as-template',[ThemeCanvasController::class, 'canvasSaveAsTemplate'])->name('theme-builder.canvas.save-as-template');
