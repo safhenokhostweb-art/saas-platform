@@ -131,20 +131,19 @@ class ThemePackGenerator
             'version'       => 1,
         ]);
 
-        ThemeMarketplace::firstOrCreate(
-            ['theme_id' => $theme->id],
-            [
-                'category'       => $category,
-                'license_type'   => 'free',
-                'price'          => 0,
+        // Use DB::table to bypass Eloquent mass-assignment/cast when inserting 0 values.
+        // annual_price/lifetime_price have NOT NULL DEFAULT 0 in the DB schema.
+        if (!\DB::table('theme_marketplace')->where('theme_id', $theme->id)->exists()) {
+            \DB::table('theme_marketplace')->insert([
+                'theme_id'       => $theme->id,
                 'annual_price'   => 0,
                 'lifetime_price' => 0,
-                'quality_score'  => 0,
-                'is_featured'    => false,
-                'installs_count' => 0,
+                'is_featured'    => 0,
                 'preview_url'    => '',
-            ]
-        );
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+        }
 
         return $theme;
     }
