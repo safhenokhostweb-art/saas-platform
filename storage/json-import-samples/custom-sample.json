@@ -1,0 +1,293 @@
+{
+  "format": "theme-pack-v1",
+  "name": "قالب شرکتی نمونه",
+  "description": "یک قالب حرفه‌ای شرکتی با تمام اجزا",
+  "version": "2.0.0",
+  "author": "JSON Import Validation",
+  "pack_data": {
+    "global_styles": {
+      "primaryColor": "#6366f1",
+      "secondaryColor": "#8b5cf6",
+      "backgroundColor": "#ffffff",
+      "textColor": "#1f2937",
+      "fontFamily": "Vazirmatn",
+      "direction": "rtl",
+      "borderRadius": "8px",
+      "shadowStyle": "soft"
+    },
+    "headers": [
+      [
+        {
+          "id": "hdr-custom-001",
+          "type": "heading",
+          "props": {
+            "text": "nav شرکت نمونه",
+            "level": 1,
+            "background": "#1e293b",
+            "textColor": "#ffffff"
+          },
+          "blocks": []
+        },
+        {
+          "id": "hdr-custom-002",
+          "type": "image",
+          "props": {
+            "url": "https://example.com/custom-logo.png",
+            "alt": "لوگو شرکت"
+          },
+          "blocks": []
+        }
+      ]
+    ],
+    "footers": [
+      [
+        {
+          "id": "ftr-custom-001",
+          "type": "text",
+          "props": {
+            "content": "© 2026 شرکت نمونه. copyright کلیه حقوق محفوظ است.",
+            "background": "#0f172a",
+            "textColor": "#94a3b8"
+          },
+          "blocks": []
+        },
+        {
+          "id": "ftr-custom-002",
+          "type": "icon",
+          "props": {
+            "name": "fa-instagram",
+            "size": "lg",
+            "url": "https://instagram.com"
+          },
+          "blocks": []
+        }
+      ]
+    ],
+    "pages": {
+      "home": {
+        "title": "صفحه اصلی",
+        "slug": "",
+        "blocks": [
+          {
+            "id": "hero-custom-001",
+            "type": "hero",
+            "props": {
+              "title": "به پلتفرم حرفه‌ای ما خوش آمدید",
+              "subtitle": "ما بهترین راهکار SaaS را برای کسب‌وکار شما فراهم می‌کنیم",
+              "button_text": "شروع کنید",
+              "button_url": "#contact",
+              "background": "primary",
+              "image_url": "https://example.com/hero-bg.jpg"
+            },
+            "blocks": []
+          },
+          {
+            "id": "features-custom-001",
+            "type": "features_grid",
+            "props": {
+              "title": "ویژگی‌های کلیدی",
+              "columns": 3,
+              "items": [
+                { "icon": "fa-rocket", "title": "سریع", "text": "بالاترین سرعت" },
+                { "icon": "fa-shield", "title": "امن", "text": "رمزنگاری کامل" },
+                { "icon": "fa-headset", "title": "پشتیبانی", "text": "۲۴/۷ در دسترس" }
+              ]
+            },
+            "blocks": []
+          },
+          {
+            "id": "stats-custom-001",
+            "type": "stats_row",
+            "props": {
+              "items": [
+                { "value": "۵۰۰۰+", "label": "مشتری فعال" },
+                { "value": "۹۹.۹٪", "label": "آپتایم" },
+                { "value": "۱۵۰+", "label": "کشور" },
+                { "value": "۱۰ سال", "label": "تجربه" }
+              ]
+            },
+            "blocks": []
+          },
+          {
+            "id": "hero-split-custom-001",
+            "type": "hero_split",
+            "props": {
+              "title": "راهکار هوشمند برای کسب‌وکار شما",
+              "subtitle": "با تکنولوژی‌های روز دنیا، کسب‌وکار خود را متحول کنید",
+              "button_text": "مشاوره رایگان",
+              "button_url": "#consult",
+              "image_url": "https://example.com/team-work.jpg"
+            },
+            "blocks": []
+          },
+          {
+            "id": "testimonials-custom-001",
+            "type": "testimonials",
+            "props": {
+              "title": "نظرات مشتریان ما",
+              "limit": 6,
+              "style": "cards"
+            },
+            "blocks": []
+          },
+          {
+            "id": "pricing-custom-001",
+            "type": "pricing_table",
+            "props": {
+              "title": "پلن‌های قیمت‌گذاری",
+              "plans": [
+                { "name": "رایگان", "price": "۰", "features": ["۵ پروژه", "۱ GB فضا"] },
+                { "name": "حرفه‌ای", "price": "۹۹,۰۰۰", "features": ["نامحدود پروژه", "۱۰۰ GB"] },
+                { "name": "سازمانی", "price": "تماس بگیرید", "features": ["همه چیز", "پشتیبانی اختصاصی"] }
+              ]
+            },
+            "blocks": []
+          },
+          {
+            "id": "blog-custom-001",
+            "type": "blog_posts",
+            "props": {
+              "title": "آخرین مطالب وبلاگ",
+              "limit": 3,
+              "style": "cards"
+            },
+            "blocks": []
+          },
+          {
+            "id": "gallery-custom-001",
+            "type": "gallery",
+            "props": {
+              "title": "نمونه کارها",
+              "columns": 3,
+              "items": [
+                { "url": "https://example.com/work1.jpg", "alt": "پروژه ۱" },
+                { "url": "https://example.com/work2.jpg", "alt": "پروژه ۲" },
+                { "url": "https://example.com/work3.jpg", "alt": "پروژه ۳" }
+              ]
+            },
+            "blocks": []
+          },
+          {
+            "id": "newsletter-custom-001",
+            "type": "text",
+            "props": {
+              "content": "عضویت در خبرنامه برای دریافت آخرین اخبار",
+              "background": "#f1f5f9"
+            },
+            "blocks": []
+          }
+        ]
+      },
+      "about": {
+        "title": "درباره ما",
+        "slug": "about",
+        "blocks": [
+          {
+            "id": "hero-about-001",
+            "type": "hero",
+            "props": {
+              "title": "تیم ما",
+              "subtitle": "متخصصین مجرب در خدمت شما",
+              "background": "secondary"
+            },
+            "blocks": []
+          },
+          {
+            "id": "team-about-001",
+            "type": "team",
+            "props": {
+              "title": "اعضای تیم",
+              "limit": 6
+            },
+            "blocks": []
+          },
+          {
+            "id": "text-about-001",
+            "type": "text",
+            "props": {
+              "content": "ما از سال ۱۳۹۰ در حال ارائه خدمات هستیم و به هزاران مشتری در سراسر کشور خدمت می‌کنیم."
+            },
+            "blocks": []
+          }
+        ]
+      },
+      "services": {
+        "title": "خدمات",
+        "slug": "services",
+        "blocks": [
+          {
+            "id": "hero-services-001",
+            "type": "hero",
+            "props": {
+              "title": "خدمات ما",
+              "subtitle": "طیف کاملی از خدمات دیجیتال",
+              "background": "primary"
+            },
+            "blocks": []
+          },
+          {
+            "id": "services-grid-001",
+            "type": "features_grid",
+            "props": {
+              "title": "آنچه ارائه می‌دهیم",
+              "columns": 2,
+              "items": [
+                { "icon": "fa-code", "title": "توسعه نرم‌افزار", "text": "توسعه کاملاً سفارشی" },
+                { "icon": "fa-paint-brush", "title": "طراحی UI/UX", "text": "رابط کاربری خیره‌کننده" },
+                { "icon": "fa-server", "title": "میزبانی", "text": "سرورهای پرسرعت" },
+                { "icon": "fa-chart-line", "title": "تحلیل داده", "text": "بینش‌های ارزشمند" }
+              ]
+            },
+            "blocks": []
+          }
+        ]
+      },
+      "contact": {
+        "title": "تماس با ما",
+        "slug": "contact",
+        "blocks": [
+          {
+            "id": "hero-contact-001",
+            "type": "hero",
+            "props": {
+              "title": "با ما در ارتباط باشید",
+              "subtitle": "همیشه آماده پاسخگویی هستیم"
+            },
+            "blocks": []
+          },
+          {
+            "id": "contact-info-001",
+            "type": "text",
+            "props": {
+              "content": "تهران، خیابان ولیعصر، پلاک ۱۰۰ | تلفن: ۰۲۱-۱۲۳۴۵۶۷۸ | ایمیل: info@example.com"
+            },
+            "blocks": []
+          }
+        ]
+      }
+    },
+    "templates": [
+      {
+        "id": "template-cta",
+        "name": "CTA نمونه",
+        "type": "hero",
+        "blocks": [
+          {
+            "id": "tpl-hero-001",
+            "type": "hero",
+            "props": {
+              "title": "آماده شروع هستید؟",
+              "button_text": "ثبت‌نام رایگان"
+            }
+          }
+        ]
+      }
+    ],
+    "demo_data": {
+      "blog_posts": [
+        { "title": "راهنمای SaaS", "excerpt": "همه چیز درباره SaaS" },
+        { "title": "ترندهای ۲۰۲۶", "excerpt": "آخرین روندها" }
+      ]
+    }
+  }
+}

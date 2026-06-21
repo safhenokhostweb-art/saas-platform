@@ -1,0 +1,279 @@
+{
+  "type": "elementor",
+  "title": "قالب نمونه Elementor",
+  "version": "3.18.0",
+  "page_settings": {
+    "background_color": "#f8fafc"
+  },
+  "content": [
+    {
+      "id": "sec-header-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#1e293b",
+        "padding": { "top": 20, "bottom": 20 }
+      },
+      "elements": [
+        {
+          "id": "col-header-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "nav-001",
+              "elType": "widget",
+              "widgetType": "nav-menu",
+              "settings": {
+                "title": "nav فهرست اصلی",
+                "menu": "main-menu"
+              }
+            },
+            {
+              "id": "logo-001",
+              "elType": "widget",
+              "widgetType": "image",
+              "settings": {
+                "image": { "url": "https://example.com/logo.png", "alt": "Logo" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-hero-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "primary",
+        "padding": { "top": 100, "bottom": 100 }
+      },
+      "elements": [
+        {
+          "id": "col-hero-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "heading-001",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "خوش آمدید به پلتفرم ما",
+                "header_size": "h1"
+              }
+            },
+            {
+              "id": "text-001",
+              "elType": "widget",
+              "widgetType": "text-editor",
+              "settings": {
+                "text_editor": "ما بهترین راهکارهای SaaS را ارائه می‌دهیم"
+              }
+            },
+            {
+              "id": "btn-001",
+              "elType": "widget",
+              "widgetType": "button",
+              "settings": {
+                "text": "شروع کنید",
+                "link": { "url": "#contact" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-features-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#ffffff",
+        "padding": { "top": 80, "bottom": 80 }
+      },
+      "elements": [
+        {
+          "id": "col-features-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "heading-002",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "ویژگی‌های ما",
+                "header_size": "h2"
+              }
+            },
+            {
+              "id": "icon-001",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "title": "سریع و مطمئن",
+                "description": "بالاترین سرعت و اطمینان"
+              }
+            },
+            {
+              "id": "icon-002",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "title": "پشتیبانی ۲۴ ساعته",
+                "description": "همیشه در کنار شما هستیم"
+              }
+            },
+            {
+              "id": "icon-003",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "title": "امنیت بالا",
+                "description": "اطلاعات شما کاملاً محافظت می‌شود"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-testimonials-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#f1f5f9",
+        "padding": { "top": 60, "bottom": 60 }
+      },
+      "elements": [
+        {
+          "id": "col-test-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "testimonials-001",
+              "elType": "widget",
+              "widgetType": "testimonial-carousel",
+              "settings": {
+                "title": "نظرات مشتریان"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-pricing-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#ffffff",
+        "padding": { "top": 80, "bottom": 80 }
+      },
+      "elements": [
+        {
+          "id": "col-pricing-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "pricing-001",
+              "elType": "widget",
+              "widgetType": "price-table",
+              "settings": {
+                "heading": "قیمت‌گذاری ما"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-cta-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#6366f1",
+        "padding": { "top": 60, "bottom": 60 }
+      },
+      "elements": [
+        {
+          "id": "col-cta-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "cta-001",
+              "elType": "widget",
+              "widgetType": "call-to-action",
+              "settings": {
+                "title": "همین الان شروع کنید",
+                "description": "رایگان ثبت‌نام کنید",
+                "button_text": "ثبت‌نام رایگان",
+                "button_link": { "url": "#signup" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-gallery-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#f8fafc",
+        "padding": { "top": 60, "bottom": 60 }
+      },
+      "elements": [
+        {
+          "id": "col-gallery-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "gallery-001",
+              "elType": "widget",
+              "widgetType": "image-gallery",
+              "settings": {
+                "gallery_title": "نمونه کارها",
+                "gallery": [
+                  { "url": "https://example.com/img1.jpg", "alt": "نمونه ۱" },
+                  { "url": "https://example.com/img2.jpg", "alt": "نمونه ۲" },
+                  { "url": "https://example.com/img3.jpg", "alt": "نمونه ۳" }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-footer-001",
+      "elType": "section",
+      "settings": {
+        "background_color": "#0f172a",
+        "padding": { "top": 40, "bottom": 40 }
+      },
+      "elements": [
+        {
+          "id": "col-footer-001",
+          "elType": "column",
+          "settings": {},
+          "elements": [
+            {
+              "id": "footer-text-001",
+              "elType": "widget",
+              "widgetType": "text-editor",
+              "settings": {
+                "text_editor": "© 2026 پلتفرم ما. تمامی حقوق محفوظ است. copyright"
+              }
+            },
+            {
+              "id": "social-001",
+              "elType": "widget",
+              "widgetType": "social-icons",
+              "settings": {}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

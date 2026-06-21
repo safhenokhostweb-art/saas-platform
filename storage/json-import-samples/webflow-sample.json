@@ -1,0 +1,305 @@
+{
+  "type": "@webflow/XscpData",
+  "payload": {
+    "site": {
+      "name": "قالب وبفلو نمونه",
+      "id": "webflow-site-001",
+      "locale": "fa-IR"
+    },
+    "styles": [
+      {
+        "id": "style-bg",
+        "properties": {
+          "background-color": "#f8fafc",
+          "color": "#1f2937"
+        }
+      },
+      {
+        "id": "style-primary",
+        "style": {
+          "background-color": "#6366f1",
+          "color": "#ffffff"
+        }
+      }
+    ],
+    "assets": [
+      {
+        "id": "asset-logo",
+        "url": "https://example.com/webflow-logo.png",
+        "alt": "Logo"
+      }
+    ],
+    "pages": [
+      {
+        "id": "page-home",
+        "name": "Home",
+        "slug": "",
+        "title": "صفحه اصلی",
+        "body": [
+          {
+            "type": "NavbarWrapper",
+            "data": {
+              "sticky": true,
+              "background": "#1e293b"
+            },
+            "children": [
+              {
+                "type": "NavbarBrand",
+                "data": { "url": "/", "src": "https://example.com/logo.png", "alt": "Logo" },
+                "children": []
+              },
+              {
+                "type": "NavbarMenu",
+                "data": { "text": "nav فهرست" },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "Section",
+            "data": { "background": "#6366f1", "padding": "xl" },
+            "children": [
+              {
+                "type": "Container",
+                "data": { "maxWidth": "7xl" },
+                "children": [
+                  {
+                    "type": "Heading",
+                    "data": { "text": "پلتفرم وبفلو نمونه", "level": 1 },
+                    "children": []
+                  },
+                  {
+                    "type": "Paragraph",
+                    "data": { "text": "بهترین راهکار برای طراحی وب حرفه‌ای" },
+                    "children": []
+                  },
+                  {
+                    "type": "Button",
+                    "data": { "text": "شروع کنید", "href": "#contact", "label": "شروع کنید" },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Section",
+            "data": { "background": "#ffffff", "padding": "lg" },
+            "children": [
+              {
+                "type": "Container",
+                "data": {},
+                "children": [
+                  {
+                    "type": "Heading",
+                    "data": { "text": "ویژگی‌های کلیدی" },
+                    "children": []
+                  },
+                  {
+                    "type": "Grid",
+                    "data": { "columns": 3 },
+                    "children": [
+                      {
+                        "type": "Div Block",
+                        "data": {},
+                        "children": [
+                          {
+                            "type": "Heading",
+                            "data": { "text": "طراحی زیبا" },
+                            "children": []
+                          },
+                          {
+                            "type": "Paragraph",
+                            "data": { "text": "قالب‌های حرفه‌ای" },
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Div Block",
+                        "data": {},
+                        "children": [
+                          {
+                            "type": "Heading",
+                            "data": { "text": "کد تمیز" },
+                            "children": []
+                          },
+                          {
+                            "type": "Paragraph",
+                            "data": { "text": "بهینه‌سازی شده" },
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Div Block",
+                        "data": {},
+                        "children": [
+                          {
+                            "type": "Heading",
+                            "data": { "text": "واکنشگرا" },
+                            "children": []
+                          },
+                          {
+                            "type": "Paragraph",
+                            "data": { "text": "در همه دستگاه‌ها" },
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Section",
+            "data": { "background": "#f1f5f9" },
+            "children": [
+              {
+                "type": "Slider",
+                "data": { "autoplay": true, "interval": 4000 },
+                "children": [
+                  { "type": "Slide", "data": { "content": "نظر مشتری ۱" }, "children": [] },
+                  { "type": "Slide", "data": { "content": "نظر مشتری ۲" }, "children": [] }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Section",
+            "data": { "background": "#ffffff" },
+            "children": [
+              {
+                "type": "Container",
+                "data": {},
+                "children": [
+                  {
+                    "type": "Heading",
+                    "data": { "text": "تصاویر نمونه کار" },
+                    "children": []
+                  },
+                  {
+                    "type": "Lightbox",
+                    "data": { "images": ["img1.jpg", "img2.jpg", "img3.jpg"] },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Section",
+            "data": { "background": "#6366f1" },
+            "children": [
+              {
+                "type": "Heading",
+                "data": { "text": "همین الان شروع کنید" },
+                "children": []
+              },
+              {
+                "type": "Button",
+                "data": { "text": "ثبت‌نام رایگان", "href": "#signup", "label": "ثبت‌نام" },
+                "children": []
+              }
+            ]
+          },
+          {
+            "tag": "footer",
+            "type": "footer",
+            "data": { "background": "#0f172a" },
+            "children": [
+              {
+                "type": "Paragraph",
+                "data": { "text": "© 2026 قالب وبفلو. copyright کلیه حقوق محفوظ است." },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "page-about",
+        "name": "About",
+        "slug": "about",
+        "title": "درباره ما",
+        "body": [
+          {
+            "type": "Section",
+            "data": { "background": "#6366f1" },
+            "children": [
+              {
+                "type": "Heading",
+                "data": { "text": "درباره تیم ما" },
+                "children": []
+              },
+              {
+                "type": "Paragraph",
+                "data": { "text": "ما تیمی از متخصصان هستیم" },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "Section",
+            "data": { "background": "#ffffff" },
+            "children": [
+              {
+                "type": "Heading",
+                "data": { "text": "ماموریت ما" },
+                "children": []
+              },
+              {
+                "type": "Paragraph",
+                "data": { "text": "ارائه بهترین خدمات طراحی وب" },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "page-services",
+        "name": "Services",
+        "slug": "services",
+        "title": "خدمات",
+        "body": [
+          {
+            "type": "Section",
+            "data": { "background": "#f8fafc" },
+            "children": [
+              {
+                "type": "Heading",
+                "data": { "text": "خدمات ما" },
+                "children": []
+              },
+              {
+                "type": "Grid",
+                "data": { "columns": 2 },
+                "children": [
+                  {
+                    "type": "Div Block",
+                    "data": {},
+                    "children": [
+                      { "type": "Heading", "data": { "text": "طراحی UI/UX" }, "children": [] },
+                      { "type": "Paragraph", "data": { "text": "رابط کاربری حرفه‌ای" }, "children": [] }
+                    ]
+                  },
+                  {
+                    "type": "Div Block",
+                    "data": {},
+                    "children": [
+                      { "type": "Heading", "data": { "text": "توسعه وب" }, "children": [] },
+                      { "type": "Paragraph", "data": { "text": "توسعه با جدیدترین تکنولوژی" }, "children": [] }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

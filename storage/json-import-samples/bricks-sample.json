@@ -1,0 +1,232 @@
+{
+  "source": "bricks-builder-v1.9",
+  "title": "قالب نمونه Bricks",
+  "version": "1.9.2",
+  "header": [
+    {
+      "id": "hdr-001",
+      "type": "section",
+      "settings": { "background": "#1e293b" },
+      "children": [
+        {
+          "id": "hdr-nav-001",
+          "type": "nav",
+          "settings": { "text": "nav فهرست اصلی" },
+          "children": []
+        },
+        {
+          "id": "hdr-logo-001",
+          "type": "logo",
+          "settings": {
+            "image": { "url": "https://example.com/logo.png", "alt": "Logo Bricks" }
+          },
+          "children": []
+        }
+      ]
+    }
+  ],
+  "content": [
+    {
+      "id": "sec-hero-bk-001",
+      "type": "section",
+      "settings": {
+        "background": "#6366f1",
+        "padding": "xl"
+      },
+      "children": [
+        {
+          "id": "hero-bk-001",
+          "type": "hero",
+          "settings": {
+            "title": "راهکار SaaS حرفه‌ای",
+            "subtitle": "با ما کسب‌وکار خود را متحول کنید",
+            "button_text": "امتحان رایگان",
+            "background": "primary"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-features-bk-001",
+      "type": "section",
+      "settings": { "background": "#ffffff" },
+      "children": [
+        {
+          "id": "heading-bk-001",
+          "type": "heading",
+          "settings": {
+            "text": "چرا ما؟",
+            "tag": "h2"
+          },
+          "children": []
+        },
+        {
+          "id": "text-bk-001",
+          "type": "text",
+          "settings": {
+            "text": "سرویس ما با بالاترین کیفیت ارائه می‌شود"
+          },
+          "children": []
+        },
+        {
+          "id": "icon-bk-001",
+          "type": "icon-box",
+          "settings": {
+            "icon": "fa-check",
+            "title": "قابل اعتماد",
+            "text": "۹۹.۹٪ آپتایم"
+          },
+          "children": []
+        },
+        {
+          "id": "icon-bk-002",
+          "type": "icon-box",
+          "settings": {
+            "icon": "fa-shield",
+            "title": "امن",
+            "text": "رمزنگاری AES-256"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-pricing-bk-001",
+      "type": "section",
+      "settings": { "background": "#f8fafc" },
+      "children": [
+        {
+          "id": "pricing-bk-001",
+          "type": "pricing-table",
+          "settings": { "title": "پلن‌های قیمت‌گذاری" },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-testimonials-bk-001",
+      "type": "section",
+      "settings": { "background": "#f1f5f9" },
+      "children": [
+        {
+          "id": "testimonials-bk-001",
+          "type": "testimonials",
+          "settings": {
+            "title": "مشتریان راضی",
+            "limit": 6
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-blog-bk-001",
+      "type": "section",
+      "settings": { "background": "#ffffff" },
+      "children": [
+        {
+          "id": "posts-bk-001",
+          "type": "posts",
+          "settings": {
+            "title": "آخرین مطالب وبلاگ",
+            "limit": 3
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-gallery-bk-001",
+      "type": "section",
+      "settings": { "background": "#f8fafc" },
+      "children": [
+        {
+          "id": "gallery-bk-001",
+          "type": "gallery",
+          "settings": {
+            "gallery_title": "نمونه‌های کار"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-counter-bk-001",
+      "type": "section",
+      "settings": { "background": "#6366f1" },
+      "children": [
+        {
+          "id": "counter-bk-001",
+          "type": "counter",
+          "settings": {
+            "number": 5000,
+            "suffix": "+",
+            "title": "مشتریان فعال"
+          },
+          "children": []
+        },
+        {
+          "id": "counter-bk-002",
+          "type": "counter",
+          "settings": {
+            "number": 99,
+            "suffix": "٪",
+            "title": "رضایت مشتری"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sec-accordion-bk-001",
+      "type": "section",
+      "settings": { "background": "#ffffff" },
+      "children": [
+        {
+          "id": "accordion-bk-001",
+          "type": "accordion",
+          "settings": {
+            "items": [
+              { "title": "چطور شروع کنم؟" },
+              { "title": "قیمت‌ها چگونه است؟" },
+              { "title": "آیا پشتیبانی دارید؟" }
+            ]
+          },
+          "children": []
+        }
+      ]
+    }
+  ],
+  "footer": [
+    {
+      "id": "ftr-001",
+      "type": "section",
+      "settings": { "background": "#0f172a" },
+      "children": [
+        {
+          "id": "ftr-text-001",
+          "type": "text",
+          "settings": {
+            "text": "© 2026 پلتفرم Bricks. copyright کلیه حقوق محفوظ است."
+          },
+          "children": []
+        },
+        {
+          "id": "ftr-social-001",
+          "type": "social-icons",
+          "settings": {},
+          "children": []
+        }
+      ]
+    }
+  ],
+  "styles": [
+    {
+      "id": "style-primary",
+      "settings": {
+        "color": "#6366f1"
+      }
+    }
+  ]
+}

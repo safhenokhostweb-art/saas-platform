@@ -53,10 +53,18 @@ class ThemeStructureAnalyzer
             return self::SOURCE_BRICKS;
         }
 
-        // Shopify: sections key with type sub-keys
+        // Shopify: sections key with type sub-keys (single-page / sections.json)
         if (isset($json['sections']) && is_array($json['sections'])) {
             $first = reset($json['sections']);
             if (is_array($first) && isset($first['type'])) return self::SOURCE_SHOPIFY;
+        }
+
+        // Shopify multi-page export: pages array where each page has a 'sections' key
+        if (isset($json['pages']) && is_array($json['pages']) && !empty($json['pages'])) {
+            $firstPage = reset($json['pages']);
+            if (is_array($firstPage) && isset($firstPage['sections'])) {
+                return self::SOURCE_SHOPIFY;
+            }
         }
 
         // Webflow: payload structure

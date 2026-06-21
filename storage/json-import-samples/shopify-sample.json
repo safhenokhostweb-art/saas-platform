@@ -1,0 +1,212 @@
+{
+  "name": "قالب فروشگاهی Shopify",
+  "settings": {
+    "colors_accent_1": "#6366f1",
+    "colors_accent_2": "#8b5cf6",
+    "colors_background_1": "#ffffff",
+    "colors_text": "#1f2937"
+  },
+  "pages": [
+    {
+      "name": "index",
+      "sections": {
+        "header": {
+          "type": "header",
+          "settings": {
+            "logo": "logo.png",
+            "enable_sticky_header": true
+          },
+          "blocks": {}
+        },
+        "announcement-1": {
+          "type": "announcement-bar",
+          "settings": {
+            "text": "تخفیف ویژه — تا ۵۰٪ تخفیف روی همه محصولات!",
+            "color_scheme": "accent-1"
+          },
+          "blocks": {}
+        },
+        "slideshow-1": {
+          "type": "slideshow",
+          "settings": {
+            "autoplay": true,
+            "speed": 5000
+          },
+          "blocks": {
+            "slide-1": {
+              "type": "slide",
+              "settings": {
+                "heading": "خوش آمدید به فروشگاه ما",
+                "subheading": "بهترین محصولات با قیمت مناسب",
+                "button_label": "خرید کنید",
+                "button_link": "/collections/all"
+              }
+            },
+            "slide-2": {
+              "type": "slide",
+              "settings": {
+                "heading": "کلکسیون جدید",
+                "subheading": "محصولات تازه رسیده",
+                "button_label": "مشاهده کنید",
+                "button_link": "/collections/new"
+              }
+            }
+          },
+          "blocks_order": ["slide-1", "slide-2"]
+        },
+        "featured-collection-1": {
+          "type": "featured-collection",
+          "settings": {
+            "title": "محصولات پرفروش",
+            "collection": "best-sellers",
+            "products_to_show": 8,
+            "columns_desktop": 4
+          },
+          "blocks": {}
+        },
+        "image-with-text-1": {
+          "type": "image-with-text",
+          "settings": {
+            "heading": "داستان ما",
+            "text": "ما با هدف ارائه بهترین محصولات آغاز به کار کردیم",
+            "button_label": "بیشتر بدانید",
+            "button_link": "/pages/about",
+            "image": "about-image.jpg"
+          },
+          "blocks": {}
+        },
+        "rich-text-1": {
+          "type": "rich-text",
+          "settings": {
+            "heading": "چرا ما را انتخاب کنید؟",
+            "text": "کیفیت بالا، قیمت مناسب، ارسال سریع"
+          },
+          "blocks": {}
+        },
+        "testimonials-1": {
+          "type": "testimonials",
+          "settings": {
+            "title": "نظرات مشتریان"
+          },
+          "blocks": {
+            "testimonial-1": {
+              "type": "testimonial",
+              "settings": {
+                "author": "فاطمه احمدی",
+                "text": "محصولات عالی با کیفیت فوق‌العاده"
+              }
+            }
+          },
+          "blocks_order": ["testimonial-1"]
+        },
+        "blog-posts-1": {
+          "type": "blog-posts",
+          "settings": {
+            "heading": "آخرین اخبار",
+            "post_limit": 3
+          },
+          "blocks": {}
+        },
+        "multicolumn-1": {
+          "type": "multicolumn",
+          "settings": {
+            "title": "مزایای ما"
+          },
+          "blocks": {
+            "col-1": {
+              "type": "column",
+              "settings": {
+                "title": "ارسال رایگان",
+                "text": "برای سفارش‌های بالای ۵۰۰ هزار تومان"
+              }
+            },
+            "col-2": {
+              "type": "column",
+              "settings": {
+                "title": "بازگشت آسان",
+                "text": "تا ۷ روز ضمانت بازگشت"
+              }
+            },
+            "col-3": {
+              "type": "column",
+              "settings": {
+                "title": "پشتیبانی ۲۴/۷",
+                "text": "همیشه در کنار شما"
+              }
+            }
+          },
+          "blocks_order": ["col-1", "col-2", "col-3"]
+        },
+        "newsletter-1": {
+          "type": "newsletter",
+          "settings": {
+            "heading": "عضویت در خبرنامه"
+          },
+          "blocks": {}
+        },
+        "footer": {
+          "type": "footer",
+          "settings": {
+            "text": "© 2026 فروشگاه ما. copyright کلیه حقوق محفوظ است."
+          },
+          "blocks": {}
+        }
+      },
+      "order": [
+        "header",
+        "announcement-1",
+        "slideshow-1",
+        "featured-collection-1",
+        "image-with-text-1",
+        "rich-text-1",
+        "testimonials-1",
+        "blog-posts-1",
+        "multicolumn-1",
+        "newsletter-1",
+        "footer"
+      ]
+    },
+    {
+      "name": "about",
+      "sections": {
+        "hero-about": {
+          "type": "image-banner",
+          "settings": {
+            "heading": "درباره ما",
+            "subheading": "داستان موفقیت ما"
+          },
+          "blocks": {}
+        },
+        "about-text": {
+          "type": "rich-text",
+          "settings": {
+            "heading": "تاریخچه شرکت",
+            "text": "ما از سال ۱۳۹۰ فعالیت می‌کنیم"
+          },
+          "blocks": {}
+        }
+      },
+      "order": ["hero-about", "about-text"]
+    },
+    {
+      "name": "contact",
+      "sections": {
+        "contact-hero": {
+          "type": "image-banner",
+          "settings": {
+            "heading": "تماس با ما"
+          },
+          "blocks": {}
+        },
+        "contact-form": {
+          "type": "contact-form",
+          "settings": {
+            "heading": "فرم تماس"
+          },
+          "blocks": {}
+        }
+      },
+      "order": ["contact-hero", "contact-form"]
+    }
+  ]
+}

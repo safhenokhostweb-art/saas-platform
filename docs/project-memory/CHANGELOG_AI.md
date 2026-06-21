@@ -5,6 +5,48 @@
 
 ---
 
+## 2026-06-21 — JSON Import Validation Suite (JSON_IMPORT_VALIDATION_PASSED)
+
+**Reason:** Full end-to-end validation of all 5 JSON import formats (Elementor, Bricks, Shopify, Webflow, Custom). 75/75 checks passed across 5 formats. 3 bugs fixed during validation.
+
+### saas-platform
+- `app/Services/ThemeBuilder/JsonImport/ThemeStructureAnalyzer.php` — BUG FIX: Shopify multi-page format detection (pages[].sections pattern)
+- `app/Services/ThemeBuilder/JsonImport/ThemePackGenerator.php` — BUG FIX: annual_price/lifetime_price NOT NULL constraint (null→0)
+- `app/Console/Commands/ValidateJsonImportCommand.php` — NEW: 15-check validation suite for all 5 formats
+- `storage/json-import-samples/elementor-sample.json` — NEW: Elementor sample (8 sections, 23 blocks)
+- `storage/json-import-samples/bricks-sample.json` — NEW: Bricks nested format (header+content+footer)
+- `storage/json-import-samples/shopify-sample.json` — NEW: Shopify multi-page (3 pages, 11 sections)
+- `storage/json-import-samples/webflow-sample.json` — NEW: Webflow payload.pages (3 pages, DSL nodes)
+- `storage/json-import-samples/custom-sample.json` — NEW: ThemePack v1 (4 pages, 13 block types)
+- `docs/JSON_IMPORT_VALIDATION_REPORT.md` — NEW: full validation report with per-format results
+
+**Validation Results:**
+| Format | Score | Grade | Blocks | Pages |
+|--------|-------|-------|--------|-------|
+| Elementor | 80/100 | EXCELLENT | 23 | 1 |
+| Bricks Builder | 80/100 | EXCELLENT | 26 | 1 |
+| Shopify | 90/100 | EXCELLENT | 33 | 3 |
+| Webflow | 90/100 | EXCELLENT | 37 | 3 |
+| Custom/ThemePack v1 | 95/100 | EXCELLENT | 20 | 4 |
+
+**Verdict: JSON_IMPORT_VALIDATION_PASSED — 5/5 formats, 75/75 checks**
+
+---
+
+## 2026-06-21 — TB3 Sprint 11 Headless Extraction Engine (HEADLESS_ENGINE_OPERATIONAL)
+
+**Reason:** Add Playwright-based headless browser rendering to the RE pipeline for SPA sites. Static HTTP extraction misses JS-rendered content; Playwright extracts the full hydrated DOM.
+
+### saas-platform
+- `app/Services/ThemeBuilder/ReverseEngineering/PlaywrightExtractionService.php` — FIXED: Windows proc_open blocking bug — replaced pipe descriptors with `['file', $tmpPath, 'w']` redirects on Windows so Chrome child-process pipe inheritance no longer blocks PHP
+- `docs/TB3_SPRINT11_CERTIFICATION.md` — NEW: full certification report (HEADLESS_ENGINE_OPERATIONAL)
+
+**Test results:**
+- example.com: 19s (was hanging 33+ min) — Headless OK
+- malltina.com: 88% match (was 70% in HTTP mode) — +18% improvement
+
+---
+
 ## 2026-06-21 — JSON Theme Import Engine (JSON_IMPORT_ENGINE_OPERATIONAL)
 
 **Reason:** Enable importing page-builder exports from 5 external formats into Canvas Editor as ThemePacks.
