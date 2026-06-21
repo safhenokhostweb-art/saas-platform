@@ -466,6 +466,8 @@ Route::prefix('admin')
         Route::post('sites/{site}/lifecycle/transition', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'forceTransition'])->name('sites.lifecycle.transition');
         Route::post('sites/{site}/lifecycle/restore', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'forceRestore'])->name('sites.lifecycle.restore');
         Route::post('sites/{site}/lifecycle/invoices/{invoice}/paid', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'markInvoicePaid'])->name('sites.lifecycle.invoice-paid');
+        // C01 — send payment link SMS + create restore invoice
+        Route::post('sites/{site}/lifecycle/send-payment-link', [\App\Http\Controllers\Admin\SiteLifecycleController::class, 'sendPaymentLink'])->name('sites.lifecycle.send-payment-link');
 
         // RESOURCE GOVERNANCE: Storage, DB, bandwidth and quota management
         Route::get('resource-governance', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'index'])->name('resource-governance.index');

@@ -86,6 +86,14 @@ Route::prefix('theme-marketplace')->middleware(['throttle:30,1', 'tenant.api'])-
     Route::get('/{theme}/download',         [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'download'])->name('api.theme-marketplace.download');
 });
 
+// Lifecycle API (C02/C04) — tenant self-service reactivation + restore
+Route::prefix('lifecycle')->middleware(['throttle:20,1', 'tenant.api'])->group(function () {
+    Route::get('/status',           [\App\Http\Controllers\Api\ApiLifecycleController::class, 'status'])->name('api.lifecycle.status');
+    Route::post('/reactivate',      [\App\Http\Controllers\Api\ApiLifecycleController::class, 'reactivate'])->name('api.lifecycle.reactivate');
+    Route::post('/request-restore', [\App\Http\Controllers\Api\ApiLifecycleController::class, 'requestRestore'])->name('api.lifecycle.request-restore');
+    Route::post('/confirm-restore', [\App\Http\Controllers\Api\ApiLifecycleController::class, 'confirmRestore'])->name('api.lifecycle.confirm-restore');
+});
+
 // Theme Bundles API (GAP-010)
 Route::prefix('theme-bundles')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
     Route::get('/',                            [\App\Http\Controllers\Api\ThemeBundleApiController::class, 'index'])->name('api.theme-bundles.index');

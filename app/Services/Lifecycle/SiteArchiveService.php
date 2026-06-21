@@ -139,4 +139,92 @@ class SiteArchiveService
     {
         return $site->archive_path && Storage::disk('local')->exists($site->archive_path);
     }
+
+    /**
+     * C05 — Delete all active uploaded files for a site from disk.
+     *
+     * Removes the site's upload directory under storage/app/sites/{site_id}/
+     * and also any public disk uploads scoped to this site.
+     * Called after createArchivePackage() during archive transition.
+     *
+     * @return int bytes freed (approximate)
+     */
+    public function deleteActiveFiles(Site $site): int
+    {
+        $freed = 0;
+        $paths = $this->resolveUploadPaths($site);
+
+        foreach ($paths as $disk => $directory) {
+            try {
+                $diskInstance = Storage::disk($disk);
+
+                if (! $diskInstance->exists($directory)) {
+                    continue;
+                }
+
+                // Calculate size before deletion for reporting
+                try {
+                    $files = $diskInstance->allFiles($directory);
+                    foreach ($files as $file) {
+                        $freed += $diskInstance->size($file);
+                    }
+                } catch (\Throwable) {
+                    // size calculation is best-effort
+                }
+
+                $diskInstance->deleteDirectory($directory);
+
+                Log::info("SiteArchiveService: deleted upload directory [{$disk}]/{$directory}", [
+                    'site_id' => $site->id,
+                    'freed_bytes' => $freed,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("SiteArchiveService: failed to delete [{$disk}]/{$directory} for site {$site->id}", [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Record deletion in site model
+        try {
+            $site->files_deleted_at = now();
+            $site->files_freed_bytes = $freed;
+            $site->save();
+        } catch (\Throwable) {
+            // columns may not exist yet if migration pending — non-fatal
+        }
+
+        Log::info("SiteArchiveService: C05 storage release complete for site {$site->id}", [
+            'freed_bytes' => $freed,
+            'freed_mb'    => round($freed / 1048576, 2),
+        ]);
+
+        return $freed;
+    }
+
+    /**
+     * Resolve all upload path directories for this site across all disks.
+     * Returns ['disk_name' => 'directory_path'].
+     */
+    private function resolveUploadPaths(Site $site): array
+    {
+        $siteId = $site->id;
+        $paths  = [];
+
+        // Primary local upload path
+        $localDir = "sites/{$siteId}";
+        $paths['local'] = $localDir;
+
+        // Public disk uploads (images, avatars etc.)
+        $publicDir = "sites/{$siteId}";
+        $paths['public'] = $publicDir;
+
+        // Smart image uploads (if using separate media disk)
+        $mediaDisk = config('filesystems.media_disk', null);
+        if ($mediaDisk && $mediaDisk !== 'local' && $mediaDisk !== 'public') {
+            $paths[$mediaDisk] = "sites/{$siteId}";
+        }
+
+        return $paths;
+    }
 }

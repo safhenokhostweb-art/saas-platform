@@ -53,6 +53,24 @@ class SiteLifecycleNotificationService
         $this->notifyPlatformAdmin($site, 'site_restored', "سایت بازگردانی شد: {$site->title}", $message, 'low');
     }
 
+    /**
+     * C01 — Send restore payment link SMS to customer.
+     * Link points to the customer-site direct payment page.
+     */
+    public function sendRestoreInvoiceSms(Site $site, string $invoiceNumber, int $amount): void
+    {
+        $paymentUrl = 'https://' . $site->domain . '/lifecycle-pay/' . $invoiceNumber;
+        $amountFmt  = number_format($amount);
+
+        $message = $amount > 0
+            ? "برای فعال‌سازی مجدد سایت {$site->title}، مبلغ {$amountFmt} تومان را پرداخت کنید:\n{$paymentUrl}"
+            : "برای فعال‌سازی رایگان سایت {$site->title} کلیک کنید:\n{$paymentUrl}";
+
+        $this->sendSmsToCustomer($site, $message);
+        $this->notifyPlatformAdmin($site, 'restore_invoice_sent', "لینک پرداخت ارسال شد: {$site->title}",
+            "لینک پرداخت برای بازگردانی سایت به مشتری ارسال شد. مبلغ: {$amountFmt} تومان", 'medium');
+    }
+
     // ── Internals ─────────────────────────────────────────────────────────────
 
     private function sendSmsToCustomer(Site $site, string $message): void

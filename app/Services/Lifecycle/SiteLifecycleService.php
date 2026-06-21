@@ -69,10 +69,27 @@ class SiteLifecycleService
 
         $this->transition($site, Site::LIFECYCLE_ARCHIVED, $reason, $adminId);
 
+        $archiveService = app(SiteArchiveService::class);
+
         try {
-            app(SiteArchiveService::class)->createArchivePackage($site);
+            $archiveService->createArchivePackage($site);
         } catch (\Throwable $e) {
             Log::error("SiteLifecycleService: archive package failed for site {$site->id}", [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // C05 — Physical file deletion after ZIP is created
+        // Only delete if ZIP was created successfully (archive_path set)
+        try {
+            if ($site->archive_path) {
+                $freed = $archiveService->deleteActiveFiles($site);
+                Log::info("SiteLifecycleService: C05 freed {$freed} bytes for site {$site->id}");
+            } else {
+                Log::warning("SiteLifecycleService: C05 skipped file deletion — ZIP not confirmed for site {$site->id}");
+            }
+        } catch (\Throwable $e) {
+            Log::error("SiteLifecycleService: C05 file deletion failed for site {$site->id}", [
                 'error' => $e->getMessage(),
             ]);
         }

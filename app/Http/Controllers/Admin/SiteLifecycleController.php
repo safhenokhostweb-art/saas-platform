@@ -5,12 +5,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Site;
 use App\Models\SiteLifecycleInvoice;
 use App\Services\Lifecycle\SiteLifecycleService;
+use App\Services\Lifecycle\SiteLifecycleNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SiteLifecycleController extends Controller
 {
-    public function __construct(private SiteLifecycleService $lifecycle) {}
+    public function __construct(
+        private SiteLifecycleService $lifecycle,
+        private SiteLifecycleNotificationService $notifications,
+    ) {}
 
     /** Dashboard: lifecycle overview for a specific site */
     public function index(Site $site)
@@ -83,6 +87,23 @@ class SiteLifecycleController extends Controller
         return redirect()
             ->route('admin.sites.lifecycle.index', $site)
             ->with('success', 'سایت با موفقیت بازگردانی شد.');
+    }
+
+    /**
+     * C01 — Create restore invoice + send payment link SMS to customer.
+     * Admin action: POST /admin/sites/{site}/lifecycle/send-payment-link
+     */
+    public function sendPaymentLink(Request $request, Site $site)
+    {
+        $invoice = $this->lifecycle->createRestoreInvoice($site);
+
+        $paymentUrl = 'https://' . $site->domain . '/lifecycle-pay/' . $invoice->invoice_number;
+
+        $this->notifications->sendRestoreInvoiceSms($site, $invoice->invoice_number, $invoice->amount);
+
+        return redirect()
+            ->route('admin.sites.lifecycle.index', $site)
+            ->with('success', "لینک پرداخت ارسال شد: {$paymentUrl}");
     }
 
     /** Mark a lifecycle invoice as paid */
