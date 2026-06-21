@@ -1,7 +1,7 @@
 # HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-06-06 (memory sync)
+> Last Updated: 2026-06-21
 
 ---
 
@@ -19,13 +19,46 @@
 
 ---
 
-## CURRENT STATE (2026-06-20)
+## CURRENT STATE (2026-06-21)
 
-**Last completed phase:** RE Pipeline Real-World Validation — REVERSE_ENGINEERING_VALIDATED (2026-06-21)
+**Last completed phase:** JSON Theme Import Engine — JSON_IMPORT_ENGINE_OPERATIONAL (2026-06-21)
+**Before that:** RE Pipeline Real-World Validation — REVERSE_ENGINEERING_VALIDATED (2026-06-21)
 **Before that:** TB3 Sprint 12 — Theme Detail Page + My-Licenses Upgrade (COMPLETE 2026-06-20)
-**Before that:** TB3 Sprint 11 — Marketplace API Enrichment + Customer UI Upgrade (COMPLETE 2026-06-20)
-**Before that:** TB3 Sprint 10 — Professional Marketplace Themes — TB3_SPRINT10_CERTIFIED (2026-06-20)
-**Status:** All marketplace sprints deployed. RE pipeline validated against 3 real-world sites. 5 pipeline bugs fixed.
+**Status:** JSON Import Engine deployed. 5-source pipeline fully operational. Admin URL: `/admin/theme-builder/json-import`.
+
+### JSON Import Engine — COMPLETE (2026-06-21)
+
+**Pipeline:** JSON → ThemeStructureAnalyzer → Adapter → WidgetMapper → ThemePackGenerator → ThemePack
+
+**5 Supported Sources:**
+- Elementor: `elType` section→column→widget hierarchy, 35 widget types
+- Bricks: nested (children) + flat (parent ids) formats, 25 types
+- Shopify: sections.json multi-page, header/footer auto-split, 15 types
+- Webflow: payload.pages, tag→type fallback, node tree, 16 types
+- Custom: ThemePack v1 passthrough + generic JSON
+
+**Quality Scoring (100 pts):** page coverage (25) + block variety (25) + header/footer (20) + block count (20) + home content (10)
+
+**Admin UI:** `/admin/theme-builder/json-import`
+- Drag-drop JSON upload with AJAX auto-detection banner
+- Source detected + metadata preview before submission
+- Force-source override for edge cases
+- Result page: quality score, block type breakdown, install → Canvas, export normalized JSON
+
+**Routes (6):** form / detect (AJAX) / import / result / install / export
+
+**Files:**
+```
+app/Services/ThemeBuilder/JsonImport/ThemeStructureAnalyzer.php
+app/Services/ThemeBuilder/JsonImport/WidgetMapper.php
+app/Services/ThemeBuilder/JsonImport/ThemePackGenerator.php
+app/Services/ThemeBuilder/JsonImport/JsonImportPipelineService.php
+app/Services/ThemeBuilder/JsonImport/Adapters/{Elementor,Bricks,Shopify,Webflow,Custom}Adapter.php
+app/Http/Controllers/Admin/ThemeJsonImportController.php
+resources/views/admin/theme-builder/json-import.blade.php
+resources/views/admin/theme-builder/json-import-result.blade.php
+docs/JSON_IMPORT_ENGINE_CERTIFICATION.md
+```
 
 ### Theme Marketplace — COMPLETE (Sprints 10–12, 2026-06-20)
 

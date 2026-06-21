@@ -1,7 +1,30 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-20
+> Last Updated: 2026-06-21
+
+---
+
+## 2026-06-21 — JSON Theme Import Engine (JSON_IMPORT_ENGINE_OPERATIONAL)
+
+**Reason:** Enable importing page-builder exports from 5 external formats into Canvas Editor as ThemePacks.
+
+### saas-platform
+- `app/Services/ThemeBuilder/JsonImport/ThemeStructureAnalyzer.php` — NEW: auto-detect format (elementor/bricks/shopify/webflow/custom) + metadata analysis
+- `app/Services/ThemeBuilder/JsonImport/WidgetMapper.php` — NEW: 90+ widget types mapped across 5 sources → ThemeBuilder block types
+- `app/Services/ThemeBuilder/JsonImport/ThemePackGenerator.php` — NEW: ThemePack creation + 6-dimension quality scoring (100 pts)
+- `app/Services/ThemeBuilder/JsonImport/JsonImportPipelineService.php` — NEW: full pipeline orchestrator
+- `app/Services/ThemeBuilder/JsonImport/Adapters/ElementorAdapter.php` — NEW: elType hierarchy (section→column→widget), header/footer split
+- `app/Services/ThemeBuilder/JsonImport/Adapters/BricksAdapter.php` — NEW: nested (children) + flat (parent ids) formats
+- `app/Services/ThemeBuilder/JsonImport/Adapters/ShopifyAdapter.php` — NEW: sections.json, multi-page, header/footer split
+- `app/Services/ThemeBuilder/JsonImport/Adapters/WebflowAdapter.php` — NEW: payload.pages, tag→type fallback, node tree processing
+- `app/Services/ThemeBuilder/JsonImport/Adapters/CustomBuilderAdapter.php` — NEW: ThemePack v1 passthrough + generic JSON
+- `app/Http/Controllers/Admin/ThemeJsonImportController.php` — NEW: form/detect/import/result/install/export (6 actions)
+- `resources/views/admin/theme-builder/json-import.blade.php` — NEW: drag-drop upload, auto-detect banner, Alpine.js AJAX detection
+- `resources/views/admin/theme-builder/json-import-result.blade.php` — NEW: quality score, stats, block types, install + export actions
+- `routes/web.php` — 6 new routes under admin middleware
+- `resources/views/admin/theme-builder/index.blade.php` — "وارد کردن JSON قالب" button added
+- `docs/JSON_IMPORT_ENGINE_CERTIFICATION.md` — NEW: full certification document
 
 ---
 

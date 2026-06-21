@@ -31,8 +31,7 @@ class ThemeJsonImportController extends Controller
 
     public function form()
     {
-        $categories     = Theme::categoryLabel(...);
-        $allCategories  = $this->categoryList();
+        $allCategories    = $this->categoryList();
         $supportedSources = JsonImportPipelineService::supportedSources();
         $recentImports  = ThemePack::whereNull('site_id')
             ->where('author', 'JSON Import Engine')

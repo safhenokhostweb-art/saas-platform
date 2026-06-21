@@ -72,20 +72,30 @@ class PlaywrightExtractionService
         $node       = $this->findNodeBinary();
         $chromePath = $this->findSystemChrome();
 
-        $descriptors = [
-            0 => ['pipe', 'r'],  // stdin
-            1 => ['pipe', 'w'],  // stdout
-            2 => ['pipe', 'w'],  // stderr
-        ];
+        // On Windows, stream_set_blocking(false) for proc_open pipes does NOT work —
+        // fread() blocks indefinitely when Chrome (child of node) still holds the write
+        // end of the pipe open. Fix: redirect stdout/stderr to temp files on Windows.
+        // On Linux pipes work correctly with non-blocking reads.
+        $useTmpFiles = PHP_OS_FAMILY === 'Windows';
+        $tmpOut = $useTmpFiles ? tempnam(sys_get_temp_dir(), 'pw_out_') : null;
+        $tmpErr = $useTmpFiles ? tempnam(sys_get_temp_dir(), 'pw_err_') : null;
 
-        // Environment strategy: pass null to inherit PHP's full process environment.
-        // We confirmed that OPENSSL_CONF is NOT present in PHP's env when running as CLI
-        // (getenv('OPENSSL_CONF') returns false). So inheriting is safe — Node.js 24
-        // won't see a broken OPENSSL_CONF and won't crash with ncrypto::CSPRNG.
-        // Chrome also needs the full Windows system env (COMPUTERNAME, ProgramData,
-        // WINDIR, PUBLIC, etc.) which would be missing in a hand-built minimal env.
-        // PLAYWRIGHT vars are set on the inherited env via actual putenv() calls so they
-        // take effect for the child.
+        if ($useTmpFiles) {
+            $descriptors = [
+                0 => ['pipe', 'r'],
+                1 => ['file', $tmpOut, 'w'],
+                2 => ['file', $tmpErr, 'w'],
+            ];
+        } else {
+            $descriptors = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+        }
+
+        // Set Playwright env vars in PHP's own process env so they're inherited.
+        // OPENSSL_CONF is confirmed absent from PHP CLI env on this system.
         if ($chromePath) {
             putenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=' . $chromePath);
         }
@@ -96,47 +106,63 @@ class PlaywrightExtractionService
             $descriptors,
             $pipes,
             base_path(),
-            null  // inherit PHP's full environment
+            null  // inherit PHP's full environment (includes all Windows system vars)
         );
 
-        // Restore env vars we just set temporarily
-        if ($chromePath) {
-            $existingChrome = getenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH');
-            if ($existingChrome === $chromePath) putenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH');
-        }
-
         if (!is_resource($process)) {
+            if ($tmpOut) @unlink($tmpOut);
+            if ($tmpErr) @unlink($tmpErr);
             throw new \RuntimeException('Playwright: فرآیند Node.js راه‌اندازی نشد.');
         }
 
-        // Non-blocking reads with timeout
-        fclose($pipes[0]);
-        stream_set_blocking($pipes[1], false);
-        stream_set_blocking($pipes[2], false);
+        // Close stdin; we won't write to it
+        if (isset($pipes[0])) fclose($pipes[0]);
+        if (!$useTmpFiles) {
+            stream_set_blocking($pipes[1], false);
+            stream_set_blocking($pipes[2], false);
+        }
 
-        $stdout    = '';
-        $stderr    = '';
-        $deadline  = time() + self::PROCESS_TIMEOUT;
+        $stdout  = '';
+        $stderr  = '';
+        $nodePid = null;
+        $deadline = time() + self::PROCESS_TIMEOUT;
 
         while (true) {
             $status = proc_get_status($process);
+            if ($nodePid === null && !empty($status['pid'])) {
+                $nodePid = (int) $status['pid'];
+            }
             if (!$status['running']) break;
             if (time() >= $deadline) {
+                if (PHP_OS_FAMILY === 'Windows' && $nodePid) {
+                    exec("taskkill /F /T /PID {$nodePid} 2>NUL");
+                }
                 proc_terminate($process, 9);
+                proc_close($process);
+                if ($tmpOut) @unlink($tmpOut);
+                if ($tmpErr) @unlink($tmpErr);
                 throw new \RuntimeException('Playwright: timeout بعد از ' . self::PROCESS_TIMEOUT . ' ثانیه.');
             }
-            $stdout .= (string) fread($pipes[1], 65536);
-            $stderr .= (string) fread($pipes[2], 8192);
-            usleep(200_000); // 200ms poll
+            if (!$useTmpFiles) {
+                $stdout .= (string) fread($pipes[1], 65536);
+                $stderr .= (string) fread($pipes[2], 8192);
+            }
+            usleep(200_000);
         }
 
-        // Drain remaining output after process exit
-        $stdout .= (string) stream_get_contents($pipes[1]);
-        $stderr .= (string) stream_get_contents($pipes[2]);
-
-        fclose($pipes[1]);
-        fclose($pipes[2]);
         $exitCode = proc_close($process);
+
+        if ($useTmpFiles) {
+            $stdout = (string) @file_get_contents($tmpOut);
+            $stderr = (string) @file_get_contents($tmpErr);
+            @unlink($tmpOut);
+            @unlink($tmpErr);
+        } else {
+            $stdout .= (string) stream_get_contents($pipes[1]);
+            $stderr .= (string) stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+        }
 
         if ($exitCode !== 0) {
             $errMsg = $this->parseStderrJson($stderr) ?: mb_substr($stderr, 0, 500);
