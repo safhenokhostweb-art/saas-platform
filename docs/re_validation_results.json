@@ -1,0 +1,1682 @@
+{
+    "apple": {
+        "site": "apple",
+        "url": "https:\/\/www.apple.com",
+        "type": "tech",
+        "status": "complete",
+        "error": null,
+        "html_size": 287559,
+        "fetch_time": 1554,
+        "http_status": 200,
+        "final_url": "https:\/\/www.apple.com",
+        "phase1_time": 306,
+        "dom": {
+            "url": "https:\/\/www.apple.com",
+            "title": "Apple",
+            "meta": {
+                "description": "",
+                "keywords": "",
+                "og_title": "Apple",
+                "og_image": "https:\/\/www.apple.com\/ac\/structured-data\/images\/open_graph_logo.png?202604211141",
+                "theme_color": "",
+                "viewport": "width=device-width, initial-scale=1, viewport-fit=cover"
+            },
+            "render_mode": {
+                "mode": "ssr",
+                "is_spa_shell": false,
+                "is_nextjs": false,
+                "is_react": false,
+                "html_size": 287559,
+                "next_data": [],
+                "has_minified_css": false
+            },
+            "landmarks": [
+                {
+                    "type": "header",
+                    "selector": "nav:first-of-type",
+                    "confidence": 85,
+                    "count": 2
+                },
+                {
+                    "type": "hero",
+                    "selector": ".hero",
+                    "confidence": 85,
+                    "count": 1
+                },
+                {
+                    "type": "pricing",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "testimonials",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "faq",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "blog",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "cta",
+                    "selector": ".cta",
+                    "confidence": 85,
+                    "count": 9
+                },
+                {
+                    "type": "footer",
+                    "selector": "footer",
+                    "confidence": 85,
+                    "count": 1
+                }
+            ],
+            "header": {
+                "detected": true,
+                "has_logo": false,
+                "nav_items": 14,
+                "is_sticky": false,
+                "has_mega_menu": false,
+                "has_search": false,
+                "has_cta": false
+            },
+            "mega_menu": {
+                "detected": true,
+                "columns": 0,
+                "has_icons": true,
+                "has_images": false
+            },
+            "hero": {
+                "detected": true,
+                "headline": "Apple",
+                "has_video_bg": true,
+                "has_bg_image": true,
+                "has_cta": true,
+                "layout": "standard",
+                "has_social_proof": false
+            },
+            "grid_layouts": {
+                "detected_types": [],
+                "total_containers": 0,
+                "primary_layout": "col-1"
+            },
+            "cards": {
+                "count": 74,
+                "types": [],
+                "has_hover_effects": false,
+                "has_badges": true
+            },
+            "features": {
+                "detected": false,
+                "item_count": 0,
+                "layout": "grid-3",
+                "has_icons": true,
+                "has_images": false,
+                "style": "cards"
+            },
+            "cta_sections": {
+                "detected": true,
+                "count": 9,
+                "has_email_form": false,
+                "style": "gradient"
+            },
+            "pricing": {
+                "detected": false,
+                "tiers": 3,
+                "has_toggle": false,
+                "has_highlight": false,
+                "has_feature_list": true
+            },
+            "testimonials": {
+                "detected": false,
+                "count": 0,
+                "layout": "grid",
+                "has_rating": true,
+                "has_avatar": false
+            },
+            "faq": {
+                "detected": false,
+                "items": 0,
+                "style": "accordion",
+                "has_search": true,
+                "has_categories": true
+            },
+            "blog": {
+                "detected": false,
+                "count": 0,
+                "grid_cols": 3,
+                "has_category": false,
+                "has_date": true,
+                "has_author": false
+            },
+            "footer": {
+                "detected": true,
+                "columns": 5,
+                "has_social": false,
+                "has_newsletter": false,
+                "has_logo": false,
+                "has_copyright": true,
+                "has_contact_info": false
+            },
+            "sections_count": 5,
+            "depth_map": [
+                {
+                    "level": 1,
+                    "text": "Apple"
+                },
+                {
+                    "level": 2,
+                    "text": "Father’s Day"
+                },
+                {
+                    "level": 2,
+                    "text": "Apple for College"
+                },
+                {
+                    "level": 2,
+                    "text": "iPhone"
+                },
+                {
+                    "level": 3,
+                    "text": "MacBook Air"
+                },
+                {
+                    "level": 3,
+                    "text": "iPad Air"
+                },
+                {
+                    "level": 3,
+                    "text": "Apple Privacy"
+                },
+                {
+                    "level": 3,
+                    "text": "MacBook Pro"
+                },
+                {
+                    "level": 3,
+                    "text": "Apple Trade In"
+                },
+                {
+                    "level": 3,
+                    "text": "Apple Card"
+                },
+                {
+                    "level": 2,
+                    "text": "Endless entertainment."
+                },
+                {
+                    "level": 2,
+                    "text": "Apple Footer"
+                },
+                {
+                    "level": 3,
+                    "text": "Shop and Learn\n\t\t\t\t\t\n\t\t\t\t\t\tShop and Learn"
+                },
+                {
+                    "level": 3,
+                    "text": "Apple Wallet\n\t\t\t\t\t\n\t\t\t\t\t\tApple Wallet"
+                },
+                {
+                    "level": 3,
+                    "text": "Account\n\t\t\t\t\t\n\t\t\t\t\t\tAccount"
+                }
+            ],
+            "extracted_at": "2026-06-21T05:22:05.172921Z"
+        },
+        "phase2_time": 10,
+        "layout": {
+            "sections": [
+                {
+                    "type": "header",
+                    "order": 0,
+                    "columns": 1,
+                    "data": {
+                        "detected": true,
+                        "has_logo": false,
+                        "nav_items": 14,
+                        "is_sticky": false,
+                        "has_mega_menu": false,
+                        "has_search": false,
+                        "has_cta": false
+                    },
+                    "block_type": "nav_header",
+                    "nested": false
+                },
+                {
+                    "type": "hero",
+                    "order": 1,
+                    "columns": 1,
+                    "data": {
+                        "detected": true,
+                        "headline": "Apple",
+                        "has_video_bg": true,
+                        "has_bg_image": true,
+                        "has_cta": true,
+                        "layout": "standard",
+                        "has_social_proof": false
+                    },
+                    "block_type": "hero",
+                    "nested": false
+                },
+                {
+                    "type": "cta",
+                    "order": 2,
+                    "columns": 1,
+                    "data": [],
+                    "block_type": "cta",
+                    "nested": false
+                },
+                {
+                    "type": "features",
+                    "order": 3,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "features_grid",
+                    "nested": false
+                },
+                {
+                    "type": "products",
+                    "order": 4,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "text",
+                    "nested": false
+                },
+                {
+                    "type": "footer",
+                    "order": 5,
+                    "columns": 5,
+                    "data": {
+                        "detected": true,
+                        "columns": 5,
+                        "has_social": false,
+                        "has_newsletter": false,
+                        "has_logo": false,
+                        "has_copyright": true,
+                        "has_contact_info": false
+                    },
+                    "block_type": "nav_footer",
+                    "nested": false
+                }
+            ],
+            "hierarchy": {
+                "heading_counts": {
+                    "h1": 1,
+                    "h2": 5,
+                    "h3": 9
+                },
+                "section_flow": [
+                    "header",
+                    "hero",
+                    "cta",
+                    "features",
+                    "products",
+                    "footer"
+                ],
+                "max_depth": 3,
+                "uses_sections": true
+            },
+            "spacing_system": {
+                "system": "standard",
+                "scale": "8px",
+                "section_padding": "80px 0",
+                "container_padding": "0 24px"
+            },
+            "container": {
+                "max_width": "1200px",
+                "size_token": "6xl",
+                "padding": "24px"
+            },
+            "responsive": {
+                "has_mobile_menu": false,
+                "has_media_queries": false,
+                "has_flex_wrap": false,
+                "breakpoints": [
+                    "md",
+                    "lg"
+                ],
+                "is_mobile_first": false
+            },
+            "relationships": {
+                "flow": [
+                    "header",
+                    "hero",
+                    "cta",
+                    "features",
+                    "products",
+                    "footer"
+                ],
+                "edges": [
+                    {
+                        "from": "header",
+                        "to": "hero",
+                        "type": "follows"
+                    },
+                    {
+                        "from": "hero",
+                        "to": "cta",
+                        "type": "follows"
+                    },
+                    {
+                        "from": "cta",
+                        "to": "features",
+                        "type": "follows"
+                    },
+                    {
+                        "from": "features",
+                        "to": "products",
+                        "type": "follows"
+                    },
+                    {
+                        "from": "products",
+                        "to": "footer",
+                        "type": "follows"
+                    }
+                ],
+                "entry_point": "header",
+                "exit_point": "footer"
+            },
+            "column_signature": {
+                "header": 1,
+                "hero": 1,
+                "cta": 1,
+                "features": 3,
+                "products": 3,
+                "footer": 5
+            },
+            "layout_style": "standard",
+            "section_count": 6,
+            "is_single_page": true
+        },
+        "phase3_time": 14,
+        "visual": {
+            "color_palette": {
+                "primary": "#a4618d",
+                "secondary": "#9fc6f4",
+                "accent": "#ea33c0",
+                "background": "#ffffff",
+                "text": "#000000",
+                "all": [
+                    "#f4f8fb",
+                    "#000000",
+                    "#a4618d",
+                    "#9fc6f4",
+                    "#ea33c0",
+                    "#271810",
+                    "#3397d4",
+                    "#de9444",
+                    "#371410"
+                ],
+                "count": 9
+            },
+            "typography": {
+                "primary_font": "system-ui",
+                "scale": "custom",
+                "base_size": "16px",
+                "sizes_detected": [],
+                "weights": [],
+                "line_height": "1.6",
+                "letter_spacing": "normal",
+                "families_raw": []
+            },
+            "buttons": {
+                "shape": "rounded",
+                "has_shadow": false,
+                "has_outline": false,
+                "has_ghost": false,
+                "has_gradient": false,
+                "primary_style": "filled",
+                "size_scale": [
+                    "md"
+                ]
+            },
+            "border_radius": {
+                "scale": "xl",
+                "card": "12px",
+                "button": "8px",
+                "input": "6px",
+                "badge": "4px"
+            },
+            "shadow_system": {
+                "intensity": "soft",
+                "sm": "0 1px 3px rgba(0,0,0,0.06)",
+                "md": "0 4px 16px rgba(0,0,0,0.08)",
+                "lg": "0 8px 32px rgba(0,0,0,0.10)",
+                "xl": "0 16px 48px rgba(0,0,0,0.12)",
+                "card": "0 2px 8px rgba(0,0,0,0.06)"
+            },
+            "visual_density": "spacious",
+            "dark_mode": false,
+            "has_animations": false,
+            "style_framework": "custom"
+        },
+        "phase4_time": 24,
+        "commerce": {
+            "is_commerce": true,
+            "platform": "magento",
+            "product_cards": {
+                "detected": false,
+                "count": 0,
+                "layout": "grid-4",
+                "fields": [
+                    "image",
+                    "title",
+                    "price",
+                    "rating",
+                    "badge",
+                    "brand"
+                ],
+                "has_hover_zoom": false,
+                "has_quick_view": false
+            },
+            "price_blocks": {
+                "detected": true,
+                "format": "usd",
+                "has_original": false,
+                "has_discount": false,
+                "has_free_shipping": false,
+                "has_installment": false,
+                "has_countdown": false
+            },
+            "discount_badges": {
+                "detected": true,
+                "style": "label",
+                "position": "top-left",
+                "colors": [
+                    "#ef4444",
+                    "#22c55e"
+                ],
+                "has_timer": false
+            },
+            "gallery": {
+                "detected": true,
+                "type": "carousel",
+                "has_zoom": true,
+                "has_video": true,
+                "has_fullscreen": false,
+                "thumb_position": "bottom"
+            },
+            "reviews": {
+                "detected": true,
+                "has_rating": true,
+                "has_count": false,
+                "has_verified": false,
+                "style": "star",
+                "has_filter": false,
+                "has_photo": false,
+                "max_rating": 5
+            },
+            "specifications": {
+                "detected": false,
+                "style": "none",
+                "has_compare": false
+            },
+            "related_products": {
+                "detected": false,
+                "layout": "grid-4",
+                "count": 4,
+                "has_price": true
+            },
+            "cross_sell": {
+                "detected": false,
+                "layout": "grid-3"
+            },
+            "upsell": {
+                "detected": false,
+                "style": "modal"
+            },
+            "cart_flow": {
+                "has_cart": false,
+                "has_wishlist": false,
+                "has_compare": false,
+                "has_instant_buy": false,
+                "add_to_cart_style": "none",
+                "cart_type": "page"
+            },
+            "commerce_score": 50,
+            "url_commerce_hint": false
+        },
+        "phase5_time": 0,
+        "similarity": {
+            "per_site": {
+                "apple": {
+                    "label": "Apple",
+                    "type": "tech",
+                    "structure": 100,
+                    "visual": 74,
+                    "commerce": 100,
+                    "layout": 92,
+                    "overall": 96
+                },
+                "amazon": {
+                    "label": "Amazon",
+                    "type": "ecommerce",
+                    "structure": 68,
+                    "visual": 35,
+                    "commerce": 30,
+                    "layout": 80,
+                    "overall": 51
+                },
+                "malltina": {
+                    "label": "Malltina",
+                    "type": "ecommerce",
+                    "structure": 61,
+                    "visual": 28,
+                    "commerce": 30,
+                    "layout": 83,
+                    "overall": 48
+                },
+                "digikala": {
+                    "label": "Digikala",
+                    "type": "ecommerce",
+                    "structure": 61,
+                    "visual": 38,
+                    "commerce": 30,
+                    "layout": 83,
+                    "overall": 50
+                },
+                "stripe": {
+                    "label": "Stripe",
+                    "type": "saas",
+                    "structure": 72,
+                    "visual": 49,
+                    "commerce": 20,
+                    "layout": 36,
+                    "overall": 49
+                },
+                "shopify": {
+                    "label": "Shopify",
+                    "type": "ecommerce",
+                    "structure": 72,
+                    "visual": 37,
+                    "commerce": 50,
+                    "layout": 61,
+                    "overall": 55
+                }
+            },
+            "best_match": "apple",
+            "best_match_label": "Apple",
+            "best_match_score": 96,
+            "structure": 72,
+            "visual": 44,
+            "commerce": 43,
+            "layout": 73,
+            "overall": 96,
+            "confidence_level": "HIGH",
+            "recommended_style": "tech"
+        },
+        "phase7_time": 0,
+        "quality": {
+            "verdict": "PASS",
+            "score": 100,
+            "findings": [],
+            "finding_count": 0,
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "summary": "امتیاز کیفی: 100\/100 | وضعیت: تایید شد | شباهت با Apple: 96%",
+            "validated_at": "2026-06-21T05:22:05.224942Z"
+        }
+    },
+    "malltina": {
+        "site": "malltina",
+        "url": "https:\/\/malltina.com",
+        "type": "ecommerce",
+        "status": "complete",
+        "error": null,
+        "html_size": 368822,
+        "fetch_time": 1157,
+        "http_status": 200,
+        "final_url": "https:\/\/malltina.com",
+        "phase1_time": 41,
+        "dom": {
+            "url": "https:\/\/malltina.com",
+            "title": "مالتینا | خرید از آمازون | به سادگی از آمریکا خرید کنید",
+            "meta": {
+                "description": "مالتینا، مسیر اصلی خرید از آمازون در ایران؛ به سادگی سفارش دهید. حداقل قیمت تمام شده را به تومان بپردازید. درب منزل تحویل بگیرید.",
+                "keywords": "",
+                "og_title": "مالتینا | خرید از آمازون | به سادگی از آمریکا خرید کنید",
+                "og_image": "",
+                "theme_color": "",
+                "viewport": "width=device-width, initial-scale=1"
+            },
+            "render_mode": {
+                "mode": "nextjs_ssr",
+                "is_spa_shell": false,
+                "is_nextjs": true,
+                "is_react": false,
+                "html_size": 368822,
+                "next_data": [],
+                "has_minified_css": true
+            },
+            "landmarks": [
+                {
+                    "type": "header",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "hero",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "pricing",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "testimonials",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "faq",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "blog",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "cta",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "footer",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                }
+            ],
+            "header": {
+                "detected": false,
+                "has_logo": false,
+                "nav_items": 0,
+                "is_sticky": false,
+                "has_mega_menu": false,
+                "has_search": false,
+                "has_cta": false
+            },
+            "mega_menu": {
+                "detected": false,
+                "columns": 0,
+                "has_icons": false,
+                "has_images": false
+            },
+            "hero": {
+                "detected": false,
+                "headline": "",
+                "has_video_bg": false,
+                "has_bg_image": false,
+                "has_cta": true,
+                "layout": "standard",
+                "has_social_proof": false
+            },
+            "grid_layouts": {
+                "detected_types": [],
+                "total_containers": 0,
+                "primary_layout": "col-1"
+            },
+            "cards": {
+                "count": 0,
+                "types": [],
+                "has_hover_effects": false,
+                "has_badges": false
+            },
+            "features": {
+                "detected": false,
+                "item_count": 0,
+                "layout": "grid-3",
+                "has_icons": false,
+                "has_images": false,
+                "style": "cards"
+            },
+            "cta_sections": {
+                "detected": false,
+                "count": 0,
+                "has_email_form": false,
+                "style": "standard"
+            },
+            "pricing": {
+                "detected": false,
+                "tiers": 3,
+                "has_toggle": false,
+                "has_highlight": false,
+                "has_feature_list": true
+            },
+            "testimonials": {
+                "detected": false,
+                "count": 0,
+                "layout": "grid",
+                "has_rating": false,
+                "has_avatar": false
+            },
+            "faq": {
+                "detected": false,
+                "items": 0,
+                "style": "accordion",
+                "has_search": false,
+                "has_categories": false
+            },
+            "blog": {
+                "detected": false,
+                "count": 0,
+                "grid_cols": 3,
+                "has_category": false,
+                "has_date": false,
+                "has_author": false
+            },
+            "footer": {
+                "detected": false,
+                "columns": 0,
+                "has_social": false,
+                "has_newsletter": false,
+                "has_logo": false,
+                "has_copyright": false,
+                "has_contact_info": false
+            },
+            "sections_count": 10,
+            "depth_map": [],
+            "extracted_at": "2026-06-21T05:22:06.423790Z"
+        },
+        "phase2_time": 7,
+        "layout": {
+            "sections": [
+                {
+                    "type": "features",
+                    "order": 0,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "features_grid",
+                    "nested": false
+                },
+                {
+                    "type": "products",
+                    "order": 1,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "text",
+                    "nested": false
+                },
+                {
+                    "type": "stats",
+                    "order": 2,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "text",
+                    "nested": false
+                },
+                {
+                    "type": "gallery",
+                    "order": 3,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "text",
+                    "nested": false
+                }
+            ],
+            "hierarchy": {
+                "heading_counts": {
+                    "h1": 0,
+                    "h2": 0,
+                    "h3": 0
+                },
+                "section_flow": [
+                    "features",
+                    "products",
+                    "stats",
+                    "gallery"
+                ],
+                "max_depth": 3,
+                "uses_sections": true
+            },
+            "spacing_system": {
+                "system": "standard",
+                "scale": "8px",
+                "section_padding": "80px 0",
+                "container_padding": "0 24px"
+            },
+            "container": {
+                "max_width": "1200px",
+                "size_token": "6xl",
+                "padding": "24px"
+            },
+            "responsive": {
+                "has_mobile_menu": false,
+                "has_media_queries": true,
+                "has_flex_wrap": false,
+                "breakpoints": [
+                    "md"
+                ],
+                "is_mobile_first": false
+            },
+            "relationships": {
+                "flow": [
+                    "features",
+                    "products",
+                    "stats",
+                    "gallery"
+                ],
+                "edges": [
+                    {
+                        "from": "features",
+                        "to": "products",
+                        "type": "follows"
+                    },
+                    {
+                        "from": "products",
+                        "to": "stats",
+                        "type": "follows"
+                    },
+                    {
+                        "from": "stats",
+                        "to": "gallery",
+                        "type": "follows"
+                    }
+                ],
+                "entry_point": "features",
+                "exit_point": "gallery"
+            },
+            "column_signature": {
+                "features": 3,
+                "products": 3,
+                "stats": 3,
+                "gallery": 3
+            },
+            "layout_style": "standard",
+            "section_count": 4,
+            "is_single_page": false
+        },
+        "phase3_time": 14,
+        "visual": {
+            "color_palette": {
+                "primary": "#27c0e2",
+                "secondary": "#ccc",
+                "accent": "#8079a9",
+                "background": "#ffffff",
+                "text": "#111827",
+                "all": [
+                    "#27c0e2",
+                    "#ccc",
+                    "#8079a9",
+                    "#09588d",
+                    "#363f47",
+                    "#085ca6",
+                    "#2374d1"
+                ],
+                "count": 7
+            },
+            "typography": {
+                "primary_font": "system-ui",
+                "scale": "custom",
+                "base_size": "16px",
+                "sizes_detected": [],
+                "weights": [],
+                "line_height": "1.6",
+                "letter_spacing": "normal",
+                "families_raw": []
+            },
+            "buttons": {
+                "shape": "rounded",
+                "has_shadow": false,
+                "has_outline": false,
+                "has_ghost": false,
+                "has_gradient": false,
+                "primary_style": "filled",
+                "size_scale": [
+                    "md"
+                ]
+            },
+            "border_radius": {
+                "scale": "xl",
+                "card": "20px",
+                "button": "6px",
+                "input": "8px",
+                "badge": "4px"
+            },
+            "shadow_system": {
+                "intensity": "soft",
+                "sm": "0 1px 3px rgba(0,0,0,0.06)",
+                "md": "0 4px 16px rgba(0,0,0,0.08)",
+                "lg": "0 8px 32px rgba(0,0,0,0.10)",
+                "xl": "0 16px 48px rgba(0,0,0,0.12)",
+                "card": "0 2px 8px rgba(0,0,0,0.06)"
+            },
+            "visual_density": "spacious",
+            "dark_mode": true,
+            "has_animations": true,
+            "style_framework": "custom"
+        },
+        "phase4_time": 35,
+        "commerce": {
+            "is_commerce": true,
+            "platform": "amazon",
+            "product_cards": {
+                "detected": false,
+                "count": 0,
+                "layout": "grid-4",
+                "fields": [
+                    "image",
+                    "title",
+                    "price",
+                    "rating",
+                    "wishlist",
+                    "badge",
+                    "brand"
+                ],
+                "has_hover_zoom": true,
+                "has_quick_view": false
+            },
+            "price_blocks": {
+                "detected": true,
+                "format": "usd",
+                "has_original": false,
+                "has_discount": false,
+                "has_free_shipping": false,
+                "has_installment": false,
+                "has_countdown": true
+            },
+            "discount_badges": {
+                "detected": true,
+                "style": "ribbon",
+                "position": "top-right",
+                "colors": [
+                    "#ef4444",
+                    "#22c55e"
+                ],
+                "has_timer": false
+            },
+            "gallery": {
+                "detected": false,
+                "type": "carousel",
+                "has_zoom": false,
+                "has_video": false,
+                "has_fullscreen": false,
+                "thumb_position": "bottom"
+            },
+            "reviews": {
+                "detected": false,
+                "has_rating": false,
+                "has_count": false,
+                "has_verified": false,
+                "style": "text",
+                "has_filter": false,
+                "has_photo": false,
+                "max_rating": 5
+            },
+            "specifications": {
+                "detected": false,
+                "style": "none",
+                "has_compare": false
+            },
+            "related_products": {
+                "detected": false,
+                "layout": "grid-4",
+                "count": 4,
+                "has_price": true
+            },
+            "cross_sell": {
+                "detected": false,
+                "layout": "grid-3"
+            },
+            "upsell": {
+                "detected": false,
+                "style": "modal"
+            },
+            "cart_flow": {
+                "has_cart": false,
+                "has_wishlist": false,
+                "has_compare": false,
+                "has_instant_buy": false,
+                "add_to_cart_style": "none",
+                "cart_type": "page"
+            },
+            "commerce_score": 60,
+            "url_commerce_hint": true
+        },
+        "phase5_time": 0,
+        "similarity": {
+            "per_site": {
+                "apple": {
+                    "label": "Apple",
+                    "type": "tech",
+                    "structure": 27,
+                    "visual": 59,
+                    "commerce": 90,
+                    "layout": 27,
+                    "overall": 48
+                },
+                "amazon": {
+                    "label": "Amazon",
+                    "type": "ecommerce",
+                    "structure": 13,
+                    "visual": 28,
+                    "commerce": 30,
+                    "layout": 50,
+                    "overall": 29
+                },
+                "malltina": {
+                    "label": "Malltina",
+                    "type": "ecommerce",
+                    "structure": 43,
+                    "visual": 63,
+                    "commerce": 82,
+                    "layout": 90,
+                    "overall": 70
+                },
+                "digikala": {
+                    "label": "Digikala",
+                    "type": "ecommerce",
+                    "structure": 11,
+                    "visual": 18,
+                    "commerce": 50,
+                    "layout": 58,
+                    "overall": 35
+                },
+                "stripe": {
+                    "label": "Stripe",
+                    "type": "saas",
+                    "structure": 11,
+                    "visual": 64,
+                    "commerce": 20,
+                    "layout": 7,
+                    "overall": 27
+                },
+                "shopify": {
+                    "label": "Shopify",
+                    "type": "ecommerce",
+                    "structure": 11,
+                    "visual": 46,
+                    "commerce": 70,
+                    "layout": 32,
+                    "overall": 43
+                }
+            },
+            "best_match": "malltina",
+            "best_match_label": "Malltina",
+            "best_match_score": 70,
+            "structure": 19,
+            "visual": 46,
+            "commerce": 57,
+            "layout": 44,
+            "overall": 70,
+            "confidence_level": "MEDIUM",
+            "recommended_style": "ecommerce"
+        },
+        "phase7_time": 0,
+        "quality": {
+            "verdict": "FAIL",
+            "score": 50,
+            "findings": [
+                {
+                    "code": "MISSING_SECTION",
+                    "severity": "HIGH",
+                    "message": "بخش اجباری «header» یافت نشد"
+                },
+                {
+                    "code": "MISSING_SECTION",
+                    "severity": "HIGH",
+                    "message": "بخش اجباری «hero» یافت نشد"
+                },
+                {
+                    "code": "MISSING_SECTION",
+                    "severity": "HIGH",
+                    "message": "بخش اجباری «footer» یافت نشد"
+                },
+                {
+                    "code": "LOW_STRUCTURE_SCORE",
+                    "severity": "LOW",
+                    "message": "امتیاز ساختاری (19\/100) پایین است — ساختار صفحه کافی تشخیص داده نشد"
+                }
+            ],
+            "finding_count": 4,
+            "critical": 0,
+            "high": 3,
+            "medium": 0,
+            "low": 1,
+            "summary": "امتیاز کیفی: 50\/100 | وضعیت: رد شد | شباهت با Malltina: 70% | 4 یافته",
+            "validated_at": "2026-06-21T05:22:06.481857Z"
+        }
+    },
+    "digikala": {
+        "site": "digikala",
+        "url": "https:\/\/www.digikala.com",
+        "type": "ecommerce",
+        "status": "complete",
+        "error": null,
+        "html_size": 3577,
+        "fetch_time": 478,
+        "http_status": 200,
+        "final_url": "https:\/\/www.digikala.com",
+        "phase1_time": 10,
+        "dom": {
+            "url": "https:\/\/www.digikala.com",
+            "title": "",
+            "meta": {
+                "description": "",
+                "keywords": "",
+                "og_title": "",
+                "og_image": "",
+                "theme_color": "",
+                "viewport": "width=device-width"
+            },
+            "render_mode": {
+                "mode": "spa_shell",
+                "is_spa_shell": true,
+                "is_nextjs": true,
+                "is_react": false,
+                "html_size": 3577,
+                "next_data": {
+                    "props": {
+                        "pageProps": []
+                    },
+                    "page": "\/",
+                    "query": [],
+                    "buildId": "4-H0daHGUaBuY6P6q6TsN",
+                    "nextExport": true,
+                    "autoExport": true,
+                    "isFallback": false,
+                    "scriptLoader": []
+                },
+                "has_minified_css": true
+            },
+            "landmarks": [
+                {
+                    "type": "header",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "hero",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "pricing",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "testimonials",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "faq",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "blog",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "cta",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                },
+                {
+                    "type": "footer",
+                    "selector": null,
+                    "confidence": 10,
+                    "count": 0
+                }
+            ],
+            "header": {
+                "detected": false,
+                "has_logo": false,
+                "nav_items": 0,
+                "is_sticky": false,
+                "has_mega_menu": false,
+                "has_search": false,
+                "has_cta": false
+            },
+            "mega_menu": {
+                "detected": false,
+                "columns": 0,
+                "has_icons": false,
+                "has_images": false
+            },
+            "hero": {
+                "detected": false,
+                "headline": "",
+                "has_video_bg": false,
+                "has_bg_image": false,
+                "has_cta": true,
+                "layout": "standard",
+                "has_social_proof": false
+            },
+            "grid_layouts": {
+                "detected_types": [],
+                "total_containers": 0,
+                "primary_layout": "col-1"
+            },
+            "cards": {
+                "count": 0,
+                "types": [],
+                "has_hover_effects": false,
+                "has_badges": false
+            },
+            "features": {
+                "detected": false,
+                "item_count": 0,
+                "layout": "grid-3",
+                "has_icons": false,
+                "has_images": false,
+                "style": "cards"
+            },
+            "cta_sections": {
+                "detected": false,
+                "count": 0,
+                "has_email_form": false,
+                "style": "standard"
+            },
+            "pricing": {
+                "detected": false,
+                "tiers": 3,
+                "has_toggle": false,
+                "has_highlight": false,
+                "has_feature_list": true
+            },
+            "testimonials": {
+                "detected": false,
+                "count": 0,
+                "layout": "grid",
+                "has_rating": false,
+                "has_avatar": false
+            },
+            "faq": {
+                "detected": false,
+                "items": 0,
+                "style": "accordion",
+                "has_search": false,
+                "has_categories": false
+            },
+            "blog": {
+                "detected": false,
+                "count": 0,
+                "grid_cols": 3,
+                "has_category": false,
+                "has_date": false,
+                "has_author": false
+            },
+            "footer": {
+                "detected": false,
+                "columns": 0,
+                "has_social": false,
+                "has_newsletter": false,
+                "has_logo": false,
+                "has_copyright": false,
+                "has_contact_info": false
+            },
+            "sections_count": 2,
+            "depth_map": [],
+            "extracted_at": "2026-06-21T05:22:06.970637Z"
+        },
+        "phase2_time": 0,
+        "layout": {
+            "sections": [
+                {
+                    "type": "features",
+                    "order": 0,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "features_grid",
+                    "nested": false
+                },
+                {
+                    "type": "products",
+                    "order": 1,
+                    "columns": 3,
+                    "data": {
+                        "inferred": true
+                    },
+                    "block_type": "text",
+                    "nested": false
+                }
+            ],
+            "hierarchy": {
+                "heading_counts": {
+                    "h1": 0,
+                    "h2": 0,
+                    "h3": 0
+                },
+                "section_flow": [
+                    "features",
+                    "products"
+                ],
+                "max_depth": 3,
+                "uses_sections": false
+            },
+            "spacing_system": {
+                "system": "standard",
+                "scale": "8px",
+                "section_padding": "80px 0",
+                "container_padding": "0 24px"
+            },
+            "container": {
+                "max_width": "1280px",
+                "size_token": "7xl",
+                "padding": "24px"
+            },
+            "responsive": {
+                "has_mobile_menu": false,
+                "has_media_queries": false,
+                "has_flex_wrap": false,
+                "breakpoints": [
+                    "md",
+                    "lg"
+                ],
+                "is_mobile_first": false
+            },
+            "relationships": {
+                "flow": [
+                    "features",
+                    "products"
+                ],
+                "edges": [
+                    {
+                        "from": "features",
+                        "to": "products",
+                        "type": "follows"
+                    }
+                ],
+                "entry_point": "features",
+                "exit_point": "products"
+            },
+            "column_signature": {
+                "features": 3,
+                "products": 3
+            },
+            "layout_style": "standard",
+            "section_count": 2,
+            "is_single_page": false
+        },
+        "phase3_time": 0,
+        "visual": {
+            "color_palette": {
+                "primary": "#3b82f6",
+                "secondary": "#8b5cf6",
+                "accent": "#f59e0b",
+                "background": "#ffffff",
+                "text": "#111827",
+                "all": [],
+                "count": 0
+            },
+            "typography": {
+                "primary_font": "system-ui",
+                "scale": "custom",
+                "base_size": "16px",
+                "sizes_detected": [],
+                "weights": [],
+                "line_height": "1.6",
+                "letter_spacing": "normal",
+                "families_raw": []
+            },
+            "buttons": {
+                "shape": "rounded",
+                "has_shadow": false,
+                "has_outline": false,
+                "has_ghost": false,
+                "has_gradient": false,
+                "primary_style": "filled",
+                "size_scale": [
+                    "md"
+                ]
+            },
+            "border_radius": {
+                "scale": "md",
+                "card": "8px",
+                "button": "6px",
+                "input": "8px",
+                "badge": "4px"
+            },
+            "shadow_system": {
+                "intensity": "soft",
+                "sm": "0 1px 3px rgba(0,0,0,0.06)",
+                "md": "0 4px 16px rgba(0,0,0,0.08)",
+                "lg": "0 8px 32px rgba(0,0,0,0.10)",
+                "xl": "0 16px 48px rgba(0,0,0,0.12)",
+                "card": "0 2px 8px rgba(0,0,0,0.06)"
+            },
+            "visual_density": "spacious",
+            "dark_mode": false,
+            "has_animations": false,
+            "style_framework": "custom"
+        },
+        "phase4_time": 0,
+        "commerce": {
+            "is_commerce": true,
+            "platform": "digikala",
+            "product_cards": {
+                "detected": false,
+                "count": 0,
+                "layout": "grid-4",
+                "fields": [
+                    "image",
+                    "title",
+                    "price"
+                ],
+                "has_hover_zoom": false,
+                "has_quick_view": false
+            },
+            "price_blocks": {
+                "detected": false,
+                "format": "unknown",
+                "has_original": false,
+                "has_discount": false,
+                "has_free_shipping": false,
+                "has_installment": false,
+                "has_countdown": false
+            },
+            "discount_badges": {
+                "detected": false,
+                "style": "label",
+                "position": "top-right",
+                "colors": [
+                    "#ef4444",
+                    "#22c55e"
+                ],
+                "has_timer": false
+            },
+            "gallery": {
+                "detected": false,
+                "type": "single",
+                "has_zoom": false,
+                "has_video": false,
+                "has_fullscreen": false,
+                "thumb_position": "bottom"
+            },
+            "reviews": {
+                "detected": false,
+                "has_rating": false,
+                "has_count": false,
+                "has_verified": false,
+                "style": "text",
+                "has_filter": false,
+                "has_photo": false,
+                "max_rating": 5
+            },
+            "specifications": {
+                "detected": false,
+                "style": "none",
+                "has_compare": false
+            },
+            "related_products": {
+                "detected": false,
+                "layout": "grid-4",
+                "count": 4,
+                "has_price": true
+            },
+            "cross_sell": {
+                "detected": false,
+                "layout": "grid-3"
+            },
+            "upsell": {
+                "detected": false,
+                "style": "modal"
+            },
+            "cart_flow": {
+                "has_cart": false,
+                "has_wishlist": false,
+                "has_compare": false,
+                "has_instant_buy": false,
+                "add_to_cart_style": "none",
+                "cart_type": "page"
+            },
+            "commerce_score": 60,
+            "url_commerce_hint": true
+        },
+        "phase5_time": 0,
+        "similarity": {
+            "per_site": {
+                "apple": {
+                    "label": "Apple",
+                    "type": "tech",
+                    "structure": 27,
+                    "visual": 59,
+                    "commerce": 90,
+                    "layout": 27,
+                    "overall": 48
+                },
+                "amazon": {
+                    "label": "Amazon",
+                    "type": "ecommerce",
+                    "structure": 13,
+                    "visual": 40,
+                    "commerce": 30,
+                    "layout": 50,
+                    "overall": 32
+                },
+                "malltina": {
+                    "label": "Malltina",
+                    "type": "ecommerce",
+                    "structure": 11,
+                    "visual": 30,
+                    "commerce": 50,
+                    "layout": 58,
+                    "overall": 38
+                },
+                "digikala": {
+                    "label": "Digikala",
+                    "type": "ecommerce",
+                    "structure": 43,
+                    "visual": 61,
+                    "commerce": 82,
+                    "layout": 90,
+                    "overall": 70
+                },
+                "stripe": {
+                    "label": "Stripe",
+                    "type": "saas",
+                    "structure": 11,
+                    "visual": 61,
+                    "commerce": 20,
+                    "layout": 7,
+                    "overall": 26
+                },
+                "shopify": {
+                    "label": "Shopify",
+                    "type": "ecommerce",
+                    "structure": 11,
+                    "visual": 46,
+                    "commerce": 70,
+                    "layout": 32,
+                    "overall": 43
+                }
+            },
+            "best_match": "digikala",
+            "best_match_label": "Digikala",
+            "best_match_score": 70,
+            "structure": 19,
+            "visual": 50,
+            "commerce": 57,
+            "layout": 44,
+            "overall": 70,
+            "confidence_level": "MEDIUM",
+            "recommended_style": "ecommerce"
+        },
+        "phase7_time": 0,
+        "quality": {
+            "verdict": "FAIL",
+            "score": 40,
+            "findings": [
+                {
+                    "code": "MISSING_SECTION",
+                    "severity": "HIGH",
+                    "message": "بخش اجباری «header» یافت نشد"
+                },
+                {
+                    "code": "MISSING_SECTION",
+                    "severity": "HIGH",
+                    "message": "بخش اجباری «hero» یافت نشد"
+                },
+                {
+                    "code": "MISSING_SECTION",
+                    "severity": "HIGH",
+                    "message": "بخش اجباری «footer» یافت نشد"
+                },
+                {
+                    "code": "TOO_FEW_SECTIONS",
+                    "severity": "MEDIUM",
+                    "message": "تعداد بخش‌های تشخیص‌داده‌شده (2) کمتر از حداقل موردنیاز (3) است"
+                },
+                {
+                    "code": "LOW_STRUCTURE_SCORE",
+                    "severity": "LOW",
+                    "message": "امتیاز ساختاری (19\/100) پایین است — ساختار صفحه کافی تشخیص داده نشد"
+                }
+            ],
+            "finding_count": 5,
+            "critical": 0,
+            "high": 3,
+            "medium": 1,
+            "low": 1,
+            "summary": "امتیاز کیفی: 40\/100 | وضعیت: رد شد | شباهت با Digikala: 70% | 5 یافته",
+            "validated_at": "2026-06-21T05:22:06.972185Z"
+        }
+    }
+}

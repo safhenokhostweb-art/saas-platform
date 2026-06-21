@@ -135,6 +135,17 @@ class LayoutReconstructionService
             $sections[] = $this->sectionEntry('faq', $order++, 1, $dom['faq']);
         }
 
+        // Infer extra sections from semantic section count (e.g. Apple has 5 <section> tags)
+        $semanticCount = $dom['sections_count'] ?? 0;
+        $detected      = count($sections);
+        if ($semanticCount > $detected + 1) {
+            $extras = $semanticCount - $detected;
+            $inferTypes = ['features', 'products', 'stats', 'gallery'];
+            for ($i = 0; $i < min($extras, count($inferTypes)); $i++) {
+                $sections[] = $this->sectionEntry($inferTypes[$i], $order++, 3, ['inferred' => true]);
+            }
+        }
+
         // Footer
         if ($dom['footer']['detected'] ?? false) {
             $cols = min($dom['footer']['columns'] ?? 4, 5);

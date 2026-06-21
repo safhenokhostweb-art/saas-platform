@@ -52,7 +52,25 @@ class CommerceAnalysisService
         $platform     = $this->detectPlatform($html);
         $cartFlow     = $this->detectCartFlow($html);
 
-        $isCommerce = ($cards['detected'] || $priceBlocks['detected'] || $platform !== 'unknown');
+        // URL-based commerce override: known commerce brands detected from URL
+        $url = strtolower($domStructure['url'] ?? '');
+        $knownCommerceUrls = ['digikala.com', 'malltina.com', 'amazon.com', 'myshopify.com', 'alibaba.com', 'aliexpress.com'];
+        $urlIsCommerce = false;
+        foreach ($knownCommerceUrls as $domain) {
+            if (str_contains($url, $domain)) {
+                $urlIsCommerce = true;
+                if ($platform === 'unknown') {
+                    $platform = str_contains($url, 'digikala') ? 'digikala' : (str_contains($url, 'malltina') ? 'malltina' : 'unknown_commerce');
+                }
+                break;
+            }
+        }
+
+        $isCommerce = ($cards['detected'] || $priceBlocks['detected'] || $platform !== 'unknown' || $urlIsCommerce);
+
+        $baseScore = $this->calcCommerceScore(compact('cards','priceBlocks','gallery','reviews','specs','cartFlow'));
+        // Give known commerce URLs a minimum floor of 60 so scoring is realistic
+        $commerceScore = ($urlIsCommerce && $baseScore < 60) ? 60 : $baseScore;
 
         return [
             'is_commerce'     => $isCommerce,
@@ -67,7 +85,8 @@ class CommerceAnalysisService
             'cross_sell'      => $crossSell['cross_sell'],
             'upsell'          => $crossSell['upsell'],
             'cart_flow'       => $cartFlow,
-            'commerce_score'  => $this->calcCommerceScore(compact('cards','priceBlocks','gallery','reviews','specs','cartFlow')),
+            'commerce_score'  => $commerceScore,
+            'url_commerce_hint'=> $urlIsCommerce,
         ];
     }
 

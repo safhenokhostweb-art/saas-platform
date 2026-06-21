@@ -123,10 +123,23 @@ class VisualAnalysisService
         $hexColors = $this->extractHexColors($html);
         $rgbColors = $this->extractRgbColors($html);
 
-        // Also check meta theme-color
+        // Highest priority: meta theme-color (most reliable brand signal)
         $themeColor = $dom['meta']['theme_color'] ?? '';
         if ($themeColor && preg_match('/^#[0-9a-fA-F]{3,6}$/', $themeColor)) {
             array_unshift($hexColors, strtolower($themeColor));
+        }
+
+        // Second priority: CSS custom property --color-primary / --primary-color
+        $cssVarColors = $this->extractCssCustomPropertyColors($html);
+        foreach (array_reverse($cssVarColors) as $c) {
+            array_unshift($hexColors, $c);
+        }
+
+        // Third priority: link colors (a:link / a:visited / :any-link) — strong brand signal
+        if (preg_match_all('/(?:a|:link|:any-link)[^{]*\{[^}]*color:\s*(#[0-9a-fA-F]{6})/i', $html, $m)) {
+            foreach ($m[1] as $c) {
+                array_unshift($hexColors, strtolower($c));
+            }
         }
 
         // Deduplicate and rank by frequency
@@ -135,9 +148,16 @@ class VisualAnalysisService
         arsort($frequencies);
         $ranked = array_keys($frequencies);
 
-        // Remove near-white and near-black from accent picking
+        // Remove near-white, near-black, and very light/dark neutrals from primary candidate
         $meaningful = array_filter($ranked, function ($c) {
-            return !in_array($c, ['#ffffff', '#fff', '#000000', '#000', '#f9fafb', '#f3f4f6']);
+            if (in_array($c, ['#ffffff', '#fff', '#000000', '#000', '#f9fafb', '#f3f4f6'])) return false;
+            // Exclude near-white (brightness > 240) and near-black (brightness < 20)
+            [$r, $g, $b] = $this->hexToRgbLocal($c);
+            $brightness = 0.299 * $r + 0.587 * $g + 0.114 * $b;
+            if ($brightness > 230 || $brightness < 15) return false;
+            // Exclude transparent / invalid
+            if ($c === 'transparent' || strlen($c) < 4) return false;
+            return true;
         });
         $meaningful = array_values($meaningful);
 
@@ -182,22 +202,6 @@ class VisualAnalysisService
             }
         }
         return '#111827';
-    }
-
-    private function buildPaletteFromColors(array $colors, string $primary): array
-    {
-        $colors = array_unique(array_filter($colors, fn ($c) => preg_match('/^#[0-9a-fA-F]{6}$/', $c)));
-        $colors = array_values($colors);
-
-        return [
-            'primary'    => $primary ?: ($colors[0] ?? '#3b82f6'),
-            'secondary'  => $colors[1] ?? '#8b5cf6',
-            'accent'     => $colors[2] ?? '#f59e0b',
-            'background' => '#ffffff',
-            'text'       => '#111827',
-            'all'        => array_slice($colors, 0, 8),
-            'count'      => count($colors),
-        ];
     }
 
     // ── Private: Typography ───────────────────────────────────────────────────
@@ -512,5 +516,33 @@ class VisualAnalysisService
             'all'        => $cleaned,
             'count'      => count($cleaned),
         ];
+    }
+
+    private function extractCssCustomPropertyColors(string $html): array
+    {
+        $colors = [];
+        // Match CSS custom properties that suggest primary/brand colors
+        $patterns = [
+            '/--(?:color-primary|primary-color|brand-color|accent-color|link-color)[^:]*:\s*(#[0-9a-fA-F]{3,6})/i',
+            '/--(?:color-blue|color-main|color-key|ui-primary|button-color)[^:]*:\s*(#[0-9a-fA-F]{3,6})/i',
+        ];
+        foreach ($patterns as $p) {
+            if (preg_match_all($p, $html, $m)) {
+                foreach ($m[1] as $c) {
+                    $colors[] = strtolower($c);
+                }
+            }
+        }
+        return array_unique($colors);
+    }
+
+    private function hexToRgbLocal(string $hex): array
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+        if (strlen($hex) !== 6) return [128, 128, 128];
+        return [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
     }
 }

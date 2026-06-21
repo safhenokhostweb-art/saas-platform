@@ -50,20 +50,39 @@ class DomExtractionService
      */
     public function extract(string $html, string $url = ''): array
     {
+        // Detect rendering mode before DOM parse
+        $renderMode = $this->detectRenderMode($html, $url);
+
         $prev = libxml_use_internal_errors(true);
         $doc  = new \DOMDocument();
         @$doc->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NOERROR);
         libxml_use_internal_errors($prev);
         $xpath = new \DOMXPath($doc);
 
+        // Core extraction (always runs)
+        $header  = $this->analyzeHeader($xpath);
+        $footer  = $this->analyzeFooter($xpath);
+        $hero    = $this->analyzeHero($xpath);
+
+        // Semantic fallback: if class-based detection fails, use HTML5 elements
+        if (!$header['detected'] && !$footer['detected']) {
+            $semFallback = $this->semanticFallback($xpath, $html);
+            if ($semFallback['sections_found'] > 0) {
+                $header = array_merge($header, ['detected' => $semFallback['has_nav']]);
+                $footer = array_merge($footer, ['detected' => $semFallback['has_footer']]);
+                $hero   = array_merge($hero,   ['detected' => $semFallback['has_main']]);
+            }
+        }
+
         return [
             'url'           => $url,
             'title'         => $this->extractTitle($xpath),
             'meta'          => $this->extractMeta($xpath),
+            'render_mode'   => $renderMode,
             'landmarks'     => $this->detectLandmarks($xpath, $doc),
-            'header'        => $this->analyzeHeader($xpath),
+            'header'        => $header,
             'mega_menu'     => $this->detectMegaMenu($xpath),
-            'hero'          => $this->analyzeHero($xpath),
+            'hero'          => $hero,
             'grid_layouts'  => $this->detectGridLayouts($xpath),
             'cards'         => $this->detectCards($xpath),
             'features'      => $this->detectFeatureSections($xpath),
@@ -72,7 +91,7 @@ class DomExtractionService
             'testimonials'  => $this->detectTestimonials($xpath),
             'faq'           => $this->detectFaq($xpath),
             'blog'          => $this->detectBlogSection($xpath),
-            'footer'        => $this->analyzeFooter($xpath),
+            'footer'        => $footer,
             'sections_count'=> $this->countSemanticSections($xpath),
             'depth_map'     => $this->buildDepthMap($xpath),
             'extracted_at'  => now()->toISOString(),
@@ -217,19 +236,24 @@ class DomExtractionService
 
     private function analyzeHeader(\DOMXPath $x): array
     {
-        $navNodes = $x->query('//header//nav | //nav[1]');
-        $logoNode = $x->query('//header//img | //header//*[contains(@class,"logo")]');
+        // Check header element first, then standalone nav (e.g. Apple uses <nav> at top without <header>)
+        $navNodes  = $x->query('//header//nav | //nav[1] | //header[1]');
+        $logoNode  = $x->query('//header//img | //header//*[contains(@class,"logo")] | //nav//img[1]');
         $linkCount = 0;
         if ($navNodes && $navNodes->length > 0) {
             $links = $x->query('.//a', $navNodes->item(0));
             $linkCount = $links ? $links->length : 0;
         }
 
+        // Apple / modern sites: top-level nav as first element
+        $topNav = $x->query('//nav[1] | //header[1]');
+        $detected = ($navNodes && $navNodes->length > 0) || ($topNav && $topNav->length > 0);
+
         $hasSticky   = $this->hasClassKeyword($x, 'header', ['sticky', 'fixed', 'affix', 'stuck']);
         $hasMegaMenu = $this->hasClassKeyword($x, 'nav', ['mega', 'dropdown', 'mega-menu', 'nav-mega']);
 
         return [
-            'detected'     => ($navNodes && $navNodes->length > 0),
+            'detected'     => $detected,
             'has_logo'     => ($logoNode && $logoNode->length > 0),
             'nav_items'    => $linkCount,
             'is_sticky'    => $hasSticky,
@@ -508,7 +532,13 @@ class DomExtractionService
     private function countSemanticSections(\DOMXPath $x): int
     {
         $sections = $x->query('//section | //article | //main/*');
-        return $sections ? $sections->length : 0;
+        $count = $sections ? $sections->length : 0;
+        // Also count direct children of body that look like sections
+        if ($count === 0) {
+            $bodyChildren = $x->query('//body/*');
+            $count = $bodyChildren ? min($bodyChildren->length, 10) : 0;
+        }
+        return $count;
     }
 
     private function buildDepthMap(\DOMXPath $x): array
@@ -538,8 +568,21 @@ class DomExtractionService
 
     private function hasClassKeyword(\DOMXPath $x, string $element, array $keywords): bool
     {
+        // If element is a CSS class selector (e.g. ".hero"), convert to wildcard + class filter
+        if (str_starts_with($element, '.')) {
+            $cls = substr($element, 1);
+            $base = "//*[contains(@class,'{$cls}')]";
+        } elseif ($element === '*') {
+            $base = '//*';
+        } else {
+            $base = "//{$element}";
+        }
+
         foreach ($keywords as $kw) {
-            $nodes = $x->query("//{$element}[contains(@class,'{$kw}')]");
+            $query = str_starts_with($element, '.') || $element === '*'
+                ? "//*[contains(@class,'{$kw}')]"
+                : "{$base}[contains(@class,'{$kw}')]";
+            $nodes = @$x->query($query);
             if ($nodes && $nodes->length > 0) return true;
         }
         return false;
@@ -554,6 +597,70 @@ class DomExtractionService
             if (str_contains($text, strtolower($kw))) return true;
         }
         return false;
+    }
+
+    /**
+     * Detect rendering mode: SSR, SPA, Next.js, etc.
+     */
+    private function detectRenderMode(string $html, string $url): array
+    {
+        $isNextJs     = str_contains($html, '_next/') || str_contains($html, '__NEXT_DATA__') || str_contains($html, 'self.__next_s');
+        $isReact      = str_contains($html, 'react') || str_contains($html, 'React') || str_contains($html, 'data-reactroot');
+        $isVue        = str_contains($html, 'vue') || str_contains($html, '__vue_');
+        $isAngular    = str_contains($html, 'ng-version') || str_contains($html, 'angular');
+        $htmlSize     = strlen($html);
+        $isMinimalSpa = $htmlSize < 8000;
+
+        $mode = 'ssr';
+        if ($isMinimalSpa && ($isNextJs || $isReact)) $mode = 'spa_shell';
+        elseif ($isNextJs) $mode = 'nextjs_ssr';
+        elseif ($isReact)  $mode = 'react_ssr';
+        elseif ($isVue)    $mode = 'vue_ssr';
+
+        // Extract __NEXT_DATA__ if present
+        $nextData = [];
+        if (preg_match('/<script id="__NEXT_DATA__"[^>]*>(.+?)<\/script>/s', $html, $m)) {
+            $nextData = json_decode($m[1], true) ?? [];
+        }
+
+        return [
+            'mode'           => $mode,
+            'is_spa_shell'   => $isMinimalSpa,
+            'is_nextjs'      => $isNextJs,
+            'is_react'       => $isReact,
+            'html_size'      => $htmlSize,
+            'next_data'      => $nextData,
+            'has_minified_css'=> $isNextJs || $isReact,
+        ];
+    }
+
+    /**
+     * Semantic HTML5 fallback — used when class-based detection finds nothing.
+     * Scans for raw HTML5 structural tags.
+     */
+    private function semanticFallback(\DOMXPath $x, string $html): array
+    {
+        $hasNav    = (bool) ($x->query('//nav') !== null && $x->query('//nav')->length > 0);
+        $hasHeader = (bool) ($x->query('//header') !== null && $x->query('//header')->length > 0);
+        $hasFooter = (bool) ($x->query('//footer') !== null && $x->query('//footer')->length > 0);
+        $hasMain   = (bool) ($x->query('//main') !== null && $x->query('//main')->length > 0);
+        $sections  = $x->query('//section');
+        $sCount    = $sections ? $sections->length : 0;
+        $articles  = $x->query('//article');
+        $aCount    = $articles ? $articles->length : 0;
+
+        // If even semantic tags are empty, site is likely a SPA shell
+        $sectionsFound = (int)($hasNav) + (int)($hasHeader) + (int)($hasFooter) + (int)($hasMain) + $sCount + $aCount;
+
+        return [
+            'has_nav'       => $hasNav || (substr_count($html, '<nav') > 0),
+            'has_header'    => $hasHeader || (substr_count($html, '<header') > 0),
+            'has_footer'    => $hasFooter || (substr_count($html, '<footer') > 0),
+            'has_main'      => $hasMain || (substr_count($html, '<main') > 0),
+            'section_count' => $sCount,
+            'article_count' => $aCount,
+            'sections_found'=> $sectionsFound,
+        ];
     }
 
     private function cssToXpath(string $selector): string
