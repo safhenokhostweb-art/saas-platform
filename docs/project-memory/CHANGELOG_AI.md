@@ -1,7 +1,37 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-21
+> Last Updated: 2026-06-22
+
+---
+
+## 2026-06-22 — Production Blocker Remediation — ALL 5 CRITICAL BLOCKERS RESOLVED
+
+**Reason:** Production readiness audit (2026-06-21) identified 5 critical blockers preventing live operation.
+
+### saas-platform
+- `app/Http/Controllers/Api/ApiLifecycleController.php` — NEW: 4 tenant-facing lifecycle API endpoints (reactivate, status, request-restore, confirm-restore), protected by tenant.api middleware
+- `app/Services/Lifecycle/SiteArchiveService.php` — MODIFIED: `deleteActiveFiles()` + `resolveUploadPaths()` for C05 physical storage release
+- `app/Services/Lifecycle/SiteLifecycleService.php` — MODIFIED: C05 wired in `archive()` — deletes files after ZIP confirmed
+- `app/Services/Lifecycle/SiteLifecycleNotificationService.php` — MODIFIED: `sendRestoreInvoiceSms()` for C01 payment link SMS
+- `app/Http/Controllers/Admin/SiteLifecycleController.php` — MODIFIED: `sendPaymentLink()` admin action for C01
+- `routes/api.php` — MODIFIED: `/api/lifecycle/*` route group
+- `routes/web.php` — MODIFIED: admin `send-payment-link` route
+- `CRITICAL_BLOCKER_PROGRESS.md` — NEW: certification tracker for all 5 phases
+
+### customer-site
+- `app/Http/Controllers/Account/AccountLifecycleController.php` — NEW: C04 self-service restore (requestRestore/callback/manualConfirm)
+- `app/Http/Controllers/Front/LifecyclePaymentController.php` — NEW: C01 direct payment page (show/initiate/callback/manualConfirm)
+- `app/Console/Commands/ProcessScheduledSmsCampaignsCommand.php` — NEW: C03 scheduler command with DB transaction lock, everyFiveMinutes
+- `app/Services/PlatformApiService.php` — MODIFIED: 4 new lifecycle methods
+- `app/Http/Controllers/Front/SubscriptionPaymentController.php` — MODIFIED: C02 triggerLifecycleReactivation() after payment
+- `app/Console/Commands/ProcessRenewalsCommand.php` — MODIFIED: C02 reactivateSiteIfSuspended() for free renewals
+- `app/Http/Middleware/CheckSiteLifecycle.php` — MODIFIED: ADMIN_PATHS whitelist for C04+C01
+- `resources/views/front/suspended.blade.php` — MODIFIED: C04 restore buttons (auth + guest paths)
+- `routes/web.php` — MODIFIED: C04 account lifecycle routes + C01 lifecycle-pay routes
+- `bootstrap/app.php` — MODIFIED: C03 scheduler entry
+
+**Certifications:** C01_RESTORE_PAYMENT_OPERATIONAL, C02_REACTIVATION_OPERATIONAL, C03_SMS_SCHEDULER_OPERATIONAL, C04_SELF_SERVICE_OPERATIONAL, C05_STORAGE_RELEASE_OPERATIONAL
 
 ---
 

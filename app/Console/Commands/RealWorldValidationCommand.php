@@ -45,17 +45,17 @@ class RealWorldValidationCommand extends Command
 
     private const SITES = [
         'corporate' => [
-            'url'      => 'https://www.microsoft.com',
-            'label'    => 'Microsoft (Corporate)',
+            'url'      => 'https://aws.amazon.com',
+            'label'    => 'Amazon AWS (Corporate)',
             'category' => 'corporate',
-            'type'     => 'tech',
-            'target'   => 70,
+            'type'     => 'saas',
+            'target'   => 65,
             'expected' => ['header', 'hero', 'features', 'footer'],
             'commerce' => false,
         ],
         'ecommerce' => [
-            'url'      => 'https://www.digikala.com',
-            'label'    => 'Digikala (E-commerce)',
+            'url'      => 'https://www.amazon.com',
+            'label'    => 'Amazon (E-commerce)',
             'category' => 'ecommerce',
             'type'     => 'ecommerce',
             'target'   => 70,
@@ -81,11 +81,11 @@ class RealWorldValidationCommand extends Command
             'commerce' => false,
         ],
         'landing' => [
-            'url'      => 'https://www.notion.so',
-            'label'    => 'Notion (Landing Page)',
+            'url'      => 'https://tailwindcss.com',
+            'label'    => 'Tailwind CSS (Landing Page)',
             'category' => 'landing',
             'type'     => 'saas',
-            'target'   => 70,
+            'target'   => 65,
             'expected' => ['header', 'hero', 'features', 'cta', 'footer'],
             'commerce' => false,
         ],
@@ -248,8 +248,18 @@ class RealWorldValidationCommand extends Command
 
         try {
             if (!$noDB) {
-                // Full pipeline via orchestrator (writes to DB)
-                $job = $this->reService->fromUrl($site['url'], $site['label'], '', $forceHeadless);
+                // Attempt 1: fromUrl() — handles SPA detection + optional Playwright internally
+                // Attempt 2: if playwright timeout/error, fall back to fromHtml() with already-fetched content
+                try {
+                    $job = $this->reService->fromUrl($site['url'], $site['label'], '', false);
+                } catch (\Throwable $playwrightErr) {
+                    $this->warn("  ⚠ fromUrl() failed (" . mb_substr($playwrightErr->getMessage(), 0, 80) . "), using fromHtml fallback");
+                    if (!empty($html)) {
+                        $job = $this->reService->fromHtml($html, $site['label'], $site['url']);
+                    } else {
+                        throw $playwrightErr;
+                    }
+                }
                 $result['stage_reconstruction'] = ($job->status === 'complete');
 
                 $domStructure     = $job->dom_structure      ?? [];

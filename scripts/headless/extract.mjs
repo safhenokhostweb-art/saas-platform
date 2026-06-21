@@ -217,7 +217,7 @@ async function extractFromPage(page, targetUrl) {
 
     // CSS Framework fingerprinting
     const cssFrameworks = {
-      tailwind:   html.includes('tailwind') || !!document.querySelector('[class*="text-"]:[class*="bg-"]'),
+      tailwind:   html.includes('tailwind') || (html.includes('class="') && (html.includes(' text-') || html.includes(' bg-') || html.includes(' flex ') || html.includes(' p-'))),
       bootstrap:  html.includes('bootstrap') || !!document.querySelector('.container, .col-md-'),
       material:   html.includes('MuiBox') || html.includes('makeStyles') || html.includes('mui'),
       antd:       html.includes('ant-') || html.includes('antd'),
@@ -304,7 +304,9 @@ async function extractFromPage(page, targetUrl) {
 
   const ariaLandmarks = await page.evaluate(() => {
     const landmark = (role) => {
-      const el = document.querySelector(`[role="${role}"], ${role === 'main' ? 'main' : ''}`);
+      const semanticTag = { main: 'main', banner: 'header', contentinfo: 'footer', navigation: 'nav' }[role] || null;
+      const sel = semanticTag ? `[role="${role}"], ${semanticTag}` : `[role="${role}"]`;
+      const el = document.querySelector(sel);
       return el ? { found: true, text: el.textContent.trim().substring(0, 80) } : { found: false };
     };
     return {

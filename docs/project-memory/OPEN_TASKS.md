@@ -21,21 +21,20 @@
 
 ---
 
-## OPEN: Business Flow Remediation — PRODUCTION_BLOCKERS
+## COMPLETE: Business Flow Remediation — PRODUCTION_BLOCKERS — 2026-06-22 ✅
 
-**Status:** OPEN (discovered in Business Flow Audit 2026-06-21)  
-**Priority:** Must complete before production go-live.  
-**Full details:** `docs/BUSINESS_FLOW_AUDIT.md`, `docs/BUSINESS_FLOW_GAP_ANALYSIS.md`, `docs/PRODUCTION_READINESS_SCORE.md`
+**Status:** ALL 5 CRITICAL BLOCKERS RESOLVED (2026-06-22)
+**Certification:** See `CRITICAL_BLOCKER_PROGRESS.md` for full details.
 
-### Critical (all 5 must be done)
+### Critical — ALL DONE ✅
 
-| ID | Task | Hours |
-|----|------|-------|
-| BFA-C01 | Restore invoice payment flow (customer → Zarinpal/IDPay → restore) | 6h |
-| BFA-C02 | Wire subscription renewal → lifecycle activate() | 2h |
-| BFA-C03 | ProcessScheduledSmsCampaignsCommand + Kernel entry | 3h |
-| BFA-C04 | Customer self-service restore button on suspended page | 4h |
-| BFA-C05 | Physical file deletion on archive (SiteArchiveService::deleteActiveFiles) | 4h |
+| ID | Task | Status | Certification |
+|----|------|--------|---------------|
+| BFA-C01 | Restore invoice payment flow (customer → Zarinpal/IDPay → restore) | ✅ DONE | C01_RESTORE_PAYMENT_OPERATIONAL |
+| BFA-C02 | Wire subscription renewal → lifecycle activate() | ✅ DONE | C02_REACTIVATION_OPERATIONAL |
+| BFA-C03 | ProcessScheduledSmsCampaignsCommand + Kernel entry | ✅ DONE | C03_SMS_SCHEDULER_OPERATIONAL |
+| BFA-C04 | Customer self-service restore button on suspended page | ✅ DONE | C04_SELF_SERVICE_OPERATIONAL |
+| BFA-C05 | Physical file deletion on archive (SiteArchiveService::deleteActiveFiles) | ✅ DONE | C05_STORAGE_RELEASE_OPERATIONAL |
 
 ### High Priority (do after critical)
 

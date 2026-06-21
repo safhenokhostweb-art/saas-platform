@@ -224,8 +224,6 @@ class AcoolHvacSeedCommand extends Command
     private function homeBlocks(): array
     {
         return [
-            $this->navBlock(),
-
             [
                 'id'   => 'home-hero',
                 'type' => 'hvac_hero',
@@ -369,7 +367,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
 
-            $this->footerBlock(),
         ];
     }
 
@@ -378,7 +375,6 @@ class AcoolHvacSeedCommand extends Command
     private function aboutBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('About Acool HVAC', 'Your trusted partner for all heating, ventilation, and air conditioning needs'),
             [
                 'id'   => 'about-main',
@@ -436,7 +432,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock('Ready to Work With Us?', 'Join thousands of satisfied customers who trust Acool HVAC for all their heating and cooling needs.'),
-            $this->footerBlock(),
         ];
     }
 
@@ -445,7 +440,6 @@ class AcoolHvacSeedCommand extends Command
     private function servicesBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('Our HVAC Services', 'Comprehensive heating, cooling and ventilation solutions for residential and commercial clients'),
             [
                 'id'   => 'services-main',
@@ -483,7 +477,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock(),
-            $this->footerBlock(),
         ];
     }
 
@@ -492,7 +485,6 @@ class AcoolHvacSeedCommand extends Command
     private function serviceDetailBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('AC Repair Service', 'Fast, reliable, and affordable AC repair — same day service available'),
             [
                 'id'   => 'sd-about',
@@ -534,7 +526,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock('Ready to Schedule Your AC Repair?', 'Call us now or book online. Same-day service available in most service areas.'),
-            $this->footerBlock(),
         ];
     }
 
@@ -543,7 +534,6 @@ class AcoolHvacSeedCommand extends Command
     private function projectsBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('Our Projects', 'A showcase of our completed HVAC installations and service projects'),
             [
                 'id'   => 'projects-grid',
@@ -563,7 +553,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock('Have a Project in Mind?', 'Contact us for a free consultation and estimate.'),
-            $this->footerBlock(),
         ];
     }
 
@@ -572,7 +561,6 @@ class AcoolHvacSeedCommand extends Command
     private function projectDetailBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('Project: Complete AC Replacement', 'Residential · Los Angeles, CA · Completed June 2024'),
             [
                 'id'   => 'pd-details',
@@ -598,7 +586,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock(),
-            $this->footerBlock(),
         ];
     }
 
@@ -607,7 +594,6 @@ class AcoolHvacSeedCommand extends Command
     private function pricingBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('Transparent Pricing', "No hidden fees, no surprises. Here's what you can expect to pay."),
             [
                 'id'   => 'pricing-plans',
@@ -642,7 +628,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock('Get Your Free Quote Today', 'Call or book online for a free in-home estimate. No pressure, no obligation.'),
-            $this->footerBlock(),
         ];
     }
 
@@ -651,7 +636,6 @@ class AcoolHvacSeedCommand extends Command
     private function faqBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('Frequently Asked Questions', 'Answers to the most common HVAC questions we hear from our customers'),
             [
                 'id'    => 'faq-main',
@@ -669,7 +653,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             $this->ctaBlock('Still Have Questions?', 'Our friendly team is happy to answer any HVAC questions. Call us anytime!'),
-            $this->footerBlock(),
         ];
     }
 
@@ -678,10 +661,8 @@ class AcoolHvacSeedCommand extends Command
     private function blogBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('HVAC Tips & News', 'Expert advice and industry news to help you get the most from your HVAC system'),
             ['id' => 'blog-main', 'type' => 'blog_posts', 'props' => ['title' => 'Latest Articles', 'limit' => 9]],
-            $this->footerBlock(),
         ];
     }
 
@@ -690,7 +671,6 @@ class AcoolHvacSeedCommand extends Command
     private function contactBlocks(): array
     {
         return [
-            $this->navBlock(),
             $this->pageHero('Contact Us', "We're here to help. Reach out by phone, email, or visit our office."),
             [
                 'id'   => 'contact-details',
@@ -722,7 +702,6 @@ class AcoolHvacSeedCommand extends Command
                     ],
                 ],
             ],
-            $this->footerBlock(),
         ];
     }
 
@@ -731,7 +710,6 @@ class AcoolHvacSeedCommand extends Command
     private function errorBlocks(): array
     {
         return [
-            $this->navBlock(),
             [
                 'id'       => '404-content',
                 'type'     => 'section',
@@ -742,7 +720,6 @@ class AcoolHvacSeedCommand extends Command
                     ['id' => Str::random(6), 'type' => 'button',  'props' => ['text' => 'Go Back Home', 'url' => '/', 'style' => 'primary']],
                 ],
             ],
-            $this->footerBlock(),
         ];
     }
 
@@ -751,7 +728,6 @@ class AcoolHvacSeedCommand extends Command
     private function singlePostBlocks(): array
     {
         return [
-            $this->navBlock(),
             [
                 'id'       => 'post-header',
                 'type'     => 'section',
@@ -770,7 +746,6 @@ class AcoolHvacSeedCommand extends Command
                 ],
             ],
             ['id' => 'post-related', 'type' => 'blog_posts', 'props' => ['title' => 'Related Articles', 'limit' => 3]],
-            $this->footerBlock(),
         ];
     }
 
