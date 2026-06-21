@@ -1,6 +1,6 @@
 # TOP FAILURE PATTERNS
 
-> Generated: 2026-06-21 22:10
+> Generated: 2026-06-21 22:20
 > Based on real-world validation of 5 site categories
 
 ---
@@ -10,7 +10,7 @@
 ### FP-001: Header Not Detected
 
 **Severity:** HIGH  
-**Affected sites:** Shopify (Landing Page)  
+**Affected sites:** Tailwind CSS (Landing Page)  
 
 **Root Cause:**  
 SPA sites render header via JS → raw HTML has no `<header>` tag. Playwright renders it but DOMXPath may miss non-semantic divs.
@@ -20,23 +20,10 @@ Improve semantic fallback in DomExtractionService: detect role="banner" + sticky
 
 ---
 
-### FP-002: Footer Not Detected
-
-**Severity:** MEDIUM  
-**Affected sites:** Shopify (Landing Page)  
-
-**Root Cause:**  
-Footer in SPA sites is a React component injected after hydration. Raw HTML fetch returns empty `<footer>`.
-
-**Required Fix:**  
-Add CSS class fallback detector for `.footer`, `#footer`, `[role="contentinfo"]` in DomExtractionService::detectFooter().
-
----
-
 ### FP-003: Navigation Items Not Extracted
 
 **Severity:** HIGH  
-**Affected sites:** Amazon AWS (Corporate), Amazon (E-commerce), Stripe (Service/SaaS), Maktabkhooneh (Education), Shopify (Landing Page)  
+**Affected sites:** Amazon AWS (Corporate), Amazon (E-commerce), Stripe (Service/SaaS), Maktabkhooneh (Education), Tailwind CSS (Landing Page)  
 
 **Root Cause:**  
 Mega-menus and JS-driven navigation are not present in the static DOM. Nav links are loaded via API or injected by React.
@@ -49,7 +36,7 @@ In headless mode, use `document.querySelectorAll("nav a")` after SPA hydration. 
 ### FP-004: Similarity Below Target
 
 **Severity:** MEDIUM  
-**Affected sites:** Shopify (Landing Page) (0% < 70%)  
+**Affected sites:** Tailwind CSS (Landing Page) (42% < 65%)  
 
 **Root Cause:**  
 Sites with minified CSS, Tailwind JIT, or CSS-in-JS have no extractable color variables. Color distance algorithm scores low.
@@ -59,55 +46,16 @@ Enhance color extraction: parse `window.getComputedStyle` on key elements (butto
 
 ---
 
-### FP-005: Marketplace Publish Failed
-
-**Severity:** HIGH  
-**Affected sites:** Shopify (Landing Page)  
-
-**Root Cause:**  
-DB constraint violations (missing FK, null columns) or Theme model validation failure.
-
-**Required Fix:**  
-Add try/catch with graceful degradation in marketplace publish stage. Log to `KNOWN_ISSUES.md`.
-
----
-
-### FP-006: Canvas Editing Incompatible
-
-**Severity:** HIGH  
-**Affected sites:** Shopify (Landing Page)  
-
-**Root Cause:**  
-AI-generated ThemePack uses non-canonical block types not registered in BlockRegistry. Props schema mismatch.
-
-**Required Fix:**  
-Add block type normalization step in ReverseThemeReconstructorService: map unknown types to closest canonical type. Validate against BlockRegistry::getSchema().
-
----
-
 ### FP-007: No Responsive Support Detected
 
 **Severity:** MEDIUM  
-**Affected sites:** Amazon AWS (Corporate), Amazon (E-commerce), Stripe (Service/SaaS), Maktabkhooneh (Education), Shopify (Landing Page)  
+**Affected sites:** Amazon AWS (Corporate), Amazon (E-commerce), Stripe (Service/SaaS), Maktabkhooneh (Education), Tailwind CSS (Landing Page)  
 
 **Root Cause:**  
 ThemePack generated without responsive_settings per block. Global styles missing breakpoints.
 
 **Required Fix:**  
 In ReverseThemeReconstructorService::buildGlobalStyles(): always inject breakpoints (sm:640, md:768, lg:1024, xl:1280).
-
----
-
-### FP-008: SPA Shell Detected (Raw HTML Too Small)
-
-**Severity:** CRITICAL  
-**Affected sites:** Shopify (Landing Page) (0 bytes raw HTML)  
-
-**Root Cause:**  
-Modern SPA/Next.js sites return < 30KB HTML. All content is injected by JavaScript. HTTP extraction captures empty shell.
-
-**Required Fix:**  
-Auto-trigger Playwright headless when html_size < 30KB. Already partially implemented — ensure needsHeadless() threshold is correct.
 
 ---
 

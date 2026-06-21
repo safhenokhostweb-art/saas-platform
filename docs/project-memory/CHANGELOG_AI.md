@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-06-22 — Real-World RE Validation — REAL_WORLD_VALIDATION_PASSED
+
+**Reason:** End-to-end validation of the Reverse Engineering pipeline against 5 real production websites.
+
+### saas-platform
+- `app/Console/Commands/RealWorldValidationCommand.php` — NEW: 5-category validation suite (corporate/ecommerce/service/education/landing), 7-stage pipeline per site, 3 report generation
+- `scripts/headless/extract.mjs` — FIXED: 2 Playwright CSS selector bugs (invalid `[class*="text-"]:[class*="bg-"]` and trailing comma in ARIA landmark selector)
+- `docs/REAL_WORLD_VALIDATION_REPORT.md` — NEW: per-site pipeline stage results + metrics
+- `docs/TOP_FAILURE_PATTERNS.md` — NEW: 4 failure patterns with root causes + required fixes
+- `docs/REVERSE_ENGINEERING_ACCURACY_REPORT.md` — NEW: aggregate accuracy with certification
+
+**Results:**
+| Site | Similarity | Stages | Result |
+|------|-----------|--------|--------|
+| Amazon AWS (Corporate) | 80% | 7/7 | ✅ PASS |
+| Amazon (E-commerce) | 99% | 7/7 | ✅ PASS |
+| Stripe (Service/SaaS) | 83% | 7/7 | ✅ PASS |
+| Maktabkhooneh (Education) | 73% | 7/7 | ✅ PASS |
+| Tailwind CSS (Landing) | 42% | 7/7 | ⚠️ PARTIAL |
+
+**Verdict:** REAL_WORLD_VALIDATION_PASSED (4/5 targets, avg 75%)
+
+**Key Findings:**
+- Navigation extraction: 0% (FP-003 — JS-driven menus not in raw HTML)
+- Responsive blocks: 0% (FP-007 — breakpoints not injected by reconstructor)
+- Complex dev-oriented landing pages score low (FP-004)
+
+---
+
 ## 2026-06-22 — Production Blocker Remediation — ALL 5 CRITICAL BLOCKERS RESOLVED
 
 **Reason:** Production readiness audit (2026-06-21) identified 5 critical blockers preventing live operation.

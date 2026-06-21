@@ -8,6 +8,34 @@
 
 ## ACTIVE BUGS
 
+### RE-FP-003 — HIGH | OPEN
+
+**Title:** Navigation Items Not Extracted (0% success rate)  
+**Module:** ReverseEngineering — DomExtractionService / extract.mjs  
+**Discovered:** Real-World Validation 2026-06-22  
+**Root Cause:** JS-driven navigation menus are not present in static DOM. Raw HTTP fetch captures no nav links. Playwright renders the page but `nav a` extraction in extract.mjs needs to run after hydration.  
+**Required Fix:** Add `document.querySelectorAll("nav a, header a, [role='navigation'] a")` to the headless extraction pass and store in the `navigation_links` payload.  
+**Impact:** 100% of sites show 0 nav items reconstructed.
+
+### RE-FP-007 — MEDIUM | OPEN
+
+**Title:** Responsive Breakpoints Not Injected in ThemePacks  
+**Module:** ReverseEngineering — ReverseThemeReconstructorService  
+**Discovered:** Real-World Validation 2026-06-22  
+**Root Cause:** `buildGlobalStyles()` doesn't include `breakpoints` key. Canvas editor expects `global_styles.breakpoints` for responsive editing.  
+**Required Fix:** Always inject `['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280]` in `buildGlobalStyles()`.  
+**Impact:** 0% of reconstructed packs support responsive editing.
+
+### RE-FP-004 — MEDIUM | OPEN
+
+**Title:** Developer/Doc Sites Score Low (42% for tailwindcss.com)  
+**Module:** ReverseEngineering — SimilarityEngineService  
+**Discovered:** Real-World Validation 2026-06-22  
+**Root Cause:** Sites with Tailwind JIT (class-based design, no CSS variables) have unextractable color tokens. The similarity engine's color distance algorithm cannot compute palette distance, scoring the site low.  
+**Required Fix:** Parse `window.getComputedStyle` on key elements (buttons, headers) in headless mode. Store computed colors in `css_variables`.
+
+
+
 ### KI-007 — CRITICAL | RESOLVED (2026-06-13)
 
 **Title:** x-core-ui::icon — Unable to locate component on production  

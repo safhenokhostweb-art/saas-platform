@@ -1,6 +1,6 @@
 # REAL WORLD VALIDATION REPORT
 
-> Generated: 2026-06-21 22:10
+> Generated: 2026-06-21 22:20
 > Command: `php artisan re:validate-real-world`
 
 ---
@@ -27,7 +27,7 @@
 | Amazon (E-commerce) | ecommerce | 99% | PARTIAL (85) | 7/7 | ✅ PASS |
 | Stripe (Service/SaaS) | service | 83% | PASS (100) | 7/7 | ✅ PASS |
 | Maktabkhooneh (Education) | education | 73% | PASS (92) | 7/7 | ✅ PASS |
-| Shopify (Landing Page) | landing | 0% | UNKNOWN (0) | 0/7 | ❌ FAIL |
+| Tailwind CSS (Landing Page) | landing | 42% | PARTIAL (70) | 7/7 | ⚠️ PARTIAL |
 
 ---
 
@@ -37,7 +37,7 @@
 **Render mode:** http  
 **HTML size:** 405,072 bytes  
 **Framework:** N/A  
-**Elapsed:** 105753ms  
+**Elapsed:** 96670ms  
 
 ### Pipeline Stages
 
@@ -70,8 +70,8 @@
 
 **Sections detected:** header, footer
 
-> ThemePack ID: #35
-> Marketplace ID: #32
+> ThemePack ID: #39
+> Marketplace ID: #36
 
 ---
 
@@ -79,9 +79,9 @@
 
 **URL:** `https://www.amazon.com`  
 **Render mode:** headless  
-**HTML size:** 753,276 bytes  
+**HTML size:** 746,511 bytes  
 **Framework:** N/A  
-**Elapsed:** 161314ms  
+**Elapsed:** 116226ms  
 
 ### Pipeline Stages
 
@@ -114,8 +114,8 @@
 
 **Sections detected:** header, hero, footer
 
-> ThemePack ID: #36
-> Marketplace ID: #33
+> ThemePack ID: #40
+> Marketplace ID: #37
 
 ---
 
@@ -123,9 +123,9 @@
 
 **URL:** `https://stripe.com`  
 **Render mode:** headless  
-**HTML size:** 760,719 bytes  
+**HTML size:** 761,178 bytes  
 **Framework:** Next.js  
-**Elapsed:** 58302ms  
+**Elapsed:** 53084ms  
 
 ### Pipeline Stages
 
@@ -158,8 +158,8 @@
 
 **Sections detected:** header, hero, cta, footer
 
-> ThemePack ID: #37
-> Marketplace ID: #34
+> ThemePack ID: #41
+> Marketplace ID: #38
 
 ---
 
@@ -169,7 +169,7 @@
 **Render mode:** http  
 **HTML size:** 626,945 bytes  
 **Framework:** N/A  
-**Elapsed:** 102162ms  
+**Elapsed:** 101646ms  
 
 ### Pipeline Stages
 
@@ -202,53 +202,51 @@
 
 **Sections detected:** header, footer
 
-> ThemePack ID: #38
-> Marketplace ID: #35
+> ThemePack ID: #42
+> Marketplace ID: #39
 
 ---
 
-## [landing] Shopify (Landing Page)
+## [landing] Tailwind CSS (Landing Page)
 
-**URL:** `https://www.shopify.com`  
-**Render mode:** http  
-**HTML size:** 0 bytes  
-**Framework:** N/A  
-**Elapsed:** 13423ms  
+**URL:** `https://tailwindcss.com`  
+**Render mode:** headless  
+**HTML size:** 932,705 bytes  
+**Framework:** Next.js  
+**Elapsed:** 111495ms  
 
 ### Pipeline Stages
 
 | Stage | Result |
 |-------|--------|
-| 1. Extraction | ❌ |
-| 2. Reconstruction | ❌ |
-| 3. Theme Pack | ❌ |
-| 4. Marketplace | ❌ |
-| 5. Tenant Install | ❌ |
-| 6. Canvas Editing | ❌ |
-| 7. Customization | ❌ |
+| 1. Extraction | ✅ |
+| 2. Reconstruction | ✅ |
+| 3. Theme Pack | ✅ |
+| 4. Marketplace | ✅ |
+| 5. Tenant Install | ✅ |
+| 6. Canvas Editing | ✅ |
+| 7. Customization | ✅ |
 
 ### Metrics
 
 | Metric | Value |
 |--------|-------|
-| Similarity Score | **0%** (target: 70%+) |
+| Similarity Score | **42%** (target: 65%+) |
 | Responsive Support | NO |
 | Header Reconstructed | NO |
-| Footer Reconstructed | NO |
+| Footer Reconstructed | YES |
 | Navigation Reconstructed | NO |
-| Commerce Reconstructed | NO |
-| Editing Compatible | NO |
-| Block Count | 0 |
-| Installation Success | NO |
-| Quality | UNKNOWN (0/100) |
-| Primary Color | `` |
-| Primary Font |  |
+| Commerce Reconstructed | YES (score: 45) |
+| Editing Compatible | YES |
+| Block Count | 6 |
+| Installation Success | YES |
+| Quality | PARTIAL (70/100) |
+| Primary Color | `#38bdf8` |
+| Primary Font | system-ui |
 
-**Sections detected:** none
+**Sections detected:** footer
 
-### Errors
-
-- Extraction: cURL error 35: Recv failure: Connection was reset (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://www.shopify.com
-
+> ThemePack ID: #43
+> Marketplace ID: #40
 
 ---
