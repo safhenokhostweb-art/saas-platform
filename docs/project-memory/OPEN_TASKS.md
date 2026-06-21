@@ -4,6 +4,28 @@
 
 ---
 
+## COMPLETE: SMS Campaign Manager — 2026-06-21 ✅
+
+**Status:** SMS_CAMPAIGN_MANAGER_COMPLETE (2026-06-21)
+
+| Component | Status |
+|-----------|--------|
+| Migration: sms_campaigns + sms_campaign_recipients | ✅ DONE |
+| SmsCampaign model (6 statuses, 4 audience types, deliveryRate()) | ✅ DONE |
+| SmsCampaignRecipient model (pending/sent/failed) | ✅ DONE |
+| SmsService — real Kavenegar v1 + Ghasedak v2 HTTP implementations | ✅ DONE |
+| SmsCampaignService — create/update/buildRecipients/send/cancel/duplicate/getStats | ✅ DONE |
+| SendSmsCampaignJob — queued, tries=2, atomic counter update, COMPLETED detection | ✅ DONE |
+| SmsCampaignController — 10 actions (index/create/store/show/edit/update/destroy/send/cancel/duplicate) | ✅ DONE |
+| 4 Blade views (index/create/show/edit) — Persian RTL, stats cards, delivery progress bars | ✅ DONE |
+| Routes (10 routes under sms/campaigns prefix) | ✅ DONE |
+| AdminMenu: sms_campaigns key + megaphone sidebar icon | ✅ DONE |
+| Deploy customer-site | ✅ DONE |
+
+**⚠️ PENDING:** `php artisan migrate` on production server (customer-site)
+
+---
+
 ## COMPLETE: JSON Import Validation — 2026-06-21 ✅
 
 **Status:** JSON_IMPORT_VALIDATION_PASSED (2026-06-21)

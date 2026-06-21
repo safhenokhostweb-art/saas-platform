@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-06-21 — SMS Campaign Manager (SMS_CAMPAIGN_MANAGER_COMPLETE)
+
+**Reason:** New feature — multi-audience SMS campaign manager for customer-site admin panel. Full lifecycle management (draft→running→completed), Kavenegar+Ghasedak real SMS, queued bulk send, per-recipient delivery tracking.
+
+### customer-site
+- `database/migrations/2026_06_21_100000_create_sms_campaigns_tables.php` — NEW: sms_campaigns + sms_campaign_recipients tables
+- `app/Models/SmsCampaign.php` — NEW: 6 statuses, 4 audience types, deliveryRate(), smsCount()
+- `app/Models/SmsCampaignRecipient.php` — NEW: pending/sent/failed tracking
+- `app/Services/SmsService.php` — UPDATED: real Kavenegar v1 + Ghasedak v2 HTTP adapters, normalizeNumber(), sendBulk()
+- `app/Services/SmsCampaignService.php` — NEW: buildRecipients() (4 audience types, dedup, bulk insert), send(), cancel(), duplicate()
+- `app/Jobs/SendSmsCampaignJob.php` — NEW: ShouldQueue, tries=2, 50-recipient chunks, atomic counters
+- `app/Http/Controllers/Admin/SmsCampaignController.php` — NEW: 10 actions
+- `resources/views/admin/sms/campaigns/index.blade.php` — NEW: stats cards, status filter, progress bars
+- `resources/views/admin/sms/campaigns/create.blade.php` — NEW: Alpine.js char counter, 4 audience radio cards
+- `resources/views/admin/sms/campaigns/show.blade.php` — NEW: live delivery progress, timeline, recipients table
+- `resources/views/admin/sms/campaigns/edit.blade.php` — NEW: pre-filled form for draft campaigns
+- `routes/web.php` — 10 new routes under sms/campaigns prefix
+- `app/Helpers/AdminMenu.php` — sms_campaigns key added to `فرم‌ها و ارتباط با مخاطب` group
+- `resources/views/admin/partials/sidebar-icon.blade.php` — megaphone SVG icon for sms_campaigns
+
+### saas-platform
+- `app/Services/ThemeBuilder/JsonImport/ThemePackGenerator.php` — BUG FIX: annual_price/lifetime_price NOT NULL via DB::table direct insert (bypasses Eloquent 0→null cast bug)
+- `docs/TB3_SPRINT11_CERTIFICATION.md` — RESTORED: headless engine certification (was overwritten by json-import:validate command)
+
+---
+
 ## 2026-06-21 — JSON Import Validation Suite (JSON_IMPORT_VALIDATION_PASSED)
 
 **Reason:** Full end-to-end validation of all 5 JSON import formats (Elementor, Bricks, Shopify, Webflow, Custom). 75/75 checks passed across 5 formats. 3 bugs fixed during validation.

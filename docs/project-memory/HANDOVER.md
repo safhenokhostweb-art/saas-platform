@@ -21,11 +21,43 @@
 
 ## CURRENT STATE (2026-06-21)
 
-**Last completed phase:** JSON Import Validation — JSON_IMPORT_VALIDATION_PASSED (2026-06-21)
+**Last completed phase:** SMS Campaign Manager — SMS_CAMPAIGN_MANAGER_COMPLETE (2026-06-21)
+**Before that:** JSON Import Validation — JSON_IMPORT_VALIDATION_PASSED (2026-06-21)
 **Before that:** TB3 Sprint 11 — Headless Visual Extraction Engine (HEADLESS_ENGINE_OPERATIONAL) 2026-06-21
 **Before that:** JSON Theme Import Engine — JSON_IMPORT_ENGINE_OPERATIONAL (2026-06-21)
-**Before that:** RE Pipeline Real-World Validation — REVERSE_ENGINEERING_VALIDATED (2026-06-21)
-**Status:** JSON Import Validation complete. 5/5 formats PASS, 75/75 checks, 3 bugs fixed (NULL constraint + Shopify multi-page detection + format-aware multi-page check). All formats produce EXCELLENT quality ThemePacks.
+**Status:** SMS Campaign Manager complete in customer-site. Full campaign lifecycle (draft→scheduled→running→completed), Kavenegar+Ghasedak SMS, bulk send via queued job, audience targeting (all/CRM/users/manual), admin panel 4 views.
+
+### SMS Campaign Manager — COMPLETE (2026-06-21) [customer-site]
+
+**Files:**
+```
+customer-site/database/migrations/2026_06_21_100000_create_sms_campaigns_tables.php
+customer-site/app/Models/SmsCampaign.php
+customer-site/app/Models/SmsCampaignRecipient.php
+customer-site/app/Services/SmsService.php          (updated — real Kavenegar+Ghasedak impl)
+customer-site/app/Services/SmsCampaignService.php
+customer-site/app/Jobs/SendSmsCampaignJob.php
+customer-site/app/Http/Controllers/Admin/SmsCampaignController.php
+customer-site/resources/views/admin/sms/campaigns/{index,create,show,edit}.blade.php
+customer-site/routes/web.php                       (10 new routes)
+customer-site/app/Helpers/AdminMenu.php            (sms_campaigns key added)
+customer-site/resources/views/admin/partials/sidebar-icon.blade.php (megaphone icon)
+```
+
+**Features:**
+- Campaign lifecycle: draft → scheduled/running → completed/failed/cancelled
+- 4 audience types: all orders / CRM contacts / active users / manual mobile list
+- Bulk send: ≤50 recipients inline, >50 dispatched via `SendSmsCampaignJob` in chunks of 50
+- SMS providers: Kavenegar v1 + Ghasedak v2 (real HTTP implementations)
+- Delivery tracking per recipient: pending/sent/failed with sent_at and error_message
+- Admin panel: index (filter by status, stats cards), create, show (delivery progress bar), edit
+- AdminMenu group: `فرم‌ها و ارتباط با مخاطب` → sms_campaigns
+
+**⚠️ PENDING PRODUCTION STEP:**
+```bash
+# Run in customer-site on production server:
+php artisan migrate
+```
 
 ### JSON Import Engine — COMPLETE (2026-06-21)
 

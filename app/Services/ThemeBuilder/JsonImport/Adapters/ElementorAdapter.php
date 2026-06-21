@@ -8,12 +8,12 @@ use Illuminate\Support\Str;
 /**
  * Converts Elementor JSON export to normalized ThemeBuilder structure.
  *
- * Elementor layout:
- *   content[] → sections (elType=section)
- *     └─ elements[] → columns (elType=column)
- *           └─ elements[] → widgets (elType=widget, widgetType=...)
+ * Supports both layout generations:
+ *   Legacy (≤3.5): content[] → section → column → widget
+ *   Flexbox (≥3.6): content[] → container → container* → widget
  *
- * Elementor Pro inner sections are handled recursively.
+ * Third-party widget types (ElementsKit, JetElements, etc.) are mapped
+ * to their nearest built-in equivalent by WidgetMapper fallback rules.
  */
 class ElementorAdapter
 {
@@ -66,8 +66,11 @@ class ElementorAdapter
         $blocks = [];
         foreach ($elements as $el) {
             $elType = $el['elType'] ?? '';
-            if ($elType === 'section') {
-                $blocks[] = $this->processSection($el);
+
+            // Legacy section or new Flexbox container at root level
+            if ($elType === 'section' || $elType === 'container') {
+                $block = $this->processContainer($el);
+                if ($block) $blocks[] = $block;
             } elseif ($elType === 'widget') {
                 $block = $this->processWidget($el);
                 if ($block) $blocks[] = $block;
@@ -76,27 +79,49 @@ class ElementorAdapter
         return $blocks;
     }
 
-    private function processSection(array $section): array
+    /**
+     * Handles both legacy section/column and Elementor 3.6+ container layout.
+     * Containers may nest arbitrarily; widgets are extracted recursively.
+     */
+    private function processContainer(array $el): ?array
     {
-        $settings = $section['settings'] ?? [];
+        $settings = $el['settings'] ?? [];
+        $elType   = $el['elType'] ?? '';
         $children = [];
 
-        foreach ($section['elements'] ?? [] as $column) {
-            if (($column['elType'] ?? '') !== 'column') continue;
+        foreach ($el['elements'] ?? [] as $child) {
+            $childType = $child['elType'] ?? '';
 
-            $colWidgets = [];
-            foreach ($column['elements'] ?? [] as $widget) {
-                $wElType = $widget['elType'] ?? '';
-                if ($wElType === 'widget') {
-                    $block = $this->processWidget($widget);
-                    if ($block) $colWidgets[] = $block;
-                } elseif ($wElType === 'section') {
-                    // Elementor Pro inner section
-                    $colWidgets[] = $this->processSection($widget);
+            if ($childType === 'widget') {
+                $block = $this->processWidget($child);
+                if ($block) $children[] = $block;
+            } elseif ($childType === 'column') {
+                // Legacy: column wraps widgets
+                foreach ($child['elements'] ?? [] as $widget) {
+                    $wType = $widget['elType'] ?? '';
+                    if ($wType === 'widget') {
+                        $block = $this->processWidget($widget);
+                        if ($block) $children[] = $block;
+                    } elseif (in_array($wType, ['section', 'container'])) {
+                        $inner = $this->processContainer($widget);
+                        if ($inner) $children[] = $inner;
+                    }
+                }
+            } elseif (in_array($childType, ['section', 'container'])) {
+                // Nested container — flatten widgets up one level so sections render
+                $inner = $this->processContainer($child);
+                if ($inner) {
+                    // If inner has no meaningful block type, promote its children
+                    $innerChildren = $inner['blocks'] ?? [];
+                    if (!empty($innerChildren)) {
+                        $children = array_merge($children, $innerChildren);
+                    }
                 }
             }
-            $children = array_merge($children, $colWidgets);
         }
+
+        // Skip containers that yielded no renderable children
+        if (empty($children)) return null;
 
         $bgColor = $settings['background_color'] ?? '';
         $bgImage = $settings['background_image']['url'] ?? '';
@@ -133,10 +158,12 @@ class ElementorAdapter
         $body   = [];
 
         foreach ($blocks as $block) {
-            $firstChild = $block['blocks'][0] ?? [];
-            $childType  = $firstChild['type'] ?? '';
+            // Check all children (not just first) for nav/logo heuristics
+            $allChildren = $block['blocks'] ?? [];
+            $firstChild  = $allChildren[0] ?? [];
+            $childType   = $firstChild['type'] ?? '';
 
-            // Heuristic: a section whose only or first child is nav/logo = header
+            // Heuristic: a section whose first child looks like nav = header
             if (in_array($childType, ['heading']) && $this->looksLikeNav($firstChild)) {
                 $header[] = $block;
             } else {

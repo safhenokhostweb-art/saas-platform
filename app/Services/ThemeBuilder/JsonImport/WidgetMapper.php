@@ -63,6 +63,46 @@ class WidgetMapper
             'text-path'                => 'text',
             'rating'                   => 'counter',
             'star-rating'              => 'counter',
+            // ── Google Maps ──────────────────────────────────────────────────
+            'google_maps'              => 'map',
+            // ── ElementsKit Lite / Pro ───────────────────────────────────────
+            'elementskit-heading'      => 'heading',
+            'elementskit-accordion'    => 'accordion',
+            'elementskit-tab'          => 'tabs',
+            'elementskit-testimonial'  => 'testimonials',
+            'elementskit-blog-posts'   => 'blog_posts',
+            'elementskit-post-grid'    => 'blog_posts',
+            'elementskit-post-list'    => 'blog_posts',
+            'elementskit-slider'       => 'slider',
+            'elementskit-image-accordion' => 'gallery',
+            'elementskit-icon-box'     => 'icon',
+            'elementskit-icon-list'    => 'text',
+            'elementskit-team'         => 'team',
+            'elementskit-team-carousel'=> 'team',
+            'elementskit-price-table'  => 'pricing_table',
+            'elementskit-nav-menu'     => 'heading',
+            'elementskit-header-info'  => 'text',
+            'elementskit-counter'      => 'counter',
+            'elementskit-progress-bar' => 'progress_bar',
+            'elementskit-caldera-forms'=> 'text',
+            'elementskit-social-link'  => 'icon',
+            // ── Jeg Kit (Jegtheme) ───────────────────────────────────────────
+            'jeg_banner'               => 'hero',
+            'jeg_carousel'             => 'slider',
+            'jeg_post_block'           => 'blog_posts',
+            'jeg_post_carousel'        => 'blog_posts',
+            'jeg_countdown'            => 'counter',
+            'jeg_news_ticker'          => 'text',
+            // ── MetForm ──────────────────────────────────────────────────────
+            'mf-form'                  => 'text',
+            'metform-form'             => 'text',
+            // ── Gum Elementor Addon ──────────────────────────────────────────
+            'gum-list'                 => 'text',
+            'gum-button'               => 'button',
+            'gum-icon-box'             => 'icon',
+            // ── Ultimate Addons / Header Footer Elementor ────────────────────
+            'ha-logo'                  => 'image',
+            'ha-nav-menu'              => 'heading',
         ],
 
         // ── Bricks ───────────────────────────────────────────────────────────
@@ -222,8 +262,11 @@ class WidgetMapper
     {
         return match ($blockType) {
             'heading' => [
-                'text'  => $this->text($s['title'] ?? $s['heading_title'] ?? ''),
-                'level' => (int) ltrim($s['header_size'] ?? 'h2', 'h'),
+                // elementskit-heading stores title differently
+                'text'  => $this->text(
+                    $s['elementskit_section_title'] ?? $s['title'] ?? $s['heading_title'] ?? ''
+                ),
+                'level' => (int) ltrim($s['header_size'] ?? $s['heading_tag'] ?? 'h2', 'h'),
             ],
             'text' => [
                 'content' => $this->text($s['text_editor'] ?? $s['editor'] ?? $s['content'] ?? ''),
@@ -237,6 +280,10 @@ class WidgetMapper
                 'text'  => $this->text($s['text'] ?? $s['button_text'] ?? 'دکمه'),
                 'url'   => $s['link']['url'] ?? '#',
                 'style' => 'primary',
+            ],
+            'map' => [
+                'address' => $this->text($s['address'] ?? ''),
+                'zoom'    => (int) ($s['zoom']['size'] ?? 12),
             ],
             'video' => [
                 'url'     => $s['link']['url'] ?? $s['youtube_url'] ?? $s['vimeo_url'] ?? '',
@@ -477,13 +524,21 @@ class WidgetMapper
     private function fallbackType(string $nodeType): string
     {
         $lower = strtolower($nodeType);
-        if (str_contains($lower, 'hero'))    return 'hero';
-        if (str_contains($lower, 'heading')) return 'heading';
+        if (str_contains($lower, 'hero'))         return 'hero';
+        if (str_contains($lower, 'heading'))      return 'heading';
+        if (str_contains($lower, 'testimonial'))  return 'testimonials';
+        if (str_contains($lower, 'blog') || str_contains($lower, 'post')) return 'blog_posts';
+        if (str_contains($lower, 'team'))         return 'team';
+        if (str_contains($lower, 'price'))        return 'pricing_table';
+        if (str_contains($lower, 'counter'))      return 'counter';
+        if (str_contains($lower, 'accordion'))    return 'accordion';
+        if (str_contains($lower, 'tab'))          return 'tabs';
+        if (str_contains($lower, 'map'))          return 'map';
         if (str_contains($lower, 'text') || str_contains($lower, 'paragraph')) return 'text';
         if (str_contains($lower, 'image') || str_contains($lower, 'photo'))    return 'image';
-        if (str_contains($lower, 'button'))  return 'button';
-        if (str_contains($lower, 'video'))   return 'video';
-        if (str_contains($lower, 'section')) return 'section';
+        if (str_contains($lower, 'button'))       return 'button';
+        if (str_contains($lower, 'video'))        return 'video';
+        if (str_contains($lower, 'section'))      return 'section';
         if (str_contains($lower, 'column') || str_contains($lower, 'container')) return 'container';
         if (str_contains($lower, 'gallery') || str_contains($lower, 'slider'))   return 'gallery';
         return 'text';
