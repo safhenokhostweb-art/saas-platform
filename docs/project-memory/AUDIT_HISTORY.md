@@ -1,7 +1,58 @@
 # AUDIT HISTORY
 > All findings recorded permanently. Resolved findings marked Fixed — never deleted.
 > Format: Finding ID | Severity | Status | Evidence | Resolution
-> Last Updated: 2026-06-15
+> Last Updated: 2026-06-21
+
+---
+
+## BUSINESS FLOW AUDIT — 2026-06-21
+
+**Scope:** All 15 end-to-end business workflows. Both repos.  
+**Verdict:** PRODUCTION_NOT_READY (67/100)  
+**Full Reports:** `docs/BUSINESS_FLOW_AUDIT.md`, `docs/BUSINESS_FLOW_GAP_ANALYSIS.md`, `docs/PRODUCTION_READINESS_SCORE.md`
+
+### BFA-C01 — CRITICAL | OPEN
+
+**Title:** Restore Invoice Has No Payment Flow  
+**Evidence:** `SiteLifecycleService::requestRestore()` creates `SiteLifecycleInvoice` with `STATUS_PENDING`. No route or payment gateway integration exists. Admin must mark paid manually.  
+**Impact:** Reactivation fee uncollectable; revenue loss.  
+**Required Fix:** Add customer-facing restore invoice page + Zarinpal/IDPay payment flow.
+
+---
+
+### BFA-C02 — CRITICAL | OPEN
+
+**Title:** Subscription Renewal Does NOT Reactivate Suspended Site  
+**Evidence:** `ProcessRenewalsCommand` + `SubscriptionPaymentController` never call `SiteLifecycleService::activate()`. Both systems are completely decoupled.  
+**Impact:** Customer pays renewal, site stays on 503. Immediate churn.  
+**Required Fix:** After `Subscription::STATUS_ACTIVE`, check `site->lifecycle_status` and call `activate()` if not active.
+
+---
+
+### BFA-C03 — CRITICAL | OPEN
+
+**Title:** Scheduled SMS Campaigns Never Auto-Fire  
+**Evidence:** `sms_campaigns.scheduled_at` column + `scheduled` status exist. No scheduler command queries and triggers them.  
+**Impact:** UI-level dead feature. Campaigns set to schedule silently never send.  
+**Required Fix:** `ProcessScheduledSmsCampaignsCommand` scheduled in Kernel.php.
+
+---
+
+### BFA-C04 — CRITICAL | OPEN
+
+**Title:** No Customer Self-Service Reactivation  
+**Evidence:** `suspended.blade.php` shows 503 with no payment link or request button. Customer cannot reactivate without contacting admin.  
+**Impact:** Every suspension requires admin manual intervention. Unscalable.  
+**Required Fix:** Add "درخواست بازگردانی" button + `AccountLifecycleController::requestRestore()`.
+
+---
+
+### BFA-C05 — CRITICAL | OPEN
+
+**Title:** Storage Release Is Accounting-Only (Files Not Deleted)  
+**Evidence:** `releaseActiveResources()` resets DB counters only. No file system operation. Server disk fills with archived site files indefinitely.  
+**Impact:** Production disk exhaustion risk at scale.  
+**Required Fix:** `SiteArchiveService::deleteActiveFiles($site)` after counter reset.
 
 ---
 

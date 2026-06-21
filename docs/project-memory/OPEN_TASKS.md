@@ -1,6 +1,49 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-20
+> Last Updated: 2026-06-21
+
+---
+
+## COMPLETE: TB3 Sprint 11.5 — Playwright Headless Engine — 2026-06-21 ✅
+
+**Status:** TB3_SPRINT11_5_CERTIFIED (2026-06-21)
+
+| Component | Status |
+|-----------|--------|
+| extract.mjs: multi-viewport + lazy-scroll + hydration wait + 60+ selectors | ✅ DONE |
+| PlaywrightSnapshotService: DOM/CSS/Layout snapshots | ✅ DONE |
+| SimilarityEngineService: headless quality bonus + EXCELLENT tier | ✅ DONE |
+| VisualReverseEngineeringService: device param + snapshot storage | ✅ DONE |
+| PlaywrightExtractionService: device param to Node | ✅ DONE |
+| Admin result view: screenshot + perf metrics + snapshots explorer | ✅ DONE |
+| ValidateHeadlessEngineeringCommand: 6-site validation suite | ✅ DONE |
+| Docs: CERTIFICATION + ARCHITECTURE + VALIDATION_REPORT | ✅ DONE |
+
+---
+
+## OPEN: Business Flow Remediation — PRODUCTION_BLOCKERS
+
+**Status:** OPEN (discovered in Business Flow Audit 2026-06-21)  
+**Priority:** Must complete before production go-live.  
+**Full details:** `docs/BUSINESS_FLOW_AUDIT.md`, `docs/BUSINESS_FLOW_GAP_ANALYSIS.md`, `docs/PRODUCTION_READINESS_SCORE.md`
+
+### Critical (all 5 must be done)
+
+| ID | Task | Hours |
+|----|------|-------|
+| BFA-C01 | Restore invoice payment flow (customer → Zarinpal/IDPay → restore) | 6h |
+| BFA-C02 | Wire subscription renewal → lifecycle activate() | 2h |
+| BFA-C03 | ProcessScheduledSmsCampaignsCommand + Kernel entry | 3h |
+| BFA-C04 | Customer self-service restore button on suspended page | 4h |
+| BFA-C05 | Physical file deletion on archive (SiteArchiveService::deleteActiveFiles) | 4h |
+
+### High Priority (do after critical)
+
+| ID | Task | Hours |
+|----|------|-------|
+| BFA-H03 | Grace period mid-reminder SMS scheduler | 2h |
+| BFA-H02 | Theme install backup + rollback mechanism | 3h |
+| BFA-M05 | Clear canvas_draft_data on new theme install (0.5h) | 0.5h |
 
 ---
 

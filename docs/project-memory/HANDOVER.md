@@ -21,7 +21,8 @@
 
 ## CURRENT STATE (2026-06-21)
 
-**Last completed phase:** SMS Campaign Manager — SMS_CAMPAIGN_MANAGER_COMPLETE (2026-06-21)
+**Last completed phase:** TB3 Sprint 11.5 — Playwright Headless Engine Enhancement (TB3_SPRINT11_5_CERTIFIED) 2026-06-21
+**Before that:** SMS Campaign Manager — SMS_CAMPAIGN_MANAGER_COMPLETE (2026-06-21)
 **Before that:** JSON Import Validation — JSON_IMPORT_VALIDATION_PASSED (2026-06-21)
 **Before that:** TB3 Sprint 11 — Headless Visual Extraction Engine (HEADLESS_ENGINE_OPERATIONAL) 2026-06-21
 **Before that:** JSON Theme Import Engine — JSON_IMPORT_ENGINE_OPERATIONAL (2026-06-21)
@@ -58,6 +59,28 @@ customer-site/resources/views/admin/partials/sidebar-icon.blade.php (megaphone i
 - Tables `sms_campaigns` + `sms_campaign_recipients` verified with indexes and FK
 - All 12 routes, 4 views, AdminMenu, Service, Job validated
 - Reports: `SMS_CAMPAIGN_DEPLOY_REPORT.md`, `DEPLOY_VALIDATION_REPORT.md`, `DEPLOY_FIX_REPORT.md`
+
+### TB3 Sprint 11.5 — Playwright Headless Engine Enhancement — CERTIFIED (2026-06-21)
+
+**Goal:** Increase RE accuracy from 70-75% → 90%+ for React/Next.js/Vue/Angular/SPA sites.
+
+**New files:**
+- `app/Services/ThemeBuilder/ReverseEngineering/PlaywrightSnapshotService.php` — DOM/CSS/Layout snapshots
+- `app/Console/Commands/ValidateHeadlessEngineeringCommand.php` — 6-site validation (apple/malltina/digikala/amazon/stripe/shopify)
+- `docs/TB3_SPRINT11_5_CERTIFICATION.md`, `docs/PLAYWRIGHT_ENGINE_ARCHITECTURE.md`, `docs/HEADLESS_BROWSER_VALIDATION_REPORT.md`
+
+**Enhanced files:**
+- `scripts/headless/extract.mjs` — multi-viewport (D/T/M), 4-scroll lazy load, SPA hydration wait, 60+ product selectors, CSS vars, ARIA, perf metrics, framework detection
+- `SimilarityEngineService` — headless quality bonus (0-15 pts), headless brand boost (+38 vs +32), EXCELLENT tier at 90%+
+- `VisualReverseEngineeringService` — snapshot generation, device param, `meta['snapshots']`/`meta['playwright']`
+- `PlaywrightExtractionService` — device param forwarded to Node argv[4]
+- `reverse-engineer-result.blade.php` — Screenshot preview, Performance metrics, Snapshots Explorer
+
+**Validation command:** `php artisan reverse-engineer:validate-headless`
+
+**Run output:** `HEADLESS_ENGINE_OPERATIONAL` (all targets met) or `HEADLESS_ENGINE_BLOCKED` (Playwright unavailable)
+
+---
 
 ### JSON Import Engine — COMPLETE (2026-06-21)
 

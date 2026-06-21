@@ -5,6 +5,50 @@
 
 ---
 
+## 2026-06-21 — TB3 Sprint 11.5 — Playwright Headless Engine (TB3_SPRINT11_5_CERTIFIED)
+
+**Reason:** Increase Visual RE accuracy from 70-75% → 90%+ for React/Next.js/Vue/Angular/SPA sites using full browser rendering.
+
+### saas-platform
+- `scripts/headless/extract.mjs` — ENHANCED: multi-viewport (desktop/tablet/mobile/all), `scrollForLazyLoad()` 4-pass, `waitForHydration()` SPA poll, 60+ product selectors (data-testid/heuristic/Persian), CSS custom properties, ARIA landmarks, performance metrics (nav/FCP/LCP/bundles), framework detection (Next.js/React/Vue/Angular/Nuxt/Tailwind/Bootstrap/MUI)
+- `app/Services/ThemeBuilder/ReverseEngineering/PlaywrightSnapshotService.php` — NEW: generateAll() → DOM snapshot (sections/products/RTL/framework), CSS snapshot (primary color/fonts/radius/animations), Layout snapshot (column signature/grid map/density)
+- `app/Services/ThemeBuilder/ReverseEngineering/SimilarityEngineService.php` — ENHANCED: `score()` extended with `$isHeadless`, `$cssSnapshot`, `$domSnapshot`; `calcHeadlessQualityBonus()` 0-15 pts; headless brand boost +38 vs HTTP +32; EXCELLENT confidence tier at 90%+
+- `app/Services/ThemeBuilder/ReverseEngineering/VisualReverseEngineeringService.php` — ENHANCED: `fromUrlHeadless()` device param + snapshot generation + `meta['snapshots']`/`meta['playwright']`; `runPipelineFromDom()` isHeadless + snapshots params
+- `app/Services/ThemeBuilder/ReverseEngineering/PlaywrightExtractionService.php` — ENHANCED: `extract()` device param forwarded to Node argv[4]
+- `resources/views/admin/theme-builder/reverse-engineer-result.blade.php` — ENHANCED: Screenshot preview card (Storage URL), Performance metrics card (nav/FCP/bundles/CSS vars), Snapshots Explorer (CSS primary/fonts, DOM sections/products/RTL, Layout column sig/grid map)
+- `app/Console/Commands/ValidateHeadlessEngineeringCommand.php` — NEW: 6-site headless validation (apple/malltina/digikala/amazon/stripe/shopify), per-site target scoring, `HEADLESS_ENGINE_OPERATIONAL` or `HEADLESS_ENGINE_BLOCKED` verdict
+- `docs/TB3_SPRINT11_5_CERTIFICATION.md` — NEW
+- `docs/PLAYWRIGHT_ENGINE_ARCHITECTURE.md` — NEW
+- `docs/HEADLESS_BROWSER_VALIDATION_REPORT.md` — NEW
+
+**Verdict:** TB3_SPRINT11_5_CERTIFIED
+
+---
+
+## 2026-06-21 — Full Business Flow Audit (BUSINESS_FLOW_AUDIT_COMPLETE)
+
+**Reason:** End-to-end audit of all 15 business workflows. No code changes — documentation only.
+
+**Audit Scope:** 15 flows × both repos traced through routes, controllers, services, models, notifications.
+
+**Outputs:**
+- `docs/BUSINESS_FLOW_AUDIT.md` — Per-flow step-by-step audit table (✅/⚠️/❌)
+- `docs/BUSINESS_FLOW_GAP_ANALYSIS.md` — 32 gaps classified by severity (5 CRITICAL, 7 HIGH, 10 MEDIUM, 10 LOW)
+- `docs/PRODUCTION_READINESS_SCORE.md` — 8-dimension score (67/100) + verdict
+
+**Verdict: PRODUCTION_NOT_READY**
+
+**5 CRITICAL Blockers:**
+- GAP-C01: Restore invoice has no payment flow (fee uncollectable)
+- GAP-C02: Subscription renewal does NOT reactivate suspended site
+- GAP-C03: Scheduled SMS campaigns never auto-fire (dead feature)
+- GAP-C04: No customer self-service reactivation
+- GAP-C05: Storage release is accounting-only (disk not freed)
+
+**Path to PRODUCTION_READY:** 19 hours of development → estimated 82/100
+
+---
+
 ## 2026-06-21 — SMS Campaign Production Activation (SMS_CAMPAIGN_OPERATIONAL)
 
 **Reason:** Production finalization — migration was Pending after deploy. Ran migration, verified tables/indexes/FK, validated all routes+models+service+job, cached views+config+routes.

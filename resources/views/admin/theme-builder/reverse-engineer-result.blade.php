@@ -607,6 +607,250 @@
     </div>
     @endif
 
+    {{-- Screenshot Preview (Playwright only) --}}
+    @if($job->isHeadless() && !empty($meta['headless_screenshot']))
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-gray-800">اسکرین‌شات Playwright</h3>
+          <p class="text-xs text-gray-400">رندر واقعی مرورگر — device: {{ $meta['device'] ?? 'desktop' }}</p>
+        </div>
+        <a href="{{ Storage::url($meta['headless_screenshot']) }}" target="_blank"
+           class="mr-auto text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          باز کن
+        </a>
+      </div>
+      <div class="p-4 bg-gray-50">
+        <img src="{{ Storage::url($meta['headless_screenshot']) }}"
+             alt="Playwright screenshot"
+             class="w-full max-h-96 object-contain object-top rounded-lg border border-gray-200 shadow-sm bg-white"
+             loading="lazy">
+      </div>
+    </div>
+    @endif
+
+    {{-- Performance Metrics (Playwright only) --}}
+    @if($job->isHeadless() && !empty($meta['playwright']['performance']))
+    @php
+      $perf = $meta['playwright']['performance'];
+      $playwrightMeta = $meta['playwright'] ?? [];
+    @endphp
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <h3 class="text-sm font-semibold text-gray-800">متریک‌های عملکرد (Performance)</h3>
+      </div>
+      <div class="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        @php
+          $navTime  = $perf['navigation_time_ms']  ?? null;
+          $fcp      = $perf['fcp_ms']               ?? null;
+          $lcp      = $perf['lcp_ms']               ?? null;
+          $jsBundles = $perf['js_bundle_count']     ?? null;
+          $cssCount = $playwrightMeta['css_vars_count'] ?? null;
+        @endphp
+        @if($navTime !== null)
+        <div class="bg-gray-50 rounded-xl p-3 text-center">
+          <div class="text-lg font-bold text-gray-800">{{ number_format($navTime) }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">Navigation (ms)</div>
+          <div class="mt-1 text-xs {{ $navTime < 3000 ? 'text-emerald-600' : ($navTime < 6000 ? 'text-amber-600' : 'text-red-500') }}">
+            {{ $navTime < 3000 ? 'سریع' : ($navTime < 6000 ? 'متوسط' : 'کند') }}
+          </div>
+        </div>
+        @endif
+        @if($fcp !== null)
+        <div class="bg-gray-50 rounded-xl p-3 text-center">
+          <div class="text-lg font-bold text-gray-800">{{ number_format($fcp) }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">FCP (ms)</div>
+          <div class="mt-1 text-xs {{ $fcp < 1800 ? 'text-emerald-600' : ($fcp < 3000 ? 'text-amber-600' : 'text-red-500') }}">
+            {{ $fcp < 1800 ? 'خوب' : ($fcp < 3000 ? 'بهبود لازم' : 'ضعیف') }}
+          </div>
+        </div>
+        @endif
+        @if($jsBundles !== null)
+        <div class="bg-gray-50 rounded-xl p-3 text-center">
+          <div class="text-lg font-bold text-gray-800">{{ $jsBundles }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">JS Bundles</div>
+          <div class="mt-1 text-xs {{ $jsBundles <= 5 ? 'text-emerald-600' : ($jsBundles <= 15 ? 'text-amber-600' : 'text-red-500') }}">
+            {{ $jsBundles <= 5 ? 'بهینه' : ($jsBundles <= 15 ? 'متوسط' : 'زیاد') }}
+          </div>
+        </div>
+        @endif
+        @if($cssCount !== null)
+        <div class="bg-gray-50 rounded-xl p-3 text-center">
+          <div class="text-lg font-bold text-gray-800">{{ $cssCount }}</div>
+          <div class="text-xs text-gray-400 mt-0.5">CSS Variables</div>
+          <div class="mt-1 text-xs {{ $cssCount >= 10 ? 'text-emerald-600' : 'text-gray-400' }}">
+            {{ $cssCount >= 10 ? 'Design System' : 'محدود' }}
+          </div>
+        </div>
+        @endif
+      </div>
+      @if(!empty($playwrightMeta['framework']))
+      @php $fw = $playwrightMeta['framework']; @endphp
+      <div class="px-5 pb-4 flex flex-wrap gap-2">
+        @if($fw['is_nextjs'] ?? false) <span class="px-2 py-0.5 rounded-full bg-black text-white text-xs font-medium">Next.js</span> @endif
+        @if($fw['is_react'] ?? false) <span class="px-2 py-0.5 rounded-full bg-sky-500 text-white text-xs font-medium">React</span> @endif
+        @if($fw['is_vue'] ?? false) <span class="px-2 py-0.5 rounded-full bg-green-500 text-white text-xs font-medium">Vue</span> @endif
+        @if($fw['is_angular'] ?? false) <span class="px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-medium">Angular</span> @endif
+        @if($fw['is_nuxt'] ?? false) <span class="px-2 py-0.5 rounded-full bg-green-600 text-white text-xs font-medium">Nuxt</span> @endif
+        @if($fw['is_tailwind'] ?? false) <span class="px-2 py-0.5 rounded-full bg-cyan-500 text-white text-xs font-medium">Tailwind</span> @endif
+        @if($fw['is_bootstrap'] ?? false) <span class="px-2 py-0.5 rounded-full bg-purple-500 text-white text-xs font-medium">Bootstrap</span> @endif
+        @if($fw['is_mui'] ?? false) <span class="px-2 py-0.5 rounded-full bg-blue-500 text-white text-xs font-medium">MUI</span> @endif
+      </div>
+      @endif
+    </div>
+    @endif
+
+    {{-- Snapshots Explorer (Playwright only) --}}
+    @if($job->isHeadless() && !empty($meta['snapshots']))
+    @php
+      $snap     = $meta['snapshots'];
+      $cssSnap  = $snap['css']    ?? [];
+      $domSnap  = $snap['dom']    ?? [];
+      $laySnap  = $snap['layout'] ?? [];
+    @endphp
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+          </svg>
+        </div>
+        <h3 class="text-sm font-semibold text-gray-800">Snapshots Explorer</h3>
+        <p class="text-xs text-gray-400">داده‌های استخراج‌شده برای موتور مشابهت</p>
+      </div>
+      <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        {{-- CSS Snapshot --}}
+        <div class="space-y-3">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">CSS Snapshot</p>
+          @if(!empty($cssSnap['primary_color']))
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg border border-gray-200 shadow-sm" style="background-color: {{ $cssSnap['primary_color'] }}"></div>
+            <div>
+              <div class="text-xs font-medium text-gray-700 font-mono">{{ $cssSnap['primary_color'] }}</div>
+              <div class="text-xs text-gray-400">رنگ اصلی (primary)</div>
+            </div>
+          </div>
+          @endif
+          @if(!empty($cssSnap['color_scheme']))
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full {{ $cssSnap['color_scheme'] === 'dark' ? 'bg-gray-800' : 'bg-white border border-gray-300' }}"></span>
+            <span class="text-xs text-gray-600">{{ $cssSnap['color_scheme'] === 'dark' ? 'Dark Mode' : 'Light Mode' }}</span>
+          </div>
+          @endif
+          @if(!empty($cssSnap['fonts']))
+          <div>
+            <p class="text-xs text-gray-400 mb-1">فونت‌ها از CSS vars:</p>
+            <div class="flex flex-wrap gap-1">
+              @foreach($cssSnap['fonts'] as $font)
+                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-mono">{{ $font }}</span>
+              @endforeach
+            </div>
+          </div>
+          @endif
+          @if(!empty($cssSnap['border_radius']))
+          <div class="text-xs text-gray-600">
+            <span class="text-gray-400">border-radius:</span>
+            <span class="font-mono font-medium">{{ $cssSnap['border_radius'] }}</span>
+          </div>
+          @endif
+          @if($cssSnap['has_animations'] ?? false)
+          <div class="flex items-center gap-1 text-xs text-emerald-600">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            CSS Animations فعال
+          </div>
+          @endif
+          @if(!empty($cssSnap['style_framework']))
+          <div class="text-xs text-indigo-600 font-medium">Framework: {{ $cssSnap['style_framework'] }}</div>
+          @endif
+        </div>
+
+        {{-- DOM Snapshot --}}
+        <div class="space-y-3">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">DOM Snapshot</p>
+          @if(isset($domSnap['section_count']))
+          <div class="text-xs text-gray-600">
+            <span class="text-gray-400">بخش‌های شناسایی‌شده:</span>
+            <span class="font-semibold text-gray-800 mr-1">{{ $domSnap['section_count'] }}</span>
+          </div>
+          @endif
+          @if(isset($domSnap['product_count']))
+          <div class="text-xs text-gray-600">
+            <span class="text-gray-400">محصولات:</span>
+            <span class="font-semibold {{ $domSnap['product_count'] > 0 ? 'text-emerald-700' : 'text-gray-400' }} mr-1">{{ $domSnap['product_count'] }}</span>
+          </div>
+          @endif
+          @if(!empty($domSnap['sections_detected']))
+          <div>
+            <p class="text-xs text-gray-400 mb-1">بخش‌ها:</p>
+            <div class="flex flex-wrap gap-1">
+              @foreach($domSnap['sections_detected'] as $sec)
+                <span class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 text-xs border border-indigo-100">{{ $sec }}</span>
+              @endforeach
+            </div>
+          </div>
+          @endif
+          @if($domSnap['has_header'] ?? false) <div class="text-xs text-emerald-600">✓ هدر</div> @endif
+          @if($domSnap['has_hero'] ?? false) <div class="text-xs text-emerald-600">✓ Hero</div> @endif
+          @if($domSnap['has_footer'] ?? false) <div class="text-xs text-emerald-600">✓ فوتر</div> @endif
+          @if($domSnap['is_rtl'] ?? false) <div class="text-xs text-blue-600">✓ RTL (فارسی/عربی)</div> @endif
+          @if(!empty($domSnap['framework']))
+          <div class="text-xs font-medium text-gray-600">Framework: {{ $domSnap['framework'] }}</div>
+          @endif
+        </div>
+
+        {{-- Layout Snapshot --}}
+        <div class="space-y-3">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Layout Snapshot</p>
+          @if(!empty($laySnap['column_signature']))
+          <div class="text-xs text-gray-600">
+            <span class="text-gray-400">امضای ستون:</span>
+            <span class="font-mono font-semibold text-gray-800 mr-1">{{ $laySnap['column_signature'] }}</span>
+          </div>
+          @endif
+          @if(!empty($laySnap['layout_style']))
+          <div class="text-xs text-gray-600">
+            <span class="text-gray-400">استایل:</span>
+            <span class="font-medium text-gray-800 mr-1">{{ $laySnap['layout_style'] }}</span>
+          </div>
+          @endif
+          @if(isset($laySnap['density']))
+          <div class="text-xs text-gray-600">
+            <span class="text-gray-400">تراکم:</span>
+            <span class="font-medium text-gray-800 mr-1">{{ $laySnap['density'] }}</span>
+          </div>
+          @endif
+          @if(!empty($laySnap['section_grid_map']))
+          <div>
+            <p class="text-xs text-gray-400 mb-1">نقشه گرید:</p>
+            <div class="space-y-0.5">
+              @foreach($laySnap['section_grid_map'] as $secMap)
+              <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                <span class="text-gray-500">{{ $secMap['type'] ?? '?' }}:</span>
+                <span class="font-mono">{{ $secMap['columns'] ?? '?' }} col</span>
+              </div>
+              @endforeach
+            </div>
+          </div>
+          @endif
+        </div>
+
+      </div>
+    </div>
+    @endif
+
   </div>
 </div>
 @endsection
