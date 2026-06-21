@@ -49,7 +49,20 @@
           </a>
           <h1 class="text-xl font-bold text-gray-900">نتیجه مهندسی معکوس بصری</h1>
         </div>
-        <p class="text-sm text-gray-500">{{ $job->suggested_name }} — {{ $job->inputTypeLabel() }} — {{ $job->created_at->diffForHumans() }}</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="text-sm text-gray-500">{{ $job->suggested_name }} — {{ $job->inputTypeLabel() }} — {{ $job->created_at->diffForHumans() }}</p>
+          @if($job->isHeadless())
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/></svg>
+              Headless (Playwright)
+            </span>
+          @else
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-xs font-medium">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+              HTTP
+            </span>
+          @endif
+        </div>
       </div>
       <div class="flex gap-2 shrink-0">
         @if($job->isComplete())
@@ -426,6 +439,170 @@
         <div><span class="font-medium text-gray-700">کانتینر:</span> {{ $layout['container']['max_width'] ?? '—' }}</div>
         <div><span class="font-medium text-gray-700">فاصله‌گذاری:</span> {{ $layout['spacing_system']['system'] ?? '—' }}</div>
         <div><span class="font-medium text-gray-700">ریسپانسیو:</span> {{ ($layout['responsive']['is_mobile_first'] ?? false) ? 'Mobile-first' : 'Desktop-first' }}</div>
+      </div>
+    </div>
+    @endif
+
+    {{-- Headless Engine Detail Panel (only when extraction was via Playwright) --}}
+    @if($job->isHeadless() && !empty($job->headless_data))
+    @php
+      $hd   = $job->headless_data;
+      $hComp = $hd['components'] ?? [];
+      $hFw  = $hd['framework'] ?? [];
+    @endphp
+    <div class="bg-white rounded-2xl border border-indigo-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-indigo-100 bg-indigo-50 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-indigo-900">نتایج موتور Headless (Playwright)</h2>
+          <p class="text-xs text-indigo-600">داده‌های استخراج‌شده از مرورگر واقعی پس از اجرای JavaScript</p>
+        </div>
+        <div class="mr-auto flex items-center gap-2">
+          @if($hFw['is_nextjs'] ?? false)
+            <span class="px-2 py-0.5 rounded-full bg-black text-white text-xs font-medium">Next.js</span>
+          @elseif($hFw['is_react'] ?? false)
+            <span class="px-2 py-0.5 rounded-full bg-sky-500 text-white text-xs font-medium">React</span>
+          @elseif($hFw['is_vue'] ?? false)
+            <span class="px-2 py-0.5 rounded-full bg-green-500 text-white text-xs font-medium">Vue</span>
+          @endif
+          <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs">
+            {{ number_format($hd['html_size'] ?? 0) }} bytes rendered
+          </span>
+        </div>
+      </div>
+
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        {{-- Navigation --}}
+        @if(!empty($hComp['nav']['items']))
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">ناوبری ({{ count($hComp['nav']['items']) }} آیتم)</p>
+          <div class="flex flex-wrap gap-1">
+            @foreach(array_slice($hComp['nav']['items'], 0, 12) as $navItem)
+              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs border border-indigo-100">{{ $navItem }}</span>
+            @endforeach
+          </div>
+          <div class="flex gap-3 mt-2 text-xs text-gray-500">
+            @if($hComp['nav']['is_sticky'] ?? false) <span class="text-emerald-600">✓ sticky</span> @endif
+            @if($hComp['nav']['has_mega_menu'] ?? false) <span class="text-emerald-600">✓ mega menu</span> @endif
+            @if($hComp['nav']['has_cart'] ?? false) <span class="text-emerald-600">✓ cart</span> @endif
+            @if($hComp['nav']['has_search'] ?? false) <span class="text-emerald-600">✓ search</span> @endif
+          </div>
+        </div>
+        @endif
+
+        {{-- Hero --}}
+        @if(!empty($hComp['hero']['headline']))
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Hero Section</p>
+          <p class="text-sm font-medium text-gray-800 leading-snug mb-1">{{ Str::limit($hComp['hero']['headline'], 80) }}</p>
+          @if(!empty($hComp['hero']['subheadline']))
+            <p class="text-xs text-gray-500 mb-2">{{ Str::limit($hComp['hero']['subheadline'], 100) }}</p>
+          @endif
+          @if(!empty($hComp['hero']['cta_buttons']))
+            <div class="flex flex-wrap gap-1">
+              @foreach($hComp['hero']['cta_buttons'] as $btn)
+                <span class="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-xs border border-violet-100">{{ $btn }}</span>
+              @endforeach
+            </div>
+          @endif
+        </div>
+        @endif
+
+        {{-- Product Grid --}}
+        @if(($hComp['product_grid']['count'] ?? 0) > 0)
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">گرید محصولات</p>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-500">تعداد کارت:</span>
+              <span class="font-medium text-gray-800">{{ $hComp['product_grid']['count'] }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">ستون‌ها:</span>
+              <span class="font-medium text-gray-800">{{ $hComp['product_grid']['columns'] ?? '؟' }}</span>
+            </div>
+            <div class="flex gap-2 mt-1">
+              @if($hComp['product_grid']['has_price'] ?? false) <span class="text-xs text-emerald-600">✓ قیمت</span> @endif
+              @if($hComp['product_grid']['has_image'] ?? false) <span class="text-xs text-emerald-600">✓ تصویر</span> @endif
+              @if($hComp['product_grid']['has_badge'] ?? false) <span class="text-xs text-emerald-600">✓ بج</span> @endif
+              @if($hComp['product_grid']['has_rating'] ?? false) <span class="text-xs text-emerald-600">✓ امتیاز</span> @endif
+            </div>
+          </div>
+        </div>
+        @endif
+
+        {{-- Colors --}}
+        @if(!empty($hComp['colors']))
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">رنگ‌های computed (مرورگر)</p>
+          <div class="flex flex-wrap gap-1.5">
+            @foreach(array_slice($hComp['colors'], 0, 10) as $hex)
+              <div class="flex items-center gap-1">
+                <div class="w-5 h-5 rounded border border-gray-200 shadow-sm" style="background-color: {{ $hex }}"></div>
+                <span class="text-xs text-gray-500 font-mono">{{ $hex }}</span>
+              </div>
+            @endforeach
+          </div>
+        </div>
+        @endif
+
+        {{-- Typography --}}
+        @if(!empty($hComp['typography']['fonts']))
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">فونت‌ها (computed)</p>
+          <div class="space-y-1">
+            @foreach($hComp['typography']['fonts'] as $font)
+              <span class="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-mono">{{ $font }}</span>
+            @endforeach
+          </div>
+          @if(!empty($hComp['typography']['base_size']))
+            <p class="text-xs text-gray-400 mt-1">base size: {{ $hComp['typography']['base_size'] }}</p>
+          @endif
+        </div>
+        @endif
+
+        {{-- Sliders & Filters --}}
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">کامپوننت‌های شناسایی‌شده</p>
+          <div class="space-y-1.5">
+            @if(!empty($hComp['sliders']))
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-xs text-gray-700">اسلایدر: {{ implode(', ', $hComp['sliders']) }}</span>
+              </div>
+            @endif
+            @if($hComp['search']['found'] ?? false)
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-xs text-gray-700">جستجو: {{ $hComp['search']['placeholder'] ?: 'فعال' }}</span>
+              </div>
+            @endif
+            @if($hComp['filters']['found'] ?? false)
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-xs text-gray-700">فیلتر: {{ count($hComp['filters']['items'] ?? []) }} آیتم</span>
+              </div>
+            @endif
+            @if($hComp['mega_menu']['detected'] ?? false)
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-xs text-gray-700">Mega Menu: {{ $hComp['mega_menu']['columns'] ?? '؟' }} ستون</span>
+              </div>
+            @endif
+            @if($hd['had_screenshot'] ?? false)
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+                <span class="text-xs text-gray-700">اسکرین‌شات ذخیره‌شده</span>
+              </div>
+            @endif
+          </div>
+        </div>
+
       </div>
     </div>
     @endif

@@ -31,11 +31,15 @@ class ThemeReverseEngineeringController extends Controller
     /** GET /admin/theme-builder/reverse-engineer */
     public function form()
     {
-        $enabled    = true; // PHP fallback always works; AI enriches when key is set
-        $hasAiKey   = $this->service->isEnabled();
-        $recentJobs = ReverseEngineeringJob::latest()->limit(6)->get();
+        $enabled         = true;
+        $hasAiKey        = $this->service->isEnabled();
+        $headlessReady   = $this->service->isHeadlessAvailable();
+        $headlessReport  = $this->service->headlessAvailabilityReport();
+        $recentJobs      = ReverseEngineeringJob::latest()->limit(6)->get();
 
-        return view('admin.theme-builder.reverse-engineer', compact('enabled', 'hasAiKey', 'recentJobs'));
+        return view('admin.theme-builder.reverse-engineer', compact(
+            'enabled', 'hasAiKey', 'headlessReady', 'headlessReport', 'recentJobs'
+        ));
     }
 
     // ── Step 1: Analyze (AJAX, runs all 7 phases) ────────────────────────────
@@ -44,22 +48,24 @@ class ThemeReverseEngineeringController extends Controller
     public function analyze(Request $request)
     {
         $data = $request->validate([
-            'input_type' => 'required|in:url,screenshot,html,prompt',
-            'url'        => 'required_if:input_type,url|nullable|url|max:500',
-            'screenshot' => 'required_if:input_type,screenshot|nullable|file|image|max:10240',
-            'html_file'  => 'required_if:input_type,html|nullable|file|mimes:html,htm,txt|max:5120',
-            'prompt'     => 'required_if:input_type,prompt|nullable|string|max:2000',
-            'notes'      => 'nullable|string|max:1000',
-            'name'       => 'nullable|string|max:255',
+            'input_type'     => 'required|in:url,screenshot,html,prompt',
+            'url'            => 'required_if:input_type,url|nullable|url|max:500',
+            'screenshot'     => 'required_if:input_type,screenshot|nullable|file|image|max:10240',
+            'html_file'      => 'required_if:input_type,html|nullable|file|mimes:html,htm,txt|max:5120',
+            'prompt'         => 'required_if:input_type,prompt|nullable|string|max:2000',
+            'notes'          => 'nullable|string|max:1000',
+            'name'           => 'nullable|string|max:255',
+            'force_headless' => 'nullable|boolean',
         ]);
 
         try {
-            $type  = $data['input_type'];
-            $notes = $data['notes'] ?? '';
-            $name  = $data['name'] ?? '';
+            $type         = $data['input_type'];
+            $notes        = $data['notes']          ?? '';
+            $name         = $data['name']           ?? '';
+            $forceHeadless= (bool) ($data['force_headless'] ?? false);
 
             $job = match ($type) {
-                'url' => $this->service->fromUrl($data['url'], $name, $notes),
+                'url' => $this->service->fromUrl($data['url'], $name, $notes, $forceHeadless),
 
                 'screenshot' => (function () use ($request, $name, $notes) {
                     $file   = $request->file('screenshot');
@@ -79,16 +85,18 @@ class ThemeReverseEngineeringController extends Controller
             $scores = $job->similarity_scores ?? [];
 
             return response()->json([
-                'success'         => true,
-                'job_id'          => $job->id,
-                'status'          => $job->status,
-                'suggested_name'  => $job->suggested_name,
-                'best_match'      => $scores['best_match_label'] ?? '',
-                'best_score'      => $scores['best_match_score'] ?? 0,
-                'overall_score'   => $scores['overall'] ?? 0,
-                'quality_verdict' => $job->quality_report['verdict'] ?? 'UNKNOWN',
-                'quality_score'   => $job->quality_report['score'] ?? 0,
-                'result_url'      => route('admin.theme-builder.reverse-engineer.result', $job),
+                'success'          => true,
+                'job_id'           => $job->id,
+                'status'           => $job->status,
+                'suggested_name'   => $job->suggested_name,
+                'best_match'       => $scores['best_match_label'] ?? '',
+                'best_score'       => $scores['best_match_score'] ?? 0,
+                'overall_score'    => $scores['overall'] ?? 0,
+                'quality_verdict'  => $job->quality_report['verdict'] ?? 'UNKNOWN',
+                'quality_score'    => $job->quality_report['score'] ?? 0,
+                'extraction_mode'  => $job->extraction_mode,
+                'is_headless'      => $job->isHeadless(),
+                'result_url'       => route('admin.theme-builder.reverse-engineer.result', $job),
             ]);
 
         } catch (\Throwable $e) {

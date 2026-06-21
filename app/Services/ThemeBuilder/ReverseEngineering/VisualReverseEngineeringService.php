@@ -6,6 +6,7 @@ use App\Models\ReverseEngineeringJob;
 use App\Models\ThemePack;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Main Orchestrator — Visual Reverse Engineering Engine
@@ -27,19 +28,31 @@ class VisualReverseEngineeringService
     private const TIMEOUT        = 90;
 
     public function __construct(
-        private readonly DomExtractionService            $domExtractor,
-        private readonly LayoutReconstructionService     $layoutReconstructor,
-        private readonly VisualAnalysisService           $visualAnalyzer,
-        private readonly CommerceAnalysisService         $commerceAnalyzer,
-        private readonly SimilarityEngineService         $similarityEngine,
+        private readonly DomExtractionService             $domExtractor,
+        private readonly LayoutReconstructionService      $layoutReconstructor,
+        private readonly VisualAnalysisService            $visualAnalyzer,
+        private readonly CommerceAnalysisService          $commerceAnalyzer,
+        private readonly SimilarityEngineService          $similarityEngine,
         private readonly ReverseThemeReconstructorService $reconstructor,
         private readonly ReverseEngineeringQualityService $qualityService,
+        private readonly PlaywrightExtractionService      $playwright,
+        private readonly HeadlessComponentExtractor       $headlessExtractor,
     ) {}
 
     public function isEnabled(): bool
     {
         return !empty(config('services.anthropic.key', ''))
             || !empty(config('services.deepseek.key', ''));
+    }
+
+    public function isHeadlessAvailable(): bool
+    {
+        return $this->playwright->isAvailable();
+    }
+
+    public function headlessAvailabilityReport(): array
+    {
+        return $this->playwright->availabilityReport();
     }
 
     public function getEnvKeyName(): string
@@ -60,23 +73,105 @@ class VisualReverseEngineeringService
 
     /**
      * Reverse-engineer from a URL.
+     *
+     * Auto-detects SPA shells and switches to Playwright headless mode when:
+     *   - HTML < 8 KB (CSR shell)
+     *   - Next.js __NEXT_DATA__ but minimal real content
+     *   - force_headless flag set by user
+     *
+     * Falls back to HTTP mode if Playwright is unavailable.
      */
-    public function fromUrl(string $url, string $name = '', string $notes = ''): ReverseEngineeringJob
-    {
+    public function fromUrl(
+        string $url,
+        string $name   = '',
+        string $notes  = '',
+        bool   $forceHeadless = false
+    ): ReverseEngineeringJob {
         $job = ReverseEngineeringJob::create([
-            'input_type'    => ReverseEngineeringJob::INPUT_URL,
-            'input_source'  => $url,
-            'input_notes'   => $notes,
-            'suggested_name'=> $name ?: $url,
-            'status'        => ReverseEngineeringJob::STATUS_EXTRACTING,
+            'input_type'     => ReverseEngineeringJob::INPUT_URL,
+            'input_source'   => $url,
+            'input_notes'    => $notes,
+            'suggested_name' => $name ?: $url,
+            'status'         => ReverseEngineeringJob::STATUS_EXTRACTING,
+            'extraction_mode'=> ReverseEngineeringJob::EXTRACTION_HTTP,
+            'force_headless' => $forceHeadless,
         ]);
 
         try {
             [$html, $finalUrl] = $this->fetchUrl($url);
+            $renderMode        = $this->domExtractor->detectRenderModePublic($html, $url);
+            $shouldHeadless    = $forceHeadless || $this->needsHeadless($renderMode, $html);
+
+            if ($shouldHeadless && $this->playwright->isAvailable()) {
+                return $this->fromUrlHeadless($job, $url, $name, $notes);
+            }
+
+            // Warn user when headless would help but isn't available
+            if ($shouldHeadless && !$this->playwright->isAvailable()) {
+                Log::info('VRE: SPA detected but Playwright unavailable — using HTTP fallback', [
+                    'url'  => $url,
+                    'mode' => $renderMode['mode'] ?? 'unknown',
+                ]);
+            }
+
             return $this->runPipeline($job, $html, $finalUrl, $name ?: $this->inferName($html, $url));
+
         } catch (\Throwable $e) {
             $job->update(['status' => ReverseEngineeringJob::STATUS_FAILED, 'error_message' => $e->getMessage()]);
             Log::error('VRE: URL processing failed', ['url' => $url, 'error' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Run the RE pipeline using Playwright for the given URL.
+     * Called either from fromUrl() auto-detection or directly.
+     */
+    public function fromUrlHeadless(
+        ReverseEngineeringJob $job,
+        string $url,
+        string $name  = '',
+        string $notes = ''
+    ): ReverseEngineeringJob {
+        $job->update([
+            'status'          => ReverseEngineeringJob::STATUS_EXTRACTING,
+            'extraction_mode' => ReverseEngineeringJob::EXTRACTION_HEADLESS,
+        ]);
+
+        try {
+            // Playwright renders the full page
+            $playwright = $this->playwright->extract($url, 35000);
+
+            // Store raw headless payload
+            $job->update(['headless_data' => $this->compactHeadlessData($playwright)]);
+
+            // Phase 1: DOM extraction from rendered HTML
+            $renderedHtml = $playwright['rendered_html'] ?? '';
+            $finalUrl     = $playwright['url'] ?? $url;
+            $domStructure = $this->domExtractor->extractFromRenderedDom($renderedHtml, $finalUrl, $playwright);
+
+            $finalName = $name
+                ?: ($playwright['components']['meta']['title'] ?? $this->inferName($renderedHtml, $url));
+
+            $job->update(['dom_structure' => $domStructure, 'suggested_name' => $finalName]);
+
+            // Phases 2–7: run on the richer headless DOM
+            $result = $this->runPipelineFromDom($job, $domStructure, $renderedHtml, $finalName);
+
+            // Attach screenshot URL if captured
+            if (!empty($playwright['screenshot_base64'])) {
+                $path = 're-screenshots/' . $job->uuid . '.png';
+                Storage::put($path, base64_decode($playwright['screenshot_base64']));
+                $meta = $result->meta ?? [];
+                $meta['headless_screenshot'] = $path;
+                $result->update(['meta' => $meta]);
+            }
+
+            return $result->fresh();
+
+        } catch (\Throwable $e) {
+            $job->update(['status' => ReverseEngineeringJob::STATUS_FAILED, 'error_message' => 'Headless: ' . $e->getMessage()]);
+            Log::error('VRE: Headless extraction failed', ['url' => $url, 'error' => $e->getMessage()]);
             throw $e;
         }
     }
@@ -252,6 +347,46 @@ class VisualReverseEngineeringService
             return $this->commerceAnalyzer->analyzeFromVision($dom['visual_hints'] ?? []);
         }
         return $this->commerceAnalyzer->analyzeFromPrompt($dom['meta']['description'] ?? '');
+    }
+
+    // ── Headless helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Decide if a URL needs Playwright-based headless rendering.
+     * Triggered when:
+     *   - HTML is a minimal SPA shell (< 8 KB)
+     *   - Next.js minimal shell detected
+     *   - Very low section count in raw HTML
+     */
+    private function needsHeadless(array $renderMode, string $html): bool
+    {
+        if ($renderMode['is_spa_shell'] ?? false) return true;
+        if (($renderMode['mode'] ?? '') === 'spa_shell') return true;
+
+        // Next.js with very little content
+        if (($renderMode['is_nextjs'] ?? false) && strlen($html) < 30000) return true;
+
+        // React CSR: huge JS bundles but tiny HTML
+        if (($renderMode['is_react'] ?? false) && strlen($html) < 15000) return true;
+
+        return false;
+    }
+
+    /**
+     * Remove the large rendered_html and screenshot from the stored payload.
+     * We only store the compact metadata + components for the DB record.
+     */
+    private function compactHeadlessData(array $playwright): array
+    {
+        return [
+            'url'          => $playwright['url']          ?? '',
+            'framework'    => $playwright['framework']    ?? [],
+            'render_mode'  => $playwright['render_mode']  ?? [],
+            'components'   => $playwright['components']   ?? [],
+            'extracted_at' => $playwright['extracted_at'] ?? now()->toISOString(),
+            'had_screenshot'=> !empty($playwright['screenshot_base64']),
+            'html_size'    => strlen($playwright['rendered_html'] ?? ''),
+        ];
     }
 
     // ── URL fetcher ───────────────────────────────────────────────────────────

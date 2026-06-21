@@ -1,0 +1,11 @@
+# Minimal OpenSSL 3.x configuration for Node.js 24 compatibility
+openssl_conf = openssl_def
+
+[openssl_def]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+
+[default_sect]
+activate = 1

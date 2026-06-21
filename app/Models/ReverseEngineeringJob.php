@@ -23,21 +23,26 @@ class ReverseEngineeringJob extends Model
 
     protected $table = 'reverse_engineering_jobs';
 
+    public const EXTRACTION_HTTP     = 'http';
+    public const EXTRACTION_HEADLESS = 'headless';
+
     protected $fillable = [
         'uuid', 'input_type', 'input_source', 'input_notes', 'suggested_name',
-        'dom_structure', 'layout_map', 'visual_profile', 'commerce_profile',
+        'dom_structure', 'headless_data', 'layout_map', 'visual_profile', 'commerce_profile',
         'similarity_scores', 'theme_pack_id', 'quality_report',
-        'status', 'error_message', 'meta',
+        'status', 'extraction_mode', 'force_headless', 'error_message', 'meta',
     ];
 
     protected $casts = [
         'dom_structure'    => 'array',
+        'headless_data'    => 'array',
         'layout_map'       => 'array',
         'visual_profile'   => 'array',
         'commerce_profile' => 'array',
         'similarity_scores'=> 'array',
         'quality_report'   => 'array',
         'meta'             => 'array',
+        'force_headless'   => 'boolean',
     ];
 
     protected static function booted(): void
@@ -100,5 +105,22 @@ class ReverseEngineeringJob extends Model
     {
         $report = $this->quality_report ?? [];
         return ($report['verdict'] ?? '') === 'PASS';
+    }
+
+    public function isHeadless(): bool
+    {
+        return $this->extraction_mode === self::EXTRACTION_HEADLESS;
+    }
+
+    public function extractionModeLabel(): string
+    {
+        return $this->isHeadless() ? 'Headless (Playwright)' : 'HTTP';
+    }
+
+    public function extractionModeBadge(): string
+    {
+        return $this->isHeadless()
+            ? 'از Playwright (رندر واقعی)'
+            : 'از HTTP (static HTML)';
     }
 }

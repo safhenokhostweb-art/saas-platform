@@ -16,7 +16,7 @@
         </div>
         <div>
           <h1 class="text-2xl font-bold text-gray-900">موتور مهندسی معکوس بصری</h1>
-          <p class="text-sm text-gray-500">TB3 Sprint 9.5 — Visual Reverse Engineering Engine</p>
+          <p class="text-sm text-gray-500">TB3 Sprint 11 — Headless Visual Extraction Engine</p>
         </div>
       </div>
       <p class="text-gray-600 mt-2">
@@ -40,6 +40,52 @@
           {{ $emoji }} {{ $site }}
         </span>
         @endforeach
+      </div>
+    </div>
+
+    {{-- Headless Engine Status Banner --}}
+    <div class="mb-6 rounded-2xl border {{ $headlessReady ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200' }} p-4 shadow-sm">
+      <div class="flex items-start gap-3">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 {{ $headlessReady ? 'bg-emerald-600' : 'bg-amber-500' }}">
+          @if($headlessReady)
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+            </svg>
+          @else
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          @endif
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <h3 class="text-sm font-bold {{ $headlessReady ? 'text-emerald-800' : 'text-amber-800' }}">
+              موتور Headless (Playwright) — {{ $headlessReady ? 'فعال و آماده' : 'غیرفعال' }}
+            </h3>
+            @if($headlessReady)
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-medium">
+                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> LIVE
+              </span>
+            @endif
+          </div>
+          @if($headlessReady)
+            <p class="text-xs text-emerald-700">Playwright + Chromium آماده است. سایت‌های React، Next.js و Vue به صورت خودکار در حالت headless پردازش می‌شوند. انتظار دارید امتیاز شباهت از ۷۰٪ به ۸۵٪+ برسد.</p>
+          @else
+            <p class="text-xs text-amber-700 mb-2">موتور headless غیرفعال است. سایت‌های SPA/React/Next.js با HTML خام پردازش می‌شوند (دقت پایین‌تر).</p>
+            <div class="flex flex-wrap gap-2 mt-1">
+              @foreach([
+                'Node.js' => $headlessReport['node'],
+                'اسکریپت extract.mjs' => $headlessReport['script'],
+                'پکیج Playwright' => $headlessReport['playwright'],
+              ] as $label => $ok)
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs {{ $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                  {{ $ok ? '✓' : '✗' }} {{ $label }}
+                </span>
+              @endforeach
+            </div>
+            <p class="text-xs text-amber-600 mt-2">برای فعال‌سازی: <code class="bg-amber-100 px-1 rounded">cd scripts/headless && npm install && npx playwright install chromium</code></p>
+          @endif
+        </div>
       </div>
     </div>
 
@@ -109,7 +155,33 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">آدرس وب‌سایت</label>
           <input type="url" x-model="url" placeholder="https://example.com"
             class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors" dir="ltr">
-          <p class="mt-1.5 text-xs text-gray-400">موتور صفحه را دریافت کرده و ساختار DOM آن را استخراج می‌کند.</p>
+          <p class="mt-1.5 text-xs text-gray-400">موتور صفحه را دریافت می‌کند. سایت‌های SPA/React/Next.js به‌طور خودکار به حالت headless سوئیچ می‌شوند.</p>
+
+          {{-- Headless Mode Toggle --}}
+          @if($headlessReady)
+          <div class="mt-3 flex items-center gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" x-model="forceHeadless" class="sr-only peer">
+              <div class="w-10 h-5 bg-gray-300 rounded-full peer peer-checked:bg-indigo-600 transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5 shadow-sm"></div>
+            </label>
+            <div>
+              <p class="text-xs font-medium text-indigo-800">اجبار حالت Headless (Playwright)</p>
+              <p class="text-xs text-indigo-600">برای سایت‌های SSR هم از مرورگر واقعی استفاده می‌شود. دقت‌تر، کندتر.</p>
+            </div>
+            <div class="mr-auto">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+                :class="forceHeadless ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'"
+                x-text="forceHeadless ? 'روشن' : 'خودکار'"></span>
+            </div>
+          </div>
+          @else
+          <div class="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <span class="text-xs text-gray-400">
+              حالت Headless: غیرفعال — برای فعال‌سازی Playwright نصب کنید.
+            </span>
+          </div>
+          @endif
         </div>
 
         {{-- Screenshot Input --}}
@@ -198,21 +270,34 @@
         </div>
 
         {{-- Progress Steps --}}
-        <div x-show="loading" x-cloak class="bg-violet-50 border border-violet-100 rounded-xl p-4">
+        <div x-show="loading" x-cloak class="border rounded-xl p-4 transition-colors"
+          :class="isHeadlessMode ? 'bg-indigo-50 border-indigo-100' : 'bg-violet-50 border-violet-100'">
           <div class="flex items-center gap-2 mb-3">
-            <svg class="w-4 h-4 text-violet-600 animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 animate-spin" :class="isHeadlessMode ? 'text-indigo-600' : 'text-violet-600'" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <p class="text-sm font-medium text-violet-700" x-text="currentStep"></p>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium" :class="isHeadlessMode ? 'text-indigo-700' : 'text-violet-700'" x-text="currentStep"></p>
+                <span x-show="isHeadlessMode" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-xs">
+                  <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Headless
+                </span>
+              </div>
+            </div>
           </div>
           <div class="flex gap-1">
-            <template x-for="(step, i) in phases" :key="i">
+            <template x-for="(step, i) in activePhases" :key="i">
               <div class="flex-1 h-1.5 rounded-full transition-all duration-500"
-                :class="phaseIndex > i ? 'bg-violet-600' : (phaseIndex === i ? 'bg-violet-400 animate-pulse' : 'bg-violet-100')"></div>
+                :class="phaseIndex > i
+                  ? (isHeadlessMode ? 'bg-indigo-600' : 'bg-violet-600')
+                  : (phaseIndex === i
+                    ? (isHeadlessMode ? 'bg-indigo-400 animate-pulse' : 'bg-violet-400 animate-pulse')
+                    : (isHeadlessMode ? 'bg-indigo-100' : 'bg-violet-100'))"></div>
             </template>
           </div>
-          <p class="text-xs text-violet-500 mt-1.5 text-center" x-text="'مرحله ' + (phaseIndex+1) + ' از ' + phases.length"></p>
+          <p class="text-xs mt-1.5 text-center" :class="isHeadlessMode ? 'text-indigo-500' : 'text-violet-500'"
+            x-text="'مرحله ' + (phaseIndex+1) + ' از ' + activePhases.length + (isHeadlessMode ? ' — Playwright در حال رندر...' : '')"></p>
         </div>
 
         {{-- Submit Button --}}
@@ -288,6 +373,7 @@ function reverseEngineerForm() {
     prompt: '',
     themeName: '',
     notes: '',
+    forceHeadless: false,
     screenshotFile: null,
     screenshotPreview: null,
     screenshotName: '',
@@ -295,8 +381,14 @@ function reverseEngineerForm() {
     loading: false,
     errorMsg: '',
     phaseIndex: 0,
+    isHeadlessMode: false,
     phases: ['استخراج DOM','بازسازی چیدمان','تحلیل بصری','تحلیل تجاری','شباهت‌سنجی','بازسازی قالب','اعتبارسنجی'],
+    headlessPhases: ['راه‌اندازی Chromium','بارگذاری سایت','اجرای JavaScript','استخراج DOM رندرشده','تحلیل بصری','بازسازی قالب','اعتبارسنجی'],
     currentStep: '',
+
+    get activePhases() {
+      return this.isHeadlessMode ? this.headlessPhases : this.phases;
+    },
 
     handleScreenshot(event) {
       const file = event.target.files[0];
@@ -310,14 +402,15 @@ function reverseEngineerForm() {
 
     startPhaseAnimation() {
       this.phaseIndex = 0;
+      const stepMs = this.isHeadlessMode ? 4000 : 1800;
       const interval = setInterval(() => {
-        if (this.phaseIndex < this.phases.length - 1) {
+        if (this.phaseIndex < this.activePhases.length - 1) {
           this.phaseIndex++;
-          this.currentStep = 'مرحله ' + (this.phaseIndex + 1) + ': ' + this.phases[this.phaseIndex];
+          this.currentStep = 'مرحله ' + (this.phaseIndex + 1) + ': ' + this.activePhases[this.phaseIndex];
         } else {
           clearInterval(interval);
         }
-      }, 1800);
+      }, stepMs);
     },
 
     async runAnalysis() {
@@ -328,8 +421,9 @@ function reverseEngineerForm() {
       if (this.inputType === 'html' && !this.$refs.htmlInput.files[0]) { this.errorMsg = 'فایل HTML انتخاب کنید.'; return; }
       if (this.inputType === 'prompt' && !this.prompt.trim()) { this.errorMsg = 'توضیح متنی وارد کنید.'; return; }
 
+      this.isHeadlessMode = this.inputType === 'url' && this.forceHeadless;
       this.loading = true;
-      this.currentStep = 'مرحله ۱: ' + this.phases[0];
+      this.currentStep = 'مرحله ۱: ' + this.activePhases[0];
       this.startPhaseAnimation();
 
       const fd = new FormData();
@@ -337,6 +431,7 @@ function reverseEngineerForm() {
       fd.append('name', this.themeName);
       fd.append('notes', this.notes);
       fd.append('_token', '{{ csrf_token() }}');
+      if (this.forceHeadless && this.inputType === 'url') fd.append('force_headless', '1');
 
       if (this.inputType === 'url') fd.append('url', this.url);
       if (this.inputType === 'screenshot') fd.append('screenshot', this.screenshotFile);

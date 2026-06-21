@@ -1,0 +1,10 @@
+{
+  "name": "saas-platform-headless-extractor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright-based headless DOM extractor for the Visual RE Engine",
+  "dependencies": {
+    "playwright": "^1.45.0"
+  }
+}

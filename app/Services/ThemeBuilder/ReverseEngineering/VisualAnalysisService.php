@@ -49,6 +49,9 @@ class VisualAnalysisService
 
     /**
      * Analyze visual properties from raw HTML.
+     *
+     * When domStructure contains headless color data (TB3 Sprint 11),
+     * the computed colors from the browser override CSS-regex extraction.
      */
     public function analyze(string $html, array $domStructure = []): array
     {
@@ -58,6 +61,21 @@ class VisualAnalysisService
         $radius     = $this->extractBorderRadius($html);
         $shadows    = $this->extractShadowSystem($html);
         $density    = $this->measureVisualDensity($html, $domStructure);
+
+        // Headless enrichment: merge computed colors + font from Playwright
+        if (!empty($domStructure['headless']['colors'])) {
+            $headlessColors = $domStructure['headless']['colors'];
+            // Merge headless computed colors into palette (they are more accurate)
+            $colors = $this->mergeHeadlessColors($colors, $headlessColors);
+        }
+
+        if (!empty($domStructure['headless']['typography']['fonts'])) {
+            $fonts = $domStructure['headless']['typography']['fonts'];
+            if (!empty($fonts[0])) {
+                $typography['primary_font'] = $fonts[0];
+                $typography['font_stack']   = implode(', ', $fonts);
+            }
+        }
 
         return [
             'color_palette'   => $colors,
@@ -69,7 +87,32 @@ class VisualAnalysisService
             'dark_mode'       => $this->hasDarkMode($html),
             'has_animations'  => $this->detectAnimations($html),
             'style_framework' => $this->detectStyleFramework($html),
+            'source_mode'     => !empty($domStructure['headless']) ? 'headless' : 'http',
         ];
+    }
+
+    /**
+     * Merge browser-computed colors into an existing color palette.
+     * Headless colors are more accurate (actual rendered colors vs regex guesses).
+     */
+    private function mergeHeadlessColors(array $existing, array $headlessColors): array
+    {
+        if (empty($headlessColors)) return $existing;
+
+        // Use headless primary if it's different from white/black (body background)
+        $filtered = array_filter($headlessColors, fn($h) => !in_array($h, ['#ffffff', '#000000', '#ffffffff']));
+        if (!empty($filtered)) {
+            $primary = array_values($filtered)[0];
+            if (!empty($primary)) {
+                $existing['primary']       = $primary;
+                $existing['primary_source']= 'computed';
+            }
+        }
+
+        // Add headless colors to swatches that aren't already there
+        $existing['headless_computed'] = array_values($headlessColors);
+
+        return $existing;
     }
 
     /**

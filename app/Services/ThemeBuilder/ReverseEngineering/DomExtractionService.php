@@ -99,6 +99,85 @@ class DomExtractionService
     }
 
     /**
+     * TB3 Sprint 11 — Extract from Playwright rendered DOM.
+     *
+     * Merges deep HTML extraction (DOMXPath over the fully-rendered page)
+     * with the structured component data already pulled by the Node.js script.
+     * This gives Phase 1 results that are far richer than HTTP-only extraction.
+     */
+    public function extractFromRenderedDom(string $renderedHtml, string $url, array $headlessComponents): array
+    {
+        // Run full DOMXPath extraction on the rendered HTML
+        $base = $this->extract($renderedHtml, $url);
+
+        // Override render_mode — the HTML came from Playwright, not raw HTTP
+        $base['render_mode'] = [
+            'mode'            => 'headless',
+            'is_spa_shell'    => false,
+            'is_nextjs'       => $headlessComponents['framework']['is_nextjs'] ?? false,
+            'is_react'        => $headlessComponents['framework']['is_react']  ?? false,
+            'html_size'       => strlen($renderedHtml),
+            'has_minified_css'=> false,
+            'was_headless'    => true,
+        ];
+
+        $comp = $headlessComponents['components'] ?? [];
+
+        // Merge nav enrichment (Playwright gives real link text after hydration)
+        if (!empty($comp['nav']['items'])) {
+            $base['header']['nav_items']  = max($base['header']['nav_items'], count($comp['nav']['items']));
+            $base['header']['nav_labels'] = $comp['nav']['items'];
+            $base['header']['is_sticky']  = $comp['nav']['is_sticky'] ?? $base['header']['is_sticky'];
+            $base['header']['has_search'] = ($comp['nav']['has_search'] ?? false) || ($base['header']['has_search'] ?? false);
+            $base['header']['has_cart']   = $comp['nav']['has_cart'] ?? false;
+        }
+
+        // Merge mega menu
+        if (!empty($comp['mega_menu']['detected'])) {
+            $base['mega_menu'] = array_merge($base['mega_menu'], [
+                'detected'  => true,
+                'columns'   => $comp['mega_menu']['columns'] ?? $base['mega_menu']['columns'],
+                'has_icons' => $comp['mega_menu']['has_icons'] ?? false,
+                'sub_items' => $comp['mega_menu']['sub_items'] ?? [],
+            ]);
+        }
+
+        // Merge hero headline if DOM extraction missed it
+        if (empty($base['hero']['headline']) && !empty($comp['hero']['headline'])) {
+            $base['hero']['headline']    = $comp['hero']['headline'];
+            $base['hero']['subheadline'] = $comp['hero']['subheadline'] ?? '';
+            $base['hero']['cta_labels']  = $comp['hero']['cta_buttons'] ?? [];
+            $base['hero']['detected']    = true;
+        }
+
+        // Merge product grid data (pixel-accurate from Playwright)
+        if (!empty($comp['product_grid']['count'])) {
+            $base['product_grid_headless'] = $comp['product_grid'];
+        }
+
+        // Attach headless-only data for Phase 3 (visual analysis)
+        $base['source'] = 'headless';
+        $base['headless'] = [
+            'colors'       => $comp['colors']      ?? [],
+            'typography'   => $comp['typography']  ?? [],
+            'sliders'      => $comp['sliders']     ?? [],
+            'search'       => $comp['search']      ?? [],
+            'filters'      => $comp['filters']     ?? [],
+            'product_grid' => $comp['product_grid'] ?? [],
+            'screenshot'   => !empty($headlessComponents['screenshot_base64']),
+            'html_size'    => strlen($renderedHtml),
+        ];
+
+        // Boost sections_count based on Playwright-detected sections
+        $detectedCount = count($comp['sections_detected'] ?? []);
+        if ($detectedCount > $base['sections_count']) {
+            $base['sections_count'] = $detectedCount;
+        }
+
+        return $base;
+    }
+
+    /**
      * Extract from AI Vision result (when screenshot is the input).
      */
     public function extractFromVision(array $visionResult): array
@@ -597,6 +676,14 @@ class DomExtractionService
             if (str_contains($text, strtolower($kw))) return true;
         }
         return false;
+    }
+
+    /**
+     * Public entry point for render mode detection (used by VisualReverseEngineeringService).
+     */
+    public function detectRenderModePublic(string $html, string $url): array
+    {
+        return $this->detectRenderMode($html, $url);
     }
 
     /**
