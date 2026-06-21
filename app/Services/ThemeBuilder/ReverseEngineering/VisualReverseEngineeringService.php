@@ -38,12 +38,22 @@ class VisualReverseEngineeringService
 
     public function isEnabled(): bool
     {
-        return !empty(config('services.anthropic.key', ''));
+        return !empty(config('services.anthropic.key', ''))
+            || !empty(config('services.deepseek.key', ''));
     }
 
     public function getEnvKeyName(): string
     {
+        if (!empty(config('services.anthropic.key', ''))) return 'ANTHROPIC_API_KEY';
+        if (!empty(config('services.deepseek.key', ''))) return 'DEEPSEEK_API_KEY';
         return 'ANTHROPIC_API_KEY';
+    }
+
+    public function getActiveProvider(): string
+    {
+        if (!empty(config('services.anthropic.key', ''))) return 'claude';
+        if (!empty(config('services.deepseek.key', ''))) return 'deepseek';
+        return 'php-fallback';
     }
 
     // ── Entry points by input type ────────────────────────────────────────────

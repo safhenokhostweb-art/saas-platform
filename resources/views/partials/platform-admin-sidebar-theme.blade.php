@@ -59,17 +59,12 @@
   margin-bottom: 0;
 }
 
-/* ─── حذف mb-4 از sidebar-group.blade.php ─── */
-#admin-sidebar .admin-sidebar-item-list > div {
-  margin-bottom: 0 !important;
-  padding-top: 0.1rem !important;
-}
-
-/* ─── لیست آیتم‌ها ─── */
+/* ─── لیست آیتم‌ها (items مستقیم، بدون wrapper mb-4) ─── */
 #admin-sidebar .admin-sidebar-item-list {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  padding: 0.15rem 0 0.3rem 0;
 }
 #admin-sidebar .sidebar-group-items.is-collapsed {
   display: none !important;
@@ -85,8 +80,8 @@
   border: none;
   border-right: 3px solid color-mix(in srgb, var(--grp-color) 60%, transparent);
   background: color-mix(in srgb, var(--grp-color) 8%, transparent);
-  padding: 0.38rem 0.75rem 0.38rem 0.625rem;
-  margin: 0.55rem 0 0.2rem 0;
+  padding: 0.35rem 0.75rem 0.35rem 0.625rem;
+  margin: 0.3rem 0 0.08rem 0;
   cursor: pointer;
   text-align: right;
   transition: background 0.18s ease, border-color 0.18s ease;

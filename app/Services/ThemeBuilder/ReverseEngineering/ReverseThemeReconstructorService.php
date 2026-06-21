@@ -29,7 +29,11 @@ class ReverseThemeReconstructorService
     private const CLAUDE_MODEL   = 'claude-sonnet-4-6';
     private const CLAUDE_VERSION = '2023-06-01';
     private const MAX_TOKENS     = 8000;
-    private const TIMEOUT        = 90;
+    private const TIMEOUT        = 120;
+
+    // DeepSeek API constants (OpenAI-compatible)
+    private const DEEPSEEK_API   = 'https://api.deepseek.com/v1/chat/completions';
+    private const DEEPSEEK_MODEL = 'deepseek-chat';
 
     public function __construct(
         private readonly ThemePlaceholderService $placeholder,
@@ -67,12 +71,23 @@ class ReverseThemeReconstructorService
         }
 
         // Try AI-assisted pack generation, fall back to PHP
-        $packJson = null;
+        $packJson    = null;
+        $deepseekKey = (string) config('services.deepseek.key', '');
+
         if (!empty($apiKey)) {
             try {
                 $packJson = $this->aiGeneratePack($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $apiKey);
             } catch (\Throwable $e) {
-                Log::warning('RE: AI reconstruction failed, using PHP fallback', ['error' => $e->getMessage()]);
+                Log::warning('RE: Claude reconstruction failed, trying DeepSeek', ['error' => $e->getMessage()]);
+            }
+        }
+
+        if ($packJson === null && !empty($deepseekKey)) {
+            try {
+                $packJson = $this->aiGeneratePackDeepSeek($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $deepseekKey);
+                Log::info('RE: DeepSeek reconstruction succeeded');
+            } catch (\Throwable $e) {
+                Log::warning('RE: DeepSeek reconstruction failed, using PHP fallback', ['error' => $e->getMessage()]);
             }
         }
 
@@ -160,6 +175,96 @@ USR;
         }
 
         $raw = $response->json('content.0.text') ?? '{}';
+        $raw = $this->stripJsonFences($raw);
+
+        $start = strpos($raw, '{');
+        $end   = strrpos($raw, '}');
+        if ($start !== false && $end !== false && $end > $start) {
+            $raw = substr($raw, $start, $end - $start + 1);
+        }
+
+        $data = json_decode($raw, true);
+        return is_array($data) ? $data : null;
+    }
+
+    // ── DeepSeek AI Pack Generation (OpenAI-compatible) ──────────────────────
+
+    private function aiGeneratePackDeepSeek(
+        string $name,
+        array  $sections,
+        array  $globalStyles,
+        array  $layoutMap,
+        array  $visualProfile,
+        array  $commerceProfile,
+        array  $similarityScores,
+        string $apiKey
+    ): ?array {
+        $bestMatch   = $similarityScores['best_match'] ?? 'ecommerce';
+        $bestScore   = $similarityScores['best_match_score'] ?? 0;
+        $isCommerce  = $commerceProfile['is_commerce'] ?? false;
+        $sectionList = implode(', ', $sections);
+        $stylesJson  = json_encode($globalStyles, JSON_UNESCAPED_UNICODE);
+        $colorPalette = $visualProfile['color_palette'] ?? [];
+        $typography   = $visualProfile['typography'] ?? [];
+
+        $primaryColor = $colorPalette['primary'] ?? '#3b82f6';
+
+        $systemPrompt = 'You are a professional Persian (RTL/Farsi) web theme designer AI. Generate a complete TB3 ThemePack JSON for a Persian e-commerce website. Return ONLY valid JSON — no markdown, no code fences, no explanation. ALL text in Persian. Direction RTL. Font Vazirmatn. Use ORIGINAL content only.';
+
+        $userPrompt = <<<USR
+Reverse-engineer and reconstruct a Persian website theme. Site: "{$name}". Best match: {$bestMatch} ({$bestScore}/100). Commerce: {$isCommerce}. Sections: {$sectionList}.
+
+Global styles: {$stylesJson}
+
+Return this exact JSON structure (fill all fields, generate UUIDs for IDs):
+{
+  "pack_name": "{$name}",
+  "description": "توضیح فارسی قالب فروشگاهی",
+  "global_styles": { "primary_color": "{$primaryColor}", "secondary_color": "#ffffff", "accent_color": "#f59e0b", "background_color": "#ffffff", "text_color": "#111827", "font_family": "Vazirmatn", "border_radius": "md", "direction": "rtl" },
+  "responsive_settings": { "desktop": { "base_font_size": "16px", "container_max_width": "1280px" }, "tablet": { "base_font_size": "15px", "container_max_width": "768px" }, "mobile": { "base_font_size": "14px", "container_max_width": "100%" } },
+  "headers": [{ "name": "هدر اصلی", "blocks": [{ "id": "uuid1", "type": "nav_header", "data": { "logo_text": "{$name}", "logo_url": "/", "sticky": true, "links": [{"text": "خانه", "url": "/"}, {"text": "محصولات", "url": "/products"}, {"text": "درباره ما", "url": "/about"}, {"text": "تماس", "url": "/contact"}], "cta_text": "خرید کنید", "cta_url": "/products" } }] }],
+  "footers": [{ "name": "فوتر اصلی", "blocks": [{ "id": "uuid2", "type": "nav_footer", "data": { "logo_text": "{$name}", "columns": [{"title": "دسترسی سریع", "links": [{"text": "خانه", "url": "/"}, {"text": "محصولات", "url": "/products"}]}, {"title": "پشتیبانی", "links": [{"text": "تماس با ما", "url": "/contact"}, {"text": "سوالات متداول", "url": "/faq"}]}], "copyright": "© 2024 {$name}. تمام حقوق محفوظ است." } }] }],
+  "pages": [{
+    "title": "صفحه اصلی",
+    "slug": "",
+    "blocks": [
+      { "id": "uuid3", "type": "hero", "data": { "title": "خرید آنلاین با بهترین قیمت", "subtitle": "هزاران محصول متنوع با ارسال سریع", "cta_text": "مشاهده محصولات", "cta_url": "/products", "layout": "standard", "bg_color": "#f8fafc" } },
+      { "id": "uuid4", "type": "card_grid", "data": { "title": "محصولات پرفروش", "columns": 4, "show_price": true, "show_badge": true, "items": [{"title": "محصول نمونه ۱", "price": "۱۵۰,۰۰۰ تومان", "badge": "پرفروش"}, {"title": "محصول نمونه ۲", "price": "۲۸۰,۰۰۰ تومان", "badge": "جدید"}, {"title": "محصول نمونه ۳", "price": "۹۵,۰۰۰ تومان"}, {"title": "محصول نمونه ۴", "price": "۳۴۰,۰۰۰ تومان", "badge": "تخفیف"}] } },
+      { "id": "uuid5", "type": "features_grid", "data": { "title": "چرا ما را انتخاب کنید؟", "columns": 3, "items": [{"icon": "🚚", "title": "ارسال سریع", "text": "تحویل در کمتر از ۴۸ ساعت"}, {"icon": "🔒", "title": "پرداخت امن", "text": "درگاه‌های معتبر بانکی"}, {"icon": "↩️", "title": "ضمانت بازگشت", "text": "۷ روز ضمانت بازگشت کالا"}] } },
+      { "id": "uuid6", "type": "stats_row", "data": { "items": [{"number": "+۱۰,۰۰۰", "label": "مشتری راضی"}, {"number": "+۵۰,۰۰۰", "label": "محصول موجود"}, {"number": "۹۸٪", "label": "رضایت مشتریان"}, {"number": "+۱۰۰", "label": "برند معتبر"}] } },
+      { "id": "uuid7", "type": "testimonials_slider", "data": { "title": "نظرات مشتریان ما", "items": [{"name": "علی محمدی", "text": "خرید از این سایت بسیار راحت بود. کیفیت محصول عالی بود."}, {"name": "فاطمه احمدی", "text": "ارسال سریع و بسته‌بندی مناسب. حتماً دوباره خرید می‌کنم."}, {"name": "حسن رضایی", "text": "قیمت‌ها مناسب و پشتیبانی عالی است."}] } },
+      { "id": "uuid8", "type": "cta", "data": { "title": "همین الان خرید کنید", "subtitle": "با تخفیف‌های ویژه و ارسال رایگان", "cta_text": "شروع خرید", "cta_url": "/products", "bg_color": "#3b82f6", "text_color": "#ffffff" } }
+    ]
+  }],
+  "templates": [
+    { "name": "هیرو فروشگاه", "type": "section", "category": "hero", "blocks": [{ "id": "t-uuid1", "type": "hero", "data": { "title": "خرید آنلاین", "subtitle": "محصولات با کیفیت", "cta_text": "مشاهده", "cta_url": "/" } }] },
+    { "name": "گرید محصولات", "type": "section", "category": "products", "blocks": [{ "id": "t-uuid2", "type": "card_grid", "data": { "title": "محصولات", "columns": 4 } }] },
+    { "name": "ویژگی‌ها", "type": "section", "category": "features", "blocks": [{ "id": "t-uuid3", "type": "features_grid", "data": { "title": "مزایا", "columns": 3 } }] }
+  ],
+  "demo_data": { "site_name": "{$name}", "tagline": "فروشگاه آنلاین حرفه‌ای" }
+}
+
+Replace all uuid1-uuid8, t-uuid1-t-uuid3 with actual UUID v4 values. Keep all Persian text.
+USR;
+
+        $response = \Illuminate\Support\Facades\Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type'  => 'application/json',
+        ])->timeout(self::TIMEOUT)->post(self::DEEPSEEK_API, [
+            'model'       => self::DEEPSEEK_MODEL,
+            'max_tokens'  => self::MAX_TOKENS,
+            'temperature' => 0.3,
+            'messages'    => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user',   'content' => $userPrompt],
+            ],
+        ]);
+
+        if (!$response->successful()) {
+            throw new \RuntimeException('DeepSeek API: ' . ($response->json('error.message') ?? $response->status()));
+        }
+
+        $raw = $response->json('choices.0.message.content') ?? '{}';
         $raw = $this->stripJsonFences($raw);
 
         $start = strpos($raw, '{');
