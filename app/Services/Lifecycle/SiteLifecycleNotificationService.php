@@ -13,8 +13,9 @@ class SiteLifecycleNotificationService
 {
     public function gracePeriodStarted(Site $site): void
     {
-        $daysLeft = (int) config('lifecycle.grace_period_days', 15);
-        $message  = "سایت {$site->title}: دوره اعتبار آغاز شد. {$daysLeft} روز فرصت دارید برای تمدید اشتراک. پس از آن سایت معلق می‌شود.";
+        $daysLeft   = (int) config('lifecycle.grace_period_days', 15);
+        $renewalUrl = 'https://' . $site->domain . '/account/subscriptions/plans';
+        $message    = "سایت {$site->title}: دوره اعتبار آغاز شد. {$daysLeft} روز فرصت دارید برای تمدید اشتراک. پس از آن سایت معلق می‌شود.\nتمدید: {$renewalUrl}";
 
         $this->sendSmsToCustomer($site, $message);
         $this->notifyPlatformAdmin($site, 'grace_period_started', "دوره اعتبار سایت: {$site->title}", $message);
@@ -22,8 +23,9 @@ class SiteLifecycleNotificationService
 
     public function gracePeriodMidReminder(Site $site): void
     {
-        $daysLeft = $site->gracePeriodDaysRemaining() ?? 0;
-        $message  = "یادآوری میانه: سایت {$site->title} هنوز تمدید نشده است. {$daysLeft} روز تا تعلیق باقی است. همین حالا اقدام کنید.";
+        $daysLeft   = $site->gracePeriodDaysRemaining() ?? 0;
+        $renewalUrl = 'https://' . $site->domain . '/account/subscriptions/plans';
+        $message    = "یادآوری میانه: سایت {$site->title} هنوز تمدید نشده است. {$daysLeft} روز تا تعلیق باقی است. همین حالا اقدام کنید.\nتمدید: {$renewalUrl}";
 
         $this->sendSmsToCustomer($site, $message);
         $this->notifyPlatformAdmin($site, 'grace_period_mid_reminder', "یادآوری میانه دوره اعتبار: {$site->title}", $message, 'medium');
@@ -31,8 +33,9 @@ class SiteLifecycleNotificationService
 
     public function gracePeriodReminder(Site $site): void
     {
-        $daysLeft = $site->gracePeriodDaysRemaining() ?? 0;
-        $message  = "یادآوری نهایی: سایت {$site->title} {$daysLeft} روز دیگر معلق می‌شود. همین حالا تمدید کنید.";
+        $daysLeft   = $site->gracePeriodDaysRemaining() ?? 0;
+        $renewalUrl = 'https://' . $site->domain . '/account/subscriptions/plans';
+        $message    = "یادآوری نهایی: سایت {$site->title} {$daysLeft} روز دیگر معلق می‌شود. همین حالا تمدید کنید.\nتمدید: {$renewalUrl}";
 
         $this->sendSmsToCustomer($site, $message);
         $this->notifyPlatformAdmin($site, 'grace_period_reminder', "یادآوری نهایی دوره اعتبار: {$site->title}", $message, 'medium');
