@@ -20,13 +20,22 @@ class SiteLifecycleNotificationService
         $this->notifyPlatformAdmin($site, 'grace_period_started', "دوره اعتبار سایت: {$site->title}", $message);
     }
 
+    public function gracePeriodMidReminder(Site $site): void
+    {
+        $daysLeft = $site->gracePeriodDaysRemaining() ?? 0;
+        $message  = "یادآوری میانه: سایت {$site->title} هنوز تمدید نشده است. {$daysLeft} روز تا تعلیق باقی است. همین حالا اقدام کنید.";
+
+        $this->sendSmsToCustomer($site, $message);
+        $this->notifyPlatformAdmin($site, 'grace_period_mid_reminder', "یادآوری میانه دوره اعتبار: {$site->title}", $message, 'medium');
+    }
+
     public function gracePeriodReminder(Site $site): void
     {
         $daysLeft = $site->gracePeriodDaysRemaining() ?? 0;
-        $message  = "یادآوری: سایت {$site->title} {$daysLeft} روز دیگر معلق می‌شود. همین حالا تمدید کنید.";
+        $message  = "یادآوری نهایی: سایت {$site->title} {$daysLeft} روز دیگر معلق می‌شود. همین حالا تمدید کنید.";
 
         $this->sendSmsToCustomer($site, $message);
-        $this->notifyPlatformAdmin($site, 'grace_period_reminder', "یادآوری دوره اعتبار: {$site->title}", $message, 'medium');
+        $this->notifyPlatformAdmin($site, 'grace_period_reminder', "یادآوری نهایی دوره اعتبار: {$site->title}", $message, 'medium');
     }
 
     public function siteSuspended(Site $site): void
