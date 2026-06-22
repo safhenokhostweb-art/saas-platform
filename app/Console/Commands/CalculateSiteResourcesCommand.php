@@ -50,7 +50,13 @@ class CalculateSiteResourcesCommand extends Command
                 $metrics = $this->calculator->calculate($site, $dryRun);
 
                 if ($push && !$dryRun) {
-                    $this->calculator->pushSummaryToCustomerSite($site, $metrics);
+                    try {
+                        $this->calculator->pushSummaryToCustomerSite($site, $metrics);
+                    } catch (\Throwable $pushErr) {
+                        // GAP-M08: notify platform admin on push failure
+                        $this->alertService->alertPushFailed($site, $pushErr->getMessage());
+                        $this->warn("  ⚠ push failed for [{$site->id}] {$site->title}: {$pushErr->getMessage()}");
+                    }
                 }
 
                 // Check alerts

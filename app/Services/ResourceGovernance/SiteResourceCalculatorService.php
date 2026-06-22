@@ -291,7 +291,8 @@ class SiteResourceCalculatorService
 
             $this->closeSiteConnection($conn);
         } catch (\Throwable $e) {
-            Log::warning("ResourceCalculator: pushSummary failed for site {$site->id}", ['error' => $e->getMessage()]);
+            // GAP-M08: re-throw so caller can fire platform admin notification
+            throw $e;
         }
     }
 

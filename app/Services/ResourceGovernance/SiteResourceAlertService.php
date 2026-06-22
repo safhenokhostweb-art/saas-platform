@@ -105,6 +105,30 @@ class SiteResourceAlertService
     }
 
     /**
+     * GAP-M08 — Alert when resource usage push to customer-site fails.
+     */
+    public function alertPushFailed(Site $site, string $error): void
+    {
+        $message = "سایت {$site->title} — انتقال اطلاعات مصرف منابع به سایت مشتری ناموفق بود.";
+
+        $this->nc->notify([
+            'type'          => 'resource_push_failed',
+            'priority'      => 'medium',
+            'title'         => "خطا در ارسال منابع: {$site->title}",
+            'message'       => $message . " خطا: {$error}",
+            'audience_type' => 'platform_admin',
+            'channel'       => 'dashboard',
+            'site_id'       => $site->id,
+            'link'          => route('admin.resource-governance.site', $site->id),
+        ]);
+
+        Log::warning("GAP-M08: resource push failed for site {$site->id}", [
+            'site'  => $site->title,
+            'error' => $error,
+        ]);
+    }
+
+    /**
      * Alert when a site has no recent backup.
      */
     public function alertBackupMissing(Site $site, int $daysSinceBackup): void
