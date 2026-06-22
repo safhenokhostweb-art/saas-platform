@@ -46,6 +46,21 @@
 
 ---
 
+## COMPLETE: Acool HVAC Theme v2.0 + [invalid] Block Fix — 2026-06-22 ✅
+
+**Status:** ACOOL_HVAC_V2_CERTIFIED (2026-06-22)
+
+| Component | Status |
+|-----------|--------|
+| builder-element-schemas.php: 10 new block types registered | ✅ DONE |
+| BlockRenderer.php: 10 new render methods (inline-styled HVAC HTML) | ✅ DONE |
+| AcoolHvacSeedCommand v2.0: 12 pages, header_blocks/footer_blocks correct | ✅ DONE |
+| Stale config cache (root@localhost) fixed on production | ✅ DONE |
+| Theme ID 54, marketplace_score=92, is_featured=true | ✅ DONE |
+| [invalid] blocks (nav_header, client_logos, stats_row, trust_badges) fixed | ✅ DONE |
+
+---
+
 ## COMPLETE: SMS Campaign Manager — 2026-06-21 ✅
 
 **Status:** SMS_CAMPAIGN_MANAGER_COMPLETE (2026-06-21)

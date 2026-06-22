@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-06-22 — Acool HVAC Theme v2.0 + [invalid] Block Fix — ACOOL_HVAC_V2_CERTIFIED
+
+**Reason:** v1 Acool theme looked "very messy and doesn't look like the original". 4 block types (nav_header, client_logos, stats_row, trust_badges) showed `[invalid]` because they were not registered in ElementSchemaRegistry.
+
+### customer-site
+- `config/builder-element-schemas.php` — 10 new block types registered: nav_header, hvac_hero, client_logos, about_section, service_cards, stats_row, trust_badges, project_cards, contact_info, site_footer
+- `app/Services/ThemeBuilder/BlockRenderer.php` — 10 new render methods (+ underscore aliases); each outputs inline-styled HVAC-themed HTML (navy #1e3a5f + sky blue #0ea5e9)
+- `bootstrap/cache/config.php` — stale root-credential cached config deleted; rebuilt from correct .env (saas_user)
+
+### saas-platform
+- `app/Console/Commands/AcoolHvacSeedCommand.php` — complete v2.0 rewrite: Theme + ThemeMarketplace created directly (no ThemePack); 12 pages; nav/footer in header_blocks/footer_blocks only
+
+**Production:**
+- Theme ID 54 `acool-hvac-service` published with 12 pages, marketplace_score=92, is_featured=true
+- All caches cleared and rebuilt; stale DB config (root@localhost) resolved
+- `[invalid]` blocks: nav_header, client_logos, stats_row, trust_badges now render correctly
+
+---
+
 ## 2026-06-22 — Real-World RE Validation — REAL_WORLD_VALIDATION_PASSED
 
 **Reason:** End-to-end validation of the Reverse Engineering pipeline against 5 real production websites.
