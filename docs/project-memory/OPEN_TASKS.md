@@ -42,6 +42,25 @@
 
 ---
 
+## COMPLETE: Business Flow Remediation — BATCH 3 (LOW) — 2026-06-22 ✅
+
+**Status:** BFA_BATCH3_COMPLETE (2026-06-22)
+
+### LOW — ALL DONE ✅
+
+| ID | Task | Status |
+|----|------|--------|
+| GAP-M10 | Lifecycle Delete No Physical Cleanup — SiteArchiveService::deleteArchiveZip() wired in SiteLifecycleService::delete() | ✅ DONE |
+| GAP-L01 | License Expiry Not Shown — API returns expires_at (purchase+1yr for non-permanent), blade shows it | ✅ DONE |
+| GAP-L02 | Payment Failure No Retry Guidance — pay-failed.blade.php rebuilt with 4-step guidance + support contacts | ✅ DONE |
+| GAP-L03 | Campaign Delivery No CSV Export — SmsCampaignController::exportCsv(), route, button in show.blade | ✅ DONE |
+| GAP-L05 | Admin Lifecycle No Days-Until-Archive — countdown chip in lifecycle/index.blade.php (red ≤30d, amber ≤90d) | ✅ DONE |
+| GAP-L06 | Archive ZIP Not Verified — verifyZip() called in createArchivePackage() (size + ZipArchive::RDONLY check) | ✅ DONE |
+| GAP-L08 | Post-Restore Counters Zero — SiteLifecycleService::restore() calls calculator->calculate() immediately | ✅ DONE |
+| GAP-L09 | Site Create No Post-Create Checklist — redirect to edit + just_created flash + 4-action checklist banner | ✅ DONE |
+
+---
+
 ## COMPLETE: Business Flow Remediation — BATCH 2 — 2026-06-22 ✅
 
 **Status:** BFA_BATCH2_COMPLETE (2026-06-22)

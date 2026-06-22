@@ -99,7 +99,7 @@ class ThemeZipImportController extends Controller
             $result = $this->service->import($request->file('zip_file'), $name, $options);
 
             return redirect()
-                ->route('theme-builder.zip-import.result', $result['pack']->id)
+                ->route('admin.theme-builder.zip-import.result', $result['pack']->id)
                 ->with('zip_import_result', [
                     'origin'           => $result['origin'],
                     'origin_label'     => $result['origin_label'],

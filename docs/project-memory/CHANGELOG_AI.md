@@ -5,6 +5,27 @@
 
 ---
 
+## 2026-06-22 — BFA-BATCH3 — Business Flow Gap Remediation Batch 3 (GAP-M10 + LOW priority)
+
+**Reason:** Close remaining 8 low-priority gaps from BUSINESS_FLOW_GAP_ANALYSIS.md
+
+### saas-platform
+- `app/Services/Lifecycle/SiteArchiveService.php` — GAP-M10: deleteArchiveZip() deletes archive ZIP on site deletion; GAP-L06: verifyZip() validates ZIP after creation
+- `app/Services/Lifecycle/SiteLifecycleService.php` — GAP-M10: inject SiteArchiveService, call deleteArchiveZip() in delete(); GAP-L08: call calculator->calculate() after restore()
+- `app/Http/Controllers/Api/ThemeMarketplaceApiController.php` — GAP-L01: expose expires_at in myLicenses() (purchase+1yr for non-permanent)
+- `resources/views/admin/lifecycle/index.blade.php` — GAP-L05: days-until-deletion countdown chip for archived sites (red ≤30, amber ≤90)
+- `resources/views/admin/sites/edit.blade.php` — GAP-L09: just_created flash → 4-action checklist banner (lifecycle/modules/subscription/resources)
+- `app/Http/Controllers/Admin/SiteController.php` — GAP-L09: redirect to edit page with just_created=true after site creation
+
+### customer-site
+- `resources/views/admin/theme-marketplace/my-licenses.blade.php` — GAP-L01: show expires_at from API (permanent = "بدون محدودیت", else date)
+- `resources/views/front/lifecycle/pay-failed.blade.php` — GAP-L02: rebuilt with 4-step retry guidance + support_phone/telegram contact
+- `app/Http/Controllers/Admin/SmsCampaignController.php` — GAP-L03: exportCsv() streams UTF-8 CSV with BOM (mobile/status/error/sent_at)
+- `routes/web.php` — GAP-L03: GET /admin/sms/campaigns/{campaign}/export-csv
+- `resources/views/admin/sms/campaigns/show.blade.php` — GAP-L03: "دانلود CSV" button in recipients table header
+
+---
+
 ## 2026-06-22 — BFA-BATCH2 — Business Flow Gap Remediation Batch 2 (GAP-H04 through GAP-M09)
 
 **Reason:** Close 11 remaining business flow gaps (HIGH + MEDIUM priority) from BUSINESS_FLOW_GAP_ANALYSIS.md

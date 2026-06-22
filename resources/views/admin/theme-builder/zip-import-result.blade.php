@@ -40,7 +40,7 @@
       <div class="flex items-center gap-2 text-sm text-gray-500">
         <a href="{{ route('admin.theme-builder.index') }}" class="hover:text-indigo-600">ویرایشگر قالب</a>
         <span>›</span>
-        <a href="{{ route('theme-builder.zip-import.form') }}" class="hover:text-indigo-600">ورود از ZIP</a>
+        <a href="{{ route('admin.theme-builder.zip-import.form') }}" class="hover:text-indigo-600">ورود از ZIP</a>
         <span>›</span>
         <span class="text-gray-900">نتیجه</span>
       </div>
@@ -295,7 +295,7 @@
           <h3 class="text-sm font-bold text-gray-900 mb-4" style="font-family: Vazirmatn, sans-serif;">عملیات</h3>
 
           {{-- Install as Canvas Theme --}}
-          <form action="{{ route('theme-builder.zip-import.install', $pack->id) }}" method="POST" class="mb-3">
+          <form action="{{ route('admin.theme-builder.zip-import.install', $pack->id) }}" method="POST" class="mb-3">
             @csrf
             <input type="hidden" name="name" value="{{ $pack->name }}">
             <input type="hidden" name="category" value="{{ $result['metadata']['category'] ?? 'corporate' }}">
@@ -310,7 +310,7 @@
           </form>
 
           {{-- Export JSON --}}
-          <a href="{{ route('theme-builder.zip-import.export', $pack->id) }}"
+          <a href="{{ route('admin.theme-builder.zip-import.export', $pack->id) }}"
              class="w-full py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 mb-3"
              style="font-family: Vazirmatn, sans-serif;">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,7 +320,7 @@
           </a>
 
           {{-- Re-import --}}
-          <a href="{{ route('theme-builder.zip-import.form') }}"
+          <a href="{{ route('admin.theme-builder.zip-import.form') }}"
              class="w-full py-2.5 px-4 border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
              style="font-family: Vazirmatn, sans-serif;">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -362,7 +362,7 @@
         <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-5">
           <h3 class="text-sm font-bold text-indigo-900 mb-2" style="font-family: Vazirmatn, sans-serif;">انتشار در Marketplace</h3>
           <p class="text-xs text-indigo-700 mb-3">این قالب هنوز در Marketplace منتشر نشده. می‌توانید آن را به‌صورت Theme جداگانه منتشر کنید.</p>
-          <form action="{{ route('theme-builder.zip-import.install', $pack->id) }}" method="POST">
+          <form action="{{ route('admin.theme-builder.zip-import.install', $pack->id) }}" method="POST">
             @csrf
             <input type="hidden" name="name" value="{{ $pack->name }}">
             <input type="hidden" name="category" value="corporate">

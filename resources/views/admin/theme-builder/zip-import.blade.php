@@ -89,7 +89,7 @@
       </div>
 
       <div class="p-6">
-        <form action="{{ route('theme-builder.zip-import.import') }}" method="POST" enctype="multipart/form-data" id="zipImportForm">
+        <form action="{{ route('admin.theme-builder.zip-import.import') }}" method="POST" enctype="multipart/form-data" id="zipImportForm">
           @csrf
 
           {{-- Drop Zone --}}
@@ -273,7 +273,7 @@
               <p class="text-xs text-gray-400">{{ $pack->created_at?->diffForHumans() }}</p>
             </div>
             <div class="flex gap-2">
-              <a href="{{ route('theme-builder.zip-import.result', $pack->id) }}"
+              <a href="{{ route('admin.theme-builder.zip-import.result', $pack->id) }}"
                  class="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-medium">نتیجه</a>
               <a href="{{ route('admin.theme-builder.canvas', ['theme' => 0, 'pack' => $pack->id]) }}"
                  class="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Canvas</a>
