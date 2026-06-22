@@ -8,6 +8,8 @@
 
 ## ACTIVE BUGS
 
+> All GAP-L07 resolved in RC1 (2026-06-22). See RELEASE_CANDIDATE_1.md.
+
 ### RE-FP-003 — HIGH | RESOLVED (2026-06-22)
 
 **Title:** Navigation Items Not Extracted (0% success rate)  

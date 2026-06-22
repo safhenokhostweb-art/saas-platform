@@ -10,11 +10,11 @@
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║            PRODUCTION_READY                                  ║
+║            RC1_READY                                         ║
 ║                                                              ║
-║   Overall Score V2:   91 / 100                               ║
-║   Previous Score V1:  67 / 100                               ║
-║   Score Delta:       +24 points                              ║
+║   Overall Score RC1:  93 / 100                               ║
+║   Previous Score V2:  91 / 100                               ║
+║   Score Delta (RC1): +2 points (GAP-L07 fixed)               ║
 ║   Grade: A (Production Grade)                                ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -162,9 +162,7 @@
 | Restore invoice payment flow (GAP-C01) | 10 | ❌ 0 | ✅ 10 | **+10** |
 | Grace period reminders — mid (GAP-H03) | 5 | ❌ 0 | ✅ 5 | **+5** |
 | Days-until-archive countdown (GAP-L05) | 3 | ❌ 0 | ✅ 3 | **+3** |
-| Renewal link in SMS (GAP-L07) | 2 | ❌ 0 | ❌ 0 | *NOT FIXED* |
-
-**Remaining gaps:** GAP-L07 — SMS grace period messages contain no clickable renewal URL (2 pts, LOW).
+| Renewal link in SMS (GAP-L07) | 2 | ❌ 0 | ✅ 2 | **+2 (RC1)** |
 
 ---
 

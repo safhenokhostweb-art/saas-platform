@@ -21,7 +21,15 @@
 
 ## CURRENT STATE (2026-06-22)
 
-**Last completed phase:** BFA Batch 3 (LOW) — All 8 remaining business flow gaps closed — BFA_BATCH3_COMPLETE (2026-06-22)
+**Last completed phase:** RELEASE_CANDIDATE_1 — RC1_READY (2026-06-22)
+**Status:** All 15 systems AUDIT_PASS. GAP-L07 fixed. 3 RC1 documents generated. POST_LAUNCH_ROADMAP created. Platform cleared for production go-live.
+
+**RC1 Documents:**
+- `docs/RELEASE_CANDIDATE_1.md` — RC1 identity, audit results, module inventory
+- `docs/GO_LIVE_CHECKLIST.md` — pre-launch, launch-day sequence, rollback plan
+- `docs/POST_LAUNCH_ROADMAP.md` — H01, Collaborative Editing, Analytics, Marketplace, AI
+
+**Before that:** BFA Batch 3 (LOW) — All 8 remaining business flow gaps closed — BFA_BATCH3_COMPLETE (2026-06-22)
 **Before that:** RE Accuracy V2 — REVERSE_ENGINEERING_V2_CERTIFIED (2026-06-22)
 **Before that:** TB3 Sprint 12 — ZIP Template Import Engine — ZIP_IMPORT_ENGINE_OPERATIONAL (2026-06-22)
 **Before that:** BFA High Priority Batch — BFA-M05 + BFA-H02 + BFA-H03 COMPLETE (2026-06-22)

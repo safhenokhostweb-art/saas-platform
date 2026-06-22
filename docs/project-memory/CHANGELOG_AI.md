@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-06-22 — RELEASE_CANDIDATE_1 — RC1_READY — Score 91/100
+
+**Reason:** Final RC1 preparation: Phase 1 fix (GAP-L07), Phase 2 audit (14 PASS/1 WARN/0 FAIL), Phase 3 documents, Phase 4 roadmap
+
+### saas-platform — GAP-L07 Fix
+- `app/Services/Lifecycle/SiteLifecycleNotificationService.php` — gracePeriodStarted/Mid/Reminder: append `https://{domain}/account/subscriptions/plans` renewal URL to SMS body
+
+### Docs created
+- `docs/RELEASE_CANDIDATE_1.md` — RC1 identity, audit results, full module list
+- `docs/GO_LIVE_CHECKLIST.md` — pre-launch, launch-day sequence, rollback plan, post-launch monitoring
+- `docs/POST_LAUNCH_ROADMAP.md` — H01 bridge, Collaborative Editing, Advanced Analytics, Marketplace Expansion, AI Enhancements (roadmap only, no implementation)
+
+**Audit verdict:** 15 systems checked — 14 PASS / 1 WARN (SMS Campaign architectural note, not a defect) / 0 FAIL
+
+---
+
 ## 2026-06-22 — PRODUCTION_READINESS_RE_AUDIT — V2 Score: 91/100, PRODUCTION_READY
 
 **Reason:** Full re-audit of all 32 business flow gaps after remediation batches
