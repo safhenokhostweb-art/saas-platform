@@ -5,6 +5,26 @@
 
 ---
 
+## 2026-06-22 — ZIP_IMPORT_ENGINE — TB3 Sprint 12 ZIP Template Import Engine
+
+**Reason:** Import commercial template ZIPs (TemplateGoat, ThemeForest, Envato, Elementor/Bricks Libraries) without manual conversion.
+
+### saas-platform
+- `app/Services/ThemeBuilder/ZipImport/ZipTemplateExtractor.php` — safe ZIP extraction (100MB/500 file limits, path traversal guard, 8 blocked extensions), file classification into json/screenshot/asset/metadata
+- `app/Services/ThemeBuilder/ZipImport/ZipTemplateAnalyzer.php` — 6 origin detection (templategoat/themeforest/envato/elementor_lib/bricks_lib/unknown), JSON priority selection, metadata extraction from package.json/style.css/README, screenshot selection
+- `app/Services/ThemeBuilder/ZipImport/ZipTemplateImportService.php` — 7-phase orchestrator: Extract→Analyze→JSON Pipeline→Screenshots→ThemePack→Marketplace→Similarity (5-dimension 100pt scoring)
+- `app/Http/Controllers/Admin/ThemeZipImportController.php` — 6 actions: form/detect/import/result/install/export
+- `resources/views/admin/theme-builder/zip-import.blade.php` — drag-drop upload + AJAX detect banner + step indicator
+- `resources/views/admin/theme-builder/zip-import-result.blade.php` — score dashboard, breakdown bars, phase timeline, screenshots gallery, install/export actions
+- `routes/web.php` — 6 new routes at /admin/theme-builder/zip-import
+- `app/Helpers/AdminMenu.php` — zip_import key + route + pattern + محتوا group
+- `resources/views/admin/partials/sidebar-icon.blade.php` + sidebar-icon-bare — archive icon for zip_import
+- `docs/ZIP_IMPORT_ENGINE_ARCHITECTURE.md`, `docs/ZIP_IMPORT_ENGINE_CERTIFICATION.md`, `docs/ZIP_IMPORT_VALIDATION_REPORT.md`
+
+**Commit:** d9c4a30
+
+---
+
 ## 2026-06-22 — RE-FP-003 + RE-FP-007 — RE Pipeline Nav + Breakpoints Fix
 
 **Reason:** Two OPEN known issues from Real-World Validation backlog.
