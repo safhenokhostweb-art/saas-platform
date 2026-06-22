@@ -338,7 +338,7 @@ function zipImport() {
       form.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
       try {
-        const res = await fetch('{{ route("theme-builder.zip-import.detect") }}', {
+        const res = await fetch('{{ route("admin.theme-builder.zip-import.detect") }}', {
           method: 'POST',
           body: form,
         });
