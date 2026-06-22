@@ -158,14 +158,17 @@ class DomExtractionService
         // Attach headless-only data for Phase 3 (visual analysis)
         $base['source'] = 'headless';
         $base['headless'] = [
-            'colors'       => $comp['colors']      ?? [],
-            'typography'   => $comp['typography']  ?? [],
-            'sliders'      => $comp['sliders']     ?? [],
-            'search'       => $comp['search']      ?? [],
-            'filters'      => $comp['filters']     ?? [],
-            'product_grid' => $comp['product_grid'] ?? [],
-            'screenshot'   => !empty($headlessComponents['screenshot_base64']),
-            'html_size'    => strlen($renderedHtml),
+            'colors'          => $comp['colors']         ?? [],
+            'tailwind_colors' => $comp['tailwind_colors'] ?? [],  // RE-FP-004: Tailwind class colors
+            'typography'      => $comp['typography']     ?? [],
+            'sliders'         => $comp['sliders']        ?? [],
+            'search'          => $comp['search']         ?? [],
+            'filters'         => $comp['filters']        ?? [],
+            'product_grid'    => $comp['product_grid']   ?? [],
+            'breakpoints'     => $comp['breakpoints']    ?? [],    // RE-FP-007: extracted breakpoints
+            'responsive_classes' => $comp['responsive_classes'] ?? [],
+            'screenshot'      => !empty($headlessComponents['screenshot_base64']),
+            'html_size'       => strlen($renderedHtml),
         ];
 
         // Boost sections_count based on Playwright-detected sections

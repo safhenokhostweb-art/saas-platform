@@ -60,8 +60,8 @@ class ReverseThemeReconstructorService
         array $similarityScores,
         string $apiKey = ''
     ): ThemePack {
-        // Build global styles from visual profile
-        $globalStyles = $this->buildGlobalStyles($visualProfile, $similarityScores);
+        // RE-FP-007: Build global styles with real extracted breakpoints from DOM structure
+        $globalStyles = $this->buildGlobalStyles($visualProfile, $similarityScores, $domStructure);
 
         // Determine which sections to generate
         $sections = array_map(fn ($s) => $s['type'], $layoutMap['sections'] ?? []);
@@ -445,11 +445,45 @@ USR;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private function buildGlobalStyles(array $visual, array $scores): array
+    /**
+     * RE-FP-007: Build global styles including real extracted responsive breakpoints.
+     *
+     * Breakpoints come from three sources (priority order):
+     *   1. Playwright CSS media query extraction (most accurate)
+     *   2. domStructure headless breakpoints data
+     *   3. Standard Tailwind defaults as fallback
+     */
+    private function buildGlobalStyles(array $visual, array $scores, array $domStructure = []): array
     {
         $palette  = $visual['color_palette'] ?? [];
         $typo     = $visual['typography'] ?? [];
         $radius   = $visual['border_radius']['scale'] ?? 'md';
+
+        // RE-FP-007: Use real extracted breakpoints when available
+        $headlessBreakpoints = $domStructure['headless']['breakpoints'] ?? [];
+        if (!empty($headlessBreakpoints) && ($headlessBreakpoints['detected'] ?? false)) {
+            $breakpoints = [
+                'sm'  => $headlessBreakpoints['mobile']  ?? 640,
+                'md'  => $headlessBreakpoints['tablet']  ?? 768,
+                'lg'  => $headlessBreakpoints['desktop'] ?? 1024,
+                'xl'  => 1280,
+                'raw' => $headlessBreakpoints['raw_px']  ?? [],
+            ];
+        } else {
+            $breakpoints = ['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280];
+        }
+
+        // RE-FP-007: Responsive visibility rules (from Tailwind class analysis)
+        $responsiveClasses = $domStructure['headless']['responsive_classes'] ?? [];
+        $responsiveRules = [];
+        if (!empty($responsiveClasses['has_responsive_grid'])) {
+            $responsiveRules['grid_col_mobile']  = 1;
+            $responsiveRules['grid_col_tablet']  = 2;
+            $responsiveRules['grid_col_desktop'] = 4;
+        }
+        if (!empty($responsiveClasses['has_mobile_hide'])) {
+            $responsiveRules['hide_on_mobile'] = ['sidebar', 'mega_menu_desktop'];
+        }
 
         return [
             'primary_color'    => $palette['primary']    ?? '#3b82f6',
@@ -462,7 +496,8 @@ USR;
             'direction'        => 'rtl',
             'shadow'           => $visual['shadow_system']['card'] ?? '0 4px 16px rgba(0,0,0,0.08)',
             'dark_mode'        => $visual['dark_mode'] ?? false,
-            'breakpoints'      => ['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280],
+            'breakpoints'      => $breakpoints,
+            'responsive'       => $responsiveRules,
         ];
     }
 

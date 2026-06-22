@@ -356,7 +356,15 @@ class VisualReverseEngineeringService
     private function analyzeVisual(string $html, array $dom): array
     {
         if (!empty($html)) {
-            return $this->visualAnalyzer->analyze($html, $dom);
+            $profile = $this->visualAnalyzer->analyze($html, $dom);
+
+            // RE-FP-004: Wire Tailwind class colors extracted by Playwright (most accurate for JIT sites)
+            $tailwindColors = $dom['headless']['tailwind_colors'] ?? [];
+            if (!empty($tailwindColors)) {
+                $profile = $this->visualAnalyzer->mergeTailwindColors($profile, $tailwindColors);
+            }
+
+            return $profile;
         }
         // Vision result stored in dom
         if ($dom['source'] === 'vision') {

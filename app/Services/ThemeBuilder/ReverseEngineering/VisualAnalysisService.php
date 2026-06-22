@@ -94,25 +94,66 @@ class VisualAnalysisService
     /**
      * Merge browser-computed colors into an existing color palette.
      * Headless colors are more accurate (actual rendered colors vs regex guesses).
+     * RE-FP-004: Also uses Tailwind class colors extracted by extract.mjs.
      */
     private function mergeHeadlessColors(array $existing, array $headlessColors): array
     {
         if (empty($headlessColors)) return $existing;
 
-        // Use headless primary if it's different from white/black (body background)
-        $filtered = array_filter($headlessColors, fn($h) => !in_array($h, ['#ffffff', '#000000', '#ffffffff']));
+        // Near-white/near-black exclusions
+        $exclude = ['#ffffff', '#000000', '#ffffffff', '#f9fafb', '#f8fafc', '#111827', '#0f172a', '#1e293b'];
+
+        // Use headless primary if it's a meaningful color
+        $filtered = array_filter($headlessColors, fn ($h) => !in_array(strtolower($h), $exclude));
+        $filtered = array_values($filtered);
+
         if (!empty($filtered)) {
-            $primary = array_values($filtered)[0];
-            if (!empty($primary)) {
-                $existing['primary']       = $primary;
-                $existing['primary_source']= 'computed';
-            }
+            $existing['primary']        = $filtered[0];
+            $existing['primary_source'] = 'computed_headless';
+
+            // Also populate secondary / accent from headless colors (more accurate than regex)
+            if (isset($filtered[1])) $existing['secondary'] = $filtered[1];
+            if (isset($filtered[2])) $existing['accent']    = $filtered[2];
         }
 
-        // Add headless colors to swatches that aren't already there
+        // Expose full headless color list for the similarity engine
         $existing['headless_computed'] = array_values($headlessColors);
+        // all_colors used by scoreVisual() multi-source matching
+        $existing['all'] = array_unique(array_merge(
+            $existing['headless_computed'],
+            $existing['all'] ?? []
+        ));
 
         return $existing;
+    }
+
+    /**
+     * Merge Tailwind class colors extracted by Playwright (RE-FP-004).
+     * These are the most reliable signal for Tailwind JIT sites.
+     */
+    public function mergeTailwindColors(array $visualProfile, array $tailwindColors): array
+    {
+        if (empty($tailwindColors)) return $visualProfile;
+
+        $palette = $visualProfile['color_palette'] ?? [];
+
+        // Tailwind colors are exact hex from class mapping — very reliable
+        if (!empty($tailwindColors[0])) {
+            $palette['primary']       = $tailwindColors[0];
+            $palette['primary_source']= 'tailwind_class';
+        }
+        if (!empty($tailwindColors[1])) {
+            $palette['secondary'] = $tailwindColors[1];
+        }
+
+        $palette['tailwind_extracted'] = $tailwindColors;
+        $palette['all'] = array_unique(array_merge(
+            $tailwindColors,
+            $palette['all'] ?? []
+        ));
+
+        $visualProfile['color_palette'] = $palette;
+        return $visualProfile;
     }
 
     /**
