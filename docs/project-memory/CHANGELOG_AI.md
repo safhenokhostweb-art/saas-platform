@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-06-22 — BFA-M05 + BFA-H02 + BFA-H03 — BUSINESS_FLOW_HIGH_PRIORITY_COMPLETE
+
+**Reason:** Three remaining high-priority items from Business Flow Remediation backlog.
+
+### BFA-M05 — Clear canvas_draft_data on theme install (customer-site)
+- `ThemeMarketplaceController::install()` — `Setting::where('key','canvas_draft_data')->delete()` after activating new theme; prevents stale draft conflicting with newly installed theme
+
+### BFA-H02 — Theme install backup + rollback (customer-site)
+- `ThemeMarketplaceController::install()` — backup current `active_canvas_theme_data` to `canvas_theme_backup_data` + `canvas_theme_backup_name` + `canvas_theme_backup_at` before overwriting
+- `ThemeMarketplaceController::rollback()` — NEW action: restores backup, clears draft, clears backup after restore
+- `routes/web.php` — `POST /admin/theme-marketplace/rollback` named `theme-marketplace.rollback`
+- `my-licenses.blade.php` — rollback amber banner + button shown when backup exists
+
+### BFA-H03 — Grace period mid-reminder SMS (saas-platform)
+- `SiteLifecycleNotificationService::gracePeriodMidReminder()` — NEW: mid-period SMS "X روز تا تعلیق" with Persian message
+- `CheckGracePeriodSitesCommand` — added mid-reminder block: sites with 5–8 days remaining, deduped via `SiteLifecycleLog` entry (`reason=grace_period_mid_reminder`) so only one mid-reminder per grace period cycle
+
+---
+
 ## 2026-06-22 — Acool HVAC Theme v2.0 + [invalid] Block Fix — ACOOL_HVAC_V2_CERTIFIED
 
 **Reason:** v1 Acool theme looked "very messy and doesn't look like the original". 4 block types (nav_header, client_logos, stats_row, trust_badges) showed `[invalid]` because they were not registered in ElementSchemaRegistry.

@@ -36,13 +36,13 @@
 | BFA-C04 | Customer self-service restore button on suspended page | ✅ DONE | C04_SELF_SERVICE_OPERATIONAL |
 | BFA-C05 | Physical file deletion on archive (SiteArchiveService::deleteActiveFiles) | ✅ DONE | C05_STORAGE_RELEASE_OPERATIONAL |
 
-### High Priority (do after critical)
+### High Priority — ALL DONE ✅
 
-| ID | Task | Hours |
-|----|------|-------|
-| BFA-H03 | Grace period mid-reminder SMS scheduler | 2h |
-| BFA-H02 | Theme install backup + rollback mechanism | 3h |
-| BFA-M05 | Clear canvas_draft_data on new theme install (0.5h) | 0.5h |
+| ID | Task | Hours | Status |
+|----|------|-------|--------|
+| BFA-H03 | Grace period mid-reminder SMS scheduler | 2h | ✅ DONE (2026-06-22) |
+| BFA-H02 | Theme install backup + rollback mechanism | 3h | ✅ DONE (2026-06-22) |
+| BFA-M05 | Clear canvas_draft_data on new theme install | 0.5h | ✅ DONE (2026-06-22) |
 
 ---
 

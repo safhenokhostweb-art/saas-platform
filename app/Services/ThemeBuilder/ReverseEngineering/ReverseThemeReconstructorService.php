@@ -434,6 +434,7 @@ USR;
             'direction'        => 'rtl',
             'shadow'           => $visual['shadow_system']['card'] ?? '0 4px 16px rgba(0,0,0,0.08)',
             'dark_mode'        => $visual['dark_mode'] ?? false,
+            'breakpoints'      => ['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280],
         ];
     }
 

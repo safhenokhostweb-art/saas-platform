@@ -54,6 +54,7 @@ class Site extends Model implements SiteModelInterface
         'lifecycle_changed_at',
         'grace_period_started_at',
         'grace_period_ends_at',
+        'grace_reminder_sent_at',
         'suspended_at',
         'suspended_reason',
         'archived_at',
@@ -63,20 +64,21 @@ class Site extends Model implements SiteModelInterface
     ];
 
     protected $casts = [
-        'support_expires_at'     => 'date',
-        'host_expires_at'        => 'date',
-        'domain_expires_at'      => 'date',
-        'support_starts_at'      => 'date',
-        'is_active'              => 'boolean',
-        'customer_menu_keys'     => 'array',
-        'features'               => 'array',
-        'lifecycle_changed_at'   => 'datetime',
-        'grace_period_started_at'=> 'datetime',
-        'grace_period_ends_at'   => 'datetime',
-        'suspended_at'           => 'datetime',
-        'archived_at'            => 'datetime',
-        'restore_requested_at'   => 'datetime',
-        'lifecycle_deleted_at'   => 'datetime',
+        'support_expires_at'      => 'date',
+        'host_expires_at'         => 'date',
+        'domain_expires_at'       => 'date',
+        'support_starts_at'       => 'date',
+        'is_active'               => 'boolean',
+        'customer_menu_keys'      => 'array',
+        'features'                => 'array',
+        'lifecycle_changed_at'    => 'datetime',
+        'grace_period_started_at' => 'datetime',
+        'grace_period_ends_at'    => 'datetime',
+        'grace_reminder_sent_at'  => 'datetime',
+        'suspended_at'            => 'datetime',
+        'archived_at'             => 'datetime',
+        'restore_requested_at'    => 'datetime',
+        'lifecycle_deleted_at'    => 'datetime',
     ];
 
     public function customer()
