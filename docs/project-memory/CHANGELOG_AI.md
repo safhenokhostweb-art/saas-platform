@@ -5,6 +5,44 @@
 
 ---
 
+## 2026-06-22 — RC1_LAUNCH_FREEZE_ENFORCEMENT
+
+**Reason:** RC1 launch freeze activation — 6-phase stabilization enforcement run: freeze rules, pre-launch cleanup audit, customer UX review, admin UX review, operational health verification, roadmap gate.
+
+### Docs Created (saas-platform)
+- `docs/LAUNCH_FREEZE_RULES.md` — allowed/prohibited/approval-required change categories + roadmap gate classification table
+- `docs/PRE_LAUNCH_CLEANUP_REPORT.md` — full codebase audit (no placeholder pages, no dead routes, 3 minor findings)
+- `docs/CUSTOMER_UX_REVIEW.md` — 10 UX improvements across dashboard/sidebar/nav/lifecycle/billing/marketplace (score 89/100)
+- `docs/ADMIN_UX_REVIEW.md` — 12 UX improvements across admin dashboard/menus/Theme Builder/Marketplace/Lifecycle/Monitoring (score 90/100)
+- `docs/OPERATIONAL_HEALTH_REPORT.md` — 24 schedulers verified, queue workers verified, backup/cleanup/SMS/health endpoints all operational. 2 known gaps: offsite backup + SSL.
+
+**Status:** LAUNCH_FREEZE_ACTIVE
+**Phase 6 Roadmap Gate:** Every future request classified as BUG/UX/PERFORMANCE/SECURITY/FEATURE/ARCHITECTURE — FEATURE and ARCHITECTURE appended to POST_LAUNCH_ROADMAP.md only.
+
+---
+
+## 2026-06-22 — CUSTOMER_MENU_OPTIMIZED
+
+**Reason:** Customer admin sidebar cleanup — remove description-only module entries, restructure into semantic groups, fix visibility bugs.
+
+### Files Modified (customer-site)
+- `app/Helpers/AdminMenu.php` — MODULE_DESCRIPTION_ONLY constant (24 modules); getDynamicPlatformMenuKeys() filter; getStaticGroups() restructured into 11 semantic groups; isVisible() additions (crm/inventory/seo_advanced/sms_campaigns); MENU_KEYS expanded
+
+### Docs Created (customer-site)
+- `docs/CUSTOMER_MENU_AUDIT.md` — full 54-item audit table
+- `docs/CUSTOMER_MENU_BEFORE_AFTER.md` — visual before/after sidebar tree
+- `docs/CUSTOMER_MENU_REFACTOR_REPORT.md` — detailed change log
+- `docs/CUSTOMER_MENU_CERTIFICATION.md` — CUSTOMER_MENU_OPTIMIZED verdict
+
+**Impact:**
+- 24 description-only "coming soon" modules blocked from sidebar
+- 3 platform modules with real UIs (crm/inventory/seo_advanced) promoted to semantic static groups
+- 2 orphan groups (آموزش و راهنما, دستیار محتوا) merged into proper parents
+- sms_campaigns visibility bug fixed (now shows when sms moduleEnabled)
+- Max 11 sidebar groups regardless of license breadth
+
+---
+
 ## 2026-06-22 — RELEASE_CANDIDATE_1 — RC1_READY — Score 91/100
 
 **Reason:** Final RC1 preparation: Phase 1 fix (GAP-L07), Phase 2 audit (14 PASS/1 WARN/0 FAIL), Phase 3 documents, Phase 4 roadmap
