@@ -70,13 +70,16 @@ class ReverseThemeReconstructorService
             $sections = ['header', 'hero', 'features', 'cta', 'footer'];
         }
 
+        // RE-FP-003: Extract real nav labels from DOM structure (Playwright headless pass)
+        $navLabels = $domStructure['header']['nav_labels'] ?? [];
+
         // Try AI-assisted pack generation, fall back to PHP
         $packJson    = null;
         $deepseekKey = (string) config('services.deepseek.key', '');
 
         if (!empty($apiKey)) {
             try {
-                $packJson = $this->aiGeneratePack($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $apiKey);
+                $packJson = $this->aiGeneratePack($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $apiKey, $navLabels);
             } catch (\Throwable $e) {
                 Log::warning('RE: Claude reconstruction failed, trying DeepSeek', ['error' => $e->getMessage()]);
             }
@@ -84,7 +87,7 @@ class ReverseThemeReconstructorService
 
         if ($packJson === null && !empty($deepseekKey)) {
             try {
-                $packJson = $this->aiGeneratePackDeepSeek($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $deepseekKey);
+                $packJson = $this->aiGeneratePackDeepSeek($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $deepseekKey, $navLabels);
                 Log::info('RE: DeepSeek reconstruction succeeded');
             } catch (\Throwable $e) {
                 Log::warning('RE: DeepSeek reconstruction failed, using PHP fallback', ['error' => $e->getMessage()]);
@@ -92,7 +95,7 @@ class ReverseThemeReconstructorService
         }
 
         if ($packJson === null) {
-            $packJson = $this->phpBuildPack($name, $sections, $globalStyles, $layoutMap, $commerceProfile);
+            $packJson = $this->phpBuildPack($name, $sections, $globalStyles, $layoutMap, $commerceProfile, $navLabels);
         }
 
         return $this->persistThemePack($packJson, $name, $similarityScores);
@@ -108,7 +111,8 @@ class ReverseThemeReconstructorService
         array  $visualProfile,
         array  $commerceProfile,
         array  $similarityScores,
-        string $apiKey
+        string $apiKey,
+        array  $navLabels = []
     ): ?array {
         $bestMatch   = $similarityScores['best_match'] ?? 'stripe';
         $bestScore   = $similarityScores['best_match_score'] ?? 0;
@@ -117,6 +121,9 @@ class ReverseThemeReconstructorService
         $stylesJson  = json_encode($globalStyles, JSON_UNESCAPED_UNICODE);
         $colorPalette = $visualProfile['color_palette'] ?? [];
         $typography   = $visualProfile['typography'] ?? [];
+        $navHint = !empty($navLabels)
+            ? 'Extracted navigation labels (use these in nav_header links, translate to Persian): ' . implode(', ', array_slice($navLabels, 0, 8))
+            : 'No navigation labels extracted; use generic Persian nav links.';
 
         $system = <<<SYS
 You are a professional Persian (RTL/Farsi) web theme designer AI.
@@ -142,6 +149,7 @@ Is commerce site: {$isCommerce}
 Global styles: {$stylesJson}
 Primary color: {$colorPalette['primary']}
 Font: {$typography['primary_font']}
+{$navHint}
 
 Generate a complete Persian ThemePack JSON:
 {
@@ -197,7 +205,8 @@ USR;
         array  $visualProfile,
         array  $commerceProfile,
         array  $similarityScores,
-        string $apiKey
+        string $apiKey,
+        array  $navLabels = []
     ): ?array {
         $bestMatch   = $similarityScores['best_match'] ?? 'ecommerce';
         $bestScore   = $similarityScores['best_match_score'] ?? 0;
@@ -208,6 +217,16 @@ USR;
         $typography   = $visualProfile['typography'] ?? [];
 
         $primaryColor = $colorPalette['primary'] ?? '#3b82f6';
+
+        // RE-FP-003: Build nav links JSON from real extracted labels
+        if (!empty($navLabels)) {
+            $navLinksJson = json_encode(
+                array_map(fn ($label) => ['text' => $label, 'url' => '#'], array_slice($navLabels, 0, 8)),
+                JSON_UNESCAPED_UNICODE
+            );
+        } else {
+            $navLinksJson = '[{"text": "خانه", "url": "/"}, {"text": "محصولات", "url": "/products"}, {"text": "درباره ما", "url": "/about"}, {"text": "تماس", "url": "/contact"}]';
+        }
 
         $systemPrompt = 'You are a professional Persian (RTL/Farsi) web theme designer AI. Generate a complete TB3 ThemePack JSON for a Persian e-commerce website. Return ONLY valid JSON — no markdown, no code fences, no explanation. ALL text in Persian. Direction RTL. Font Vazirmatn. Use ORIGINAL content only.';
 
@@ -222,7 +241,7 @@ Return this exact JSON structure (fill all fields, generate UUIDs for IDs):
   "description": "توضیح فارسی قالب فروشگاهی",
   "global_styles": { "primary_color": "{$primaryColor}", "secondary_color": "#ffffff", "accent_color": "#f59e0b", "background_color": "#ffffff", "text_color": "#111827", "font_family": "Vazirmatn", "border_radius": "md", "direction": "rtl" },
   "responsive_settings": { "desktop": { "base_font_size": "16px", "container_max_width": "1280px" }, "tablet": { "base_font_size": "15px", "container_max_width": "768px" }, "mobile": { "base_font_size": "14px", "container_max_width": "100%" } },
-  "headers": [{ "name": "هدر اصلی", "blocks": [{ "id": "uuid1", "type": "nav_header", "data": { "logo_text": "{$name}", "logo_url": "/", "sticky": true, "links": [{"text": "خانه", "url": "/"}, {"text": "محصولات", "url": "/products"}, {"text": "درباره ما", "url": "/about"}, {"text": "تماس", "url": "/contact"}], "cta_text": "خرید کنید", "cta_url": "/products" } }] }],
+  "headers": [{ "name": "هدر اصلی", "blocks": [{ "id": "uuid1", "type": "nav_header", "data": { "logo_text": "{$name}", "logo_url": "/", "sticky": true, "links": {$navLinksJson}, "cta_text": "خرید کنید", "cta_url": "/products" } }] }],
   "footers": [{ "name": "فوتر اصلی", "blocks": [{ "id": "uuid2", "type": "nav_footer", "data": { "logo_text": "{$name}", "columns": [{"title": "دسترسی سریع", "links": [{"text": "خانه", "url": "/"}, {"text": "محصولات", "url": "/products"}]}, {"title": "پشتیبانی", "links": [{"text": "تماس با ما", "url": "/contact"}, {"text": "سوالات متداول", "url": "/faq"}]}], "copyright": "© 2024 {$name}. تمام حقوق محفوظ است." } }] }],
   "pages": [{
     "title": "صفحه اصلی",
@@ -284,13 +303,22 @@ USR;
         array  $sections,
         array  $globalStyles,
         array  $layoutMap,
-        array  $commerceProfile
+        array  $commerceProfile,
+        array  $navLabels = []
     ): array {
         $homeBlocks = [];
         $templates  = [];
 
         $headerData = $this->placeholder->header(['site_name' => $name]);
         $footerData = $this->placeholder->footer(['site_name' => $name]);
+
+        // RE-FP-003: Inject real nav labels if extracted by Playwright
+        if (!empty($navLabels)) {
+            $headerData['links'] = array_map(fn ($label) => [
+                'text' => $label,
+                'url'  => '#',
+            ], array_slice($navLabels, 0, 8));
+        }
 
         foreach ($sections as $section) {
             if (in_array($section, ['header', 'footer'], true)) continue;
