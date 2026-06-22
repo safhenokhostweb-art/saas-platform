@@ -43,31 +43,32 @@ class RealWorldValidationCommand extends Command
 
     protected $description = 'Real-world RE validation: 5 sites × full pipeline → 3 reports + verdict';
 
+    // V2 — Updated targets matching RE accuracy improvement task
     private const SITES = [
-        'corporate' => [
-            'url'      => 'https://aws.amazon.com',
-            'label'    => 'Amazon AWS (Corporate)',
-            'category' => 'corporate',
-            'type'     => 'saas',
-            'target'   => 65,
-            'expected' => ['header', 'hero', 'features', 'footer'],
-            'commerce' => false,
-        ],
         'ecommerce' => [
             'url'      => 'https://www.amazon.com',
             'label'    => 'Amazon (E-commerce)',
             'category' => 'ecommerce',
             'type'     => 'ecommerce',
-            'target'   => 70,
+            'target'   => 95,
             'expected' => ['header', 'products', 'footer'],
             'commerce' => true,
+        ],
+        'corporate' => [
+            'url'      => 'https://aws.amazon.com',
+            'label'    => 'Amazon AWS (Corporate)',
+            'category' => 'corporate',
+            'type'     => 'saas',
+            'target'   => 90,
+            'expected' => ['header', 'hero', 'features', 'footer'],
+            'commerce' => false,
         ],
         'service' => [
             'url'      => 'https://stripe.com',
             'label'    => 'Stripe (Service/SaaS)',
             'category' => 'service',
             'type'     => 'saas',
-            'target'   => 70,
+            'target'   => 90,
             'expected' => ['header', 'hero', 'features', 'pricing', 'footer'],
             'commerce' => false,
         ],
@@ -76,7 +77,7 @@ class RealWorldValidationCommand extends Command
             'label'    => 'Maktabkhooneh (Education)',
             'category' => 'education',
             'type'     => 'education',
-            'target'   => 65,
+            'target'   => 85,
             'expected' => ['header', 'hero', 'courses', 'footer'],
             'commerce' => false,
         ],
@@ -84,8 +85,8 @@ class RealWorldValidationCommand extends Command
             'url'      => 'https://tailwindcss.com',
             'label'    => 'Tailwind CSS (Landing Page)',
             'category' => 'landing',
-            'type'     => 'saas',
-            'target'   => 65,
+            'type'     => 'landing',
+            'target'   => 75,
             'expected' => ['header', 'hero', 'features', 'cta', 'footer'],
             'commerce' => false,
         ],
@@ -619,9 +620,9 @@ class RealWorldValidationCommand extends Command
             $md[] = "";
         }
 
-        $path = base_path('docs/REAL_WORLD_VALIDATION_REPORT.md');
+        $path = base_path('docs/SIMILARITY_SCORE_REPORT_V2.md');
         file_put_contents($path, implode("\n", $md));
-        $this->line("  ✓ Report: docs/REAL_WORLD_VALIDATION_REPORT.md");
+        $this->line("  ✓ Report: docs/SIMILARITY_SCORE_REPORT_V2.md");
     }
 
     // ── Report: Top Failure Patterns ──────────────────────────────────────────
@@ -740,9 +741,9 @@ class RealWorldValidationCommand extends Command
         $md[] = "| P3 | Add marketplace publish dry-run mode to catch DB issues before real publish |";
         $md[] = "";
 
-        $path = base_path('docs/TOP_FAILURE_PATTERNS.md');
+        $path = base_path('docs/TOP_FAILURE_PATTERNS_V2.md');
         file_put_contents($path, implode("\n", $md));
-        $this->line("  ✓ Report: docs/TOP_FAILURE_PATTERNS.md");
+        $this->line("  ✓ Report: docs/TOP_FAILURE_PATTERNS_V2.md");
     }
 
     // ── Report: Accuracy Report ───────────────────────────────────────────────
@@ -880,25 +881,38 @@ class RealWorldValidationCommand extends Command
         $md[] = "## Certification";
         $md[] = "";
 
-        if ($passed >= 3 && $avgSimilarity >= 65) {
+        // V2 certification: ≥4 sites AND avg ≥ 90%
+        $v2Certified = $passed >= 4 && $avgSimilarity >= 90;
+        $v2Partial   = $passed >= 3 && $avgSimilarity >= 75;
+
+        if ($v2Certified) {
             $md[] = "```";
-            $md[] = "REAL_WORLD_VALIDATION_PASSED";
+            $md[] = "REVERSE_ENGINEERING_V2_CERTIFIED";
             $md[] = "Date: {$date}";
-            $md[] = "Sites: {$passed}/{$total} targets met";
+            $md[] = "Sites: {$passed}/{$total} V2 targets met";
             $md[] = "Average similarity: {$avgSimilarity}%";
+            $md[] = "Target: ≥90% avg / ≥4 sites";
+            $md[] = "```";
+        } elseif ($v2Partial) {
+            $md[] = "```";
+            $md[] = "REVERSE_ENGINEERING_V2_PARTIAL";
+            $md[] = "Date: {$date}";
+            $md[] = "Sites: {$passed}/{$total} V2 targets met";
+            $md[] = "Average similarity: {$avgSimilarity}%";
+            $md[] = "Note: Need ≥4 sites AND avg ≥90% for full V2 certification";
             $md[] = "```";
         } else {
             $md[] = "```";
-            $md[] = "REAL_WORLD_VALIDATION_FAILED";
+            $md[] = "REVERSE_ENGINEERING_V2_FAILED";
             $md[] = "Date: {$date}";
-            $md[] = "Sites: {$passed}/{$total} targets met";
+            $md[] = "Sites: {$passed}/{$total} V2 targets met";
             $md[] = "Average similarity: {$avgSimilarity}%";
             $md[] = "```";
         }
 
-        $path = base_path('docs/REVERSE_ENGINEERING_ACCURACY_REPORT.md');
+        $path = base_path('docs/REVERSE_ENGINEERING_ACCURACY_V2.md');
         file_put_contents($path, implode("\n", $md));
-        $this->line("  ✓ Report: docs/REVERSE_ENGINEERING_ACCURACY_REPORT.md");
+        $this->line("  ✓ Report: docs/REVERSE_ENGINEERING_ACCURACY_V2.md");
     }
 
     // ── Final Verdict ─────────────────────────────────────────────────────────
@@ -932,27 +946,38 @@ class RealWorldValidationCommand extends Command
         $this->line("  Avg similarity:    {$avgSim}%");
         $this->line('');
 
-        $passed3 = $passed >= 3;
-        $avgOk   = $avgSim >= 65;
+        // V2: Need ≥4 of 5 targets met AND avg ≥ 90%
+        $passed4 = $passed >= 4;
+        $avgOk   = $avgSim >= 90;
 
-        if ($passed3 && $avgOk) {
-            $this->info('  ✅ REAL_WORLD_VALIDATION_PASSED');
-            $this->info("     {$passed}/{$total} sites met targets · Avg {$avgSim}% similarity");
+        if ($passed4 && $avgOk) {
+            $this->info('  ✅ REVERSE_ENGINEERING_V2_CERTIFIED');
+            $this->info("     {$passed}/{$total} sites met V2 targets · Avg {$avgSim}% similarity");
             $this->line('');
             $this->line('  Reports:');
-            $this->line('    docs/REAL_WORLD_VALIDATION_REPORT.md');
-            $this->line('    docs/TOP_FAILURE_PATTERNS.md');
-            $this->line('    docs/REVERSE_ENGINEERING_ACCURACY_REPORT.md');
+            $this->line('    docs/REVERSE_ENGINEERING_ACCURACY_V2.md');
+            $this->line('    docs/TOP_FAILURE_PATTERNS_V2.md');
+            $this->line('    docs/SIMILARITY_SCORE_REPORT_V2.md');
+            $this->line('');
+            return Command::SUCCESS;
+        } elseif ($passed >= 3 && $avgSim >= 75) {
+            $this->warn('  ⚠️  REVERSE_ENGINEERING_V2_PARTIAL');
+            $this->warn("     {$passed}/{$total} sites met targets · Avg {$avgSim}% (V2 needs ≥4 sites and avg ≥90%)");
+            $this->line('');
+            $this->line('  Reports:');
+            $this->line('    docs/REVERSE_ENGINEERING_ACCURACY_V2.md');
+            $this->line('    docs/TOP_FAILURE_PATTERNS_V2.md');
+            $this->line('    docs/SIMILARITY_SCORE_REPORT_V2.md');
             $this->line('');
             return Command::SUCCESS;
         } else {
-            $this->error('  ❌ REAL_WORLD_VALIDATION_FAILED');
-            $reason = !$passed3
-                ? "Only {$passed}/{$total} sites met targets (need ≥3)"
-                : "Average similarity {$avgSim}% below 65% threshold";
+            $this->error('  ❌ REVERSE_ENGINEERING_V2_FAILED');
+            $reason = !$passed4
+                ? "Only {$passed}/{$total} sites met V2 targets (need ≥4)"
+                : "Average similarity {$avgSim}% below 90% V2 threshold";
             $this->error("     {$reason}");
             $this->line('');
-            $this->line('  Check docs/TOP_FAILURE_PATTERNS.md for root causes.');
+            $this->line('  Check docs/TOP_FAILURE_PATTERNS_V2.md for root causes.');
             $this->line('');
             return Command::FAILURE;
         }

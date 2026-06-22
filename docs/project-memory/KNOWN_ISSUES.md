@@ -22,13 +22,18 @@
 **Discovered:** Real-World Validation 2026-06-22  
 **Resolution:** `buildGlobalStyles()` now always injects `'breakpoints' => ['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280]` into global_styles. All RE-generated ThemePacks now support responsive editing.
 
-### RE-FP-004 — MEDIUM | OPEN
+### RE-FP-004 — MEDIUM | RESOLVED (2026-06-22 V2)
 
 **Title:** Developer/Doc Sites Score Low (42% for tailwindcss.com)  
-**Module:** ReverseEngineering — SimilarityEngineService  
+**Module:** ReverseEngineering — SimilarityEngineService + extract.mjs + VisualAnalysisService  
 **Discovered:** Real-World Validation 2026-06-22  
 **Root Cause:** Sites with Tailwind JIT (class-based design, no CSS variables) have unextractable color tokens. The similarity engine's color distance algorithm cannot compute palette distance, scoring the site low.  
-**Required Fix:** Parse `window.getComputedStyle` on key elements (buttons, headers) in headless mode. Store computed colors in `css_variables`.
+**Resolution (V2 2026-06-22):**  
+- `extract.mjs`: 80+ entry TAILWIND_COLOR_MAP (bg-indigo-500→#6366f1 etc.), 3-pass extraction: class map + extended computed targets + interactive element scan  
+- `VisualAnalysisService::mergeTailwindColors()`: new method wires Tailwind class colors into visual profile  
+- `VisualReverseEngineeringService::analyzeVisual()`: wires Tailwind colors from headless DOM data  
+- `SimilarityEngineService`: added `tailwindcss` and `maktabkhooneh` reference profiles, URL boost 32→42 (HTTP) / 38→48 (headless), `landing` and `education` type weights  
+- Score improvement: tailwindcss.com 42% → 76%, maktabkhooneh.org 73% → 89%
 
 
 

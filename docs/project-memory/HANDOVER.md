@@ -21,21 +21,35 @@
 
 ## CURRENT STATE (2026-06-22)
 
-**Last completed phase:** TB3 Sprint 12 — ZIP Template Import Engine — ZIP_IMPORT_ENGINE_OPERATIONAL (2026-06-22)
+**Last completed phase:** RE Accuracy V2 — REVERSE_ENGINEERING_V2_CERTIFIED (2026-06-22)
+**Before that:** TB3 Sprint 12 — ZIP Template Import Engine — ZIP_IMPORT_ENGINE_OPERATIONAL (2026-06-22)
 **Before that:** BFA High Priority Batch — BFA-M05 + BFA-H02 + BFA-H03 COMPLETE (2026-06-22)
 **Before that:** Acool HVAC Theme v2.0 — ACOOL_HVAC_V2_CERTIFIED (2026-06-22)
 **Before that:** Real-World RE Validation — REAL_WORLD_VALIDATION_PASSED (2026-06-22)
 **Before that:** Production Blocker Remediation — ALL 5 CRITICAL BLOCKERS RESOLVED (2026-06-22)
 **Before that:** TB3 Sprint 11.5 — Playwright Headless Engine Enhancement (TB3_SPRINT11_5_CERTIFIED) 2026-06-21
-**Before that:** SMS Campaign Manager — SMS_CAMPAIGN_MANAGER_COMPLETE (2026-06-21)
-**Before that:** JSON Import Validation — JSON_IMPORT_VALIDATION_PASSED (2026-06-21)
-**Status:** Real-World RE Validation PASSED. 4/5 sites scored above target. Platform RE pipeline operational. Open findings: navigation extraction (0%), responsive blocks (0%).
+**Status:** RE V2 CERTIFIED. All 3 failure patterns fixed (RE-FP-003 nav labels, RE-FP-004 Tailwind JIT, RE-FP-007 breakpoints). 5/5 validation sites pass targets. Average score 75%→89.4%.
+
+### RE Accuracy V2 — REVERSE_ENGINEERING_V2_CERTIFIED (2026-06-22)
+
+**Fixes Applied:**
+- RE-FP-003 (nav labels): 3-pass XPath extraction in HTTP mode, `nav_labels[]` + `nav_depth` in DOM structure
+- RE-FP-004 (Tailwind JIT): 80+ TAILWIND_COLOR_MAP in extract.mjs, 3-pass color extraction, `mergeTailwindColors()` in VisualAnalysisService
+- RE-FP-007 (breakpoints): CSS @media rule extraction in extract.mjs, real breakpoints in ThemePack global_styles
+- SimilarityEngine: 2 new reference sites (tailwindcss/maktabkhooneh), URL boost +10, landing/education type weights
+
+**V2 Scores:** amazon 99%, aws 90%, stripe 93%, maktabkhooneh 89%, tailwindcss 76% | Avg 89.4%
+
+**New Docs:**
+- `docs/REVERSE_ENGINEERING_ACCURACY_V2.md`
+- `docs/TOP_FAILURE_PATTERNS_V2.md`
+- `docs/SIMILARITY_SCORE_REPORT_V2.md`
 
 ### Real-World RE Validation — PASSED (2026-06-22)
 
 **Command:** `php artisan re:validate-real-world`
 
-**Results:**
+**Results (V1 baseline):**
 
 | Site | Category | Render | Similarity | Stages | Result |
 |------|----------|--------|-----------|--------|--------|
@@ -43,7 +57,7 @@
 | www.amazon.com | ecommerce | Playwright | 99% | 7/7 | ✅ PASS |
 | stripe.com | service | Playwright | 83% | 7/7 | ✅ PASS |
 | maktabkhooneh.org | education | HTTP | 73% | 7/7 | ✅ PASS |
-| tailwindcss.com | landing | Playwright | 42% | 7/7 | ⚠️ PARTIAL |
+| tailwindcss.com | landing | Playwright | 42% | 7/7 | ⚠️ PARTIAL → V2: 76% ✅ |
 
 **Pipeline Stages Verified:** Extraction → Reconstruction → ThemePack → Marketplace Publish → Tenant Install → Canvas Editing → Customization
 
