@@ -638,6 +638,14 @@ Route::prefix('admin')
             Route::post('theme-builder/json-import/{pack}/install',          [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'install'])->name('theme-builder.json-import.install');
             Route::get('theme-builder/json-import/{pack}/export',            [\App\Http\Controllers\Admin\ThemeJsonImportController::class, 'export'])->name('theme-builder.json-import.export');
 
+            // ─── ZIP Import Engine ────────────────────────────────────────────────
+            Route::get('theme-builder/zip-import',                           [\App\Http\Controllers\Admin\ThemeZipImportController::class, 'form'])->name('theme-builder.zip-import.form');
+            Route::post('theme-builder/zip-import/detect',                   [\App\Http\Controllers\Admin\ThemeZipImportController::class, 'detect'])->name('theme-builder.zip-import.detect');
+            Route::post('theme-builder/zip-import/import',                   [\App\Http\Controllers\Admin\ThemeZipImportController::class, 'import'])->name('theme-builder.zip-import.import');
+            Route::get('theme-builder/zip-import/{pack}/result',             [\App\Http\Controllers\Admin\ThemeZipImportController::class, 'result'])->name('theme-builder.zip-import.result');
+            Route::post('theme-builder/zip-import/{pack}/install',           [\App\Http\Controllers\Admin\ThemeZipImportController::class, 'install'])->name('theme-builder.zip-import.install');
+            Route::get('theme-builder/zip-import/{pack}/export',             [\App\Http\Controllers\Admin\ThemeZipImportController::class, 'export'])->name('theme-builder.zip-import.export');
+
             // ─── TB6: Template Library (Canvas) ──────────────────────────────────
             Route::get('theme-builder/{theme}/canvas/templates',        [ThemeCanvasController::class, 'canvasTemplates'])->name('theme-builder.canvas.templates');
             Route::post('theme-builder/{theme}/canvas/save-as-template',[ThemeCanvasController::class, 'canvasSaveAsTemplate'])->name('theme-builder.canvas.save-as-template');
