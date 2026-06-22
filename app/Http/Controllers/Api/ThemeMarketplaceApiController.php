@@ -253,4 +253,46 @@ class ThemeMarketplaceApiController extends Controller
             'order_id'     => $order->id,
         ]);
     }
+
+    /**
+     * GAP-H06 — GET /api/theme-marketplace/licenses/{licenseKey}/invoice-data
+     *
+     * Returns invoice data for a specific theme purchase — used by customer-site to generate PDF.
+     */
+    public function licenseInvoiceData(Request $request, string $licenseKey): JsonResponse
+    {
+        /** @var Site $site */
+        $site = $request->attributes->get('tenant_site');
+
+        $license = ThemeLicense::with('theme')
+            ->where('site_id', $site->id)
+            ->where('license_key', $licenseKey)
+            ->first();
+
+        if (! $license) {
+            return response()->json(['success' => false, 'error' => 'license_not_found'], 404);
+        }
+
+        $order = $license->purchase_order_id
+            ? ThemePurchaseOrder::find($license->purchase_order_id)
+            : null;
+
+        $customer = $site->customer;
+
+        return response()->json([
+            'success'        => true,
+            'invoice_number' => 'THEME-' . str_pad((string) ($license->id), 6, '0', STR_PAD_LEFT),
+            'license_key'    => $license->license_key,
+            'theme_name'     => $license->theme?->name ?? 'قالب',
+            'theme_slug'     => $license->theme?->slug ?? '',
+            'purchased_at'   => $license->purchased_at?->toDateString(),
+            'amount_rial'    => $order?->amount_rial ?? 0,
+            'gateway_ref'    => $order?->gateway_ref ?? '',
+            'status'         => $order ? $order->status : 'paid',
+            'site_title'     => $site->title,
+            'site_domain'    => $site->domain ?? '',
+            'customer_name'  => $customer?->name ?? $site->title,
+            'customer_mobile' => $customer?->mobile ?? '',
+        ]);
+    }
 }

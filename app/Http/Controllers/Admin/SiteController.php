@@ -13,6 +13,8 @@ use App\Models\PaymentGateway;
 use App\Helpers\CustomerMenu;
 use App\Helpers\PlatformModules;
 use App\Services\WelcomeNotificationService;
+use App\Services\Sms\SmsGatewayResolver;
+use App\Helpers\PlatformSettings;
 use Illuminate\Support\Facades\Schema;
 
 class SiteController extends Controller
@@ -132,6 +134,9 @@ class SiteController extends Controller
         }
 
         ActivityLogger::log('site.created', 'ایجاد سایت: ' . $site->title, $site);
+
+        // GAP-M09 — Send welcome SMS to customer after site creation
+        $this->sendSiteCreatedSms($site);
 
         $message = 'سایت با موفقیت ایجاد شد';
         if ($welcomeCount > 0) {
@@ -263,6 +268,39 @@ class SiteController extends Controller
     /**
      * نرمال‌سازی تاریخ: شمسی یا میلادی به Y-m-d برای ذخیره در DB
      */
+    /**
+     * GAP-M09 — ارسال SMS خوش‌آمدگویی به مشتری پس از ایجاد سایت.
+     */
+    private function sendSiteCreatedSms(Site $site): void
+    {
+        try {
+            $gateway = SmsGatewayResolver::resolve();
+            if (! $gateway) {
+                return;
+            }
+
+            $customer = $site->customer;
+            $mobile   = $customer?->mobile ?? '';
+            if ($mobile === '') {
+                return;
+            }
+
+            $platformName = PlatformSettings::platformName();
+            $domain       = $site->domain ? "آدرس: {$site->domain}\n" : '';
+            $message      = "کاربر گرامی،\n"
+                          . "سایت «{$site->title}» با موفقیت در {$platformName} ایجاد شد.\n"
+                          . $domain
+                          . 'برای دسترسی به پنل مدیریت وارد شوید.';
+
+            $gateway->send($mobile, $message);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('GAP-M09: site created SMS failed', [
+                'site_id' => $site->id,
+                'error'   => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function normalizeDate(?string $value): ?string
     {
         if ($value === null || trim((string) $value) === '') {

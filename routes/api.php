@@ -84,6 +84,7 @@ Route::prefix('theme-marketplace')->middleware(['throttle:30,1', 'tenant.api'])-
     Route::get('/{theme}',                  [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'show'])->name('api.theme-marketplace.show');
     Route::post('/{theme}/initiate-purchase', [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'initiatePurchase'])->name('api.theme-marketplace.initiate-purchase');
     Route::get('/{theme}/download',         [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'download'])->name('api.theme-marketplace.download');
+    Route::get('/licenses/{licenseKey}/invoice-data', [\App\Http\Controllers\Api\ThemeMarketplaceApiController::class, 'licenseInvoiceData'])->name('api.theme-marketplace.license-invoice-data');
 });
 
 // Lifecycle API (C02/C04) — tenant self-service reactivation + restore

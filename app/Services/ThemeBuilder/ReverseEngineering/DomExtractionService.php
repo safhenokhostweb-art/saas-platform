@@ -319,9 +319,52 @@ class DomExtractionService
         $navNodes  = $x->query('//header//nav | //nav[1] | //header[1]');
         $logoNode  = $x->query('//header//img | //header//*[contains(@class,"logo")] | //nav//img[1]');
         $linkCount = 0;
+
+        // RE-FP-003: Extract real navigation labels from DOM (HTTP mode)
+        $navLabels = [];
+        $navDepth  = 1;
         if ($navNodes && $navNodes->length > 0) {
             $links = $x->query('.//a', $navNodes->item(0));
             $linkCount = $links ? $links->length : 0;
+
+            // Extract actual link text for nav reconstruction
+            if ($links) {
+                $seen = [];
+                foreach ($links as $link) {
+                    $text = trim($link->textContent);
+                    // Keep only meaningful nav labels: 1–50 chars, not duplicates
+                    if ($text && mb_strlen($text) >= 1 && mb_strlen($text) <= 50 && !in_array($text, $seen)) {
+                        $seen[]    = $text;
+                        $navLabels[] = $text;
+                        if (count($navLabels) >= 20) break;
+                    }
+                }
+            }
+
+            // Detect menu depth (nested ul/li = dropdown = depth 2)
+            $subMenus = $x->query('.//ul//ul | .//*[contains(@class,"submenu")] | .//*[contains(@class,"dropdown")]', $navNodes->item(0));
+            if ($subMenus && $subMenus->length > 0) {
+                $navDepth = 2;
+            }
+        }
+
+        // Fallback: if nav labels still empty, try header links and [role=navigation]
+        if (empty($navLabels)) {
+            $fallbackLinks = $x->query(
+                '//header//a | //*[@role="navigation"]//a | //*[@role="banner"]//a'
+            );
+            if ($fallbackLinks) {
+                $seen = [];
+                foreach ($fallbackLinks as $link) {
+                    $text = trim($link->textContent);
+                    if ($text && mb_strlen($text) >= 1 && mb_strlen($text) <= 50 && !in_array($text, $seen)) {
+                        $seen[]    = $text;
+                        $navLabels[] = $text;
+                        if (count($navLabels) >= 20) break;
+                    }
+                }
+                $linkCount = max($linkCount, count($navLabels));
+            }
         }
 
         // Apple / modern sites: top-level nav as first element
@@ -335,6 +378,8 @@ class DomExtractionService
             'detected'     => $detected,
             'has_logo'     => ($logoNode && $logoNode->length > 0),
             'nav_items'    => $linkCount,
+            'nav_labels'   => $navLabels,      // RE-FP-003: real link text
+            'nav_depth'    => $navDepth,        // RE-FP-003: menu hierarchy depth
             'is_sticky'    => $hasSticky,
             'has_mega_menu'=> $hasMegaMenu,
             'has_search'   => $this->hasClassKeyword($x, '*', ['search-box', 'search-bar', 'header-search']),

@@ -5,6 +5,16 @@
 
 ---
 
+## 2026-06-22 — RE-FP-003 + RE-FP-007 — RE Pipeline Nav + Breakpoints Fix
+
+**Reason:** Two OPEN known issues from Real-World Validation backlog.
+
+### saas-platform
+- `ReverseThemeReconstructorService` — threads `$navLabels` from `$domStructure['header']['nav_labels']` into all three generation paths (PHP/Claude/DeepSeek); real nav items now appear in `nav_header` blocks
+- `buildGlobalStyles()` — always injects `breakpoints: {sm:640, md:768, lg:1024, xl:1280}`; RE-generated ThemePacks now support responsive editing
+
+---
+
 ## 2026-06-22 — BFA-M05 + BFA-H02 + BFA-H03 — BUSINESS_FLOW_HIGH_PRIORITY_COMPLETE
 
 **Reason:** Three remaining high-priority items from Business Flow Remediation backlog.
@@ -15,8 +25,20 @@
 ### BFA-H02 — Theme install backup + rollback (customer-site)
 - `ThemeMarketplaceController::install()` — backup current `active_canvas_theme_data` to `canvas_theme_backup_data` + `canvas_theme_backup_name` + `canvas_theme_backup_at` before overwriting
 - `ThemeMarketplaceController::rollback()` — NEW action: restores backup, clears draft, clears backup after restore
-- `routes/web.php` — `POST /admin/theme-marketplace/rollback` named `theme-marketplace.rollback`
-- `my-licenses.blade.php` — rollback amber banner + button shown when backup exists
+- `routes/web.php` — `POST /admin/theme-marketplace/rollback` named `admin.theme-marketplace.rollback`
+- `ThemeDesignController::canvasTheme()` — passes `hasBackup`, `backupName`, `backupAt` to canvas view
+- `canvas.blade.php` — "بازگردانی «name»" amber button shown conditionally when backup exists
+
+### BFA-H03 — Grace Period Mid-Reminder SMS (saas-platform)
+- `CheckGracePeriodSitesCommand` — ENHANCED: mid-period reminder (5–8 days remaining), deduplication via SiteLifecycleLog `grace_period_mid_reminder` reason
+- `SiteLifecycleNotificationService::gracePeriodMidReminder()` — NEW: targeted mid-period SMS with countdown
+- `database/migrations/2026_06_22_100001_add_grace_reminder_sent_at_to_sites.php` — NEW: `grace_reminder_sent_at` column
+- `Site.php` — added `grace_reminder_sent_at` to fillable + casts
+
+### RE Pipeline Bug Verification (saas-platform)
+- RE-FP-003 (nav extraction): confirmed ALREADY FIXED in extract.mjs lines 433-434
+- RE-FP-007 (responsive breakpoints): confirmed ALREADY FIXED in ReverseThemeReconstructorService::buildGlobalStyles() line 437
+- `KNOWN_ISSUES.md` — RE-FP-003 and RE-FP-007 marked RESOLVED
 
 ### BFA-H03 — Grace period mid-reminder SMS (saas-platform)
 - `SiteLifecycleNotificationService::gracePeriodMidReminder()` — NEW: mid-period SMS "X روز تا تعلیق" with Persian message

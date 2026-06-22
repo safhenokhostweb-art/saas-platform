@@ -11,16 +11,16 @@
 ### RE-FP-003 — HIGH | RESOLVED (2026-06-22)
 
 **Title:** Navigation Items Not Extracted (0% success rate)  
-**Module:** ReverseEngineering — DomExtractionService / extract.mjs  
+**Module:** ReverseEngineering — ReverseThemeReconstructorService  
 **Discovered:** Real-World Validation 2026-06-22  
-**Resolution:** `extract.mjs` already contains `document.querySelectorAll('nav a, header a, [role="navigation"] a, [role="banner"] a')` extraction. Confirmed resolved in code audit.
+**Resolution:** `reconstruct()` now threads `$navLabels` from `$domStructure['header']['nav_labels']` (populated by Playwright + DomExtractionService) into `phpBuildPack()`, `aiGeneratePack()`, and `aiGeneratePackDeepSeek()`. Real nav link text now appears in `nav_header` block `links` array instead of generic Persian placeholders.
 
 ### RE-FP-007 — MEDIUM | RESOLVED (2026-06-22)
 
 **Title:** Responsive Breakpoints Not Injected in ThemePacks  
 **Module:** ReverseEngineering — ReverseThemeReconstructorService  
 **Discovered:** Real-World Validation 2026-06-22  
-**Resolution:** `buildGlobalStyles()` at line 437 already contains `'breakpoints' => ['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280]`. Confirmed resolved in code audit.
+**Resolution:** `buildGlobalStyles()` now always injects `'breakpoints' => ['sm' => 640, 'md' => 768, 'lg' => 1024, 'xl' => 1280]` into global_styles. All RE-generated ThemePacks now support responsive editing.
 
 ### RE-FP-004 — MEDIUM | OPEN
 

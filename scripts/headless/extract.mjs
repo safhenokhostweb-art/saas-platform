@@ -419,10 +419,13 @@ async function extractFromPage(page, targetUrl) {
       search:       { found: false, placeholder: '', is_prominent: false },
       footer:       { links: [], has_social: false, columns: 0, has_newsletter: false, has_sitemap: false },
       colors:       [],
+      tailwind_colors: [],
       typography:   { fonts: [], base_size: '', weights: [], line_heights: [] },
       sections_detected: [],
       aria_sections: [],
       heading_structure: [],
+      breakpoints:  { mobile: 390, tablet: 768, desktop: 1280, raw_px: [], detected: false },
+      responsive_classes: {},
     };
 
     // ── Navigation ────────────────────────────────────────────────────────────
@@ -738,37 +741,100 @@ async function extractFromPage(page, targetUrl) {
       result.sections_detected.push('footer');
     }
 
-    // ── Color Extraction ─────────────────────────────────────────────────────
+    // ── Color Extraction (RE-FP-004: Tailwind JIT + computed styles) ─────────
 
+    // Tailwind color class → hex mapping (covers most used colors)
+    const TAILWIND_COLOR_MAP = {
+      'bg-slate-50':'#f8fafc','bg-slate-100':'#f1f5f9','bg-slate-200':'#e2e8f0','bg-slate-700':'#334155','bg-slate-800':'#1e293b','bg-slate-900':'#0f172a',
+      'bg-gray-50':'#f9fafb','bg-gray-100':'#f3f4f6','bg-gray-200':'#e5e7eb','bg-gray-800':'#1f2937','bg-gray-900':'#111827',
+      'bg-zinc-900':'#18181b','bg-neutral-900':'#171717',
+      'bg-red-500':'#ef4444','bg-red-600':'#dc2626','bg-orange-500':'#f97316',
+      'bg-amber-400':'#fbbf24','bg-amber-500':'#f59e0b','bg-yellow-400':'#facc15',
+      'bg-green-500':'#22c55e','bg-emerald-500':'#10b981','bg-teal-500':'#14b8a6',
+      'bg-cyan-500':'#06b6d4','bg-sky-400':'#38bdf8','bg-sky-500':'#0ea5e9','bg-sky-600':'#0284c7',
+      'bg-blue-500':'#3b82f6','bg-blue-600':'#2563eb','bg-blue-700':'#1d4ed8',
+      'bg-indigo-500':'#6366f1','bg-indigo-600':'#4f46e5','bg-violet-500':'#8b5cf6',
+      'bg-purple-500':'#a855f7','bg-purple-600':'#9333ea','bg-fuchsia-500':'#d946ef',
+      'bg-pink-500':'#ec4899','bg-rose-500':'#f43f5e',
+      'bg-white':'#ffffff','bg-black':'#000000',
+      'text-indigo-500':'#6366f1','text-indigo-600':'#4f46e5',
+      'text-blue-500':'#3b82f6','text-blue-600':'#2563eb',
+      'text-sky-400':'#38bdf8','text-sky-500':'#0ea5e9',
+      'text-violet-500':'#8b5cf6','text-purple-500':'#a855f7',
+      'text-emerald-500':'#10b981','text-green-500':'#22c55e',
+      'text-rose-500':'#f43f5e','text-red-500':'#ef4444',
+      'text-amber-500':'#f59e0b','text-yellow-400':'#facc15',
+    };
+
+    const colorSet = new Set();
+    const tailwindColors = [];
+
+    // Pass 1: Tailwind class color detection (RE-FP-004 — works without CSS vars)
+    const allHtmlClasses = document.documentElement.innerHTML
+      .match(/class="([^"]+)"/g)?.join(' ') || '';
+    for (const [cls, hex] of Object.entries(TAILWIND_COLOR_MAP)) {
+      if (allHtmlClasses.includes(cls) && !['#ffffff','#000000','#f9fafb','#f8fafc'].includes(hex)) {
+        tailwindColors.push(hex);
+        colorSet.add(hex);
+      }
+    }
+
+    // Pass 2: Computed styles on extended target list
     const colorTargets = [
       document.body,
       document.querySelector('nav, header, [role="banner"]'),
       document.querySelector('h1, h2'),
+      // Standard button selectors
       document.querySelector('a.btn, button:not(:disabled), .btn-primary, [class*="btn-primary"], [class*="button-primary"]'),
+      // Tailwind button patterns
+      document.querySelector('a[class*="bg-"], button[class*="bg-"]'),
       document.querySelector('[class*="card"]:not([class*="blog"]):not([class*="footer"])'),
       document.querySelector('[class*="hero"], [class*="banner"], section:first-of-type'),
       document.querySelector('[class*="primary"], [class*="brand"]'),
+      // Additional targets for SaaS/docs sites
+      document.querySelector('a[href*="get-started"], a[href*="signup"], a[href*="install"]'),
+      document.querySelector('[data-testid*="cta"], [data-testid*="button"]'),
+      document.querySelector('footer [class*="social"], footer a[class*="icon"]'),
+      // Gradient containers often reveal brand colors
+      document.querySelector('[class*="gradient"], [style*="gradient"]'),
     ].filter(Boolean);
 
-    const colorSet = new Set();
     colorTargets.forEach(el => {
-      ['backgroundColor', 'color', 'borderColor'].forEach(prop => {
+      ['backgroundColor', 'color', 'borderColor', 'outlineColor'].forEach(prop => {
         try {
           const val = window.getComputedStyle(el)[prop];
           if (!val || val === 'transparent' || val === 'rgba(0, 0, 0, 0)') return;
           const m = val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
           if (m) {
             const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
-            // Skip near-white and near-black for non-text elements
             const brightness = (r * 299 + g * 587 + b * 114) / 1000;
             if (brightness > 240 && prop === 'backgroundColor') return;
+            if (brightness < 12) return; // near-black also skip
             const hex = '#' + [r, g, b].map(n => n.toString(16).padStart(2, '0')).join('');
             colorSet.add(hex);
           }
         } catch { /* ignore */ }
       });
     });
+
+    // Pass 3: Scan first N interactive elements for their computed color
+    const interactiveEls = [...document.querySelectorAll('a, button')].slice(0, 30);
+    interactiveEls.forEach(el => {
+      try {
+        const bg = window.getComputedStyle(el).backgroundColor;
+        const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (m) {
+          const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+          const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+          if (brightness > 20 && brightness < 235) {
+            colorSet.add('#' + [r, g, b].map(n => n.toString(16).padStart(2, '0')).join(''));
+          }
+        }
+      } catch { /* ignore */ }
+    });
+
     result.colors = [...colorSet].slice(0, 20);
+    result.tailwind_colors = tailwindColors.slice(0, 10); // RE-FP-004: explicit Tailwind brand colors
 
     // ── Typography ────────────────────────────────────────────────────────────
 
@@ -788,6 +854,56 @@ async function extractFromPage(page, targetUrl) {
       [...document.querySelectorAll('h1, h2, h3, strong, b, button')].slice(0, 20)
         .map(e => window.getComputedStyle(e).fontWeight)
     )].slice(0, 5);
+
+    // ── Responsive Breakpoints (RE-FP-007) ───────────────────────────────────
+    // Extract actual CSS media query breakpoints from loaded stylesheets
+
+    const extractedBreakpoints = { mobile: 0, tablet: 0, desktop: 0, raw: [] };
+    try {
+      for (const sheet of document.styleSheets) {
+        try {
+          for (const rule of sheet.cssRules) {
+            if (rule instanceof CSSMediaRule) {
+              const media = rule.conditionText || rule.media?.mediaText || '';
+              const widthMatch = media.match(/(?:max|min)-width:\s*(\d+)px/i);
+              if (widthMatch) {
+                const px = parseInt(widthMatch[1]);
+                extractedBreakpoints.raw.push({ media, px });
+                // Classify breakpoints
+                if (media.includes('max-width') && px <= 480)       extractedBreakpoints.mobile  = px;
+                else if (media.includes('max-width') && px <= 1024) extractedBreakpoints.tablet  = px;
+                else if (media.includes('min-width') && px >= 1024) extractedBreakpoints.desktop = px;
+                else if (media.includes('min-width') && px >= 640)  extractedBreakpoints.tablet  = px;
+                else if (media.includes('min-width') && px >= 320)  extractedBreakpoints.mobile  = px;
+              }
+            }
+          }
+        } catch { /* cross-origin stylesheet */ }
+      }
+      extractedBreakpoints.raw = [...new Set(extractedBreakpoints.raw.map(b => b.px))]
+        .sort((a, b) => a - b).slice(0, 6);
+    } catch { /* ignore */ }
+
+    result.breakpoints = {
+      mobile:  extractedBreakpoints.mobile  || 390,
+      tablet:  extractedBreakpoints.tablet  || 768,
+      desktop: extractedBreakpoints.desktop || 1280,
+      raw_px:  extractedBreakpoints.raw,
+      detected: extractedBreakpoints.raw.length > 0,
+    };
+
+    // ── Responsive spacing / visibility per viewport ──────────────────────────
+    // Check if there are show/hide breakpoint classes (Tailwind: sm:hidden, md:block, etc.)
+
+    const responsiveClasses = {
+      has_mobile_hide:   !!document.querySelector('[class*="sm:hidden"], [class*="xs:hidden"]'),
+      has_tablet_hide:   !!document.querySelector('[class*="md:hidden"]'),
+      has_desktop_hide:  !!document.querySelector('[class*="lg:hidden"]'),
+      has_mobile_only:   !!document.querySelector('[class*="sm:block"][class*="hidden"], [class*="block sm:block"]'),
+      has_responsive_grid: !!document.querySelector('[class*="sm:grid-cols"], [class*="md:grid-cols"], [class*="lg:grid-cols"]'),
+      has_responsive_flex: !!document.querySelector('[class*="sm:flex-row"], [class*="md:flex-col"]'),
+    };
+    result.responsive_classes = responsiveClasses;
 
     return result;
   });
