@@ -42,6 +42,33 @@
 
 ---
 
+## COMPLETE: Business Flow Remediation — BATCH 2 — 2026-06-22 ✅
+
+**Status:** BFA_BATCH2_COMPLETE (2026-06-22)
+
+### HIGH — ALL DONE ✅
+
+| ID | Task | Status |
+|----|------|--------|
+| GAP-H04 | Overage Fees Never Billed — BillResourceOverageCommand (monthly, SiteLifecycleInvoice TYPE_OVERAGE, SMS) | ✅ DONE |
+| GAP-H05 | Dunning for Failed Renewals — ProcessDunningCommand (day3/7/14 SMS, SubscriptionLog tracking) | ✅ DONE |
+| GAP-H06 | Marketplace/Bundle No PDF Invoice — `/my-licenses/{key}/invoice` + licenseInvoiceData API + PDF download | ✅ DONE |
+| GAP-H07 | Upload Not Throttled — SmartImageUploadService enforceStorageLimit() (512MB default, 5min cache) | ✅ DONE |
+
+### MEDIUM — ALL DONE ✅
+
+| ID | Task | Status |
+|----|------|--------|
+| GAP-M01 | Canvas No Autosave — setInterval 60s in canvas-editor.blade.php init() | ✅ DONE |
+| GAP-M02 | No Published Theme Revision History — rotateRevisions() in canvasPublish() (5-slot cap) | ✅ DONE |
+| GAP-M03 | Suspended Page Dead End — support_phone + support_telegram contact section in suspended.blade.php | ✅ DONE |
+| GAP-M04 | Bundle No "Install All" Button — per-theme install buttons + "Install First Theme" in bundle show | ✅ DONE |
+| GAP-M07 | Platform URL Not Configured — admin layout amber warning banner with .env instructions | ✅ DONE |
+| GAP-M08 | Resource Push Silent Failure — alertPushFailed() in SiteResourceAlertService, wired in CalculateSiteResourcesCommand | ✅ DONE |
+| GAP-M09 | Site Create No Customer SMS — SiteController::sendSiteCreatedSms() after Site::create() | ✅ DONE |
+
+---
+
 ## COMPLETE: Business Flow Remediation — PRODUCTION_BLOCKERS — 2026-06-22 ✅
 
 **Status:** ALL 5 CRITICAL BLOCKERS RESOLVED (2026-06-22)

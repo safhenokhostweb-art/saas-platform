@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-06-22 — BFA-BATCH2 — Business Flow Gap Remediation Batch 2 (GAP-H04 through GAP-M09)
+
+**Reason:** Close 11 remaining business flow gaps (HIGH + MEDIUM priority) from BUSINESS_FLOW_GAP_ANALYSIS.md
+
+### saas-platform
+- `app/Models/SiteLifecycleInvoice.php` — Added TYPE_OVERAGE = 'storage_overage' + typeLabel()
+- `app/Console/Commands/BillResourceOverageCommand.php` — GAP-H04: monthly overage billing (calculates GB overage, creates SiteLifecycleInvoice, sends SMS, idempotent per month)
+- `app/Services/Lifecycle/SiteLifecycleNotificationService.php` — GAP-H04: sendOverageInvoiceSms()
+- `app/Console/Kernel.php` — GAP-H04: resource:bill-overage monthly on 2nd at 09:00
+- `app/Http/Controllers/Api/ThemeMarketplaceApiController.php` — GAP-H06: licenseInvoiceData() endpoint for PDF invoice generation
+- `routes/api.php` — GAP-H06: GET /api/theme-marketplace/licenses/{licenseKey}/invoice-data
+- `app/Services/ResourceGovernance/SiteResourceAlertService.php` — GAP-M08: alertPushFailed()
+- `app/Services/ResourceGovernance/SiteResourceCalculatorService.php` — GAP-M08: pushSummaryToCustomerSite() re-throws instead of swallowing
+- `app/Console/Commands/CalculateSiteResourcesCommand.php` — GAP-M08: catch push failure + call alertPushFailed()
+- `app/Http/Controllers/Admin/SiteController.php` — GAP-M09: sendSiteCreatedSms() after Site::create()
+
+### customer-site
+- `app/Models/SubscriptionLog.php` — GAP-H05: ACTION_DUNNING_DAY3/DAY7/DAY14 constants
+- `app/Console/Commands/ProcessDunningCommand.php` — GAP-H05: dunning SMS at day 3/7/14 for unpaid renewal invoices
+- `bootstrap/app.php` — GAP-H05: subscriptions:process-dunning dailyAt('10:30')
+- `resources/views/front/suspended.blade.php` — GAP-M03: support_phone + support_telegram contact section
+- `app/Services/SmartImageUploadService.php` — GAP-H07: enforceStorageLimit() checks storage_limit_mb setting
+- `resources/views/admin/theme-design/canvas-editor.blade.php` — GAP-M01: setInterval 60s autosave in init()
+- `app/Http/Controllers/Admin/ThemeDesignController.php` — GAP-M02: rotateRevisions() in canvasPublish() (5-slot cap)
+- `app/Services/PlatformApiService.php` — GAP-H06: getThemeLicenseInvoiceData(licenseKey)
+- `app/Http/Controllers/Admin/ThemeMarketplaceController.php` — GAP-H06: invoiceDownload() generates PDF via dompdf
+- `resources/views/admin/theme-marketplace/my-licenses.blade.php` — GAP-H06: "دانلود فاکتور PDF" button
+- `routes/web.php` — GAP-H06: GET /admin/theme-marketplace/my-licenses/{licenseKey}/invoice
+- `resources/views/admin/theme-bundles/show.blade.php` — GAP-M04: per-theme Install buttons + "Install First Theme" in sidebar
+- `resources/views/admin/layout.blade.php` — GAP-M07: amber banner when PLATFORM_API_URL not configured
+
+---
+
 ## 2026-06-22 — RE-V2 — Reverse Engineering Accuracy V2 (RE-FP-003 + RE-FP-004 + RE-FP-007)
 
 **Reason:** Raise RE pipeline average similarity score from 75% to 90%+. Fix 3 failure patterns.
