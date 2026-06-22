@@ -141,6 +141,49 @@ class SiteArchiveService
     }
 
     /**
+     * GAP-M10 — Delete the archive ZIP file from disk when a site is permanently deleted.
+     *
+     * Storage::disk('local') corresponds to storage/app/. The archive_path column
+     * stores a relative path like "archives/site_42_20260101_120000.zip".
+     *
+     * Returns true if the file was deleted (or didn't exist), false on error.
+     */
+    public function deleteArchiveZip(Site $site): bool
+    {
+        if (! $site->archive_path) {
+            return true;
+        }
+
+        try {
+            $disk = Storage::disk('local');
+
+            if ($disk->exists($site->archive_path)) {
+                $disk->delete($site->archive_path);
+
+                Log::info("SiteArchiveService: archive ZIP deleted for site {$site->id}", [
+                    'path' => $site->archive_path,
+                ]);
+            } else {
+                Log::info("SiteArchiveService: archive ZIP already absent for site {$site->id}", [
+                    'path' => $site->archive_path,
+                ]);
+            }
+
+            $site->archive_path = null;
+            $site->save();
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("SiteArchiveService: failed to delete archive ZIP for site {$site->id}", [
+                'path'  => $site->archive_path,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * C05 — Delete all active uploaded files for a site from disk.
      *
      * Removes the site's upload directory under storage/app/sites/{site_id}/

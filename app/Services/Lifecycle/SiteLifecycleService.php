@@ -27,7 +27,8 @@ class SiteLifecycleService
     ];
 
     public function __construct(
-        private SiteLifecycleNotificationService $notifications
+        private SiteLifecycleNotificationService $notifications,
+        private SiteArchiveService $archive
     ) {}
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -138,6 +139,10 @@ class SiteLifecycleService
         $site->save();
 
         $this->transition($site, Site::LIFECYCLE_DELETED, $reason, $adminId);
+
+        // GAP-M10 — Physical cleanup: delete the archive ZIP from disk
+        $this->archive->deleteArchiveZip($site);
+
         Log::warning("SiteLifecycleService: site {$site->id} ({$site->domain}) marked as DELETED");
     }
 
