@@ -313,6 +313,23 @@ class SiteLifecycleService
                 ]);
             }
 
+            // Push changed_at so customer-site suspended page can compute archive deadline
+            $existingChangedAt = $conn->table('settings')->where('key', 'site_lifecycle_changed_at')->first();
+            if ($existingChangedAt) {
+                $conn->table('settings')->where('key', 'site_lifecycle_changed_at')->update([
+                    'value'      => $now,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                $conn->table('settings')->insert([
+                    'key'        => 'site_lifecycle_changed_at',
+                    'value'      => $now,
+                    'group'      => 'lifecycle',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+
             // Also clear the settings cache in the customer site
             $conn->table('cache')->where('key', 'settings')->delete();
 

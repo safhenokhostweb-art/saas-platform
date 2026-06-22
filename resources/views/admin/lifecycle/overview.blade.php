@@ -52,6 +52,36 @@
         @endforeach
     </div>
 
+    {{-- AUX-008: State Distribution Bar --}}
+    @php
+        $distTotal = max(1, array_sum($summary));
+        $distColors = ['active'=>'#22c55e','grace_period'=>'#f59e0b','suspended'=>'#ef4444','archived'=>'#94a3b8','deleted'=>'#1e293b'];
+        $distLabels = ['active'=>'فعال','grace_period'=>'دوره اعتبار','suspended'=>'معلق','archived'=>'آرشیو','deleted'=>'حذف'];
+    @endphp
+    <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-gray-700">توزیع وضعیت سایت‌ها</h3>
+            <span class="text-xs text-gray-400">مجموع: {{ $distTotal }} سایت</span>
+        </div>
+        <div class="flex h-5 rounded-full overflow-hidden gap-0.5 mb-3">
+            @foreach($distColors as $key => $color)
+            @php $pct = $summary[$key] > 0 ? round($summary[$key] / $distTotal * 100, 1) : 0; @endphp
+            @if($pct > 0)
+            <div style="width:{{ $pct }}%;background:{{ $color }};transition:width .5s" title="{{ $distLabels[$key] }}: {{ $summary[$key] }} ({{ $pct }}%)"></div>
+            @endif
+            @endforeach
+        </div>
+        <div class="flex flex-wrap gap-x-5 gap-y-1.5">
+            @foreach($distColors as $key => $color)
+            <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style="background:{{ $color }}"></span>
+                {{ $distLabels[$key] }}: <strong>{{ $summary[$key] }}</strong>
+                ({{ $summary[$key] > 0 ? round($summary[$key] / $distTotal * 100) : 0 }}%)
+            </div>
+            @endforeach
+        </div>
+    </div>
+
     {{-- Grace Period Sites --}}
     @if($gracePeriodSites->isNotEmpty())
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl overflow-hidden">
