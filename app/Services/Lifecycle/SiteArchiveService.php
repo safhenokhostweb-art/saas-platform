@@ -37,11 +37,15 @@ class SiteArchiveService
             $this->createZip($manifestDir, $archivePath);
             $this->cleanup($manifestDir);
 
+            // GAP-L06: Verify the ZIP is readable and non-empty after creation
+            $this->verifyZip($archivePath, $site->id);
+
             $site->archive_path = "archives/{$archiveName}";
             $site->save();
 
             Log::info("SiteArchiveService: archive created for site {$site->id}", [
-                'path' => $archivePath,
+                'path'      => $archivePath,
+                'size_bytes' => filesize($archivePath),
             ]);
 
             return $archivePath;
@@ -118,6 +122,40 @@ class SiteArchiveService
         }
 
         $zip->close();
+    }
+
+    /**
+     * GAP-L06 — Verify the created ZIP archive is valid and non-empty.
+     * Throws RuntimeException if the file is missing, empty, or unreadable.
+     */
+    private function verifyZip(string $zipPath, int $siteId): void
+    {
+        if (! file_exists($zipPath)) {
+            throw new \RuntimeException("Archive verification failed for site {$siteId}: file not found at {$zipPath}");
+        }
+
+        $size = filesize($zipPath);
+        if ($size === false || $size === 0) {
+            throw new \RuntimeException("Archive verification failed for site {$siteId}: file is empty at {$zipPath}");
+        }
+
+        $zip = new \ZipArchive();
+        $result = $zip->open($zipPath, \ZipArchive::RDONLY);
+        if ($result !== true) {
+            throw new \RuntimeException("Archive verification failed for site {$siteId}: ZIP is corrupt (ZipArchive error {$result})");
+        }
+
+        $count = $zip->numFiles;
+        $zip->close();
+
+        if ($count === 0) {
+            throw new \RuntimeException("Archive verification failed for site {$siteId}: ZIP contains no files");
+        }
+
+        Log::info("SiteArchiveService: archive verified for site {$siteId}", [
+            'size_bytes' => $size,
+            'file_count' => $count,
+        ]);
     }
 
     private function cleanup(string $dir): void

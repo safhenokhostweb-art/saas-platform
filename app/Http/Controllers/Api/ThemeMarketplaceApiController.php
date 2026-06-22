@@ -65,6 +65,10 @@ class ThemeMarketplaceApiController extends Controller
                 'license_key'             => $lic->license_key,
                 'purchased_at'            => $lic->purchased_at?->toDateString(),
                 'is_permanent'            => $lic->is_permanent,
+                // GAP-L01: expose expiry for non-permanent licenses (1 year from purchase)
+                'expires_at'              => $lic->is_permanent
+                    ? null
+                    : $lic->purchased_at?->addYear()->toDateString(),
                 'installed_theme_version' => $lic->installed_theme_version,
                 'is_outdated'             => $lic->isOutdated(),
                 'theme' => $lic->theme ? [

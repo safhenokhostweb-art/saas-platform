@@ -130,6 +130,16 @@ class SiteLifecycleService
 
         $this->transition($site, Site::LIFECYCLE_ACTIVE, $reason, $adminId);
         $this->notifications->siteRestored($site);
+
+        // GAP-L08: Trigger immediate resource recalculation so counters aren't zero until next daily job
+        try {
+            app(\App\Services\ResourceGovernance\SiteResourceCalculatorService::class)
+                ->calculate($site);
+        } catch (\Throwable $e) {
+            Log::warning("SiteLifecycleService: post-restore resource recalc failed for site {$site->id}", [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function delete(Site $site, string $reason = 'حذف پس از انقضای نگهداری', ?int $adminId = null): void

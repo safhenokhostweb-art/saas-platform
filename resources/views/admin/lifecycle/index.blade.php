@@ -35,6 +35,26 @@
                 @endif
                 @if($site->archived_at)
                 <div>تاریخ آرشیو: <span class="font-medium text-gray-700">{{ \Morilog\Jalali\CalendarUtils::strftime('Y/m/d', $site->archived_at) }}</span></div>
+                {{-- GAP-L05: Days until permanent deletion (365 days after archive) --}}
+                @php
+                    $deletionDate = $site->archived_at->addDays(365);
+                    $daysLeft = (int) now()->diffInDays($deletionDate, false);
+                @endphp
+                @if($daysLeft > 0)
+                <div class="mt-1">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {{ $daysLeft <= 30 ? 'bg-red-100 text-red-700' : ($daysLeft <= 90 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600') }}">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ $daysLeft }} روز تا حذف دائمی
+                    </span>
+                </div>
+                @else
+                <div class="mt-1">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        آماده حذف (تاریخ گذشته)
+                    </span>
+                </div>
+                @endif
                 @endif
                 @if($site->lifecycle_changed_at)
                 <div>آخرین تغییر: {{ \Morilog\Jalali\CalendarUtils::strftime('Y/m/d H:i', $site->lifecycle_changed_at) }}</div>

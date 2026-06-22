@@ -16,6 +16,44 @@
         </div>
     @endif
 
+    {{-- GAP-L09: Post-create checklist shown only immediately after site creation --}}
+    @if(session('just_created'))
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-5 relative" dir="rtl">
+        <div class="flex items-start gap-4">
+            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="font-bold text-indigo-900 text-sm mb-3">سایت ایجاد شد — مراحل بعدی را تکمیل کنید</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <a href="{{ route('admin.sites.lifecycle.index', $site) }}"
+                       class="flex items-center gap-2 text-xs text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50 transition">
+                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        بررسی چرخه عمر سایت
+                    </a>
+                    <a href="{{ route('admin.sites.edit', $site) }}#modules"
+                       class="flex items-center gap-2 text-xs text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50 transition">
+                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                        فعال‌سازی ماژول‌ها
+                    </a>
+                    <a href="{{ route('admin.subscriptions.index') }}?site={{ $site->id }}"
+                       class="flex items-center gap-2 text-xs text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50 transition">
+                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                        تنظیم اشتراک
+                    </a>
+                    <a href="{{ route('admin.resources.sites.index') }}"
+                       class="flex items-center gap-2 text-xs text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50 transition">
+                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        تنظیم منابع و محدودیت‌ها
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <form method="POST" action="{{ route('admin.sites.update', $site) }}" class="card p-4 shadow-sm rounded-xl border-0">
         @csrf
         @method('PUT')

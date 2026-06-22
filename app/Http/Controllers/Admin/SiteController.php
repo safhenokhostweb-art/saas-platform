@@ -143,8 +143,10 @@ class SiteController extends Controller
             $message .= " و {$welcomeCount} اعلان خوش‌آمدگویی ارسال شد.";
         }
 
-        return redirect()->route('admin.sites.index')
-            ->with('success', $message);
+        // GAP-L09: Redirect to edit page with checklist so admin knows next steps
+        return redirect()->route('admin.sites.edit', $site)
+            ->with('success', $message)
+            ->with('just_created', true);
     }
 
     /**
