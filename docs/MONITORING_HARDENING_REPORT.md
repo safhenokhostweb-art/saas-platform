@@ -305,15 +305,26 @@ These can be added to `RuntimeHealthService::checkAll()` as optional checks (non
 
 ## Action Items
 
-| # | Action | Priority | Effort |
-|---|--------|----------|--------|
-| 1 | Add disk usage check to ScanRuntimeAnomaliesCommand | HIGH | 30m |
-| 2 | Add backup-overdue check to ScanRuntimeAnomaliesCommand | HIGH | 15m |
-| 3 | Add missed-scheduler detection | HIGH | 30m |
-| 4 | Verify crontab is active post-reboot | CRITICAL | 5m |
-| 5 | Add SMS delivery rate alert | MEDIUM | 30m |
-| 6 | Add telemetry_events pruning | LOW | 15m |
-| 7 | Add archive ZIP integrity check | LOW | 20m |
+| # | Action | Priority | Effort | Status |
+|---|--------|----------|--------|--------|
+| 1 | Add disk usage check to ScanRuntimeAnomaliesCommand | HIGH | 30m | ✅ IMPLEMENTED 2026-06-22 |
+| 2 | Add backup-overdue check to ScanRuntimeAnomaliesCommand | HIGH | 15m | ✅ IMPLEMENTED 2026-06-22 |
+| 3 | Add missed-scheduler detection | HIGH | 30m | ✅ IMPLEMENTED 2026-06-22 |
+| 4 | Verify crontab is active post-reboot | CRITICAL | 5m | Manual verification required |
+| 5 | Add SMS delivery rate alert | MEDIUM | 30m | Deferred (post-launch) |
+| 6 | Add telemetry_events pruning | LOW | 15m | Deferred (post-launch) |
+| 7 | Add archive ZIP integrity check | LOW | 20m | Deferred (post-launch) |
+
+### Implementation Details (Items 1–3)
+
+All three checks were added to `app/Console/Commands/ScanRuntimeAnomaliesCommand.php` in `checkOperational()`:
+
+- **DISK_CRITICAL** (≥90%): `SlackAlertService::critical()` fired
+- **DISK_WARNING** (≥80%): `SlackAlertService::high()` fired
+- **BACKUP_OVERDUE**: fires when `InfraBackupRun` has no `status=success` row in last 26h
+- **SCHEDULER_DEAD**: fires when `InfraSchedulerRun::latest()` is >5 minutes old
+
+All checks use try/catch to prevent the scanner itself from failing if models are unavailable.
 
 ### Pre-Launch Verification Commands
 
@@ -347,10 +358,10 @@ ssh -p 9011 root@87.107.12.81 "ls -lh /var/www/saas-platform/storage/app/backups
 
 ## Verdict
 
-**MONITORING_HARDENING_COMPLETE**  
+**MONITORING_HARDENING_COMPLETE + GAPS_1_3_IMPLEMENTED**  
 Core monitoring (queue workers, SMS delivery, backup success, scheduler tracking) is operational.  
-3 monitoring gaps identified (disk space, backup overdue alert, missed-scheduler alert) — implementation is LOW effort and HIGH value.  
-Implementing gaps 1-3 from the action list before launch is strongly recommended.
+3 high-priority gaps (disk space, backup overdue, missed-scheduler) implemented in `ScanRuntimeAnomaliesCommand` on 2026-06-22.  
+Remaining items 4–7 are post-launch improvements.
 
 ---
 

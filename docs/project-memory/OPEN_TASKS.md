@@ -4,6 +4,32 @@
 
 ---
 
+## COMPLETE: PRE_LAUNCH_POLISH_AND_HARDENING — 2026-06-22 ✅
+
+**Status:** PRE_LAUNCH_HARDENING_COMPLETE
+
+| Phase | Status |
+|-------|--------|
+| Phase 1: Customer UX Polish — CUX-006/008/009 implemented, score 89→92 | ✅ DONE |
+| Phase 2: Admin UX Polish — AUX-008 state bar, score 90→93 | ✅ DONE |
+| Phase 3: SSL Hardening — SSL_HARDENING_REPORT.md (no mixed content found) | ✅ DONE |
+| Phase 4: Offsite Backup Audit — OFFSITE_BACKUP_AUDIT.md (CRITICAL gap documented) | ✅ DONE |
+| Phase 5: Monitoring Hardening — 3 gaps implemented in ScanRuntimeAnomaliesCommand | ✅ DONE |
+| Phase 6: Launch Day Runbook — LAUNCH_DAY_RUNBOOK.md (T-60→T+48h sequence) | ✅ DONE |
+| lifecycle archive deadline push from SiteLifecycleService | ✅ DONE |
+| suspended.blade.php archive deadline block | ✅ DONE |
+| pay-failed.blade.php Alpine.js 3-min cooldown | ✅ DONE |
+| installments/show.blade.php next-payment amber highlight | ✅ DONE |
+| lifecycle/overview.blade.php 5-color state distribution bar | ✅ DONE |
+
+**Pre-launch open actions (non-code):**
+1. CRITICAL: `APP_URL=https://...` in production .env
+2. CRITICAL: ArvanCloud CDN activation (real SSL)
+3. HIGH: `CORS_ALLOWED_ORIGIN` ≠ `*` in production
+4. HIGH: Manual DB backup offsite copy before DNS cutover
+
+---
+
 ## COMPLETE: RC1_LAUNCH_FREEZE_ENFORCEMENT — 2026-06-22 ✅
 
 **Status:** LAUNCH_FREEZE_ACTIVE

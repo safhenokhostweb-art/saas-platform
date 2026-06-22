@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-06-22 — MONITORING_COMMAND_HARDENING
+
+**Reason:** Implement the 3 HIGH-priority monitoring gaps identified in MONITORING_HARDENING_REPORT.md — disk usage alert, backup-overdue alert, missed-scheduler detection — directly into `ScanRuntimeAnomaliesCommand`.
+
+### Code Changes (saas-platform)
+
+- `app/Console/Commands/ScanRuntimeAnomaliesCommand.php` — added `checkOperational()` with 3 checks:
+  - `DISK_CRITICAL` (≥90%) → `SlackAlertService::critical()`
+  - `DISK_WARNING` (≥80%) → `SlackAlertService::high()`
+  - `BACKUP_OVERDUE` (no success row in InfraBackupRun within 26h) → `SlackAlertService::critical()`
+  - `SCHEDULER_DEAD` (InfraSchedulerRun::latest() older than 5 min) → `SlackAlertService::critical()`
+- `docs/MONITORING_HARDENING_REPORT.md` — action items 1–3 marked IMPLEMENTED
+
+---
+
 ## 2026-06-22 — PRE_LAUNCH_POLISH_AND_HARDENING
 
 **Reason:** 6-phase pre-launch hardening sprint: customer UX polish, admin UX polish, SSL audit, backup audit, monitoring audit, launch day runbook.
