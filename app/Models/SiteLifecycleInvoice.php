@@ -8,6 +8,7 @@ class SiteLifecycleInvoice extends Model
     const TYPE_REACTIVATION    = 'reactivation';
     const TYPE_ARCHIVE_RESTORE = 'archive_restore';
     const TYPE_STORAGE_RETENTION = 'storage_retention';
+    const TYPE_OVERAGE         = 'storage_overage';
 
     const STATUS_PENDING   = 'pending';
     const STATUS_PAID      = 'paid';
@@ -63,6 +64,7 @@ class SiteLifecycleInvoice extends Model
             self::TYPE_REACTIVATION    => 'هزینه فعال‌سازی مجدد',
             self::TYPE_ARCHIVE_RESTORE => 'هزینه بازگردانی آرشیو',
             self::TYPE_STORAGE_RETENTION => 'هزینه نگهداری',
+            self::TYPE_OVERAGE           => 'هزینه مازاد فضا',
             default                    => $this->type,
         };
     }

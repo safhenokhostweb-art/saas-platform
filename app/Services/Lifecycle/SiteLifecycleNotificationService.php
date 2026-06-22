@@ -80,6 +80,23 @@ class SiteLifecycleNotificationService
             "لینک پرداخت برای بازگردانی سایت به مشتری ارسال شد. مبلغ: {$amountFmt} تومان", 'medium');
     }
 
+    /**
+     * GAP-H04 — Send overage invoice SMS and platform admin notification.
+     */
+    public function sendOverageInvoiceSms(Site $site, string $invoiceNumber, int $amount): void
+    {
+        $paymentUrl = 'https://' . $site->domain . '/lifecycle-pay/' . $invoiceNumber;
+        $amountFmt  = number_format($amount);
+
+        $message = "سایت {$site->title}: هزینه مازاد فضای ذخیره‌سازی ماه جاری {$amountFmt} ریال است.\n"
+                 . "شماره فاکتور: {$invoiceNumber}\n"
+                 . "پرداخت: {$paymentUrl}";
+
+        $this->sendSmsToCustomer($site, $message);
+        $this->notifyPlatformAdmin($site, 'overage_invoice_sent', "فاکتور مازاد فضا: {$site->title}",
+            "هزینه مازاد {$amountFmt} ریال برای سایت {$site->title} صادر شد. شماره: {$invoiceNumber}", 'medium');
+    }
+
     // ── Internals ─────────────────────────────────────────────────────────────
 
     private function sendSmsToCustomer(Site $site, string $message): void

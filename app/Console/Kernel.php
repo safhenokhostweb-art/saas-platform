@@ -101,6 +101,15 @@ class Kernel extends ConsoleKernel
             ->monthlyOn(1, '08:00')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/resource.log'));
+
+        // GAP-H04: Monthly overage fee billing — 2nd of each month 09:00 (after usage-report)
+        $schedule->command('resource:bill-overage')
+            ->monthlyOn(2, '09:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/resource-billing.log'))
+            ->onFailure(function () {
+                \Illuminate\Support\Facades\Log::error('resource:bill-overage scheduled run failed');
+            });
     }
 
     /**
