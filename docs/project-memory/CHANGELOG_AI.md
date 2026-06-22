@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-06-22 — PRE_LAUNCH_POLISH_AND_HARDENING
+
+**Reason:** 6-phase pre-launch hardening sprint: customer UX polish, admin UX polish, SSL audit, backup audit, monitoring audit, launch day runbook.
+
+### Code Changes (customer-site)
+
+- `resources/views/front/suspended.blade.php` — archive deadline block (Jalali + days remaining)
+- `resources/views/front/lifecycle/pay-failed.blade.php` — Alpine.js 3-min retry cooldown timer
+- `resources/views/account/installments/show.blade.php` — next pending payment row amber highlight + "بعدی" badge
+
+### Code Changes (saas-platform)
+
+- `app/Services/Lifecycle/SiteLifecycleService.php` — pushes `site_lifecycle_changed_at` to customer-site settings on every lifecycle transition
+- `resources/views/admin/lifecycle/overview.blade.php` — state distribution bar (5-color segmented bar + legend)
+
+### Docs Created (saas-platform/docs/)
+
+- `PRE_LAUNCH_CUSTOMER_UX_REPORT.md` — Phase 1: 3 fixes applied, 4 items confirmed already done, score 89→92
+- `PRE_LAUNCH_ADMIN_UX_REPORT.md` — Phase 2: 1 fix applied (state bar), 6 items confirmed already done, score 90→93
+- `SSL_HARDENING_REPORT.md` — Phase 3: no mixed content found, 2 pre-launch verifications required
+- `OFFSITE_BACKUP_AUDIT.md` — Phase 4: CRITICAL gap documented, full restore procedure provided
+- `MONITORING_HARDENING_REPORT.md` — Phase 5: 3 gaps + 7 action items for monitoring hardening
+- `LAUNCH_DAY_RUNBOOK.md` — Phase 6: T-60 to T+48h sequence, go/no-go, rollback scenarios, sign-off sheet
+
+**Status:** PRE_LAUNCH_HARDENING_COMPLETE  
+**Score:** RC1 93/100 — UX improvements bring effective launch readiness to ~95/100
+
+---
+
 ## 2026-06-22 — RC1_LAUNCH_FREEZE_ENFORCEMENT
 
 **Reason:** RC1 launch freeze activation — 6-phase stabilization enforcement run: freeze rules, pre-launch cleanup audit, customer UX review, admin UX review, operational health verification, roadmap gate.

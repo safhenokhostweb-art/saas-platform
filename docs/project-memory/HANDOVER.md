@@ -21,11 +21,28 @@
 
 ## CURRENT STATE (2026-06-22)
 
-**Last completed phase:** RC1_LAUNCH_FREEZE_ENFORCEMENT — LAUNCH_FREEZE_ACTIVE (2026-06-22)
+**Last completed phase:** PRE_LAUNCH_POLISH_AND_HARDENING — PRE_LAUNCH_HARDENING_COMPLETE (2026-06-22)
 
 **⛔ LAUNCH FREEZE ACTIVE** — No new features, no new modules, no new DB tables, no architectural changes.
 Allowed: BUG FIX | UX IMPROVEMENT | PERFORMANCE | SECURITY | DOCUMENTATION | MONITORING
 See `docs/LAUNCH_FREEZE_RULES.md` for complete policy.
+
+**Pre-Launch Hardening Documents Generated:**
+- `docs/PRE_LAUNCH_CUSTOMER_UX_REPORT.md` — 3 UX fixes applied (CUX-006/008/009), customer score 89→92
+- `docs/PRE_LAUNCH_ADMIN_UX_REPORT.md` — 1 UX fix applied (AUX-008 state bar), admin score 90→93
+- `docs/SSL_HARDENING_REPORT.md` — SSL audit, 2 pre-launch actions (APP_URL + CORS), ArvanCloud CDN plan
+- `docs/OFFSITE_BACKUP_AUDIT.md` — Backup audit, CRITICAL gap: onsite-only DB backup, restore procedure
+- `docs/MONITORING_HARDENING_REPORT.md` — 3 monitoring gaps (disk/backup-overdue/scheduler-dead alert)
+- `docs/LAUNCH_DAY_RUNBOOK.md` — Full launch day runbook with T-60→T+48h sequence, rollback procedures
+
+**Code Changes (this session):**
+- `SiteLifecycleService.php`: pushes `site_lifecycle_changed_at` to customer-site settings on every transition
+- `front/suspended.blade.php`: shows archive deadline block (Jalali date + days remaining)
+- `front/lifecycle/pay-failed.blade.php`: Alpine.js 3-min cooldown timer on retry button
+- `account/installments/show.blade.php`: next pending payment row highlighted amber + "بعدی" badge
+- `admin/lifecycle/overview.blade.php`: state distribution bar (5 colors, proportional)
+
+**Before that:** RC1_LAUNCH_FREEZE_ENFORCEMENT — LAUNCH_FREEZE_ACTIVE (2026-06-22)
 
 **RC1 Launch Freeze Documents Generated:**
 - `docs/LAUNCH_FREEZE_RULES.md` — Complete freeze policy + roadmap gate
