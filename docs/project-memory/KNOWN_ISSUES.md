@@ -10,6 +10,33 @@
 
 > All GAP-L07 resolved in RC1 (2026-06-22). See RELEASE_CANDIDATE_1.md.
 
+### CANVAS-BUG-01 — CRITICAL | RESOLVED (2026-06-23)
+
+**Title:** Canvas-provisioned pages show empty content after canvas theme deactivation  
+**Module:** customer-site — ThemeCanvas / Page rendering  
+**Root Cause:**  
+- `Page::getBuilderContentForRender()` checked `['sections']` key only; canvas pages store blocks under `['blocks']` key → content silently dropped → `usesBuilder()` false → empty body rendered
+- `page.blade.php` used base `BlockRenderer` which shows `module:*` blocks as placeholder labels (not live data)  
+**Resolution:**  
+- `getBuilderContentForRender()` now normalizes `blocks` → `sections` for canvas-provisioned pages  
+- `page.blade.php` switched to `ThemeCanvasRenderer` so module blocks render live content after canvas deactivation
+
+---
+
+### CANVAS-BUG-02 — CRITICAL | RESOLVED (2026-06-23)
+
+**Title:** Theme installed from platform admin not visible on customer site (Redis cache never cleared)  
+**Module:** saas-platform → customer-site — ThemeCanvasController::installToSite()  
+**Root Cause:**  
+1. `installToSite()` only wrote `active_canvas_theme_data` — name/slug/id never written to customer DB  
+2. Cache clearing targeted SQL `cache` table but customer-site uses Redis → ZERO EFFECT  
+3. `loadThemeData()` read through the 3600s `settings` cache before the 300s `canvas_theme_data` cache → stale for up to 1 hour  
+4. `ThemeMarketplaceController::install()` didn't clear `canvas_theme_data` cache  
+**Resolution:**  
+- `installToSite()` now writes all 4 settings (data + name + slug + id)  
+- `loadThemeData()` reads `active_canvas_theme_data` directly from DB (bypasses settings cache), TTL 60s  
+- `ThemeMarketplaceController::install()` now calls `Cache::forget('canvas_theme_data')`
+
 ### RE-FP-003 — HIGH | RESOLVED (2026-06-22)
 
 **Title:** Navigation Items Not Extracted (0% success rate)  

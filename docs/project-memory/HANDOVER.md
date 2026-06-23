@@ -19,9 +19,11 @@
 
 ---
 
-## CURRENT STATE (2026-06-22)
+## CURRENT STATE (2026-06-23)
 
-**Last completed phase:** PRE_LAUNCH_POLISH_AND_HARDENING — PRE_LAUNCH_HARDENING_COMPLETE (2026-06-22)
+**Last completed phase:** CANVAS_THEME_BUGFIX — 2 critical canvas theme bugs permanently fixed (2026-06-23)
+
+**Previous phase:** PRE_LAUNCH_POLISH_AND_HARDENING — PRE_LAUNCH_HARDENING_COMPLETE (2026-06-22)
 
 **⛔ LAUNCH FREEZE ACTIVE** — No new features, no new modules, no new DB tables, no architectural changes.
 Allowed: BUG FIX | UX IMPROVEMENT | PERFORMANCE | SECURITY | DOCUMENTATION | MONITORING
@@ -35,7 +37,14 @@ See `docs/LAUNCH_FREEZE_RULES.md` for complete policy.
 - `docs/MONITORING_HARDENING_REPORT.md` — 3 monitoring gaps (disk/backup-overdue/scheduler-dead alert)
 - `docs/LAUNCH_DAY_RUNBOOK.md` — Full launch day runbook with T-60→T+48h sequence, rollback procedures
 
-**Code Changes (this session):**
+**Code Changes (2026-06-23 — Canvas Theme Bugfix):**
+- `customer-site/app/Models/Page.php`: `getBuilderContentForRender()` now normalizes `['blocks']` → `['sections']` so canvas-provisioned pages render correctly after deactivation
+- `customer-site/resources/views/themes/default/page.blade.php`: switched from `BlockRenderer` to `ThemeCanvasRenderer` so `module:*` blocks show live module data (courses, products, etc.)
+- `customer-site/app/Http/Controllers/Front/ThemeCanvasPageController.php`: `loadThemeData()` now reads `active_canvas_theme_data` directly from DB with 60s TTL (bypasses 1h settings cache — platform admin installs visible within 60s)
+- `customer-site/app/Http/Controllers/Admin/ThemeMarketplaceController.php`: `install()` now calls `Cache::forget('canvas_theme_data')` after install
+- `saas-platform/app/Http/Controllers/Admin/ThemeCanvasController.php`: `installToSite()` now writes all 4 canvas settings (previously only wrote `active_canvas_theme_data`, missing name/slug/id)
+
+**Code Changes (previous session):**
 - `SiteLifecycleService.php`: pushes `site_lifecycle_changed_at` to customer-site settings on every transition
 - `front/suspended.blade.php`: shows archive deadline block (Jalali date + days remaining)
 - `front/lifecycle/pay-failed.blade.php`: Alpine.js 3-min cooldown timer on retry button

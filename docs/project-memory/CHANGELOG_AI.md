@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-06-23 — CANVAS_THEME_BUG_FIX_PERMANENT
+
+**Reason:** Two critical theme bugs reported: (1) canvas pages show empty/broken after deactivation, (2) theme installed from platform admin not visible due to Redis cache never being cleared.
+
+### Root Causes Found & Fixed:
+
+**Bug 1 — Canvas pages empty after deactivation (customer-site):**
+- `Page::getBuilderContentForRender()` checked `['sections']` key but canvas-provisioned pages store blocks under `['blocks']` key → content was silently dropped
+- `page.blade.php` used base `BlockRenderer` which shows `module:*` blocks as schema-validation placeholders (no live data)
+
+**Bug 2 — Theme invisible after platform admin install (saas-platform → customer-site):**
+- `ThemeCanvasController::installToSite()` only wrote `active_canvas_theme_data` to customer DB — `active_canvas_theme_name`, `active_canvas_theme_slug`, `active_canvas_theme_id` were never written
+- Cache clearing in `installToSite()` targeted SQL `cache` table, but customer-site uses Redis → ZERO EFFECT
+- `ThemeMarketplaceController::install()` didn't call `Cache::forget('canvas_theme_data')` after install
+- `loadThemeData()` TTL was 300s AND read through the 3600s `settings` cache → stale data for up to 1 hour
+
+### Files Changed:
+
+**customer-site:**
+- `app/Models/Page.php` — `getBuilderContentForRender()` now normalizes `['blocks']` → `['sections']` for canvas-provisioned pages
+- `resources/views/themes/default/page.blade.php` — switched from `BlockRenderer` to `ThemeCanvasRenderer` so `module:*` blocks render live module data
+- `app/Http/Controllers/Front/ThemeCanvasPageController.php` — `loadThemeData()` now reads `active_canvas_theme_data` directly from DB (bypasses 1h `settings` cache), TTL reduced from 300s to 60s
+- `app/Http/Controllers/Admin/ThemeMarketplaceController.php` — `install()` now also calls `Cache::forget('canvas_theme_data')`
+
+**saas-platform:**
+- `app/Http/Controllers/Admin/ThemeCanvasController.php` — `installToSite()` now writes all 4 settings (data + name + slug + id) and also tries to clear `settings` entries in any SQL-based cache table
+
+---
+
 ## 2026-06-23 — PRE_LAUNCH_HARDENING_DEPLOYS_CONFIRMED
 
 **Reason:** Final deploy confirmation for all pre-launch hardening code changes from 2026-06-22 session.
