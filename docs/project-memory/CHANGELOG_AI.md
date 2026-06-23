@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-06-23 — PRE_LAUNCH_DEVOPS_HARDENING_AUDIT
+
+**Reason:** Comprehensive DevOps/production hardening audit before DNS cutover. 6 phases: APP_URL, SSL, CORS, Backup, Monitoring, Go-Live Verdict.
+
+### Production Server Fixes (via SSH to 87.107.12.81:9011)
+
+- `PLATFORM_URL` on customer-site: `http://` → `https://panel.safhenokhost.ir` (encrypted inter-service calls)
+- `LOG_LEVEL` on customer-site: `debug` → `error` (reduced log noise in production)
+- `VITE_APP_URL` on saas-platform: `http://127.0.0.1:8000` → `https://panel.safhenokhost.ir` (correct prod URL)
+- `customer-site-worker` Supervisor: was FATAL → restarted (`supervisorctl start "customer-site-worker:*"`)
+- `/var/www/deploy.sh` on server: added `supervisorctl start/restart "${PROJECT}-worker:*"` after `queue:restart` to prevent future FATAL states
+
+### Documents Generated (saas-platform/docs/)
+
+- `APP_URL_AUDIT.md` — 3 fixes applied, all URLs HTTPS in production
+- `SSL_HARDENING_AUDIT.md` — Nginx config correct, HSTS active, CDN pending
+- `CORS_SECURITY_AUDIT.md` — PASS, no wildcard, server-to-server calls exempt
+- `OFFSITE_BACKUP_STATUS.md` — 7 daily backups running, offsite copy required before launch
+- `MONITORING_FINAL_AUDIT.md` — all 4 workers RUNNING, scheduler active, anomaly detection operational
+- `GO_LIVE_VERDICT.md` — GO_LIVE_READY_WITH_WARNINGS, score 96/100, 2 pre-launch actions
+
+### Score Change: 93/100 → 96/100
+
+---
+
 ## 2026-06-22 — MONITORING_COMMAND_HARDENING
 
 **Reason:** Implement the 3 HIGH-priority monitoring gaps identified in MONITORING_HARDENING_REPORT.md — disk usage alert, backup-overdue alert, missed-scheduler detection — directly into `ScanRuntimeAnomaliesCommand`.

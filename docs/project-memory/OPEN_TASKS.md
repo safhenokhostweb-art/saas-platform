@@ -22,11 +22,13 @@
 | installments/show.blade.php next-payment amber highlight | ✅ DONE |
 | lifecycle/overview.blade.php 5-color state distribution bar | ✅ DONE |
 
-**Pre-launch open actions (non-code):**
-1. CRITICAL: `APP_URL=https://...` in production .env
-2. CRITICAL: ArvanCloud CDN activation (real SSL)
-3. HIGH: `CORS_ALLOWED_ORIGIN` ≠ `*` in production
+**Pre-launch open actions (non-code) — UPDATED 2026-06-23:**
+1. ✅ FIXED: `APP_URL=https://...` in production .env (was already correct)
+2. CRITICAL: ArvanCloud CDN activation (real SSL) — DevOps action
+3. ✅ FIXED: `CORS_ALLOWED_ORIGINS` in production defaults to empty array (secure — no wildcard)
 4. HIGH: Manual DB backup offsite copy before DNS cutover
+5. ✅ FIXED: `customer-site-worker` FATAL → restarted (now RUNNING)
+6. ✅ FIXED: `PLATFORM_URL=http://` → `https://` on customer-site production
 
 ---
 
