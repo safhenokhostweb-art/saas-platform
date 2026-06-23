@@ -1,7 +1,20 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-22
+> Last Updated: 2026-06-23
+
+---
+
+## 2026-06-23 — PRE_LAUNCH_HARDENING_DEPLOYS_CONFIRMED
+
+**Reason:** Final deploy confirmation for all pre-launch hardening code changes from 2026-06-22 session.
+
+### Deployed to production (87.107.12.81):
+
+- **saas-platform** — `SiteLifecycleService` lifecycle_changed_at push + `lifecycle/overview.blade.php` state bar + `ScanRuntimeAnomaliesCommand` disk/backup-overdue/scheduler-dead alerts + 6 audit docs — DEPLOYED ✅
+- **customer-site** — `front/suspended.blade.php` archive deadline block + `lifecycle/pay-failed.blade.php` Alpine.js cooldown + `account/installments/show.blade.php` next-payment highlight — DEPLOYED ✅
+
+All 4 workers confirmed RUNNING post-deploy. No migrations pending.
 
 ---
 

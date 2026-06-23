@@ -231,25 +231,35 @@ class ThemeCanvasController extends Controller
                 'global_styles' => $theme->global_styles ?? [],
             ], JSON_UNESCAPED_UNICODE);
 
-            // upsert در جدول settings سایت مشتری
-            $existing = $conn->table('settings')->where('key', 'active_canvas_theme_data')->first();
-            if ($existing) {
-                $conn->table('settings')
-                    ->where('key', 'active_canvas_theme_data')
-                    ->update(['value' => $themeJson, 'updated_at' => now()]);
-            } else {
-                $conn->table('settings')->insert([
-                    'key'        => 'active_canvas_theme_data',
-                    'value'      => $themeJson,
-                    'group'      => 'theme',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+            // upsert تمام ۴ کلید canvas theme در جدول settings سایت مشتری
+            $themeSettings = [
+                'active_canvas_theme_data' => $themeJson,
+                'active_canvas_theme_name' => $theme->name,
+                'active_canvas_theme_slug' => $theme->slug,
+                'active_canvas_theme_id'   => (string) $theme->id,
+            ];
+
+            foreach ($themeSettings as $key => $value) {
+                $existing = $conn->table('settings')->where('key', $key)->first();
+                if ($existing) {
+                    $conn->table('settings')
+                        ->where('key', $key)
+                        ->update(['value' => $value, 'updated_at' => now()]);
+                } else {
+                    $conn->table('settings')->insert([
+                        'key'        => $key,
+                        'value'      => $value,
+                        'group'      => 'theme',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             }
 
-            // پاکسازی کش قالب
+            // پاکسازی کش قالب (برای driver=database — Redis توسط customer-site در 60 ثانیه expire می‌شود)
             try {
                 $conn->table('cache')->where('key', 'like', '%canvas_theme%')->delete();
+                $conn->table('cache')->where('key', 'like', '%settings%')->delete();
             } catch (\Throwable) {}
 
             // Provision theme pages into customer site's pages table
