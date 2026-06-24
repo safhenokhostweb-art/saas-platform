@@ -3,8 +3,10 @@ namespace App\Console\Commands;
 
 use App\Models\Infrastructure\InfraBackupRun;
 use App\Models\Infrastructure\InfraSchedulerRun;
+use App\Services\Infrastructure\ArvanBackupService;
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class BackupDatabaseCommand extends Command
 {
@@ -70,6 +72,29 @@ class BackupDatabaseCommand extends Command
         $this->info("Backup created: {$filename} ({$sizeMb} MB)");
         $backupRun->endSuccess($fullPath, $sizeMb, $duration);
         $schedRun->endSuccess("Backup: {$filename} ({$sizeMb} MB)");
+
+        // ARVAN: Upload backup to offsite storage
+        try {
+            $arvan = app(ArvanBackupService::class);
+            $remotePath = $arvan->platformDbPath($filename);
+            $result = $arvan->upload($fullPath, $remotePath);
+
+            if ($result['success']) {
+                $this->info("Arvan offsite backup: {$result['message']}");
+                Log::info("db:backup arvan success", ['filename' => $filename, 'size' => $sizeMb]);
+            } else {
+                $this->warn("Arvan offsite backup failed: {$result['message']}");
+                Log::warning("db:backup arvan failed", ['filename' => $filename, 'error' => $result['message']]);
+                app(SlackAlertService::class)->warning(
+                    'Arvan Offsite Backup Failed',
+                    "Database backup created locally but offsite upload failed: {$result['message']}",
+                    ['filename' => $filename, 'size_mb' => $sizeMb]
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->warn("Arvan upload exception: " . $e->getMessage());
+            Log::error("db:backup arvan exception", ['error' => $e->getMessage()]);
+        }
 
         $this->pruneOldBackups($backupDir, $retention);
 

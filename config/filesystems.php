@@ -90,6 +90,20 @@ return [
             'throw'  => false,
         ],
 
+        // ARVAN: Offsite backup disk (ArvanCloud S3-compatible object storage)
+        'arvan_backup' => [
+            'driver'                  => 's3',
+            'key'                     => env('ARVAN_ACCESS_KEY'),
+            'secret'                  => env('ARVAN_SECRET_KEY'),
+            'region'                  => env('ARVAN_REGION', 'ir-thr-at1'),
+            'bucket'                  => env('ARVAN_BUCKET', 'safhenokhost-backups'),
+            'endpoint'                => env('ARVAN_ENDPOINT'),
+            'url'                     => env('ARVAN_URL'),
+            'use_path_style_endpoint' => true,
+            'throw'                   => false,
+            'visibility'              => 'private',
+        ],
+
         // INFRA-2: Legacy public avatar storage (web-accessible via /uploads URL)
         // Maps to public/uploads so existing avatar URLs continue to resolve.
         'uploads' => [
