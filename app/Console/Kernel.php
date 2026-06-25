@@ -110,6 +110,12 @@ class Kernel extends ConsoleKernel
             ->onFailure(function () {
                 \Illuminate\Support\Facades\Log::error('resource:bill-overage scheduled run failed');
             });
+
+        // ARVAN-001 Phase 2: Weekly platform storage snapshot → ArvanCloud offsite (Sunday 03:30)
+        $schedule->command('storage:backup')
+            ->weeklyOn(0, '03:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/storage-backup.log'));
     }
 
     /**

@@ -2,6 +2,7 @@
 namespace App\Services\Lifecycle;
 
 use App\Models\Site;
+use App\Services\Infrastructure\ArvanBackupService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Storage;
  */
 class SiteArchiveService
 {
+    public function __construct(private ArvanBackupService $arvan) {}
+
     public function createArchivePackage(Site $site): string
     {
         $archiveDir  = storage_path('app/archives');
@@ -47,6 +50,8 @@ class SiteArchiveService
                 'path'      => $archivePath,
                 'size_bytes' => filesize($archivePath),
             ]);
+
+            $this->uploadToArvan($archivePath, $archiveName, $site->id);
 
             return $archivePath;
         } catch (\Throwable $e) {
@@ -156,6 +161,52 @@ class SiteArchiveService
             'size_bytes' => $size,
             'file_count' => $count,
         ]);
+    }
+
+    /**
+     * ARVAN-001 Phase 2: Upload site archive to ArvanCloud offsite storage.
+     * Non-blocking — failure logs a warning but does not prevent archival.
+     * Uploads to two paths for redundant DR access:
+     *   - saas-platform/archives/{filename}  (platform-wide view)
+     *   - customer-sites/tenant-{siteId}/archives/{filename}  (per-tenant isolation)
+     */
+    private function uploadToArvan(string $localPath, string $archiveName, int $siteId): void
+    {
+        try {
+            $platformPath = $this->arvan->platformArchivePath($archiveName);
+            $result = $this->arvan->upload($localPath, $platformPath);
+
+            if ($result['success']) {
+                Log::info("SiteArchiveService: Arvan platform archive uploaded for site {$siteId}", [
+                    'remote_path' => $platformPath,
+                    'remote_size' => $result['remote_size'],
+                ]);
+            } else {
+                Log::warning("SiteArchiveService: Arvan platform archive upload failed for site {$siteId}", [
+                    'remote_path' => $platformPath,
+                    'error'       => $result['message'],
+                ]);
+            }
+
+            $tenantPath = $this->arvan->tenantPath($siteId, 'archives', $archiveName);
+            $tenantResult = $this->arvan->upload($localPath, $tenantPath);
+
+            if ($tenantResult['success']) {
+                Log::info("SiteArchiveService: Arvan tenant archive uploaded for site {$siteId}", [
+                    'remote_path' => $tenantPath,
+                    'remote_size' => $tenantResult['remote_size'],
+                ]);
+            } else {
+                Log::warning("SiteArchiveService: Arvan tenant archive upload failed for site {$siteId}", [
+                    'remote_path' => $tenantPath,
+                    'error'       => $tenantResult['message'],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error("SiteArchiveService: Arvan upload exception for site {$siteId}", [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function cleanup(string $dir): void
