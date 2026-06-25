@@ -5,6 +5,41 @@
 
 ---
 
+## 2026-06-25 — LICENSE_SYNC_FALSE_WARNING_ELIMINATION
+
+**Phase:** LICENSE_SYNC_FALSE_WARNING_ELIMINATION (production bug fix — allowed under Launch Freeze)
+
+**Root Cause Found:**
+- `cURL error 60: SSL certificate problem: self-signed certificate` on EVERY request to `https://panel.safhenokhost.ir/api/license/validate`
+- `last_validated_at` not updated on transient skip → retry storm (every request = new sync attempt)
+- Both caused the "هشدار موقت لایسنس" banner to show permanently despite valid license
+
+**Customer-Site Files Modified:**
+- `app/Services/LicenseActivationService.php`:
+  - `validate()`: respect `LICENSE_VERIFY_SSL=false` → `withoutVerifying()`; timeout 10→15s
+  - `syncWithPlatform()`: update `last_validated_at` even on transient skip (fixes retry storm); TTL 30min→2×interval
+- `config/license.php`: added `verify_ssl` config key (env: `LICENSE_VERIFY_SSL`, default: true)
+
+**Production `.env` Changes (`/var/www/customer-site/.env`):**
+- `PLATFORM_URL`: `https://panel.safhenokhost.ir` → `http://panel.safhenokhost.ir` (HTTP block exists for ArvanCloud Flexible SSL)
+- Added: `LICENSE_VERIFY_SSL=false`
+
+**Production Actions:**
+- Cleared stuck `license.transient_error.*` cache entries from DB
+- Ran `php artisan config:clear && cache:clear`
+- Deployed via `customer-site/deploy.ps1`
+
+**Audit Documents Generated (customer-site/docs/):**
+- `LICENSE_SYNC_FLOW_MAP.md` — Complete trace of sync workflow
+- `LICENSE_WARNING_ROOT_CAUSES.md` — 4 root causes analyzed
+- `LICENSE_SYNC_LOG_AUDIT.md` — 30-entry log audit (100% SSL error)
+- `PLATFORM_SYNC_CONNECTIVITY_REPORT.md` — SSL/HTTP/DNS/timeout analysis
+- `LICENSE_SYNC_CERTIFICATION.md` — Final verdict
+
+**Verdict: LICENSE_SYNC_FALSE_WARNING_ELIMINATED**
+
+---
+
 ## 2026-06-25 — FINAL_PRE_LAUNCH_VERIFICATION
 
 **Phase:** FINAL_PRE_LAUNCH_VERIFICATION (4-phase audit)

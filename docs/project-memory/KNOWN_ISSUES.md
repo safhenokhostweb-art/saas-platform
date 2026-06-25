@@ -10,6 +10,22 @@
 
 > All GAP-L07 resolved in RC1 (2026-06-22). See RELEASE_CANDIDATE_1.md.
 
+### LICENSE-SSL-001 — CRITICAL | RESOLVED (2026-06-25)
+
+**Title:** Customer dashboard permanent false "هشدار موقت لایسنس" banner  
+**Module:** customer-site — LicenseActivationService / EnsureLicenseValid  
+**Root Cause:**
+1. `PLATFORM_URL=https://...` with self-signed cert → cURL error 60 on every request
+2. `last_validated_at` not updated on transient skip → retry on every request → banner renewed continuously
+**Resolution:**
+- `PLATFORM_URL=http://panel.safhenokhost.ir` (HTTP block exists on same server)
+- `LICENSE_VERIFY_SSL=false` + `withoutVerifying()` fallback
+- `last_validated_at` updated on transient skip → 5-min interval respected
+- Banner TTL reduced from 30min to `max(10, interval×2)` min
+**See:** `customer-site/docs/LICENSE_SYNC_CERTIFICATION.md`
+
+---
+
 ### CANVAS-BUG-01 — CRITICAL | RESOLVED (2026-06-23)
 
 **Title:** Canvas-provisioned pages show empty content after canvas theme deactivation  

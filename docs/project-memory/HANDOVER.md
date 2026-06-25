@@ -5,6 +5,28 @@
 
 ---
 
+## CURRENT STATE (2026-06-25 — LICENSE_SYNC_FALSE_WARNING_ELIMINATION)
+
+**Last completed phase:** LICENSE_SYNC_FALSE_WARNING_ELIMINATION — Production bug fix, allowed under Launch Freeze
+
+**Root Cause Fixed:** Customer dashboard showed permanent "هشدار موقت لایسنس" banner.
+- SSL cert at `https://panel.safhenokhost.ir` was self-signed → cURL error 60 on every request
+- `last_validated_at` not updated on transient skip → retry storm (2 log errors per page load)
+
+**Code Changes (customer-site):**
+- `app/Services/LicenseActivationService.php`: `withoutVerifying()` when `LICENSE_VERIFY_SSL=false`; timeout 10→15s; `last_validated_at` updated on transient skip; banner TTL 30→2×interval
+- `config/license.php`: added `verify_ssl` config key
+
+**Production `.env` changes (`/var/www/customer-site/.env`):**
+- `PLATFORM_URL=http://panel.safhenokhost.ir` (was https — HTTP block exists for ArvanCloud Flexible SSL)
+- `LICENSE_VERIFY_SSL=false`
+
+**Certification:** `customer-site/docs/LICENSE_SYNC_CERTIFICATION.md` — LICENSE_SYNC_FALSE_WARNING_ELIMINATED
+
+**⛔ LAUNCH FREEZE ACTIVE** — See `docs/LAUNCH_FREEZE_RULES.md`. This was a permitted production bug fix.
+
+---
+
 ## PROJECT SUMMARY
 
 **SaaS Platform** — A multi-tenant Laravel 10 SaaS built for managing customer support, forms, education content, and platform communication. One Laravel installation serves multiple customer sites via domain-based tenant resolution (`site_id` scoping).
