@@ -5,6 +5,30 @@
 
 ---
 
+## 2026-06-26 — DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE (Phase 2 Design)
+
+**Phase:** PHASE_2_DR_CENTER_DESIGN
+
+**Type:** Architecture + Documentation only — zero code changes, zero deploys.
+
+**3 design documents produced:**
+
+| File | Description |
+|------|-------------|
+| `docs/DISASTER_RECOVERY_CENTER_ARCHITECTURE.md` | Controller, routes, views, services, new files list |
+| `docs/DISASTER_RECOVERY_MONITORING_SPEC.md` | Data queries, health logic, tenant visibility, refresh strategy |
+| `docs/DISASTER_RECOVERY_ALERT_SYSTEM.md` | 7 alert definitions, ScanDrHealthCommand, dedup strategy |
+
+**Key design decisions:**
+- No new migrations required (all data in existing tables)
+- `dr_alert_log` migration is optional (system degrades gracefully without it)
+- All Arvan calls cached 5-min (`Cache::remember`) — no excessive API load
+- `ScanDrHealthCommand` runs hourly, alert dedup via 6h cache key
+- Dashboard is read-only — no destructive actions except "retry sync" button
+- New controller: `DrCenterController` + service: `DrIntegrityService`
+
+---
+
 ## 2026-06-26 — RESTORE_WIZARD_OPERATIONAL (Phase 1 Complete)
 
 **Phase:** PHASE_1_RESTORE_WIZARD_IMPLEMENTATION

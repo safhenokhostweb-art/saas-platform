@@ -234,3 +234,43 @@ docs/project-memory/              ← حافظه پروژه (همیشه آپدی
 ```
 
 **مخزن = حافظه. هیچ‌وقت به chat history وابسته نباش.**
+
+---
+
+## Technical Commands
+
+### saas-platform (this repo)
+```powershell
+# Development
+npm run dev                          # Vite dev server (watches resources/)
+npm run build                        # Production Vite build
+php artisan serve                    # Local PHP server (Laragon preferred)
+
+# Testing
+php artisan test                     # Run all tests
+php artisan test --filter=ClassName  # Run single test class
+php artisan test tests/Feature/...   # Run specific file
+./vendor/bin/phpunit --testsuite=Unit
+
+# Database
+php artisan migrate                  # Run pending migrations
+php artisan migrate:fresh --seed     # Reset + seed (dev only)
+
+# Deploy
+.\deploy.ps1                         # Deploy to 87.107.12.81:9011 (always use this)
+```
+
+### customer-site (c:\laragon\www\customer-site)
+```powershell
+npm run dev    # Vite dev server
+npm run build  # Production build
+php artisan test
+```
+
+### Key Architecture Facts
+- **Platform stack:** Laravel 10, PHP 8.1+, Alpine.js, Tailwind CSS, Vite
+- **Tenant isolation:** every DB table has `site_id`; global scope auto-applies it
+- **Package rule:** `packages/` dirs must never import `App\*` — use `config()` bindings
+- **Two repos:** `saas-platform` (admin + API) ↔ `customer-site` (tenant UI) communicate via HTTP API + shared DB
+- **Icon system:** `x-core-ui::icon name="..."` — all SVGs in `app/Icons/LocalIconRegistry.php`
+- **Migrations:** never edit existing ones — create new ones only

@@ -5,6 +5,28 @@
 
 ---
 
+## CURRENT STATE (2026-06-26 — DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE)
+
+**Last completed phase:** DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE — Phase 2 design only. Zero code changes.
+
+**3 design documents produced:**
+- `docs/DISASTER_RECOVERY_CENTER_ARCHITECTURE.md` — controller, routes, views, services
+- `docs/DISASTER_RECOVERY_MONITORING_SPEC.md` — data queries, health logic, tenant table, refresh strategy
+- `docs/DISASTER_RECOVERY_ALERT_SYSTEM.md` — 7 alerts, ScanDrHealthCommand, dedup, optional dr_alert_log
+
+**Ready to implement:**
+1. `DrCenterController` (read-only, 5 methods)
+2. `DrIntegrityService` (on-demand Arvan integrity check)
+3. `ScanDrHealthCommand` (hourly health scanner + Slack alerts)
+4. Blade views: `center/index.blade.php` + 6 partials + `tenant-detail.blade.php`
+5. Routes (add to existing disaster-recovery group)
+6. AdminMenu `dr_center` entry
+7. Optional: `dr_alert_log` migration + alerts page
+
+**No new migrations required** (unless alert log is implemented — optional).
+
+---
+
 ## CURRENT STATE (2026-06-26 — RESTORE_WIZARD_OPERATIONAL)
 
 **Last completed phase:** RESTORE_WIZARD_OPERATIONAL — Phase 1 Restore Wizard fully implemented, 30 tests, security audit PASS, certified.
