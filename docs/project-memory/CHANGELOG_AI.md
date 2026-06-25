@@ -5,6 +5,43 @@
 
 ---
 
+## 2026-06-25 — PRODUCTION_500_INCIDENT_RESOLUTION
+
+**Phase:** PRODUCTION_OPERATIONAL_RESTORED
+
+**Incident:** Two simultaneous 500 errors:
+1. `safhenokhost.ir` — customer site homepage
+2. `panel.safhenokhost.ir/admin/finance/dashboard` and `/admin/finance/ledger`
+
+**Root Cause 1 — Finance Views:**
+- 4 finance Blade views used `@extends('admin.layouts.admin')` (non-existent)
+- Correct path: `@extends('layouts.admin')`
+- Files: `admin/finance/dashboard.blade.php`, `ledger/index.blade.php`, `ledger/create.blade.php`, `ledger/edit.blade.php`
+
+**Root Cause 2 — Customer Site Permission Denied:**
+- Deploy of `league/flysystem-aws-s3-v3` created vendor dirs with `drw-r--r--` (no execute bit)
+- PHP-FPM (www-data) could not traverse `vendor/mtdowling/`, `vendor/aws/` → fatal at autoloader
+- Fix: `find /var/www/customer-site/vendor/ -type d ! -perm /111 -exec chmod 755 {} \;`
+- `customer-site-worker` restarted after fix
+
+**saas-platform Files Modified:**
+- `resources/views/admin/finance/dashboard.blade.php` — layout path fixed
+- `resources/views/admin/finance/ledger/index.blade.php` — layout path fixed
+- `resources/views/admin/finance/ledger/create.blade.php` — layout path fixed
+- `resources/views/admin/finance/ledger/edit.blade.php` — layout path fixed
+
+**Docs Created:**
+- `docs/INCIDENT_500_ROOT_CAUSE.md`
+- `docs/FINANCE_500_AUDIT.md`
+- `docs/CUSTOMER_SITE_500_AUDIT.md`
+- `docs/INCIDENT_500_RESOLUTION.md`
+
+**Validation:**
+- Homepage: 200 ✅ | Finance Dashboard: 302 ✅ | Finance Ledger: 302 ✅
+- All 4 workers RUNNING ✅ | 0 new errors ✅
+
+---
+
 ## 2026-06-25 — CUSTOMER_SITE_OFFSITE_BACKUP_CERTIFICATION
 
 **Phase:** CUSTOMER_SITE_OFFSITE_BACKUP_CERTIFIED

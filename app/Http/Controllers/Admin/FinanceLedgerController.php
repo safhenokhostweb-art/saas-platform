@@ -40,7 +40,7 @@ class FinanceLedgerController extends Controller
     public function index(Request $request)
     {
         $q = FinanceLedgerEntry::query()
-            ->with(['site:id,title', 'customer:id,name', 'createdBy:id,name'])
+            ->with(['site:id,title', 'customer:id,name'])
             ->orderByDesc('entry_date')
             ->orderByDesc('id');
 

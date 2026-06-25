@@ -59,9 +59,8 @@ class IncidentController extends Controller
     public function show(int $id)
     {
         $incident = InfraIncident::with(['site', 'assignedTo', 'notes.user'])->findOrFail($id);
-        $admins   = \App\Models\User::where('is_admin', true)->where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
-        return view('admin.incidents.show', compact('incident', 'admins'));
+        return view('admin.incidents.show', compact('incident'));
     }
 
     public function investigate(Request $request, int $id)

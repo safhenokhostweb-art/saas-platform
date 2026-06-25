@@ -8,6 +8,18 @@
 
 ## ACTIVE BUGS
 
+### DEPLOY-PERM-001 — MEDIUM | DEFERRED (2026-06-25)
+
+**Title:** New composer packages installed via deploy ZIP have directories with missing execute bit  
+**Module:** customer-site deploy process  
+**Root Cause:** When new packages are installed via ZIP deploy, vendor directories can be created as `drw-r--r--` (644) instead of `drwxr-xr-x` (755). PHP-FPM (www-data) requires execute bit to traverse directories. This caused a full site 500 on 2026-06-25 after `league/flysystem-aws-s3-v3` was installed.  
+**Workaround Applied:** `find /var/www/customer-site/vendor/ -type d ! -perm /111 -exec chmod 755 {} \;`  
+**Permanent Fix (post-launch):** Add to customer-site deploy script after vendor extraction:  
+```bash
+find /var/www/customer-site/vendor/ -type d -exec chmod 755 {} \;
+```
+**See:** `docs/CUSTOMER_SITE_500_AUDIT.md`, `docs/INCIDENT_500_RESOLUTION.md`
+
 > All GAP-L07 resolved in RC1 (2026-06-22). See RELEASE_CANDIDATE_1.md.
 
 ### HOSTING-WIDGET-001 — HIGH | RESOLVED (2026-06-25)
