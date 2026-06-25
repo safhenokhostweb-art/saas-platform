@@ -132,4 +132,83 @@ class ArvanBackupService
     {
         return "customer-sites/tenant-{$siteId}/{$type}/{$filename}";
     }
+
+    /**
+     * List all files under a remote prefix, sorted newest-first.
+     *
+     * @return list<array{path: string, filename: string, size: int|null, last_modified: int|null}>
+     */
+    public function listFiles(string $prefix): array
+    {
+        try {
+            $files = Storage::disk($this->disk)->files($prefix);
+            $result = [];
+            foreach ($files as $file) {
+                $size     = $this->size($file);
+                $modified = null;
+                try {
+                    $modified = Storage::disk($this->disk)->lastModified($file);
+                } catch (\Throwable) {}
+
+                $result[] = [
+                    'path'          => $file,
+                    'filename'      => basename($file),
+                    'size'          => $size,
+                    'last_modified' => $modified,
+                ];
+            }
+            usort($result, fn($a, $b) => ($b['last_modified'] ?? 0) <=> ($a['last_modified'] ?? 0));
+            return $result;
+        } catch (\Throwable $e) {
+            Log::warning("ArvanBackup: listFiles failed for prefix '{$prefix}': " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Download a remote file to a local path. Returns true on success.
+     */
+    public function download(string $remotePath, string $localPath): bool
+    {
+        try {
+            $stream = Storage::disk($this->disk)->readStream($remotePath);
+            if (!$stream) {
+                Log::warning("ArvanBackup: readStream returned null for {$remotePath}");
+                return false;
+            }
+
+            $dest = fopen($localPath, 'w');
+            if ($dest === false) {
+                Log::warning("ArvanBackup: cannot open local path for writing: {$localPath}");
+                if (is_resource($stream)) fclose($stream);
+                return false;
+            }
+
+            stream_copy_to_stream($stream, $dest);
+            fclose($dest);
+            if (is_resource($stream)) fclose($stream);
+
+            $ok = file_exists($localPath) && filesize($localPath) > 0;
+            if ($ok) {
+                Log::info("ArvanBackup: Downloaded {$remotePath} → {$localPath} (" . filesize($localPath) . " bytes)");
+            }
+            return $ok;
+        } catch (\Throwable $e) {
+            Log::warning("ArvanBackup: download failed for {$remotePath}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get last-modified timestamp for a file, or null on failure.
+     */
+    public function lastModified(string $remotePath): ?int
+    {
+        try {
+            return Storage::disk($this->disk)->lastModified($remotePath);
+        } catch (\Throwable $e) {
+            Log::warning("ArvanBackup: lastModified check failed for {$remotePath}: " . $e->getMessage());
+            return null;
+        }
+    }
 }

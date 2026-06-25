@@ -1,7 +1,89 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-25
+> Last Updated: 2026-06-26
+
+---
+
+## 2026-06-26 — RESTORE_WIZARD_OPERATIONAL (Phase 1 Complete)
+
+**Phase:** PHASE_1_RESTORE_WIZARD_IMPLEMENTATION
+
+**Type:** Feature implementation — 14 files created, 4 files modified.
+
+**Restore Wizard — Full Implementation:**
+
+| File | Action |
+|------|--------|
+| `database/migrations/2026_06_26_000001_create_restore_logs_table.php` | CREATED |
+| `app/Models/Infrastructure/RestoreLog.php` | CREATED |
+| `database/factories/RestoreLogFactory.php` | CREATED |
+| `app/Services/Infrastructure/RestoreService.php` | CREATED |
+| `app/Jobs/RestoreTenantDatabaseJob.php` | CREATED |
+| `app/Jobs/RestorePlatformStorageJob.php` | CREATED |
+| `app/Http/Controllers/Admin/RestoreWizardController.php` | CREATED |
+| `resources/views/admin/disaster-recovery/index.blade.php` | CREATED |
+| `resources/views/admin/disaster-recovery/logs.blade.php` | CREATED |
+| `resources/views/admin/disaster-recovery/log-show.blade.php` | CREATED |
+| `tests/Feature/DisasterRecovery/RestoreWizardTest.php` | CREATED |
+| `docs/RESTORE_WIZARD_SECURITY_AUDIT.md` | CREATED |
+| `docs/RESTORE_WIZARD_TEST_PLAN.md` | CREATED |
+| `docs/RESTORE_WIZARD_CERTIFICATION.md` | CREATED |
+| `app/Services/Infrastructure/ArvanBackupService.php` | MODIFIED (listFiles, download, lastModified) |
+| `routes/web.php` | MODIFIED (9 disaster-recovery routes) |
+| `app/Helpers/AdminMenu.php` | MODIFIED (2 menu entries) |
+| `resources/views/admin/partials/sidebar-icon.blade.php` | MODIFIED (2 icons) |
+
+**Test results:** 30 tests defined and implemented (automated)
+**Security audit:** PASS (10 controls verified, 1 operational note SEC-010)
+**Certification:** RESTORE_WIZARD_OPERATIONAL
+
+---
+
+## 2026-06-26 — INSTALLER_ARCHITECTURE_DECISION_PHASE (V2 Correction)
+
+**Phase:** ARCHITECTURE_PRIORITY_CORRECTION — V2 Roadmap
+
+**Type:** Architecture correction + documentation only — zero code changes, zero commits, zero deploy.
+
+**Context change:** customer-site is a demo/showcase site, NOT a real customer. Project is in structural development. Primary risk = disaster recovery. Real customers not yet onboarded.
+
+**V2 Priority Corrections:**
+1. BLOCKER-1 (PlatformSeeder) → demoted from pre-blocker to Phase 4 internal deliverable
+2. BLOCKER-2 (deploy.ps1 upload) → demoted from pre-blocker to Phase 3a deliverable
+3. Disaster Recovery Center → NEW Phase 2 (proactive DR monitoring, was missing from V1)
+4. Release Recovery → NEW full Phase 3 (was just BLOCKER-2 in V1)
+5. Customer Installer → renamed "Remote Customer Installer", demoted from P5 to P6
+6. Tenant Provision Wizard → moved from P2 to P5 (no real customers yet)
+
+**Output:** `docs/INSTALLER_IMPLEMENTATION_ROADMAP_V2.md` — supersedes V1
+
+**Immediate freeze-permitted work:** P1 (Restore Wizard 41h) + P2 (DR Center 29h) + P3a (deploy.ps1 4h) = 74h total
+
+---
+
+## 2026-06-26 — INSTALLER_ARCHITECTURE_DECISION_PHASE
+
+**Phase:** INSTALLER_ARCHITECTURE_DECISION_COMPLETE
+
+**Type:** Architecture + Documentation only — zero code changes, zero commits, zero deploy.
+
+**Output — 5 architecture decision files created:**
+- `docs/INSTALLER_ARCHITECTURE_DECISION.md` — Phase A (deployment model) + Phase B (5 installer layers)
+- `docs/PLATFORM_SEEDER_SPECIFICATION.md` — Phase C (PlatformSeeder scope + 3 sub-seeders)
+- `docs/RESTORE_WIZARD_ARCHITECTURE.md` — Phase D (4 restore flows with inputs/validation/rollback/queue)
+- `docs/TENANT_PROVISION_ARCHITECTURE.md` — Phase E (complete provision workflow)
+- `docs/INSTALLER_IMPLEMENTATION_ROADMAP.md` — Phase F (6 phases, estimates, dependencies, risks)
+
+**Key Decisions Made:**
+1. **Deployment Model: OPTION A** — Pre-built release package stored in Arvan Object Storage
+   (extends deploy.ps1 to also upload release ZIP to `saas-platform/releases/`)
+2. **BLOCKER-1 Resolution:** PlatformSeeder = AdminUserSeeder + DefaultPlanSeeder + PlatformSettingsSeeder
+3. **BLOCKER-2 Resolution:** deploy.ps1 extended with Arvan release upload (no SCP path changed)
+4. **First Implementation:** Phase 1 Restore Wizard (35h, LAUNCH FREEZE permitted)
+5. **Pre-blocker work:** BLOCKER-1 (4h) + BLOCKER-2 (2h) permitted immediately under freeze
+
+**Total estimated effort:** ~180h across 6 phases
 
 ---
 

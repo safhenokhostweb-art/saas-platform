@@ -1,7 +1,70 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-06-25
+> Last Updated: 2026-06-26
+
+---
+
+## CURRENT STATE (2026-06-26 — RESTORE_WIZARD_OPERATIONAL)
+
+**Last completed phase:** RESTORE_WIZARD_OPERATIONAL — Phase 1 Restore Wizard fully implemented, 30 tests, security audit PASS, certified.
+
+**What was built:**
+- 7-step Alpine.js wizard at `/admin/disaster-recovery` (Operations → Disaster Recovery → Restore Wizard)
+- 4 restore types: platform_database, platform_storage, tenant_database, tenant_storage
+- Safety: Redis NX lock, dry-run simulation, pre-restore mysqldump snapshot, tries=1 jobs
+- SSE real-time progress streaming via Redis list + EventSource
+- RestoreLog model + `restore_logs` table + audit trail
+- Security: CSRF, escapeshellarg(), site_id validation, platform DB requires "RESTORE-PLATFORM" text
+
+**Production steps NOT yet run:**
+- `php artisan migrate` — needed for restore_logs table
+- `php artisan queue:work --queue=restore` — needed for job execution
+- Nginx SSE timeout: verify `fastcgi_read_timeout 300`
+
+**Next options:**
+1. Phase 2: DR Center (29h) — disaster recovery monitoring dashboard
+2. Phase 3a: deploy.ps1 Arvan release upload (4h)
+3. EDU-17: AI provider live wiring
+
+---
+
+## CURRENT STATE (2026-06-26 — INSTALLER_ARCHITECTURE_DECISION_PHASE)
+
+**Last completed phase:** INSTALLER_ARCHITECTURE_DECISION_COMPLETE — Architecture + documentation only. Zero code changes.
+
+**5 Architecture Decisions Finalized:**
+1. **Deployment Model:** OPTION A — Pre-built release ZIPs uploaded to Arvan `saas-platform/releases/` (extends existing deploy.ps1)
+2. **Installer Architecture:** Hybrid Web (standalone PHP wizard) + CLI (Artisan commands) — 5 layers defined
+3. **PlatformSeeder:** AdminUserSeeder + DefaultPlanSeeder + PlatformSettingsSeeder — all idempotent, all use `updateOrCreate`
+4. **Restore Wizard:** 4 flows (tenant DB / platform DB / storage / full disaster) with SSE streaming + pre-restore snapshots
+5. **Tenant Provision Wizard:** 6-step TenantProvisioningService orchestrating all existing services
+
+**Blockers to resolve (permitted under LAUNCH FREEZE):**
+- BLOCKER-1: PlatformSeeder does not exist → 4h implementation → spec in `docs/PLATFORM_SEEDER_SPECIFICATION.md`
+- BLOCKER-2: deploy.ps1 does not upload release ZIPs to Arvan → 2h extension
+
+**Architecture docs:**
+- `docs/INSTALLER_ARCHITECTURE_DECISION.md` — deployment model + 5 installer layers
+- `docs/PLATFORM_SEEDER_SPECIFICATION.md` — seeder scope + constraints (users.name forbidden)
+- `docs/RESTORE_WIZARD_ARCHITECTURE.md` — 4 restore flows
+- `docs/TENANT_PROVISION_ARCHITECTURE.md` — provision workflow
+- `docs/INSTALLER_IMPLEMENTATION_ROADMAP.md` — 6 phases + estimates
+
+**V2 Correction (2026-06-26):**
+- customer-site = demo/showcase, no real customers → roadmap reprioritized to DR-first
+- BLOCKER-1 (PlatformSeeder) is NO LONGER a pre-blocker — it is Phase 4 internal deliverable
+- BLOCKER-2 (deploy.ps1 release upload) is Phase 3a deliverable
+- Disaster Recovery Center added as Phase 2 (was missing from V1)
+
+**Next action (freeze-permitted):**
+1. Phase 1: Restore Wizard (41h) — start here
+2. Phase 2: DR Center (29h)
+3. Phase 3a: deploy.ps1 Arvan release upload (4h — can run in parallel)
+
+**Roadmap:** `docs/INSTALLER_IMPLEMENTATION_ROADMAP_V2.md` (supersedes V1)
+
+**⛔ LAUNCH FREEZE ACTIVE** — Architecture decisions only completed this session. No code written.
 
 ---
 

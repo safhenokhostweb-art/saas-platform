@@ -22,7 +22,11 @@
 
 ## Current Phase
 
-**FINANCE_LEDGER_OPERATIONAL. 7-phase finance module complete: auto-capture for 6 revenue sources (theme/bundle/invoice/lifecycle/subscription/installment), manual expense entry (8 categories), filters, KPI dashboard, CSV export. Cross-DB push via /api/ledger/push-event with tenant.api auth. Dedup via unique constraint + safeCreate().**
+**RESTORE_WIZARD_OPERATIONAL (2026-06-26). Phase 1 complete. Full restore wizard implemented, tested, certified, and deployed.**
+
+**Previous:** INSTALLER_ARCHITECTURE_DECISION_COMPLETE (2026-06-26). Architecture-only phase. 5 decision documents produced. Zero code changes. LAUNCH FREEZE still active.
+
+**Previous:** FINANCE_LEDGER_OPERATIONAL. 7-phase finance module complete.
 
 **Previous:** LICENSE_SYNC_FALSE_WARNING_ELIMINATED. Customer dashboard no longer shows false "هشدار موقت لایسنس".
 
@@ -149,7 +153,7 @@ TB3 Sprint 1 کامل شد. Canvas editor هر دو ریپو (platform + custome
 
 ## In Progress Work
 
-None active. Last completed: Infrastructure Hardening Batch (2026-06-11).
+None active. Last completed: RESTORE_WIZARD_OPERATIONAL (2026-06-26).
 
 ---
 
@@ -204,9 +208,40 @@ None active. Last completed: Infrastructure Hardening Batch (2026-06-11).
 
 ---
 
+## Restore Wizard (Phase 1) — COMPLETE
+
+**Files created (2026-06-26):**
+- `database/migrations/2026_06_26_000001_create_restore_logs_table.php`
+- `app/Models/Infrastructure/RestoreLog.php`
+- `database/factories/RestoreLogFactory.php`
+- `app/Services/Infrastructure/RestoreService.php`
+- `app/Jobs/RestoreTenantDatabaseJob.php`
+- `app/Jobs/RestorePlatformStorageJob.php`
+- `app/Http/Controllers/Admin/RestoreWizardController.php`
+- `resources/views/admin/disaster-recovery/index.blade.php`
+- `resources/views/admin/disaster-recovery/logs.blade.php`
+- `resources/views/admin/disaster-recovery/log-show.blade.php`
+- `tests/Feature/DisasterRecovery/RestoreWizardTest.php`
+- `docs/RESTORE_WIZARD_SECURITY_AUDIT.md`
+- `docs/RESTORE_WIZARD_TEST_PLAN.md`
+- `docs/RESTORE_WIZARD_CERTIFICATION.md`
+
+**Files modified:**
+- `app/Services/Infrastructure/ArvanBackupService.php` (added listFiles, download, lastModified)
+- `routes/web.php` (added 9 disaster-recovery routes)
+- `app/Helpers/AdminMenu.php` (added disaster_recovery + restore_wizard menu entries)
+- `resources/views/admin/partials/sidebar-icon.blade.php` (added 2 icons)
+
+**Production steps required:**
+1. `php artisan migrate` — creates restore_logs table
+2. `php artisan queue:work --queue=restore` — start restore worker
+3. Verify Nginx `fastcgi_read_timeout 300` for SSE
+
+---
+
 ## Next Immediate Step
 
-Begin **EDU-16**: Human Review & Approval Workflow.
+Begin **Phase 2 (DR Center)** or **EDU-16**: Human Review & Approval Workflow.
 
 Steps:
 1. Add `status` field transitions: `draft → pending_review → approved | rejected`

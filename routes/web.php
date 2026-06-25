@@ -846,6 +846,24 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | Disaster Recovery — Restore Wizard (Phase 1)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('disaster-recovery')->name('disaster-recovery.')->group(function () {
+            Route::get('/',                    [\App\Http\Controllers\Admin\RestoreWizardController::class, 'index'])->name('index');
+            Route::get('/browse',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'browse'])->name('browse');
+            Route::post('/validate',           [\App\Http\Controllers\Admin\RestoreWizardController::class, 'validate'])->name('validate');
+            Route::post('/dry-run',            [\App\Http\Controllers\Admin\RestoreWizardController::class, 'dryRun'])->name('dry-run');
+            Route::post('/execute',            [\App\Http\Controllers\Admin\RestoreWizardController::class, 'execute'])->name('execute');
+            Route::get('/stream',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'stream'])->name('stream');
+            Route::get('/status',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'status'])->name('status');
+            Route::post('/abort',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'abort'])->name('abort');
+            Route::get('/logs',                [\App\Http\Controllers\Admin\RestoreWizardController::class, 'logs'])->name('logs');
+            Route::get('/logs/{log}',          [\App\Http\Controllers\Admin\RestoreWizardController::class, 'logShow'])->name('logs.show');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | ریدایرکت /admin به داشبورد
         |--------------------------------------------------------------------------
         */
