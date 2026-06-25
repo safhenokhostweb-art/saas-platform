@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-06-25 — FINANCE_500_COMPLETE_FIX (Session 2)
+
+**Phase:** FINANCE_500_FIXED
+
+**Problem:** Finance ledger index still crashed after prior session because `createdBy:id,name` eager load requested non-existent `users.name` column (users table has only `mobile`; `name` is a virtual accessor). Incident controller also had same bug.
+
+**Root Causes Fixed:**
+1. `FinanceLedgerController::index()` — `->with(['createdBy:id,name'])` → removed (view never showed `createdBy`)
+2. `IncidentController::show()` — `User::...orderBy('name')->get(['id','name'])` → removed entire `$admins` query (unused in view)
+
+**saas-platform Files Modified:**
+- `app/Http/Controllers/Admin/FinanceLedgerController.php` (line 43) — removed `createdBy:id,name`
+- `app/Http/Controllers/Admin/IncidentController.php` (line 62) — removed `$admins` query
+
+**Docs Created:**
+- `docs/FINANCE_500_FIX_CERTIFICATION.md`
+
+**Commit:** `b4f90c0`
+
+**Validation:** Finance Ledger 200 ✅ | Finance Dashboard 200 ✅ | Homepage 200 ✅ | Incidents 200 ✅
+
+---
+
 ## 2026-06-25 — PRODUCTION_500_INCIDENT_RESOLUTION
 
 **Phase:** PRODUCTION_OPERATIONAL_RESTORED

@@ -8,6 +8,21 @@
 
 ## ACTIVE BUGS
 
+### USERS-NAME-001 — HIGH | RESOLVED (2026-06-25)
+
+**Title:** `users.name` column references causing 500 in FinanceLedgerController and IncidentController  
+**Module:** saas-platform — Admin Controllers  
+**Root Cause:**  
+1. `FinanceLedgerController::index()` had `->with(['createdBy:id,name'])` — `users` table has no `name` column; `name` is a virtual accessor only  
+2. `IncidentController::show()` had `User::...orderBy('name')->get(['id','name'])` — same issue; `$admins` variable was also unused in view  
+**Resolution:**  
+- Removed `'createdBy:id,name'` from `FinanceLedgerController::index()` (view never displayed `createdBy`)  
+- Removed entire `$admins` query from `IncidentController::show()` (unused variable)  
+**Commit:** `b4f90c0`  
+**See:** `docs/FINANCE_500_FIX_CERTIFICATION.md`
+
+---
+
 ### DEPLOY-PERM-001 — MEDIUM | DEFERRED (2026-06-25)
 
 **Title:** New composer packages installed via deploy ZIP have directories with missing execute bit  
