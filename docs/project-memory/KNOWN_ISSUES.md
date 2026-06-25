@@ -10,6 +10,21 @@
 
 > All GAP-L07 resolved in RC1 (2026-06-22). See RELEASE_CANDIDATE_1.md.
 
+### HOSTING-WIDGET-001 — HIGH | RESOLVED (2026-06-25)
+
+**Title:** Customer dashboard hosting expiry widget shows wrong/stale date; no renewal CTA  
+**Module:** saas-platform — SiteConfigController / ExpiryReminderService; customer-site — dashboard  
+**Root Cause:**
+1. `ExpiryReminderService` embeds expiry date in `PlatformSiteNotification.link` as `__expiry__:host:YYYY-MM-DD`
+2. On renewal, `SiteController.update()` did not update the notification → stale date persisted
+3. `SiteConfigController` read from stale marker instead of authoritative `Site.host_expires_at`
+4. No CTA button existed for hosting renewal
+**Resolution:**
+- `SiteController`: `syncExpiryNotifications()` updates/deactivates notification on every save
+- `SiteConfigController`: always reads `Site.host_expires_at` as source of truth; deactivates post-renewal notifications; adds `/admin/inbox` renewal link
+- `dashboard.blade.php`: CTA rendered as amber button with proper internal/external link handling
+**See:** `customer-site/docs/HOSTING_EXPIRY_WIDGET_CERTIFICATION.md`
+
 ### LICENSE-SSL-001 — CRITICAL | RESOLVED (2026-06-25)
 
 **Title:** Customer dashboard permanent false "هشدار موقت لایسنس" banner  

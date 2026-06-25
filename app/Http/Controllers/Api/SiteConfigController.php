@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\PlatformSettings;
 use App\Http\Controllers\Controller;
 use App\Services\DesignSystemService;
+use App\Services\ExpiryReminderService;
 use App\Services\LicenseServerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -99,57 +100,95 @@ class SiteConfigController extends Controller
                 $link     = $n->link;
                 $linkText = $n->link_text;
 
-                // هشدارهای انقضا: تعداد روز را پویا محاسبه کن تا هر روز آپدیت بماند
+                // هشدارهای انقضا: source of truth = Site.{field}; تاریخ پویا محاسبه می‌شود
                 // فرمت marker داخلی: __expiry__:{type}:{YYYY-MM-DD}
                 if ($link && str_starts_with((string) $link, '__expiry__:')) {
-                    $parts = explode(':', (string) $link, 3);
+                    $parts       = explode(':', (string) $link, 3);
+                    $renewalLink = '/admin/inbox';
+                    $renewalText = 'تمدید هاست';
                     if (count($parts) === 3) {
+                        $expiryType = $parts[1];
+                        $fieldMap   = [
+                            'host'    => ['field' => 'host_expires_at',    'label' => 'هاست',      'link_text' => 'تمدید هاست'],
+                            'domain'  => ['field' => 'domain_expires_at',  'label' => 'دامنه',     'link_text' => 'تمدید دامنه'],
+                            'support' => ['field' => 'support_expires_at', 'label' => 'پشتیبانی', 'link_text' => 'تمدید پشتیبانی'],
+                        ];
                         try {
-                            $expiryDate  = \Carbon\Carbon::parse($parts[2]);
+                            $siteModel  ??= \App\Models\Site::find($siteId);
+                            $typeMeta    = $fieldMap[$expiryType] ?? null;
+                            $actualDate  = $typeMeta && $siteModel ? $siteModel->{$typeMeta['field']} : null;
+                            // منبع حقیقت: Site.{field} — اگر موجود نباشد از stored date استفاده می‌شود
+                            $expiryDate  = $actualDate
+                                ? \Carbon\Carbon::instance($actualDate)
+                                : \Carbon\Carbon::parse($parts[2]);
                             $daysLeft    = max(0, (int) now()->diffInDays($expiryDate, false));
+
+                            // تمدید شده (> ۳۰ روز): notification را غیرفعال کن و از لیست حذف کن
+                            if ($daysLeft > ExpiryReminderService::DAYS_WINDOW) {
+                                $n->updateQuietly(['is_active' => false]);
+                                continue;
+                            }
+
                             $daysLeftFa  = \App\Helpers\NumberHelper::toPersianNumbers((string) $daysLeft);
-                            $body = str_replace(
-                                '. لطفاً برای تمدید اقدام کنید.',
-                                " (حدود {$daysLeftFa} روز مانده). لطفاً برای تمدید اقدام کنید.",
-                                $body
-                            );
+                            $labelFa     = $typeMeta['label'] ?? mb_substr(trim((string) $n->title), mb_strlen('هشدار انقضای '));
+                            $dateFa      = \App\Helpers\Jalali::formatFa($expiryDate, 'Y/m/d');
+                            $body        = "تاریخ انقضای {$labelFa}: {$dateFa} (حدود {$daysLeftFa} روز مانده). لطفاً برای تمدید اقدام کنید.";
+                            $renewalText = $typeMeta['link_text'] ?? $renewalText;
+
+                            // اگر تاریخ در DB قدیمی شده، آن را sync کن
+                            if ($actualDate && $parts[2] !== $expiryDate->toDateString()) {
+                                $n->updateQuietly([
+                                    'body' => "تاریخ انقضای {$labelFa}: {$dateFa}. لطفاً برای تمدید اقدام کنید.",
+                                    'link' => '__expiry__:' . $expiryType . ':' . $expiryDate->toDateString(),
+                                ]);
+                            }
                         } catch (\Throwable) {}
                     }
-                    // marker داخلی است؛ به customer-site ارسال نمی‌شود
-                    $link     = null;
-                    $linkText = null;
+                    // marker داخلی است؛ لینک تمدید به‌جای آن ارسال می‌شود
+                    $link     = $renewalLink;
+                    $linkText = $renewalText;
                 } elseif (str_starts_with((string) $n->title, 'هشدار انقضای ')) {
-                    // Backward-compat: notification قدیمی — تاریخ واقعی را از Site بخوان
-                    // و notification را در DB هم fix کن تا دفعه بعد نیازی به این query نباشد
-                    $siteModel ??= \App\Models\Site::find($siteId);
+                    // Backward-compat: notification قدیمی (بدون marker) — تاریخ واقعی را از Site بخوان
+                    $siteModel    ??= \App\Models\Site::find($siteId);
+                    $renewalLink   = '/admin/inbox';
+                    $renewalText   = 'تمدید هاست';
                     if ($siteModel) {
                         $titleTrimmed = trim((string) $n->title);
-                        $labelMap = [
-                            'هشدار انقضای هاست'     => ['field' => 'host_expires_at',    'type' => 'host'],
-                            'هشدار انقضای دامنه'     => ['field' => 'domain_expires_at',  'type' => 'domain'],
-                            'هشدار انقضای پشتیبانی' => ['field' => 'support_expires_at', 'type' => 'support'],
+                        $labelMap     = [
+                            'هشدار انقضای هاست'     => ['field' => 'host_expires_at',    'type' => 'host',    'label' => 'هاست',      'link_text' => 'تمدید هاست'],
+                            'هشدار انقضای دامنه'     => ['field' => 'domain_expires_at',  'type' => 'domain',  'label' => 'دامنه',     'link_text' => 'تمدید دامنه'],
+                            'هشدار انقضای پشتیبانی' => ['field' => 'support_expires_at', 'type' => 'support', 'label' => 'پشتیبانی', 'link_text' => 'تمدید پشتیبانی'],
                         ];
                         $meta = $labelMap[$titleTrimmed] ?? null;
                         if ($meta && $siteModel->{$meta['field']}) {
                             try {
                                 $expiryDate = \Carbon\Carbon::instance($siteModel->{$meta['field']});
                                 $daysLeft   = max(0, (int) now()->diffInDays($expiryDate, false));
+
+                                // تمدید شده (> ۳۰ روز): غیرفعال و حذف از لیست
+                                if ($daysLeft > ExpiryReminderService::DAYS_WINDOW) {
+                                    $n->updateQuietly(['is_active' => false]);
+                                    $link     = null;
+                                    $linkText = null;
+                                    continue;
+                                }
+
                                 $daysLeftFa = \App\Helpers\NumberHelper::toPersianNumbers((string) $daysLeft);
                                 $expiryLink = '__expiry__:' . $meta['type'] . ':' . $expiryDate->toDateString();
-                                $labelFa    = mb_substr($titleTrimmed, mb_strlen('هشدار انقضای '));
+                                $labelFa    = $meta['label'];
                                 $dateFa     = \App\Helpers\Jalali::formatFa($expiryDate, 'Y/m/d');
-                                // Fix notification در DB (body بدون روز + marker link)
+                                // Upgrade notification به فرمت جدید با marker
                                 $n->updateQuietly([
                                     'body' => "تاریخ انقضای {$labelFa}: {$dateFa}. لطفاً برای تمدید اقدام کنید.",
                                     'link' => $expiryLink,
                                 ]);
-                                // body پویا برای این response
-                                $body = "تاریخ انقضای {$labelFa}: {$dateFa} (حدود {$daysLeftFa} روز مانده). لطفاً برای تمدید اقدام کنید.";
+                                $body        = "تاریخ انقضای {$labelFa}: {$dateFa} (حدود {$daysLeftFa} روز مانده). لطفاً برای تمدید اقدام کنید.";
+                                $renewalText = $meta['link_text'];
                             } catch (\Throwable) {}
                         }
                     }
-                    $link     = null;
-                    $linkText = null;
+                    $link     = $renewalLink;
+                    $linkText = $renewalText;
                 }
 
                 $notifications[] = [

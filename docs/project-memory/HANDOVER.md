@@ -5,6 +5,28 @@
 
 ---
 
+## CURRENT STATE (2026-06-25 — CUSTOMER_HOSTING_EXPIRY_WIDGET_FIX)
+
+**Last completed phase:** CUSTOMER_HOSTING_EXPIRY_WIDGET_FIX — Production bug fix, allowed under Launch Freeze
+
+**Root Cause Fixed:** Customer dashboard hosting expiry widget showed stale/wrong date and had no CTA.
+- `ExpiryReminderService` embedded expiry date in `PlatformSiteNotification.link` as internal marker
+- On admin renewal, the marker was never updated → stale date shown indefinitely
+- `SiteConfigController` read from stale marker instead of `Site.host_expires_at`
+
+**Code Changes (saas-platform):**
+- `app/Http/Controllers/Api/SiteConfigController.php`: always reads `Site.host_expires_at` as source of truth; if days_remaining > 30 → deactivates notification; fixes stale link in DB; adds `/admin/inbox` renewal CTA
+- `app/Http/Controllers/Admin/SiteController.php`: `syncExpiryNotifications()` called after every `update()` to proactively sync notifications
+
+**Code Changes (customer-site):**
+- `resources/views/admin/dashboard.blade.php`: CTA link rendered as amber button; internal vs external link detection
+
+**Certification:** `customer-site/docs/HOSTING_EXPIRY_WIDGET_CERTIFICATION.md` — CUSTOMER_HOSTING_EXPIRY_FIXED
+
+**⛔ LAUNCH FREEZE ACTIVE** — This was a permitted production bug fix.
+
+---
+
 ## CURRENT STATE (2026-06-25 — LICENSE_SYNC_FALSE_WARNING_ELIMINATION)
 
 **Last completed phase:** LICENSE_SYNC_FALSE_WARNING_ELIMINATION — Production bug fix, allowed under Launch Freeze

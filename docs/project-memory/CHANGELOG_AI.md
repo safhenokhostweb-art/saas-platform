@@ -5,6 +5,42 @@
 
 ---
 
+## 2026-06-25 — CUSTOMER_HOSTING_EXPIRY_WIDGET_FIX
+
+**Phase:** CUSTOMER_HOSTING_EXPIRY_WIDGET_FIX (production bug fix — allowed under Launch Freeze)
+
+**Root Cause Found:**
+- `ExpiryReminderService::sendReminder()` stores expiry date in `PlatformSiteNotification.link` as `__expiry__:host:YYYY-MM-DD`
+- When admin renews hosting (`sites.host_expires_at` updated), the notification link is NEVER updated
+- `SiteConfigController` reads stale date from link field instead of authoritative `Site.host_expires_at`
+- No CTA button existed for hosting renewal
+
+**saas-platform Files Modified:**
+- `app/Http/Controllers/Api/SiteConfigController.php`:
+  - Added `use ExpiryReminderService;` import
+  - `__expiry__:` processing: always reads `Site.host_expires_at` as source of truth
+  - If days_remaining > 30 (renewed): deactivates notification + skips it from response
+  - Fixes stale link in DB if actual date differs from stored date
+  - Sets `link='/admin/inbox'`, `link_text='تمدید هاست/دامنه/پشتیبانی'` as CTA
+  - Backward-compat path: same source-of-truth logic + renewal check
+- `app/Http/Controllers/Admin/SiteController.php`:
+  - Added `syncExpiryNotifications(Site $site)` private method
+  - Called after `$site->update($data)` in `update()` method
+  - Proactively deactivates or updates `PlatformSiteNotification` when expiry dates change
+
+**customer-site Files Modified:**
+- `resources/views/admin/dashboard.blade.php`:
+  - Alert CTA link now renders as amber button (not plain text hyperlink)
+  - Internal links (`/...`): open in same tab; external links: open in new tab
+
+**Certification Docs Generated (customer-site/docs/):**
+- `HOSTING_WIDGET_FLOW_MAP.md`
+- `HOSTING_EXPIRY_SOURCE_OF_TRUTH.md`
+- `HOSTING_EXPIRY_CACHE_AUDIT.md`
+- `HOSTING_EXPIRY_WIDGET_CERTIFICATION.md` — CUSTOMER_HOSTING_EXPIRY_FIXED
+
+---
+
 ## 2026-06-25 — LICENSE_SYNC_FALSE_WARNING_ELIMINATION
 
 **Phase:** LICENSE_SYNC_FALSE_WARNING_ELIMINATION (production bug fix — allowed under Launch Freeze)
