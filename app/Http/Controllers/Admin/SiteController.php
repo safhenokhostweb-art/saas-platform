@@ -14,7 +14,9 @@ use App\Helpers\CustomerMenu;
 use App\Helpers\PlatformModules;
 use App\Services\WelcomeNotificationService;
 use App\Services\Sms\SmsGatewayResolver;
+use App\Services\ExpiryReminderService;
 use App\Helpers\PlatformSettings;
+use App\Models\PlatformSiteNotification;
 use Illuminate\Support\Facades\Schema;
 
 class SiteController extends Controller
@@ -322,29 +324,48 @@ class SiteController extends Controller
             'هشدار انقضای پشتیبانی' => ['field' => 'support_expires_at', 'type' => 'support', 'label' => 'پشتیبانی'],
         ];
         foreach ($expiryMap as $title => $meta) {
-            $existing = \App\Models\PlatformSiteNotification::where('site_id', $site->id)
+            $existing = PlatformSiteNotification::where('site_id', $site->id)
                 ->where('title', $title)
                 ->first();
-            if (! $existing) {
-                continue;
-            }
+
             $newDate = $site->{$meta['field']};
             if (! $newDate) {
-                $existing->updateQuietly(['is_active' => false]);
+                $existing?->updateQuietly(['is_active' => false]);
                 continue;
             }
+
             $newDateCarbon = \Carbon\Carbon::instance($newDate);
             $daysLeft      = max(0, (int) now()->diffInDays($newDateCarbon, false));
-            if ($daysLeft > 30) {
-                // تمدید شده: notification را غیرفعال کن
-                $existing->updateQuietly(['is_active' => false]);
-            } else {
-                // هنوز در بازه هشدار: link و body را به‌روز کن
-                $dateFa = Jalali::formatFa($newDateCarbon, 'Y/m/d');
+
+            if ($daysLeft > ExpiryReminderService::DAYS_WINDOW) {
+                $existing?->updateQuietly(['is_active' => false]);
+                continue;
+            }
+
+            // Within warning window — upsert notification immediately (no scheduler wait)
+            $dateFa     = Jalali::formatFa($newDateCarbon, 'Y/m/d');
+            $expiryLink = '__expiry__:' . $meta['type'] . ':' . $newDateCarbon->toDateString();
+            $body       = "تاریخ انقضای {$meta['label']}: {$dateFa}. لطفاً برای تمدید اقدام کنید.";
+
+            if ($existing) {
                 $existing->updateQuietly([
-                    'body'      => "تاریخ انقضای {$meta['label']}: {$dateFa}. لطفاً برای تمدید اقدام کنید.",
-                    'link'      => '__expiry__:' . $meta['type'] . ':' . $newDateCarbon->toDateString(),
+                    'body'      => $body,
+                    'link'      => $expiryLink,
                     'is_active' => true,
+                ]);
+            } else {
+                $order = PlatformSiteNotification::where('site_id', $site->id)->max('order') + 1;
+                PlatformSiteNotification::create([
+                    'site_id'   => $site->id,
+                    'title'     => $title,
+                    'body'      => $body,
+                    'type'      => 'warning',
+                    'link'      => $expiryLink,
+                    'link_text' => null,
+                    'audience'  => 'admin',
+                    'priority'  => 'high',
+                    'is_active' => true,
+                    'order'     => $order,
                 ]);
             }
         }

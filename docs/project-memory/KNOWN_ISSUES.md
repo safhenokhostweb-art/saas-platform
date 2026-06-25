@@ -25,6 +25,16 @@
 - `dashboard.blade.php`: CTA rendered as amber button with proper internal/external link handling
 **See:** `customer-site/docs/HOSTING_EXPIRY_WIDGET_CERTIFICATION.md`
 
+### HOSTING-WIDGET-002 — MEDIUM | RESOLVED (2026-06-25)
+
+**Title:** Warning not shown when `host_expires_at` set via admin UI but no prior notification record exists  
+**Module:** saas-platform — SiteController::syncExpiryNotifications()  
+**Root Cause:**
+`syncExpiryNotifications()` only updated existing `PlatformSiteNotification` records; `if (! $existing) { continue; }` silently skipped creation. Notification only appeared after next scheduler run (daily 08:00).  
+**Resolution:**
+Rewrote `syncExpiryNotifications()` with full upsert logic: checks date field first, computes `$daysLeft`, then CREATES a new record (matching `ExpiryReminderService::sendReminder()` field set) when `$existing === null` AND `$daysLeft ≤ DAYS_WINDOW`. Null-safe operator handles all deactivation paths. Scheduler's subsequent `sendReminder()` finds existing record and updates — no duplicate.  
+**See:** `customer-site/docs/HOSTING_WIDGET_002_CERTIFICATION.md`
+
 ### LICENSE-SSL-001 — CRITICAL | RESOLVED (2026-06-25)
 
 **Title:** Customer dashboard permanent false "هشدار موقت لایسنس" banner  
