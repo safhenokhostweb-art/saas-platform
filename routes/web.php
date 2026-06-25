@@ -736,6 +736,22 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | دفتر کل مالی — Finance Ledger
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('finance')->name('finance-ledger.')->group(function () {
+            Route::get('/dashboard', [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'dashboard'])->name('dashboard');
+            Route::get('/ledger',         [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'index'])->name('index');
+            Route::get('/ledger/create',  [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'create'])->name('create');
+            Route::post('/ledger',        [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'store'])->name('store');
+            Route::get('/ledger/{financeLedgerEntry}/edit',    [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'edit'])->name('edit');
+            Route::put('/ledger/{financeLedgerEntry}',         [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'update'])->name('update');
+            Route::delete('/ledger/{financeLedgerEntry}',      [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'destroy'])->name('destroy');
+            Route::get('/export', [\App\Http\Controllers\Admin\FinanceLedgerController::class, 'export'])->name('export');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | مدیریت زیرساخت — Infrastructure Management
         |--------------------------------------------------------------------------
         */

@@ -5,6 +5,43 @@
 
 ---
 
+## 2026-06-25 — CENTRAL_FINANCE_LEDGER_MODULE
+
+**Phase:** FINANCE_LEDGER_OPERATIONAL (7-phase finance ledger — override of Launch Freeze per user instruction)
+
+**saas-platform Files Created:**
+- `docs/FINANCE_LEDGER_AUDIT.md` — Phase 1 audit
+- `database/migrations/2026_06_25_200000_create_finance_ledger_entries_table.php`
+- `app/Models/FinanceLedgerEntry.php` — scopes, constants, category helpers
+- `app/Services/Finance/FinanceLedgerService.php` — auto-capture + manual + KPIs
+- `app/Observers/ThemeBundleOrderObserver.php`
+- `app/Observers/InvoiceLedgerObserver.php`
+- `app/Observers/SiteLifecycleInvoiceObserver.php`
+- `app/Http/Controllers/Api/FinanceLedgerApiController.php`
+- `app/Http/Controllers/Admin/FinanceLedgerController.php`
+- `resources/views/admin/finance/dashboard.blade.php`
+- `resources/views/admin/finance/ledger/index.blade.php`
+- `resources/views/admin/finance/ledger/create.blade.php`
+- `resources/views/admin/finance/ledger/edit.blade.php`
+- `docs/FINANCE_LEDGER_CERTIFICATION.md`
+
+**saas-platform Files Modified:**
+- `app/Observers/ThemePurchaseOrderObserver.php` — ledger wired + isDirty→wasChanged fix
+- `app/Providers/AppServiceProvider.php` — 3 new observers registered
+- `routes/web.php` — 8 finance admin routes
+- `routes/api.php` — `/api/ledger/push-event`
+- `app/Helpers/AdminMenu.php` — finance_dashboard + finance_ledger keys/routes/groups
+- `resources/views/admin/partials/sidebar-icon.blade.php` — finance icons
+
+**customer-site Files Modified:**
+- `app/Services/PlatformApiService.php` — `pushLedgerEvent()` method
+- `app/Http/Controllers/Front/SubscriptionPaymentController.php` — subscription_payment push
+- `app/Services/InstallmentService.php` — installment_payment push
+
+**Auto-capture:** theme_sale ✅ bundle_sale ✅ module_purchase ✅ hosting_renewal ✅ subscription ✅ installment ✅ support (manual)
+
+---
+
 ## 2026-06-25 — CUSTOMER_HOSTING_EXPIRY_WIDGET_FIX
 
 **Phase:** CUSTOMER_HOSTING_EXPIRY_WIDGET_FIX (production bug fix — allowed under Launch Freeze)

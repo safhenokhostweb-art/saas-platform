@@ -2,11 +2,17 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Site;
+use App\Models\SiteLifecycleInvoice;
+use App\Models\ThemeBundleOrder;
 use App\Models\ThemePurchaseOrder;
+use App\Observers\InvoiceLedgerObserver;
 use App\Observers\ProductObserver;
+use App\Observers\SiteLifecycleInvoiceObserver;
 use App\Observers\SiteObserver;
+use App\Observers\ThemeBundleOrderObserver;
 use App\Observers\ThemePurchaseOrderObserver;
 use App\Contracts\Repositories\SupportTicketRepositoryInterface;
 use App\Contracts\Repositories\SupportTicketReplyRepositoryInterface;
@@ -66,6 +72,9 @@ class AppServiceProvider extends ServiceProvider
         Product::observe(ProductObserver::class);
         Site::observe(SiteObserver::class);
         ThemePurchaseOrder::observe(ThemePurchaseOrderObserver::class);
+        ThemeBundleOrder::observe(ThemeBundleOrderObserver::class);
+        Invoice::observe(InvoiceLedgerObserver::class);
+        SiteLifecycleInvoice::observe(SiteLifecycleInvoiceObserver::class);
 
         // ثبت directive برای تبدیل اعداد انگلیسی به فارسی در Blade
         \Blade::directive('persianNumber', function ($expression) {

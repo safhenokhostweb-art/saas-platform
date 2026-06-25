@@ -16,13 +16,15 @@
 
 ## Current Module
 
-**LICENSE_SYNC_FALSE_WARNING_ELIMINATION COMPLETE (2026-06-25) — Banner false positive permanently eliminated**
+**CENTRAL_FINANCE_LEDGER_MODULE COMPLETE (2026-06-25) — Full financial ledger operational**
 
 ---
 
 ## Current Phase
 
-**LICENSE_SYNC_FALSE_WARNING_ELIMINATED. Customer dashboard no longer shows false "هشدار موقت لایسنس". Root cause: SSL self-signed cert (cURL 60) + retry storm. Fixed via HTTP internal access + last_validated_at on transient skip. Validation: Sync valid=YES, Transient cache=CLEAR, no new SSL errors in 49 minutes.**
+**FINANCE_LEDGER_OPERATIONAL. 7-phase finance module complete: auto-capture for 6 revenue sources (theme/bundle/invoice/lifecycle/subscription/installment), manual expense entry (8 categories), filters, KPI dashboard, CSV export. Cross-DB push via /api/ledger/push-event with tenant.api auth. Dedup via unique constraint + safeCreate().**
+
+**Previous:** LICENSE_SYNC_FALSE_WARNING_ELIMINATED. Customer dashboard no longer shows false "هشدار موقت لایسنس".
 
 **Previous phase:** GO_LIVE_READY_WITH_WARNINGS (97/100). All pre-launch verification complete.
 

@@ -49,6 +49,8 @@ class AdminMenu
         'kb'                 => 'مقالات دانش‌نامه',
         'lifecycle'              => 'چرخه عمر سایت‌ها',
         'resource_governance'    => 'حاکمیت منابع',
+        'finance_dashboard'      => 'داشبورد مالی',
+        'finance_ledger'         => 'دفتر کل مالی',
     ];
 
     /** مسیر هر آیتم منو */
@@ -93,6 +95,8 @@ class AdminMenu
         'kb'                 => 'admin.kb.index',
         'lifecycle'              => 'admin.lifecycle.overview',
         'resource_governance'    => 'admin.resource-governance.index',
+        'finance_dashboard'      => 'admin.finance-ledger.dashboard',
+        'finance_ledger'         => 'admin.finance-ledger.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -137,6 +141,8 @@ class AdminMenu
         'kb'                 => 'admin.kb.*',
         'lifecycle'              => 'admin.lifecycle.*',
         'resource_governance'    => 'admin.resource-governance.*',
+        'finance_dashboard'      => 'admin.finance-ledger.dashboard',
+        'finance_ledger'         => 'admin.finance-ledger.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -151,6 +157,7 @@ class AdminMenu
             'داشبورد'                          => ['dashboard'],
             'مشتریان / کاربران'                 => ['users', 'customers'],
             'سایت‌ها / پروژه‌ها'                => ['sites', 'site_license', 'modules', 'module_licenses', 'licenses', 'updates'],
+            'مالی / حسابداری'                    => ['finance_dashboard', 'finance_ledger'],
             'فروش / صورتحساب'                   => ['products', 'support_plans', 'payment_gateways', 'resellers', 'reseller_commissions', 'payout_requests'],
             'پشتیبانی / تیکت‌ها'                => ['support_tickets'],
             'فرم‌ها / برگه‌ها'                  => ['forms', 'profile_fields', 'settings_profile', 'pages'],

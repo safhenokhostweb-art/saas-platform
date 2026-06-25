@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ThemePurchaseOrder;
 use App\Services\AdminNotificationService;
+use App\Services\Finance\FinanceLedgerService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -11,8 +12,15 @@ class ThemePurchaseOrderObserver
 {
     public function updated(ThemePurchaseOrder $order): void
     {
-        if (!$order->isDirty('status') || $order->status !== 'paid') {
+        if (!$order->wasChanged('status') || $order->status !== 'paid') {
             return;
+        }
+
+        // Auto-record in finance ledger
+        try {
+            app(FinanceLedgerService::class)->fromThemePurchase($order);
+        } catch (\Throwable $e) {
+            Log::warning('FinanceLedger: failed to record theme purchase', ['order' => $order->id, 'err' => $e->getMessage()]);
         }
 
         // Send admin notification

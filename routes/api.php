@@ -95,6 +95,11 @@ Route::prefix('lifecycle')->middleware(['throttle:20,1', 'tenant.api'])->group(f
     Route::post('/confirm-restore', [\App\Http\Controllers\Api\ApiLifecycleController::class, 'confirmRestore'])->name('api.lifecycle.confirm-restore');
 });
 
+// Finance Ledger API — customer-site pushes payment events to platform ledger
+Route::prefix('ledger')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
+    Route::post('/push-event', [\App\Http\Controllers\Api\FinanceLedgerApiController::class, 'pushEvent'])->name('api.ledger.push-event');
+});
+
 // Theme Bundles API (GAP-010)
 Route::prefix('theme-bundles')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
     Route::get('/',                            [\App\Http\Controllers\Api\ThemeBundleApiController::class, 'index'])->name('api.theme-bundles.index');
