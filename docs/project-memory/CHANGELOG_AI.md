@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-06-25 — CUSTOMER_SITE_OFFSITE_BACKUP_CERTIFICATION
+
+**Phase:** CUSTOMER_SITE_OFFSITE_BACKUP_CERTIFIED
+
+**Problem:** customer-site had NO Arvan offsite backup wiring. saas-platform was ARVAN_OFFSITE_BACKUP_OPERATIONAL but customer-site was silent.
+
+**4 Defects Fixed:**
+1. D-01: Added `uploadToArvan()` to `BackupDatabaseCommand.php` (3×retry, size verify, tenant path)
+2. D-02: Added `league/flysystem-aws-s3-v3 ^3.0` to `customer-site/composer.json`
+3. D-03: Added ARVAN_* env vars to `/var/www/customer-site/.env` (BOM-safe Python script)
+4. D-04: Fixed `env('PLATFORM_SITE_ID')` → `config('site.platform_site_id')` (config:cache safe)
+
+**Verification:**
+```
+Arvan offsite backup: آپلود به customer-sites/tenant-1/database/backup_2026-06-25_12-13-03.sql.gz (77582 bytes)
+```
+
+**customer-site Files Modified:**
+- `app/Console/Commands/BackupDatabaseCommand.php` — uploadToArvan() + config() fix
+- `composer.json` — flysystem-aws-s3-v3 added
+- `docs/CUSTOMER_SITE_BACKUP_AUDIT.md` — NEW
+- `docs/CUSTOMER_SITE_OFFSITE_BACKUP_CERTIFICATION.md` — NEW
+
+---
+
 ## 2026-06-25 — CENTRAL_FINANCE_LEDGER_MODULE
 
 **Phase:** FINANCE_LEDGER_OPERATIONAL (7-phase finance ledger — override of Launch Freeze per user instruction)
