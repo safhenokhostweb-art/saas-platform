@@ -218,3 +218,13 @@
    CANONICAL UTILITIES — Alpine, interactions
    ============================================================================ */
 [x-cloak]{display:none!important}
+
+/* ============================================================================
+   NATIVE SELECT / OPTION — Cross-browser visibility fix
+   Native <option> elements do not inherit CSS custom properties reliably.
+   color-scheme: light forces the browser to render the dropdown in light mode
+   and the hardcoded option colors guarantee text is always visible regardless
+   of which theme preset (midnight-dark, royal-purple, etc.) is active.
+   ============================================================================ */
+select{color-scheme:light}
+select option{background-color:#ffffff;color:#1e293b;font-family:inherit}
