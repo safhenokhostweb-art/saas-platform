@@ -22,7 +22,9 @@
 
 ## Current Phase
 
-**SITE_THEME_PRESET_FIX_DEPLOYED (2026-06-26). Bug fix: site theme presets now apply to the public customer site frontend; custom mode fully operational with 9 comprehensive color fields.**
+**PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED (2026-06-26). Full Persian digit + Jalali date localization implemented across both repos. Centralized PersianFormatter layer, 8 Blade directives, global helpers autoloaded, all number_format() violations fixed, all date inputs converted to Jalali pickers, controllers updated for Jalali→Gregorian conversion. 4 certification docs generated.**
+
+**Previous:** SITE_THEME_PRESET_FIX_DEPLOYED (2026-06-26). Bug fix: site theme presets now apply to the public customer site frontend; custom mode fully operational with 9 comprehensive color fields.
 
 **Previous:** DISASTER_RECOVERY_CENTER_ENTERPRISE_READY (2026-06-26). DR Center Phase 2 Completion deployed — readiness score, backup age, simulation history, Arvan status.
 
