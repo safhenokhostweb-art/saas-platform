@@ -22,7 +22,9 @@
 
 ## Current Phase
 
-**PLATFORM_INSTALLER_PHASE1_COMPLETE (2026-06-26). Platform Installer scaffolding complete. 3 installation modes (Fresh/Restore/Upgrade), 7 service classes, 1 controller, 1 middleware, 20 installer views, 9 routes, admin menu entry. Reuses RestoreService, ArvanBackupService, DrReadinessScoreService, SlackAlertService. install.lock security mechanism. Standalone RTL dark mode Persian UI wizard. Architecture: PASS, Security: PASS, Reuse: PASS.**
+**PLATFORM_INSTALLER_STEP65_COMPLETE (2026-06-26). Installation Report (HTML+PDF) + POST-INSTALL SNAPSHOT implemented. InstallationReportService generates 30-field reports with PASS/WARNING/FAILED classification. DomPDF (v3.1.2) added for PDF generation. Reports stored permanently in storage/app/installation-reports/. UpgradeAdapter::createInstallationBaseline() creates INITIAL_INSTALLATION_BASELINE snapshot (DB+.env+reports). Download buttons on completion page. Middleware updated to allow complete+download routes when locked.**
+
+**Previous:** PLATFORM_INSTALLER_PHASE1_COMPLETE (2026-06-26). Platform Installer scaffolding complete. 3 installation modes (Fresh/Restore/Upgrade), 7 service classes, 1 controller, 1 middleware, 20 installer views, 9 routes, admin menu entry. Reuses RestoreService, ArvanBackupService, DrReadinessScoreService, SlackAlertService. install.lock security mechanism. Standalone RTL dark mode Persian UI wizard. Architecture: PASS, Security: PASS, Reuse: PASS.**
 
 **Previous:** PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED (2026-06-26). Full Persian digit + Jalali date localization implemented across both repos. Centralized PersianFormatter layer, 8 Blade directives, global helpers autoloaded, all number_format() violations fixed, all date inputs converted to Jalali pickers, controllers updated for Jalali→Gregorian conversion. 4 certification docs generated.**
 

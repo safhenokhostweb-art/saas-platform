@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-06-26 — PLATFORM_INSTALLER_STEP65_COMPLETE
+
+**Type:** Platform Installer — Step 6.5 + Post-Install Snapshot
+
+**Summary:** Installation Report generation (HTML + PDF) and INITIAL_INSTALLATION_BASELINE post-install snapshot. Triggered automatically after fresh installation completes.
+
+**Files Created:**
+
+| File | Purpose |
+|------|---------|
+| `app/Services/Installer/InstallationReportService.php` | 30-field report collection + HTML/PDF generation |
+| `resources/views/installer/reports/installation-report.blade.php` | Standalone dark-mode HTML report template |
+| `resources/views/installer/reports/installation-report-pdf.blade.php` | DomPDF-compatible PDF template |
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `app/Services/Installer/UpgradeAdapter.php` | Added `createInstallationBaseline()` method |
+| `app/Http/Controllers/Installer/PlatformInstallerController.php` | Inject InstallationReportService; update `processFreshFinish()`; add `downloadReport()`; update `complete()` |
+| `resources/views/installer/complete.blade.php` | Download buttons for HTML/PDF reports |
+| `app/Http/Middleware/InstallerLockMiddleware.php` | Added `installer.complete` + `installer.report-download` to allowed routes |
+| `routes/web.php` | Moved complete + added report download routes outside middleware group |
+| `composer.json` / `composer.lock` | Added `barryvdh/laravel-dompdf` v3.1.2 |
+
+**Report fields:** project name, version, git commit, Laravel version, PHP version, composer version, Node version, DB engine/version, Redis/Queue/Scheduler/Supervisor/Reverb/Storage/Mail/Arvan/License/Backup status, installed modules, admin info (no secrets), install date (Jalali), timezone, server IP, domain, environment, health score, DR readiness score, installation ID (UUID), SHA-256 checksum.
+
+**Baseline includes:** DB dump (mysqldump+gzip), .env backup, HTML+PDF reports, baseline_meta.json.
+
+**Dependency added:** `barryvdh/laravel-dompdf` ^3.1
+
+---
+
 ## 2026-06-26 — PLATFORM_INSTALLER_PHASE1_COMPLETE
 
 **Type:** Platform Infrastructure — saas-platform

@@ -9,19 +9,21 @@ use App\Services\Installer\InfrastructureInstaller;
 use App\Services\Installer\RestoreAdapter;
 use App\Services\Installer\UpgradeAdapter;
 use App\Services\Installer\HealthCheckRunner;
+use App\Services\Installer\InstallationReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
 class PlatformInstallerController extends Controller
 {
     public function __construct(
-        private InstallerService        $installer,
-        private InstallerValidator      $validator,
-        private EnvironmentWriter       $envWriter,
-        private InfrastructureInstaller $infra,
-        private RestoreAdapter          $restore,
-        private UpgradeAdapter          $upgrade,
-        private HealthCheckRunner       $health,
+        private InstallerService          $installer,
+        private InstallerValidator        $validator,
+        private EnvironmentWriter         $envWriter,
+        private InfrastructureInstaller   $infra,
+        private RestoreAdapter            $restore,
+        private UpgradeAdapter            $upgrade,
+        private HealthCheckRunner         $health,
+        private InstallationReportService $report,
     ) {}
 
     // ─── Entry Point ─────────────────────────────────────────────────────────
@@ -289,10 +291,27 @@ class PlatformInstallerController extends Controller
     private function processFreshFinish(Request $request)
     {
         $state = $this->installer->getState();
+
+        // STEP 6.5: Generate Installation Report
+        $reportData  = $this->report->collect();
+        $htmlResult  = $this->report->generateHtml($reportData);
+        $pdfResult   = $this->report->generatePdf($reportData);
+
+        // POST-INSTALL: Create INITIAL_INSTALLATION_BASELINE snapshot
+        $baselineResult = $this->upgrade->createInstallationBaseline(
+            $htmlResult['path'] ?? null,
+            $pdfResult['path']  ?? null,
+        );
+
+        // Lock installer — store report + baseline paths
         $this->installer->lock([
-            'mode'         => InstallerService::MODE_FRESH,
-            'completed_at' => now()->toISOString(),
-            'admin_id'     => $state['data']['platform']['admin_id'] ?? null,
+            'mode'          => InstallerService::MODE_FRESH,
+            'completed_at'  => now()->toISOString(),
+            'admin_id'      => $state['data']['platform']['admin_id'] ?? null,
+            'report_html'   => $htmlResult['path']     ?? null,
+            'report_pdf'    => $pdfResult['path']      ?? null,
+            'report_id'     => $reportData['installation_id'] ?? null,
+            'baseline_path' => $baselineResult['baseline_path'] ?? null,
         ]);
         $this->installer->clearState();
 
@@ -454,7 +473,32 @@ class PlatformInstallerController extends Controller
     public function complete()
     {
         $lockData = $this->installer->getLockData();
-        return view('installer.complete', compact('lockData'));
+        $hasHtml  = !empty($lockData['report_html']) && file_exists($lockData['report_html']);
+        $hasPdf   = !empty($lockData['report_pdf'])  && file_exists($lockData['report_pdf']);
+        return view('installer.complete', compact('lockData', 'hasHtml', 'hasPdf'));
+    }
+
+    // ─── Report Download ─────────────────────────────────────────────────────
+
+    public function downloadReport(string $format)
+    {
+        if (!in_array($format, ['html', 'pdf'])) {
+            abort(404);
+        }
+
+        $lockData = $this->installer->getLockData();
+        $path = $format === 'html'
+            ? ($lockData['report_html'] ?? null)
+            : ($lockData['report_pdf']  ?? null);
+
+        if (!$path || !file_exists($path)) {
+            abort(404, 'گزارش نصب یافت نشد');
+        }
+
+        $mime     = $format === 'pdf' ? 'application/pdf' : 'text/html';
+        $filename = 'INSTALLATION_REPORT.' . $format;
+
+        return response()->download($path, $filename, ['Content-Type' => $mime]);
     }
 
     // ─── AJAX: Re-run env checks ─────────────────────────────────────────────

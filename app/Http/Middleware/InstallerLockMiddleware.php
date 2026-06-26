@@ -15,7 +15,12 @@ class InstallerLockMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        $allowedRoutes = ['installer.locked', 'installer.unlock'];
+        $allowedRoutes = [
+            'installer.locked',
+            'installer.unlock',
+            'installer.complete',
+            'installer.report-download',
+        ];
 
         if ($this->installer->isLocked() && !in_array($request->route()?->getName(), $allowedRoutes)) {
             return redirect()->route('installer.locked');
