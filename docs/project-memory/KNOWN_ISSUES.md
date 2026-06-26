@@ -8,6 +8,21 @@
 
 ## ACTIVE BUGS
 
+### SELECT-DROPDOWN-001 — HIGH | RESOLVED (2026-06-26)
+
+**Title:** Admin settings page `<select>` dropdowns invisible or immediately closing after opening  
+**Module:** customer-site — Admin UI (`/admin/settings`)  
+**Root Causes:**  
+1. `design-tokens.css` dark-mode block sets `--ui-text-primary: #f1f5f9` (white) — native select popup inherited white text on white background  
+2. TinyMCE called `tinymce.init()` eagerly on `DOMContentLoaded`, registering a global `document.mousedown` handler that fired `endFocusedEditor()` and moved DOM focus away from the `<select>`, immediately dismissing the native popup  
+**Resolution:**  
+- CSS: Added `color-scheme: light!important; color: #1e293b!important; background-color: #fff!important` to `module-components.css` and `customer-admin-layout.css`  
+- JS: Converted TinyMCE init to lazy — only calls `tinymce.init()` on first focus/mousedown of the textarea element  
+**Commits:** `470ba7d` (CSS), `34ed5bf` (JS lazy init)  
+**Files:** `customer-site/resources/views/admin/partials/tinymce-field-init.blade.php`, `customer-site/public/css/customer-admin-layout.css`, `saas-platform/packages/.../module-components.css`
+
+---
+
 ### USERS-NAME-001 — HIGH | RESOLVED (2026-06-25)
 
 **Title:** `users.name` column references causing 500 in FinanceLedgerController and IncidentController  

@@ -904,6 +904,19 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | Installer Admin Panel (read-only — shows baseline, manifest, verification)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('installer')->name('installer.')->group(function () {
+            Route::get('/',                [\App\Http\Controllers\Admin\InstallerAdminController::class, 'index'])->name('index');
+            Route::post('/verify',         [\App\Http\Controllers\Admin\InstallerAdminController::class, 'verify'])->name('verify');
+            Route::get('/report/{format}', [\App\Http\Controllers\Admin\InstallerAdminController::class, 'downloadReport'])->name('report')->where('format', 'html|pdf');
+            Route::get('/manifest',        [\App\Http\Controllers\Admin\InstallerAdminController::class, 'downloadManifest'])->name('manifest');
+            Route::get('/baseline-meta',   [\App\Http\Controllers\Admin\InstallerAdminController::class, 'downloadBaselineMeta'])->name('baseline-meta');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | ریدایرکت /admin به داشبورد
         |--------------------------------------------------------------------------
         */

@@ -292,26 +292,46 @@ class PlatformInstallerController extends Controller
     {
         $state = $this->installer->getState();
 
-        // STEP 6.5: Generate Installation Report
-        $reportData  = $this->report->collect();
-        $htmlResult  = $this->report->generateHtml($reportData);
-        $pdfResult   = $this->report->generatePdf($reportData);
+        // Phase 1: Collect base report data (without baseline info)
+        $reportData = $this->report->collect();
 
-        // POST-INSTALL: Create INITIAL_INSTALLATION_BASELINE snapshot
+        // Phase 2: Create baseline core (database + .env + meta + manifest)
         $baselineResult = $this->upgrade->createInstallationBaseline(
-            $htmlResult['path'] ?? null,
-            $pdfResult['path']  ?? null,
+            $reportData['installation_id']
         );
 
-        // Lock installer — store report + baseline paths
+        // Phase 3: Enrich report data with real baseline info (path, checksum, verification)
+        $reportData = $this->report->enrichWithBaseline($reportData, $baselineResult);
+
+        // Phase 4: Generate HTML/PDF reports (now include baseline sections)
+        $htmlResult = $this->report->generateHtml($reportData);
+        $pdfResult  = $this->report->generatePdf($reportData);
+
+        // Phase 5: Finalize baseline (copy reports → update manifest → lock read-only)
+        $finalizeResult = null;
+        if (!empty($baselineResult['baseline_path'])) {
+            $finalizeResult = $this->upgrade->addReportsToBaseline(
+                $baselineResult['baseline_path'],
+                $htmlResult['path'] ?? null,
+                $pdfResult['path']  ?? null,
+            );
+        }
+
+        // Lock installer — store all paths
         $this->installer->lock([
-            'mode'          => InstallerService::MODE_FRESH,
-            'completed_at'  => now()->toISOString(),
-            'admin_id'      => $state['data']['platform']['admin_id'] ?? null,
-            'report_html'   => $htmlResult['path']     ?? null,
-            'report_pdf'    => $pdfResult['path']      ?? null,
-            'report_id'     => $reportData['installation_id'] ?? null,
-            'baseline_path' => $baselineResult['baseline_path'] ?? null,
+            'mode'              => InstallerService::MODE_FRESH,
+            'completed_at'      => now()->toISOString(),
+            'admin_id'          => $state['data']['platform']['admin_id'] ?? null,
+            'report_html'       => $htmlResult['path']               ?? null,
+            'report_pdf'        => $pdfResult['path']                ?? null,
+            'report_id'         => $reportData['installation_id']    ?? null,
+            'baseline_path'     => $baselineResult['baseline_path']  ?? null,
+            'baseline_label'    => $baselineResult['baseline_label'] ?? null,
+            'manifest_checksum' => $finalizeResult['manifest_checksum']
+                                    ?? $baselineResult['manifest_checksum']
+                                    ?? null,
+            'overall_status'    => $reportData['overall_status'] ?? null,
+            'certification'     => $reportData['installation_certification'] ?? null,
         ]);
         $this->installer->clearState();
 

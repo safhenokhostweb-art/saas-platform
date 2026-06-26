@@ -5,6 +5,18 @@
 
 ---
 
+## CURRENT STATE (2026-06-26 — SELECT_DROPDOWN_FIX_DEPLOYED)
+
+**Last completed task:** SELECT_DROPDOWN_FIX — Admin UI `<select>` dropdowns in customer-site settings page now visible and functional.
+
+**Two-layer fix applied:**
+1. **CSS layer** (`module-components.css` + `customer-admin-layout.css`): Force `color-scheme: light`, `color: #1e293b`, `background-color: #fff` on all `select` elements to override dark-mode CSS variable inheritance.
+2. **JS layer** (`tinymce-field-init.blade.php`): Lazy TinyMCE initialization — `tinymce.init()` is NOT called until the user first interacts with the textarea. This prevents TinyMCE from registering its global `document.mousedown` handler which was stealing focus from native `<select>` popups.
+
+**Status:** DEPLOYED to `safhenokhost.ir` via customer-site deploy.
+
+---
+
 ## CURRENT STATE (2026-06-26 — PLATFORM_INSTALLER_PHASE1_COMPLETE)
 
 **Last completed phase:** PLATFORM_INSTALLER_PHASE_1 — Platform Installer scaffolding for all 3 modes.

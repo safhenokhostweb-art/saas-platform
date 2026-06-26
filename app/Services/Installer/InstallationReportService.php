@@ -10,7 +10,8 @@ class InstallationReportService
     const REPORTS_DIR = 'installation-reports';
 
     public function __construct(
-        private HealthCheckRunner $health,
+        private HealthCheckRunner       $health,
+        private BaselineManifestService $manifestService,
     ) {}
 
     // ─── Data Collection ─────────────────────────────────────────────────────
@@ -71,13 +72,92 @@ class InstallationReportService
         $data['health_score'] = $this->calculateHealthScore($data);
         $data['dr_score']     = $data['dr_result']['dr_score'] ?? 0;
 
+        // Baseline fields — populated later by enrichWithBaseline()
+        $data['baseline_path']              = null;
+        $data['baseline_label']             = null;
+        $data['manifest_checksum']          = null;
+        $data['snapshot_verification']      = null;
+        $data['snapshot_status']            = 'PENDING';
+        $data['recovery_readiness_score']   = $data['dr_score'];
+        $data['installation_certification'] = null;
+        $data['overall_status']             = null;
+
         // Signature
         $payload = $data;
         unset($payload['generated_at']);
-        $data['checksum'] = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE));
-        $data['generated_by'] = 'Platform Installer v1.0 / Claude';
+        $data['checksum']      = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE));
+        $data['generated_by']  = 'Platform Installer v2.0 / Claude';
 
         return $data;
+    }
+
+    // ─── Baseline Enrichment ─────────────────────────────────────────────────
+
+    /**
+     * Enriches the report data with baseline and manifest information.
+     * Called after createInstallationBaseline() succeeds so the report
+     * contains the real baseline path, manifest checksum, and verification result.
+     */
+    public function enrichWithBaseline(array $data, array $baselineResult): array
+    {
+        $baselinePath  = $baselineResult['baseline_path'] ?? null;
+        $baselineLabel = $baselineResult['baseline_label'] ?? basename((string) $baselinePath);
+
+        $data['baseline_path']  = $baselinePath;
+        $data['baseline_label'] = $baselineLabel;
+        $data['manifest_checksum'] = $baselineResult['manifest_checksum'] ?? null;
+
+        // Run verification against the just-created baseline
+        if ($baselinePath && is_dir($baselinePath)) {
+            $verification = $this->manifestService->verify($baselinePath);
+            $data['snapshot_verification'] = $verification;
+            $data['snapshot_status']       = $verification['status'] ?? 'FAILED';
+        } else {
+            $data['snapshot_verification'] = null;
+            $data['snapshot_status']       = $baselineResult['success'] ? 'CREATED' : 'FAILED';
+        }
+
+        $data['recovery_readiness_score'] = $data['dr_score'] ?? 0;
+
+        // Determine overall status
+        $data['overall_status'] = $this->computeOverallStatus($data);
+
+        // Certification text
+        $data['installation_certification'] = $data['overall_status'] === 'PASS'
+            ? 'INSTALLER_FOUNDATION_ENTERPRISE_CERTIFIED'
+            : ($data['overall_status'] === 'WARNING'
+                ? 'INSTALLATION_COMPLETE_WITH_WARNINGS'
+                : 'INSTALLATION_REQUIRES_ATTENTION');
+
+        // Recompute checksum now that baseline fields are filled
+        $payload = $data;
+        unset($payload['generated_at']);
+        $data['checksum'] = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE));
+
+        return $data;
+    }
+
+    private function computeOverallStatus(array $data): string
+    {
+        $hs         = $data['health_score'] ?? 0;
+        $snapStatus = $data['snapshot_status'] ?? 'FAILED';
+        $drScore    = $data['dr_score'] ?? 0;
+
+        $failed = array_filter([
+            $data['redis_status']['status']   ?? 'failed',
+            $data['queue_status']['status']   ?? 'failed',
+            $data['storage_status']['status'] ?? 'failed',
+        ], fn($s) => $s === 'failed');
+
+        if (!empty($failed) || $hs < 40 || $snapStatus === 'FAILED') {
+            return 'FAILED';
+        }
+
+        if ($hs >= 80 && $drScore >= 70 && in_array($snapStatus, ['PASS', 'CREATED'])) {
+            return 'PASS';
+        }
+
+        return 'WARNING';
     }
 
     // ─── HTML Generation ─────────────────────────────────────────────────────

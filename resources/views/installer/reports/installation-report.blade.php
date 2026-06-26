@@ -370,12 +370,99 @@
     </div>
     @endif
 
+    {{-- Baseline Snapshot --}}
+    @php
+        $snapStatus = $data['snapshot_status'] ?? 'PENDING';
+        $snapColor  = $snapStatus === 'PASS' ? '#22c55e' : ($snapStatus === 'CREATED' ? '#22c55e' : ($snapStatus === 'PENDING' ? '#f59e0b' : '#ef4444'));
+        $snapClass  = $snapStatus === 'PASS' || $snapStatus === 'CREATED' ? 'pass' : ($snapStatus === 'PENDING' ? 'warning' : 'failed');
+    @endphp
+    <div class="section">
+        <div class="section-title">&#x1F4BE; Baseline Snapshot &amp; Integrity</div>
+        <table>
+            <tr>
+                <th>Baseline Snapshot Location</th>
+                <td>{{ $data['baseline_path'] ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Baseline Label</th>
+                <td>{{ $data['baseline_label'] ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Manifest Checksum (SHA-256)</th>
+                <td style="word-break:break-all; font-size:11px;">{{ $data['manifest_checksum'] ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Snapshot Status</th>
+                <td><span class="badge badge-{{ $snapClass }}">{{ $snapStatus }}</span></td>
+            </tr>
+            @if(!empty($data['snapshot_verification']))
+            @php $sv = $data['snapshot_verification']; @endphp
+            <tr>
+                <th>Snapshot Verification Result</th>
+                <td>
+                    <span class="badge badge-{{ ($sv['pass'] ?? false) ? 'pass' : 'failed' }}">
+                        {{ $sv['status'] ?? 'N/A' }}
+                    </span>
+                    @if(!empty($sv['passed']))
+                        <span style="font-size:11px; color:#22c55e; margin-right:8px;">&#10003; {{ count($sv['passed']) }} checks passed</span>
+                    @endif
+                    @if(!empty($sv['failures']))
+                        <span style="font-size:11px; color:#ef4444;">&#10007; {{ count($sv['failures']) }} failures</span>
+                    @endif
+                </td>
+            </tr>
+            @if(!empty($sv['failures']))
+            <tr>
+                <th>Verification Failures</th>
+                <td style="color:#ef4444;">
+                    @foreach($sv['failures'] as $f)
+                        <div style="font-size:11px;">&#x2715; {{ $f }}</div>
+                    @endforeach
+                </td>
+            </tr>
+            @endif
+            @endif
+            <tr>
+                <th>Recovery Readiness Score</th>
+                <td>
+                    @php $rs = $data['recovery_readiness_score'] ?? 0; @endphp
+                    <span style="color:{{ $rs >= 80 ? '#22c55e' : ($rs >= 50 ? '#f59e0b' : '#ef4444') }}; font-weight:700;">{{ $rs }}/100</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {{-- Overall Status & Certification --}}
+    @php
+        $os      = $data['overall_status'] ?? 'N/A';
+        $cert    = $data['installation_certification'] ?? 'N/A';
+        $osColor = $os === 'PASS' ? '#22c55e' : ($os === 'WARNING' ? '#f59e0b' : '#ef4444');
+        $osBg    = $os === 'PASS' ? 'rgba(34,197,94,0.08)' : ($os === 'WARNING' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)');
+        $osClass = strtolower($os);
+    @endphp
+    <div style="background:{{ $osBg }}; border:2px solid {{ $osColor }}; border-radius:12px; padding:24px; margin-bottom:28px;">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            <div>
+                <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:#8892a4; margin-bottom:4px;">Overall Status</div>
+                <div style="font-size:32px; font-weight:900; color:{{ $osColor }};">{{ $os }}</div>
+            </div>
+            <div style="flex:1; min-width:200px;">
+                <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:#8892a4; margin-bottom:4px;">Installation Certification</div>
+                <div style="font-size:14px; font-weight:700; color:{{ $osColor }}; font-family:monospace;">{{ $cert }}</div>
+            </div>
+            <div>
+                <div style="font-size:11px; color:#8892a4; margin-bottom:4px;">Health Score</div>
+                <div style="font-size:22px; font-weight:800; color:{{ ($data['health_score'] ?? 0) >= 80 ? '#22c55e' : '#f59e0b' }};">{{ $data['health_score'] ?? 0 }}/100</div>
+            </div>
+        </div>
+    </div>
+
     {{-- Signature --}}
     <div class="signature">
         <div class="section-title" style="border:none; padding:0; margin:0 0 16px;">&#x1F512; Digital Signature &amp; Certification</div>
         <div class="signature-grid">
             <div class="sig-row">
-                <div class="sig-key">Installation ID</div>
+                <div class="sig-key">Installation UUID</div>
                 <div class="sig-val">{{ $data['installation_id'] }}</div>
             </div>
             <div class="sig-row">
@@ -392,12 +479,19 @@
             </div>
         </div>
         <div class="sig-row" style="margin-top:16px;">
-            <div class="sig-key">SHA-256 Checksum</div>
+            <div class="sig-key">Report SHA-256 Checksum</div>
             <div class="checksum">{{ $data['checksum'] }}</div>
         </div>
+        @if(!empty($data['manifest_checksum']))
+        <div class="sig-row" style="margin-top:10px;">
+            <div class="sig-key">Manifest SHA-256 Checksum</div>
+            <div class="checksum">{{ $data['manifest_checksum'] }}</div>
+        </div>
+        @endif
         <div style="margin-top:16px; font-size:11px; color:#8892a4;">
             This report is auto-generated and permanently stored at
             <code>storage/app/installation-reports/</code>.
+            Baseline snapshot stored at <code>storage/upgrade_snapshots/{{ $data['baseline_label'] ?? 'INITIAL_INSTALLATION_BASELINE' }}/</code>.
             Do not expose passwords, API keys, or private keys through this document.
         </div>
     </div>

@@ -55,6 +55,7 @@ class AdminMenu
         'restore_wizard'         => 'ویزارد بازیابی',
         'dr_center'              => 'مرکز DR',
         'platform_installer'     => 'نصب‌کننده پلتفرم',
+        'installer_status'       => 'وضعیت نصب',
     ];
 
     /** مسیر هر آیتم منو */
@@ -105,6 +106,7 @@ class AdminMenu
         'restore_wizard'         => 'admin.disaster-recovery.index',
         'dr_center'              => 'admin.disaster-recovery.center.index',
         'platform_installer'     => 'installer.index',
+        'installer_status'       => 'admin.installer.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -155,6 +157,7 @@ class AdminMenu
         'restore_wizard'         => 'admin.disaster-recovery.*',
         'dr_center'              => 'admin.disaster-recovery.center.*',
         'platform_installer'     => 'installer.*',
+        'installer_status'       => 'admin.installer.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -176,7 +179,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'theme_templates', 'theme_packs', 'zip_import', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer', 'installer_status'],
             'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

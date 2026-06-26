@@ -5,24 +5,31 @@ use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Support\Facades\Artisan;
 
 /**
- * Adapter for MODE 3 (Upgrade Platform).
- * Protocol: snapshot → maintenance → migrate → optimize → health check → unlock.
- * On failure: automatic rollback from snapshot.
+ * Adapter for MODE 3 (Upgrade Platform) and Installation Baseline management.
+ *
+ * Baseline invariants:
+ * - INITIAL_INSTALLATION_BASELINE is created once and never overwritten.
+ * - Subsequent baselines are named INSTALLATION_BASELINE_YYYYMMDD_HHMMSS.
+ * - All baseline directories are made read-only after finalization.
+ * - manifest.json contains SHA-256 checksums for every file.
  */
 class UpgradeAdapter
 {
+    const BASELINES_ROOT = 'upgrade_snapshots';
+
     public function __construct(
-        private InfrastructureInstaller $infra,
-        private HealthCheckRunner       $health,
-        private SlackAlertService       $slack,
+        private InfrastructureInstaller  $infra,
+        private HealthCheckRunner        $health,
+        private SlackAlertService        $slack,
+        private BaselineManifestService  $manifest,
     ) {}
 
-    // ─── Snapshot ────────────────────────────────────────────────────────────
+    // ─── Snapshot (Upgrade Mode) ──────────────────────────────────────────────
 
     public function createSnapshot(): array
     {
         $timestamp = now()->format('Ymd_His');
-        $snapDir   = storage_path("upgrade_snapshots/{$timestamp}");
+        $snapDir   = storage_path(self::BASELINES_ROOT . "/{$timestamp}");
         @mkdir($snapDir, 0750, true);
 
         $results = [];
@@ -49,16 +56,14 @@ class UpgradeAdapter
 
     private function snapshotDatabase(string $snapDir): array
     {
-        $db       = config('database.connections.mysql');
-        $outFile  = "{$snapDir}/database.sql.gz";
+        $db      = config('database.connections.mysql');
+        $outFile = "{$snapDir}/database.sql.gz";
 
         $dbNameEsc = escapeshellarg($db['database']);
         $userEsc   = escapeshellarg($db['username']);
         $hostEsc   = escapeshellarg($db['host']);
         $outEsc    = escapeshellarg($outFile);
-        $passFlag  = !empty($db['password'])
-            ? '-p' . escapeshellarg($db['password'])
-            : '';
+        $passFlag  = !empty($db['password']) ? '-p' . escapeshellarg($db['password']) : '';
 
         $cmd        = "mysqldump -h {$hostEsc} -u {$userEsc} {$passFlag} {$dbNameEsc} | gzip > {$outEsc} 2>&1";
         $output     = [];
@@ -91,7 +96,7 @@ class UpgradeAdapter
         ];
     }
 
-    // ─── Upgrade ─────────────────────────────────────────────────────────────
+    // ─── Upgrade ──────────────────────────────────────────────────────────────
 
     public function runUpgrade(string $snapshotPath): array
     {
@@ -156,20 +161,25 @@ class UpgradeAdapter
         ];
     }
 
-    // ─── Installation Baseline ───────────────────────────────────────────────
+    // ─── Installation Baseline — Phase 1 (Core files) ────────────────────────
 
-    public function createInstallationBaseline(?string $reportHtmlPath = null, ?string $reportPdfPath = null): array
+    /**
+     * Phase 1: Creates the baseline core (database.sql.gz + .env.backup + baseline_meta.json + manifest.json).
+     *
+     * INITIAL_INSTALLATION_BASELINE is NEVER overwritten.
+     * Subsequent calls produce INSTALLATION_BASELINE_YYYYMMDD_HHMMSS.
+     *
+     * Returns the baseline_path, manifest_checksum, and success status.
+     * Phase 2 (addReportsToBaseline) must be called after HTML/PDF reports are generated.
+     */
+    public function createInstallationBaseline(string $installationUuid = ''): array
     {
-        $baselineDir = storage_path('upgrade_snapshots/INITIAL_INSTALLATION_BASELINE');
+        $basePath    = storage_path(self::BASELINES_ROOT);
+        @mkdir($basePath, 0750, true);
 
-        if (is_dir($baselineDir)) {
-            return [
-                'success'        => true,
-                'baseline_path'  => $baselineDir,
-                'message'        => 'Baseline already exists — skipped',
-                'already_exists' => true,
-            ];
-        }
+        // Resolve name — never overwrites INITIAL
+        $baselineDir = $this->manifest->resolveBaselineName($basePath);
+        $label       = basename($baselineDir);
 
         @mkdir($baselineDir, 0750, true);
 
@@ -178,52 +188,101 @@ class UpgradeAdapter
         // 1. Database snapshot
         $results['database'] = $this->snapshotDatabase($baselineDir);
 
-        // 2. .env backup
+        // 2. .env backup (secrets stay in backup, never exposed in manifest values)
         $results['env'] = $this->snapshotEnv($baselineDir);
 
-        // 3. Copy installation reports
-        foreach (array_filter([$reportHtmlPath, $reportPdfPath]) as $rp) {
-            if (file_exists($rp)) {
-                $dest  = $baselineDir . '/' . basename($rp);
-                $ok    = copy($rp, $dest);
-                $results['report_' . pathinfo($rp, PATHINFO_EXTENSION)] = [
-                    'success' => $ok,
-                    'path'    => $ok ? $dest : null,
-                    'message' => $ok ? 'Report copied' : 'Failed to copy report',
-                ];
-            }
-        }
-
-        // 4. Baseline metadata
+        // 3. Baseline metadata (no secrets)
         $meta = [
-            'label'       => 'INITIAL_INSTALLATION_BASELINE',
-            'created_at'  => now()->toISOString(),
-            'version'     => config('app.version', '1.0.0'),
-            'mode'        => 'fresh',
-            'description' => 'Permanent initial installation baseline — primary rollback point for all future upgrades',
-            'components'  => array_keys($results),
-            'platform'    => config('app.name'),
+            'label'            => $label,
+            'installation_uuid'=> $installationUuid ?: \Illuminate\Support\Str::uuid()->toString(),
+            'created_at'       => now()->toISOString(),
+            'version'          => config('app.version', '1.0.0'),
+            'mode'             => 'fresh',
+            'description'      => $label === 'INITIAL_INSTALLATION_BASELINE'
+                ? 'Permanent initial installation baseline — primary rollback point for all future upgrades'
+                : 'Supplemental installation baseline',
+            'components'       => ['database', 'env', 'baseline_meta'],
+            'platform'         => config('app.name'),
         ];
         file_put_contents(
             $baselineDir . '/baseline_meta.json',
             json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
         );
+        $results['meta'] = ['success' => true, 'path' => $baselineDir . '/baseline_meta.json'];
 
-        $allSuccess = collect($results)->every(fn($r) => $r['success'] ?? false);
+        // 4. Create manifest (checksums for database + .env.backup + baseline_meta.json)
+        $manifestResult = $this->manifest->createManifest($baselineDir, [
+            'installation_uuid' => $meta['installation_uuid'],
+            'label'             => $label,
+        ]);
+        $results['manifest'] = $manifestResult;
 
-        $this->slack->info('Installer: INITIAL_INSTALLATION_BASELINE created at ' . $baselineDir);
+        $allSuccess = $results['database']['success'] && $results['env']['success'] && $manifestResult['success'];
+
+        if (!$allSuccess) {
+            $this->slack->warning("Installer: Baseline {$label} created with failures");
+        }
 
         return [
-            'success'       => $allSuccess,
-            'baseline_path' => $baselineDir,
-            'results'       => $results,
-            'message'       => $allSuccess
-                ? 'INITIAL_INSTALLATION_BASELINE created successfully'
-                : 'Baseline created with some failures',
+            'success'           => $allSuccess,
+            'baseline_path'     => $baselineDir,
+            'baseline_label'    => $label,
+            'installation_uuid' => $meta['installation_uuid'],
+            'manifest_checksum' => $manifestResult['manifest_checksum'] ?? null,
+            'results'           => $results,
+            'message'           => $allSuccess
+                ? "{$label} created successfully"
+                : "Baseline created with failures",
         ];
     }
 
-    // ─── Rollback ────────────────────────────────────────────────────────────
+    // ─── Installation Baseline — Phase 2 (Finalize with reports) ─────────────
+
+    /**
+     * Phase 2: Copies installation reports into the baseline, updates the manifest
+     * with their checksums, then locks the directory as read-only.
+     *
+     * Must be called after createInstallationBaseline() and after HTML/PDF are generated.
+     */
+    public function addReportsToBaseline(string $baselineDir, ?string $htmlPath, ?string $pdfPath): array
+    {
+        if (!is_dir($baselineDir)) {
+            return ['success' => false, 'message' => 'Baseline directory not found'];
+        }
+
+        $copied = [];
+
+        foreach (array_filter([$htmlPath, $pdfPath]) as $rp) {
+            if (file_exists($rp)) {
+                $dest = $baselineDir . '/' . basename($rp);
+                $ok   = copy($rp, $dest);
+                $ext  = pathinfo($rp, PATHINFO_EXTENSION);
+                $copied["report_{$ext}"] = [
+                    'success' => $ok,
+                    'path'    => $ok ? $dest : null,
+                    'message' => $ok ? "Report ({$ext}) copied to baseline" : "Failed to copy {$ext} report",
+                ];
+            }
+        }
+
+        // Recompute manifest to include the newly added reports
+        $manifestResult = $this->manifest->updateManifest($baselineDir);
+
+        // Lock the directory — immutable from this point
+        $this->manifest->makeReadOnly($baselineDir);
+
+        $this->slack->info('Installer: ' . basename($baselineDir) . ' finalized and locked as read-only');
+
+        return [
+            'success'           => $manifestResult['success'],
+            'baseline_path'     => $baselineDir,
+            'manifest_checksum' => $manifestResult['manifest_checksum'] ?? null,
+            'copied'            => $copied,
+            'message'           => 'Baseline finalized with reports',
+        ];
+    }
+
+    // ─── Rollback ─────────────────────────────────────────────────────────────
 
     public function rollback(string $snapshotPath): array
     {
@@ -233,13 +292,11 @@ class UpgradeAdapter
 
         $results = [];
 
-        // Restore database
         $dbFile = "{$snapshotPath}/database.sql.gz";
         if (file_exists($dbFile)) {
             $results['database'] = $this->restoreDatabase($dbFile);
         }
 
-        // Restore .env
         $envFile = "{$snapshotPath}/.env.backup";
         if (file_exists($envFile)) {
             $ok = copy($envFile, base_path('.env'));
@@ -262,11 +319,11 @@ class UpgradeAdapter
 
     private function restoreDatabase(string $gzipFile): array
     {
-        $db      = config('database.connections.mysql');
-        $fileEsc = escapeshellarg($gzipFile);
-        $dbEsc   = escapeshellarg($db['database']);
-        $userEsc = escapeshellarg($db['username']);
-        $hostEsc = escapeshellarg($db['host']);
+        $db       = config('database.connections.mysql');
+        $fileEsc  = escapeshellarg($gzipFile);
+        $dbEsc    = escapeshellarg($db['database']);
+        $userEsc  = escapeshellarg($db['username']);
+        $hostEsc  = escapeshellarg($db['host']);
         $passFlag = !empty($db['password']) ? '-p' . escapeshellarg($db['password']) : '';
 
         $cmd    = "gunzip < {$fileEsc} | mysql -h {$hostEsc} -u {$userEsc} {$passFlag} {$dbEsc} 2>&1";
@@ -278,5 +335,12 @@ class UpgradeAdapter
             'success' => $code === 0,
             'message' => $code === 0 ? 'پایگاه داده بازیابی شد' : implode(', ', $output),
         ];
+    }
+
+    // ─── Baselines Root ───────────────────────────────────────────────────────
+
+    public function getBaselinesRootPath(): string
+    {
+        return storage_path(self::BASELINES_ROOT);
     }
 }

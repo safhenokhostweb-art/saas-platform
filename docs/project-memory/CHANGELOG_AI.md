@@ -5,6 +5,30 @@
 
 ---
 
+## 2026-06-26 — SELECT_DROPDOWN_FIX_COMPLETE
+
+**Type:** Bug Fix — customer-site Admin UI — Select/Combobox dropdown options invisible
+
+**Summary:** Two-layer fix for native `<select>` dropdowns in customer-site admin panel being invisible or immediately dismissing after opening on the settings page (`/admin/settings`).
+
+**Root Causes Found:**
+1. **CSS (dark mode):** `design-tokens.css` sets `--ui-text-primary: #f1f5f9` (white) in dark mode; `<select>` elements inherited this, rendering white text on white native popup background → options invisible.
+2. **JS (TinyMCE focus-stealing):** `tinymce.init()` called on `DOMContentLoaded` registers a global `document.addEventListener('mousedown', ...)` handler. When user clicked a `<select>`, TinyMCE detected a click outside the editor and fired `endFocusedEditor()` → moved DOM focus → dismissed native select popup immediately.
+
+**Files Modified:**
+
+| File | Repo | Change |
+|------|------|--------|
+| `packages/saas-platform/core-utils/resources/css/module-components.css` | saas-platform | Added `select { color-scheme: light!important; color: #1e293b!important; background-color: #fff!important }` + option rules at end of file |
+| `public/css/customer-admin-layout.css` | customer-site | Same CSS rules appended as static file (loaded before Vite bundle, belt-and-suspenders) |
+| `resources/views/admin/partials/tinymce-field-init.blade.php` | customer-site | Converted TinyMCE init from eager (on DOMContentLoaded) to lazy (only on first focus/mousedown of the textarea). Until user touches the editor, zero global document listeners are registered by TinyMCE. |
+
+**Architecture Note:** `stopImmediatePropagation()` in capture phase on document was evaluated and rejected — it would prevent the `<select>` from ever receiving the mousedown event. Lazy init is the correct solution.
+
+**Deployed:** customer-site deployed twice (23:13 + 23:23); saas-platform deployed once.
+
+---
+
 ## 2026-06-26 — PLATFORM_INSTALLER_STEP65_COMPLETE
 
 **Type:** Platform Installer — Step 6.5 + Post-Install Snapshot
