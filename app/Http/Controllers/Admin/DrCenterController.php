@@ -2,11 +2,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Infrastructure\DrSimulation;
 use App\Models\Infrastructure\InfraBackupRun;
 use App\Models\Infrastructure\RestoreLog;
 use App\Models\Site;
 use App\Services\Infrastructure\ArvanBackupService;
 use App\Services\Infrastructure\DrIntegrityService;
+use App\Services\Infrastructure\DrReadinessScoreService;
 use App\Services\Infrastructure\RestoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,9 +19,10 @@ use Illuminate\Support\Facades\Schema;
 class DrCenterController extends Controller
 {
     public function __construct(
-        private ArvanBackupService  $arvan,
-        private DrIntegrityService  $integrity,
-        private RestoreService      $restore,
+        private ArvanBackupService       $arvan,
+        private DrIntegrityService       $integrity,
+        private RestoreService           $restore,
+        private DrReadinessScoreService  $readiness,
     ) {}
 
     // ─── Main Dashboard ────────────────────────────────────────────────────────
@@ -84,6 +87,19 @@ class DrCenterController extends Controller
         // Alert log exists?
         $alertLogExists = Schema::hasTable('dr_alert_log');
 
+        // Readiness score (cached 5 min)
+        $readinessScore = Cache::remember('dr_readiness_score', 300,
+            fn() => $this->readiness->calculate());
+
+        // Latest simulation
+        $latestSimulation = Schema::hasTable('dr_simulations')
+            ? DrSimulation::orderByDesc('created_at')->first()
+            : null;
+
+        // Arvan detail (cached 5 min, lazy — shown in partial via AJAX)
+        $arvanStatus = Cache::remember('dr_arvan_detail_status', 300,
+            fn() => $this->buildArvanDetailStatus($arvanDbFiles, $arvanStorageFiles));
+
         return view('admin.disaster-recovery.center.index', compact(
             'lastDb', 'lastStorage',
             'dbHealth', 'storageHealth',
@@ -92,7 +108,10 @@ class DrCenterController extends Controller
             'recentRestores', 'restoreStats',
             'backupFailures',
             'alerts', 'lockActive',
-            'alertLogExists'
+            'alertLogExists',
+            'readinessScore',
+            'latestSimulation',
+            'arvanStatus',
         ));
     }
 
@@ -124,6 +143,90 @@ class DrCenterController extends Controller
         ));
     }
 
+    // ─── Simulation History ───────────────────────────────────────────────────
+
+    public function simulationIndex(): \Illuminate\View\View
+    {
+        $simulations = Schema::hasTable('dr_simulations')
+            ? DrSimulation::orderByDesc('created_at')->paginate(20)
+            : collect();
+
+        return view('admin.disaster-recovery.center.simulation-history', compact('simulations'));
+    }
+
+    // ─── POST: Run Non-Destructive Simulation ─────────────────────────────────
+
+    public function runSimulation(Request $request): JsonResponse
+    {
+        $startedAt = now();
+
+        // Collect component results (same logic as readiness score, but detailed)
+        $readinessData = $this->readiness->calculate();
+        $components    = $readinessData['components'];
+
+        // Determine PASS / FAIL
+        // FAIL if any weight-heavy component is CRITICAL or MISSING
+        $criticalKeys = ['platform_db_backup', 'arvan_sync', 'redis'];
+        $result       = 'PASS';
+        foreach ($criticalKeys as $key) {
+            if (isset($components[$key]) && in_array($components[$key]['status'], ['MISSING', 'CRITICAL'], true)) {
+                $result = 'FAIL';
+                break;
+            }
+        }
+
+        // Estimate RPO = age of last successful platform DB backup
+        $lastDb = InfraBackupRun::whereNull('site_id')
+            ->where('backup_type', 'database')
+            ->where('status', 'success')
+            ->orderByDesc('completed_at')
+            ->first();
+
+        $estimatedRpo = $lastDb?->completed_at
+            ? $this->humanDiff($lastDb->completed_at->diffInMinutes(now()))
+            : 'نامشخص';
+
+        // Estimate restore time: 1 MB/sec DB restore rate
+        $sizeMb              = (float) ($lastDb?->file_size_mb ?? 0);
+        $estimatedRestoreMin = $sizeMb > 0
+            ? ceil($sizeMb / 60) + 5   // 1 MB/sec = 60 MB/min, +5min overhead
+            : null;
+
+        $estimatedRestoreTime = $estimatedRestoreMin
+            ? $this->humanDiff($estimatedRestoreMin)
+            : 'نامشخص (بکاپ موجود نیست)';
+
+        $duration = (int) $startedAt->diffInSeconds(now());
+
+        $simulation = DrSimulation::create([
+            'operator_id'            => auth()->id(),
+            'operator_name'          => auth()->user()?->name ?? 'سیستم',
+            'result'                 => $result,
+            'duration_seconds'       => $duration,
+            'estimated_restore_time' => $estimatedRestoreTime,
+            'estimated_rpo'          => $estimatedRpo,
+            'components'             => array_map(
+                fn($c) => ['label' => $c['label'], 'score' => $c['score'], 'max' => $c['max'], 'status' => $c['status'], 'detail' => $c['detail']],
+                $components
+            ),
+            'notes'                  => 'شبیه‌سازی غیرمخرب — هیچ داده‌ای تغییر نکرده',
+        ]);
+
+        // Invalidate readiness cache so next load reflects the simulation
+        Cache::forget('dr_readiness_score');
+
+        return response()->json([
+            'id'                     => $simulation->id,
+            'result'                 => $result,
+            'score'                  => $readinessData['score'],
+            'estimated_restore_time' => $estimatedRestoreTime,
+            'estimated_rpo'          => $estimatedRpo,
+            'duration_seconds'       => $duration,
+            'components'             => $components,
+            'history_url'            => route('admin.disaster-recovery.center.simulations'),
+        ]);
+    }
+
     // ─── AJAX: Timeline Chart Data ────────────────────────────────────────────
 
     public function backupTimeline(): JsonResponse
@@ -142,21 +245,18 @@ class DrCenterController extends Controller
             ->limit(30)
             ->get(['file_size_mb', 'started_at']);
 
-        // Reverse so oldest is on left
         $dbRuns      = $dbRuns->reverse()->values();
         $storageRuns = $storageRuns->reverse()->values();
 
-        $labels     = $dbRuns->map(fn($r) => $r->started_at?->format('M d'))->all();
-        $dbData     = $dbRuns->map(fn($r) => round((float) $r->file_size_mb, 2))->all();
+        $labels      = $dbRuns->map(fn($r) => $r->started_at?->format('M d'))->all();
+        $dbData      = $dbRuns->map(fn($r) => round((float) $r->file_size_mb, 2))->all();
         $storageData = $storageRuns->map(fn($r) => round((float) $r->file_size_mb, 2))->all();
-
-        // Anomaly detection (size < mean - 2σ)
         $dbAnomalies = $this->detectAnomalies($dbData);
 
         return response()->json([
             'labels'   => $labels,
             'datasets' => [
-                ['label' => 'بکاپ DB (MB)', 'data' => $dbData,      'anomalies' => $dbAnomalies],
+                ['label' => 'بکاپ DB (MB)',      'data' => $dbData,      'anomalies' => $dbAnomalies],
                 ['label' => 'بکاپ Storage (MB)', 'data' => $storageData, 'anomalies' => []],
             ],
         ]);
@@ -173,15 +273,16 @@ class DrCenterController extends Controller
             return response()->json(['error' => 'site_id الزامی است'], 422);
         }
 
-        if ($type === 'tenant') {
-            $result = $this->integrity->checkTenant($siteId);
-        } else {
-            $result = $this->integrity->checkPlatform();
-        }
+        $result = $type === 'tenant'
+            ? $this->integrity->checkTenant($siteId)
+            : $this->integrity->checkPlatform();
 
-        // Clear Arvan cache so next page load gets fresh data
+        // Track last integrity check time for Arvan status display
+        Cache::put('dr_integrity_last_checked_at', now()->toIso8601String(), 3600);
+
         Cache::forget('dr_arvan_platform_db');
         Cache::forget('dr_arvan_platform_storage');
+        Cache::forget('dr_arvan_detail_status');
 
         return response()->json($result);
     }
@@ -239,14 +340,14 @@ class DrCenterController extends Controller
             $healthScore = $this->computeTenantHealthScore($site->id, $arvanFiles);
 
             return [
-                'site'             => ['id' => $site->id, 'name' => $site->name, 'domain' => $site->domain],
-                'last_db_backup'   => $lastDbBackup ? true : false,
+                'site'               => ['id' => $site->id, 'name' => $site->name, 'domain' => $site->domain],
+                'last_db_backup'     => (bool) $lastDbBackup,
                 'last_db_backup_ago' => $lastDbBackup?->completed_at?->diffForHumans() ?? null,
-                'db_health'        => $dbHealth,
-                'arvan_file_count' => count($arvanFiles),
-                'last_restore_ago' => $lastRestore?->created_at?->diffForHumans() ?? null,
-                'health_score'     => $healthScore,
-                'detail_url'       => route('admin.disaster-recovery.center.tenant', $site->id),
+                'db_health'          => $dbHealth,
+                'arvan_file_count'   => count($arvanFiles),
+                'last_restore_ago'   => $lastRestore?->created_at?->diffForHumans() ?? null,
+                'health_score'       => $healthScore,
+                'detail_url'         => route('admin.disaster-recovery.center.tenant', $site->id),
             ];
         })->values()->all();
 
@@ -336,16 +437,12 @@ class DrCenterController extends Controller
         if ($hasFailedRestore) $score -= 20;
         if (empty($arvanDbFiles)) $score -= 20;
 
-        $lastBackup = InfraBackupRun::where('site_id', $siteId)
-            ->orderByDesc('started_at')
-            ->first();
-
+        $lastBackup = InfraBackupRun::where('site_id', $siteId)->orderByDesc('started_at')->first();
         if ($lastBackup && $lastBackup->isFailed()) $score -= 10;
 
         $hasRestore = RestoreLog::where('site_id', $siteId)->exists();
         if (!$hasRestore) $score -= 10;
 
-        // Bonus: Arvan count matches DB run count
         $dbCount    = InfraBackupRun::where('site_id', $siteId)->where('status', 'success')->count();
         $arvanCount = count($arvanDbFiles);
         if ($dbCount > 0 && $arvanCount >= $dbCount) $score += 10;
@@ -399,10 +496,51 @@ class DrCenterController extends Controller
     {
         if (count($data) < 3) return [];
 
-        $mean   = array_sum($data) / count($data);
-        $stddev = sqrt(array_sum(array_map(fn($v) => ($v - $mean) ** 2, $data)) / count($data));
+        $mean      = array_sum($data) / count($data);
+        $stddev    = sqrt(array_sum(array_map(fn($v) => ($v - $mean) ** 2, $data)) / count($data));
         $threshold = $mean - 2 * $stddev;
 
         return array_map(fn($v) => $v < $threshold, $data);
+    }
+
+    private function buildArvanDetailStatus(array $dbFiles, array $storageFiles): array
+    {
+        $allFiles = array_merge($dbFiles, $storageFiles);
+
+        $totalFiles   = count($allFiles);
+        $totalSizeB   = array_sum(array_column($allFiles, 'size'));
+        $totalSizeMb  = round($totalSizeB / 1048576, 1);
+
+        $latestUpload = null;
+        foreach ($allFiles as $f) {
+            if ($f['last_modified'] && (!$latestUpload || $f['last_modified'] > $latestUpload)) {
+                $latestUpload = $f['last_modified'];
+            }
+        }
+
+        $lastCheckedAt = Cache::get('dr_integrity_last_checked_at');
+
+        return [
+            'total_files'       => $totalFiles,
+            'total_size_mb'     => $totalSizeMb,
+            'latest_upload_ts'  => $latestUpload,
+            'latest_upload_ago' => $latestUpload
+                ? \Carbon\Carbon::createFromTimestamp($latestUpload)->diffForHumans()
+                : null,
+            'last_verified_at'  => $lastCheckedAt,
+            'db_file_count'     => count($dbFiles),
+            'storage_file_count'=> count($storageFiles),
+            'capacity_available'=> false, // ArvanCloud S3 does not expose bucket quota via standard API
+        ];
+    }
+
+    private function humanDiff(int $minutes): string
+    {
+        if ($minutes < 60) return "{$minutes} دقیقه";
+        $hours   = (int) ($minutes / 60);
+        $mins    = $minutes % 60;
+        $label   = "{$hours} ساعت";
+        if ($mins > 0) $label .= " {$mins} دقیقه";
+        return $label;
     }
 }

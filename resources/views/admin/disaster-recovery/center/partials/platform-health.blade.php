@@ -14,6 +14,10 @@ $healthLabel = fn(string $h) => match($h) {
     'MISSING'      => 'غایب',
     default        => $h,
 };
+
+// Compute Jalali backup ages
+$dbAge      = $lastDb?->completed_at      ? \App\Helpers\Jalali::diffForHumansFa($lastDb->completed_at)      : null;
+$storageAge = $lastStorage?->completed_at ? \App\Helpers\Jalali::diffForHumansFa($lastStorage->completed_at) : null;
 @endphp
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -37,8 +41,21 @@ $healthLabel = fn(string $h) => match($h) {
             @if($lastDb)
             <dl class="space-y-1.5 text-sm">
                 <div class="flex justify-between">
-                    <dt class="text-gray-500">آخرین اجرا</dt>
-                    <dd class="text-gray-800 font-medium">{{ $lastDb->completed_at?->diffForHumans() ?? '—' }}</dd>
+                    <dt class="text-gray-500">آخرین بکاپ</dt>
+                    <dd class="text-gray-800 font-medium">
+                        {{ $dbAge ?? '—' }}
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">سن بکاپ</dt>
+                    <dd class="font-medium
+                        {{ $lastDb->completed_at?->lt(now()->subHours(24)) ? 'text-amber-600' : 'text-green-600' }}">
+                        @if($lastDb->completed_at)
+                        {{ \App\Helpers\Jalali::formatFa($lastDb->completed_at) }}
+                        @else
+                        —
+                        @endif
+                    </dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">وضعیت</dt>
@@ -82,8 +99,21 @@ $healthLabel = fn(string $h) => match($h) {
             @if($lastStorage)
             <dl class="space-y-1.5 text-sm">
                 <div class="flex justify-between">
-                    <dt class="text-gray-500">آخرین اجرا</dt>
-                    <dd class="text-gray-800 font-medium">{{ $lastStorage->completed_at?->diffForHumans() ?? '—' }}</dd>
+                    <dt class="text-gray-500">آخرین بکاپ</dt>
+                    <dd class="text-gray-800 font-medium">
+                        {{ $storageAge ?? '—' }}
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">سن بکاپ</dt>
+                    <dd class="font-medium
+                        {{ $lastStorage->completed_at?->lt(now()->subDays(7)) ? 'text-amber-600' : 'text-green-600' }}">
+                        @if($lastStorage->completed_at)
+                        {{ \App\Helpers\Jalali::formatFa($lastStorage->completed_at) }}
+                        @else
+                        —
+                        @endif
+                    </dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">وضعیت</dt>

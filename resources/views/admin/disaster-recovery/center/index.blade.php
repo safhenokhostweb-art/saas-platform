@@ -12,6 +12,14 @@
             <p class="text-sm text-gray-500 mt-1">داشبورد مانیتورینگ بازیابی فاجعه — فقط خواندنی</p>
         </div>
         <div class="flex items-center gap-3">
+            <a href="{{ route('admin.disaster-recovery.center.simulations') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-sm hover:bg-indigo-100 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                تاریخچه شبیه‌سازی
+            </a>
             @if($alertLogExists)
             <a href="{{ route('admin.disaster-recovery.center.alerts') }}"
                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition">
@@ -59,6 +67,11 @@
     </div>
     @endif
 
+    {{-- Section 0: Recovery Readiness Score (NEW) ----------------------------}}
+    @include('admin.disaster-recovery.center.partials.readiness-score', compact(
+        'readinessScore', 'latestSimulation'
+    ))
+
     {{-- Section 1: Platform Backup Health ------------------------------------}}
     @include('admin.disaster-recovery.center.partials.platform-health', compact(
         'lastDb', 'lastStorage', 'dbHealth', 'storageHealth', 'arvanDbFiles', 'arvanStorageFiles'
@@ -75,10 +88,13 @@
         @include('admin.disaster-recovery.center.partials.integrity', compact('syncGap', 'dbRunsLast7d', 'arvanDbLast7d'))
     </div>
 
-    {{-- Section 5: Tenant Health Table (lazy via Alpine) --------------------}}
+    {{-- Section 5: Arvan Storage Status (NEW) --------------------------------}}
+    @include('admin.disaster-recovery.center.partials.arvan-status', compact('arvanStatus'))
+
+    {{-- Section 6: Tenant Health Table (lazy via Alpine) --------------------}}
     @include('admin.disaster-recovery.center.partials.tenant-health')
 
-    {{-- Section 6: Alert Feed (auto-refresh) ---------------------------------}}
+    {{-- Section 7: Alert Feed (auto-refresh) ---------------------------------}}
     @if($alertLogExists)
     @include('admin.disaster-recovery.center.partials.alert-feed')
     @endif
@@ -98,7 +114,7 @@
                 <span class="shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">{{ $fail->backup_type }}</span>
                 <span class="text-gray-500 shrink-0">{{ $fail->site ? $fail->site->name : 'پلتفرم' }}</span>
                 <span class="text-gray-700 truncate flex-1">{{ Str::limit($fail->error_message, 120) }}</span>
-                <span class="text-gray-400 shrink-0">{{ $fail->started_at?->diffForHumans() }}</span>
+                <span class="text-gray-400 shrink-0">{{ \App\Helpers\Jalali::diffForHumansFa($fail->started_at) }}</span>
             </div>
             @endforeach
         </div>

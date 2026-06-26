@@ -76,9 +76,53 @@ class AppServiceProvider extends ServiceProvider
         Invoice::observe(InvoiceLedgerObserver::class);
         SiteLifecycleInvoice::observe(SiteLifecycleInvoiceObserver::class);
 
-        // ثبت directive برای تبدیل اعداد انگلیسی به فارسی در Blade
+        // ── PERSIAN LOCALIZATION GLOBAL STANDARD — Blade Directives ────────────
+        // Route ALL formatting through PersianFormatter — never use number_format()
+        // or Carbon::format() directly in Blade views.
+
+        // @persianNumber($n) — legacy alias, keep for backward compat
         \Blade::directive('persianNumber', function ($expression) {
-            return "<?php echo \App\Helpers\NumberHelper::toPersianNumbers($expression); ?>";
+            return "<?php echo \\App\\Helpers\\NumberHelper::toPersianNumbers($expression); ?>";
+        });
+
+        // @numFa($n) / @numFa($n, 2)  — number with thousand sep + Persian digits
+        \Blade::directive('numFa', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::num($expression); ?>";
+        });
+
+        // @priceFa($n) / @priceFa($n, 'ریال')  — formatted price with unit
+        \Blade::directive('priceFa', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::currency($expression); ?>";
+        });
+
+        // @dateFa($d)  — Jalali date  ۱۴۰۵/۰۴/۰۴
+        \Blade::directive('dateFa', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::date($expression); ?>";
+        });
+
+        // @dateFaLong($d)  — چهارشنبه ۴ تیر ۱۴۰۵
+        \Blade::directive('dateFaLong', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::dateLong($expression); ?>";
+        });
+
+        // @dateFaShort($d)  — ۴ تیر ۱۴۰۵
+        \Blade::directive('dateFaShort', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::dateShort($expression); ?>";
+        });
+
+        // @datetimeFa($d)  — ۱۴۰۵/۰۴/۰۴ ۱۴:۳۰
+        \Blade::directive('datetimeFa', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::datetime($expression); ?>";
+        });
+
+        // @agoFa($d)  — ۳ دقیقه پیش / دیروز / همین الان
+        \Blade::directive('agoFa', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::ago($expression); ?>";
+        });
+
+        // @digitsFa($s)  — convert any digits in a string to Persian
+        \Blade::directive('digitsFa', function ($expression) {
+            return "<?php echo \\App\\Services\\PersianFormatter::digits($expression); ?>";
         });
     }
 }

@@ -5,11 +5,12 @@ namespace SaaSPlatform\CoreUtils\Helpers;
 class NumberHelper
 {
     /**
-     * Format a number with Persian/Arabic digits.
+     * Format a number with Persian/Arabic digits and thousand separators.
+     * PERSIAN LOCALIZATION STANDARD: always outputs Persian digits.
      */
     public static function format(int|float $number, int $decimals = 0): string
     {
-        return number_format($number, $decimals);
+        return self::toPersian(number_format($number, $decimals));
     }
 
     /**
@@ -24,19 +25,20 @@ class NumberHelper
     }
 
     /**
-     * Format a number as currency (Toman/IRR).
+     * Format a number as currency (Toman/IRR) with Persian digits.
+     * PERSIAN LOCALIZATION STANDARD: always outputs Persian digits + unit.
      */
     public static function currency(int|float $amount, string $unit = 'تومان'): string
     {
-        return number_format($amount) . ' ' . $unit;
+        return self::toPersian(number_format($amount)) . ' ' . $unit;
     }
 
     /**
-     * Format a percentage value.
+     * Format a percentage value with Persian digits.
      */
     public static function percent(float $value, int $decimals = 1): string
     {
-        return number_format($value * 100, $decimals) . '%';
+        return self::toPersian(number_format($value * 100, $decimals)) . '%';
     }
 
     /**

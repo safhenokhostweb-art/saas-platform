@@ -870,6 +870,9 @@ Route::prefix('admin')
                 Route::get('/alerts',                  [\App\Http\Controllers\Admin\DrCenterController::class, 'alertHistory'])->name('alerts');
                 Route::get('/alert-feed',              [\App\Http\Controllers\Admin\DrCenterController::class, 'alertFeed'])->name('alert-feed');
                 Route::get('/tenant-health-ajax',      [\App\Http\Controllers\Admin\DrCenterController::class, 'tenantHealthAjax'])->name('tenant-health-ajax');
+                // Phase 2 additions: Simulation History + Run Simulation
+                Route::get('/simulations',             [\App\Http\Controllers\Admin\DrCenterController::class, 'simulationIndex'])->name('simulations');
+                Route::post('/simulations/run',        [\App\Http\Controllers\Admin\DrCenterController::class, 'runSimulation'])->name('simulations.run');
             });
         });
 
