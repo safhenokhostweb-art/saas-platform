@@ -5,6 +5,37 @@
 
 ---
 
+## CURRENT STATE (2026-06-26 — PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED)
+
+**Last completed phase:** PERSIAN_LOCALIZATION_GLOBAL_STANDARD — Full Persian digit + Jalali date localization across both repos.
+
+**What was built:**
+1. `PersianFormatter` service class (both repos) — single entry point for all number/date localization
+2. `app/Helpers/persian_helpers.php` (both repos) — `num_fa()`, `price_fa()`, `date_fa()`, `datetime_fa()`, `ago_fa()`, `digits_fa()`, `jalali_to_gregorian()` autoloaded via composer
+3. 8 Blade directives in `AppServiceProvider` (both repos): `@numFa`, `@priceFa`, `@dateFa`, `@dateFaLong`, `@dateFaShort`, `@datetimeFa`, `@agoFa`, `@digitsFa`
+4. `<x-jalali-datepicker>` Alpine.js component (saas-platform)
+5. `.persian-date-input` / `.persian-date-defer` jQuery picker classes (customer-site)
+6. All `number_format()` in user-facing views replaced — 0 violations remain in either repo
+
+**Files changed (saas-platform views):** 49 view files, UserController.php (date conversion), _filters.blade.php (date picker)
+**Files changed (customer-site views):** 54+ view files, OrderController.php, UserPanelController.php (date conversion), orders/index, users/index (date picker inputs)
+
+**Certification docs generated:**
+- `docs/PERSIAN_LOCALIZATION_STANDARD.md`
+- `docs/LOCALIZATION_AUDIT.md`
+- `docs/DATE_PICKER_ARCHITECTURE.md`
+- `docs/PERSIAN_LOCALIZATION_CERTIFICATION.md`
+
+**Key permanent rules added:**
+- No `number_format()` in any Blade template — use `@numFa()` or `num_fa()`
+- No `type="date"` inputs — use Jalali date pickers
+- Controllers must convert incoming Jalali dates to Gregorian before DB operations
+- SVG `stroke-dasharray`/`stroke-dashoffset` are intentionally excluded (readiness-score.blade.php)
+
+**No outstanding steps.**
+
+---
+
 ## CURRENT STATE (2026-06-26 — SITE_THEME_PRESET_FIX_DEPLOYED)
 
 **Last completed phase:** SITE_THEME_PRESET_FIX_DEPLOYED — Bug fix: site theme presets now apply to the public customer site frontend; custom mode fully operational.

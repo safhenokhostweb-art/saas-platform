@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-06-26 — PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED
+
+**Type:** Platform-wide — Both repos
+
+**Summary:** ایجاد لایه مرکزی بومی‌سازی فارسی. تمام `number_format()` در view ها جایگزین شد. تمام ورودی‌های تاریخ به Jalali Date Picker تبدیل شد. کنترلرها برای تبدیل تاریخ جلالی به میلادی قبل از DB به‌روزرسانی شدند.
+
+**Infrastructure created:**
+
+| File | Repo | Description |
+|------|------|-------------|
+| `app/Services/PersianFormatter.php` | both | Single entry point — num(), currency(), date(), datetime(), ago(), digits() |
+| `app/Helpers/persian_helpers.php` | both | Global helpers autoloaded via composer.json files[] |
+| `app/Providers/AppServiceProvider.php` | both | 8 Blade directives: @numFa, @priceFa, @dateFa, @dateFaLong, @dateFaShort, @datetimeFa, @agoFa, @digitsFa |
+| `resources/views/components/jalali-datepicker.blade.php` | saas-platform | Alpine.js Jalali date picker component |
+
+**Views fixed — saas-platform:** 49 files (all number_format → @numFa/num_fa)
+**Views fixed — customer-site:** 54+ files (all number_format → @numFa/num_fa)
+**Date inputs fixed:** users/_filters (saas), orders/index + users/index (customer-site)
+**Controllers fixed:** UserController (saas), OrderController + UserPanelController (customer-site)
+
+**Docs generated:**
+- `docs/PERSIAN_LOCALIZATION_STANDARD.md`
+- `docs/LOCALIZATION_AUDIT.md`
+- `docs/DATE_PICKER_ARCHITECTURE.md`
+- `docs/PERSIAN_LOCALIZATION_CERTIFICATION.md`
+
+**Exceptions documented:** SVG stroke-dasharray/stroke-dashoffset in readiness-score.blade.php
+
+**Impact:** Zero English digits visible in user-facing UI. All dates display as Jalali. All date inputs use Jalali pickers.
+
+---
+
 ## 2026-06-26 — SITE_THEME_PRESET_FIX_DEPLOYED
 
 **Type:** Bug Fix — customer-site

@@ -4,6 +4,31 @@
 
 ---
 
+## COMPLETE: PERSIAN_LOCALIZATION_GLOBAL_STANDARD — 2026-06-26 ✅
+
+**Status:** PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED
+
+| Task | Status |
+|------|--------|
+| PersianFormatter service (both repos) | ✅ DONE |
+| Global helpers + composer autoload (both repos) | ✅ DONE |
+| 8 Blade directives in AppServiceProvider (both repos) | ✅ DONE |
+| `<x-jalali-datepicker>` component (saas-platform) | ✅ DONE |
+| `.persian-date-input/.persian-date-defer` jQuery system (customer-site) | ✅ DONE |
+| All number_format() violations fixed — saas-platform (49 files) | ✅ DONE |
+| All number_format() violations fixed — customer-site (54+ files) | ✅ DONE |
+| Date input conversion — saas-platform (users/_filters) | ✅ DONE |
+| Date input conversion — customer-site (orders/index, users/index) | ✅ DONE |
+| Controller Jalali→Gregorian conversion — UserController, OrderController, UserPanelController | ✅ DONE |
+| 4 certification docs generated | ✅ DONE |
+| project-memory updated | ✅ DONE |
+
+**Exceptions (documented):**
+- SVG stroke-dasharray/stroke-dashoffset in readiness-score.blade.php — intentionally excluded
+- datetime-local input in sms/campaigns/create.blade.php — MANUAL REVIEW
+
+---
+
 ## COMPLETE: SITE_THEME_PRESET_FIX — 2026-06-26 ✅
 
 **Status:** SITE_THEME_PRESET_FIX_DEPLOYED
