@@ -54,6 +54,12 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/runtime-anomalies.log'));
 
+        // Phase 2 DR Center: hourly backup health scan + Slack alerts (deduped 6h)
+        $schedule->command('dr:scan-health')
+            ->hourly()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/dr-health.log'));
+
         // LIFECYCLE: Check expired sites → GRACE_PERIOD (daily 08:05)
         $schedule->command('lifecycle:check-expired')
             ->dailyAt('08:05')

@@ -860,6 +860,17 @@ Route::prefix('admin')
             Route::post('/abort',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'abort'])->name('abort');
             Route::get('/logs',                [\App\Http\Controllers\Admin\RestoreWizardController::class, 'logs'])->name('logs');
             Route::get('/logs/{log}',          [\App\Http\Controllers\Admin\RestoreWizardController::class, 'logShow'])->name('logs.show');
+
+            // Phase 2: DR Center (read-only monitoring dashboard)
+            Route::prefix('center')->name('center.')->group(function () {
+                Route::get('/',                        [\App\Http\Controllers\Admin\DrCenterController::class, 'index'])->name('index');
+                Route::get('/tenant/{site}',           [\App\Http\Controllers\Admin\DrCenterController::class, 'tenantHealth'])->name('tenant');
+                Route::get('/timeline',                [\App\Http\Controllers\Admin\DrCenterController::class, 'backupTimeline'])->name('timeline');
+                Route::post('/integrity',              [\App\Http\Controllers\Admin\DrCenterController::class, 'integrityCheck'])->name('integrity');
+                Route::get('/alerts',                  [\App\Http\Controllers\Admin\DrCenterController::class, 'alertHistory'])->name('alerts');
+                Route::get('/alert-feed',              [\App\Http\Controllers\Admin\DrCenterController::class, 'alertFeed'])->name('alert-feed');
+                Route::get('/tenant-health-ajax',      [\App\Http\Controllers\Admin\DrCenterController::class, 'tenantHealthAjax'])->name('tenant-health-ajax');
+            });
         });
 
         /*

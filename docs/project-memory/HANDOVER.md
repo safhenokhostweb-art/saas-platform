@@ -5,25 +5,29 @@
 
 ---
 
-## CURRENT STATE (2026-06-26 — DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE)
+## CURRENT STATE (2026-06-26 — DR_CENTER_OPERATIONAL)
 
-**Last completed phase:** DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE — Phase 2 design only. Zero code changes.
+**Last completed phase:** DR_CENTER_OPERATIONAL — Phase 2 fully implemented and deployed.
 
-**3 design documents produced:**
-- `docs/DISASTER_RECOVERY_CENTER_ARCHITECTURE.md` — controller, routes, views, services
-- `docs/DISASTER_RECOVERY_MONITORING_SPEC.md` — data queries, health logic, tenant table, refresh strategy
-- `docs/DISASTER_RECOVERY_ALERT_SYSTEM.md` — 7 alerts, ScanDrHealthCommand, dedup, optional dr_alert_log
+**New files created:**
+- `app/Http/Controllers/Admin/DrCenterController.php` (7 methods)
+- `app/Services/Infrastructure/DrIntegrityService.php`
+- `app/Console/Commands/ScanDrHealthCommand.php` (`dr:scan-health`)
+- `database/migrations/2026_06_26_100000_create_dr_alert_log_table.php`
+- `resources/views/admin/disaster-recovery/center/` (9 view files)
 
-**Ready to implement:**
-1. `DrCenterController` (read-only, 5 methods)
-2. `DrIntegrityService` (on-demand Arvan integrity check)
-3. `ScanDrHealthCommand` (hourly health scanner + Slack alerts)
-4. Blade views: `center/index.blade.php` + 6 partials + `tenant-detail.blade.php`
-5. Routes (add to existing disaster-recovery group)
-6. AdminMenu `dr_center` entry
-7. Optional: `dr_alert_log` migration + alerts page
+**Production steps required:**
+1. `php artisan migrate` — creates dr_alert_log (optional but recommended)
+2. Scheduler auto-runs `dr:scan-health` hourly
 
-**No new migrations required** (unless alert log is implemented — optional).
+**DR Center URL:** `/admin/disaster-recovery/center`
+**Alert History URL:** `/admin/disaster-recovery/center/alerts`
+
+**Previous:** DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE — 3 design documents produced.
+
+**Next options:**
+1. Phase 3a: deploy.ps1 Arvan release upload (4h)
+2. EDU-17: AI provider live wiring
 
 ---
 

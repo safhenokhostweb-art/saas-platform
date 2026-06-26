@@ -1,0 +1,12 @@
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <h2 class="text-sm font-semibold text-gray-700">تاریخچه اندازه بکاپ (۳۰ روز اخیر)</h2>
+    </div>
+    <div class="p-5">
+        <canvas id="dr-backup-chart" height="200"></canvas>
+        <p class="text-xs text-gray-400 mt-3 text-center">بارگذاری نمودار در حال اجرا...</p>
+    </div>
+</div>

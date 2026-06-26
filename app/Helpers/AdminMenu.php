@@ -53,6 +53,7 @@ class AdminMenu
         'finance_ledger'         => 'دفتر کل مالی',
         'disaster_recovery'      => 'مرکز بازیابی فاجعه',
         'restore_wizard'         => 'ویزارد بازیابی',
+        'dr_center'              => 'مرکز DR',
     ];
 
     /** مسیر هر آیتم منو */
@@ -101,6 +102,7 @@ class AdminMenu
         'finance_ledger'         => 'admin.finance-ledger.index',
         'disaster_recovery'      => 'admin.disaster-recovery.index',
         'restore_wizard'         => 'admin.disaster-recovery.index',
+        'dr_center'              => 'admin.disaster-recovery.center.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -149,6 +151,7 @@ class AdminMenu
         'finance_ledger'         => 'admin.finance-ledger.*',
         'disaster_recovery'      => 'admin.disaster-recovery.*',
         'restore_wizard'         => 'admin.disaster-recovery.*',
+        'dr_center'              => 'admin.disaster-recovery.center.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -170,7 +173,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'theme_templates', 'theme_packs', 'zip_import', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center'],
             'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

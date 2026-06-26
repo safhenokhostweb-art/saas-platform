@@ -209,6 +209,48 @@ class DrCenterController extends Controller
         return view('admin.disaster-recovery.center.alerts', compact('alerts', 'alertLogExists'));
     }
 
+    // ─── AJAX: Tenant Health Table ────────────────────────────────────────────
+
+    public function tenantHealthAjax(): JsonResponse
+    {
+        $sites = Site::where('lifecycle_status', 'active')->orWhereNull('lifecycle_status')->get();
+
+        $tenants = $sites->map(function (Site $site) {
+            $lastDbBackup = InfraBackupRun::where('site_id', $site->id)
+                ->where('backup_type', 'database')
+                ->where('status', 'success')
+                ->orderByDesc('started_at')
+                ->first();
+
+            $arvanFiles = Cache::remember("dr_arvan_tenant_{$site->id}", 300, fn() =>
+                $this->arvan->listFiles("customer-sites/tenant-{$site->id}/database/"));
+
+            $lastRestore = RestoreLog::where('site_id', $site->id)
+                ->where('status', 'success')
+                ->orderByDesc('created_at')
+                ->first();
+
+            $dbHealth = $lastDbBackup
+                ? ($lastDbBackup->completed_at?->lt(now()->subDays(7)) ? 'STALE' : 'OK')
+                : 'MISSING';
+
+            $healthScore = $this->computeTenantHealthScore($site->id, $arvanFiles);
+
+            return [
+                'site'             => ['id' => $site->id, 'name' => $site->name, 'domain' => $site->domain],
+                'last_db_backup'   => $lastDbBackup ? true : false,
+                'last_db_backup_ago' => $lastDbBackup?->completed_at?->diffForHumans() ?? null,
+                'db_health'        => $dbHealth,
+                'arvan_file_count' => count($arvanFiles),
+                'last_restore_ago' => $lastRestore?->created_at?->diffForHumans() ?? null,
+                'health_score'     => $healthScore,
+                'detail_url'       => route('admin.disaster-recovery.center.tenant', $site->id),
+            ];
+        })->values()->all();
+
+        return response()->json(['tenants' => $tenants]);
+    }
+
     // ─── AJAX: Alert Feed (auto-refresh) ─────────────────────────────────────
 
     public function alertFeed(): JsonResponse

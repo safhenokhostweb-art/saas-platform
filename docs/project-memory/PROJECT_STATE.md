@@ -22,7 +22,9 @@
 
 ## Current Phase
 
-**RESTORE_WIZARD_OPERATIONAL (2026-06-26). Phase 1 complete. Full restore wizard implemented, tested, certified, and deployed.**
+**DR_CENTER_OPERATIONAL (2026-06-26). Phase 2 complete. Full DR Center dashboard implemented and deployed.**
+
+**Previous:** RESTORE_WIZARD_OPERATIONAL (2026-06-26). Phase 1 complete.
 
 **Previous:** INSTALLER_ARCHITECTURE_DECISION_COMPLETE (2026-06-26). Architecture-only phase. 5 decision documents produced. Zero code changes. LAUNCH FREEZE still active.
 

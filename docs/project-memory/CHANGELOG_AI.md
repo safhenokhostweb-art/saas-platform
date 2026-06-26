@@ -5,6 +5,76 @@
 
 ---
 
+## 2026-06-26 — DR_CENTER_OPERATIONAL (Phase 2)
+
+**Type:** Feature — saas-platform
+
+**Summary:** پیاده‌سازی کامل مرکز DR (Disaster Recovery Center). داشبورد مانیتورینگ فقط‌خواندنی بکاپ، بازیابی، یکپارچگی Arvan و هشدارها.
+
+**Files created (saas-platform):**
+| File | Description |
+|------|-------------|
+| `app/Http/Controllers/Admin/DrCenterController.php` | 7 methods: index, tenantHealth, backupTimeline, integrityCheck, alertHistory, tenantHealthAjax, alertFeed |
+| `app/Services/Infrastructure/DrIntegrityService.php` | On-demand Arvan integrity check (platform + tenant) |
+| `app/Console/Commands/ScanDrHealthCommand.php` | `dr:scan-health` — hourly health scanner + Slack alerts with 6h dedup |
+| `database/migrations/2026_06_26_100000_create_dr_alert_log_table.php` | Optional in-app alert log table |
+| `resources/views/admin/disaster-recovery/center/index.blade.php` | Main dashboard (5 sections + alert banners) |
+| `resources/views/admin/disaster-recovery/center/partials/platform-health.blade.php` | DB + Storage backup health cards |
+| `resources/views/admin/disaster-recovery/center/partials/restore-monitor.blade.php` | Restore stats + recent events table |
+| `resources/views/admin/disaster-recovery/center/partials/size-chart.blade.php` | Chart.js backup size history (AJAX) |
+| `resources/views/admin/disaster-recovery/center/partials/integrity.blade.php` | On-demand Arvan integrity check (Alpine.js) |
+| `resources/views/admin/disaster-recovery/center/partials/tenant-health.blade.php` | Lazy-loaded tenant health table (Alpine.js) |
+| `resources/views/admin/disaster-recovery/center/partials/alert-feed.blade.php` | Auto-refresh alert feed (60s interval) |
+| `resources/views/admin/disaster-recovery/center/tenant-detail.blade.php` | Per-tenant drill-down with health score |
+| `resources/views/admin/disaster-recovery/center/alerts.blade.php` | Paginated alert history page |
+
+**Files modified (saas-platform):**
+| File | Change |
+|------|--------|
+| `routes/web.php` | Added 7 center routes inside existing disaster-recovery group |
+| `app/Helpers/AdminMenu.php` | Added `dr_center` key to MENU_KEYS, MENU_ROUTES, MENU_ROUTE_PATTERNS, getGroups() |
+| `resources/views/admin/partials/sidebar-icon.blade.php` | Added `dr_center` cloud icon |
+| `app/Console/Kernel.php` | Added `dr:scan-health` hourly schedule |
+
+**Architecture decisions:**
+- No new migrations required for core functionality (all data in existing tables)
+- `dr_alert_log` migration is optional — system degrades to Slack-only without it
+- Arvan calls cached 5 min to avoid excessive API calls
+- Alert dedup via 6h cache key (dr_alert_sent_{ALERT-TYPE})
+- Tenant health table loaded lazily via AJAX (not on page load)
+- Chart.js data fetched via AJAX after page load (non-blocking)
+
+**Production steps required:**
+1. `php artisan migrate` — creates dr_alert_log table (optional but recommended)
+2. `dr:scan-health` runs automatically via scheduler (hourly)
+
+---
+
+## 2026-06-26 — THEME_COLOR_SEPARATION_COMPLETE
+
+**Type:** Feature — customer-site
+
+**Summary:** کامل‌کردن معماری دو-مسیره تم (two-track theme). رنگ داشبورد کاملاً مجزا از رنگ سایت مشتری. مدیریت از یک مکان واحد (`ظاهر و تم`).
+
+**Files changed (customer-site):**
+| File | Change |
+|------|--------|
+| `app/Services/ThemeEngine/TenantThemeResolver.php` | Rewrite — split to `resolveSiteTokens()` + `resolveDashboardTokens()` |
+| `app/Http/Controllers/Admin/ThemeDesignController.php` | Added `activateSitePreset`, `resetSitePreset`, `activateDashboardPreset`, `updateDashboardCustom`; `index()` passes split vars |
+| `routes/web.php` | Added 4 new routes: `site-preset`, `reset-site-preset`, `dashboard-preset`, `dashboard-custom` |
+| `app/Http/Controllers/Admin/SettingController.php` | Removed `AdminSidebarTheme` loop from validation + saving |
+| `resources/views/admin/settings/index.blade.php` | Removed "رنگ نوار کناری" section |
+| `resources/views/partials/customer-admin-sidebar-theme.blade.php` | Removed `:root {}` block — tokens now come exclusively from `theme-engine-tokens` |
+| `resources/views/admin/theme-design/index.blade.php` | Full redesign — two independent sections: "ظاهر پنل مدیریت" + "تم سایت" each with 8 presets + custom mode |
+
+**Architecture:**
+- `dashboard_preset_slug` setting → controls `--admin-sidebar-*` CSS tokens
+- `site_theme_preset_slug` setting → controls `--ui-*`, `--ds-*`, `--tb-*` tokens
+- Both resolved in `TenantThemeResolver::resolveTokens()` → injected via `theme-engine-tokens` partial
+- `custom` dashboard mode → 6 individual color pickers saved as `admin_sidebar_*` settings
+
+---
+
 ## 2026-06-26 — DISASTER_RECOVERY_CENTER_DESIGN_COMPLETE (Phase 2 Design)
 
 **Phase:** PHASE_2_DR_CENTER_DESIGN
