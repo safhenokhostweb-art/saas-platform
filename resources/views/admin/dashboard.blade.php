@@ -7,6 +7,19 @@
 @php
     $modulesCount        = $modulesCount ?? 0;
     $activeLicensesCount = $activeLicensesCount ?? 0;
+    $revenueThisMonth    = $revenueThisMonth ?? 0;
+    $paidInvoicesCount   = $paidInvoicesCount ?? 0;
+    $activeExpiryWarnings = $activeExpiryWarnings ?? collect();
+
+    // Chart bar heights (pure CSS – no CDN)
+    $chartMax = max($customers, $sites, $forms, $modulesCount, $activeLicensesCount, 1);
+    $chartBars = [
+        ['label' => 'مشتری‌ها', 'value' => $customers,        'color' => '#7c3aed'],
+        ['label' => 'سایت‌ها',  'value' => $sites,            'color' => '#0284c7'],
+        ['label' => 'فرم‌ها',   'value' => $forms,             'color' => '#059669'],
+        ['label' => 'ماژول‌ها', 'value' => $modulesCount,      'color' => '#e11d48'],
+        ['label' => 'لایسنس',   'value' => $activeLicensesCount,'color' => '#d97706'],
+    ];
 @endphp
 
 @push('head')
@@ -38,13 +51,25 @@ details>summary{list-style:none;cursor:pointer}
 details>summary::-webkit-details-marker{display:none}
 details[open]>summary .chevron{transform:rotate(180deg)}
 .chevron{transition:transform .2s;display:inline-block}
+
+/* Pure CSS bar chart */
+.css-chart{display:flex;align-items:flex-end;gap:8px;height:130px;padding:0 4px}
+.css-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;gap:4px}
+.css-bar{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .4s ease}
+.css-bar-val{font-size:.7rem;font-weight:700;color:#1e293b;direction:ltr}
+.css-bar-lbl{font-size:.6rem;color:#64748b;text-align:center;white-space:nowrap}
+
+/* Expiry badge */
+.expiry-urgent{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3)}
+.expiry-warning{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}
+.expiry-ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3)}
 </style>
 @endpush
 
-{{-- ── Header compact ── --}}
+{{-- ── Header ── --}}
 <div class="flex items-center justify-between mb-4 px-1">
     <div>
-        <h2 class="text-xl font-bold text-gray-900">خوش آمدید، <span class="bg-gradient-to-l from-indigo-600 to-purple-600 bg-clip-text text-transparent">{{ auth()->user()->name ?? 'مدیر' }}</span></h2>
+        <h2 class="text-xl font-bold text-gray-900">خوش آمدید، <span class="bg-linear-to-l from-indigo-600 to-purple-600 bg-clip-text text-transparent">{{ auth()->user()->name ?? 'مدیر' }}</span></h2>
         <p class="text-gray-400 text-xs mt-0.5">آخرین وضعیت پلتفرم</p>
     </div>
     <div class="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
@@ -99,42 +124,77 @@ details[open]>summary .chevron{transform:rotate(180deg)}
 {{-- ── Two-column middle zone ── --}}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
-    {{-- Chart --}}
+    {{-- Pure CSS bar chart — no CDN needed --}}
     <div class="glass-card-strong rounded-xl p-4">
         <div class="flex items-center gap-2 mb-3">
             <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 text-base">📊</span>
             <span class="font-semibold text-gray-800 text-sm">آمار کلی</span>
         </div>
-        <div style="height:180px">
-            <canvas id="statsChart"></canvas>
+
+        {{-- Bar chart --}}
+        <div class="css-chart mb-3">
+            @foreach($chartBars as $bar)
+            @php $pct = $chartMax > 0 ? round(($bar['value'] / $chartMax) * 100) : 4; $pct = max($pct, 4); @endphp
+            <div class="css-bar-wrap">
+                <div class="css-bar-val">{{ \App\Helpers\NumberHelper::formatFa($bar['value']) }}</div>
+                <div class="css-bar" style="height:{{ $pct }}%;background:{{ $bar['color'] }};opacity:.85"></div>
+                <div class="css-bar-lbl">{{ $bar['label'] }}</div>
+            </div>
+            @endforeach
+        </div>
+
+        {{-- Stats summary row --}}
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-xs text-gray-600">فاکتورهای پرداخت‌شده:</span>
+                <span class="text-xs font-bold text-gray-900">{{ \App\Helpers\NumberHelper::formatFa($paidInvoicesCount) }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                <span class="text-xs text-gray-600">درآمد این ماه:</span>
+                <span class="text-xs font-bold text-gray-900">{{ $revenueThisMonth > 0 ? \App\Helpers\NumberHelper::formatFa(number_format($revenueThisMonth)) . ' ت' : '—' }}</span>
+            </div>
         </div>
     </div>
 
-    {{-- Expiry reminders --}}
-    @if(isset($expiryReminders) && $expiryReminders->isNotEmpty())
+    {{-- Expiry warnings (real-time from Site.host_expires_at etc.) --}}
+    @if($activeExpiryWarnings->isNotEmpty())
     <div class="glass-card-strong rounded-xl p-4 border-r-4 border-r-amber-400">
         <div class="flex items-center gap-2 mb-3">
             <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700 text-base">⚠</span>
             <span class="font-semibold text-gray-800 text-sm">هشدارهای انقضا</span>
-            <span class="ms-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{{ $expiryReminders->count() }}</span>
+            <span class="ms-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">{{ $activeExpiryWarnings->count() }}</span>
         </div>
-        <ul class="space-y-1.5 max-h-40 overflow-y-auto scrollbar-thin">
-            @foreach($expiryReminders as $reminder)
-            <li class="flex items-start gap-2 p-2 rounded-lg bg-amber-50 border border-amber-100">
-                <span class="shrink-0 w-1.5 h-1.5 mt-1.5 rounded-full {{ $reminder->type === 'support' ? 'bg-blue-500' : ($reminder->type === 'host' ? 'bg-purple-500' : 'bg-teal-500') }}"></span>
+        <ul class="space-y-1.5 max-h-44 overflow-y-auto scrollbar-thin">
+            @foreach($activeExpiryWarnings as $warn)
+            @php
+                $daysLeft = $warn->days_left;
+                $urgencyClass = $daysLeft <= 7 ? 'expiry-urgent' : ($daysLeft <= 14 ? 'expiry-warning' : 'expiry-ok');
+                $dotColor     = $daysLeft <= 7 ? 'bg-red-500' : ($daysLeft <= 14 ? 'bg-amber-500' : 'bg-teal-500');
+                $daysText     = $daysLeft === 0 ? 'امروز منقضی می‌شود' : \App\Helpers\NumberHelper::toPersianNumbers($daysLeft) . ' روز مانده';
+                $expDateFa    = \App\Helpers\Jalali::formatFa($warn->expires_at, 'Y/m/d');
+            @endphp
+            <li class="flex items-start gap-2 p-2 rounded-lg {{ $urgencyClass }}">
+                <span class="shrink-0 w-1.5 h-1.5 mt-1.5 rounded-full {{ $dotColor }}"></span>
                 <div class="min-w-0 flex-1">
-                    <span class="text-xs font-medium text-gray-800">{{ \App\Helpers\NumberHelper::toPersianNumbers(Str::limit($reminder->title ?? 'هشدار انقضا', 40)) }}</span>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ $reminder->sent_at ? \App\Helpers\Jalali::formatFa($reminder->sent_at, 'Y/m/d') : '' }}</p>
+                    <span class="text-xs font-semibold text-gray-800">{{ $warn->site->title ?? '—' }}</span>
+                    <span class="text-xs text-gray-500 mx-1">—</span>
+                    <span class="text-xs text-gray-600">{{ $warn->label }}</span>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-xs font-bold {{ $daysLeft <= 7 ? 'text-red-600' : ($daysLeft <= 14 ? 'text-amber-600' : 'text-teal-600') }}">{{ $daysText }}</span>
+                        <span class="text-xs text-gray-400">({{ $expDateFa }})</span>
+                    </div>
                 </div>
-                @if($reminder->site)
-                <a href="{{ route('admin.sites.edit', $reminder->site) }}" class="shrink-0 text-xs text-indigo-600 hover:underline">ویرایش</a>
+                @if($warn->site)
+                <a href="{{ route('admin.sites.edit', $warn->site) }}" class="shrink-0 text-xs text-indigo-600 hover:underline whitespace-nowrap">ویرایش</a>
                 @endif
             </li>
             @endforeach
         </ul>
     </div>
     @else
-    {{-- Guide (fallback when no expiry warnings) --}}
+    {{-- No expiry warnings: show guide inline --}}
     <div class="glass-card-strong rounded-xl p-4">
         @include('admin.dashboard.guide')
     </div>
@@ -263,56 +323,9 @@ details[open]>summary .chevron{transform:rotate(180deg)}
 </details>
 @endif
 
-{{-- ── Guide (when expiry reminders exist, show guide here) ── --}}
-@if(isset($expiryReminders) && $expiryReminders->isNotEmpty())
-<details class="glass-card-strong rounded-xl mb-3 overflow-hidden">
-    <summary class="flex items-center gap-2 px-4 py-3 hover:bg-indigo-50/30 transition">
-        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700 text-base">📖</span>
-        <span class="font-semibold text-gray-800 text-sm flex-1">راهنمای داشبورد</span>
-        <svg class="chevron w-4 h-4 text-gray-400 ms-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-    </summary>
-    <div class="px-4 pb-4">
-        @include('admin.dashboard.guide')
-    </div>
-</details>
-@endif
+{{-- ── Guide — always visible, never in a collapsible ── --}}
+<div class="glass-card-strong rounded-xl p-4 mb-3">
+    @include('admin.dashboard.guide')
+</div>
 
-@endsection
-
-@section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var ctx = document.getElementById('statsChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['مشتری‌ها', 'سایت‌ها', 'فرم‌ها'],
-            datasets: [{
-                label: 'آمار',
-                data: @json([$customers, $sites, $forms]),
-                backgroundColor: ['rgba(124,58,237,.7)', 'rgba(2,132,199,.7)', 'rgba(5,150,105,.7)'],
-                borderColor:     ['rgba(124,58,237,1)', 'rgba(2,132,199,1)', 'rgba(5,150,105,1)'],
-                borderWidth: 2, borderRadius: 6, barPercentage: 0.55
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(255,255,255,.9)', titleColor: '#1e293b',
-                    bodyColor: '#475569', borderColor: 'rgba(226,232,240,1)', borderWidth: 1,
-                    cornerRadius: 8, rtl: true,
-                    titleFont: { family: 'Vazirmatn' }, bodyFont: { family: 'Vazirmatn' }
-                }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(226,232,240,.4)' }, ticks: { font: { family: 'Vazirmatn' }, padding: 4 } },
-                x: { grid: { display: false }, ticks: { font: { family: 'Vazirmatn' } } }
-            }
-        }
-    });
-});
-</script>
 @endsection
