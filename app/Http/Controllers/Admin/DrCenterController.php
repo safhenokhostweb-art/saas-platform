@@ -11,6 +11,7 @@ use App\Services\Infrastructure\RestoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class DrCenterController extends Controller
@@ -68,7 +69,8 @@ class DrCenterController extends Controller
         $restoreStats = $this->computeRestoreStats();
 
         // Recent backup failures
-        $backupFailures = InfraBackupRun::where('status', 'failed')
+        $backupFailures = InfraBackupRun::with('site')
+            ->where('status', 'failed')
             ->orderByDesc('started_at')
             ->limit(10)
             ->get();
@@ -192,7 +194,7 @@ class DrCenterController extends Controller
         $alerts         = collect();
 
         if ($alertLogExists) {
-            $query = \DB::table('dr_alert_log')->orderByDesc('created_at');
+            $query = DB::table('dr_alert_log')->orderByDesc('created_at');
 
             if ($severity = $request->query('severity')) {
                 $query->where('severity', $severity);
@@ -259,7 +261,7 @@ class DrCenterController extends Controller
             return response()->json(['items' => [], 'table_exists' => false]);
         }
 
-        $items = \DB::table('dr_alert_log')
+        $items = DB::table('dr_alert_log')
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
