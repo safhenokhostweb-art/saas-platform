@@ -1,6 +1,6 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-06-25
+> Last Updated: 2026-06-26
 
 ---
 
@@ -22,7 +22,9 @@
 
 ## Current Phase
 
-**PLATFORM_INSTALLER_STEP65_COMPLETE (2026-06-26). Installation Report (HTML+PDF) + POST-INSTALL SNAPSHOT implemented. InstallationReportService generates 30-field reports with PASS/WARNING/FAILED classification. DomPDF (v3.1.2) added for PDF generation. Reports stored permanently in storage/app/installation-reports/. UpgradeAdapter::createInstallationBaseline() creates INITIAL_INSTALLATION_BASELINE snapshot (DB+.env+reports). Download buttons on completion page. Middleware updated to allow complete+download routes when locked.**
+**PLATFORM_INSTALLER_FOUNDATION_FINALIZED (2026-06-26). Installer Foundation upgraded to Enterprise level. New BaselineManifestService: SHA-256 streaming checksums, manifest.json (self-covering), auto-naming (INITIAL never overwritten), full integrity verification, read-only lock. Two-phase baseline: Phase 1 core (DB+.env+meta+manifest), Phase 2 finalize (reports+manifest update+read-only). InstallationReportService enrichWithBaseline() adds 8 new fields (baseline_path, manifest_checksum, snapshot_verification, overall_status, installation_certification, recovery_readiness_score, snapshot_status). Admin Panel: /admin/installer (InstallerAdminController — read-only, no delete/overwrite). Download manifest.json, baseline_meta.json, HTML/PDF reports. On-demand verification via POST /admin/installer/verify with path traversal guard. Admin menu: installer_status key added. 3 certification docs generated.**
+
+**Previous:** PLATFORM_INSTALLER_STEP65_COMPLETE (2026-06-26). Installation Report (HTML+PDF) + POST-INSTALL SNAPSHOT implemented. InstallationReportService generates 30-field reports with PASS/WARNING/FAILED classification. DomPDF (v3.1.2) added for PDF generation. Reports stored permanently in storage/app/installation-reports/. UpgradeAdapter::createInstallationBaseline() creates INITIAL_INSTALLATION_BASELINE snapshot (DB+.env+reports). Download buttons on completion page. Middleware updated to allow complete+download routes when locked.**
 
 **Previous:** PLATFORM_INSTALLER_PHASE1_COMPLETE (2026-06-26). Platform Installer scaffolding complete. 3 installation modes (Fresh/Restore/Upgrade), 7 service classes, 1 controller, 1 middleware, 20 installer views, 9 routes, admin menu entry. Reuses RestoreService, ArvanBackupService, DrReadinessScoreService, SlackAlertService. install.lock security mechanism. Standalone RTL dark mode Persian UI wizard. Architecture: PASS, Security: PASS, Reuse: PASS.**
 

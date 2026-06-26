@@ -5,6 +5,36 @@
 
 ---
 
+## CURRENT STATE (2026-06-26 — PLATFORM_INSTALLER_FOUNDATION_FINALIZED)
+
+**Last completed phase:** PLATFORM_INSTALLER_FOUNDATION_FINALIZED — Enterprise-level installer foundation complete. All 5 tasks: Manifest, Immutable Baselines, Verification, Report Improvement, Admin Panel.
+
+**New files:**
+- `app/Services/Installer/BaselineManifestService.php` — streaming SHA-256, manifest.json self-covering checksum, immutable naming, full integrity verification, read-only lock
+- `app/Http/Controllers/Admin/InstallerAdminController.php` — read-only admin panel controller
+- `resources/views/admin/installer/index.blade.php` — admin dashboard view
+- `docs/INSTALLER_BASELINE_MANIFEST.md` / `INSTALLER_BASELINE_SECURITY.md` / `INSTALLER_BASELINE_CERTIFICATION.md`
+
+**Modified files:**
+- `UpgradeAdapter.php` — Phase 1: `createInstallationBaseline($uuid)` + Phase 2: `addReportsToBaseline()` + `getBaselinesRootPath()`
+- `InstallationReportService.php` — `enrichWithBaseline()` + 8 new report fields + `computeOverallStatus()`
+- `PlatformInstallerController::processFreshFinish()` — 5-phase orchestration flow
+- `installation-report.blade.php` — Baseline Snapshot + Overall Status banner + Certification sections
+- `routes/web.php` — 5 admin installer routes under `admin.installer.*`
+- `AdminMenu.php` + `sidebar-icon.blade.php` — `installer_status` key with shield icon
+
+**Key invariants:**
+- INITIAL_INSTALLATION_BASELINE is NEVER overwritten — subsequent baselines auto-named INSTALLATION_BASELINE_YYYYMMDD_HHMMSS
+- manifest.json covers all baseline files with streaming SHA-256 + manifest self-covering checksum
+- Baselines become read-only (0444/0555) after finalization
+- Admin panel is strictly read-only — no delete, no overwrite, path traversal guard on all download/verify endpoints
+
+**Certification:** INSTALLER_FOUNDATION_ENTERPRISE_CERTIFIED
+
+**Next phase (requires explicit approval):** Restore Engine or Upgrade Engine — DO NOT START without user instruction.
+
+---
+
 ## CURRENT STATE (2026-06-26 — SELECT_DROPDOWN_FIX_DEPLOYED)
 
 **Last completed task:** SELECT_DROPDOWN_FIX — Admin UI `<select>` dropdowns in customer-site settings page now visible and functional.

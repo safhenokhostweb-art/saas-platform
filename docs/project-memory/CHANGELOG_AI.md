@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-06-26 — PLATFORM_INSTALLER_FOUNDATION_FINALIZED
+
+**Type:** Feature — Platform Installer Foundation Enterprise Upgrade
+
+**Summary:** Completed all 5 finalization tasks for the Installation Foundation: Baseline Manifest, Immutable Baselines, Verification Routine, Report Improvement, Admin Access Panel.
+
+**New Files:**
+
+| File | Description |
+|------|-------------|
+| `app/Services/Installer/BaselineManifestService.php` | SHA-256 streaming checksums, manifest.json creation/verification, immutable naming, read-only locking |
+| `app/Http/Controllers/Admin/InstallerAdminController.php` | Read-only admin panel: installation status, baseline info, manifest status, downloads, on-demand verification |
+| `resources/views/admin/installer/index.blade.php` | Admin dashboard: overall status banner, all baseline info, download buttons, JS verify button |
+| `docs/INSTALLER_BASELINE_MANIFEST.md` | Manifest specification |
+| `docs/INSTALLER_BASELINE_SECURITY.md` | Security specification |
+| `docs/INSTALLER_BASELINE_CERTIFICATION.md` | Certification document |
+
+**Modified Files:**
+
+| File | Change |
+|------|--------|
+| `app/Services/Installer/UpgradeAdapter.php` | Injected BaselineManifestService; two-phase flow: `createInstallationBaseline()` + `addReportsToBaseline()`; `getBaselinesRootPath()` helper |
+| `app/Services/Installer/InstallationReportService.php` | Injected BaselineManifestService; `enrichWithBaseline()` method; 8 new report fields; `computeOverallStatus()` |
+| `app/Http/Controllers/Installer/PlatformInstallerController.php` | `processFreshFinish()` rewritten to 5-phase flow |
+| `resources/views/installer/reports/installation-report.blade.php` | Added Baseline Snapshot section, Overall Status banner, manifest checksum in signature |
+| `routes/web.php` | Admin installer routes under `admin.installer.*` (5 routes) |
+| `app/Helpers/AdminMenu.php` | `installer_status` key, route, pattern, Infrastructure group |
+| `resources/views/admin/partials/sidebar-icon.blade.php` | Shield icon for `installer_status` |
+
+**Certification:** `INSTALLER_FOUNDATION_ENTERPRISE_CERTIFIED` — All 5 tasks PASS, all security requirements met.
+
+---
+
 ## 2026-06-26 — SELECT_DROPDOWN_FIX_COMPLETE
 
 **Type:** Bug Fix — customer-site Admin UI — Select/Combobox dropdown options invisible
