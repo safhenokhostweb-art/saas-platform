@@ -226,5 +226,5 @@
    and the hardcoded option colors guarantee text is always visible regardless
    of which theme preset (midnight-dark, royal-purple, etc.) is active.
    ============================================================================ */
-select{color-scheme:light}
-select option{background-color:#ffffff;color:#1e293b;font-family:inherit}
+select{color-scheme:light!important;background-color:#ffffff!important;color:#1e293b!important}
+select option,select optgroup{background-color:#ffffff!important;color:#1e293b!important;font-family:inherit}
