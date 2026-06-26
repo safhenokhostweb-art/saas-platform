@@ -136,15 +136,13 @@
                 {{-- از تاریخ --}}
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">از تاریخ عضویت</label>
-                    <input type="date" x-model="filters.created_from"
-                           class="form-control text-sm">
+                    <x-jalali-datepicker name="created_from" :value="request('created_from', '')" placeholder="از تاریخ" extraClass="form-control text-sm"/>
                 </div>
 
                 {{-- تا تاریخ --}}
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">تا تاریخ عضویت</label>
-                    <input type="date" x-model="filters.created_to"
-                           class="form-control text-sm">
+                    <x-jalali-datepicker name="created_to" :value="request('created_to', '')" placeholder="تا تاریخ" extraClass="form-control text-sm"/>
                 </div>
             </div>
 

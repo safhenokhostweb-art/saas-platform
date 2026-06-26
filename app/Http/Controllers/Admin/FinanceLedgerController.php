@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Jalali;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\FinanceLedgerEntry;
@@ -61,10 +62,12 @@ class FinanceLedgerController extends Controller
             $q->where('gateway', $request->gateway);
         }
         if ($request->filled('date_from')) {
-            $q->where('entry_date', '>=', $request->date_from);
+            $fromCarbon = Jalali::toCarbon($request->date_from);
+            $q->where('entry_date', '>=', $fromCarbon ? $fromCarbon->toDateString() : $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $q->where('entry_date', '<=', $request->date_to);
+            $toCarbon = Jalali::toCarbon($request->date_to);
+            $q->where('entry_date', '<=', $toCarbon ? $toCarbon->toDateString() : $request->date_to);
         }
         if ($request->filled('amount_min')) {
             $q->where('amount', '>=', (int) $request->amount_min);
@@ -108,6 +111,14 @@ class FinanceLedgerController extends Controller
 
     public function store(Request $request)
     {
+        // Convert Jalali entry_date (from jalali-datepicker) to Gregorian before validation
+        if ($request->filled('entry_date')) {
+            $carbon = Jalali::toCarbon($request->entry_date);
+            if ($carbon) {
+                $request->merge(['entry_date' => $carbon->toDateString()]);
+            }
+        }
+
         $validated = $request->validate([
             'type'           => 'required|in:income,expense',
             'category'       => 'required|string|max:50',
@@ -156,6 +167,14 @@ class FinanceLedgerController extends Controller
 
     public function update(Request $request, FinanceLedgerEntry $financeLedgerEntry)
     {
+        // Convert Jalali entry_date (from jalali-datepicker) to Gregorian before validation
+        if ($request->filled('entry_date')) {
+            $carbon = Jalali::toCarbon($request->entry_date);
+            if ($carbon) {
+                $request->merge(['entry_date' => $carbon->toDateString()]);
+            }
+        }
+
         $validated = $request->validate([
             'type'           => 'required|in:income,expense',
             'category'       => 'required|string|max:50',
@@ -195,8 +214,14 @@ class FinanceLedgerController extends Controller
 
         if ($request->filled('type'))      $q->where('type', $request->type);
         if ($request->filled('category'))  $q->where('category', $request->category);
-        if ($request->filled('date_from')) $q->where('entry_date', '>=', $request->date_from);
-        if ($request->filled('date_to'))   $q->where('entry_date', '<=', $request->date_to);
+        if ($request->filled('date_from')) {
+            $fromCarbon = Jalali::toCarbon($request->date_from);
+            $q->where('entry_date', '>=', $fromCarbon ? $fromCarbon->toDateString() : $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $toCarbon = Jalali::toCarbon($request->date_to);
+            $q->where('entry_date', '<=', $toCarbon ? $toCarbon->toDateString() : $request->date_to);
+        }
 
         $entries = $q->with(['site:id,title'])->get();
         $labels  = FinanceLedgerEntry::categoryLabels();
@@ -213,7 +238,7 @@ class FinanceLedgerController extends Controller
 
             foreach ($entries as $e) {
                 fputcsv($handle, [
-                    $e->entry_date?->format('Y-m-d'),
+                    $e->entry_date ? \App\Helpers\Jalali::format($e->entry_date, 'Y/m/d') : '',
                     $e->typeLabel(),
                     $labels[$e->category] ?? $e->category,
                     $e->source === 'automatic' ? 'خودکار' : 'دستی',

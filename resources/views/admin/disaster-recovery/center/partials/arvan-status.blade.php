@@ -36,7 +36,7 @@ $sizeLabel = $totalSizeMb >= 1024
         <div class="space-y-0.5">
             <dt class="text-xs text-gray-500">کل فایل‌ها</dt>
             <dd class="text-lg font-bold text-gray-900">
-                {{ $totalFiles > 0 ? number_format($totalFiles) : '—' }}
+                {{ $totalFiles > 0 ? num_fa($totalFiles) : '—' }}
             </dd>
             @if($dbCount > 0 || $storageCount > 0)
             <dd class="text-xs text-gray-400">DB: {{ $dbCount }} / Storage: {{ $storageCount }}</dd>

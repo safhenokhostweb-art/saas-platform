@@ -23,7 +23,7 @@
             @forelse($plans as $plan)
                 <tr class="border-t hover:bg-gray-50">
                     <td class="p-3 font-medium">{{ $plan->title }}</td>
-                    <td class="p-3">{{ number_format($plan->price) }}</td>
+                    <td class="p-3">@numFa($plan->price)</td>
                     <td class="p-3">{{ $plan->duration_days }}</td>
                     <td class="p-3">
                         @if($plan->has_ticket)

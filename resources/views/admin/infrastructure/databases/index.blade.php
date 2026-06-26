@@ -42,9 +42,9 @@
                     <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $envColors[$db->environment] ?? 'bg-gray-100 text-gray-600' }}">{{ $envLabels[$db->environment] ?? $db->environment }}</span>
                 </td>
                 <td class="py-3 px-4 text-xs text-gray-600">
-                    {{ $db->size_gb !== null ? number_format($db->size_gb, 1) . ' GB' : '—' }}
+                    {{ $db->size_gb !== null ? num_fa($db->size_gb, 1) . ' GB' : '—' }}
                     @if($db->monthly_growth_mb !== null)
-                    <div class="text-gray-400">رشد: {{ $db->monthly_growth_mb >= 0 ? '+' : '' }}{{ number_format($db->monthly_growth_mb) }} MB/ماه</div>
+                    <div class="text-gray-400">رشد: {{ $db->monthly_growth_mb >= 0 ? '+' : '' }}@numFa($db->monthly_growth_mb) MB/ماه</div>
                     @endif
                 </td>
                 <td class="py-3 px-4 text-xs text-gray-600">

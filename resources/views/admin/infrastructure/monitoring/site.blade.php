@@ -256,7 +256,7 @@
                     @endphp
                     <div class="uptime-bar uptime-bar--{{ $cls }}"
                          style="height:{{ $h }}px"
-                         title="{{ $day['date'] }}: {{ $pct !== null ? number_format($pct, 1).'%' : 'بدون داده' }}"></div>
+                         title="{{ $day['date'] }}: {{ $pct !== null ? num_fa($pct, 1).'%' : 'بدون داده' }}"></div>
                 @endforeach
             </div>
             <div class="flex justify-between text-xs text-gray-400 mt-1 px-1">
@@ -286,7 +286,7 @@
                         @endphp
                         <div class="resp-bar resp-bar--{{ $rc }}"
                              style="height:{{ $h2 }}px"
-                             title="{{ $point->checked_at?->format('H:i') }} — {{ number_format($ms2) }}ms"></div>
+                             title="{{ $point->checked_at?->format('H:i') }} — {{ num_fa($ms2) }}ms"></div>
                     @endforeach
                 </div>
                 <div class="flex justify-between text-xs text-gray-400 mt-1 px-1">
@@ -391,7 +391,7 @@
                         @if($h->response_time_ms !== null)
                             @php $rms = $h->response_time_ms; @endphp
                             <span class="font-mono text-xs {{ $rms > 2000 ? 'text-red-600 font-bold' : ($rms > 800 ? 'text-amber-600' : 'text-green-600') }}">
-                                {{ number_format($rms) }}ms
+                                @numFa($rms)ms
                             </span>
                         @else —
                         @endif

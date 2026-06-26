@@ -56,11 +56,11 @@
             @endif
             <span class="flex items-center gap-1.5">
               <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              {{ number_format($theme->installs_count ?? 0) }} نصب
+              @numFa($theme->installs_count ?? 0) نصب
             </span>
             <span class="flex items-center gap-1.5">
               <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-              {{ number_format($meta?->sales_count ?? 0) }} فروش
+              @numFa($meta?->sales_count ?? 0) فروش
             </span>
           </div>
         </div>
@@ -75,7 +75,7 @@
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
           <p class="text-xs text-gray-500 mb-1">یک‌بار خرید</p>
           @if($theme->marketplace_price > 0)
-            <p class="text-xl font-bold text-gray-900">{{ number_format($theme->marketplace_price) }}</p>
+            <p class="text-xl font-bold text-gray-900">@numFa($theme->marketplace_price)</p>
             <p class="text-xs text-gray-400">ریال</p>
           @else
             <p class="text-xl font-bold text-emerald-600">رایگان</p>
@@ -85,7 +85,7 @@
         <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-center {{ $meta?->annual_price ? '' : 'opacity-40' }}">
           <p class="text-xs text-indigo-600 mb-1">سالانه</p>
           @if($meta?->annual_price)
-            <p class="text-xl font-bold text-indigo-700">{{ number_format($meta->annual_price) }}</p>
+            <p class="text-xl font-bold text-indigo-700">@numFa($meta->annual_price)</p>
             <p class="text-xs text-indigo-400">ریال / سال</p>
           @else
             <p class="text-sm text-gray-400">تنظیم نشده</p>
@@ -95,7 +95,7 @@
         <div class="bg-violet-50 border border-violet-200 rounded-xl p-4 text-center {{ $meta?->lifetime_price ? '' : 'opacity-40' }}">
           <p class="text-xs text-violet-600 mb-1">مادام‌العمر</p>
           @if($meta?->lifetime_price)
-            <p class="text-xl font-bold text-violet-700">{{ number_format($meta->lifetime_price) }}</p>
+            <p class="text-xl font-bold text-violet-700">@numFa($meta->lifetime_price)</p>
             <p class="text-xs text-violet-400">ریال</p>
           @else
             <p class="text-sm text-gray-400">تنظیم نشده</p>

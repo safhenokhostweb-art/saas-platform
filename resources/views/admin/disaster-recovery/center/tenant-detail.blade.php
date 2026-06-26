@@ -64,7 +64,7 @@
                     <span class="font-mono text-gray-700 truncate">{{ $file['filename'] }}</span>
                     <div class="flex items-center gap-3 shrink-0">
                         @if($file['size'])
-                        <span class="text-gray-500">{{ number_format($file['size'] / 1048576, 1) }} MB</span>
+                        <span class="text-gray-500">{{ num_fa($file['size'] / 1048576, 1) }} MB</span>
                         @endif
                         @if($file['last_modified'])
                         <span class="text-gray-400">{{ \Carbon\Carbon::createFromTimestamp($file['last_modified'])->diffForHumans() }}</span>
@@ -88,7 +88,7 @@
                 <div class="px-5 py-2.5 flex items-center justify-between text-xs">
                     <span class="font-mono text-gray-700 truncate">{{ $file['filename'] }}</span>
                     @if($file['size'])
-                    <span class="text-gray-500 shrink-0">{{ number_format($file['size'] / 1048576, 1) }} MB</span>
+                    <span class="text-gray-500 shrink-0">{{ num_fa($file['size'] / 1048576, 1) }} MB</span>
                     @endif
                 </div>
                 @endforeach
@@ -126,7 +126,7 @@
                                 {{ $run->isSuccess() ? 'موفق' : 'ناموفق' }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $run->file_size_mb ? number_format($run->file_size_mb, 1) . ' MB' : '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $run->file_size_mb ? num_fa($run->file_size_mb, 1) . ' MB' : '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $run->duration_seconds ? $run->duration_seconds . 's' : '—' }}</td>
                         <td class="px-4 py-3 text-gray-400">{{ $run->started_at?->diffForHumans() }}</td>
                     </tr>

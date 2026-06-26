@@ -90,22 +90,22 @@
 <div class="nc-grid-4 mb-6">
     <div class="nc-stat nc-stat--indigo">
         <div class="nc-stat__label">کل امروز</div>
-        <div class="nc-stat__value">{{ number_format($stats['total_today']) }}</div>
-        <div class="nc-stat__sub">{{ number_format($stats['total_all_time']) }} در کل</div>
+        <div class="nc-stat__value">@numFa($stats['total_today'])</div>
+        <div class="nc-stat__sub">@numFa($stats['total_all_time']) در کل</div>
     </div>
     <div class="nc-stat {{ $stats['unread'] > 0 ? 'nc-stat--amber' : 'nc-stat--green' }}">
         <div class="nc-stat__label">خوانده‌نشده</div>
-        <div class="nc-stat__value">{{ number_format($stats['unread']) }}</div>
+        <div class="nc-stat__value">@numFa($stats['unread'])</div>
         <div class="nc-stat__sub">نیازمند توجه</div>
     </div>
     <div class="nc-stat {{ $stats['critical_open'] > 0 ? 'nc-stat--red' : 'nc-stat--green' }}">
         <div class="nc-stat__label">بحرانی باز</div>
-        <div class="nc-stat__value">{{ number_format($stats['critical_open']) }}</div>
+        <div class="nc-stat__value">@numFa($stats['critical_open'])</div>
         <div class="nc-stat__sub">اولویت فوری</div>
     </div>
     <div class="nc-stat nc-stat--green">
         <div class="nc-stat__label">پیامک امروز</div>
-        <div class="nc-stat__value">{{ number_format($stats['sms_sent_today']) }}</div>
+        <div class="nc-stat__value">@numFa($stats['sms_sent_today'])</div>
         <div class="nc-stat__sub">SMS ارسال‌شده</div>
     </div>
 </div>

@@ -85,8 +85,7 @@
             {{-- Date --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">تاریخ تراکنش</label>
-                <input type="date" name="entry_date" value="{{ old('entry_date', $entry->entry_date?->format('Y-m-d')) }}"
-                       class="w-full rounded-lg border-gray-200 text-sm px-3 py-2 focus:ring-indigo-300 focus:border-indigo-400">
+                <x-jalali-datepicker name="entry_date" :value="old('entry_date', $entry->entry_date ? \App\Services\PersianFormatter::date($entry->entry_date, 'Y/m/d') : '')" placeholder="۱۴۰۵/۰۱/۰۱" extraClass="w-full rounded-lg border-gray-200 text-sm focus:ring-indigo-300 focus:border-indigo-400"/>
             </div>
 
             <div class="grid grid-cols-2 gap-4">

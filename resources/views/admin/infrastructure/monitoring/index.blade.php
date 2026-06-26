@@ -300,7 +300,7 @@
                     @endphp
                     <div class="chart-bar {{ $cls }}"
                          style="height:{{ $h }}px"
-                         title="{{ $point->hour }} — {{ number_format($point->avg_ms) }}ms"></div>
+                         title="{{ $point->hour }} — {{ num_fa($point->avg_ms) }}ms"></div>
                 @endforeach
             </div>
             <div class="flex justify-between text-xs text-gray-400 mt-1 px-1">
@@ -511,7 +511,7 @@
                         @if($log->response_time_ms !== null)
                             @php $ms = $log->response_time_ms; @endphp
                             <span class="col-ms {{ $ms > 2000 ? 'text-red-600 font-bold' : ($ms > 800 ? 'text-amber-600' : 'text-green-600') }}">
-                                {{ number_format($ms) }}ms
+                                @numFa($ms)ms
                             </span>
                         @else
                             <span class="text-gray-400">—</span>

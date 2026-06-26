@@ -43,7 +43,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-2xl font-bold text-emerald-700">{{ number_format($kpis['today_income']) }}</p>
+            <p class="text-2xl font-bold text-emerald-700">@numFa($kpis['today_income'])</p>
             <p class="text-xs text-gray-400 mt-1">ریال</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -55,7 +55,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-2xl font-bold text-red-600">{{ number_format($kpis['today_expense']) }}</p>
+            <p class="text-2xl font-bold text-red-600">@numFa($kpis['today_expense'])</p>
             <p class="text-xs text-gray-400 mt-1">ریال</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -67,7 +67,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-2xl font-bold {{ $todayProfit >= 0 ? 'text-blue-700' : 'text-orange-600' }}">{{ number_format($todayProfit) }}</p>
+            <p class="text-2xl font-bold {{ $todayProfit >= 0 ? 'text-blue-700' : 'text-orange-600' }}">@numFa($todayProfit)</p>
             <p class="text-xs text-gray-400 mt-1">ریال</p>
         </div>
     </div>
@@ -81,7 +81,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                 </svg>
             </div>
-            <p class="text-3xl font-bold">{{ number_format($kpis['month_income']) }}</p>
+            <p class="text-3xl font-bold">@numFa($kpis['month_income'])</p>
             <p class="text-xs text-emerald-200 mt-1">ریال</p>
         </div>
         <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-sm p-5 text-white">
@@ -91,7 +91,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
                 </svg>
             </div>
-            <p class="text-3xl font-bold">{{ number_format($kpis['month_expense']) }}</p>
+            <p class="text-3xl font-bold">@numFa($kpis['month_expense'])</p>
             <p class="text-xs text-red-200 mt-1">ریال</p>
         </div>
         <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-sm p-5 text-white">
@@ -101,7 +101,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                 </svg>
             </div>
-            <p class="text-3xl font-bold">{{ number_format($kpis['month_profit']) }}</p>
+            <p class="text-3xl font-bold">@numFa($kpis['month_profit'])</p>
             <p class="text-xs text-indigo-200 mt-1">ریال</p>
         </div>
     </div>
@@ -110,15 +110,15 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <p class="text-xs text-gray-500 mb-1">درآمد امسال</p>
-            <p class="text-xl font-bold text-emerald-700">{{ number_format($kpis['year_income']) }} <span class="text-xs text-gray-400">ریال</span></p>
+            <p class="text-xl font-bold text-emerald-700">@numFa($kpis['year_income']) <span class="text-xs text-gray-400">ریال</span></p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <p class="text-xs text-gray-500 mb-1">هزینه امسال</p>
-            <p class="text-xl font-bold text-red-600">{{ number_format($kpis['year_expense']) }} <span class="text-xs text-gray-400">ریال</span></p>
+            <p class="text-xl font-bold text-red-600">@numFa($kpis['year_expense']) <span class="text-xs text-gray-400">ریال</span></p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <p class="text-xs text-gray-500 mb-1">سود خالص امسال</p>
-            <p class="text-xl font-bold {{ $kpis['year_profit'] >= 0 ? 'text-indigo-700' : 'text-orange-600' }}">{{ number_format($kpis['year_profit']) }} <span class="text-xs text-gray-400">ریال</span></p>
+            <p class="text-xl font-bold {{ $kpis['year_profit'] >= 0 ? 'text-indigo-700' : 'text-orange-600' }}">@numFa($kpis['year_profit']) <span class="text-xs text-gray-400">ریال</span></p>
         </div>
     </div>
 
@@ -139,7 +139,7 @@
                 <div>
                     <div class="flex justify-between text-xs text-gray-500 mb-1">
                         <span>{{ $m['label'] }}</span>
-                        <span>درآمد: {{ number_format($m['income']) }} | هزینه: {{ number_format($m['expense']) }}</span>
+                        <span>درآمد: @numFa($m['income']) | هزینه: @numFa($m['expense'])</span>
                     </div>
                     <div class="flex gap-1 h-3">
                         <div class="bg-emerald-400 rounded-sm" style="width: {{ round($m['income'] / $maxVal * 100) }}%"></div>
@@ -173,7 +173,7 @@
                 <div>
                     <div class="flex justify-between text-xs mb-1">
                         <span class="text-gray-700">{{ $item['label'] }}</span>
-                        <span class="text-emerald-700 font-medium">{{ number_format($item['total']) }}</span>
+                        <span class="text-emerald-700 font-medium">@numFa($item['total'])</span>
                     </div>
                     <div class="w-full bg-gray-100 rounded-full h-1.5">
                         <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ round($item['total'] / $maxIncome * 100) }}%"></div>
@@ -206,7 +206,7 @@
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-gray-800 truncate">{{ $site['site'] }}</p>
                     </div>
-                    <span class="text-sm font-bold text-emerald-700 shrink-0">{{ number_format($site['total']) }}</span>
+                    <span class="text-sm font-bold text-emerald-700 shrink-0">@numFa($site['total'])</span>
                 </div>
                 @endforeach
             </div>
@@ -230,7 +230,7 @@
                 <div>
                     <div class="flex justify-between text-xs mb-1">
                         <span class="text-gray-700">{{ $item['label'] }}</span>
-                        <span class="text-red-600 font-medium">{{ number_format($item['total']) }}</span>
+                        <span class="text-red-600 font-medium">@numFa($item['total'])</span>
                     </div>
                     <div class="w-full bg-gray-100 rounded-full h-1.5">
                         <div class="bg-red-400 h-1.5 rounded-full" style="width: {{ round($item['total'] / $maxExp * 100) }}%"></div>
@@ -268,7 +268,7 @@
                 <tbody class="divide-y divide-gray-50">
                     @forelse($recent as $e)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $e->entry_date?->format('Y-m-d') }}</td>
+                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">@dateFa($e->entry_date)</td>
                         <td class="px-4 py-3">
                             @if($e->isIncome())
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">درآمد</span>
@@ -278,7 +278,7 @@
                         </td>
                         <td class="px-4 py-3 text-gray-700">{{ $e->categoryLabel() }}</td>
                         <td class="px-4 py-3 text-gray-600 max-w-xs truncate">{{ $e->description }}</td>
-                        <td class="px-4 py-3 font-semibold {{ $e->isIncome() ? 'text-emerald-700' : 'text-red-600' }}">{{ number_format($e->amount) }}</td>
+                        <td class="px-4 py-3 font-semibold {{ $e->isIncome() ? 'text-emerald-700' : 'text-red-600' }}">@numFa($e->amount)</td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $e->isAutomatic() ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }}">
                                 {{ $e->isAutomatic() ? 'خودکار' : 'دستی' }}

@@ -54,7 +54,7 @@
         </div>
         <div>
             <p class="text-sm text-gray-500">درآمد کل از باندل‌ها</p>
-            <p class="text-2xl font-bold text-gray-900">{{ number_format($totalRevenue) }} <span class="text-sm font-normal text-gray-500">ریال</span></p>
+            <p class="text-2xl font-bold text-gray-900">@numFa($totalRevenue) <span class="text-sm font-normal text-gray-500">ریال</span></p>
         </div>
     </div>
 
@@ -134,13 +134,13 @@
                                     @if($bundle->price === 0)
                                         رایگان
                                     @else
-                                        {{ number_format($bundle->price) }} ریال
+                                        @numFa($bundle->price) ریال
                                     @endif
                                 </p>
                             </div>
                             <div class="text-left text-xs text-gray-400 space-y-0.5">
                                 <p>{{ $salesCount }} فروش</p>
-                                <p>{{ number_format($revenue) }} ریال</p>
+                                <p>@numFa($revenue) ریال</p>
                             </div>
                         </div>
 

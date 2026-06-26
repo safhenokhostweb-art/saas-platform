@@ -32,7 +32,7 @@
                     @else {{ $product->type }}
                     @endif
                 </td>
-                <td class='px-4 py-2 border border-gray-200'>{{ number_format($product->price_irr) }}</td>
+                <td class='px-4 py-2 border border-gray-200'>@numFa($product->price_irr)</td>
                 <td class='px-4 py-2 border border-gray-200'>
                     @if($product->is_active)
                         <span class='text-green-600 font-medium'>فعال</span>

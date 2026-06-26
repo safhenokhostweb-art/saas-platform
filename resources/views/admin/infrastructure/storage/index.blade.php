@@ -20,7 +20,7 @@
 <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
     <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium text-gray-600">مصرف کل</span>
-        <span class="text-sm text-gray-500">{{ number_format($totalUsedGb) }} / {{ number_format($totalCapacityGb) }} GB</span>
+        <span class="text-sm text-gray-500">@numFa($totalUsedGb) / @numFa($totalCapacityGb) GB</span>
     </div>
     <div class="h-3 rounded-full bg-gray-100 overflow-hidden">
         @php $overallPercent = $totalCapacityGb ? round(($totalUsedGb / $totalCapacityGb) * 100) : 0; @endphp
@@ -59,7 +59,7 @@
                 </td>
                 <td class="py-3 px-4">
                     @if($p->capacity_gb)
-                    <div class="text-xs font-medium text-gray-700">{{ number_format($p->used_gb ?? 0) }} / {{ number_format($p->capacity_gb) }} GB</div>
+                    <div class="text-xs font-medium text-gray-700">@numFa($p->used_gb ?? 0) / @numFa($p->capacity_gb) GB</div>
                     @if($usagePct !== null)
                     <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden mt-1 w-24">
                         <div class="h-full rounded-full {{ $usagePct >= 90 ? 'bg-red-500' : ($usagePct >= 70 ? 'bg-amber-500' : 'bg-emerald-500') }}"
@@ -72,7 +72,7 @@
                     @endif
                 </td>
                 <td class="py-3 px-4 text-xs text-gray-600">
-                    {{ $p->monthly_growth_gb !== null ? (($p->monthly_growth_gb >= 0 ? '+' : '') . number_format($p->monthly_growth_gb) . ' GB') : '—' }}
+                    {{ $p->monthly_growth_gb !== null ? (($p->monthly_growth_gb >= 0 ? '+' : '') . num_fa($p->monthly_growth_gb) . ' GB') : '—' }}
                 </td>
                 <td class="py-3 px-4">
                     @if($p->disk_name)

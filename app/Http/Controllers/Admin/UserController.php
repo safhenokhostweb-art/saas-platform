@@ -47,6 +47,14 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $filters = $request->only(['mobile', 'name', 'status', 'role', 'group_id', 'tag_id', 'two_factor', 'created_from', 'created_to', 'trashed']);
+        if (!empty($filters['created_from'])) {
+            $c = Jalali::toCarbon($filters['created_from']);
+            if ($c) $filters['created_from'] = $c->toDateString();
+        }
+        if (!empty($filters['created_to'])) {
+            $c = Jalali::toCarbon($filters['created_to']);
+            if ($c) $filters['created_to'] = $c->toDateString();
+        }
         $sortBy  = $request->get('sort', 'created_at');
         $sortDir = $request->get('direction', 'desc');
         $perPage = max(10, min(100, (int) $request->get('perPage', 25)));

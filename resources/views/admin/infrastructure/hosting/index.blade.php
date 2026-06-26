@@ -47,7 +47,7 @@
                     @if(!$h->cpu_cores_allocated && !$h->ram_gb_allocated)— @endif
                 </td>
                 <td class="py-3 px-4 text-sm font-semibold text-gray-700">
-                    {{ $h->monthly_cost ? number_format($h->monthly_cost) . ' ' . $h->currency : '—' }}
+                    {{ $h->monthly_cost ? num_fa($h->monthly_cost) . ' ' . $h->currency : '—' }}
                 </td>
                 <td class="py-3 px-4 text-xs">
                     @if($h->next_renewal_at)

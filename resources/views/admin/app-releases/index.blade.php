@@ -24,7 +24,7 @@
     <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
         <div class="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-xl">⬇️</div>
         <div>
-            <p class="text-2xl font-bold text-gray-800">{{ number_format($stats['downloads']) }}</p>
+            <p class="text-2xl font-bold text-gray-800">@numFa($stats['downloads'])</p>
             <p class="text-sm text-gray-500">کل دانلودها</p>
         </div>
     </div>
@@ -78,7 +78,7 @@
         @if($latest)
             <div class="text-xs text-gray-500 space-y-1">
                 <div class="flex justify-between"><span>حجم فایل:</span><span class="font-medium text-gray-700">{{ $latest->size_label }}</span></div>
-                <div class="flex justify-between"><span>دانلود:</span><span class="font-medium text-gray-700">{{ number_format($latest->download_count) }} بار</span></div>
+                <div class="flex justify-between"><span>دانلود:</span><span class="font-medium text-gray-700">@numFa($latest->download_count) بار</span></div>
                 <div class="flex justify-between"><span>آپلود:</span><span class="font-medium text-gray-700">{{ \App\Helpers\Jalali::diffForHumansFa($latest->created_at) }}</span></div>
             </div>
             <a href="{{ route('admin.app-releases.download', $latest) }}"
@@ -150,7 +150,7 @@
                         <td class="px-5 py-3">
                             <span class="inline-flex items-center gap-1 text-gray-600">
                                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                {{ number_format($release->download_count) }}
+                                @numFa($release->download_count)
                             </span>
                         </td>
                         <td class="px-5 py-3 text-gray-500">{{ $release->uploader?->name ?? '—' }}</td>

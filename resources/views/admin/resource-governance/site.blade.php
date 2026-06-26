@@ -76,7 +76,7 @@
         <p class="text-xs text-gray-500 mb-2">آرشیو</p>
         <p class="text-2xl font-bold text-gray-900">{{ $usage->formattedArchive() }}</p>
         <p class="text-xs text-gray-400 mt-2">
-          {{ $usage->file_count > 0 ? number_format($usage->file_count) . ' فایل' : 'بدون فایل' }}
+          {{ $usage->file_count > 0 ? num_fa($usage->file_count) . ' فایل' : 'بدون فایل' }}
         </p>
       </div>
     </div>
@@ -122,12 +122,12 @@
         @foreach($overageFees as $item)
           <div class="flex justify-between items-center text-sm py-2 border-b border-gray-100 last:border-0">
             <span class="text-gray-700">{{ $item['label'] }}</span>
-            <span class="font-semibold text-red-600">{{ number_format($item['amount']) }} ریال</span>
+            <span class="font-semibold text-red-600">@numFa($item['amount']) ریال</span>
           </div>
         @endforeach
         <div class="flex justify-between items-center text-sm font-bold pt-2">
           <span class="text-gray-900">جمع کل</span>
-          <span class="text-red-700">{{ number_format(array_sum(array_column($overageFees, 'amount'))) }} ریال</span>
+          <span class="text-red-700">{{ num_fa(array_sum(array_column($overageFees, 'amount'))) }} ریال</span>
         </div>
       </div>
     </div>
@@ -302,7 +302,7 @@
                 <td class="px-4 py-2 text-center text-gray-600">{{ \App\Models\SiteResourceUsage::formatBytes($snap->db_bytes) }}</td>
                 <td class="px-4 py-2 text-center text-gray-600">{{ \App\Models\SiteResourceUsage::formatBytes($snap->backup_bytes) }}</td>
                 <td class="px-4 py-2 text-center text-gray-600">{{ \App\Models\SiteResourceUsage::formatBytes($snap->archive_bytes) }}</td>
-                <td class="px-4 py-2 text-center text-gray-600">{{ number_format($snap->file_count) }}</td>
+                <td class="px-4 py-2 text-center text-gray-600">@numFa($snap->file_count)</td>
               </tr>
             @endforeach
           </tbody>

@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-06-26 — DISASTER_RECOVERY_CENTER_ENTERPRISE_READY (Phase 2 Completion)
+
+**Type:** Feature — saas-platform
+
+**Summary:** اضافه کردن ۴ ویژگی Enterprise به مرکز DR: امتیاز آمادگی بازیابی ۱۰ مؤلفه‌ای، سن بکاپ جلالی، تاریخچه شبیه‌سازی غیرمخرب، وضعیت Arvan با NOT AVAILABLE واقعی.
+
+**Files created:**
+| File | Description |
+|------|-------------|
+| `database/migrations/2026_06_26_200000_create_dr_simulations_table.php` | Simulation history table |
+| `app/Models/Infrastructure/DrSimulation.php` | Simulation model with isPass() and durationForHumans() |
+| `app/Services/Infrastructure/DrReadinessScoreService.php` | 10-component weighted readiness score (100 pts) |
+| `resources/views/.../readiness-score.blade.php` | Ring gauge + component bars + Alpine simulation runner |
+| `resources/views/.../arvan-status.blade.php` | Arvan storage status panel with NOT AVAILABLE labels |
+| `resources/views/.../simulation-history.blade.php` | Paginated simulation history |
+| `docs/DR_CENTER_PHASE2_COMPLETION.md` | Feature delivery doc |
+| `docs/DR_CENTER_FINAL_CERTIFICATION.md` | Enterprise certification |
+
+**Files modified:**
+| File | Change |
+|------|--------|
+| `app/Http/Controllers/Admin/DrCenterController.php` | Added readinessScore, simulationIndex, runSimulation, arvanDetail, buildArvanDetailStatus |
+| `routes/web.php` | Added simulations + simulations.run routes |
+| `resources/views/.../index.blade.php` | Readiness score section 0, Arvan status section 5 |
+| `resources/views/.../platform-health.blade.php` | Jalali backup age (dbAge, storageAge) |
+
+**Impact:** DR Center is now ENTERPRISE_READY. Readiness score calculated live, backup age in Persian, every simulation auditable, Arvan status fully transparent.
+
+---
+
 ## 2026-06-26 — DR_CENTER_OPERATIONAL (Phase 2)
 
 **Type:** Feature — saas-platform

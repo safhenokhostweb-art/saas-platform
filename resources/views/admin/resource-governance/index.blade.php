@@ -159,7 +159,7 @@
                   @endif
                 </td>
                 <td class="px-4 py-3 text-center text-gray-700">{{ $usage->formattedBandwidth() }}</td>
-                <td class="px-4 py-3 text-center text-gray-700">{{ number_format($usage->file_count) }}</td>
+                <td class="px-4 py-3 text-center text-gray-700">@numFa($usage->file_count)</td>
                 <td class="px-4 py-3 text-center text-xs text-gray-400">
                   @if($usage->calculated_at)
                     {{ \App\Helpers\Jalali::diffForHumansFa($usage->calculated_at) }}

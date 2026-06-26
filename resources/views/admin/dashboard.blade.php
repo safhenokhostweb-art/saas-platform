@@ -121,86 +121,106 @@ details[open]>summary .chevron{transform:rotate(180deg)}
     </a>
 </div>
 
-{{-- ── Two-column middle zone ── --}}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-
-    {{-- Pure CSS bar chart — no CDN needed --}}
-    <div class="glass-card-strong rounded-xl p-4">
-        <div class="flex items-center gap-2 mb-3">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 text-base">📊</span>
-            <span class="font-semibold text-gray-800 text-sm">آمار کلی</span>
-        </div>
-
-        {{-- Bar chart --}}
-        <div class="css-chart mb-3">
-            @foreach($chartBars as $bar)
-            @php $pct = $chartMax > 0 ? round(($bar['value'] / $chartMax) * 100) : 4; $pct = max($pct, 4); @endphp
-            <div class="css-bar-wrap">
-                <div class="css-bar-val">{{ \App\Helpers\NumberHelper::formatFa($bar['value']) }}</div>
-                <div class="css-bar" style="height:{{ $pct }}%;background:{{ $bar['color'] }};opacity:.85"></div>
-                <div class="css-bar-lbl">{{ $bar['label'] }}</div>
-            </div>
-            @endforeach
-        </div>
-
-        {{-- Stats summary row --}}
-        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
-            <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-                <span class="text-xs text-gray-600">فاکتورهای پرداخت‌شده:</span>
-                <span class="text-xs font-bold text-gray-900">{{ \App\Helpers\NumberHelper::formatFa($paidInvoicesCount) }}</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-                <span class="text-xs text-gray-600">درآمد این ماه:</span>
-                <span class="text-xs font-bold text-gray-900">{{ $revenueThisMonth > 0 ? \App\Helpers\NumberHelper::formatFa(number_format($revenueThisMonth)) . ' ت' : '—' }}</span>
-            </div>
-        </div>
+{{-- ── Chart (full-width, pure inline-style bars — zero CDN dependency) ── --}}
+<div class="glass-card-strong rounded-xl p-4 mb-4">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 text-base">📊</span>
+        <span class="font-semibold text-gray-800 text-sm">آمار کلی</span>
+        <span class="ms-auto text-xs text-gray-400">{{ \App\Helpers\Jalali::formatFa(now(), 'Y/m/d') }}</span>
     </div>
 
-    {{-- Expiry warnings (real-time from Site.host_expires_at etc.) --}}
-    @if($activeExpiryWarnings->isNotEmpty())
-    <div class="glass-card-strong rounded-xl p-4 border-r-4 border-r-amber-400">
-        <div class="flex items-center gap-2 mb-3">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700 text-base">⚠</span>
-            <span class="font-semibold text-gray-800 text-sm">هشدارهای انقضا</span>
-            <span class="ms-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">{{ $activeExpiryWarnings->count() }}</span>
-        </div>
-        <ul class="space-y-1.5 max-h-44 overflow-y-auto scrollbar-thin">
-            @foreach($activeExpiryWarnings as $warn)
-            @php
-                $daysLeft = $warn->days_left;
-                $urgencyClass = $daysLeft <= 7 ? 'expiry-urgent' : ($daysLeft <= 14 ? 'expiry-warning' : 'expiry-ok');
-                $dotColor     = $daysLeft <= 7 ? 'bg-red-500' : ($daysLeft <= 14 ? 'bg-amber-500' : 'bg-teal-500');
-                $daysText     = $daysLeft === 0 ? 'امروز منقضی می‌شود' : \App\Helpers\NumberHelper::toPersianNumbers($daysLeft) . ' روز مانده';
-                $expDateFa    = \App\Helpers\Jalali::formatFa($warn->expires_at, 'Y/m/d');
-            @endphp
-            <li class="flex items-start gap-2 p-2 rounded-lg {{ $urgencyClass }}">
-                <span class="shrink-0 w-1.5 h-1.5 mt-1.5 rounded-full {{ $dotColor }}"></span>
-                <div class="min-w-0 flex-1">
-                    <span class="text-xs font-semibold text-gray-800">{{ $warn->site->title ?? '—' }}</span>
-                    <span class="text-xs text-gray-500 mx-1">—</span>
-                    <span class="text-xs text-gray-600">{{ $warn->label }}</span>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        <span class="text-xs font-bold {{ $daysLeft <= 7 ? 'text-red-600' : ($daysLeft <= 14 ? 'text-amber-600' : 'text-teal-600') }}">{{ $daysText }}</span>
-                        <span class="text-xs text-gray-400">({{ $expDateFa }})</span>
-                    </div>
-                </div>
-                @if($warn->site)
-                <a href="{{ route('admin.sites.edit', $warn->site) }}" class="shrink-0 text-xs text-indigo-600 hover:underline whitespace-nowrap">ویرایش</a>
-                @endif
-            </li>
-            @endforeach
-        </ul>
-    </div>
-    @else
-    {{-- No expiry warnings: show guide inline --}}
-    <div class="glass-card-strong rounded-xl p-4">
-        @include('admin.dashboard.guide')
-    </div>
-    @endif
+    @php
+        $barHeightMax = 90; // max bar height in px
+        $chartBarsData = [
+            ['label' => 'مشتری‌ها', 'value' => $customers,         'color' => '#7c3aed'],
+            ['label' => 'سایت‌ها',  'value' => $sites,             'color' => '#0284c7'],
+            ['label' => 'فرم‌ها',   'value' => $forms,              'color' => '#059669'],
+            ['label' => 'ماژول‌ها', 'value' => $modulesCount,       'color' => '#e11d48'],
+            ['label' => 'لایسنس',   'value' => $activeLicensesCount,'color' => '#d97706'],
+        ];
+        $maxVal = max(array_column($chartBarsData, 'value'));
+        $maxVal = max($maxVal, 1);
+    @endphp
 
+    {{-- Value labels row --}}
+    <div style="display:flex;gap:12px;margin-bottom:6px;padding:0 4px">
+        @foreach($chartBarsData as $bar)
+        <div style="flex:1;text-align:center;font-size:.75rem;font-weight:800;color:#1e293b;font-family:Vazirmatn,sans-serif">
+            {{ \App\Helpers\NumberHelper::formatFa($bar['value']) }}
+        </div>
+        @endforeach
+    </div>
+
+    {{-- Bar columns — pixel heights, no percentage --}}
+    <div style="display:flex;gap:12px;align-items:flex-end;height:{{ $barHeightMax }}px;padding:0 4px;margin-bottom:6px">
+        @foreach($chartBarsData as $bar)
+        @php $px = max(4, (int) round(($bar['value'] / $maxVal) * $barHeightMax)); @endphp
+        <div style="flex:1;height:{{ $px }}px;background:{{ $bar['color'] }};border-radius:5px 5px 0 0;opacity:.88;transition:height .4s ease"></div>
+        @endforeach
+    </div>
+
+    {{-- Label row --}}
+    <div style="display:flex;gap:12px;padding:0 4px;border-top:1px solid #f1f5f9;padding-top:6px">
+        @foreach($chartBarsData as $bar)
+        <div style="flex:1;text-align:center;font-size:.65rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Vazirmatn,sans-serif">
+            {{ $bar['label'] }}
+        </div>
+        @endforeach
+    </div>
+
+    {{-- Summary stats --}}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:.72rem">
+            <span style="width:8px;height:8px;border-radius:50%;background:#059669;flex-shrink:0"></span>
+            <span style="color:#64748b">فاکتور پرداخت‌شده:</span>
+            <span style="font-weight:700;color:#1e293b">{{ \App\Helpers\NumberHelper::formatFa($paidInvoicesCount) }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:.72rem">
+            <span style="width:8px;height:8px;border-radius:50%;background:#d97706;flex-shrink:0"></span>
+            <span style="color:#64748b">درآمد این ماه:</span>
+            <span style="font-weight:700;color:#1e293b">{{ $revenueThisMonth > 0 ? num_fa($revenueThisMonth) . ' ت' : '—' }}</span>
+        </div>
+    </div>
 </div>
+
+{{-- ── Expiry warnings (real-time from Site.host_expires_at) ── --}}
+@if($activeExpiryWarnings->isNotEmpty())
+<div class="glass-card-strong rounded-xl p-4 mb-4 border-r-4 border-r-amber-400">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700 text-base">⚠</span>
+        <span class="font-semibold text-gray-800 text-sm">هشدارهای انقضا</span>
+        <span class="ms-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">{{ $activeExpiryWarnings->count() }}</span>
+    </div>
+    <ul class="space-y-1.5 max-h-44 overflow-y-auto scrollbar-thin">
+        @foreach($activeExpiryWarnings as $warn)
+        @php
+            $daysLeft     = $warn->days_left;
+            $urgencyBg    = $daysLeft <= 7 ? 'rgba(239,68,68,.1)' : ($daysLeft <= 14 ? 'rgba(245,158,11,.1)' : 'rgba(16,185,129,.1)');
+            $urgencyBdr   = $daysLeft <= 7 ? 'rgba(239,68,68,.3)' : ($daysLeft <= 14 ? 'rgba(245,158,11,.3)' : 'rgba(16,185,129,.3)');
+            $dotBg        = $daysLeft <= 7 ? '#ef4444' : ($daysLeft <= 14 ? '#f59e0b' : '#10b981');
+            $daysColor    = $daysLeft <= 7 ? '#dc2626' : ($daysLeft <= 14 ? '#d97706' : '#059669');
+            $daysText     = $daysLeft === 0 ? 'امروز منقضی می‌شود' : \App\Helpers\NumberHelper::toPersianNumbers($daysLeft) . ' روز مانده';
+            $expDateFa    = \App\Helpers\Jalali::formatFa($warn->expires_at, 'Y/m/d');
+        @endphp
+        <li style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:{{ $urgencyBg }};border:1px solid {{ $urgencyBdr }}">
+            <span style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:{{ $dotBg }};margin-top:5px"></span>
+            <div style="min-width:0;flex:1">
+                <span style="font-size:.75rem;font-weight:600;color:#1e293b">{{ $warn->site->title ?? '—' }}</span>
+                <span style="font-size:.75rem;color:#94a3b8;margin:0 4px">—</span>
+                <span style="font-size:.75rem;color:#475569">{{ $warn->label }}</span>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+                    <span style="font-size:.7rem;font-weight:700;color:{{ $daysColor }}">{{ $daysText }}</span>
+                    <span style="font-size:.65rem;color:#94a3b8">({{ $expDateFa }})</span>
+                </div>
+            </div>
+            @if($warn->site)
+            <a href="{{ route('admin.sites.edit', $warn->site) }}" style="flex-shrink:0;font-size:.7rem;color:#6366f1;text-decoration:underline;white-space:nowrap">ویرایش</a>
+            @endif
+        </li>
+        @endforeach
+    </ul>
+</div>
+@endif
 
 {{-- ── Collapsible: Forms × Sites ── --}}
 @if(isset($formSiteColumnExists))

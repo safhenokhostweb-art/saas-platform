@@ -35,7 +35,7 @@
                     <span class="text-gray-500 font-medium">بایگانی</span>
                 @endif
             </span>
-            <span><strong>بازدید:</strong> {{ number_format($article->view_count) }}</span>
+            <span><strong>بازدید:</strong> @numFa($article->view_count)</span>
             @if($article->helpfulness_percent !== null)
             <span><strong>مفید بود:</strong> {{ $article->helpfulness_percent }}%</span>
             @endif

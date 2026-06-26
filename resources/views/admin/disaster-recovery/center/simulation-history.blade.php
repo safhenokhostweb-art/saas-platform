@@ -54,7 +54,7 @@
     @endphp
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <div class="text-2xl font-bold text-gray-900">{{ number_format($simulations->total()) }}</div>
+            <div class="text-2xl font-bold text-gray-900">@numFa($simulations->total())</div>
             <div class="text-xs text-gray-500 mt-1">کل شبیه‌سازی‌ها</div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">

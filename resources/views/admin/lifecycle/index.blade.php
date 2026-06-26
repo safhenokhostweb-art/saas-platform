@@ -77,7 +77,7 @@
                 <h3 class="font-bold text-amber-800">فاکتور پرداخت‌نشده</h3>
                 <p class="text-sm text-amber-700 mt-1">{{ $invoice->invoice_number }} — {{ $invoice->typeLabel() }}</p>
                 <p class="text-lg font-bold text-amber-900 mt-1">
-                    {{ number_format($invoice->amount) }} ریال
+                    @numFa($invoice->amount) ریال
                 </p>
             </div>
             <form method="POST" action="{{ route('admin.sites.lifecycle.invoice-paid', [$site, $invoice]) }}"
@@ -199,7 +199,7 @@
                 <tr>
                     <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ $invoice->invoice_number }}</td>
                     <td class="px-4 py-3 text-gray-700">{{ $invoice->typeLabel() }}</td>
-                    <td class="px-4 py-3 font-medium">{{ number_format($invoice->amount) }} ریال</td>
+                    <td class="px-4 py-3 font-medium">@numFa($invoice->amount) ریال</td>
                     <td class="px-4 py-3">
                         <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $invoice->status === 'paid' ? 'bg-green-100 text-green-700' : ($invoice->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
                             {{ match($invoice->status) { 'paid' => 'پرداخت‌شده', 'pending' => 'در انتظار', default => 'لغو‌شده' } }}

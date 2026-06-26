@@ -470,7 +470,7 @@
             <span class="px-2 py-0.5 rounded-full bg-green-500 text-white text-xs font-medium">Vue</span>
           @endif
           <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs">
-            {{ number_format($hd['html_size'] ?? 0) }} bytes rendered
+            @numFa($hd['html_size'] ?? 0) bytes rendered
           </span>
         </div>
       </div>
@@ -660,7 +660,7 @@
         @endphp
         @if($navTime !== null)
         <div class="bg-gray-50 rounded-xl p-3 text-center">
-          <div class="text-lg font-bold text-gray-800">{{ number_format($navTime) }}</div>
+          <div class="text-lg font-bold text-gray-800">@numFa($navTime)</div>
           <div class="text-xs text-gray-400 mt-0.5">Navigation (ms)</div>
           <div class="mt-1 text-xs {{ $navTime < 3000 ? 'text-emerald-600' : ($navTime < 6000 ? 'text-amber-600' : 'text-red-500') }}">
             {{ $navTime < 3000 ? 'سریع' : ($navTime < 6000 ? 'متوسط' : 'کند') }}
@@ -669,7 +669,7 @@
         @endif
         @if($fcp !== null)
         <div class="bg-gray-50 rounded-xl p-3 text-center">
-          <div class="text-lg font-bold text-gray-800">{{ number_format($fcp) }}</div>
+          <div class="text-lg font-bold text-gray-800">@numFa($fcp)</div>
           <div class="text-xs text-gray-400 mt-0.5">FCP (ms)</div>
           <div class="mt-1 text-xs {{ $fcp < 1800 ? 'text-emerald-600' : ($fcp < 3000 ? 'text-amber-600' : 'text-red-500') }}">
             {{ $fcp < 1800 ? 'خوب' : ($fcp < 3000 ? 'بهبود لازم' : 'ضعیف') }}

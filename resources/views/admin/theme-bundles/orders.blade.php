@@ -54,7 +54,7 @@
                                     <span class="text-gray-600">{{ $order->site?->domain ?? "Site #{$order->site_id}" }}</span>
                                 </td>
                                 <td class="px-5 py-3 font-medium text-gray-800" dir="ltr">
-                                    {{ number_format($order->amount_rial) }} ریال
+                                    @numFa($order->amount_rial) ریال
                                 </td>
                                 <td class="px-5 py-3 text-gray-500 font-mono text-xs">
                                     {{ $order->gateway ?? '—' }}

@@ -57,14 +57,14 @@
 
     <div class="sms-stat sms-stat--blue">
       <div class="sms-stat__label">ارسال امروز</div>
-      <div class="sms-stat__value">{{ number_format($todaySent) }}</div>
+      <div class="sms-stat__value">@numFa($todaySent)</div>
       <div class="sms-stat__sub">{{ $todaySuccess }} موفق &bull; {{ $todayFailed }} ناموفق</div>
     </div>
 
     <div class="sms-stat {{ $last30Rate >= 90 ? 'sms-stat--green' : ($last30Rate >= 70 ? 'sms-stat--amber' : 'sms-stat--red') }}">
       <div class="sms-stat__label">نرخ موفقیت ۳۰ روز</div>
       <div class="sms-stat__value">{{ $last30Rate }}٪</div>
-      <div class="sms-stat__sub">{{ number_format($last30Success) }} از {{ number_format($last30Sent) }}</div>
+      <div class="sms-stat__sub">@numFa($last30Success) از @numFa($last30Sent)</div>
     </div>
 
     <div class="sms-stat {{ $primaryRate >= 90 ? 'sms-stat--green' : 'sms-stat--amber' }}">
@@ -101,8 +101,8 @@
             <div class="prog-bar__fill" style="width:{{ $rate }}%;background:{{ $rate >= 90 ? '#22c55e' : ($rate >= 70 ? '#f59e0b' : '#ef4444') }}"></div>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:.4rem;font-size:.75rem;color:#64748b">
-            <span>{{ number_format($health['success']) }} موفق</span>
-            <span>{{ number_format($health['failure']) }} ناموفق</span>
+            <span>@numFa($health['success']) موفق</span>
+            <span>@numFa($health['failure']) ناموفق</span>
             @if($health['last_checked_at'])
             <span>آخرین: {{ \App\Helpers\Jalali::diffForHumansFa(\Carbon\Carbon::parse($health['last_checked_at'])) }}</span>
             @endif

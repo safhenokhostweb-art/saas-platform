@@ -69,7 +69,7 @@ $storageAge = $lastStorage?->completed_at ? \App\Helpers\Jalali::diffForHumansFa
                 @if($lastDb->file_size_mb)
                 <div class="flex justify-between">
                     <dt class="text-gray-500">اندازه فایل</dt>
-                    <dd class="text-gray-800">{{ number_format($lastDb->file_size_mb, 1) }} MB</dd>
+                    <dd class="text-gray-800">{{ num_fa($lastDb->file_size_mb, 1) }} MB</dd>
                 </div>
                 @endif
                 @if($lastDb->duration_seconds)
@@ -127,7 +127,7 @@ $storageAge = $lastStorage?->completed_at ? \App\Helpers\Jalali::diffForHumansFa
                 @if($lastStorage->file_size_mb)
                 <div class="flex justify-between">
                     <dt class="text-gray-500">اندازه فایل</dt>
-                    <dd class="text-gray-800">{{ number_format($lastStorage->file_size_mb, 1) }} MB</dd>
+                    <dd class="text-gray-800">{{ num_fa($lastStorage->file_size_mb, 1) }} MB</dd>
                 </div>
                 @endif
                 <div class="flex justify-between">

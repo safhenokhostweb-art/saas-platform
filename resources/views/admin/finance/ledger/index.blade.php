@@ -40,16 +40,16 @@
     <div class="grid grid-cols-3 gap-4">
         <div class="bg-emerald-50 border border-emerald-100 rounded-lg px-4 py-3 text-center">
             <p class="text-xs text-emerald-600 font-medium">مجموع درآمد (فیلترشده)</p>
-            <p class="text-lg font-bold text-emerald-800 mt-1">{{ number_format($totalIncome) }} ریال</p>
+            <p class="text-lg font-bold text-emerald-800 mt-1">@numFa($totalIncome) ریال</p>
         </div>
         <div class="bg-red-50 border border-red-100 rounded-lg px-4 py-3 text-center">
             <p class="text-xs text-red-600 font-medium">مجموع هزینه (فیلترشده)</p>
-            <p class="text-lg font-bold text-red-800 mt-1">{{ number_format($totalExpense) }} ریال</p>
+            <p class="text-lg font-bold text-red-800 mt-1">@numFa($totalExpense) ریال</p>
         </div>
         <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3 text-center">
             <p class="text-xs text-indigo-600 font-medium">سود خالص (فیلترشده)</p>
             @php $profit = $totalIncome - $totalExpense; @endphp
-            <p class="text-lg font-bold {{ $profit >= 0 ? 'text-indigo-800' : 'text-orange-700' }} mt-1">{{ number_format($profit) }} ریال</p>
+            <p class="text-lg font-bold {{ $profit >= 0 ? 'text-indigo-800' : 'text-orange-700' }} mt-1">@numFa($profit) ریال</p>
         </div>
     </div>
 
@@ -78,10 +78,8 @@
                 <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>{{ $site->title }}</option>
                 @endforeach
             </select>
-            <input type="date" name="date_from" value="{{ request('date_from') }}"
-                   class="rounded-lg border-gray-200 text-sm px-3 py-2 focus:ring-indigo-300 focus:border-indigo-400" placeholder="از تاریخ">
-            <input type="date" name="date_to" value="{{ request('date_to') }}"
-                   class="rounded-lg border-gray-200 text-sm px-3 py-2 focus:ring-indigo-300 focus:border-indigo-400" placeholder="تا تاریخ">
+            <x-jalali-datepicker name="date_from" :value="request('date_from', '')" placeholder="از تاریخ" extraClass="rounded-lg border-gray-200 text-sm focus:ring-indigo-300 focus:border-indigo-400"/>
+            <x-jalali-datepicker name="date_to" :value="request('date_to', '')" placeholder="تا تاریخ" extraClass="rounded-lg border-gray-200 text-sm focus:ring-indigo-300 focus:border-indigo-400"/>
             <input type="number" name="amount_min" value="{{ request('amount_min') }}"
                    class="rounded-lg border-gray-200 text-sm px-3 py-2 focus:ring-indigo-300 focus:border-indigo-400" placeholder="حداقل مبلغ">
             <input type="number" name="amount_max" value="{{ request('amount_max') }}"
@@ -114,7 +112,7 @@
             <tbody class="divide-y divide-gray-50">
                 @forelse($entries as $e)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{{ $e->entry_date?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">@dateFa($e->entry_date)</td>
                     <td class="px-4 py-3">
                         @if($e->isIncome())
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
@@ -135,7 +133,7 @@
                         <div class="text-xs text-gray-400">فاکتور: {{ $e->invoice_number }}</div>
                         @endif
                     </td>
-                    <td class="px-4 py-3 font-bold {{ $e->isIncome() ? 'text-emerald-700' : 'text-red-600' }} whitespace-nowrap">{{ number_format($e->amount) }}</td>
+                    <td class="px-4 py-3 font-bold {{ $e->isIncome() ? 'text-emerald-700' : 'text-red-600' }} whitespace-nowrap">@numFa($e->amount)</td>
                     <td class="px-4 py-3 text-gray-600 text-xs">{{ $e->site?->title ?? '—' }}</td>
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ $e->gateway ?? '—' }}</td>
                     <td class="px-4 py-3">

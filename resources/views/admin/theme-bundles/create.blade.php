@@ -113,7 +113,7 @@
                         <div class="min-w-0">
                             <p class="font-medium text-gray-800 text-sm truncate">{{ $theme->name }}</p>
                             <p class="text-xs text-gray-400">
-                                {{ number_format($theme->marketplace_price ?? 0) }} ریال
+                                @numFa($theme->marketplace_price ?? 0) ریال
                             </p>
                         </div>
                     </label>

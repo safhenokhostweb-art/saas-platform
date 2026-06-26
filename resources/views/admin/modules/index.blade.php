@@ -48,7 +48,7 @@
                         </td>
                         <td class='p-3' dir='ltr'>
                             @if($module->price_irr)
-                                {{ number_format($module->price_irr) }}
+                                @numFa($module->price_irr)
                             @else
                                 <span class='text-gray-400'>—</span>
                             @endif

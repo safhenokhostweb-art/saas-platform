@@ -96,7 +96,7 @@
               <td class="px-6 py-3 text-gray-400 text-xs">#{{ $order->id }}</td>
               <td class="px-6 py-3 font-medium text-gray-800">{{ $order->theme?->name ?? '—' }}</td>
               <td class="px-6 py-3 text-gray-600">{{ $order->site?->title ?? '—' }}</td>
-              <td class="px-6 py-3 font-mono text-gray-700">{{ number_format($order->amount_rial) }}</td>
+              <td class="px-6 py-3 font-mono text-gray-700">@numFa($order->amount_rial)</td>
               <td class="px-6 py-3 text-gray-500">{{ $order->gateway ?? '—' }}</td>
               <td class="px-6 py-3"><span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $st['cls'] }}">{{ $st['text'] }}</span></td>
               <td class="px-6 py-3 text-gray-400 text-xs">{{ \App\Helpers\Jalali::formatFa($order->created_at, 'Y/m/d') }}</td>

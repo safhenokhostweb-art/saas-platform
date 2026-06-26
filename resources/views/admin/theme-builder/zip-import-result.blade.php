@@ -103,7 +103,7 @@
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">زمان پردازش</span>
-            <span class="font-semibold">{{ number_format(($result['duration_ms'] ?? 0) / 1000, 1) }}s</span>
+            <span class="font-semibold">{{ num_fa(($result['duration_ms'] ?? 0) / 1000, 1) }}s</span>
           </div>
         </div>
       </div>
