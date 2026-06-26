@@ -257,6 +257,29 @@ Route::get('/install/done', [InstallController::class, 'done'])
 
 /*
 |--------------------------------------------------------------------------
+| Platform Installer (New — Phase 1)
+| All routes protected by InstallerLockMiddleware except locked + unlock.
+|--------------------------------------------------------------------------
+*/
+Route::prefix('platform-installer')->name('installer.')->group(function () {
+    // Lock / unlock (no middleware)
+    Route::get('/locked',  [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'locked'])->name('locked');
+    Route::post('/unlock', [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'unlock'])->name('unlock');
+
+    // Main installer (protected by lock)
+    Route::middleware(\App\Http\Middleware\InstallerLockMiddleware::class)->group(function () {
+        Route::get('/',                [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'index'])->name('index');
+        Route::post('/select-mode',    [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'selectMode'])->name('select-mode');
+        Route::get('/complete',        [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'complete'])->name('complete');
+        Route::get('/check',           [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'apiCheck'])->name('api-check');
+
+        Route::get('/{mode}/{step}',   [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'step'])->name('step');
+        Route::post('/{mode}/{step}',  [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'processStep'])->name('process');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
 | فرم‌های سایت مشتری (نمایش و ارسال با کپچا)
 |--------------------------------------------------------------------------
 */

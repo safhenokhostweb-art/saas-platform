@@ -5,6 +5,47 @@
 
 ---
 
+## CURRENT STATE (2026-06-26 — PLATFORM_INSTALLER_PHASE1_COMPLETE)
+
+**Last completed phase:** PLATFORM_INSTALLER_PHASE_1 — Platform Installer scaffolding for all 3 modes.
+
+**What was built:**
+1. `app/Services/Installer/InstallerService.php` — orchestrator, session state, install.lock management
+2. `app/Services/Installer/InstallerValidator.php` — 10 pre-flight environment checks
+3. `app/Services/Installer/EnvironmentWriter.php` — atomic .env writer
+4. `app/Services/Installer/InfrastructureInstaller.php` — migrations, seeding, Supervisor/Cron/Reverb config generation
+5. `app/Services/Installer/RestoreAdapter.php` — wraps RestoreService + ArvanBackupService
+6. `app/Services/Installer/UpgradeAdapter.php` — snapshot → migrate → validate → auto-rollback
+7. `app/Services/Installer/HealthCheckRunner.php` — wraps DrReadinessScoreService
+8. `app/Http/Controllers/Installer/PlatformInstallerController.php` — all 3 modes, all 15 steps
+9. `app/Http/Middleware/InstallerLockMiddleware.php` — blocks installer if install.lock exists
+10. 20 Blade views in `resources/views/installer/` — standalone RTL dark mode Persian UI wizard
+
+**Routes added:** 9 routes under `/platform-installer/` prefix
+
+**Admin Menu:** `platform_installer` added to زیرساخت / DevOps group with server icon
+
+**Docs generated:**
+- `docs/PLATFORM_INSTALLER_ARCHITECTURE.md`
+- `docs/PLATFORM_INSTALLER_SECURITY.md`
+- `docs/PLATFORM_INSTALLER_FLOW.md`
+- `docs/PLATFORM_INSTALLER_CERTIFICATION.md`
+
+**Key decisions:**
+- Session-based state (not DB) so installer works before DB is configured
+- Standalone layout — no dependency on admin sidebar
+- `install.lock` = JSON file in `storage/` (not DB record)
+- Confirmation strings: `RESTORE-PLATFORM`, `UPGRADE-PLATFORM`, `UNLOCK-INSTALLER`
+- UpgradeAdapter auto-rollbacks on migration failure
+
+**Phase 2 blockers:**
+- `PlatformSeeder` not yet implemented (BLOCKER-1)
+- Integration tests on real VPS (BLOCKER-2)
+
+**No outstanding steps for Phase 1.**
+
+---
+
 ## CURRENT STATE (2026-06-26 — PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED)
 
 **Last completed phase:** PERSIAN_LOCALIZATION_GLOBAL_STANDARD — Full Persian digit + Jalali date localization across both repos.

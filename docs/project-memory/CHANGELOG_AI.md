@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-06-26 — PLATFORM_INSTALLER_PHASE1_COMPLETE
+
+**Type:** Platform Infrastructure — saas-platform
+
+**Summary:** ساخت موتور نصب دائمی پلتفرم با 3 حالت (نصب تازه / بازیابی / ارتقا). 7 کلاس سرویس، 1 کنترلر، 1 میدلور، 20 ویو، 9 مسیر. بدون تکرار منطق — کامل از سرویس‌های موجود استفاده می‌کند.
+
+**Services Created:**
+
+| File | Purpose |
+|------|---------|
+| `app/Services/Installer/InstallerService.php` | State, lock, step navigation |
+| `app/Services/Installer/InstallerValidator.php` | 10 environment checks |
+| `app/Services/Installer/EnvironmentWriter.php` | Atomic .env writer |
+| `app/Services/Installer/InfrastructureInstaller.php` | Migrations, seeding, config gen |
+| `app/Services/Installer/RestoreAdapter.php` | Wraps RestoreService + ArvanBackupService |
+| `app/Services/Installer/UpgradeAdapter.php` | Snapshot + upgrade + rollback |
+| `app/Services/Installer/HealthCheckRunner.php` | Wraps DrReadinessScoreService |
+
+**Controller & Middleware Created:**
+
+| File | Purpose |
+|------|---------|
+| `app/Http/Controllers/Installer/PlatformInstallerController.php` | All 3 modes, all 15 steps |
+| `app/Http/Middleware/InstallerLockMiddleware.php` | Blocks installer if locked |
+
+**Views Created (20 files):**
+- `resources/views/installer/layout.blade.php` — Standalone RTL dark layout
+- `resources/views/installer/mode-select.blade.php`
+- `resources/views/installer/locked.blade.php`
+- `resources/views/installer/complete.blade.php`
+- `resources/views/installer/partials/progress.blade.php`
+- `resources/views/installer/fresh/` — 7 step views (env-check through finish)
+- `resources/views/installer/restore/` — 4 step views (source-select through finish)
+- `resources/views/installer/upgrade/` — 4 step views (snapshot through finish)
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `routes/web.php` | 9 installer routes under `/platform-installer/` |
+| `app/Helpers/AdminMenu.php` | `platform_installer` key in زیرساخت / DevOps group |
+| `resources/views/admin/partials/sidebar-icon.blade.php` | Installer icon added |
+
+**Docs Generated:**
+- `docs/PLATFORM_INSTALLER_ARCHITECTURE.md`
+- `docs/PLATFORM_INSTALLER_SECURITY.md`
+- `docs/PLATFORM_INSTALLER_FLOW.md`
+- `docs/PLATFORM_INSTALLER_CERTIFICATION.md`
+
+**Impact:** Platform can now be installed fresh, restored from backup, or upgraded safely via a guided wizard.
+
+---
+
 ## 2026-06-26 — PERSIAN_LOCALIZATION_GLOBAL_STANDARD_DEPLOYED
 
 **Type:** Platform-wide — Both repos
