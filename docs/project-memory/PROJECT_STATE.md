@@ -22,7 +22,9 @@
 
 ## Current Phase
 
-**DISASTER_RECOVERY_CENTER_ENTERPRISE_READY (2026-06-26). DR Center Phase 2 Completion deployed — readiness score, backup age, simulation history, Arvan status.**
+**SITE_THEME_PRESET_FIX_DEPLOYED (2026-06-26). Bug fix: site theme presets now apply to the public customer site frontend; custom mode fully operational with 9 comprehensive color fields.**
+
+**Previous:** DISASTER_RECOVERY_CENTER_ENTERPRISE_READY (2026-06-26). DR Center Phase 2 Completion deployed — readiness score, backup age, simulation history, Arvan status.
 
 **Previous:** DR_CENTER_OPERATIONAL (2026-06-26). Phase 2 complete. Full DR Center dashboard implemented and deployed.
 

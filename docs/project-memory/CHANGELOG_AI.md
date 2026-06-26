@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-06-26 — SITE_THEME_PRESET_FIX_DEPLOYED
+
+**Type:** Bug Fix — customer-site
+
+**Summary:** رفع باگ اعمال نشدن تم سایت روی فرانت‌اند عمومی. تم preset انتخاب‌شده و حالت سفارشی اکنون روی کل سایت اعمال می‌شوند.
+
+**Root causes:**
+1. `partials.theme-engine-tokens` در هیچ‌کدام از دو layout عمومی include نشده بود
+2. `ThemeSetting::toCssVariables()` فقط متغیرهای CSS کمی تولید می‌کرد
+3. جدول `theme_settings` فاقد 9 ستون رنگ جدید بود
+
+**Files created:**
+| File | Description |
+|------|-------------|
+| `database/migrations/2026_06_26_110000_add_color_fields_to_theme_settings_table.php` | Adds 9 color columns: accent, background, surface, text, muted, border, link, header_bg, footer_bg |
+
+**Files modified:**
+| File | Change |
+|------|--------|
+| `app/Models/ThemeSetting.php` | 9 new fillable fields, defaults, toCssVariables() rewritten to generate full CSS var set |
+| `app/Services/ThemeEngine/TenantThemeResolver.php` | fromThemeSetting() generates comprehensive CSS vars; extractSiteTokens() adds --platform-primary |
+| `resources/views/themes/default/layout.blade.php` | Added @include('partials.theme-engine-tokens') |
+| `resources/views/layouts/canvas-theme.blade.php` | Added @include('partials.theme-engine-tokens') |
+| `resources/views/admin/theme-design/index.blade.php` | Custom card in preset grid + 4-section color form |
+| `app/Http/Controllers/Admin/ThemeDesignController.php` | Validates 9 new fields; auto-sets preset to 'custom' on save |
+
+**Impact:** Site theme presets now apply to the public frontend. Custom mode is selectable as a card and applies comprehensive color system (--tb-*, --ds-*, --ui-*, --platform-primary) to all site details.
+
+**Production:** Migration batch [111] confirmed. All 7 changes verified on server.
+
+---
+
 ## 2026-06-26 — DISASTER_RECOVERY_CENTER_ENTERPRISE_READY (Phase 2 Completion)
 
 **Type:** Feature — saas-platform

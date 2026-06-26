@@ -4,6 +4,22 @@
 
 ---
 
+## COMPLETE: SITE_THEME_PRESET_FIX — 2026-06-26 ✅
+
+**Status:** SITE_THEME_PRESET_FIX_DEPLOYED
+
+| Task | Status |
+|------|--------|
+| Migration: add 9 color columns to theme_settings | ✅ DONE (batch 111) |
+| ThemeSetting model: fillable + defaults + toCssVariables() | ✅ DONE |
+| TenantThemeResolver: fromThemeSetting() comprehensive CSS vars | ✅ DONE |
+| Public layout (default): add theme-engine-tokens include | ✅ DONE |
+| Canvas layout: add theme-engine-tokens include | ✅ DONE |
+| Admin theme-design: custom card + 4-section color form | ✅ DONE |
+| Controller: validate 9 new fields + auto-set preset=custom | ✅ DONE |
+
+---
+
 ## COMPLETE: DR_CENTER_PHASE2_COMPLETION — 2026-06-26 ✅
 
 **Status:** DISASTER_RECOVERY_CENTER_ENTERPRISE_READY

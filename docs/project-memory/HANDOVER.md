@@ -5,6 +5,34 @@
 
 ---
 
+## CURRENT STATE (2026-06-26 — SITE_THEME_PRESET_FIX_DEPLOYED)
+
+**Last completed phase:** SITE_THEME_PRESET_FIX_DEPLOYED — Bug fix: site theme presets now apply to the public customer site frontend; custom mode fully operational.
+
+**Root causes fixed:**
+1. `partials.theme-engine-tokens` was missing from both public layouts — preset CSS vars were never emitted on public pages
+2. `ThemeSetting::toCssVariables()` only generated a minimal set of CSS vars — custom mode had no effect
+3. `ThemeSetting` model was missing 9 color columns (accent, background, surface, text, muted, border, link, header_bg, footer_bg)
+
+**Files changed (customer-site):**
+- `database/migrations/2026_06_26_110000_add_color_fields_to_theme_settings_table.php` — NEW: adds 9 color columns
+- `app/Models/ThemeSetting.php` — 9 new fields in $fillable, defaults, toCssVariables() fully rewritten
+- `app/Services/ThemeEngine/TenantThemeResolver.php` — fromThemeSetting() now generates full CSS var set; extractSiteTokens() adds --platform-primary
+- `resources/views/themes/default/layout.blade.php` — added @include('partials.theme-engine-tokens') at line 77
+- `resources/views/layouts/canvas-theme.blade.php` — added @include('partials.theme-engine-tokens') at line 38
+- `resources/views/admin/theme-design/index.blade.php` — custom card in preset grid + expanded custom color form (4 sections)
+- `app/Http/Controllers/Admin/ThemeDesignController.php` — validates 9 new fields; auto-sets site_theme_preset_slug='custom' on save
+
+**Production verification:**
+- Migration at batch [111] — CONFIRMED
+- ThemeSetting: 19 fillable fields — CONFIRMED
+- theme-engine-tokens in default/layout.blade.php (line 77) — CONFIRMED
+- theme-engine-tokens in canvas-theme.blade.php (line 38) — CONFIRMED
+
+**No outstanding steps.**
+
+---
+
 ## CURRENT STATE (2026-06-26 — DISASTER_RECOVERY_CENTER_ENTERPRISE_READY)
 
 **Last completed phase:** DR_CENTER_PHASE2_COMPLETION — All 4 enterprise features added to the DR Center.
