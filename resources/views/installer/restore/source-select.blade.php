@@ -8,19 +8,20 @@
     <div class="card-title">بازیابی — انتخاب منبع</div>
     <div class="card-subtitle">منبع فایل پشتیبان را انتخاب کنید.</div>
 
-    <form action="{{ route('installer.process', ['mode'=>'restore','step'=>'source_select']) }}" method="POST" x-data="{ source: '' }">
+    <form action="{{ route('installer.process', ['mode'=>'restore','step'=>'source_select']) }}" method="POST" id="sourceForm">
         @csrf
-        <input type="hidden" name="source" x-model="source">
-        <input type="hidden" name="file_path" id="selectedPath" value="">
+        <input type="hidden" name="source"    id="sourceInput"  value="">
+        <input type="hidden" name="file_path" id="filePathInput" value="">
 
         {{-- Arvan Backups --}}
         @if(count($sources['arvan']) > 0)
         <div class="card-section">
             <div class="section-title">☁️ Arvan Object Storage</div>
             @foreach($sources['arvan'] as $file)
-                <div class="check-row" style="cursor:pointer;"
-                     @click="source='arvan'; document.getElementById('selectedPath').value='{{ $file['path'] }}'">
-                    <input type="radio" name="_arvan_pick" value="{{ $file['path'] }}">
+                <div class="check-row backup-row" style="cursor:pointer;"
+                     data-source="arvan"
+                     data-path="{{ $file['path'] }}">
+                    <input type="radio" name="_arvan_pick" value="{{ $file['path'] }}" tabindex="-1">
                     <span class="check-icon">🗄️</span>
                     <span class="check-label">{{ $file['filename'] }}</span>
                     <span class="check-message" style="font-size:12px;">{{ $file['size_human'] ?? '' }}</span>
@@ -35,9 +36,10 @@
         <div class="card-section">
             <div class="section-title">💾 دیسک محلی</div>
             @foreach($sources['local'] as $file)
-                <div class="check-row" style="cursor:pointer;"
-                     @click="source='local'; document.getElementById('selectedPath').value='{{ $file['path'] }}'">
-                    <input type="radio" name="_local_pick" value="{{ $file['path'] }}">
+                <div class="check-row backup-row" style="cursor:pointer;"
+                     data-source="local"
+                     data-path="{{ $file['path'] }}">
+                    <input type="radio" name="_local_pick" value="{{ $file['path'] }}" tabindex="-1">
                     <span class="check-icon">📄</span>
                     <span class="check-label">{{ $file['filename'] }}</span>
                     <span class="check-message" style="font-size:12px;">{{ number_format($file['size'] / 1048576, 1) }} MB</span>
@@ -52,9 +54,10 @@
         <div class="card-section">
             <div class="section-title">📦 پکیج Release</div>
             @foreach($sources['release'] as $file)
-                <div class="check-row" style="cursor:pointer;"
-                     @click="source='release'; document.getElementById('selectedPath').value='{{ $file['path'] }}'">
-                    <input type="radio" name="_release_pick" value="{{ $file['path'] }}">
+                <div class="check-row backup-row" style="cursor:pointer;"
+                     data-source="release"
+                     data-path="{{ $file['path'] }}">
+                    <input type="radio" name="_release_pick" value="{{ $file['path'] }}" tabindex="-1">
                     <span class="check-icon">📦</span>
                     <span class="check-label">{{ $file['filename'] }}</span>
                     <span class="check-message" style="font-size:12px;">{{ number_format($file['size'] / 1048576, 1) }} MB</span>
@@ -71,9 +74,32 @@
 
         <div class="actions-bar">
             <a href="{{ route('installer.index') }}" class="btn btn-secondary">← بازگشت</a>
-            <button type="submit" class="btn btn-primary" :disabled="!source">ادامه — تأیید پشتیبان &larr;</button>
+            <button type="submit" class="btn btn-primary" id="continueBtn" disabled>ادامه — تأیید پشتیبان &larr;</button>
         </div>
     </form>
 </div>
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<script>
+    var sourceInput   = document.getElementById('sourceInput');
+    var filePathInput = document.getElementById('filePathInput');
+    var continueBtn   = document.getElementById('continueBtn');
+
+    document.querySelectorAll('.backup-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            document.querySelectorAll('.backup-row').forEach(function(r) {
+                r.style.background = '';
+                var radio = r.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+
+            this.style.background = 'rgba(99,102,241,0.08)';
+            var radio = this.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+
+            sourceInput.value   = this.getAttribute('data-source');
+            filePathInput.value = this.getAttribute('data-path');
+            continueBtn.disabled = false;
+        });
+    });
+</script>
 @endsection

@@ -5,6 +5,28 @@
 
 ---
 
+## 2026-06-27 — HOTFIX-002_PRODUCTION_ACCEPTANCE_FIX
+
+**Type:** Hotfix — Production acceptance failure from HOTFIX-001 false certification
+
+**Root Causes Fixed:**
+1. `RestoreWizardController.php:24` — `Site::orderBy('name')` queries non-existent DB column (column is `title`). Fixed: `orderBy('title')->get(['id','title','domain'])`. Deployed in `a5a1a09`.
+2. `resources/views/installer/mode-select.blade.php` — Alpine.js `x-show` on button wrapper is in a separate `x-data` scope with no reactive state, so wrapper stays `display:none` after card click. Vanilla JS click handler never set `selectedMode.value`. Fixed: removed all Alpine from this view, pure vanilla JS with `data-mode` attributes. Deployed in `f663f66`.
+
+**Files modified:**
+- `app/Http/Controllers/Admin/RestoreWizardController.php` — `orderBy('name')` → `orderBy('title')`, `get(['id','name','domain'])` → `get(['id','title','domain'])`
+- `resources/views/installer/mode-select.blade.php` — removed Alpine.js, pure vanilla JS mode selection
+
+**Documents created:**
+- `docs/HOTFIX_002_REPORT.md`
+- `docs/HOTFIX_002_CERTIFICATION.md`
+
+**Verification:**
+- Production HTTP checks: 200/302 on all 4 pages post-deploy
+- Production log: no errors after deploy a5a1a09
+
+---
+
 ## 2026-06-27 — HOTFIX-001_PRODUCTION_500_FIX
 
 **Type:** Hotfix — Critical production 500 errors
