@@ -3,6 +3,7 @@ namespace App\Services\Infrastructure;
 
 use App\Models\Infrastructure\RestoreLog;
 use App\Models\Site;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -11,10 +12,12 @@ use Illuminate\Support\Str;
 /**
  * RestoreService — Production restore logic for platform and tenant backups.
  *
- * Safety contract:
+ * Safety contracts:
  *  - Dry-run NEVER touches DB or files.
  *  - Every destructive operation creates a rollback snapshot first.
- *  - Redis lock prevents concurrent restores.
+ *  - Redis lock prevents concurrent restores (error-handled — no exception on Redis failure).
+ *  - Tenant delete+copy wrapped in DB transaction — atomic, no partial state.
+ *  - Passwords passed via MYSQL_PWD env var — never in CLI args.
  *  - All operations are written to restore_logs.
  */
 class RestoreService
@@ -28,42 +31,68 @@ class RestoreService
 
     public function isLocked(): bool
     {
-        return (bool) Redis::get('restore_in_progress');
+        try {
+            return (bool) Redis::get('restore_in_progress');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function getLockValue(): ?string
     {
-        $v = Redis::get('restore_in_progress');
-        return $v ? (string) $v : null;
+        try {
+            $v = Redis::get('restore_in_progress');
+            return $v ? (string) $v : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function acquireLock(string $value, int $ttlMinutes = 30): bool
     {
-        return (bool) Redis::set('restore_in_progress', $value, 'EX', $ttlMinutes * 60, 'NX');
+        try {
+            return (bool) Redis::set('restore_in_progress', $value, 'EX', $ttlMinutes * 60, 'NX');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function releaseLock(): void
     {
-        Redis::del('restore_in_progress');
+        try {
+            Redis::del('restore_in_progress');
+        } catch (\Throwable) {
+            // Redis unavailable — lock will expire via TTL
+        }
     }
 
     // ─── Progress Streaming (Redis List) ──────────────────────────────────────
 
     public function pushProgress(string $token, array $event): void
     {
-        $key = "restore_progress_{$token}";
-        Redis::rpush($key, json_encode($event));
-        Redis::expire($key, 7200); // 2 hour TTL
+        try {
+            $key = "restore_progress_{$token}";
+            Redis::rpush($key, json_encode($event));
+            Redis::expire($key, 7200);
+        } catch (\Throwable) {
+            // Non-fatal — progress streaming degrades gracefully on Redis failure
+        }
     }
 
     public function getProgressEvents(string $token, int $offset = 0): array
     {
-        return Redis::lrange("restore_progress_{$token}", $offset, -1);
+        try {
+            return Redis::lrange("restore_progress_{$token}", $offset, -1);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function clearProgress(string $token): void
     {
-        Redis::del("restore_progress_{$token}");
+        try {
+            Redis::del("restore_progress_{$token}");
+        } catch (\Throwable) {}
     }
 
     // ─── Backup Discovery ─────────────────────────────────────────────────────
@@ -100,27 +129,20 @@ class RestoreService
 
     // ─── Backup Validation ────────────────────────────────────────────────────
 
-    /**
-     * Validate a backup file before restore. Returns validation result array.
-     */
     public function validateBackup(string $remotePath, string $type): array
     {
         $checks = [];
         $valid  = true;
 
-        // Check 1: File exists on Arvan
         $exists = $this->arvan->exists($remotePath);
         $checks[] = [
             'check'  => 'وجود فایل در Arvan',
             'result' => $exists ? 'pass' : 'fail',
             'detail' => $exists ? "فایل یافت شد: {$remotePath}" : 'فایل در Arvan Object Storage یافت نشد',
         ];
-        if (!$exists) {
-            $valid = false;
-        }
+        if (!$exists) $valid = false;
 
-        // Check 2: File size reasonable
-        $size = $exists ? $this->arvan->size($remotePath) : 0;
+        $size    = $exists ? $this->arvan->size($remotePath) : 0;
         $minSize = str_contains($type, 'storage') ? 100 : 32;
         $sizeOk  = $size !== null && $size >= $minSize;
         $checks[] = [
@@ -128,33 +150,25 @@ class RestoreService
             'result' => $sizeOk ? 'pass' : 'fail',
             'detail' => $sizeOk
                 ? 'اندازه فایل: ' . $this->humanSize($size)
-                : ('اندازه فایل خیلی کوچک است یا نامشخص: ' . $this->humanSize($size ?? 0) . ' (حداقل ' . $minSize . ' بایت)'),
+                : 'اندازه فایل خیلی کوچک یا نامشخص: ' . $this->humanSize($size ?? 0),
         ];
-        if (!$sizeOk) {
-            $valid = false;
-        }
+        if (!$sizeOk) $valid = false;
 
-        // Check 3: Filename format
-        $filename  = basename($remotePath);
-        $formatOk  = $this->isValidBackupFilename($filename, $type);
+        $filename = basename($remotePath);
+        $formatOk = $this->isValidBackupFilename($filename, $type);
         $checks[] = [
             'check'  => 'فرمت نام فایل',
             'result' => $formatOk ? 'pass' : 'warn',
-            'detail' => $formatOk
-                ? "نام فایل معتبر: {$filename}"
-                : "نام فایل با فرمت استاندارد مطابقت ندارد: {$filename}",
+            'detail' => $formatOk ? "نام فایل معتبر: {$filename}" : "نام فایل با فرمت استاندارد مطابقت ندارد: {$filename}",
         ];
 
-        // Check 4: No active restore running
         $lockFree = !$this->isLocked();
         $checks[] = [
             'check'  => 'بدون تعارض',
             'result' => $lockFree ? 'pass' : 'fail',
             'detail' => $lockFree ? 'هیچ بازیابی در حال اجرا نیست' : 'یک بازیابی در حال اجرا است: ' . ($this->getLockValue() ?? ''),
         ];
-        if (!$lockFree) {
-            $valid = false;
-        }
+        if (!$lockFree) $valid = false;
 
         $metadata = [
             'remote_path'   => $remotePath,
@@ -169,10 +183,6 @@ class RestoreService
 
     // ─── Dry Run ──────────────────────────────────────────────────────────────
 
-    /**
-     * Simulate a restore without any side effects.
-     * Returns a summary of what would happen.
-     */
     public function dryRun(string $type, string $remotePath, ?int $siteId = null): array
     {
         $validation = $this->validateBackup($remotePath, $type);
@@ -181,14 +191,14 @@ class RestoreService
         $impact     = $this->estimateImpact($type, $siteId);
 
         return [
-            'type'         => $type,
-            'remote_path'  => $remotePath,
-            'site_id'      => $siteId,
-            'validation'   => $validation,
-            'steps'        => $steps,
-            'warnings'     => $warnings,
-            'impact'       => $impact,
-            'safe_to_run'  => $validation['valid'] && empty(array_filter($warnings, fn($w) => $w['level'] === 'critical')),
+            'type'        => $type,
+            'remote_path' => $remotePath,
+            'site_id'     => $siteId,
+            'validation'  => $validation,
+            'steps'       => $steps,
+            'warnings'    => $warnings,
+            'impact'      => $impact,
+            'safe_to_run' => $validation['valid'] && empty(array_filter($warnings, fn($w) => $w['level'] === 'critical')),
         ];
     }
 
@@ -198,49 +208,43 @@ class RestoreService
 
         return match($type) {
             RestoreLog::TYPE_PLATFORM_DATABASE => [
-                ['step' => 1, 'action' => 'قفل Redis را تنظیم کن (TTL 60 دقیقه)'],
-                ['step' => 2, 'action' => 'وضعیت maintenance را فعال کن (php artisan down)'],
-                ['step' => 3, 'action' => "ایجاد snapshot قبل از بازیابی: pre-restore-platform-{timestamp}.sql.gz"],
-                ['step' => 4, 'action' => "دانلود فایل بکاپ از Arvan: {$filename}"],
-                ['step' => 5, 'action' => 'تأیید یکپارچگی گزیپ: gzip -t'],
-                ['step' => 6, 'action' => 'DROP DATABASE saas_platform; CREATE DATABASE saas_platform'],
-                ['step' => 7, 'action' => 'بازیابی دیتابیس: gunzip | mysql saas_platform'],
-                ['step' => 8, 'action' => 'اجرای migration‌ها: php artisan migrate --force'],
-                ['step' => 9, 'action' => 'پاکسازی cache: php artisan config:cache + route:cache + view:cache'],
+                ['step' => 1,  'action' => 'قفل Redis را تنظیم کن (TTL 60 دقیقه)'],
+                ['step' => 2,  'action' => "دانلود فایل بکاپ از Arvan: {$filename}"],
+                ['step' => 3,  'action' => 'تأیید یکپارچگی گزیپ: gzip -t'],
+                ['step' => 4,  'action' => 'وضعیت maintenance را فعال کن (php artisan down)'],
+                ['step' => 5,  'action' => 'ایجاد snapshot: mysqldump saas_platform (MYSQL_PWD env var)'],
+                ['step' => 6,  'action' => 'DROP DATABASE saas_platform; CREATE DATABASE saas_platform'],
+                ['step' => 7,  'action' => 'بازیابی دیتابیس: gunzip | mysql (MYSQL_PWD env var)'],
+                ['step' => 8,  'action' => 'اجرای migration‌ها: php artisan migrate --force'],
+                ['step' => 9,  'action' => 'بازسازی cache: config:cache + route:cache + view:cache'],
                 ['step' => 10, 'action' => 'غیرفعال کردن maintenance: php artisan up'],
-                ['step' => 11, 'action' => 'بررسی سلامت: GET /health/ready'],
-                ['step' => 12, 'action' => 'آزادکردن قفل Redis + ثبت لاگ فعالیت'],
+                ['step' => 11, 'action' => 'آزادکردن قفل Redis + ثبت لاگ فعالیت'],
             ],
             RestoreLog::TYPE_TENANT_DATABASE => [
-                ['step' => 1, 'action' => "قفل Redis را تنظیم کن: tenant-{$siteId} (TTL 30 دقیقه)"],
-                ['step' => 2, 'action' => "دانلود فایل بکاپ از Arvan: {$filename}"],
-                ['step' => 3, 'action' => 'تأیید یکپارچگی گزیپ: gzip -t'],
-                ['step' => 4, 'action' => "ایجاد snapshot: mysqldump customer_site WHERE site_id={$siteId}"],
-                ['step' => 5, 'action' => "ایجاد دیتابیس موقت: CREATE DATABASE restore_tmp_{$siteId}"],
-                ['step' => 6, 'action' => 'بازیابی کامل بکاپ در دیتابیس موقت'],
-                ['step' => 7, 'action' => "تأیید وجود داده تِنِنت در دیتابیس موقت"],
-                ['step' => 8, 'action' => "حذف ردیف‌های site_id={$siteId} از customer_site"],
-                ['step' => 9, 'action' => "کپی داده از restore_tmp_{$siteId} به customer_site"],
-                ['step' => 10, 'action' => "DROP DATABASE restore_tmp_{$siteId}"],
-                ['step' => 11, 'action' => "پاکسازی cache تِنِنت: customers store"],
-                ['step' => 12, 'action' => 'آزادکردن قفل Redis + ثبت لاگ فعالیت'],
+                ['step' => 1,  'action' => "قفل Redis را تنظیم کن: tenant-{$siteId} (TTL 30 دقیقه)"],
+                ['step' => 2,  'action' => "دانلود فایل بکاپ از Arvan: {$filename}"],
+                ['step' => 3,  'action' => 'تأیید یکپارچگی گزیپ: gzip -t'],
+                ['step' => 4,  'action' => "ایجاد snapshot: mysqldump WHERE site_id={$siteId} (MYSQL_PWD env var)"],
+                ['step' => 5,  'action' => "ایجاد دیتابیس موقت: CREATE DATABASE restore_tmp_{$siteId}"],
+                ['step' => 6,  'action' => 'بازیابی کامل بکاپ در دیتابیس موقت'],
+                ['step' => 7,  'action' => "انتقال atomic: DELETE site_id={$siteId} + INSERT FROM tmp — در تراکنش DB"],
+                ['step' => 8,  'action' => "DROP DATABASE restore_tmp_{$siteId}"],
+                ['step' => 9,  'action' => 'پاکسازی cache تِنِنت'],
+                ['step' => 10, 'action' => 'آزادکردن قفل Redis + ثبت لاگ فعالیت'],
             ],
             RestoreLog::TYPE_PLATFORM_STORAGE => [
                 ['step' => 1, 'action' => "دانلود آرشیو از Arvan: {$filename}"],
                 ['step' => 2, 'action' => 'تأیید یکپارچگی tar: tar -tzf'],
                 ['step' => 3, 'action' => 'بررسی فضای دیسک'],
-                ['step' => 4, 'action' => 'استخراج فایل‌ها در /var/www/saas-platform/storage/app/public/'],
+                ['step' => 4, 'action' => 'استخراج فایل‌ها در storage/app/public/'],
                 ['step' => 5, 'action' => 'تنظیم دسترسی‌ها: chown www-data'],
-                ['step' => 6, 'action' => 'پاکسازی cache: php artisan cache:clear'],
-                ['step' => 7, 'action' => 'ثبت لاگ فعالیت'],
+                ['step' => 6, 'action' => 'پاکسازی cache + ثبت لاگ'],
             ],
             RestoreLog::TYPE_TENANT_STORAGE => [
                 ['step' => 1, 'action' => "دانلود آرشیو از Arvan: {$filename}"],
                 ['step' => 2, 'action' => 'تأیید یکپارچگی tar: tar -tzf'],
-                ['step' => 3, 'action' => 'بررسی فضای دیسک'],
-                ['step' => 4, 'action' => "استخراج فایل‌های تِنِنت {$siteId}"],
-                ['step' => 5, 'action' => 'تنظیم دسترسی‌ها: chown www-data'],
-                ['step' => 6, 'action' => 'ثبت لاگ فعالیت'],
+                ['step' => 3, 'action' => "استخراج فایل‌های تِنِنت {$siteId}"],
+                ['step' => 4, 'action' => 'ثبت لاگ فعالیت'],
             ],
             default => [],
         };
@@ -249,12 +253,10 @@ class RestoreService
     private function collectWarnings(string $type, ?int $siteId): array
     {
         $warnings = [];
-
         if ($type === RestoreLog::TYPE_PLATFORM_DATABASE) {
             $warnings[] = ['level' => 'critical', 'message' => 'این عملیات کل دیتابیس پلتفرم را جایگزین می‌کند. تمام تِنِنت‌ها تحت تأثیر قرار می‌گیرند.'];
             $warnings[] = ['level' => 'high',     'message' => 'پلتفرم در طول بازیابی در حالت maintenance خواهد بود.'];
         }
-
         if ($type === RestoreLog::TYPE_TENANT_DATABASE && $siteId) {
             $site = Site::find($siteId);
             if ($site) {
@@ -262,11 +264,9 @@ class RestoreService
             }
             $warnings[] = ['level' => 'medium', 'message' => 'کاربران تِنِنت در حین بازیابی ممکن است خطا ببینند.'];
         }
-
         if (str_contains($type, 'storage')) {
             $warnings[] = ['level' => 'high', 'message' => 'فایل‌های موجودی که با بکاپ تداخل دارند جایگزین خواهند شد.'];
         }
-
         return $warnings;
     }
 
@@ -274,18 +274,18 @@ class RestoreService
     {
         return match(true) {
             $type === RestoreLog::TYPE_PLATFORM_DATABASE => [
-                'scope'    => 'کل پلتفرم',
-                'downtime' => 'بله — maintenance mode فعال می‌شود',
+                'scope'        => 'کل پلتفرم',
+                'downtime'     => 'بله — maintenance mode فعال می‌شود',
                 'data_at_risk' => 'تمام جداول پلتفرم از آخرین snapshot تا الان',
             ],
             $type === RestoreLog::TYPE_TENANT_DATABASE => [
-                'scope'    => "tenant-{$siteId} فقط",
-                'downtime' => 'خیر — سایر تِنِنت‌ها تحت تأثیر نیستند',
+                'scope'        => "tenant-{$siteId} فقط",
+                'downtime'     => 'خیر — سایر تِنِنت‌ها تحت تأثیر نیستند',
                 'data_at_risk' => "داده‌های site_id={$siteId} از آخرین snapshot تا الان",
             ],
             str_contains($type, 'storage') => [
-                'scope'    => 'فایل‌های استوریج',
-                'downtime' => 'خیر — بازیابی غیرمخرب است',
+                'scope'        => 'فایل‌های استوریج',
+                'downtime'     => 'خیر',
                 'data_at_risk' => 'فایل‌های استوریج که از آخرین snapshot تغییر کرده‌اند',
             ],
             default => ['scope' => '—', 'downtime' => '—', 'data_at_risk' => '—'],
@@ -296,6 +296,7 @@ class RestoreService
 
     /**
      * Create a pre-restore database snapshot. Returns local path or null on failure.
+     * Uses MYSQL_PWD env var — password never in CLI args.
      */
     public function createDatabaseSnapshot(string $database, string $label, ?string $whereClause = null): ?string
     {
@@ -307,15 +308,15 @@ class RestoreService
         $user     = config('database.connections.mysql.username');
         $password = config('database.connections.mysql.password');
 
-        $passwordArg = $password !== '' ? '-p' . escapeshellarg($password) : '';
-        $whereArg    = $whereClause ? "--where=" . escapeshellarg($whereClause) : '';
+        $whereArg = $whereClause ? '--where=' . escapeshellarg($whereClause) : '';
+        $envPwd   = $password !== '' ? 'MYSQL_PWD=' . escapeshellarg($password) . ' ' : '';
 
         $cmd = sprintf(
-            'mysqldump --single-transaction --quick --lock-tables=false -h %s -P %s -u %s %s %s %s | gzip > %s 2>&1',
+            '%smysqldump --single-transaction --quick --lock-tables=false -h %s -P %s -u %s %s %s | gzip > %s 2>&1',
+            $envPwd,
             escapeshellarg($host),
             escapeshellarg((string) $port),
             escapeshellarg($user),
-            $passwordArg,
             escapeshellarg($database),
             $whereArg,
             escapeshellarg($localPath)
@@ -326,7 +327,7 @@ class RestoreService
         if ($exitCode !== 0 || !file_exists($localPath) || filesize($localPath) < 32) {
             Log::error("RestoreService: snapshot failed for {$database}", [
                 'exit_code' => $exitCode,
-                'output'    => implode(' ', $output),
+                'label'     => $label,
             ]);
             return null;
         }
@@ -349,16 +350,148 @@ class RestoreService
         return $code === 0;
     }
 
-    // ─── Restore Execution (called from Jobs) ─────────────────────────────────
+    // ─── Platform Database Restore ────────────────────────────────────────────
+
+    /**
+     * Execute a full platform database restore.
+     * Called from RestorePlatformDatabaseJob.
+     * Steps: download → verify gzip → maintenance mode → pre-restore snapshot →
+     *        drop/create DB → restore → migrate → cache rebuild → maintenance off.
+     */
+    public function executePlatformDatabaseRestore(RestoreLog $log, string $remotePath): void
+    {
+        $token             = $log->restore_token;
+        $events            = [];
+        $localPath         = null;
+        $maintenanceActive = false;
+
+        try {
+            $this->push($token, $events, 5, 'آغاز بازیابی دیتابیس پلتفرم', 'running');
+
+            // Step 1: Download from Arvan
+            $this->push($token, $events, 8, 'دانلود فایل بکاپ از Arvan...');
+            $ts        = now()->format('Y-m-d_His');
+            $localPath = sys_get_temp_dir() . "/restore-platform-db-{$ts}.sql.gz";
+
+            if (!$this->arvan->download($remotePath, $localPath)) {
+                throw new \RuntimeException('دانلود فایل بکاپ از Arvan ناموفق بود');
+            }
+            $this->push($token, $events, 20, 'فایل بکاپ دانلود شد: ' . $this->humanSize(filesize($localPath)));
+
+            // Step 2: Verify gzip integrity
+            $this->push($token, $events, 23, 'تأیید یکپارچگی فایل gzip...');
+            if (!$this->verifyGzip($localPath)) {
+                @unlink($localPath);
+                throw new \RuntimeException('فایل بکاپ خراب است (gzip integrity check failed)');
+            }
+            $this->push($token, $events, 27, 'یکپارچگی فایل تأیید شد');
+
+            // Step 3: Enable maintenance mode
+            $this->push($token, $events, 30, 'فعال‌سازی حالت maintenance...');
+            Artisan::call('down');
+            $maintenanceActive = true;
+            $this->push($token, $events, 33, 'حالت maintenance فعال شد');
+
+            // Step 4: Create pre-restore snapshot
+            $this->push($token, $events, 35, 'ایجاد snapshot قبل از بازیابی...');
+            $database     = config('database.connections.mysql.database');
+            $snapshotPath = $this->createDatabaseSnapshot($database, 'platform');
+            if ($snapshotPath) {
+                $log->update(['rollback_snapshot_path' => $snapshotPath]);
+                $this->push($token, $events, 43, 'Snapshot ایجاد شد: ' . basename($snapshotPath));
+            } else {
+                $this->push($token, $events, 43, 'هشدار: snapshot ایجاد نشد — ادامه با احتیاط', 'warn');
+            }
+
+            // Step 5: Drop and recreate database using MYSQL_PWD
+            [$host, $port, $user, $password] = $this->dbCredentials();
+            $envPwd    = $password !== '' ? 'MYSQL_PWD=' . escapeshellarg($password) . ' ' : '';
+            $connFlags = sprintf(
+                '-h %s -P %s -u %s',
+                escapeshellarg($host),
+                escapeshellarg((string) $port),
+                escapeshellarg($user)
+            );
+
+            $this->push($token, $events, 47, "DROP و CREATE DATABASE {$database}...");
+            exec("{$envPwd}mysql {$connFlags} -e " . escapeshellarg(
+                "DROP DATABASE IF EXISTS `{$database}`; CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            ) . ' 2>&1', $o, $c);
+            if ($c !== 0) {
+                throw new \RuntimeException("DROP/CREATE DATABASE ناموفق: " . implode(' ', $o));
+            }
+            $this->push($token, $events, 52, 'دیتابیس پاک‌سازی و ایجاد مجدد شد');
+
+            // Step 6: Restore database from backup
+            $this->push($token, $events, 55, 'بازیابی دیتابیس از بکاپ...');
+            exec(
+                "{$envPwd}gunzip -c " . escapeshellarg($localPath) . " | mysql {$connFlags} " . escapeshellarg($database) . ' 2>&1',
+                $o, $c
+            );
+            if ($c !== 0) {
+                throw new \RuntimeException("بازیابی دیتابیس ناموفق: " . implode(' ', $o));
+            }
+            $this->push($token, $events, 72, 'دیتابیس با موفقیت بازیابی شد');
+
+            // Step 7: Run pending migrations
+            $this->push($token, $events, 75, 'اجرای migration‌های جدید...');
+            $migResult = Artisan::call('migrate', ['--force' => true]);
+            $this->push($token, $events, 80, $migResult === 0
+                ? 'migration‌ها اجرا شدند'
+                : 'هشدار: برخی migration‌ها ناموفق بودند');
+
+            // Step 8: Rebuild caches
+            $this->push($token, $events, 82, 'بازسازی cache‌ها...');
+            Artisan::call('config:cache');
+            Artisan::call('route:cache');
+            Artisan::call('view:cache');
+            $this->push($token, $events, 87, 'Cache‌ها بازسازی شدند');
+
+            // Step 9: Disable maintenance mode
+            $this->push($token, $events, 90, 'غیرفعال‌سازی حالت maintenance...');
+            Artisan::call('up');
+            $maintenanceActive = false;
+            $this->push($token, $events, 93, 'حالت maintenance غیرفعال شد');
+
+            @unlink($localPath);
+            $this->releaseLock();
+            $this->writeActivityLog('platform_database', null, basename($remotePath), 'success');
+
+            $log->markSuccess($events);
+            $this->push($token, $events, 100, 'بازیابی دیتابیس پلتفرم با موفقیت انجام شد', 'success', true);
+
+        } catch (\Throwable $e) {
+            @unlink($localPath ?? '');
+
+            if ($maintenanceActive) {
+                try { Artisan::call('up'); } catch (\Throwable) {}
+            }
+
+            $this->releaseLock();
+            $this->writeActivityLog('platform_database', null, basename($remotePath), 'failed', $e->getMessage());
+
+            $errMsg = $e->getMessage();
+            $log->markFailed($errMsg, $events);
+            $this->push($token, $events, null, "خطا: {$errMsg}", 'error', true);
+
+            $this->slack->critical('Platform DB Restore Failed', $errMsg, ['file' => $remotePath]);
+            Log::error("RestoreService: platform DB restore failed", ['error' => $errMsg]);
+        }
+    }
+
+    // ─── Tenant Database Restore ──────────────────────────────────────────────
 
     /**
      * Execute a tenant database restore.
-     * This method is called from RestoreTenantDatabaseJob.
+     * Called from RestoreTenantDatabaseJob.
+     * Delete+copy wrapped in DB::transaction() — atomic, no partial tenant state.
      */
     public function executeTenantDatabaseRestore(RestoreLog $log, string $remotePath, int $siteId): void
     {
-        $token   = $log->restore_token;
-        $events  = [];
+        $token     = $log->restore_token;
+        $events    = [];
+        $localPath = null;
+        $tmpDb     = "restore_tmp_{$siteId}";
 
         try {
             $this->push($token, $events, 5, 'آغاز بازیابی دیتابیس تِنِنت', 'running');
@@ -371,9 +504,9 @@ class RestoreService
             if (!$this->arvan->download($remotePath, $localPath)) {
                 throw new \RuntimeException('دانلود فایل بکاپ از Arvan ناموفق بود');
             }
-            $this->push($token, $events, 20, 'فایل بکاپ دانلود شد: ' . $this->humanSize(filesize($localPath)));
+            $this->push($token, $events, 22, 'فایل بکاپ دانلود شد: ' . $this->humanSize(filesize($localPath)));
 
-            // Step 2: Verify integrity
+            // Step 2: Verify gzip integrity
             $this->push($token, $events, 25, 'تأیید یکپارچگی فایل gzip...');
             if (!$this->verifyGzip($localPath)) {
                 @unlink($localPath);
@@ -382,7 +515,7 @@ class RestoreService
             $this->push($token, $events, 30, 'یکپارچگی فایل تأیید شد');
 
             // Step 3: Pre-restore snapshot
-            $this->push($token, $events, 35, 'ایجاد snapshot قبل از بازیابی...');
+            $this->push($token, $events, 33, 'ایجاد snapshot قبل از بازیابی...');
             $customerDb   = config('database.connections.mysql_customer.database', 'customer_site');
             $snapshotPath = $this->createDatabaseSnapshot($customerDb, "tenant-{$siteId}", "site_id={$siteId}");
             if ($snapshotPath) {
@@ -392,50 +525,51 @@ class RestoreService
                 $this->push($token, $events, 40, 'هشدار: snapshot ایجاد نشد — ادامه با احتیاط', 'warn');
             }
 
-            // Step 4: Create temp DB and restore
-            $tmpDb    = "restore_tmp_{$siteId}";
-            $host     = config('database.connections.mysql.host');
-            $port     = config('database.connections.mysql.port', 3306);
-            $user     = config('database.connections.mysql.username');
-            $password = config('database.connections.mysql.password');
-            $passArg  = $password !== '' ? '-p' . escapeshellarg($password) : '';
-            $connArgs = sprintf('-h %s -P %s -u %s %s', escapeshellarg($host), escapeshellarg((string)$port), escapeshellarg($user), $passArg);
+            // Step 4: Create temp DB and restore backup into it
+            [$host, $port, $user, $password] = $this->dbCredentials();
+            $envPwd    = $password !== '' ? 'MYSQL_PWD=' . escapeshellarg($password) . ' ' : '';
+            $connFlags = sprintf(
+                '-h %s -P %s -u %s',
+                escapeshellarg($host),
+                escapeshellarg((string) $port),
+                escapeshellarg($user)
+            );
 
-            $this->push($token, $events, 45, "ایجاد دیتابیس موقت {$tmpDb}...");
-            exec("mysql {$connArgs} -e " . escapeshellarg("CREATE DATABASE IF NOT EXISTS `{$tmpDb}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci") . ' 2>&1', $o, $c);
+            $this->push($token, $events, 43, "ایجاد دیتابیس موقت {$tmpDb}...");
+            exec("{$envPwd}mysql {$connFlags} -e " . escapeshellarg(
+                "CREATE DATABASE IF NOT EXISTS `{$tmpDb}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            ) . ' 2>&1', $o, $c);
             if ($c !== 0) throw new \RuntimeException("ایجاد دیتابیس موقت ناموفق: " . implode(' ', $o));
 
-            $this->push($token, $events, 50, 'بازیابی بکاپ در دیتابیس موقت...');
-            exec("gunzip < {$localPath} | mysql {$connArgs} " . escapeshellarg($tmpDb) . ' 2>&1', $o, $c);
+            $this->push($token, $events, 48, 'بازیابی بکاپ در دیتابیس موقت...');
+            exec(
+                "{$envPwd}gunzip -c " . escapeshellarg($localPath) . " | mysql {$connFlags} " . escapeshellarg($tmpDb) . ' 2>&1',
+                $o, $c
+            );
             if ($c !== 0) {
-                exec("mysql {$connArgs} -e " . escapeshellarg("DROP DATABASE IF EXISTS `{$tmpDb}`"), $_, $_);
+                exec("{$envPwd}mysql {$connFlags} -e " . escapeshellarg("DROP DATABASE IF EXISTS `{$tmpDb}`") . ' 2>&1');
                 throw new \RuntimeException("بازیابی در دیتابیس موقت ناموفق: " . implode(' ', $o));
             }
             $this->push($token, $events, 60, 'بازیابی در دیتابیس موقت کامل شد');
 
-            // Step 5: Delete existing tenant data
-            $this->push($token, $events, 65, "حذف داده‌های site_id={$siteId} از {$customerDb}...");
-            $this->deleteTenantData($connArgs, $customerDb, $siteId);
-            $this->push($token, $events, 72, 'داده‌های قدیمی تِنِنت حذف شدند');
-
-            // Step 6: Copy from tmp to production
-            $this->push($token, $events, 75, 'کپی داده از دیتابیس موقت به تولید...');
-            $this->copyTenantData($connArgs, $tmpDb, $customerDb, $siteId);
-            $this->push($token, $events, 88, 'داده‌های تِنِنت کپی شدند');
+            // Step 5+6: Atomic delete+copy in a single DB transaction
+            $this->push($token, $events, 63, "انتقال atomic داده‌های site_id={$siteId} (DB transaction)...");
+            DB::transaction(function () use ($customerDb, $tmpDb, $siteId) {
+                $this->deleteTenantData($customerDb, $siteId);
+                $this->copyTenantData($tmpDb, $customerDb, $siteId);
+            });
+            $this->push($token, $events, 85, 'داده‌های تِنِنت به‌صورت atomic منتقل شدند');
 
             // Step 7: Drop temp DB
-            $this->push($token, $events, 90, "حذف دیتابیس موقت {$tmpDb}...");
-            exec("mysql {$connArgs} -e " . escapeshellarg("DROP DATABASE IF EXISTS `{$tmpDb}`"), $_, $_);
+            $this->push($token, $events, 88, "حذف دیتابیس موقت {$tmpDb}...");
+            exec("{$envPwd}mysql {$connFlags} -e " . escapeshellarg("DROP DATABASE IF EXISTS `{$tmpDb}`") . ' 2>&1');
 
-            // Step 8: Flush caches
-            $this->push($token, $events, 93, 'پاکسازی cache تِنِنت...');
+            // Step 8: Flush tenant cache
+            $this->push($token, $events, 92, 'پاکسازی cache تِنِنت...');
             \Illuminate\Support\Facades\Cache::store('customers')->flush();
 
-            // Step 9: Cleanup
             @unlink($localPath);
             $this->releaseLock();
-
-            // Step 10: Log activity
             $this->writeActivityLog('tenant_database', $siteId, basename($remotePath), 'success');
 
             $log->markSuccess($events);
@@ -443,6 +577,15 @@ class RestoreService
 
         } catch (\Throwable $e) {
             @unlink($localPath ?? '');
+
+            // Drop temp DB if creation succeeded
+            try {
+                [$h, $p, $u, $pwd] = $this->dbCredentials();
+                $ep  = $pwd !== '' ? 'MYSQL_PWD=' . escapeshellarg($pwd) . ' ' : '';
+                $cf  = sprintf('-h %s -P %s -u %s', escapeshellarg($h), escapeshellarg((string)$p), escapeshellarg($u));
+                exec("{$ep}mysql {$cf} -e " . escapeshellarg("DROP DATABASE IF EXISTS `{$tmpDb}`") . ' 2>&1');
+            } catch (\Throwable) {}
+
             $this->releaseLock();
             $this->writeActivityLog('tenant_database', $siteId, basename($remotePath), 'failed', $e->getMessage());
 
@@ -455,19 +598,17 @@ class RestoreService
         }
     }
 
-    /**
-     * Execute a platform storage restore.
-     * Called from RestorePlatformStorageJob.
-     */
+    // ─── Platform Storage Restore ─────────────────────────────────────────────
+
     public function executePlatformStorageRestore(RestoreLog $log, string $remotePath, string $mergeStrategy = 'merge'): void
     {
-        $token  = $log->restore_token;
-        $events = [];
+        $token     = $log->restore_token;
+        $events    = [];
+        $localPath = null;
 
         try {
             $this->push($token, $events, 5, 'آغاز بازیابی فایل‌های پلتفرم', 'running');
 
-            // Download
             $this->push($token, $events, 10, 'دانلود آرشیو از Arvan...');
             $ts        = now()->format('Y-m-d_His');
             $localPath = sys_get_temp_dir() . "/restore-storage-{$ts}.tar.gz";
@@ -477,7 +618,6 @@ class RestoreService
             }
             $this->push($token, $events, 25, 'آرشیو دانلود شد: ' . $this->humanSize(filesize($localPath)));
 
-            // Verify
             $this->push($token, $events, 30, 'تأیید یکپارچگی tar...');
             if (!$this->verifyTar($localPath)) {
                 @unlink($localPath);
@@ -485,44 +625,42 @@ class RestoreService
             }
             $this->push($token, $events, 35, 'یکپارچگی آرشیو تأیید شد');
 
-            // Disk space check
             $this->push($token, $events, 40, 'بررسی فضای دیسک...');
-            $freeBytes  = disk_free_space(storage_path('app/public'));
-            $tarSize    = filesize($localPath);
+            $freeBytes = disk_free_space(storage_path('app/public'));
+            $tarSize   = filesize($localPath);
             if ($freeBytes < $tarSize * 2) {
                 throw new \RuntimeException('فضای دیسک کافی نیست. فضای آزاد: ' . $this->humanSize($freeBytes));
             }
             $this->push($token, $events, 45, 'فضای دیسک کافی است: ' . $this->humanSize($freeBytes));
 
-            // Extract
             $destDir = storage_path('app/public');
             $this->push($token, $events, 50, "استخراج فایل‌ها (strategy: {$mergeStrategy})...");
 
             if ($mergeStrategy === 'overwrite') {
                 $cmd = 'tar -xzf ' . escapeshellarg($localPath) . ' -C ' . escapeshellarg($destDir) . ' 2>&1';
+                exec($cmd, $output, $exitCode);
             } else {
-                // merge: only copy files not already present
                 $tmpExtract = sys_get_temp_dir() . "/restore-storage-tmp-{$ts}";
                 mkdir($tmpExtract, 0755, true);
                 exec('tar -xzf ' . escapeshellarg($localPath) . ' -C ' . escapeshellarg($tmpExtract) . ' 2>&1', $o1, $c1);
                 if ($c1 !== 0) throw new \RuntimeException('استخراج موقت ناموفق: ' . implode(' ', $o1));
                 $cmd = 'rsync -a --ignore-existing ' . escapeshellarg($tmpExtract . '/') . ' ' . escapeshellarg($destDir . '/') . ' 2>&1';
+                exec($cmd, $output, $exitCode);
+                exec('rm -rf ' . escapeshellarg($tmpExtract));
             }
 
-            exec($cmd, $output, $exitCode);
-            if (isset($tmpExtract)) exec('rm -rf ' . escapeshellarg($tmpExtract));
-            if ($exitCode !== 0) throw new \RuntimeException('استخراج فایل‌ها ناموفق: ' . implode(' ', $output));
+            if (isset($exitCode) && $exitCode !== 0) {
+                throw new \RuntimeException('استخراج فایل‌ها ناموفق: ' . implode(' ', $output ?? []));
+            }
             $this->push($token, $events, 75, 'فایل‌ها با موفقیت استخراج شدند');
 
-            // Fix permissions
             $this->push($token, $events, 80, 'تنظیم دسترسی‌های فایل...');
             exec('chown -R www-data:www-data ' . escapeshellarg($destDir) . ' 2>&1');
             $this->push($token, $events, 85, 'دسترسی‌های فایل تنظیم شد');
 
-            // Cleanup
             @unlink($localPath);
             $this->push($token, $events, 90, 'پاکسازی cache...');
-            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            Artisan::call('cache:clear');
 
             $this->releaseLock();
             $this->writeActivityLog('platform_storage', null, basename($remotePath), 'success');
@@ -560,41 +698,65 @@ class RestoreService
         $this->pushProgress($token, $event);
     }
 
-    private function deleteTenantData(string $connArgs, string $db, int $siteId): void
+    private function dbCredentials(): array
     {
-        // Tables that have site_id column — delete in child-first order to respect FKs
-        $tables = $this->getTenantTables($connArgs, $db, $siteId);
+        return [
+            config('database.connections.mysql.host'),
+            config('database.connections.mysql.port', 3306),
+            config('database.connections.mysql.username'),
+            config('database.connections.mysql.password'),
+        ];
+    }
+
+    /**
+     * Delete all tenant rows from a database using parameterized DB facade.
+     * Runs inside DB::transaction() in the caller — rollback-safe.
+     */
+    private function deleteTenantData(string $db, int $siteId): void
+    {
+        $tables = $this->getTenantTableNames($db);
         foreach (array_reverse($tables) as $table) {
-            exec("mysql {$connArgs} " . escapeshellarg($db) . " -e " . escapeshellarg("DELETE FROM `{$table}` WHERE site_id={$siteId}") . ' 2>&1');
+            DB::statement("DELETE FROM `{$db}`.`{$table}` WHERE site_id = ?", [$siteId]);
         }
     }
 
-    private function copyTenantData(string $connArgs, string $tmpDb, string $destDb, int $siteId): void
+    /**
+     * Copy tenant rows from tmpDb into destDb using parameterized DB facade.
+     * Runs inside DB::transaction() in the caller — rollback-safe.
+     */
+    private function copyTenantData(string $tmpDb, string $destDb, int $siteId): void
     {
-        $tables = $this->getTenantTables($connArgs, $tmpDb, $siteId);
+        $tables = $this->getTenantTableNames($tmpDb);
         foreach ($tables as $table) {
-            // Check table exists in dest
-            exec("mysql {$connArgs} " . escapeshellarg($destDb) . " -e " . escapeshellarg("SELECT 1 FROM `{$table}` LIMIT 1") . ' 2>&1', $_, $c);
-            if ($c !== 0) continue; // table doesn't exist in dest — skip
+            $exists = DB::select(
+                "SELECT COUNT(*) as cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+                [$destDb, $table]
+            );
+            if (empty($exists) || ((array) $exists[0])['cnt'] == 0) {
+                continue;
+            }
 
-            exec("mysql {$connArgs} -e " . escapeshellarg(
-                "INSERT INTO `{$destDb}`.`{$table}` SELECT * FROM `{$tmpDb}`.`{$table}` WHERE site_id={$siteId}"
-            ) . ' 2>&1');
+            DB::statement(
+                "INSERT INTO `{$destDb}`.`{$table}` SELECT * FROM `{$tmpDb}`.`{$table}` WHERE site_id = ?",
+                [$siteId]
+            );
         }
     }
 
-    private function getTenantTables(string $connArgs, string $db, int $siteId): array
+    /**
+     * Get all table names that have a site_id column in the given database.
+     * Uses parameterized query — no SQL injection risk.
+     */
+    private function getTenantTableNames(string $db): array
     {
-        exec("mysql {$connArgs} " . escapeshellarg($db) . " -e " . escapeshellarg(
-            "SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='{$db}' AND COLUMN_NAME='site_id' GROUP BY TABLE_NAME"
-        ) . ' 2>&1', $output, $exitCode);
-
-        if ($exitCode !== 0) return [];
-
-        return array_filter(
-            array_map('trim', array_slice($output, 1)), // skip header
-            fn($t) => $t !== '' && $t !== 'TABLE_NAME'
+        $rows = DB::select(
+            "SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND COLUMN_NAME = 'site_id' GROUP BY TABLE_NAME",
+            [$db]
         );
+        return array_values(array_column(
+            array_map(fn($r) => (array) $r, $rows),
+            'TABLE_NAME'
+        ));
     }
 
     private function writeActivityLog(string $type, ?int $siteId, string $filename, string $result, string $error = ''): void

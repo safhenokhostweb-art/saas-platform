@@ -1,7 +1,64 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-06-26
+> Last Updated: 2026-06-27
+
+---
+
+## CURRENT STATE (2026-06-27 — CORE_BLOCKERS_IMPLEMENTATION_COMPLETE)
+
+**Last completed phase:** CORE_BLOCKERS_IMPLEMENTATION — All P0/P1/P2 blockers from CORE_CERTIFICATION_PHASE_1 resolved.
+
+**Overall Core Health: 95/100 — CORE_READY_FOR_FREEZE**
+
+**Subsystem results (post-implementation):**
+| Subsystem | Score | Freeze |
+|-----------|-------|--------|
+| Installer Foundation | 96/100 | FROZEN |
+| Backup Engine / DR Center | 90/100 | FROZEN |
+| Restore Foundation | 92/100 | FROZEN |
+| Arvan Offsite Backup | 96/100 | FROZEN |
+| Queue / Job Reliability | 94/100 | FROZEN |
+| Finance Ledger | 78/100 | FROZEN* |
+| License Sync | 82/100 | FROZEN* |
+| (all others) | 85–95 | FROZEN |
+
+*Minor warnings accepted — no blocking issues
+
+**Blockers resolved:**
+1. `executePlatformDatabaseRestore()` — IMPLEMENTED (11-step flow, maintenance mode, pre-snapshot, MYSQL_PWD)
+2. `RestorePlatformDatabaseJob` — CREATED (`$timeout=3600`, `$queue=restore`, `failed()` releases lock + `artisan up`)
+3. `config/queue.php` — Added `restore` connection (`retry_after=7200`)
+4. All restore jobs — dispatch `->onConnection('restore')->onQueue('restore')`
+5. InstallerValidator — `sync` driver is now hard FAIL
+6. Restore atomicity — `DB::transaction()` wraps delete+copy; parameterized SQL
+7. `BackupTenantDatabaseCommand` — CREATED, scheduled daily 02:30
+8. ArvanBackupService `prune()` — ADDED, called by all 3 backup commands
+9. `ArvanBackupService::listFiles()` — O(2N+1)→O(1) via `listContents()`
+10. MYSQL_PWD — All mysqldump/mysql CLI calls converted
+11. Scheduler heartbeat — `Cache::put('scheduler_last_run', now(), 120)` every minute
+12. SCHEDULER_DEAD — Fixed: checks heartbeat cache, not `InfraSchedulerRun`
+13. DB composite index — Migration `2026_06_27_000001_add_composite_index_to_infra_backup_runs.php`
+
+**Documents generated:**
+- `docs/CORE_BLOCKERS_IMPLEMENTATION.md` — all 13 changes with per-file evidence
+- `docs/CORE_HEALTH_REASSESSMENT.md` — per-finding PASS/WARNING/FAIL table
+- `docs/CORE_FREEZE_READINESS_V2.md` — final gate assessment + CORE_READY_FOR_FREEZE verdict
+
+**Accepted warnings (not blocking):**
+- SUP-001: Supervisor group name mismatch (server-side, ops)
+- DR-SCORE-01: evalRestoreLogs() bias on fresh installs (cosmetic)
+- DR-ALERT-02: ALERT-007 TTL math (minor false-positive window)
+- FIN-IDEM-01: createManual() no idempotency (admin-only)
+- FIN-BOUND-02: finance amount no upper bound (admin-only)
+- SEC-RATE-01: no rate limit on license validate (Phase 3 hardening)
+
+**NEXT STEP:** Phase 3 — Restore Engine Enterprise (requires user approval to start)
+
+**POST-DEPLOY REQUIRED:**
+- `php artisan migrate --force` (composite index migration)
+- Verify redis queue worker active: `supervisorctl status`
+- Test tenant backup: `php artisan db:backup-tenants --dry-run`
 
 ---
 

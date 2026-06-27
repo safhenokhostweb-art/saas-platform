@@ -44,13 +44,13 @@ class BackupDatabaseCommand extends Command
         $schedRun  = InfraSchedulerRun::startRun('db:backup --retention=7');
         $startedAt = microtime(true);
 
-        $passwordArg = $password !== '' ? '-p' . escapeshellarg($password) : '';
+        $envPwd = $password !== '' ? 'MYSQL_PWD=' . escapeshellarg($password) . ' ' : '';
         $cmd = sprintf(
-            'mysqldump --single-transaction --quick --lock-tables=false -h %s -P %s -u %s %s %s | gzip > %s 2>&1',
+            '%smysqldump --single-transaction --quick --lock-tables=false -h %s -P %s -u %s %s | gzip > %s 2>&1',
+            $envPwd,
             escapeshellarg($host),
             escapeshellarg((string) $port),
             escapeshellarg($user),
-            $passwordArg,
             escapeshellarg($db),
             escapeshellarg($fullPath)
         );
@@ -97,6 +97,19 @@ class BackupDatabaseCommand extends Command
         }
 
         $this->pruneOldBackups($backupDir, $retention);
+
+        // Prune Arvan remote files — keep same retention as local
+        try {
+            $arvan  = app(ArvanBackupService::class);
+            $pruned = $arvan->prune($arvan->platformDbPath(''), $retention);
+            if ($pruned['pruned'] > 0) {
+                $this->line("Arvan pruned {$pruned['pruned']} old backup(s), kept {$pruned['kept']}");
+                Log::info("db:backup arvan prune", $pruned);
+            }
+        } catch (\Throwable $e) {
+            $this->warn("Arvan prune failed: " . $e->getMessage());
+            Log::warning("db:backup arvan prune failed", ['error' => $e->getMessage()]);
+        }
 
         return self::SUCCESS;
     }

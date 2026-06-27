@@ -3,6 +3,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Cache;
 
 class Kernel extends ConsoleKernel
 {
@@ -11,6 +12,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Scheduler heartbeat — written every minute so SCHEDULER_DEAD detection works accurately
+        $schedule->call(fn() => Cache::put('scheduler_last_run', now(), 120))
+            ->everyMinute()
+            ->name('scheduler-heartbeat')
+            ->withoutOverlapping();
+
         // اعلان خودکار انقضا: یک ماه قبل و هر ۱۰ روز — هر روز یک‌بار چک می‌شود
         $schedule->command('expiry:send-reminders')->daily()->at('08:00');
 
@@ -122,6 +129,12 @@ class Kernel extends ConsoleKernel
             ->weeklyOn(0, '03:30')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/storage-backup.log'));
+
+        // TENANT-BACKUP: Daily tenant database backup → ArvanCloud offsite (02:30 — after platform backup)
+        $schedule->command('db:backup-tenants --retention=7')
+            ->dailyAt('02:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/tenant-backup.log'));
     }
 
     /**

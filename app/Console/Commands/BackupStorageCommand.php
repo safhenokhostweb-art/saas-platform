@@ -93,6 +93,19 @@ class BackupStorageCommand extends Command
             }
         }
 
+        // Prune old Arvan storage backups — keep last 4 weekly backups (~1 month)
+        try {
+            $arvan  = app(ArvanBackupService::class);
+            $pruned = $arvan->prune($arvan->platformStoragePath(''), 4);
+            if ($pruned['pruned'] > 0) {
+                $this->line("Arvan pruned {$pruned['pruned']} old storage backup(s), kept {$pruned['kept']}");
+                Log::info('storage:backup arvan prune', $pruned);
+            }
+        } catch (\Throwable $e) {
+            $this->warn("Arvan storage prune failed: " . $e->getMessage());
+            Log::warning('storage:backup arvan prune failed', ['error' => $e->getMessage()]);
+        }
+
         return self::SUCCESS;
     }
 }

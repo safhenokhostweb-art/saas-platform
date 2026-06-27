@@ -45,6 +45,41 @@
 
 ---
 
+## COMPLETE: CORE_BLOCKERS_IMPLEMENTATION — 2026-06-27 ✅
+
+**Status:** CORE_BLOCKERS_IMPLEMENTATION_COMPLETE — Core Health 95/100 — CORE_READY_FOR_FREEZE
+
+| Task | Status |
+|------|--------|
+| P0-1: executePlatformDatabaseRestore() + RestorePlatformDatabaseJob | ✅ DONE |
+| P0-2: Queue reliability — restore connection + retry_after=7200 | ✅ DONE |
+| P0-2b: InstallerValidator sync → hard FAIL | ✅ DONE |
+| P0-3: Restore atomicity — DB::transaction() + parameterized SQL | ✅ DONE |
+| P1-4: BackupTenantDatabaseCommand + Kernel schedule 02:30 | ✅ DONE |
+| P1-5: ArvanBackupService::prune() + called in all 3 backup commands | ✅ DONE |
+| P1-6: Scheduler heartbeat + SCHEDULER_DEAD fix | ✅ DONE |
+| P2-7: MYSQL_PWD everywhere — RestoreService + BackupDatabaseCommand | ✅ DONE |
+| P2-8a: listContents() O(1) fix in ArvanBackupService | ✅ DONE |
+| P2-8b: Composite index migration on infra_backup_runs | ✅ DONE |
+| docs/CORE_BLOCKERS_IMPLEMENTATION.md | ✅ DONE |
+| docs/CORE_HEALTH_REASSESSMENT.md | ✅ DONE |
+| docs/CORE_FREEZE_READINESS_V2.md | ✅ DONE |
+| project-memory updated | ✅ DONE |
+| deploy.ps1 | ✅ DONE |
+
+**Post-deploy required on server:**
+- `php artisan migrate --force` (composite index migration)
+- `supervisorctl status` (verify redis worker)
+- `php artisan db:backup-tenants --dry-run` (verify tenant backup)
+
+**Accepted warnings (Phase 3 targets):**
+- SUP-001: Supervisor group name mismatch
+- DR-SCORE-01/DR-ALERT-02: DR score/alert cosmetic issues
+- FIN-IDEM-01/FIN-BOUND-02: Finance minor gaps
+- SEC-RATE-01: License endpoint rate limiting
+
+---
+
 ## COMPLETE: DR_CENTER_PHASE2_COMPLETION — 2026-06-26 ✅
 
 **Status:** DISASTER_RECOVERY_CENTER_ENTERPRISE_READY

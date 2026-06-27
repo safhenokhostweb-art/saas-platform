@@ -3,6 +3,7 @@ namespace App\Services\Infrastructure;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use League\Flysystem\FileAttributes;
 
 class ArvanBackupService
 {
@@ -126,6 +127,14 @@ class ArvanBackupService
     }
 
     /**
+     * Build remote path for a tenant database backup.
+     */
+    public function tenantDbPath(int $siteId, string $filename): string
+    {
+        return "customer-sites/tenant-{$siteId}/database/{$filename}";
+    }
+
+    /**
      * Build remote path for a tenant backup.
      */
     public function tenantPath(int $siteId, string $type, string $filename): string
@@ -135,34 +144,77 @@ class ArvanBackupService
 
     /**
      * List all files under a remote prefix, sorted newest-first.
+     * Uses listContents() to fetch metadata in a single API call (no N+1).
      *
      * @return list<array{path: string, filename: string, size: int|null, last_modified: int|null}>
      */
     public function listFiles(string $prefix): array
     {
         try {
-            $files = Storage::disk($this->disk)->files($prefix);
-            $result = [];
-            foreach ($files as $file) {
-                $size     = $this->size($file);
-                $modified = null;
-                try {
-                    $modified = Storage::disk($this->disk)->lastModified($file);
-                } catch (\Throwable) {}
+            $listing = Storage::disk($this->disk)->listContents($prefix, false);
+            $result  = [];
+
+            foreach ($listing as $item) {
+                if (!($item instanceof FileAttributes)) {
+                    continue;
+                }
+
+                $size     = $item->fileSize();
+                $modified = $item->lastModified();
+
+                // Fallback to individual API calls only if metadata is missing from listing
+                if ($size === null) {
+                    $size = $this->size($item->path());
+                }
+                if ($modified === null) {
+                    $modified = $this->lastModified($item->path());
+                }
 
                 $result[] = [
-                    'path'          => $file,
-                    'filename'      => basename($file),
+                    'path'          => $item->path(),
+                    'filename'      => basename($item->path()),
                     'size'          => $size,
                     'last_modified' => $modified,
                 ];
             }
+
             usort($result, fn($a, $b) => ($b['last_modified'] ?? 0) <=> ($a['last_modified'] ?? 0));
             return $result;
+
         } catch (\Throwable $e) {
             Log::warning("ArvanBackup: listFiles failed for prefix '{$prefix}': " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Prune old files under a prefix, keeping the newest $keepCount files.
+     * Files are sorted newest-first; oldest files beyond $keepCount are deleted.
+     *
+     * @return array{pruned: int, kept: int}
+     */
+    public function prune(string $prefix, int $keepCount = 7): array
+    {
+        $files = $this->listFiles($prefix);
+
+        if (count($files) <= $keepCount) {
+            return ['pruned' => 0, 'kept' => count($files)];
+        }
+
+        $toDelete = array_slice($files, $keepCount);
+        $pruned   = 0;
+
+        foreach ($toDelete as $file) {
+            try {
+                Storage::disk($this->disk)->delete($file['path']);
+                $pruned++;
+                Log::info("ArvanBackup: pruned {$file['path']}");
+            } catch (\Throwable $e) {
+                Log::warning("ArvanBackup: prune delete failed for {$file['path']}: " . $e->getMessage());
+            }
+        }
+
+        return ['pruned' => $pruned, 'kept' => count($files) - $pruned];
     }
 
     /**

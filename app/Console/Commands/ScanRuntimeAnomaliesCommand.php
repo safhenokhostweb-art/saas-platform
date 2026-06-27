@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Infrastructure\InfraBackupRun;
-use App\Models\Infrastructure\InfraSchedulerRun;
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Console\Command;
 use SaaSPlatform\CoreUtils\Telemetry\Anomaly\RuntimeAnomalyEngine;
@@ -115,14 +114,16 @@ class ScanRuntimeAnomaliesCommand extends Command
         } catch (\Throwable) {
         }
 
-        // 3. Scheduler dead (no InfraSchedulerRun record in last 5 minutes)
+        // 3. Scheduler dead — check heartbeat cache key (written every minute by Kernel)
         try {
-            $lastRun = InfraSchedulerRun::latest()->first();
-            if ($lastRun && $lastRun->created_at->lt(now()->subMinutes(5))) {
+            $heartbeat = cache('scheduler_last_run');
+            if ($heartbeat === null) {
+                // No heartbeat ever written — either first boot or cron not configured
+                // Don't alert until we have positive evidence of a working then broken scheduler
+            } elseif ($heartbeat->lt(now()->subMinutes(3))) {
                 $anomalies[] = $this->opAnomaly('SCHEDULER_DEAD', 'critical',
-                    'Laravel scheduler has not run in the last 5 minutes — cron may be down',
-                    ['last_run_at' => $lastRun->created_at->toIso8601String(),
-                     'last_command' => $lastRun->command]);
+                    'Laravel scheduler has not run in the last 3 minutes — cron may be down',
+                    ['last_heartbeat_at' => $heartbeat->toIso8601String()]);
             }
         } catch (\Throwable) {
         }

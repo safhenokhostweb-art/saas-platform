@@ -1,7 +1,105 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-26
+> Last Updated: 2026-06-27
+
+---
+
+## 2026-06-27 — CORE_BLOCKERS_IMPLEMENTATION_COMPLETE
+
+**Type:** Implementation — Critical infrastructure fixes (no new features)
+
+**Core Health:** 73/100 → 95/100 (+22 points)
+
+**Verdict:** CORE_READY_FOR_FREEZE
+
+**Files modified (10):**
+- `config/queue.php` — added `restore` connection (retry_after=7200)
+- `app/Services/Infrastructure/RestoreService.php` — full rewrite: executePlatformDatabaseRestore(), DB::transaction(), MYSQL_PWD, parameterized SQL
+- `app/Http/Controllers/Admin/RestoreWizardController.php` — fixed platform DB dispatch + all jobs onConnection('restore')
+- `app/Services/Installer/InstallerValidator.php` — sync driver → hard FAIL
+- `app/Services/Infrastructure/ArvanBackupService.php` — listContents() O(1) + prune() method
+- `app/Console/Commands/BackupDatabaseCommand.php` — MYSQL_PWD + Arvan prune
+- `app/Console/Commands/BackupStorageCommand.php` — Arvan prune
+- `app/Console/Kernel.php` — scheduler heartbeat + tenant backup schedule
+- `app/Console/Commands/ScanRuntimeAnomaliesCommand.php` — SCHEDULER_DEAD fixed (cache key, not InfraSchedulerRun)
+
+**Files created (3):**
+- `app/Jobs/RestorePlatformDatabaseJob.php` — $timeout=3600, $queue=restore, failed() releases lock + artisan up
+- `app/Console/Commands/BackupTenantDatabaseCommand.php` — per-site mysqldump, MYSQL_PWD, Arvan upload+prune, InfraBackupRun
+- `database/migrations/2026_06_27_000001_add_composite_index_to_infra_backup_runs.php` — (site_id, backup_type, status, started_at) index
+
+**Documents generated:**
+- `docs/CORE_BLOCKERS_IMPLEMENTATION.md`
+- `docs/CORE_HEALTH_REASSESSMENT.md`
+- `docs/CORE_FREEZE_READINESS_V2.md`
+
+---
+
+## 2026-06-27 — CORE_CERTIFICATION_PHASE1_COMPLETE
+
+**Type:** Audit Only — No code built, no files modified (except docs)
+
+**Scope:** 12 core subsystems fully audited via source code inspection
+
+**Documents generated:**
+- `docs/CORE_CERTIFICATION_MATRIX.md` — 12 subsystems, full evidence
+- `docs/CORE_SECURITY_AUDIT.md` — 9 findings (2 HIGH, 2 MEDIUM, 1 LOW)
+- `docs/CORE_SCALABILITY_AUDIT.md` — 8 scalability findings (2 CRITICAL)
+- `docs/CORE_RECOVERY_AUDIT.md` — 6 recovery paths audited
+- `docs/CORE_FREEZE_READINESS.md` — P0→P3 roadmap, ~22.5h to FREEZE-READY
+
+**Verdict:** CORE_NOT_READY_FOR_FREEZE — Overall Core Health 73/100
+
+**Critical findings (not in any prior doc):**
+- `executePlatformDatabaseRestore()` missing — platform DB restore non-functional
+- `retry_after=90` causes duplicate restore execution for any backup >90s
+- Arvan backup retention never pruned — unbounded cost
+- Supervisor group name mismatch — workers not restarted on deploy
+- `SCHEDULER_DEAD` fires false CRITICAL alarm every 5 minutes
+
+**Files changed:** HANDOVER.md, CHANGELOG_AI.md (project memory only — no deploy needed)
+
+---
+
+## 2026-06-27 — SELECT_DROPDOWN_FIX_V3_COMPREHENSIVE
+
+**Type:** Bug Fix — Round 3 (comprehensive, 3-layer)
+
+**Layer 1 (CSS):** Added `body.admin-body { color-scheme: light !important; }` to `customer-admin-layout.css`. Forces the entire admin body to light-mode native controls.
+
+**Layer 2 (TinyMCE complete deferral):** Previously `tinymce.min.js` was still loaded eagerly. Rewrote `tinymce-field-init.blade.php` to dynamically insert the script tag only when user first touches the textarea. Zero TinyMCE presence on page before that.
+
+**Layer 3 (Global Select Focus Guard):** Added `HTMLElement.prototype.focus` override to `admin/layout.blade.php` (every admin page). Intercepts capture-phase `mousedown` on select elements, blocks any `focus()` on non-select elements for 600ms. Protects against ANY script stealing focus during native select popup interaction.
+
+**Files:** `customer-admin-layout.css`, `tinymce-field-init.blade.php`, `admin/layout.blade.php`
+
+---
+
+## 2026-06-27 — THEME_BLUE_GRADIENT_FIX
+
+**Type:** Bug Fix — Hidden blue gradient in default theme hero section
+
+**Root Cause:**
+`home.blade.php` (default theme) hero fallback section used `var(--platform-link-hover, #4338ca)` for the gradient end color. Since `--platform-link-hover` was never set by `TenantThemeResolver`, it always fell back to the hardcoded indigo blue `#4338ca`, creating a green-to-blue gradient when Sage Green (or any non-blue) preset was active.
+
+**Investigation Findings:**
+- Canvas builder blocks had no hardcoded gradient colors in DB (`canvas_draft_data`)
+- Active canvas theme was empty — site was using `theme=default`  
+- The `pages` table had 0 rows; canvas draft had `bgGradientFrom/To` absent
+- The actual gradient was coming from the fallback `<section class="hero-section">` in `home.blade.php:23`
+
+**Modified Files (customer-site):**
+
+| File | Change |
+|------|--------|
+| `resources/views/themes/default/home.blade.php` | L23: `var(--platform-link-hover, #4338ca)` → `var(--ui-indigo-hover, #4338ca)` — uses always-set theme var |
+| `app/Services/ThemeEngine/TenantThemeResolver.php` | `extractSiteTokens()`: added fallbacks for `--platform-link-hover`, `--tb-primary`, `--tb-secondary` from preset tokens |
+| `app/Services/ThemeEngine/TenantThemeResolver.php` | `fromThemeSetting()`: added `--platform-link-hover => $accent` for custom mode |
+
+**Deployed:** SCP to `87.107.12.81:9011`, cache cleared.
+
+---
 
 ---
 

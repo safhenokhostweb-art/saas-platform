@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RestorePlatformDatabaseJob;
 use App\Jobs\RestorePlatformStorageJob;
 use App\Jobs\RestoreTenantDatabaseJob;
 use App\Models\Infrastructure\RestoreLog;
@@ -197,18 +198,18 @@ class RestoreWizardController extends Controller
         // ── Dispatch appropriate job ───────────────────────────────────────────
 
         try {
-            if ($type === RestoreLog::TYPE_TENANT_DATABASE) {
-                RestoreTenantDatabaseJob::dispatch($log->id, $backupFile, $siteId);
+            if ($type === RestoreLog::TYPE_PLATFORM_DATABASE) {
+                RestorePlatformDatabaseJob::dispatch($log->id, $backupFile)
+                    ->onConnection('restore')->onQueue('restore');
+            } elseif ($type === RestoreLog::TYPE_TENANT_DATABASE) {
+                RestoreTenantDatabaseJob::dispatch($log->id, $backupFile, $siteId)
+                    ->onConnection('restore')->onQueue('restore');
             } elseif ($type === RestoreLog::TYPE_PLATFORM_STORAGE) {
-                RestorePlatformStorageJob::dispatch($log->id, $backupFile, $mergeStrategy);
+                RestorePlatformStorageJob::dispatch($log->id, $backupFile, $mergeStrategy)
+                    ->onConnection('restore')->onQueue('restore');
             } elseif ($type === RestoreLog::TYPE_TENANT_STORAGE) {
-                RestorePlatformStorageJob::dispatch($log->id, $backupFile, $mergeStrategy);
-            } else {
-                // Platform DB restore — run synchronously in the controller via SSE
-                // The job model doesn't suit this since it needs maintenance mode
-                // We dispatch a special sync-safe job
-                RestoreTenantDatabaseJob::dispatch($log->id, $backupFile, 0)
-                    ->onQueue('restore');
+                RestorePlatformStorageJob::dispatch($log->id, $backupFile, $mergeStrategy)
+                    ->onConnection('restore')->onQueue('restore');
             }
         } catch (\Throwable $e) {
             $this->restore->releaseLock();

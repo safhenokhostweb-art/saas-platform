@@ -147,14 +147,28 @@ class InstallerValidator
     public function checkQueue(): array
     {
         $driver = config('queue.default', 'sync');
-        $good   = in_array($driver, ['redis', 'database']);
+        if ($driver === 'redis') {
+            return [
+                'label'   => 'صف (Queue)',
+                'status'  => 'pass',
+                'value'   => $driver,
+                'message' => "درایور صف: {$driver} ✓",
+            ];
+        }
+        if ($driver === 'database') {
+            return [
+                'label'   => 'صف (Queue)',
+                'status'  => 'warn',
+                'value'   => $driver,
+                'message' => "درایور صف: {$driver} — برای production توصیه می‌شود از redis استفاده شود",
+            ];
+        }
+        // sync or any other driver is a hard fail — restore jobs will run synchronously and timeout
         return [
             'label'   => 'صف (Queue)',
-            'status'  => $good ? 'pass' : 'warn',
+            'status'  => 'fail',
             'value'   => $driver,
-            'message' => $good
-                ? "درایور صف: {$driver} ✓"
-                : "درایور صف: {$driver} — برای production توصیه می‌شود از redis استفاده شود",
+            'message' => "درایور صف: {$driver} — sync در production غیرمجاز است. QUEUE_CONNECTION=redis را در .env تنظیم کنید",
         ];
     }
 

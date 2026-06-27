@@ -71,6 +71,16 @@ return [
             'after_commit' => false,
         ],
 
+        // Dedicated connection for long-running restore jobs (up to 2 hours)
+        'restore' => [
+            'driver'      => 'redis',
+            'connection'  => 'default',
+            'queue'       => 'restore',
+            'retry_after' => 7200,
+            'block_for'   => null,
+            'after_commit'=> false,
+        ],
+
     ],
 
     /*
