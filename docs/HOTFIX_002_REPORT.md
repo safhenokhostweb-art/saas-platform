@@ -130,11 +130,47 @@ Post-deploy errors: **NONE** (only DEBUG entries)
 
 ---
 
+---
+
+## Additional Bugs Fixed During Acceptance Testing
+
+### BUG-005-B — Restore Wizard: source-select Alpine pattern (identical to BUG-005)
+
+**File:** `resources/views/installer/restore/source-select.blade.php`  
+**Evidence:** Validation errors "فیلد source الزامی است / فیلد file path الزامی است" after clicking Continue  
+**Root Cause:** `<form x-data="{ source: '' }">` with `<input name="source" x-model="source">` — Alpine CDN blocked, `x-model` never populated, hidden inputs stay empty. `@click` set value but button wrapper hidden.  
+**Fix:** Replaced with vanilla JS. `data-source` + `data-path` on each row, click handler reads them and sets hidden inputs, enables Continue button.  
+**Deploy:** `a6854b4`
+
+---
+
+### BUG-006 — Platform Upgrade / Rollback: SlackAlertService ArgumentCountError
+
+**Files:** `app/Services/Installer/UpgradeAdapter.php`, `app/Services/ResourceGovernance/SiteResourceAlertService.php`, `app/Services/CustomerInstallation/Stages/CustomerReadyStage.php`  
+**Evidence:** Production log 18:28 — ArgumentCountError after user confirmed upgrade  
+**Root Cause:** `SlackAlertService::critical(string $title, string $body)` requires 2 mandatory args. `UpgradeAdapter.php:310` (rollback), `SiteResourceAlertService.php:81` (storage critical alert), and `CustomerReadyStage.php:79` (wrong type — string passed as `array $context`) all had wrong arg counts. The exception was thrown AFTER the upgrade steps succeeded → 500 returned to browser.  
+**Fix:** All calls now pass correct number/types of args.  
+**Deploy:** `50ea792`
+
+---
+
+### BUG-007 — Customer Deployment Servers: Transient 500 During Deploy
+
+**URL:** `/admin/infrastructure/customer-deployment/servers`  
+**Evidence:** Production log 18:36 — `CredentialVault.php:27` INSTALLER_MASTER_KEY not set  
+**Root Cause:** Brief window during deploy when config cache was being rebuilt. INSTALLER_MASTER_KEY IS present in production .env. Page returns 200 after deploy completed.  
+**Fix:** No code change needed.
+
+---
+
 ## Regression Impact
 
 | Area | Impact |
 |------|--------|
 | Platform Installer | `mode-select.blade.php` rewritten — Alpine removed, behavior preserved, no other wizard views changed |
+| Restore Wizard source-select | `source-select.blade.php` rewritten — Alpine removed, same vanilla JS pattern |
 | Restore Wizard AJAX endpoints | Unaffected (only `index()` query changed) |
+| Platform Upgrade | SlackAlertService calls fixed — upgrade now completes without 500 |
+| Customer Installation | `CustomerReadyStage.php` context arg fixed — no functional change |
 | DR Center | Unaffected — no code changes |
 | Other admin pages | Unaffected — no shared code changed |

@@ -4,6 +4,23 @@
 
 ---
 
+## COMPLETE: HOTFIX-001 + HOTFIX-002 + HOTFIX-003 — PRODUCTION_BUGS_FIXED — 2026-06-27 ✅
+
+**Status:** All production 500 bugs resolved and verified
+
+| Bug | Root Cause | Fix | Status |
+|-----|-----------|-----|--------|
+| BUG-001 | InstallerService ParseError (];→};) | Fixed in-place + deploy | ✅ RESOLVED |
+| BUG-002 | RestoreWizardController::validate() conflicts with base | Renamed to checkBackup() | ✅ RESOLVED |
+| BUG-003 | INSTALLER_MASTER_KEY missing from .env | Generated via artisan command | ✅ RESOLVED |
+| BUG-004 | sites.name column doesn't exist (is 'title') | orderBy('title') in RestoreWizardController | ✅ RESOLVED |
+| BUG-005 | Alpine x-show on mode-select never re-evaluates | Rewrote to vanilla JS with data-mode | ✅ RESOLVED |
+| BUG-005-B | Alpine x-model on source-select never populated | Rewrote to vanilla JS with data-source | ✅ RESOLVED |
+| BUG-006 | SlackAlertService 1-arg calls (ArgumentCountError) | Added 2nd arg to all calls in 3 files | ✅ RESOLVED |
+| BUG-007 | Customer-deployment/servers 500 (transient mid-deploy) | No code change needed; key present | ✅ RESOLVED |
+
+---
+
 ## COMPLETE: PHASE-002 + PHASE-003A + PHASE-003B + PHASE-003C — CUSTOMER_INSTALLATION_ENGINE
 
 **Status:** PHASE-003C_COMPLETE — 2026-06-27 ✅

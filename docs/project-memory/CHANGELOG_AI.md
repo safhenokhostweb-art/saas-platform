@@ -5,6 +5,33 @@
 
 ---
 
+## 2026-06-27 — HOTFIX-003_SLACK_ARGCOUNT_AND_INSTALLER_ALPINE_FIX
+
+**Type:** Hotfix — Additional production bugs found during HOTFIX-002 acceptance testing
+
+**Root Causes Fixed:**
+
+**BUG-005-B — Restore Wizard source-select Alpine broken:**
+- `resources/views/installer/restore/source-select.blade.php` — same Alpine CDN pattern as mode-select. `x-model` on hidden `source` and `file_path` inputs never populated when Alpine CDN blocked. `@click` handlers set values but button wrapper Alpine-hidden (`display:none` permanent). Fixed: replaced with vanilla JS, `data-source` + `data-path` attributes on each row. Deployed in `a6854b4`.
+
+**BUG-006 — SlackAlertService ArgumentCountError in UpgradeAdapter:**
+- `app/Services/Installer/UpgradeAdapter.php` — 5 calls to `slack->info/warning/critical()` with wrong argument count. `SlackAlertService::info(string $title, string $body)` requires 2 mandatory args. Calls at lines 151, 153, 223, 274 had `''` as 2nd arg (OK) but line 310 (`critical`) was 1-arg. Root cause: upgrade succeeded but threw `ArgumentCountError` AFTER success → 500 returned to browser. Fixed: all calls now pass 2+ args.
+- `app/Services/ResourceGovernance/SiteResourceAlertService.php` — `slack->critical($message)` at line 81 was 1-arg. Fixed: `slack->critical("بحران فضای ذخیره‌سازی: {$site->title}", $message)`.
+- `app/Services/CustomerInstallation/Stages/CustomerReadyStage.php` — `slack->info()` at line 79 passed a string as 3rd arg (`array $context`). Wrong type — would throw TypeError (caught silently). Fixed: merged detail into body string.
+
+**BUG-007 — Customer Deployment Servers 500 (transient mid-deploy):**
+- `/admin/infrastructure/customer-deployment/servers` returned 500 at 18:36:42 during deploy `a6854b4`. Root cause: `CredentialVault.php:27` `resolveKey()` threw because `INSTALLER_MASTER_KEY` was not available during the brief deploy window when config cache was being rebuilt. Key IS present in `.env` (`INSTALLER_MASTER_KEY="QjRig..."`). Page returns 200 after deploy completed. No code change needed.
+
+**Files modified:**
+- `resources/views/installer/restore/source-select.blade.php` — removed Alpine, vanilla JS row selection
+- `app/Services/Installer/UpgradeAdapter.php` — `critical()` at line 310 now 2-arg
+- `app/Services/ResourceGovernance/SiteResourceAlertService.php` — `critical()` at line 81 now 2-arg
+- `app/Services/CustomerInstallation/Stages/CustomerReadyStage.php` — 3rd arg string → merged into body
+
+**Deploys:** `a6854b4` (source-select + BUG-006 partial), next deploy (BUG-006 complete + CustomerReadyStage)
+
+---
+
 ## 2026-06-27 — HOTFIX-002_PRODUCTION_ACCEPTANCE_FIX
 
 **Type:** Hotfix — Production acceptance failure from HOTFIX-001 false certification

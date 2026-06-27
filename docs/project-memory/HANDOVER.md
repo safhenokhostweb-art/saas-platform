@@ -5,7 +5,34 @@
 
 ---
 
-## CURRENT STATE (2026-06-27 — PHASE-003C_COMPLETE)
+## CURRENT STATE (2026-06-27 — HOTFIX-003_COMPLETE)
+
+**Last completed phase:** All production 500 errors resolved. Platform is STABLE.
+
+**What was fixed (HOTFIX-001 through HOTFIX-003):**
+- InstallerService.php ParseError (];→};) — BUG-001
+- RestoreWizardController::validate() conflict → renamed checkBackup() — BUG-002
+- INSTALLER_MASTER_KEY missing from .env — BUG-003
+- RestoreWizardController sites.name SQL column missing — BUG-004
+- mode-select.blade.php Alpine x-show orphaned scope → vanilla JS — BUG-005
+- source-select.blade.php Alpine x-model never populated → vanilla JS — BUG-005-B
+- SlackAlertService 1-arg calls in UpgradeAdapter.php, SiteResourceAlertService.php, CustomerReadyStage.php — BUG-006
+- Customer-deployment/servers 500 transient (mid-deploy, key present) — BUG-007
+
+**Production URLs — all verified 200/302:**
+- `/platform-installer` — 200
+- `/admin/disaster-recovery` — 302 (auth redirect)
+- `/admin/disaster-recovery/center` — 302 (auth redirect)
+- `/admin/installer` — 302 (auth redirect)
+- `/admin/infrastructure/customer-deployment/servers` — 200
+
+**Last deploy:** `50ea792` (2026-06-27 22:19)
+
+**NEXT STEP:** No active bugs. Ready for next development phase.
+
+---
+
+## PREVIOUS STATE (2026-06-27 — PHASE-003C_COMPLETE)
 
 **Last completed phase:** PHASE-003C Customer Installation Execution Engine — real deployment engine complete, certified, ready to deploy.
 

@@ -22,7 +22,11 @@
 
 ## Current Phase
 
-**HOTFIX-001_COMPLETE (2026-06-27). All 4 infrastructure module pages fixed. 3 root causes: InstallerService ParseError (];→};), RestoreWizardController::validate() method conflict (renamed to checkBackup), INSTALLER_MASTER_KEY missing. All pages verified: 302/200. Production STABLE.**
+**HOTFIX-003_COMPLETE (2026-06-27). Additional production bugs fixed: source-select Alpine CDN broken (same pattern as mode-select — replaced with vanilla JS), SlackAlertService ArgumentCountError in UpgradeAdapter.php (critical() 1-arg at rollback), SiteResourceAlertService.php (critical() 1-arg), CustomerReadyStage.php (wrong type for context arg). Customer-deployment/servers 500 was transient mid-deploy — key present, page returns 200. Deployed in `50ea792`.**
+
+**Previous:** HOTFIX-002_COMPLETE (2026-06-27). Production acceptance failures fixed: sites.name SQL column missing (RestoreWizardController, fixed to orderBy('title')), Alpine x-show on mode-select button never re-evaluates (rewrote to vanilla JS with data-mode attributes). Deployed in `a5a1a09` + `f663f66`.**
+
+**Previous:** HOTFIX-001_COMPLETE (2026-06-27). All 4 infrastructure module pages fixed. 3 root causes: InstallerService ParseError (];→};), RestoreWizardController::validate() method conflict (renamed to checkBackup), INSTALLER_MASTER_KEY missing. All pages verified: 302/200. Production STABLE.**
 
 **Previous:** PHASE-003C_COMPLETE (2026-06-27). Real execution engine delivered. PostInstallValidationService (8 checks), SSH reconnect (MAX_RECONNECTS=2), INITIAL_CUSTOMER_BASELINE (mysqldump→SFTP→Arvan), CustomerInstallAcceptanceCommand. Migration for baseline/validation columns. Deployed to 87.107.12.81:9011.
 
