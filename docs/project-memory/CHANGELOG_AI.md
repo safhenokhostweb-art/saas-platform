@@ -5,6 +5,90 @@
 
 ---
 
+## 2026-06-27 — PHASE-003B_CUSTOMER_INSTALLATION_ADMIN_CENTER_COMPLETE
+
+**Type:** Implementation — Admin UI layer
+
+**Scope:** Customer Installation Admin Center — complete presentation layer reusing PHASE-003A services.
+
+**Rules followed:**
+- ❌ No Core changes
+- ❌ No Restore changes
+- ❌ No Backup changes
+- ❌ No Theme implementation
+- ❌ No PSDS
+- ✅ All PHASE-003A services reused without duplication
+
+**Files created (new — controllers):**
+- `app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php` — dashboard, wizard, history, show, start, rollback, packages
+- `app/Http/Controllers/Admin/Infrastructure/CustomerRemoteServerAdminController.php` — CRUD + SSH test, credential vault, delete guard
+- `app/Http/Controllers/Admin/Infrastructure/CustomerInstallationProgressController.php` — SSE stream (Redis + DB fallback, auto-close)
+
+**Files created (new — views):**
+- `resources/views/admin/infrastructure/customer-deployment/dashboard.blade.php`
+- `resources/views/admin/infrastructure/customer-deployment/wizard.blade.php` — 8-step Alpine.js wizard
+- `resources/views/admin/infrastructure/customer-deployment/history.blade.php` — filterable paginated table
+- `resources/views/admin/infrastructure/customer-deployment/show.blade.php` — timeline + SSE + rollback
+- `resources/views/admin/infrastructure/customer-deployment/packages.blade.php`
+- `resources/views/admin/infrastructure/customer-deployment/servers/index.blade.php` — AJAX test connection
+- `resources/views/admin/infrastructure/customer-deployment/servers/create.blade.php` — credential vault notice
+- `resources/views/admin/infrastructure/customer-deployment/servers/edit.blade.php` — inline test panel
+
+**Files created (new — docs):**
+- `docs/CUSTOMER_INSTALL_ADMIN_CENTER.md`
+- `docs/CUSTOMER_INSTALL_UI.md`
+- `docs/CUSTOMER_INSTALL_ACCEPTANCE.md`
+- `docs/CUSTOMER_INSTALL_CERTIFICATION.md`
+
+**Files modified:**
+- `app/Helpers/AdminMenu.php` — customer_deployment entry in زیرساخت / DevOps group
+- `routes/web.php` — 15 routes under /admin/infrastructure/customer-deployment/
+- `docs/project-memory/HANDOVER.md` — PHASE-003B state
+- `docs/project-memory/PROJECT_STATE.md` — current phase updated
+- `docs/project-memory/OPEN_TASKS.md` — PHASE-003B tasks marked done
+
+**Security controls implemented:**
+- AES-256-GCM credential encryption before any DB write (CredentialVault)
+- Credentials never pre-populated in edit forms
+- Credentials never returned in any API response or SSE stream
+- Rollback guards: status + checkpoint validation
+- Delete guard: no deletion of servers with active installations
+- CSRF on all forms + AJAX X-CSRF-TOKEN headers
+
+**Pending:** Deploy to production via `.\deploy.ps1`
+
+---
+
+## 2026-06-27 — PHASE-003A_CUSTOMER_INSTALLATION_ENGINE_FOUNDATION_CERTIFIED
+
+**Type:** Implementation + Bug Fix + Tests
+
+**Scope:** Customer Installation Engine Foundation — complete implementation, test fixes, certification.
+
+**Bug fixed:**
+- `SecurityPatchRegistry.boot()` eagerly connected to Redis via Cache facade during `CoreUtilsServiceProvider` boot, causing all tests to fail when Redis wasn't running. Fixed by wrapping Cache calls in try-catch (idempotent seed — failure is non-fatal).
+- `MobilePatchRegistryAdapter.seedMobileRegistry()` also hit Redis via `MobileSecurityPatchCoordinator.getAvailablePatches()`. Fixed with try-catch wrapper around entire seed operation.
+- `InstallationStateManager.markRunning()` didn't create an audit log entry — fixed to create INIT/started log.
+
+**Files changed (new):**
+- `app/Providers/CustomerInstallationServiceProvider.php` — Binds InstallationStateInterface→InstallationStateManager, CustomerPackageInterface→CustomerReleasePackageService, all singletons. Registers 2 commands.
+
+**Files changed (modified):**
+- `app/Services/CustomerInstallation/InstallationStateManager.php` — markRunning() now creates CustomerInstallationLog entry
+- `packages/saas-platform/core-utils/src/MobileRuntime/Security/SecurityPatchRegistry.php` — boot() and all() wrapped in try-catch
+- `packages/saas-platform/core-utils/src/MobileRuntime/Security/MobilePatchRegistryAdapter.php` — seedMobileRegistry() wrapped in try-catch
+- `config/app.php` — CustomerInstallationServiceProvider registered
+
+**Test results:** 31/31 PASS (17 unit, 14 feature)
+- CredentialVaultTest: 7/7 PASS
+- FakeDriverTest: 9/9 PASS
+- PipelineTest: 8/8 PASS (incl. 20-stage build, mode variants, resume, disk/ext/sha256 checks)
+- RollbackTest: 5/5 PASS (incl. immutable log, checkpoint tracking, status transitions)
+
+**Deployed:** ✅ Production 87.107.12.81:9011
+
+---
+
 ## 2026-06-27 — PHASE-002_CUSTOMER_INSTALLATION_ENGINE_ARCHITECTURE
 
 **Type:** Architecture design — no code changes

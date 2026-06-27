@@ -6,6 +6,28 @@
 
 ---
 
+## TECHNICAL DEBT / ACCEPTED LIMITATIONS
+
+### CIE-L001 — LOW | DEFERRED
+**Title:** SshRemoteDriver untested against real SSH server  
+**Module:** Customer Installation Engine  
+**Detail:** All pipeline tests use FakeRemoteDriver. Live SSH test requires a test VPS.  
+**Accepted:** PHASE-003B scope — will be validated when Admin Center UI is built.
+
+### CIE-L002 — LOW | DEFERRED
+**Title:** CustomerReleasePackageService untested with real Arvan download  
+**Module:** Customer Installation Engine  
+**Detail:** No real customer-site release ZIP exists yet on Arvan.  
+**Accepted:** Will be tested when first release package is created.
+
+### CIE-L003 — MEDIUM | OPEN
+**Title:** INSTALLER_MASTER_KEY must be set on production before any installation  
+**Module:** Customer Installation Engine  
+**Detail:** CredentialVault throws RuntimeException if INSTALLER_MASTER_KEY missing. Key backup is operator responsibility.  
+**Workaround:** Generate with `php artisan installer:generate-master-key` and store in secure vault.
+
+---
+
 ## ACTIVE BUGS
 
 ### SELECT-DROPDOWN-001 — HIGH | RESOLVED (2026-06-27)

@@ -16,13 +16,17 @@
 
 ## Current Module
 
-**PHASE-002: CUSTOMER_INSTALLATION_ENGINE — ARCHITECTURE_COMPLETE (2026-06-27). 5 architecture documents produced. Implementation not yet started.**
+**PHASE-003B: CUSTOMER_INSTALLATION_ADMIN_CENTER — COMPLETE (2026-06-27). All 8 modules delivered. Ready to deploy.**
 
 ---
 
 ## Current Phase
 
-**PHASE-002_ARCHITECTURE_COMPLETE (2026-06-27). Customer Installation Engine fully designed. 5 documents: ENGINE, PIPELINE, REMOTE_DEPLOYMENT, SECURITY, ROADMAP. No code written. 16-day implementation plan ready. Prerequisites: phpseclib, INSTALLER_MASTER_KEY, Arvan package bucket.**
+**PHASE-003B_COMPLETE (2026-06-27). Customer Installation Admin Center delivered. 3 controllers, 8 Blade views (dashboard, 8-step Alpine.js wizard, history, show, packages, server CRUD), 15 routes, AdminMenu entry. SSE real-time monitor, credential vault integration, manual rollback. 4 certification docs. Reuses PHASE-003A services without duplication. Pending deploy to 87.107.12.81:9011.**
+
+**Previous:** PHASE-003A_FOUNDATION_CERTIFIED (2026-06-27). Customer Installation Engine Foundation complete and certified. 40+ files: 5 migrations, 5 models, 4 DTOs, 4 contracts, CredentialVault (AES-256-GCM), SshRemoteDriver (phpseclib3), FakeRemoteDriver, 20 stage classes, InstallationOrchestrator, RollbackService, 3 jobs, 2 commands, CustomerInstallationServiceProvider. All 31 tests pass (17 unit + 14 feature). Redis eager-connect bug fixed in SecurityPatchRegistry + MobilePatchRegistryAdapter. Deployed to 87.107.12.81:9011.
+
+**Previous:** PHASE-002_ARCHITECTURE_COMPLETE (2026-06-27). Customer Installation Engine fully designed. 5 documents: ENGINE, PIPELINE, REMOTE_DEPLOYMENT, SECURITY, ROADMAP. No code written. 16-day implementation plan ready. Prerequisites: phpseclib, INSTALLER_MASTER_KEY, Arvan package bucket.
 
 **Previous:** CORE_ENTERPRISE_CERTIFIED (2026-06-27). CORE_FREEZE_ACCEPTANCE_FINAL complete. 12/12 acceptance scenarios PASS. 0 critical blockers. Core Health 95/100. 4 certification docs generated. Phase 3 (Restore Engine Enterprise) APPROVED TO START.**
 

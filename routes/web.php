@@ -818,6 +818,40 @@ Route::prefix('admin')
                 Route::get('/',         [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'index'])->name('index');
                 Route::get('{siteId}',  [\App\Http\Controllers\Admin\Infrastructure\MonitoringController::class, 'show'])->name('site');
             });
+
+            // PHASE-003B — Customer Deployment Center
+            Route::prefix('customer-deployment')->name('customer-deployment.')->group(function () {
+                // Dashboard
+                Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'dashboard'])->name('dashboard');
+
+                // Installation Wizard + Start
+                Route::get('/wizard', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'wizard'])->name('wizard');
+                Route::post('/start', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'start'])->name('start');
+
+                // Installation History
+                Route::get('/history', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'history'])->name('history');
+
+                // Release Packages
+                Route::get('/packages', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'packages'])->name('packages');
+
+                // Installation Detail + Rollback
+                Route::get('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'show'])->name('installations.show');
+                Route::post('/installations/{installation}/rollback', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'rollback'])->name('installations.rollback');
+
+                // SSE Progress Stream
+                Route::get('/installations/{installation}/progress', [\App\Http\Controllers\Admin\Infrastructure\CustomerInstallationProgressController::class, 'stream'])->name('installations.progress');
+
+                // Remote Server Management
+                Route::prefix('servers')->name('servers.')->group(function () {
+                    Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'index'])->name('index');
+                    Route::get('/create', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'create'])->name('create');
+                    Route::post('/', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'store'])->name('store');
+                    Route::get('/{server}/edit', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'edit'])->name('edit');
+                    Route::put('/{server}', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'update'])->name('update');
+                    Route::delete('/{server}', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'destroy'])->name('destroy');
+                    Route::post('/{server}/test', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'testConnection'])->name('test');
+                });
+            });
         });
 
         /*

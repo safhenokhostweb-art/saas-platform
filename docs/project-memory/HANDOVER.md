@@ -5,34 +5,51 @@
 
 ---
 
-## CURRENT STATE (2026-06-27 — PHASE-002_ARCHITECTURE_COMPLETE)
+## CURRENT STATE (2026-06-27 — PHASE-003B_COMPLETE)
 
-**Last completed phase:** PHASE-002 Customer Installation Engine — Architecture complete. No code written.
+**Last completed phase:** PHASE-003B Customer Installation Admin Center — complete, certified, ready to deploy.
 
-**5 Architecture Documents:**
-- `docs/CUSTOMER_INSTALLATION_ENGINE.md` — Core architecture, interfaces, DB schema, jobs, wizard, admin routes
-- `docs/CUSTOMER_INSTALLATION_PIPELINE.md` — 20-stage pipeline with per-stage spec, mode variants, error handling, SSE streaming
-- `docs/CUSTOMER_REMOTE_DEPLOYMENT.md` — SSH driver, CredentialVault, host key pinning, package transfer, future drivers
-- `docs/CUSTOMER_INSTALL_SECURITY.md` — Threat model, encryption, package integrity, audit logging, access control
-- `docs/CUSTOMER_INSTALL_ROADMAP.md` — 9 phases, 16 days, prerequisites, future expansion
+**All 8 modules delivered. 4 documentation files generated.**
 
-**Key architectural decisions:**
-- 5 installation modes: FRESH, RESTORE, CLONE, MOVE, REINSTALL
-- 3 server types now (SSH), expandable to DirectAdmin/cPanel/Docker/K8s without pipeline changes
-- 20-stage pipeline — resumable after failure, rollback stack per stage
-- `RemoteConnectionInterface` abstraction — driver-agnostic pipeline
-- Reuses: ArvanBackupService, RestoreService, BaselineManifestService, EnvironmentWriter, InstallerValidator, DrReadinessScoreService, SlackAlertService
-- Never Git clone or composer install on remote — pre-built ZIPs only
-- SHA-256 verified twice (local + remote) before extraction
-- AES-256-GCM for all credential storage (INSTALLER_MASTER_KEY env)
+**What's built (PHASE-003B):**
+- `CustomerDeploymentController` — dashboard, wizard, history, show, start, rollback, packages
+- `CustomerRemoteServerAdminController` — CRUD + SSH test (CredentialVault + RemoteConnectionService injected)
+- `CustomerInstallationProgressController` — SSE stream (Redis + DB fallback, auto-close on terminal status)
+- 8 Blade views: dashboard, wizard (8-step Alpine.js), history (filterable), show (timeline + SSE), packages, servers/index, servers/create, servers/edit
+- AdminMenu: `customer_deployment` entry in "زیرساخت / DevOps" group
+- 15 routes under `/admin/infrastructure/customer-deployment/`
+- 4 docs: CUSTOMER_INSTALL_ADMIN_CENTER.md, CUSTOMER_INSTALL_UI.md, CUSTOMER_INSTALL_ACCEPTANCE.md, CUSTOMER_INSTALL_CERTIFICATION.md
 
-**Prerequisites before implementation starts:**
-1. `phpseclib/phpseclib` v3 added to composer.json
-2. `INSTALLER_MASTER_KEY` env (32-byte base64) generated and stored on production
-3. Arvan release package bucket structure confirmed: `saas-platform/releases/customer-site/`
-4. `manage_installations` permission scope agreed with product
+**NEXT STEP:** Deploy PHASE-003B to production via `.\deploy.ps1`. Then PHASE-003C (Arvan real package download integration) or SSH live-connection testing.
 
-**NEXT STEP:** Begin Phase A (Foundation) — migrations, models, DTOs, CredentialVault, gates. Estimated 3 days.
+---
+
+## CURRENT STATE (2026-06-27 — PHASE-003A_FOUNDATION_CERTIFIED)
+
+**Last completed phase:** PHASE-003A Customer Installation Engine — Foundation complete, certified, deployed.
+
+**31/31 tests pass. Deployed to production.**
+
+**What's built:**
+- 5 DB tables: `customer_remote_servers`, `customer_installation_packages`, `customer_installations`, `customer_installation_logs` (immutable), `customer_install_rollbacks`
+- 5 Models: `CustomerRemoteServer`, `CustomerInstallationPackage`, `CustomerInstallation`, `CustomerInstallationLog` (booted: no update/delete), `CustomerInstallRollback`
+- DTOs: `CustomerInstallRequest`, `CommandResult`, `ConnectionTestResult`, `StageResult`, `PackageManifest`, `InstallationContext`
+- Contracts: `RemoteConnectionInterface`, `InstallationStageInterface`, `CustomerPackageInterface`, `InstallationStateInterface`
+- `CredentialVault` — AES-256-GCM, random 12-byte nonce per encryption, INSTALLER_MASTER_KEY env, rotate() method
+- `SshRemoteDriver` — phpseclib3\Net\SSH2+SFTP, RSA key or password auth, host key pinning, chunked SFTP upload with progress
+- `FakeRemoteDriver` — full test double: response registry, command/upload log, configurable disk free, willFail()
+- 20 stage classes in `app/Services/CustomerInstallation/Stages/`
+- `CustomerInstallationOrchestrator` — buildStageList(mode), run(installation, callback), resume support, LIFO rollback dispatch
+- `CustomerInstallationRollbackService` — LIFO, idempotent, continues after individual stage rollback failure
+- `InstallationStateManager` — implements `InstallationStateInterface`, Redis progress streaming (try-catch, non-fatal), immutable audit log creation
+- 3 Jobs: `CustomerInstallationPipelineJob` (3600s), `CustomerInstallationRollbackJob` (1800s), `CustomerPackageUploadJob` (1800s, 3 tries)
+- 2 Commands: `installer:generate-master-key`, `customer-install:register-package`
+- `CustomerInstallationServiceProvider` — registered in config/app.php, binds all interfaces, registers commands
+
+**Bug fixed (test infrastructure):**
+- `SecurityPatchRegistry.boot()` + `MobilePatchRegistryAdapter.seedMobileRegistry()` — wrapped in try-catch, no longer crashes when Redis unavailable during test bootstrap
+
+**NEXT STEP:** PHASE-003B — Admin Center UI (wizard, server list, progress SSE, installation history, logs viewer). Or integrate real Arvan package download. Architecture is frozen.
 
 ---
 

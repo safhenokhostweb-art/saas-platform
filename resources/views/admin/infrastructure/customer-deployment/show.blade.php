@@ -1,0 +1,284 @@
+@extends('layouts.admin')
+
+@section('header', 'جزئیات نصب')
+
+@push('head')
+<style>
+.status-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .75rem;border-radius:9999px;font-size:.8rem;font-weight:600}
+.status-pending{background:#fef9c3;color:#92400e}
+.status-running{background:#dbeafe;color:#1e40af}
+.status-rolling_back{background:#ede9fe;color:#5b21b6}
+.status-complete{background:#d1fae5;color:#065f46}
+.status-failed{background:#fee2e2;color:#991b1b}
+.status-rollback_failed{background:#fce7f3;color:#9d174d}
+.status-rolled_back{background:#f3f4f6;color:#374151}
+.detail-card{background:#fff;border-radius:1rem;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(15,23,42,0.04);padding:1.25rem 1.5rem;margin-bottom:1rem}
+.timeline-item{display:flex;gap:1rem;padding:.75rem 0;position:relative}
+.timeline-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:.35rem;border:2px solid}
+.timeline-dot--started{background:#bfdbfe;border-color:#3b82f6}
+.timeline-dot--completed{background:#a7f3d0;border-color:#10b981}
+.timeline-dot--failed{background:#fecaca;border-color:#ef4444}
+.timeline-dot--warning{background:#fed7aa;border-color:#f97316}
+.timeline-dot--checkpoint{background:#e9d5ff;border-color:#8b5cf6}
+.timeline-dot--rolled_back{background:#e5e7eb;border-color:#6b7280}
+.timeline-line{position:absolute;right:4px;top:1.5rem;bottom:0;width:2px;background:#f1f5f9}
+.prog-bar-wrap{background:#f3f4f6;border-radius:999px;height:6px;overflow:hidden}
+.prog-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#4f46e5,#7c3aed);transition:width .5s ease}
+.stage-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.35rem}
+.stage-dot--done{background:#10b981}
+.stage-dot--active{background:#3b82f6}
+.stage-dot--pending{background:#d1d5db}
+</style>
+@endpush
+
+@section('content')
+
+{{-- Breadcrumb --}}
+<div class="flex items-center gap-2 text-sm text-gray-500 mb-5">
+    <a href="{{ route('admin.infrastructure.customer-deployment.dashboard') }}" class="hover:text-indigo-600">استقرار مشتریان</a>
+    <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <a href="{{ route('admin.infrastructure.customer-deployment.history') }}" class="hover:text-indigo-600">تاریخچه</a>
+    <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-800 font-medium">{{ $installation->customer_company }}</span>
+</div>
+
+@if(session('success'))
+    <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{{ session('error') }}</div>
+@endif
+
+{{-- Header Card --}}
+<div class="detail-card mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-xl font-bold text-gray-900">{{ $installation->customer_company }}</h1>
+                @php $statusMap = ['pending'=>['در صف','status-pending'], 'running'=>['در حال اجرا','status-running'], 'complete'=>['موفق','status-complete'], 'failed'=>['ناموفق','status-failed'], 'rolling_back'=>['بازگشت','status-rolling_back'], 'rolled_back'=>['بازگشت‌خورد','status-rolled_back'], 'rollback_failed'=>['خطای بازگشت','status-rollback_failed']]; @endphp
+                <span class="status-badge {{ $statusMap[$installation->status][1] ?? 'status-pending' }}">{{ $statusMap[$installation->status][0] ?? $installation->status }}</span>
+            </div>
+            <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500">
+                <span><strong class="text-gray-700">دامنه:</strong> {{ $installation->customer_domain }}</span>
+                <span><strong class="text-gray-700">ایمیل:</strong> {{ $installation->customer_email }}</span>
+                <span><strong class="text-gray-700">سرور:</strong> {{ $installation->remoteServer?->label ?? '—' }}</span>
+                <span><strong class="text-gray-700">حالت:</strong> <span class="font-mono">{{ str_replace('MODE_', '', $installation->install_mode) }}</span></span>
+                <span><strong class="text-gray-700">مرحله:</strong> {{ $installation->current_stage ?? '—' }}</span>
+            </div>
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+            @if($installation->isRunning())
+                <a href="{{ route('admin.infrastructure.customer-deployment.installations.progress', $installation) }}" class="btn btn-sm" style="background:#4f46e5;color:#fff">
+                    <svg class="w-4 h-4 ml-1 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"/></svg>
+                    پیشرفت زنده
+                </a>
+            @endif
+            @if($canRollback)
+                <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.installations.rollback', $installation) }}" onsubmit="return confirm('آیا مطمئن هستید؟ عملیات بازگشت شروع می‌شود.')">
+                    @csrf
+                    <button type="submit" class="btn btn-sm" style="background:#dc2626;color:#fff">
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        بازگشت (Rollback)
+                    </button>
+                </form>
+            @endif
+        </div>
+    </div>
+
+    {{-- Progress bar for running installations --}}
+    @if($installation->isRunning())
+    <div class="mt-4 border-t border-gray-100 pt-4" id="liveProgressSection">
+        <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-medium text-gray-600">پیشرفت</span>
+            <span class="text-xs text-gray-500" id="stageCount">{{ count($installation->completedStagesList()) }} / 20 مرحله</span>
+        </div>
+        <div class="prog-bar-wrap">
+            <div class="prog-bar" id="progressBar" style="width: {{ (count($installation->completedStagesList()) / 20) * 100 }}%"></div>
+        </div>
+        <div class="mt-1.5 text-xs text-indigo-600 font-medium" id="currentStageLabel">{{ $installation->current_stage ? str_replace('_', ' ', $installation->current_stage) : 'در انتظار شروع...' }}</div>
+    </div>
+    @elseif($installation->isComplete())
+    <div class="mt-4 border-t border-gray-100 pt-4">
+        <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-medium text-green-700">نصب با موفقیت کامل شد</span>
+            @if($installation->completed_at && $installation->started_at)
+                <span class="text-xs text-gray-500">مدت: {{ gmdate('H:i:s', $installation->completed_at->diffInSeconds($installation->started_at)) }}</span>
+            @endif
+        </div>
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width:100%;background:linear-gradient(90deg,#059669,#10b981)"></div></div>
+    </div>
+    @elseif($installation->isFailed())
+    <div class="mt-4 border-t border-gray-100 pt-4">
+        <div class="text-xs text-red-600 font-medium mb-1">نصب ناموفق بود</div>
+        @if($installation->failure_reason)
+            <div class="text-xs text-gray-600 bg-red-50 rounded-lg px-3 py-2 border border-red-100">{{ $installation->failure_reason }}</div>
+        @endif
+    </div>
+    @endif
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    {{-- Timeline / Logs --}}
+    <div class="lg:col-span-2">
+        <div class="detail-card">
+            <h2 class="font-semibold text-gray-800 mb-4">تایم‌لاین رویدادها</h2>
+
+            @if($installation->logs->isEmpty())
+                <p class="text-sm text-gray-400 text-center py-8">هنوز رویدادی ثبت نشده</p>
+            @else
+                <div class="space-y-0 relative">
+                    @foreach($installation->logs as $log)
+                    <div class="timeline-item">
+                        @if(!$loop->last)
+                        <div class="timeline-line"></div>
+                        @endif
+                        <div class="timeline-dot timeline-dot--{{ $log->event }} flex-shrink-0 mt-1.5 z-10"></div>
+                        <div class="flex-1 pb-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <span class="text-xs font-semibold text-gray-700 font-mono">{{ $log->stage }}</span>
+                                    <span class="mx-1.5 text-gray-300">·</span>
+                                    <span class="text-xs text-gray-500">{{ match($log->event) {
+                                        'started' => 'شروع شد',
+                                        'completed' => 'تکمیل شد',
+                                        'failed' => 'خطا',
+                                        'warning' => 'هشدار',
+                                        'checkpoint' => 'checkpoint',
+                                        'rolled_back' => 'بازگشت',
+                                        default => $log->event
+                                    } }}</span>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <div class="text-xs text-gray-400">{{ $log->created_at->format('H:i:s') }}</div>
+                                    @if($log->duration_ms)
+                                        <div class="text-xs text-gray-400">{{ number_format($log->duration_ms) }}ms</div>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-0.5">{{ $log->message }}</div>
+                            @if($log->output && count($log->output))
+                                <div class="mt-1.5 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                    @foreach($log->output as $k => $v)
+                                    <div class="text-xs text-gray-600"><span class="font-mono text-gray-400">{{ $k }}:</span> {{ is_array($v) ? json_encode($v) : $v }}</div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Right Side: Info + Stage Progress + Rollback Checkpoints --}}
+    <div class="space-y-4">
+
+        {{-- Installation Info --}}
+        <div class="detail-card">
+            <h3 class="font-semibold text-gray-800 mb-3 text-sm">اطلاعات نصب</h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500">شناسه:</span><span class="font-mono text-gray-700">#{{ $installation->id }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">حالت:</span><span class="font-mono text-xs text-gray-700">{{ $installation->install_mode }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">تاریخ ایجاد:</span><span class="text-gray-700">{{ $installation->created_at->format('Y/m/d H:i') }}</span></div>
+                @if($installation->started_at)
+                <div class="flex justify-between"><span class="text-gray-500">شروع اجرا:</span><span class="text-gray-700">{{ $installation->started_at->format('H:i:s') }}</span></div>
+                @endif
+                @if($installation->completed_at)
+                <div class="flex justify-between"><span class="text-gray-500">پایان:</span><span class="text-gray-700">{{ $installation->completed_at->format('H:i:s') }}</span></div>
+                @endif
+                @if($installation->failed_at)
+                <div class="flex justify-between"><span class="text-gray-500">خطا در:</span><span class="text-red-600">{{ $installation->failed_at->format('H:i:s') }}</span></div>
+                @endif
+                @if($installation->remoteServer)
+                <div class="flex justify-between"><span class="text-gray-500">سرور:</span><span class="text-gray-700">{{ $installation->remoteServer->label }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">هاست:</span><span class="font-mono text-xs text-gray-600">{{ $installation->remoteServer->host }}</span></div>
+                @endif
+                @if($installation->package_version)
+                <div class="flex justify-between"><span class="text-gray-500">نسخه:</span><span class="font-mono text-xs text-gray-600">{{ $installation->package_version }}</span></div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Stage Progress --}}
+        <div class="detail-card">
+            <h3 class="font-semibold text-gray-800 mb-3 text-sm">پیشرفت مراحل ({{ count($installation->completedStagesList()) }}/20)</h3>
+            @php
+            $allStages = ['VALIDATE_SERVER','VALIDATE_PHP','VALIDATE_EXTENSIONS','VALIDATE_DISK','VALIDATE_PERMISSIONS','DOWNLOAD_PACKAGE','UPLOAD_PACKAGE','VERIFY_PACKAGE','EXTRACT_PACKAGE','GENERATE_ENVIRONMENT','CREATE_DATABASE','RUN_MIGRATIONS','RUN_SEEDER','CONFIGURE_STORAGE','CONFIGURE_QUEUE','CONFIGURE_SCHEDULER','CONFIGURE_SSL','CONFIGURE_WEBSERVER','PROVISION_LICENSE','INSTALL_THEME','CUSTOMER_READY'];
+            $completedList = $installation->completedStagesList();
+            $currentStage = $installation->current_stage;
+            @endphp
+            <div class="space-y-1.5">
+                @foreach($allStages as $stage)
+                <div class="flex items-center gap-2">
+                    @if(in_array($stage, $completedList))
+                        <div class="stage-dot stage-dot--done"></div>
+                        <span class="text-xs text-gray-500 line-through">{{ str_replace('_', ' ', $stage) }}</span>
+                    @elseif($stage === $currentStage)
+                        <div class="stage-dot stage-dot--active animate-pulse"></div>
+                        <span class="text-xs text-indigo-600 font-semibold">{{ str_replace('_', ' ', $stage) }}</span>
+                    @else
+                        <div class="stage-dot stage-dot--pending"></div>
+                        <span class="text-xs text-gray-400">{{ str_replace('_', ' ', $stage) }}</span>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Rollback Checkpoints --}}
+        @if($installation->rollbacks->isNotEmpty())
+        <div class="detail-card">
+            <h3 class="font-semibold text-gray-800 mb-3 text-sm">نقاط بازگشت</h3>
+            <div class="space-y-2">
+                @foreach($installation->rollbacks as $rb)
+                <div class="flex items-start justify-between p-2 rounded-lg {{ $rb->executed_at ? 'bg-gray-50' : 'bg-amber-50 border border-amber-100' }}">
+                    <div>
+                        <div class="text-xs font-mono font-semibold {{ $rb->executed_at ? 'text-gray-500' : 'text-amber-700' }}">{{ $rb->stage }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ $rb->created_at->format('H:i:s') }}</div>
+                    </div>
+                    <span class="text-xs {{ $rb->executed_at ? 'text-gray-400' : 'text-amber-700 font-medium' }}">
+                        {{ $rb->executed_at ? 'اجرا شد' : 'در انتظار' }}
+                    </span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
+
+{{-- Live SSE Monitor (only for running installations) --}}
+@if($installation->isRunning())
+@push('scripts')
+<script>
+(function() {
+    const src = new EventSource('{{ route('admin.infrastructure.customer-deployment.installations.progress', $installation) }}');
+    src.addEventListener('progress', function(e) {
+        const d = JSON.parse(e.data);
+        if (d.stage) document.getElementById('currentStageLabel').textContent = d.stage.replace(/_/g, ' ') + ' — ' + (d.message || '');
+    });
+    src.addEventListener('status', function(e) {
+        const d = JSON.parse(e.data);
+        if (d.completed_stages !== undefined) {
+            const pct = Math.round((d.completed_stages / 20) * 100);
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('stageCount').textContent = d.completed_stages + ' / 20 مرحله';
+        }
+        if (d.current_stage) {
+            document.getElementById('currentStageLabel').textContent = d.current_stage.replace(/_/g, ' ');
+        }
+    });
+    src.addEventListener('done', function(e) {
+        src.close();
+        // Reload page after 2s to show final state
+        setTimeout(() => window.location.reload(), 2000);
+    });
+    src.addEventListener('error', function() { src.close(); });
+})();
+</script>
+@endpush
+@endif
+
+@endsection

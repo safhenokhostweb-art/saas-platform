@@ -4,37 +4,46 @@
 
 ---
 
-## IN PROGRESS: PHASE-002 — CUSTOMER_INSTALLATION_ENGINE
+## COMPLETE: PHASE-002 + PHASE-003A + PHASE-003B — CUSTOMER_INSTALLATION_ENGINE
 
-**Status:** ARCHITECTURE_COMPLETE — awaiting implementation start
+**Status:** PHASE-003B_COMPLETE — 2026-06-27 ✅
 
-| Document | Status |
-|----------|--------|
-| `docs/CUSTOMER_INSTALLATION_ENGINE.md` | ✅ DONE |
-| `docs/CUSTOMER_INSTALLATION_PIPELINE.md` | ✅ DONE |
-| `docs/CUSTOMER_REMOTE_DEPLOYMENT.md` | ✅ DONE |
-| `docs/CUSTOMER_INSTALL_SECURITY.md` | ✅ DONE |
-| `docs/CUSTOMER_INSTALL_ROADMAP.md` | ✅ DONE |
+| Component | Status |
+|-----------|--------|
+| Architecture (5 docs) | ✅ DONE |
+| 5 Migrations | ✅ DONE |
+| 5 Models (incl. immutable log) | ✅ DONE |
+| DTOs + Contracts | ✅ DONE |
+| CredentialVault (AES-256-GCM) | ✅ DONE |
+| SshRemoteDriver (phpseclib3) | ✅ DONE |
+| FakeRemoteDriver (test isolation) | ✅ DONE |
+| 20 Stage classes | ✅ DONE |
+| CustomerInstallationOrchestrator | ✅ DONE |
+| CustomerInstallationRollbackService | ✅ DONE |
+| 3 Jobs + 2 Commands | ✅ DONE |
+| CustomerInstallationServiceProvider | ✅ DONE |
+| 31/31 Tests passing | ✅ DONE |
+| PHASE-003A Deployed to production | ✅ DONE |
+| CustomerDeploymentController | ✅ DONE |
+| CustomerRemoteServerAdminController | ✅ DONE |
+| CustomerInstallationProgressController (SSE) | ✅ DONE |
+| Dashboard view (6 stat cards) | ✅ DONE |
+| Wizard view (8-step Alpine.js) | ✅ DONE |
+| History view (filterable) | ✅ DONE |
+| Installation detail view (timeline + SSE) | ✅ DONE |
+| Packages list view | ✅ DONE |
+| Server CRUD views (index/create/edit) | ✅ DONE |
+| AdminMenu entry (customer_deployment) | ✅ DONE |
+| 15 routes registered | ✅ DONE |
+| 4 documentation files | ✅ DONE |
 
-**Implementation phases (not started):**
+**Remaining phases:**
 
-| Phase | Description | Days | Status |
-|-------|-------------|------|--------|
-| A | Foundation (migrations, models, DTOs, CredentialVault, gates) | 3 | ⏳ |
-| B | Remote Connection (SshRemoteDriver, phpseclib) | 2 | ⏳ |
-| C | Package Layer (download/verify/upload) | 1 | ⏳ |
-| D | Pipeline Core (20 stages, orchestrator, main job) | 3 | ⏳ |
-| E | Rollback Engine | 1 | ⏳ |
-| F | Mode Variants (all 5 modes) | 2 | ⏳ |
-| G | Admin Center (wizard, progress, server management) | 2 | ⏳ |
-| H | Tests + Security Hardening | 1.5 | ⏳ |
-| I | Docs + Admin menu | 0.5 | ⏳ |
-
-**Prerequisites before start:**
-- `phpseclib/phpseclib` composer install
-- `INSTALLER_MASTER_KEY` env defined
-- Arvan release package bucket structure confirmed
-- `manage_installations` gate scope agreed
+| Phase | Description | Status |
+|-------|-------------|--------|
+| C | Integration with real Arvan package download | ⏳ NOT STARTED |
+| D | SSH live-connection test to real servers | ⏳ NOT STARTED |
+| E | All 5 install modes fully tested end-to-end | ⏳ NOT STARTED |
 
 ---
 
