@@ -53,7 +53,7 @@ class SiteResourceAlertService
         ]);
 
         try {
-            $this->slack->warning($message);
+            $this->slack->warning("هشدار فضای ذخیره‌سازی: {$site->title}", $message);
         } catch (\Throwable $e) {
             Log::debug('ResourceAlertService: Slack warning failed: ' . $e->getMessage());
         }
@@ -78,7 +78,7 @@ class SiteResourceAlertService
         ]);
 
         try {
-            $this->slack->critical($message);
+            $this->slack->critical("بحران فضای ذخیره‌سازی: {$site->title}", $message);
         } catch (\Throwable $e) {
             Log::debug('ResourceAlertService: Slack critical failed: ' . $e->getMessage());
         }

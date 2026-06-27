@@ -148,9 +148,9 @@ class UpgradeAdapter
         $allSuccess = collect($steps)->every(fn($s) => $s['success'] ?? false);
 
         if ($allSuccess) {
-            $this->slack->info('Installer: Platform upgrade completed successfully');
+            $this->slack->info('Installer: Platform upgrade completed successfully', '');
         } else {
-            $this->slack->warning('Installer: Platform upgrade completed with some failures');
+            $this->slack->warning('Installer: Platform upgrade completed with some failures', '');
         }
 
         return [
@@ -220,7 +220,7 @@ class UpgradeAdapter
         $allSuccess = $results['database']['success'] && $results['env']['success'] && $manifestResult['success'];
 
         if (!$allSuccess) {
-            $this->slack->warning("Installer: Baseline {$label} created with failures");
+            $this->slack->warning("Installer: Baseline {$label} created with failures", '');
         }
 
         return [
@@ -271,7 +271,7 @@ class UpgradeAdapter
         // Lock the directory — immutable from this point
         $this->manifest->makeReadOnly($baselineDir);
 
-        $this->slack->info('Installer: ' . basename($baselineDir) . ' finalized and locked as read-only');
+        $this->slack->info('Installer: ' . basename($baselineDir) . ' finalized and locked as read-only', '');
 
         return [
             'success'           => $manifestResult['success'],
@@ -307,7 +307,7 @@ class UpgradeAdapter
         }
 
         $this->infra->disableMaintenanceMode();
-        $this->slack->critical('Installer: Rollback executed from snapshot ' . basename($snapshotPath));
+        $this->slack->critical('Installer: Rollback executed', 'Snapshot: ' . basename($snapshotPath));
 
         $allSuccess = collect($results)->every(fn($r) => $r['success'] ?? false);
         return [

@@ -78,8 +78,7 @@ class CustomerReadyStage extends AbstractStage
 
             $this->slack->info(
                 "{$icon} [INSTALL-{$status}] {$req->company} @ {$req->domain}",
-                'Customer Installation',
-                "Site ID: {$ctx->installation->site_id} | Mode: {$req->installMode} | {$detail}"
+                "Customer Installation | Site ID: {$ctx->installation->site_id} | Mode: {$req->installMode} | {$detail}"
             );
         } catch (\Throwable) {}
     }
