@@ -8,18 +8,22 @@
 
 ## ACTIVE BUGS
 
-### SELECT-DROPDOWN-001 — HIGH | RESOLVED (2026-06-26)
+### SELECT-DROPDOWN-001 — HIGH | RESOLVED (2026-06-27)
 
-**Title:** Admin settings page `<select>` dropdowns invisible or immediately closing after opening  
-**Module:** customer-site — Admin UI (`/admin/settings`)  
-**Root Causes:**  
-1. `design-tokens.css` dark-mode block sets `--ui-text-primary: #f1f5f9` (white) — native select popup inherited white text on white background  
-2. TinyMCE called `tinymce.init()` eagerly on `DOMContentLoaded`, registering a global `document.mousedown` handler that fired `endFocusedEditor()` and moved DOM focus away from the `<select>`, immediately dismissing the native popup  
-**Resolution:**  
-- CSS: Added `color-scheme: light!important; color: #1e293b!important; background-color: #fff!important` to `module-components.css` and `customer-admin-layout.css`  
-- JS: Converted TinyMCE init to lazy — only calls `tinymce.init()` on first focus/mousedown of the textarea element  
-**Commits:** `470ba7d` (CSS), `34ed5bf` (JS lazy init)  
-**Files:** `customer-site/resources/views/admin/partials/tinymce-field-init.blade.php`, `customer-site/public/css/customer-admin-layout.css`, `saas-platform/packages/.../module-components.css`
+**Title:** Native `<select>` dropdown options invisible on desktop (Windows dark OS mode)  
+**Module:** customer-site — Admin UI + Account UI (all pages)  
+**Root Cause (confirmed 2026-06-27):**  
+Tailwind CSS v4 (`@import 'tailwindcss'`) includes a preflight that sets `:root { color-scheme: light dark }`. On Windows desktop with OS dark mode enabled, Chrome uses this to render native `<select>` popup in DARK MODE (dark background). CSS rules setting `color: #1e293b` (dark text) on `<option>` elements then produced dark text on dark background = invisible. Mobile was unaffected because iOS/Android OS pickers ignore CSS on option elements entirely.  
+**Resolution (final):**  
+- Inline `<style id="admin-select-fix">` in `admin/layout.blade.php`: `html, :root, body.admin-body { color-scheme: light !important; }` — overrides Tailwind v4's light dark setting at root level so Chrome uses light popup  
+- Same fix in `account/layout.blade.php` as `<style id="account-select-fix">`  
+- `select { color-scheme: light !important; background-color: #fff !important; color: #1e293b !important; }` and `select option, select optgroup { ... }` rules in both layouts  
+- Static CSS in `customer-admin-layout.css` + Vite bundle as belt-and-suspenders  
+- TinyMCE converted to full dynamic loading (no eager DOMContentLoaded init)  
+- `HTMLElement.prototype.focus` guard in admin layout to block focus-stealing during select interaction  
+**Key diagnostic:** "mobile works, desktop doesn't" → CSS color-scheme issue confirmed  
+**Commits:** `6fbd07d` (final fix)  
+**Files:** `customer-site/resources/views/admin/layout.blade.php`, `customer-site/resources/views/account/layout.blade.php`
 
 ---
 

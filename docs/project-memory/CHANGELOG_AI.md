@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-06-27 — SELECT_DROPDOWN_ROOT_CAUSE_FIX
+
+**Type:** Bug fix — CSS color-scheme override for Tailwind v4
+
+**Files modified (2):**
+- `customer-site/resources/views/admin/layout.blade.php` — added `html, :root, body.admin-body { color-scheme: light !important; }` to inline style block
+- `customer-site/resources/views/account/layout.blade.php` — added `<style id="account-select-fix">` with same root-level override
+
+**Root cause identified:** Tailwind v4 sets `:root { color-scheme: light dark }` in preflight. On Windows desktop with dark OS mode, Chrome renders native select popup in dark mode (dark background), making dark `color: #1e293b` text on options invisible. Mobile unaffected because OS pickers ignore CSS.
+
+**Diagnostic clue:** User reported "mobile works fine, desktop broken" — confirmed CSS color-scheme issue.
+
+**Deploy:** `6fbd07d` — DONE: customer deployed successfully
+
+---
+
 ## 2026-06-27 — CORE_BLOCKERS_IMPLEMENTATION_COMPLETE
 
 **Type:** Implementation — Critical infrastructure fixes (no new features)
