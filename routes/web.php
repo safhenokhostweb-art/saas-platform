@@ -912,7 +912,7 @@ Route::prefix('admin')
         Route::prefix('disaster-recovery')->name('disaster-recovery.')->group(function () {
             Route::get('/',                    [\App\Http\Controllers\Admin\RestoreWizardController::class, 'index'])->name('index');
             Route::get('/browse',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'browse'])->name('browse');
-            Route::post('/validate',           [\App\Http\Controllers\Admin\RestoreWizardController::class, 'validate'])->name('validate');
+            Route::post('/validate',           [\App\Http\Controllers\Admin\RestoreWizardController::class, 'checkBackup'])->name('validate');
             Route::post('/dry-run',            [\App\Http\Controllers\Admin\RestoreWizardController::class, 'dryRun'])->name('dry-run');
             Route::post('/execute',            [\App\Http\Controllers\Admin\RestoreWizardController::class, 'execute'])->name('execute');
             Route::get('/stream',              [\App\Http\Controllers\Admin\RestoreWizardController::class, 'stream'])->name('stream');

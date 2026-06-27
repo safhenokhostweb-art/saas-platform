@@ -199,6 +199,6 @@ class InstallerService
             self::MODE_RESTORE => 'بازیابی پلتفرم',
             self::MODE_UPGRADE => 'ارتقاء پلتفرم',
             default            => $mode,
-        ];
+        };
     }
 }

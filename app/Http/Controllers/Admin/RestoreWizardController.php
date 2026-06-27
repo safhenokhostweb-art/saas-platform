@@ -65,7 +65,7 @@ class RestoreWizardController extends Controller
 
     // ─── AJAX: Validate a backup ──────────────────────────────────────────────
 
-    public function validate(Request $request)
+    public function checkBackup(Request $request)
     {
         $request->validate([
             'backup_file' => 'required|string|max:500',
