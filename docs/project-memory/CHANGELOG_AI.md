@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-06-27 — THEME_COLOR_FULL_ISOLATION
+
+**Type:** Bug fix — Removed all hardcoded blue hex colors from default theme templates
+
+**Root cause:** Default theme views had hundreds of hardcoded indigo/blue hex codes (`#4f46e5`, `#4338ca`, `#6366f1`, etc.) that overrode the user-selected color palette. Additionally, the CSS cascade order in `layout.blade.php` had PlatformUx `css_block` injected AFTER `theme-engine-tokens`, overwriting preset colors with hardcoded blue design-system defaults.
+
+**Rule enforced:** ALL colors in every default theme view must come from CSS vars that `TenantThemeResolver` sets from the selected palette.
+
+**Files modified (10):**
+- `customer-site/resources/views/themes/default/blog/show.blade.php` — tag badge colors → `var(--platform-primary-light)` / `var(--platform-primary)`
+- `customer-site/resources/views/themes/default/blog/index.blade.php` — focus outline → `var(--platform-primary)`
+- `customer-site/resources/views/themes/default/content/show.blade.php` — AI badge, category link, excerpt border/bg, tag badges, step circles, hover JS, back link, `.content-body a`
+- `customer-site/resources/views/themes/default/content/index.blade.php` — filter tabs (active state), AI badge, "مطالعه" link, pagination active
+- `customer-site/resources/views/themes/default/page.blade.php` — `.content-body a` link color
+- `customer-site/resources/views/themes/default/search/index.blade.php` — hero gradient end color, filter chip bg/color, JS autocomplete price color
+- `customer-site/resources/views/themes/default/shop/cart.blade.php` — SVG icon, empty state btn, count badge, item price, qty input focus, total price, coupon input focus, form input focus, checkout button gradient
+- `customer-site/resources/views/themes/default/shop/index.blade.php` — focus outline
+- `customer-site/resources/views/themes/default/shop/show.blade.php` — installment card border/bg/SVG/text, plan hover, plan name, monthly payment
+
+**CSS var mapping used:**
+- `var(--platform-primary)` — main action color (buttons, icons, active)
+- `var(--platform-link-color)` — hyperlinks in body text
+- `var(--platform-primary-light)` — badge backgrounds, tinted card backgrounds
+- `var(--ui-indigo-hover)` — gradient endpoint, secondary accent
+- JS hover: `getComputedStyle(document.documentElement).getPropertyValue('--platform-primary')`
+
+**Deploy:** `1b89a40` — customer-site deployed
+
+---
+
 ## 2026-06-27 — SELECT_DROPDOWN_ROOT_CAUSE_FIX
 
 **Type:** Bug fix — CSS color-scheme override for Tailwind v4
@@ -18,6 +48,29 @@
 **Diagnostic clue:** User reported "mobile works fine, desktop broken" — confirmed CSS color-scheme issue.
 
 **Deploy:** `6fbd07d` — DONE: customer deployed successfully
+
+---
+
+## 2026-06-27 — CORE_ENTERPRISE_CERTIFIED
+
+**Type:** Audit / Certification — No code built, docs only
+
+**Scope:** CORE_FREEZE_ACCEPTANCE_FINAL — 12 end-to-end acceptance scenarios
+
+**Result:** CORE_ENTERPRISE_CERTIFIED — 12/12 PASS, 0 critical blockers
+
+**Documents generated:**
+- `docs/CORE_FREEZE_ACCEPTANCE_REPORT.md`
+- `docs/ENTERPRISE_CERTIFICATION.md`
+- `docs/KNOWN_LIMITATIONS.md`
+- `docs/FREEZE_APPROVAL.md`
+
+**Key findings confirmed in code:**
+- InstallerAdminController.verify(): realpath() path traversal guard CONFIRMED
+- InstallerLockMiddleware: install.lock blocks installer routes CONFIRMED
+- TENANT_STORAGE uses RestorePlatformStorageJob (KL-006 — placeholder)
+- MYSQL_PWD verified in all backup/restore commands
+- ArvanBackupService O(1) listContents() confirmed
 
 ---
 

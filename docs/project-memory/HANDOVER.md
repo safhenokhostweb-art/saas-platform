@@ -5,6 +5,33 @@
 
 ---
 
+## CURRENT STATE (2026-06-27 — CORE_ENTERPRISE_CERTIFIED)
+
+**Last completed phase:** CORE_FREEZE_ACCEPTANCE_FINAL — 12/12 acceptance scenarios PASS. Full enterprise certification complete.
+
+**Core Health: 95/100 — CORE_ENTERPRISE_CERTIFIED**
+
+**12 Acceptance Scenarios:**
+All 12 PASS: Installation, Backup, Restore, DR Center, Finance, License, Hosting, Customer Site, Infrastructure, Security, Performance, Operational Recovery
+
+**4 Certification documents:**
+- `docs/CORE_FREEZE_ACCEPTANCE_REPORT.md` — 12 scenarios, full evidence
+- `docs/ENTERPRISE_CERTIFICATION.md` — subsystem cert scores, conditions
+- `docs/KNOWN_LIMITATIONS.md` — KL-001..KL-006 (accepted, non-blocking)
+- `docs/FREEZE_APPROVAL.md` — CORE_ENTERPRISE_CERTIFIED verdict + Phase 3 entry
+
+**Known Limitations (Phase 3 targets, non-blocking):**
+- KL-001: Supervisor group name mismatch in deploy.sh (ops)
+- KL-002: evalRestoreLogs() false low score on fresh install (cosmetic)
+- KL-003: ALERT-007 TTL math in ScanDrHealthCommand (minor false-positive)
+- KL-004: Finance createManual() no idempotency (admin-only)
+- KL-005: No rate limit on /api/license/validate (hardening)
+- KL-006: Tenant storage restore uses platform storage job (placeholder)
+
+**NEXT STEP:** Phase 3 — Restore Engine Enterprise (APPROVED TO START)
+
+---
+
 ## CURRENT STATE (2026-06-27 — CORE_BLOCKERS_IMPLEMENTATION_COMPLETE)
 
 **Last completed phase:** CORE_BLOCKERS_IMPLEMENTATION — All P0/P1/P2 blockers from CORE_CERTIFICATION_PHASE_1 resolved.

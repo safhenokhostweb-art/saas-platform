@@ -45,6 +45,35 @@
 
 ---
 
+## COMPLETE: THEME_COLOR_FULL_ISOLATION — 2026-06-27 ✅
+
+**Status:** THEME_COLOR_ISOLATION_DEPLOYED
+
+**Rule:** All colors in every default theme template must come from the selected palette. No hardcoded hex blue.
+
+| Task | Status |
+|------|--------|
+| layout.blade.php: css_block injected BEFORE theme-engine-tokens (theme wins) | ✅ DONE |
+| home.blade.php: hero gradient — `--platform-link-hover` → `--ui-indigo-hover` | ✅ DONE |
+| TenantThemeResolver: all `--platform-*` vars set in both preset and custom mode | ✅ DONE |
+| blog/show.blade.php: tag badges `#eef2ff/#4338ca` → CSS vars | ✅ DONE |
+| blog/index.blade.php: focus outline → `var(--platform-primary)` | ✅ DONE |
+| content/show.blade.php: AI badge, category link, excerpt border, tags, steps, body links | ✅ DONE |
+| content/index.blade.php: filter tabs, AI badge, "مطالعه" link, pagination active | ✅ DONE |
+| page.blade.php: content body link color → `var(--platform-link-color)` | ✅ DONE |
+| search/index.blade.php: hero gradient end, filter chip, JS price color | ✅ DONE |
+| shop/cart.blade.php: SVG, empty btn, count badge, price, focus, total, coupon, form, checkout btn | ✅ DONE |
+| shop/index.blade.php: focus outline → CSS var | ✅ DONE |
+| shop/show.blade.php: installment card border/bg, SVG, text, hover, plan name, monthly payment | ✅ DONE |
+
+**CSS Var Mapping:**
+- `--platform-primary` → main theme color (buttons, icons, active elements)
+- `--platform-link-color` → link colors in body text
+- `--platform-primary-light` → badge/card backgrounds (`--ui-bg` from preset)
+- `--ui-indigo-hover` → gradient endpoint / secondary accent
+
+---
+
 ## COMPLETE: CORE_BLOCKERS_IMPLEMENTATION — 2026-06-27 ✅
 
 **Status:** CORE_BLOCKERS_IMPLEMENTATION_COMPLETE — Core Health 95/100 — CORE_READY_FOR_FREEZE
