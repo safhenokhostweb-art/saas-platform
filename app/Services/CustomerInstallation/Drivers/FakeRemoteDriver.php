@@ -2,15 +2,20 @@
 
 namespace App\Services\CustomerInstallation\Drivers;
 
+use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\Contracts\RemoteConnectionInterface;
 use App\Services\CustomerInstallation\Dto\CommandResult;
 use App\Services\CustomerInstallation\Dto\ConnectionTestResult;
+use App\Services\CustomerInstallation\Dto\DriverCapabilities;
+use App\Services\CustomerInstallation\Dto\ValidationResult;
+use App\Services\CustomerInstallation\Enums\DriverType;
 
 /**
  * In-memory fake driver for unit and feature testing.
  * Records all commands and uploads for assertion.
+ * Implements DeploymentDriverInterface so tests exercise the full interface.
  */
-class FakeRemoteDriver implements RemoteConnectionInterface
+class FakeRemoteDriver implements DeploymentDriverInterface
 {
     private bool $connected = false;
     private array $commandLog = [];
@@ -24,6 +29,28 @@ class FakeRemoteDriver implements RemoteConnectionInterface
     /** If true, next execute() call throws */
     private bool $shouldFail = false;
     private string $failMessage = 'Simulated failure';
+
+    // ─── DeploymentDriverInterface ────────────────────────────────────────────
+
+    public function driverType(): DriverType
+    {
+        return DriverType::FAKE;
+    }
+
+    public function capabilities(): DriverCapabilities
+    {
+        return DriverCapabilities::forVps(); // fake reports full VPS capabilities for testing
+    }
+
+    public function validate(): ValidationResult
+    {
+        return ValidationResult::pass();
+    }
+
+    public function rollbackStage(string $stageName, array $snapshot): void
+    {
+        // No-op in fake driver — tests can assert stage rollback logic directly
+    }
 
     // ─── Control ──────────────────────────────────────────────────────────────
 

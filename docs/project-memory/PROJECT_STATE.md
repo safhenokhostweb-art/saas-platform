@@ -16,13 +16,15 @@
 
 ## Current Module
 
-**PHASE-003C: CUSTOMER_INSTALLATION_EXECUTION_ENGINE — COMPLETE (2026-06-27). Real deployment engine. All 20 stages execute real SSH commands. PostInstallValidation, SSH reconnect, INITIAL_CUSTOMER_BASELINE, acceptance test.**
+**ARCHITECTURE_UPGRADE_001: UNIVERSAL_DEPLOYMENT_ENGINE — COMPLETE (2026-06-27). Driver-based deployment architecture. DeploymentDriverInterface, SshDeploymentDriver (live), 4 stub drivers (cPanel/DirectAdmin/SFTP/Docker), DeploymentTarget model, DriverCapabilities DTO, AuthMethod/DriverType enums. Pipeline is now hosting-agnostic.**
 
 ---
 
 ## Current Phase
 
-**HOTFIX-003_COMPLETE (2026-06-27). Additional production bugs fixed: source-select Alpine CDN broken (same pattern as mode-select — replaced with vanilla JS), SlackAlertService ArgumentCountError in UpgradeAdapter.php (critical() 1-arg at rollback), SiteResourceAlertService.php (critical() 1-arg), CustomerReadyStage.php (wrong type for context arg). Customer-deployment/servers 500 was transient mid-deploy — key present, page returns 200. Deployed in `50ea792`.**
+**ARCHITECTURE_UPGRADE_001_COMPLETE (2026-06-27). Universal Deployment Engine architecture upgrade complete. DeploymentDriverInterface declared. SshDeploymentDriver (full). CpanelDeploymentDriver, DirectAdminDeploymentDriver, SftpDeploymentDriver, DockerDeploymentDriver (stubs). DeploymentTarget model + migration. 4 docs generated. All existing code backward compatible. ADR-014 recorded.**
+
+**Previous:** HOTFIX-003_COMPLETE (2026-06-27). Additional production bugs fixed: source-select Alpine CDN broken (same pattern as mode-select — replaced with vanilla JS), SlackAlertService ArgumentCountError in UpgradeAdapter.php (critical() 1-arg at rollback), SiteResourceAlertService.php (critical() 1-arg), CustomerReadyStage.php (wrong type for context arg). Customer-deployment/servers 500 was transient mid-deploy — key present, page returns 200. Deployed in `50ea792`.**
 
 **Previous:** HOTFIX-002_COMPLETE (2026-06-27). Production acceptance failures fixed: sites.name SQL column missing (RestoreWizardController, fixed to orderBy('title')), Alpine x-show on mode-select button never re-evaluates (rewrote to vanilla JS with data-mode attributes). Deployed in `a5a1a09` + `f663f66`.**
 

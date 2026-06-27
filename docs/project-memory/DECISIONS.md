@@ -1,7 +1,35 @@
 # ARCHITECTURAL DECISIONS
 > ADR-style log. Every important decision recorded permanently.
 > Format: Decision ID | Date | Context | Decision | Reason | Impact
-> Last Updated: 2026-06-06
+> Last Updated: 2026-06-27
+
+---
+
+## ADR-014
+
+**ID:** ADR-014  
+**Date:** 2026-06-27  
+**Title:** Universal Deployment Engine — Driver-Based Architecture
+
+**Context:**  
+ARCHITECTURE_UPGRADE_001: The existing deployment pipeline only supported SSH/VPS. Supporting shared hosting (cPanel, DirectAdmin), SFTP, and Docker would have required adding `if/switch` conditionals throughout the 20-stage pipeline.
+
+**Decision:**  
+Implement a Driver-Based Deployment Architecture with `DeploymentDriverInterface`. Every driver declares its `DriverCapabilities`. The pipeline queries `capabilities()` — never checks `driverType()`. Adding a new hosting type requires only a new driver class.
+
+**Reason:**  
+Open/Closed Principle: pipeline is open for extension (new drivers), closed for modification. Prevents hosting-type conditionals from spreading across 20 stage classes.
+
+**Impact:**  
+- `DeploymentDriverInterface` is the canonical contract for all future deployment work
+- `DeploymentTarget` model replaces the "server" concept — 11 fields including `connection_driver`, `capabilities`, `path`, `domain`
+- `SshDeploymentDriver` is the only live driver; 4 stubs (cPanel, DirectAdmin, SFTP, Docker) declare architecture
+- All pipeline stages that use supervisor/cron/redis must check `capabilities()` before executing
+- `FakeRemoteDriver` now implements `DeploymentDriverInterface` for full test coverage
+- Backward compatible: `CustomerRemoteServer` + `SshRemoteDriver` unchanged
+
+**Never violate:**  
+No `if ($driverType === DriverType::SSH)` or `switch` in pipeline stages. Always `capabilities()`.
 
 ---
 

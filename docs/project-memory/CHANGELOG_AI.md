@@ -5,6 +5,53 @@
 
 ---
 
+## 2026-06-27 — ARCHITECTURE_UPGRADE_001_UNIVERSAL_DEPLOYMENT_ENGINE
+
+**Type:** Architecture Upgrade — Driver-based deployment engine
+
+**What changed:**
+- Created `DeploymentDriverInterface` — universal driver contract (extends `RemoteConnectionInterface`)
+- Created `SshDeploymentDriver` — full SSH implementation for `DeploymentTarget` model
+- Created `CpanelDeploymentDriver`, `DirectAdminDeploymentDriver`, `SftpDeploymentDriver`, `DockerDeploymentDriver` — architecture stubs
+- Created `DriverType` and `AuthMethod` PHP 8.1 enums
+- Created `DriverCapabilities` DTO — 10 capability flags, named constructors per hosting type
+- Created `ValidationResult` DTO — driver pre-flight validation
+- Created `DeploymentTarget` model — universal target (replaces "server" concept)
+- Created `deployment_targets` migration — new table with type, connection_driver, auth_method, path, domain, status, capabilities fields
+- Updated `FakeRemoteDriver` — now implements `DeploymentDriverInterface`
+- Updated `RemoteConnectionService` — added `buildDriverForTarget()` + `testAndRecordTarget()`, backward compatible
+- Updated `config/customer_installation.php` — added `deployment_drivers` registry
+- Generated 4 docs: `UNIVERSAL_DEPLOYMENT_ARCHITECTURE.md`, `DEPLOYMENT_DRIVER_INTERFACE.md`, `HOSTING_SUPPORT_MATRIX.md`, `FUTURE_DEPLOYMENT_DRIVERS.md`
+
+**Files created (19):**
+- `app/Services/CustomerInstallation/Enums/DriverType.php`
+- `app/Services/CustomerInstallation/Enums/AuthMethod.php`
+- `app/Services/CustomerInstallation/Dto/DriverCapabilities.php`
+- `app/Services/CustomerInstallation/Dto/ValidationResult.php`
+- `app/Services/CustomerInstallation/Contracts/DeploymentDriverInterface.php`
+- `app/Services/CustomerInstallation/Drivers/SshDeploymentDriver.php`
+- `app/Services/CustomerInstallation/Drivers/CpanelDeploymentDriver.php`
+- `app/Services/CustomerInstallation/Drivers/DirectAdminDeploymentDriver.php`
+- `app/Services/CustomerInstallation/Drivers/SftpDeploymentDriver.php`
+- `app/Services/CustomerInstallation/Drivers/DockerDeploymentDriver.php`
+- `app/Models/DeploymentTarget.php`
+- `database/migrations/2026_06_27_300000_create_deployment_targets_table.php`
+- `docs/UNIVERSAL_DEPLOYMENT_ARCHITECTURE.md`
+- `docs/DEPLOYMENT_DRIVER_INTERFACE.md`
+- `docs/HOSTING_SUPPORT_MATRIX.md`
+- `docs/FUTURE_DEPLOYMENT_DRIVERS.md`
+
+**Files modified (3):**
+- `app/Services/CustomerInstallation/Drivers/FakeRemoteDriver.php`
+- `app/Services/CustomerInstallation/RemoteConnectionService.php`
+- `config/customer_installation.php`
+
+**Backward compatibility:** PASS — `CustomerRemoteServer`, `SshRemoteDriver`, `RemoteConnectionService::buildDriver()` and all 20 pipeline stages are unchanged.
+
+**ADR:** ADR-014 — Pipeline must never contain if-VPS/if-cPanel. Only capabilities() queries.
+
+---
+
 ## 2026-06-27 — HOTFIX-003_SLACK_ARGCOUNT_AND_INSTALLER_ALPINE_FIX
 
 **Type:** Hotfix — Additional production bugs found during HOTFIX-002 acceptance testing

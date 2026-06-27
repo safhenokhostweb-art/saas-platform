@@ -5,6 +5,34 @@
 
 ---
 
+## CURRENT STATE (2026-06-27 — ARCHITECTURE_UPGRADE_001_COMPLETE)
+
+**Last completed phase:** UNIVERSAL_DEPLOYMENT_ENGINE architecture upgrade. Driver-based system for all future hosting types.
+
+**What was built:**
+- `DeploymentDriverInterface` — universal driver contract extending `RemoteConnectionInterface`
+- `SshDeploymentDriver` — full SSH/VPS implementation using `DeploymentTarget` model
+- `CpanelDeploymentDriver`, `DirectAdminDeploymentDriver`, `SftpDeploymentDriver`, `DockerDeploymentDriver` — architecture stubs (interface only, no business logic)
+- `DriverType` enum (SSH/CPANEL/DIRECTADMIN/SFTP/DOCKER/FAKE)
+- `AuthMethod` enum (SSH_KEY/SSH_PASSWORD/CPANEL_API_TOKEN/DIRECTADMIN_API_TOKEN/SFTP_PASSWORD)
+- `DriverCapabilities` DTO — 10 capability flags with named constructors per hosting type
+- `ValidationResult` DTO — driver pre-flight validation
+- `DeploymentTarget` model + `deployment_targets` migration (11 fields: name, type, connection_driver, auth_method, host, port, username, path, domain, status, capabilities JSON)
+- `FakeRemoteDriver` — now implements `DeploymentDriverInterface` for full test coverage
+- `RemoteConnectionService` — added `buildDriverForTarget()` + `testAndRecordTarget()`, backward compatible
+- `config/customer_installation.php` — added `deployment_drivers` registry with all 6 drivers
+- 4 docs: `UNIVERSAL_DEPLOYMENT_ARCHITECTURE.md`, `DEPLOYMENT_DRIVER_INTERFACE.md`, `HOSTING_SUPPORT_MATRIX.md`, `FUTURE_DEPLOYMENT_DRIVERS.md`
+
+**ADR-014 recorded:** Pipeline must never contain if-VPS/if-cPanel. Only `capabilities()` queries.
+
+**Backward compatibility:** PASS — `CustomerRemoteServer`, `SshRemoteDriver`, all 20 pipeline stages unchanged.
+
+**Production deployment required:** `php artisan migrate --force` to create `deployment_targets` table.
+
+**NEXT STEP:** No active tasks. Ready for next development phase.
+
+---
+
 ## CURRENT STATE (2026-06-27 — HOTFIX-003_COMPLETE)
 
 **Last completed phase:** All production 500 errors resolved. Platform is STABLE.

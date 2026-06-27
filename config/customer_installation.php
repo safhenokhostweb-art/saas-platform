@@ -30,9 +30,27 @@ return [
         'resume_enabled'     => true,
     ],
 
+    /*
+     * Legacy drivers (CustomerRemoteServer) — backward compatible.
+     * Used by RemoteConnectionService::buildDriver().
+     */
     'drivers' => [
         'ssh'  => \App\Services\CustomerInstallation\Drivers\SshRemoteDriver::class,
         'fake' => \App\Services\CustomerInstallation\Drivers\FakeRemoteDriver::class,
+    ],
+
+    /*
+     * Universal deployment drivers (DeploymentTarget) — new architecture.
+     * Used by RemoteConnectionService::buildDriverForTarget().
+     * Only 'ssh' and 'fake' are fully implemented; others are architecture stubs.
+     */
+    'deployment_drivers' => [
+        'ssh'         => \App\Services\CustomerInstallation\Drivers\SshDeploymentDriver::class,
+        'cpanel'      => \App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver::class,
+        'directadmin' => \App\Services\CustomerInstallation\Drivers\DirectAdminDeploymentDriver::class,
+        'sftp'        => \App\Services\CustomerInstallation\Drivers\SftpDeploymentDriver::class,
+        'docker'      => \App\Services\CustomerInstallation\Drivers\DockerDeploymentDriver::class,
+        'fake'        => \App\Services\CustomerInstallation\Drivers\FakeRemoteDriver::class,
     ],
 
     'required_php_extensions' => [
