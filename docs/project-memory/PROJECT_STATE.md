@@ -22,7 +22,9 @@
 
 ## Current Phase
 
-**PHASE-003C_COMPLETE (2026-06-27). Real execution engine delivered. PostInstallValidationService (8 checks), SSH reconnect (MAX_RECONNECTS=2), INITIAL_CUSTOMER_BASELINE (mysqldump→SFTP→Arvan), CustomerInstallAcceptanceCommand. Migration for baseline/validation columns. Pending deploy + migration on 87.107.12.81:9011.**
+**HOTFIX-001_COMPLETE (2026-06-27). All 4 infrastructure module pages fixed. 3 root causes: InstallerService ParseError (];→};), RestoreWizardController::validate() method conflict (renamed to checkBackup), INSTALLER_MASTER_KEY missing. All pages verified: 302/200. Production STABLE.**
+
+**Previous:** PHASE-003C_COMPLETE (2026-06-27). Real execution engine delivered. PostInstallValidationService (8 checks), SSH reconnect (MAX_RECONNECTS=2), INITIAL_CUSTOMER_BASELINE (mysqldump→SFTP→Arvan), CustomerInstallAcceptanceCommand. Migration for baseline/validation columns. Deployed to 87.107.12.81:9011.
 
 **Previous:** PHASE-003B_COMPLETE (2026-06-27). Customer Installation Admin Center delivered. 3 controllers, 8 Blade views (dashboard, 8-step Alpine.js wizard, history, show, packages, server CRUD), 15 routes, AdminMenu entry. SSE real-time monitor, credential vault integration, manual rollback. 4 certification docs. Reuses PHASE-003A services without duplication.
 

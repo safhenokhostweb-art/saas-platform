@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-06-27 — HOTFIX-001_PRODUCTION_500_FIX
+
+**Type:** Hotfix — Critical production 500 errors
+
+**Scope:** All infrastructure module pages were returning HTTP 500. Three root causes identified and fixed.
+
+**Root Causes Fixed:**
+1. `InstallerService.php:202` — `match()` expression closed with `];` instead of `};` (PHP ParseError)
+2. `RestoreWizardController::validate()` — incompatible signature with base `Controller::validate()` (FatalError)
+3. `INSTALLER_MASTER_KEY` missing from production `.env` (queue worker spamming errors)
+
+**Files modified:**
+- `app/Services/Installer/InstallerService.php` — changed `];` → `};` in `getModeLabel()` match expression
+- `app/Http/Controllers/Admin/RestoreWizardController.php` — renamed `validate()` → `checkBackup()`
+- `routes/web.php` — updated route binding from `'validate'` → `'checkBackup'`
+
+**Production actions:**
+- Applied fixes directly on server (sed + PHP scripts)
+- Generated INSTALLER_MASTER_KEY via `artisan installer:generate-master-key`
+- Rebuilt: config:cache, route:cache, view:cache, event:cache
+- Restarted PHP-FPM
+
+**Verification:**
+- `/admin/disaster-recovery/center` → 302 ✓
+- `/admin/disaster-recovery` → 302 ✓
+- `/platform-installer` → 200 ✓
+- `/admin/installer` → 302 ✓
+- Last ERROR in log: 17:25:34 — no new errors after fix
+
+**Docs:** `docs/HOTFIX_500_REPORT.md`, `docs/HOTFIX_CERTIFICATION.md`
+
+---
+
 ## 2026-06-27 — PHASE-003C_CUSTOMER_INSTALLATION_EXECUTION_ENGINE_COMPLETE
 
 **Type:** Implementation — Real execution engine

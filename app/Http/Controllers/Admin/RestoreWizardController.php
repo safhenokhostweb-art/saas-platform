@@ -21,7 +21,7 @@ class RestoreWizardController extends Controller
 
     public function index()
     {
-        $sites        = Site::orderBy('name')->get(['id', 'name', 'domain']);
+        $sites        = Site::orderBy('title')->get(['id', 'title', 'domain']);
         $recentLogs   = RestoreLog::with('site', 'executor')
             ->latest()
             ->limit(10)

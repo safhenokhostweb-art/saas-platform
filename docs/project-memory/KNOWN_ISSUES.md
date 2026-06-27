@@ -20,11 +20,11 @@
 **Detail:** No real customer-site release ZIP exists yet on Arvan.  
 **Accepted:** Will be tested when first release package is created.
 
-### CIE-L003 — MEDIUM | OPEN
+### CIE-L003 — MEDIUM | RESOLVED
 **Title:** INSTALLER_MASTER_KEY must be set on production before any installation  
 **Module:** Customer Installation Engine  
 **Detail:** CredentialVault throws RuntimeException if INSTALLER_MASTER_KEY missing. Key backup is operator responsibility.  
-**Workaround:** Generate with `php artisan installer:generate-master-key` and store in secure vault.
+**Resolution (2026-06-27):** Key generated and added to production `.env` via `php artisan installer:generate-master-key`. HOTFIX-001.
 
 ---
 
