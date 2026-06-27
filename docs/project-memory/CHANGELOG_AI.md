@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-06-27 — PHASE-002_CUSTOMER_INSTALLATION_ENGINE_ARCHITECTURE
+
+**Type:** Architecture design — no code changes
+
+**Scope:** Complete Customer Installation Engine architecture for PHASE-002.
+
+**Documents produced (5):**
+- `docs/CUSTOMER_INSTALLATION_ENGINE.md` — Main architecture: 5 modes, 8 server types, 4 interfaces, DB schema (5 tables), 3 jobs, wizard fields, theme hooks, PSDS integration points, admin center routes
+- `docs/CUSTOMER_INSTALLATION_PIPELINE.md` — 20-stage pipeline spec: per-stage purpose, checks, commands, rollback, timing, mode variants (MODE_FRESH/RESTORE/CLONE/MOVE/REINSTALL), error handling, resume logic, SSE streaming
+- `docs/CUSTOMER_REMOTE_DEPLOYMENT.md` — Remote connection architecture: SshRemoteDriver, phpseclib, host key pinning, CredentialVault, keypair management, package transfer strategy, bandwidth config, future driver extension
+- `docs/CUSTOMER_INSTALL_SECURITY.md` — Security model: threat matrix, AES-256-GCM at rest, SHA-256 double-verification, MYSQL_PWD pattern, audit logging rules, rollback security, access control, rate limits
+- `docs/CUSTOMER_INSTALL_ROADMAP.md` — 9-phase implementation plan: 16 days sequential, 12 days parallel, prerequisite checklist, future phase map
+
+**Key architectural decisions:**
+- Reuses ArvanBackupService, BaselineManifestService, RestoreService, EnvironmentWriter, InstallerValidator, DrReadinessScoreService, SlackAlertService — no logic duplicated
+- Never Git clone or composer install on remote — pre-built immutable ZIPs only
+- SshRemoteDriver via phpseclib (pure PHP, no native dependency)
+- CredentialVault: AES-256-GCM, INSTALLER_MASTER_KEY env, no plaintext in DB ever
+- SHA-256 verified twice (locally + remotely) before extraction
+- Pipeline state persisted to DB at every stage — resumable after failure
+- Theme installation is a hook/event only — no theme logic in engine
+
+**Files changed:** 0 PHP/Blade files — architecture only
+
+---
+
 ## 2026-06-27 — THEME_COLOR_FULL_ISOLATION
 
 **Type:** Bug fix — Removed all hardcoded blue hex colors from default theme templates

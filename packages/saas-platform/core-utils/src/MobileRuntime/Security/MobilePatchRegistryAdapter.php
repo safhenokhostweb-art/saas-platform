@@ -15,31 +15,35 @@ class MobilePatchRegistryAdapter
 
     /**
      * Seeds MobileSecurityPatchCoordinator from the platform SecurityPatchRegistry.
-     * Idempotent — safe to call multiple times.
+     * Idempotent — safe to call multiple times. Silently skips if cache backend unavailable.
      */
     public function seedMobileRegistry(): void
     {
-        $this->platformRegistry->boot();
-        $platformPatches = $this->platformRegistry->all();
-        $existing        = $this->mobileCoordinator->getAvailablePatches();
+        try {
+            $this->platformRegistry->boot();
+            $platformPatches = $this->platformRegistry->all();
+            $existing        = $this->mobileCoordinator->getAvailablePatches();
 
-        foreach ($platformPatches as $id => $patch) {
-            if (isset($existing[$id])) {
-                continue;
+            foreach ($platformPatches as $id => $patch) {
+                if (isset($existing[$id])) {
+                    continue;
+                }
+                $this->mobileCoordinator->registerPatch($id, [
+                    'severity'             => $patch['severity'] ?? 'normal',
+                    'type'                 => $patch['type'] ?? 'security',
+                    'title'                => $patch['title'] ?? $id,
+                    'description'          => $patch['description'] ?? '',
+                    'applies_to_versions'  => [],    // applies to all versions
+                    'source'               => 'platform_registry',
+                ]);
             }
-            $this->mobileCoordinator->registerPatch($id, [
-                'severity'             => $patch['severity'] ?? 'normal',
-                'type'                 => $patch['type'] ?? 'security',
-                'title'                => $patch['title'] ?? $id,
-                'description'          => $patch['description'] ?? '',
-                'applies_to_versions'  => [],    // applies to all versions
-                'source'               => 'platform_registry',
-            ]);
-        }
 
-        Log::debug('mobile.security.patch_registry_seeded', [
-            'platform_count' => count($platformPatches),
-        ]);
+            Log::debug('mobile.security.patch_registry_seeded', [
+                'platform_count' => count($platformPatches),
+            ]);
+        } catch (\Throwable) {
+            // Cache backend unavailable — skip boot-time seeding
+        }
     }
 
     public function getPlatformPatches(): array

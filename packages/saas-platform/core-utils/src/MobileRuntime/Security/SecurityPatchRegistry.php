@@ -63,10 +63,14 @@ class SecurityPatchRegistry
 
     public function boot(): void
     {
-        if (Cache::has(self::CACHE_KEY)) {
-            return;
+        try {
+            if (Cache::has(self::CACHE_KEY)) {
+                return;
+            }
+            $this->seed();
+        } catch (\Throwable) {
+            // Cache backend unavailable (e.g. Redis not running in test env) — skip seeding
         }
-        $this->seed();
     }
 
     public function seed(): void
@@ -99,7 +103,11 @@ class SecurityPatchRegistry
 
     public function all(): array
     {
-        return Cache::get(self::CACHE_KEY, []);
+        try {
+            return Cache::get(self::CACHE_KEY, []);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function getCritical(): array

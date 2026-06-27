@@ -5,6 +5,37 @@
 
 ---
 
+## CURRENT STATE (2026-06-27 — PHASE-002_ARCHITECTURE_COMPLETE)
+
+**Last completed phase:** PHASE-002 Customer Installation Engine — Architecture complete. No code written.
+
+**5 Architecture Documents:**
+- `docs/CUSTOMER_INSTALLATION_ENGINE.md` — Core architecture, interfaces, DB schema, jobs, wizard, admin routes
+- `docs/CUSTOMER_INSTALLATION_PIPELINE.md` — 20-stage pipeline with per-stage spec, mode variants, error handling, SSE streaming
+- `docs/CUSTOMER_REMOTE_DEPLOYMENT.md` — SSH driver, CredentialVault, host key pinning, package transfer, future drivers
+- `docs/CUSTOMER_INSTALL_SECURITY.md` — Threat model, encryption, package integrity, audit logging, access control
+- `docs/CUSTOMER_INSTALL_ROADMAP.md` — 9 phases, 16 days, prerequisites, future expansion
+
+**Key architectural decisions:**
+- 5 installation modes: FRESH, RESTORE, CLONE, MOVE, REINSTALL
+- 3 server types now (SSH), expandable to DirectAdmin/cPanel/Docker/K8s without pipeline changes
+- 20-stage pipeline — resumable after failure, rollback stack per stage
+- `RemoteConnectionInterface` abstraction — driver-agnostic pipeline
+- Reuses: ArvanBackupService, RestoreService, BaselineManifestService, EnvironmentWriter, InstallerValidator, DrReadinessScoreService, SlackAlertService
+- Never Git clone or composer install on remote — pre-built ZIPs only
+- SHA-256 verified twice (local + remote) before extraction
+- AES-256-GCM for all credential storage (INSTALLER_MASTER_KEY env)
+
+**Prerequisites before implementation starts:**
+1. `phpseclib/phpseclib` v3 added to composer.json
+2. `INSTALLER_MASTER_KEY` env (32-byte base64) generated and stored on production
+3. Arvan release package bucket structure confirmed: `saas-platform/releases/customer-site/`
+4. `manage_installations` permission scope agreed with product
+
+**NEXT STEP:** Begin Phase A (Foundation) — migrations, models, DTOs, CredentialVault, gates. Estimated 3 days.
+
+---
+
 ## CURRENT STATE (2026-06-27 — CORE_ENTERPRISE_CERTIFIED)
 
 **Last completed phase:** CORE_FREEZE_ACCEPTANCE_FINAL — 12/12 acceptance scenarios PASS. Full enterprise certification complete.

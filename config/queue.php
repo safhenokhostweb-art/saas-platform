@@ -81,6 +81,26 @@ return [
             'after_commit'=> false,
         ],
 
+        // Customer installation pipeline (up to 1 hour per job)
+        'customer-install' => [
+            'driver'      => 'redis',
+            'connection'  => 'default',
+            'queue'       => 'customer-install',
+            'retry_after' => 3600,
+            'block_for'   => null,
+            'after_commit'=> false,
+        ],
+
+        // Customer package upload (large file transfers, up to 30 minutes)
+        'customer-upload' => [
+            'driver'      => 'redis',
+            'connection'  => 'default',
+            'queue'       => 'customer-upload',
+            'retry_after' => 1800,
+            'block_for'   => null,
+            'after_commit'=> false,
+        ],
+
     ],
 
     /*
