@@ -4,7 +4,27 @@
 
 ---
 
-## COMPLETE: PHASE-002 + PHASE-003A + PHASE-003B — CUSTOMER_INSTALLATION_ENGINE
+## COMPLETE: PHASE-002 + PHASE-003A + PHASE-003B + PHASE-003C — CUSTOMER_INSTALLATION_ENGINE
+
+**Status:** PHASE-003C_COMPLETE — 2026-06-27 ✅
+
+| Component | Status |
+|-----------|--------|
+| PostInstallValidationService (8 checks: database/queue/redis/storage/license/scheduler/domain/ssl) | ✅ DONE |
+| SshRemoteDriver reconnect (MAX_RECONNECTS=2, 0.8s pause) | ✅ DONE |
+| CustomerReadyStage — validation-driven, persists post_install_validation | ✅ DONE |
+| InitializeBackupStage — INITIAL_CUSTOMER_BASELINE → Arvan → SHA-256 | ✅ DONE |
+| CustomerInstallAcceptanceCommand (--full: disk/extensions/MySQL/Supervisor/Redis) | ✅ DONE |
+| Migration: baseline + validation columns on customer_installations | ✅ DONE |
+| CustomerInstallationServiceProvider — PostInstallValidationService + AcceptanceCommand registered | ✅ DONE |
+
+**Post-deploy actions required:**
+- `php artisan migrate --force` (new migration: 2026_06_27_200000_...)
+- `php artisan customer-install:acceptance-test {server_id} --full` (verify server readiness)
+
+---
+
+## COMPLETE: PHASE-002 + PHASE-003A + PHASE-003B — CUSTOMER_INSTALLATION_ENGINE (previous record)
 
 **Status:** PHASE-003B_COMPLETE — 2026-06-27 ✅
 

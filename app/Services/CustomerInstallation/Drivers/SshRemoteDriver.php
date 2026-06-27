@@ -14,8 +14,10 @@ use RuntimeException;
 
 class SshRemoteDriver implements RemoteConnectionInterface
 {
-    private ?SSH2 $ssh = null;
+    private ?SSH2 $ssh  = null;
     private ?SFTP $sftp = null;
+    private int $reconnectAttempts = 0;
+    private const MAX_RECONNECTS = 2;
 
     public function __construct(
         private readonly CustomerRemoteServer $server,
@@ -111,6 +113,20 @@ class SshRemoteDriver implements RemoteConnectionInterface
             throw new RuntimeException('SSH not connected. Call connect() first.');
         }
 
+        try {
+            return $this->doExecute($command, $env);
+        } catch (\Throwable $e) {
+            if ($this->isConnectionDropped($e) && $this->reconnectAttempts < self::MAX_RECONNECTS) {
+                $this->reconnectAttempts++;
+                $this->reconnect();
+                return $this->doExecute($command, $env);
+            }
+            throw $e;
+        }
+    }
+
+    private function doExecute(string $command, array $env = []): CommandResult
+    {
         $start = microtime(true);
 
         $envString = '';
@@ -118,9 +134,12 @@ class SshRemoteDriver implements RemoteConnectionInterface
             $envString .= 'export ' . escapeshellarg($key) . '=' . escapeshellarg($value) . '; ';
         }
 
-        $output = $this->ssh->exec($envString . $command);
-        $exitCode = $this->ssh->getExitStatus();
+        $output    = $this->ssh->exec($envString . $command);
+        $exitCode  = $this->ssh->getExitStatus();
         $durationMs = (int) round((microtime(true) - $start) * 1000);
+
+        // Reset reconnect counter on successful execution
+        $this->reconnectAttempts = 0;
 
         return new CommandResult(
             exitCode:   is_int($exitCode) ? $exitCode : 0,
@@ -128,6 +147,32 @@ class SshRemoteDriver implements RemoteConnectionInterface
             stderr:     '',
             durationMs: $durationMs,
         );
+    }
+
+    private function isConnectionDropped(\Throwable $e): bool
+    {
+        $msg = strtolower($e->getMessage());
+        return str_contains($msg, 'disconnected')
+            || str_contains($msg, 'connection reset')
+            || str_contains($msg, 'broken pipe')
+            || str_contains($msg, 'timed out')
+            || str_contains($msg, 'connection closed')
+            || str_contains($msg, 'bad file descriptor');
+    }
+
+    private function reconnect(): void
+    {
+        try {
+            $this->sftp?->disconnect();
+            $this->ssh?->disconnect();
+        } catch (\Throwable) {}
+
+        $this->sftp = null;
+        $this->ssh  = null;
+
+        // Brief pause before reconnect to let server recover
+        usleep(800000); // 0.8 seconds
+        $this->connect();
     }
 
     public function upload(string $localPath, string $remotePath, ?callable $progress = null): void

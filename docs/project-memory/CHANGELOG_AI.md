@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-06-27 — PHASE-003C_CUSTOMER_INSTALLATION_EXECUTION_ENGINE_COMPLETE
+
+**Type:** Implementation — Real execution engine
+
+**Scope:** Customer Installation Engine — real deployment execution, post-install validation, SSH reconnect, INITIAL_CUSTOMER_BASELINE, acceptance test.
+
+**Files created (new):**
+- `database/migrations/2026_06_27_200000_add_baseline_and_validation_to_customer_installations.php` — adds initial_baseline_at, initial_baseline_arvan_key, initial_baseline_sha256, post_install_validation columns
+- `app/Services/CustomerInstallation/PostInstallValidationService.php` — 8 health checks: database, queue, redis, storage, license, scheduler, domain, ssl
+- `app/Console/Commands/CustomerInstallAcceptanceCommand.php` — acceptance test command for server readiness validation
+
+**Files updated:**
+- `app/Models/CustomerInstallation.php` — 4 new fillable + 2 new casts for baseline/validation fields
+- `app/Services/CustomerInstallation/Drivers/SshRemoteDriver.php` — reconnect support (MAX_RECONNECTS=2), isConnectionDropped(), doExecute() private method
+- `app/Services/CustomerInstallation/Stages/CustomerReadyStage.php` — full PostInstallValidationService integration, persists results in installation.post_install_validation, fails only if required checks fail
+- `app/Services/CustomerInstallation/Stages/InitializeBackupStage.php` — creates INITIAL_CUSTOMER_BASELINE: mysqldump on remote → SFTP download → Arvan upload → SHA-256 verify → installation record update
+- `app/Providers/CustomerInstallationServiceProvider.php` — registers PostInstallValidationService + CustomerInstallAcceptanceCommand
+
+**Architecture decisions:**
+- Required checks (database, storage) → FAIL blocks installation; all others are WARN-level warnings
+- SSH reconnect: MAX_RECONNECTS=2, 0.8s pause, resets on successful command
+- Baseline key format: `customers/site-{id}/baselines/INITIAL_CUSTOMER_BASELINE_{timestamp}.sql.gz`
+- Acceptance test: `php artisan customer-install:acceptance-test {server_id} [--full]`
+
+---
+
 ## 2026-06-27 — PHASE-003B_CUSTOMER_INSTALLATION_ADMIN_CENTER_COMPLETE
 
 **Type:** Implementation — Admin UI layer

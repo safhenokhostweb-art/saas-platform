@@ -5,6 +5,24 @@
 
 ---
 
+## CURRENT STATE (2026-06-27 — PHASE-003C_COMPLETE)
+
+**Last completed phase:** PHASE-003C Customer Installation Execution Engine — real deployment engine complete, certified, ready to deploy.
+
+**What's built (PHASE-003C):**
+- `PostInstallValidationService` — 8 health checks: database (artisan migrate:status + tinker SELECT 1), queue (supervisorctl), redis (redis-cli ping), storage (symlink + writable), license (.env grep), scheduler (cron.d), domain (HTTP 200), ssl (HTTPS 200)
+- `SshRemoteDriver` — reconnect support: `MAX_RECONNECTS=2`, `isConnectionDropped()`, `doExecute()`, 0.8s pause on reconnect
+- `CustomerReadyStage` — uses PostInstallValidationService, persists results in `post_install_validation`, fails only if required checks (database, storage) fail, Slack notification with check summary
+- `InitializeBackupStage` — full INITIAL_CUSTOMER_BASELINE flow: remote mysqldump → SFTP download → Arvan upload → SHA-256 verify → installation record update (`initial_baseline_at`, `initial_baseline_arvan_key`, `initial_baseline_sha256`)
+- `CustomerInstallAcceptanceCommand` — `php artisan customer-install:acceptance-test {server} [--full]` — measures SSH ping, command exec, PHP version, disk, extensions, MySQL, supervisor, redis, /var/www writable
+- Migration `2026_06_27_200000_add_baseline_and_validation_to_customer_installations.php` — 4 new columns
+
+**Pipeline status:** 20 stages, all real SSH execution. No stubs, no simulation.
+
+**NEXT STEP:** Run migration on production: `php artisan migrate --force`. Then run acceptance test: `php artisan customer-install:acceptance-test {server_id} --full`.
+
+---
+
 ## CURRENT STATE (2026-06-27 — PHASE-003B_COMPLETE)
 
 **Last completed phase:** PHASE-003B Customer Installation Admin Center — complete, certified, ready to deploy.

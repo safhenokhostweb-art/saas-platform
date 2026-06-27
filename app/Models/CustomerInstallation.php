@@ -27,14 +27,20 @@ class CustomerInstallation extends Model
         'failure_reason',
         'request_payload',
         'source_installation_id',
+        'initial_baseline_at',
+        'initial_baseline_arvan_key',
+        'initial_baseline_sha256',
+        'post_install_validation',
     ];
 
     protected $casts = [
-        'completed_stages' => 'array',
-        'request_payload'  => 'array',
-        'started_at'       => 'datetime',
-        'completed_at'     => 'datetime',
-        'failed_at'        => 'datetime',
+        'completed_stages'    => 'array',
+        'request_payload'     => 'array',
+        'post_install_validation' => 'array',
+        'started_at'          => 'datetime',
+        'completed_at'        => 'datetime',
+        'failed_at'           => 'datetime',
+        'initial_baseline_at' => 'datetime',
     ];
 
     public function logs(): HasMany

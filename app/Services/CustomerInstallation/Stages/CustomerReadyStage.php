@@ -5,53 +5,82 @@ namespace App\Services\CustomerInstallation\Stages;
 use App\Services\CustomerInstallation\Contracts\InstallationStateInterface;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
+use App\Services\CustomerInstallation\PostInstallValidationService;
 use App\Services\Infrastructure\SlackAlertService;
 
 class CustomerReadyStage extends AbstractStage
 {
     public function __construct(
-        private readonly InstallationStateInterface $state,
-        private readonly SlackAlertService $slack,
+        private readonly InstallationStateInterface   $state,
+        private readonly PostInstallValidationService $validator,
+        private readonly SlackAlertService            $slack,
     ) {}
 
     public function name(): string { return 'CUSTOMER_READY'; }
-    public function label(): string { return 'آماده‌سازی نهایی'; }
-    public function estimatedSeconds(): int { return 10; }
+    public function label(): string { return 'آماده‌سازی نهایی و تأیید'; }
+    public function estimatedSeconds(): int { return 25; }
 
     public function execute(InstallationContext $ctx): StageResult
     {
         return $this->run($ctx, function (InstallationContext $ctx) {
             $req = $ctx->request;
-            $webRoot = escapeshellarg($ctx->webRoot());
 
-            // Final health verification
-            $healthResult = $ctx->connection->execute(
-                "cd {$webRoot} && php artisan about 2>&1 | head -5 || echo 'app-running'"
-            );
+            // Run all post-install health checks
+            $checks        = $this->validator->runAll($ctx);
+            $overallStatus = $this->validator->overallStatus($checks);
+            $requiredPass  = $this->validator->allRequiredPass($checks);
 
-            $httpStatus = 0;
-            try {
-                $httpResult = $ctx->connection->execute("curl -s -o /dev/null -w '%{http_code}' --max-time 10 'http://127.0.0.1' -H 'Host: {$req->domain}' 2>/dev/null || echo '0'");
-                $httpStatus = (int) trim($httpResult->stdout);
-            } catch (\Throwable) {}
+            // Persist validation results on the installation record
+            $ctx->installation->update([
+                'post_install_validation' => [
+                    'status'     => $overallStatus,
+                    'checks'     => $checks,
+                    'checked_at' => now()->toIso8601String(),
+                ],
+            ]);
 
+            // Hard fail only if required checks (database, storage) fail
+            if (!$requiredPass) {
+                $failed = array_keys(array_filter($checks, fn($c) => $c['required'] && $c['status'] !== 'PASS'));
+                return StageResult::failure(
+                    $this->name(),
+                    'Post-install validation: required checks FAILED — ' . implode(', ', $failed),
+                    $this->elapsed()
+                );
+            }
+
+            // Mark installation complete
             $this->state->markComplete($ctx->installation);
 
-            try {
-                $this->slack->info(
-                    "[INSTALL] {$req->company} @ {$req->domain} — نصب کامل شد",
-                    'Customer Installation',
-                    "Site ID: {$ctx->installation->site_id} | Mode: {$req->installMode} | Domain: {$req->domain}"
-                );
-            } catch (\Throwable) {}
+            // Slack notification
+            $this->notifySlack($ctx, $checks, $overallStatus);
+
+            $warnings = array_keys(array_filter($checks, fn($c) => $c['status'] === 'WARN'));
 
             return StageResult::success($this->name(), [
                 'domain'           => $req->domain,
-                'http_status'      => $httpStatus,
-                'health_output'    => trim($healthResult->stdout),
+                'validation_status'=> $overallStatus,
+                'checks'           => $checks,
+                'warnings'         => $warnings,
                 'site_id'          => $ctx->installation->site_id,
-                'notifications_sent' => true,
             ], [], $this->elapsed());
         });
+    }
+
+    private function notifySlack(InstallationContext $ctx, array $checks, string $status): void
+    {
+        try {
+            $req    = $ctx->request;
+            $icon   = $status === 'PASS' ? '✅' : ($status === 'WARN' ? '⚠️' : '❌');
+            $detail = collect($checks)
+                ->map(fn($c, $k) => "{$k}: {$c['status']}")
+                ->implode(' | ');
+
+            $this->slack->info(
+                "{$icon} [INSTALL-{$status}] {$req->company} @ {$req->domain}",
+                'Customer Installation',
+                "Site ID: {$ctx->installation->site_id} | Mode: {$req->installMode} | {$detail}"
+            );
+        } catch (\Throwable) {}
     }
 }

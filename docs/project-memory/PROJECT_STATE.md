@@ -16,13 +16,15 @@
 
 ## Current Module
 
-**PHASE-003B: CUSTOMER_INSTALLATION_ADMIN_CENTER — COMPLETE (2026-06-27). All 8 modules delivered. Ready to deploy.**
+**PHASE-003C: CUSTOMER_INSTALLATION_EXECUTION_ENGINE — COMPLETE (2026-06-27). Real deployment engine. All 20 stages execute real SSH commands. PostInstallValidation, SSH reconnect, INITIAL_CUSTOMER_BASELINE, acceptance test.**
 
 ---
 
 ## Current Phase
 
-**PHASE-003B_COMPLETE (2026-06-27). Customer Installation Admin Center delivered. 3 controllers, 8 Blade views (dashboard, 8-step Alpine.js wizard, history, show, packages, server CRUD), 15 routes, AdminMenu entry. SSE real-time monitor, credential vault integration, manual rollback. 4 certification docs. Reuses PHASE-003A services without duplication. Pending deploy to 87.107.12.81:9011.**
+**PHASE-003C_COMPLETE (2026-06-27). Real execution engine delivered. PostInstallValidationService (8 checks), SSH reconnect (MAX_RECONNECTS=2), INITIAL_CUSTOMER_BASELINE (mysqldump→SFTP→Arvan), CustomerInstallAcceptanceCommand. Migration for baseline/validation columns. Pending deploy + migration on 87.107.12.81:9011.**
+
+**Previous:** PHASE-003B_COMPLETE (2026-06-27). Customer Installation Admin Center delivered. 3 controllers, 8 Blade views (dashboard, 8-step Alpine.js wizard, history, show, packages, server CRUD), 15 routes, AdminMenu entry. SSE real-time monitor, credential vault integration, manual rollback. 4 certification docs. Reuses PHASE-003A services without duplication.
 
 **Previous:** PHASE-003A_FOUNDATION_CERTIFIED (2026-06-27). Customer Installation Engine Foundation complete and certified. 40+ files: 5 migrations, 5 models, 4 DTOs, 4 contracts, CredentialVault (AES-256-GCM), SshRemoteDriver (phpseclib3), FakeRemoteDriver, 20 stage classes, InstallationOrchestrator, RollbackService, 3 jobs, 2 commands, CustomerInstallationServiceProvider. All 31 tests pass (17 unit + 14 feature). Redis eager-connect bug fixed in SecurityPatchRegistry + MobilePatchRegistryAdapter. Deployed to 87.107.12.81:9011.
 
