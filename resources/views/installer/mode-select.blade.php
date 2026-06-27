@@ -11,12 +11,10 @@
     @csrf
     <input type="hidden" name="mode" id="selectedMode" value="">
 
-    <div class="mode-grid" x-data="{ selected: '' }">
+    <div class="mode-grid">
 
         {{-- MODE 1: Fresh Install --}}
-        <div class="mode-card"
-             :class="selected === 'fresh' ? 'selected' : ''"
-             @click="selected = 'fresh'; document.getElementById('selectedMode').value='fresh'">
+        <div class="mode-card" data-mode="fresh">
             <span class="mode-icon">🚀</span>
             <div class="mode-title">نصب تازه</div>
             <div class="mode-desc">
@@ -29,9 +27,7 @@
         </div>
 
         {{-- MODE 2: Restore --}}
-        <div class="mode-card"
-             :class="selected === 'restore' ? 'selected' : ''"
-             @click="selected = 'restore'; document.getElementById('selectedMode').value='restore'">
+        <div class="mode-card" data-mode="restore">
             <span class="mode-icon">♻️</span>
             <div class="mode-title">بازیابی پلتفرم</div>
             <div class="mode-desc">
@@ -44,9 +40,7 @@
         </div>
 
         {{-- MODE 3: Upgrade --}}
-        <div class="mode-card"
-             :class="selected === 'upgrade' ? 'selected' : ''"
-             @click="selected = 'upgrade'; document.getElementById('selectedMode').value='upgrade'">
+        <div class="mode-card" data-mode="upgrade">
             <span class="mode-icon">⬆️</span>
             <div class="mode-title">ارتقاء پلتفرم</div>
             <div class="mode-desc">
@@ -60,26 +54,26 @@
 
     </div>
 
-    <div style="text-align:center; margin-top:40px;" x-data x-show="document.getElementById('selectedMode').value !== ''">
-        <button type="submit" class="btn btn-primary btn-lg" id="startBtn" disabled
-                onclick="if(!document.getElementById('selectedMode').value){event.preventDefault();alert('لطفاً یک حالت انتخاب کنید');}">
+    <div style="text-align:center; margin-top:40px; display:none;" id="startBtnWrapper">
+        <button type="submit" class="btn btn-primary btn-lg" id="startBtn">
             شروع &larr;
         </button>
     </div>
 </form>
 
 <script>
-    document.getElementById('modeForm').addEventListener('change', function() {
-        document.getElementById('startBtn').disabled = !document.getElementById('selectedMode').value;
-    });
+    var selectedModeInput = document.getElementById('selectedMode');
+    var startBtnWrapper   = document.getElementById('startBtnWrapper');
+
     document.querySelectorAll('.mode-card').forEach(function(card) {
         card.addEventListener('click', function() {
-            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.mode-card').forEach(function(c) {
+                c.classList.remove('selected');
+            });
             this.classList.add('selected');
-            document.getElementById('startBtn').disabled = false;
+            selectedModeInput.value = this.getAttribute('data-mode');
+            startBtnWrapper.style.display = 'block';
         });
     });
 </script>
-
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 @endsection
