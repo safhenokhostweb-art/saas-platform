@@ -7,19 +7,31 @@ use RuntimeException;
 
 class CredentialVault
 {
-    private string $key;
+    private ?string $key = null;
     private string $algorithm = 'aes-256-gcm';
 
     public function __construct()
     {
+        // Key is loaded lazily — constructor does NOT throw so artisan cache/migrate
+        // commands work even when INSTALLER_MASTER_KEY is absent from the environment.
+    }
+
+    private function resolveKey(): string
+    {
+        if ($this->key !== null) {
+            return $this->key;
+        }
+
         $raw = env('INSTALLER_MASTER_KEY', '');
         if (empty($raw)) {
             throw new RuntimeException('INSTALLER_MASTER_KEY environment variable is not set.');
         }
-        $this->key = base64_decode($raw, true) ?: $raw;
-        if (strlen($this->key) < 16) {
+        $key = base64_decode($raw, true) ?: $raw;
+        if (strlen($key) < 16) {
             throw new RuntimeException('INSTALLER_MASTER_KEY must be at least 16 bytes after base64 decode.');
         }
+
+        return $this->key = $key;
     }
 
     public function encrypt(string $plaintext): string
@@ -29,7 +41,7 @@ class CredentialVault
         $ciphertext = openssl_encrypt(
             $plaintext,
             $this->algorithm,
-            $this->key,
+            $this->resolveKey(),
             OPENSSL_RAW_DATA,
             $nonce,
             $tag
@@ -61,7 +73,7 @@ class CredentialVault
         $plaintext = openssl_decrypt(
             $ciphertext,
             $this->algorithm,
-            $this->key,
+            $this->resolveKey(),
             OPENSSL_RAW_DATA,
             $nonce,
             $tag
@@ -76,6 +88,7 @@ class CredentialVault
 
     public function rotate(string $newMasterKeyBase64): int
     {
+        $this->resolveKey(); // ensure current key is loaded before cloning
         $newVault = clone $this;
         $newKey = base64_decode($newMasterKeyBase64, true) ?: $newMasterKeyBase64;
         if (strlen($newKey) < 16) {
