@@ -55,15 +55,17 @@ class CustomerReleasePackageService implements CustomerPackageInterface
         $localPath = $tempDir . '/customer-site-' . $version . '-' . uniqid() . '.zip';
 
         // Use local file when registered (no Arvan dependency)
+        // Write to /tmp so the queue worker can always write regardless of storage/ ownership
         if (!empty($pkg->local_path)) {
             if (!file_exists($pkg->local_path)) {
                 throw new RuntimeException("Local package file not found: {$pkg->local_path}");
             }
-            Log::info("CIE: Copying local package {$version} from: {$pkg->local_path}");
-            if (!copy($pkg->local_path, $localPath)) {
-                throw new RuntimeException("Failed to copy local package from {$pkg->local_path}");
+            $tmpCopy = sys_get_temp_dir() . '/customer-site-' . $version . '-' . uniqid() . '.zip';
+            Log::info("CIE: Copying local package {$version} from {$pkg->local_path} to {$tmpCopy}");
+            if (!copy($pkg->local_path, $tmpCopy)) {
+                throw new RuntimeException("Failed to copy local package from {$pkg->local_path} to {$tmpCopy}");
             }
-            return $localPath;
+            return $tmpCopy;
         }
 
         Log::info("CIE: Downloading package {$version} from Arvan: {$manifest->arvanKey}");

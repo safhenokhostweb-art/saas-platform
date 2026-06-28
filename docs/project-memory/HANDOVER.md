@@ -5,6 +5,38 @@
 
 ---
 
+## CURRENT STATE (2026-06-28 — HOTFIX-003_PIPELINE_FIX_COMPLETE)
+
+**Last completed phase:** HOTFIX-003 — Customer Installation Pipeline Fix.
+
+**What was built:**
+
+### New files:
+- `app/Console/Commands/RegisterLocalInstallPackageCommand.php` — Artisan: `customer-install:register-local-package {path} {version} [--activate]`. Computes SHA-256, stores `local_path` on package record, bypasses Arvan cloud.
+- `database/migrations/2026_06_28_200001_add_local_path_to_customer_installation_packages.php` — nullable `local_path` string on `customer_installation_packages`
+- `database/migrations/2026_06_28_200002_add_metadata_to_customer_installations.php` — nullable JSON `metadata` on `customer_installations`
+- `c:\laragon\www\customer-site\database\seeders\CustomerPlatformSeeder.php` — reads ADMIN_EMAIL/ADMIN_NAME/ADMIN_PASSWORD from .env, creates tenant-admin user (idempotent, skips if missing or duplicate)
+
+### Modified files:
+- `app/Models/CustomerInstallationPackage.php` — `local_path` added to `$fillable`
+- `app/Models/CustomerInstallation.php` — `metadata` in `$fillable` + `$casts` (array)
+- `app/Services/CustomerInstallation/CustomerReleasePackageService.php` — `downloadLocally()` checks `local_path` first; copies local file instead of Arvan download
+- `app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php` — generates `$adminPassword = Str::random(16)`, adds `ADMIN_NAME/ADMIN_EMAIL/ADMIN_PASSWORD` to `.env` lines, stores in `$ctx->installation->metadata`
+- `app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php` — added `destroy()` method: SSH cleanup (non-fatal), Site record delete, logs/rollbacks/installation cascade delete
+- `routes/web.php` — `Route::delete('/installations/{installation}', destroy)` added
+- `resources/views/admin/infrastructure/customer-deployment/show.blade.php` — delete button (gray, trash icon, confirm dialog), admin credentials card (amber, select-all), `failure_reason` shown for `rolled_back` status too
+- `app/Providers/CustomerInstallationServiceProvider.php` — `RegisterLocalInstallPackageCommand` registered
+
+**Production state:**
+- Both migrations ran: `200001` + `200002`
+- Package v1.0.0 registered and activated at `/var/www/saas-platform/storage/app/install-packages/customer-site-v1.0.0.zip` (42.6 MB, SHA-256: eee53be4d223b916...)
+- Commits: `0ba9759` (first deploy) + `9408397` (second deploy)
+- customer-site commit: `e0424f1` (CustomerPlatformSeeder)
+
+**NEXT STEP:** Create a new installation from the admin UI wizard to verify the full 20-stage pipeline runs end-to-end. The admin credentials should appear on the show page after `GENERATE_ENVIRONMENT` stage completes.
+
+---
+
 ## CURRENT STATE (2026-06-28 — HOTFIX-003_AUTHENTICATION_UI_COMPLETE)
 
 **Last completed phase:** HOTFIX-003 — Enterprise Authentication UI Completion.

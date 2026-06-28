@@ -5,6 +5,37 @@
 
 ---
 
+## 2026-06-28 — HOTFIX-003_PIPELINE_FIX
+
+**Type:** Bugfix — Customer Installation Pipeline operational
+
+**Root cause diagnosed:** `failure_reason` on installation record showed "Stage UPLOAD_PACKAGE failed: No active release package registered". No package was in `customer_installation_packages`. Arvan cloud not configured.
+
+**What changed:**
+
+**Files created (3):**
+- `app/Console/Commands/RegisterLocalInstallPackageCommand.php` — `customer-install:register-local-package` bypasses Arvan, copies local ZIP
+- `database/migrations/2026_06_28_200001_add_local_path_to_customer_installation_packages.php`
+- `database/migrations/2026_06_28_200002_add_metadata_to_customer_installations.php`
+
+**Files modified (7):**
+- `app/Models/CustomerInstallationPackage.php` — `local_path` fillable
+- `app/Models/CustomerInstallation.php` — `metadata` fillable + cast
+- `app/Services/CustomerInstallation/CustomerReleasePackageService.php` — local_path copy path
+- `app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php` — admin credentials + metadata write; `env(APP_URL)` → `config('app.url')`
+- `app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php` — `destroy()` method
+- `routes/web.php` — DELETE route for installations
+- `resources/views/admin/infrastructure/customer-deployment/show.blade.php` — delete button + admin credentials card
+
+**customer-site files created (1):**
+- `database/seeders/CustomerPlatformSeeder.php` — creates initial tenant admin from .env vars
+
+**Why:** Pipeline was failing at UPLOAD_PACKAGE because no package was registered. New admin users were not created (fresh DB had no users). No way to delete failed installations.
+
+**Impact:** Pipeline can now complete all 20 stages. Admin credentials visible in show page. Delete functionality cleans up failed/complete installs. Commits: `0ba9759`, `9408397` on saas-platform; `e0424f1` on customer-site.
+
+---
+
 ## 2026-06-28 — HOTFIX-003_AUTHENTICATION_UI_COMPLETION
 
 **Type:** Feature — Enterprise Authentication UI (driver-aware, method-aware)
