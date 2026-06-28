@@ -282,9 +282,17 @@
                                     کلید خصوصی SSH جدید
                                     <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
                                 </label>
+                                <div x-data="{ pubKeyWarning: false }">
                                 <textarea name="private_key" rows="6"
+                                    @input="pubKeyWarning = /^(ssh-|ecdsa-|sk-)/.test($event.target.value.trim())"
+                                    :class="pubKeyWarning ? 'border-red-400 bg-red-50' : ''"
                                     placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;برای بازنویسی کلید موجود، کلید جدید را وارد کنید&#10;-----END OPENSSH PRIVATE KEY-----"
                                     class="form-control font-mono text-xs @error('private_key') border-red-400 @enderror">{{ old('private_key') }}</textarea>
+                                <div x-show="pubKeyWarning" class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                    <p class="text-xs text-red-700">این <strong>کلید عمومی</strong> است، نه کلید خصوصی. فایل <code class="bg-red-100 px-1 rounded">id_ed25519</code> یا <code class="bg-red-100 px-1 rounded">id_rsa</code> (بدون <code>.pub</code>) را وارد کنید — با <strong>-----BEGIN OPENSSH PRIVATE KEY-----</strong> شروع می‌شود.</p>
+                                </div>
+                                </div>
                                 <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                     <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
                                     کلید موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
