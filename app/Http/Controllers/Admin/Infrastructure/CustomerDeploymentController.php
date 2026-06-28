@@ -78,7 +78,7 @@ class CustomerDeploymentController extends Controller
             'request_payload'   => $payload,
         ]);
 
-        CustomerInstallationPipelineJob::dispatch($installation)
+        CustomerInstallationPipelineJob::dispatch($installation->id)
             ->onConnection('customer-install')
             ->onQueue('customer-install');
 
