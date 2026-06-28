@@ -9,7 +9,7 @@ use App\Services\CustomerInstallation\Dto\CommandResult;
 use App\Services\CustomerInstallation\Dto\ConnectionTestResult;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
-use phpseclib3\Crypt\RSA;
+use phpseclib3\Crypt\PublicKeyLoader;
 use RuntimeException;
 
 class SshRemoteDriver implements RemoteConnectionInterface
@@ -32,7 +32,7 @@ class SshRemoteDriver implements RemoteConnectionInterface
 
         if ($this->server->isKeyAuth()) {
             $privateKey = $this->vault->decrypt($this->server->private_key_encrypted);
-            $key = RSA::loadPrivateKey($privateKey);
+            $key = PublicKeyLoader::load($privateKey);
             if (!$ssh->login($this->server->username, $key)) {
                 throw new RuntimeException("SSH key authentication failed for {$this->server->host}");
             }
@@ -248,7 +248,7 @@ class SshRemoteDriver implements RemoteConnectionInterface
         $sftp = new SFTP($this->server->host, $this->server->port);
 
         if ($this->server->isKeyAuth()) {
-            $key = RSA::loadPrivateKey($this->vault->decrypt($this->server->private_key_encrypted));
+            $key = PublicKeyLoader::load($this->vault->decrypt($this->server->private_key_encrypted));
             if (!$sftp->login($this->server->username, $key)) {
                 throw new RuntimeException('SFTP key auth failed');
             }

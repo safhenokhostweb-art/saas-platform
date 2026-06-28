@@ -12,7 +12,7 @@ use App\Services\CustomerInstallation\Dto\ValidationResult;
 use App\Services\CustomerInstallation\Enums\DriverType;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
-use phpseclib3\Crypt\RSA;
+use phpseclib3\Crypt\PublicKeyLoader;
 use RuntimeException;
 
 /**
@@ -92,7 +92,7 @@ class SshDeploymentDriver implements DeploymentDriverInterface
 
         if ($this->target->isKeyAuth()) {
             $privateKey = $this->vault->decrypt($this->target->private_key_encrypted);
-            $key = RSA::loadPrivateKey($privateKey);
+            $key = PublicKeyLoader::load($privateKey);
             if (!$ssh->login($this->target->username, $key)) {
                 throw new RuntimeException("SSH key authentication failed for {$this->target->host}");
             }
@@ -313,7 +313,7 @@ class SshDeploymentDriver implements DeploymentDriverInterface
         $sftp = new SFTP($this->target->host, $this->target->port);
 
         if ($this->target->isKeyAuth()) {
-            $key = RSA::loadPrivateKey($this->vault->decrypt($this->target->private_key_encrypted));
+            $key = PublicKeyLoader::load($this->vault->decrypt($this->target->private_key_encrypted));
             if (!$sftp->login($this->target->username, $key)) {
                 throw new RuntimeException('SFTP key auth failed');
             }

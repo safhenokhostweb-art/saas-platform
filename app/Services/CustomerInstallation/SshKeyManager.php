@@ -5,6 +5,7 @@ namespace App\Services\CustomerInstallation;
 use App\Models\CustomerRemoteServer;
 use App\Models\SshKey;
 use phpseclib3\Crypt\EC;
+use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Crypt\RSA;
 use phpseclib3\Net\SSH2;
 use RuntimeException;
@@ -157,14 +158,9 @@ class SshKeyManager
     {
         try {
             $privateKeyPem = $this->vault->decrypt($key->private_key_encrypted);
-            $loadedKey     = RSA::loadPrivateKey($privateKeyPem);
-        } catch (\Throwable) {
-            try {
-                $privateKeyPem = $this->vault->decrypt($key->private_key_encrypted);
-                $loadedKey     = EC::loadPrivateKey($privateKeyPem);
-            } catch (\Throwable $e) {
-                throw new RuntimeException('Cannot load private key: ' . $e->getMessage());
-            }
+            $loadedKey     = PublicKeyLoader::load($privateKeyPem);
+        } catch (\Throwable $e) {
+            throw new RuntimeException('Cannot load private key: ' . $e->getMessage());
         }
 
         $ssh = new SSH2($server->host, $server->port, 10);
@@ -250,12 +246,7 @@ class SshKeyManager
     public function validatePrivateKey(string $pem): bool
     {
         try {
-            RSA::loadPrivateKey($pem);
-            return true;
-        } catch (\Throwable) {}
-
-        try {
-            EC::loadPrivateKey($pem);
+            PublicKeyLoader::load($pem);
             return true;
         } catch (\Throwable) {}
 
@@ -287,11 +278,7 @@ class SshKeyManager
 
         if ($server->auth_method === 'key' && $server->private_key_encrypted) {
             $pem = $this->vault->decrypt($server->private_key_encrypted);
-            try {
-                $key = RSA::loadPrivateKey($pem);
-            } catch (\Throwable) {
-                $key = EC::loadPrivateKey($pem);
-            }
+            $key = PublicKeyLoader::load($pem);
             if (!$ssh->login($server->username, $key)) {
                 throw new RuntimeException("SSH key auth failed for {$server->host}");
             }
