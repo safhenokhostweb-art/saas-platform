@@ -45,6 +45,7 @@ class CustomerReleasePackageService implements CustomerPackageInterface
     public function downloadLocally(string $version): string
     {
         $manifest = $this->getManifest($version);
+        $pkg = CustomerInstallationPackage::where('version', $version)->firstOrFail();
         $tempDir = config('customer_installation.package.local_temp_path', storage_path('app/install-packages'));
 
         if (!is_dir($tempDir)) {
@@ -52,6 +53,18 @@ class CustomerReleasePackageService implements CustomerPackageInterface
         }
 
         $localPath = $tempDir . '/customer-site-' . $version . '-' . uniqid() . '.zip';
+
+        // Use local file when registered (no Arvan dependency)
+        if (!empty($pkg->local_path)) {
+            if (!file_exists($pkg->local_path)) {
+                throw new RuntimeException("Local package file not found: {$pkg->local_path}");
+            }
+            Log::info("CIE: Copying local package {$version} from: {$pkg->local_path}");
+            if (!copy($pkg->local_path, $localPath)) {
+                throw new RuntimeException("Failed to copy local package from {$pkg->local_path}");
+            }
+            return $localPath;
+        }
 
         Log::info("CIE: Downloading package {$version} from Arvan: {$manifest->arvanKey}");
 

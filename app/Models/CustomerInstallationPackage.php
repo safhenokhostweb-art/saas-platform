@@ -9,6 +9,7 @@ class CustomerInstallationPackage extends Model
     protected $fillable = [
         'version',
         'arvan_key',
+        'local_path',
         'sha256',
         'manifest_checksum',
         'size_bytes',

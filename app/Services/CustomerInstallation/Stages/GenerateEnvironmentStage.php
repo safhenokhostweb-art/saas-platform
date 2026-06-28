@@ -22,7 +22,7 @@ class GenerateEnvironmentStage extends AbstractStage
 
             $appKey = 'base64:' . base64_encode(random_bytes(32));
             $appUrl = ($req->sslEnabled ? 'https' : 'http') . '://' . $req->domain;
-            $platformUrl = rtrim(env('APP_URL', 'https://panel.safhenokhost.ir'), '/');
+            $platformUrl = rtrim(config('app.url', 'https://panel.safhenokhost.ir'), '/');
 
             $envLines = [
                 "APP_NAME=\"{$req->company}\"",

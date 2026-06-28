@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Console\Commands\GenerateMasterKeyCommand;
 use App\Console\Commands\RegisterInstallPackageCommand;
+use App\Console\Commands\RegisterLocalInstallPackageCommand;
 use App\Console\Commands\CustomerInstallAcceptanceCommand;
 use App\Services\CustomerInstallation\Contracts\CustomerPackageInterface;
 use App\Services\CustomerInstallation\Contracts\InstallationStateInterface;
@@ -34,6 +35,7 @@ class CustomerInstallationServiceProvider extends ServiceProvider
             $this->commands([
                 GenerateMasterKeyCommand::class,
                 RegisterInstallPackageCommand::class,
+                RegisterLocalInstallPackageCommand::class,
                 CustomerInstallAcceptanceCommand::class,
             ]);
         }

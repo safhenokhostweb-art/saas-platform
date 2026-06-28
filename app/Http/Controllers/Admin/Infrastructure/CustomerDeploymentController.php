@@ -61,11 +61,25 @@ class CustomerDeploymentController extends Controller
             'ssl_enabled'       => 'nullable|boolean',
         ]);
 
-        $payload = array_merge($validated, [
-            'smtp'       => [],
-            'modules'    => $validated['modules'] ?? [],
-            'ssl_enabled' => (bool) ($validated['ssl_enabled'] ?? false),
-        ]);
+        // Map form field names to DTO field names expected by CustomerInstallRequest::fromArray()
+        $payload = [
+            'company'          => $validated['customer_company'],
+            'owner_name'       => $validated['owner_name'],
+            'email'            => $validated['customer_email'],
+            'phone'            => $validated['phone'] ?? '',
+            'language'         => $validated['language'],
+            'timezone'         => $validated['timezone'],
+            'currency'         => $validated['currency'],
+            'domain'           => $validated['customer_domain'],
+            'license_type'     => $validated['license_type'],
+            'theme_slug'       => $validated['theme_slug'] ?? '',
+            'modules'          => $validated['modules'] ?? [],
+            'backup_policy'    => $validated['backup_policy'] ?? 'daily',
+            'ssl_enabled'      => (bool) ($validated['ssl_enabled'] ?? false),
+            'smtp'             => [],
+            'remote_server_id' => (int) $validated['remote_server_id'],
+            'install_mode'     => $validated['install_mode'],
+        ];
 
         $installation = CustomerInstallation::create([
             'remote_server_id'  => $validated['remote_server_id'],
