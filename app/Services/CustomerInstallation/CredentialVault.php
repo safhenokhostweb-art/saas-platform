@@ -22,7 +22,7 @@ class CredentialVault
             return $this->key;
         }
 
-        $raw = env('INSTALLER_MASTER_KEY', '');
+        $raw = config('installer.master_key', '');
         if (empty($raw)) {
             throw new RuntimeException('INSTALLER_MASTER_KEY environment variable is not set.');
         }
