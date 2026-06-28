@@ -74,9 +74,12 @@ class CustomerInstallationOrchestrator
 
                 $this->state->recordStageStart($installation, $stageName);
 
-                // Record rollback checkpoint before execution if rollback is supported
+                // Build rollback snapshot BEFORE execution wherever possible.
+                // Stages override buildPreSnapshot() to return their resource paths so
+                // that rollback has actionable data even when the stage fails mid-way.
                 if ($stage->canRollback()) {
-                    $this->state->recordRollbackCheckpoint($installation, $stageName, []);
+                    $preSnapshot = $stage->buildPreSnapshot($ctx);
+                    $this->state->recordRollbackCheckpoint($installation, $stageName, $preSnapshot);
                 }
 
                 $startMs = (int) round(microtime(true) * 1000);
@@ -90,10 +93,10 @@ class CustomerInstallationOrchestrator
                     return;
                 }
 
-                // Push rollback snapshot with actual data
+                // Update the checkpoint with the actual snapshot from the stage result.
+                // This upserts — no second record is created (see InstallationStateManager).
                 if ($stage->canRollback() && !empty($result->rollbackSnapshot)) {
                     $ctx->pushRollback($stageName, $result->rollbackSnapshot);
-                    // Update the checkpoint record with actual snapshot data
                     $this->state->recordRollbackCheckpoint($installation, $stageName, $result->rollbackSnapshot);
                 }
 

@@ -181,35 +181,91 @@ class SshRemoteDriver implements RemoteConnectionInterface
 
     public function upload(string $localPath, string $remotePath, ?callable $progress = null): void
     {
-        $sftp = $this->getSftp();
-        $chunkSize = config('customer_installation.upload.chunk_size_bytes', 4 * 1024 * 1024);
-        $fileSize = filesize($localPath);
-        $uploaded = 0;
+        $chunkSize   = config('customer_installation.upload.chunk_size_bytes', 4 * 1024 * 1024);
+        $maxAttempts = max(1, (int) config('customer_installation.upload.retry_attempts', 3));
+        $retryDelayMs = (int) config('customer_installation.upload.retry_delay_ms', 2000);
+        $fileSize    = filesize($localPath);
 
-        $sftp->put(
-            $remotePath,
-            function (int $size) use ($localPath, $chunkSize, $fileSize, &$uploaded, $progress): string {
-                static $fp = null;
-                if ($fp === null) {
-                    $fp = fopen($localPath, 'rb');
-                    if ($fp === false) {
-                        throw new RuntimeException("Cannot open local file: {$localPath}");
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $sftp     = $this->getSftp();
+            $uploaded = 0;
+            $fp       = null;
+
+            try {
+                // Resume check: if remote file already has the correct size, skip upload.
+                $remoteStat = $sftp->stat($remotePath);
+                if ($remoteStat !== false && isset($remoteStat['size']) && (int) $remoteStat['size'] === $fileSize) {
+                    if ($progress) {
+                        $progress(100, $fileSize, $fileSize);
                     }
+                    return; // already complete — skip
                 }
-                $data = fread($fp, $chunkSize);
-                if ($data === false || $data === '') {
+
+                // Partial file on remote: delete before re-upload.
+                if ($remoteStat !== false) {
+                    $sftp->delete($remotePath);
+                }
+
+                $fp = fopen($localPath, 'rb');
+                if ($fp === false) {
+                    throw new RuntimeException("Cannot open local file: {$localPath}");
+                }
+
+                $ok = $sftp->put(
+                    $remotePath,
+                    function (int $size) use (&$fp, $chunkSize, $fileSize, &$uploaded, $progress): string {
+                        $data = fread($fp, $chunkSize);
+                        if ($data === false || $data === '') {
+                            return '';
+                        }
+                        $uploaded += strlen($data);
+                        if ($progress && $fileSize > 0) {
+                            $pct = (int) round($uploaded / $fileSize * 100);
+                            $progress($pct, $uploaded, $fileSize);
+                        }
+                        return $data;
+                    },
+                    SFTP::SOURCE_CALLBACK
+                );
+
+                fclose($fp);
+                $fp = null;
+
+                if (!$ok) {
+                    throw new RuntimeException("SFTP put() returned false after {$uploaded}/{$fileSize} bytes");
+                }
+
+                return; // success
+
+            } catch (\Throwable $e) {
+                if ($fp !== null) {
                     fclose($fp);
-                    return '';
                 }
-                $uploaded += strlen($data);
-                if ($progress && $fileSize > 0) {
-                    $pct = (int) round($uploaded / $fileSize * 100);
-                    $progress($pct, $uploaded, $fileSize);
+
+                // Clean up the partial remote file so the next attempt starts fresh.
+                try {
+                    $this->getSftp()->delete($remotePath);
+                } catch (\Throwable) {}
+
+                $lastException = $e;
+
+                if ($attempt < $maxAttempts && $this->isConnectionDropped($e)) {
+                    // Force SFTP reconnect before next attempt.
+                    try {
+                        $this->sftp?->disconnect();
+                    } catch (\Throwable) {}
+                    $this->sftp = null;
+                    usleep($retryDelayMs * 1000);
+                    continue;
                 }
-                return $data;
-            },
-            SFTP::SOURCE_CALLBACK
-        );
+
+                throw $e;
+            }
+        }
+
+        throw $lastException ?? new RuntimeException('Upload failed after all retry attempts');
     }
 
     public function download(string $remotePath, string $localPath): void
@@ -249,7 +305,12 @@ class SshRemoteDriver implements RemoteConnectionInterface
             return $this->sftp;
         }
 
-        $sftp = new SFTP($this->server->host, $this->server->port);
+        // Use the upload timeout (default 1800s) so that large file transfers
+        // don't hit the default phpseclib3 10-second per-operation timeout.
+        $uploadTimeout = (int) config('customer_installation.ssh.timeout_upload', 1800);
+
+        $sftp = new SFTP($this->server->host, $this->server->port, $uploadTimeout);
+        $sftp->setTimeout($uploadTimeout);
 
         if ($this->server->isKeyAuth()) {
             $key = PublicKeyLoader::load($this->vault->decrypt($this->server->private_key_encrypted));

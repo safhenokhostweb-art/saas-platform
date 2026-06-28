@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-06-28 — P0_UPLOAD_PACKAGE_TIMEOUT_FIX
+
+**Type:** Critical Bugfix — UPLOAD_PACKAGE production failure: "Timed out waiting for server"
+
+**Root Cause:** 6 compounding bugs. Primary: SFTP session created with 10s default timeout; `config('ssh.timeout_upload', 1800)` was defined but never applied to the SFTP object. Any server ACK delay >10s killed the upload.
+
+**Files modified (8):**
+- `app/Services/CustomerInstallation/Drivers/SshRemoteDriver.php` — SFTP timeout from config (1800s); upload retry (3 attempts); cleanup partial remote on failure; resume check (size comparison before re-upload); `put()` return value check
+- `app/Services/CustomerInstallation/Stages/AbstractStage.php` — added `buildPreSnapshot()` method (default returns [])
+- `app/Services/CustomerInstallation/Stages/UploadPackageStage.php` — 5-phase timestamp logging; `buildPreSnapshot()` with remote_path; self-cleanup on failure via SSH execute; remote size check; KB/s progress
+- `app/Services/CustomerInstallation/Stages/ExtractPackageStage.php` — `buildPreSnapshot()` with webRoot; idempotency (resume if >100 files); `.cie_installing` sentinel file; file count sanity check
+- `app/Services/CustomerInstallation/Stages/CustomerReadyStage.php` — removes `.cie_installing` sentinel on complete success
+- `app/Services/CustomerInstallation/CustomerInstallationOrchestrator.php` — uses `buildPreSnapshot()` for pre-execution checkpoint
+- `app/Services/CustomerInstallation/InstallationStateManager.php` — `recordRollbackCheckpoint()` upserts (no duplicate records)
+- `app/Jobs/CustomerInstallationRollbackJob.php` — `tries = 3`, `backoff = [60, 300]`
+
+**Files created (1):**
+- `docs/UPLOAD_PACKAGE_TIMEOUT_ANALYSIS.md` — full analysis: 7 root causes, execution timeline, network timing, all phases, fix verification checklist
+
+**Why:** Production installation failed with "Timed out waiting for server". Root cause: phpseclib3 SFTP default 10-second timeout fired on chunk ACK during 42MB upload. Six secondary bugs (empty rollback snapshot, ignored put() return, no retry, no cleanup, duplicate checkpoints, 1-retry rollback job) amplified the impact.
+
+**Impact:** Non-breaking. All changes are internal to the pipeline engine. Existing installation records unaffected.
+
+---
+
 ## 2026-06-28 — P1-004_LOCAL_RECOVERY_REPOSITORY
 
 **Type:** Feature — Installer Core Enterprise Recovery — Local Recovery Repository

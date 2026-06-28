@@ -87,20 +87,34 @@ class InstallationStateManager implements InstallationStateInterface
         string $stage,
         array $snapshot
     ): void {
-        CustomerInstallRollback::create([
-            'installation_id' => $installation->id,
-            'stage'           => $stage,
-            'snapshot'        => $this->sanitizeSnapshot($snapshot),
-            'created_at'      => now(),
-        ]);
+        // Upsert: update the existing pending checkpoint rather than creating a duplicate.
+        // The orchestrator calls this method twice per stage (pre-execute + post-execute),
+        // so we must not accumulate two records — the rollback service would execute both.
+        $existing = CustomerInstallRollback::where('installation_id', $installation->id)
+            ->where('stage', $stage)
+            ->whereNull('executed_at')
+            ->first();
 
-        CustomerInstallationLog::create([
-            'installation_id' => $installation->id,
-            'stage'           => $stage,
-            'event'           => 'checkpoint',
-            'message'         => "Rollback checkpoint recorded for {$stage}",
-            'created_at'      => now(),
-        ]);
+        $sanitized = $this->sanitizeSnapshot($snapshot);
+
+        if ($existing) {
+            $existing->update(['snapshot' => $sanitized]);
+        } else {
+            CustomerInstallRollback::create([
+                'installation_id' => $installation->id,
+                'stage'           => $stage,
+                'snapshot'        => $sanitized,
+                'created_at'      => now(),
+            ]);
+
+            CustomerInstallationLog::create([
+                'installation_id' => $installation->id,
+                'stage'           => $stage,
+                'event'           => 'checkpoint',
+                'message'         => "Rollback checkpoint recorded for {$stage}",
+                'created_at'      => now(),
+            ]);
+        }
     }
 
     public function recordWarning(CustomerInstallation $installation, string $stage, string $message): void

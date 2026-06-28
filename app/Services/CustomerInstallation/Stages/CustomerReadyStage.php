@@ -49,6 +49,14 @@ class CustomerReadyStage extends AbstractStage
                 );
             }
 
+            // Remove the installation-in-progress sentinel file.
+            // Until this file is deleted, any web server wildcard config that
+            // serves the web root should return 503 (see customer-site middleware).
+            try {
+                $webRoot = $ctx->webRoot();
+                $ctx->connection->execute('rm -f ' . escapeshellarg($webRoot . '/.cie_installing'));
+            } catch (\Throwable) {}
+
             // Mark installation complete
             $this->state->markComplete($ctx->installation);
 
