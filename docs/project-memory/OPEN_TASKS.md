@@ -4,6 +4,29 @@
 
 ---
 
+## COMPLETE: P1-004 — LOCAL RECOVERY REPOSITORY — 2026-06-28 ✅
+
+**Status:** LOCAL_RECOVERY_REPOSITORY_COMPLETE — All 33 requirements certified PASS
+
+| Task | Status |
+|------|--------|
+| Migration: local_recovery_logs | ✅ DONE |
+| Model: LocalRecoveryLog | ✅ DONE |
+| Config: installer.recovery_repository section | ✅ DONE |
+| Service: LocalRecoveryRepository (store/verify/list/status) | ✅ DONE |
+| Controller: RecoveryRepositoryController | ✅ DONE |
+| View: recovery-repository/index.blade.php (4 status cards, config form, 2 backup tables) | ✅ DONE |
+| Routes + AdminMenu (زیرساخت / DevOps → خزانه بازیابی محلی) | ✅ DONE |
+| UpgradeAdapter integration (platform baseline local copy) | ✅ DONE |
+| InitializeBackupStage integration (customer baseline local copy + policy fix) | ✅ DONE |
+| RestoreAdapter + PlatformInstallerController (4th source: recovery_repository) | ✅ DONE |
+| source-select.blade.php (🛡️ Local Recovery Repository section) | ✅ DONE |
+| docs/LOCAL_RECOVERY_REPOSITORY.md | ✅ DONE |
+| docs/LOCAL_RECOVERY_CERTIFICATION.md | ✅ DONE |
+| Deploy to production | ✅ DONE |
+
+---
+
 ## COMPLETE: HOTFIX-001 + HOTFIX-002 + HOTFIX-003 — PRODUCTION_BUGS_FIXED — 2026-06-27 ✅
 
 **Status:** All production 500 bugs resolved and verified

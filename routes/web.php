@@ -973,6 +973,20 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | Local Recovery Repository
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('infrastructure/recovery-repository')->name('infrastructure.recovery-repository.')->group(function () {
+            Route::get('/',            [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'index'])->name('index');
+            Route::post('/save',       [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'save'])->name('save');
+            Route::post('/validate-path', [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'validatePath'])->name('validate-path');
+            Route::post('/verify-all', [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'verifyAll'])->name('verify-all');
+            Route::post('/verify/{log}',  [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'verify'])->name('verify');
+            Route::delete('/{log}',    [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | Installer Admin Panel (read-only — shows baseline, manifest, verification)
         |--------------------------------------------------------------------------
         */

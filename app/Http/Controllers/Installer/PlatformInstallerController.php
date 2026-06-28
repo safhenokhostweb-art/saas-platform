@@ -349,7 +349,7 @@ class PlatformInstallerController extends Controller
     private function processRestoreSourceSelect(Request $request)
     {
         $request->validate([
-            'source'    => 'required|in:local,arvan,release',
+            'source'    => 'required|in:local,arvan,release,recovery_repository',
             'file_path' => 'required|string',
         ]);
 

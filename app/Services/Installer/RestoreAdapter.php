@@ -7,13 +7,14 @@ use App\Services\Infrastructure\ArvanBackupService;
 /**
  * Adapter for MODE 2 (Restore Platform).
  * Wraps RestoreService + ArvanBackupService for the installer context.
- * Sources: local disk, Arvan object storage, release package ZIP.
+ * Sources: local disk, Arvan object storage, release package ZIP, recovery_repository.
  */
 class RestoreAdapter
 {
     public function __construct(
-        private RestoreService    $restore,
-        private ArvanBackupService $arvan,
+        private RestoreService          $restore,
+        private ArvanBackupService      $arvan,
+        private LocalRecoveryRepository $localRepo,
     ) {}
 
     // ─── Source Discovery ────────────────────────────────────────────────────
@@ -21,9 +22,10 @@ class RestoreAdapter
     public function listAllSources(): array
     {
         return [
-            'local'   => $this->listLocalBackups(),
-            'arvan'   => $this->listArvanBackups(),
-            'release' => $this->listReleasePackages(),
+            'local'               => $this->listLocalBackups(),
+            'arvan'               => $this->listArvanBackups(),
+            'release'             => $this->listReleasePackages(),
+            'recovery_repository' => $this->listRecoveryRepositoryBackups(),
         ];
     }
 
@@ -75,14 +77,25 @@ class RestoreAdapter
         ], $this->sortByModified($files));
     }
 
+    // ─── Recovery Repository Source ───────────────────────────────────────────
+
+    private function listRecoveryRepositoryBackups(): array
+    {
+        try {
+            return $this->localRepo->listRestorablePlatformBackups();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     // ─── Verification ────────────────────────────────────────────────────────
 
     public function verifyBackup(string $source, string $path): array
     {
         return match($source) {
-            'local', 'release' => $this->verifyLocalFile($path),
-            'arvan'            => $this->verifyArvanFile($path),
-            default            => ['valid' => false, 'message' => "منبع نامعتبر: {$source}"],
+            'local', 'release', 'recovery_repository' => $this->verifyLocalFile($path),
+            'arvan'                                    => $this->verifyArvanFile($path),
+            default                                    => ['valid' => false, 'message' => "منبع نامعتبر: {$source}"],
         };
     }
 

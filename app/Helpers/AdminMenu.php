@@ -58,6 +58,7 @@ class AdminMenu
         'installer_status'       => 'وضعیت نصب',
         'customer_deployment'    => 'استقرار مشتریان',
         'auth_center'            => 'مرکز احراز هویت',
+        'recovery_repository'    => 'خزانه بازیابی محلی',
     ];
 
     /** مسیر هر آیتم منو */
@@ -111,6 +112,7 @@ class AdminMenu
         'installer_status'       => 'admin.installer.index',
         'customer_deployment'    => 'admin.infrastructure.customer-deployment.dashboard',
         'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.index',
+        'recovery_repository'    => 'admin.infrastructure.recovery-repository.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -164,6 +166,7 @@ class AdminMenu
         'installer_status'       => 'admin.installer.*',
         'customer_deployment'    => 'admin.infrastructure.customer-deployment.*',
         'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.*',
+        'recovery_repository'    => 'admin.infrastructure.recovery-repository.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -185,7 +188,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'theme_templates', 'theme_packs', 'zip_import', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer', 'installer_status', 'customer_deployment'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer', 'installer_status', 'customer_deployment', 'recovery_repository'],
             'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

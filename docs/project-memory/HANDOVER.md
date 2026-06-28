@@ -1,7 +1,49 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-06-27
+> Last Updated: 2026-06-28
+
+---
+
+## CURRENT STATE (2026-06-28 — P1-004_LOCAL_RECOVERY_REPOSITORY_COMPLETE)
+
+**Last completed phase:** P1-004 — Local Recovery Repository (Installer Core — Enterprise Recovery).
+
+**What was built:**
+
+### New files:
+- `database/migrations/2026_06_28_300000_create_local_recovery_logs_table.php` — `local_recovery_logs` table: type, site_id, installation_uuid, baseline_label, local_path, size_bytes, sha256, manifest_checksum, status (pending/verified/failed), verified_at, notes
+- `app/Models/Infrastructure/LocalRecoveryLog.php` — Eloquent model with scopes (platform/customer/verified/failed), helpers (sizeHuman/statusBadge/statusLabel), BelongsTo Site
+- `app/Services/Installer/LocalRecoveryRepository.php` — Core service: getPolicy/getPriority/shouldUseLocal/shouldUseArvan/isConfigured/validate/storePlatformBaseline/storeCustomerBaseline/verifyLog/getStatus/listPlatformBackups/listCustomerBackups/listRestorablePlatformBackups
+- `app/Http/Controllers/Admin/RecoveryRepositoryController.php` — Admin controller: index/save/validatePath/verify/verifyAll/destroy
+- `resources/views/admin/infrastructure/recovery-repository/index.blade.php` — Full admin UI: 4 status cards, config form with AJAX path validation, platform/customer backup tables with verify/delete
+- `docs/LOCAL_RECOVERY_REPOSITORY.md` — Architecture documentation
+- `docs/LOCAL_RECOVERY_CERTIFICATION.md` — Certification (33/33 requirements PASS)
+
+### Modified files:
+- `config/installer.php` — Added `recovery_repository` section (RECOVERY_POLICY/PRIORITY/LOCAL_PATH/MIN_FREE_GB)
+- `app/Services/Installer/UpgradeAdapter.php` — Calls `localRepo->storePlatformBaseline()` non-fatally after baseline finalization
+- `app/Services/CustomerInstallation/Stages/InitializeBackupStage.php` — Calls `localRepo->storeCustomerBaseline()` before /tmp cleanup; `$this->localRepo->shouldUseArvan()` for proper policy enforcement
+- `app/Services/Installer/RestoreAdapter.php` — Added `recovery_repository` as fourth source type
+- `app/Http/Controllers/Installer/PlatformInstallerController.php` — Accepts `recovery_repository` in source-select validation
+- `resources/views/installer/restore/source-select.blade.php` — Shows Local Recovery Repository backups (🛡️ section)
+- `routes/web.php` — 6 routes under `/admin/infrastructure/recovery-repository/`
+- `app/Helpers/AdminMenu.php` — Added `recovery_repository` key in زیرساخت / DevOps group
+
+**Directory layout enforced:**
+```
+{RECOVERY_LOCAL_PATH}/
+├── Platform/{baseline_label}/          ← Full baseline dir copy, SHA-256 verified
+└── Customers/Site-{id}/{uuid}/{Ymd_His}/
+    ├── customer_baseline.sql.gz
+    └── checksum.txt
+```
+
+**Failure policy:** Local fails → Arvan continues; Arvan fails → Local continues; BOTH fail → abort (baselineCreated=false)
+
+**Restore integration:** Restore wizard Step 1 now shows 4 source types: arvan / local / release / recovery_repository. Only `verified` local repo baselines appear.
+
+**Admin menu path:** زیرساخت / DevOps → خزانه بازیابی محلی
 
 ---
 

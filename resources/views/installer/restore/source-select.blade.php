@@ -66,7 +66,25 @@
         </div>
         @endif
 
-        @if(empty($sources['arvan']) && empty($sources['local']) && empty($sources['release']))
+        {{-- Local Recovery Repository --}}
+        @if(count($sources['recovery_repository'] ?? []) > 0)
+        <div class="card-section">
+            <div class="section-title">🛡️ خزانه بازیابی محلی</div>
+            @foreach($sources['recovery_repository'] as $file)
+                <div class="check-row backup-row" style="cursor:pointer;"
+                     data-source="recovery_repository"
+                     data-path="{{ $file['path'] }}">
+                    <input type="radio" name="_recovery_pick" value="{{ $file['path'] }}" tabindex="-1">
+                    <span class="check-icon">🛡️</span>
+                    <span class="check-label">{{ $file['filename'] }}</span>
+                    <span class="check-message" style="font-size:12px;">{{ $file['size_human'] ?? '' }}</span>
+                    <span style="font-size:11px; color:var(--c-muted);">{{ $file['date_human'] ?? '' }}</span>
+                </div>
+            @endforeach
+        </div>
+        @endif
+
+        @if(empty($sources['arvan']) && empty($sources['local']) && empty($sources['release']) && empty($sources['recovery_repository'] ?? []))
             <div class="alert alert-warning">
                 ⚠ هیچ فایل پشتیبانی یافت نشد. فایل پشتیبان را در <code>storage/backups/</code> یا <code>storage/releases/</code> قرار دهید.
             </div>

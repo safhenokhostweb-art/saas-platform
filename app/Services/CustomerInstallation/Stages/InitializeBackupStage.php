@@ -5,11 +5,15 @@ namespace App\Services\CustomerInstallation\Stages;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use App\Services\Infrastructure\ArvanBackupService;
+use App\Services\Installer\LocalRecoveryRepository;
 use Illuminate\Support\Facades\Log;
 
 class InitializeBackupStage extends AbstractStage
 {
-    public function __construct(private readonly ArvanBackupService $arvan) {}
+    public function __construct(
+        private readonly ArvanBackupService      $arvan,
+        private readonly LocalRecoveryRepository $localRepo,
+    ) {}
 
     public function name(): string { return 'INITIALIZE_BACKUP'; }
     public function label(): string { return 'راه‌اندازی پشتیبان‌گیری اولیه'; }
@@ -65,22 +69,44 @@ class InitializeBackupStage extends AbstractStage
                             // Step 4: Compute checksum
                             $checksum = hash_file('sha256', $localPath);
 
-                            // Step 5: Upload to Arvan
-                            $arvanKey  = "customers/site-{$siteId}/baselines/INITIAL_CUSTOMER_BASELINE_{$timestamp}.sql.gz";
-                            $uploaded  = $this->arvan->upload($localPath, $arvanKey);
+                            // Step 5a: Copy to Local Recovery Repository (non-fatal)
+                            $localRepoResult = null;
+                            if ($this->localRepo->shouldUseLocal()) {
+                                try {
+                                    $localRepoResult = $this->localRepo->storeCustomerBaseline(
+                                        siteId:            (int) $siteId,
+                                        installationUuid:  $ctx->installation->uuid ?? (string) $ctx->installation->id,
+                                        sqlLocalPath:      $localPath,
+                                        sha256:            $checksum,
+                                    );
+                                } catch (\Throwable $e) {
+                                    Log::warning("CIE InitializeBackup: Local repo copy failed — {$e->getMessage()}");
+                                }
+                            }
 
-                            if ($uploaded['success'] ?? false) {
+                            // Step 5b: Upload to Arvan (non-fatal when policy includes local)
+                            $arvanKey  = "customers/site-{$siteId}/baselines/INITIAL_CUSTOMER_BASELINE_{$timestamp}.sql.gz";
+                            $uploaded  = $this->localRepo->shouldUseArvan()
+                                ? $this->arvan->upload($localPath, $arvanKey)
+                                : ['success' => false, 'message' => 'Arvan disabled by policy'];
+
+                            // Policy: abort only when BOTH fail
+                            $arvanOk     = $uploaded['success'] ?? false;
+                            $localRepoOk = $localRepoResult['success'] ?? false;
+
+                            if ($arvanOk || $localRepoOk) {
                                 $baselineCreated = true;
 
-                                // Persist on installation record
                                 $ctx->installation->update([
                                     'initial_baseline_at'         => now(),
-                                    'initial_baseline_arvan_key'  => $arvanKey,
+                                    'initial_baseline_arvan_key'  => $arvanOk ? $arvanKey : null,
                                     'initial_baseline_sha256'     => $checksum,
                                 ]);
+                            } else {
+                                Log::warning("CIE InitializeBackup: Both Arvan and Local repo failed for site={$siteId}");
                             }
                         } catch (\Throwable $e) {
-                            Log::warning("CIE InitializeBackup: Arvan upload failed — {$e->getMessage()}");
+                            Log::warning("CIE InitializeBackup: baseline creation failed — {$e->getMessage()}");
                         } finally {
                             @unlink($localPath);
                         }

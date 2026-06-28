@@ -5,6 +5,37 @@
 
 ---
 
+## 2026-06-28 — P1-004_LOCAL_RECOVERY_REPOSITORY
+
+**Type:** Feature — Installer Core Enterprise Recovery — Local Recovery Repository
+
+**What changed:**
+
+**Files created (7):**
+- `database/migrations/2026_06_28_300000_create_local_recovery_logs_table.php`
+- `app/Models/Infrastructure/LocalRecoveryLog.php`
+- `app/Services/Installer/LocalRecoveryRepository.php`
+- `app/Http/Controllers/Admin/RecoveryRepositoryController.php`
+- `resources/views/admin/infrastructure/recovery-repository/index.blade.php`
+- `docs/LOCAL_RECOVERY_REPOSITORY.md`
+- `docs/LOCAL_RECOVERY_CERTIFICATION.md`
+
+**Files modified (8):**
+- `config/installer.php` — recovery_repository config section
+- `app/Services/Installer/UpgradeAdapter.php` — non-fatal local repo copy after baseline finalization
+- `app/Services/CustomerInstallation/Stages/InitializeBackupStage.php` — local repo copy + policy fix (`shouldUseArvan()`)
+- `app/Services/Installer/RestoreAdapter.php` — recovery_repository as fourth source
+- `app/Http/Controllers/Installer/PlatformInstallerController.php` — accepts recovery_repository source
+- `resources/views/installer/restore/source-select.blade.php` — 🛡️ Local Recovery Repository section
+- `routes/web.php` — 6 routes
+- `app/Helpers/AdminMenu.php` — recovery_repository menu entry in زیرساخت / DevOps
+
+**Why:** Implement P1-004 — Local Recovery Repository. Platform needs dual-location backup redundancy (disk + Arvan) with SHA-256 verification, administrator-configurable policy, and restore wizard integration.
+
+**Impact:** Full feature addition — no breaking changes to existing backup or restore flows. UpgradeAdapter and InitializeBackupStage calls are non-fatal (exceptions caught, logged). Restore wizard: recovery_repository source only shows verified logs with existing paths.
+
+---
+
 ## 2026-06-28 — HOTFIX-003_PIPELINE_FIX
 
 **Type:** Bugfix — Customer Installation Pipeline operational

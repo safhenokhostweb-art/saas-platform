@@ -3,6 +3,7 @@ namespace App\Services\Installer;
 
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Adapter for MODE 3 (Upgrade Platform) and Installation Baseline management.
@@ -22,6 +23,7 @@ class UpgradeAdapter
         private HealthCheckRunner        $health,
         private SlackAlertService        $slack,
         private BaselineManifestService  $manifest,
+        private LocalRecoveryRepository  $localRepo,
     ) {}
 
     // ─── Snapshot (Upgrade Mode) ──────────────────────────────────────────────
@@ -273,11 +275,26 @@ class UpgradeAdapter
 
         $this->slack->info('Installer: ' . basename($baselineDir) . ' finalized and locked as read-only', '');
 
+        // Copy to Local Recovery Repository (non-fatal — Arvan is the other track)
+        $localResult = null;
+        if ($this->localRepo->shouldUseLocal()) {
+            try {
+                $localResult = $this->localRepo->storePlatformBaseline($baselineDir);
+                if (!($localResult['success'] ?? false) && !($localResult['skipped'] ?? false)) {
+                    Log::warning('UpgradeAdapter: Local Recovery Repository copy failed — ' . ($localResult['message'] ?? ''));
+                    $this->slack->warning('Installer: Local repo copy failed for ' . basename($baselineDir), $localResult['message'] ?? '');
+                }
+            } catch (\Throwable $e) {
+                Log::warning('UpgradeAdapter: Local Recovery Repository exception — ' . $e->getMessage());
+            }
+        }
+
         return [
             'success'           => $manifestResult['success'],
             'baseline_path'     => $baselineDir,
             'manifest_checksum' => $manifestResult['manifest_checksum'] ?? null,
             'copied'            => $copied,
+            'local_repo'        => $localResult,
             'message'           => 'Baseline finalized with reports',
         ];
     }
