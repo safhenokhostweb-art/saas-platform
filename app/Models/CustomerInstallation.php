@@ -31,12 +31,14 @@ class CustomerInstallation extends Model
         'initial_baseline_arvan_key',
         'initial_baseline_sha256',
         'post_install_validation',
+        'metadata',
     ];
 
     protected $casts = [
         'completed_stages'    => 'array',
         'request_payload'     => 'array',
         'post_install_validation' => 'array',
+        'metadata'                => 'array',
         'started_at'          => 'datetime',
         'completed_at'        => 'datetime',
         'failed_at'           => 'datetime',

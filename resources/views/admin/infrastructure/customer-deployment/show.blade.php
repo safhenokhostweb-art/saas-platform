@@ -82,6 +82,15 @@
                     </button>
                 </form>
             @endif
+            @if(!$installation->isRunning())
+                <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.installations.destroy', $installation) }}" onsubmit="return confirm('این عملیات نصب را به‌طور کامل حذف می‌کند. ادامه می‌دهید؟')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-sm" style="background:#6b7280;color:#fff">
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        حذف کامل
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 
@@ -107,9 +116,9 @@
         </div>
         <div class="prog-bar-wrap"><div class="prog-bar" style="width:100%;background:linear-gradient(90deg,#059669,#10b981)"></div></div>
     </div>
-    @elseif($installation->isFailed())
+    @elseif($installation->isFailed() || $installation->status === 'rolled_back')
     <div class="mt-4 border-t border-gray-100 pt-4">
-        <div class="text-xs text-red-600 font-medium mb-1">نصب ناموفق بود</div>
+        <div class="text-xs text-red-600 font-medium mb-1">{{ $installation->status === 'rolled_back' ? 'نصب ناموفق — rollback اجرا شد' : 'نصب ناموفق بود' }}</div>
         @if($installation->failure_reason)
             <div class="text-xs text-gray-600 bg-red-50 rounded-lg px-3 py-2 border border-red-100">{{ $installation->failure_reason }}</div>
         @endif
@@ -226,6 +235,31 @@
                 @endforeach
             </div>
         </div>
+
+        {{-- Admin Credentials (shown after GENERATE_ENVIRONMENT completes) --}}
+        @if($installation->metadata && !empty($installation->metadata['admin_password']))
+        <div class="detail-card border-amber-200" style="background:#fffbeb">
+            <h3 class="font-semibold text-amber-800 mb-3 text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                اطلاعات ورود مشتری
+            </h3>
+            <div class="space-y-2 text-xs">
+                <div>
+                    <span class="text-gray-500">ایمیل:</span>
+                    <span class="font-mono text-gray-800 select-all">{{ $installation->metadata['admin_email'] ?? '—' }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">نام:</span>
+                    <span class="text-gray-800">{{ $installation->metadata['admin_name'] ?? '—' }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">رمز عبور:</span>
+                    <span class="font-mono bg-amber-100 px-2 py-0.5 rounded text-amber-900 select-all">{{ $installation->metadata['admin_password'] }}</span>
+                </div>
+                <p class="text-amber-700 text-xs mt-2">این رمز عبور را ذخیره کنید — پس از اولین ورود تغییر دهید</p>
+            </div>
+        </div>
+        @endif
 
         {{-- Rollback Checkpoints --}}
         @if($installation->rollbacks->isNotEmpty())

@@ -834,9 +834,10 @@ Route::prefix('admin')
                 // Release Packages
                 Route::get('/packages', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'packages'])->name('packages');
 
-                // Installation Detail + Rollback
+                // Installation Detail + Rollback + Delete
                 Route::get('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'show'])->name('installations.show');
                 Route::post('/installations/{installation}/rollback', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'rollback'])->name('installations.rollback');
+                Route::delete('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'destroy'])->name('installations.destroy');
 
                 // SSE Progress Stream
                 Route::get('/installations/{installation}/progress', [\App\Http\Controllers\Admin\Infrastructure\CustomerInstallationProgressController::class, 'stream'])->name('installations.progress');

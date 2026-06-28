@@ -4,6 +4,7 @@ namespace App\Services\CustomerInstallation\Stages;
 
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class GenerateEnvironmentStage extends AbstractStage
@@ -20,9 +21,10 @@ class GenerateEnvironmentStage extends AbstractStage
             $webRoot = $ctx->webRoot();
             $envPath = $webRoot . '/.env';
 
-            $appKey = 'base64:' . base64_encode(random_bytes(32));
-            $appUrl = ($req->sslEnabled ? 'https' : 'http') . '://' . $req->domain;
-            $platformUrl = rtrim(config('app.url', 'https://panel.safhenokhost.ir'), '/');
+            $appKey        = 'base64:' . base64_encode(random_bytes(32));
+            $appUrl        = ($req->sslEnabled ? 'https' : 'http') . '://' . $req->domain;
+            $platformUrl   = rtrim(config('app.url', 'https://panel.safhenokhost.ir'), '/');
+            $adminPassword = Str::random(16);
 
             $envLines = [
                 "APP_NAME=\"{$req->company}\"",
@@ -63,6 +65,10 @@ class GenerateEnvironmentStage extends AbstractStage
                 "MODULE_EDUCATION_ENABLED=" . (in_array('education', $req->modules) ? 'true' : 'false'),
                 "MODULE_FORMS_ENABLED=" . (in_array('forms', $req->modules) ? 'true' : 'false'),
                 "MODULE_TICKETS_ENABLED=" . (in_array('tickets', $req->modules) ? 'true' : 'false'),
+                "",
+                "ADMIN_NAME=\"{$req->ownerName}\"",
+                "ADMIN_EMAIL={$req->email}",
+                "ADMIN_PASSWORD={$adminPassword}",
             ];
 
             $envContent = implode("\n", $envLines) . "\n";
@@ -76,6 +82,15 @@ class GenerateEnvironmentStage extends AbstractStage
             if ($result->failed()) {
                 return StageResult::failure($this->name(), 'Failed to write .env: ' . $result->output(), $this->elapsed());
             }
+
+            // Store admin credentials in installation metadata for platform admin retrieval
+            $ctx->installation->update([
+                'metadata' => [
+                    'admin_email'    => $req->email,
+                    'admin_name'     => $req->ownerName,
+                    'admin_password' => $adminPassword,
+                ],
+            ]);
 
             return StageResult::success($this->name(), [
                 'env_path'      => $envPath,
