@@ -1,7 +1,30 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-27
+> Last Updated: 2026-06-28
+
+---
+
+## 2026-06-28 — HOTFIX-003_AUTHENTICATION_UI_COMPLETION
+
+**Type:** Feature — Enterprise Authentication UI (driver-aware, method-aware)
+
+**What changed:**
+
+**Files modified (4):**
+- `app/Http/Controllers/Admin/Infrastructure/CustomerRemoteServerAdminController.php` — Added `generateSshKeyPair()` AJAX method; updated `credentialRules()` for cPanel/DA to support both `api_token` and `password` auth methods
+- `routes/web.php` — Added `POST /servers/generate-ssh-key` route
+- `resources/views/admin/infrastructure/customer-deployment/servers/create.blade.php` — Full rewrite: 3-option SSH auth selector, 6-step SSH key generation wizard, SSH education panel with connection diagram, cPanel/DA auth method selector (API Token vs Password)
+- `resources/views/admin/infrastructure/customer-deployment/servers/edit.blade.php` — Added: cPanel/DA auth method selector, SSH key in-place generation, SSH migration wizard banner for password-auth servers
+
+**Files created (3):**
+- `docs/AUTHENTICATION_UI.md` — Driver×method matrix, route docs, security docs
+- `docs/SSH_KEY_USER_GUIDE.md` — Full user guide for SSH keys
+- `docs/PASSWORD_TO_SSH_MIGRATION.md` — Step-by-step migration guide
+
+**Why:** HOTFIX-003 — Authentication UI was incomplete. cPanel only showed API Token (password was missing). SSH onboarding lacked wizard, education panel, and key generation. Not enterprise-ready.
+
+**Impact:** Zero breaking changes. New `credentialRules()` accepts both auth methods for panel drivers. `generateSshKeyPair()` is a new stateless AJAX endpoint. All existing servers unaffected.
 
 ---
 

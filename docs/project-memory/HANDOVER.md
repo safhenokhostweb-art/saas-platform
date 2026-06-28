@@ -5,6 +5,34 @@
 
 ---
 
+## CURRENT STATE (2026-06-28 — HOTFIX-003_AUTHENTICATION_UI_COMPLETE)
+
+**Last completed phase:** HOTFIX-003 — Enterprise Authentication UI Completion.
+
+**What was built:**
+- `CustomerRemoteServerAdminController::generateSshKeyPair()` — AJAX Ed25519 key generation (phpseclib3), returns `{ private_key, public_key }`
+- `credentialRules()` updated — cPanel/DirectAdmin now accept both `api_token` (recommended) and `password` auth methods
+- `servers/create.blade.php` — Complete rewrite: 3-option SSH auth selector (existing key / generate new / password), 6-step SSH key generation wizard, SSH Education Panel with connection diagram, 2-option cPanel/DA auth selector (API Token / Password)
+- `servers/edit.blade.php` — Added: auth method selector for cPanel/DA, inline SSH key generation sub-mode, migration wizard banner for SSH password-auth servers
+- Route: `POST /admin/infrastructure/customer-deployment/servers/generate-ssh-key`
+- 3 docs: `AUTHENTICATION_UI.md`, `SSH_KEY_USER_GUIDE.md`, `PASSWORD_TO_SSH_MIGRATION.md`
+
+**Auth method matrix after this fix:**
+
+| Driver | API Token | SSH Key | Password |
+|--------|-----------|---------|----------|
+| SSH | — | ✔ (existing or generate) | ✔ |
+| cPanel | ✔ (recommended) | — | ✔ |
+| DirectAdmin | ✔ (recommended) | — | ✔ |
+| SFTP | — | — | ✔ (only) |
+| Docker | — | ✔ (existing or generate) | ✔ |
+
+**Security:** Private keys AES-256-GCM encrypted. Passwords/tokens masked. Keys never displayed after save — fingerprint only.
+
+**NEXT STEP:** No active tasks. Ready for next development phase.
+
+---
+
 ## CURRENT STATE (2026-06-28 — PHASE-003D6_COMPLETE)
 
 **Last completed phase:** Enterprise Authentication Engine. Full credential lifecycle management.

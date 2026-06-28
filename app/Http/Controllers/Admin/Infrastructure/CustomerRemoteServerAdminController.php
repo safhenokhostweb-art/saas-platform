@@ -8,7 +8,9 @@ use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\RemoteConnectionService;
 use App\Services\CustomerInstallation\Enums\DriverType;
 use App\Services\CustomerInstallation\Dto\DriverCapabilities;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use phpseclib3\Crypt\EC;
 
 class CustomerRemoteServerAdminController extends Controller
 {
@@ -144,6 +146,28 @@ class CustomerRemoteServerAdminController extends Controller
             ->with('success', 'مقصد استقرار حذف شد.');
     }
 
+    public function generateSshKeyPair(Request $request): JsonResponse
+    {
+        try {
+            $comment       = 'saas-platform-' . date('Y-m-d');
+            $privateKeyObj = EC::createKey('Ed25519');
+
+            $privateKey = $privateKeyObj->toString('OpenSSH', ['comment' => $comment]);
+            $publicKey  = $privateKeyObj->getPublicKey()->toString('OpenSSH', ['comment' => $comment]);
+
+            return response()->json([
+                'success'     => true,
+                'private_key' => $privateKey,
+                'public_key'  => $publicKey,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'خطا در تولید کلید: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function testConnection(Request $request, CustomerRemoteServer $server)
     {
         try {
@@ -185,8 +209,9 @@ class CustomerRemoteServerAdminController extends Controller
                 'password'    => "required_if:auth_method,password|nullable|string|max:500",
             ],
             'cpanel', 'directadmin' => [
-                'auth_method' => 'nullable|string',
-                'api_token'   => "{$req}|nullable|string|max:500",
+                'auth_method' => 'required|in:api_token,password',
+                'api_token'   => 'required_if:auth_method,api_token|nullable|string|max:500',
+                'password'    => 'required_if:auth_method,password|nullable|string|max:500',
             ],
             'sftp' => [
                 'auth_method' => 'nullable|string',

@@ -15,6 +15,11 @@
     ];
     $tc = $typeColorMap[$server->type] ?? $typeColorMap['ssh'];
     $capLabels = ['queue'=>'صف کار','supervisor'=>'Supervisor','redis'=>'Redis','ssl'=>'SSL','database'=>'ساخت DB','storage'=>'Storage Link','cron'=>'زمانبند','docker'=>'Docker','reboot'=>'ریبوت'];
+    $currentAuthMethod = $server->auth_method ?? 'key';
+    $isSshDriver = in_array($server->type, ['ssh', 'docker']);
+    $isPanelDriver = in_array($server->type, ['cpanel', 'directadmin']);
+    $isPasswordAuth = $currentAuthMethod === 'password';
+    $isApiTokenAuth = $currentAuthMethod === 'api_token';
 @endphp
 
 <div class="flex items-center gap-3 mb-6">
@@ -64,8 +69,87 @@
     </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.servers.update', $server) }}">
+    {{-- PART 5 — Migration Wizard Banner (SSH password servers only) --}}
+    @if($isSshDriver && $isPasswordAuth)
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-5" x-data="{ showMigrate: false }">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-indigo-900">مهاجرت به کلید SSH پیشنهاد می‌شود</p>
+                <p class="text-xs text-indigo-700 mt-0.5">این سرور از رمز عبور SSH استفاده می‌کند. کلید SSH امن‌تر و پایدارتر است.</p>
+            </div>
+            <button type="button" @click="showMigrate = !showMigrate"
+                class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shrink-0 transition-colors">
+                مهاجرت به کلید SSH
+            </button>
+        </div>
+
+        {{-- Migration Wizard --}}
+        <div x-show="showMigrate" x-cloak x-transition class="mt-4 border-t border-indigo-200 pt-4"
+             x-data="sshMigrationWizard()">
+
+            {{-- Step 1: Generate --}}
+            <div x-show="step === 1">
+                <p class="text-sm font-semibold text-indigo-900 mb-3">مرحله ۱ — تولید کلید Ed25519</p>
+                <button type="button" @click="generate()" :disabled="generating"
+                    class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium flex items-center gap-2 transition-colors">
+                    <svg x-show="!generating" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <svg x-show="generating" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span x-text="generating ? 'در حال تولید...' : 'تولید کلید Ed25519'"></span>
+                </button>
+                <div x-show="genError" class="mt-2 text-xs text-red-600" x-text="genError"></div>
+            </div>
+
+            {{-- Step 2+3: Show & Copy Public Key --}}
+            <div x-show="step === 2">
+                <p class="text-sm font-semibold text-indigo-900 mb-2">مرحله ۲ — کلید عمومی را کپی کنید</p>
+                <div class="bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400 break-all mb-2" x-text="publicKey"></div>
+                <button type="button" @click="copyKey()"
+                    class="text-xs px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium flex items-center gap-1 mb-3">
+                    <span x-text="copied ? '✓ کپی شد' : 'کپی کردن'"></span>
+                </button>
+                <p class="text-xs text-indigo-800 mb-4">کلید عمومی بالا را در فایل <code class="bg-indigo-100 px-1 rounded">~/.ssh/authorized_keys</code> سرور اضافه کنید.</p>
+                <button type="button" @click="step = 3"
+                    class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">
+                    نصب کردم — ادامه
+                </button>
+            </div>
+
+            {{-- Step 3: Test --}}
+            <div x-show="step === 3">
+                <p class="text-sm font-semibold text-indigo-900 mb-2">مرحله ۳ — تست اتصال</p>
+                <p class="text-xs text-indigo-700 mb-3">کلید خصوصی به‌صورت خودکار در فرم زیر وارد شده. فرم را ذخیره کنید تا مقصد با کلید SSH به‌روز شود، سپس اتصال را تست کنید.</p>
+                <div class="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-xs text-green-800 font-medium">کلید خصوصی در فرم بارگذاری شد — ذخیره کنید تا فعال شود</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    @endif
+
+    <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.servers.update', $server) }}"
+          x-data="editServerForm()">
         @csrf @method('PUT')
+
+        {{-- Hidden auth_method for panel drivers (managed by Alpine) --}}
+        @if($isPanelDriver)
+        <input type="hidden" name="auth_method" x-bind:value="panelAuthMode">
+        @endif
+
+        {{-- Hidden private_key for SSH migration wizard --}}
+        @if($isSshDriver)
+        <input type="hidden" name="private_key" x-bind:value="migratedPrivateKey">
+        @endif
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
 
@@ -105,7 +189,7 @@
             @endif
 
             {{-- Username + Port (cPanel / DirectAdmin) --}}
-            @if(in_array($server->type, ['cpanel', 'directadmin']))
+            @if($isPanelDriver)
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="form-label">نام کاربری پنل <span class="text-red-500">*</span></label>
@@ -124,38 +208,216 @@
             @endif
 
             {{-- ─── SSH Auth (SSH / Docker) ─── --}}
-            @if(in_array($server->type, ['ssh', 'docker']))
-            <div x-data="{ authMethod: '{{ old('auth_method', $server->auth_method ?? 'key') }}' }">
-                <label class="form-label">روش احراز هویت SSH</label>
-                <div class="flex gap-4 mt-1 mb-4">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="auth_method" value="key" x-model="authMethod" class="text-indigo-600">
-                        <span class="text-sm font-medium text-gray-700">کلید خصوصی SSH</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="auth_method" value="password" x-model="authMethod" class="text-indigo-600">
-                        <span class="text-sm font-medium text-gray-700">رمز عبور SSH</span>
-                    </label>
+            @if($isSshDriver)
+            <div>
+                <label class="form-label mb-3 block">روش احراز هویت SSH</label>
+
+                {{-- Current auth method badge --}}
+                <div class="mb-3 flex items-center gap-2">
+                    <span class="text-xs text-gray-500">روش فعلی:</span>
+                    @if($currentAuthMethod === 'key')
+                        <span class="text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded font-medium">کلید SSH</span>
+                    @else
+                        <span class="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-medium">رمز عبور SSH</span>
+                    @endif
+                    @if($server->key_fingerprint)
+                        <span class="text-xs font-mono text-gray-400">{{ $server->key_fingerprint }}</span>
+                    @endif
                 </div>
 
-                <div x-show="authMethod === 'key'" x-cloak>
+                <div x-data="{ sshEditMode: '{{ $currentAuthMethod === 'key' ? 'key' : 'password' }}' }">
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button type="button" x-on:click="sshEditMode = 'key'; $dispatch('ssh-mode-change', { mode: 'key' })"
+                            :class="sshEditMode === 'key' ? 'ring-2 ring-indigo-500 border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'"
+                            class="relative p-3 rounded-xl border-2 text-right transition-all">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                                <span class="text-sm font-semibold text-gray-900">کلید خصوصی SSH</span>
+                            </div>
+                            <p class="text-xs text-gray-500">امن‌تر — توصیه شده</p>
+                            <div x-show="sshEditMode === 'key'" class="absolute top-2 left-2 w-4 h-4 bg-indigo-600 rounded-full flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </div>
+                        </button>
+
+                        <button type="button" x-on:click="sshEditMode = 'password'; $dispatch('ssh-mode-change', { mode: 'password' })"
+                            :class="sshEditMode === 'password' ? 'ring-2 ring-gray-500 border-gray-400 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'"
+                            class="relative p-3 rounded-xl border-2 text-right transition-all">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <span class="text-sm font-semibold text-gray-900">رمز عبور SSH</span>
+                            </div>
+                            <p class="text-xs text-gray-500">کمتر امن</p>
+                            <div x-show="sshEditMode === 'password'" class="absolute top-2 left-2 w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </div>
+                        </button>
+                    </div>
+
+                    <input type="hidden" name="auth_method" :value="sshEditMode">
+
+                    {{-- SSH Key (input + generate new option) --}}
+                    <div x-show="sshEditMode === 'key'" x-cloak>
+                        <div class="space-y-3" x-data="{ keyInputMode: 'paste' }">
+
+                            <div class="flex gap-3 text-xs mb-2">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="radio" value="paste" x-model="keyInputMode" class="text-indigo-600">
+                                    <span class="text-gray-700">وارد کردن کلید موجود</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="radio" value="generate" x-model="keyInputMode" class="text-green-600">
+                                    <span class="text-gray-700">تولید کلید جدید</span>
+                                </label>
+                            </div>
+
+                            {{-- Paste mode --}}
+                            <div x-show="keyInputMode === 'paste'" x-cloak>
+                                <label class="form-label">
+                                    کلید خصوصی SSH جدید
+                                    <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
+                                </label>
+                                <textarea name="private_key" rows="6"
+                                    placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;برای بازنویسی کلید موجود، کلید جدید را وارد کنید&#10;-----END OPENSSH PRIVATE KEY-----"
+                                    class="form-control font-mono text-xs @error('private_key') border-red-400 @enderror">{{ old('private_key') }}</textarea>
+                                <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                                    کلید موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                                </p>
+                                @error('private_key')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Generate mode --}}
+                            <div x-show="keyInputMode === 'generate'" x-cloak x-data="inlineKeyGen()">
+
+                                <div x-show="!generated">
+                                    <button type="button" @click="gen()" :disabled="running"
+                                        class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium flex items-center gap-2 transition-colors">
+                                        <svg x-show="!running" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        <svg x-show="running" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        <span x-text="running ? 'در حال تولید...' : 'تولید کلید Ed25519'"></span>
+                                    </button>
+                                    <div x-show="err" class="mt-2 text-xs text-red-600" x-text="err"></div>
+                                </div>
+
+                                <div x-show="generated" x-cloak class="space-y-3">
+                                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-sm text-green-800">
+                                        <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                        کلید جدید ایجاد شد — با ذخیره فرم رمزگذاری می‌شود
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-xs text-gray-600 font-medium">کلید عمومی (برای authorized_keys سرور):</span>
+                                            <button type="button" @click="cp()"
+                                                class="text-xs px-2 py-1 rounded border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                                                <span x-text="cpd ? '✓ کپی شد' : 'کپی'"></span>
+                                            </button>
+                                        </div>
+                                        <div class="bg-gray-900 rounded p-2 font-mono text-xs text-green-400 break-all" x-text="pub"></div>
+                                    </div>
+                                    <input type="hidden" name="private_key" :value="priv">
+                                    <p class="text-xs text-blue-700 bg-blue-50 p-2 rounded">کلید عمومی را در <code class="bg-blue-100 px-1">~/.ssh/authorized_keys</code> سرور اضافه کنید، سپس فرم را ذخیره کنید.</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- SSH Password --}}
+                    <div x-show="sshEditMode === 'password'" x-cloak>
+                        <label class="form-label">
+                            رمز عبور SSH جدید
+                            <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
+                        </label>
+                        <input type="password" name="password" autocomplete="new-password"
+                               placeholder="برای تغییر رمز، رمز جدید وارد کنید"
+                               class="form-control @error('password') border-red-400 @enderror">
+                        <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                            رمز موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                        </p>
+                        @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+
+                </div>
+            </div>
+            @endif
+
+            {{-- ─── cPanel / DirectAdmin: Auth Method Selector ─── --}}
+            @if($isPanelDriver)
+            <div>
+                <label class="form-label mb-3 block">روش احراز هویت</label>
+
+                {{-- Current auth badge --}}
+                <div class="mb-3 flex items-center gap-2">
+                    <span class="text-xs text-gray-500">روش فعلی:</span>
+                    @if($isApiTokenAuth)
+                        <span class="text-xs bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded font-medium">API Token</span>
+                    @elseif($isPasswordAuth)
+                        <span class="text-xs bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded font-medium">نام کاربری + رمز عبور</span>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    {{-- API Token --}}
+                    <button type="button" x-on:click="panelAuthMode = 'api_token'"
+                        :class="panelAuthMode === 'api_token' ? 'ring-2 ring-orange-500 border-orange-300 bg-orange-50' : 'border-gray-200 bg-white hover:border-gray-300'"
+                        class="relative p-3 rounded-xl border-2 text-right transition-all">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-4 h-4 text-orange-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            </svg>
+                            <span class="text-sm font-semibold text-gray-900">{{ $server->type === 'cpanel' ? 'API Token' : 'API Key' }}</span>
+                        </div>
+                        <p class="text-xs text-gray-500">پیشنهادی — امن‌تر</p>
+                        <span class="absolute top-2 left-2 text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded">پیشنهادی</span>
+                        <div x-show="panelAuthMode === 'api_token'" class="absolute top-2 left-2 w-4 h-4 bg-orange-600 rounded-full flex items-center justify-center">
+                            <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        </div>
+                    </button>
+
+                    {{-- Password --}}
+                    <button type="button" x-on:click="panelAuthMode = 'password'"
+                        :class="panelAuthMode === 'password' ? 'ring-2 ring-gray-500 border-gray-400 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'"
+                        class="relative p-3 rounded-xl border-2 text-right transition-all">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            <span class="text-sm font-semibold text-gray-900">نام کاربری + رمز عبور</span>
+                        </div>
+                        <p class="text-xs text-gray-500">احراز هویت legacy</p>
+                        <div x-show="panelAuthMode === 'password'" class="absolute top-2 left-2 w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center">
+                            <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        </div>
+                    </button>
+                </div>
+
+                {{-- API Token field --}}
+                <div x-show="panelAuthMode === 'api_token'" x-cloak>
                     <label class="form-label">
-                        کلید خصوصی SSH جدید
+                        {{ $server->type === 'cpanel' ? 'cPanel API Token جدید' : 'DirectAdmin API Key جدید' }}
                         <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
                     </label>
-                    <textarea name="private_key" rows="6"
-                        placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;برای بازنویسی کلید موجود، کلید جدید را وارد کنید&#10;-----END RSA PRIVATE KEY-----"
-                        class="form-control font-mono text-xs @error('private_key') border-red-400 @enderror">{{ old('private_key') }}</textarea>
+                    <input type="password" name="api_token" autocomplete="new-password"
+                           placeholder="برای بازنویسی توکن موجود، توکن جدید وارد کنید"
+                           class="form-control @error('api_token') border-red-400 @enderror">
                     <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
                         <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                        کلید موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                        توکن موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
                     </p>
-                    @error('private_key')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    @error('api_token')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
-                <div x-show="authMethod === 'password'" x-cloak>
+                {{-- Panel Password field --}}
+                <div x-show="panelAuthMode === 'password'" x-cloak>
                     <label class="form-label">
-                        رمز عبور SSH جدید
+                        رمز عبور پنل جدید
                         <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
                     </label>
                     <input type="password" name="password" autocomplete="new-password"
@@ -167,24 +429,6 @@
                     </p>
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-            </div>
-            @endif
-
-            {{-- ─── API Token (cPanel / DirectAdmin) ─── --}}
-            @if(in_array($server->type, ['cpanel', 'directadmin']))
-            <div>
-                <label class="form-label">
-                    {{ $server->type === 'cpanel' ? 'cPanel API Token جدید' : 'DirectAdmin API Key جدید' }}
-                    <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
-                </label>
-                <input type="password" name="api_token" autocomplete="new-password"
-                       placeholder="برای بازنویسی توکن موجود، توکن جدید وارد کنید"
-                       class="form-control @error('api_token') border-red-400 @enderror">
-                <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                    <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                    توکن موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
-                </p>
-                @error('api_token')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             @endif
 
@@ -290,6 +534,122 @@
 
 @push('scripts')
 <script>
+function editServerForm() {
+    return {
+        panelAuthMode: '{{ $currentAuthMethod === 'password' ? 'password' : 'api_token' }}',
+        migratedPrivateKey: '',
+    };
+}
+
+function sshMigrationWizard() {
+    return {
+        step: 1,
+        generating: false,
+        generated: false,
+        genError: '',
+        publicKey: '',
+        privateKey: '',
+        copied: false,
+
+        async generate() {
+            this.generating = true;
+            this.genError   = '';
+            try {
+                const resp = await fetch('{{ route('admin.infrastructure.customer-deployment.servers.generate-ssh-key') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    this.publicKey  = data.public_key;
+                    this.privateKey = data.private_key;
+                    // Inject into the form's hidden field
+                    const hidden = document.querySelector('input[name="private_key"]');
+                    if (hidden) hidden.value = data.private_key;
+                    // Change auth_method to key
+                    const authField = document.querySelector('input[name="auth_method"]');
+                    if (authField) authField.value = 'key';
+                    this.step = 2;
+                } else {
+                    this.genError = data.error || 'خطا در تولید کلید';
+                }
+            } catch (e) {
+                this.genError = 'خطای شبکه: ' + e.message;
+            } finally {
+                this.generating = false;
+            }
+        },
+
+        async copyKey() {
+            try {
+                await navigator.clipboard.writeText(this.publicKey);
+            } catch {
+                const el = document.createElement('textarea');
+                el.value = this.publicKey;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            this.copied = true;
+            setTimeout(() => { this.copied = false; }, 3000);
+        },
+    };
+}
+
+function inlineKeyGen() {
+    return {
+        running: false,
+        generated: false,
+        err: '',
+        pub: '',
+        priv: '',
+        cpd: false,
+
+        async gen() {
+            this.running = true;
+            this.err     = '';
+            try {
+                const resp = await fetch('{{ route('admin.infrastructure.customer-deployment.servers.generate-ssh-key') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    this.pub  = data.public_key;
+                    this.priv = data.private_key;
+                    this.generated = true;
+                } else {
+                    this.err = data.error || 'خطا';
+                }
+            } catch (e) {
+                this.err = e.message;
+            } finally {
+                this.running = false;
+            }
+        },
+
+        async cp() {
+            try { await navigator.clipboard.writeText(this.pub); } catch {
+                const el = document.createElement('textarea');
+                el.value = this.pub;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            this.cpd = true;
+            setTimeout(() => { this.cpd = false; }, 3000);
+        },
+    };
+}
+
 function testTarget(id, btn) {
     const resultEl  = document.getElementById('edit-test-result');
     const origHtml  = btn.innerHTML;

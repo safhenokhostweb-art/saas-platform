@@ -846,6 +846,7 @@ Route::prefix('admin')
                     Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'index'])->name('index');
                     Route::get('/create', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'create'])->name('create');
                     Route::post('/', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'store'])->name('store');
+                    Route::post('/generate-ssh-key', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'generateSshKeyPair'])->name('generate-ssh-key');
                     Route::get('/{server}/edit', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'edit'])->name('edit');
                     Route::put('/{server}', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'update'])->name('update');
                     Route::delete('/{server}', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'destroy'])->name('destroy');
