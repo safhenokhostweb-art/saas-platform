@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-06-28 — PHASE-003D5_DEPLOYMENT_TARGET_UI_REFACTOR
+
+**Type:** UI Refactor — Driver-aware Deployment Target admin interface
+
+**What changed:**
+- Rewrote `CustomerRemoteServerAdminController` — accepts all 5 driver types, added `driverMetaMap()` static method as single source of truth for all driver UI metadata
+- Rewrote `servers/index.blade.php` — "مقصد استقرار" terminology, 5-driver support banner, type color badges, capability chips, disabled test button for stubs
+- Rewrote `servers/create.blade.php` — Step 1: Alpine.js type selector grid (6 cards, 1 disabled), Step 2: fully dynamic form with per-driver fields + capability preview
+- Rewrote `servers/edit.blade.php` — driver-aware static Blade form, type locked, optional credential update, capability snapshot grid, conditional test button
+- Created migration `2026_06_27_310000_add_driver_fields_to_customer_remote_servers.php` — adds `api_token_encrypted`, `path`, `domain` fields, expands `auth_method` enum
+
+**Files created:**
+- `database/migrations/2026_06_27_310000_add_driver_fields_to_customer_remote_servers.php`
+- `docs/DEPLOYMENT_TARGET_UI_ARCHITECTURE.md`
+- `docs/DEPLOYMENT_TARGET_DRIVER_UI.md`
+- `docs/HOSTING_TARGET_MATRIX.md`
+
+**Files modified:**
+- `app/Http/Controllers/Admin/Infrastructure/CustomerRemoteServerAdminController.php`
+- `resources/views/admin/infrastructure/customer-deployment/servers/index.blade.php`
+- `resources/views/admin/infrastructure/customer-deployment/servers/create.blade.php`
+- `resources/views/admin/infrastructure/customer-deployment/servers/edit.blade.php`
+
+**Architectural rule:** `driverMetaMap()` is the single source of truth. Adding a new driver = one map entry + one card in create.blade.php. No other UI changes needed.
+
+**ADR reference:** ADR-014 (pipeline capabilities-only, no type conditionals) remains intact.
+
+---
+
 ## 2026-06-27 — ARCHITECTURE_UPGRADE_001_UNIVERSAL_DEPLOYMENT_ENGINE
 
 **Type:** Architecture Upgrade — Driver-based deployment engine

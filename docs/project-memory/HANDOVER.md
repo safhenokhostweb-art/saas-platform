@@ -5,6 +5,24 @@
 
 ---
 
+## CURRENT STATE (2026-06-28 — PHASE-003D5_COMPLETE)
+
+**Last completed phase:** Deployment Target UI Refactor. Full driver-aware admin interface for managing remote deployment environments.
+
+**What was built:**
+- `CustomerRemoteServerAdminController` — fully rewritten: accepts all 5 driver types (ssh/cpanel/directadmin/sftp/docker), `driverMetaMap()` static method as single source of truth
+- `servers/index.blade.php` — "مقصد استقرار" throughout, 5-driver support banner, color-coded type badges, capability chips (desktop only), disabled test button for stubs
+- `servers/create.blade.php` — Alpine.js two-step flow: Step 1 type selector grid (5 cards + disabled K8s) → Step 2 dynamic form (fields change per driver) → Step 3 capability preview
+- `servers/edit.blade.php` — driver-aware static form, type locked with badge, optional credential update (empty = keep existing), capability snapshot grid
+- Migration: `api_token_encrypted`, `path`, `domain` added to `customer_remote_servers`; `auth_method` enum expanded to include `api_token` and `sftp_password`
+- 3 docs: `DEPLOYMENT_TARGET_UI_ARCHITECTURE.md`, `DEPLOYMENT_TARGET_DRIVER_UI.md`, `HOSTING_TARGET_MATRIX.md`
+
+**Architectural invariant:** `driverMetaMap()` is the ONLY place with driver-specific UI knowledge. Zero hardcoded driver logic in views.
+
+**NEXT STEP:** No active tasks. Ready for next development phase.
+
+---
+
 ## CURRENT STATE (2026-06-27 — ARCHITECTURE_UPGRADE_001_COMPLETE)
 
 **Last completed phase:** UNIVERSAL_DEPLOYMENT_ENGINE architecture upgrade. Driver-based system for all future hosting types.

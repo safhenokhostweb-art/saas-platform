@@ -16,13 +16,15 @@
 
 ## Current Module
 
-**ARCHITECTURE_UPGRADE_001: UNIVERSAL_DEPLOYMENT_ENGINE — COMPLETE (2026-06-27). Driver-based deployment architecture. DeploymentDriverInterface, SshDeploymentDriver (live), 4 stub drivers (cPanel/DirectAdmin/SFTP/Docker), DeploymentTarget model, DriverCapabilities DTO, AuthMethod/DriverType enums. Pipeline is now hosting-agnostic.**
+**PHASE-003D.5: DEPLOYMENT_TARGET_UI_REFACTOR — COMPLETE (2026-06-28). Full UI refactor of Customer Deployment admin. All "سرور" renamed to "مقصد استقرار". Driver-aware create form with 5-type selector + Alpine.js dynamic fields. Driver-aware edit form (type locked). Capability preview grid auto-rendered from driver metadata. Index enhanced with type badges + capability chips + 5-driver support banner. driverMetaMap() as single source of truth — zero hardcoded driver logic in views.**
 
 ---
 
 ## Current Phase
 
-**ARCHITECTURE_UPGRADE_001_COMPLETE (2026-06-27). Universal Deployment Engine architecture upgrade complete. DeploymentDriverInterface declared. SshDeploymentDriver (full). CpanelDeploymentDriver, DirectAdminDeploymentDriver, SftpDeploymentDriver, DockerDeploymentDriver (stubs). DeploymentTarget model + migration. 4 docs generated. All existing code backward compatible. ADR-014 recorded.**
+**PHASE-003D5_COMPLETE (2026-06-28). Deployment Target UI refactor complete. create.blade.php: Step 1 type selector grid (VPS/DA/cPanel/SFTP/Docker + disabled K8s) + Step 2 Alpine.js dynamic form + capability preview. edit.blade.php: driver-aware static form (type locked), optional credential update, capability grid. index.blade.php: deployment target terminology throughout, 5-driver support banner, type badges, capability chips. Controller: driverMetaMap() single source of truth. 3 new docs generated.**
+
+**Previous:** ARCHITECTURE_UPGRADE_001_COMPLETE (2026-06-27). Universal Deployment Engine architecture upgrade complete. DeploymentDriverInterface declared. SshDeploymentDriver (full). CpanelDeploymentDriver, DirectAdminDeploymentDriver, SftpDeploymentDriver, DockerDeploymentDriver (stubs). DeploymentTarget model + migration. 4 docs generated. All existing code backward compatible. ADR-014 recorded.
 
 **Previous:** HOTFIX-003_COMPLETE (2026-06-27). Additional production bugs fixed: source-select Alpine CDN broken (same pattern as mode-select — replaced with vanilla JS), SlackAlertService ArgumentCountError in UpgradeAdapter.php (critical() 1-arg at rollback), SiteResourceAlertService.php (critical() 1-arg), CustomerReadyStage.php (wrong type for context arg). Customer-deployment/servers 500 was transient mid-deploy — key present, page returns 200. Deployed in `50ea792`.**
 

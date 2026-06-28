@@ -1,173 +1,304 @@
 @extends('layouts.admin')
 
-@section('header', 'ویرایش سرور: ' . $server->label)
+@section('header', 'ویرایش مقصد استقرار')
 
 @section('content')
 
+@php
+    $meta = $driverMeta[$server->type] ?? $driverMeta['ssh'];
+    $typeColorMap = [
+        'ssh'         => ['ring' => 'ring-indigo-200',  'bg' => 'bg-indigo-50',  'text' => 'text-indigo-700',  'dot' => 'bg-indigo-500'],
+        'directadmin' => ['ring' => 'ring-blue-200',    'bg' => 'bg-blue-50',    'text' => 'text-blue-700',    'dot' => 'bg-blue-500'],
+        'cpanel'      => ['ring' => 'ring-orange-200',  'bg' => 'bg-orange-50',  'text' => 'text-orange-700',  'dot' => 'bg-orange-500'],
+        'sftp'        => ['ring' => 'ring-teal-200',    'bg' => 'bg-teal-50',    'text' => 'text-teal-700',    'dot' => 'bg-teal-500'],
+        'docker'      => ['ring' => 'ring-cyan-200',    'bg' => 'bg-cyan-50',    'text' => 'text-cyan-700',    'dot' => 'bg-cyan-500'],
+    ];
+    $tc = $typeColorMap[$server->type] ?? $typeColorMap['ssh'];
+    $capLabels = ['queue'=>'صف کار','supervisor'=>'Supervisor','redis'=>'Redis','ssl'=>'SSL','database'=>'ساخت DB','storage'=>'Storage Link','cron'=>'زمانبند','docker'=>'Docker','reboot'=>'ریبوت'];
+@endphp
+
 <div class="flex items-center gap-3 mb-6">
     <a href="{{ route('admin.infrastructure.customer-deployment.servers.index') }}" class="text-gray-400 hover:text-gray-600">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
     </a>
     <div>
-        <h1 class="text-xl font-bold text-gray-900">ویرایش سرور: <span class="text-indigo-700">{{ $server->label }}</span></h1>
+        <h1 class="text-xl font-bold text-gray-900">ویرایش: {{ $server->label }}</h1>
         <p class="text-sm text-gray-500 font-mono">{{ $server->username }}@{{ $server->host }}:{{ $server->port }}</p>
     </div>
 </div>
 
-<div class="max-w-2xl" x-data="serverEditForm()">
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 mb-4 text-sm">{{ session('success') }}</div>
+<div class="max-w-3xl">
+
+    @if($errors->any())
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-5">
+            <p class="text-red-800 text-sm font-semibold mb-1">خطاهای اعتبارسنجی:</p>
+            <ul class="text-red-700 text-sm list-disc list-inside space-y-0.5">
+                @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+            </ul>
+        </div>
     @endif
 
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-
-        @if($errors->any())
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-5">
-                <p class="text-red-800 text-sm font-semibold mb-1">خطاهای اعتبارسنجی:</p>
-                <ul class="text-red-700 text-sm list-disc list-inside space-y-0.5">
-                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-                </ul>
-            </div>
+    {{-- Type badge (locked) --}}
+    <div class="flex items-center gap-3 mb-5 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div class="flex items-center gap-2 {{ $tc['bg'] }} {{ $tc['ring'] }} ring-1 px-3 py-1.5 rounded-lg">
+            <span class="w-2 h-2 rounded-full {{ $tc['dot'] }}"></span>
+            <span class="text-sm font-semibold {{ $tc['text'] }}">{{ $meta['label'] }}</span>
+        </div>
+        <div class="text-sm text-gray-500 flex-1">نوع مقصد قفل شده — برای نوع دیگر، مقصد جدید ایجاد کنید</div>
+        @if(!$meta['implemented'])
+            <span class="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">درایور فعال نیست</span>
         @endif
+    </div>
 
-        <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.servers.update', $server) }}">
-            @csrf @method('PUT')
+    @if(!$meta['implemented'])
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-5 flex gap-3">
+        <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div>
+            <p class="text-amber-800 text-sm font-semibold">درایور {{ $meta['label'] }} هنوز پیاده‌سازی نشده</p>
+            <p class="text-amber-700 text-xs mt-1">اطلاعات ذخیره می‌شود اما تست اتصال و نصب خودکار تا پیاده‌سازی درایور ممکن نخواهد بود.</p>
+        </div>
+    </div>
+    @endif
 
-            {{-- Label --}}
-            <div class="mb-5">
-                <label class="form-label">برچسب سرور <span class="text-red-500">*</span></label>
-                <input type="text" name="label" value="{{ old('label', $server->label) }}" class="form-control @error('label') border-red-400 @enderror">
+    <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.servers.update', $server) }}">
+        @csrf @method('PUT')
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+
+            {{-- Name --}}
+            <div>
+                <label class="form-label">نام مقصد <span class="text-red-500">*</span></label>
+                <input type="text" name="label" value="{{ old('label', $server->label) }}"
+                       class="form-control @error('label') border-red-400 @enderror">
                 @error('label')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-5">
-                {{-- Host --}}
-                <div class="col-span-2 sm:col-span-1">
-                    <label class="form-label">آدرس هاست / IP <span class="text-red-500">*</span></label>
-                    <input type="text" name="host" value="{{ old('host', $server->host) }}" class="form-control font-mono @error('host') border-red-400 @enderror">
-                    @error('host')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-                {{-- Port --}}
+            {{-- Host --}}
+            <div>
+                <label class="form-label">آدرس هاست / IP <span class="text-red-500">*</span></label>
+                <input type="text" name="host" value="{{ old('host', $server->host) }}"
+                       class="form-control font-mono @error('host') border-red-400 @enderror">
+                @error('host')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            {{-- Port + Username (SSH / SFTP / Docker) --}}
+            @if(in_array($server->type, ['ssh', 'sftp', 'docker']))
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="form-label">پورت SSH <span class="text-red-500">*</span></label>
-                    <input type="number" name="port" value="{{ old('port', $server->port) }}" min="1" max="65535" class="form-control font-mono @error('port') border-red-400 @enderror">
+                    <label class="form-label">پورت <span class="text-red-500">*</span></label>
+                    <input type="number" name="port" value="{{ old('port', $server->port) }}"
+                           min="1" max="65535"
+                           class="form-control font-mono @error('port') border-red-400 @enderror">
+                    @error('port')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="form-label">نام کاربری <span class="text-red-500">*</span></label>
+                    <input type="text" name="username" value="{{ old('username', $server->username) }}"
+                           class="form-control font-mono @error('username') border-red-400 @enderror">
+                    @error('username')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            @endif
+
+            {{-- Username + Port (cPanel / DirectAdmin) --}}
+            @if(in_array($server->type, ['cpanel', 'directadmin']))
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label">نام کاربری پنل <span class="text-red-500">*</span></label>
+                    <input type="text" name="username" value="{{ old('username', $server->username) }}"
+                           class="form-control @error('username') border-red-400 @enderror">
+                    @error('username')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="form-label">پورت پنل</label>
+                    <input type="number" name="port" value="{{ old('port', $server->port) }}"
+                           min="1" max="65535"
+                           class="form-control font-mono @error('port') border-red-400 @enderror">
                     @error('port')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
+            @endif
 
-            {{-- Username --}}
-            <div class="mb-5">
-                <label class="form-label">نام کاربری SSH <span class="text-red-500">*</span></label>
-                <input type="text" name="username" value="{{ old('username', $server->username) }}" class="form-control font-mono @error('username') border-red-400 @enderror">
-                @error('username')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-            </div>
-
-            {{-- Auth Method --}}
-            <div class="mb-5">
-                <label class="form-label">روش احراز هویت <span class="text-red-500">*</span></label>
-                <div class="flex gap-3 mt-1">
+            {{-- ─── SSH Auth (SSH / Docker) ─── --}}
+            @if(in_array($server->type, ['ssh', 'docker']))
+            <div x-data="{ authMethod: '{{ old('auth_method', $server->auth_method ?? 'key') }}' }">
+                <label class="form-label">روش احراز هویت SSH</label>
+                <div class="flex gap-4 mt-1 mb-4">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="auth_method" value="key" x-model="authMethod" {{ old('auth_method', $server->auth_method) === 'key' ? 'checked' : '' }} class="text-indigo-600">
-                        <span class="text-sm font-medium text-gray-700">کلید SSH (Private Key)</span>
+                        <input type="radio" name="auth_method" value="key" x-model="authMethod" class="text-indigo-600">
+                        <span class="text-sm font-medium text-gray-700">کلید خصوصی SSH</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="auth_method" value="password" x-model="authMethod" {{ old('auth_method', $server->auth_method) === 'password' ? 'checked' : '' }} class="text-indigo-600">
-                        <span class="text-sm font-medium text-gray-700">رمز عبور</span>
+                        <input type="radio" name="auth_method" value="password" x-model="authMethod" class="text-indigo-600">
+                        <span class="text-sm font-medium text-gray-700">رمز عبور SSH</span>
                     </label>
                 </div>
-            </div>
 
-            {{-- Private Key --}}
-            <div class="mb-5" x-show="authMethod === 'key'" x-cloak>
-                <label class="form-label">کلید خصوصی SSH جدید</label>
-                <textarea name="private_key" rows="8" placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----&#10;(خالی بگذارید تا کلید فعلی حفظ شود)" class="form-control font-mono text-xs @error('private_key') border-red-400 @enderror"></textarea>
-                <div class="flex items-center gap-2 mt-1">
-                    <svg class="w-3 h-3 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                    <p class="text-xs text-gray-400">کلید فعلی ذخیره‌شده است — فقط در صورت تغییر پر کنید</p>
+                <div x-show="authMethod === 'key'" x-cloak>
+                    <label class="form-label">
+                        کلید خصوصی SSH جدید
+                        <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
+                    </label>
+                    <textarea name="private_key" rows="6"
+                        placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;برای بازنویسی کلید موجود، کلید جدید را وارد کنید&#10;-----END RSA PRIVATE KEY-----"
+                        class="form-control font-mono text-xs @error('private_key') border-red-400 @enderror">{{ old('private_key') }}</textarea>
+                    <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                        کلید موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                    </p>
+                    @error('private_key')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                @error('private_key')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-            </div>
 
-            {{-- Password --}}
-            <div class="mb-5" x-show="authMethod === 'password'" x-cloak>
-                <label class="form-label">رمز عبور SSH جدید</label>
-                <input type="password" name="password" placeholder="(خالی بگذارید تا رمز فعلی حفظ شود)" class="form-control @error('password') border-red-400 @enderror" autocomplete="new-password">
-                <div class="flex items-center gap-2 mt-1">
-                    <svg class="w-3 h-3 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                    <p class="text-xs text-gray-400">رمز فعلی ذخیره‌شده است — فقط در صورت تغییر پر کنید</p>
+                <div x-show="authMethod === 'password'" x-cloak>
+                    <label class="form-label">
+                        رمز عبور SSH جدید
+                        <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
+                    </label>
+                    <input type="password" name="password" autocomplete="new-password"
+                           placeholder="برای تغییر رمز، رمز جدید وارد کنید"
+                           class="form-control @error('password') border-red-400 @enderror">
+                    <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                        رمز موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                    </p>
+                    @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+            </div>
+            @endif
+
+            {{-- ─── API Token (cPanel / DirectAdmin) ─── --}}
+            @if(in_array($server->type, ['cpanel', 'directadmin']))
+            <div>
+                <label class="form-label">
+                    {{ $server->type === 'cpanel' ? 'cPanel API Token جدید' : 'DirectAdmin API Key جدید' }}
+                    <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
+                </label>
+                <input type="password" name="api_token" autocomplete="new-password"
+                       placeholder="برای بازنویسی توکن موجود، توکن جدید وارد کنید"
+                       class="form-control @error('api_token') border-red-400 @enderror">
+                <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                    توکن موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                </p>
+                @error('api_token')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+            @endif
+
+            {{-- ─── SFTP Password ─── --}}
+            @if($server->type === 'sftp')
+            <div>
+                <label class="form-label">
+                    رمز عبور SFTP جدید
+                    <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
+                </label>
+                <input type="password" name="password" autocomplete="new-password"
+                       placeholder="برای تغییر رمز، رمز جدید وارد کنید"
+                       class="form-control @error('password') border-red-400 @enderror">
+                <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                    رمز موجود با رمزگذاری ذخیره است — خالی گذاشتن آن را حفظ می‌کند
+                </p>
                 @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
+            @endif
 
-            {{-- Server metadata --}}
-            <div class="bg-gray-50 rounded-lg p-3 mb-5 text-xs text-gray-500 grid grid-cols-2 gap-2">
+            {{-- Domain --}}
+            @if(in_array($server->type, ['cpanel', 'directadmin', 'sftp']))
+            <div>
+                <label class="form-label">دامنه اصلی</label>
+                <input type="text" name="domain" value="{{ old('domain', $server->domain) }}"
+                       placeholder="example.com"
+                       class="form-control font-mono @error('domain') border-red-400 @enderror">
+                @error('domain')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+            @endif
+
+            {{-- Path --}}
+            @if(in_array($server->type, ['cpanel', 'directadmin', 'sftp']))
+            <div>
+                <label class="form-label">مسیر وب روت</label>
+                <input type="text" name="path" value="{{ old('path', $server->path) }}"
+                       placeholder="/home/user/public_html"
+                       class="form-control font-mono @error('path') border-red-400 @enderror">
+                @error('path')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+            @endif
+
+        </div>
+
+        {{-- Capability snapshot --}}
+        <div class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">قابلیت‌های این مقصد</h3>
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                @foreach($capLabels as $cap => $label)
+                    @php $supported = $meta['capabilities'][$cap] ?? false; @endphp
+                    <div class="{{ $supported ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-400' }} border rounded-lg px-2.5 py-2 text-center">
+                        <div class="{{ $supported ? 'text-green-500' : 'text-gray-300' }} text-lg mb-0.5">{{ $supported ? '✓' : '✗' }}</div>
+                        <div class="text-xs font-medium">{{ $label }}</div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Server metadata --}}
+        <div class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">اطلاعات تست اتصال</h3>
+            <div class="grid grid-cols-2 gap-3 text-xs text-gray-600">
                 <div>
-                    <span class="font-medium text-gray-600">آخرین تست اتصال:</span>
+                    <span class="font-medium text-gray-500">آخرین تست:</span>
                     {{ $server->last_tested_at ? $server->last_tested_at->diffForHumans() : 'تست نشده' }}
-                    @if($server->last_test_status === 'ok')
+                    @if($server->last_test_result === 'success')
                         <span class="text-green-600 font-medium"> (موفق)</span>
-                    @elseif($server->last_test_status)
+                    @elseif($server->last_test_result)
                         <span class="text-red-500 font-medium"> (ناموفق)</span>
                     @endif
                 </div>
                 <div>
-                    <span class="font-medium text-gray-600">تعداد نصب‌ها:</span>
+                    <span class="font-medium text-gray-500">تعداد نصب‌ها:</span>
                     {{ $server->installations()->count() }}
                 </div>
-                @if($server->last_php_version)
-                <div>
-                    <span class="font-medium text-gray-600">PHP:</span> {{ $server->last_php_version }}
-                </div>
-                @endif
-                @if($server->last_disk_free_bytes)
-                <div>
-                    <span class="font-medium text-gray-600">دیسک آزاد:</span>
-                    {{ round($server->last_disk_free_bytes / 1024 / 1024 / 1024, 2) }} GB
-                </div>
-                @endif
             </div>
 
-            <div class="flex gap-3">
-                <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
-                <a href="{{ route('admin.infrastructure.customer-deployment.servers.index') }}" class="btn btn-outline-secondary">انصراف</a>
+            @if($meta['implemented'])
+            <div class="mt-4 flex items-center gap-3">
+                <button type="button" onclick="testTarget({{ $server->id }}, document.getElementById('edit-test-btn'))"
+                        id="edit-test-btn"
+                        class="btn btn-outline-secondary text-sm flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    تست اتصال
+                </button>
+                <div id="edit-test-result" class="text-xs text-gray-500"></div>
             </div>
-        </form>
-    </div>
-
-    {{-- Test connection from edit page --}}
-    <div class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-        <div class="flex items-center justify-between mb-3">
-            <div>
-                <h2 class="text-sm font-semibold text-gray-800">تست اتصال</h2>
-                <p class="text-xs text-gray-500">بررسی اتصال SSH، نسخه PHP، دیسک و مجوزها</p>
-            </div>
-            <button onclick="testServer({{ $server->id }})" class="btn btn-outline-secondary text-sm flex items-center gap-1" id="edit-test-btn">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                تست اتصال
-            </button>
+            @else
+            <p class="text-xs text-gray-400 mt-3">تست اتصال برای این نوع درایور هنوز فعال نشده است.</p>
+            @endif
         </div>
-        <div id="edit-test-result" class="hidden text-sm rounded-lg p-3"></div>
-    </div>
+
+        <div class="mt-5 flex gap-3">
+            <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+            <a href="{{ route('admin.infrastructure.customer-deployment.servers.index') }}" class="btn btn-outline-secondary">انصراف</a>
+        </div>
+    </form>
+
 </div>
 
 @push('scripts')
 <script>
-function serverEditForm() {
-    return {
-        authMethod: '{{ old('auth_method', $server->auth_method) }}',
-    };
-}
+function testTarget(id, btn) {
+    const resultEl  = document.getElementById('edit-test-result');
+    const origHtml  = btn.innerHTML;
 
-function testServer(serverId) {
-    const btn = document.getElementById('edit-test-btn');
-    const result = document.getElementById('edit-test-result');
-    const originalHtml = btn.innerHTML;
-
-    btn.disabled = true;
+    btn.disabled  = true;
     btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> در حال تست...';
-    result.classList.add('hidden');
+    resultEl.textContent = '';
 
-    fetch('/admin/infrastructure/customer-deployment/servers/' + serverId + '/test', {
+    fetch('/admin/infrastructure/customer-deployment/servers/' + id + '/test', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -177,30 +308,23 @@ function testServer(serverId) {
     })
     .then(r => r.json())
     .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        result.classList.remove('hidden');
+        btn.disabled  = false;
+        btn.innerHTML = origHtml;
 
         if (data.success) {
-            result.className = 'text-sm rounded-lg p-3 bg-green-50 border border-green-200 text-green-800';
-            result.innerHTML =
-                '<p class="font-semibold mb-1">✓ اتصال موفق</p>' +
-                '<div class="grid grid-cols-2 gap-1 text-xs">' +
-                (data.php_version ? '<div><span class="font-medium">PHP:</span> ' + data.php_version + '</div>' : '') +
-                (data.disk_free   ? '<div><span class="font-medium">دیسک آزاد:</span> ' + data.disk_free + '</div>' : '') +
-                (data.fingerprint ? '<div class="col-span-2"><span class="font-medium">SSH Fingerprint:</span> <code class="font-mono text-gray-600">' + data.fingerprint + '</code></div>' : '') +
-                '</div>';
+            resultEl.innerHTML =
+                '<span class="text-green-600 font-semibold">✓ اتصال موفق</span>' +
+                (data.os          ? ' · ' + data.os : '') +
+                (data.php_version ? ' · PHP ' + data.php_version : '') +
+                (data.disk_free   ? ' · دیسک آزاد: ' + data.disk_free : '');
         } else {
-            result.className = 'text-sm rounded-lg p-3 bg-red-50 border border-red-200 text-red-800';
-            result.innerHTML = '<p class="font-semibold">✗ اتصال ناموفق</p><p class="text-xs mt-1">' + (data.message || 'خطای ناشناخته') + '</p>';
+            resultEl.innerHTML = '<span class="text-red-500 font-semibold">✗ ناموفق: </span>' + (data.message || 'خطای ناشناخته');
         }
     })
     .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        result.classList.remove('hidden');
-        result.className = 'text-sm rounded-lg p-3 bg-red-50 border border-red-200 text-red-800';
-        result.innerHTML = '<p class="font-semibold">✗ خطا در ارتباط</p><p class="text-xs mt-1">' + err.message + '</p>';
+        btn.disabled  = false;
+        btn.innerHTML = origHtml;
+        resultEl.innerHTML = '<span class="text-red-500">✗ خطا: ' + err.message + '</span>';
     });
 }
 </script>
