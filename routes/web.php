@@ -851,6 +851,39 @@ Route::prefix('admin')
                     Route::delete('/{server}', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'destroy'])->name('destroy');
                     Route::post('/{server}/test', [\App\Http\Controllers\Admin\Infrastructure\CustomerRemoteServerAdminController::class, 'testConnection'])->name('test');
                 });
+
+                // PHASE-003D6 — Authentication Center
+                Route::prefix('auth-center')->name('auth-center.')->group(function () {
+                    Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'index'])->name('index');
+
+                    // SSH Keys
+                    Route::prefix('ssh-keys')->name('ssh-keys.')->group(function () {
+                        Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'sshKeys'])->name('index');
+                        Route::get('/generate', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'generateKeyForm'])->name('generate');
+                        Route::post('/generate', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'generateKey'])->name('generate.store');
+                        Route::get('/import', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'importKeyForm'])->name('import');
+                        Route::post('/import', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'importKey'])->name('import.store');
+                        Route::get('/{key}', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'showKey'])->name('show');
+                        Route::post('/{key}/install', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'installKey'])->name('install');
+                        Route::post('/{key}/test', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'testKey'])->name('test');
+                        Route::post('/{key}/activate', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'activateKey'])->name('activate');
+                        Route::post('/{key}/rotate', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'rotateKey'])->name('rotate');
+                        Route::post('/{key}/revoke', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'revokeKey'])->name('revoke');
+                        Route::delete('/{key}', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'deleteKey'])->name('delete');
+                    });
+
+                    // API Tokens
+                    Route::get('/api-tokens', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'apiTokens'])->name('api-tokens');
+                    Route::post('/api-tokens/{server}', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'storeApiToken'])->name('api-tokens.store');
+                    Route::post('/api-tokens/{server}/rotate', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'rotateApiToken'])->name('api-tokens.rotate');
+                    Route::delete('/api-tokens/{server}', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'deleteApiToken'])->name('api-tokens.delete');
+
+                    // Security Audit
+                    Route::get('/security-audit', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'securityAudit'])->name('security-audit');
+
+                    // Migration Wizard
+                    Route::get('/migration-wizard/{server}', [\App\Http\Controllers\Admin\Infrastructure\AuthenticationCenterController::class, 'migrationWizard'])->name('migration-wizard');
+                });
             });
         });
 

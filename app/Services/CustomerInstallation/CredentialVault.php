@@ -97,21 +97,39 @@ class CredentialVault
         $newVault->key = $newKey;
 
         $rotated = 0;
+
+        // Rotate all encrypted fields on CustomerRemoteServer
         CustomerRemoteServer::all()->each(function (CustomerRemoteServer $server) use ($newVault, &$rotated) {
             $updates = [];
 
-            if ($server->private_key_encrypted) {
-                $plain = $this->decrypt($server->private_key_encrypted);
-                $updates['private_key_encrypted'] = $newVault->encrypt($plain);
-            }
-
-            if ($server->password_encrypted) {
-                $plain = $this->decrypt($server->password_encrypted);
-                $updates['password_encrypted'] = $newVault->encrypt($plain);
+            foreach (['private_key_encrypted', 'password_encrypted', 'api_token_encrypted'] as $field) {
+                if (!empty($server->{$field})) {
+                    $plain = $this->decrypt($server->{$field});
+                    $updates[$field] = $newVault->encrypt($plain);
+                }
             }
 
             if (!empty($updates)) {
                 $server->updateQuietly($updates);
+                $rotated++;
+            }
+        });
+
+        // Rotate all SshKey encrypted fields
+        \App\Models\SshKey::all()->each(function (\App\Models\SshKey $key) use ($newVault, &$rotated) {
+            $updates = [];
+
+            if (!empty($key->private_key_encrypted)) {
+                $plain = $this->decrypt($key->private_key_encrypted);
+                $updates['private_key_encrypted'] = $newVault->encrypt($plain);
+            }
+            if (!empty($key->passphrase_encrypted)) {
+                $plain = $this->decrypt($key->passphrase_encrypted);
+                $updates['passphrase_encrypted'] = $newVault->encrypt($plain);
+            }
+
+            if (!empty($updates)) {
+                $key->updateQuietly($updates);
                 $rotated++;
             }
         });

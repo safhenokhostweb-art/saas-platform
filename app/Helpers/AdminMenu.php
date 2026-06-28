@@ -57,6 +57,7 @@ class AdminMenu
         'platform_installer'     => 'نصب‌کننده پلتفرم',
         'installer_status'       => 'وضعیت نصب',
         'customer_deployment'    => 'استقرار مشتریان',
+        'auth_center'            => 'مرکز احراز هویت',
     ];
 
     /** مسیر هر آیتم منو */
@@ -109,6 +110,7 @@ class AdminMenu
         'platform_installer'     => 'installer.index',
         'installer_status'       => 'admin.installer.index',
         'customer_deployment'    => 'admin.infrastructure.customer-deployment.dashboard',
+        'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -161,6 +163,7 @@ class AdminMenu
         'platform_installer'     => 'installer.*',
         'installer_status'       => 'admin.installer.*',
         'customer_deployment'    => 'admin.infrastructure.customer-deployment.*',
+        'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */

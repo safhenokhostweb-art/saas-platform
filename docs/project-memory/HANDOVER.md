@@ -5,6 +5,32 @@
 
 ---
 
+## CURRENT STATE (2026-06-28 — PHASE-003D6_COMPLETE)
+
+**Last completed phase:** Enterprise Authentication Engine. Full credential lifecycle management.
+
+**What was built:**
+- `SshKeyManager` — generate (Ed25519/RSA-4096), import, installOnTarget, testKey, activateOnServer, rotateKey, revokeKey via phpseclib3
+- `ApiTokenManager` — store/replace/rotate/delete, maskedPreview (never plaintext), tokenHealth (ok/stale/unused/missing)
+- `AuthenticationCenterController` — 6 sections: overview (security score), ssh-keys CRUD, api-tokens, security-audit (automated findings), migration-wizard
+- `SshKey` model + `ssh_keys` migration (key_type, public_key, private_key_encrypted, fingerprint, status, installed_at, rotated_at)
+- Migration: `ssh_key_id`, `key_installed_at`, `api_token_created_at`, `api_token_last_used_at` added to `customer_remote_servers`
+- `CredentialVault::rotate()` extended to also cover SshKey encrypted fields and `api_token_encrypted`
+- 28 routes under `/admin/infrastructure/customer-deployment/auth-center/`
+- 6 views: index, ssh-keys/index, ssh-keys/generate, ssh-keys/show, ssh-keys/import, api-tokens, security-audit, migration-wizard
+- 4 documentation files: SSH_KEY_MANAGEMENT.md, API_TOKEN_MANAGEMENT.md, AUTHENTICATION_CENTER.md, CREDENTIAL_SECURITY_POLICY.md
+- AdminMenu: `auth_center` key added
+
+**Security guarantees:**
+- Private keys: never in plaintext beyond the method that handles them
+- Passwords/tokens: `$hidden` on models, masked in views
+- Host fingerprint pinning: MITM detection in SshDeploymentDriver
+- Master key rotation: covers all credential fields atomically
+
+**NEXT STEP:** No active tasks. Ready for next development phase.
+
+---
+
 ## CURRENT STATE (2026-06-28 — PHASE-003D5_COMPLETE)
 
 **Last completed phase:** Deployment Target UI Refactor. Full driver-aware admin interface for managing remote deployment environments.

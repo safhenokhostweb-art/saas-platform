@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**PHASE-003D.5: DEPLOYMENT_TARGET_UI_REFACTOR — COMPLETE (2026-06-28). Full UI refactor of Customer Deployment admin. All "سرور" renamed to "مقصد استقرار". Driver-aware create form with 5-type selector + Alpine.js dynamic fields. Driver-aware edit form (type locked). Capability preview grid auto-rendered from driver metadata. Index enhanced with type badges + capability chips + 5-driver support banner. driverMetaMap() as single source of truth — zero hardcoded driver logic in views.**
+**PHASE-003D6: ENTERPRISE_AUTHENTICATION_ENGINE — COMPLETE (2026-06-28). SshKeyManager (Ed25519/RSA-4096 generate, import, install, test, activate, rotate, revoke), ApiTokenManager (store/replace/rotate/test/delete, masked display, health check), AuthenticationCenterController (6 sections: overview, ssh-keys, api-tokens, security-audit, migration-wizard), CredentialVault extended to rotate SshKey credentials. 6 views. 28 routes. 4 security docs. SecurityScore metric. BACKWARD COMPATIBLE.**
+
+**Previous:** PHASE-003D.5: DEPLOYMENT_TARGET_UI_REFACTOR — COMPLETE (2026-06-28). Full UI refactor of Customer Deployment admin. All "سرور" renamed to "مقصد استقرار". Driver-aware create form with 5-type selector + Alpine.js dynamic fields. Driver-aware edit form (type locked). Capability preview grid auto-rendered from driver metadata. Index enhanced with type badges + capability chips + 5-driver support banner. driverMetaMap() as single source of truth — zero hardcoded driver logic in views.**
 
 ---
 

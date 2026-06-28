@@ -5,6 +5,43 @@
 
 ---
 
+## 2026-06-28 — PHASE-003D6_ENTERPRISE_AUTHENTICATION_ENGINE
+
+**Type:** New Feature — Enterprise authentication layer for Deployment Engine
+
+**What changed:**
+
+**Files created (14):**
+- `database/migrations/2026_06_28_100000_create_ssh_keys_table.php`
+- `database/migrations/2026_06_28_100001_add_auth_metadata_to_customer_remote_servers.php`
+- `app/Models/SshKey.php`
+- `app/Services/CustomerInstallation/SshKeyManager.php`
+- `app/Services/CustomerInstallation/ApiTokenManager.php`
+- `app/Http/Controllers/Admin/Infrastructure/AuthenticationCenterController.php`
+- `resources/views/admin/infrastructure/auth-center/index.blade.php`
+- `resources/views/admin/infrastructure/auth-center/ssh-keys/index.blade.php`
+- `resources/views/admin/infrastructure/auth-center/ssh-keys/generate.blade.php`
+- `resources/views/admin/infrastructure/auth-center/ssh-keys/show.blade.php`
+- `resources/views/admin/infrastructure/auth-center/ssh-keys/import.blade.php`
+- `resources/views/admin/infrastructure/auth-center/api-tokens.blade.php`
+- `resources/views/admin/infrastructure/auth-center/security-audit.blade.php`
+- `resources/views/admin/infrastructure/auth-center/migration-wizard.blade.php`
+- `docs/SSH_KEY_MANAGEMENT.md`
+- `docs/API_TOKEN_MANAGEMENT.md`
+- `docs/AUTHENTICATION_CENTER.md`
+- `docs/CREDENTIAL_SECURITY_POLICY.md`
+
+**Files modified (5):**
+- `app/Models/CustomerRemoteServer.php` — added fillable fields + casts for new columns
+- `app/Services/CustomerInstallation/CredentialVault.php` — rotate() covers api_token + SshKey fields
+- `routes/web.php` — 28 auth-center routes added
+- `app/Helpers/AdminMenu.php` — auth_center key added
+- `docs/project-memory/PROJECT_STATE.md`, `HANDOVER.md`, `CHANGELOG_AI.md`
+
+**Security properties:** AES-256-GCM, phpseclib3, never plaintext in logs/reports/responses, fingerprint pinning, security audit engine.
+
+---
+
 ## 2026-06-28 — PHASE-003D5_DEPLOYMENT_TARGET_UI_REFACTOR
 
 **Type:** UI Refactor — Driver-aware Deployment Target admin interface
