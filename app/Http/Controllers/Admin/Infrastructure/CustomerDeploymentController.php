@@ -138,7 +138,7 @@ class CustomerDeploymentController extends Controller
             return back()->with('error', 'هیچ checkpoint بازگشتی برای این نصب وجود ندارد.');
         }
 
-        CustomerInstallationRollbackJob::dispatch($installation)
+        CustomerInstallationRollbackJob::dispatch($installation->id)
             ->onConnection('customer-install')
             ->onQueue('customer-install');
 
