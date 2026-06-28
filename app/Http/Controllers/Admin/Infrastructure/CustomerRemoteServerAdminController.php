@@ -205,7 +205,18 @@ class CustomerRemoteServerAdminController extends Controller
         return match($type) {
             'ssh', 'docker' => [
                 'auth_method' => 'required|in:key,password',
-                'private_key' => "required_if:auth_method,key|nullable|string",
+                'private_key' => [
+                    "required_if:auth_method,key",
+                    "nullable",
+                    "string",
+                    function ($attr, $value, $fail) {
+                        if (empty($value)) return;
+                        $trimmed = ltrim($value);
+                        if (str_starts_with($trimmed, 'ssh-') || str_starts_with($trimmed, 'ecdsa-') || str_starts_with($trimmed, 'sk-')) {
+                            $fail('مقدار وارد شده یک کلید عمومی است. لطفاً کلید خصوصی را وارد کنید (باید با -----BEGIN OPENSSH PRIVATE KEY----- شروع شود).');
+                        }
+                    },
+                ],
                 'password'    => "required_if:auth_method,password|nullable|string|max:500",
             ],
             'cpanel', 'directadmin' => [

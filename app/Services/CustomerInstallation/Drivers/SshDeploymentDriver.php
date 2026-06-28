@@ -13,6 +13,7 @@ use App\Services\CustomerInstallation\Enums\DriverType;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
 use phpseclib3\Crypt\PublicKeyLoader;
+use phpseclib3\Crypt\Common\PrivateKey as SshPrivateKey;
 use RuntimeException;
 
 /**
@@ -93,6 +94,9 @@ class SshDeploymentDriver implements DeploymentDriverInterface
         if ($this->target->isKeyAuth()) {
             $privateKey = $this->vault->decrypt($this->target->private_key_encrypted);
             $key = PublicKeyLoader::load($privateKey);
+            if (!($key instanceof SshPrivateKey)) {
+                throw new RuntimeException('کلید خصوصی معتبر نیست — کلید عمومی ذخیره شده است. از صفحه ویرایش مقصد، کلید خصوصی را وارد کنید.');
+            }
             if (!$ssh->login($this->target->username, $key)) {
                 throw new RuntimeException("SSH key authentication failed for {$this->target->host}");
             }

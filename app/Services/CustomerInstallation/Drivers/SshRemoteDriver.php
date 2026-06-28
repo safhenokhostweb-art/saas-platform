@@ -10,6 +10,7 @@ use App\Services\CustomerInstallation\Dto\ConnectionTestResult;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
 use phpseclib3\Crypt\PublicKeyLoader;
+use phpseclib3\Crypt\Common\PrivateKey as SshPrivateKey;
 use RuntimeException;
 
 class SshRemoteDriver implements RemoteConnectionInterface
@@ -33,6 +34,9 @@ class SshRemoteDriver implements RemoteConnectionInterface
         if ($this->server->isKeyAuth()) {
             $privateKey = $this->vault->decrypt($this->server->private_key_encrypted);
             $key = PublicKeyLoader::load($privateKey);
+            if (!($key instanceof SshPrivateKey)) {
+                throw new RuntimeException('کلید خصوصی معتبر نیست — کلید عمومی ذخیره شده است. از صفحه ویرایش مقصد، کلید خصوصی را وارد کنید.');
+            }
             if (!$ssh->login($this->server->username, $key)) {
                 throw new RuntimeException("SSH key authentication failed for {$this->server->host}");
             }
