@@ -237,16 +237,17 @@
                 </div>
 
                 {{-- Port + Username (SSH / SFTP / Docker) --}}
+                {{-- :disabled prevents submission when this group is hidden --}}
                 <div x-show="needsPort" class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">پورت <span class="text-red-500">*</span></label>
-                        <input type="number" name="port" x-bind:value="defaultPort" min="1" max="65535"
+                        <input type="number" name="port" x-bind:value="defaultPort" :disabled="!needsPort" min="1" max="65535"
                                class="form-control font-mono @error('port') border-red-400 @enderror">
                         @error('port')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label class="form-label">نام کاربری <span class="text-red-500">*</span></label>
-                        <input type="text" name="username" value="{{ old('username', 'root') }}"
+                        <input type="text" name="username" value="{{ old('username', 'root') }}" :disabled="!needsPort"
                                placeholder="root"
                                class="form-control font-mono @error('username') border-red-400 @enderror">
                         @error('username')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
@@ -254,17 +255,18 @@
                 </div>
 
                 {{-- Username only (cPanel / DirectAdmin) --}}
+                {{-- :disabled prevents submission when this group is hidden --}}
                 <div x-show="!needsPort" class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">نام کاربری پنل <span class="text-red-500">*</span></label>
-                        <input type="text" name="username" value="{{ old('username') }}"
+                        <input type="text" name="username" value="{{ old('username') }}" :disabled="needsPort"
                                placeholder="نام کاربری حساب هاستینگ"
                                class="form-control @error('username') border-red-400 @enderror">
                         @error('username')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label class="form-label">پورت پنل</label>
-                        <input type="number" name="port" x-bind:value="defaultPort" min="1" max="65535"
+                        <input type="number" name="port" x-bind:value="defaultPort" :disabled="needsPort" min="1" max="65535"
                                class="form-control font-mono @error('port') border-red-400 @enderror">
                         @error('port')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
