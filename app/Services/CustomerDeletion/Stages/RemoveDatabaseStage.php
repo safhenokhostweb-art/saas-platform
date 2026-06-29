@@ -35,7 +35,7 @@ class RemoveDatabaseStage extends AbstractDeleteStage
             }
 
             $dbName = $ctx->dbName;
-            $sql    = "DROP DATABASE IF EXISTS \`{$dbName}\`;";
+            $sql    = "DROP DATABASE IF EXISTS `{$dbName}`;";
 
             $result = $ctx->connection->execute(
                 'mysql -u root -e ' . escapeshellarg($sql) . ' 2>/dev/null; echo $?'
