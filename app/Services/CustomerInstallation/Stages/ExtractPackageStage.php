@@ -61,7 +61,8 @@ class ExtractPackageStage extends AbstractStage
             $steps = [
                 "mkdir -p {$safeWebRoot}",
                 "touch {$safeWebRoot}/.cie_installing",
-                "unzip -q " . escapeshellarg($remotePath) . " -d {$safeWebRoot} 2>&1",
+                // -o: force overwrite without prompting (prevents interactive hang if dir is reused)
+                "unzip -o -q " . escapeshellarg($remotePath) . " -d {$safeWebRoot} 2>&1",
                 "rm -f " . escapeshellarg($remotePath),
                 "chown -R www-data:www-data {$safeWebRoot} 2>/dev/null || true",
                 // Use {} + (batch mode) instead of {} \; to avoid spawning one chmod per file.

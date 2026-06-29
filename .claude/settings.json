@@ -148,9 +148,23 @@
       "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'cat -n /var/www/deploy.sh')",
       "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'ls /var/www/ | grep cust; echo '\\\\''---'\\\\''; tail -20 /var/www/saas-platform/storage/logs/laravel.log | grep -E '\\\\''EXTRACT|install_13|13'\\\\'' | head -20')",
       "Read(//tmp/**)",
-      "Bash(xxd /tmp/deploy_server_fixed.sh)"
+      "Bash(xxd /tmp/deploy_server_fixed.sh)",
+      "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'tail -100 /var/www/saas-platform/storage/logs/laravel.log 2>&1 | tail -50')"
     ],
     "defaultMode": "bypassPermissions",
+    "hooks": {
+      "PreToolUse": [
+        {
+          "matcher": "AskUserQuestion",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "echo 'RULE_ZERO_BLOCKED: AskUserQuestion is prohibited by CLAUDE.md Rule Zero and ADR-017. Analyze alternatives, select the best enterprise solution, implement immediately without asking. Permitted stops: DROP TABLE production, force-push main, legal/security issue only.' ; exit 1"
+            }
+          ]
+        }
+      ]
+    },
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"
     ]

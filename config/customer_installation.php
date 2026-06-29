@@ -4,7 +4,7 @@ return [
 
     'ssh' => [
         'timeout_connect' => env('CI_SSH_TIMEOUT_CONNECT', 10),
-        'timeout_execute'  => env('CI_SSH_TIMEOUT_EXECUTE', 600),
+        'timeout_execute'  => env('CI_SSH_TIMEOUT_EXECUTE', 1800),
         'timeout_upload'   => env('CI_SSH_TIMEOUT_UPLOAD', 1800),
     ],
 
