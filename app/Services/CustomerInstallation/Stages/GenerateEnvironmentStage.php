@@ -58,6 +58,7 @@ class GenerateEnvironmentStage extends AbstractStage
                 "",
                 "PLATFORM_URL={$platformUrl}",
                 "LICENSE_KEY=__LICENSE_KEY__",
+                "LICENSE_VERIFY_SSL=false",
                 "",
                 "SITE_TIMEZONE={$req->timezone}",
                 "SITE_LANGUAGE={$req->language}",

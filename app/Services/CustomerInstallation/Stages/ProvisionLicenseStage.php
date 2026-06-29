@@ -6,7 +6,7 @@ use App\Models\Customer;
 use App\Models\Site;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
-use Illuminate\Support\Str;
+use App\Services\LicenseServerService;
 
 class ProvisionLicenseStage extends AbstractStage
 {
@@ -40,10 +40,18 @@ class ProvisionLicenseStage extends AbstractStage
             // Link installation to site
             $ctx->installation->update(['site_id' => $site->id]);
 
-            $licenseKey = 'CIE-' . strtoupper(Str::random(6)) . '-' . strtoupper(Str::random(6)) . '-' . strtoupper(Str::random(6));
+            // Issue the license via LicenseServerService so that a PlatformLicense record
+            // is created with the correct HMAC-SHA256 hash. Without this record the
+            // customer-site's EnsureLicenseValid middleware gets "invalid_key" from the
+            // license validate API and the admin panel becomes inaccessible.
+            $licenseKey = app(LicenseServerService::class)->issue(
+                $site,
+                $req->domain,
+                null,          // no expiry by default
+                'CIE-INSTALL'  // product SKU for CIE-provisioned installs
+            );
 
-            // Persist license key on the Site record so the platform can validate
-            // license:validate API calls from the customer-site.
+            // Also store the key on the Site record for quick cross-reference.
             $site->update(['license_key' => $licenseKey]);
 
             // Update .env LICENSE_KEY placeholder on the remote server
