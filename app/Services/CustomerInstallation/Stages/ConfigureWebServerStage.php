@@ -22,6 +22,10 @@ class ConfigureWebServerStage extends AbstractStage
             $configPath = "/etc/nginx/sites-available/{$slug}";
             $enablePath = "/etc/nginx/sites-enabled/{$slug}";
 
+            // Detect the actual PHP-FPM socket path on this server.
+            // Hardcoding php8.3-fpm.sock fails on servers with different PHP versions.
+            $phpFpmSocket = $this->detectPhpFpmSocket($ctx);
+
             $arvanCidrs = implode("\n    ", [
                 'set_real_ip_from 185.143.232.0/22;',
                 'set_real_ip_from 185.215.228.0/22;',
@@ -38,8 +42,8 @@ class ConfigureWebServerStage extends AbstractStage
                 'set_real_ip_from 188.0.240.0/21;',
             ]);
 
-            $sslCert    = '/etc/ssl/safhenokhost/safhenokhost.crt';
-            $sslKey     = '/etc/ssl/safhenokhost/safhenokhost.key';
+            $sslCert    = config('customer_installation.nginx.ssl_cert', '/etc/ssl/safhenokhost/safhenokhost.crt');
+            $sslKey     = config('customer_installation.nginx.ssl_key', '/etc/ssl/safhenokhost/safhenokhost.key');
 
             $nginxConfig = <<<NGINX
 # Customer tenant: {$domain}
@@ -58,7 +62,7 @@ server {
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:{$phpFpmSocket};
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
         fastcgi_param HTTPS \$forwarded_https;
         include fastcgi_params;
@@ -95,8 +99,9 @@ server {
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:{$phpFpmSocket};
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        fastcgi_param HTTPS \$https;
         include fastcgi_params;
         fastcgi_read_timeout 300;
     }
@@ -155,5 +160,38 @@ NGINX;
         try {
             $ctx->connection->execute('nginx -s reload 2>&1 || systemctl reload nginx 2>&1');
         } catch (\Throwable) {}
+    }
+
+    private function detectPhpFpmSocket(InstallationContext $ctx): string
+    {
+        // Get the PHP version actually running on the remote server
+        $versionResult = $ctx->connection->execute(
+            "php -r \"echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;\" 2>/dev/null"
+        );
+        $phpVersion = trim($versionResult->stdout);
+
+        if (!preg_match('/^\d+\.\d+$/', $phpVersion)) {
+            $phpVersion = '8.3';
+        }
+
+        // Try both common socket locations for the detected version
+        foreach (["/run/php/php{$phpVersion}-fpm.sock", "/var/run/php/php{$phpVersion}-fpm.sock"] as $candidate) {
+            $check = $ctx->connection->execute("test -S " . escapeshellarg($candidate) . " && echo exists || echo absent");
+            if (str_contains($check->stdout, 'exists')) {
+                return $candidate;
+            }
+        }
+
+        // No socket for detected version — find any available php-fpm socket
+        $findResult = $ctx->connection->execute(
+            "ls /run/php/php*-fpm.sock 2>/dev/null || ls /var/run/php/php*-fpm.sock 2>/dev/null | head -1"
+        );
+        $found = trim($findResult->stdout);
+        if (!empty($found) && str_contains($found, '.sock')) {
+            return strtok($found, "\n");
+        }
+
+        // Last resort: use the configured fallback (PHP 8.3)
+        return config('customer_installation.nginx.fpm_socket_fallback', "/run/php/php{$phpVersion}-fpm.sock");
     }
 }

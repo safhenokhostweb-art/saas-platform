@@ -61,6 +61,7 @@ class Site extends Model implements SiteModelInterface
         'archive_path',
         'restore_requested_at',
         'lifecycle_deleted_at',
+        'license_key',
     ];
 
     protected $casts = [

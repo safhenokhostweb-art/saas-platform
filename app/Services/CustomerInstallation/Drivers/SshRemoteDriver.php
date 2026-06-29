@@ -186,6 +186,19 @@ class SshRemoteDriver implements RemoteConnectionInterface
         $retryDelayMs = (int) config('customer_installation.upload.retry_delay_ms', 2000);
         $fileSize    = filesize($localPath);
 
+        // Optimization: if source file is accessible on the remote server at the same path
+        // (same-server deployment), use shell cp for instant transfer instead of SFTP.
+        // This avoids hairpin NAT / SFTP loopback issues when platform and target are co-located.
+        $fastCopy = $this->execute(
+            'test -f ' . escapeshellarg($localPath) . ' && cp ' . escapeshellarg($localPath) . ' ' . escapeshellarg($remotePath) . ' && echo __ok__'
+        );
+        if (str_contains($fastCopy->stdout, '__ok__')) {
+            if ($progress) {
+                $progress(100, $fileSize, $fileSize);
+            }
+            return;
+        }
+
         $lastException = null;
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {

@@ -42,25 +42,37 @@ class ProvisionLicenseStage extends AbstractStage
 
             $licenseKey = 'CIE-' . strtoupper(Str::random(6)) . '-' . strtoupper(Str::random(6)) . '-' . strtoupper(Str::random(6));
 
-            // Update .env LICENSE_KEY placeholder
-            $webRoot = escapeshellarg($ctx->webRoot());
-            $envPath = $ctx->webRoot() . '/.env';
+            // Persist license key on the Site record so the platform can validate
+            // license:validate API calls from the customer-site.
+            $site->update(['license_key' => $licenseKey]);
+
+            // Update .env LICENSE_KEY placeholder on the remote server
+            $safeWebRoot = escapeshellarg($ctx->webRoot());
+            $envPath     = $ctx->webRoot() . '/.env';
             $ctx->connection->execute(
                 "sed -i 's/__LICENSE_KEY__/" . addslashes($licenseKey) . "/' " . escapeshellarg($envPath)
             );
 
-            $validateResult = $ctx->connection->execute(
-                "cd {$webRoot} && php artisan license:validate 2>&1 || echo 'license-ok'"
+            // Verify the key was written correctly
+            $verifyResult = $ctx->connection->execute(
+                "grep -q '^LICENSE_KEY=CIE-' " . escapeshellarg($envPath) . " && echo ok || echo missing"
             );
 
+            if (str_contains($verifyResult->stdout, 'missing')) {
+                return StageResult::failure(
+                    $this->name(),
+                    'LICENSE_KEY placeholder replacement failed — .env may be malformed',
+                    $this->elapsed()
+                );
+            }
+
             return StageResult::success($this->name(), [
-                'site_id'             => $site->id,
-                'license_key_prefix'  => substr($licenseKey, 0, 8),
-                'domain'              => $req->domain,
-                'license_validate'    => trim($validateResult->stdout),
+                'site_id'            => $site->id,
+                'license_key_prefix' => substr($licenseKey, 0, 8),
+                'domain'             => $req->domain,
+                'license_stored'     => true,
             ], [
-                'site_id'    => $site->id,
-                'license_id' => 0,
+                'site_id' => $site->id,
             ], $this->elapsed());
         });
     }

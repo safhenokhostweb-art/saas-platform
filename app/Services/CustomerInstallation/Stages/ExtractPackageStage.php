@@ -93,6 +93,28 @@ class ExtractPackageStage extends AbstractStage
                 );
             }
 
+            // Detect and flatten single-subdirectory ZIP structure.
+            // Some ZIPs are packaged as: customer-site.zip → customer-site/ → artisan, public/, ...
+            // We need artisan to be directly under $webRoot, not inside a subdirectory.
+            $artisanCheck = $ctx->connection->execute("test -f {$safeWebRoot}/artisan && echo direct || echo indirect");
+            if (str_contains($artisanCheck->stdout, 'indirect')) {
+                $subDirResult = $ctx->connection->execute(
+                    "find {$safeWebRoot} -maxdepth 2 -name artisan -type f 2>/dev/null | head -1"
+                );
+                $artisanPath = trim($subDirResult->stdout);
+                if (!empty($artisanPath)) {
+                    $subDir = escapeshellarg(dirname($artisanPath));
+                    // Move all contents (including hidden files) up to webRoot
+                    $ctx->connection->execute("mv {$subDir}/* {$safeWebRoot}/ 2>/dev/null; mv {$subDir}/.* {$safeWebRoot}/ 2>/dev/null || true");
+                    $ctx->connection->execute("rm -rf {$subDir}");
+                    Log::info("CIE EXTRACT_PACKAGE: Flattened subdirectory {$artisanPath} → {$webRoot}", ['installation_id' => $installId]);
+                }
+            }
+
+            // Final file count after potential flatten
+            $countResult = $ctx->connection->execute("find {$safeWebRoot} -type f 2>/dev/null | wc -l");
+            $fileCount   = (int) trim($countResult->stdout);
+
             Log::info("CIE EXTRACT_PACKAGE: Extracted {$fileCount} files to {$webRoot}", ['installation_id' => $installId]);
 
             return StageResult::success($this->name(), [

@@ -38,8 +38,14 @@ class InstallationContext
 
     public function customerSlug(): string
     {
-        $slug = preg_replace('/[^a-z0-9]/', '_', strtolower($this->request->company));
-        return 'cust_' . substr($slug, 0, 20) . '_' . $this->installation->id;
+        // Strip non-ASCII bytes first so Persian/Arabic company names don't produce
+        // an all-underscore slug. The installation ID suffix guarantees uniqueness.
+        $ascii   = preg_replace('/[^\x20-\x7E]/', '', $this->request->company);
+        $clean   = strtolower(preg_replace('/[^a-z0-9]+/', '_', $ascii));
+        $clean   = trim($clean, '_');
+        $segment = ($clean === '') ? 'site' : substr($clean, 0, 20);
+
+        return 'cust_' . $segment . '_' . $this->installation->id;
     }
 
     public function webRoot(): string

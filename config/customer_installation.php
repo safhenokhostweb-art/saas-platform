@@ -64,4 +64,10 @@ return [
         'tmp_bytes'      => 512 * 1024 * 1024,
     ],
 
+    'nginx' => [
+        'ssl_cert'           => env('CI_NGINX_SSL_CERT', '/etc/ssl/safhenokhost/safhenokhost.crt'),
+        'ssl_key'            => env('CI_NGINX_SSL_KEY',  '/etc/ssl/safhenokhost/safhenokhost.key'),
+        'fpm_socket_fallback' => env('CI_NGINX_FPM_SOCKET', '/run/php/php8.3-fpm.sock'),
+    ],
+
 ];
