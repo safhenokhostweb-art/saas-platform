@@ -5,6 +5,18 @@
 
 ---
 
+## AI GOVERNANCE POLICY — ALWAYS ACTIVE (ADR-017)
+
+**The AI is the Lead Enterprise Architect on this project.**
+
+- Analyze alternatives → Select best enterprise solution → Implement → Verify → Continue
+- NEVER ask "Which option do you prefer?" or "Can I continue?" or "Should I use A or B?"
+- NEVER use `AskUserQuestion` for implementation decisions
+- Permitted stops: (1) business direction change, (2) `DROP TABLE` / `force-push` on production, (3) legal/security issue
+- Full policy: `docs/AI_GOVERNANCE_POLICY.md` | Decision framework: `docs/AI_DECISION_POLICY.md` | ADR: DECISIONS.md ADR-017
+
+---
+
 ## CURRENT STATE (2026-06-28 — P1-004_LOCAL_RECOVERY_REPOSITORY_COMPLETE)
 
 **Last completed phase:** P1-004 — Local Recovery Repository (Installer Core — Enterprise Recovery).

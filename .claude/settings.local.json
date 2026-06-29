@@ -223,7 +223,8 @@
       "Bash(Get-Content \"C:\\\\Users\\\\FARSHA~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--laragon-www-saas-platform\\\\27575e5a-b7e6-46d0-af67-e257c518e081\\\\tasks\\\\b2jc4pyzi.output\" -Wait)",
       "Bash(Select-String -Pattern \"DONE|ERROR|failed|successfully|customer deployed\")",
       "WebFetch(domain:elementorkits-1.nextdin.com)",
-      "Bash(xargs grep -l \"customer_remote_servers\\\\|customer_installation_packages\\\\|customer_installations\\\\|customer_installation_logs\\\\|customer_install_rollbacks\\\\|ssh_keys\\\\|deployment_targets\\\\|dr_simulations\\\\|dr_alert_log\\\\|restore_logs\")"
+      "Bash(xargs grep -l \"customer_remote_servers\\\\|customer_installation_packages\\\\|customer_installations\\\\|customer_installation_logs\\\\|customer_install_rollbacks\\\\|ssh_keys\\\\|deployment_targets\\\\|dr_simulations\\\\|dr_alert_log\\\\|restore_logs\")",
+      "PowerShell($SSH_KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; Test-Path $SSH_KEY)"
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [

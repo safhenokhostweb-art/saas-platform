@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-06-28 — AI_GOVERNANCE_POLICY_RESTORED
+
+**Type:** Governance — AI decision-making policy formalization and synchronization
+
+**Why:** Project owner requested audit of AI governance policy across all project memory files. Policy existed informally in CLAUDE.md (Rule Zero) but was not formally documented, not recorded as an ADR, and not cross-referenced from HANDOVER.md.
+
+**Files created (3):**
+- `docs/AI_GOVERNANCE_POLICY.md` — authoritative governance document: Lead Enterprise Architect model, prohibited behaviors, permitted exceptions, session loading protocol
+- `docs/AI_DECISION_POLICY.md` — decision-making framework: category A/B/C/D decisions, evaluation criteria, anti-patterns, ambiguity handling
+- `docs/AI_MEMORY_AUDIT.md` — audit report: pre-audit findings, gaps identified, actions taken, post-audit verification
+
+**Files updated (3):**
+- `docs/project-memory/DECISIONS.md` — added ADR-017: AI Governance Policy (Lead Enterprise Architect model)
+- `docs/project-memory/HANDOVER.md` — added governance policy banner at top of file (loaded in every session)
+- `docs/project-memory/CHANGELOG_AI.md` — this entry
+
+**Pre-audit status:** Policy PRESENT in CLAUDE.md only. Missing from all dedicated docs and ADR log.
+**Post-audit status:** Policy SYNCHRONIZED across 5 locations. No contradictions. Future sessions load automatically.
+
+**Impact:** No code changes. Documentation and governance only.
+
+---
+
 ## 2026-06-28 — P0_UPLOAD_PACKAGE_TIMEOUT_FIX
 
 **Type:** Critical Bugfix — UPLOAD_PACKAGE production failure: "Timed out waiting for server"

@@ -1,4 +1,4 @@
-@extends('admin.layouts.admin')
+@extends('layouts.admin')
 @section('title', 'خزانه بازیابی محلی')
 
 @section('content')

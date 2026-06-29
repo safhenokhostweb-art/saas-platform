@@ -68,6 +68,7 @@ class GenerateEnvironmentStage extends AbstractStage
                 "",
                 "ADMIN_NAME=\"{$req->ownerName}\"",
                 "ADMIN_EMAIL={$req->email}",
+                "ADMIN_MOBILE={$req->phone}",
                 "ADMIN_PASSWORD={$adminPassword}",
             ];
 
@@ -86,9 +87,11 @@ class GenerateEnvironmentStage extends AbstractStage
             // Store admin credentials in installation metadata for platform admin retrieval
             $ctx->installation->update([
                 'metadata' => [
-                    'admin_email'    => $req->email,
-                    'admin_name'     => $req->ownerName,
-                    'admin_password' => $adminPassword,
+                    'admin_email'             => $req->email,
+                    'admin_mobile'            => $req->phone,
+                    'admin_name'              => $req->ownerName,
+                    'admin_password'          => $adminPassword,
+                    'first_login_required'    => true,
                 ],
             ]);
 

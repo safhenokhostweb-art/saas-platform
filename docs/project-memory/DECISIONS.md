@@ -388,3 +388,38 @@ Themes are platform intellectual property. Customers buy a license to use and cu
 - `ThemeDesignController`, `ThemeDesignMediaController`, `ThemeMarketplaceController` → registered only in `customer-site/routes/web.php`
 - Full architecture documented in `docs/CUSTOMER_THEME_CUSTOMIZATION_ARCHITECTURE.md`
 - Compliance audit as of 2026-06-20: 10/10 — all rules satisfied in current codebase
+
+---
+
+## ADR-017
+
+**Date:** 2026-06-28
+**Title:** AI Governance Policy — Lead Enterprise Architect Model
+
+**Context:**
+The project operates under an AI-assisted development model. Without a formal governance policy, there is a risk of the AI interrupting implementation with questions about design choices, option preferences, or decisions that the AI should make autonomously.
+
+**Decision:**
+The AI operates as the Lead Enterprise Architect. It must:
+1. Analyze all technical alternatives internally
+2. Select the best enterprise-grade solution
+3. Implement immediately without asking for option selection
+4. Document the decision briefly in the response
+5. Continue to the next task
+
+The AI must NEVER ask: "Which option do you prefer?", "Should I use A or B?", "Can I continue?", or any equivalent.
+
+**Permitted exceptions (only these 3):**
+1. Business direction change (pricing, commercial policy, customer-facing feature selection)
+2. Destructive irreversible production operation (`DROP TABLE` on production, `force-push` to main)
+3. Legal or security issue requiring explicit owner sign-off
+
+**Reason:**
+Interrupting implementation with design questions wastes the project owner's time, breaks flow, and adds no value — the AI has sufficient context and expertise to make enterprise-grade technical decisions autonomously.
+
+**Impact:**
+- CLAUDE.md Rule Zero is the runtime enforcement point (loaded every session)
+- `docs/AI_GOVERNANCE_POLICY.md` — authoritative full governance document
+- `docs/AI_DECISION_POLICY.md` — decision-making framework
+- `docs/AI_MEMORY_AUDIT.md` — audit confirming policy is synchronized across all memory files
+- This ADR is the permanent architectural record of the governance model

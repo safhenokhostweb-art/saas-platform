@@ -2,6 +2,7 @@
 
 namespace App\Services\CustomerInstallation\Stages;
 
+use App\Models\Customer;
 use App\Models\Site;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
@@ -19,16 +20,20 @@ class ProvisionLicenseStage extends AbstractStage
         return $this->run($ctx, function (InstallationContext $ctx) {
             $req = $ctx->request;
 
-            // Create or find the Site record
+            // Find or create the Customer by mobile phone
+            $customer = Customer::firstOrCreate(
+                ['mobile' => $req->phone],
+                ['name'   => $req->ownerName]
+            );
+
+            // Create or find the Site record using correct column names
             $site = Site::updateOrCreate(
                 ['domain' => $req->domain],
                 [
-                    'name'         => $req->company,
-                    'owner_email'  => $req->email,
-                    'owner_phone'  => $req->phone,
-                    'is_active'    => true,
-                    'timezone'     => $req->timezone,
-                    'language'     => $req->language,
+                    'customer_id'      => $customer->id,
+                    'title'            => $req->company,
+                    'is_active'        => true,
+                    'lifecycle_status' => Site::LIFECYCLE_ACTIVE,
                 ]
             );
 
