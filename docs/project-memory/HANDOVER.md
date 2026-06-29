@@ -12,7 +12,7 @@
 - Analyze alternatives → Select best enterprise solution → Implement → Verify → Continue
 - NEVER ask "Which option do you prefer?" or "Can I continue?" or "Should I use A or B?"
 - NEVER use `AskUserQuestion` for implementation decisions
-- Permitted stops: (1) business direction change, (2) `DROP TABLE` / `force-push` on production, (3) legal/security issue
+- Permitted stops: (1) business decisions (pricing, commercial plans, licensing policy, contractual decisions), (2) irreversible destructive operations (`DROP DATABASE`, `DROP TABLE`, `force-push` on production, delete production backups, destroy recovery repository, permanent data removal), (3) legal/security decisions (security policy, encryption policy, privacy policy, compliance, certificates, keys)
 - Full policy: `docs/AI_GOVERNANCE_POLICY.md` | Decision framework: `docs/AI_DECISION_POLICY.md` | ADR: DECISIONS.md ADR-017
 
 ---

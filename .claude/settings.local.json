@@ -225,7 +225,8 @@
       "WebFetch(domain:elementorkits-1.nextdin.com)",
       "Bash(xargs grep -l \"customer_remote_servers\\\\|customer_installation_packages\\\\|customer_installations\\\\|customer_installation_logs\\\\|customer_install_rollbacks\\\\|ssh_keys\\\\|deployment_targets\\\\|dr_simulations\\\\|dr_alert_log\\\\|restore_logs\")",
       "PowerShell($SSH_KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; Test-Path $SSH_KEY)",
-      "Bash(ssh -i ~/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 ' *)"
+      "Bash(ssh -i ~/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 ' *)",
+      "PowerShell($s = Get-Content \"c:\\\\laragon\\\\www\\\\saas-platform\\\\.claude\\\\settings.json\" -Raw | ConvertFrom-Json; Write-Host \"defaultMode:\" $s.permissions.defaultMode; Write-Host \"hooks at top level:\" \\($s.hooks -ne $null\\); Write-Host \"hooks inside permissions:\" \\($s.permissions.hooks -ne $null\\))"
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [

@@ -410,9 +410,9 @@ The AI operates as the Lead Enterprise Architect. It must:
 The AI must NEVER ask: "Which option do you prefer?", "Should I use A or B?", "Can I continue?", or any equivalent.
 
 **Permitted exceptions (only these 3):**
-1. Business direction change (pricing, commercial policy, customer-facing feature selection)
-2. Destructive irreversible production operation (`DROP TABLE` on production, `force-push` to main)
-3. Legal or security issue requiring explicit owner sign-off
+1. Business decisions (pricing, commercial plans, licensing policy, customer-facing commercial options, contractual decisions)
+2. Irreversible destructive operations (`DROP DATABASE`, `DROP TABLE` on production, `force-push` to main, delete production backups, destroy recovery repository, permanent data removal)
+3. Legal or security decisions (security policy changes, encryption policy, privacy policy, compliance, certificates, keys)
 
 **Reason:**
 Interrupting implementation with design questions wastes the project owner's time, breaks flow, and adds no value — the AI has sufficient context and expertise to make enterprise-grade technical decisions autonomously.

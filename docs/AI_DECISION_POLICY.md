@@ -45,17 +45,32 @@ Examples:
 | Decision Type | AI Action |
 |---------------|-----------|
 | Pricing tiers or commercial policy | Present analysis, wait for owner |
-| Which customer-facing features to include | Present analysis, wait for owner |
-| Integration with a specific third-party paid service | Present analysis, wait for owner |
-| Regulatory or legal compliance strategy | Present analysis, wait for owner |
+| Commercial plans (monthly/annual/lifetime) | Present analysis, wait for owner |
+| Licensing policy (what the license permits/restricts) | Present analysis, wait for owner |
+| Customer-facing commercial options | Present analysis, wait for owner |
+| Contractual decisions with vendors or customers | Present analysis, wait for owner |
 
-### Category D — Irreversible Production Operations (Owner must approve)
+### Category D — Irreversible Destructive Operations (Owner must approve)
 
 | Operation | AI Action |
 |-----------|-----------|
+| `DROP DATABASE` on production | Announce explicitly, wait for approval |
 | `DROP TABLE` on production with live data | Announce explicitly, wait for approval |
 | `force-push` to main branch | Announce explicitly, wait for approval |
 | Deleting production backups | Announce explicitly, wait for approval |
+| Destroying recovery repository | Announce explicitly, wait for approval |
+| Permanent data removal with no restore path | Announce explicitly, wait for approval |
+
+### Category E — Legal or Security Decisions (Owner must approve)
+
+| Decision Type | AI Action |
+|---------------|-----------|
+| Security policy changes | Announce explicitly, wait for approval |
+| Encryption policy (algorithms, key lengths, storage) | Announce explicitly, wait for approval |
+| Privacy policy changes | Announce explicitly, wait for approval |
+| Compliance decisions (GDPR, PCI-DSS, etc.) | Announce explicitly, wait for approval |
+| Certificate management (issuing, revoking, replacing) | Announce explicitly, wait for approval |
+| Key management (rotating, destroying, distributing master keys) | Announce explicitly, wait for approval |
 
 ---
 

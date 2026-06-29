@@ -152,21 +152,21 @@
       "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'tail -100 /var/www/saas-platform/storage/logs/laravel.log 2>&1 | tail -50')"
     ],
     "defaultMode": "bypassPermissions",
-    "hooks": {
-      "PreToolUse": [
-        {
-          "matcher": "AskUserQuestion",
-          "hooks": [
-            {
-              "type": "command",
-              "command": "echo 'RULE_ZERO_BLOCKED: AskUserQuestion is prohibited by CLAUDE.md Rule Zero and ADR-017. Analyze alternatives, select the best enterprise solution, implement immediately without asking. Permitted stops: DROP TABLE production, force-push main, legal/security issue only.' ; exit 1"
-            }
-          ]
-        }
-      ]
-    },
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'RULE_ZERO_BLOCKED: AskUserQuestion is prohibited (ADR-017). Implement autonomously. Permitted stops ONLY: (1) destructive ops [DROP DATABASE, DROP TABLE, force-push main, delete backups, destroy recovery repo, permanent data removal] (2) business decisions [pricing, commercial plans, licensing policy, contractual] (3) legal/security decisions [security policy, encryption, privacy, compliance, certificates, keys]. Everything else: analyze, choose, implement, continue.' ; exit 1"
+          }
+        ]
+      }
     ]
   }
 }

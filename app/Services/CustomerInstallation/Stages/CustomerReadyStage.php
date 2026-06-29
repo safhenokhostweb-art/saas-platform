@@ -49,6 +49,20 @@ class CustomerReadyStage extends AbstractStage
                 );
             }
 
+            // Create the installer lock file that customer-site's RedirectIfNotInstalled
+            // middleware checks via Installation::isLockPresent(). Without this, every
+            // request redirects to /install wizard even after a full CIE pipeline run.
+            // Lock path mirrors customer-site's Installation::lockPath() = storage/installed.lock
+            try {
+                $webRoot  = $ctx->webRoot();
+                $lockPath = $webRoot . '/storage/installed.lock';
+                $ctx->connection->execute(
+                    'echo ' . escapeshellarg(now()->toIso8601String()) . ' > ' . escapeshellarg($lockPath) .
+                    ' && chown www-data:www-data ' . escapeshellarg($lockPath) .
+                    ' && chmod 644 ' . escapeshellarg($lockPath)
+                );
+            } catch (\Throwable) {}
+
             // Remove the installation-in-progress sentinel file.
             // Until this file is deleted, any web server wildcard config that
             // serves the web root should return 503 (see customer-site middleware).

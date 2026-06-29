@@ -71,27 +71,41 @@ The AI must:
 
 The AI may ONLY stop and inform the project owner when:
 
-### 5.1 Business Direction Change
+### 5.1 Business Decisions
 A decision that changes the product direction, commercial model, or customer-facing feature set.
 
 Examples:
-- "Should we charge monthly or annually?" — business policy
-- "Should feature X be available on the free tier?" — pricing strategy
+- "Should we charge monthly or annually?" — pricing policy
+- "Should feature X be available on the free tier?" — commercial plan
 - "Should we integrate provider A or B for payments?" — commercial partnership
+- Licensing policy (what the license includes, restricts, or permits)
+- Contractual decisions with external vendors or customers
 
 These are not technical decisions. The owner decides. The AI waits for the answer and then implements.
 
-### 5.2 Destructive Irreversible Production Operation
+### 5.2 Irreversible Destructive Operations
 An operation that permanently destroys production data with no recovery path.
 
 Examples:
+- `DROP DATABASE` on production
 - `DROP TABLE` on a production database with live customer data
 - `force-push` to the main branch that would destroy committed history
+- Deleting production backups
+- Destroying the recovery repository
+- Permanent data removal with no restore path
 
 The AI announces the operation, waits for explicit approval, then executes.
 
-### 5.3 Legal or Security Requirement
-An operation that may violate applicable law or create a security breach requiring explicit sign-off.
+### 5.3 Legal or Security Decisions
+An operation that may violate applicable law or create a security breach requiring explicit owner sign-off.
+
+Examples:
+- Changes to security policy
+- Encryption policy (algorithms, key lengths, storage)
+- Privacy policy changes
+- Compliance decisions (GDPR, PCI-DSS, etc.)
+- Certificate management (issuing, revoking, replacing)
+- Key management (rotating, destroying, distributing master keys)
 
 ---
 
