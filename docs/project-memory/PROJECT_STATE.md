@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**PHASE-003G_POST_INSTALL_COMPLETE (2026-06-29). 6 critical post-install bugs fixed. Tenant `tenent.safhenokhost.ir` fully operational: login→ForcePasswordChange→profile (200). Install package v1.0.1 activated. ProvisionLicenseStage uses LicenseServerService::issue() for PlatformLicense HMAC. CustomerReadyStage creates storage/installed.lock. GenerateEnvironmentStage adds LICENSE_VERIFY_SSL=false. CustomerPlatformSeeder seeds license record. EnsureLicenseValid allows admin.profile.* routes. Remaining: restore test + certification docs.**
+**PHASE-003H_ENTERPRISE_DELETE_ENGINE_COMPLETE (2026-06-29). 14-stage reverse pipeline for complete customer deletion. Zero hardcoded values — all paths resolved from CustomerInstallation metadata. Transactional, idempotent, resumable. 4 delete policies. Comprehensive verification (12+ checks). Domain confirmation guard. SSE live progress. Post-deploy: php artisan migrate --force (2 migrations).**
+
+**Previous: PHASE-003G_POST_INSTALL_COMPLETE (2026-06-29). 6 critical post-install bugs fixed. Tenant `tenent.safhenokhost.ir` fully operational: login→ForcePasswordChange→profile (200). Install package v1.0.1 activated. ProvisionLicenseStage uses LicenseServerService::issue() for PlatformLicense HMAC. CustomerReadyStage creates storage/installed.lock. GenerateEnvironmentStage adds LICENSE_VERIFY_SSL=false. CustomerPlatformSeeder seeds license record. EnsureLicenseValid allows admin.profile.* routes. Remaining: restore test + certification docs.**
 
 **Previous: INFRA_WORKER_RECOVERY_COMPLETE (2026-06-29). Production infrastructure stabilized. deploy.sh on server fixed: BOM removed, supervisor group names corrected (saas-install-worker / saas-platform-worker), find syntax fixed. saas-install-worker stuck in STOPPING recovered via pkill+supervisorctl restart. Zombie reserved job for installation_id=13 cleared from Redis. Installation 13 marked failed (can be retried with fixed ExtractPackageStage). All 5 workers RUNNING. Queue [0] OK.**
 

@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-06-29 — PHASE-003H: ENTERPRISE CUSTOMER DELETE ENGINE
+
+**Type:** New Feature — Enterprise Delete Engine (14-stage reverse pipeline)
+
+**Files created (28):**
+- `database/migrations/2026_06_29_400000_create_customer_deletions_table.php`
+- `database/migrations/2026_06_29_400001_create_customer_deletion_logs_table.php`
+- `app/Models/CustomerDeletion.php`
+- `app/Models/CustomerDeletionLog.php`
+- `app/Services/CustomerDeletion/Contracts/DeleteStageInterface.php`
+- `app/Services/CustomerDeletion/Dto/DeletePolicy.php` (enum — 4 cases)
+- `app/Services/CustomerDeletion/Dto/DeleteContext.php` (dynamic resolver)
+- `app/Services/CustomerDeletion/Dto/DeleteStageResult.php`
+- `app/Services/CustomerDeletion/Stages/AbstractDeleteStage.php`
+- `app/Services/CustomerDeletion/Stages/PreDeleteAuditStage.php`
+- `app/Services/CustomerDeletion/Stages/FinalBackupStage.php`
+- `app/Services/CustomerDeletion/Stages/StopServicesStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveQueueStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveSchedulerStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveWebServerStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveStorageStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveFilesStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveDatabaseStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveDatabaseUserStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveLicenseStage.php`
+- `app/Services/CustomerDeletion/Stages/RemovePlatformRecordsStage.php`
+- `app/Services/CustomerDeletion/Stages/RemoveRecoveryMetadataStage.php`
+- `app/Services/CustomerDeletion/Stages/VerifyDeleteStage.php`
+- `app/Services/CustomerDeletion/CustomerDeleteOrchestrator.php`
+- `app/Services/CustomerDeletion/CustomerDeleteStateManager.php`
+- `app/Jobs/CustomerDeletionPipelineJob.php`
+- `app/Http/Controllers/Admin/Infrastructure/CustomerDeleteController.php`
+- `resources/views/admin/infrastructure/customer-deployment/delete-confirm.blade.php`
+- `resources/views/admin/infrastructure/customer-deployment/delete-progress.blade.php`
+- `docs/ENTERPRISE_DELETE_ENGINE.md`
+- `docs/DELETE_PIPELINE.md`
+- `docs/DELETE_CERTIFICATION.md`
+
+**Files modified:**
+- `routes/web.php` — 4 new delete routes added
+- `app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php` — `destroy()` now redirects to engine
+- `resources/views/admin/infrastructure/customer-deployment/show.blade.php` — delete button updated
+
+**Key properties:**
+- 14-stage reverse pipeline (reverse of install pipeline)
+- Zero hardcoded values — all paths resolved from installation metadata
+- Transactional, idempotent, resumable, retry-safe
+- 4 delete policies (never_delete_backup / delete_local_backups / delete_remote_backups / delete_everything)
+- Comprehensive verification (12+ checks, stored report)
+- Domain confirmation guard + SSE live progress
+
+---
+
 ## 2026-06-29 — PHASE-003G: POST-INSTALL FLOW FIXES
 
 **Type:** Critical Production Fixes — Real Installation End-to-End Certification
