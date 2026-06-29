@@ -166,39 +166,12 @@ class CustomerDeploymentController extends Controller
 
     public function destroy(Request $request, CustomerInstallation $installation)
     {
-        if ($installation->isRunning()) {
-            return back()->with('error', 'نمی‌توان نصب در حال اجرا را حذف کرد. ابتدا آن را متوقف کنید.');
-        }
-
-        $domain = $installation->customer_domain;
-
-        // Attempt to clean up remote server (non-fatal if it fails)
-        try {
-            $server = $installation->remoteServer;
-            if ($server) {
-                $connection = app(RemoteConnectionService::class)->buildDriver($server);
-                $connection->connect();
-                $webRoot = '/var/www/cust_' . preg_replace('/[^a-z0-9]/', '_', strtolower($installation->customer_company ?? '')) . '_' . $installation->id;
-                $connection->execute('rm -rf ' . escapeshellarg($webRoot) . ' 2>/dev/null || true');
-                $connection->disconnect();
-            }
-        } catch (\Throwable $e) {
-            Log::warning("CIE destroy: remote cleanup failed for installation #{$installation->id}: {$e->getMessage()}");
-        }
-
-        // Remove platform Site record
-        if ($installation->site_id) {
-            Site::find($installation->site_id)?->delete();
-        }
-
-        // Delete installation records (logs, rollbacks, then the record)
-        $installation->logs()->delete();
-        $installation->rollbacks()->delete();
-        $installation->delete();
-
+        // Redirect to the Enterprise Delete Engine confirmation page.
+        // The old direct-delete path has been replaced by the pipeline-based engine
+        // (PHASE-003H) which is transactional, audited, and verifiable.
         return redirect()
-            ->route('admin.infrastructure.customer-deployment.history')
-            ->with('success', "نصب «{$domain}» کاملاً حذف شد.");
+            ->route('admin.infrastructure.customer-deployment.installations.delete.confirm', $installation)
+            ->with('info', 'لطفاً فرآیند حذف را از طریق موتور حذف سازمانی تأیید کنید.');
     }
 
     public function packages()

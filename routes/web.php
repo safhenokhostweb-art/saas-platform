@@ -834,13 +834,19 @@ Route::prefix('admin')
                 // Release Packages
                 Route::get('/packages', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'packages'])->name('packages');
 
-                // Installation Detail + Rollback + Delete
+                // Installation Detail + Rollback + Delete (legacy quick-delete preserved)
                 Route::get('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'show'])->name('installations.show');
                 Route::post('/installations/{installation}/rollback', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'rollback'])->name('installations.rollback');
                 Route::delete('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'destroy'])->name('installations.destroy');
 
                 // SSE Progress Stream
                 Route::get('/installations/{installation}/progress', [\App\Http\Controllers\Admin\Infrastructure\CustomerInstallationProgressController::class, 'stream'])->name('installations.progress');
+
+                // PHASE-003H — Enterprise Delete Engine
+                Route::get('/installations/{installation}/delete', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'confirm'])->name('installations.delete.confirm');
+                Route::post('/installations/{installation}/delete', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'initiate'])->name('installations.delete.initiate');
+                Route::get('/deletions/{deletion}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'progress'])->name('deletions.progress');
+                Route::get('/deletions/{deletion}/stream', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'stream'])->name('deletions.stream');
 
                 // Remote Server Management
                 Route::prefix('servers')->name('servers.')->group(function () {
