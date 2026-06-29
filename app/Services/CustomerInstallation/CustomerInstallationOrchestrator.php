@@ -23,6 +23,7 @@ use App\Services\CustomerInstallation\Stages\RunSeederStage;
 use App\Services\CustomerInstallation\Stages\ConfigureStorageStage;
 use App\Services\CustomerInstallation\Stages\ConfigureQueueStage;
 use App\Services\CustomerInstallation\Stages\ConfigureSchedulerStage;
+use App\Services\CustomerInstallation\Stages\ConfigureWebServerStage;
 use App\Services\CustomerInstallation\Stages\ProvisionLicenseStage;
 use App\Services\CustomerInstallation\Stages\InitializeBackupStage;
 use App\Services\CustomerInstallation\Stages\ConfigureMonitoringStage;
@@ -146,6 +147,7 @@ class CustomerInstallationOrchestrator
             app(ConfigureStorageStage::class),
             app(ConfigureQueueStage::class),
             app(ConfigureSchedulerStage::class),
+            app(ConfigureWebServerStage::class),
             app(ProvisionLicenseStage::class),
             app(InitializeBackupStage::class),
             app(ConfigureMonitoringStage::class),
