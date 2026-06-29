@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**INFRA_WORKER_RECOVERY_COMPLETE (2026-06-29). Production infrastructure stabilized. deploy.sh on server fixed: BOM removed, supervisor group names corrected (saas-install-worker / saas-platform-worker), find syntax fixed. saas-install-worker stuck in STOPPING recovered via pkill+supervisorctl restart. Zombie reserved job for installation_id=13 cleared from Redis. Installation 13 marked failed (can be retried with fixed ExtractPackageStage). All 5 workers RUNNING. Queue [0] OK.**
+**PHASE-003G_POST_INSTALL_COMPLETE (2026-06-29). 6 critical post-install bugs fixed. Tenant `tenent.safhenokhost.ir` fully operational: login→ForcePasswordChange→profile (200). Install package v1.0.1 activated. ProvisionLicenseStage uses LicenseServerService::issue() for PlatformLicense HMAC. CustomerReadyStage creates storage/installed.lock. GenerateEnvironmentStage adds LICENSE_VERIFY_SSL=false. CustomerPlatformSeeder seeds license record. EnsureLicenseValid allows admin.profile.* routes. Remaining: restore test + certification docs.**
+
+**Previous: INFRA_WORKER_RECOVERY_COMPLETE (2026-06-29). Production infrastructure stabilized. deploy.sh on server fixed: BOM removed, supervisor group names corrected (saas-install-worker / saas-platform-worker), find syntax fixed. saas-install-worker stuck in STOPPING recovered via pkill+supervisorctl restart. Zombie reserved job for installation_id=13 cleared from Redis. Installation 13 marked failed (can be retried with fixed ExtractPackageStage). All 5 workers RUNNING. Queue [0] OK.**
 
 **Previous: CUSTOMER_INSTALLATION_CERTIFIED (2026-06-29). Full 21-stage pipeline audit. 5 bugs fixed: BUG-CIE-001 Persian slug CRITICAL, BUG-CIE-002 PHP-FPM hardcoded socket CRITICAL, BUG-CIE-003 ZIP subdirectory HIGH, BUG-CIE-004 storage:link unverified MEDIUM, BUG-CIE-005 license key not in platform DB HIGH. Migration: add_license_key_to_sites. Certification: docs/CUSTOMER_INSTALLATION_CERTIFICATION.md.**
 

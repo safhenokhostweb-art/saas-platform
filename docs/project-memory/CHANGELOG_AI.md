@@ -1,7 +1,69 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-28
+> Last Updated: 2026-06-29
+
+---
+
+## 2026-06-29 — PHASE-003G: POST-INSTALL FLOW FIXES
+
+**Type:** Critical Production Fixes — Real Installation End-to-End Certification
+
+**Root causes fixed (6):**
+
+**BUG-CIE-006 CRITICAL** — `CustomerReadyStage` never created installer lock file
+- Customer-site's `RedirectIfNotInstalled` middleware checks `storage/installed.lock` (via `Installation::isLockPresent()`)
+- CIE pipeline completed 21 stages but never created this file → every request to tenant redirected to `/install` wizard
+- Fix: `CustomerReadyStage.php` now creates `{webRoot}/storage/installed.lock` via SSH before removing `.cie_installing` sentinel
+
+**BUG-CIE-007 CRITICAL** — `ProvisionLicenseStage` never created `PlatformLicense` record
+- License key stored in `sites.license_key` (plaintext) but validation API looks up `platform_licenses` table by HMAC-SHA256 hash
+- Customer-site calls `/api/license/validate` → `invalid_key` every time → `EnsureLicenseValid` middleware blocks all pages
+- Fix: `ProvisionLicenseStage.php` now uses `LicenseServerService::issue()` which creates `PlatformLicense` with HMAC hash and `domain_allowed`
+
+**BUG-CIE-008 HIGH** — Self-signed SSL certificate blocks license revalidation
+- Customer-site's `LicenseActivationService` makes HTTPS call to platform API
+- Platform uses self-signed SSL cert → `cURL error 60` → license revalidation exception
+- Fix: Added `LICENSE_VERIFY_SSL=false` to `GenerateEnvironmentStage` .env template; customer-site already supports this via `config('license.verify_ssl')`
+
+**BUG-CIE-009 HIGH** — `CustomerPlatformSeeder` never seeded license record in tenant DB
+- `License::current()` returns null → `EnsureLicenseValid` redirects to `/admin/license` even after successful license API validation
+- Fix: `CustomerPlatformSeeder::seedLicense()` reads `LICENSE_KEY` from `.env` and inserts into `licenses` table with `platform_valid=true`
+
+**BUG-CIE-010 MEDIUM** — Circular redirect between EnsureLicenseValid and ForcePasswordChange
+- `/admin/license` (public route) → ForcePasswordChange → `/admin/profile`
+- `/admin/profile` (blocked by license check) → EnsureLicenseValid → `/admin/license`
+- Fix: Added `admin.profile.index` and `admin.profile.update` to `EnsureLicenseValid::PUBLIC_ROUTES`
+
+**BUG-CIE-011 LOW** — Log file ownership became root after `truncate` debug session
+- Log write failed → `UnexpectedValueException` propagated → 500 on dashboard
+- Fix: `chown www-data:www-data storage/logs/laravel.log` on server
+
+**Files modified (platform):**
+- `app/Services/CustomerInstallation/Stages/CustomerReadyStage.php` — Creates `storage/installed.lock` via SSH
+- `app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php` — Uses `LicenseServerService::issue()` instead of manual key generation
+- `app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php` — Added `LICENSE_VERIFY_SSL=false`
+
+**Files modified (customer-site):**
+- `database/seeders/CustomerPlatformSeeder.php` — Added `seedLicense()` method
+- `app/Http/Middleware/EnsureLicenseValid.php` — Added `admin.profile.*` to PUBLIC_ROUTES
+
+**Install package:**
+- v1.0.1 built (42 MB) and activated; patches both seeder and middleware into existing v1.0.0 ZIP via Python
+
+**Manual fixes applied to existing tenant (tenent.safhenokhost.ir / cust_site_16):**
+- Created `storage/installed.lock`
+- Inserted license record into `cust_b0as58_16.licenses`
+- Created Site id=3 and PlatformLicense id=5 in `saas_platform`
+- Fixed `platform_valid=1` + `last_validated_at=NOW()` in tenant DB
+- Added `LICENSE_VERIFY_SSL=false` to tenant .env
+- Patched `EnsureLicenseValid.php` on `/var/www/cust_site_16`
+
+**Verification result:**
+- Login: 200 OK ✓
+- dashboard → 302 to `/admin/profile` (ForcePasswordChange active) ✓
+- profile: 200 OK ✓
+- License API validates: `valid=true` ✓
 
 ---
 

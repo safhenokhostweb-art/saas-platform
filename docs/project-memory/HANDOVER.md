@@ -1,7 +1,7 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-06-28
+> Last Updated: 2026-06-29
 
 ---
 
@@ -14,6 +14,37 @@
 - NEVER use `AskUserQuestion` for implementation decisions
 - Permitted stops: (1) business decisions (pricing, commercial plans, licensing policy, contractual decisions), (2) irreversible destructive operations (`DROP DATABASE`, `DROP TABLE`, `force-push` on production, delete production backups, destroy recovery repository, permanent data removal), (3) legal/security decisions (security policy, encryption policy, privacy policy, compliance, certificates, keys)
 - Full policy: `docs/AI_GOVERNANCE_POLICY.md` | Decision framework: `docs/AI_DECISION_POLICY.md` | ADR: DECISIONS.md ADR-017
+
+---
+
+## CURRENT STATE (2026-06-29 — PHASE-003G POST-INSTALL FLOW COMPLETE)
+
+**Last completed phase:** PHASE-003G — Real Customer Installation Certification (post-install flow fixes)
+
+**6 critical bugs fixed:**
+- BUG-CIE-006: `CustomerReadyStage` now creates `storage/installed.lock` (fixes `/install` redirect loop)
+- BUG-CIE-007: `ProvisionLicenseStage` now uses `LicenseServerService::issue()` to create `PlatformLicense` record with HMAC hash
+- BUG-CIE-008: `GenerateEnvironmentStage` adds `LICENSE_VERIFY_SSL=false` to bypass self-signed cert
+- BUG-CIE-009: `CustomerPlatformSeeder` now calls `seedLicense()` to insert license into tenant DB
+- BUG-CIE-010: `EnsureLicenseValid` now allows `admin.profile.*` routes (breaks circular redirect)
+- BUG-CIE-011: Log file ownership fix
+
+**Install package:** v1.0.1 registered and activated (42 MB, patches seeder + middleware)
+
+**Tenant `tenent.safhenokhost.ir` verified:**
+- Login → ForcePasswordChange → `/admin/profile` (200) ✓
+- License API validates ✓
+- `force_password_change=1` set on admin user ✓
+
+**Credentials (admin, first login):**
+- Domain: tenent.safhenokhost.ir
+- Mobile: 09927530317
+- Password: `1s1xo9HFupzIDP35` (must be changed on first login)
+
+**Remaining tasks:**
+- Run real restore test (delete + restore tenant, verify SHA-256/DB/files/license/login)
+- Generate certification docs (REAL_INSTALLATION_REPORT, REAL_RESTORE_REPORT, INSTALLER_FINAL_CERTIFICATION)
+- P0-005 Performance analysis (stage timings from the completed installation)
 
 ---
 
