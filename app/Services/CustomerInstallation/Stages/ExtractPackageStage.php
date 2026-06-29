@@ -69,6 +69,11 @@ class ExtractPackageStage extends AbstractStage
                 // On 13k+ files the single-at-a-time form exceeds the SSH exec timeout.
                 "find {$safeWebRoot} -type f ! -name '.cie_installing' -exec chmod 644 {} + 2>/dev/null",
                 "find {$safeWebRoot} -type d -exec chmod 755 {} + 2>/dev/null",
+                // Bootstrap/cache and storage dirs are gitignored so not in ZIP.
+                // Create them now so artisan commands work before ConfigureStorageStage runs.
+                "mkdir -p {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage/logs {$safeWebRoot}/storage/framework/cache {$safeWebRoot}/storage/framework/sessions {$safeWebRoot}/storage/framework/views",
+                "chown -R www-data:www-data {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage 2>/dev/null || true",
+                "chmod -R 775 {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage 2>/dev/null || true",
             ];
 
             foreach ($steps as $step) {
