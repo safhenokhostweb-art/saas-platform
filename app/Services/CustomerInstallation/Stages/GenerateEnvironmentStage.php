@@ -42,6 +42,7 @@ class GenerateEnvironmentStage extends AbstractStage
                 "DB_USERNAME=__DB_USER__",
                 "DB_PASSWORD=__DB_PASS__",
                 "",
+                "BROADCAST_DRIVER=log",
                 "CACHE_DRIVER=redis",
                 "SESSION_DRIVER=redis",
                 "QUEUE_CONNECTION=redis",
