@@ -64,8 +64,10 @@ class ExtractPackageStage extends AbstractStage
                 "unzip -q " . escapeshellarg($remotePath) . " -d {$safeWebRoot} 2>&1",
                 "rm -f " . escapeshellarg($remotePath),
                 "chown -R www-data:www-data {$safeWebRoot} 2>/dev/null || true",
-                "find {$safeWebRoot} -type f ! -name '.cie_installing' -exec chmod 644 {} \\; 2>/dev/null",
-                "find {$safeWebRoot} -type d -exec chmod 755 {} \\; 2>/dev/null",
+                // Use {} + (batch mode) instead of {} \; to avoid spawning one chmod per file.
+                // On 13k+ files the single-at-a-time form exceeds the SSH exec timeout.
+                "find {$safeWebRoot} -type f ! -name '.cie_installing' -exec chmod 644 {} + 2>/dev/null",
+                "find {$safeWebRoot} -type d -exec chmod 755 {} + 2>/dev/null",
             ];
 
             foreach ($steps as $step) {

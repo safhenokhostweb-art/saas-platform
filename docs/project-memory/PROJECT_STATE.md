@@ -1,6 +1,6 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-06-27
+> Last Updated: 2026-06-29
 
 ---
 
@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**CUSTOMER_INSTALLATION_CERTIFIED (2026-06-29). Full 21-stage pipeline audit. 5 bugs fixed: BUG-CIE-001 Persian slug CRITICAL, BUG-CIE-002 PHP-FPM hardcoded socket CRITICAL, BUG-CIE-003 ZIP subdirectory HIGH, BUG-CIE-004 storage:link unverified MEDIUM, BUG-CIE-005 license key not in platform DB HIGH. Migration: add_license_key_to_sites. Run `php artisan migrate --force`. Certification: docs/CUSTOMER_INSTALLATION_CERTIFICATION.md.**
+**INFRA_WORKER_RECOVERY_COMPLETE (2026-06-29). Production infrastructure stabilized. deploy.sh on server fixed: BOM removed, supervisor group names corrected (saas-install-worker / saas-platform-worker), find syntax fixed. saas-install-worker stuck in STOPPING recovered via pkill+supervisorctl restart. Zombie reserved job for installation_id=13 cleared from Redis. Installation 13 marked failed (can be retried with fixed ExtractPackageStage). All 5 workers RUNNING. Queue [0] OK.**
+
+**Previous: CUSTOMER_INSTALLATION_CERTIFIED (2026-06-29). Full 21-stage pipeline audit. 5 bugs fixed: BUG-CIE-001 Persian slug CRITICAL, BUG-CIE-002 PHP-FPM hardcoded socket CRITICAL, BUG-CIE-003 ZIP subdirectory HIGH, BUG-CIE-004 storage:link unverified MEDIUM, BUG-CIE-005 license key not in platform DB HIGH. Migration: add_license_key_to_sites. Certification: docs/CUSTOMER_INSTALLATION_CERTIFICATION.md.**
 
 **Previous: P0_UPLOAD_PACKAGE_TIMEOUT_FIX_COMPLETE (2026-06-28). Critical fix for production UPLOAD_PACKAGE failure. Root cause: phpseclib3 SFTP session created with 10s default timeout; timeout_upload=1800 was in config but never applied. 7 root causes fixed: SFTP timeout, put() return value, empty rollback snapshot, duplicate checkpoint records, no upload retry, no partial cleanup, 1-retry rollback job. Added buildPreSnapshot() pattern, upload 5-phase logging, resumable upload/extraction, .cie_installing sentinel, rollback job 3-retry with backoff. Full analysis: docs/UPLOAD_PACKAGE_TIMEOUT_ANALYSIS.md.**
 

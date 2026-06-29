@@ -5,6 +5,43 @@
 
 ---
 
+## 2026-06-29 — DEPLOY_SH_AND_WORKER_RECOVERY
+
+**Type:** Infrastructure Fix — server deploy.sh bugs and stuck worker recovery
+
+**Root causes fixed (3):**
+
+**BUG-DEPLOY-001 CRITICAL** — `/var/www/deploy.sh` on server had BOM on shebang line
+- `﻿#!/bin/bash` (BOM before `#!`) → bash couldn't parse it, printed `No such file or directory` each deploy
+- Fix: rewrote file with no BOM via SCP from local clean heredoc
+
+**BUG-DEPLOY-002 HIGH** — Wrong supervisor group name in deploy.sh
+- `supervisorctl restart "${PROJECT}-worker:*"` → `saas-worker:*` (doesn't exist)
+- Actual groups: `saas-install-worker` and `saas-platform-worker`
+- Fix: restart `saas-platform-worker:*` (short jobs, safe); `saas-install-worker` only started if STOPPED/FATAL/EXITED
+
+**BUG-DEPLOY-003 MEDIUM** — `find -exec chmod 755 {} ;` syntax error
+- Missing backslash: `{} ;` should be `{} \;`
+- `find: missing argument to -exec` printed every deploy
+
+**Worker recovery:**
+- `saas-install-worker` was STOPPING (stuck due to `stopwaitsecs=3600`)
+- Root cause: `CustomerInstallationPipelineJob` for installation_id=13 was looping via `failOnTimeout: false`
+- The `EXTRACT_PACKAGE` stage had timed out every hour (3600s), re-queued (not failed), then restarted
+- Resolution: `pkill -9` the STOPPING process → supervisor auto-restarted clean worker
+- Cleared zombie reserved job from `laravel_database_queues:customer-install:reserved` (1 entry removed)
+- Marked installation_id=13 as `failed` in DB — can be retried with fixed ExtractPackageStage
+
+**Files changed on server (1):**
+- `/var/www/deploy.sh` — BOM removed, supervisor groups corrected, find syntax fixed
+
+**Final state:**
+- All 5 workers RUNNING (customer-site-worker, reverb, saas-install-worker, 2x saas-platform-worker)
+- Queue `[redis] customer-install` → `[0] OK`
+- 0 reserved jobs, 0 pending jobs
+
+---
+
 ## 2026-06-29 — CUSTOMER_INSTALLATION_CERTIFICATION
 
 **Type:** Audit + Bug Fix — 21-stage pipeline full certification

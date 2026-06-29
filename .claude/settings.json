@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Read",
       "Write",
@@ -142,8 +141,16 @@
       "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; Set-Location \"c:\\\\laragon\\\\www\\\\customer-site\"; & $PHP \"vendor\\\\phpunit\\\\phpunit\\\\phpunit\" --filter \"Module\" 2>&1 | Select-Object -Last 10)",
       "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; & $PHP \"c:\\\\laragon\\\\www\\\\customer-site\\\\vendor\\\\phpunit\\\\phpunit\\\\phpunit\" --filter \"ShopModuleFeatureTest|EarlyAccessGating\" --no-coverage 2>&1 | Select-Object -Last 8)",
       "PowerShell($PHP = \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.4.16-nts-Win32-vs17-x64\\\\php.exe\"; $COMPOSER = \"C:\\\\laragon\\\\bin\\\\composer\\\\composer.phar\"; & $PHP $COMPOSER install --working-dir=\"c:\\\\laragon\\\\www\\\\customer-site\" --no-interaction --quiet 2>&1 | Select-Object -Last 5)",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('extra',{}\\).get\\('laravel',{}\\), indent=2\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('extra',{}\\).get\\('laravel',{}\\), indent=2\\)\\)\")",
+      "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 ' *)",
+      "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no -o ConnectTimeout=30 root@87.107.12.81 'echo '\\\\''CONNECTED'\\\\''')",
+      "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no -o ConnectTimeout=15 root@87.107.12.81 'supervisorctl status')",
+      "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'cat -n /var/www/deploy.sh')",
+      "Bash(ssh -i 'C:\\\\Users\\\\Farshad-IT/.ssh/deploy_saas' -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 'ls /var/www/ | grep cust; echo '\\\\''---'\\\\''; tail -20 /var/www/saas-platform/storage/logs/laravel.log | grep -E '\\\\''EXTRACT|install_13|13'\\\\'' | head -20')",
+      "Read(//tmp/**)",
+      "Bash(xxd /tmp/deploy_server_fixed.sh)"
     ],
+    "defaultMode": "bypassPermissions",
     "additionalDirectories": [
       "c:\\laragon\\www\\saas-platform"
     ]

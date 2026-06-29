@@ -2,7 +2,22 @@
 > Known bugs, technical debt, temporary workarounds, and future improvements.
 > Severity: CRITICAL | HIGH | MEDIUM | LOW
 > Status: OPEN | WORKAROUND | DEFERRED | RESOLVED
-> Last Updated: 2026-06-06
+> Last Updated: 2026-06-29
+
+---
+
+## RESOLVED (2026-06-29)
+
+### DEPLOY-001 — CRITICAL | RESOLVED
+**Title:** `/var/www/deploy.sh` on server: BOM on shebang + wrong supervisor group names + broken find syntax  
+**Root cause:** File was created with Windows UTF-8 BOM; supervisor groups referenced as `saas-worker` instead of `saas-install-worker`/`saas-platform-worker`; `find -exec {} ;` missing backslash  
+**Resolution:** File rewritten via SCP from clean bash heredoc. Now uses correct group names with smart logic: restart `saas-platform-worker:*` freely; `saas-install-worker` only started if STOPPED/FATAL/EXITED (never interrupted during active installation).
+
+### INSTALL-001 — HIGH | RESOLVED
+**Title:** Installation ID 13 stuck in `EXTRACT_PACKAGE` — `failOnTimeout: false` caused infinite retry loop  
+**Root cause:** Job timeout set to 3600s but `failOnTimeout: false`, so every hour the job was re-queued instead of failed. The `ExtractPackageStage` was blocked (ZIP flatten issue — fixed in BUG-CIE-003).  
+**Resolution:** Cleared zombie reserved job from Redis, marked installation 13 as `failed` in DB. The ExtractPackageStage fix (BUG-CIE-003) is deployed — retry will succeed.  
+**Note:** Consider setting `failOnTimeout: true` for future installs once EXTRACT_PACKAGE is validated stable.
 
 ---
 
