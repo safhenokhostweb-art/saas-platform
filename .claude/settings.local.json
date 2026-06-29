@@ -224,7 +224,8 @@
       "Bash(Select-String -Pattern \"DONE|ERROR|failed|successfully|customer deployed\")",
       "WebFetch(domain:elementorkits-1.nextdin.com)",
       "Bash(xargs grep -l \"customer_remote_servers\\\\|customer_installation_packages\\\\|customer_installations\\\\|customer_installation_logs\\\\|customer_install_rollbacks\\\\|ssh_keys\\\\|deployment_targets\\\\|dr_simulations\\\\|dr_alert_log\\\\|restore_logs\")",
-      "PowerShell($SSH_KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; Test-Path $SSH_KEY)"
+      "PowerShell($SSH_KEY = \"$env:USERPROFILE\\\\.ssh\\\\deploy_saas\"; Test-Path $SSH_KEY)",
+      "Bash(ssh -i ~/.ssh/deploy_saas -p 9011 -o StrictHostKeyChecking=no root@87.107.12.81 ' *)"
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [

@@ -17,6 +17,37 @@
 
 ---
 
+## CURRENT STATE (2026-06-29 — CUSTOMER_INSTALLATION_CERTIFIED)
+
+**Last completed phase:** Real Customer Installation Certification & Optimization — 5 critical bugs fixed across the 21-stage pipeline.
+
+**Bugs fixed:**
+- BUG-CIE-001 CRITICAL — Persian company name → all-underscore web root slug → `InstallationContext::customerSlug()` now strips non-ASCII before cleaning
+- BUG-CIE-002 CRITICAL — PHP-FPM socket hardcoded `php8.3-fpm.sock` → `ConfigureWebServerStage` now detects actual PHP version and socket path dynamically
+- BUG-CIE-003 HIGH — ZIP subdirectory not flattened → `ExtractPackageStage` now detects and flattens single top-level dirs containing `artisan`
+- BUG-CIE-004 MEDIUM — `storage:link` result never verified → `ConfigureStorageStage` now checks symlink exists, attempts manual fallback, returns failure if both fail
+- BUG-CIE-005 HIGH — License key never stored in platform DB → migration `2026_06_29_100000_add_license_key_to_sites.php` adds `license_key` to `sites` table; `ProvisionLicenseStage` now saves key and verifies `.env` replacement
+
+**New files:**
+- `database/migrations/2026_06_29_100000_add_license_key_to_sites.php`
+- `docs/CUSTOMER_INSTALLATION_CERTIFICATION.md` — full 21-stage audit + certification
+
+**Modified files:**
+- `app/Services/CustomerInstallation/Dto/InstallationContext.php`
+- `app/Services/CustomerInstallation/Stages/ConfigureWebServerStage.php`
+- `app/Services/CustomerInstallation/Stages/ExtractPackageStage.php`
+- `app/Services/CustomerInstallation/Stages/ConfigureStorageStage.php`
+- `app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php`
+- `app/Models/Site.php` (`license_key` added to `$fillable`)
+- `config/customer_installation.php` (nginx config keys added)
+
+**Post-deploy required:**
+- `php artisan migrate --force` (adds `license_key` column to sites table)
+
+**Certification:** `docs/CUSTOMER_INSTALLATION_CERTIFICATION.md` — CUSTOMER_INSTALLATION_ENGINE_CERTIFIED
+
+---
+
 ## CURRENT STATE (2026-06-28 — P1-004_LOCAL_RECOVERY_REPOSITORY_COMPLETE)
 
 **Last completed phase:** P1-004 — Local Recovery Repository (Installer Core — Enterprise Recovery).

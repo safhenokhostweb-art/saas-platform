@@ -5,6 +5,53 @@
 
 ---
 
+## 2026-06-29 — CUSTOMER_INSTALLATION_CERTIFICATION
+
+**Type:** Audit + Bug Fix — 21-stage pipeline full certification
+
+**Bugs fixed (5):**
+
+**BUG-CIE-001 CRITICAL** — `app/Services/CustomerInstallation/Dto/InstallationContext.php`
+- `customerSlug()`: Persian company names (`شرکت ایران`) produced all-underscore slugs like `cust_____________________1`
+- Fix: strip non-ASCII bytes first; fallback to `'site'` if nothing remains
+- Result: `cust_site_42` for Persian names, `cust_safhenokhost_ltd_42` for Latin names
+
+**BUG-CIE-002 CRITICAL** — `app/Services/CustomerInstallation/Stages/ConfigureWebServerStage.php`
+- PHP-FPM socket was hardcoded to `php8.3-fpm.sock` — breaks on PHP 8.1/8.2 servers
+- Fix: added `detectPhpFpmSocket()` — detects version via `php -r`, checks both `/run/php/` and `/var/run/php/`, falls back to any available socket
+- Also: SSL cert/key moved to config keys (`CI_NGINX_SSL_CERT`, `CI_NGINX_SSL_KEY`)
+- Also: added missing `fastcgi_param HTTPS $https` to HTTPS server block
+
+**BUG-CIE-003 HIGH** — `app/Services/CustomerInstallation/Stages/ExtractPackageStage.php`
+- ZIPs packaged as `zip -r customer-site.zip customer-site/` extract into subdirectory
+- `artisan` ends up at `{webRoot}/customer-site/artisan` instead of `{webRoot}/artisan`
+- Fix: after extraction, check for `artisan` at web root; if indirect, find and flatten
+
+**BUG-CIE-004 MEDIUM** — `app/Services/CustomerInstallation/Stages/ConfigureStorageStage.php`
+- `storage:link` result was never verified — silent failure meant PostInstallValidation's storage check failed with no clear diagnosis
+- Fix: verify symlink after artisan; attempt manual `ln -sf` fallback; return failure if both fail
+
+**BUG-CIE-005 HIGH** — `app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php`
+- License key written to `.env` but never stored in platform DB → `license:validate` always fails on customer-site (hidden by `|| echo 'license-ok'`)
+- Fix: migration adds `license_key` to `sites` table; stage saves key before writing to `.env`; verification confirms placeholder replaced
+
+**Files created (2):**
+- `database/migrations/2026_06_29_100000_add_license_key_to_sites.php`
+- `docs/CUSTOMER_INSTALLATION_CERTIFICATION.md`
+
+**Files modified (7):**
+- `app/Services/CustomerInstallation/Dto/InstallationContext.php`
+- `app/Services/CustomerInstallation/Stages/ConfigureWebServerStage.php`
+- `app/Services/CustomerInstallation/Stages/ExtractPackageStage.php`
+- `app/Services/CustomerInstallation/Stages/ConfigureStorageStage.php`
+- `app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php`
+- `app/Models/Site.php`
+- `config/customer_installation.php`
+
+**Impact:** Pipeline now works correctly for Persian company names, any PHP version, any ZIP structure, with verified storage and real license key management.
+
+---
+
 ## 2026-06-28 — AI_GOVERNANCE_POLICY_RESTORED
 
 **Type:** Governance — AI decision-making policy formalization and synchronization
