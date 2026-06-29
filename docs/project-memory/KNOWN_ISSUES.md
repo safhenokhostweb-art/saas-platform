@@ -45,6 +45,21 @@
 
 ## ACTIVE BUGS
 
+### CDE-001 — MEDIUM | RESOLVED (2026-06-30)
+**Title:** REMOVE_DATABASE stage fails with "Unknown command '\`'" in MySQL  
+**Root cause:** `"DROP DATABASE IF EXISTS \`{$dbName}\`;"` — PHP `\`` is a literal backslash+backtick (not an escape). MySQL received `\`` and rejected it.  
+**Resolution:** Removed backslash — plain backtick `"DROP DATABASE IF EXISTS `{$dbName}`;"` works correctly in PHP double-quoted strings.
+
+### CDE-002 — MEDIUM | RESOLVED (2026-06-30)
+**Title:** REMOVE_PLATFORM_RECORDS fails with SQLSTATE Data truncated for column 'status'  
+**Root cause:** `customer_installations.status` ENUM did not include `'deleted'`. The stage tried to set `status = 'deleted'`.  
+**Resolution:** Migration `2026_06_30_400002` adds `'deleted'` to the ENUM.
+
+### CDE-003 — HIGH | RESOLVED (2026-06-30, pre-deploy)
+**Title:** 500 on confirm page — `Route [admin.customer-deployment.deletions.progress] not defined`  
+**Root cause:** Route cache was stale (routes registered after cache was last built, before 23:54 deploy).  
+**Resolution:** Resolved by the 23:54 deploy which ran `php artisan route:cache` with the new routes in place.
+
 ### SELECT-DROPDOWN-001 — HIGH | RESOLVED (2026-06-27)
 
 **Title:** Native `<select>` dropdown options invisible on desktop (Windows dark OS mode)  

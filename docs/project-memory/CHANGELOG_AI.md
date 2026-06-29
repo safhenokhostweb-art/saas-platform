@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-06-30 — PHASE-003H: DELETE ENGINE BUG FIXES (post-deploy)
+
+**Type:** Bug Fix — 3 production bugs found in logs after first deploy
+
+**Root causes fixed:**
+1. `RemoveDatabaseStage.php` — `"DROP DATABASE IF EXISTS \`{$dbName}\`;"` — PHP `\`` is literal backslash+backtick; MySQL rejected with "Unknown command '\`'". Fixed: removed backslash, plain backtick now used.
+2. `customer_installations.status` ENUM — `'deleted'` not in enum caused SQLSTATE[01000] Data truncated. Fixed: migration `2026_06_30_400002_add_deleted_status_to_customer_installations.php` adds `'deleted'` to ENUM.
+3. `Route [admin.customer-deployment.deletions.progress] not defined` — route cache was stale pre-23:54 deploy. Fixed by previous deploy — no code change needed.
+
+**Files changed (2):**
+- `app/Services/CustomerDeletion/Stages/RemoveDatabaseStage.php` — backtick escaping fix
+- `database/migrations/2026_06_30_400002_add_deleted_status_to_customer_installations.php` — new migration
+
+**Deployed:** 2026-06-30 00:24 — migration DONE (43ms)
+
+---
+
 ## 2026-06-29 — PHASE-003H: ENTERPRISE CUSTOMER DELETE ENGINE
 
 **Type:** New Feature — Enterprise Delete Engine (14-stage reverse pipeline)

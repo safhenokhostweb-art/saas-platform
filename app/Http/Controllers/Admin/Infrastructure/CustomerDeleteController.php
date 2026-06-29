@@ -30,7 +30,7 @@ class CustomerDeleteController extends Controller
 
         if ($existing) {
             return redirect()
-                ->route('admin.customer-deployment.deletions.progress', $existing)
+                ->route('admin.infrastructure.customer-deployment.deletions.progress', $existing)
                 ->with('info', 'یک فرآیند حذف برای این نصب وجود دارد.');
         }
 
@@ -76,7 +76,7 @@ class CustomerDeleteController extends Controller
             ->onQueue('customer-install');
 
         return redirect()
-            ->route('admin.customer-deployment.deletions.progress', $deletion)
+            ->route('admin.infrastructure.customer-deployment.deletions.progress', $deletion)
             ->with('success', 'فرآیند حذف مشتری آغاز شد.');
     }
 
