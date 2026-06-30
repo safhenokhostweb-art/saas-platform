@@ -5,6 +5,42 @@
 
 ---
 
+## 2026-06-30 — PHASE-003I: ARVAN DNS API INTEGRATION
+
+**Type:** Feature — Enterprise DNS Provider integration with customer installation pipeline
+
+**What was built:**
+1. `database/migrations/2026_06_30_300000_create_dns_provider_settings_table.php` — table: provider, root_domain, api_token_encrypted, cloud_proxy, default_ttl, health_status
+2. `app/Models/Infrastructure/DnsProviderSetting.php` — model with `setToken()` / `getDecryptedToken()` via CredentialVault, `isReady()`, `active()` scope
+3. `app/Contracts/DnsProviderInterface.php` — interface: createARecord, updateARecord, deleteRecord, findARecord, waitForPropagation, healthCheck
+4. `app/Services/Dns/ArvanDnsProvider.php` — full Arvan Cloud DNS API implementation via Laravel HTTP client; propagation via Google DoH (8.8.8.8 fallback); idempotent delete (404 = success)
+5. `app/Services/CustomerInstallation/Stages/ConfigureDnsStage.php` — pipeline stage (position 16, before ConfigureWebServerStage); auto-detects server IP via SSH; skips gracefully if provider unconfigured or domain is not under platform root; full rollback deletes DNS record by record_id
+6. `app/Http/Controllers/Admin/Infrastructure/DnsProviderController.php` — index/save/healthCheck/listRecords
+7. `resources/views/admin/infrastructure/dns-provider/index.blade.php` — admin UI with token input (masked), health check AJAX, records list AJAX
+
+**Modified files:**
+- `app/Services/CustomerInstallation/CustomerInstallationOrchestrator.php` — ConfigureDnsStage inserted before ConfigureWebServerStage (22-stage pipeline)
+- `app/Services/CustomerInstallation/CredentialVault.php` — rotate() now covers DnsProviderSetting.api_token_encrypted
+- `config/customer_installation.php` — added `dns` section (skip_propagation, propagation_max_wait_sec, propagation_poll_sec)
+- `app/Helpers/AdminMenu.php` — dns_provider key added to MENU_KEYS/MENU_ROUTES/MENU_ROUTE_PATTERNS/getGroups()
+- `routes/web.php` — 4 routes under `/admin/infrastructure/dns-provider/`
+- `resources/views/admin/partials/sidebar-icon.blade.php` — globe icon for dns_provider
+
+**Security invariants:**
+- Token NEVER stored plain text — always CredentialVault AES-256-GCM
+- Token NEVER in .env or code
+- Token covered by master key rotation
+
+**Pipeline behavior:**
+- CONFIGURE_DNS stage (stage 16) runs BEFORE CONFIGURE_WEB_SERVER
+- If DNS provider not configured → SKIP (installation continues)
+- If domain not under platform root → SKIP (custom domain scenario)
+- On success: creates A record, waits propagation (max 5 min, configurable)
+- On failure: rollback deletes the DNS record by record_id
+- All stage logs go to customer_installation_logs via InstallationStateManager (automatic)
+
+---
+
 ## 2026-06-30 — RESTORE WORKER AUTO-START/STOP
 
 **Type:** Feature — Restore wizard auto-manages saas-restore-worker lifecycle

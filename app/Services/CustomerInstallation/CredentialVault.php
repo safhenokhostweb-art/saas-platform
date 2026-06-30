@@ -115,6 +115,15 @@ class CredentialVault
             }
         });
 
+        // Rotate DNS provider token
+        \App\Models\Infrastructure\DnsProviderSetting::all()->each(function (\App\Models\Infrastructure\DnsProviderSetting $dns) use ($newVault, &$rotated) {
+            if (!empty($dns->api_token_encrypted)) {
+                $plain = $this->decrypt($dns->api_token_encrypted);
+                $dns->updateQuietly(['api_token_encrypted' => $newVault->encrypt($plain)]);
+                $rotated++;
+            }
+        });
+
         // Rotate all SshKey encrypted fields
         \App\Models\SshKey::all()->each(function (\App\Models\SshKey $key) use ($newVault, &$rotated) {
             $updates = [];

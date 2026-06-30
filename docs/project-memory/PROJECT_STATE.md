@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**PHASE-003H_POST_DEPLOY_FIXES_COMPLETE (2026-06-30). Restore wizard end-to-end verified. MobilePatchRegistryAdapter log spam fixed. RestoreWizardController stream() return type fixed (StreamedResponse not Response). Stale restore queue/lock cleared. `E:\Backup-Platform` stray dir removed from public/. DR score "لاگ بازیابی" now OK. All workers running. Platform stable.**
+**PHASE-003I_ARVAN_DNS_INTEGRATION_COMPLETE (2026-06-30). Full Arvan DNS API integration. DnsProviderSetting (AES-256-GCM token storage), ArvanDnsProvider service (create/update/delete A records, propagation via Google DoH, health check), ConfigureDnsStage (pipeline stage 16, before ConfigureWebServerStage, with rollback), admin panel at /admin/infrastructure/dns-provider/, CredentialVault.rotate() covers DNS token. Post-deploy: php artisan migrate --force. Then: admin → زیرساخت/DevOps → DNS Provider آروان → وارد کردن توکن.**
+
+**Previous: PHASE-003H_POST_DEPLOY_FIXES_COMPLETE (2026-06-30). Restore wizard end-to-end verified. MobilePatchRegistryAdapter log spam fixed. RestoreWizardController stream() return type fixed (StreamedResponse not Response). Stale restore queue/lock cleared. `E:\Backup-Platform` stray dir removed from public/. DR score "لاگ بازیابی" now OK. All workers running. Platform stable.**
 
 **Previous: PHASE-003H_ENTERPRISE_DELETE_ENGINE_COMPLETE (2026-06-29). 14-stage reverse pipeline for complete customer deletion. Zero hardcoded values — all paths resolved from CustomerInstallation metadata. Transactional, idempotent, resumable. 4 delete policies. Comprehensive verification (12+ checks). Domain confirmation guard. SSE live progress. Post-deploy: php artisan migrate --force (2 migrations).**
 

@@ -17,6 +17,48 @@
 
 ---
 
+## CURRENT STATE (2026-06-30 — PHASE-003I: ARVAN DNS API INTEGRATION COMPLETE)
+
+**Last session work:** Full Arvan DNS API integration into Customer Installation Pipeline.
+
+### DNS Integration — COMPLETE ✅
+- `dns_provider_settings` table: provider, root_domain, api_token_encrypted (AES-256-GCM), cloud_proxy, default_ttl, health_status
+- `DnsProviderSetting` model — `setToken()` / `getDecryptedToken()` via CredentialVault; `isReady()` / `active()` scope
+- `ArvanDnsProvider` service — all 6 DNS operations + Google DoH propagation check + native fallback
+- `ConfigureDnsStage` — pipeline position 16 (before CONFIGURE_WEB_SERVER):
+  - Auto-detects server IP via SSH (`curl ipify.org` → `ifconfig.me` → `hostname -I`)
+  - Skips gracefully if provider unconfigured OR domain not under platform root
+  - Rollback deletes DNS record by record_id from snapshot
+  - Propagation wait: configurable max 300s, poll every 15s, via Google DoH
+- Admin panel: `/admin/infrastructure/dns-provider/` → token input (masked), health check AJAX, records list AJAX
+- `CredentialVault.rotate()` now covers `DnsProviderSetting.api_token_encrypted`
+
+### Post-Deploy Required:
+```
+php artisan migrate --force
+```
+Then: پنل ادمین → زیرساخت/DevOps → DNS Provider آروان → وارد کردن توکن → فعال‌سازی
+
+### New files (7):
+- `database/migrations/2026_06_30_300000_create_dns_provider_settings_table.php`
+- `app/Models/Infrastructure/DnsProviderSetting.php`
+- `app/Contracts/DnsProviderInterface.php`
+- `app/Services/Dns/ArvanDnsProvider.php`
+- `app/Services/CustomerInstallation/Stages/ConfigureDnsStage.php`
+- `app/Http/Controllers/Admin/Infrastructure/DnsProviderController.php`
+- `resources/views/admin/infrastructure/dns-provider/index.blade.php`
+
+### Modified files (7):
+- `app/Services/CustomerInstallation/CustomerInstallationOrchestrator.php` (22 stages now)
+- `app/Services/CustomerInstallation/CredentialVault.php` (rotate covers DNS)
+- `config/customer_installation.php` (dns section added)
+- `app/Helpers/AdminMenu.php` (dns_provider key)
+- `routes/web.php` (4 DNS provider routes)
+- `resources/views/admin/partials/sidebar-icon.blade.php` (globe icon)
+- `docs/project-memory/*` (this update)
+
+---
+
 ## CURRENT STATE (2026-06-30 — PHASE-003H POST-DEPLOY FIXES COMPLETE)
 
 **Last session work:** Restore wizard end-to-end verified + infrastructure bug fixes.
