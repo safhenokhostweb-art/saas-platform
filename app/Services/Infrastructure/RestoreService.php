@@ -423,11 +423,14 @@ class RestoreService
             $this->push($token, $events, 52, 'دیتابیس پاک‌سازی و ایجاد مجدد شد');
 
             // Step 6: Restore database from backup
+            // MYSQL_PWD must be set for mysql (right side of pipe), not just gunzip.
+            // Wrap in bash -c so the env var is exported to both sides of the pipeline.
             $this->push($token, $events, 55, 'بازیابی دیتابیس از بکاپ...');
-            exec(
-                "{$envPwd}gunzip -c " . escapeshellarg($localPath) . " | mysql {$connFlags} " . escapeshellarg($database) . ' 2>&1',
-                $o, $c
-            );
+            $restoreCmd = "bash -c " . escapeshellarg(
+                "{$envPwd}gunzip -c " . escapeshellarg($localPath) .
+                " | {$envPwd}mysql {$connFlags} " . escapeshellarg($database)
+            ) . ' 2>&1';
+            exec($restoreCmd, $o, $c);
             if ($c !== 0) {
                 throw new \RuntimeException("بازیابی دیتابیس ناموفق: " . implode(' ', $o));
             }
