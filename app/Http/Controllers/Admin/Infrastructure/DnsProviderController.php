@@ -36,9 +36,11 @@ class DnsProviderController extends Controller
         $setting->default_ttl  = (int) ($request->input('default_ttl') ?: 120);
         $setting->is_active    = (bool) $request->input('is_active', false);
 
-        // Only update token if a new value was provided
+        // Only update token if a new value was provided; strip any accidental "apikey " prefix
         if ($request->filled('api_token')) {
-            $setting->setToken(trim($request->input('api_token')));
+            $raw = trim($request->input('api_token'));
+            $raw = ltrim(preg_replace('/^apikey\s+/i', '', $raw));
+            $setting->setToken($raw);
         }
 
         $setting->save();
