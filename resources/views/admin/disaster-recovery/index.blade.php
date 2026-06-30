@@ -209,13 +209,34 @@
                 </div>
             </template>
 
-            <template x-if="!loadingBackups && backups.length === 0">
+            <template x-if="!loadingBackups && browseError">
+                <div class="rounded-xl bg-red-50 border border-red-200 p-5 space-y-3">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                        </svg>
+                        <div class="flex-1">
+                            <p class="font-medium text-red-800">خطا در دریافت لیست بکاپ‌ها</p>
+                            <p class="text-sm text-red-700 mt-1 font-mono break-all" x-text="browseError"></p>
+                        </div>
+                    </div>
+                    <button x-on:click="loadBackups()" type="button"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition">
+                        تلاش مجدد
+                    </button>
+                </div>
+            </template>
+
+            <template x-if="!loadingBackups && !browseError && backups.length === 0">
                 <div class="text-center py-10">
                     <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                     </svg>
                     <p class="text-gray-500">هیچ فایل بکاپی در این مسیر یافت نشد</p>
                     <p class="text-sm text-gray-400 mt-1">مطمئن شوید که دستور <code class="font-mono">php artisan db:backup</code> اجرا شده است</p>
+                    <button x-on:click="loadBackups()" type="button" class="mt-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition">
+                        بارگذاری مجدد
+                    </button>
                 </div>
             </template>
 
@@ -686,6 +707,7 @@ function restoreWizard() {
         siteSearch: '',
         backups: [],
         backupPrefix: '',
+        browseError: null,
         loadingBackups: false,
         validating: false,
         validationResult: null,
@@ -736,6 +758,7 @@ function restoreWizard() {
         async loadBackups() {
             this.loadingBackups = true;
             this.backups = [];
+            this.browseError = null;
             this.goToStep(3);
 
             try {
@@ -743,12 +766,38 @@ function restoreWizard() {
                 if (this.form.site_id) params.append('site_id', this.form.site_id);
 
                 const res = await fetch(`{{ route('admin.disaster-recovery.browse') }}?${params}`, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                 });
-                const data = await res.json();
+
+                const rawText = await res.text();
+
+                if (!res.ok) {
+                    this.browseError = `خطای سرور ${res.status}: ${rawText.substring(0, 300)}`;
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (jsonErr) {
+                    this.browseError = `پاسخ سرور JSON نیست (${res.status}). شروع پاسخ: ${rawText.substring(0, 200)}`;
+                    return;
+                }
+
+                if (data.error) {
+                    this.browseError = data.error;
+                    return;
+                }
+
                 this.backups = data.files || [];
                 this.backupPrefix = data.prefix || '';
+
+                if (this.backups.length === 0) {
+                    this.browseError = null;
+                }
             } catch (e) {
+                this.browseError = `خطای شبکه: ${e.message}`;
                 console.error('Browse failed:', e);
             } finally {
                 this.loadingBackups = false;
@@ -894,6 +943,7 @@ function restoreWizard() {
             this.currentStep = 1;
             this.form = { type: null, site_id: null, backup_file: null, confirmed: false, merge_strategy: 'merge' };
             this.backups = [];
+            this.browseError = null;
             this.validationResult = null;
             this.dryRunResult = null;
             this.progressEvents = [];
