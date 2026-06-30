@@ -24,6 +24,7 @@ class MobilePatchRegistryAdapter
             $platformPatches = $this->platformRegistry->all();
             $existing        = $this->mobileCoordinator->getAvailablePatches();
 
+            $seeded = 0;
             foreach ($platformPatches as $id => $patch) {
                 if (isset($existing[$id])) {
                     continue;
@@ -36,11 +37,15 @@ class MobilePatchRegistryAdapter
                     'applies_to_versions'  => [],    // applies to all versions
                     'source'               => 'platform_registry',
                 ]);
+                $seeded++;
             }
 
-            Log::debug('mobile.security.patch_registry_seeded', [
-                'platform_count' => count($platformPatches),
-            ]);
+            if ($seeded > 0) {
+                Log::debug('mobile.security.patch_registry_seeded', [
+                    'platform_count' => count($platformPatches),
+                    'seeded'         => $seeded,
+                ]);
+            }
         } catch (\Throwable) {
             // Cache backend unavailable — skip boot-time seeding
         }
