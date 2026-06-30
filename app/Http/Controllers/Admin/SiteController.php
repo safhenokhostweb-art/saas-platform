@@ -259,17 +259,35 @@ class SiteController extends Controller
     }
 
     /**
-     * حذف سایت
+     * حذف سرتاسری سایت — تمام رکوردهای مرتبط پاک می‌شوند، فقط لاگ باقی می‌ماند.
      */
     public function destroy(Site $site)
     {
-        $title = $site->title;
-        $id = $site->id;
-        $site->delete();
-        ActivityLogger::log('site.deleted', 'حذف سایت: ' . $title, null, ['deleted_id' => $id]);
+        $title      = $site->title;
+        $id         = $site->id;
+        $domain     = $site->domain;
+        $customerId = $site->customer_id;
+
+        // لاگ قبل از حذف ثبت می‌شود تا در صورت خطا هم ردپا باقی بماند
+        ActivityLogger::log('site.deleted', "حذف سرتاسری سایت: {$title}", null, [
+            'deleted_site_id' => $id,
+            'domain'          => $domain,
+            'customer_id'     => $customerId,
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            // customer_installations فاقد FK به sites است — باید دستی مدیریت شود
+            // وضعیت 'deleted' بجای حذف فیزیکی → audit trail باقی می‌ماند
+            \App\Models\CustomerInstallation::where('site_id', $id)
+                ->whereNotIn('status', ['deleted'])
+                ->update(['status' => 'deleted', 'completed_at' => now()]);
+
+            // حذف سایت — FK cascadeOnDelete بقیه جداول را خودکار پاک می‌کند
+            \App\Models\Site::find($id)?->delete();
+        });
 
         return redirect()->route('admin.sites.index')
-            ->with('success', 'سایت حذف شد');
+            ->with('success', "سایت «{$title}» و تمام داده‌های مرتبط حذف شد.");
     }
 
     /**

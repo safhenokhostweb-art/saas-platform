@@ -69,6 +69,12 @@
                     <td class='p-3'>
                         <a href="{{ route('admin.sites.edit', $site) }}" class='text-blue-600 hover:underline text-xs'>ویرایش</a>
                         <a href="{{ route('admin.sites.license.create', $site) }}" class='text-indigo-600 hover:underline text-xs mr-2'>صدور لایسنس</a>
+                        <button
+                            type="button"
+                            onclick="confirmDeleteSite({{ $site->id }}, '{{ addslashes($site->title) }}')"
+                            class='text-red-600 hover:underline text-xs mr-2'>
+                            حذف
+                        </button>
                     </td>
                 </tr>
                 @empty
@@ -79,4 +85,59 @@
     </div>
 </div>
 @include('admin.sites.guide')
+
+{{-- Modal تأیید حذف سرتاسری --}}
+<div id="deleteSiteModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50" dir="rtl">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-900">حذف سرتاسری سایت</h3>
+                <p class="text-xs text-gray-500">این عملیات قابل بازگشت نیست</p>
+            </div>
+        </div>
+        <p class="text-sm text-gray-700 mb-2">
+            آیا مطمئن هستید که می‌خواهید سایت <strong id="deleteSiteName" class="text-red-700"></strong> را حذف کنید؟
+        </p>
+        <ul class="text-xs text-gray-500 mb-5 space-y-1 border border-gray-100 rounded-lg p-3 bg-gray-50">
+            <li>• تمام ماژول‌ها، تنظیمات، لایسنس‌ها و اعلان‌های سایت حذف می‌شوند</li>
+            <li>• نصب‌های مرتبط به وضعیت «حذف‌شده» تغییر می‌کنند (لاگ باقی می‌ماند)</li>
+            <li>• فقط لاگ فعالیت برای ردپای حسابرسی باقی می‌ماند</li>
+        </ul>
+        <div class="flex gap-3 justify-end">
+            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+                انصراف
+            </button>
+            <form id="deleteSiteForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">
+                    بله، حذف کن
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDeleteSite(id, name) {
+    document.getElementById('deleteSiteName').textContent = name;
+    document.getElementById('deleteSiteForm').action = '/admin/sites/' + id;
+    var modal = document.getElementById('deleteSiteModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeDeleteModal() {
+    var modal = document.getElementById('deleteSiteModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('deleteSiteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+</script>
 @endsection
