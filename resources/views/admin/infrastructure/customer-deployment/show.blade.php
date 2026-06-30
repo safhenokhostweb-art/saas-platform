@@ -82,12 +82,25 @@
                     </button>
                 </form>
             @endif
-            @if(!$installation->isRunning())
+            @if(!$installation->isRunning() && $installation->isComplete())
                 <a href="{{ route('admin.infrastructure.customer-deployment.installations.delete.confirm', $installation) }}"
                    style="display:inline-flex;align-items:center;gap:.4rem;background:#ef4444;color:#fff;border:none;border-radius:.5rem;padding:.45rem 1rem;font-size:.85rem;font-weight:600;text-decoration:none">
                     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     حذف مشتری
                 </a>
+            @endif
+            @if(in_array($installation->status, ['rolled_back', 'failed', 'rollback_failed']))
+                <form method="POST"
+                      action="{{ route('admin.infrastructure.customer-deployment.installations.force-destroy', $installation) }}"
+                      onsubmit="return confirm('⚠️ حذف دستی\n\nاین عملیات تمام رکوردهای دیتابیس این نصب را به‌صورت مستقیم حذف می‌کند (بدون اتصال SSH).\n\nاگر هنوز منابع روی سرور باقی مانده‌اند، باید دستی آن‌ها را پاک کنید.\n\nادامه می‌دهید؟')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            style="display:inline-flex;align-items:center;gap:.4rem;background:#6b7280;color:#fff;border:none;border-radius:.5rem;padding:.45rem 1rem;font-size:.85rem;font-weight:600;cursor:pointer">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        حذف دستی
+                    </button>
+                </form>
             @endif
         </div>
     </div>

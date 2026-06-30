@@ -93,9 +93,9 @@ class RestoreAdapter
     public function verifyBackup(string $source, string $path): array
     {
         return match($source) {
-            'local', 'release', 'recovery_repository' => $this->verifyLocalFile($path),
-            'arvan'                                    => $this->verifyArvanFile($path),
-            default                                    => ['valid' => false, 'message' => "منبع نامعتبر: {$source}"],
+            'local', 'release', 'recovery_repository', 'local_pc' => $this->verifyLocalFile($path),
+            'arvan'                                                => $this->verifyArvanFile($path),
+            default                                                => ['valid' => false, 'message' => "منبع نامعتبر: {$source}"],
         };
     }
 

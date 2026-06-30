@@ -838,6 +838,7 @@ Route::prefix('admin')
                 Route::get('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'show'])->name('installations.show');
                 Route::post('/installations/{installation}/rollback', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'rollback'])->name('installations.rollback');
                 Route::delete('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'destroy'])->name('installations.destroy');
+                Route::delete('/installations/{installation}/force', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'forceDestroy'])->name('installations.force-destroy');
 
                 // SSE Progress Stream
                 Route::get('/installations/{installation}/progress', [\App\Http\Controllers\Admin\Infrastructure\CustomerInstallationProgressController::class, 'stream'])->name('installations.progress');
@@ -1001,6 +1002,8 @@ Route::prefix('admin')
             Route::post('/verify-all', [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'verifyAll'])->name('verify-all');
             Route::post('/verify/{log}',  [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'verify'])->name('verify');
             Route::delete('/{log}',    [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'destroy'])->name('destroy');
+            Route::get('/download/platform', [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'downloadPlatformPackage'])->name('download.platform');
+            Route::get('/download/full',     [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'downloadFullPackage'])->name('download.full');
         });
 
         /*

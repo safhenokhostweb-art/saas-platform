@@ -14,7 +14,7 @@
         <div class="check-row">
             <span class="check-icon">📂</span>
             <span class="check-label">منبع</span>
-            <span class="check-message">{{ ['local' => 'دیسک محلی', 'arvan' => 'Arvan', 'release' => 'Release Package'][$sourceData['source']] ?? $sourceData['source'] }}</span>
+            <span class="check-message">{{ ['local' => 'دیسک محلی', 'arvan' => 'Arvan', 'release' => 'Release Package', 'recovery_repository' => 'خزانه بازیابی محلی', 'local_pc' => 'Local PC (آپلود مستقل)'][$sourceData['source']] ?? $sourceData['source'] }}</span>
         </div>
         <div class="check-row">
             <span class="check-icon">📄</span>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin\Infrastructure;
 use App\Http\Controllers\Controller;
 use App\Jobs\CustomerInstallationPipelineJob;
 use App\Jobs\CustomerInstallationRollbackJob;
+use App\Models\Customer;
+use App\Models\CustomerDeletion;
 use App\Models\CustomerInstallation;
 use App\Models\CustomerInstallationPackage;
 use App\Models\CustomerRemoteServer;
@@ -13,6 +15,7 @@ use App\Services\CustomerInstallation\CustomerInstallationRollbackService;
 use App\Services\CustomerInstallation\RemoteConnectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CustomerDeploymentController extends Controller
@@ -191,6 +194,57 @@ class CustomerDeploymentController extends Controller
         return redirect()
             ->route('admin.infrastructure.customer-deployment.installations.delete.confirm', $installation)
             ->with('info', 'لطفاً فرآیند حذف را از طریق موتور حذف سازمانی تأیید کنید.');
+    }
+
+    /**
+     * Manual / force delete — bypasses the Enterprise Delete Engine (SSH pipeline).
+     *
+     * Scoped to installations that never reached a live, fully-provisioned customer
+     * (rolled_back / failed / rollback_failed). These installs either have no remote
+     * resources left to clean up (rollback already did that) or the remote resources
+     * were never fully created, so the SSH-based pipeline has nothing valid to act on
+     * and gets stuck. This purges the platform-side DB records directly.
+     */
+    public function forceDestroy(CustomerInstallation $installation)
+    {
+        if (!in_array($installation->status, ['rolled_back', 'failed', 'rollback_failed'])) {
+            return back()->with('error', 'حذف دستی فقط برای نصب‌های ناموفق یا بازگشت‌خورده مجاز است.');
+        }
+
+        DB::transaction(function () use ($installation) {
+            $siteId = $installation->site_id;
+
+            if ($siteId) {
+                $site = Site::find($siteId);
+                if ($site) {
+                    $customerId = $site->customer_id;
+                    $site->delete();
+
+                    if ($customerId && Site::where('customer_id', $customerId)->count() === 0) {
+                        Customer::find($customerId)?->delete();
+                    }
+                }
+            }
+
+            foreach (CustomerDeletion::where('installation_id', $installation->id)->get() as $deletion) {
+                $deletion->logs()->delete();
+                $deletion->delete();
+            }
+
+            $installation->rollbacks()->delete();
+            $installation->logs()->delete();
+            $installation->delete();
+        });
+
+        Log::warning('CDE: Installation force-deleted manually (bypassed SSH pipeline)', [
+            'installation_id' => $installation->id,
+            'domain'          => $installation->customer_domain,
+            'by_user'         => Auth::id(),
+        ]);
+
+        return redirect()
+            ->route('admin.infrastructure.customer-deployment.history')
+            ->with('success', "نصب «{$installation->customer_domain}» به‌صورت دستی حذف شد.");
     }
 
     public function packages()

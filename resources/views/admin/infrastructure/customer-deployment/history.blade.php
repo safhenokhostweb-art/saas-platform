@@ -108,8 +108,23 @@
                             —
                         @endif
                     </td>
-                    <td class="px-4 py-3">
+                    <td class="px-4 py-3 flex items-center gap-3">
                         <a href="{{ route('admin.infrastructure.customer-deployment.installations.show', $inst) }}" class="text-indigo-600 hover:underline text-xs font-medium">جزئیات</a>
+                        @if(in_array($inst->status, ['rolled_back', 'failed', 'rollback_failed']))
+                        <form method="POST"
+                              action="{{ route('admin.infrastructure.customer-deployment.installations.force-destroy', $inst) }}"
+                              onsubmit="return confirm('حذف دستی «{{ $inst->customer_domain }}»\n\nرکوردهای دیتابیس بدون اتصال SSH حذف می‌شوند.\nادامه می‌دهید؟')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" title="حذف دستی"
+                                    style="display:inline-flex;align-items:center;padding:.2rem .5rem;background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db;border-radius:.4rem;font-size:.72rem;font-weight:600;cursor:pointer;gap:.3rem"
+                                    onmouseover="this.style.background='#fee2e2';this.style.color='#991b1b';this.style.borderColor='#fca5a5'"
+                                    onmouseout="this.style.background='#f3f4f6';this.style.color='#6b7280';this.style.borderColor='#d1d5db'">
+                                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                حذف
+                            </button>
+                        </form>
+                        @endif
                     </td>
                 </tr>
                 @endforeach

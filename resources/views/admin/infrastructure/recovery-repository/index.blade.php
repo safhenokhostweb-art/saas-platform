@@ -183,6 +183,37 @@
         </form>
     </div>
 
+    {{-- ─── LEVEL 3: Download to Local PC ───────────────────────────────────── --}}
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+            <x-core-ui::icon name="download" class="w-5 h-5 text-slate-500" />
+            <h2 class="font-semibold text-slate-800">دانلود به کامپیوتر محلی (LEVEL 3)</h2>
+        </div>
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-slate-500">
+                یک بسته ZIP کاملاً مستقل و قابل‌حمل بسازید و مستقیماً روی کامپیوتر خودتان دانلود کنید —
+                این بسته به هیچ مسیر یا سرور خاصی وابسته نیست و می‌تواند روی هر VPS یا هاست دیگری بازیابی شود.
+            </p>
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('admin.infrastructure.recovery-repository.download.platform') }}"
+                    class="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition">
+                    <x-core-ui::icon name="server" class="w-4 h-4" />
+                    دانلود بسته پلتفرم
+                </a>
+                <a href="{{ route('admin.infrastructure.recovery-repository.download.full') }}"
+                    onclick="return confirm('ساخت بسته کامل (پلتفرم + تمام مشتریان) ممکن است چند دقیقه طول بکشد. ادامه می‌دهید؟')"
+                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                    <x-core-ui::icon name="archive" class="w-4 h-4" />
+                    دانلود بسته کامل (پلتفرم + مشتریان)
+                </a>
+            </div>
+            <p class="text-xs text-slate-400">
+                بسته شامل: دیتابیس پلتفرم، اطلاعات سایت‌ها، manifest با تأیید SHA-256، و در حالت کامل، دیتابیس تمام مشتریان.
+                هیچ IP، مسیر یا شناسه سروری داخل بسته ذخیره نمی‌شود.
+            </p>
+        </div>
+    </div>
+
     {{-- ─── Path Validation Result (current status) ─────────────────────────── --}}
     @if(!$status['is_configured'])
         <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">

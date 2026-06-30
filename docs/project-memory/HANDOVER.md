@@ -17,11 +17,11 @@
 
 ---
 
-## CURRENT STATE (2026-06-30 — PHASE-003I: ARVAN DNS API INTEGRATION COMPLETE)
+## CURRENT STATE (2026-06-30 — PHASE-003I: ARVAN DNS API INTEGRATION CERTIFIED ✅)
 
-**Last session work:** Full Arvan DNS API integration into Customer Installation Pipeline.
+**Last session work:** Full Arvan DNS API integration into Customer Installation Pipeline — now live, token configured, end-to-end verified in production.
 
-### DNS Integration — COMPLETE ✅
+### DNS Integration — CERTIFIED LIVE ✅
 - `dns_provider_settings` table: provider, root_domain, api_token_encrypted (AES-256-GCM), cloud_proxy, default_ttl, health_status
 - `DnsProviderSetting` model — `setToken()` / `getDecryptedToken()` via CredentialVault; `isReady()` / `active()` scope
 - `ArvanDnsProvider` service — all 6 DNS operations + Google DoH propagation check + native fallback
@@ -32,12 +32,17 @@
   - Propagation wait: configurable max 300s, poll every 15s, via Google DoH
 - Admin panel: `/admin/infrastructure/dns-provider/` → token input (masked), health check AJAX, records list AJAX
 - `CredentialVault.rotate()` now covers `DnsProviderSetting.api_token_encrypted`
+- **Production config:** `root_domain=safhenokhost.ir`, `is_active=true`, token stored encrypted (Arvan machine-user `safhenokhost`)
 
-### Post-Deploy Required:
-```
-php artisan migrate --force
-```
-Then: پنل ادمین → زیرساخت/DevOps → DNS Provider آروان → وارد کردن توکن → فعال‌سازی
+### Post-deploy bugs found + fixed (2026-06-30):
+1. View used `@extends('admin.layouts.app')` (doesn't exist) → 500 on page load. Fixed to `@extends('layouts.admin')`.
+2. Stored token had a stray `apikey ` prefix (user pasted the full `Authorization` header value, not just the token) → Arvan API returned 401. Fixed token in DB + `DnsProviderController::save()` now auto-strips a leading `apikey ` (case-insensitive).
+
+### End-to-end verification (production, 2026-06-30):
+- Health check: `ok=true`, domain recognized
+- Listed existing records: 5 found (panel, @, tenent, 2×NS)
+- Live write test: created throwaway A record `dns-write-test.safhenokhost.ir`→1.2.3.4, then deleted it — confirms the Arvan machine-user token has full CREATE/DELETE permission (its IAM policy label "بیننده‌ی گزارش‌های دامنه" sounds read-only but grants write in practice — verified empirically, don't trust the label alone)
+- **No further action needed** — system is ready for real customer installations to auto-provision DNS via the pipeline.
 
 ### New files (7):
 - `database/migrations/2026_06_30_300000_create_dns_provider_settings_table.php`

@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Infrastructure\LocalRecoveryLog;
 use App\Models\Site;
 use App\Services\Installer\EnvironmentWriter;
+use App\Services\Installer\LocalPcPackageBuilder;
 use App\Services\Installer\LocalRecoveryRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecoveryRepositoryController extends Controller
 {
     public function __construct(
         private LocalRecoveryRepository $repo,
         private EnvironmentWriter       $envWriter,
+        private LocalPcPackageBuilder   $pcBuilder,
     ) {}
 
     // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -123,6 +126,47 @@ class RecoveryRepositoryController extends Controller
             'passed'  => $passed,
             'failed'  => $failed,
             'results' => $results,
+        ]);
+    }
+
+    // ─── LEVEL 3: Download to Local PC ───────────────────────────────────────
+
+    public function downloadPlatformPackage(): StreamedResponse
+    {
+        $result = $this->pcBuilder->buildPlatformPackage();
+
+        if (!$result['success']) {
+            abort(500, $result['message']);
+        }
+
+        return $this->streamZipDownload($result['zip_path'], $result['filename']);
+    }
+
+    public function downloadFullPackage(): StreamedResponse
+    {
+        $result = $this->pcBuilder->buildFullPackage();
+
+        if (!$result['success']) {
+            abort(500, $result['message']);
+        }
+
+        return $this->streamZipDownload($result['zip_path'], $result['filename']);
+    }
+
+    private function streamZipDownload(string $zipPath, string $filename): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($zipPath) {
+            $handle = fopen($zipPath, 'rb');
+            while (!feof($handle)) {
+                echo fread($handle, 8 * 1024 * 1024); // 8MB chunks
+                flush();
+            }
+            fclose($handle);
+            @unlink($zipPath);
+        }, $filename, [
+            'Content-Type'        => 'application/zip',
+            'Content-Length'      => filesize($zipPath),
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 

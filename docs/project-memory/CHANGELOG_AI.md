@@ -39,6 +39,14 @@
 - On failure: rollback deletes the DNS record by record_id
 - All stage logs go to customer_installation_logs via InstallationStateManager (automatic)
 
+**2026-06-30 post-deploy verification (production):**
+- Token received from user, stored via SSH script using `DnsProviderSetting::setToken()` (CredentialVault AES-256-GCM) — never logged plain, never hardcoded in repo
+- BUG FOUND: `dns-provider/index.blade.php` used `@extends('admin.layouts.app')` (does not exist) → 500 on page load. Fixed to `@extends('layouts.admin')` (matches all other admin/infrastructure views). Deployed `381ebf4`.
+- BUG FOUND: stored token accidentally included `apikey ` prefix (user pasted the full `Authorization` scheme string, not just the token) → Arvan API rejected with HTTP 401 (header became `Apikey apikey <uuid>`). Fixed token in DB directly (stripped prefix) and hardened `DnsProviderController::save()` to auto-strip a leading `apikey ` (case-insensitive) from any token the admin pastes in future. Deployed `d6e2cc2`.
+- Health check confirmed `ok=true`, domain recognized (`Domain count: 1`) once token was corrected.
+- End-to-end write test executed directly via `ArvanDnsProvider`: created throwaway A record `dns-write-test.safhenokhost.ir` → 1.2.3.4, then deleted it — confirms the machine-user API token (Arvan IAM policy "بیننده‌ی گزارش‌های دامنه و ۴ مورد دیگر") has sufficient CREATE/DELETE permission despite the "viewer" sounding policy name. Listing records also confirmed (5 existing records returned: panel, @, tenent, 2×NS).
+- **PHASE-003I is now fully certified end-to-end in production.**
+
 ---
 
 ## 2026-06-30 — RESTORE WORKER AUTO-START/STOP

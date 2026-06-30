@@ -10,6 +10,7 @@ use App\Services\Installer\RestoreAdapter;
 use App\Services\Installer\UpgradeAdapter;
 use App\Services\Installer\HealthCheckRunner;
 use App\Services\Installer\InstallationReportService;
+use App\Services\Installer\LocalPcPackageBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
@@ -24,6 +25,7 @@ class PlatformInstallerController extends Controller
         private UpgradeAdapter            $upgrade,
         private HealthCheckRunner         $health,
         private InstallationReportService $report,
+        private LocalPcPackageBuilder     $pcBuilder,
     ) {}
 
     // ─── Entry Point ─────────────────────────────────────────────────────────
@@ -349,9 +351,36 @@ class PlatformInstallerController extends Controller
     private function processRestoreSourceSelect(Request $request)
     {
         $request->validate([
-            'source'    => 'required|in:local,arvan,release,recovery_repository',
-            'file_path' => 'required|string',
+            'source'    => 'required|in:local,arvan,release,recovery_repository,local_pc',
+            'file_path' => 'required_unless:source,local_pc|nullable|string',
+            'pc_zip'    => 'required_if:source,local_pc|nullable|file|mimes:zip|max:5242880', // 5GB
         ]);
+
+        if ($request->source === 'local_pc') {
+            $upload = $request->file('pc_zip');
+
+            $uploadDir = storage_path('app/pc-restore-uploads');
+            @mkdir($uploadDir, 0750, true);
+
+            $uploadPath = $uploadDir . '/' . uniqid('pc_upload_', true) . '.zip';
+            $upload->move($uploadDir, basename($uploadPath));
+
+            $result = $this->pcBuilder->extractAndVerify($uploadPath);
+            @unlink($uploadPath); // raw zip no longer needed once extracted
+
+            if (!$result['valid']) {
+                return back()->withErrors(['source' => 'بسته Local PC نامعتبر است: ' . $result['message']]);
+            }
+
+            $this->installer->saveStepData('source_select', [
+                'source' => 'local_pc',
+                'path'   => $result['db_path'],
+                'extract_dir' => $result['extract_dir'],
+            ]);
+            $this->installer->markStepCompleted('source_select');
+
+            return redirect()->route('installer.step', ['mode' => 'restore', 'step' => 'verify']);
+        }
 
         $this->installer->saveStepData('source_select', [
             'source' => $request->source,
