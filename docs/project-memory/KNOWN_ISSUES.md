@@ -45,6 +45,20 @@
 
 ## ACTIVE BUGS
 
+### RESTORE-001 — MEDIUM | OPEN
+**Title:** After platform database restore, `php artisan migrate --force` required  
+**Module:** Disaster Recovery — Restore Wizard  
+**Detail:** The Arvan backup (`db_backup_2026-06-30_020004.sql.gz`) is from an older platform version. Restoring it produces a working DB but missing recent schema columns. After any platform restore, run `php artisan migrate --force` on the server to apply pending migrations.  
+**Impact:** Platform continues to function after restore, but missing columns cause errors on specific features until migrations run.  
+**Action:** Document in restore wizard completion screen. Consider adding auto-migrate step after successful platform restore.
+
+### RESTORE-002 — LOW | OPEN
+**Title:** `saas-restore-worker` must be manually started/stopped per restore operation  
+**Module:** Disaster Recovery — Restore Wizard  
+**Detail:** `saas-restore-worker` supervisor config uses `autostart=false` to avoid accidental restore job processing. Operator must run `supervisorctl start saas-restore-worker:` before triggering a restore, then `supervisorctl stop saas-restore-worker:` after.  
+**Impact:** If operator forgets to start the worker, the restore job sits in queue indefinitely (stuck at 0%).  
+**Workaround:** The SSE progress screen polls every 2s; if no progress after 30s, check worker status.
+
 ### CDE-001 — MEDIUM | RESOLVED (2026-06-30)
 **Title:** REMOVE_DATABASE stage fails with "Unknown command '\`'" in MySQL  
 **Root cause:** `"DROP DATABASE IF EXISTS \`{$dbName}\`;"` — PHP `\`` is a literal backslash+backtick (not an escape). MySQL received `\`` and rejected it.  

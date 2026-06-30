@@ -9,7 +9,7 @@ use App\Models\Infrastructure\RestoreLog;
 use App\Models\Site;
 use App\Services\Infrastructure\RestoreService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
@@ -236,7 +236,7 @@ class RestoreWizardController extends Controller
 
     // ─── SSE: Stream Progress ─────────────────────────────────────────────────
 
-    public function stream(Request $request): Response
+    public function stream(Request $request): StreamedResponse
     {
         $token = $request->query('token', '');
 

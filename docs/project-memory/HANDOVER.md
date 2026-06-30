@@ -17,6 +17,39 @@
 
 ---
 
+## CURRENT STATE (2026-06-30 — PHASE-003H POST-DEPLOY FIXES COMPLETE)
+
+**Last session work:** Restore wizard end-to-end verified + infrastructure bug fixes.
+
+### Restore Wizard — CONFIRMED WORKING ✅
+- The platform database restore via wizard **succeeded** at 17:04:30 on 2026-06-30 (38-second run, worker log shows DONE)
+- The MYSQL_PWD `bash -c` pipeline fix IS on the server and worked correctly
+- Earlier "DB wiped" confusion: gzip/mysql pipeline errors at 16:09 and 16:24 were from BEFORE the bash-c fix deploy; the 17:03 run succeeded
+- Pre-restore snapshots correctly created in `/tmp/pre-restore-platform-*.sql.gz`; database recovered from these when needed
+- restore_log id=11: status set to `success`, completed_at=2026-06-30 20:40:53
+- DR score "لاگ بازیابی" component is now OK (10/10)
+
+### Infrastructure Changes (on server)
+- **`/etc/supervisor/conf.d/saas-restore-worker.conf`** created — `autostart=false`, must be manually started per restore, listens on `restore` queue only
+- **`/etc/nginx/sites-available/catch-all-ssl`** + **`000-catch-all-http`** — unknown domains return 444 (tenent.safhenokhost.ir now blocked)
+- **`RECOVERY_LOCAL_PATH=`** in `.env` cleared (was `E:\Backup-Platform` — Windows path)
+
+### Bugs Fixed (this session)
+- **`MobilePatchRegistryAdapter`** log spam fixed: `mobile.security.patch_registry_seeded` was logged on every HTTP request even when no patches were seeded. Now only logs when `$seeded > 0`. Deployed 2026-06-30.
+- **Installation id=15** (`tenent.safhenokhost.ir`) completely deleted from `customer_deletion_logs`, `customer_deletions`, `customer_installations` in correct FK order.
+
+### Arvan Backup Schema Note
+The Arvan backup `db_backup_2026-06-30_020004.sql.gz` is from an older platform version (missing some `restore_logs` columns added later). After restore, run `php artisan migrate --force` to bring schema up to date.
+
+### Queue / Worker State
+- `saas-restore-worker`: STOPPED (correct — autostart=false, only started per restore session)
+- `saas-platform-worker`: 2 processes RUNNING
+- `saas-install-worker`: RUNNING
+- Redis queues: all empty (0 pending restore or default jobs)
+- Redis restore lock: cleared
+
+---
+
 ## CURRENT STATE (2026-06-29 — PHASE-003H: ENTERPRISE DELETE ENGINE COMPLETE)
 
 **Last completed phase:** PHASE-003H — Enterprise Customer Delete Engine

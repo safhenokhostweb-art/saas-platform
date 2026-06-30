@@ -5,6 +5,63 @@
 
 ---
 
+## 2026-06-30 — MOBILE PATCH REGISTRY LOG SPAM FIX
+
+**Type:** Bug Fix — Eliminate per-request DEBUG log noise
+
+**Problem:** `MobilePatchRegistryAdapter::seedMobileRegistry()` called `Log::debug('mobile.security.patch_registry_seeded')` on every HTTP request, even when no new patches were seeded (registry already populated). Logged ~60/minute, filling laravel.log.
+
+**Root cause:** Debug log was unconditional — executed after the `foreach` loop regardless of whether any new patches were registered. On every request the coordinator already had all patches, so the loop skipped them all, but the log still fired.
+
+**Fix:** Track `$seeded` counter in the foreach loop. Only call `Log::debug()` when `$seeded > 0`.
+
+**Files changed (1):**
+- `packages/saas-platform/core-utils/src/MobileRuntime/Security/MobilePatchRegistryAdapter.php`
+
+**Deployed:** 2026-06-30 20:45
+
+---
+
+## 2026-06-30 — RESTORE WIZARD END-TO-END VERIFICATION + POST-DEPLOY FIXES
+
+**Type:** Verification + Bug Fix — Platform restore wizard fully operational
+
+**Summary:** Platform database restore wizard tested end-to-end. Multiple bugs discovered and fixed across two sessions.
+
+**Bugs fixed:**
+
+1. **Restore wizard step 3 empty** — `loadBackups()` silently swallowed HTTP errors. Added proper error display with `browseError` Alpine state and retry button.
+
+2. **"مشکلات حیاتی" blocking dry-run** — `collectWarnings()` returned `critical` level for platform_database type, making `safe_to_run=false`. Changed to `high` level.
+
+3. **PHP 8.1/8.3 trait conflict** — `RestorePlatformDatabaseJob` declared `public string $queue = 'restore'` conflicting with `Queueable` trait's untyped `$queue`. Fixed with `$this->onQueue('restore')` in constructor.
+
+4. **MYSQL_PWD pipeline broken** — `gunzip | mysql` pipe: MYSQL_PWD env var was set only for `gunzip` (left side), not `mysql` (right side). MySQL got no password → exited immediately → SIGPIPE to gunzip → "Broken pipe". Fixed by wrapping in `bash -c` so env var applies to entire command including `mysql`.
+
+5. **No restore queue worker** — `saas-platform-worker` only processes `default` queue. Created `/etc/supervisor/conf.d/saas-restore-worker.conf` on server (`autostart=false`, `--queue=restore`).
+
+6. **RECOVERY_LOCAL_PATH stuck at Windows value** — `E:\Backup-Platform` persisted because `save()` only wrote the var when non-empty. Fixed controller + cleared in .env.
+
+7. **nginx default_server missing** — Unknown domains fell to customer-site app. Added `catch-all-ssl` (443→444) and `000-catch-all-http` (80→444) nginx blocks.
+
+**Restore confirmed working:** Worker log shows `17:03:51 RUNNING → 17:04:30 DONE` (38 seconds). restore_log id=11 status=`success`.
+
+**Files changed:**
+- `resources/views/admin/disaster-recovery/index.blade.php` — browseError state, error display, loadBackups fix
+- `app/Services/Infrastructure/RestoreService.php` — collectWarnings() critical→high, bash -c MYSQL_PWD pipeline fix
+- `app/Jobs/RestorePlatformDatabaseJob.php` — PHP 8.3 trait conflict fix
+- `app/Http/Controllers/Admin/RecoveryRepositoryController.php` — always write RECOVERY_LOCAL_PATH
+
+**Server changes (direct):**
+- `/etc/supervisor/conf.d/saas-restore-worker.conf` created
+- `/etc/nginx/sites-available/catch-all-ssl` + `000-catch-all-http` created
+- `.env`: `RECOVERY_LOCAL_PATH=` (cleared)
+- `restore_logs` id=11: status set to `success`
+
+**Deployed:** 2026-06-30 (multiple deploys)
+
+---
+
 ## 2026-06-30 — DOMAIN DNS VALIDATION BEFORE INSTALLATION
 
 **Type:** Feature / Security — Prevent installation on non-existent domains
