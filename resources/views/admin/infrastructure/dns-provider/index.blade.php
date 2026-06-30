@@ -267,8 +267,15 @@ document.addEventListener('DOMContentLoaded', function () {
             let html = '<div class="table-responsive"><table class="table table-sm table-bordered small">'
                 + '<thead><tr><th>نوع</th><th>نام</th><th>مقدار</th><th>TTL</th></tr></thead><tbody>';
             data.records.forEach(r => {
-                const vals = (r.value || []).map(v => v.ip || v.text || JSON.stringify(v)).join(', ');
-                html += `<tr><td>${r.type}</td><td>${r.name}</td><td>${vals}</td><td>${r.ttl}</td></tr>`;
+                let vals = '';
+                if (Array.isArray(r.value)) {
+                    vals = r.value.map(v => v.ip || v.text || v.host || JSON.stringify(v)).join(', ');
+                } else if (r.value && typeof r.value === 'object') {
+                    vals = r.value.ip || r.value.text || r.value.host || JSON.stringify(r.value);
+                } else {
+                    vals = String(r.value || '');
+                }
+                html += `<tr><td>${r.type.toUpperCase()}</td><td>${r.name}</td><td>${vals}</td><td>${r.ttl}</td></tr>`;
             });
             html += '</tbody></table></div>';
             el.innerHTML = html;
