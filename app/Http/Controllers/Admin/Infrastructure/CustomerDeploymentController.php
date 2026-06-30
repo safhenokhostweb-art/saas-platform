@@ -64,6 +64,25 @@ class CustomerDeploymentController extends Controller
             'ssl_enabled'       => 'nullable|boolean',
         ]);
 
+        // DNS existence check — verify domain has at least one A/CNAME/AAAA record.
+        // We do NOT check if it points to this server (ArvanCloud CDN is in front).
+        $domainForDns = preg_replace('#^https?://#i', '', rtrim($validated['customer_domain'], '/'));
+        try {
+            $dnsExists = checkdnsrr($domainForDns, 'A')
+                      || checkdnsrr($domainForDns, 'CNAME')
+                      || checkdnsrr($domainForDns, 'AAAA');
+        } catch (\Throwable) {
+            $dnsExists = true; // fail-open: if DNS query itself fails, don't block the install
+        }
+
+        if (!$dnsExists) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'customer_domain' => "دامنه «{$domainForDns}» در DNS یافت نشد. مطمئن شوید دامنه ثبت شده و رکورد DNS آن (A یا CNAME) فعال باشد.",
+                ]);
+        }
+
         // Map form field names to DTO field names expected by CustomerInstallRequest::fromArray()
         $payload = [
             'company'          => $validated['customer_company'],
