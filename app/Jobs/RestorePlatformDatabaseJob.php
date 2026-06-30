@@ -14,14 +14,15 @@ class RestorePlatformDatabaseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int    $tries   = 1;       // No retries — too dangerous for destructive operations
-    public int    $timeout = 3600;    // 1 hour max — large databases
-    public string $queue   = 'restore';
+    public int $tries   = 1;
+    public int $timeout = 3600;
 
     public function __construct(
         public readonly int    $restoreLogId,
         public readonly string $remotePath,
-    ) {}
+    ) {
+        $this->onQueue('restore');
+    }
 
     public function handle(RestoreService $service): void
     {
