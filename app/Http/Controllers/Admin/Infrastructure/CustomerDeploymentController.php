@@ -67,23 +67,34 @@ class CustomerDeploymentController extends Controller
             'ssl_enabled'       => 'nullable|boolean',
         ]);
 
-        // DNS existence check — verify domain has at least one A/CNAME/AAAA record.
-        // We do NOT check if it points to this server (ArvanCloud CDN is in front).
+        // DNS existence check — only for custom domains that the admin must have pre-configured.
+        // Platform-managed subdomains (under the configured root_domain) are skipped here because
+        // ConfigureDnsStage creates the A record automatically during the installation pipeline.
         $domainForDns = preg_replace('#^https?://#i', '', rtrim($validated['customer_domain'], '/'));
-        try {
-            $dnsExists = checkdnsrr($domainForDns, 'A')
-                      || checkdnsrr($domainForDns, 'CNAME')
-                      || checkdnsrr($domainForDns, 'AAAA');
-        } catch (\Throwable) {
-            $dnsExists = true; // fail-open: if DNS query itself fails, don't block the install
-        }
 
-        if (!$dnsExists) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'customer_domain' => "دامنه «{$domainForDns}» در DNS یافت نشد. مطمئن شوید دامنه ثبت شده و رکورد DNS آن (A یا CNAME) فعال باشد.",
-                ]);
+        $dnsSetting   = \App\Models\Infrastructure\DnsProviderSetting::active();
+        $rootDomain   = $dnsSetting?->root_domain ?? '';
+        $isPlatformSubdomain = $rootDomain !== ''
+            && strtolower($domainForDns) !== strtolower($rootDomain)
+            && str_ends_with(strtolower($domainForDns), '.' . strtolower($rootDomain));
+
+        if (!$isPlatformSubdomain) {
+            // Custom domain — must already have a DNS record pointing somewhere
+            try {
+                $dnsExists = checkdnsrr($domainForDns, 'A')
+                          || checkdnsrr($domainForDns, 'CNAME')
+                          || checkdnsrr($domainForDns, 'AAAA');
+            } catch (\Throwable) {
+                $dnsExists = true; // fail-open if the DNS query itself fails
+            }
+
+            if (!$dnsExists) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'customer_domain' => "دامنه «{$domainForDns}» در DNS یافت نشد. مطمئن شوید دامنه ثبت شده و رکورد DNS آن (A یا CNAME) فعال باشد.",
+                    ]);
+            }
         }
 
         // Map form field names to DTO field names expected by CustomerInstallRequest::fromArray()

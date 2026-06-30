@@ -1,7 +1,7 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-06-29
+> Last Updated: 2026-07-01
 
 ---
 
@@ -17,7 +17,45 @@
 
 ---
 
-## CURRENT STATE (2026-06-30 — PHASE-003I: ARVAN DNS API INTEGRATION CERTIFIED ✅)
+## CURRENT STATE (2026-07-01 — PHASE-003H2: LOCAL PC DISASTER RECOVERY ✅)
+
+**Last session work:** LEVEL 3 Disaster Recovery — Download to Local PC + Upload restore from Local PC.
+
+### What was built (PHASE-003H2) — Gap Analysis + Implementation
+
+**Pre-existing (NOT modified):**
+- LEVEL 1: `LocalRecoveryRepository` service — server-local disk copies (configurable path, SHA-256 verification, policy-driven)
+- LEVEL 2: `ArvanBackupService` + `RestoreService` — Arvan Object Storage cloud backup
+
+**New — LEVEL 3 (Local PC):**
+
+**New files (1):**
+- `app/Services/Installer/LocalPcPackageBuilder.php` — portable ZIP builder + upload verifier:
+  - `buildPlatformPackage()` — fresh mysqldump + metadata + SHA-256 manifest → ZIP
+  - `buildFullPackage()` — same + all customer DB dumps from existing LocalRecoveryLog baselines
+  - `extractAndVerify()` — safe extraction (zip-slip guard), manifest signature check, per-file SHA-256, returns `db_path`
+  - Portability: zero absolute paths, zero IPs, zero server IDs in any produced package
+
+**Modified files (6):**
+- `app/Http/Controllers/Admin/RecoveryRepositoryController.php` — injected LocalPcPackageBuilder; new `downloadPlatformPackage()` + `downloadFullPackage()` streaming endpoints
+- `app/Services/Installer/RestoreAdapter.php` — `local_pc` added to `verifyBackup()` match arm
+- `app/Http/Controllers/Installer/PlatformInstallerController.php` — injected LocalPcPackageBuilder; `processRestoreSourceSelect()` handles `source=local_pc` upload flow
+- `resources/views/admin/infrastructure/recovery-repository/index.blade.php` — "Download to PC" card (2 buttons: Platform Package / Full Package)
+- `resources/views/installer/restore/source-select.blade.php` — `enctype=multipart/form-data`, Local PC upload section, JS wiring
+- `resources/views/installer/restore/verify.blade.php` — label map extended for `recovery_repository` and `local_pc`
+- `routes/web.php` — `GET /download/platform` + `GET /download/full` (download.platform, download.full)
+
+### Restore flow for Local PC source:
+1. Admin selects ZIP file in installer wizard source-select
+2. JS sets source='local_pc', form submits with file attachment
+3. Controller: moves upload → pc-restore-uploads/, calls extractAndVerify()
+4. Raw ZIP deleted; extracted dir kept for restore; db_path stored in session step data
+5. verify step: verifyLocalFile(db_path) confirms file exists + non-trivial size
+6. restore step: unchanged — same as all other sources
+
+---
+
+## PREVIOUS STATE (2026-06-30 — PHASE-003I: ARVAN DNS API INTEGRATION CERTIFIED ✅)
 
 **Last session work:** Full Arvan DNS API integration into Customer Installation Pipeline — now live, token configured, end-to-end verified in production.
 

@@ -1,7 +1,47 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-06-29
+> Last Updated: 2026-07-01
+
+---
+
+## 2026-07-01 — PHASE-003H2: LOCAL PC DISASTER RECOVERY (LEVEL 3)
+
+**Type:** Feature — True portable PC-side disaster recovery; independent of VPS
+
+**Gap Analysis Result:**
+- LEVEL 1 (server-local backup via LocalRecoveryRepository) — EXISTED, NOT MODIFIED
+- LEVEL 2 (Arvan object storage backup) — EXISTED, NOT MODIFIED
+- LEVEL 3 (local PC download + upload restore) — MISSING, NOW IMPLEMENTED
+
+**What was built:**
+1. `app/Services/Installer/LocalPcPackageBuilder.php` (NEW — 434 lines) — Core LEVEL 3 service:
+   - `buildPlatformPackage()` — builds platform-only ZIP (DB + metadata + manifest)
+   - `buildFullPackage()` — builds full ZIP with all customer DB dumps
+   - `extractAndVerify()` — validates uploaded ZIP: manifest signature, per-file SHA-256, zip-slip protection
+   - All packages: zero absolute paths, zero server IPs, zero VPS identifiers — fully portable
+
+**Modified files:**
+- `app/Http/Controllers/Admin/RecoveryRepositoryController.php` — injected LocalPcPackageBuilder; added downloadPlatformPackage() + downloadFullPackage() with streamed 8MB-chunked response + @unlink cleanup
+- `app/Services/Installer/RestoreAdapter.php` — added 'local_pc' to verifyBackup() match arm (reuses verifyLocalFile)
+- `app/Http/Controllers/Installer/PlatformInstallerController.php` — injected LocalPcPackageBuilder; processRestoreSourceSelect() now handles source=local_pc: file upload, extractAndVerify(), stores extract_dir + db_path
+- `resources/views/admin/infrastructure/recovery-repository/index.blade.php` — added LEVEL 3 "Download to PC" card with Platform Package + Full Package download buttons
+- `resources/views/installer/restore/source-select.blade.php` — added enctype=multipart/form-data, Local PC upload section, JS wiring (file change → source=local_pc, enables continue)
+- `resources/views/installer/restore/verify.blade.php` — added labels for recovery_repository + local_pc
+- `routes/web.php` — 2 new GET routes: download.platform + download.full
+
+**Portability guarantees (per spec):**
+- ZIP manifest contains only relative paths (forward slashes)
+- platform_info.json: NO server IP, NO VPS hostname, NO DB connection info, NO filesystem paths
+- sites_overview.json: domain + status only (NO paths, NO credentials)
+- Restores on: VPS, cPanel, DirectAdmin, SFTP, Docker — any target without modification
+
+**Security measures:**
+- Zip-slip protection: safeExtract() validates every ZIP entry name before extractTo()
+- Manifest self-signature: SHA-256(body) stored; verified on upload before extraction accepted
+- Per-file SHA-256 verification of all extracted files against manifest
+- Uploaded raw ZIP deleted immediately after extraction (@unlink)
+- MYSQL_PWD pattern for mysqldump (password not visible in process list)
 
 ---
 

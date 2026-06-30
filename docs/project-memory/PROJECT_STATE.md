@@ -1,6 +1,6 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-06-30
+> Last Updated: 2026-07-01
 
 ---
 
@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**PHASE-003I_ARVAN_DNS_INTEGRATION_CERTIFIED (2026-06-30). Full Arvan DNS API integration, fully verified end-to-end in production. DnsProviderSetting (AES-256-GCM token storage), ArvanDnsProvider service (create/update/delete A records, propagation via Google DoH, health check), ConfigureDnsStage (pipeline stage 16, before ConfigureWebServerStage, with rollback), admin panel at /admin/infrastructure/dns-provider/, CredentialVault.rotate() covers DNS token. Token live (root_domain=safhenokhost.ir, is_active=true). 2 post-deploy bugs found+fixed: wrong layout (`admin.layouts.app`→`layouts.admin`), stored token had stray `apikey ` prefix (now auto-stripped in controller). Health check ok=true, domain recognized, create+delete A record verified live against Arvan API, listing 5 existing records verified. System ready for real customer installations to auto-provision DNS.**
+**PHASE-003H2_LOCAL_PC_DISASTER_RECOVERY_COMPLETE (2026-07-01). LEVEL 3 DR implemented: LocalPcPackageBuilder service builds portable ZIP packages (platform-only or full+customers) with zero absolute paths, zero server IPs, SHA-256 self-signed manifest, and zip-slip protection on extraction. Admin download UI in recovery-repository index. RestoreAdapter extended for local_pc source. PlatformInstallerController handles file upload, extract, verify. Source-select wizard now shows Local PC upload section with enctype=multipart/form-data. 6 files created/modified. Portable backup restores on any VPS/cPanel/Docker without modification. Deploy complete.**
+
+**Previous: PHASE-003I_ARVAN_DNS_INTEGRATION_CERTIFIED (2026-06-30). Full Arvan DNS API integration, fully verified end-to-end in production. DnsProviderSetting (AES-256-GCM token storage), ArvanDnsProvider service (create/update/delete A records, propagation via Google DoH, health check), ConfigureDnsStage (pipeline stage 16, before ConfigureWebServerStage, with rollback), admin panel at /admin/infrastructure/dns-provider/, CredentialVault.rotate() covers DNS token. Token live (root_domain=safhenokhost.ir, is_active=true). 2 post-deploy bugs found+fixed: wrong layout (`admin.layouts.app`→`layouts.admin`), stored token had stray `apikey ` prefix (now auto-stripped in controller). Health check ok=true, domain recognized, create+delete A record verified live against Arvan API, listing 5 existing records verified. System ready for real customer installations to auto-provision DNS.**
 
 **Previous: PHASE-003H_POST_DEPLOY_FIXES_COMPLETE (2026-06-30). Restore wizard end-to-end verified. MobilePatchRegistryAdapter log spam fixed. RestoreWizardController stream() return type fixed (StreamedResponse not Response). Stale restore queue/lock cleared. `E:\Backup-Platform` stray dir removed from public/. DR score "لاگ بازیابی" now OK. All workers running. Platform stable.**
 
