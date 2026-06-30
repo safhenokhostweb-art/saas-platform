@@ -1,6 +1,7 @@
 <?php
 namespace App\Console\Commands;
 
+use App\Models\Infrastructure\InfraBackupRun;
 use App\Services\Infrastructure\ArvanBackupService;
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Console\Command;
@@ -30,6 +31,7 @@ class BackupStorageCommand extends Command
             return self::SUCCESS;
         }
 
+        $backupRun = InfraBackupRun::startRun('storage');
         $startedAt = microtime(true);
 
         $cmd = sprintf(
@@ -43,6 +45,7 @@ class BackupStorageCommand extends Command
         if ($exitCode !== 0 || ! file_exists($tempPath) || filesize($tempPath) < 32) {
             $msg = "Storage backup failed (exit {$exitCode}). Output: " . implode(' ', $output);
             $this->error($msg);
+            $backupRun->endFailed($msg);
             Log::error('storage:backup failed', ['error' => $msg]);
             app(SlackAlertService::class)->critical(
                 'Platform Storage Backup Failed',
@@ -55,6 +58,7 @@ class BackupStorageCommand extends Command
         $sizeMb   = round(filesize($tempPath) / 1024 / 1024, 2);
         $duration = (int) (microtime(true) - $startedAt);
 
+        $backupRun->endSuccess($tempPath, $sizeMb, $duration);
         $this->info("Storage snapshot created: {$filename} ({$sizeMb} MB, {$duration}s)");
         Log::info('storage:backup snapshot created', ['filename' => $filename, 'size_mb' => $sizeMb]);
 
