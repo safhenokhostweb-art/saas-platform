@@ -54,9 +54,7 @@ class RecoveryRepositoryController extends Controller
         ];
 
         $path = trim($request->input('local_path', ''));
-        if ($path !== '') {
-            $values['RECOVERY_LOCAL_PATH'] = $path;
-        }
+        $values['RECOVERY_LOCAL_PATH'] = $path; // always write — empty string clears the stored value
 
         $result = $this->envWriter->write($values);
 
