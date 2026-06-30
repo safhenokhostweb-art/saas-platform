@@ -123,7 +123,7 @@
                 <div class="flex gap-2">
                     <input type="text" name="local_path" id="localPathInput"
                         value="{{ config('installer.recovery_repository.local_path') }}"
-                        placeholder="مثال: /var/backups/saas-platform یا D:\SAAS_PLATFORM_BACKUPS"
+                        placeholder="مثال: /var/backups/saas-platform"
                         class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
                     <button type="button" onclick="validatePath()"
                         class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 transition">

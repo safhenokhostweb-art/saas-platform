@@ -79,15 +79,15 @@ class LocalRecoveryRepository
             return ['is_valid' => false, 'message' => 'مسیر خزانه بازیابی تنظیم نشده است.', 'free_bytes' => 0];
         }
 
-        // Security: must be absolute
-        if (!str_starts_with($path, '/') && !preg_match('/^[A-Za-z]:[\\\\\/]/', $path)) {
-            return ['is_valid' => false, 'message' => 'مسیر باید مطلق (absolute) باشد.', 'free_bytes' => 0];
+        // Must be an absolute Linux path (starts with /)
+        // Windows-style paths (E:\...) are rejected — server is Linux
+        if (!str_starts_with($path, '/')) {
+            return ['is_valid' => false, 'message' => 'مسیر باید absolute Linux باشد (باید با / شروع شود). مثال: /var/backups/saas-platform', 'free_bytes' => 0];
         }
 
         if (!is_dir($path)) {
-            // Attempt to create it
             if (!@mkdir($path, 0750, true)) {
-                return ['is_valid' => false, 'message' => "دایرکتوری وجود ندارد و ساخته نشد: {$path}", 'free_bytes' => 0];
+                return ['is_valid' => false, 'message' => "دایرکتوری وجود ندارد و قابل ساخت نیست: {$path}", 'free_bytes' => 0];
             }
         }
 

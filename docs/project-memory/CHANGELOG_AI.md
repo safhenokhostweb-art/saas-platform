@@ -5,6 +5,26 @@
 
 ---
 
+## 2026-06-30 — DOMAIN DNS VALIDATION BEFORE INSTALLATION
+
+**Type:** Feature / Security — Prevent installation on non-existent domains
+
+**Problem:** Platform allowed creating customer installations for domains with no DNS records (e.g. `tenent1.safhenokhost.ir`). This caused wasted installs and impossible-to-reach sites.
+
+**Solution:** Added DNS existence check in `CustomerDeploymentController::start()` after Laravel validation. Uses PHP `checkdnsrr()` to verify domain has at least one A, CNAME, or AAAA record before creating the installation record.
+
+**Key design decisions:**
+- Domain-agnostic check: does NOT require domain to point to our server (ArvanCloud CDN fronts the server)
+- Fail-open: if DNS query itself throws (infrastructure failure), installation is allowed through
+- Returns `$errors->customer_domain` which the admin layout displays automatically
+
+**Files changed (1):**
+- `app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php` — DNS check after validate() in start()
+
+**Deployed:** 2026-06-30 10:40
+
+---
+
 ## 2026-06-30 — PHASE-003H: DELETE ENGINE BUG FIXES (post-deploy)
 
 **Type:** Bug Fix — 3 production bugs found in logs after first deploy
