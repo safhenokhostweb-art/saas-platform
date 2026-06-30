@@ -424,9 +424,9 @@ class PlatformInstallerController extends Controller
     {
         $request->validate(['confirm' => 'required|in:RESTORE-PLATFORM']);
 
-        $rollback = $this->restore->createRollbackPoint('pre_restore');
-
-        $sourceData    = $this->installer->getStepData('source_select');
+        $sourceData     = $this->installer->getStepData('source_select');
+        $source         = $sourceData['source'] ?? '';
+        $path           = $sourceData['path'] ?? '';
         $restoreService = $this->restore->getRestoreService();
 
         // Acquire restore lock
@@ -435,21 +435,72 @@ class PlatformInstallerController extends Controller
             return back()->withErrors(['restore' => 'یک عملیات بازیابی در حال اجرا است — لطفاً صبر کنید']);
         }
 
-        $this->installer->saveStepData('restore', [
-            'token'         => $token,
-            'rollback_path' => $rollback['rollback_path'] ?? null,
-            'source'        => $sourceData['source'],
-            'path'          => $sourceData['path'],
-            'started_at'    => now()->toISOString(),
-        ]);
+        // Local sources: execute synchronously (no queue dependency — safe for fresh-server DR)
+        $localSources = ['local', 'local_pc', 'release', 'recovery_repository'];
+        if (in_array($source, $localSources, true)) {
+            set_time_limit(600); // allow up to 10 min for large DBs
 
-        $this->installer->markStepCompleted('restore');
-        return redirect()->route('installer.step', ['mode' => 'restore', 'step' => 'finish']);
+            $result = $restoreService->executeLocalPlatformDatabaseRestore(null, $path);
+
+            // Clean up extracted local_pc directory
+            if ($source === 'local_pc' && !empty($sourceData['extract_dir'])) {
+                $this->pcBuilder->deleteDirectory($sourceData['extract_dir']);
+            }
+
+            $this->installer->saveStepData('restore', [
+                'token'      => $token,
+                'source'     => $source,
+                'path'       => $path,
+                'started_at' => now()->toISOString(),
+                'success'    => $result['success'],
+                'message'    => $result['message'],
+            ]);
+            $this->installer->markStepCompleted('restore');
+
+            return redirect()->route('installer.step', ['mode' => 'restore', 'step' => 'finish']);
+        }
+
+        // Arvan source: dispatch to queue (requires running restore worker)
+        if ($source === 'arvan') {
+            $log = \App\Models\Infrastructure\RestoreLog::create([
+                'restore_type'  => \App\Models\Infrastructure\RestoreLog::TYPE_PLATFORM_DATABASE,
+                'status'        => \App\Models\Infrastructure\RestoreLog::STATUS_PENDING,
+                'backup_file'   => $path,
+                'restore_token' => $token,
+                'dry_run'       => false,
+                'executed_by'   => auth()->id(),
+                'started_at'    => now(),
+            ]);
+
+            try {
+                \App\Jobs\RestorePlatformDatabaseJob::dispatch($log->id, $path)
+                    ->onConnection('restore')->onQueue('restore');
+            } catch (\Throwable $e) {
+                $restoreService->releaseLock();
+                return back()->withErrors(['restore' => 'خطا در ارسال کار بازیابی: ' . $e->getMessage()]);
+            }
+
+            $this->installer->saveStepData('restore', [
+                'token'      => $token,
+                'source'     => $source,
+                'path'       => $path,
+                'log_id'     => $log->id,
+                'started_at' => now()->toISOString(),
+                'queued'     => true,
+            ]);
+            $this->installer->markStepCompleted('restore');
+
+            return redirect()->route('installer.step', ['mode' => 'restore', 'step' => 'finish']);
+        }
+
+        $restoreService->releaseLock();
+        return back()->withErrors(['restore' => 'منبع بازیابی نامعتبر است']);
     }
 
     private function stepRestoreFinish(array $data)
     {
-        return view('installer.restore.finish', $data);
+        $restoreStepData = $this->installer->getStepData('restore') ?? [];
+        return view('installer.restore.finish', array_merge($data, compact('restoreStepData')));
     }
 
     // ─── UPGRADE Steps ───────────────────────────────────────────────────────

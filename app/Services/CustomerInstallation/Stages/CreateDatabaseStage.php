@@ -18,7 +18,7 @@ class CreateDatabaseStage extends AbstractStage
         return $this->run($ctx, function (InstallationContext $ctx) {
             $dbName = 'cust_' . Str::random(6) . '_' . $ctx->installation->id;
             $dbUser = 'u_' . Str::random(8);
-            $dbPass = Str::random(32);
+            $dbPass = $this->generateDbPassword();
             $webRoot = $ctx->webRoot();
 
             $sqlCommands = [
@@ -46,12 +46,13 @@ class CreateDatabaseStage extends AbstractStage
                 }
             }
 
-            // Update .env with real DB credentials
+            // Update .env with real DB credentials.
+            // Use | as sed delimiter (password charset never includes |).
             $envPath = $webRoot . '/.env';
             $sedCommands = [
-                "sed -i 's/__DB_NAME__/{$dbName}/' " . escapeshellarg($envPath),
-                "sed -i 's/__DB_USER__/{$dbUser}/' " . escapeshellarg($envPath),
-                "sed -i 's/__DB_PASS__/{$dbPass}/' " . escapeshellarg($envPath),
+                "sed -i 's|__DB_NAME__|{$dbName}|' " . escapeshellarg($envPath),
+                "sed -i 's|__DB_USER__|{$dbUser}|' " . escapeshellarg($envPath),
+                "sed -i 's|__DB_PASS__|{$dbPass}|' " . escapeshellarg($envPath),
             ];
             foreach ($sedCommands as $cmd) {
                 $ctx->connection->execute($cmd);
@@ -65,6 +66,33 @@ class CreateDatabaseStage extends AbstractStage
                 'db_user' => $dbUser,
             ], $this->elapsed());
         });
+    }
+
+    /**
+     * Generate a 32-char password that satisfies MySQL validate_password STRONG policy.
+     * Charset excludes /, &, \, ', ", `, $, | to be safe in sed and shell substitutions.
+     */
+    private function generateDbPassword(): string
+    {
+        $lower   = 'abcdefghijklmnopqrstuvwxyz';
+        $upper   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $digits  = '0123456789';
+        $special = '!@#%^*_+=:,.?~';
+
+        $pool    = $lower . $upper . $digits . $special;
+        $poolLen = strlen($pool);
+
+        // Guarantee at least one character from each required class
+        $pass  = $lower[random_int(0, 25)];
+        $pass .= $upper[random_int(0, 25)];
+        $pass .= $digits[random_int(0, 9)];
+        $pass .= $special[random_int(0, strlen($special) - 1)];
+
+        for ($i = 4; $i < 32; $i++) {
+            $pass .= $pool[random_int(0, $poolLen - 1)];
+        }
+
+        return str_shuffle($pass);
     }
 
     public function rollback(InstallationContext $ctx, array $snapshot): void

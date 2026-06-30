@@ -33,10 +33,11 @@ class ScanDrHealthCommand extends Command
             ->first();
 
         if (!$lastDb || $lastDb->completed_at->lt(now()->subHours(26))) {
-            $hoursAgo = $lastDb ? now()->diffInHours($lastDb->completed_at) : 'هرگز';
-            $this->fireAlert('ALERT-001', 'critical', "آخرین موفقیت: {$hoursAgo}h پیش",
-                $slack, 'DB Backup Stale', "Platform database backup has not completed successfully in over 26 hours. Last success: {$hoursAgo}h ago.");
-            $alerts[] = ['type' => 'ALERT-001', 'severity' => 'critical', 'message' => "بکاپ DB پلتفرم بیش از ۲۶ ساعت است بروز نشده. آخرین موفقیت: {$hoursAgo}h پیش"];
+            $hoursAgoRaw   = $lastDb ? now()->diffInHours($lastDb->completed_at) : null;
+            $hoursAgoLabel = $hoursAgoRaw !== null ? "{$hoursAgoRaw} ساعت" : 'هرگز';
+            $this->fireAlert('ALERT-001', 'critical', "آخرین موفقیت: {$hoursAgoLabel} پیش",
+                $slack, 'DB Backup Stale', "Platform database backup has not completed successfully in over 26 hours. Last success: " . ($hoursAgoRaw !== null ? "{$hoursAgoRaw}h" : 'never') . " ago.");
+            $alerts[] = ['type' => 'ALERT-001', 'severity' => 'critical', 'message' => "بکاپ DB پلتفرم بیش از ۲۶ ساعت است بروز نشده. آخرین موفقیت: {$hoursAgoLabel} پیش"];
         } else {
             Cache::forget('dr_alert_sent_ALERT-001');
         }
@@ -61,10 +62,11 @@ class ScanDrHealthCommand extends Command
             ->first();
 
         if (!$lastStorage || $lastStorage->completed_at->lt(now()->subDays(8))) {
-            $daysAgo = $lastStorage ? now()->diffInDays($lastStorage->completed_at) : 'هرگز';
-            $this->fireAlert('ALERT-004', 'high', "آخرین موفقیت: {$daysAgo}d پیش",
-                $slack, 'Storage Backup Stale', "Platform storage backup has not completed successfully in over 8 days. Last success: {$daysAgo}d ago.");
-            $alerts[] = ['type' => 'ALERT-004', 'severity' => 'high', 'message' => "بکاپ Storage پلتفرم بیش از ۸ روز است بروز نشده. آخرین موفقیت: {$daysAgo}d پیش"];
+            $daysAgoRaw   = $lastStorage ? now()->diffInDays($lastStorage->completed_at) : null;
+            $daysAgoLabel = $daysAgoRaw !== null ? "{$daysAgoRaw} روز" : 'هرگز';
+            $this->fireAlert('ALERT-004', 'high', "آخرین موفقیت: {$daysAgoLabel} پیش",
+                $slack, 'Storage Backup Stale', "Platform storage backup has not completed successfully in over 8 days. Last success: " . ($daysAgoRaw !== null ? "{$daysAgoRaw}d" : 'never') . " ago.");
+            $alerts[] = ['type' => 'ALERT-004', 'severity' => 'high', 'message' => "بکاپ Storage پلتفرم بیش از ۸ روز است بروز نشده. آخرین موفقیت: {$daysAgoLabel} پیش"];
         } else {
             Cache::forget('dr_alert_sent_ALERT-004');
         }

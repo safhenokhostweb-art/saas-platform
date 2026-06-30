@@ -498,6 +498,125 @@ class RestoreService
         }
     }
 
+    // ─── Local File Platform Database Restore (no Arvan download) ───────────────
+
+    /**
+     * Restore platform database from a LOCAL file path.
+     * Identical to executePlatformDatabaseRestore() but skips Arvan download.
+     * Used by the installer restore wizard and RestoreFromLocalFileJob.
+     *
+     * @param RestoreLog|null $log  If null, a minimal in-memory log is used (installer fresh-server context)
+     * @param string          $localFilePath  Absolute path to .sql.gz file on this server
+     */
+    public function executeLocalPlatformDatabaseRestore(?RestoreLog $log, string $localFilePath): array
+    {
+        $token  = $log?->restore_token ?? Str::uuid()->toString();
+        $events = [];
+        $maintenanceActive = false;
+
+        try {
+            $this->push($token, $events, 5, 'آغاز بازیابی دیتابیس پلتفرم از فایل محلی', 'running');
+
+            if (!file_exists($localFilePath) || filesize($localFilePath) < 20) {
+                throw new \RuntimeException("فایل بکاپ یافت نشد یا خالی است: {$localFilePath}");
+            }
+            $this->push($token, $events, 15, 'فایل بکاپ یافت شد: ' . $this->humanSize(filesize($localFilePath)));
+
+            // Verify gzip integrity
+            $this->push($token, $events, 20, 'تأیید یکپارچگی فایل gzip...');
+            if (!$this->verifyGzip($localFilePath)) {
+                throw new \RuntimeException('فایل بکاپ خراب است (gzip integrity check failed)');
+            }
+            $this->push($token, $events, 27, 'یکپارچگی فایل تأیید شد');
+
+            // Enable maintenance mode
+            $this->push($token, $events, 30, 'فعال‌سازی حالت maintenance...');
+            try { Artisan::call('down'); $maintenanceActive = true; } catch (\Throwable) {}
+            $this->push($token, $events, 33, 'حالت maintenance فعال شد');
+
+            // Pre-restore snapshot
+            $this->push($token, $events, 35, 'ایجاد snapshot قبل از بازیابی...');
+            $database     = config('database.connections.mysql.database');
+            $snapshotPath = $this->createDatabaseSnapshot($database, 'platform');
+            if ($snapshotPath && $log) {
+                $log->update(['rollback_snapshot_path' => $snapshotPath]);
+                $this->push($token, $events, 43, 'Snapshot ایجاد شد: ' . basename($snapshotPath));
+            } else {
+                $this->push($token, $events, 43, 'هشدار: snapshot ایجاد نشد — ادامه با احتیاط', 'warn');
+            }
+
+            // DROP + CREATE database
+            [$host, $port, $user, $password] = $this->dbCredentials();
+            $envPwd    = $password !== '' ? 'MYSQL_PWD=' . escapeshellarg($password) . ' ' : '';
+            $connFlags = sprintf(
+                '-h %s -P %s -u %s',
+                escapeshellarg($host), escapeshellarg((string) $port), escapeshellarg($user)
+            );
+
+            $this->push($token, $events, 47, "DROP و CREATE DATABASE {$database}...");
+            exec("{$envPwd}mysql {$connFlags} -e " . escapeshellarg(
+                "DROP DATABASE IF EXISTS `{$database}`; CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            ) . ' 2>&1', $o, $c);
+            if ($c !== 0) {
+                throw new \RuntimeException("DROP/CREATE DATABASE ناموفق: " . implode(' ', $o));
+            }
+            $this->push($token, $events, 52, 'دیتابیس پاک‌سازی و ایجاد مجدد شد');
+
+            // Restore from local file
+            $this->push($token, $events, 55, 'بازیابی دیتابیس از فایل محلی...');
+            $restoreCmd = "bash -c " . escapeshellarg(
+                "{$envPwd}gunzip -c " . escapeshellarg($localFilePath) .
+                " | {$envPwd}mysql {$connFlags} " . escapeshellarg($database)
+            ) . ' 2>&1';
+            exec($restoreCmd, $o, $c);
+            if ($c !== 0) {
+                throw new \RuntimeException("بازیابی دیتابیس ناموفق: " . implode(' ', $o));
+            }
+            $this->push($token, $events, 72, 'دیتابیس با موفقیت بازیابی شد');
+
+            // Run pending migrations
+            $this->push($token, $events, 75, 'اجرای migration‌های جدید...');
+            try { Artisan::call('migrate', ['--force' => true]); } catch (\Throwable) {}
+            $this->push($token, $events, 80, 'migration‌ها اجرا شدند');
+
+            // Rebuild caches
+            $this->push($token, $events, 82, 'بازسازی cache‌ها...');
+            try {
+                Artisan::call('config:cache');
+                Artisan::call('route:cache');
+                Artisan::call('view:cache');
+            } catch (\Throwable) {}
+            $this->push($token, $events, 87, 'Cache‌ها بازسازی شدند');
+
+            // Disable maintenance mode
+            $this->push($token, $events, 90, 'غیرفعال‌سازی حالت maintenance...');
+            try { Artisan::call('up'); $maintenanceActive = false; } catch (\Throwable) {}
+            $this->push($token, $events, 93, 'حالت maintenance غیرفعال شد');
+
+            $this->releaseLock();
+            if ($log) {
+                $log->markSuccess($events);
+            }
+            $this->push($token, $events, 100, 'بازیابی دیتابیس پلتفرم با موفقیت انجام شد', 'success', true);
+            $this->writeActivityLog('platform_database', null, basename($localFilePath), 'success');
+
+            return ['success' => true, 'events' => $events, 'message' => 'بازیابی با موفقیت انجام شد'];
+
+        } catch (\Throwable $e) {
+            if ($maintenanceActive) {
+                try { Artisan::call('up'); } catch (\Throwable) {}
+            }
+            $this->releaseLock();
+            $errMsg = $e->getMessage();
+            if ($log) {
+                $log->markFailed($errMsg, $events);
+            }
+            $this->push($token, $events, null, "خطا: {$errMsg}", 'error', true);
+            Log::error("RestoreService: local platform DB restore failed", ['error' => $errMsg]);
+            return ['success' => false, 'events' => $events, 'message' => "بازیابی ناموفق: {$errMsg}"];
+        }
+    }
+
     // ─── Tenant Database Restore ──────────────────────────────────────────────
 
     /**
