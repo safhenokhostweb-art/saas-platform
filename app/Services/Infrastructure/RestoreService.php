@@ -254,8 +254,8 @@ class RestoreService
     {
         $warnings = [];
         if ($type === RestoreLog::TYPE_PLATFORM_DATABASE) {
-            $warnings[] = ['level' => 'critical', 'message' => 'این عملیات کل دیتابیس پلتفرم را جایگزین می‌کند. تمام تِنِنت‌ها تحت تأثیر قرار می‌گیرند.'];
-            $warnings[] = ['level' => 'high',     'message' => 'پلتفرم در طول بازیابی در حالت maintenance خواهد بود.'];
+            $warnings[] = ['level' => 'high', 'message' => 'این عملیات کل دیتابیس پلتفرم را جایگزین می‌کند. تمام تِنِنت‌ها تحت تأثیر قرار می‌گیرند.'];
+            $warnings[] = ['level' => 'high', 'message' => 'پلتفرم در طول بازیابی در حالت maintenance خواهد بود.'];
         }
         if ($type === RestoreLog::TYPE_TENANT_DATABASE && $siteId) {
             $site = Site::find($siteId);
