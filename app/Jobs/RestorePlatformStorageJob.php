@@ -13,15 +13,16 @@ class RestorePlatformStorageJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int  $tries   = 1;
-    public int  $timeout = 1800;    // 30 minutes — large tar.gz files
-    public string $queue = 'restore';
+    public int $tries   = 1;
+    public int $timeout = 1800;
 
     public function __construct(
         public readonly int    $restoreLogId,
         public readonly string $remotePath,
         public readonly string $mergeStrategy = 'merge',
-    ) {}
+    ) {
+        $this->onQueue('restore');
+    }
 
     public function handle(RestoreService $service): void
     {
@@ -38,7 +39,9 @@ class RestorePlatformStorageJob implements ShouldQueue
             $log->markFailed('Job failed unexpectedly: ' . $e->getMessage());
         }
 
-        app(\App\Services\Infrastructure\RestoreService::class)->releaseLock();
+        $service = app(\App\Services\Infrastructure\RestoreService::class);
+        $service->releaseLock();
+        $service->stopRestoreWorker();
         app(\App\Services\Infrastructure\SlackAlertService::class)->critical(
             'Restore Job Crashed',
             'RestorePlatformStorageJob crashed: ' . $e->getMessage()

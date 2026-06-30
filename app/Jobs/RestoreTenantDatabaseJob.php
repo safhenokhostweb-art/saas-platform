@@ -13,15 +13,16 @@ class RestoreTenantDatabaseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int  $tries   = 1;       // No retries — too dangerous
-    public int  $timeout = 600;     // 10 minutes max
-    public string $queue = 'restore';
+    public int $tries   = 1;
+    public int $timeout = 600;
 
     public function __construct(
         public readonly int    $restoreLogId,
         public readonly string $remotePath,
         public readonly int    $siteId,
-    ) {}
+    ) {
+        $this->onQueue('restore');
+    }
 
     public function handle(RestoreService $service): void
     {
@@ -38,7 +39,9 @@ class RestoreTenantDatabaseJob implements ShouldQueue
             $log->markFailed('Job failed unexpectedly: ' . $e->getMessage());
         }
 
-        app(\App\Services\Infrastructure\RestoreService::class)->releaseLock();
+        $service = app(\App\Services\Infrastructure\RestoreService::class);
+        $service->releaseLock();
+        $service->stopRestoreWorker();
         app(\App\Services\Infrastructure\SlackAlertService::class)->critical(
             'Restore Job Crashed',
             "RestoreTenantDatabaseJob for site {$this->siteId} crashed: " . $e->getMessage()

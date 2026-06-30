@@ -169,6 +169,7 @@ class AdminMenu
         'customer_deployment'    => 'admin.infrastructure.customer-deployment.*',
         'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.*',
         'recovery_repository'    => 'admin.infrastructure.recovery-repository.*',
+        'dns_provider'           => 'admin.infrastructure.dns-provider.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
