@@ -39,7 +39,9 @@ class RestorePlatformDatabaseJob implements ShouldQueue
             $log->markFailed('Job failed unexpectedly: ' . $e->getMessage());
         }
 
-        app(RestoreService::class)->releaseLock();
+        $service = app(RestoreService::class);
+        $service->releaseLock();
+        $service->stopRestoreWorker();
 
         // Ensure maintenance mode is off if job crashed mid-restore
         try {

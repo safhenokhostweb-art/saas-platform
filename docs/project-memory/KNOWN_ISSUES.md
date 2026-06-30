@@ -59,6 +59,12 @@
 **Impact:** If operator forgets to start the worker, the restore job sits in queue indefinitely (stuck at 0%).  
 **Workaround:** The SSE progress screen polls every 2s; if no progress after 30s, check worker status.
 
+### STREAM-001 — HIGH | RESOLVED (2026-06-30)
+**Title:** `RestoreWizardController::stream()` TypeError — wrong return type  
+**Module:** Disaster Recovery — Restore Wizard SSE  
+**Root cause:** Method declared `Response` return type but returned `StreamedResponse`. PHP strict return type check threw TypeError.  
+**Resolution:** Changed return type to `StreamedResponse` (from `Symfony\Component\HttpFoundation\StreamedResponse`).
+
 ### CDE-001 — MEDIUM | RESOLVED (2026-06-30)
 **Title:** REMOVE_DATABASE stage fails with "Unknown command '\`'" in MySQL  
 **Root cause:** `"DROP DATABASE IF EXISTS \`{$dbName}\`;"` — PHP `\`` is a literal backslash+backtick (not an escape). MySQL received `\`` and rejected it.  

@@ -64,6 +64,17 @@ return [
         'tmp_bytes'      => 512 * 1024 * 1024,
     ],
 
+    /*
+     * DNS Provider configuration for automatic subdomain management.
+     * Token and root_domain are stored in dns_provider_settings table (encrypted).
+     * These config values control pipeline behavior only — not the provider credentials.
+     */
+    'dns' => [
+        'skip_propagation'        => env('CI_DNS_SKIP_PROPAGATION', false),
+        'propagation_max_wait_sec' => (int) env('CI_DNS_PROPAGATION_WAIT', 300),
+        'propagation_poll_sec'    => (int) env('CI_DNS_PROPAGATION_POLL', 15),
+    ],
+
     'nginx' => [
         'ssl_cert'           => env('CI_NGINX_SSL_CERT', '/etc/ssl/safhenokhost/safhenokhost.crt'),
         'ssl_key'            => env('CI_NGINX_SSL_KEY',  '/etc/ssl/safhenokhost/safhenokhost.key'),

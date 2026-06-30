@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-06-30 — RESTOREWIZARDCONTROLLER STREAM RETURN TYPE FIX
+
+**Type:** Bug Fix — PHP TypeError on restore SSE stream
+
+**Problem:** `RestoreWizardController::stream()` had `Response` return type but actually returned `StreamedResponse` (a subclass, but not accepted by PHP's strict return type check). This caused a `TypeError` on every SSE stream request.
+
+**Fix:** Changed import from `Illuminate\Http\Response` to `Symfony\Component\HttpFoundation\StreamedResponse` and updated method signature to `StreamedResponse`.
+
+**Files changed (1):**
+- `app/Http/Controllers/Admin/RestoreWizardController.php`
+
+**Deployed:** 2026-06-30 21:00
+
+---
+
 ## 2026-06-30 — MOBILE PATCH REGISTRY LOG SPAM FIX
 
 **Type:** Bug Fix — Eliminate per-request DEBUG log noise

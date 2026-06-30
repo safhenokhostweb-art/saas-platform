@@ -59,6 +59,7 @@ class AdminMenu
         'customer_deployment'    => 'استقرار مشتریان',
         'auth_center'            => 'مرکز احراز هویت',
         'recovery_repository'    => 'خزانه بازیابی محلی',
+        'dns_provider'           => 'DNS Provider آروان',
     ];
 
     /** مسیر هر آیتم منو */
@@ -113,6 +114,7 @@ class AdminMenu
         'customer_deployment'    => 'admin.infrastructure.customer-deployment.dashboard',
         'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.index',
         'recovery_repository'    => 'admin.infrastructure.recovery-repository.index',
+        'dns_provider'           => 'admin.infrastructure.dns-provider.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */

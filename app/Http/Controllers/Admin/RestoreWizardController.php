@@ -195,6 +195,10 @@ class RestoreWizardController extends Controller
             return response()->json(['error' => 'تعارض قفل — دوباره تلاش کنید'], 409);
         }
 
+        // ── Start restore worker (auto-managed) ────────────────────────────────
+
+        $this->restore->startRestoreWorker();
+
         // ── Dispatch appropriate job ───────────────────────────────────────────
 
         try {

@@ -66,6 +66,20 @@ class RestoreService
         }
     }
 
+    // ─── Restore Worker Lifecycle ─────────────────────────────────────────────
+
+    public function startRestoreWorker(): void
+    {
+        exec('sudo /usr/local/bin/restore-worker-ctl start 2>&1', $out, $code);
+        Log::info('restore_worker.start', ['code' => $code, 'out' => implode(' ', $out)]);
+    }
+
+    public function stopRestoreWorker(): void
+    {
+        exec('sudo /usr/local/bin/restore-worker-ctl stop 2>&1', $out, $code);
+        Log::info('restore_worker.stop', ['code' => $code, 'out' => implode(' ', $out)]);
+    }
+
     // ─── Progress Streaming (Redis List) ──────────────────────────────────────
 
     public function pushProgress(string $token, array $event): void
@@ -458,6 +472,7 @@ class RestoreService
 
             @unlink($localPath);
             $this->releaseLock();
+            $this->stopRestoreWorker();
             $this->writeActivityLog('platform_database', null, basename($remotePath), 'success');
 
             $log->markSuccess($events);
@@ -471,6 +486,7 @@ class RestoreService
             }
 
             $this->releaseLock();
+            $this->stopRestoreWorker();
             $this->writeActivityLog('platform_database', null, basename($remotePath), 'failed', $e->getMessage());
 
             $errMsg = $e->getMessage();
@@ -573,6 +589,7 @@ class RestoreService
 
             @unlink($localPath);
             $this->releaseLock();
+            $this->stopRestoreWorker();
             $this->writeActivityLog('tenant_database', $siteId, basename($remotePath), 'success');
 
             $log->markSuccess($events);
@@ -590,6 +607,7 @@ class RestoreService
             } catch (\Throwable) {}
 
             $this->releaseLock();
+            $this->stopRestoreWorker();
             $this->writeActivityLog('tenant_database', $siteId, basename($remotePath), 'failed', $e->getMessage());
 
             $errMsg = $e->getMessage();
@@ -666,6 +684,7 @@ class RestoreService
             Artisan::call('cache:clear');
 
             $this->releaseLock();
+            $this->stopRestoreWorker();
             $this->writeActivityLog('platform_storage', null, basename($remotePath), 'success');
 
             $log->markSuccess($events);
@@ -674,6 +693,7 @@ class RestoreService
         } catch (\Throwable $e) {
             @unlink($localPath ?? '');
             $this->releaseLock();
+            $this->stopRestoreWorker();
             $this->writeActivityLog('platform_storage', null, basename($remotePath), 'failed', $e->getMessage());
 
             $errMsg = $e->getMessage();

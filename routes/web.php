@@ -979,6 +979,18 @@ Route::prefix('admin')
 
         /*
         |--------------------------------------------------------------------------
+        | DNS Provider Settings (Arvan DNS)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('infrastructure/dns-provider')->name('infrastructure.dns-provider.')->group(function () {
+            Route::get('/',          [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'index'])->name('index');
+            Route::post('/save',     [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'save'])->name('save');
+            Route::post('/health',   [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'healthCheck'])->name('health');
+            Route::get('/records',   [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'listRecords'])->name('records');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | Local Recovery Repository
         |--------------------------------------------------------------------------
         */

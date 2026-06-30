@@ -1,6 +1,6 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-06-29
+> Last Updated: 2026-06-30
 
 ---
 
@@ -16,7 +16,9 @@
 
 ## Current Module
 
-**PHASE-003H_ENTERPRISE_DELETE_ENGINE_COMPLETE (2026-06-29). 14-stage reverse pipeline for complete customer deletion. Zero hardcoded values — all paths resolved from CustomerInstallation metadata. Transactional, idempotent, resumable. 4 delete policies. Comprehensive verification (12+ checks). Domain confirmation guard. SSE live progress. Post-deploy: php artisan migrate --force (2 migrations).**
+**PHASE-003H_POST_DEPLOY_FIXES_COMPLETE (2026-06-30). Restore wizard end-to-end verified. MobilePatchRegistryAdapter log spam fixed. RestoreWizardController stream() return type fixed (StreamedResponse not Response). Stale restore queue/lock cleared. `E:\Backup-Platform` stray dir removed from public/. DR score "لاگ بازیابی" now OK. All workers running. Platform stable.**
+
+**Previous: PHASE-003H_ENTERPRISE_DELETE_ENGINE_COMPLETE (2026-06-29). 14-stage reverse pipeline for complete customer deletion. Zero hardcoded values — all paths resolved from CustomerInstallation metadata. Transactional, idempotent, resumable. 4 delete policies. Comprehensive verification (12+ checks). Domain confirmation guard. SSE live progress. Post-deploy: php artisan migrate --force (2 migrations).**
 
 **Previous: PHASE-003G_POST_INSTALL_COMPLETE (2026-06-29). 6 critical post-install bugs fixed. Tenant `tenent.safhenokhost.ir` fully operational: login→ForcePasswordChange→profile (200). Install package v1.0.1 activated. ProvisionLicenseStage uses LicenseServerService::issue() for PlatformLicense HMAC. CustomerReadyStage creates storage/installed.lock. GenerateEnvironmentStage adds LICENSE_VERIFY_SSL=false. CustomerPlatformSeeder seeds license record. EnsureLicenseValid allows admin.profile.* routes. Remaining: restore test + certification docs.**
 
