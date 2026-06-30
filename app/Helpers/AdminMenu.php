@@ -191,7 +191,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'theme_templates', 'theme_packs', 'zip_import', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer', 'installer_status', 'customer_deployment', 'recovery_repository'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer', 'installer_status', 'customer_deployment', 'recovery_repository', 'dns_provider'],
             'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

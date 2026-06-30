@@ -316,7 +316,10 @@ class DrCenterController extends Controller
 
     public function tenantHealthAjax(): JsonResponse
     {
-        $sites = Site::where('lifecycle_status', 'active')->orWhereNull('lifecycle_status')->get();
+        $sites = Site::where(function ($q) {
+            $q->where('lifecycle_status', Site::LIFECYCLE_ACTIVE)
+              ->orWhere(fn ($q2) => $q2->whereNull('lifecycle_status')->where('is_active', true));
+        })->get();
 
         $tenants = $sites->map(function (Site $site) {
             $lastDbBackup = InfraBackupRun::where('site_id', $site->id)

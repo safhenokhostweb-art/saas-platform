@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-06-30 — RESTORE WORKER AUTO-START/STOP
+
+**Type:** Feature — Restore wizard auto-manages saas-restore-worker lifecycle
+
+**Problem:** Operator had to manually run `supervisorctl start saas-restore-worker:` before every restore and `stop` after. Forgetting to start → restore job sits in queue at 0% indefinitely.
+
+**Solution:**
+1. Server: `/usr/local/bin/restore-worker-ctl` wrapper script + `/etc/sudoers.d/www-data-restore-worker` sudoers rule so `www-data` can start/stop the worker via sudo
+2. `RestoreService::startRestoreWorker()` + `stopRestoreWorker()` public methods
+3. `RestoreWizardController::execute()`: calls `startRestoreWorker()` before dispatching job
+4. `RestoreService::executePlatformDatabaseRestore()`, `executeTenantDatabaseRestore()`, `executePlatformStorageRestore()`: all call `stopRestoreWorker()` on success AND failure
+5. `RestorePlatformDatabaseJob::failed()`, `RestoreTenantDatabaseJob::failed()`, `RestorePlatformStorageJob::failed()`: all call `stopRestoreWorker()` for crash scenarios
+
+**Bonus fix:** `RestoreTenantDatabaseJob` and `RestorePlatformStorageJob` had `public string $queue = 'restore'` — same PHP 8.3 trait conflict that was previously fixed in `RestorePlatformDatabaseJob`. Fixed with `$this->onQueue('restore')` in constructor.
+
+**Files changed (6):**
+- `app/Services/Infrastructure/RestoreService.php` — startRestoreWorker/stopRestoreWorker + calls in all 3 execute methods
+- `app/Http/Controllers/Admin/RestoreWizardController.php` — startRestoreWorker() before dispatch
+- `app/Jobs/RestorePlatformDatabaseJob.php` — stopRestoreWorker() in failed()
+- `app/Jobs/RestoreTenantDatabaseJob.php` — trait fix + stopRestoreWorker() in failed()
+- `app/Jobs/RestorePlatformStorageJob.php` — trait fix + stopRestoreWorker() in failed()
+
+**Server changes (direct):**
+- `/usr/local/bin/restore-worker-ctl` — wrapper script
+- `/etc/sudoers.d/www-data-restore-worker` — sudoers rule
+
+**Deployed:** 2026-06-30 22:00
+
+---
+
 ## 2026-06-30 — RESTOREWIZARDCONTROLLER STREAM RETURN TYPE FIX
 
 **Type:** Bug Fix — PHP TypeError on restore SSE stream
