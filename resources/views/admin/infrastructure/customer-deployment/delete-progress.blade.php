@@ -58,7 +58,7 @@
       </div>
       <div>
         <div style="font-size:.75rem;color:#94a3b8;margin-bottom:.2rem">آغاز</div>
-        <div>{{ $deletion->started_at ? \num_fa($deletion->started_at->format('H:i')) : '—' }}</div>
+        <div>{{ $deletion->started_at ? digits_fa($deletion->started_at->format('H:i')) : '—' }}</div>
       </div>
       <div>
         <div style="font-size:.75rem;color:#94a3b8;margin-bottom:.2rem">مرحله جاری</div>
@@ -113,7 +113,7 @@
       <h3 style="font-size:.95rem;font-weight:700;color:#0f172a;margin:0">گزارش تأیید نهایی</h3>
       <span style="font-weight:700;font-size:1.1rem;color:{{ $report['verdict'] === 'PASS' ? '#059669' : ($report['verdict'] === 'PARTIAL' ? '#d97706' : '#dc2626') }}">
         {{ $report['verdict'] ?? '—' }}
-        ({{ num_fa($report['score'] ?? 0) }}%)
+        ({{ num_fa((int)($report['score'] ?? 0)) }}%)
       </span>
     </div>
     @foreach(($report['checks'] ?? []) as $check)

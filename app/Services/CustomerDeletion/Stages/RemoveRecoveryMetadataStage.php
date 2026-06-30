@@ -74,10 +74,13 @@ class RemoveRecoveryMetadataStage extends AbstractDeleteStage
             }
 
             if (empty($removed)) {
-                return DeleteStageResult::skipped(
-                    $this->name(),
-                    "سیاست {$policy->value} — پشتیبان‌ها حفظ شدند"
-                );
+                $reason = match(true) {
+                    !$policy->shouldDeleteLocalBackups() && !$policy->shouldDeleteRemoteBackups()
+                        => "سیاست {$policy->value} — پشتیبان‌ها حفظ می‌شوند",
+                    default
+                        => "هیچ متادیتای قابل حذفی یافت نشد (site_id یا arvan_key وجود ندارد)",
+                };
+                return DeleteStageResult::skipped($this->name(), $reason);
             }
 
             return DeleteStageResult::success($this->name(), ['removed' => $removed]);
