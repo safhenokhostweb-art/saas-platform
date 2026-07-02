@@ -163,7 +163,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'RULE_ZERO_BLOCKED: AskUserQuestion is prohibited (ADR-017). Implement autonomously. Permitted stops ONLY: (1) destructive ops [DROP DATABASE, DROP TABLE, force-push main, delete backups, destroy recovery repo, permanent data removal] (2) business decisions [pricing, commercial plans, licensing policy, contractual] (3) legal/security decisions [security policy, encryption, privacy, compliance, certificates, keys]. Everything else: analyze, choose, implement, continue.' ; exit 1"
+            "command": "echo 'BLOCKED_BY_PROJECT_GOVERNANCE: Read and follow AGENTS.md.' ; exit 1"
           }
         ]
       }

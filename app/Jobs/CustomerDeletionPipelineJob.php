@@ -16,7 +16,12 @@ class CustomerDeletionPipelineJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 1800;
-    public int $tries   = 1;
+    public int $tries   = 3;
+
+    public function backoff(): array
+    {
+        return [60, 300];
+    }
 
     public function __construct(
         public readonly int $deletionId,

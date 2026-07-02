@@ -249,7 +249,9 @@ Key final reports only (most recent):
 | `OVERBIDE-ARCHITECTURE.md` | Override architecture | ✅ EXISTS |
 | `COMMIT-PHASES.md` | Commit phase plan | ✅ EXISTS |
 | `MIGRATION-SAFETY-RULES.md` | Migration safety rules | ✅ EXISTS |
-| `CLAUDE.md` | Claude project config | ✅ EXISTS |
+| `PROJECT_CONSTITUTION.md` | Permanent project authority | ✅ EXISTS |
+| `AGENTS.md` | Vendor-neutral agent orchestration | ✅ EXISTS |
+| `CLAUDE.md` / `CODEX.md` / `CLINE.md` / `CONTINUE.md` / `DEEPSEEK.md` | Compatibility wrappers to `AGENTS.md` | ✅ EXISTS |
 | `PHASE-0-COMPLETE-REPORT.md` | Phase 0 completion | ✅ EXISTS |
 
 ## GAP ANALYSIS

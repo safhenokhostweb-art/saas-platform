@@ -1,6 +1,6 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-07-01
+> Last Updated: 2026-07-03
 
 ---
 
@@ -14,7 +14,15 @@
 
 ---
 
+## Governance Status
+
+**PHASE-008_ENTERPRISE_GOVERNANCE_V2_COMPLETE (2026-07-02), DELIVERY AMENDMENT ACTIVE (2026-07-03).** `PROJECT_CONSTITUTION.md` is the permanent authority; `AGENTS.md` is vendor-neutral orchestration; agent and workspace entrypoints are thin wrappers. ADR-018 defines the architecture. ADR-019 requires every completed task to be committed, pushed, synchronized to affected production servers, and health-verified.
+
+---
+
 ## Current Module
+
+**PHASE-009_INSTALLER_RECOVERY_CERTIFICATION_CONDITIONAL_DEPLOYED (2026-07-03).** Full code-level gap analysis completed. Critical restore, package-integrity, delete-resume, durable-final-backup, and recovery-cleanup defects were corrected and selectively deployed to production with SHA-256 verification and rollback archive `/var/backups/saas-platform/phase009-20260703-013616.tar.gz`. Full enterprise certification is withheld because four deployment drivers remain stubs, three install modes lack distinct execution, tenant-storage/multi-customer restore is incomplete, destructive failure drills and performance samples are absent, and PHPUnit is blocked by the local Composer dev autoloader. Canonical evidence: `FINAL_GAP_ANALYSIS.md` and the four PHASE-009 certification reports.
 
 **PHASE-003H2_LOCAL_PC_DISASTER_RECOVERY_COMPLETE (2026-07-01). LEVEL 3 DR implemented: LocalPcPackageBuilder service builds portable ZIP packages (platform-only or full+customers) with zero absolute paths, zero server IPs, SHA-256 self-signed manifest, and zip-slip protection on extraction. Admin download UI in recovery-repository index. RestoreAdapter extended for local_pc source. PlatformInstallerController handles file upload, extract, verify. Source-select wizard now shows Local PC upload section with enctype=multipart/form-data. 6 files created/modified. Portable backup restores on any VPS/cPanel/Docker without modification. Deploy complete.**
 

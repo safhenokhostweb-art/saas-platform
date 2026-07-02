@@ -321,9 +321,13 @@ class RestoreWizardTest extends TestCase
 
     // ─── Abort Tests ──────────────────────────────────────────────────────────
 
-    public function test_abort_clears_redis_lock(): void
+    public function test_abort_clears_lock_for_pending_restore(): void
     {
         Redis::set('restore_in_progress', 'tenant-1', 'EX', 1800);
+        RestoreLog::factory()->create([
+            'status' => RestoreLog::STATUS_PENDING,
+            'restore_token' => 'pending-abort-token',
+        ]);
 
         $this->actingAs($this->admin)
              ->postJson(route('admin.disaster-recovery.abort'))
@@ -331,6 +335,34 @@ class RestoreWizardTest extends TestCase
              ->assertJsonPath('success', true);
 
         $this->assertNull(Redis::get('restore_in_progress'));
+        $this->assertDatabaseHas('restore_logs', ['status' => RestoreLog::STATUS_ABORTED]);
+    }
+
+    public function test_abort_preserves_lock_for_running_restore(): void
+    {
+        Redis::set('restore_in_progress', 'tenant-1', 'EX', 1800);
+        RestoreLog::factory()->create([
+            'status' => RestoreLog::STATUS_RUNNING,
+            'restore_token' => 'running-abort-token',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.disaster-recovery.abort'))
+            ->assertStatus(409);
+
+        $this->assertNotNull(Redis::get('restore_in_progress'));
+    }
+
+    public function test_tenant_storage_restore_is_blocked_until_scoped_format_exists(): void
+    {
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.disaster-recovery.execute'), [
+                'type' => RestoreLog::TYPE_TENANT_STORAGE,
+                'backup_file' => 'customer-sites/tenant-1/storage/archive.tar.gz',
+                'site_id' => $this->site->id,
+                'confirmation' => true,
+            ])
+            ->assertStatus(422);
     }
 
     public function test_abort_when_no_lock_returns_gracefully(): void

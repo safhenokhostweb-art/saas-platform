@@ -2,7 +2,31 @@
 > Known bugs, technical debt, temporary workarounds, and future improvements.
 > Severity: CRITICAL | HIGH | MEDIUM | LOW
 > Status: OPEN | WORKAROUND | DEFERRED | RESOLVED
-> Last Updated: 2026-06-29
+> Last Updated: 2026-07-03
+
+---
+
+## PHASE-009 CERTIFICATION BLOCKERS (2026-07-03)
+
+### CERT-009-001 — HIGH | OPEN
+**Title:** Universal deployment support is advertised beyond implemented drivers
+**Evidence:** cPanel, DirectAdmin, SFTP, and Docker deployment drivers explicitly throw architecture-stub errors. Clone, move, and reinstall modes use the default fresh pipeline.
+**Action:** Implement and certify each path or remove it from production operator selection.
+
+### CERT-009-002 — HIGH | OPEN
+**Title:** Recovery lifecycle is incomplete
+**Evidence:** Tenant-storage restore is blocked for safety, multiple-customer orchestration is absent, running restore cancellation is unavailable, and restore-worker control is externally provisioned.
+**Action:** Complete tenant-scoped restore semantics and version operational worker assets.
+
+### CERT-009-003 — MEDIUM | BLOCKED
+**Title:** Local Composer development autoloader hangs
+**Evidence:** Loading `vendor/autoload.php` and Composer autoload generation do not complete, preventing PHPUnit execution. PHP file lint and `git diff --check` pass.
+**Action:** Repair the dev dependency/autoload environment, then run targeted and full suites.
+
+### CERT-009-004 — MEDIUM | OPEN
+**Title:** Disaster-recovery drill and performance evidence is absent
+**Evidence:** No controlled reboot, disk-full, worker-crash, interrupted operation, server migration, or representative p95 timing dataset was produced in PHASE-009.
+**Action:** Execute the certification plan in `FINAL_GAP_ANALYSIS.md` on staging.
 
 ---
 

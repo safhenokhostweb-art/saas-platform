@@ -70,9 +70,8 @@ class CustomerReleasePackageService implements CustomerPackageInterface
 
         Log::info("CIE: Downloading package {$version} from Arvan: {$manifest->arvanKey}");
 
-        $result = $this->arvan->download($manifest->arvanKey, $localPath);
-        if (!$result['success']) {
-            throw new RuntimeException("Package download failed: " . $result['message']);
+        if (!$this->arvan->download($manifest->arvanKey, $localPath)) {
+            throw new RuntimeException("Package download failed from Arvan: {$manifest->arvanKey}");
         }
 
         return $localPath;

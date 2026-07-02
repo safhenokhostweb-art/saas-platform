@@ -472,10 +472,17 @@ class PlatformInstallerController extends Controller
                 'started_at'    => now(),
             ]);
 
+            if (!app()->environment('testing') && !$restoreService->startRestoreWorker()) {
+                $restoreService->releaseLock();
+                $log->markFailed('Restore worker could not be started');
+                return back()->withErrors(['restore' => 'Restore worker در دسترس نیست؛ عملیات شروع نشد.']);
+            }
+
             try {
                 \App\Jobs\RestorePlatformDatabaseJob::dispatch($log->id, $path)
                     ->onConnection('restore')->onQueue('restore');
             } catch (\Throwable $e) {
+                $restoreService->stopRestoreWorker();
                 $restoreService->releaseLock();
                 return back()->withErrors(['restore' => 'خطا در ارسال کار بازیابی: ' . $e->getMessage()]);
             }

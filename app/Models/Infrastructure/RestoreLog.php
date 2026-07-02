@@ -42,6 +42,7 @@ class RestoreLog extends Model
     const STATUS_RUNNING          = 'running';
     const STATUS_SUCCESS          = 'success';
     const STATUS_FAILED           = 'failed';
+    const STATUS_ABORTED          = 'aborted';
     const STATUS_DRY_RUN_COMPLETE = 'dry_run_complete';
 
     public function site()
@@ -78,6 +79,15 @@ class RestoreLog extends Model
         ]);
     }
 
+    public function markAborted(string $reason): void
+    {
+        $this->update([
+            'status'        => self::STATUS_ABORTED,
+            'error_message' => $reason,
+            'completed_at'  => now(),
+        ]);
+    }
+
     public function typeLabelFa(): string
     {
         return match($this->restore_type) {
@@ -96,6 +106,7 @@ class RestoreLog extends Model
             self::STATUS_RUNNING          => 'در حال اجرا',
             self::STATUS_SUCCESS          => 'موفق',
             self::STATUS_FAILED           => 'ناموفق',
+            self::STATUS_ABORTED          => 'لغو شده',
             self::STATUS_DRY_RUN_COMPLETE => 'شبیه‌سازی کامل',
             default                       => $this->status,
         };

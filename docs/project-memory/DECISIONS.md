@@ -418,8 +418,53 @@ The AI must NEVER ask: "Which option do you prefer?", "Should I use A or B?", "C
 Interrupting implementation with design questions wastes the project owner's time, breaks flow, and adds no value — the AI has sufficient context and expertise to make enterprise-grade technical decisions autonomously.
 
 **Impact:**
-- CLAUDE.md Rule Zero is the runtime enforcement point (loaded every session)
-- `docs/AI_GOVERNANCE_POLICY.md` — authoritative full governance document
-- `docs/AI_DECISION_POLICY.md` — decision-making framework
+- `PROJECT_CONSTITUTION.md` is the vendor-independent permanent architectural authority
+- `AGENTS.md` is the vendor-neutral orchestration and runtime enforcement layer
+- `CLAUDE.md`, `CODEX.md`, `CLINE.md`, `CONTINUE.md`, `DEEPSEEK.md`, and legacy entrypoints are compatibility wrappers
+- `docs/AI_GOVERNANCE_POLICY.md` and `docs/AI_DECISION_POLICY.md` retain backward-compatible paths without duplicating active governance
 - `docs/AI_MEMORY_AUDIT.md` — audit confirming policy is synchronized across all memory files
 - This ADR is the permanent architectural record of the governance model
+
+---
+
+## ADR-018
+
+**Date:** 2026-07-02
+**Title:** Project Constitution and Vendor-Neutral Agent Orchestration
+
+**Context:**
+Permanent project principles, agent execution instructions, capability assumptions, compatibility wrappers, and recovery loading were previously combined in one governance layer. The workspace also retained legacy Cline and Continue rule copies outside the canonical repository.
+
+**Decision:**
+Adopt `PROJECT_CONSTITUTION.md` as the highest permanent project authority and limit `AGENTS.md` to vendor-neutral orchestration. Agent-specific files are thin wrappers selecting a declarative capability profile. Project memory and ADRs retain their existing canonical locations. Workspace and `customer-site` entrypoints delegate to the canonical governance files without copying rules.
+
+**Reason:**
+Separating permanent architecture from tool orchestration keeps the project valid without any coding agent, removes vendor coupling, prevents rule drift, and allows a future agent to be added with one wrapper.
+
+**Impact:**
+- Authority hierarchy: Constitution → orchestration → wrapper → project memory → current task
+- ADR-017 remains active and unchanged as the execution-governance decision
+- Existing wrapper and compatibility paths remain available
+- No application code, business logic, installation pipeline, deployment pipeline, or runtime behavior changes
+- Validation and file inventory are recorded in `docs/GOVERNANCE_V2_REPORT.md`
+
+---
+
+## ADR-019
+
+**Date:** 2026-07-03
+**Title:** Mandatory Git and Production Synchronization at Task Completion
+
+**Context:**
+Completed work could previously remain only in a local workspace or be deployed without being committed and pushed, creating source-of-truth drift between local repositories, Git remotes, and production servers.
+
+**Decision:**
+Every completed task must commit and push all task-owned changes to the configured Git remote, synchronize those changes to every affected production server, and verify post-deployment health. Documentation-only changes require Git and server synchronization but do not require unnecessary runtime restarts. Unavailable synchronization keeps the task incomplete and must be recorded as a blocker.
+
+**Reason:**
+GitHub and production must remain recoverable, auditable delivery targets rather than optional post-task steps.
+
+**Impact:**
+- Task completion now includes Git commit, Git push, server synchronization, and health verification.
+- Unrelated dirty workspace or server changes must remain isolated from the task release.
+- Selective deployment is required when a full canonical deployment would overwrite unrelated live changes.

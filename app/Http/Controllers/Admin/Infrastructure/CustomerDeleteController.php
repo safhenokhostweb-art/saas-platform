@@ -94,6 +94,27 @@ class CustomerDeleteController extends Controller
         ));
     }
 
+    public function retry(CustomerDeletion $deletion)
+    {
+        if (!$deletion->isFailed()) {
+            return back()->with('error', 'فقط حذف ناموفق قابل تلاش مجدد است.');
+        }
+
+        $deletion->update([
+            'status'         => 'pending',
+            'failure_reason' => null,
+            'failed_at'      => null,
+        ]);
+
+        CustomerDeletionPipelineJob::dispatch($deletion->id)
+            ->onConnection('customer-install')
+            ->onQueue('customer-install');
+
+        return redirect()
+            ->route('admin.infrastructure.customer-deployment.deletions.progress', $deletion)
+            ->with('success', 'ادامه حذف از آخرین stage کامل‌شده در صف قرار گرفت.');
+    }
+
     /**
      * SSE stream for real-time deletion progress.
      * GET /admin/infrastructure/customer-deployment/deletions/{deletion}/stream

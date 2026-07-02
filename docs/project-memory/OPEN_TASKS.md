@@ -1,6 +1,23 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-06-27
+> Last Updated: 2026-07-03
+
+---
+
+## OPEN: PHASE-009 ENTERPRISE CERTIFICATION GATES
+
+**Status:** CONDITIONAL — code-level audit complete; certification withheld. Canonical scope and evidence: `FINAL_GAP_ANALYSIS.md`.
+
+| Gate | Status |
+|------|--------|
+| Implement or hide cPanel, DirectAdmin, SFTP, Docker driver stubs | OPEN |
+| Implement distinct clone, move, reinstall semantics | OPEN |
+| Define safe installation retry after automatic rollback | OPEN |
+| Implement tenant-storage and multi-customer restore | OPEN |
+| Version/provision restore worker control assets | OPEN |
+| Repair local Composer dev autoload and pass regression suites | BLOCKED |
+| Run controlled interruption/reboot/disk/connectivity drills | OPEN |
+| Collect representative performance baselines and approve SLOs | OPEN |
 
 ---
 

@@ -8,6 +8,7 @@ use App\Services\CustomerDeletion\Dto\DeletePolicy;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 /**
  * STAGE 13: REMOVE_RECOVERY_METADATA
@@ -33,7 +34,7 @@ class RemoveRecoveryMetadataStage extends AbstractDeleteStage
 {
     public function name(): string { return 'REMOVE_RECOVERY_METADATA'; }
     public function label(): string { return 'حذف متادیتای بازیابی'; }
-    public function isCritical(): bool { return false; }
+    public function isCritical(): bool { return true; }
     public function estimatedSeconds(): int { return 10; }
 
     public function execute(DeleteContext $ctx): DeleteStageResult
@@ -47,29 +48,48 @@ class RemoveRecoveryMetadataStage extends AbstractDeleteStage
                 $logs = LocalRecoveryLog::where('site_id', $ctx->siteId)->get();
 
                 foreach ($logs as $log) {
-                    // Delete the actual backup file from disk
-                    if ($log->local_path && file_exists($log->local_path)) {
-                        @unlink($log->local_path);
-                        // Remove parent dir if empty
-                        $dir = dirname($log->local_path);
-                        if (is_dir($dir) && count(scandir($dir)) === 2) {
-                            @rmdir($dir);
-                        }
+                    if ($log->local_path && is_dir($log->local_path)) {
+                        File::deleteDirectory($log->local_path);
+                    } elseif ($log->local_path && file_exists($log->local_path)) {
+                        File::delete($log->local_path);
                     }
+
+                    if ($log->local_path && file_exists($log->local_path)) {
+                        return DeleteStageResult::failure(
+                            $this->name(),
+                            "حذف فایل پشتیبان محلی ناموفق بود: {$log->local_path}"
+                        );
+                    }
+
                     $log->delete();
                     $removed[] = "LocalRecoveryLog #{$log->id} deleted";
                 }
             }
 
             // Remote (Arvan) backup artifacts
-            if ($policy->shouldDeleteRemoteBackups() && $ctx->arvanBaselineKey) {
+            if ($policy->shouldDeleteRemoteBackups() && $ctx->siteId) {
                 try {
-                    Storage::disk('arvan')->delete($ctx->arvanBaselineKey);
-                    $removed[] = "Arvan object deleted: {$ctx->arvanBaselineKey}";
+                    $disk = Storage::disk('arvan_backup');
+                    $prefixes = [
+                        "customers/site-{$ctx->siteId}",
+                        "customer-sites/tenant-{$ctx->siteId}",
+                    ];
+
+                    foreach ($prefixes as $prefix) {
+                        $disk->deleteDirectory($prefix);
+
+                        if (!empty($disk->allFiles($prefix))) {
+                            return DeleteStageResult::failure(
+                                $this->name(),
+                                "حذف کامل prefix پشتیبان remote ناموفق بود: {$prefix}"
+                            );
+                        }
+
+                        $removed[] = "Arvan prefix deleted: {$prefix}";
+                    }
                 } catch (\Throwable $e) {
-                    // Non-fatal — Arvan object may have been pruned already
-                    Log::warning("CDE: Arvan delete failed for {$ctx->arvanBaselineKey}: {$e->getMessage()}");
-                    $removed[] = "Arvan delete skipped: {$e->getMessage()}";
+                    Log::warning("CDE: Arvan backup prefix deletion failed for site {$ctx->siteId}: {$e->getMessage()}");
+                    return DeleteStageResult::failure($this->name(), 'حذف پشتیبان‌های remote ناموفق بود: ' . $e->getMessage());
                 }
             }
 
@@ -89,15 +109,36 @@ class RemoveRecoveryMetadataStage extends AbstractDeleteStage
 
     public function verify(DeleteContext $ctx): array
     {
-        if (!$ctx->policy->shouldDeleteLocalBackups()) {
-            return [['check' => 'Local backups preserved (policy)', 'passed' => true, 'detail' => $ctx->policy->value]];
-        }
+        $checks = [];
 
         if ($ctx->siteId) {
-            $remaining = LocalRecoveryLog::where('site_id', $ctx->siteId)->count();
-            return [
-                ['check' => 'Local recovery logs cleared', 'passed' => $remaining === 0, 'detail' => "{$remaining} records remaining"],
-            ];
+            if ($ctx->policy->shouldDeleteLocalBackups()) {
+                $remaining = LocalRecoveryLog::where('site_id', $ctx->siteId)->count();
+                $checks[] = [
+                    'check' => 'Local recovery logs cleared',
+                    'passed' => $remaining === 0,
+                    'detail' => "{$remaining} records remaining",
+                ];
+            } else {
+                $checks[] = ['check' => 'Local backups preserved (policy)', 'passed' => true, 'detail' => $ctx->policy->value];
+            }
+
+            if ($ctx->policy->shouldDeleteRemoteBackups()) {
+                $disk = Storage::disk('arvan_backup');
+                $remoteRemaining = array_merge(
+                    $disk->allFiles("customers/site-{$ctx->siteId}"),
+                    $disk->allFiles("customer-sites/tenant-{$ctx->siteId}")
+                );
+                $checks[] = [
+                    'check' => 'Remote recovery prefixes cleared',
+                    'passed' => empty($remoteRemaining),
+                    'detail' => count($remoteRemaining) . ' objects remaining',
+                ];
+            } else {
+                $checks[] = ['check' => 'Remote backups preserved (policy)', 'passed' => true, 'detail' => $ctx->policy->value];
+            }
+
+            return $checks;
         }
 
         return [['check' => 'Recovery metadata removed', 'passed' => true, 'detail' => 'no site_id to verify']];

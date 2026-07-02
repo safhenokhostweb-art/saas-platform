@@ -1,7 +1,18 @@
 # AUDIT HISTORY
 > All findings recorded permanently. Resolved findings marked Fixed — never deleted.
 > Format: Finding ID | Severity | Status | Evidence | Resolution
-> Last Updated: 2026-06-21
+> Last Updated: 2026-07-03
+
+---
+
+## PHASE-009 INSTALLER & RECOVERY AUDIT — 2026-07-03
+
+**Scope:** Installation, deletion, recovery, restore, rollback, deployment drivers, portability, failure scenarios, verification, and performance.
+**Verdict:** CONDITIONAL; enterprise certification withheld.
+**Evidence:** `FINAL_GAP_ANALYSIS.md`, `INSTALLER_ENTERPRISE_CERTIFICATION.md`, `RECOVERY_ENTERPRISE_CERTIFICATION.md`, `DELETE_ENGINE_CERTIFICATION.md`, `DISASTER_RECOVERY_CERTIFICATION.md`.
+**Resolved findings:** Arvan package return-contract defect; missing DNS/web rollback registration; restore snapshot/migration fail-open behavior; pending-abort race; unsafe tenant-storage dispatch; removable final-delete backup; recovery disk/prefix/directory cleanup; optional manifest signature and unlisted DB payload.
+**Deployment evidence:** selective production release passed SHA-256, rollback-archive checksum, Laravel cache, route, HTTP, and worker checks; backup `/var/backups/saas-platform/phase009-20260703-013616.tar.gz`.
+**Open findings:** tracked as `CERT-009-001` through `CERT-009-004` in `KNOWN_ISSUES.md`.
 
 ---
 

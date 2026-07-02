@@ -92,12 +92,12 @@ class PipelineTest extends TestCase
         ]);
     }
 
-    public function test_orchestrator_builds_20_stages_for_fresh_mode(): void
+    public function test_orchestrator_builds_22_stages_for_fresh_mode(): void
     {
         $orchestrator = app(CustomerInstallationOrchestrator::class);
         $stages = $orchestrator->buildStageList('MODE_FRESH');
 
-        $this->assertCount(20, $stages);
+        $this->assertCount(22, $stages);
 
         $names = array_map(fn($s) => $s->name(), $stages);
         $this->assertContains('VALIDATE_SERVER', $names);

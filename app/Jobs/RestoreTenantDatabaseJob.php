@@ -27,6 +27,9 @@ class RestoreTenantDatabaseJob implements ShouldQueue
     public function handle(RestoreService $service): void
     {
         $log = RestoreLog::findOrFail($this->restoreLogId);
+        if ($log->status !== RestoreLog::STATUS_PENDING) {
+            return;
+        }
         $log->markRunning();
 
         $service->executeTenantDatabaseRestore($log, $this->remotePath, $this->siteId);

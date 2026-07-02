@@ -847,6 +847,7 @@ Route::prefix('admin')
                 Route::get('/installations/{installation}/delete', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'confirm'])->name('installations.delete.confirm');
                 Route::post('/installations/{installation}/delete', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'initiate'])->name('installations.delete.initiate');
                 Route::get('/deletions/{deletion}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'progress'])->name('deletions.progress');
+                Route::post('/deletions/{deletion}/retry', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'retry'])->name('deletions.retry');
                 Route::get('/deletions/{deletion}/stream', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeleteController::class, 'stream'])->name('deletions.stream');
 
                 // Remote Server Management

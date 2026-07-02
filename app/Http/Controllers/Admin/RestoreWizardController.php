@@ -138,6 +138,12 @@ class RestoreWizardController extends Controller
         $siteId        = $request->input('site_id') ? (int) $request->input('site_id') : null;
         $mergeStrategy = $request->input('merge_strategy', 'merge');
 
+        if ($type === RestoreLog::TYPE_TENANT_STORAGE) {
+            return response()->json([
+                'error' => 'بازیابی storage تِنِنت تا تعریف فرمت آرشیو tenant-scoped غیرفعال است؛ بازیابی platform storage استفاده نشد.',
+            ], 422);
+        }
+
         // ── Safety checks ──────────────────────────────────────────────────────
 
         // Block concurrent restores
@@ -197,7 +203,11 @@ class RestoreWizardController extends Controller
 
         // ── Start restore worker (auto-managed) ────────────────────────────────
 
-        $this->restore->startRestoreWorker();
+        if (!app()->environment('testing') && !$this->restore->startRestoreWorker()) {
+            $this->restore->releaseLock();
+            $log->markFailed('Restore worker could not be started');
+            return response()->json(['error' => 'Restore worker در دسترس نیست؛ عملیات شروع نشد.'], 503);
+        }
 
         // ── Dispatch appropriate job ───────────────────────────────────────────
 
@@ -211,11 +221,9 @@ class RestoreWizardController extends Controller
             } elseif ($type === RestoreLog::TYPE_PLATFORM_STORAGE) {
                 RestorePlatformStorageJob::dispatch($log->id, $backupFile, $mergeStrategy)
                     ->onConnection('restore')->onQueue('restore');
-            } elseif ($type === RestoreLog::TYPE_TENANT_STORAGE) {
-                RestorePlatformStorageJob::dispatch($log->id, $backupFile, $mergeStrategy)
-                    ->onConnection('restore')->onQueue('restore');
             }
         } catch (\Throwable $e) {
+            $this->restore->stopRestoreWorker();
             $this->restore->releaseLock();
             $log->markFailed('Dispatch failed: ' . $e->getMessage());
             return response()->json(['error' => 'خطا در ارسال کار بازیابی: ' . $e->getMessage()], 500);
@@ -307,7 +315,19 @@ class RestoreWizardController extends Controller
             return response()->json(['message' => 'هیچ بازیابی فعالی یافت نشد'], 200);
         }
 
+        $activeLog = RestoreLog::whereIn('status', [RestoreLog::STATUS_PENDING, RestoreLog::STATUS_RUNNING])
+            ->latest('id')
+            ->first();
+
+        if (!$activeLog || $activeLog->status === RestoreLog::STATUS_RUNNING) {
+            return response()->json([
+                'error' => 'بازیابی در حال اجرا را نمی‌توان با آزادکردن lock متوقف کرد؛ lock برای جلوگیری از اجرای همزمان حفظ شد.',
+            ], 409);
+        }
+
         $lockValue = $this->restore->getLockValue();
+        $activeLog->markAborted('Restore aborted before worker execution by operator');
+        $this->restore->stopRestoreWorker();
         $this->restore->releaseLock();
 
         Log::warning("RestoreWizard: restore manually aborted", [

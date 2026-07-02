@@ -1,23 +1,25 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-07-01
+> Last Updated: 2026-07-03
 
 ---
 
-## AI GOVERNANCE POLICY — ALWAYS ACTIVE (ADR-017)
+## CURRENT STATE (2026-07-03 — PHASE-009: CONDITIONAL, NOT CERTIFIED)
 
-**The AI is the Lead Enterprise Architect on this project.**
+The complete PHASE-009 gap analysis and five requested reports are published at the repository root. Critical code defects were corrected and selectively deployed to production on 2026-07-03. The deploy preserved unrelated dirty server state, matched SHA-256 for all 15 runtime files, registered the retry route, returned HTTP 302 for the protected admin endpoint, restarted queue workers gracefully, and created rollback archive `/var/backups/saas-platform/phase009-20260703-013616.tar.gz`. PHP lint and `git diff --check` pass; PHPUnit remains blocked because the local Composer dev autoloader hangs. Do not represent installer, recovery, delete, or disaster recovery as fully enterprise-certified until every gate in `FINAL_GAP_ANALYSIS.md` passes.
 
-- Analyze alternatives → Select best enterprise solution → Implement → Verify → Continue
-- NEVER ask "Which option do you prefer?" or "Can I continue?" or "Should I use A or B?"
-- NEVER use `AskUserQuestion` for implementation decisions
-- Permitted stops: (1) business decisions (pricing, commercial plans, licensing policy, contractual decisions), (2) irreversible destructive operations (`DROP DATABASE`, `DROP TABLE`, `force-push` on production, delete production backups, destroy recovery repository, permanent data removal), (3) legal/security decisions (security policy, encryption policy, privacy policy, compliance, certificates, keys)
-- Full policy: `docs/AI_GOVERNANCE_POLICY.md` | Decision framework: `docs/AI_DECISION_POLICY.md` | ADR: DECISIONS.md ADR-017
+---
+
+## GOVERNANCE AUTHORITY — ALWAYS ACTIVE (ADR-017, ADR-018, ADR-019)
+
+Permanent authority: `PROJECT_CONSTITUTION.md`. Agent orchestration: `AGENTS.md`. Architectural record: `DECISIONS.md`. Governance V2 validation: `docs/GOVERNANCE_V2_REPORT.md`. ADR-019 requires Git push, affected-server synchronization, and health verification before any task is complete.
 
 ---
 
 ## CURRENT STATE (2026-07-01 — PHASE-003H2: LOCAL PC DISASTER RECOVERY ✅)
+
+**Governance checkpoint (2026-07-02):** PHASE-008 Enterprise Governance V2 complete under ADR-018; application state unchanged.
 
 **Last session work:** LEVEL 3 Disaster Recovery — Download to Local PC + Upload restore from Local PC.
 

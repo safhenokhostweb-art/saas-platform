@@ -252,7 +252,9 @@
 | `DEPLOY-CHECKLIST.md` | Deploy | ✅ Done |
 | `COMMIT-PHASES.md` | Commit plan | ✅ Done |
 | `MIGRATION-SAFETY-RULES.md` | Migration safety | ✅ Done |
-| `CLAUDE.md` | Project config | ✅ Done |
+| `PROJECT_CONSTITUTION.md` | Permanent project authority | ✅ Active |
+| `AGENTS.md` | Vendor-neutral agent orchestration | ✅ Active |
+| `CLAUDE.md` / `CODEX.md` / `CLINE.md` / `CONTINUE.md` / `DEEPSEEK.md` | Compatibility wrappers to `AGENTS.md` | ✅ Active |
 | `ui/BUTTON_CONTRAST_AUDIT.md` | Button contrast | ✅ Done |
 | `SIDEBAR_LAYOUT_FIX_REPORT.md` | Sidebar fix | ✅ Done |
 | `SIDEBAR_UI_AUDIT.md` | Sidebar UI | ✅ Done |

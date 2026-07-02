@@ -45,6 +45,15 @@
     </span>
   </div>
 
+  @if($deletion->isFailed())
+    <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.deletions.retry', $deletion) }}" class="mb-4">
+      @csrf
+      <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
+        تلاش مجدد و ادامه از آخرین مرحله
+      </button>
+    </form>
+  @endif
+
   {{-- Summary --}}
   <div class="del-card">
     <div style="display:flex;gap:2rem;flex-wrap:wrap">

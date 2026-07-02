@@ -102,14 +102,21 @@ class LocalPcPackageBuilder
 
         // Verify manifest self-signature (tamper detection)
         $storedSig = $manifest['manifest_signature'] ?? null;
-        if ($storedSig) {
-            $body = $manifest;
-            unset($body['manifest_signature']);
-            $computed = hash('sha256', json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-            if ($computed !== $storedSig) {
-                $this->deleteDirectory($extractDir);
-                return ['valid' => false, 'message' => 'manifest.json دستکاری شده — امضا نامعتبر است', 'extract_dir' => null, 'db_path' => null, 'manifest' => $manifest];
-            }
+        if (!is_string($storedSig) || !preg_match('/^[a-f0-9]{64}$/', $storedSig)) {
+            $this->deleteDirectory($extractDir);
+            return ['valid' => false, 'message' => 'manifest_signature معتبر در پکیج وجود ندارد', 'extract_dir' => null, 'db_path' => null, 'manifest' => $manifest];
+        }
+        $body = $manifest;
+        unset($body['manifest_signature']);
+        $computed = hash('sha256', json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        if (!hash_equals($storedSig, $computed)) {
+            $this->deleteDirectory($extractDir);
+            return ['valid' => false, 'message' => 'manifest.json دستکاری شده — امضا نامعتبر است', 'extract_dir' => null, 'db_path' => null, 'manifest' => $manifest];
+        }
+
+        if (!isset($manifest['files']['database/platform.sql.gz'])) {
+            $this->deleteDirectory($extractDir);
+            return ['valid' => false, 'message' => 'دیتابیس پلتفرم در checksum manifest ثبت نشده است', 'extract_dir' => null, 'db_path' => null, 'manifest' => $manifest];
         }
 
         // Verify SHA-256 of each listed file (streaming)

@@ -1,7 +1,31 @@
 # AI CHANGELOG
 > Every AI-generated modification logged here. Date | Files Changed | Reason | Impact.
 > Newest entries at top.
-> Last Updated: 2026-07-01
+> Last Updated: 2026-07-03
+
+---
+
+## 2026-07-03 — ADR-019: MANDATORY GIT AND SERVER DELIVERY
+
+**Type:** Permanent delivery-governance amendment
+
+Task completion now requires all task-owned changes to be committed and pushed to the configured Git remote, synchronized to every affected production server, and health-verified. Documentation-only work is synchronized without unnecessary runtime restarts. Unrelated dirty changes remain isolated from each task release.
+
+---
+
+## 2026-07-03 — PHASE-009: INSTALLER & RECOVERY ENTERPRISE CERTIFICATION
+
+**Type:** Gap analysis, targeted safety corrections, regression coverage, and conditional certification
+
+Audited installation, deletion, restore, rollback, recovery repositories, portability, failure handling, verification, and performance evidence. Corrected Arvan package download handling, rollback stage coverage, restore fail-closed behavior and abort races, local-PC manifest integrity, delete retry/resume, durable final-delete backups, and recovery cleanup. Added targeted regression tests and five canonical reports. Runtime fixes were selectively deployed to production with per-file SHA-256 verification, route/HTTP/worker health checks, and rollback archive `/var/backups/saas-platform/phase009-20260703-013616.tar.gz`. Full certification remains withheld due to explicit driver/mode/restore gaps, missing live drills/performance data, and a blocked local PHPUnit environment. See `FINAL_GAP_ANALYSIS.md`.
+
+---
+
+## 2026-07-02 — PHASE-008: ENTERPRISE GOVERNANCE V2
+
+**Type:** Architecture-only governance refinement
+
+Created the permanent `PROJECT_CONSTITUTION.md`, refactored `AGENTS.md` into vendor-neutral orchestration, added the five canonical agent wrappers and declarative capability matrix, replaced workspace and `customer-site` legacy rule copies with thin bridges, preserved ADR-017, and recorded ADR-018. Full inventory and validation: `docs/GOVERNANCE_V2_REPORT.md`. No application or pipeline behavior changed.
 
 ---
 

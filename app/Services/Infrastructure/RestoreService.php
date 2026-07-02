@@ -68,16 +68,18 @@ class RestoreService
 
     // ─── Restore Worker Lifecycle ─────────────────────────────────────────────
 
-    public function startRestoreWorker(): void
+    public function startRestoreWorker(): bool
     {
         exec('sudo /usr/local/bin/restore-worker-ctl start 2>&1', $out, $code);
         Log::info('restore_worker.start', ['code' => $code, 'out' => implode(' ', $out)]);
+        return $code === 0;
     }
 
-    public function stopRestoreWorker(): void
+    public function stopRestoreWorker(): bool
     {
         exec('sudo /usr/local/bin/restore-worker-ctl stop 2>&1', $out, $code);
         Log::info('restore_worker.stop', ['code' => $code, 'out' => implode(' ', $out)]);
+        return $code === 0;
     }
 
     // ─── Progress Streaming (Redis List) ──────────────────────────────────────
@@ -410,12 +412,11 @@ class RestoreService
             $this->push($token, $events, 35, 'ایجاد snapshot قبل از بازیابی...');
             $database     = config('database.connections.mysql.database');
             $snapshotPath = $this->createDatabaseSnapshot($database, 'platform');
-            if ($snapshotPath) {
-                $log->update(['rollback_snapshot_path' => $snapshotPath]);
-                $this->push($token, $events, 43, 'Snapshot ایجاد شد: ' . basename($snapshotPath));
-            } else {
-                $this->push($token, $events, 43, 'هشدار: snapshot ایجاد نشد — ادامه با احتیاط', 'warn');
+            if (!$snapshotPath) {
+                throw new \RuntimeException('ایجاد snapshot قبل از بازیابی ناموفق بود؛ عملیات مخرب متوقف شد');
             }
+            $log->update(['rollback_snapshot_path' => $snapshotPath]);
+            $this->push($token, $events, 43, 'Snapshot ایجاد شد: ' . basename($snapshotPath));
 
             // Step 5: Drop and recreate database using MYSQL_PWD
             [$host, $port, $user, $password] = $this->dbCredentials();
@@ -453,9 +454,10 @@ class RestoreService
             // Step 7: Run pending migrations
             $this->push($token, $events, 75, 'اجرای migration‌های جدید...');
             $migResult = Artisan::call('migrate', ['--force' => true]);
-            $this->push($token, $events, 80, $migResult === 0
-                ? 'migration‌ها اجرا شدند'
-                : 'هشدار: برخی migration‌ها ناموفق بودند');
+            if ($migResult !== 0) {
+                throw new \RuntimeException('اجرای migration‌های پس از بازیابی ناموفق بود');
+            }
+            $this->push($token, $events, 80, 'migration‌ها اجرا شدند');
 
             // Step 8: Rebuild caches
             $this->push($token, $events, 82, 'بازسازی cache‌ها...');
@@ -538,12 +540,13 @@ class RestoreService
             $this->push($token, $events, 35, 'ایجاد snapshot قبل از بازیابی...');
             $database     = config('database.connections.mysql.database');
             $snapshotPath = $this->createDatabaseSnapshot($database, 'platform');
-            if ($snapshotPath && $log) {
-                $log->update(['rollback_snapshot_path' => $snapshotPath]);
-                $this->push($token, $events, 43, 'Snapshot ایجاد شد: ' . basename($snapshotPath));
-            } else {
-                $this->push($token, $events, 43, 'هشدار: snapshot ایجاد نشد — ادامه با احتیاط', 'warn');
+            if (!$snapshotPath) {
+                throw new \RuntimeException('ایجاد snapshot قبل از بازیابی ناموفق بود؛ عملیات مخرب متوقف شد');
             }
+            if ($log) {
+                $log->update(['rollback_snapshot_path' => $snapshotPath]);
+            }
+            $this->push($token, $events, 43, 'Snapshot ایجاد شد: ' . basename($snapshotPath));
 
             // DROP + CREATE database
             [$host, $port, $user, $password] = $this->dbCredentials();
@@ -576,7 +579,10 @@ class RestoreService
 
             // Run pending migrations
             $this->push($token, $events, 75, 'اجرای migration‌های جدید...');
-            try { Artisan::call('migrate', ['--force' => true]); } catch (\Throwable) {}
+            $migrationResult = Artisan::call('migrate', ['--force' => true]);
+            if ($migrationResult !== 0) {
+                throw new \RuntimeException('اجرای migration‌های پس از بازیابی ناموفق بود');
+            }
             $this->push($token, $events, 80, 'migration‌ها اجرا شدند');
 
             // Rebuild caches
