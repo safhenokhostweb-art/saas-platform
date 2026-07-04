@@ -2,10 +2,12 @@
 namespace Tests\Feature\DisasterRecovery;
 
 use App\Models\Infrastructure\RestoreLog;
+use App\Models\Customer;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\Infrastructure\ArvanBackupService;
 use App\Services\Infrastructure\RestoreService;
+use Database\Factories\RestoreLogFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
@@ -16,13 +18,21 @@ class RestoreWizardTest extends TestCase
 
     private User $admin;
     private Site $site;
+    private InMemoryRedis $redis;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        $this->redis = new InMemoryRedis();
+        Redis::swap($this->redis);
+        $this->admin = User::factory()->create(['is_admin' => true]);
+        $customer = Customer::create([
+            'name' => 'Restore Test Customer',
+            'mobile' => '09120000001',
+        ]);
         $this->site  = Site::create([
+            'customer_id'      => $customer->id,
             'title'            => 'Test Site',
             'domain'           => 'test.example.com',
             'is_active'        => true,
@@ -43,7 +53,7 @@ class RestoreWizardTest extends TestCase
 
     public function test_non_admin_cannot_access_restore_wizard(): void
     {
-        $user = User::factory()->create(['role' => 'user']);
+        $user = User::factory()->create(['is_admin' => false]);
         $this->actingAs($user)
              ->get(route('admin.disaster-recovery.index'))
              ->assertForbidden();
@@ -324,7 +334,7 @@ class RestoreWizardTest extends TestCase
     public function test_abort_clears_lock_for_pending_restore(): void
     {
         Redis::set('restore_in_progress', 'tenant-1', 'EX', 1800);
-        RestoreLog::factory()->create([
+        RestoreLogFactory::new()->create([
             'status' => RestoreLog::STATUS_PENDING,
             'restore_token' => 'pending-abort-token',
         ]);
@@ -341,7 +351,7 @@ class RestoreWizardTest extends TestCase
     public function test_abort_preserves_lock_for_running_restore(): void
     {
         Redis::set('restore_in_progress', 'tenant-1', 'EX', 1800);
-        RestoreLog::factory()->create([
+        RestoreLogFactory::new()->create([
             'status' => RestoreLog::STATUS_RUNNING,
             'restore_token' => 'running-abort-token',
         ]);
@@ -398,7 +408,7 @@ class RestoreWizardTest extends TestCase
 
     public function test_logs_page_shows_restore_history(): void
     {
-        RestoreLog::factory()->count(3)->create([
+        RestoreLogFactory::new()->count(3)->create([
             'restore_type' => RestoreLog::TYPE_PLATFORM_DATABASE,
             'status'       => RestoreLog::STATUS_SUCCESS,
             'executed_by'  => $this->admin->id,
@@ -472,5 +482,60 @@ class RestoreWizardTest extends TestCase
         $this->assertEquals('1 KB', $service->humanSize(1024));
         $this->assertEquals('1 MB', $service->humanSize(1048576));
         $this->assertEquals('5 MB', $service->humanSize(5242880));
+    }
+}
+
+final class InMemoryRedis
+{
+    private array $values = [];
+    private array $lists = [];
+
+    public function get(string $key): mixed
+    {
+        return $this->values[$key] ?? null;
+    }
+
+    public function set(string $key, mixed $value, mixed ...$options): bool
+    {
+        if (in_array('NX', $options, true) && array_key_exists($key, $this->values)) {
+            return false;
+        }
+
+        $this->values[$key] = $value;
+
+        return true;
+    }
+
+    public function del(string ...$keys): int
+    {
+        $deleted = 0;
+
+        foreach ($keys as $key) {
+            $existed = array_key_exists($key, $this->values) || array_key_exists($key, $this->lists);
+            unset($this->values[$key], $this->lists[$key]);
+            $deleted += (int) $existed;
+        }
+
+        return $deleted;
+    }
+
+    public function rpush(string $key, mixed $value): int
+    {
+        $this->lists[$key][] = $value;
+
+        return count($this->lists[$key]);
+    }
+
+    public function lrange(string $key, int $start, int $stop): array
+    {
+        $values = $this->lists[$key] ?? [];
+        $length = $stop === -1 ? null : $stop - $start + 1;
+
+        return array_slice($values, $start, $length);
+    }
+
+    public function expire(string $key, int $seconds): bool
+    {
+        return array_key_exists($key, $this->values) || array_key_exists($key, $this->lists);
     }
 }

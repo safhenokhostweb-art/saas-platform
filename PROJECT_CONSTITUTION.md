@@ -106,6 +106,13 @@ Implementation guides, workflows, project memory, and architectural decisions mu
 - A conflict between an ADR and this constitution must be resolved by an explicit constitutional amendment or a superseding ADR that records the amendment.
 - ADR content must not be duplicated across governance, wrappers, reports, or project memory summaries.
 
+## 13A. Proportional Agent Execution
+
+- Agent context loading, repository inspection, model escalation, and validation must be proportional to the task scope.
+- Codex micro-task execution is governed by ADR-019 in `docs/project-memory/DECISIONS.md`.
+- A current sprint brief, when present, is the preferred operational context after this constitution and the orchestration layer.
+- Agents must stop at the requested task boundary and must not begin subsequent work without an explicit task.
+
 ## 14. Governance Hierarchy
 
 Authority descends in this order:

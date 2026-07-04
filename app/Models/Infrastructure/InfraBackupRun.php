@@ -8,9 +8,17 @@ class InfraBackupRun extends Model
 {
     protected $table = 'infra_backup_runs';
 
+    public const TRIGGER_MANUAL         = 'manual';
+    public const TRIGGER_DAILY          = 'daily';
+    public const TRIGGER_WEEKLY         = 'weekly';
+    public const TRIGGER_MONTHLY        = 'monthly';
+    public const TRIGGER_BEFORE_UPGRADE = 'before_upgrade';
+    public const TRIGGER_BEFORE_DELETE  = 'before_delete';
+    public const TRIGGER_BEFORE_RESTORE = 'before_restore';
+
     protected $fillable = [
-        'backup_type', 'site_id', 'status', 'file_path',
-        'file_size_mb', 'duration_seconds', 'error_message',
+        'backup_type', 'trigger_type', 'site_id', 'status', 'file_path',
+        'file_size_mb', 'sha256', 'duration_seconds', 'error_message',
         'started_at', 'completed_at',
     ];
 
@@ -52,22 +60,24 @@ class InfraBackupRun extends Model
             ->first();
     }
 
-    public static function startRun(string $type = 'database', ?int $siteId = null): self
+    public static function startRun(string $type = 'database', ?int $siteId = null, string $trigger = self::TRIGGER_MANUAL): self
     {
         return static::create([
-            'backup_type' => $type,
-            'site_id'     => $siteId,
-            'status'      => 'running',
-            'started_at'  => now(),
+            'backup_type'  => $type,
+            'trigger_type' => $trigger,
+            'site_id'      => $siteId,
+            'status'       => 'running',
+            'started_at'   => now(),
         ]);
     }
 
-    public function endSuccess(string $filePath, float $sizeMb, int $durationSec): void
+    public function endSuccess(string $filePath, float $sizeMb, int $durationSec, ?string $sha256 = null): void
     {
         $this->update([
             'status'           => 'success',
             'file_path'        => $filePath,
             'file_size_mb'     => $sizeMb,
+            'sha256'           => $sha256 ?? (file_exists($filePath) ? hash_file('sha256', $filePath) : null),
             'duration_seconds' => $durationSec,
             'completed_at'     => now(),
         ]);

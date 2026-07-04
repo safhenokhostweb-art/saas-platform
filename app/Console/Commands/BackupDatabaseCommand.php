@@ -40,7 +40,7 @@ class BackupDatabaseCommand extends Command
             mkdir($backupDir, 0750, true);
         }
 
-        $backupRun = InfraBackupRun::startRun('database');
+        $backupRun = InfraBackupRun::startRun('database', null, InfraBackupRun::TRIGGER_DAILY);
         $schedRun  = InfraSchedulerRun::startRun('db:backup --retention=7');
         $startedAt = microtime(true);
 

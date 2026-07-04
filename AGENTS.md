@@ -8,21 +8,19 @@ This file is the vendor-neutral orchestration layer for coding agents operating 
 
 For every task, process context in this order:
 
-1. Load `PROJECT_CONSTITUTION.md` before any other project governance document.
+1. Load `PROJECT_CONSTITUTION.md` before any other project governance document. Do not reload it when it has already been loaded in the same chat.
 2. Identify the workspace scope: `saas-platform`, `customer-site`, or both.
-3. Load the relevant project memory entrypoint:
+3. Load `CURRENT_SPRINT.md` when present and relevant; for a micro-task, use it as the preferred task context and do not expand context unless evidence requires it.
+4. Load the relevant project memory entrypoint when the sprint brief is absent or insufficient:
    - General or cross-workspace task: `docs/project-memory/HANDOVER.md`.
    - Education task: `docs/project-memory/HANDOVER_EDU.md`.
    - Subscription task: `docs/project-memory/HANDOVER_SUBSCRIPTION.md`.
-4. Load architectural decisions from `docs/project-memory/DECISIONS.md`, including ADR-017 for agent execution governance.
-5. Load current phase from `docs/project-memory/PROJECT_STATE.md`.
-6. Load open work from `docs/project-memory/OPEN_TASKS.md`.
-7. Load architecture from `docs/project-memory/ARCHITECTURE.md` and any task-specific architecture document.
-8. Load relevant known issues and audit history from `docs/project-memory/KNOWN_ISSUES.md` and `docs/project-memory/AUDIT_HISTORY.md`.
-9. Apply the capability profile declared by the active agent wrapper. The wrapper is bootstrap metadata and must not be recursively reloaded.
-10. Build an internal task model, then execute the current task under the authority hierarchy below.
+5. Load architectural decisions from `docs/project-memory/DECISIONS.md`, including ADR-017 and ADR-019 for agent execution governance.
+6. For work larger than a micro-task, or when required evidence remains missing, load current phase, open work, architecture, relevant known issues, and audit history from their canonical project-memory files.
+7. Apply the capability profile declared by the active agent wrapper. The wrapper is bootstrap metadata and must not be recursively reloaded.
+8. Build an internal task model, then execute the current task under the authority hierarchy below.
 
-Repository evidence takes precedence over chat history. Missing optional context must not be invented.
+Do not reload `AGENTS.md` when it has already been loaded in the same chat. Repository evidence takes precedence over chat history. Missing optional context must not be invented.
 
 ## Authority Hierarchy
 
@@ -52,6 +50,10 @@ Current task
 - Conflicts are resolved by the authority hierarchy, then by the newest non-superseded ADR within its valid scope.
 
 ## Task Orchestration
+
+### Codex Micro-task Fast Path
+
+Codex must apply ADR-019 to every micro-task. Its inspection, change, root-cause, capability, commit, search-stop, model-selection, review-time, and task-boundary limits are authoritative from the canonical decision log and must not be copied into implementation prompts. When the host exposes model selection, use the lightest capable model and escalate to GPT-5.5 only under ADR-019. Never start the next task automatically.
 
 Before modifying files:
 

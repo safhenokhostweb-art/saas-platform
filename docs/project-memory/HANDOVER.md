@@ -15,6 +15,12 @@ The complete PHASE-009 gap analysis and five requested reports are published at 
 
 Permanent authority: `PROJECT_CONSTITUTION.md`. Agent orchestration: `AGENTS.md`. Architectural record: `DECISIONS.md`. Governance V2 validation: `docs/GOVERNANCE_V2_REPORT.md`. ADR-019 requires Git push, affected-server synchronization, and health verification before any task is complete.
 
+## PRODUCTION DATA CLEANUP (2026-07-03)
+
+- Obsolete deleted installation records `7`, `12`, and `13` were permanently removed from production in FK-safe order, including their deletion records and dependent logs/rollbacks.
+- A recovery snapshot and SHA-256 checksum were stored at `/var/backups/saas-platform/customer-installations-7-12-13-20260703-130218.json{,.sha256}` before deletion.
+- Post-delete verification confirmed zero remaining target or dependent rows; production returned HTTP `200` for `/` and `302` for protected `/admin`.
+
 ---
 
 ## CURRENT STATE (2026-07-01 — PHASE-003H2: LOCAL PC DISASTER RECOVERY ✅)

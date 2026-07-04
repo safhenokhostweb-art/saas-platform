@@ -12,6 +12,8 @@ class CredentialVaultTest extends TestCase
         $key = base64_encode(random_bytes(32));
         putenv("INSTALLER_MASTER_KEY={$key}");
         $_ENV['INSTALLER_MASTER_KEY'] = $key;
+        config()->set('installer.master_key', $key);
+
         return new CredentialVault();
     }
 
@@ -60,9 +62,10 @@ class CredentialVaultTest extends TestCase
     {
         putenv('INSTALLER_MASTER_KEY=');
         $_ENV['INSTALLER_MASTER_KEY'] = '';
+        config()->set('installer.master_key', '');
 
         $this->expectException(\RuntimeException::class);
-        new CredentialVault();
+        (new CredentialVault())->encrypt('secret');
     }
 
     public function test_encrypts_empty_string(): void

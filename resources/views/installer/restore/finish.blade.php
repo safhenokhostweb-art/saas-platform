@@ -5,10 +5,9 @@
 @include('installer.partials.progress')
 
 @php
-    $restoreData = $installer->getStepData('restore') ?? [];
-    $success     = $restoreData['success'] ?? null;
-    $queued      = $restoreData['queued']  ?? false;
-    $message     = $restoreData['message'] ?? '';
+    $success = $restoreStepData['success'] ?? null;
+    $queued  = $restoreStepData['queued']  ?? false;
+    $message = $restoreStepData['message'] ?? '';
 @endphp
 
 <div class="card" style="text-align:center;">

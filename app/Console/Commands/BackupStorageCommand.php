@@ -31,7 +31,7 @@ class BackupStorageCommand extends Command
             return self::SUCCESS;
         }
 
-        $backupRun = InfraBackupRun::startRun('storage');
+        $backupRun = InfraBackupRun::startRun('storage', null, InfraBackupRun::TRIGGER_WEEKLY);
         $startedAt = microtime(true);
 
         $cmd = sprintf(

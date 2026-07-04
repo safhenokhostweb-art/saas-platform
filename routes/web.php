@@ -239,50 +239,6 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| مراحل نصب سیستم (Installer)
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/install', [InstallController::class, 'step1'])
-    ->name('install.step1');
-
-Route::post('/install/db', [InstallController::class, 'saveDb'])
-    ->name('install.db');
-
-Route::post('/install/admin', [InstallController::class, 'saveAdmin'])
-    ->name('install.admin');
-
-Route::get('/install/done', [InstallController::class, 'done'])
-    ->name('install.done');
-
-/*
-|--------------------------------------------------------------------------
-| Platform Installer (New — Phase 1)
-| All routes protected by InstallerLockMiddleware except locked + unlock.
-|--------------------------------------------------------------------------
-*/
-Route::prefix('platform-installer')->name('installer.')->group(function () {
-    // Always accessible (no lock restriction)
-    Route::get('/locked',  [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'locked'])->name('locked');
-    Route::post('/unlock', [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'unlock'])->name('unlock');
-    Route::get('/complete',[\App\Http\Controllers\Installer\PlatformInstallerController::class, 'complete'])->name('complete');
-    Route::get('/report/{format}', [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'downloadReport'])
-        ->name('report-download')
-        ->where('format', 'html|pdf');
-
-    // Main installer wizard (blocked when installer is locked)
-    Route::middleware(\App\Http\Middleware\InstallerLockMiddleware::class)->group(function () {
-        Route::get('/',                [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'index'])->name('index');
-        Route::post('/select-mode',    [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'selectMode'])->name('select-mode');
-        Route::get('/check',           [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'apiCheck'])->name('api-check');
-
-        Route::get('/{mode}/{step}',   [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'step'])->name('step');
-        Route::post('/{mode}/{step}',  [\App\Http\Controllers\Installer\PlatformInstallerController::class, 'processStep'])->name('process');
-    });
-});
-
-/*
-|--------------------------------------------------------------------------
 | فرم‌های سایت مشتری (نمایش و ارسال با کپچا)
 |--------------------------------------------------------------------------
 */
@@ -1018,6 +974,18 @@ Route::prefix('admin')
             Route::get('/report/{format}', [\App\Http\Controllers\Admin\InstallerAdminController::class, 'downloadReport'])->name('report')->where('format', 'html|pdf');
             Route::get('/manifest',        [\App\Http\Controllers\Admin\InstallerAdminController::class, 'downloadManifest'])->name('manifest');
             Route::get('/baseline-meta',   [\App\Http\Controllers\Admin\InstallerAdminController::class, 'downloadBaselineMeta'])->name('baseline-meta');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recovery Manager — Unified DR Hub
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('recovery-manager')->name('recovery-manager.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\RecoveryManagerController::class, 'index'])->name('index');
+            Route::get('/sync-script/{platform}', [\App\Http\Controllers\Admin\RecoveryManagerController::class, 'downloadSyncScript'])
+                ->name('sync-script')
+                ->where('platform', 'windows|linux');
         });
 
         /*

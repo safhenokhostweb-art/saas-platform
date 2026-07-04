@@ -1,7 +1,7 @@
 # ARCHITECTURAL DECISIONS
 > ADR-style log. Every important decision recorded permanently.
 > Format: Decision ID | Date | Context | Decision | Reason | Impact
-> Last Updated: 2026-06-27
+> Last Updated: 2026-07-03
 
 ---
 
@@ -451,6 +451,32 @@ Separating permanent architecture from tool orchestration keeps the project vali
 ---
 
 ## ADR-019
+
+**Date:** 2026-07-03
+**Title:** Codex Efficiency Policy
+
+**Context:**
+Codex task startup required broad, repeated governance and repository context loading regardless of task size. This consumed unnecessary context and high-capability model time, encouraged scans beyond the requested scope, and made isolated micro-tasks less efficient.
+
+**Decision:**
+Codex uses a micro-task fast path with one capability and one root cause per task. Each micro-task may inspect at most 5 files, change at most 4 files, and produce at most 1 commit. It must not begin the next task automatically, perform a repository-wide audit unless explicitly requested, modify unrelated modules, or create duplicate abstractions.
+
+Within the same chat, Codex must not reread `PROJECT_CONSTITUTION.md` or `AGENTS.md` after loading them. When present, `CURRENT_SPRINT.md` is preferred over repository-wide context. Repository search stops after the first confirmed match whenever practical.
+
+Codex uses the lightest capable model exposed by the host. GPT-5.5 is reserved for ambiguous architecture, a root cause that cannot otherwise be determined, or final architecture review; any GPT-5.5 review is limited to 5 minutes. If the host does not expose model selection or timing controls, Codex must report that limitation and must not claim the capability.
+
+**Reason:**
+Bounded context and escalation make small changes faster and less expensive while retaining a narrow path for difficult architectural reasoning.
+
+**Impact:**
+- `PROJECT_CONSTITUTION.md` establishes proportional agent execution and task-boundary stopping.
+- `AGENTS.md` loads this decision on bootstrap and provides the Codex micro-task fast path.
+- Future Codex sessions inherit the policy through the standard bootstrap sequence; implementation prompts do not need to repeat it.
+- Explicit task scope can be narrower than these maxima but cannot silently broaden them.
+
+---
+
+## ADR-020
 
 **Date:** 2026-07-03
 **Title:** Mandatory Git and Production Synchronization at Task Completion

@@ -60,6 +60,7 @@ class AdminMenu
         'auth_center'            => 'مرکز احراز هویت',
         'recovery_repository'    => 'خزانه بازیابی محلی',
         'dns_provider'           => 'DNS Provider آروان',
+        'recovery_manager'       => 'مدیریت بازیابی (Recovery Manager)',
     ];
 
     /** مسیر هر آیتم منو */
@@ -115,6 +116,7 @@ class AdminMenu
         'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.index',
         'recovery_repository'    => 'admin.infrastructure.recovery-repository.index',
         'dns_provider'           => 'admin.infrastructure.dns-provider.index',
+        'recovery_manager'       => 'admin.recovery-manager.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -170,6 +172,7 @@ class AdminMenu
         'auth_center'            => 'admin.infrastructure.customer-deployment.auth-center.*',
         'recovery_repository'    => 'admin.infrastructure.recovery-repository.*',
         'dns_provider'           => 'admin.infrastructure.dns-provider.*',
+        'recovery_manager'       => 'admin.recovery-manager.*',
     ];
 
     /** این آیتم‌ها همیشه در منو نمایش داده می‌شوند (برای جلوگیری از قفل شدن دسترسی) */
@@ -191,7 +194,7 @@ class AdminMenu
             'محتوا / مقالات'                    => ['theme_builder', 'theme_templates', 'theme_packs', 'zip_import', 'education'],
             'تنظیمات سیستم'                     => ['access', 'captcha', 'module_labels', 'platform_settings', 'theme_manager'],
             'اطلاع‌رسانی / ارتباطات'            => ['notification_center'],
-            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'platform_installer', 'installer_status', 'customer_deployment', 'recovery_repository', 'dns_provider'],
+            'زیرساخت / DevOps'                  => ['infrastructure', 'monitoring_center', 'incidents', 'lifecycle', 'resource_governance', 'disaster_recovery', 'restore_wizard', 'dr_center', 'recovery_manager', 'platform_installer', 'installer_status', 'customer_deployment', 'recovery_repository', 'dns_provider'],
             'بازاریابی / دانش‌محور'             => ['kb'],
             'گزارش‌ها / آمار'                   => ['activity_log', 'module_adoption'],
             'اپلیکیشن‌ها'                        => ['app_releases'],

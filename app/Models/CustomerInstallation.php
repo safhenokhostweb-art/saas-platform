@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\CustomerInstallation\State\InstallationStateBridge;
+use App\Services\CustomerInstallation\State\StateResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,17 +65,34 @@ class CustomerInstallation extends Model
 
     public function isRunning(): bool
     {
-        return in_array($this->status, ['pending', 'running', 'rolling_back']);
+        return in_array($this->resolvedState(), [
+            StateResolver::PENDING,
+            StateResolver::RUNNING,
+            StateResolver::ROLLING_BACK,
+        ], true);
     }
 
     public function isComplete(): bool
     {
-        return $this->status === 'complete';
+        return in_array($this->resolvedState(), [
+            StateResolver::COMPLETE,
+            StateResolver::CUSTOMER_READY,
+        ], true);
     }
 
     public function isFailed(): bool
     {
-        return in_array($this->status, ['failed', 'rollback_failed']);
+        return in_array($this->resolvedState(), [
+            StateResolver::FAILED,
+            StateResolver::ROLLBACK_FAILED,
+            StateResolver::INSTALLATION_BLOCKED,
+            StateResolver::VERIFY_FAILED,
+        ], true);
+    }
+
+    public function resolvedState(): string
+    {
+        return app(InstallationStateBridge::class)->read($this);
     }
 
     public function completedStagesList(): array
