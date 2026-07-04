@@ -2,7 +2,7 @@ name: Mobile Client Build — Phase M2.1
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'mobile/**'
       - '.github/workflows/mobile-build.yml'
@@ -33,6 +33,10 @@ on:
         description: 'Skip governance check (emergency only)'
         type: boolean
         default: false
+
+concurrency:
+  group: mobile-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   FLUTTER_VERSION: '3.22.3'
