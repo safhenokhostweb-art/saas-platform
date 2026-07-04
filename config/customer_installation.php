@@ -35,8 +35,9 @@ return [
      * Used by RemoteConnectionService::buildDriver().
      */
     'drivers' => [
-        'ssh'  => \App\Services\CustomerInstallation\Drivers\SshRemoteDriver::class,
-        'fake' => \App\Services\CustomerInstallation\Drivers\FakeRemoteDriver::class,
+        'ssh'    => \App\Services\CustomerInstallation\Drivers\SshRemoteDriver::class,
+        'cpanel' => \App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver::class,
+        'fake'   => \App\Services\CustomerInstallation\Drivers\FakeRemoteDriver::class,
     ],
 
     /*
