@@ -105,7 +105,7 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   text-transform: none !important;
-  color: var(--grp-color) !important;
+  color: var(--platform-sidebar-text) !important;
   border-bottom: none !important;
   padding: 0 !important;
   margin: 0;
