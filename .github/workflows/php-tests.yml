@@ -2,8 +2,18 @@ name: PHP Tests — SaaS Platform
 
 on:
   pull_request:
+    paths-ignore:
+      - 'mobile/**'
+      - '.github/workflows/mobile-build.yml'
   push:
     branches: [main, master]
+    paths-ignore:
+      - 'mobile/**'
+      - '.github/workflows/mobile-build.yml'
+
+concurrency:
+  group: php-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────────
@@ -97,7 +107,7 @@ jobs:
           DB_PASSWORD: root
         run: php artisan migrate --env=testing --force
 
-      - name: Run platform tests
+      - name: Run platform Unit and Feature test suites
         env:
           APP_ENV: testing
           DB_HOST: 127.0.0.1
@@ -110,7 +120,7 @@ jobs:
           SESSION_DRIVER: array
           PULSE_ENABLED: "false"
           TELESCOPE_ENABLED: "false"
-        run: vendor/bin/phpunit tests/ --no-coverage --stop-on-failure
+        run: vendor/bin/phpunit --configuration phpunit.xml --testsuite Unit,Feature --no-coverage --stop-on-failure
 
       - name: Upload test results on failure
         if: failure()

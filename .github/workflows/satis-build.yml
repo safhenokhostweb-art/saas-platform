@@ -9,6 +9,10 @@ on:
       - '.github/workflows/satis-build.yml'
   workflow_dispatch:
 
+concurrency:
+  group: satis-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-satis:
     name: 'Build Satis Index'
