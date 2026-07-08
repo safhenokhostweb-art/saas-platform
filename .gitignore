@@ -1,5 +1,6 @@
 /.phpunit.cache
 /node_modules
+node_modules/
 /public/build
 /public/hot
 /public/storage
@@ -31,8 +32,7 @@ yarn-error.log
 /.vscode
 cursor-rules-sync.local.json
 
-# Secrets and credentials (Phase 5 / P4-4 cleanup)
-# هر فایلی که شبیه SSH key است نباید commit شود.
+# Secrets and credentials
 id_rsa
 id_rsa.pub
 id_ed25519
@@ -43,28 +43,16 @@ id_ed25519.pub
 # Runtime artifacts
 dump.rdb
 META-INF/
-public/uploads/
 
 # Local experimental/test scripts that may contain API keys
 test_gapgpt.py
 test_*_local.py
-"" 
-"# Temporary files" 
-".clinerules/" 
-"cline_rules_backup/" 
-"memory-bank/" 
-"*.py" 
-"get(__FILE__)" 
-"routes_snapshot.txt" 
-"2" 
-"bootstrap/cache/*.php" 
-".vite/" 
-"" 
-"# Temporary development files" 
-".clinerules/" 
-"cline_rules_backup/" 
-"memory-bank/" 
-"*.py" 
-"routes_snapshot.txt" 
-"2" 
-"bootstrap/cache/*.php" 
+
+# Temporary/local development files
+cline_rules_backup/
+memory-bank/
+routes_snapshot.txt
+debug.txt
+composer_error.txt
+composer_output.txt
+.vite/
