@@ -3,16 +3,26 @@
 namespace SaaSPlatform\CoreUtils\Console\Commands;
 
 use Illuminate\Console\Command;
+use SaaSPlatform\CoreUtils\Contracts\Services\Dto\ModuleReleaseRequest;
+use SaaSPlatform\CoreUtils\Contracts\Services\Dto\ModuleReleaseResult;
+use SaaSPlatform\CoreUtils\Contracts\Services\ModuleReleaseProducerInterface;
 use SaaSPlatform\CoreUtils\Support\ModuleVersionRegistry;
 use SaaSPlatform\CoreUtils\Support\ReleaseManifest;
 
 /**
  * PHASE 6.98 — TASK 2: module:release
+ * Commit 12-G — wired to the platform's version authority.
  *
  * Prepares a module release:
  *  1. Validates the module passes module:build
- *  2. Generates a canonical release manifest JSON
- *  3. Creates a git tag for the version
+ *  2. Records the release against module_releases via
+ *     ModuleReleaseProducerInterface (see
+ *     docs/architecture/module-version-authority-adr.md)
+ *  3. Generates a canonical release manifest JSON
+ *  4. Creates a git tag for the version
+ *
+ * This package never touches App\Models or the host adapter directly —
+ * it only depends on the contract, resolved from the container.
  *
  * DOES NOT push tags or deploy. Release preparation only.
  */
@@ -21,7 +31,8 @@ class ModuleReleaseCommand extends Command
     protected $signature = 'module:release
         {module : The module slug to release}
         {--dry-run : Prepare manifest but skip git tag creation}
-        {--no-build : Skip module:build validation (not recommended)}';
+        {--no-build : Skip module:build validation (not recommended)}
+        {--type=patch : Release type recorded in module_releases (patch|minor|major)}';
 
     protected $description = 'Prepare a module release: generate manifest and create git tag';
 
@@ -36,6 +47,12 @@ class ModuleReleaseCommand extends Command
             return self::FAILURE;
         }
 
+        $releaseType = $this->option('type');
+        if (!in_array($releaseType, ['patch', 'minor', 'major'], true)) {
+            $this->error("Invalid --type [{$releaseType}]. Expected patch, minor, or major.");
+            return self::FAILURE;
+        }
+
         $version = $data['version'] ?? '0.0.0';
         $this->line('');
         $this->line("🚀 Releasing module: <info>{$module}</info> v{$version}");
@@ -43,28 +60,60 @@ class ModuleReleaseCommand extends Command
 
         // Step 1: Build validation
         if (!$this->option('no-build')) {
-            $this->line('Step 1/3: Running module:build validation...');
+            $this->line('Step 1/4: Running module:build validation...');
             $exitCode = $this->call('module:build', ['module' => $module]);
             if ($exitCode !== 0) {
                 $this->error('Release aborted — module:build failed.');
                 return self::FAILURE;
             }
         } else {
-            $this->warn('Step 1/3: Skipping module:build (--no-build flag set).');
+            $this->warn('Step 1/4: Skipping module:build (--no-build flag set).');
         }
 
-        // Step 2: Generate release manifest
-        $this->line('Step 2/3: Generating release manifest...');
+        // Read fresh version — build validation does not mutate module.json,
+        // but the registry cache may predate an out-of-band version bump.
+        $registry->flush();
+        $data    = $registry->get($module) ?? $data;
+        $version = $data['version'] ?? $version;
+
+        // Step 2: Record the release against the platform's version authority.
+        // Only the contract is used here — this package never sees
+        // App\Models or the host adapter (see class docblock).
+        $this->line('Step 2/4: Recording release in platform database...');
+        $result = app(ModuleReleaseProducerInterface::class)->record(new ModuleReleaseRequest(
+            slug: $module,
+            version: $version,
+            releaseType: $releaseType,
+            distributedAt: new \DateTimeImmutable(),
+        ));
+
+        switch ($result->status) {
+            case ModuleReleaseResult::STATUS_CREATED:
+                $this->info("  Release recorded (module_releases id={$result->releaseId}).");
+                break;
+            case ModuleReleaseResult::STATUS_SKIPPED_DUPLICATE:
+                $this->warn("  {$result->reason}");
+                $this->warn('  Continuing — an active release for this version already exists.');
+                break;
+            case ModuleReleaseResult::STATUS_SKIPPED_NO_MODULE_ROW:
+            case ModuleReleaseResult::STATUS_FAILED:
+            default:
+                $this->error("Release aborted — {$result->reason}");
+                return self::FAILURE;
+        }
+
+        // Step 3: Generate release manifest
+        $this->line('Step 3/4: Generating release manifest...');
         $manifest = app(ReleaseManifest::class)->generate($module, $data);
         $this->info("  Manifest written → storage/app/modules/releases/{$module}.json");
         $this->line("  Checksum: {$manifest['checksum']}");
 
-        // Step 3: Git tag
+        // Step 4: Git tag
         $tag = "module-{$module}-v{$version}";
         if ($this->option('dry-run')) {
-            $this->warn("Step 3/3: [DRY RUN] Would create git tag: {$tag}");
+            $this->warn("Step 4/4: [DRY RUN] Would create git tag: {$tag}");
         } else {
-            $this->line("Step 3/3: Creating git tag: <comment>{$tag}</comment>...");
+            $this->line("Step 4/4: Creating git tag: <comment>{$tag}</comment>...");
 
             // Collect checksums for tag message
             $tagMessage = "Release {$module} v{$version}\n\nSchema version: " . ($data['schema_version'] ?? '1');
