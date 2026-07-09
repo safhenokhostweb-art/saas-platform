@@ -36,7 +36,15 @@ class ProductController extends Controller
             'support_plan_id' => 'nullable|exists:support_plans,id',
         ];
         if ($request->type === Product::TYPE_MODULE_ADDON) {
-            $rules['module_id'] = 'required|exists:modules,id';
+            $rules['module_id'] = [
+                'required',
+                'exists:modules,id',
+                function ($attribute, $value, $fail) {
+                    if (! Module::paidMarketplace()->whereKey($value)->exists()) {
+                        $fail('ماژول انتخاب‌شده برای فروش در فروشگاه (Marketplace) در دسترس نیست.');
+                    }
+                },
+            ];
         }
         if ($request->type === Product::TYPE_SUPPORT_PLAN) {
             $rules['support_plan_id'] = 'required|exists:support_plans,id';
@@ -73,7 +81,15 @@ class ProductController extends Controller
             'support_plan_id' => 'nullable|exists:support_plans,id',
         ];
         if ($request->type === Product::TYPE_MODULE_ADDON) {
-            $rules['module_id'] = 'required|exists:modules,id';
+            $rules['module_id'] = [
+                'required',
+                'exists:modules,id',
+                function ($attribute, $value, $fail) {
+                    if (! Module::paidMarketplace()->whereKey($value)->exists()) {
+                        $fail('ماژول انتخاب‌شده برای فروش در فروشگاه (Marketplace) در دسترس نیست.');
+                    }
+                },
+            ];
         }
         if ($request->type === Product::TYPE_SUPPORT_PLAN) {
             $rules['support_plan_id'] = 'required|exists:support_plans,id';
