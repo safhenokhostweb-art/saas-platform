@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Site;
 use App\Services\CartService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 /**
@@ -11,13 +12,28 @@ use Illuminate\Http\Request;
  */
 class StoreController extends Controller
 {
+    /**
+     * حذف محصولاتی که به ماژول غیر customer-facing (internal/platform-only)
+     * وابسته‌اند — چه در لیست فروشگاه، چه در مسیر افزودن به سبد خرید.
+     * محصولات بدون module_id (license_template, support_plan) تحت تأثیر
+     * قرار نمی‌گیرند. Source of truth: Module::scopeCustomerFacing()
+     * (فقط core/paid؛ internal هرگز — طبق مستندات موجود پروژه).
+     */
+    protected function excludeInternalModuleProducts(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->whereNull('module_id')
+                ->orWhereHas('module', fn (Builder $m) => $m->customerFacing());
+        });
+    }
+
     public function index(Request $request, CartService $cart)
     {
         // پیش‌پر کردن سبد از URL (برای لینک از سایت مالک: ?add=product_id&site_id=...)
         if ($request->filled('add')) {
             $productId = (int) $request->add;
             $siteId = $request->filled('site_id') ? (int) $request->site_id : null;
-            $product = Product::where('is_active', true)->find($productId);
+            $product = $this->excludeInternalModuleProducts(Product::where('is_active', true))->find($productId);
             if ($product) {
                 $needsSite = in_array($product->type, [Product::TYPE_MODULE_ADDON, Product::TYPE_SUPPORT_PLAN]);
                 if (!$needsSite || $siteId) {
@@ -27,7 +43,7 @@ class StoreController extends Controller
             }
         }
 
-        $products = Product::where('is_active', true)
+        $products = $this->excludeInternalModuleProducts(Product::where('is_active', true))
             ->with(['module', 'supportPlan'])
             ->orderBy('type')
             ->get();
@@ -50,7 +66,10 @@ class StoreController extends Controller
         if ($request->filled('add')) {
             $productId = (int) $request->add;
             $siteId = $request->filled('site_id') ? (int) $request->site_id : null;
-            $product = Product::where('is_active', true)->where('type', Product::TYPE_MODULE_ADDON)->find($productId);
+            $product = Product::where('is_active', true)
+                ->where('type', Product::TYPE_MODULE_ADDON)
+                ->whereHas('module', fn (Builder $m) => $m->customerFacing())
+                ->find($productId);
             if ($product && $product->module_id) {
                 if ($siteId) {
                     $cart->add($productId, 1, $siteId);
@@ -62,6 +81,7 @@ class StoreController extends Controller
         $products = Product::where('is_active', true)
             ->where('type', Product::TYPE_MODULE_ADDON)
             ->whereNotNull('module_id')
+            ->whereHas('module', fn (Builder $m) => $m->customerFacing())
             ->with('module')
             ->orderBy('name_fa')
             ->get();
@@ -111,7 +131,8 @@ class StoreController extends Controller
             'site_id' => 'nullable|exists:sites,id',
         ]);
 
-        $product = Product::where('is_active', true)->findOrFail($request->product_id);
+        $product = $this->excludeInternalModuleProducts(Product::where('is_active', true))
+            ->findOrFail($request->product_id);
         $siteId = $request->site_id;
         if (in_array($product->type, [Product::TYPE_MODULE_ADDON, Product::TYPE_SUPPORT_PLAN]) && !$siteId) {
             return back()->with('error', 'برای این محصول باید یک سایت انتخاب کنید.');
