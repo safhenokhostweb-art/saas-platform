@@ -141,6 +141,39 @@ class TenantMarketplaceModulesApiTest extends TestCase
         $this->assertTrue($entry['purchasable']);
     }
 
+    public function test_purchasable_module_includes_purchase_url(): void
+    {
+        $site = $this->makeSite($this->makeCustomer());
+        $module = $this->makePaidMarketplaceModule();
+        $key = $this->issueLicenseKey($site);
+
+        // Not installed / not entitled: still purchasable, so purchase_url
+        // must be present (Phase 3-F / Commit 10-B).
+        $response = $this->getJson('/api/tenant-marketplace/modules?' . http_build_query([
+            'license_key' => $key,
+            'domain' => $site->domain,
+        ]));
+
+        $response->assertOk();
+        $entry = collect($response->json('modules'))->firstWhere('slug', $module->slug);
+        $this->assertNotNull($entry);
+
+        // Existing fields must remain untouched (backward compatibility).
+        $this->assertSame($module->slug, $entry['slug']);
+        $this->assertSame($module->title, $entry['title']);
+        $this->assertArrayHasKey('visibility', $entry);
+        $this->assertArrayHasKey('enabled', $entry);
+        $this->assertArrayHasKey('version', $entry);
+
+        // New field: no product_id, no site_id, just the module slug.
+        $this->assertSame(
+            route('store.modules', ['module' => $module->slug]),
+            $entry['purchase_url']
+        );
+        $this->assertStringNotContainsString('product', $entry['purchase_url']);
+        $this->assertStringNotContainsString('site_id', $entry['purchase_url']);
+    }
+
     public function test_internal_module_never_appears_in_response(): void
     {
         $site = $this->makeSite($this->makeCustomer());

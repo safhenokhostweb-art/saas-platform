@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Services\LicenseServerService;
 use App\Services\ModuleAssignmentService;
 use App\Services\ModuleEcosystem\DeploymentResolver;
+use App\Services\ModuleEcosystem\Dto\VisibilityState;
 use App\Services\ModuleEcosystem\EntitlementResolver;
 use App\Services\ModuleEcosystem\VisibilityResolver;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,16 @@ class TenantMarketplaceController extends Controller
                 $entitlement = $this->entitlementResolver->resolve($site, $m);
                 $visibility = $this->visibilityResolver->resolve($site, $m);
 
+                // Phase 3-F / Commit 10-B: deep-link to the Platform Store
+                // (Commit 10-A resolves ?module=<slug> server-side). Only
+                // the module slug travels over the wire — no product_id,
+                // no site_id, no internal-only module ever reaches this
+                // point (Module::paidMarketplace() already excludes them).
+                $purchasable = $m->isPaidMarketplace() || $m->isLicenseOnly();
+                $purchaseUrl = ($purchasable && $visibility->state !== VisibilityState::STATE_HIDDEN)
+                    ? route('store.modules', ['module' => $m->slug])
+                    : null;
+
                 return [
                     'id' => $m->id,
                     'slug' => $m->slug,
@@ -124,7 +135,8 @@ class TenantMarketplaceController extends Controller
                     'visibility' => $visibility->state,
                     'enabled' => $entitlement->allowed,
                     'version' => $deployment->installedVersion ?? $deployment->latestVersion,
-                    'purchasable' => $m->isPaidMarketplace() || $m->isLicenseOnly(),
+                    'purchasable' => $purchasable,
+                    'purchase_url' => $purchaseUrl,
                 ];
             });
 
