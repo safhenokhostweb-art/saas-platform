@@ -7,6 +7,7 @@ use App\Adapters\AuthUserResolverAdapter;
 use App\Adapters\CaptchaServiceAdapter;
 use App\Adapters\JalaliDateFormatterAdapter;
 use App\Adapters\ModuleLicenseAdapter;
+use App\Adapters\ModuleReleaseProducerAdapter;
 use App\Adapters\SiteRepositoryAdapter;
 use App\Models\Site;
 use App\Models\User;
@@ -18,6 +19,7 @@ use SaaSPlatform\CoreUtils\Contracts\Services\AuthUserResolverInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\CaptchaServiceInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\DateFormatterInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\ModuleLicenseServiceInterface;
+use SaaSPlatform\CoreUtils\Contracts\Services\ModuleReleaseProducerInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 
@@ -49,6 +51,7 @@ class InfrastructureServiceProvider extends ServiceProvider
         $this->app->singleton(CaptchaServiceInterface::class, CaptchaServiceAdapter::class);
         $this->app->singleton(ActivityLoggerInterface::class, ActivityLoggerAdapter::class);
         $this->app->singleton(ModuleLicenseServiceInterface::class, ModuleLicenseAdapter::class);
+        $this->app->singleton(ModuleReleaseProducerInterface::class, ModuleReleaseProducerAdapter::class);
         $this->app->singleton(DateFormatterInterface::class, JalaliDateFormatterAdapter::class);
         $this->app->singleton(AuthUserResolverInterface::class, AuthUserResolverAdapter::class);
     }
