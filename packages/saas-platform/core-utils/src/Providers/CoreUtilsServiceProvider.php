@@ -15,6 +15,7 @@ use SaaSPlatform\CoreUtils\Console\Commands\ValidateAuthorityCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\DriftAuthorityCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleVersionCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleBuildCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\ModuleReleaseBackfillCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleReleaseCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleListCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\IconListCommand;
@@ -1125,6 +1126,8 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 ModuleVersionCommand::class,
                 ModuleBuildCommand::class,
                 ModuleReleaseCommand::class,
+                // Commit 12-H: one-time module_releases backfill
+                ModuleReleaseBackfillCommand::class,
                 ModuleListCommand::class,
                 IconListCommand::class,
                 // PHASE 7.15 — TASK 8: UI authority validation command
