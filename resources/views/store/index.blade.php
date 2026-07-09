@@ -35,9 +35,9 @@
                             $price = (int) round($price * (100 - $wholesaleDiscount) / 100);
                         }
                     @endphp
-                    <span class="font-bold">{{ \App\Helpers\NumberHelper::formatFa($price)) }} ریال</span>
+                    <span class="font-bold">{{ \App\Helpers\NumberHelper::formatFa($price) }} ریال</span>
                     @if($wholesaleDiscount > 0)
-                        <span class="text-gray-500 text-sm line-through">{{ \App\Helpers\NumberHelper::formatFa($product->price_irr)) }}</span>
+                        <span class="text-gray-500 text-sm line-through">{{ \App\Helpers\NumberHelper::formatFa($product->price_irr) }}</span>
                         <span class="text-green-600 text-xs">تخفیف عمده {{ \App\Helpers\NumberHelper::toPersianNumbers($wholesaleDiscount) }}%</span>
                     @endif
                     @php
