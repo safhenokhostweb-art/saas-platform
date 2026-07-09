@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\LicenseServerService;
 use App\Services\ModuleAssignmentService;
+use App\Services\ModuleEcosystem\DeploymentResolver;
+use App\Services\ModuleEcosystem\EntitlementResolver;
+use App\Services\ModuleEcosystem\VisibilityResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,7 +17,10 @@ class TenantMarketplaceController extends Controller
 {
     public function __construct(
         protected LicenseServerService $licenseService,
-        protected ModuleAssignmentService $assignmentService
+        protected ModuleAssignmentService $assignmentService,
+        protected DeploymentResolver $deploymentResolver,
+        protected EntitlementResolver $entitlementResolver,
+        protected VisibilityResolver $visibilityResolver,
     ) {}
 
     /**
@@ -86,12 +92,20 @@ class TenantMarketplaceController extends Controller
         $modules = \App\Models\Module::paidMarketplace()
             ->orderBy('title')
             ->get()
-            ->map(function ($m) use ($enabledSlugs, $ownedSet) {
+            ->map(function ($m) use ($site, $enabledSlugs, $ownedSet) {
                 $installed = in_array($m->slug, $enabledSlugs, true);
                 $owned = $installed || isset($ownedSet[(int) $m->id]);
                 $status = $installed
                     ? 'installed'
                     : ($owned ? 'owned_disabled' : 'available');
+
+                // Runtime state via Module Ecosystem resolvers (Phase 3-B /
+                // Commit 6). Additive only — the fields above are unchanged
+                // for existing consumers; visibility/enabled/version/
+                // purchasable are the new resolver-backed contract.
+                $deployment = $this->deploymentResolver->resolve($site, $m);
+                $entitlement = $this->entitlementResolver->resolve($site, $m);
+                $visibility = $this->visibilityResolver->resolve($site, $m);
 
                 return [
                     'id' => $m->id,
@@ -107,6 +121,10 @@ class TenantMarketplaceController extends Controller
                     'installed' => $installed,
                     'owned' => $owned,
                     'status' => $status,
+                    'visibility' => $visibility->state,
+                    'enabled' => $entitlement->allowed,
+                    'version' => $deployment->installedVersion ?? $deployment->latestVersion,
+                    'purchasable' => $m->isPaidMarketplace() || $m->isLicenseOnly(),
                 ];
             });
 
