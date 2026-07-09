@@ -78,6 +78,34 @@ class StoreController extends Controller
             }
         }
 
+        // Deep link از Customer Site: ?module=<slug> (Phase 3-F / Commit 10-A).
+        // فقط Product متناظر را برای پیش‌انتخاب در همین صفحه resolve می‌کند؛
+        // site_id از URL پذیرفته نمی‌شود و به سبد خرید اضافه نمی‌کند — انتخاب
+        // سایت همچنان از طریق فرم/Session موجود همین صفحه انجام می‌شود.
+        $preselectedProductId = null;
+        if ($request->filled('module')) {
+            $module = \App\Models\Module::customerFacing()
+                ->where('slug', (string) $request->input('module'))
+                ->first();
+
+            if (!$module) {
+                abort(404, 'ماژول یافت نشد.');
+            }
+
+            $product = Product::where('type', Product::TYPE_MODULE_ADDON)
+                ->where('is_active', true)
+                ->whereHas('module', fn (Builder $m) => $m->customerFacing())
+                ->where('module_id', $module->id)
+                ->first();
+
+            if (!$product) {
+                return redirect()->route('store.modules')
+                    ->with('error', 'این ماژول در حال حاضر برای خرید موجود نیست.');
+            }
+
+            $preselectedProductId = $product->id;
+        }
+
         $products = Product::where('is_active', true)
             ->where('type', Product::TYPE_MODULE_ADDON)
             ->whereNotNull('module_id')
@@ -94,7 +122,7 @@ class StoreController extends Controller
 
         $enabledModuleIdsBySite = $this->getEnabledModuleIdsBySiteForCustomer();
 
-        return view('store.modules', compact('products', 'reseller', 'wholesaleDiscount', 'preselectedSiteId', 'enabledModuleIdsBySite'));
+        return view('store.modules', compact('products', 'reseller', 'wholesaleDiscount', 'preselectedSiteId', 'enabledModuleIdsBySite', 'preselectedProductId'));
     }
 
     /**
