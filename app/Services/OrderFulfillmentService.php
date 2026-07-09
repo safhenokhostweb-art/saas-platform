@@ -108,6 +108,13 @@ class OrderFulfillmentService
     protected function fulfillModuleAddon(InvoiceItem $item, ?Site $site): void
     {
         if (! $site || ! $item->product->module_id) {
+            Log::error('Module addon fulfillment skipped: missing site or module_id on invoice item', [
+                'invoice_item_id' => $item->id,
+                'invoice_id' => $item->invoice_id,
+                'site_id' => $item->site_id,
+                'product_id' => $item->product_id,
+                'module_id' => $item->product->module_id ?? null,
+            ]);
             return;
         }
         $moduleId = $item->product->module_id;

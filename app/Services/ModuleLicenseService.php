@@ -8,6 +8,7 @@ use App\Models\ModulePurchase;
 use App\Models\Site;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * موتور لایسنس ماژول: صدور، اعطا، اعتبارسنجی، لغو.
@@ -77,6 +78,12 @@ class ModuleLicenseService
     {
         $module = Module::where('type', Module::TYPE_PAID)->find($moduleId);
         if (! $module) {
+            Log::error('Module license creation skipped: module not found or not type=paid', [
+                'site_id' => $site->id,
+                'module_id' => $moduleId,
+                'invoice_id' => $item->invoice_id,
+                'invoice_item_id' => $item->id,
+            ]);
             return null;
         }
 

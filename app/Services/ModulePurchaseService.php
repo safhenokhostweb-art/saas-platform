@@ -6,6 +6,7 @@ use App\Models\Module;
 use App\Models\ModulePurchase;
 use App\Models\Site;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 /**
  * سرویس خرید و مالکیت ماژول.
@@ -20,6 +21,12 @@ class ModulePurchaseService
     {
         $module = Module::where('type', Module::TYPE_PAID)->find($moduleId);
         if (! $module) {
+            Log::error('Module purchase record skipped: module not found or not type=paid', [
+                'site_id' => $site->id,
+                'module_id' => $moduleId,
+                'invoice_id' => $invoiceItem->invoice_id,
+                'invoice_item_id' => $invoiceItem->id,
+            ]);
             return null;
         }
 
