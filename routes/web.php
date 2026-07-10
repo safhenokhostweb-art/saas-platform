@@ -471,6 +471,10 @@ Route::prefix('admin')
         Route::get('sites/{site}/modules', [SiteModuleController::class, 'edit'])->name('sites.modules.edit');
         Route::put('sites/{site}/modules', [SiteModuleController::class, 'update'])->name('sites.modules.update');
         Route::post('sites/{site}/modules/toggle', [SiteModuleController::class, 'toggle'])->name('sites.modules.toggle');
+        // Phase 13-K — module upgrade request & approval flow
+        Route::get('sites/{site}/module-upgrades', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'index'])->name('sites.module-upgrades.index');
+        Route::get('sites/{site}/module-upgrades/{moduleSlug}', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'confirm'])->name('sites.module-upgrades.confirm');
+        Route::post('sites/{site}/module-upgrades/{moduleSlug}', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'store'])->name('sites.module-upgrades.store');
         // ADR-015: Menu management removed from platform admin.
         // Each customer site manages its own menus in its own admin panel (customer-site /admin/menus/*).
         // Platform admin has no role in tenant menu structure.
