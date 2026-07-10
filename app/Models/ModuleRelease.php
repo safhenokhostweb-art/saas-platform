@@ -19,11 +19,16 @@ class ModuleRelease extends Model
         'changelog',
         'distributed_at',
         'is_active',
+        'package_sha256',
+        'package_path',
+        'package_key',
+        'package_size_bytes',
     ];
 
     protected $casts = [
         'distributed_at' => 'datetime',
         'is_active' => 'boolean',
+        'package_size_bytes' => 'integer',
     ];
 
     public function module()
