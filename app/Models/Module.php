@@ -297,6 +297,14 @@ class Module extends Model
 
     /**
      * آیا نسخهٔ نصب‌شده قدیمی‌تر از نسخهٔ فعلی ماژول است؟
+     *
+     * @deprecated Commit 12-I audit — compares $this->version (modules.version,
+     *             a denormalized cache), not module_releases, the version
+     *             authority (see docs/architecture/module-version-authority-adr.md).
+     *             Has no call sites as of Commit 12-J; kept for backward
+     *             compatibility only. Use ModuleUpdateEligibilityService
+     *             (backed by ModuleRelease::latestForModule()) for any new
+     *             update-availability decision instead of this method.
      */
     public function hasUpdateAvailable(?string $installedVersion): bool
     {
