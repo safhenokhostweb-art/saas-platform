@@ -4,10 +4,16 @@ namespace App\Services\CustomerInstallation;
 
 use App\Models\CustomerInstallation;
 use App\Models\CustomerRemoteServer;
+use App\Services\CustomerInstallation\Contracts\CustomerPackageInterface;
 use App\Services\CustomerInstallation\Contracts\InstallationStateInterface;
 use App\Services\CustomerInstallation\Contracts\InstallationStageInterface;
 use App\Services\CustomerInstallation\Dto\CustomerInstallRequest;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
+use App\Services\CustomerInstallation\Dto\ModuleUpdateTarget;
+use App\Services\CustomerInstallation\ModuleReleasePackageService;
+use App\Services\CustomerInstallation\Stages\BackupModuleUpgradeStage;
+use App\Services\CustomerInstallation\Stages\CompleteModuleUpgradeStage;
+use App\Services\CustomerInstallation\Stages\ExtractModulePackageStage;
 use App\Services\CustomerInstallation\Stages\ValidateServerStage;
 use App\Services\CustomerInstallation\Stages\ValidatePhpStage;
 use App\Services\CustomerInstallation\Stages\ValidateExtensionsStage;
@@ -49,7 +55,18 @@ class CustomerInstallationOrchestrator
     {
         $request = CustomerInstallRequest::fromArray($installation->request_payload ?? []);
         $server = CustomerRemoteServer::findOrFail($installation->remote_server_id);
-        $stages = $this->buildStageList($request->installMode);
+
+        $moduleTarget = null;
+        if ($request->installMode === 'MODE_MODULE_UPDATE') {
+            try {
+                $moduleTarget = ModuleUpdateTarget::fromArray($installation->metadata ?? []);
+            } catch (\Throwable $e) {
+                $this->state->markFailed($installation, 'Invalid module update target: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        $stages = $this->buildStageList($request->installMode, $moduleTarget);
 
         $this->state->markRunning($installation);
 
@@ -62,7 +79,7 @@ class CustomerInstallationOrchestrator
             return;
         }
 
-        $ctx = new InstallationContext($installation, $request, $connection);
+        $ctx = new InstallationContext($installation, $request, $connection, $moduleTarget);
 
         try {
             foreach ($stages as $stage) {
@@ -119,15 +136,55 @@ class CustomerInstallationOrchestrator
 
     /**
      * Build ordered stage list for the given installation mode.
+     *
+     * $target is only used by MODE_MODULE_UPDATE; other modes ignore it.
      */
-    public function buildStageList(string $mode): array
+    public function buildStageList(string $mode, ?ModuleUpdateTarget $target = null): array
     {
+        if ($mode === 'MODE_MODULE_UPDATE') {
+            return $this->moduleUpdateStages($target);
+        }
+
         $stages = $this->resolveAllStages();
 
         return match($mode) {
             'MODE_RESTORE' => $this->modeRestoreStages($stages),
             default        => $stages,
         };
+    }
+
+    /**
+     * Phase 13-I — stage list for updating a single module on an
+     * already-live site. Deliberately excludes every fresh-install-only
+     * stage (database creation, seeding, DNS/web-server/license
+     * provisioning, theme install, etc.) — see the Phase 13-B/13-F reuse
+     * audit for why each excluded stage doesn't apply here.
+     *
+     * UploadPackageStage is rebound to a module-scoped CustomerPackageInterface
+     * implementation via a contextual binding, scoped to this resolution only —
+     * the global binding used by fresh installs is untouched.
+     */
+    private function moduleUpdateStages(?ModuleUpdateTarget $target): array
+    {
+        if ($target) {
+            app()->when(UploadPackageStage::class)
+                ->needs(CustomerPackageInterface::class)
+                ->give(fn () => new ModuleReleasePackageService($target->moduleSlug));
+        }
+
+        return [
+            app(ValidateServerStage::class),
+            app(ValidatePhpStage::class),
+            app(ValidateExtensionsStage::class),
+            app(ValidateDiskStage::class),
+            app(ValidatePermissionsStage::class),
+            app(BackupModuleUpgradeStage::class),
+            app(UploadPackageStage::class),
+            app(VerifyPackageStage::class),
+            app(ExtractModulePackageStage::class),
+            app(RunMigrationsStage::class),
+            app(CompleteModuleUpgradeStage::class),
+        ];
     }
 
     private function resolveAllStages(): array

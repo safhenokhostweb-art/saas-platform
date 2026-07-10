@@ -29,6 +29,9 @@ use App\Services\CustomerInstallation\Stages\InitializeBackupStage;
 use App\Services\CustomerInstallation\Stages\ConfigureMonitoringStage;
 use App\Services\CustomerInstallation\Stages\InstallThemeStage;
 use App\Services\CustomerInstallation\Stages\CustomerReadyStage;
+use App\Services\CustomerInstallation\Stages\BackupModuleUpgradeStage;
+use App\Services\CustomerInstallation\Stages\ExtractModulePackageStage;
+use App\Services\CustomerInstallation\Stages\CompleteModuleUpgradeStage;
 use Illuminate\Support\Facades\Log;
 
 class CustomerInstallationRollbackService
@@ -136,6 +139,12 @@ class CustomerInstallationRollbackService
             app(ConfigureMonitoringStage::class),
             app(InstallThemeStage::class),
             app(CustomerReadyStage::class),
+            // Phase 13-I — MODE_MODULE_UPDATE stages. Registered here so their
+            // rollback checkpoints are actually replayed rather than silently
+            // marked executed (see the Phase 13-C finding this guards against).
+            app(BackupModuleUpgradeStage::class),
+            app(ExtractModulePackageStage::class),
+            app(CompleteModuleUpgradeStage::class),
         ];
 
         foreach ($stages as $stage) {

@@ -14,6 +14,7 @@ class InstallationContext
         public readonly CustomerInstallation      $installation,
         public readonly CustomerInstallRequest    $request,
         public RemoteConnectionInterface          $connection,
+        public readonly ?ModuleUpdateTarget       $moduleTarget = null,
     ) {}
 
     public function pushRollback(string $stage, array $snapshot): void
@@ -51,5 +52,18 @@ class InstallationContext
     public function webRoot(): string
     {
         return '/var/www/' . $this->customerSlug();
+    }
+
+    /**
+     * Remote path of the target module's own directory within the site's
+     * web root — never the web root itself. Only valid when moduleTarget
+     * is set (MODE_MODULE_UPDATE runs).
+     */
+    public function moduleInstallPath(): string
+    {
+        if (!$this->moduleTarget) {
+            throw new \RuntimeException('moduleInstallPath() called without a moduleTarget on the context.');
+        }
+        return $this->webRoot() . '/packages/saas-platform/modules/' . $this->moduleTarget->moduleSlug;
     }
 }

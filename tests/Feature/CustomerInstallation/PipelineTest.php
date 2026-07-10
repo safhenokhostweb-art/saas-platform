@@ -120,6 +120,65 @@ class PipelineTest extends TestCase
         $this->assertContains('CUSTOMER_READY', $names);
     }
 
+    /**
+     * Phase 13-I — MODE_MODULE_UPDATE stage list.
+     */
+    public function test_orchestrator_builds_module_update_stage_list(): void
+    {
+        $target = new \App\Services\CustomerInstallation\Dto\ModuleUpdateTarget('forms', 1, '1.1.0');
+        $orchestrator = app(CustomerInstallationOrchestrator::class);
+        $stages = $orchestrator->buildStageList('MODE_MODULE_UPDATE', $target);
+
+        $names = array_map(fn($s) => $s->name(), $stages);
+
+        $this->assertSame([
+            'VALIDATE_SERVER',
+            'VALIDATE_PHP',
+            'VALIDATE_EXTENSIONS',
+            'VALIDATE_DISK',
+            'VALIDATE_PERMISSIONS',
+            'BACKUP_MODULE_UPGRADE',
+            'UPLOAD_PACKAGE',
+            'VERIFY_PACKAGE',
+            'EXTRACT_MODULE_PACKAGE',
+            'RUN_MIGRATIONS',
+            'COMPLETE_MODULE_UPGRADE',
+        ], $names);
+    }
+
+    public function test_module_update_stages_exclude_fresh_install_only_stages(): void
+    {
+        $target = new \App\Services\CustomerInstallation\Dto\ModuleUpdateTarget('forms', 1, '1.1.0');
+        $orchestrator = app(CustomerInstallationOrchestrator::class);
+        $stages = $orchestrator->buildStageList('MODE_MODULE_UPDATE', $target);
+
+        $names = array_map(fn($s) => $s->name(), $stages);
+
+        foreach (['CREATE_DATABASE', 'RUN_SEEDER', 'CONFIGURE_DNS', 'CONFIGURE_WEB_SERVER',
+                  'PROVISION_LICENSE', 'INSTALL_THEME', 'CUSTOMER_READY', 'EXTRACT_PACKAGE',
+                  'INITIALIZE_BACKUP'] as $excluded) {
+            $this->assertNotContains($excluded, $names, "{$excluded} should not appear in MODE_MODULE_UPDATE");
+        }
+    }
+
+    public function test_module_update_upload_stage_resolves_module_scoped_package_service(): void
+    {
+        $target = new \App\Services\CustomerInstallation\Dto\ModuleUpdateTarget('forms', 1, '1.1.0');
+        $orchestrator = app(CustomerInstallationOrchestrator::class);
+        $orchestrator->buildStageList('MODE_MODULE_UPDATE', $target);
+
+        // The contextual binding set for UploadPackageStage must resolve to the
+        // module-scoped service, not the global CustomerReleasePackageService.
+        $resolved = app()->make(\App\Services\CustomerInstallation\Stages\UploadPackageStage::class);
+        $prop = new \ReflectionProperty($resolved, 'packages');
+        $prop->setAccessible(true);
+
+        $this->assertInstanceOf(
+            \App\Services\CustomerInstallation\ModuleReleasePackageService::class,
+            $prop->getValue($resolved)
+        );
+    }
+
     public function test_installation_state_transitions(): void
     {
         $server = $this->makeServer();

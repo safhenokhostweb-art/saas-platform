@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Services\CustomerInstallation\Stages;
+
+use App\Services\CustomerInstallation\Dto\InstallationContext;
+use App\Services\CustomerInstallation\Dto\StageResult;
+use App\Services\Infrastructure\ArvanBackupService;
+use App\Services\Installer\LocalRecoveryRepository;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Phase 13-I — pre-upgrade database backup.
+ *
+ * Reuses InitializeBackupStage's dump/checksum/dual-storage mechanism
+ * exactly (mysqldump → download → checksum → store to Local Recovery
+ * Repository and/or Arvan, fail only if both fail), minus the one-time
+ * .env bootstrap (BACKUP_ENABLED/RETENTION) and the artisan db:backup
+ * trigger — both install-time-only concerns that don't apply to "take
+ * one dump right now before this specific upgrade."
+ */
+class BackupModuleUpgradeStage extends AbstractStage
+{
+    public function __construct(
+        private readonly ArvanBackupService $arvan,
+        private readonly LocalRecoveryRepository $localRepo,
+    ) {}
+
+    public function name(): string { return 'BACKUP_MODULE_UPGRADE'; }
+    public function label(): string { return 'پشتیبان‌گیری قبل از بروزرسانی ماژول'; }
+    public function estimatedSeconds(): int { return 60; }
+
+    public function execute(InstallationContext $ctx): StageResult
+    {
+        return $this->run($ctx, function (InstallationContext $ctx) {
+            $webRoot = $ctx->webRoot();
+            $envPath = escapeshellarg($webRoot . '/.env');
+            $siteId = $ctx->installation->site_id ?? $ctx->installation->id;
+            $timestamp = now()->format('Ymd_His');
+            $dumpFile = "/tmp/cie_module_upgrade_{$siteId}_{$timestamp}.sql.gz";
+
+            $dbName = trim($ctx->connection->execute("grep '^DB_DATABASE=' {$envPath} 2>/dev/null | cut -d= -f2 | tr -d '\"'")->stdout);
+            $dbUser = trim($ctx->connection->execute("grep '^DB_USERNAME=' {$envPath} 2>/dev/null | cut -d= -f2 | tr -d '\"'")->stdout);
+            $dbPassRaw = trim($ctx->connection->execute("grep '^DB_PASSWORD=' {$envPath} 2>/dev/null | cut -d= -f2 | tr -d '\"'")->stdout);
+
+            if (empty($dbName) || empty($dbUser)) {
+                return StageResult::failure($this->name(), 'Could not read DB credentials from remote .env — cannot take pre-upgrade backup', $this->elapsed());
+            }
+
+            $dumpResult = $ctx->connection->execute(
+                'MYSQL_PWD=' . escapeshellarg($dbPassRaw) . ' mysqldump -u ' . escapeshellarg($dbUser)
+                . ' ' . escapeshellarg($dbName)
+                . ' 2>/dev/null | gzip > ' . escapeshellarg($dumpFile)
+                . " && echo 'dump-ok' || echo 'dump-failed'"
+            );
+
+            if (!str_contains($dumpResult->stdout, 'dump-ok')) {
+                return StageResult::failure($this->name(), 'mysqldump failed on remote server', $this->elapsed());
+            }
+
+            $sizeResult = $ctx->connection->execute('stat -c%s ' . escapeshellarg($dumpFile) . ' 2>/dev/null || echo 0');
+            $dumpSize = (int) trim($sizeResult->stdout);
+
+            if ($dumpSize <= 100) {
+                $ctx->connection->execute('rm -f ' . escapeshellarg($dumpFile));
+                return StageResult::failure($this->name(), 'Database dump is empty or suspiciously small', $this->elapsed());
+            }
+
+            $localPath = storage_path("app/install-packages/module_upgrade_baseline_{$siteId}_{$timestamp}.sql.gz");
+
+            try {
+                $ctx->connection->download($dumpFile, $localPath);
+            } catch (\Throwable $e) {
+                $ctx->connection->execute('rm -f ' . escapeshellarg($dumpFile));
+                return StageResult::failure($this->name(), 'Failed to download backup dump: ' . $e->getMessage(), $this->elapsed());
+            }
+
+            $checksum = hash_file('sha256', $localPath);
+
+            $localRepoResult = null;
+            if ($this->localRepo->shouldUseLocal()) {
+                try {
+                    $localRepoResult = $this->localRepo->storeCustomerBaseline(
+                        siteId: (int) $siteId,
+                        installationUuid: $ctx->installation->uuid ?? (string) $ctx->installation->id,
+                        sqlLocalPath: $localPath,
+                        sha256: $checksum,
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning("CIE BackupModuleUpgrade: Local repo copy failed — {$e->getMessage()}");
+                }
+            }
+
+            $arvanKey = "customers/site-{$siteId}/module-upgrades/backup_{$timestamp}.sql.gz";
+            $uploaded = $this->localRepo->shouldUseArvan()
+                ? $this->arvan->upload($localPath, $arvanKey)
+                : ['success' => false, 'message' => 'Arvan disabled by policy'];
+
+            $arvanOk = $uploaded['success'] ?? false;
+            $localRepoOk = $localRepoResult['success'] ?? false;
+
+            @unlink($localPath);
+            $ctx->connection->execute('rm -f ' . escapeshellarg($dumpFile));
+
+            if (!$arvanOk && !$localRepoOk) {
+                return StageResult::failure($this->name(), 'Backup could not be stored (both Arvan and local repo failed)', $this->elapsed());
+            }
+
+            return StageResult::success($this->name(), [
+                'backup_sha256' => $checksum,
+                'backup_arvan_key' => $arvanOk ? $arvanKey : null,
+                'stored_locally' => $localRepoOk,
+            ], [], $this->elapsed());
+        });
+    }
+}
