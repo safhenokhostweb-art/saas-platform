@@ -4,6 +4,8 @@ namespace App\Services;
 use App\Models\Module;
 use App\Models\ModuleRelease;
 use App\Models\Site;
+use Illuminate\Support\Facades\Log;
+use SaaSPlatform\CoreUtils\Services\PlatformCompatibilityService;
 
 /**
  * تعیین واجد شرایط بودن و بروزرسانی‌های موجود برای ماژول‌ها به‌صورت tenant-aware.
@@ -15,7 +17,8 @@ class ModuleUpdateEligibilityService
     public const UPDATE_TYPE_MAJOR = 'major';
 
     public function __construct(
-        protected SupportLicenseService $supportService
+        protected SupportLicenseService $supportService,
+        protected PlatformCompatibilityService $compatibilityService,
     ) {}
 
     /**
@@ -28,6 +31,11 @@ class ModuleUpdateEligibilityService
 
     /**
      * لیست ماژول‌های دارای بروزرسانی برای این سایت.
+     *
+     * Commit 12-K: نسخهٔ جدید فقط در صورتی پیشنهاد می‌شود که با محیط پلتفرم
+     * (PHP/Laravel/saas-platform، طبق module.json) سازگار باشد — طبق
+     * PlatformCompatibilityService::check(). این بررسی جدا از تعیین
+     * installed/available version است و منطق آن را تغییر نمی‌دهد.
      *
      * @return array<int, array{slug: string, title: string, installed_version: string|null, available_version: string, update_type: string}>
      */
@@ -48,6 +56,10 @@ class ModuleUpdateEligibilityService
                 continue;
             }
 
+            if (!$this->isCompatibleRelease($module, $available, $site)) {
+                continue;
+            }
+
             $updateType = $this->getUpdateType($installed ?? '0', $available);
             $updates[] = [
                 'slug' => $module->slug,
@@ -59,6 +71,31 @@ class ModuleUpdateEligibilityService
         }
 
         return $updates;
+    }
+
+    /**
+     * Compatibility gate (Commit 12-K). Suppresses an otherwise-available
+     * update when PlatformCompatibilityService reports a hard error
+     * (e.g. PHP/Laravel/platform version constraint not met by this
+     * server). Warnings (e.g. rollback safety) never block eligibility —
+     * only PlatformCompatibilityService::check()'s own `errors` do.
+     */
+    protected function isCompatibleRelease(Module $module, string $available, Site $site): bool
+    {
+        $result = $this->compatibilityService->check($module->slug, $available);
+
+        if (!empty($result['passed'])) {
+            return true;
+        }
+
+        Log::warning('module_update.incompatible_release_suppressed', [
+            'site_id' => $site->id,
+            'module' => $module->slug,
+            'available_version' => $available,
+            'errors' => $result['errors'] ?? [],
+        ]);
+
+        return false;
     }
 
     /**
