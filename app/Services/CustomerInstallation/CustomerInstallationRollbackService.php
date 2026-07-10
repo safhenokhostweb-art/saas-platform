@@ -32,6 +32,8 @@ use App\Services\CustomerInstallation\Stages\CustomerReadyStage;
 use App\Services\CustomerInstallation\Stages\BackupModuleUpgradeStage;
 use App\Services\CustomerInstallation\Stages\ExtractModulePackageStage;
 use App\Services\CustomerInstallation\Stages\CompleteModuleUpgradeStage;
+use App\Services\CustomerInstallation\Stages\LockTenantStage;
+use App\Services\CustomerInstallation\Stages\UnlockTenantStage;
 use Illuminate\Support\Facades\Log;
 
 class CustomerInstallationRollbackService
@@ -145,6 +147,10 @@ class CustomerInstallationRollbackService
             app(BackupModuleUpgradeStage::class),
             app(ExtractModulePackageStage::class),
             app(CompleteModuleUpgradeStage::class),
+            // Phase 13-J — LockTenantStage's rollback() is the failure-path
+            // unlock safety net; registering both keeps the map complete.
+            app(LockTenantStage::class),
+            app(UnlockTenantStage::class),
         ];
 
         foreach ($stages as $stage) {

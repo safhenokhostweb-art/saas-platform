@@ -138,12 +138,35 @@ class PipelineTest extends TestCase
             'VALIDATE_DISK',
             'VALIDATE_PERMISSIONS',
             'BACKUP_MODULE_UPGRADE',
+            'LOCK_TENANT',
             'UPLOAD_PACKAGE',
             'VERIFY_PACKAGE',
             'EXTRACT_MODULE_PACKAGE',
             'RUN_MIGRATIONS',
             'COMPLETE_MODULE_UPGRADE',
+            'UNLOCK_TENANT',
         ], $names);
+    }
+
+    /**
+     * Phase 13-J — lock happens right before the mutating stages, unlock
+     * is the very last stage (after the health check), so a failed
+     * upgrade never unlocks a broken site.
+     */
+    public function test_lock_precedes_mutation_and_unlock_is_last(): void
+    {
+        $target = new \App\Services\CustomerInstallation\Dto\ModuleUpdateTarget('forms', 1, '1.1.0');
+        $orchestrator = app(CustomerInstallationOrchestrator::class);
+        $names = array_map(fn ($s) => $s->name(), $orchestrator->buildStageList('MODE_MODULE_UPDATE', $target));
+
+        $lockPos = array_search('LOCK_TENANT', $names, true);
+        $unlockPos = array_search('UNLOCK_TENANT', $names, true);
+        $uploadPos = array_search('UPLOAD_PACKAGE', $names, true);
+        $completePos = array_search('COMPLETE_MODULE_UPGRADE', $names, true);
+
+        $this->assertLessThan($uploadPos, $lockPos, 'LOCK_TENANT must precede UPLOAD_PACKAGE');
+        $this->assertSame(count($names) - 1, $unlockPos, 'UNLOCK_TENANT must be the last stage');
+        $this->assertGreaterThan($completePos, $unlockPos, 'UNLOCK_TENANT must come after the health check');
     }
 
     public function test_module_update_stages_exclude_fresh_install_only_stages(): void

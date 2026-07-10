@@ -14,6 +14,8 @@ use App\Services\CustomerInstallation\ModuleReleasePackageService;
 use App\Services\CustomerInstallation\Stages\BackupModuleUpgradeStage;
 use App\Services\CustomerInstallation\Stages\CompleteModuleUpgradeStage;
 use App\Services\CustomerInstallation\Stages\ExtractModulePackageStage;
+use App\Services\CustomerInstallation\Stages\LockTenantStage;
+use App\Services\CustomerInstallation\Stages\UnlockTenantStage;
 use App\Services\CustomerInstallation\Stages\ValidateServerStage;
 use App\Services\CustomerInstallation\Stages\ValidatePhpStage;
 use App\Services\CustomerInstallation\Stages\ValidateExtensionsStage;
@@ -179,11 +181,13 @@ class CustomerInstallationOrchestrator
             app(ValidateDiskStage::class),
             app(ValidatePermissionsStage::class),
             app(BackupModuleUpgradeStage::class),
+            app(LockTenantStage::class),
             app(UploadPackageStage::class),
             app(VerifyPackageStage::class),
             app(ExtractModulePackageStage::class),
             app(RunMigrationsStage::class),
             app(CompleteModuleUpgradeStage::class),
+            app(UnlockTenantStage::class),
         ];
     }
 
