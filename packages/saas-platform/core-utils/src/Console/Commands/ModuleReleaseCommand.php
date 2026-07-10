@@ -12,6 +12,7 @@ use SaaSPlatform\CoreUtils\Support\ReleaseManifest;
 /**
  * PHASE 6.98 — TASK 2: module:release
  * Commit 12-G — wired to the platform's version authority.
+ * Commit 12-M — optional customer-facing changelog input.
  *
  * Prepares a module release:
  *  1. Validates the module passes module:build
@@ -28,11 +29,20 @@ use SaaSPlatform\CoreUtils\Support\ReleaseManifest;
  */
 class ModuleReleaseCommand extends Command
 {
+    /**
+     * --changelog is customer-facing text stored verbatim on the release
+     * row and surfaced through the public update API. See
+     * docs/architecture/module-release-changelog-convention.md for what
+     * belongs in it before using this flag.
+     */
+    protected const CHANGELOG_MAX_LENGTH = 500;
+
     protected $signature = 'module:release
         {module : The module slug to release}
         {--dry-run : Prepare manifest but skip git tag creation}
         {--no-build : Skip module:build validation (not recommended)}
-        {--type=patch : Release type recorded in module_releases (patch|minor|major)}';
+        {--type=patch : Release type recorded in module_releases (patch|minor|major)}
+        {--changelog= : Customer-facing changelog text (see docs/architecture/module-release-changelog-convention.md)}';
 
     protected $description = 'Prepare a module release: generate manifest and create git tag';
 
@@ -51,6 +61,20 @@ class ModuleReleaseCommand extends Command
         if (!in_array($releaseType, ['patch', 'minor', 'major'], true)) {
             $this->error("Invalid --type [{$releaseType}]. Expected patch, minor, or major.");
             return self::FAILURE;
+        }
+
+        $changelog = $this->option('changelog');
+        if ($changelog !== null) {
+            $changelog = trim($changelog);
+            if ($changelog === '') {
+                $changelog = null;
+            } elseif (mb_strlen($changelog) > self::CHANGELOG_MAX_LENGTH) {
+                $this->error(
+                    '--changelog must be ' . self::CHANGELOG_MAX_LENGTH . ' characters or fewer. '
+                    . 'See docs/architecture/module-release-changelog-convention.md for guidance.'
+                );
+                return self::FAILURE;
+            }
         }
 
         $version = $data['version'] ?? '0.0.0';
@@ -84,6 +108,7 @@ class ModuleReleaseCommand extends Command
             slug: $module,
             version: $version,
             releaseType: $releaseType,
+            changelog: $changelog,
             distributedAt: new \DateTimeImmutable(),
         ));
 

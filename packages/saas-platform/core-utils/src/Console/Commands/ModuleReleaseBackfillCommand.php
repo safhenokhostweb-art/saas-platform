@@ -28,6 +28,13 @@ use SaaSPlatform\CoreUtils\Support\ModuleVersionRegistry;
  *
  * --dry-run lists candidates and their package versions without calling
  * the producer at all (no writes of any kind).
+ *
+ * Commit 12-M decision: this command deliberately has no --changelog
+ * option. Backfilled releases have no real historical changelog to
+ * report, and a generated placeholder would itself violate the
+ * customer-facing changelog convention (internal-process leakage) while
+ * risking misleading a tenant into treating it as a real release note.
+ * See docs/architecture/module-release-changelog-convention.md.
  */
 class ModuleReleaseBackfillCommand extends Command
 {
