@@ -9,6 +9,7 @@ use App\Models\CustomerInstallation;
 use App\Models\CustomerRemoteServer;
 use App\Models\Module;
 use App\Models\ModuleRelease;
+use App\Models\Role;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,14 +31,66 @@ class SiteModuleUpgradeControllerTest extends TestCase
 
     private const SLUG = 'forms';
 
+    /**
+     * Phase 13-M5 — attaches the `staff` role, which is seeded (via
+     * 2026_07_11_100000_seed_tenant_upgrade_execute_permission.php) with
+     * the `tenant.upgrade.execute` permission this controller now
+     * requires. Every existing test in this file uses this helper and is
+     * expected to keep passing unchanged — staff's de facto ability to
+     * trigger upgrades is preserved, not narrowed, by that seed.
+     */
     private function admin(): User
     {
-        return User::create([
+        $user = User::create([
             'mobile' => '09121234567',
             'password' => Hash::make('password'),
             'is_admin' => true,
             'is_active' => true,
         ]);
+
+        $staffRole = Role::where('slug', Role::STAFF)->first();
+        if ($staffRole) {
+            $user->roles()->attach($staffRole->id);
+        }
+
+        return $user;
+    }
+
+    /**
+     * Phase 13-M5 — `is_admin=true` (passes the blanket ['auth','admin']
+     * middleware) but no role at all, so no `tenant.upgrade.execute`
+     * permission — the exact class of legacy user this phase narrows.
+     */
+    private function adminWithoutUpgradePermission(): User
+    {
+        return User::create([
+            'mobile' => '09121234568',
+            'password' => Hash::make('password'),
+            'is_admin' => true,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * Phase 13-M5 — super_admin, deliberately with no explicit
+     * role_has_permissions row: AuthorizationService::can() must bypass
+     * via User::isSuperAdmin() alone.
+     */
+    private function superAdmin(): User
+    {
+        $user = User::create([
+            'mobile' => '09121234570',
+            'password' => Hash::make('password'),
+            'is_admin' => true,
+            'is_active' => true,
+        ]);
+
+        $role = Role::where('slug', Role::SUPER_ADMIN)->first();
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
+
+        return $user;
     }
 
     private function makeSiteWithModule(string $installed, string $available, bool $withPackage = true): array
@@ -346,5 +399,91 @@ class SiteModuleUpgradeControllerTest extends TestCase
         $lock = Cache::lock(SiteModuleUpgradeController::lockKey($site->id), 10);
         $this->assertTrue($lock->get());
         $lock->release();
+    }
+
+    // ─── Phase 13-M5 — Permission Boundary ─────────────────────────────────
+
+    /**
+     * Scenario 1 — a user holding tenant.upgrade.execute (staff, via the
+     * seeded permission) can complete the upgrade flow exactly as before.
+     */
+    public function test_store_allowed_for_user_with_upgrade_permission(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->admin());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $response = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), [
+            'reason' => 'Security patch needed for this module',
+            'confirmed_upgrade' => '1',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseCount('customer_installations', 2); // fixture's MODE_FRESH row + the new one
+        Bus::assertDispatched(CustomerInstallationPipelineJob::class);
+    }
+
+    /**
+     * Scenario 2 — is_admin=true alone (no role, no permission) passes the
+     * blanket ['auth','admin'] middleware but must be denied here: no
+     * CustomerInstallation created, no job dispatched.
+     */
+    public function test_store_denied_without_upgrade_permission(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->adminWithoutUpgradePermission());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $response = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), [
+            'reason' => 'Security patch needed for this module',
+            'confirmed_upgrade' => '1',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('customer_installations', 1); // only the fixture's MODE_FRESH row
+        Bus::assertNotDispatched(CustomerInstallationPipelineJob::class);
+    }
+
+    /**
+     * The permission gate covers the whole upgrade flow, not just the
+     * final submit — index() and confirm() are denied identically.
+     */
+    public function test_index_denied_without_upgrade_permission(): void
+    {
+        $this->actingAs($this->adminWithoutUpgradePermission());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $response = $this->get(route('admin.sites.module-upgrades.index', $site));
+
+        $response->assertForbidden();
+    }
+
+    public function test_confirm_denied_without_upgrade_permission(): void
+    {
+        $this->actingAs($this->adminWithoutUpgradePermission());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $response = $this->get(route('admin.sites.module-upgrades.confirm', [$site, self::SLUG]));
+
+        $response->assertForbidden();
+    }
+
+    /**
+     * Scenario 3 — super_admin passes with no explicit permission row,
+     * via AuthorizationService::can()'s isSuperAdmin() short-circuit.
+     */
+    public function test_store_allowed_for_super_admin_without_explicit_permission_row(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->superAdmin());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $response = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), [
+            'reason' => 'Security patch needed for this module',
+            'confirmed_upgrade' => '1',
+        ]);
+
+        $response->assertSessionHas('success');
+        Bus::assertDispatched(CustomerInstallationPipelineJob::class);
     }
 }

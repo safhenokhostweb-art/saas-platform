@@ -9,6 +9,7 @@ use App\Models\Module;
 use App\Models\ModuleRelease;
 use App\Models\Site;
 use App\Services\ActivityLogger;
+use App\Services\AuthorizationService;
 use App\Services\ModuleUpdateEligibilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,20 +25,40 @@ use Illuminate\Support\Facades\Log;
  *
  * Reuses the Wave 5.2 two-step confirm shape (reason + explicit
  * checkbox, no mutation on the first view) and CustomerDeploymentController's
- * create+dispatch pattern verbatim. Gated by the same ['auth','admin']
- * middleware every other admin route already uses — no new permission.
+ * create+dispatch pattern verbatim.
  *
  * Phase 13-M1 — store() acquires a per-site Cache::lock() before creating
  * the CustomerInstallation row, closing the race identified in the 13-M
  * audit: two concurrent requests could otherwise both pass the eligibility
  * check and each dispatch their own pipeline against the same remote
  * server (colliding mysqldump/unzip/`artisan migrate --force` runs).
+ *
+ * Phase 13-M5 — every action additionally requires the `tenant.upgrade.execute`
+ * permission, as a second layer on top of (never a replacement for) the
+ * existing ['auth','admin'] middleware every other admin route uses. Plain
+ * admin/staff access alone is no longer sufficient to reach this specific,
+ * higher-risk flow (real mysqldump/unzip/`artisan migrate --force` against a
+ * customer's live server) — see AuthorizationService::can().
  */
 class SiteModuleUpgradeController extends Controller
 {
     public function __construct(
         protected ModuleUpdateEligibilityService $eligibilityService,
+        protected AuthorizationService $authorizationService,
     ) {}
+
+    /**
+     * Phase 13-M5 — second authorization layer, on top of the existing
+     * ['auth','admin'] middleware. AuthorizationService::can() already
+     * short-circuits true for super_admin (User::isSuperAdmin()), so no
+     * separate super_admin branch is needed here.
+     */
+    private function authorizeUpgrade(): void
+    {
+        if (!$this->authorizationService->can(Auth::user(), 'tenant.upgrade.execute')) {
+            abort(403, 'شما اجازهٔ اجرای بروزرسانی ماژول را ندارید.');
+        }
+    }
 
     /**
      * Cache key for the per-site upgrade lock. Exposed so tests can
@@ -53,6 +74,8 @@ class SiteModuleUpgradeController extends Controller
      */
     public function index(Site $site)
     {
+        $this->authorizeUpgrade();
+
         $updates = $this->eligibleUpgrades($site);
 
         return view('admin.sites.module-upgrades.index', compact('site', 'updates'));
@@ -63,6 +86,8 @@ class SiteModuleUpgradeController extends Controller
      */
     public function confirm(Site $site, string $moduleSlug)
     {
+        $this->authorizeUpgrade();
+
         $upgrade = $this->resolveEligibleUpgrade($site, $moduleSlug);
 
         if (!$upgrade) {
@@ -83,6 +108,8 @@ class SiteModuleUpgradeController extends Controller
      */
     public function store(Request $request, Site $site, string $moduleSlug)
     {
+        $this->authorizeUpgrade();
+
         // Re-validate eligibility server-side at execution time, not just
         // trusting what the confirmation page showed a moment earlier.
         $upgrade = $this->resolveEligibleUpgrade($site, $moduleSlug);
