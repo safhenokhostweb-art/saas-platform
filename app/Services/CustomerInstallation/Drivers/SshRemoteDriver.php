@@ -138,15 +138,42 @@ class SshRemoteDriver implements RemoteConnectionInterface
             $envString .= 'export ' . escapeshellarg($key) . '=' . escapeshellarg($value) . '; ';
         }
 
-        $output    = $this->ssh->exec($envString . $command);
-        $exitCode  = $this->ssh->getExitStatus();
+        $output     = $this->ssh->exec($envString . $command);
         $durationMs = (int) round((microtime(true) - $start) * 1000);
 
-        // Reset reconnect counter on successful execution
+        // Reset reconnect counter — exec() returned without throwing, so the
+        // channel itself is alive even if the command below is treated as failed.
         $this->reconnectAttempts = 0;
 
+        // Phase 13-O2 — a command that ran out the configured exec timeout
+        // never sent an exit-status message; treating that as success would
+        // silently report a truncated/aborted command as having completed.
+        if ($this->ssh->isTimeout()) {
+            return new CommandResult(
+                exitCode:   -1,
+                stdout:     $output ?? '',
+                stderr:     'SSH command timed out before an exit status was received — output may be incomplete.',
+                durationMs: $durationMs,
+            );
+        }
+
+        $exitCode = $this->ssh->getExitStatus();
+
+        // Phase 13-O2 — getExitStatus() returns false when the server never
+        // sent an exit-status message (some servers/configs omit it). The
+        // previous default of coercing this to 0 reported an indeterminate
+        // result as success; it must fail closed instead.
+        if (!is_int($exitCode)) {
+            return new CommandResult(
+                exitCode:   -1,
+                stdout:     $output ?? '',
+                stderr:     'SSH did not report a valid exit status for this command — treating as failed rather than assuming success.',
+                durationMs: $durationMs,
+            );
+        }
+
         return new CommandResult(
-            exitCode:   is_int($exitCode) ? $exitCode : 0,
+            exitCode:   $exitCode,
             stdout:     $output ?? '',
             stderr:     '',
             durationMs: $durationMs,
