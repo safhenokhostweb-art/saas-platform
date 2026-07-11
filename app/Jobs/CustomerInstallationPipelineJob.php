@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\CustomerInstallation;
 use App\Services\CustomerInstallation\CustomerInstallationOrchestrator;
+use App\Services\CustomerInstallation\RollbackDispatcher;
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -89,6 +90,7 @@ class CustomerInstallationPipelineJob implements ShouldQueue
         ]);
 
         $installation = CustomerInstallation::find($this->installationId);
+
         if ($installation && $installation->isRunning()) {
             $installation->update([
                 'status'         => 'failed',
@@ -100,9 +102,27 @@ class CustomerInstallationPipelineJob implements ShouldQueue
         try {
             app(SlackAlertService::class)->critical(
                 "[INSTALL FAILED] Installation {$this->installationId}",
-                'Customer Installation',
                 $exception->getMessage()
             );
         } catch (\Throwable) {}
+
+        // Phase 13-O3 — this is the one failure path the orchestrator itself
+        // never sees (queue timeout, worker crash, exhausted retries), so it's
+        // the only place that ever needs to trigger rollback from here rather
+        // than from CustomerInstallationOrchestrator::run()'s own handling.
+        if (!$installation) {
+            return;
+        }
+
+        $dispatched = app(RollbackDispatcher::class)->dispatch($installation);
+
+        if (!$dispatched) {
+            try {
+                app(SlackAlertService::class)->critical(
+                    "[ROLLBACK DISPATCH FAILED] Installation {$this->installationId} — Manual intervention required",
+                    'The pipeline job failed and automatic rollback could not be queued. The tenant may be left mid-upgrade until this is resolved manually.'
+                );
+            } catch (\Throwable) {}
+        }
     }
 }

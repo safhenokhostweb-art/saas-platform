@@ -38,7 +38,6 @@ use App\Services\CustomerInstallation\Stages\InitializeBackupStage;
 use App\Services\CustomerInstallation\Stages\ConfigureMonitoringStage;
 use App\Services\CustomerInstallation\Stages\InstallThemeStage;
 use App\Services\CustomerInstallation\Stages\CustomerReadyStage;
-use App\Jobs\CustomerInstallationRollbackJob;
 use Illuminate\Support\Facades\Log;
 
 class CustomerInstallationOrchestrator
@@ -47,6 +46,7 @@ class CustomerInstallationOrchestrator
         private readonly InstallationStateInterface    $state,
         private readonly RemoteConnectionService       $connectionService,
         private readonly CustomerInstallationRollbackService $rollback,
+        private readonly RollbackDispatcher            $rollbackDispatcher,
     ) {}
 
     /**
@@ -110,7 +110,7 @@ class CustomerInstallationOrchestrator
                 if (!$result->success) {
                     $this->state->recordStageFailure($installation, $stageName, $result->error ?? 'Unknown error', $durationMs);
                     $this->state->markFailed($installation, "Stage {$stageName} failed: " . ($result->error ?? 'Unknown error'));
-                    $this->dispatchRollback($installation);
+                    $this->rollbackDispatcher->dispatch($installation);
                     return;
                 }
 
@@ -235,16 +235,5 @@ class CustomerInstallationOrchestrator
             $allStages,
             fn(InstallationStageInterface $s) => !in_array($s->name(), $skipInRestore)
         ));
-    }
-
-    private function dispatchRollback(CustomerInstallation $installation): void
-    {
-        try {
-            CustomerInstallationRollbackJob::dispatch($installation->id)
-                ->onConnection('customer-install')
-                ->onQueue('customer-install');
-        } catch (\Throwable $e) {
-            Log::error("CIE: Failed to dispatch rollback job", ['error' => $e->getMessage()]);
-        }
     }
 }
