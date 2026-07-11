@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Http\Controllers\Admin\SiteModuleUpgradeController;
 use App\Jobs\CustomerInstallationPipelineJob;
 use App\Models\Customer;
 use App\Models\CustomerInstallation;
@@ -12,6 +13,7 @@ use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -232,5 +234,117 @@ class SiteModuleUpgradeControllerTest extends TestCase
         $response->assertRedirect(route('admin.sites.module-upgrades.index', $site));
         $this->assertDatabaseCount('customer_installations', 1); // only the fixture's MODE_FRESH row
         Bus::assertNotDispatched(CustomerInstallationPipelineJob::class);
+    }
+
+    // ─── Phase 13-M1 — Concurrency Protection ──────────────────────────────
+
+    public function test_store_rejected_when_site_lock_already_held(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->admin());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        // Simulate a concurrent request already inside the critical section:
+        // acquire the exact same lock the controller acquires, and hold it.
+        $lock = Cache::lock(SiteModuleUpgradeController::lockKey($site->id), 10);
+        $this->assertTrue($lock->get());
+
+        try {
+            $response = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), [
+                'reason' => 'Security patch needed for this module',
+                'confirmed_upgrade' => '1',
+            ]);
+
+            $response->assertSessionHas('error');
+            // Only the fixture's MODE_FRESH row — no MODE_MODULE_UPDATE row created.
+            $this->assertDatabaseCount('customer_installations', 1);
+            Bus::assertNotDispatched(CustomerInstallationPipelineJob::class);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function test_store_rejected_when_active_installation_already_exists_for_site(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->admin());
+        ['site' => $site, 'server' => $server] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        // Simulate a race that already slipped a second installation in for
+        // this site (e.g. a different install_mode), independent of the lock.
+        CustomerInstallation::create([
+            'remote_server_id' => $server->id,
+            'installer_user_id' => 1,
+            'install_mode' => 'MODE_MODULE_UPDATE',
+            'status' => 'pending',
+            'site_id' => $site->id,
+            'customer_company' => 'مشتری تست',
+            'customer_email' => 'noreply@example.com',
+            'customer_domain' => $site->domain,
+        ]);
+
+        $response = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), [
+            'reason' => 'Security patch needed for this module',
+            'confirmed_upgrade' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.sites.module-upgrades.index', $site));
+        $response->assertSessionHas('error');
+        // The fixture's MODE_FRESH row + the pre-existing pending row — no third row.
+        $this->assertDatabaseCount('customer_installations', 2);
+        Bus::assertNotDispatched(CustomerInstallationPipelineJob::class);
+    }
+
+    public function test_concurrent_requests_only_one_installation_created(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->admin());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $payload = [
+            'reason' => 'Security patch needed for this module',
+            'confirmed_upgrade' => '1',
+        ];
+
+        // PHP test requests are sequential, not truly parallel — but each
+        // request re-runs the full lock-acquire → recheck → create →
+        // release cycle, so the first succeeds and the second must be
+        // rejected by the post-lock "already running" recheck (بخش ۴),
+        // proving no duplicate row is created even across repeated attempts.
+        // Assert each response's session state immediately after its own
+        // call — a later post() overwrites the shared test session, so
+        // checking both only after issuing both would read the second
+        // response's flash data for the first assertion too.
+        $first = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), $payload);
+        $first->assertRedirect();
+        $first->assertSessionHas('success');
+
+        $second = $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), $payload);
+        $second->assertRedirect(route('admin.sites.module-upgrades.index', $site));
+        $second->assertSessionHas('error');
+
+        $this->assertSame(
+            1,
+            CustomerInstallation::where('install_mode', 'MODE_MODULE_UPDATE')->count()
+        );
+        Bus::assertDispatchedTimes(CustomerInstallationPipelineJob::class, 1);
+    }
+
+    public function test_lock_is_released_after_successful_request(): void
+    {
+        Bus::fake();
+        $this->actingAs($this->admin());
+        ['site' => $site] = $this->makeSiteWithModule('1.0.0', '1.1.0');
+
+        $this->post(route('admin.sites.module-upgrades.store', [$site, self::SLUG]), [
+            'reason' => 'Security patch needed for this module',
+            'confirmed_upgrade' => '1',
+        ]);
+
+        // If store() left the lock held, this second acquisition attempt
+        // (unrelated to the "already running" business check) would fail.
+        $lock = Cache::lock(SiteModuleUpgradeController::lockKey($site->id), 10);
+        $this->assertTrue($lock->get());
+        $lock->release();
     }
 }
