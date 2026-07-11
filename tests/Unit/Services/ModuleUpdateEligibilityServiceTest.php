@@ -115,4 +115,52 @@ class ModuleUpdateEligibilityServiceTest extends TestCase
 
         $this->assertCount(0, $updates);
     }
+
+    // ─── Phase 13-M4 — recordPipelineAssertedVersion() ─────────────────────
+
+    public function test_record_pipeline_asserted_version_updates_installed_version_only(): void
+    {
+        $site = $this->makeEligibleSite();
+        [$module] = $this->makeModuleWithRelease('1.0.0', '1.1.0');
+        $reportedAt = now()->subDays(5);
+        $site->modules()->attach($module->id, [
+            'is_active' => true,
+            'installed_version' => '1.0.0',
+            'version_reported_at' => $reportedAt,
+        ]);
+
+        $service = app(ModuleUpdateEligibilityService::class);
+        $updated = $service->recordPipelineAssertedVersion($site->id, $module->slug, '1.1.0');
+
+        $this->assertTrue($updated);
+
+        $row = \Illuminate\Support\Facades\DB::table('site_modules')
+            ->where('site_id', $site->id)->where('module_id', $module->id)->first();
+
+        $this->assertSame('1.1.0', $row->installed_version);
+        // version_reported_at must stay exactly as the tenant last reported it.
+        $this->assertEquals($reportedAt->toDateTimeString(), \Carbon\Carbon::parse($row->version_reported_at)->toDateTimeString());
+    }
+
+    public function test_record_pipeline_asserted_version_returns_false_for_unknown_module(): void
+    {
+        $site = $this->makeEligibleSite();
+
+        $service = app(ModuleUpdateEligibilityService::class);
+        $updated = $service->recordPipelineAssertedVersion($site->id, 'does-not-exist', '1.1.0');
+
+        $this->assertFalse($updated);
+    }
+
+    public function test_record_pipeline_asserted_version_returns_false_when_site_has_no_such_module_row(): void
+    {
+        $site = $this->makeEligibleSite();
+        [$module] = $this->makeModuleWithRelease('1.0.0', '1.1.0');
+        // Deliberately not attached to $site.
+
+        $service = app(ModuleUpdateEligibilityService::class);
+        $updated = $service->recordPipelineAssertedVersion($site->id, $module->slug, '1.1.0');
+
+        $this->assertFalse($updated);
+    }
 }

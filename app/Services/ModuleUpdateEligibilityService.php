@@ -171,4 +171,42 @@ class ModuleUpdateEligibilityService
                 ]);
         }
     }
+
+    /**
+     * Phase 13-M4 — optimistic write of installed_version right after a
+     * MODE_MODULE_UPDATE pipeline completes successfully, so the platform
+     * UI doesn't show a stale version until the tenant's next heartbeat.
+     *
+     * Deliberately does NOT touch version_reported_at — that column stays
+     * exclusively owned by recordReportedVersions() (the tenant's own
+     * self-report). Leaving it untouched is what makes this write provably
+     * a cache/projection rather than a new source of truth: whenever the
+     * tenant reports again, recordReportedVersions() unconditionally
+     * overwrites installed_version and refreshes version_reported_at,
+     * reconciling any drift. Mirrors the module-version-authority ADR's
+     * treatment of modules.version as "cache, never a decision point."
+     *
+     * @return bool  true if a site_modules row was actually updated
+     */
+    public function recordPipelineAssertedVersion(int $siteId, string $moduleSlug, string $version): bool
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+            return false;
+        }
+
+        $moduleId = Module::where('slug', $moduleSlug)->value('id');
+        if ($moduleId === null) {
+            return false;
+        }
+
+        $updated = \Illuminate\Support\Facades\DB::table('site_modules')
+            ->where('site_id', $siteId)
+            ->where('module_id', $moduleId)
+            ->update([
+                'installed_version' => $version,
+                'updated_at' => now(),
+            ]);
+
+        return $updated > 0;
+    }
 }

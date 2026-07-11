@@ -2,14 +2,18 @@
 
 namespace Tests\Unit\Services\CustomerInstallation\Stages;
 
+use App\Models\Customer;
 use App\Models\CustomerInstallation;
 use App\Models\CustomerRemoteServer;
+use App\Models\Module;
+use App\Models\Site;
 use App\Services\CustomerInstallation\Dto\CustomerInstallRequest;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\ModuleUpdateTarget;
 use App\Services\CustomerInstallation\Drivers\FakeRemoteDriver;
 use App\Services\CustomerInstallation\Stages\CompleteModuleUpgradeStage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -30,14 +34,14 @@ class CompleteModuleUpgradeStageTest extends TestCase
         $_ENV['INSTALLER_MASTER_KEY'] = $key;
     }
 
-    private function makeContext(FakeRemoteDriver $driver): InstallationContext
+    private function makeContext(FakeRemoteDriver $driver, array $overrides = []): InstallationContext
     {
         $server = CustomerRemoteServer::create([
             'label' => 'Test Server', 'type' => 'fake', 'host' => 'localhost',
             'port' => 22, 'username' => 'deploy', 'auth_method' => 'key',
         ]);
 
-        $installation = CustomerInstallation::create([
+        $installation = CustomerInstallation::create(array_merge([
             'remote_server_id' => $server->id,
             'installer_user_id' => 1,
             'install_mode' => 'MODE_MODULE_UPDATE',
@@ -50,12 +54,50 @@ class CompleteModuleUpgradeStageTest extends TestCase
                 'phone' => '09123456789', 'domain' => 'test.example.com',
                 'remote_server_id' => $server->id, 'install_mode' => 'MODE_MODULE_UPDATE',
             ],
-        ]);
+        ], $overrides));
 
         $request = CustomerInstallRequest::fromArray($installation->request_payload);
         $target = new ModuleUpdateTarget('forms', 1, '1.1.0');
 
         return new InstallationContext($installation, $request, $driver, $target);
+    }
+
+    /**
+     * @return array{site: Site, module: Module}
+     */
+    private function makeSiteWithModule(string $installed, string $slug = 'forms'): array
+    {
+        $customer = Customer::create([
+            'name' => 'مشتری تست', 'mobile' => '0912' . random_int(1000000, 9999999),
+        ]);
+
+        $site = Site::create([
+            'customer_id' => $customer->id,
+            'title' => 'سایت تست',
+            'domain' => 'test-' . uniqid('', true) . '.example.com',
+            'is_active' => true,
+        ]);
+
+        $module = Module::updateOrCreate(
+            ['slug' => $slug],
+            ['title' => 'ماژول فرم', 'is_active' => true, 'version' => $installed, 'type' => Module::TYPE_CORE]
+        );
+
+        $site->modules()->attach($module->id, [
+            'is_active' => true,
+            'installed_version' => $installed,
+            'version_reported_at' => now()->subDays(3),
+        ]);
+
+        return compact('site', 'module');
+    }
+
+    private function fetchSiteModuleRow(int $siteId, int $moduleId): ?object
+    {
+        return DB::table('site_modules')
+            ->where('site_id', $siteId)
+            ->where('module_id', $moduleId)
+            ->first();
     }
 
     public function test_marks_complete_when_required_checks_pass(): void
@@ -84,5 +126,91 @@ class CompleteModuleUpgradeStageTest extends TestCase
         $this->assertFalse($result->success);
         $ctx->installation->refresh();
         $this->assertNotSame('complete', $ctx->installation->status);
+    }
+
+    // ─── Phase 13-M4 — Version Sync ─────────────────────────────────────────
+
+    /**
+     * Scenario 1 — successful upgrade syncs site_modules.installed_version,
+     * without touching version_reported_at (provenance stays with the
+     * tenant's own self-report).
+     */
+    public function test_syncs_installed_version_on_success(): void
+    {
+        ['site' => $site, 'module' => $module] = $this->makeSiteWithModule('1.0.0');
+        $before = $this->fetchSiteModuleRow($site->id, $module->id);
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('public/storage', 0, "linked\n");
+        $driver->addResponse('.cie_health', 0, "writable\n");
+
+        $ctx = $this->makeContext($driver, [
+            'site_id' => $site->id,
+            'metadata' => ['module_slug' => $module->slug, 'target_version' => '1.1.0'],
+        ]);
+
+        $result = app(CompleteModuleUpgradeStage::class)->execute($ctx);
+
+        $this->assertTrue($result->success);
+
+        $after = $this->fetchSiteModuleRow($site->id, $module->id);
+        $this->assertSame('1.1.0', $after->installed_version);
+        // version_reported_at must be untouched — only the tenant's own
+        // self-report (recordReportedVersions) is allowed to set it.
+        $this->assertEquals($before->version_reported_at, $after->version_reported_at);
+    }
+
+    /**
+     * Scenario 2 — incomplete metadata (target_version missing) must not
+     * fail the stage; it just skips the sync and logs a warning.
+     */
+    public function test_does_not_fail_when_metadata_incomplete(): void
+    {
+        ['site' => $site, 'module' => $module] = $this->makeSiteWithModule('1.0.0');
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('public/storage', 0, "linked\n");
+        $driver->addResponse('.cie_health', 0, "writable\n");
+
+        $ctx = $this->makeContext($driver, [
+            'site_id' => $site->id,
+            'metadata' => ['module_slug' => $module->slug], // target_version missing
+        ]);
+
+        $result = app(CompleteModuleUpgradeStage::class)->execute($ctx);
+
+        $this->assertTrue($result->success);
+        $ctx->installation->refresh();
+        $this->assertSame('complete', $ctx->installation->status);
+
+        // installed_version stays exactly as it was before the (skipped) sync.
+        $after = $this->fetchSiteModuleRow($site->id, $module->id);
+        $this->assertSame('1.0.0', $after->installed_version);
+    }
+
+    /**
+     * Scenario 3 — non-MODE_MODULE_UPDATE installations never sync a
+     * version, even if site_id/metadata happen to be present.
+     */
+    public function test_does_not_sync_version_for_non_module_update_mode(): void
+    {
+        ['site' => $site, 'module' => $module] = $this->makeSiteWithModule('1.0.0');
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('public/storage', 0, "linked\n");
+        $driver->addResponse('.cie_health', 0, "writable\n");
+
+        $ctx = $this->makeContext($driver, [
+            'install_mode' => 'MODE_FRESH',
+            'site_id' => $site->id,
+            'metadata' => ['module_slug' => $module->slug, 'target_version' => '1.1.0'],
+        ]);
+
+        $result = app(CompleteModuleUpgradeStage::class)->execute($ctx);
+
+        $this->assertTrue($result->success);
+
+        $after = $this->fetchSiteModuleRow($site->id, $module->id);
+        $this->assertSame('1.0.0', $after->installed_version);
     }
 }
