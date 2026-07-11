@@ -168,6 +168,11 @@ class BackupModuleUpgradeStageTest extends TestCase
         $this->assertTrue(app(BackupModuleUpgradeStage::class)->canRollback());
     }
 
+    public function test_is_critical_for_safety(): void
+    {
+        $this->assertTrue(app(BackupModuleUpgradeStage::class)->isCriticalForSafety());
+    }
+
     public function test_execute_populates_rollback_snapshot(): void
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-01-01 00:00:00'));

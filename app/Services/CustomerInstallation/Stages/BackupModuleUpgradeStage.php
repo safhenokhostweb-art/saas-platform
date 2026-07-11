@@ -41,6 +41,16 @@ class BackupModuleUpgradeStage extends AbstractStage
     public function estimatedSeconds(): int { return 60; }
     public function canRollback(): bool { return true; }
 
+    /**
+     * Phase 13-M3b — if this stage's rollback() (the database restore)
+     * fails, CustomerInstallationRollbackService must not proceed to
+     * LOCK_TENANT's rollback() (the unlock) — that would expose live
+     * traffic to old module code against a database still in its
+     * post-migration state. Halting here leaves the tenant locked,
+     * requiring manual recovery, which is the safe failure mode.
+     */
+    public function isCriticalForSafety(): bool { return true; }
+
     public function execute(InstallationContext $ctx): StageResult
     {
         return $this->run($ctx, function (InstallationContext $ctx) {

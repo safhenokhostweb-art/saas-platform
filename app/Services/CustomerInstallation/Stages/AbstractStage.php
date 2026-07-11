@@ -15,6 +15,11 @@ abstract class AbstractStage implements InstallationStageInterface
         return false;
     }
 
+    public function isCriticalForSafety(): bool
+    {
+        return false;
+    }
+
     public function rollback(InstallationContext $ctx, array $snapshot): void
     {
         // No rollback by default — override in stages that have state

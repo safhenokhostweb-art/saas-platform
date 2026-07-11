@@ -92,4 +92,15 @@ class LockTenantStageTest extends TestCase
         $commands = $driver->getCommandLog();
         $this->assertNotEmpty(array_filter($commands, fn ($c) => str_contains($c, 'artisan up')));
     }
+
+    /**
+     * Phase 13-M3b — LockTenantStage's own rollback (the unlock) is not
+     * itself a critical recovery step; it must run with the default
+     * (non-critical) AbstractStage behavior so a failed unlock doesn't
+     * halt replay of anything that might come after it.
+     */
+    public function test_is_not_critical_for_safety(): void
+    {
+        $this->assertFalse(app(LockTenantStage::class)->isCriticalForSafety());
+    }
 }

@@ -76,6 +76,7 @@ class CustomerInstallationRollbackService
             ->get();
 
         $allSucceeded = true;
+        $haltReason = null;
 
         foreach ($checkpoints as $checkpoint) {
             $stageName = $checkpoint->stage;
@@ -101,7 +102,18 @@ class CustomerInstallationRollbackService
             } catch (\Throwable $e) {
                 Log::error("CIE Rollback: Failed to rollback stage {$stageName}", ['error' => $e->getMessage()]);
                 $allSucceeded = false;
-                // Continue attempting remaining rollbacks
+
+                if ($stage->isCriticalForSafety()) {
+                    // Phase 13-M3b — a critical recovery stage (e.g. the database
+                    // restore) failed. Replaying the remaining, older checkpoints
+                    // — which includes LOCK_TENANT's unlock — would expose a
+                    // tenant whose database was never actually restored. Stop
+                    // here and leave the tenant locked; that requires manual
+                    // recovery, which is safer than serving broken traffic.
+                    $haltReason = "Critical rollback stage {$stageName} failed — halting replay to avoid unlocking an inconsistent tenant: " . $e->getMessage();
+                    break;
+                }
+                // Non-critical stage — continue attempting remaining rollbacks
             }
         }
 
@@ -112,7 +124,7 @@ class CustomerInstallationRollbackService
         if ($allSucceeded) {
             $this->state->markRolledBack($installation);
         } else {
-            $this->state->markRollbackFailed($installation, 'One or more rollback steps failed');
+            $this->state->markRollbackFailed($installation, $haltReason ?? 'One or more rollback steps failed');
         }
     }
 

@@ -244,4 +244,56 @@ class RollbackTest extends TestCase
         $installation->refresh();
         $this->assertSame('rolled_back', $installation->status);
     }
+
+    /**
+     * Phase 13-M3b — when the database restore itself fails, replay must
+     * halt immediately: LOCK_TENANT's checkpoint (the unlock) must never
+     * be reached, the tenant stays locked, and the installation is marked
+     * rollback_failed rather than reporting a clean rollback.
+     */
+    public function test_rollback_halts_and_leaves_tenant_locked_when_database_restore_fails(): void
+    {
+        $driver = new FakeRemoteDriver();
+        // No grep/gunzip responses registered — irrelevant here, since the
+        // snapshot below has no usable backup reference at all, so
+        // BackupModuleUpgradeStage::rollback() throws before touching the
+        // connection.
+
+        $this->mock(RemoteConnectionService::class, function ($mock) use ($driver) {
+            $mock->shouldReceive('buildDriver')->andReturn($driver);
+        });
+
+        $installation = $this->makeModuleUpdateInstallation();
+
+        $this->seedCheckpoint($installation, 'LOCK_TENANT', []);
+        $this->seedCheckpoint($installation, 'BACKUP_MODULE_UPGRADE', [
+            // Deliberately missing backup_sha256/backup_arvan_key/local_repo_file
+            // — BackupModuleUpgradeStage::rollback() throws immediately.
+        ]);
+        $this->seedCheckpoint($installation, 'UPLOAD_PACKAGE', ['remote_path' => '/tmp/module.zip']);
+        $this->seedCheckpoint($installation, 'VERIFY_PACKAGE', ['remote_path' => '/tmp/module.zip']);
+        $this->seedCheckpoint($installation, 'EXTRACT_MODULE_PACKAGE', ['module_path' => '/var/www/test/packages/saas-platform/modules/forms']);
+
+        app(CustomerInstallationRollbackService::class)->rollback($installation);
+
+        $commandLog = $driver->getCommandLog();
+        $this->assertEmpty(
+            array_filter($commandLog, fn ($c) => str_contains($c, 'artisan up')),
+            'LOCK_TENANT.rollback() (the unlock) must never run when the database restore fails'
+        );
+
+        $installation->refresh();
+        $this->assertSame('rollback_failed', $installation->status);
+        $this->assertStringContainsString('BACKUP_MODULE_UPGRADE', $installation->failure_reason);
+
+        // EXTRACT/VERIFY/UPLOAD were replayed (and succeeded) before BACKUP
+        // was reached — only BACKUP (failed) and LOCK (never reached) remain pending.
+        $extract = CustomerInstallRollback::where('installation_id', $installation->id)->where('stage', 'EXTRACT_MODULE_PACKAGE')->first();
+        $backup  = CustomerInstallRollback::where('installation_id', $installation->id)->where('stage', 'BACKUP_MODULE_UPGRADE')->first();
+        $lock    = CustomerInstallRollback::where('installation_id', $installation->id)->where('stage', 'LOCK_TENANT')->first();
+
+        $this->assertNotNull($extract->executed_at, 'EXTRACT_MODULE_PACKAGE ran before the critical failure and should be marked executed');
+        $this->assertNull($backup->executed_at, 'BACKUP_MODULE_UPGRADE failed and must not be marked executed');
+        $this->assertNull($lock->executed_at, 'LOCK_TENANT must never be reached after the critical halt');
+    }
 }
