@@ -220,15 +220,26 @@ class InstallationStateManager implements InstallationStateInterface
         return $output;
     }
 
+    /**
+     * Phase 13-O5 — snapshots are kept in full by default so any Stage's
+     * rollback() has the data it recorded. A fixed allowlist here (the
+     * previous approach) silently drops any key a newer Stage introduces
+     * before rollback ever runs, since sanitizeSnapshot() sits between
+     * every Stage's snapshot and its persisted CustomerInstallRollback row
+     * — see the Phase 13-O4 audit finding this closes. Only keys that look
+     * like they hold a secret are stripped, matching sanitizeOutput()'s
+     * redaction intent but keyed on the field name rather than its value,
+     * since a rollback snapshot is a small set of named references
+     * (paths, hashes, IDs) rather than free-form command output.
+     */
     private function sanitizeSnapshot(array $snapshot): array
     {
-        // Rollback snapshots must never contain passwords
         $safe = [];
-        $allowedKeys = ['remote_path', 'db_name', 'db_user', 'config_path', 'cron_path', 'site_id', 'license_id'];
-        foreach ($allowedKeys as $key) {
-            if (isset($snapshot[$key])) {
-                $safe[$key] = $snapshot[$key];
+        foreach ($snapshot as $key => $value) {
+            if (is_string($key) && preg_match('/password|secret|token|private_key|credential|api_key/i', $key)) {
+                continue;
             }
+            $safe[$key] = is_array($value) ? $this->sanitizeSnapshot($value) : $value;
         }
         return $safe;
     }
