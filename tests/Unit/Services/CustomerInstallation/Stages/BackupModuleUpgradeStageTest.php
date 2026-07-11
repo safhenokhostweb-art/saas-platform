@@ -160,4 +160,213 @@ class BackupModuleUpgradeStageTest extends TestCase
         $this->assertFalse($result->success);
         $this->assertStringContainsString('could not be stored', $result->error);
     }
+
+    // ─── Phase 13-M2 — Database Restore Rollback ───────────────────────────
+
+    public function test_can_rollback_is_true(): void
+    {
+        $this->assertTrue(app(BackupModuleUpgradeStage::class)->canRollback());
+    }
+
+    public function test_execute_populates_rollback_snapshot(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-01-01 00:00:00'));
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse("grep '^DB_DATABASE='", 0, "testdb\n");
+        $driver->addResponse("grep '^DB_USERNAME='", 0, "testuser\n");
+        $driver->addResponse("grep '^DB_PASSWORD='", 0, "testpass\n");
+        $driver->addResponse('mysqldump', 0, "dump-ok\n");
+        $driver->addResponse('stat -c%s', 0, "5000\n");
+        $driver->putFile('/tmp/cie_module_upgrade_999_20260101_000000.sql.gz');
+
+        $this->mock(LocalRecoveryRepository::class, function ($mock) {
+            $mock->shouldReceive('shouldUseLocal')->andReturn(true);
+            $mock->shouldReceive('shouldUseArvan')->andReturn(false);
+            $mock->shouldReceive('storeCustomerBaseline')->andReturn([
+                'success' => true,
+                'local_path' => '/fake/repo/Customers/Site-999/uuid/20260101_000000',
+            ]);
+        });
+        $this->mock(ArvanBackupService::class);
+
+        $ctx = $this->makeContext($driver);
+        $result = app(BackupModuleUpgradeStage::class)->execute($ctx);
+
+        $this->assertTrue($result->success);
+        $this->assertSame($result->output['backup_sha256'], $result->rollbackSnapshot['backup_sha256']);
+        $this->assertNull($result->rollbackSnapshot['backup_arvan_key']);
+        $this->assertSame(
+            '/fake/repo/Customers/Site-999/uuid/20260101_000000' . DIRECTORY_SEPARATOR . 'customer_baseline.sql.gz',
+            $result->rollbackSnapshot['local_repo_file']
+        );
+    }
+
+    public function test_rollback_throws_when_snapshot_has_no_backup_reference(): void
+    {
+        $ctx = $this->makeContext(new FakeRemoteDriver());
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/no usable backup reference/');
+
+        app(BackupModuleUpgradeStage::class)->rollback($ctx, []);
+    }
+
+    public function test_rollback_restores_from_local_repo_file(): void
+    {
+        $fixture = storage_path('app/install-packages/rollback_fixture_local.sql.gz');
+        file_put_contents($fixture, 'fake-dump-content');
+        $sha256 = hash_file('sha256', $fixture);
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse("grep '^DB_DATABASE='", 0, "testdb\n");
+        $driver->addResponse("grep '^DB_USERNAME='", 0, "testuser\n");
+        $driver->addResponse("grep '^DB_PASSWORD='", 0, "testpass\n");
+        $driver->addResponse('gunzip -c', 0, "restore-ok\n");
+        $driver->addResponse('mysql -N -u', 0, "5\n");
+
+        $ctx = $this->makeContext($driver);
+
+        try {
+            app(BackupModuleUpgradeStage::class)->rollback($ctx, [
+                'backup_sha256' => $sha256,
+                'backup_arvan_key' => null,
+                'local_repo_file' => $fixture,
+            ]);
+        } finally {
+            @unlink($fixture);
+        }
+
+        $uploads = $driver->getUploadLog();
+        $this->assertNotEmpty($uploads);
+        $this->assertStringContainsString('module_upgrade_restore_', $uploads[0]['local']);
+    }
+
+    public function test_rollback_restores_via_arvan_when_local_file_unavailable(): void
+    {
+        $this->mock(ArvanBackupService::class, function ($mock) {
+            $mock->shouldReceive('download')->once()->andReturnUsing(function ($key, $dest) {
+                file_put_contents($dest, 'arvan-dump-content');
+                return true;
+            });
+        });
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse("grep '^DB_DATABASE='", 0, "testdb\n");
+        $driver->addResponse("grep '^DB_USERNAME='", 0, "testuser\n");
+        $driver->addResponse("grep '^DB_PASSWORD='", 0, "testpass\n");
+        $driver->addResponse('gunzip -c', 0, "restore-ok\n");
+        $driver->addResponse('mysql -N -u', 0, "3\n");
+
+        $ctx = $this->makeContext($driver);
+
+        app(BackupModuleUpgradeStage::class)->rollback($ctx, [
+            'backup_sha256' => hash('sha256', 'arvan-dump-content'),
+            'backup_arvan_key' => 'customers/site-999/module-upgrades/backup_x.sql.gz',
+            'local_repo_file' => null,
+        ]);
+
+        $this->assertNotEmpty($driver->getUploadLog());
+    }
+
+    public function test_rollback_throws_on_checksum_mismatch(): void
+    {
+        $fixture = storage_path('app/install-packages/rollback_fixture_mismatch.sql.gz');
+        file_put_contents($fixture, 'fake-dump-content');
+
+        $ctx = $this->makeContext(new FakeRemoteDriver());
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/checksum mismatch/');
+
+        try {
+            app(BackupModuleUpgradeStage::class)->rollback($ctx, [
+                'backup_sha256' => str_repeat('0', 64),
+                'backup_arvan_key' => null,
+                'local_repo_file' => $fixture,
+            ]);
+        } finally {
+            @unlink($fixture);
+        }
+    }
+
+    public function test_rollback_throws_when_mysql_restore_fails(): void
+    {
+        $fixture = storage_path('app/install-packages/rollback_fixture_restore_fail.sql.gz');
+        file_put_contents($fixture, 'x');
+        $sha256 = hash_file('sha256', $fixture);
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse("grep '^DB_DATABASE='", 0, "testdb\n");
+        $driver->addResponse("grep '^DB_USERNAME='", 0, "testuser\n");
+        $driver->addResponse("grep '^DB_PASSWORD='", 0, "testpass\n");
+        $driver->addResponse('gunzip -c', 0, "restore-failed\n");
+
+        $ctx = $this->makeContext($driver);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/mysql restore failed/');
+
+        try {
+            app(BackupModuleUpgradeStage::class)->rollback($ctx, [
+                'backup_sha256' => $sha256,
+                'backup_arvan_key' => null,
+                'local_repo_file' => $fixture,
+            ]);
+        } finally {
+            @unlink($fixture);
+        }
+    }
+
+    public function test_rollback_throws_when_post_restore_verification_finds_no_tables(): void
+    {
+        $fixture = storage_path('app/install-packages/rollback_fixture_no_tables.sql.gz');
+        file_put_contents($fixture, 'x');
+        $sha256 = hash_file('sha256', $fixture);
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse("grep '^DB_DATABASE='", 0, "testdb\n");
+        $driver->addResponse("grep '^DB_USERNAME='", 0, "testuser\n");
+        $driver->addResponse("grep '^DB_PASSWORD='", 0, "testpass\n");
+        $driver->addResponse('gunzip -c', 0, "restore-ok\n");
+        $driver->addResponse('mysql -N -u', 0, "0\n");
+
+        $ctx = $this->makeContext($driver);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/no tables/');
+
+        try {
+            app(BackupModuleUpgradeStage::class)->rollback($ctx, [
+                'backup_sha256' => $sha256,
+                'backup_arvan_key' => null,
+                'local_repo_file' => $fixture,
+            ]);
+        } finally {
+            @unlink($fixture);
+        }
+    }
+
+    public function test_rollback_throws_when_db_credentials_unreadable(): void
+    {
+        $fixture = storage_path('app/install-packages/rollback_fixture_no_creds.sql.gz');
+        file_put_contents($fixture, 'x');
+        $sha256 = hash_file('sha256', $fixture);
+
+        // No grep responses registered — FakeRemoteDriver defaults to empty stdout.
+        $ctx = $this->makeContext(new FakeRemoteDriver());
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/DB credentials/');
+
+        try {
+            app(BackupModuleUpgradeStage::class)->rollback($ctx, [
+                'backup_sha256' => $sha256,
+                'backup_arvan_key' => null,
+                'local_repo_file' => $fixture,
+            ]);
+        } finally {
+            @unlink($fixture);
+        }
+    }
 }
