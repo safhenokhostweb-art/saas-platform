@@ -137,8 +137,8 @@ class PipelineTest extends TestCase
             'VALIDATE_EXTENSIONS',
             'VALIDATE_DISK',
             'VALIDATE_PERMISSIONS',
-            'BACKUP_MODULE_UPGRADE',
             'LOCK_TENANT',
+            'BACKUP_MODULE_UPGRADE',
             'UPLOAD_PACKAGE',
             'VERIFY_PACKAGE',
             'EXTRACT_MODULE_PACKAGE',
@@ -167,6 +167,26 @@ class PipelineTest extends TestCase
         $this->assertLessThan($uploadPos, $lockPos, 'LOCK_TENANT must precede UPLOAD_PACKAGE');
         $this->assertSame(count($names) - 1, $unlockPos, 'UNLOCK_TENANT must be the last stage');
         $this->assertGreaterThan($completePos, $unlockPos, 'UNLOCK_TENANT must come after the health check');
+    }
+
+    /**
+     * Phase 13-M3a — LOCK_TENANT must precede BACKUP_MODULE_UPGRADE in the
+     * forward stage list. Checkpoints are recorded in forward execution
+     * order and replayed LIFO on rollback, so this forward ordering is what
+     * guarantees BACKUP_MODULE_UPGRADE.rollback() (the database restore)
+     * runs before LOCK_TENANT.rollback() (the unlock) during a failed
+     * upgrade — never the other way around.
+     */
+    public function test_lock_precedes_backup(): void
+    {
+        $target = new \App\Services\CustomerInstallation\Dto\ModuleUpdateTarget('forms', 1, '1.1.0');
+        $orchestrator = app(CustomerInstallationOrchestrator::class);
+        $names = array_map(fn ($s) => $s->name(), $orchestrator->buildStageList('MODE_MODULE_UPDATE', $target));
+
+        $lockPos = array_search('LOCK_TENANT', $names, true);
+        $backupPos = array_search('BACKUP_MODULE_UPGRADE', $names, true);
+
+        $this->assertLessThan($backupPos, $lockPos, 'LOCK_TENANT must precede BACKUP_MODULE_UPGRADE so rollback restores the database before unlocking the site');
     }
 
     public function test_module_update_stages_exclude_fresh_install_only_stages(): void

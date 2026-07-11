@@ -180,8 +180,15 @@ class CustomerInstallationOrchestrator
             app(ValidateExtensionsStage::class),
             app(ValidateDiskStage::class),
             app(ValidatePermissionsStage::class),
-            app(BackupModuleUpgradeStage::class),
+            // Phase 13-M3a — LOCK_TENANT precedes BACKUP_MODULE_UPGRADE (was the
+            // reverse). Two effects: the pre-upgrade dump is now taken while the
+            // site is already in maintenance mode (a quiescent snapshot, not one
+            // racing live writes), and — the actual gap this fixes — LIFO rollback
+            // checkpoint order is reversed accordingly, so on failure the database
+            // restore (BACKUP_MODULE_UPGRADE.rollback()) now runs before the site
+            // is unlocked (LOCK_TENANT.rollback()), never after.
             app(LockTenantStage::class),
+            app(BackupModuleUpgradeStage::class),
             app(UploadPackageStage::class),
             app(VerifyPackageStage::class),
             app(ExtractModulePackageStage::class),

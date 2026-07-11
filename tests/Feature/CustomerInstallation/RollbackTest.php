@@ -8,6 +8,7 @@ use App\Models\CustomerRemoteServer;
 use App\Services\CustomerInstallation\CustomerInstallationRollbackService;
 use App\Services\CustomerInstallation\Drivers\FakeRemoteDriver;
 use App\Services\CustomerInstallation\InstallationStateManager;
+use App\Services\CustomerInstallation\RemoteConnectionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -135,5 +136,112 @@ class RollbackTest extends TestCase
         $this->assertContains('started', $events);
         $this->assertContains('completed', $events);
         $this->assertContains('failed', $events);
+    }
+
+    // ─── Phase 13-M3a — Module Update Rollback Order ───────────────────────
+
+    private function makeModuleUpdateInstallation(): CustomerInstallation
+    {
+        $server = CustomerRemoteServer::create([
+            'label' => 'Fake', 'type' => 'fake', 'host' => 'localhost',
+            'port' => 22, 'username' => 'deploy', 'auth_method' => 'key',
+        ]);
+
+        return CustomerInstallation::create([
+            'remote_server_id'  => $server->id,
+            'installer_user_id' => 1,
+            'install_mode'      => 'MODE_MODULE_UPDATE',
+            'status'            => 'failed',
+            'failed_at'         => now(),
+            'site_id'           => 999,
+            'customer_company'  => 'Module Update Co',
+            'customer_email'    => 'mu@example.com',
+            'customer_domain'   => 'mu.example.com',
+            'request_payload'   => [
+                'company' => 'Module Update Co', 'owner_name' => 'Owner',
+                'email' => 'mu@example.com', 'phone' => '09123456789',
+                'domain' => 'mu.example.com',
+                'remote_server_id' => $server->id, 'install_mode' => 'MODE_MODULE_UPDATE',
+            ],
+        ]);
+    }
+
+    private function seedCheckpoint(CustomerInstallation $installation, string $stage, array $snapshot): void
+    {
+        CustomerInstallRollback::create([
+            'installation_id' => $installation->id,
+            'stage'           => $stage,
+            'snapshot'        => $snapshot,
+            'executed_at'     => null,
+            'created_at'      => now(),
+        ]);
+    }
+
+    /**
+     * Phase 13-M3a — proves the fix end-to-end through the real
+     * CustomerInstallationRollbackService: checkpoints are seeded in the
+     * new forward order (LOCK_TENANT created before BACKUP_MODULE_UPGRADE,
+     * matching CustomerInstallationOrchestrator::moduleUpdateStages()), so
+     * LIFO replay must restore the database (BACKUP_MODULE_UPGRADE.rollback())
+     * before it unlocks the tenant (LOCK_TENANT.rollback()) — verified by
+     * the actual order of remote commands issued.
+     */
+    public function test_rollback_restores_database_before_unlocking_tenant(): void
+    {
+        $fixture = storage_path('app/install-packages/m3a_rollback_order_fixture.sql.gz');
+        file_put_contents($fixture, 'ordered-dump-content');
+        $sha256 = hash_file('sha256', $fixture);
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse("grep '^DB_DATABASE='", 0, "testdb\n");
+        $driver->addResponse("grep '^DB_USERNAME='", 0, "testuser\n");
+        $driver->addResponse("grep '^DB_PASSWORD='", 0, "testpass\n");
+        $driver->addResponse('gunzip -c', 0, "restore-ok\n");
+        $driver->addResponse('mysql -N -u', 0, "4\n");
+
+        $this->mock(RemoteConnectionService::class, function ($mock) use ($driver) {
+            $mock->shouldReceive('buildDriver')->andReturn($driver);
+        });
+
+        $installation = $this->makeModuleUpdateInstallation();
+
+        // Seed checkpoints in the exact order the orchestrator now produces
+        // them forward: LOCK_TENANT first, then BACKUP_MODULE_UPGRADE, then
+        // the remaining mutating stages.
+        $this->seedCheckpoint($installation, 'LOCK_TENANT', []);
+        $this->seedCheckpoint($installation, 'BACKUP_MODULE_UPGRADE', [
+            'backup_sha256'    => $sha256,
+            'backup_arvan_key' => null,
+            'local_repo_file'  => $fixture,
+        ]);
+        $this->seedCheckpoint($installation, 'UPLOAD_PACKAGE', ['remote_path' => '/tmp/module.zip']);
+        $this->seedCheckpoint($installation, 'VERIFY_PACKAGE', ['remote_path' => '/tmp/module.zip']);
+        $this->seedCheckpoint($installation, 'EXTRACT_MODULE_PACKAGE', ['module_path' => '/var/www/test/packages/saas-platform/modules/forms']);
+
+        try {
+            app(CustomerInstallationRollbackService::class)->rollback($installation);
+        } finally {
+            @unlink($fixture);
+        }
+
+        $commandLog = $driver->getCommandLog();
+        $restoreIdx = null;
+        $unlockIdx  = null;
+
+        foreach ($commandLog as $i => $command) {
+            if ($restoreIdx === null && str_contains($command, 'gunzip -c')) {
+                $restoreIdx = $i;
+            }
+            if ($unlockIdx === null && str_contains($command, 'artisan up')) {
+                $unlockIdx = $i;
+            }
+        }
+
+        $this->assertNotNull($restoreIdx, 'Expected the database restore command (gunzip -c | mysql) to run');
+        $this->assertNotNull($unlockIdx, 'Expected the unlock command (artisan up) to run');
+        $this->assertLessThan($unlockIdx, $restoreIdx, 'Database restore must run before the tenant is unlocked');
+
+        $installation->refresh();
+        $this->assertSame('rolled_back', $installation->status);
     }
 }
