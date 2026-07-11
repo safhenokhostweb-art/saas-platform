@@ -81,12 +81,16 @@ return [
             'after_commit'=> false,
         ],
 
-        // Customer installation pipeline (up to 1 hour per job)
+        // Customer installation pipeline (up to 1 hour per job).
+        // Phase 13-O1 — retry_after (3900) is kept safely above the job's
+        // own $timeout (3600) so Redis never re-queues a job that's still
+        // finishing its own cleanup, which previously raced with the job's
+        // own failure/rollback handling.
         'customer-install' => [
             'driver'      => 'redis',
             'connection'  => 'default',
             'queue'       => 'customer-install',
-            'retry_after' => 3600,
+            'retry_after' => 3900,
             'block_for'   => null,
             'after_commit'=> false,
         ],
