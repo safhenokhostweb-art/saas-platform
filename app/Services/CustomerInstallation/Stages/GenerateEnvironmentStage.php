@@ -95,11 +95,15 @@ class GenerateEnvironmentStage extends AbstractStage
             // backup, local and offsite). It's stored encrypted via
             // CredentialVault; metadata only keeps a reference to the
             // InstallationCredential row.
-            $credential = InstallationCredential::create([
-                'installation_id' => $ctx->installation->id,
-                'type'             => 'admin_password',
-                'encrypted_value'  => $this->vault->encrypt($adminPassword),
-            ]);
+            //
+            // Phase 13-O9c — updateOrCreate (keyed on installation_id+type,
+            // now unique-constrained) instead of create(), so a retried
+            // stage run overwrites the same row rather than leaving stale
+            // duplicate credentials behind.
+            $credential = InstallationCredential::updateOrCreate(
+                ['installation_id' => $ctx->installation->id, 'type' => 'admin_password'],
+                ['encrypted_value' => $this->vault->encrypt($adminPassword)]
+            );
 
             $ctx->installation->update([
                 'metadata' => [
@@ -117,7 +121,7 @@ class GenerateEnvironmentStage extends AbstractStage
                 'env_path'      => $envPath,
                 'app_key_set'   => true,
                 'app_url'       => $appUrl,
-            ], ['env_path' => $envPath], $this->elapsed());
+            ], ['env_path' => $envPath, 'credential_type' => 'admin_password'], $this->elapsed());
         });
     }
 
@@ -125,6 +129,24 @@ class GenerateEnvironmentStage extends AbstractStage
     {
         if (!empty($snapshot['env_path'])) {
             $ctx->connection->execute('rm -f ' . escapeshellarg($snapshot['env_path']));
+        }
+
+        // Phase 13-O9c — revoke, not delete: the InstallationCredential row
+        // is kept (installation_id/type/created_at stay available for
+        // audit), only the metadata pointer is removed. Without this, the
+        // .env is gone but the UI still resolved credential_ids.admin_password
+        // to a row whose password no longer matches anything live.
+        $type = $snapshot['credential_type'] ?? null;
+        if ($type === null) {
+            return;
+        }
+
+        $installation = $ctx->installation->fresh();
+        $metadata = $installation->metadata ?? [];
+
+        if (isset($metadata['credential_ids'][$type])) {
+            unset($metadata['credential_ids'][$type]);
+            $installation->update(['metadata' => $metadata]);
         }
     }
 }

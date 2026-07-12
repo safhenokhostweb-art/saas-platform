@@ -143,6 +143,17 @@ class CredentialVault
             }
         });
 
+        // Phase 13-O9c — rotate InstallationCredential rows too, so they stay
+        // decryptable after INSTALLER_MASTER_KEY rotation like every other
+        // vault-backed credential.
+        \App\Models\InstallationCredential::all()->each(function (\App\Models\InstallationCredential $credential) use ($newVault, &$rotated) {
+            if (!empty($credential->encrypted_value)) {
+                $plain = $this->decrypt($credential->encrypted_value);
+                $credential->updateQuietly(['encrypted_value' => $newVault->encrypt($plain)]);
+                $rotated++;
+            }
+        });
+
         return $rotated;
     }
 }

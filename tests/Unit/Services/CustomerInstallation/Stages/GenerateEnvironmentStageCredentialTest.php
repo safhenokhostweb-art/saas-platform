@@ -133,4 +133,83 @@ class GenerateEnvironmentStageCredentialTest extends TestCase
         $this->assertNotEmpty($decrypted);
         $this->assertSame(16, strlen($decrypted)); // Str::random(16) in the stage
     }
+
+    /**
+     * Phase 13-O9c — the unique (installation_id, type) index must reject a
+     * second row for the same installation/type outright (belt-and-braces
+     * alongside updateOrCreate in the stage itself).
+     */
+    public function test_duplicate_credential_prevented_by_unique_index(): void
+    {
+        $installation = $this->makeInstallation();
+
+        InstallationCredential::create([
+            'installation_id' => $installation->id,
+            'type'            => 'admin_password',
+            'encrypted_value' => (new CredentialVault())->encrypt('first'),
+        ]);
+
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        InstallationCredential::create([
+            'installation_id' => $installation->id,
+            'type'            => 'admin_password',
+            'encrypted_value' => (new CredentialVault())->encrypt('second'),
+        ]);
+    }
+
+    /**
+     * Phase 13-O9c — a retried GENERATE_ENVIRONMENT run (e.g. installation
+     * pipeline retry after a later stage failed) must overwrite the existing
+     * credential row rather than leaving a stale duplicate behind.
+     */
+    public function test_stage_retry_creates_only_one_credential(): void
+    {
+        $installation = $this->makeInstallation();
+
+        $this->runStage($installation);
+        $firstCredentialId = $installation->fresh()->metadata['credential_ids']['admin_password'];
+        $firstEncrypted = InstallationCredential::findOrFail($firstCredentialId)->encrypted_value;
+
+        // Simulate a retry of the same stage against the same installation.
+        $this->runStage($installation);
+        $secondCredentialId = $installation->fresh()->metadata['credential_ids']['admin_password'];
+        $secondEncrypted = InstallationCredential::findOrFail($secondCredentialId)->encrypted_value;
+
+        $this->assertSame($firstCredentialId, $secondCredentialId, 'Retry must reuse the same credential row');
+        $this->assertNotSame($firstEncrypted, $secondEncrypted, 'Retry must regenerate the password, not keep the old ciphertext');
+        $this->assertSame(1, InstallationCredential::where('installation_id', $installation->id)
+            ->where('type', 'admin_password')
+            ->count());
+    }
+
+    /**
+     * Phase 13-O9c — on rollback the credential is revoked (metadata pointer
+     * removed so the UI stops resolving it), not deleted (the row itself
+     * stays for audit — installation_id/type/created_at remain queryable).
+     */
+    public function test_rollback_revokes_credential_reference_without_deleting_row(): void
+    {
+        $installation = $this->makeInstallation();
+        $request = CustomerInstallRequest::fromArray($installation->request_payload);
+        $ctx = new InstallationContext($installation, $request, new FakeRemoteDriver());
+
+        $stage = app(GenerateEnvironmentStage::class);
+        $result = $stage->execute($ctx);
+        $this->assertTrue($result->success, $result->error ?? '');
+
+        $credentialId = $installation->fresh()->metadata['credential_ids']['admin_password'];
+
+        $stage->rollback($ctx, $result->rollbackSnapshot);
+
+        $metadata = $installation->fresh()->metadata;
+        $this->assertArrayNotHasKey('admin_password', $metadata['credential_ids'] ?? []);
+
+        // The row itself is preserved for audit — not deleted.
+        $this->assertDatabaseHas('installation_credentials', [
+            'id'              => $credentialId,
+            'installation_id' => $installation->id,
+            'type'            => 'admin_password',
+        ]);
+    }
 }
