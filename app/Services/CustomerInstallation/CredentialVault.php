@@ -154,6 +154,17 @@ class CredentialVault
             }
         });
 
+        // Phase 13-O12a — rotate Site::db_password_encrypted too. Sites still
+        // on the legacy plaintext db_password column (encrypted column empty)
+        // are skipped here on purpose — there is nothing to rotate for them.
+        \App\Models\Site::all()->each(function (\App\Models\Site $site) use ($newVault, &$rotated) {
+            if (!empty($site->db_password_encrypted)) {
+                $plain = $this->decrypt($site->db_password_encrypted);
+                $site->updateQuietly(['db_password_encrypted' => $newVault->encrypt($plain)]);
+                $rotated++;
+            }
+        });
+
         return $rotated;
     }
 }

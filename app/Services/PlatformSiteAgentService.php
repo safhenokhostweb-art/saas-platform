@@ -163,7 +163,7 @@ class PlatformSiteAgentService
             'port'      => '3306',
             'database'  => $site->db_name,
             'username'  => $site->db_user,
-            'password'  => $site->db_password ?? '',
+            'password'  => $site->getDecryptedDbPassword() ?? '',
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix'    => '',

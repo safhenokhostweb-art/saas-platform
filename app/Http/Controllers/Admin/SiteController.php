@@ -17,10 +17,15 @@ use App\Services\Sms\SmsGatewayResolver;
 use App\Services\ExpiryReminderService;
 use App\Helpers\PlatformSettings;
 use App\Models\PlatformSiteNotification;
+use App\Services\CustomerInstallation\CredentialVault;
 use Illuminate\Support\Facades\Schema;
 
 class SiteController extends Controller
 {
+    public function __construct(
+        private readonly CredentialVault $credentialVault,
+    ) {}
+
     /**
      * لیست سایت‌ها
      */
@@ -90,7 +95,6 @@ class SiteController extends Controller
             'hosting_company',
             'db_name',
             'db_user',
-            'db_password',
             'db_host',
             'support_expires_at',
             'host_expires_at',
@@ -114,12 +118,21 @@ class SiteController extends Controller
             $data['customer_menu_keys'] = $request->input('customer_menu_keys', array_keys(CustomerMenu::MENU_KEYS));
         }
 
+        // Phase 13-O12a — db_password is never written to the plaintext
+        // column anymore; it's only ever encrypted into db_password_encrypted
+        // (Site::getDecryptedDbPassword() reads it back out).
+        $dbPasswordInput = $request->input('db_password');
+
         // Auto-fill customer-site DB credentials from platform env if not provided
         if (empty($data['db_host']) && config('services.customer_db.host')) {
-            $data['db_host']     = config('services.customer_db.host');
-            $data['db_user']     = $data['db_user']     ?: config('services.customer_db.user');
-            $data['db_password'] = $data['db_password'] ?: config('services.customer_db.password');
-            $data['db_name']     = $data['db_name']     ?: config('services.customer_db.name');
+            $data['db_host']  = config('services.customer_db.host');
+            $data['db_user']  = $data['db_user'] ?: config('services.customer_db.user');
+            $dbPasswordInput  = $dbPasswordInput ?: config('services.customer_db.password');
+            $data['db_name']  = $data['db_name'] ?: config('services.customer_db.name');
+        }
+
+        if (!empty($dbPasswordInput)) {
+            $data['db_password_encrypted'] = $this->credentialVault->encrypt($dbPasswordInput);
         }
 
         $site = Site::create($data);
@@ -201,7 +214,6 @@ class SiteController extends Controller
             'hosting_company',
             'db_name',
             'db_user',
-            'db_password',
             'db_host',
             'support_expires_at',
             'host_expires_at',
@@ -226,6 +238,14 @@ class SiteController extends Controller
         if (Schema::hasColumn('sites', 'customer_menu_keys')) {
             $data['customer_menu_keys'] = $request->input('customer_menu_keys', []);
         }
+
+        // Phase 13-O12a — db_password is never written to the plaintext
+        // column anymore; it's only ever encrypted into db_password_encrypted.
+        $dbPasswordInput = $request->input('db_password');
+        if (!empty($dbPasswordInput)) {
+            $data['db_password_encrypted'] = $this->credentialVault->encrypt($dbPasswordInput);
+        }
+
         $site->update($data);
 
         // sync expiry notifications after renewal

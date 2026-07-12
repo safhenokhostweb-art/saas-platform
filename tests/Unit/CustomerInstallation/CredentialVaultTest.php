@@ -2,9 +2,11 @@
 
 namespace Tests\Unit\CustomerInstallation;
 
+use App\Models\Customer;
 use App\Models\CustomerInstallation;
 use App\Models\CustomerRemoteServer;
 use App\Models\InstallationCredential;
+use App\Models\Site;
 use App\Services\CustomerInstallation\CredentialVault;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -134,6 +136,35 @@ class CredentialVaultTest extends TestCase
         $vaultAfterRotation = new CredentialVault();
 
         $decrypted = $vaultAfterRotation->decrypt($credential->fresh()->encrypted_value);
+        $this->assertSame($plain, $decrypted);
+    }
+
+    /**
+     * Phase 13-O12a — CredentialVault::rotate() must also cover
+     * Site::db_password_encrypted: encrypt under the old master key, rotate
+     * to a new one, and confirm the value still decrypts under the new key.
+     */
+    public function test_rotation_keeps_site_db_password_decryptable(): void
+    {
+        $vault = $this->makeVault();
+
+        $customer = Customer::create(['name' => 'Rotation Site Co', 'mobile' => '09121234567']);
+        $plain = 'site-db-password-before-rotation';
+        $site = Site::create([
+            'customer_id'           => $customer->id,
+            'title'                 => 'Rotation Site',
+            'db_password_encrypted' => $vault->encrypt($plain),
+        ]);
+
+        $newKey = base64_encode(random_bytes(32));
+        $rotated = $vault->rotate($newKey);
+
+        $this->assertGreaterThanOrEqual(1, $rotated);
+
+        config(['installer.master_key' => $newKey]);
+        $vaultAfterRotation = new CredentialVault();
+
+        $decrypted = $vaultAfterRotation->decrypt($site->fresh()->db_password_encrypted);
         $this->assertSame($plain, $decrypted);
     }
 }

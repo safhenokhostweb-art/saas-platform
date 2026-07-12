@@ -39,6 +39,7 @@ class Site extends Model implements SiteModelInterface
         'db_name',
         'db_user',
         'db_password',
+        'db_password_encrypted',
         'db_host',
         'support_expires_at',
         'host_expires_at',
@@ -85,6 +86,35 @@ class Site extends Model implements SiteModelInterface
     public function customer()
     {
         return $this->belongsTo(\App\Models\Customer::class);
+    }
+
+    /**
+     * Phase 13-O12a — central read path for the site's remote database
+     * password. New/updated sites store it encrypted via CredentialVault in
+     * db_password_encrypted; sites created before this phase still have it
+     * as plaintext directly in db_password — that fallback is intentional
+     * (no backfill in this step, see Phase 13-O11 design) so callers keep
+     * working unchanged for existing sites. Mirrors
+     * DnsProviderSetting::getDecryptedToken() (vault resolved internally,
+     * not injected) and CustomerDeploymentController::resolveAdminPassword()
+     * (decrypt failure logged and swallowed, never thrown to the caller).
+     */
+    public function getDecryptedDbPassword(): ?string
+    {
+        if (!empty($this->db_password_encrypted)) {
+            try {
+                $vault = app(\App\Services\CustomerInstallation\CredentialVault::class);
+                return $vault->decrypt($this->db_password_encrypted);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Site: Failed to decrypt db_password_encrypted', [
+                    'site_id' => $this->id,
+                    'error'   => $e->getMessage(),
+                ]);
+                return null;
+            }
+        }
+
+        return $this->db_password ?: null;
     }
 
     public function modules()

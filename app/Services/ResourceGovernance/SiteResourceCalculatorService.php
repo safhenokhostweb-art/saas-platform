@@ -306,7 +306,7 @@ class SiteResourceCalculatorService
                 'port'      => env('DB_PORT', 3306),
                 'database'  => $site->db_name,
                 'username'  => $site->db_user     ?: env('DB_USERNAME'),
-                'password'  => $site->db_password ?: env('DB_PASSWORD'),
+                'password'  => $site->getDecryptedDbPassword() ?: env('DB_PASSWORD'),
                 'charset'   => 'utf8mb4',
                 'collation' => 'utf8mb4_unicode_ci',
                 'prefix'    => '',
