@@ -10,9 +10,11 @@ use App\Models\CustomerDeletion;
 use App\Models\CustomerInstallation;
 use App\Models\CustomerInstallationPackage;
 use App\Models\CustomerRemoteServer;
+use App\Models\InstallationCredential;
 use App\Models\Site;
 use App\Services\ActivityLogger;
 use App\Services\AuthorizationService;
+use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\CustomerInstallationRollbackService;
 use App\Services\CustomerInstallation\RemoteConnectionService;
 use Illuminate\Http\Request;
@@ -24,6 +26,7 @@ class CustomerDeploymentController extends Controller
 {
     public function __construct(
         protected AuthorizationService $authorizationService,
+        protected CredentialVault $credentialVault,
     ) {}
 
     /**
@@ -196,7 +199,45 @@ class CustomerDeploymentController extends Controller
         $canRollback = in_array($installation->status, ['failed', 'rollback_failed'])
             && $installation->rollbacks()->whereNull('executed_at')->exists();
 
-        return view('admin.infrastructure.customer-deployment.show', compact('installation', 'canRollback'));
+        $adminPassword = $this->resolveAdminPassword($installation);
+
+        return view('admin.infrastructure.customer-deployment.show', compact('installation', 'canRollback', 'adminPassword'));
+    }
+
+    /**
+     * Phase 13-O9a — new installations store admin_password encrypted via
+     * CredentialVault (InstallationCredential), referenced from
+     * metadata.credential_ids.admin_password. Installations created before
+     * this phase still have it as plaintext directly under
+     * metadata.admin_password — that fallback is intentional (no backfill
+     * or deletion of old data in this phase) so their detail page doesn't
+     * suddenly stop showing a value it always showed.
+     */
+    private function resolveAdminPassword(CustomerInstallation $installation): ?string
+    {
+        $credentialId = $installation->metadata['credential_ids']['admin_password'] ?? null;
+
+        if ($credentialId) {
+            $credential = InstallationCredential::where('id', $credentialId)
+                ->where('installation_id', $installation->id)
+                ->where('type', 'admin_password')
+                ->first();
+
+            if ($credential) {
+                try {
+                    return $this->credentialVault->decrypt($credential->encrypted_value);
+                } catch (\Throwable $e) {
+                    Log::error('CDE: Failed to decrypt admin_password credential', [
+                        'installation_id' => $installation->id,
+                        'credential_id'   => $credential->id,
+                        'error'           => $e->getMessage(),
+                    ]);
+                    return null;
+                }
+            }
+        }
+
+        return $installation->metadata['admin_password'] ?? null;
     }
 
     public function rollback(Request $request, CustomerInstallation $installation)

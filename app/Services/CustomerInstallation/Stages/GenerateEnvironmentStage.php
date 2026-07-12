@@ -2,6 +2,8 @@
 
 namespace App\Services\CustomerInstallation\Stages;
 
+use App\Models\InstallationCredential;
+use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use Illuminate\Support\Facades\Crypt;
@@ -9,6 +11,8 @@ use Illuminate\Support\Str;
 
 class GenerateEnvironmentStage extends AbstractStage
 {
+    public function __construct(private readonly CredentialVault $vault) {}
+
     public function name(): string { return 'GENERATE_ENVIRONMENT'; }
     public function label(): string { return 'تولید فایل محیطی'; }
     public function estimatedSeconds(): int { return 3; }
@@ -86,14 +90,26 @@ class GenerateEnvironmentStage extends AbstractStage
                 return StageResult::failure($this->name(), 'Failed to write .env: ' . $result->output(), $this->elapsed());
             }
 
-            // Store admin credentials in installation metadata for platform admin retrieval
+            // Phase 13-O9a — the password itself is never written to
+            // metadata (plaintext JSON that ends up in every daily platform
+            // backup, local and offsite). It's stored encrypted via
+            // CredentialVault; metadata only keeps a reference to the
+            // InstallationCredential row.
+            $credential = InstallationCredential::create([
+                'installation_id' => $ctx->installation->id,
+                'type'             => 'admin_password',
+                'encrypted_value'  => $this->vault->encrypt($adminPassword),
+            ]);
+
             $ctx->installation->update([
                 'metadata' => [
-                    'admin_email'             => $req->email,
-                    'admin_mobile'            => $req->phone,
-                    'admin_name'              => $req->ownerName,
-                    'admin_password'          => $adminPassword,
-                    'first_login_required'    => true,
+                    'admin_email'          => $req->email,
+                    'admin_mobile'         => $req->phone,
+                    'admin_name'           => $req->ownerName,
+                    'first_login_required' => true,
+                    'credential_ids'       => [
+                        'admin_password' => $credential->id,
+                    ],
                 ],
             ]);
 

@@ -61,6 +61,11 @@ class CustomerInstallation extends Model
         return $this->belongsTo(CustomerRemoteServer::class, 'remote_server_id');
     }
 
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(InstallationCredential::class, 'installation_id');
+    }
+
     public function isRunning(): bool
     {
         return in_array($this->status, ['pending', 'running', 'rolling_back']);
