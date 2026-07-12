@@ -11,6 +11,8 @@ use App\Models\CustomerInstallation;
 use App\Models\CustomerInstallationPackage;
 use App\Models\CustomerRemoteServer;
 use App\Models\Site;
+use App\Services\ActivityLogger;
+use App\Services\AuthorizationService;
 use App\Services\CustomerInstallation\CustomerInstallationRollbackService;
 use App\Services\CustomerInstallation\RemoteConnectionService;
 use Illuminate\Http\Request;
@@ -20,6 +22,25 @@ use Illuminate\Support\Facades\Log;
 
 class CustomerDeploymentController extends Controller
 {
+    public function __construct(
+        protected AuthorizationService $authorizationService,
+    ) {}
+
+    /**
+     * Phase 13-O8 — second authorization layer for manual rollback, on top
+     * of (never a replacement for) the existing ['auth','admin'] middleware,
+     * mirroring authorizeUpgrade() in SiteModuleUpgradeController (13-M5).
+     * AuthorizationService::can() already short-circuits true for
+     * super_admin (User::isSuperAdmin()), so no separate super_admin
+     * branch is needed here.
+     */
+    private function authorizeRollback(): void
+    {
+        if (!$this->authorizationService->can(Auth::user(), 'tenant.rollback.execute')) {
+            abort(403, 'شما اجازهٔ اجرای عملیات بازگشت (Rollback) را ندارید.');
+        }
+    }
+
     public function dashboard()
     {
         $active   = CustomerInstallation::whereIn('status', ['pending', 'running', 'rolling_back'])->with('remoteServer')->latest()->get();
@@ -180,6 +201,8 @@ class CustomerDeploymentController extends Controller
 
     public function rollback(Request $request, CustomerInstallation $installation)
     {
+        $this->authorizeRollback();
+
         if (!in_array($installation->status, ['failed', 'rollback_failed'])) {
             return back()->with('error', 'فقط نصب‌های ناموفق قابل بازگشت هستند.');
         }
@@ -191,6 +214,18 @@ class CustomerDeploymentController extends Controller
         CustomerInstallationRollbackJob::dispatch($installation->id)
             ->onConnection('customer-install')
             ->onQueue('customer-install');
+
+        ActivityLogger::log(
+            'installation.rollback_requested',
+            "درخواست بازگشت (Rollback) برای نصب {$installation->customer_domain}",
+            $installation,
+            [
+                'installation_id' => $installation->id,
+                'site_id'         => $installation->site_id,
+                'triggered_by'    => Auth::id(),
+                'reason'          => $request->input('reason'),
+            ]
+        );
 
         return redirect()
             ->route('admin.infrastructure.customer-deployment.installations.show', $installation)
