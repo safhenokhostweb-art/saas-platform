@@ -197,7 +197,10 @@
         <input name="db_host" class="form-control mb-2" placeholder="آدرس سرور دیتابیس — مثلاً: 127.0.0.1" value="{{ old('db_host', $site->db_host) }}">
         <input name="db_name" class="form-control mb-2" placeholder="نام دیتابیس — مثلاً: customer_site" value="{{ old('db_name', $site->db_name) }}">
         <input name="db_user" class="form-control mb-2" placeholder="کاربر دیتابیس — مثلاً: root" value="{{ old('db_user', $site->db_user) }}">
-        <input name="db_password" class="form-control mb-2" placeholder="رمز عبور دیتابیس" value="{{ old('db_password', $site->db_password) }}" type="password" autocomplete="new-password">
+        {{-- Phase 13-O12c — write-only: never pre-fill the current password (encrypted or legacy
+             plaintext) into the DOM. Leaving this empty on submit keeps the stored credential unchanged. --}}
+        <input name="db_password" class="form-control mb-2" placeholder="رمز عبور دیتابیس — خالی بگذارید تا رمز فعلی حفظ شود" value="{{ old('db_password') }}" type="password" autocomplete="new-password">
+        <small class="text-muted d-block mb-2">برای تغییر رمز عبور دیتابیس، مقدار جدید را وارد کنید. خالی گذاشتن این فیلد، رمز عبور فعلی را دست‌نخورده نگه می‌دارد.</small>
 
         <div class="row mt-3">
             <div class="col-md-4 mb-3">
