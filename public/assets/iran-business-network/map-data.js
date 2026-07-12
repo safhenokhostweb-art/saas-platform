@@ -1,0 +1,38 @@
+/** Geographic presentation data aligned to iran-provinces-source.svg (1000 x 907). */
+export const IRAN_MAP = {
+  viewBox: '0 0 1000 907',
+  source: new URL('./iran-provinces-source.svg', import.meta.url),
+  outlineSource: new URL('./iran-outline-source.svg', import.meta.url),
+  attribution: 'Map geometry (c) SimpleMaps / Pareto Software LLC',
+  provinces: {
+    IR01: 'آذربایجان شرقی', IR02: 'آذربایجان غربی', IR03: 'اردبیل',
+    IR04: 'اصفهان', IR05: 'ایلام', IR06: 'بوشهر', IR07: 'تهران',
+    IR08: 'چهارمحال و بختیاری', IR09: 'البرز', IR10: 'خوزستان',
+    IR11: 'زنجان', IR12: 'سمنان', IR13: 'سیستان و بلوچستان',
+    IR14: 'فارس', IR15: 'کرمان', IR16: 'کردستان', IR17: 'کرمانشاه',
+    IR18: 'کهگیلویه و بویراحمد', IR19: 'گیلان', IR20: 'لرستان',
+    IR21: 'مازندران', IR22: 'مرکزی', IR23: 'هرمزگان', IR24: 'همدان',
+    IR25: 'یزد', IR26: 'قم', IR27: 'گلستان', IR28: 'قزوین',
+    IR29: 'خراسان جنوبی', IR30: 'خراسان رضوی', IR31: 'خراسان شمالی',
+  },
+  labelOffsets: {
+    IR03: [8, -8], IR07: [12, 12], IR08: [-4, 8], IR09: [-8, -10],
+    IR11: [-5, 0], IR18: [-8, 8], IR19: [0, -7], IR21: [10, -4],
+    IR22: [0, 7], IR24: [-4, 5], IR26: [5, 13], IR28: [-5, -10],
+  },
+  cities: {
+    Qazvin:      { x: 331, y: 258, label: 'قزوین' },
+    Tehran:      { x: 405, y: 282, label: 'تهران' },
+    Isfahan:     { x: 445, y: 458, label: 'اصفهان' },
+    Shiraz:      { x: 458, y: 661, label: 'شیراز' },
+    Mashhad:     { x: 829, y: 303, label: 'مشهد' },
+    Tabriz:      { x: 197, y: 139, label: 'تبریز' },
+    Rasht:       { x: 328, y: 203, label: 'رشت' },
+    Ahvaz:       { x: 265, y: 557, label: 'اهواز' },
+    Kerman:      { x: 655, y: 652, label: 'کرمان' },
+    Yazd:        { x: 578, y: 508, label: 'یزد' },
+    BandarAbbas: { x: 637, y: 798, label: 'بندرعباس' },
+    Sanandaj:    { x: 229, y: 326, label: 'سنندج' },
+    Gorgan:      { x: 563, y: 224, label: 'گرگان' },
+  },
+};
