@@ -44,6 +44,19 @@ class CustomerDeploymentController extends Controller
         }
     }
 
+    /**
+     * Phase 13-O9e — permission boundary for viewing a decrypted installation
+     * credential, mirroring authorizeRollback() (13-O8) / authorizeUpgrade()
+     * (13-M5). AuthorizationService::can() already short-circuits true for
+     * super_admin, so no separate super_admin branch is needed here.
+     */
+    private function authorizeCredentialView(): void
+    {
+        if (!$this->authorizationService->can(Auth::user(), 'tenant.credentials.view')) {
+            abort(403, 'شما اجازهٔ مشاهدهٔ اطلاعات ورود مشتری را ندارید.');
+        }
+    }
+
     public function dashboard()
     {
         $active   = CustomerInstallation::whereIn('status', ['pending', 'running', 'rolling_back'])->with('remoteServer')->latest()->get();
@@ -199,9 +212,13 @@ class CustomerDeploymentController extends Controller
         $canRollback = in_array($installation->status, ['failed', 'rollback_failed'])
             && $installation->rollbacks()->whereNull('executed_at')->exists();
 
-        $adminPassword = $this->resolveAdminPassword($installation);
+        // Phase 13-O9e — show() no longer decrypts or exposes the credential
+        // value; it only tells the view whether a reveal button should be
+        // offered at all. The actual password is only ever decrypted inside
+        // revealCredential(), behind its own permission check and audit log.
+        $hasCredential = $this->hasCredential($installation);
 
-        return view('admin.infrastructure.customer-deployment.show', compact('installation', 'canRollback', 'adminPassword'));
+        return view('admin.infrastructure.customer-deployment.show', compact('installation', 'canRollback', 'hasCredential'));
     }
 
     /**
@@ -210,8 +227,31 @@ class CustomerDeploymentController extends Controller
      * metadata.credential_ids.admin_password. Installations created before
      * this phase still have it as plaintext directly under
      * metadata.admin_password — that fallback is intentional (no backfill
-     * or deletion of old data in this phase) so their detail page doesn't
-     * suddenly stop showing a value it always showed.
+     * or deletion of old data in this phase).
+     *
+     * Phase 13-O9e — this bool-only check (no decrypt) backs the "show a
+     * reveal button?" decision on the detail page; boolean existence check
+     * only, must never call CredentialVault::decrypt().
+     */
+    private function hasCredential(CustomerInstallation $installation): bool
+    {
+        $credentialId = $installation->metadata['credential_ids']['admin_password'] ?? null;
+
+        if ($credentialId) {
+            return InstallationCredential::where('id', $credentialId)
+                ->where('installation_id', $installation->id)
+                ->where('type', 'admin_password')
+                ->exists();
+        }
+
+        return !empty($installation->metadata['admin_password'] ?? null);
+    }
+
+    /**
+     * Phase 13-O9e — Secure Reveal endpoint (Phase 13-O9d, Option B).
+     * Decrypts and returns the installation's admin credential only on an
+     * explicit, permission-gated, audited request — never as a side effect
+     * of loading show().
      */
     private function resolveAdminPassword(CustomerInstallation $installation): ?string
     {
@@ -238,6 +278,31 @@ class CustomerDeploymentController extends Controller
         }
 
         return $installation->metadata['admin_password'] ?? null;
+    }
+
+    public function revealCredential(CustomerInstallation $installation)
+    {
+        $this->authorizeCredentialView();
+
+        $password = $this->resolveAdminPassword($installation);
+
+        if ($password === null) {
+            return response()->json(['message' => 'رمزی برای این نصب ثبت نشده است.'], 404);
+        }
+
+        ActivityLogger::log(
+            'installation.credential_viewed',
+            "مشاهده رمز عبور ادمین برای نصب {$installation->customer_domain}",
+            $installation,
+            [
+                'installation_id' => $installation->id,
+                'site_id'         => $installation->site_id,
+                'credential_type' => 'admin_password',
+                'triggered_by'    => Auth::id(),
+            ]
+        );
+
+        return response()->json(['password' => $password]);
     }
 
     public function rollback(Request $request, CustomerInstallation $installation)

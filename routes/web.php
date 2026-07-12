@@ -840,6 +840,8 @@ Route::prefix('admin')
 
                 // Installation Detail + Rollback + Delete (legacy quick-delete preserved)
                 Route::get('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'show'])->name('installations.show');
+                // Phase 13-O9e — Secure Reveal endpoint; permission (tenant.credentials.view) is enforced inside the controller.
+                Route::get('/installations/{installation}/credential', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'revealCredential'])->name('installations.credential');
                 Route::post('/installations/{installation}/rollback', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'rollback'])->name('installations.rollback');
                 Route::delete('/installations/{installation}', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'destroy'])->name('installations.destroy');
                 Route::delete('/installations/{installation}/force', [\App\Http\Controllers\Admin\Infrastructure\CustomerDeploymentController::class, 'forceDestroy'])->name('installations.force-destroy');

@@ -66,6 +66,7 @@ class ActivityLog extends Model
             'site_agent.revoked'           => 'لغو دسترسی ادمین پلتفرم از سایت مشتری',
             'site_agent.password_viewed'   => 'مشاهده رمز عبور ادمین پلتفرم',
             'site_agent.access_logged'     => 'ثبت دسترسی ادمین پلتفرم به سایت مشتری',
+            'installation.credential_viewed' => 'مشاهده رمز عبور ادمین نصب مشتری',
         ];
         return $labels[$action] ?? $action;
     }

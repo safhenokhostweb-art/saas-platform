@@ -248,7 +248,9 @@
         </div>
 
         {{-- Admin Credentials (shown after GENERATE_ENVIRONMENT completes) --}}
-        @if($installation->metadata && !empty($adminPassword))
+        {{-- Phase 13-O9e — Secure Reveal: the password is never in the initial HTML; it's fetched from
+             installations.credential (permission + audit logged server-side) only after an explicit click. --}}
+        @if($installation->metadata && $hasCredential)
         <div class="detail-card border-amber-200" style="background:#fffbeb">
             <h3 class="font-semibold text-amber-800 mb-3 text-sm flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
@@ -263,9 +265,12 @@
                     <span class="text-gray-500">نام:</span>
                     <span class="text-gray-800">{{ $installation->metadata['admin_name'] ?? '—' }}</span>
                 </div>
-                <div>
+                <div class="flex items-center gap-2">
                     <span class="text-gray-500">رمز عبور:</span>
-                    <span class="font-mono bg-amber-100 px-2 py-0.5 rounded text-amber-900 select-all">{{ $adminPassword }}</span>
+                    <span id="credPwValue" class="font-mono bg-amber-100 px-2 py-0.5 rounded text-amber-900 select-all hidden"></span>
+                    <button type="button" id="credRevealBtn" onclick="revealCredential()" class="text-indigo-600 font-medium hover:text-indigo-800" style="background:none;border:none;padding:0;cursor:pointer">
+                        نمایش رمز
+                    </button>
                 </div>
                 <p class="text-amber-700 text-xs mt-2">این رمز عبور را ذخیره کنید — پس از اولین ورود تغییر دهید</p>
             </div>
@@ -322,6 +327,29 @@
     });
     src.addEventListener('error', function() { src.close(); });
 })();
+</script>
+@endpush
+@endif
+
+{{-- Phase 13-O9e — Secure Reveal fetch, mirrors admin.sites.agents.show's revealPassword() pattern --}}
+@if($hasCredential)
+@push('scripts')
+<script>
+async function revealCredential() {
+    try {
+        const res = await fetch('{{ route('admin.infrastructure.customer-deployment.installations.credential', $installation) }}', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json',
+                       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+        });
+        if (!res.ok) { alert('خطا در دریافت رمز عبور'); return; }
+        const data = await res.json();
+        document.getElementById('credPwValue').textContent = data.password;
+        document.getElementById('credPwValue').classList.remove('hidden');
+        document.getElementById('credRevealBtn').classList.add('hidden');
+    } catch (e) {
+        alert('خطا در دریافت رمز عبور');
+    }
+}
 </script>
 @endpush
 @endif
