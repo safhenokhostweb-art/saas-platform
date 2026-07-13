@@ -14,6 +14,16 @@ use App\Services\CustomerInstallation\Enums\AuthMethod;
  * A deployment target abstracts any hosting environment regardless of type.
  * The connection_driver field determines which DeploymentDriver is loaded.
  * Capabilities are auto-computed from the driver type but can be overridden.
+ *
+ * @deprecated Phase 14-B1 — architecture scaffolding, not yet wired to any
+ * production flow. Nothing in the app creates a row in this table (grep-
+ * verified: no controller/form constructs a DeploymentTarget). The live
+ * customer-installation pipeline still uses CustomerRemoteServer via
+ * CustomerInstallation::remote_server_id. Left intact per the 14-B1 audit —
+ * do not migrate CustomerInstallation to deployment_target_id without a
+ * dedicated phase (see docs/architecture Phase 14-B report, section 4).
+ * TODO: either give this model a real caller (admin UI + pipeline wiring)
+ * or remove it together with DeploymentOrchestrator.
  */
 class DeploymentTarget extends Model
 {

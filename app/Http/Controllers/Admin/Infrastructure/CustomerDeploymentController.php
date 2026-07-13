@@ -16,6 +16,7 @@ use App\Services\ActivityLogger;
 use App\Services\AuthorizationService;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\CustomerInstallationRollbackService;
+use App\Services\CustomerInstallation\Enums\DriverType;
 use App\Services\CustomerInstallation\RemoteConnectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -103,6 +104,22 @@ class CustomerDeploymentController extends Controller
             'backup_policy'     => 'nullable|in:none,daily,weekly',
             'ssl_enabled'       => 'nullable|boolean',
         ]);
+
+        // Phase 14-B1 — a CustomerRemoteServer can exist with a driver type
+        // that is registered but not yet implemented (cpanel/directadmin/
+        // sftp/docker are architecture stubs). Without this check, starting
+        // an installation against one dispatches a job that is guaranteed to
+        // fail deep inside the pipeline (see Installation #44 root-cause
+        // audit) instead of failing fast with a clear message here.
+        $targetServer = CustomerRemoteServer::findOrFail($validated['remote_server_id']);
+        $driverType   = DriverType::tryFrom($targetServer->type);
+        if (!$driverType || !$driverType->isImplemented()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'remote_server_id' => "درایور مقصد استقرار انتخاب‌شده («{$targetServer->type}») هنوز پیاده‌سازی نشده و امکان شروع نصب روی آن وجود ندارد.",
+                ]);
+        }
 
         // DNS existence check — only for custom domains that the admin must have pre-configured.
         // Platform-managed subdomains (under the configured root_domain) are skipped here because

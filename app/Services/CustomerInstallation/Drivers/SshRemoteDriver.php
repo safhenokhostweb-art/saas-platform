@@ -3,17 +3,32 @@
 namespace App\Services\CustomerInstallation\Drivers;
 
 use App\Models\CustomerRemoteServer;
+use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\CredentialVault;
-use App\Services\CustomerInstallation\Contracts\RemoteConnectionInterface;
+use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\Dto\CommandResult;
 use App\Services\CustomerInstallation\Dto\ConnectionTestResult;
+use App\Services\CustomerInstallation\Dto\DriverCapabilities;
+use App\Services\CustomerInstallation\Dto\ValidationResult;
+use App\Services\CustomerInstallation\Enums\DriverType;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
 use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Crypt\Common\PrivateKey as SshPrivateKey;
 use RuntimeException;
 
-class SshRemoteDriver implements RemoteConnectionInterface
+/**
+ * SSH transport driver for VPS / dedicated servers.
+ *
+ * Phase 14-B1 — merged with the former SshDeploymentDriver (which targeted
+ * DeploymentTarget only and lacked this class's exit-status/timeout
+ * fail-closed handling and upload retry/resume logic). This is now the only
+ * SSH driver; it accepts either connection-source model since both
+ * CustomerRemoteServer and DeploymentTarget expose the same shape
+ * (host/port/username/private_key_encrypted/password_encrypted/
+ * key_fingerprint + isKeyAuth()).
+ */
+class SshRemoteDriver implements DeploymentDriverInterface
 {
     private ?SSH2 $ssh  = null;
     private ?SFTP $sftp = null;
@@ -21,9 +36,54 @@ class SshRemoteDriver implements RemoteConnectionInterface
     private const MAX_RECONNECTS = 2;
 
     public function __construct(
-        private readonly CustomerRemoteServer $server,
+        private readonly CustomerRemoteServer|DeploymentTarget $server,
         private readonly CredentialVault $vault,
     ) {}
+
+    // ─── DeploymentDriverInterface ────────────────────────────────────────────
+
+    public function driverType(): DriverType
+    {
+        return DriverType::SSH;
+    }
+
+    public function capabilities(): DriverCapabilities
+    {
+        return DriverCapabilities::forVps();
+    }
+
+    public function validate(): ValidationResult
+    {
+        $errors = [];
+
+        if (empty($this->server->host)) {
+            $errors[] = 'Host is required';
+        }
+
+        if (empty($this->server->username)) {
+            $errors[] = 'Username is required';
+        }
+
+        if ($this->server->isKeyAuth()) {
+            if (empty($this->server->private_key_encrypted)) {
+                $errors[] = 'SSH private key is required for key authentication';
+            }
+        } else {
+            if (empty($this->server->password_encrypted)) {
+                $errors[] = 'Password is required for password authentication';
+            }
+        }
+
+        return empty($errors) ? ValidationResult::pass() : ValidationResult::fail($errors);
+    }
+
+    public function rollbackStage(string $stageName, array $snapshot): void
+    {
+        // Stage-specific rollback logic resides in each Stage class.
+        // SSH driver has no driver-level cleanup beyond the session lifecycle.
+    }
+
+    // ─── RemoteConnectionInterface ────────────────────────────────────────────
 
     public function connect(): void
     {

@@ -31,21 +31,25 @@ return [
     ],
 
     /*
-     * Legacy drivers (CustomerRemoteServer) — backward compatible.
-     * Used by RemoteConnectionService::buildDriver().
+     * Phase 14-B1 — single driver registry. Previously this file had two
+     * parallel registries ('drivers' for CustomerRemoteServer and
+     * 'deployment_drivers' for DeploymentTarget) that could disagree about
+     * which server types were registered — this was the root cause of the
+     * "No driver registered for server type: cpanel" incident (Installation
+     * #44), because the legacy lookup never saw the cpanel/directadmin
+     * entries the newer one already had.
+     *
+     * DriverFactory is now the ONLY class that reads this key. Do not add a
+     * second registry — add the driver here and mark it implemented in
+     * App\Services\CustomerInstallation\Enums\DriverType::isImplemented().
+     *
+     * Only 'ssh' and 'fake' are fully implemented; cpanel/directadmin/sftp/docker
+     * are registered (so DriverFactory can report a precise "not yet
+     * implemented" error) but are architecture stubs — see each class's
+     * docblock in App\Services\CustomerInstallation\Drivers.
      */
     'drivers' => [
-        'ssh'  => \App\Services\CustomerInstallation\Drivers\SshRemoteDriver::class,
-        'fake' => \App\Services\CustomerInstallation\Drivers\FakeRemoteDriver::class,
-    ],
-
-    /*
-     * Universal deployment drivers (DeploymentTarget) — new architecture.
-     * Used by RemoteConnectionService::buildDriverForTarget().
-     * Only 'ssh' and 'fake' are fully implemented; others are architecture stubs.
-     */
-    'deployment_drivers' => [
-        'ssh'         => \App\Services\CustomerInstallation\Drivers\SshDeploymentDriver::class,
+        'ssh'         => \App\Services\CustomerInstallation\Drivers\SshRemoteDriver::class,
         'cpanel'      => \App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver::class,
         'directadmin' => \App\Services\CustomerInstallation\Drivers\DirectAdminDeploymentDriver::class,
         'sftp'        => \App\Services\CustomerInstallation\Drivers\SftpDeploymentDriver::class,

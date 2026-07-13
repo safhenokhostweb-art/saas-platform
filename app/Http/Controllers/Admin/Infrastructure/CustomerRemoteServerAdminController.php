@@ -45,7 +45,16 @@ class CustomerRemoteServerAdminController extends Controller
         $validated = $request->validate(array_merge(
             [
                 'label'  => 'required|string|max:100',
-                'type'   => 'required|in:ssh,docker,cpanel,directadmin,sftp',
+                'type'   => [
+                    'required',
+                    'in:ssh,docker,cpanel,directadmin,sftp',
+                    function ($attribute, $value, $fail) {
+                        $driverType = DriverType::tryFrom($value);
+                        if ($driverType && !$driverType->isImplemented()) {
+                            $fail("درایور «{$driverType->label()}» هنوز پیاده‌سازی نشده است. امکان ساخت مقصد استقرار از این نوع وجود ندارد.");
+                        }
+                    },
+                ],
                 'host'   => 'required|string|max:255',
                 'domain' => 'nullable|string|max:255',
                 'path'   => 'nullable|string|max:500',

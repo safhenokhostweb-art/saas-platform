@@ -7,12 +7,20 @@ use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\Contracts\RemoteConnectionInterface;
 use App\Services\CustomerInstallation\Dto\ConnectionTestResult;
-use App\Services\CustomerInstallation\Enums\DriverType;
 use RuntimeException;
 
+/**
+ * Phase 14-B1 — thin facade over DriverFactory.
+ *
+ * All actual driver resolution/construction now lives in DriverFactory
+ * (single registry, single resolve point). This class keeps its existing
+ * public method signatures unchanged so the pipeline orchestrator, rollback
+ * service, delete pipeline, package upload job, and admin controllers did
+ * not need to change to pick up the unified registry.
+ */
 class RemoteConnectionService
 {
-    public function __construct(private readonly CredentialVault $vault) {}
+    public function __construct(private readonly DriverFactory $factory) {}
 
     // ─── Legacy API (CustomerRemoteServer) — backward compatible ─────────────
 
@@ -22,24 +30,7 @@ class RemoteConnectionService
      */
     public function buildDriver(CustomerRemoteServer $server): RemoteConnectionInterface
     {
-        $drivers = config('customer_installation.drivers', []);
-        $type    = $server->type;
-
-        if (!isset($drivers[$type])) {
-            throw new RuntimeException("No driver registered for server type: {$type}");
-        }
-
-        $driverClass = $drivers[$type];
-
-        if ($type === 'ssh') {
-            return new $driverClass($server, $this->vault);
-        }
-
-        if ($type === 'fake') {
-            return new $driverClass();
-        }
-
-        return app($driverClass, ['server' => $server, 'vault' => $this->vault]);
+        return $this->factory->buildForServer($server);
     }
 
     public function testAndRecord(CustomerRemoteServer $server): ConnectionTestResult
@@ -63,19 +54,17 @@ class RemoteConnectionService
 
     /**
      * Build a DeploymentDriverInterface for a DeploymentTarget.
-     * Resolves the driver class from config, validates, and returns the driver.
+     * Resolves the driver class via DriverFactory, validates, and returns it.
+     *
+     * @deprecated Phase 14-B1 — no production caller. DeploymentTarget /
+     * DeploymentOrchestrator are architecture scaffolding with nothing wired
+     * to create a DeploymentTarget row yet. Kept working (not removed) so the
+     * existing DeploymentOrchestratorTest continues to pass — see
+     * DeploymentOrchestrator's own @deprecated notice before building on it.
      */
     public function buildDriverForTarget(DeploymentTarget $target): DeploymentDriverInterface
     {
-        $driverType  = $target->driverType();
-        $driverClass = $this->resolveDriverClass($driverType);
-
-        if ($driverType === DriverType::FAKE) {
-            return new $driverClass();
-        }
-
-        /** @var DeploymentDriverInterface $driver */
-        $driver = new $driverClass($target, $this->vault);
+        $driver = $this->factory->buildForTarget($target);
 
         $validation = $driver->validate();
         if (!$validation->passed) {
@@ -90,6 +79,8 @@ class RemoteConnectionService
 
     /**
      * Test a DeploymentTarget and persist the result.
+     *
+     * @deprecated Phase 14-B1 — see buildDriverForTarget().
      */
     public function testAndRecordTarget(DeploymentTarget $target): ConnectionTestResult
     {
@@ -108,21 +99,5 @@ class RemoteConnectionService
         $target->update($update);
 
         return $result;
-    }
-
-    // ─── Internal ─────────────────────────────────────────────────────────────
-
-    private function resolveDriverClass(DriverType $type): string
-    {
-        $drivers = config('customer_installation.deployment_drivers', []);
-
-        if (!isset($drivers[$type->value])) {
-            throw new RuntimeException(
-                "No deployment driver registered for type '{$type->value}'. " .
-                "Register it in config/customer_installation.php under 'deployment_drivers'."
-            );
-        }
-
-        return $drivers[$type->value];
     }
 }

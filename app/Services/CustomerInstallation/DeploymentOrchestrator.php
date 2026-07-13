@@ -9,6 +9,15 @@ use App\Services\CustomerInstallation\Enums\DriverType;
 use InvalidArgumentException;
 use Throwable;
 
+/**
+ * @deprecated Phase 14-B1 — architecture scaffolding with no production
+ * caller (grep-verified: only DeploymentOrchestratorTest constructs this
+ * class). Nothing in the app creates a DeploymentTarget row yet, so this
+ * ssh→cpanel→sftp fallback chain can never run against real data. Left
+ * intact (not removed/refactored) per the 14-B1 audit — see docs/architecture
+ * Phase 14-B/14-B1 reports before adding a caller or extending this class.
+ * TODO: either wire a real caller in a later phase or remove this class.
+ */
 final class DeploymentOrchestrator
 {
     private const CHAIN = [
