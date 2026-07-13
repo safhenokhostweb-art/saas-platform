@@ -74,7 +74,6 @@ class SiteControllerCredentialTest extends TestCase
 
         $site = Site::where('title', 'Store Cred Site')->firstOrFail();
 
-        $this->assertNull($site->db_password, 'The plaintext column must never be written by store()');
         $this->assertNotEmpty($site->db_password_encrypted);
         $this->assertSame('FreshlyEnteredPass789', $site->getDecryptedDbPassword());
     }
@@ -104,7 +103,6 @@ class SiteControllerCredentialTest extends TestCase
         $response->assertRedirect();
 
         $site->refresh();
-        $this->assertNull($site->db_password, 'The plaintext column must never be written by update()');
         $this->assertNotEmpty($site->db_password_encrypted);
         $this->assertSame('UpdatedPassABC321', $site->getDecryptedDbPassword());
     }
@@ -165,31 +163,16 @@ class SiteControllerCredentialTest extends TestCase
         $this->assertTrue($connected, 'Expected a real connection using the vault-decrypted password to succeed');
     }
 
-    /** Same consumer regression, but for a legacy site still on the plaintext fallback column. */
-    public function test_platform_site_agent_service_connects_using_legacy_plaintext_password(): void
-    {
-        $customer = $this->makeCustomer();
-
-        $site = Site::create([
-            'customer_id' => $customer->id,
-            'title'       => 'Connectable Old Style Site',
-            'db_host'     => config('database.connections.mysql.host'),
-            'db_name'     => config('database.connections.mysql.database'),
-            'db_user'     => config('database.connections.mysql.username'),
-            'db_password' => (string) config('database.connections.mysql.password'),
-        ]);
-
-        $connected = app(PlatformSiteAgentService::class)->testConnection($site);
-
-        $this->assertTrue($connected, 'Expected a real connection using the legacy plaintext fallback password to succeed');
-    }
-
     // ─── Phase 13-O12c ───────────────────────────────────────────────────────
 
     /**
      * A) UI hardening regression — the edit page must never contain the real
-     * password, neither the legacy plaintext value nor anything derived from
-     * the encrypted column, for either a legacy or a vault-backed site.
+     * password, neither the plaintext value entered nor the ciphertext
+     * derived from the encrypted column.
+     *
+     * Phase 13-O12e — this used to also cover a "legacy" site with a
+     * plaintext db_password; that scenario no longer exists now that the
+     * column itself has been removed from the schema.
      */
     public function test_edit_page_never_contains_plaintext_or_encrypted_password(): void
     {
@@ -197,20 +180,11 @@ class SiteControllerCredentialTest extends TestCase
         $vault = new CredentialVault();
         $customer = $this->makeCustomer();
 
-        $legacySite = Site::create([
-            'customer_id' => $customer->id,
-            'title'       => 'Legacy Edit Page Site',
-            'db_password' => 'LegacyPlainShouldNeverAppear',
-        ]);
         $vaultSite = Site::create([
             'customer_id'           => $customer->id,
             'title'                 => 'Vault Edit Page Site',
             'db_password_encrypted' => $vault->encrypt('VaultPlainShouldNeverAppear'),
         ]);
-
-        $legacyResponse = $this->get(route('admin.sites.edit', $legacySite));
-        $legacyResponse->assertOk();
-        $legacyResponse->assertDontSee('LegacyPlainShouldNeverAppear');
 
         $vaultResponse = $this->get(route('admin.sites.edit', $vaultSite));
         $vaultResponse->assertOk();
