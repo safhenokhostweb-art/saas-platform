@@ -26,8 +26,11 @@ enum DriverType: string
     public function isImplemented(): bool
     {
         return match($this) {
-            self::SSH, self::FAKE => true,
-            default               => false,
+            // Phase 14-C — cPanel connects over SSH transport (password/key
+            // auth only; api_token is rejected by CpanelDeploymentDriver
+            // itself). directadmin/sftp/docker remain architecture stubs.
+            self::SSH, self::CPANEL, self::FAKE => true,
+            default                              => false,
         };
     }
 

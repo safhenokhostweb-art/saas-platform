@@ -36,17 +36,19 @@ class DriverFactory
             return new $class();
         }
 
-        if ($type === DriverType::SSH) {
+        if ($type === DriverType::SSH || $type === DriverType::CPANEL) {
+            // Both drivers accept CustomerRemoteServer|DeploymentTarget (see
+            // SshRemoteDriver / CpanelDeploymentDriver constructors).
             return new $class($server, $this->vault);
         }
 
-        // Every non-SSH/non-fake driver is built against DeploymentTarget, not
-        // CustomerRemoteServer, so it cannot be constructed here. resolve()
-        // already guarantees isImplemented() before returning a class name,
-        // so this branch is unreachable today (only ssh/fake are implemented)
-        // — it exists to fail loudly instead of a confusing TypeError if a
-        // legacy-model driver is ever marked implemented without updating
-        // this factory.
+        // Every other non-fake driver (directadmin/sftp/docker, as of
+        // Phase 14-C) is built against DeploymentTarget only, so it cannot be
+        // constructed here. resolve() already guarantees isImplemented()
+        // before returning a class name, so this branch is unreachable today
+        // — it exists to fail loudly instead of a confusing TypeError if one
+        // of those is ever marked implemented without first giving it a
+        // CustomerRemoteServer-compatible constructor and updating this list.
         throw new RuntimeException(
             "Driver type '{$type->value}' cannot be built from a CustomerRemoteServer record."
         );

@@ -82,19 +82,20 @@ class DriverFactoryTest extends TestCase
 
     public function test_implemented_false_driver_cannot_be_selected_via_resolve(): void
     {
-        // cpanel IS registered in the unified config (unlike the pre-14-B1
-        // bug where it was entirely absent) — resolve() must still reject
-        // it because DriverType::isImplemented() is false, and the error
-        // must say "not yet implemented", not "not registered".
+        // Phase 14-C flipped cpanel to isImplemented()=true, so this test now
+        // uses directadmin — still an architecture stub — as the "registered
+        // but not implemented" example. resolve() must still reject it
+        // because DriverType::isImplemented() is false, and the error must
+        // say "not yet implemented", not "not registered".
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('not yet implemented');
 
-        $this->factory()->resolve(DriverType::CPANEL);
+        $this->factory()->resolve(DriverType::DIRECTADMIN);
     }
 
     public function test_implemented_false_driver_cannot_be_selected_via_build_for_server(): void
     {
-        $server = new CustomerRemoteServer(['type' => 'cpanel', 'host' => 'box.example.test']);
+        $server = new CustomerRemoteServer(['type' => 'directadmin', 'host' => 'box.example.test']);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('not yet implemented');
@@ -102,12 +103,21 @@ class DriverFactoryTest extends TestCase
         $this->factory()->buildForServer($server);
     }
 
-    public function test_cpanel_class_is_registered_even_though_not_implemented(): void
+    public function test_directadmin_class_is_registered_even_though_not_implemented(): void
     {
-        // Confirms the registry itself is unified: cpanel now appears in the
-        // single 'drivers' config key with a real class mapping, so a future
-        // implementation only needs DriverType::isImplemented() flipped —
-        // not a second registry entry added anywhere.
+        // Confirms the registry itself is unified: directadmin appears in
+        // the single 'drivers' config key with a real class mapping, so a
+        // future implementation only needs DriverType::isImplemented()
+        // flipped — not a second registry entry added anywhere.
+        $this->assertSame(
+            \App\Services\CustomerInstallation\Drivers\DirectAdminDeploymentDriver::class,
+            config('customer_installation.drivers')['directadmin'] ?? null
+        );
+    }
+
+    public function test_cpanel_is_implemented_and_registered_as_of_phase_14_c(): void
+    {
+        $this->assertTrue(DriverType::CPANEL->isImplemented());
         $this->assertSame(
             CpanelDeploymentDriver::class,
             config('customer_installation.drivers')['cpanel'] ?? null

@@ -43,10 +43,11 @@ return [
      * second registry — add the driver here and mark it implemented in
      * App\Services\CustomerInstallation\Enums\DriverType::isImplemented().
      *
-     * Only 'ssh' and 'fake' are fully implemented; cpanel/directadmin/sftp/docker
-     * are registered (so DriverFactory can report a precise "not yet
-     * implemented" error) but are architecture stubs — see each class's
-     * docblock in App\Services\CustomerInstallation\Drivers.
+     * 'ssh', 'cpanel', and 'fake' are implemented (Phase 14-C added cpanel,
+     * over SSH transport — see CpanelDeploymentDriver's docblock).
+     * directadmin/sftp/docker are registered (so DriverFactory can report a
+     * precise "not yet implemented" error) but are architecture stubs — see
+     * each class's docblock in App\Services\CustomerInstallation\Drivers.
      */
     'drivers' => [
         'ssh'         => \App\Services\CustomerInstallation\Drivers\SshRemoteDriver::class,
