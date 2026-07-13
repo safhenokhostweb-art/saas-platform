@@ -1,0 +1,15 @@
+{
+  "module": "motion-graphics",
+  "owner": "main-platform-admin",
+  "editable_by_ai": true,
+  "tenant_editing": false,
+  "architecture": "centralized-master-library",
+  "canonical_path": "packages/saas-platform/modules/motion-graphics",
+  "documentation": [
+    "AI_CONTEXT.md",
+    "AI_WORKFLOW.md",
+    "MOTION_ASSET_SCHEMA.md",
+    "AI_CHANGE_RULES.md",
+    "CREATE_AI_PROMPT_TEMPLATE.md"
+  ]
+}
