@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Services\CustomerInstallation\Provisioning;
+
+use App\Services\CustomerInstallation\Dto\InstallationContext;
+use RuntimeException;
+
+/**
+ * Phase 14-F2 — extracted verbatim from the pre-14-F2 CreateDatabaseStage.
+ * Same SQL, same two-attempt retry (with/without MYSQL_PWD env), same error
+ * message format, same rollback semantics (best-effort, never throws).
+ * No behavior change for VPS/SSH installations.
+ */
+class VpsDatabaseProvisioner implements DatabaseProvisionerInterface
+{
+    public function createDatabase(InstallationContext $ctx, string $dbName): void
+    {
+        $this->runSql($ctx, "CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;", 'CREATE DATABASE');
+    }
+
+    public function createUser(InstallationContext $ctx, string $dbUser, string $dbPassword): void
+    {
+        $this->runSql($ctx, "CREATE USER IF NOT EXISTS '{$dbUser}'@'localhost' IDENTIFIED BY '{$dbPassword}';", 'CREATE USER');
+    }
+
+    public function grantPrivileges(InstallationContext $ctx, string $dbName, string $dbUser): void
+    {
+        $this->runSql($ctx, "GRANT ALL PRIVILEGES ON `{$dbName}`.* TO '{$dbUser}'@'localhost';", 'GRANT PRIVILEGES');
+        $this->runSql($ctx, "FLUSH PRIVILEGES;", 'FLUSH PRIVILEGES');
+    }
+
+    public function dropDatabase(InstallationContext $ctx, string $dbName): void
+    {
+        $ctx->connection->execute('mysql -u root -e ' . escapeshellarg("DROP DATABASE IF EXISTS `{$dbName}`;"));
+    }
+
+    public function dropUser(InstallationContext $ctx, string $dbUser): void
+    {
+        $ctx->connection->execute('mysql -u root -e ' . escapeshellarg("DROP USER IF EXISTS '{$dbUser}'@'localhost';"));
+    }
+
+    /**
+     * Phase 14-G1 — $context is a short, secret-free label (e.g. "CREATE USER")
+     * describing the statement kind, never the SQL itself. createUser() embeds
+     * the freshly-generated tenant DB password directly into $sql via
+     * IDENTIFIED BY '{password}' — putting the raw $sql in an exception message
+     * (as this used to) means a failed CREATE_DATABASE stage persists the
+     * plaintext password, unredacted, into customer_installation_logs.message
+     * and customer_installations.failure_reason, both rendered on the admin
+     * installation detail page. $result->output() (the mysql CLI's own
+     * stdout/stderr) is intentionally still included — MySQL error output
+     * does not echo back statement text for the statements this class runs.
+     *
+     * @throws RuntimeException
+     */
+    private function runSql(InstallationContext $ctx, string $sql, string $context): void
+    {
+        $result = $ctx->connection->execute(
+            'mysql -u root 2>/dev/null -e ' . escapeshellarg($sql),
+            ['MYSQL_PWD' => '']
+        );
+
+        // If root has no password access via socket, try without password env
+        if ($result->failed()) {
+            $result = $ctx->connection->execute('mysql -u root -e ' . escapeshellarg($sql));
+            if ($result->failed()) {
+                throw new RuntimeException("MySQL command failed ({$context}): " . $result->output());
+            }
+        }
+    }
+}

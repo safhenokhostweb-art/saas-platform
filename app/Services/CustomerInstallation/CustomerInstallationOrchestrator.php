@@ -47,6 +47,7 @@ class CustomerInstallationOrchestrator
         private readonly RemoteConnectionService       $connectionService,
         private readonly CustomerInstallationRollbackService $rollback,
         private readonly RollbackDispatcher            $rollbackDispatcher,
+        private readonly StageCapabilityGate           $capabilityGate,
     ) {}
 
     /**
@@ -95,6 +96,33 @@ class CustomerInstallationOrchestrator
 
                 $this->state->recordStageStart($installation, $stageName);
 
+                // Phase 14-E — capability gate. Runs before any pre-snapshot/
+                // checkpoint work: if the stage can't run at all, there is
+                // nothing meaningful to snapshot for rollback.
+                $missingCapabilities = $this->capabilityGate->missingCapabilities($stage, $connection);
+
+                if (!empty($missingCapabilities)) {
+                    $driverLabel = $connection->driverType()->label();
+
+                    if ($stage->isCapabilityRequiredToProceed()) {
+                        $reason = "Stage {$stageName} requires capability '{$missingCapabilities[0]}', "
+                            . "which the {$driverLabel} driver does not support.";
+                        Log::error("CIE: {$reason}");
+                        $this->state->recordStageFailure($installation, $stageName, $reason, 0);
+                        $this->state->markFailed($installation, $reason);
+                        $this->rollbackDispatcher->dispatch($installation);
+                        return;
+                    }
+
+                    $reason = "Skipping stage {$stageName} — missing capability '{$missingCapabilities[0]}' "
+                        . "on the {$driverLabel} driver.";
+                    Log::warning("CIE: {$reason}");
+                    $skipOutput = ['skipped' => true, 'reason' => $reason];
+                    $ctx->recordOutput($stageName, $skipOutput);
+                    $this->state->recordStageComplete($installation, $stageName, $skipOutput, 0);
+                    continue;
+                }
+
                 // Build rollback snapshot BEFORE execution wherever possible.
                 // Stages override buildPreSnapshot() to return their resource paths so
                 // that rollback has actionable data even when the stage fails mid-way.
@@ -128,7 +156,7 @@ class CustomerInstallationOrchestrator
         } catch (\Throwable $e) {
             Log::error("CIE: Unexpected error in pipeline", ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             $this->state->markFailed($installation, 'Unexpected pipeline error: ' . $e->getMessage());
-            $this->dispatchRollback($installation);
+            $this->rollbackDispatcher->dispatch($installation);
         } finally {
             try {
                 $connection->disconnect();

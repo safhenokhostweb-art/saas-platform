@@ -74,7 +74,7 @@ class InstallationStateManager implements InstallationStateInterface
             'installation_id' => $installation->id,
             'stage'           => $stage,
             'event'           => 'failed',
-            'message'         => $error,
+            'message'         => $this->sanitizeMessage($error),
             'duration_ms'     => $durationMs,
             'created_at'      => now(),
         ]);
@@ -151,7 +151,7 @@ class InstallationStateManager implements InstallationStateInterface
         $installation->update([
             'status'         => 'failed',
             'failed_at'      => now(),
-            'failure_reason' => $reason,
+            'failure_reason' => $this->sanitizeMessage($reason),
         ]);
 
         $this->emitProgress($installation->id, $installation->current_stage ?? '', 'failed', 'نصب با خطا متوقف شد');
@@ -207,6 +207,28 @@ class InstallationStateManager implements InstallationStateInterface
         } catch (\Throwable) {
             // Redis unavailable — non-fatal, pipeline continues
         }
+    }
+
+    /**
+     * Phase 14-G1 — defense-in-depth for stage-failure/error messages, which
+     * are free-form strings built from shell/SQL commands (unlike
+     * sanitizeOutput()'s structured array or sanitizeSnapshot()'s named
+     * fields). VpsDatabaseProvisioner no longer embeds raw SQL containing the
+     * tenant's freshly-generated DB password in its exception message (see
+     * VpsDatabaseProvisioner::runSql()), but this redaction stays as a
+     * second layer so any other stage/command string that leaks a credential
+     * shape into its error message doesn't reach customer_installation_logs
+     * or the admin-visible failure_reason unredacted.
+     */
+    private function sanitizeMessage(string $message): string
+    {
+        $patterns = [
+            "/IDENTIFIED BY\s+'[^']*'/i"  => "IDENTIFIED BY '[REDACTED]'",
+            '/IDENTIFIED BY\s+"[^"]*"/i'  => 'IDENTIFIED BY "[REDACTED]"',
+            '/MYSQL_PWD=\S+/i'             => 'MYSQL_PWD=[REDACTED]',
+        ];
+
+        return preg_replace(array_keys($patterns), array_values($patterns), $message);
     }
 
     private function sanitizeOutput(array $output): array

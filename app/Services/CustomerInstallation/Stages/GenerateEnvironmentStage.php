@@ -30,6 +30,32 @@ class GenerateEnvironmentStage extends AbstractStage
             $platformUrl   = rtrim(config('app.url', 'https://panel.safhenokhost.ir'), '/');
             $adminPassword = Str::random(16);
 
+            // Phase 14-E — capability-aware fallback (not a skip/fail: the
+            // site can run correctly on file-based cache/session and a
+            // non-Redis queue, just without Redis-backed performance).
+            // Hardcoding redis here — as before this phase — wrote a config
+            // that silently could never connect on any driver without
+            // supportsRedis (cPanel, DirectAdmin, SFTP).
+            //
+            // Phase 14-G1 — queue driver must match what ConfigureQueueStage
+            // actually provisions for this driver, not just what's fastest.
+            // supportsQueue (Redis-backed persistent worker, VPS/Docker) ->
+            // redis. supportsQueueWorker without supportsQueue (cron-based
+            // `queue:work --stop-when-empty`, cPanel — see
+            // CpanelQueueProvisioner) -> database: a cron worker polling a
+            // `sync` connection never has anything to consume, since `sync`
+            // runs jobs inline and never enqueues them at all. Neither
+            // capability -> sync (no worker will ever run, so there's
+            // nothing to poll a queue table for).
+            $capabilities   = $ctx->connection->capabilities();
+            $cacheDriver    = $capabilities->supportsRedis ? 'redis' : 'file';
+            $sessionDriver  = $capabilities->supportsRedis ? 'redis' : 'file';
+            $queueDriver    = match (true) {
+                $capabilities->supportsQueue       => 'redis',
+                $capabilities->supportsQueueWorker  => 'database',
+                default                             => 'sync',
+            };
+
             $envLines = [
                 "APP_NAME=\"{$req->company}\"",
                 "APP_ENV=production",
@@ -47,9 +73,9 @@ class GenerateEnvironmentStage extends AbstractStage
                 "DB_PASSWORD=__DB_PASS__",
                 "",
                 "BROADCAST_DRIVER=log",
-                "CACHE_DRIVER=redis",
-                "SESSION_DRIVER=redis",
-                "QUEUE_CONNECTION=redis",
+                "CACHE_DRIVER={$cacheDriver}",
+                "SESSION_DRIVER={$sessionDriver}",
+                "QUEUE_CONNECTION={$queueDriver}",
                 "REDIS_HOST=127.0.0.1",
                 "REDIS_PORT=6379",
                 "",
@@ -121,6 +147,9 @@ class GenerateEnvironmentStage extends AbstractStage
                 'env_path'      => $envPath,
                 'app_key_set'   => true,
                 'app_url'       => $appUrl,
+                'cache_driver'  => $cacheDriver,
+                'session_driver'=> $sessionDriver,
+                'queue_driver'  => $queueDriver,
             ], ['env_path' => $envPath, 'credential_type' => 'admin_password'], $this->elapsed());
         });
     }

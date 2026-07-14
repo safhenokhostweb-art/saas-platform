@@ -30,6 +30,21 @@ class FakeRemoteDriver implements DeploymentDriverInterface
     private bool $shouldFail = false;
     private string $failMessage = 'Simulated failure';
 
+    private DriverCapabilities $capabilities;
+
+    /**
+     * Phase 14-G1 — defaults to full VPS capabilities (unchanged behavior
+     * for every existing caller, all of which use `new FakeRemoteDriver()`
+     * with no argument). Tests that need to exercise capability-aware stage
+     * logic (e.g. a cPanel-shaped capability set) without opening a real SSH
+     * connection — which CpanelDeploymentDriver would require — can pass an
+     * explicit DriverCapabilities instead.
+     */
+    public function __construct(?DriverCapabilities $capabilities = null)
+    {
+        $this->capabilities = $capabilities ?? DriverCapabilities::forVps();
+    }
+
     // ─── DeploymentDriverInterface ────────────────────────────────────────────
 
     public function driverType(): DriverType
@@ -39,7 +54,7 @@ class FakeRemoteDriver implements DeploymentDriverInterface
 
     public function capabilities(): DriverCapabilities
     {
-        return DriverCapabilities::forVps(); // fake reports full VPS capabilities for testing
+        return $this->capabilities;
     }
 
     public function validate(): ValidationResult
