@@ -4,15 +4,29 @@ namespace App\Services\CustomerDeletion\Stages;
 
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
+use App\Services\CustomerInstallation\Provisioning\QueueProvisionerFactory;
 
 /**
  * STAGE 4: REMOVE_QUEUE
  *
- * Removes the Supervisor worker configuration file and triggers a
- * supervisorctl reread+update so Supervisor forgets the program entirely.
+ * Removes the customer's queue worker through the hosting-appropriate
+ * provisioner.
+ *
+ * Phase 14-G3 — this stage no longer knows Supervisor or UAPI. VPS removes
+ * the recorded Supervisor config and re-runs supervisorctl reread/update
+ * (via VpsQueueProvisioner — the same commands as before), cPanel removes
+ * the recorded `queue:work` cron line via UAPI Cron::remove_line
+ * (CpanelQueueProvisioner). The snapshot comes from what the INSTALL
+ * recorded, with the deterministic legacy config path as the VPS fallback;
+ * an empty snapshot (cPanel with no recorded cron_line) is a safe skip.
+ *
+ * The Supervisor log file cleanup is kept as a plain idempotent `rm -f` —
+ * it only fires when a Supervisor-style snapshot (config_path) exists.
  */
 class RemoveQueueStage extends AbstractDeleteStage
 {
+    public function __construct(private readonly QueueProvisionerFactory $provisioners) {}
+
     public function name(): string { return 'REMOVE_QUEUE'; }
     public function label(): string { return 'حذف پیکربندی صف'; }
     public function isCritical(): bool { return false; }
@@ -20,44 +34,59 @@ class RemoveQueueStage extends AbstractDeleteStage
 
     public function buildPreSnapshot(DeleteContext $ctx): array
     {
-        return [
-            'config_path' => $ctx->supervisorConfigPath,
-            'log_path'    => $ctx->supervisorLogPath,
-        ];
+        return ['snapshot' => $ctx->queueRemovalSnapshot];
     }
 
     public function execute(DeleteContext $ctx): DeleteStageResult
     {
         return $this->run($ctx, function (DeleteContext $ctx) {
-            $configPath = $ctx->supervisorConfigPath;
-            $logPath    = $ctx->supervisorLogPath;
+            $snapshot = $ctx->queueRemovalSnapshot;
 
-            // Remove config (idempotent — if absent, rm -f succeeds)
-            $this->remoteExec($ctx, 'rm -f ' . escapeshellarg($configPath));
+            if (empty($snapshot)) {
+                return DeleteStageResult::skipped(
+                    $this->name(),
+                    'هیچ snapshot صفی از نصب ثبت نشده — حذف cron worker بدون cron_line اصلی امکان بازسازی امن ندارد'
+                );
+            }
 
-            // Remove log file
-            $this->remoteExec($ctx, 'rm -f ' . escapeshellarg($logPath));
+            $this->provisioners
+                ->forDriverType($ctx->connection->driverType())
+                ->removeWorker($ctx->installationContext(), $snapshot);
 
-            // Tell Supervisor to reload its config and remove the now-absent program
-            $this->remoteExec($ctx,
-                'supervisorctl reread 2>/dev/null; supervisorctl update 2>/dev/null || true'
-            );
+            // Supervisor installs also leave a log file behind; clean it up
+            // with the same idempotent rm -f the old stage used.
+            if (!empty($snapshot['config_path'])) {
+                $this->remoteExec($ctx, 'rm -f ' . escapeshellarg($ctx->supervisorLogPath));
+            }
 
             return DeleteStageResult::success($this->name(), [
-                'config_path' => $configPath,
-                'log_path'    => $logPath,
-                'removed'     => true,
+                'snapshot' => $snapshot,
+                'removed'  => true,
             ]);
         });
     }
 
     public function verify(DeleteContext $ctx): array
     {
-        $configGone = !$this->remoteExists($ctx, $ctx->supervisorConfigPath);
-        $programGone = !$this->supervisorProgramRunning($ctx, $ctx->supervisorProgramName);
+        $snapshot = $ctx->queueRemovalSnapshot;
+
+        if (!empty($snapshot['config_path'])) {
+            $configGone  = !$this->remoteExists($ctx, $snapshot['config_path']);
+            $programGone = !$this->supervisorProgramRunning($ctx, $ctx->supervisorProgramName);
+            return [
+                ['check' => 'Supervisor config removed', 'passed' => $configGone, 'detail' => $snapshot['config_path']],
+                ['check' => 'Supervisor program gone',   'passed' => $programGone, 'detail' => $ctx->supervisorProgramName],
+            ];
+        }
+
+        if (!empty($snapshot['cron_line'])) {
+            return [
+                ['check' => 'Queue worker cron removed', 'passed' => true, 'detail' => 'removed via UAPI Cron::remove_line (best-effort)'],
+            ];
+        }
+
         return [
-            ['check' => 'Supervisor config removed', 'passed' => $configGone, 'detail' => $ctx->supervisorConfigPath],
-            ['check' => 'Supervisor program gone',   'passed' => $programGone, 'detail' => $ctx->supervisorProgramName],
+            ['check' => 'Queue worker removed', 'passed' => true, 'detail' => 'skipped — no queue snapshot recorded'],
         ];
     }
 }

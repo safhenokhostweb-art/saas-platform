@@ -4,16 +4,23 @@ namespace App\Services\CustomerDeletion\Stages;
 
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
+use App\Services\CustomerInstallation\Provisioning\DatabaseProvisionerFactory;
 
 /**
  * STAGE 10: REMOVE_DATABASE_USER
  *
- * Drops the MySQL user that was created exclusively for this customer.
+ * Drops the DB user that was created exclusively for this customer.
  * Separated from REMOVE_DATABASE so the audit trail proves the user account
  * was also cleaned up (important for compliance).
+ *
+ * Phase 14-G3 — no direct SQL remains in this stage; drop + verification go
+ * through DatabaseProvisionerFactory (VPS: root mysql `DROP USER IF EXISTS`,
+ * cPanel: UAPI Mysql::delete_user). See RemoveDatabaseStage for the pattern.
  */
 class RemoveDatabaseUserStage extends AbstractDeleteStage
 {
+    public function __construct(private readonly DatabaseProvisionerFactory $provisioners) {}
+
     public function name(): string { return 'REMOVE_DATABASE_USER'; }
     public function label(): string { return 'حذف کاربر پایگاه داده'; }
     public function isCritical(): bool { return false; }
@@ -34,29 +41,31 @@ class RemoveDatabaseUserStage extends AbstractDeleteStage
                 );
             }
 
-            $dbUser = $ctx->dbUser;
-            $sql    = "DROP USER IF EXISTS '{$dbUser}'@'localhost'; FLUSH PRIVILEGES;";
-
-            $result = $ctx->connection->execute(
-                'mysql -u root -e ' . escapeshellarg($sql) . ' 2>/dev/null; echo $?'
-            );
-            $exitCode = (int) trim($result->stdout);
-
-            if ($exitCode !== 0) {
-                $result2 = $ctx->connection->execute(
-                    'mysql -u root -e ' . escapeshellarg($sql)
+            if (!$ctx->connection->capabilities()->supportsDatabaseDeletion) {
+                return DeleteStageResult::skipped(
+                    $this->name(),
+                    'این درایور امکان حذف کاربر پایگاه داده ندارد — حذف دستی لازم است: ' . $ctx->dbUser
                 );
-                if ($result2->failed()) {
-                    return DeleteStageResult::failure(
-                        $this->name(),
-                        "DROP USER failed: {$result2->output()}"
-                    );
-                }
+            }
+
+            $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
+            $ictx        = $ctx->installationContext();
+
+            $provisioner->dropUser($ictx, $ctx->dbUser);
+
+            $exists = $provisioner->databaseUserExists($ictx, $ctx->dbUser);
+
+            if ($exists === true) {
+                return DeleteStageResult::failure(
+                    $this->name(),
+                    "DROP USER issued but user still exists: {$ctx->dbUser}"
+                );
             }
 
             return DeleteStageResult::success($this->name(), [
-                'db_user' => $dbUser,
-                'dropped' => true,
+                'db_user'  => $ctx->dbUser,
+                'dropped'  => true,
+                'verified' => $exists === false,
             ]);
         });
     }
@@ -67,10 +76,18 @@ class RemoveDatabaseUserStage extends AbstractDeleteStage
             return [['check' => 'DB user removal', 'passed' => true, 'detail' => 'skipped — no db_user']];
         }
 
-        $out = $this->remoteExec($ctx,
-            'mysql -u root -e ' . escapeshellarg("SELECT User FROM mysql.user WHERE User='{$ctx->dbUser}';") . ' 2>/dev/null | wc -l'
-        );
-        $exists = (int) trim($out) > 1;
+        if (!$ctx->connection->capabilities()->supportsDatabaseDeletion) {
+            return [['check' => 'DB user removal', 'passed' => true, 'detail' => 'skipped — driver cannot manage databases']];
+        }
+
+        $exists = $this->provisioners
+            ->forDriverType($ctx->connection->driverType())
+            ->databaseUserExists($ctx->installationContext(), $ctx->dbUser);
+
+        if ($exists === null) {
+            return [['check' => "DB user {$ctx->dbUser} dropped", 'passed' => true, 'detail' => 'unverifiable on this driver — drop was issued']];
+        }
+
         return [
             ['check' => "DB user {$ctx->dbUser} dropped", 'passed' => !$exists, 'detail' => $exists ? 'still exists' : 'gone'],
         ];

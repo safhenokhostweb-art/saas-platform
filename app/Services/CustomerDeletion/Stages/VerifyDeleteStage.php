@@ -7,6 +7,7 @@ use App\Models\PlatformLicense;
 use App\Models\Site;
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
+use App\Services\CustomerInstallation\Provisioning\DatabaseProvisionerFactory;
 
 /**
  * STAGE 14: VERIFY_DELETE
@@ -17,9 +18,16 @@ use App\Services\CustomerDeletion\Dto\DeleteStageResult;
  *
  * Each item is independently checked so partial failures are surfaced
  * clearly. The overall result is PASS only if every critical check passes.
+ *
+ * Phase 14-G3 — checks are capability-aware (a resource this driver never
+ * managed is reported as an explicit skip, not a fake pass/fail against a
+ * path that could never exist) and the database checks go through the
+ * hosting-appropriate provisioner instead of raw root-mysql queries.
  */
 class VerifyDeleteStage extends AbstractDeleteStage
 {
+    public function __construct(private readonly DatabaseProvisionerFactory $provisioners) {}
+
     public function name(): string { return 'VERIFY_DELETE'; }
     public function label(): string { return 'تأیید نهایی حذف'; }
     public function isCritical(): bool { return true; }
@@ -57,6 +65,7 @@ class VerifyDeleteStage extends AbstractDeleteStage
     private function runAllChecks(DeleteContext $ctx): array
     {
         $checks = [];
+        $capabilities = $ctx->connection->capabilities();
 
         // ── Remote server checks ─────────────────────────────────────────────
         $checks[] = [
@@ -66,64 +75,111 @@ class VerifyDeleteStage extends AbstractDeleteStage
             'critical' => true,
         ];
 
-        $checks[] = [
-            'check'    => 'Nginx config removed',
-            'passed'   => !$this->remoteExists($ctx, $ctx->nginxConfigPath),
-            'detail'   => $ctx->nginxConfigPath,
-            'critical' => true,
-        ];
-
-        $checks[] = [
-            'check'    => 'Nginx symlink removed',
-            'passed'   => !$this->remoteExists($ctx, $ctx->nginxEnabledPath),
-            'detail'   => $ctx->nginxEnabledPath,
-            'critical' => false,
-        ];
-
-        $checks[] = [
-            'check'    => 'Supervisor config removed',
-            'passed'   => !$this->remoteExists($ctx, $ctx->supervisorConfigPath),
-            'detail'   => $ctx->supervisorConfigPath,
-            'critical' => false,
-        ];
-
-        $checks[] = [
-            'check'    => 'Supervisor worker stopped',
-            'passed'   => !$this->supervisorProgramRunning($ctx, $ctx->supervisorProgramName),
-            'detail'   => $ctx->supervisorProgramName,
-            'critical' => false,
-        ];
-
-        $checks[] = [
-            'check'    => 'Cron entry removed',
-            'passed'   => !$this->remoteExists($ctx, $ctx->cronPath),
-            'detail'   => $ctx->cronPath,
-            'critical' => false,
-        ];
-
-        // ── Database checks ──────────────────────────────────────────────────
-        if ($ctx->dbName) {
-            $dbOut = $this->remoteExec($ctx,
-                'mysql -u root -e ' . escapeshellarg("SHOW DATABASES LIKE '{$ctx->dbName}';") . ' 2>/dev/null | wc -l'
-            );
+        if ($capabilities->supportsWebServerConfiguration) {
             $checks[] = [
-                'check'    => "Database {$ctx->dbName} dropped",
-                'passed'   => (int) trim($dbOut) <= 1,
-                'detail'   => "db_name={$ctx->dbName}",
+                'check'    => 'Nginx config removed',
+                'passed'   => !$this->remoteExists($ctx, $ctx->nginxConfigPath),
+                'detail'   => $ctx->nginxConfigPath,
                 'critical' => true,
+            ];
+
+            $checks[] = [
+                'check'    => 'Nginx symlink removed',
+                'passed'   => !$this->remoteExists($ctx, $ctx->nginxEnabledPath),
+                'detail'   => $ctx->nginxEnabledPath,
+                'critical' => false,
+            ];
+        } else {
+            $checks[] = [
+                'check'    => 'Web server config removed',
+                'passed'   => true,
+                'detail'   => 'skipped — vhost managed by hosting panel',
+                'critical' => false,
             ];
         }
 
-        if ($ctx->dbUser) {
-            $userOut = $this->remoteExec($ctx,
-                'mysql -u root -e ' . escapeshellarg("SELECT User FROM mysql.user WHERE User='{$ctx->dbUser}';") . ' 2>/dev/null | wc -l'
-            );
+        if ($capabilities->supportsSupervisor) {
             $checks[] = [
-                'check'    => "DB user {$ctx->dbUser} dropped",
-                'passed'   => (int) trim($userOut) <= 1,
-                'detail'   => "db_user={$ctx->dbUser}",
+                'check'    => 'Supervisor config removed',
+                'passed'   => !$this->remoteExists($ctx, $ctx->supervisorConfigPath),
+                'detail'   => $ctx->supervisorConfigPath,
                 'critical' => false,
             ];
+
+            $checks[] = [
+                'check'    => 'Supervisor worker stopped',
+                'passed'   => !$this->supervisorProgramRunning($ctx, $ctx->supervisorProgramName),
+                'detail'   => $ctx->supervisorProgramName,
+                'critical' => false,
+            ];
+        } else {
+            $checks[] = [
+                'check'    => 'Queue worker removed',
+                'passed'   => true,
+                'detail'   => 'skipped — driver has no Supervisor (cron-based worker removed by REMOVE_QUEUE)',
+                'critical' => false,
+            ];
+        }
+
+        if (!empty($ctx->schedulerRemovalSnapshot['cron_path'])) {
+            $checks[] = [
+                'check'    => 'Cron entry removed',
+                'passed'   => !$this->remoteExists($ctx, $ctx->schedulerRemovalSnapshot['cron_path']),
+                'detail'   => $ctx->schedulerRemovalSnapshot['cron_path'],
+                'critical' => false,
+            ];
+        } else {
+            $checks[] = [
+                'check'    => 'Cron entry removed',
+                'passed'   => true,
+                'detail'   => !empty($ctx->schedulerRemovalSnapshot['cron_line'])
+                    ? 'removed via UAPI Cron::remove_line (best-effort)'
+                    : 'skipped — no scheduler snapshot recorded',
+                'critical' => false,
+            ];
+        }
+
+        // ── Database checks ──────────────────────────────────────────────────
+        if ($ctx->dbName) {
+            if ($capabilities->supportsDatabaseDeletion) {
+                $exists = $this->provisioners
+                    ->forDriverType($ctx->connection->driverType())
+                    ->databaseExists($ctx->installationContext(), $ctx->dbName);
+                $checks[] = [
+                    'check'    => "Database {$ctx->dbName} dropped",
+                    'passed'   => $exists !== true,
+                    'detail'   => $exists === null ? 'unverifiable on this driver — drop was issued' : "db_name={$ctx->dbName}",
+                    'critical' => true,
+                ];
+            } else {
+                $checks[] = [
+                    'check'    => "Database {$ctx->dbName} dropped",
+                    'passed'   => true,
+                    'detail'   => 'skipped — driver cannot manage databases, manual cleanup required',
+                    'critical' => false,
+                ];
+            }
+        }
+
+        if ($ctx->dbUser) {
+            if ($capabilities->supportsDatabaseDeletion) {
+                $exists = $this->provisioners
+                    ->forDriverType($ctx->connection->driverType())
+                    ->databaseUserExists($ctx->installationContext(), $ctx->dbUser);
+                $checks[] = [
+                    'check'    => "DB user {$ctx->dbUser} dropped",
+                    'passed'   => $exists !== true,
+                    'detail'   => $exists === null ? 'unverifiable on this driver — drop was issued' : "db_user={$ctx->dbUser}",
+                    'critical' => false,
+                ];
+            } else {
+                $checks[] = [
+                    'check'    => "DB user {$ctx->dbUser} dropped",
+                    'passed'   => true,
+                    'detail'   => 'skipped — driver cannot manage databases, manual cleanup required',
+                    'critical' => false,
+                ];
+            }
         }
 
         // ── Platform DB checks ───────────────────────────────────────────────

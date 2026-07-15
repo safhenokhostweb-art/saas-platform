@@ -11,6 +11,10 @@ use App\Services\CustomerDeletion\Dto\DeleteStageResult;
  * Removes both the sites-available and sites-enabled Nginx configuration
  * files for the customer domain, then reloads Nginx so the virtual host
  * is immediately de-registered.
+ *
+ * Phase 14-G3 — gated on supportsWebServerConfiguration, mirroring the
+ * install side's ConfigureWebServerStage: cPanel/WHM owns its vhosts, this
+ * pipeline never wrote one there, so there is nothing to remove.
  */
 class RemoveWebServerStage extends AbstractDeleteStage
 {
@@ -30,6 +34,13 @@ class RemoveWebServerStage extends AbstractDeleteStage
     public function execute(DeleteContext $ctx): DeleteStageResult
     {
         return $this->run($ctx, function (DeleteContext $ctx) {
+            if (!$ctx->connection->capabilities()->supportsWebServerConfiguration) {
+                return DeleteStageResult::skipped(
+                    $this->name(),
+                    'این درایور پیکربندی وب‌سرور را مدیریت نمی‌کند (vhost توسط پنل هاست مدیریت می‌شود)'
+                );
+            }
+
             $configPath  = $ctx->nginxConfigPath;
             $enabledPath = $ctx->nginxEnabledPath;
 
@@ -52,6 +63,12 @@ class RemoveWebServerStage extends AbstractDeleteStage
 
     public function verify(DeleteContext $ctx): array
     {
+        if (!$ctx->connection->capabilities()->supportsWebServerConfiguration) {
+            return [
+                ['check' => 'Web server config removed', 'passed' => true, 'detail' => 'skipped — vhost managed by hosting panel'],
+            ];
+        }
+
         $configGone  = !$this->remoteExists($ctx, $ctx->nginxConfigPath);
         $enabledGone = !$this->remoteExists($ctx, $ctx->nginxEnabledPath);
         return [

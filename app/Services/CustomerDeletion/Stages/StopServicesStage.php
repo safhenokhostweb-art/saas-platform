@@ -11,6 +11,12 @@ use App\Services\CustomerDeletion\Dto\DeleteStageResult;
  * Gracefully stops the customer's Supervisor worker before removing configs.
  * This prevents Supervisor from throwing FATAL errors when its config
  * disappears while a worker is still registered.
+ *
+ * Phase 14-G3 — gated on supportsSupervisor: cPanel (and any other driver
+ * without Supervisor) skips safely instead of running a meaningless
+ * `supervisorctl stop`. Its cron-based worker (`queue:work
+ * --stop-when-empty`) exits on its own within a minute; the cron line
+ * itself is removed by REMOVE_QUEUE.
  */
 class StopServicesStage extends AbstractDeleteStage
 {
@@ -22,6 +28,13 @@ class StopServicesStage extends AbstractDeleteStage
     public function execute(DeleteContext $ctx): DeleteStageResult
     {
         return $this->run($ctx, function (DeleteContext $ctx) {
+            if (!$ctx->connection->capabilities()->supportsSupervisor) {
+                return DeleteStageResult::skipped(
+                    $this->name(),
+                    'این درایور Supervisor ندارد — worker مبتنی بر cron خودش خاتمه می‌یابد'
+                );
+            }
+
             $program = $ctx->supervisorProgramName;
             $stopped = [];
             $errors  = [];
@@ -48,6 +61,12 @@ class StopServicesStage extends AbstractDeleteStage
 
     public function verify(DeleteContext $ctx): array
     {
+        if (!$ctx->connection->capabilities()->supportsSupervisor) {
+            return [
+                ['check' => 'Services stopped', 'passed' => true, 'detail' => 'skipped — driver has no Supervisor'],
+            ];
+        }
+
         $running = $this->supervisorProgramRunning($ctx, $ctx->supervisorProgramName);
         return [
             ['check' => "Supervisor {$ctx->supervisorProgramName} stopped", 'passed' => !$running, 'detail' => $running ? 'still RUNNING' : 'not running'],

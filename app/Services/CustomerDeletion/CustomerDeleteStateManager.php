@@ -43,6 +43,7 @@ class CustomerDeleteStateManager
 
     public function recordStageFailure(CustomerDeletion $deletion, string $stage, string $error, int $durationMs): void
     {
+        $error = $this->sanitizeMessage($error);
         $this->log($deletion, $stage, 'failed', $error, [], $durationMs);
         $this->emitProgress($deletion->id, $stage, 'failed', "خطا در {$stage}: {$error}");
     }
@@ -59,6 +60,7 @@ class CustomerDeleteStateManager
 
     public function markFailed(CustomerDeletion $deletion, string $reason): void
     {
+        $reason = $this->sanitizeMessage($reason);
         $deletion->update([
             'status'         => 'failed',
             'failed_at'      => now(),
@@ -66,6 +68,26 @@ class CustomerDeleteStateManager
         ]);
         $this->log($deletion, 'FAILED', 'failed', $reason);
         $this->emitProgress($deletion->id, 'FAILED', 'failed', "حذف ناموفق: {$reason}");
+    }
+
+    /**
+     * Phase 14-G3 — same defense-in-depth redaction InstallationStateManager
+     * gained in Phase 14-G1: failure messages are free-form strings built
+     * from shell/SQL command results, so any credential-shaped fragment is
+     * stripped before it reaches customer_deletion_logs.message or the
+     * admin-visible failure_reason. No deletion stage interpolates a secret
+     * today (FinalBackupStage passes the DB password via the connection's
+     * env mechanism, never the command string) — this is the second layer.
+     */
+    private function sanitizeMessage(string $message): string
+    {
+        $patterns = [
+            "/IDENTIFIED BY\s+'[^']*'/i"  => "IDENTIFIED BY '[REDACTED]'",
+            '/IDENTIFIED BY\s+"[^"]*"/i'  => 'IDENTIFIED BY "[REDACTED]"',
+            '/MYSQL_PWD=\S+/i'             => 'MYSQL_PWD=[REDACTED]',
+        ];
+
+        return preg_replace(array_keys($patterns), array_values($patterns), $message);
     }
 
     private function log(
