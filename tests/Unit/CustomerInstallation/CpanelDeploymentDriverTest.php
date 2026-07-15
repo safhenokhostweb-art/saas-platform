@@ -81,9 +81,9 @@ class CpanelDeploymentDriverTest extends TestCase
         $this->assertFalse($capabilities->supportsQueue, 'cPanel has no persistent worker/queue support');
         $this->assertFalse($capabilities->supportsSupervisor, 'cPanel accounts cannot run supervisord');
         $this->assertFalse($capabilities->supportsRedis, 'Redis is not available on typical cPanel plans');
-        $this->assertFalse($capabilities->supportsStorageLink, 'No root shell to guarantee artisan storage:link works');
         $this->assertFalse($capabilities->supportsDocker, 'cPanel does not run Docker containers');
         $this->assertFalse($capabilities->supportsReboot, 'A hosting account cannot reboot the server');
+        $this->assertFalse($capabilities->supportsWebServerConfiguration, 'WHM/cPanel manages vhosts automatically, no /etc/nginx access');
     }
 
     public function test_capabilities_declare_what_the_cpanel_api_surface_can_actually_do(): void
@@ -94,7 +94,17 @@ class CpanelDeploymentDriverTest extends TestCase
         $this->assertTrue($capabilities->supportsCron, 'cPanel Cron Jobs UI/API');
         $this->assertTrue($capabilities->supportsScheduler, 'built on the same cPanel cron mechanism');
         $this->assertTrue($capabilities->supportsSSL, 'cPanel SSL/TLS or AutoSSL');
-        $this->assertTrue($capabilities->supportsDatabaseCreation, 'cPanel MySQL Databases API (not yet wired into CreateDatabaseStage — see Phase 14-C report)');
+        // Phase 14-F2: true again — CreateDatabaseStage now resolves a real
+        // CpanelDatabaseProvisioner (cPanel UAPI Mysql module) instead of
+        // running root `mysql -u root`, which is what made this false in
+        // Phase 14-E. See DriverCapabilities' class docblock.
+        $this->assertTrue($capabilities->supportsDatabaseCreation, 'cPanel UAPI Mysql module, wired via CpanelDatabaseProvisioner (Phase 14-F2)');
+        // Phase 14-F5: true again — cPanel connects over SSH (Phase 14-C),
+        // so `artisan storage:link` (a symlink inside the account's own home
+        // directory) works the same as VPS. The prior false value was
+        // written before CpanelDeploymentDriver existed. See DriverCapabilities'
+        // class docblock.
+        $this->assertTrue($capabilities->supportsStorageLink, 'cPanel connects over SSH (Phase 14-C) — artisan storage:link needs no root (Phase 14-F5)');
     }
 
     // ─── credential encryption usage ──────────────────────────────────────────

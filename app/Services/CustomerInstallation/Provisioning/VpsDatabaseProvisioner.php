@@ -40,6 +40,32 @@ class VpsDatabaseProvisioner implements DatabaseProvisionerInterface
     }
 
     /**
+     * Phase 14-G3 — moved verbatim from the pre-14-G3 deletion stages'
+     * verify() methods (same SHOW DATABASES query, same `wc -l > 1` parse),
+     * so VPS verification behavior is unchanged. Never returns null on VPS:
+     * if root mysql access is unavailable the query outputs nothing and this
+     * reports false ("gone"), exactly as the old inline check did.
+     */
+    public function databaseExists(InstallationContext $ctx, string $dbName): ?bool
+    {
+        $result = $ctx->connection->execute(
+            'mysql -u root -e ' . escapeshellarg("SHOW DATABASES LIKE '{$dbName}';") . ' 2>/dev/null | wc -l'
+        );
+
+        return (int) trim($result->stdout) > 1;
+    }
+
+    /** Phase 14-G3 — see databaseExists(). */
+    public function databaseUserExists(InstallationContext $ctx, string $dbUser): ?bool
+    {
+        $result = $ctx->connection->execute(
+            'mysql -u root -e ' . escapeshellarg("SELECT User FROM mysql.user WHERE User='{$dbUser}';") . ' 2>/dev/null | wc -l'
+        );
+
+        return (int) trim($result->stdout) > 1;
+    }
+
+    /**
      * Phase 14-G1 — $context is a short, secret-free label (e.g. "CREATE USER")
      * describing the statement kind, never the SQL itself. createUser() embeds
      * the freshly-generated tenant DB password directly into $sql via

@@ -3,17 +3,28 @@
 namespace App\Services\CustomerInstallation\Dto;
 
 use App\Models\CustomerInstallation;
-use App\Services\CustomerInstallation\Contracts\RemoteConnectionInterface;
+use App\Models\CustomerRemoteServer;
+use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
+use App\Services\CustomerInstallation\WebRootResolver;
 
 class InstallationContext
 {
     public array $stageOutputs = [];
     public array $rollbackStack = [];
+    private ?string $resolvedWebRoot = null;
 
+    /**
+     * Phase 14-E — widened from RemoteConnectionInterface to
+     * DeploymentDriverInterface so stages/the orchestrator can call
+     * ->capabilities() for the capability gate. Every driver DriverFactory
+     * ever constructs already implements the full DeploymentDriverInterface
+     * (SshRemoteDriver, CpanelDeploymentDriver, FakeRemoteDriver), so this is
+     * a safe narrowing, not a behavior change.
+     */
     public function __construct(
         public readonly CustomerInstallation      $installation,
         public readonly CustomerInstallRequest    $request,
-        public RemoteConnectionInterface          $connection,
+        public DeploymentDriverInterface          $connection,
         public readonly ?ModuleUpdateTarget       $moduleTarget = null,
     ) {}
 
@@ -49,9 +60,21 @@ class InstallationContext
         return 'cust_' . $segment . '_' . $this->installation->id;
     }
 
+    /**
+     * Phase 14-F1 — delegates to WebRootResolver so this stays hosting-type
+     * agnostic (no Stage, and now not even this DTO, branches on driver
+     * type itself). Memoized: the underlying CustomerRemoteServer lookup
+     * only needs to happen once per pipeline run, not once per Stage that
+     * calls webRoot() (there are ~19 call sites).
+     */
     public function webRoot(): string
     {
-        return '/var/www/' . $this->customerSlug();
+        if ($this->resolvedWebRoot === null) {
+            $server = CustomerRemoteServer::find($this->installation->remote_server_id);
+            $this->resolvedWebRoot = (new WebRootResolver())->resolve($this->connection, $this->customerSlug(), $server);
+        }
+
+        return $this->resolvedWebRoot;
     }
 
     /**

@@ -86,4 +86,17 @@ return [
         'fpm_socket_fallback' => env('CI_NGINX_FPM_SOCKET', '/run/php/php8.3-fpm.sock'),
     ],
 
+    /*
+     * Phase 14-F2 — cPanel UAPI client settings (CpanelUapiClient).
+     * uapi_port is deliberately independent of CustomerRemoteServer::port,
+     * which is the SSH port (Phase 14-C/14-F1 decision) — cPanel's UAPI
+     * port is standard across installs and almost never customized, unlike
+     * SSH, so a fixed config default avoids needing a second port column.
+     */
+    'cpanel' => [
+        'uapi_port'       => (int) env('CI_CPANEL_UAPI_PORT', 2083),
+        'uapi_timeout'    => (int) env('CI_CPANEL_UAPI_TIMEOUT', 30),
+        'uapi_verify_ssl' => env('CI_CPANEL_UAPI_VERIFY_SSL', true),
+    ],
+
 ];

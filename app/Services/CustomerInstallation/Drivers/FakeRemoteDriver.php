@@ -31,6 +31,7 @@ class FakeRemoteDriver implements DeploymentDriverInterface
     private string $failMessage = 'Simulated failure';
 
     private DriverCapabilities $capabilities;
+    private DriverType $driverType;
 
     /**
      * Phase 14-G1 — defaults to full VPS capabilities (unchanged behavior
@@ -39,17 +40,24 @@ class FakeRemoteDriver implements DeploymentDriverInterface
      * logic (e.g. a cPanel-shaped capability set) without opening a real SSH
      * connection — which CpanelDeploymentDriver would require — can pass an
      * explicit DriverCapabilities instead.
+     *
+     * Phase 14-G3 — same reasoning for $driverType: the provisioner
+     * factories (DatabaseProvisionerFactory & co.) route on driverType(), so
+     * tests exercising the cPanel provisioning path pass DriverType::CPANEL
+     * here while keeping the in-memory transport (the cPanel provisioners
+     * talk UAPI over Http::fake, never the connection).
      */
-    public function __construct(?DriverCapabilities $capabilities = null)
+    public function __construct(?DriverCapabilities $capabilities = null, ?DriverType $driverType = null)
     {
         $this->capabilities = $capabilities ?? DriverCapabilities::forVps();
+        $this->driverType   = $driverType ?? DriverType::FAKE;
     }
 
     // ─── DeploymentDriverInterface ────────────────────────────────────────────
 
     public function driverType(): DriverType
     {
-        return DriverType::FAKE;
+        return $this->driverType;
     }
 
     public function capabilities(): DriverCapabilities

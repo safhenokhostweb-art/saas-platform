@@ -28,4 +28,22 @@ interface InstallationStageInterface
     public function isCriticalForSafety(): bool;
 
     public function estimatedSeconds(): int;
+
+    /**
+     * Phase 14-E — capability keys (DriverCapabilities public property names,
+     * e.g. 'supportsDatabaseCreation') this stage's actual implementation
+     * needs from the connected driver. Empty array = works on any driver,
+     * no gate. Checked by CustomerInstallationOrchestrator via
+     * StageCapabilityGate before execute() is called.
+     */
+    public function requiredCapabilities(): array;
+
+    /**
+     * When requiredCapabilities() are not met: true = the orchestrator fails
+     * the installation with a clear message (this capability is essential —
+     * the site cannot function without it); false = the orchestrator skips
+     * this stage (logs a warning, records it complete with a 'skipped'
+     * marker) and continues the pipeline (this capability is optional infra).
+     */
+    public function isCapabilityRequiredToProceed(): bool;
 }

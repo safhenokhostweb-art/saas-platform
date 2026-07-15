@@ -2,56 +2,61 @@
 
 namespace App\Services\CustomerInstallation\Stages;
 
+use App\Models\CustomerRemoteServer;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
-use Illuminate\Support\Str;
+use App\Services\CustomerInstallation\Provisioning\DatabaseNameResolver;
+use App\Services\CustomerInstallation\Provisioning\DatabaseProvisionerFactory;
 
+/**
+ * Phase 14-F2 — this stage no longer knows `mysql`, SSH, or cPanel. It
+ * resolves hosting-appropriate names via DatabaseNameResolver, resolves the
+ * right DatabaseProvisionerInterface via DatabaseProvisionerFactory for
+ * whatever driver is connected, and calls only that interface. The .env
+ * update below is NOT hosting-specific: it uses $ctx->connection->execute(),
+ * the same generic primitive every driver (including CpanelDeploymentDriver)
+ * implements identically over its own transport.
+ */
 class CreateDatabaseStage extends AbstractStage
 {
+    public function __construct(private readonly DatabaseProvisionerFactory $provisioners) {}
+
     public function name(): string { return 'CREATE_DATABASE'; }
     public function label(): string { return 'ساخت پایگاه داده'; }
     public function estimatedSeconds(): int { return 3; }
     public function canRollback(): bool { return true; }
 
+    /**
+     * Phase 14-E — this stage's mechanism requires the connected driver to
+     * be able to create a database. Essential: a site cannot run without
+     * one, so a missing capability fails the installation rather than
+     * skipping (isCapabilityRequiredToProceed() default = true).
+     */
+    public function requiredCapabilities(): array
+    {
+        return ['supportsDatabaseCreation'];
+    }
+
     public function execute(InstallationContext $ctx): StageResult
     {
         return $this->run($ctx, function (InstallationContext $ctx) {
-            $dbName = 'cust_' . Str::random(6) . '_' . $ctx->installation->id;
-            $dbUser = 'u_' . Str::random(8);
+            $server = CustomerRemoteServer::find($ctx->installation->remote_server_id);
+            $names  = (new DatabaseNameResolver())->resolve($ctx, $server);
             $dbPass = $this->generateDbPassword();
-            $webRoot = $ctx->webRoot();
 
-            $sqlCommands = [
-                "CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
-                "CREATE USER IF NOT EXISTS '{$dbUser}'@'localhost' IDENTIFIED BY '{$dbPass}';",
-                "GRANT ALL PRIVILEGES ON `{$dbName}`.* TO '{$dbUser}'@'localhost';",
-                "FLUSH PRIVILEGES;",
-            ];
+            $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
 
-            foreach ($sqlCommands as $sql) {
-                $result = $ctx->connection->execute(
-                    'mysql -u root 2>/dev/null -e ' . escapeshellarg($sql),
-                    ['MYSQL_PWD' => '']
-                );
-                // If root has no password access via socket, try without password env
-                if ($result->failed()) {
-                    $result = $ctx->connection->execute('mysql -u root -e ' . escapeshellarg($sql));
-                    if ($result->failed()) {
-                        return StageResult::failure(
-                            $this->name(),
-                            "MySQL command failed: {$sql}\n" . $result->output(),
-                            $this->elapsed()
-                        );
-                    }
-                }
-            }
+            $provisioner->createDatabase($ctx, $names->database);
+            $provisioner->createUser($ctx, $names->username, $dbPass);
+            $provisioner->grantPrivileges($ctx, $names->database, $names->username);
 
             // Update .env with real DB credentials.
             // Use | as sed delimiter (password charset never includes |).
+            $webRoot = $ctx->webRoot();
             $envPath = $webRoot . '/.env';
             $sedCommands = [
-                "sed -i 's|__DB_NAME__|{$dbName}|' " . escapeshellarg($envPath),
-                "sed -i 's|__DB_USER__|{$dbUser}|' " . escapeshellarg($envPath),
+                "sed -i 's|__DB_NAME__|{$names->database}|' " . escapeshellarg($envPath),
+                "sed -i 's|__DB_USER__|{$names->username}|' " . escapeshellarg($envPath),
                 "sed -i 's|__DB_PASS__|{$dbPass}|' " . escapeshellarg($envPath),
             ];
             foreach ($sedCommands as $cmd) {
@@ -59,11 +64,11 @@ class CreateDatabaseStage extends AbstractStage
             }
 
             return StageResult::success($this->name(), [
-                'db_name' => $dbName,
-                'db_user' => $dbUser,
+                'db_name' => $names->database,
+                'db_user' => $names->username,
             ], [
-                'db_name' => $dbName,
-                'db_user' => $dbUser,
+                'db_name' => $names->database,
+                'db_user' => $names->username,
             ], $this->elapsed());
         });
     }
@@ -97,11 +102,13 @@ class CreateDatabaseStage extends AbstractStage
 
     public function rollback(InstallationContext $ctx, array $snapshot): void
     {
+        $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
+
         if (!empty($snapshot['db_name'])) {
-            $ctx->connection->execute('mysql -u root -e ' . escapeshellarg("DROP DATABASE IF EXISTS `{$snapshot['db_name']}`;"));
+            $provisioner->dropDatabase($ctx, $snapshot['db_name']);
         }
         if (!empty($snapshot['db_user'])) {
-            $ctx->connection->execute('mysql -u root -e ' . escapeshellarg("DROP USER IF EXISTS '{$snapshot['db_user']}'@'localhost';"));
+            $provisioner->dropUser($ctx, $snapshot['db_user']);
         }
     }
 }

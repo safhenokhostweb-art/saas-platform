@@ -12,6 +12,26 @@ class ConfigureWebServerStage extends AbstractStage
     public function estimatedSeconds(): int { return 5; }
     public function canRollback(): bool { return true; }
 
+    /**
+     * Phase 14-E — this stage's actual mechanism writes /etc/nginx vhost
+     * files and reloads the service, which no shared-hosting account can do.
+     * Unlike CreateDatabaseStage, missing this capability does not fail the
+     * installation: on cPanel/DirectAdmin the control panel already manages
+     * vhosts automatically outside this pipeline (the domain/subdomain is
+     * normally provisioned in WHM before this installer runs), so skipping
+     * with a clear log is the correct behavior — there is no cPanel handler
+     * implemented this phase (would require Driver changes, out of scope).
+     */
+    public function requiredCapabilities(): array
+    {
+        return ['supportsWebServerConfiguration'];
+    }
+
+    public function isCapabilityRequiredToProceed(): bool
+    {
+        return false;
+    }
+
     public function execute(InstallationContext $ctx): StageResult
     {
         return $this->run($ctx, function (InstallationContext $ctx) {

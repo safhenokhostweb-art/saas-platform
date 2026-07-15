@@ -11,6 +11,29 @@ class ConfigureStorageStage extends AbstractStage
     public function label(): string { return 'پیکربندی ذخیره‌سازی'; }
     public function estimatedSeconds(): int { return 5; }
 
+    /**
+     * Phase 14-F5 — this stage previously had no capability gate at all (it
+     * ran unconditionally on every driver). Adding requiredCapabilities()
+     * now that supportsStorageLink correctly reports true for both VPS and
+     * cPanel means the gate never blocks either today — this is metadata
+     * alignment, not a behavior change. Optional (not required to proceed):
+     * a missing storage symlink is not fatal to installation completion, an
+     * admin can wire it manually later — same philosophy as
+     * ConfigureQueueStage/ConfigureSchedulerStage. The stage's own internal
+     * failure path (both symlink attempts genuinely failing on a connected,
+     * capable driver) is untouched — that remains a real StageResult::failure,
+     * unrelated to this gate.
+     */
+    public function requiredCapabilities(): array
+    {
+        return ['supportsStorageLink'];
+    }
+
+    public function isCapabilityRequiredToProceed(): bool
+    {
+        return false;
+    }
+
     public function execute(InstallationContext $ctx): StageResult
     {
         return $this->run($ctx, function (InstallationContext $ctx) {

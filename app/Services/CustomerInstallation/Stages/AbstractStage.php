@@ -20,6 +20,26 @@ abstract class AbstractStage implements InstallationStageInterface
         return false;
     }
 
+    /**
+     * Phase 14-E — default: no capability requirement (works on any driver).
+     * Override in stages whose actual mechanism needs a specific driver
+     * capability — see StageCapabilityGate.
+     */
+    public function requiredCapabilities(): array
+    {
+        return [];
+    }
+
+    /**
+     * Phase 14-E — default: true (fail, not skip) if a stage DOES declare
+     * requiredCapabilities() but doesn't override this method. Safer default
+     * than silently skipping an essential operation nobody flagged as optional.
+     */
+    public function isCapabilityRequiredToProceed(): bool
+    {
+        return true;
+    }
+
     public function rollback(InstallationContext $ctx, array $snapshot): void
     {
         // No rollback by default — override in stages that have state
