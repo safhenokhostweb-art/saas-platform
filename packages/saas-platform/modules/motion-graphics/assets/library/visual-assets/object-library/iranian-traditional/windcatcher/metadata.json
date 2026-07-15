@@ -1,0 +1,112 @@
+{
+    "name":  "Windcatcher",
+    "slug":  "windcatcher",
+    "category":  "iranian-traditional",
+    "description":  "دارایی برداری Windcatcher از مجموعه سنتی ایرانی برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "iranian-traditional",
+                 "windcatcher",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "product",
+                 "decoration",
+                 "card",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:iranian-traditional:windcatcher:v1",
+    "name_fa":  "سنتی ایرانی — Windcatcher",
+    "name_en":  "Windcatcher",
+    "keywords":  [
+                     "سنتی ایرانی — Windcatcher",
+                     "Windcatcher",
+                     "windcatcher",
+                     "iranian-traditional",
+                     "سنتی ایرانی",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "product",
+                     "decoration",
+                     "card",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "traditional",
+                     "object",
+                     "objects",
+                     "سنتی ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

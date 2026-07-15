@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "EDITING_SESSION.schema.json",
+  "title": "AI Asset Editing Session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_id",
+    "asset_id",
+    "source_version",
+    "source_sha256",
+    "requested_by",
+    "customer_id",
+    "provider",
+    "prompt",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "session_id": { "$ref": "#/$defs/opaqueId" },
+    "asset_id": { "type": "string", "minLength": 3, "maxLength": 255 },
+    "source_version": { "type": "string", "pattern": "^v?[1-9][0-9]*$" },
+    "source_sha256": { "$ref": "#/$defs/sha256" },
+    "requested_by": { "$ref": "#/$defs/opaqueId" },
+    "customer_id": { "$ref": "#/$defs/opaqueId" },
+    "provider": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 16000 },
+    "status": { "enum": ["draft", "processing", "generated", "review_required", "approved", "rejected", "cancelled"] },
+    "current_attempt_id": { "$ref": "#/$defs/opaqueId" },
+    "current_proposal_id": { "$ref": "#/$defs/opaqueId" },
+    "approved_variant_id": { "$ref": "#/$defs/opaqueId" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "opaqueId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

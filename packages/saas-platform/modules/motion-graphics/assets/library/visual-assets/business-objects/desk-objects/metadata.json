@@ -1,0 +1,104 @@
+{
+    "name":  "لوازم میز",
+    "slug":  "desk-objects",
+    "category":  "business-objects",
+    "description":  "چیدمان منظم لوازم میز شامل دفتر، قلم و نگهدارنده",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "desk",
+                 "stationery",
+                 "workspace",
+                 "office",
+                 "business-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "business",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:business-objects:desk-objects:v1",
+    "name_fa":  "لوازم میز",
+    "name_en":  "Desk Objects",
+    "keywords":  [
+                     "لوازم میز",
+                     "Desk Objects",
+                     "desk-objects",
+                     "business-objects",
+                     "ابزار کسب‌وکار",
+                     "desk",
+                     "stationery",
+                     "workspace",
+                     "office",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "business",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "objects"
+                 ],
+    "synonyms":  [
+                     "business",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "ابزار کسب‌وکار"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

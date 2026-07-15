@@ -1,0 +1,106 @@
+{
+    "name":  "Solar Farm",
+    "slug":  "solar-farm",
+    "category":  "agriculture",
+    "description":  "دارایی برداری Solar Farm از مجموعه کشاورزی برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "agriculture",
+                 "solar-farm",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:agriculture:solar-farm:v1",
+    "name_fa":  "کشاورزی — Solar Farm",
+    "name_en":  "Solar Farm",
+    "keywords":  [
+                     "کشاورزی — Solar Farm",
+                     "Solar Farm",
+                     "solar-farm",
+                     "agriculture",
+                     "کشاورزی",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "solar",
+                     "farm"
+                 ],
+    "synonyms":  [
+                     "agriculture",
+                     "object",
+                     "objects",
+                     "کشاورزی"
+                 ],
+    "industry":  [
+                     "agriculture"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,103 @@
+{
+    "name":  "Bottle",
+    "slug":  "bottle",
+    "category":  "beauty",
+    "description":  "دارایی برداری Bottle از مجموعه زیبایی برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "beauty",
+                 "bottle",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "consumer",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:beauty:bottle:v1",
+    "name_fa":  "زیبایی — Bottle",
+    "name_en":  "Bottle",
+    "keywords":  [
+                     "زیبایی — Bottle",
+                     "Bottle",
+                     "bottle",
+                     "beauty",
+                     "زیبایی",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "consumer",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "beauty",
+                     "object",
+                     "objects",
+                     "زیبایی",
+                     "consumer"
+                 ],
+    "industry":  [
+                     "consumer"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

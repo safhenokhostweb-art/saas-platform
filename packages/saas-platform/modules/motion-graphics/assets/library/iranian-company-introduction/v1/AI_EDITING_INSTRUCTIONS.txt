@@ -1,0 +1,50 @@
+نام دارایی: معرفی حرفه‌ای شرکت ایرانی
+Slug: iranian-company-introduction
+
+مفهوم انیمیشن:
+این دارایی یک شرکت ایرانی حرفه‌ای را در مرکز اکوسیستم خود نمایش می‌دهد. کارت‌های پیرامونی نماینده تیم، خدمات، محصولات و توانمندی‌ها، مشتریان و رشد کسب‌وکار هستند. خطوط و ذرات متحرک، ارتباط و جریان همکاری میان این اجزا را نشان می‌دهند.
+
+بخش‌های قابل تغییر توسط AI:
+- عنوان، زیرعنوان و عبارت پایانی فارسی
+- رنگ اصلی، رنگ مکمل، متن، سطح کارت‌ها و تم روشن یا تیره
+- نشان مرکزی شرکت و شکل ساده لوگو
+- سرعت کلی از طریق متغیر --company-speed
+- نوع، تعداد و جایگاه کارت‌های پیرامونی
+- آیکن‌ها و برچسب‌های تیم، خدمات، محصول، مشتری و رشد
+- میزان حرکت شناور، سرعت خطوط و ذرات ارتباطی
+
+تغییر رنگ‌ها:
+متغیرهای CSS ابتدای animation.svg تغییر داده شوند: --company-primary، --company-accent، --company-ink، --company-muted و --company-surface. کنتراست خوانا حفظ شود و هیچ URL یا stylesheet خارجی اضافه نشود.
+
+جایگزینی لوگو:
+گروه مرکزی داخل transform="translate(360 270)" شامل نشان پیش‌فرض شرکت است. path داخلی آن را با لوگوی vector و sanitize‌شده جایگزین کنید. لوگو باید داخل محدوده 64×64 قرار گیرد، viewBox اصلی تغییر نکند و تصویر base64 یا لینک خارجی استفاده نشود.
+
+تغییر نوع شرکت و صنعت:
+- تولیدی و صنعتی: کارت محصول به کارخانه، خط تولید یا کنترل کیفیت تغییر کند.
+- مهندسی: کارت‌ها به طراحی، اجرا، پروژه و پشتیبانی تبدیل شوند.
+- خدماتی: روی تیم، فرایند خدمت، رضایت مشتری و پشتیبانی تمرکز شود.
+- فناوری: عناصر نرم‌افزار، فضای ابری، امنیت و هوش مصنوعی استفاده شوند.
+- بازرگانی: تأمین، فروش، مشتری و رشد بازار نمایش داده شوند.
+
+نسخه‌های آینده پیشنهادی:
+- نسخه کارخانه و تولید صنعتی
+- نسخه شرکت مهندسی و پروژه‌محور
+- نسخه شرکت خدمات حرفه‌ای
+- نسخه فناوری و هوش مصنوعی
+- نسخه کوتاه Section Intro و نسخه گسترده Homepage Hero
+- نسخه بدون متن برای Background Motion
+
+محدودیت‌ها:
+متن باید فارسی و راست‌چین بماند. از عناصر کارتونی، نمادهای فرهنگی خارجی، اسکریپت، event handler، foreignObject، فونت و URL خارجی استفاده نشود. نسخه منتشرشده هرگز درجا ویرایش نشود؛ تغییرات باید نسخه جدید ایجاد کنند.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

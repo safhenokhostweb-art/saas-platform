@@ -1,0 +1,102 @@
+{
+    "name":  "Knife",
+    "slug":  "knife",
+    "category":  "restaurant",
+    "description":  "دارایی برداری Knife از مجموعه رستوران برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "restaurant",
+                 "knife",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:restaurant:knife:v1",
+    "name_fa":  "رستوران — Knife",
+    "name_en":  "Knife",
+    "keywords":  [
+                     "رستوران — Knife",
+                     "Knife",
+                     "knife",
+                     "restaurant",
+                     "رستوران",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "consumer",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "restaurant",
+                     "object",
+                     "objects",
+                     "رستوران"
+                 ],
+    "industry":  [
+                     "restaurant"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

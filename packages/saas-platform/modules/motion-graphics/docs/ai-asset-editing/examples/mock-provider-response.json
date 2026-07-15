@@ -1,0 +1,40 @@
+{
+  "status": "generated",
+  "proposal_id": "proposal_demo_001",
+  "request_id": "request_demo_001",
+  "preview": {
+    "file_id": "preview_demo_001",
+    "media_type": "image/svg+xml",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "generated_files": [
+    {
+      "file_id": "generated_svg_001",
+      "relative_path": "company.svg",
+      "media_type": "image/svg+xml",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "proposed_content": "<svg viewBox=\"0 0 24 24\" role=\"img\" style=\"--brand-primary:#0F766E\"><title>Company</title><desc>Sanitized fake test proposal</desc><path id=\"editable-primary\" fill=\"var(--brand-primary)\" d=\"M4 20V4h16v16z\"/></svg>"
+    }
+  ],
+  "metadata_changes": [
+    {
+      "path": "/theme/primary",
+      "operation": "replace",
+      "value": "#0F766E",
+      "reason": "Map the editable primary token to the approved Brand Theme."
+    }
+  ],
+  "ai_metadata": {
+    "provider": "fake",
+    "model": "fake-asset-editor-v1",
+    "provider_request_id": "fake_request_001",
+    "generated_at": "2026-07-14T12:00:00+03:30",
+    "duration_ms": 1,
+    "warnings": [],
+    "usage": {
+      "input_units": 0,
+      "output_units": 0,
+      "estimated_cost": 0
+    }
+  }
+}

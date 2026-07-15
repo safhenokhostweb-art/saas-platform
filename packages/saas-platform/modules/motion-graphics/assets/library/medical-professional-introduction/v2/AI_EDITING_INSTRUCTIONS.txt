@@ -1,0 +1,36 @@
+نام دارایی: معرفی حرفه‌ای پزشک
+نسخه: v2
+
+مفهوم منحصربه‌فرد:
+پزشک و بیمار در دو سوی یک پنل سلامت با موج قلب و گفت‌وگوی امن.
+
+شیوه روایت:
+doctor-patient consultation scene
+
+عناصر اختصاصی:
+- doctor portrait
+- patient portrait
+- heart waveform
+- digital health panel
+- secure consultation
+
+قابل ویرایش توسط AI:
+رنگ‌ها، متن فارسی، لوگو، سرعت، تم و جزئیات عناصر. متغیرهای --primary، --accent، --ink، --muted، --surface و --soft برای تم هستند.
+
+تنوع صنعتی:
+جزئیات را می‌توان برای زیرشاخه‌های Healthcare تغییر داد، اما استعاره و داستان اختصاصی حفظ شود.
+
+امنیت:
+script، event handler، foreignObject، فونت و URL خارجی ممنوع است. v1 تغییر نکند و اصلاح بعدی نسخه جدید بسازد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+روایت ارتباط امن و انسانی میان پزشک و بیمار با خدمات سلامت دیجیتال.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

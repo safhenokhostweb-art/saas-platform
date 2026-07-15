@@ -1,0 +1,108 @@
+{
+    "name":  "دکوراسیون خانه ایرانی",
+    "slug":  "iranian-home-decoration",
+    "category":  "iranian-lifestyle",
+    "description":  "گوشه‌ای از خانه ایرانی مدرن با فرش و گلدان",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "home",
+                 "interior",
+                 "iranian",
+                 "lifestyle",
+                 "iranian-lifestyle",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-lifestyle:iranian-home-decoration:v1",
+    "name_fa":  "دکوراسیون خانه ایرانی",
+    "name_en":  "Iranian Home Decoration",
+    "keywords":  [
+                     "دکوراسیون خانه ایرانی",
+                     "Iranian Home Decoration",
+                     "iranian-home-decoration",
+                     "iranian-lifestyle",
+                     "سبک زندگی ایرانی",
+                     "home",
+                     "interior",
+                     "iranian",
+                     "lifestyle",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "lifestyle",
+                     "visual",
+                     "visual-assets",
+                     "سبک زندگی ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,107 @@
+{
+    "name":  "اسلیمی ساده",
+    "slug":  "simple-eslimi",
+    "category":  "iranian-patterns",
+    "description":  "نقش اسلیمی مینیمال برای تزئین پس‌زمینه و بخش‌های برند ایرانی",
+    "type":  "pattern",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "iranian",
+                 "eslimi",
+                 "decorative",
+                 "luxury",
+                 "iranian-patterns",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-patterns:simple-eslimi:v1",
+    "name_fa":  "اسلیمی ساده",
+    "name_en":  "Simple Eslimi",
+    "keywords":  [
+                     "اسلیمی ساده",
+                     "Simple Eslimi",
+                     "simple-eslimi",
+                     "iranian-patterns",
+                     "نقوش ایرانی",
+                     "iranian",
+                     "eslimi",
+                     "decorative",
+                     "luxury",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "simple"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "patterns",
+                     "visual",
+                     "visual-assets",
+                     "نقوش ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "pattern",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

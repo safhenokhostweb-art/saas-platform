@@ -1,0 +1,81 @@
+{
+  "module": "motion-graphics",
+  "layer": "ai-asset-editing",
+  "version": "1.0",
+  "status": "architecture-only",
+  "owner": "main-platform-admin",
+  "provider_neutral": true,
+  "real_provider_connected": false,
+  "tenant_authoring": false,
+  "master_assets_immutable": true,
+  "proposal_requires_validation": true,
+  "proposal_requires_admin_approval": true,
+  "approval_publishes": false,
+  "supported_asset_types": [
+    "motion",
+    "icon",
+    "object",
+    "visual-asset"
+  ],
+  "session_statuses": [
+    "draft",
+    "processing",
+    "generated",
+    "review_required",
+    "approved",
+    "rejected",
+    "cancelled"
+  ],
+  "documentation": [
+    "README.md",
+    "AI_EDITING_ARCHITECTURE.md",
+    "AI_PROVIDER_CONTRACT.md",
+    "EDITING_SESSION_FLOW.md",
+    "PROPOSAL_APPROVAL_FLOW.md",
+    "VARIANT_GENERATION_RULES.md",
+    "PROMPT_HISTORY_RULES.md",
+    "AI_SECURITY_RULES.md",
+    "ARCHITECTURE_TEST_SCENARIOS.md",
+    "FUTURE_PLATFORM_INTEGRATION.md"
+  ],
+  "schemas": [
+    "schemas/BRAND_THEME.schema.json",
+    "schemas/AI_PROVIDER_REQUEST.schema.json",
+    "schemas/AI_PROVIDER_PROPOSAL.schema.json",
+    "schemas/EDITING_SESSION.schema.json",
+    "schemas/ASSET_VARIANT.schema.json",
+    "schemas/AI_EDIT_HISTORY.schema.json"
+  ],
+  "templates": [
+    "templates/AI_EDIT_HISTORY.json"
+  ],
+  "examples": [
+    "examples/mock-provider-request.json",
+    "examples/mock-provider-response.json",
+    "examples/AI_EDIT_HISTORY.example.json"
+  ],
+  "related_architecture": [
+    "../ai/AI_CONTEXT.md",
+    "../ai/AI_WORKFLOW.md",
+    "../library/AI_ASSET_MODIFICATION_RULES.md",
+    "../library/AI_AGENT_LIBRARY_GUIDE.md",
+    "../brand-adaptation/README.md",
+    "../brand-adaptation/ASSET_INHERITANCE.md",
+    "../brand-adaptation/VERSIONING.md",
+    "../brand-adaptation/AI_EDITING_HISTORY.md",
+    "../brand-adaptation/CUSTOMER_OWNERSHIP_RULES.md",
+    "../brand-adaptation/THEME_TOKEN_CONTRACT.md"
+  ],
+  "deferred": [
+    "laravel-code",
+    "database",
+    "platform-integration",
+    "customer-site",
+    "real-ai-providers",
+    "frontend-ui",
+    "runtime-api",
+    "storage",
+    "publication",
+    "deployment"
+  ]
+}

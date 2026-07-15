@@ -1,0 +1,105 @@
+{
+    "name":  "Yogurt",
+    "slug":  "yogurt",
+    "category":  "food",
+    "description":  "دارایی برداری Yogurt از مجموعه مواد غذایی برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "food",
+                 "yogurt",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "restaurant",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:food:yogurt:v1",
+    "name_fa":  "مواد غذایی — Yogurt",
+    "name_en":  "Yogurt",
+    "keywords":  [
+                     "مواد غذایی — Yogurt",
+                     "Yogurt",
+                     "yogurt",
+                     "food",
+                     "مواد غذایی",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "restaurant",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "consumer",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "food",
+                     "object",
+                     "objects",
+                     "مواد غذایی",
+                     "restaurant"
+                 ],
+    "industry":  [
+                     "restaurant"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,114 @@
+{
+    "name":  "برند شخصی حرفه‌ای",
+    "slug":  "professional-personal-brand",
+    "category":  "personal-brand",
+    "description":  "معرفی هویت حرفه‌ای یک متخصص با مهارت، تجربه، ارتباط و نشان‌های اعتماد.",
+    "purpose":  "Professional profile hero animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "personal-brand",
+                 "professional-profile",
+                 "skills",
+                 "experience",
+                 "trust",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "business",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:personal-brand:professional-personal-brand:v1",
+    "name_fa":  "برند شخصی حرفه‌ای",
+    "name_en":  "Professional Personal Brand",
+    "keywords":  [
+                     "برند شخصی حرفه‌ای",
+                     "Professional Personal Brand",
+                     "professional-personal-brand",
+                     "personal-brand",
+                     "برند شخصی",
+                     "professional-profile",
+                     "skills",
+                     "experience",
+                     "trust",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "business",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "personal",
+                     "brand"
+                 ],
+    "synonyms":  [
+                     "personal",
+                     "brand",
+                     "motion",
+                     "برند شخصی",
+                     "business"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "animated-svg",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

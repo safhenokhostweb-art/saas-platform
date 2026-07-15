@@ -1,0 +1,99 @@
+{
+    "name":  "تلفن همراه",
+    "slug":  "mobile-phone",
+    "category":  "ecommerce-products",
+    "description":  "تلفن همراه مدرن برای فروشگاه و معرفی اپلیکیشن",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "mobile",
+                 "phone",
+                 "ecommerce",
+                 "technology",
+                 "ecommerce-products",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:ecommerce-products:mobile-phone:v1",
+    "name_fa":  "تلفن همراه",
+    "name_en":  "Mobile Phone",
+    "keywords":  [
+                     "تلفن همراه",
+                     "Mobile Phone",
+                     "mobile-phone",
+                     "ecommerce-products",
+                     "محصولات فروشگاهی",
+                     "mobile",
+                     "phone",
+                     "ecommerce",
+                     "technology",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "consumer",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "ecommerce",
+                     "products",
+                     "visual",
+                     "visual-assets",
+                     "محصولات فروشگاهی"
+                 ],
+    "industry":  [
+                     "ecommerce"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

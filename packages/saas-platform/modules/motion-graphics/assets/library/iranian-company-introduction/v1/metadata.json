@@ -1,0 +1,113 @@
+{
+    "name":  "معرفی حرفه‌ای شرکت ایرانی",
+    "slug":  "iranian-company-introduction",
+    "category":  "corporate",
+    "purpose":  "Company introduction hero animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "company",
+                 "iranian-business",
+                 "corporate",
+                 "services",
+                 "growth",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "business",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "description":  "Premium reusable motion graphic for introducing an Iranian company, its team, services, capabilities, customers, and growth.",
+    "library_id":  "motion:corporate:iranian-company-introduction:v1",
+    "name_fa":  "معرفی حرفه‌ای شرکت ایرانی",
+    "name_en":  "Iranian Company Introduction",
+    "keywords":  [
+                     "معرفی حرفه‌ای شرکت ایرانی",
+                     "Iranian Company Introduction",
+                     "iranian-company-introduction",
+                     "corporate",
+                     "شرکتی",
+                     "company",
+                     "iranian-business",
+                     "services",
+                     "growth",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "business",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "iranian",
+                     "introduction"
+                 ],
+    "synonyms":  [
+                     "corporate",
+                     "motion",
+                     "شرکتی",
+                     "business"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "animated-svg",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

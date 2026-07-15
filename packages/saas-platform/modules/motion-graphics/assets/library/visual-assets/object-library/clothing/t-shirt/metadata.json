@@ -1,0 +1,105 @@
+{
+    "name":  "T Shirt",
+    "slug":  "t-shirt",
+    "category":  "clothing",
+    "description":  "دارایی برداری T Shirt از مجموعه پوشاک برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "clothing",
+                 "t-shirt",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "consumer",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:clothing:t-shirt:v1",
+    "name_fa":  "پوشاک — T Shirt",
+    "name_en":  "T Shirt",
+    "keywords":  [
+                     "پوشاک — T Shirt",
+                     "T Shirt",
+                     "t-shirt",
+                     "clothing",
+                     "پوشاک",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "consumer",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "ai-editable",
+                     "t",
+                     "shirt"
+                 ],
+    "synonyms":  [
+                     "clothing",
+                     "object",
+                     "objects",
+                     "پوشاک",
+                     "consumer"
+                 ],
+    "industry":  [
+                     "consumer"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

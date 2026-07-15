@@ -1,0 +1,42 @@
+{
+  "module": "motion-graphics",
+  "layer": "brand-adaptation",
+  "status": "architecture-only",
+  "owner": "platform-admin",
+  "tenant_authoring": false,
+  "master_assets_immutable": true,
+  "variant_owner": "customer-or-site",
+  "supported_asset_classes": [
+    "icons",
+    "objects",
+    "illustrations",
+    "motion"
+  ],
+  "required_theme_tokens": [
+    "--brand-primary",
+    "--brand-secondary",
+    "--brand-accent",
+    "--brand-background",
+    "--brand-border"
+  ],
+  "required_variant_fields": [
+    "source_asset_id",
+    "customer_id",
+    "theme_palette",
+    "AI_prompt",
+    "AI_provider",
+    "generated_date",
+    "version"
+  ],
+  "documentation": [
+    "README.md",
+    "ASSET_INHERITANCE.md",
+    "VERSIONING.md",
+    "AI_EDITING_HISTORY.md",
+    "CUSTOMER_OWNERSHIP_RULES.md",
+    "THEME_TOKEN_CONTRACT.md",
+    "AI_PROVIDER_WORKFLOW.md",
+    "CUSTOMER_ASSET_PACKAGE.md"
+  ]
+}
+

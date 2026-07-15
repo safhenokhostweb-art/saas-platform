@@ -1,0 +1,95 @@
+{
+    "name":  "پوشش مدرن اداری",
+    "slug":  "modern-business-clothing",
+    "category":  "clothing",
+    "description":  "ست پوشش اداری مدرن برای معرفی تیم و سازمان",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "clothing",
+                 "business",
+                 "modern",
+                 "corporate",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "consumer",
+                 "premium",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:clothing:modern-business-clothing:v1",
+    "name_fa":  "پوشش مدرن اداری",
+    "name_en":  "Modern Business Clothing",
+    "keywords":  [
+                     "پوشش مدرن اداری",
+                     "Modern Business Clothing",
+                     "modern-business-clothing",
+                     "clothing",
+                     "پوشاک",
+                     "business",
+                     "modern",
+                     "corporate",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "consumer",
+                     "premium",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "clothing",
+                     "visual",
+                     "visual-assets",
+                     "پوشاک",
+                     "consumer"
+                 ],
+    "industry":  [
+                     "consumer"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,102 @@
+{
+    "name":  "دوره آموزشی",
+    "slug":  "course",
+    "category":  "education",
+    "description":  "ساختار دوره و محتوای درس",
+    "style":  "outline",
+    "usage":  [
+                  "hero",
+                  "feature-card",
+                  "service-section",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "education",
+                 "course",
+                 "saas-icon",
+                 "icons",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "minimal",
+                 "corporate",
+                 "feature",
+                 "card",
+                 "service",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "stroke",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "icon",
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "icon:education:course:v1",
+    "name_fa":  "دوره آموزشی",
+    "name_en":  "Course",
+    "keywords":  [
+                     "دوره آموزشی",
+                     "Course",
+                     "course",
+                     "education",
+                     "آموزش",
+                     "saas-icon",
+                     "icons",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "minimal",
+                     "corporate",
+                     "feature",
+                     "card",
+                     "service",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "education",
+                     "icon",
+                     "icons",
+                     "آموزش"
+                 ],
+    "industry":  [
+                     "education"
+                 ],
+    "subcategory":  "outline",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  90,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "vector-library-authoring",
+    "status":  "active"
+}

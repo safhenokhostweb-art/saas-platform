@@ -1,0 +1,31 @@
+AI EDITING INSTRUCTIONS — محصولات اداری
+
+معنا و کاربرد
+مجموعه کالای اداری برای فروشگاه و خدمات سازمانی.
+
+بخش‌های قابل ویرایش
+- رنگ‌های اصلی از متغیرهای --va-primary، --va-accent، --va-ink و --va-light کنترل می‌شوند.
+- اندازه و نسبت نمایش از viewBox و ابعاد عنصر میزبان قابل تنظیم است.
+- شدت سایه‌ها، شفافیت لایه‌ها، جزئیات تزئینی و تم روشن/تیره قابل تغییر است.
+- فرم اصلی باید همچنان مفهوم «محصولات اداری» و زمینه ایرانی آن را حفظ کند.
+
+تطبیق با برند
+رنگ‌ها را با پالت برند جایگزین کنید، کنتراست را بررسی کنید و از افزودن لوگو یا متن بدون مجوز خودداری کنید. برای صنایع مختلف می‌توان مواد، رنگ بسته‌بندی، نقش سطح و تعداد اجزا را تغییر داد.
+
+پس‌زمینه
+asset.svg شفاف است. پس‌زمینه فقط در preview.svg برای نمایش نمونه وجود دارد و می‌تواند متناسب با Hero یا Section تغییر کند.
+
+تغییرات آینده با AI
+AI می‌تواند نسخه‌های روشن، تیره، مینیمال، لوکس، تک‌رنگ و چیدمان‌های responsive بسازد؛ اما نباید URL خارجی، فونت خارجی، اسکریپت، تصویر ردیاب، واترمارک یا داده حساس اضافه کند.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+مجموعه کالای اداری برای فروشگاه و خدمات سازمانی
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

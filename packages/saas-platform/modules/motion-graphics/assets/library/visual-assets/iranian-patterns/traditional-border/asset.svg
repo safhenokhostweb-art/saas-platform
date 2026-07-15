@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title-traditional-border desc-traditional-border" aria-label="حاشیه سنتی">
+<title id="title-traditional-border">حاشیه سنتی</title>
+<desc id="desc-traditional-border">حاشیه باریک و منعطف برای قاب‌بندی بخش‌های وب</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset=".48" stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-accent)"/></linearGradient>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".5" stop-color="var(--asset-primary)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".55" stop-color="var(--asset-border)"/><stop offset="1" stop-color="var(--asset-border)"/></linearGradient>
+<linearGradient id="ruby" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-secondary)"/></linearGradient>
+<linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-primary)" stop-opacity=".28"/></linearGradient>
+<radialGradient id="warm"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-accent)" stop-opacity="0"/></radialGradient>
+</defs>
+<style>.line{fill:none;stroke:var(--asset-primary);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.fine{fill:none;stroke:var(--asset-accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.ink{fill:var(--asset-border)}.accent{fill:var(--asset-accent)}.soft{fill:var(--asset-primary);opacity:.18}</style>
+
+<g fill="none" stroke-linejoin="round"><rect x="72" y="92" width="656" height="416" rx="28" stroke="url(#gold)" stroke-width="10"/><rect x="94" y="114" width="612" height="372" rx="20" stroke="url(#teal)" stroke-width="5"/><path d="M72 180L160 92L248 180M552 180L640 92L728 180M72 420L160 508L248 420M552 420L640 508L728 420" stroke="url(#gold)" stroke-width="8"/></g>
+</svg>
+

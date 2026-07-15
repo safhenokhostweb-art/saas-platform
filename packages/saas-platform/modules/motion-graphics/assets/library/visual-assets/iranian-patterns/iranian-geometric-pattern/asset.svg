@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title-iranian-geometric-pattern desc-iranian-geometric-pattern" aria-label="نقوش هندسی ایرانی">
+<title id="title-iranian-geometric-pattern">نقوش هندسی ایرانی</title>
+<desc id="desc-iranian-geometric-pattern">شبکه هندسی ستاره‌ای الهام‌گرفته از هنر ایرانی</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset=".48" stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-accent)"/></linearGradient>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".5" stop-color="var(--asset-primary)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".55" stop-color="var(--asset-border)"/><stop offset="1" stop-color="var(--asset-border)"/></linearGradient>
+<linearGradient id="ruby" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-secondary)"/></linearGradient>
+<linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-primary)" stop-opacity=".28"/></linearGradient>
+<radialGradient id="warm"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-accent)" stop-opacity="0"/></radialGradient>
+</defs>
+<style>.line{fill:none;stroke:var(--asset-primary);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.fine{fill:none;stroke:var(--asset-accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.ink{fill:var(--asset-border)}.accent{fill:var(--asset-accent)}.soft{fill:var(--asset-primary);opacity:.18}</style>
+
+<g fill="none" stroke="url(#teal)" stroke-width="7"><path d="M400 72L450 205L588 150L530 286L672 300L530 314L588 450L450 395L400 528L350 395L212 450L270 314L128 300L270 286L212 150L350 205Z"/><path d="M400 168L438 262L536 300L438 338L400 432L362 338L264 300L362 262Z" stroke="url(#gold)"/><circle cx="400" cy="300" r="48"/></g>
+</svg>
+

@@ -1,0 +1,103 @@
+{
+    "name":  "لوازم اتاق جلسه",
+    "slug":  "meeting-room-objects",
+    "category":  "business-objects",
+    "description":  "میز جلسه و ابزار همکاری برای معرفی تیم سازمانی",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "meeting",
+                 "team",
+                 "business",
+                 "collaboration",
+                 "business-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:business-objects:meeting-room-objects:v1",
+    "name_fa":  "لوازم اتاق جلسه",
+    "name_en":  "Meeting Room Objects",
+    "keywords":  [
+                     "لوازم اتاق جلسه",
+                     "Meeting Room Objects",
+                     "meeting-room-objects",
+                     "business-objects",
+                     "ابزار کسب‌وکار",
+                     "meeting",
+                     "team",
+                     "business",
+                     "collaboration",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "room",
+                     "objects"
+                 ],
+    "synonyms":  [
+                     "business",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "ابزار کسب‌وکار"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

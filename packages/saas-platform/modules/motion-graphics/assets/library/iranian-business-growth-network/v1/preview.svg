@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="t d" aria-label="شبکه رشد کسب‌وکار ایرانی">
+  <title id="t">پیش‌نمایش شبکه رشد کسب‌وکار ایرانی</title><desc id="d">پیش‌نمایش ثابت دارایی انیمیشن شبکه کسب‌وکار</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="var(--asset-border)"/><stop offset="1" stop-color="var(--asset-border)"/></linearGradient><linearGradient id="l"><stop stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient></defs>
+  <rect width="960" height="540" rx="28" fill="url(#bg)"/>
+  <g fill="none" stroke="url(#l)" stroke-width="2" opacity=".75"><path d="M347 272 158 105M347 272 94 276M347 272 163 441M347 272 542 108M347 272 582 282M347 272 532 445"/></g>
+  <g fill="var(--asset-border)" stroke="var(--asset-primary)" stroke-width="2"><circle cx="158" cy="105" r="25"/><circle cx="94" cy="276" r="25"/><circle cx="163" cy="441" r="25"/><circle cx="542" cy="108" r="25"/><circle cx="582" cy="282" r="25"/><circle cx="532" cy="445" r="25"/></g>
+  <circle cx="347" cy="272" r="57" fill="var(--asset-accent)" opacity=".12"/><circle cx="347" cy="272" r="34" fill="var(--asset-border)" stroke="var(--asset-accent)" stroke-width="3"/><path d="M332 281v-16l15-8 15 8v16m-19 0v-9h8v9m-22 0h36" fill="none" stroke="var(--asset-accent)" stroke-width="2" stroke-linecap="round"/>
+  <g direction="rtl" text-anchor="end" font-family="Vazirmatn,IRANSans,system-ui,sans-serif"><rect x="692" y="170" width="4" height="92" rx="2" fill="var(--asset-accent)"/><text x="900" y="210" fill="var(--asset-background)" font-size="30" font-weight="700">شبکه رشد کسب‌وکار ایرانی</text><text x="900" y="248" fill="var(--asset-primary)" font-size="16">ارتباط هوشمند شرکت‌ها، متخصصان و مشتریان</text><text x="900" y="330" fill="var(--asset-primary)" font-size="13">همکاری تجاری  •  تحول دیجیتال  •  رشد برند</text></g>
+</svg>

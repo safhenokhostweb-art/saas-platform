@@ -1,0 +1,282 @@
+{
+    "version":  1,
+    "policy":  {
+                   "allow_custom_asset_tags":  true,
+                   "custom_tag_format":  "lowercase-kebab-case",
+                   "required_groups":  [
+                                           "industry",
+                                           "usage",
+                                           "style",
+                                           "audience"
+                                       ],
+                   "deprecation":  "Deprecated tags remain readable but must map to a replacement."
+               },
+    "tags":  [
+                 {
+                     "id":  "technology",
+                     "group":  "industry",
+                     "label_en":  "Technology",
+                     "label_fa":  "فناوری",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "medical",
+                     "group":  "industry",
+                     "label_en":  "Medical",
+                     "label_fa":  "پزشکی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "construction",
+                     "group":  "industry",
+                     "label_en":  "Construction",
+                     "label_fa":  "ساخت‌وساز",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "ecommerce",
+                     "group":  "industry",
+                     "label_en":  "Ecommerce",
+                     "label_fa":  "فروشگاه اینترنتی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "education",
+                     "group":  "industry",
+                     "label_en":  "Education",
+                     "label_fa":  "آموزش",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "finance",
+                     "group":  "industry",
+                     "label_en":  "Finance",
+                     "label_fa":  "مالی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "manufacturing",
+                     "group":  "industry",
+                     "label_en":  "Manufacturing",
+                     "label_fa":  "تولید",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "restaurant",
+                     "group":  "industry",
+                     "label_en":  "Restaurant",
+                     "label_fa":  "رستوران",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "tourism",
+                     "group":  "industry",
+                     "label_en":  "Tourism",
+                     "label_fa":  "گردشگری",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "business",
+                     "group":  "industry",
+                     "label_en":  "Business",
+                     "label_fa":  "کسب‌وکار",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "agriculture",
+                     "group":  "industry",
+                     "label_en":  "Agriculture",
+                     "label_fa":  "کشاورزی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "culture",
+                     "group":  "industry",
+                     "label_en":  "Culture",
+                     "label_fa":  "فرهنگ",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "beauty",
+                     "group":  "industry",
+                     "label_en":  "Beauty",
+                     "label_fa":  "زیبایی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "hero",
+                     "group":  "usage",
+                     "label_en":  "Hero",
+                     "label_fa":  "هیرو",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "feature",
+                     "group":  "usage",
+                     "label_en":  "Feature",
+                     "label_fa":  "ویژگی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "card",
+                     "group":  "usage",
+                     "label_en":  "Card",
+                     "label_fa":  "کارت",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "background",
+                     "group":  "usage",
+                     "label_en":  "Background",
+                     "label_fa":  "پس‌زمینه",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "decoration",
+                     "group":  "usage",
+                     "label_en":  "Decoration",
+                     "label_fa":  "تزئین",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "product",
+                     "group":  "usage",
+                     "label_en":  "Product",
+                     "label_fa":  "محصول",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "service",
+                     "group":  "usage",
+                     "label_en":  "Service",
+                     "label_fa":  "خدمات",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "landing-page",
+                     "group":  "usage",
+                     "label_en":  "Landing Page",
+                     "label_fa":  "لندینگ",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "modern",
+                     "group":  "style",
+                     "label_en":  "Modern",
+                     "label_fa":  "مدرن",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "premium",
+                     "group":  "style",
+                     "label_en":  "Premium",
+                     "label_fa":  "ممتاز",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "minimal",
+                     "group":  "style",
+                     "label_en":  "Minimal",
+                     "label_fa":  "مینیمال",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "traditional",
+                     "group":  "style",
+                     "label_en":  "Traditional",
+                     "label_fa":  "سنتی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "corporate",
+                     "group":  "style",
+                     "label_en":  "Corporate",
+                     "label_fa":  "شرکتی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "luxury",
+                     "group":  "style",
+                     "label_en":  "Luxury",
+                     "label_fa":  "لوکس",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "playful",
+                     "group":  "style",
+                     "label_en":  "Playful",
+                     "label_fa":  "سرزنده",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "company",
+                     "group":  "audience",
+                     "label_en":  "Company",
+                     "label_fa":  "شرکت",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "startup",
+                     "group":  "audience",
+                     "label_en":  "Startup",
+                     "label_fa":  "استارتاپ",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "professional",
+                     "group":  "audience",
+                     "label_en":  "Professional",
+                     "label_fa":  "متخصص",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "consumer",
+                     "group":  "audience",
+                     "label_en":  "Consumer",
+                     "label_fa":  "مصرف‌کننده",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "svg",
+                     "group":  "technical",
+                     "label_en":  "SVG",
+                     "label_fa":  "اس‌وی‌جی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "themeable",
+                     "group":  "technical",
+                     "label_en":  "Themeable",
+                     "label_fa":  "تم‌پذیر",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "ai-editable",
+                     "group":  "technical",
+                     "label_en":  "AI Editable",
+                     "label_fa":  "قابل‌ویرایش با هوش مصنوعی",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "animated",
+                     "group":  "technical",
+                     "label_en":  "Animated",
+                     "label_fa":  "متحرک",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "rtl-compatible",
+                     "group":  "technical",
+                     "label_en":  "RTL Compatible",
+                     "label_fa":  "سازگار با راست‌به‌چپ",
+                     "status":  "active"
+                 },
+                 {
+                     "id":  "clothing",
+                     "group":  "industry",
+                     "label_en":  "Clothing",
+                     "label_fa":  "پوشاک",
+                     "status":  "active"
+                 }
+             ]
+}

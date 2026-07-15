@@ -1,0 +1,122 @@
+{
+    "name":  "امنیت و اعتماد دیجیتال",
+    "slug":  "digital-security-trust",
+    "category":  "security",
+    "description":  "نمایش عبور داده رمزگذاری‌شده از لایه محافظ، قفل مرکزی و تراکنش تأییدشده.",
+    "purpose":  "Secure digital business animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "security",
+                 "iranian-business",
+                 "premium-motion",
+                 "web-animation",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "technology",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "بلوک‌های داده وارد سپر چندلایه می‌شوند و به تراکنش تأییدشده تبدیل می‌گردند.",
+    "storytelling_style":  "defense-in-depth protection flow",
+    "unique_elements":  [
+                            "encrypted data blocks",
+                            "layered shield",
+                            "central lock",
+                            "verification seal",
+                            "secure transaction"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:security:digital-security-trust:v2",
+    "name_fa":  "امنیت و اعتماد دیجیتال",
+    "name_en":  "Digital Security Trust",
+    "keywords":  [
+                     "امنیت و اعتماد دیجیتال",
+                     "Digital Security Trust",
+                     "digital-security-trust",
+                     "security",
+                     "امنیت",
+                     "iranian-business",
+                     "premium-motion",
+                     "web-animation",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "technology",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "digital",
+                     "trust"
+                 ],
+    "synonyms":  [
+                     "security",
+                     "motion",
+                     "امنیت",
+                     "technology"
+                 ],
+    "industry":  [
+                     "technology"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

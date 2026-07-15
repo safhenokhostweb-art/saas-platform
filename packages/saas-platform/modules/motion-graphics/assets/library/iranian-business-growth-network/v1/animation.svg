@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc" aria-label="شبکه رشد کسب‌وکار ایرانی">
+  <title id="title">شبکه رشد کسب‌وکار ایرانی</title>
+  <desc id="desc">شبکه‌ای متحرک از شرکت‌ها، متخصصان و خدمات ایرانی که به یک هسته تجاری هوشمند متصل‌اند.</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+  <style>
+    :root{--mg-primary:var(--asset-accent);--mg-accent:var(--asset-primary);--mg-ink:var(--asset-background);--mg-muted:var(--asset-primary);--mg-panel:var(--asset-border);--mg-speed:8s}
+    .halo{transform-box:fill-box;transform-origin:center;animation:halo var(--mg-speed) ease-in-out infinite}
+    .link{fill:none;stroke:url(#line);stroke-width:1.5;stroke-linecap:round;stroke-dasharray:7 12;animation:flow calc(var(--mg-speed)*.5) linear infinite}
+    .node{transform-box:fill-box;transform-origin:center;animation:node var(--mg-speed) ease-in-out infinite}
+    .node:nth-of-type(2){animation-delay:-1s}.node:nth-of-type(3){animation-delay:-2s}.node:nth-of-type(4){animation-delay:-3s}.node:nth-of-type(5){animation-delay:-4s}.node:nth-of-type(6){animation-delay:-5s}
+    .copy{animation:copy var(--mg-speed) ease-in-out infinite}
+    .spark{filter:url(#glow)}
+    @keyframes flow{to{stroke-dashoffset:-38}}
+    @keyframes halo{0%,100%{opacity:.35;transform:scale(.84)}42%,72%{opacity:.9;transform:scale(1)}}
+    @keyframes node{0%,15%,100%{opacity:.68;transform:scale(.94)}30%,70%{opacity:1;transform:scale(1)}}
+    @keyframes copy{0%,10%,92%,100%{opacity:.72;transform:translateY(4px)}22%,82%{opacity:1;transform:none}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important}.link{stroke-dasharray:none}}
+  </style>
+  <defs>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--mg-primary)"/><stop offset="1" stop-color="var(--mg-accent)" stop-opacity=".42"/></linearGradient>
+    <radialGradient id="core"><stop stop-color="var(--mg-primary)" stop-opacity=".28"/><stop offset="1" stop-color="var(--mg-primary)" stop-opacity="0"/></radialGradient>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <path id="p1" d="M322 252C260 215 217 169 169 118"/><path id="p2" d="M316 270C244 270 180 265 111 274"/><path id="p3" d="M326 293C271 331 221 371 177 425"/><path id="p4" d="M372 248C419 203 467 165 527 122"/><path id="p5" d="M378 270C448 267 504 270 564 279"/><path id="p6" d="M369 297C418 340 461 381 518 430"/>
+  </defs>
+
+  <g opacity=".24" fill="none" stroke="var(--mg-muted)" stroke-width="1"><circle cx="347" cy="272" r="150"/><circle cx="347" cy="272" r="205" stroke-dasharray="2 12"/></g>
+  <g><use href="#p1" class="link"/><use href="#p2" class="link"/><use href="#p3" class="link"/><use href="#p4" class="link"/><use href="#p5" class="link"/><use href="#p6" class="link"/></g>
+
+  <g class="halo"><circle cx="347" cy="272" r="78" fill="url(#core)"/><circle cx="347" cy="272" r="50" fill="none" stroke="var(--mg-primary)" stroke-opacity=".22"/></g>
+  <g transform="translate(347 272)">
+    <circle r="33" fill="var(--mg-panel)" stroke="var(--mg-primary)" stroke-width="2"/>
+    <path d="M-15 9V-7L0-15 15-7V9M-18 9h36M-7 9V0h14v9" fill="none" stroke="var(--mg-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g fill="var(--mg-panel)" stroke="var(--mg-accent)" stroke-width="1.5">
+    <g class="node" transform="translate(158 105)"><circle r="27"/><path d="M-11 10V-9h7v7l7-5v5l7-5v17M-14 10h28" fill="none" stroke="var(--mg-accent)" stroke-linejoin="round"/></g>
+    <g class="node" transform="translate(94 276)"><circle r="27"/><path d="M-12-8h24l-2 7H-10zm3 7v12h18V-1M-4 11V4h8v7" fill="none" stroke="var(--mg-accent)" stroke-linejoin="round"/></g>
+    <g class="node" transform="translate(163 441)"><circle r="27"/><path d="M-12 10c1-8 5-12 12-12s11 4 12 12M0-5a7 7 0 1 0 0-14 7 7 0 0 0 0 14" fill="none" stroke="var(--mg-accent)" stroke-linecap="round"/></g>
+    <g class="node" transform="translate(542 108)"><circle r="27"/><path d="M-12 5h24M-9 5v7h18V5M-7-2a7 7 0 0 1 14 0v7H-7z" fill="none" stroke="var(--mg-accent)" stroke-linejoin="round"/></g>
+    <g class="node" transform="translate(582 282)"><circle r="27"/><path d="M-13 8h26M-10 8V-5h20V8M-5-5v-7h10v7M-4 1h8" fill="none" stroke="var(--mg-accent)" stroke-linejoin="round"/></g>
+    <g class="node" transform="translate(532 445)"><circle r="27"/><path d="M-13-3h15v11h-15zm15 3h7l5 6v2H2zM-8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8m16 0a4 4 0 1 0 0-8 4 4 0 0 0 0 8" fill="none" stroke="var(--mg-accent)" stroke-linejoin="round"/></g>
+  </g>
+
+  <g fill="var(--mg-primary)" class="spark">
+    <circle r="3"><animateMotion dur="3.8s" repeatCount="indefinite"><mpath href="#p1"/></animateMotion></circle>
+    <circle r="3"><animateMotion dur="4.3s" begin="-1.2s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion></circle>
+    <circle r="3"><animateMotion dur="4.1s" begin="-2.2s" repeatCount="indefinite"><mpath href="#p3"/></animateMotion></circle>
+    <circle r="3"><animateMotion dur="3.9s" begin="-1.8s" repeatCount="indefinite"><mpath href="#p4"/></animateMotion></circle>
+    <circle r="3"><animateMotion dur="4.4s" begin="-.6s" repeatCount="indefinite"><mpath href="#p5"/></animateMotion></circle>
+    <circle r="3"><animateMotion dur="4s" begin="-2.8s" repeatCount="indefinite"><mpath href="#p6"/></animateMotion></circle>
+  </g>
+
+  <g class="copy" direction="rtl" text-anchor="end" font-family="Vazirmatn,IRANSans,system-ui,sans-serif">
+    <rect x="692" y="170" width="4" height="92" rx="2" fill="var(--mg-primary)"/>
+    <text x="900" y="210" fill="var(--mg-ink)" font-size="30" font-weight="700">شبکه رشد کسب‌وکار ایرانی</text>
+    <text x="900" y="248" fill="var(--mg-muted)" font-size="16">ارتباط هوشمند شرکت‌ها، متخصصان و مشتریان</text>
+    <g transform="translate(900 294)" fill="none" stroke="var(--mg-accent)" stroke-width="1.5"><path d="M0 0h-126"/><circle cx="-126" r="3" fill="var(--mg-accent)"/></g>
+    <text x="900" y="330" fill="var(--mg-muted)" font-size="13">همکاری تجاری  •  تحول دیجیتال  •  رشد برند</text>
+  </g>
+</svg>

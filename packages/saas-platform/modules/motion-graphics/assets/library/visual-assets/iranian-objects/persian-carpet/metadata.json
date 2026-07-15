@@ -1,0 +1,108 @@
+{
+    "name":  "فرش ایرانی",
+    "slug":  "persian-carpet",
+    "category":  "iranian-objects",
+    "description":  "فرش ایرانی ایزومتریک با ترنج مرکزی و حاشیه ظریف",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "carpet",
+                 "persian",
+                 "handmade",
+                 "interior",
+                 "iranian-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-objects:persian-carpet:v1",
+    "name_fa":  "فرش ایرانی",
+    "name_en":  "Persian Carpet",
+    "keywords":  [
+                     "فرش ایرانی",
+                     "Persian Carpet",
+                     "persian-carpet",
+                     "iranian-objects",
+                     "اشیای ایرانی",
+                     "carpet",
+                     "persian",
+                     "handmade",
+                     "interior",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "اشیای ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

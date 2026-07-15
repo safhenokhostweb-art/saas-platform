@@ -1,0 +1,104 @@
+{
+    "name":  "Coffee Cup",
+    "slug":  "coffee-cup",
+    "category":  "restaurant",
+    "description":  "دارایی برداری Coffee Cup از مجموعه رستوران برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "restaurant",
+                 "coffee-cup",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:restaurant:coffee-cup:v1",
+    "name_fa":  "رستوران — Coffee Cup",
+    "name_en":  "Coffee Cup",
+    "keywords":  [
+                     "رستوران — Coffee Cup",
+                     "Coffee Cup",
+                     "coffee-cup",
+                     "restaurant",
+                     "رستوران",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "consumer",
+                     "ai-editable",
+                     "coffee",
+                     "cup"
+                 ],
+    "synonyms":  [
+                     "restaurant",
+                     "object",
+                     "objects",
+                     "رستوران"
+                 ],
+    "industry":  [
+                     "restaurant"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

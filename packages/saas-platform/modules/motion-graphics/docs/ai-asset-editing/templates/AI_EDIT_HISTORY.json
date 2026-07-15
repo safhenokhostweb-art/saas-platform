@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "history_id": "history_template",
+  "customer_id": "customer_placeholder",
+  "asset_id": "asset:placeholder:v1",
+  "source_version": "v1",
+  "entries": []
+}

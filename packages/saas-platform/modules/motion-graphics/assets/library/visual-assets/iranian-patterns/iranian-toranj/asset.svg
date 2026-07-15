@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title-iranian-toranj desc-iranian-toranj" aria-label="ترنج ایرانی">
+<title id="title-iranian-toranj">ترنج ایرانی</title>
+<desc id="desc-iranian-toranj">مدالیون ترنج ایرانی برای هویت بصری لوکس و فرهنگی</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset=".48" stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-accent)"/></linearGradient>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".5" stop-color="var(--asset-primary)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".55" stop-color="var(--asset-border)"/><stop offset="1" stop-color="var(--asset-border)"/></linearGradient>
+<linearGradient id="ruby" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-secondary)"/></linearGradient>
+<linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-primary)" stop-opacity=".28"/></linearGradient>
+<radialGradient id="warm"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-accent)" stop-opacity="0"/></radialGradient>
+</defs>
+<style>.line{fill:none;stroke:var(--asset-primary);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.fine{fill:none;stroke:var(--asset-accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.ink{fill:var(--asset-border)}.accent{fill:var(--asset-accent)}.soft{fill:var(--asset-primary);opacity:.18}</style>
+
+<g transform="translate(400 300)"><path d="M0-230C44-176 96-158 144-144C158-96 176-44 230 0C176 44 158 96 144 144C96 158 44 176 0 230C-44 176-96 158-144 144C-158 96-176 44-230 0C-176-44-158-96-144-144C-96-158-44-176 0-230Z" fill="none" stroke="url(#gold)" stroke-width="10"/><path d="M0-156L46-74L138-46L72 24L88 120L0 78L-88 120L-72 24L-138-46L-46-74Z" fill="url(#teal)" opacity=".85"/><circle r="48" fill="url(#gold)"/><circle r="24" fill="var(--asset-border)"/></g>
+</svg>
+

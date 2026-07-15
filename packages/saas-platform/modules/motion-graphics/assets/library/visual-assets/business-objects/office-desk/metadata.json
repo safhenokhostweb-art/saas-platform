@@ -1,0 +1,101 @@
+{
+    "name":  "میز اداری",
+    "slug":  "office-desk",
+    "category":  "business-objects",
+    "description":  "میز کار حرفه‌ای با لپ‌تاپ و چیدمان مینیمال",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "office",
+                 "desk",
+                 "workspace",
+                 "business",
+                 "business-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:business-objects:office-desk:v1",
+    "name_fa":  "میز اداری",
+    "name_en":  "Office Desk",
+    "keywords":  [
+                     "میز اداری",
+                     "Office Desk",
+                     "office-desk",
+                     "business-objects",
+                     "ابزار کسب‌وکار",
+                     "office",
+                     "desk",
+                     "workspace",
+                     "business",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "business",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "ابزار کسب‌وکار"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

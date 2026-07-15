@@ -1,0 +1,36 @@
+نام دارایی: برند شخصی حرفه‌ای
+Slug: professional-personal-brand
+
+مفهوم:
+معرفی هویت حرفه‌ای یک متخصص با مهارت، تجربه، ارتباط و نشان‌های اعتماد.
+
+سناریوهای کسب‌وکار:
+مناسب برای پزشکان، وکلا، مشاوران، مدرسان و فریلنسرها و قابل استفاده در Hero، درباره ما و معرفی خدمات.
+
+موارد قابل ویرایش توسط AI:
+- رنگ‌های اصلی و مکمل، متن، تم، سرعت و چیدمان عناصر
+- عنوان و زیرعنوان فارسی و برچسب‌های پیرامونی
+- نشان مرکزی و لوگوی vector
+- تعداد گره‌ها، مسیرها و شدت micro-interaction
+- آیکن‌ها متناسب با صنعت مقصد
+
+روش شخصی‌سازی:
+رنگ‌ها از متغیرهای --p، --a، --ink، --muted و --surface در animation.svg تغییر می‌کنند. سرعت با --speed کنترل می‌شود. برای جایگزینی لوگو، محتوای گروه main در مرکز با pathهای vector و sanitize‌شده تعویض شود. متن‌ها باید فارسی و راست‌چین بمانند.
+
+تنوع‌های آینده:
+نسخه روشن، نسخه بدون متن، Section Intro، Background Motion، حالت فشرده موبایل و نسخه تخصصی برای زیرشاخه‌های Personal Brand.
+
+محدودیت امنیتی:
+هیچ script، event handler، foreignObject، تصویر embedded، فونت یا URL خارجی اضافه نشود. هر تغییر باید نسخه جدید بسازد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+معرفی هویت حرفه‌ای یک متخصص با مهارت، تجربه، ارتباط و نشان‌های اعتماد.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

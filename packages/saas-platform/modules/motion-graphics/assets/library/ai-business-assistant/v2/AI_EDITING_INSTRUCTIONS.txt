@@ -1,0 +1,36 @@
+نام دارایی: دستیار هوشمند کسب‌وکار
+نسخه: v2
+
+مفهوم منحصربه‌فرد:
+یک هسته مغزی AI در کنار داشبورد زنده، کارت پیشنهاد و صف وظایف خودکار.
+
+شیوه روایت:
+assistant workspace with scanning and recommendations
+
+عناصر اختصاصی:
+- AI brain core
+- analysis dashboard
+- recommendation card
+- automated checklist
+- live scanner
+
+قابل ویرایش توسط AI:
+رنگ‌ها، متن فارسی، نشان یا لوگو، سرعت، تم، جزئیات عناصر و ترتیب روایت. رنگ‌ها از متغیرهای --primary، --accent، --ink، --muted، --surface و --soft کنترل می‌شوند.
+
+تنوع‌های صنعتی:
+می‌توان آیکن‌ها و متن را برای زیرشاخه‌های AI تغییر داد، اما استعاره اصلی و تفاوت آن با سایر assetها باید حفظ شود.
+
+امنیت و نسخه‌بندی:
+فقط path و shapeهای sanitize‌شده استفاده شوند. script، event handler، foreignObject، فونت یا URL خارجی ممنوع است. v1 و نسخه منتشرشده تغییر نکنند؛ اصلاح بعدی باید نسخه جدید بسازد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+دستیار هوشمند داده‌ها را تحلیل می‌کند، پیشنهاد می‌دهد و وظایف کسب‌وکار را خودکار پیش می‌برد.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

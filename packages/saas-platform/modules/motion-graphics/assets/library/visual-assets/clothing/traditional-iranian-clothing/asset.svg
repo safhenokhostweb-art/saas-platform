@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title-traditional-iranian-clothing desc-traditional-iranian-clothing" aria-label="لباس سنتی ایرانی">
+<title id="title-traditional-iranian-clothing">لباس سنتی ایرانی</title>
+<desc id="desc-traditional-iranian-clothing">پوشش سنتی ایرانی با فرم متین و نقش هندسی کنترل‌شده</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset=".48" stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-accent)"/></linearGradient>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".5" stop-color="var(--asset-primary)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".55" stop-color="var(--asset-border)"/><stop offset="1" stop-color="var(--asset-border)"/></linearGradient>
+<linearGradient id="ruby" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-secondary)"/></linearGradient>
+<linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-primary)" stop-opacity=".28"/></linearGradient>
+<radialGradient id="warm"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-accent)" stop-opacity="0"/></radialGradient>
+</defs>
+<style>.line{fill:none;stroke:var(--asset-primary);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.fine{fill:none;stroke:var(--asset-accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.ink{fill:var(--asset-border)}.accent{fill:var(--asset-accent)}.soft{fill:var(--asset-primary);opacity:.18}</style>
+
+<ellipse cx="400" cy="515" rx="220" ry="34" fill="var(--asset-border)" opacity=".16"/><path d="M326 134Q400 86 474 134L514 252L474 266V472H326V266L286 252Z" fill="url(#teal)" stroke="var(--asset-accent)" stroke-width="8"/><path d="M358 120L400 208L442 120" fill="none" stroke="var(--asset-primary)" stroke-width="10"/><path d="M326 284H474M326 356H474" fill="none" stroke="var(--asset-accent)" stroke-width="7"/><path d="M364 310L400 278L436 310L400 342Z" fill="url(#gold)"/><path d="M326 472L290 512M474 472L510 512" class="fine"/>
+</svg>
+

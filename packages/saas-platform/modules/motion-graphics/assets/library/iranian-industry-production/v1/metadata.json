@@ -1,0 +1,116 @@
+{
+    "name":  "صنعت و تولید ایران",
+    "slug":  "iranian-industry-production",
+    "category":  "industry",
+    "description":  "نمایش کارخانه، خط تولید، مهندسی، کنترل کیفیت، محصول و توسعه بازار.",
+    "purpose":  "Industrial capability hero animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "industry",
+                 "factory",
+                 "production",
+                 "engineering",
+                 "quality",
+                 "export",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "manufacturing",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:industry:iranian-industry-production:v1",
+    "name_fa":  "صنعت و تولید ایران",
+    "name_en":  "Iranian Industry Production",
+    "keywords":  [
+                     "صنعت و تولید ایران",
+                     "Iranian Industry Production",
+                     "iranian-industry-production",
+                     "industry",
+                     "صنعت",
+                     "factory",
+                     "production",
+                     "engineering",
+                     "quality",
+                     "export",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "manufacturing",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "iranian"
+                 ],
+    "synonyms":  [
+                     "industry",
+                     "motion",
+                     "صنعت",
+                     "manufacturing"
+                 ],
+    "industry":  [
+                     "manufacturing"
+                 ],
+    "subcategory":  "animated-svg",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

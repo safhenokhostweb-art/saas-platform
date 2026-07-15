@@ -1,0 +1,97 @@
+{
+    "name":  "لباس سنتی ایرانی",
+    "slug":  "traditional-iranian-clothing",
+    "category":  "clothing",
+    "description":  "پوشش سنتی ایرانی با فرم متین و نقش هندسی کنترل‌شده",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "clothing",
+                 "iranian",
+                 "traditional",
+                 "culture",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "consumer",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:clothing:traditional-iranian-clothing:v1",
+    "name_fa":  "لباس سنتی ایرانی",
+    "name_en":  "Traditional Iranian Clothing",
+    "keywords":  [
+                     "لباس سنتی ایرانی",
+                     "Traditional Iranian Clothing",
+                     "traditional-iranian-clothing",
+                     "clothing",
+                     "پوشاک",
+                     "iranian",
+                     "traditional",
+                     "culture",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "consumer",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "clothing",
+                     "visual",
+                     "visual-assets",
+                     "پوشاک",
+                     "consumer"
+                 ],
+    "industry":  [
+                     "consumer"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

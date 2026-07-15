@@ -2,30 +2,64 @@
 
 ## Authority boundary
 
-The master library lives only in `packages/saas-platform/modules/motion-graphics`. It is a platform-only, non-distributable package. A main platform administrator is an authenticated user with `is_admin=true` and `site_id=null`. Every authoring route enforces both conditions.
+The master library lives only in `packages/saas-platform/modules/motion-graphics`. It is a platform-owned authoring system. A main Platform Admin is an authenticated user with `is_admin=true` and `site_id=null`; every authoring, AI, classification, version, publication, and deployment mutation route enforces that boundary.
 
-Tenant applications contain only `MotionRuntimeClient` and the `<x-motion.graphics name=... />` Blade consumer. They contain no authoring model, source parser, editable schema, AI editor, mutation endpoint, or configuration UI.
+Tenants remain consumers. Customer ownership identifies an asset whose availability is restricted to one `site_id`; it does not grant that tenant source access or authoring authority.
+
+## Ownership types
+
+### Global
+
+- Owned and authored by the Platform.
+- `ownership_type=global` and `site_id=null`.
+- Becomes available to a site only through an enabled deployment.
+- May be assigned to multiple sites, pages, and placements.
+
+### Customer
+
+- Authored by Platform Admin for one customer.
+- `ownership_type=customer` and a required owner `site_id`.
+- May be deployed only to its owner site.
+- Cross-site assignment and runtime access fail closed.
+
+`site_id` is the canonical tenant boundary under `PROJECT_CONSTITUTION.md`. `platform_id` is optional platform provenance and does not replace tenant isolation.
 
 ## Data boundary
 
-- `motion_graphics`: encrypted current authoring definition, editable schema, and AI metadata.
-- `motion_graphic_versions`: append-only encrypted source snapshots and immutable compiled-asset manifests.
-- `motion_graphic_deployments`: the canonical `site_id` tenant boundary and selected published version.
+- `motion_graphics`: encrypted current authoring definition, editable schema, AI metadata, encrypted configuration, ownership, classification, latest draft pointer, and published pointer.
+- `motion_graphic_versions`: append-only encrypted snapshots, provider provenance, parent lineage, approval, and publication history.
+- `motion_groups`, `motion_tags`, `motion_asset_tags`: platform-managed classification.
+- `motion_graphic_deployments`: site, page, placement, enabled state, priority, and selected published version.
 
-The requested generic `tenant_id` is intentionally represented as `site_id`, because `PROJECT_CONSTITUTION.md` defines `site_id` as the structural tenant-isolation key.
+Tenant responses never serialize source definitions, editable schemas, AI metadata, source descriptions, configuration, prompts, snapshots, or comparison data.
 
 ## Publication flow
 
-`draft -> approved -> published -> retired`. Publish atomically retires the former published version, promotes the approved version, updates the master pointer, and advances every deployment. Rollback never rewrites history; it copies the selected snapshot into a new draft version requiring approval.
+`draft -> review -> approved -> published -> retired`.
+
+- `current_version` points to the newest draft lineage.
+- `published_version` points to the active runtime version.
+- Creating a draft updates only `current_version`; an existing published version remains live.
+- Publishing atomically retires the former published version, advances `published_version`, records the publisher/time, and advances deployments.
+- Rollback copies a historical snapshot into a new draft whose parent is the latest version. It never rewrites history and never publishes automatically.
 
 ## Runtime contract
 
-The license-authenticated tenant endpoint returns only `name`, `version`, sanitized compiled asset descriptors (`url`, `sha256`, `mime`), and `published_at`. Model hidden fields and encrypted casts prevent source, schema, and AI metadata serialization. Asset paths are immutable: `/assets/motion/{slug}/v{version}/...`.
+The tenant-authenticated runtime endpoint and `<x-motion.graphics name='iran-network' />` resolve only an enabled deployment for the active site and the motion's published version. The projection contains only:
+
+- slug;
+- published version;
+- optimized asset URL, SHA-256, and MIME type;
+- publication timestamp.
+
+Immutable asset paths use `/assets/motion/{slug}/v{version}/...`.
 
 ## Permission matrix
 
-Platform authoring permissions are `motion.create`, `motion.update`, `motion.ai_edit`, `motion.publish`, `motion.rollback`, and `motion.delete`. Tenant capabilities are only `motion.view` and `motion.use`; these do not grant access to the master module or any mutation route.
+Platform authoring capabilities are `motion.create`, `motion.update`, `motion.ai_edit`, `motion.publish`, `motion.rollback`, and `motion.delete`. Tenant capabilities remain `motion.view` and `motion.use`; they do not grant mutation routes, source access, AI access, classification management, or deployment management.
 
 ## AI collaboration governance
 
-Before any AI-assisted work, load the module's machine-readable [AI module index](../../packages/saas-platform/modules/motion-graphics/docs/ai/AI_MODULE_INDEX.json) and every document it lists. That layer defines the AI workflow, asset schema, change boundaries, and prompt contract without expanding AI, admin, or tenant authority.
+AI providers are adapters behind `MotionAiGenerationContract`. Provider output must be normalized to the Motion Asset Schema, validated against the editable schema, and saved as an unpublished immutable draft. AI cannot approve or publish.
+
+Before AI-assisted work, load the module's [AI module index](../../packages/saas-platform/modules/motion-graphics/docs/ai/AI_MODULE_INDEX.json) and every document it lists.

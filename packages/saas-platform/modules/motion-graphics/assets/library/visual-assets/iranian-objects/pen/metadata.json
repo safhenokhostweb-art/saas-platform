@@ -1,0 +1,105 @@
+{
+    "name":  "قلم",
+    "slug":  "pen",
+    "category":  "iranian-objects",
+    "description":  "قلم نفیس با فرم مینیمال برای معرفی نوشت‌افزار و خدمات",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "pen",
+                 "writing",
+                 "office",
+                 "premium",
+                 "iranian-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-objects:pen:v1",
+    "name_fa":  "قلم",
+    "name_en":  "Pen",
+    "keywords":  [
+                     "قلم",
+                     "Pen",
+                     "pen",
+                     "iranian-objects",
+                     "اشیای ایرانی",
+                     "writing",
+                     "office",
+                     "premium",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "اشیای ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

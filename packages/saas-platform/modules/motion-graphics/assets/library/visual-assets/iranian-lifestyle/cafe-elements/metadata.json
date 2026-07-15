@@ -1,0 +1,109 @@
+{
+    "name":  "عناصر کافه",
+    "slug":  "cafe-elements",
+    "category":  "iranian-lifestyle",
+    "description":  "چیدمان کافه ایرانی شامل فنجان، میز و گیاه",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "cafe",
+                 "coffee",
+                 "hospitality",
+                 "lifestyle",
+                 "iranian-lifestyle",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-lifestyle:cafe-elements:v1",
+    "name_fa":  "عناصر کافه",
+    "name_en":  "Cafe Elements",
+    "keywords":  [
+                     "عناصر کافه",
+                     "Cafe Elements",
+                     "cafe-elements",
+                     "iranian-lifestyle",
+                     "سبک زندگی ایرانی",
+                     "cafe",
+                     "coffee",
+                     "hospitality",
+                     "lifestyle",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "elements"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "lifestyle",
+                     "visual",
+                     "visual-assets",
+                     "سبک زندگی ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

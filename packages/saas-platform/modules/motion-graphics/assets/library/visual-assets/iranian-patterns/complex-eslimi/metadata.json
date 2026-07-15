@@ -1,0 +1,107 @@
+{
+    "name":  "اسلیمی پیچیده",
+    "slug":  "complex-eslimi",
+    "category":  "iranian-patterns",
+    "description":  "ترکیب اسلیمی چندلایه با جزئیات ظریف و معاصر",
+    "type":  "pattern",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "iranian",
+                 "eslimi",
+                 "ornamental",
+                 "premium",
+                 "iranian-patterns",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-patterns:complex-eslimi:v1",
+    "name_fa":  "اسلیمی پیچیده",
+    "name_en":  "Complex Eslimi",
+    "keywords":  [
+                     "اسلیمی پیچیده",
+                     "Complex Eslimi",
+                     "complex-eslimi",
+                     "iranian-patterns",
+                     "نقوش ایرانی",
+                     "iranian",
+                     "eslimi",
+                     "ornamental",
+                     "premium",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "complex"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "patterns",
+                     "visual",
+                     "visual-assets",
+                     "نقوش ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "pattern",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,45 @@
+نام دارایی: شبکه رشد کسب‌وکار ایرانی
+Slug: iranian-business-growth-network
+
+مفهوم:
+این انیمیشن یک هسته مرکزی کسب‌وکار را نشان می‌دهد که به تولید، فروشگاه، متخصص، خدمات شرکتی، فناوری و ارسال کالا متصل است. حرکت ذرات روی مسیرها نماد همکاری تجاری، اتصال مشتری و شرکت و رشد دیجیتال است.
+
+موارد قابل تغییر توسط AI:
+- رنگ اصلی طلایی، رنگ مکمل فیروزه‌ای، رنگ متن و سطح تیره
+- عنوان، زیرعنوان و عبارت‌های کوتاه فارسی
+- لوگوی ساده داخل هسته مرکزی
+- سرعت حلقه از طریق متغیر --mg-speed
+- تم روشن یا تیره با حفظ کنتراست دسترس‌پذیر
+- اندازه و نسبت خروجی با حفظ viewBox
+- تعداد گره‌ها، آیکن هر گره و مسیرهای اتصال
+
+محدودیت‌های ویرایش:
+- متن باید فارسی، راست‌چین و مرتبط با فضای کسب‌وکار ایرانی باقی بماند.
+- از نشانه‌های فرهنگی عربی، بناهای خارجی و متن نامرتبط استفاده نشود.
+- هیچ کتابخانه، فونت، تصویر یا وابستگی remote اضافه نشود.
+- پس‌زمینه animation.svg شفاف بماند.
+- عناصر script، event handler، foreignObject و URL خارجی ممنوع‌اند.
+- نسخه منتشرشده تغییر نکند؛ هر اصلاح باید نسخه جدید بسازد.
+
+تغییرات پیشنهادی آینده:
+- نسخه ویژه کارخانه و تولید
+- نسخه ویژه پزشک، وکیل، مشاور و متخصص
+- نسخه فروشگاه، پرداخت امن و ارسال کالا
+- نسخه فناوری، هوش مصنوعی، امنیت و فضای ابری
+- حالت Hero، Call To Action، Section Divider، Loading و Background Motion
+- جایگزینی نشان مرکزی با لوگوی مشتری در مرحله یکپارچه‌سازی مجاز
+
+پرامپت اصلی ساخت:
+«یک دارایی وب متحرک، مینیمال و حرفه‌ای برای کتابخانه Motion Graphics SaaS بساز که شبکه رشد کسب‌وکارهای ایرانی را با یک هسته مرکزی، خطوط ارتباطی پویا و گره‌های تولید، فروش، تخصص، فناوری و ارسال نمایش دهد. خروجی باید SVG سبک، responsive، بدون وابستگی خارجی، دارای پس‌زمینه شفاف، متن فارسی راست‌چین، حلقه نرم و پشتیبانی از prefers-reduced-motion باشد.»
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+نمایش ارتباط هوشمند میان شرکت‌ها، متخصصان، فروشگاه‌ها و خدمات ایرانی در یک شبکه حرفه‌ای.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

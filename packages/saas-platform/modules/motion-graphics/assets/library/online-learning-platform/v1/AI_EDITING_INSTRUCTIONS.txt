@@ -1,0 +1,36 @@
+نام دارایی: آموزش و یادگیری آنلاین
+Slug: online-learning-platform
+
+مفهوم:
+نمایش مدرس، دانش‌پذیران، دوره‌های آنلاین و جریان اشتراک دانش در یک پلتفرم آموزشی.
+
+سناریوهای کسب‌وکار:
+مناسب برای مدارس، آموزشگاه‌ها، شرکت‌های آموزشی و مربیان و قابل استفاده در Hero، درباره ما و معرفی خدمات.
+
+موارد قابل ویرایش توسط AI:
+- رنگ اصلی، مکمل، متن، سطح و تم روشن یا تیره
+- عنوان، زیرعنوان و برچسب‌های فارسی
+- لوگو یا نشان vector مرکزی
+- سرعت، تعداد گره‌ها، مسیرها و micro-interaction
+- آیکن‌ها و عناصر متناسب با صنعت مقصد
+
+شخصی‌سازی:
+رنگ‌ها با --p، --a، --ink، --muted و --surface و سرعت با --speed کنترل می‌شوند. برای جایگزینی لوگو، گروه main مرکزی با pathهای sanitize‌شده عوض شود. متن فارسی و راست‌چین باقی بماند.
+
+تنوع آینده:
+نسخه روشن، بدون متن، Section Intro، Background Motion، موبایل فشرده و نسخه‌های تخصصی زیرمجموعه Education.
+
+امنیت:
+script، event handler، foreignObject، تصویر embedded، فونت و URL خارجی ممنوع است. هر اصلاح باید نسخه جدید ایجاد کند.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+نمایش مدرس، دانش‌پذیران، دوره‌های آنلاین و جریان اشتراک دانش در یک پلتفرم آموزشی.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

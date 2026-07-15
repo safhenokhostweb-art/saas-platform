@@ -1,0 +1,36 @@
+نام دارایی: امنیت و اعتماد دیجیتال
+نسخه: v2
+
+مفهوم منحصربه‌فرد:
+بلوک‌های داده وارد سپر چندلایه می‌شوند و به تراکنش تأییدشده تبدیل می‌گردند.
+
+شیوه روایت:
+defense-in-depth protection flow
+
+عناصر اختصاصی:
+- encrypted data blocks
+- layered shield
+- central lock
+- verification seal
+- secure transaction
+
+قابل ویرایش توسط AI:
+رنگ‌ها، متن فارسی، لوگو، سرعت، تم و جزئیات عناصر. متغیرهای --primary، --accent، --ink، --muted، --surface و --soft برای تم هستند.
+
+تنوع صنعتی:
+جزئیات را می‌توان برای زیرشاخه‌های Security تغییر داد، اما استعاره و داستان اختصاصی حفظ شود.
+
+امنیت:
+script، event handler، foreignObject، فونت و URL خارجی ممنوع است. v1 تغییر نکند و اصلاح بعدی نسخه جدید بسازد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+نمایش عبور داده رمزگذاری‌شده از لایه محافظ، قفل مرکزی و تراکنش تأییدشده.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

@@ -1,0 +1,100 @@
+{
+    "name":  "اسناد",
+    "slug":  "documents",
+    "category":  "business-objects",
+    "description":  "مجموعه اسناد و پوشه‌های حرفه‌ای برای خدمات سازمانی",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "documents",
+                 "files",
+                 "business",
+                 "office",
+                 "business-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:business-objects:documents:v1",
+    "name_fa":  "اسناد",
+    "name_en":  "Documents",
+    "keywords":  [
+                     "اسناد",
+                     "Documents",
+                     "documents",
+                     "business-objects",
+                     "ابزار کسب‌وکار",
+                     "files",
+                     "business",
+                     "office",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "business",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "ابزار کسب‌وکار"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

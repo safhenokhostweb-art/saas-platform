@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="preview-title-traditional-lamp preview-desc-traditional-lamp" aria-label="چراغ سنتی">
+<title id="preview-title-traditional-lamp">پیش‌نمایش چراغ سنتی</title>
+<desc id="preview-desc-traditional-lamp">چراغ سنتی ایرانی با شبکه هندسی و نور گرم</desc>
+<style id="asset-theme">:root{--asset-primary:#42c7b5;--asset-secondary:#1b3554;--asset-accent:#e4b94f;--asset-background:#f3f7f7;--asset-border:#17304d;color:var(--asset-border);--asset-current:currentColor}</style>
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset=".48" stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-accent)"/></linearGradient>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".5" stop-color="var(--asset-primary)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-primary)"/><stop offset=".55" stop-color="var(--asset-border)"/><stop offset="1" stop-color="var(--asset-border)"/></linearGradient>
+<linearGradient id="ruby" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-accent)"/><stop offset="1" stop-color="var(--asset-secondary)"/></linearGradient>
+<linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)"/><stop offset="1" stop-color="var(--asset-primary)"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-primary)" stop-opacity=".28"/></linearGradient>
+<radialGradient id="warm"><stop stop-color="var(--asset-background)" stop-opacity=".85"/><stop offset="1" stop-color="var(--asset-accent)" stop-opacity="0"/></radialGradient>
+</defs>
+<style>.line{fill:none;stroke:var(--asset-primary);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.fine{fill:none;stroke:var(--asset-accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.ink{fill:var(--asset-border)}.accent{fill:var(--asset-accent)}.soft{fill:var(--asset-primary);opacity:.18}</style>
+<rect width="800" height="600" rx="42" fill="var(--asset-border)"/><circle cx="92" cy="82" r="180" fill="var(--asset-primary)" opacity=".12"/><circle cx="716" cy="520" r="220" fill="var(--asset-accent)" opacity=".1"/>
+<circle cx="400" cy="310" r="210" fill="url(#warm)"/><ellipse cx="400" cy="515" rx="220" ry="34" fill="var(--asset-border)" opacity=".16"/><path d="M350 110H450L478 188H322Z" fill="url(#gold)"/><path d="M322 188H478L504 424L448 490H352L296 424Z" fill="url(#navy)" stroke="var(--asset-accent)" stroke-width="10"/><path d="M340 230L400 188L460 230L442 414L400 458L358 414Z" fill="var(--asset-accent)" opacity=".72"/><path d="M340 230L460 414M460 230L340 414M400 188V458" fill="none" stroke="var(--asset-border)" stroke-width="8"/><path d="M400 110V62" class="fine"/>
+</svg>
+

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title-sofa desc-sofa" aria-label="Sofa">
+<title id="title-sofa">Sofa</title>
+<desc id="desc-sofa">دارایی برداری Sofa از مجموعه مبلمان با پشتیبانی کامل از رنگ‌بندی پوسته.</desc>
+<style>:root{--asset-primary:var(--theme-primary,#42c7b5);--asset-secondary:var(--theme-secondary,#1b3554);--asset-accent:var(--theme-accent,#e4b94f);--asset-background:var(--theme-background,#f3f7f7);--asset-border:var(--theme-border,#17304d);--asset-shadow:var(--theme-shadow,rgba(7,18,34,.16));color:var(--asset-border)}.primary{fill:var(--asset-primary)}.secondary{fill:var(--asset-secondary)}.accent{fill:var(--asset-accent)}.background{fill:var(--asset-background)}.border{stroke:var(--asset-border);stroke-width:5;stroke-linejoin:round}.outline{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.detail{fill:none;stroke:currentColor;stroke-width:4;stroke-linecap:round}.current{color:var(--asset-border)}.shadow{fill:var(--asset-shadow)}.subtle{opacity:.2}</style>
+
+<ellipse class="shadow" cx="128" cy="218" rx="76" ry="12"/><path class="secondary border" d="M55 104q0-22 22-22h102q22 0 22 22v54H55z"/><path class="primary border" d="M43 144h170v48q0 16-16 16H59q-16 0-16-16z"/><path class="accent" d="M76 98h45v45H76zm59 0h45v45h-45z"/><path class="current outline" d="M62 208v18m132-18v18M43 160h170"/><g class="semantic-identity" data-asset-identity="sofa" transform="translate(207 46) scale(.72)"><path class="current detail" d="M-18 8v-18h36V8m-30 0v10m24-10v10"/><path class="current detail" d="M-9 28h18M-16 33h32"/><path class="current detail identity-weave" d="M-23 53 L-7 47 L15 46 M-13 62 h7"/></g>
+</svg>
+

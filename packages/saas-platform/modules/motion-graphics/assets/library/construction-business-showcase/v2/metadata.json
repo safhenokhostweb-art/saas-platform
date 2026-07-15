@@ -1,0 +1,119 @@
+{
+    "name":  "نمایش خدمات ساخت‌وساز",
+    "slug":  "construction-business-showcase",
+    "category":  "construction",
+    "description":  "روایت شکل‌گیری پروژه از نقشه معماری و خطوط مهندسی تا بالا آمدن ساختمان.",
+    "purpose":  "Construction process showcase animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "construction",
+                 "iranian-business",
+                 "premium-motion",
+                 "web-animation",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "نقشه blueprint روی میز به کمک جرثقیل و فرایند مهندسی به ساختمان واقعی تبدیل می‌شود.",
+    "storytelling_style":  "blueprint-to-building construction sequence",
+    "unique_elements":  [
+                            "blueprint grid",
+                            "architecture drawing",
+                            "tower crane",
+                            "rising floors",
+                            "location marker"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:construction:construction-business-showcase:v2",
+    "name_fa":  "نمایش خدمات ساخت‌وساز",
+    "name_en":  "Construction Business Showcase",
+    "keywords":  [
+                     "نمایش خدمات ساخت‌وساز",
+                     "Construction Business Showcase",
+                     "construction-business-showcase",
+                     "construction",
+                     "ساخت‌وساز",
+                     "iranian-business",
+                     "premium-motion",
+                     "web-animation",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "business",
+                     "showcase"
+                 ],
+    "synonyms":  [
+                     "construction",
+                     "motion",
+                     "ساخت‌وساز"
+                 ],
+    "industry":  [
+                     "construction"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

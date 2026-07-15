@@ -1,0 +1,104 @@
+{
+    "name":  "Information Desk",
+    "slug":  "information-desk",
+    "category":  "tourism",
+    "description":  "دارایی برداری Information Desk از مجموعه گردشگری برای قالب‌ها و اجزای وب.",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "feature",
+                  "product",
+                  "section",
+                  "dashboard",
+                  "motion-graphic",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "tourism",
+                 "information-desk",
+                 "themeable",
+                 "svg",
+                 "marketplace",
+                 "objects",
+                 "master-asset",
+                 "premium",
+                 "modern",
+                 "product",
+                 "decoration",
+                 "card",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "theme_support":  true,
+    "editable_properties":  [
+                                "colors",
+                                "material",
+                                "style",
+                                "outline",
+                                "filled version",
+                                "shadow",
+                                "size",
+                                "rotation",
+                                "color",
+                                "theme"
+                            ],
+    "ai_editable":  true,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "currentColor":  true
+                     },
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "library_id":  "object:tourism:information-desk:v1",
+    "name_fa":  "گردشگری — Information Desk",
+    "name_en":  "Information Desk",
+    "keywords":  [
+                     "گردشگری — Information Desk",
+                     "Information Desk",
+                     "information-desk",
+                     "tourism",
+                     "گردشگری",
+                     "themeable",
+                     "svg",
+                     "marketplace",
+                     "objects",
+                     "master-asset",
+                     "premium",
+                     "modern",
+                     "product",
+                     "decoration",
+                     "card",
+                     "consumer",
+                     "ai-editable",
+                     "information",
+                     "desk"
+                 ],
+    "synonyms":  [
+                     "tourism",
+                     "object",
+                     "objects",
+                     "گردشگری"
+                 ],
+    "industry":  [
+                     "tourism"
+                 ],
+    "subcategory":  "themeable-object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  86,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "object-library-authoring",
+    "status":  "active"
+}

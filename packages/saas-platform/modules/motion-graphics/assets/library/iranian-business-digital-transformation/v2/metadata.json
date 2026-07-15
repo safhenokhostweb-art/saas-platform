@@ -1,0 +1,123 @@
+{
+    "name":  "تحول دیجیتال کسب‌وکار ایرانی",
+    "slug":  "iranian-business-digital-transformation",
+    "category":  "technology",
+    "description":  "روایت تبدیل فرایند سنتی شرکت ایرانی به عملیات ابری، خودکار و داده‌محور.",
+    "purpose":  "Digital transformation hero animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "technology",
+                 "iranian-business",
+                 "premium-motion",
+                 "web-animation",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "startup",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "فرایند سنتی در سمت چپ وارد لایه‌های تبدیل می‌شود و به داشبورد ابری و رشد دیجیتال در سمت راست می‌رسد.",
+    "storytelling_style":  "left-to-right transformation pipeline",
+    "unique_elements":  [
+                            "traditional office",
+                            "transformation layers",
+                            "cloud platform",
+                            "automation gears",
+                            "digital growth chart"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:technology:iranian-business-digital-transformation:v2",
+    "name_fa":  "تحول دیجیتال کسب‌وکار ایرانی",
+    "name_en":  "Iranian Business Digital Transformation",
+    "keywords":  [
+                     "تحول دیجیتال کسب‌وکار ایرانی",
+                     "Iranian Business Digital Transformation",
+                     "iranian-business-digital-transformation",
+                     "technology",
+                     "فناوری",
+                     "iranian-business",
+                     "premium-motion",
+                     "web-animation",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "startup",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "iranian",
+                     "business",
+                     "digital",
+                     "transformation"
+                 ],
+    "synonyms":  [
+                     "technology",
+                     "motion",
+                     "فناوری"
+                 ],
+    "industry":  [
+                     "technology"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

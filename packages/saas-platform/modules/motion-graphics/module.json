@@ -1,0 +1,11 @@
+{
+    "name": "Standalone Motion Graphics",
+    "module_slug": "motion-graphics",
+    "version": "0.2.0-standalone",
+    "type": "standalone-package",
+    "enabled": false,
+    "auto_discover": false,
+    "distributable": false,
+    "integration_status": "prepared-not-connected",
+    "tenant_editing": false
+}

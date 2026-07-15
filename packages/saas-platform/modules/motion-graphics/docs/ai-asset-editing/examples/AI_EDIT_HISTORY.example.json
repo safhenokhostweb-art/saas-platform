@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "history_id": "history_demo_001",
+  "customer_id": "site_demo_1001",
+  "asset_id": "icon:business:company:v1",
+  "source_version": "v1",
+  "entries": [
+    {
+      "entry_id": "history_entry_001",
+      "sequence": 1,
+      "event": "proposal_received",
+      "recorded_at": "2026-07-14T12:00:01+03:30",
+      "session_id": "session_demo_001",
+      "attempt_id": "attempt_demo_001",
+      "proposal_id": "proposal_demo_001",
+      "requested_by": "platform_admin_demo_001",
+      "prompt": "Private fictional test prompt; adapt editable theme colors only.",
+      "provider": "fake",
+      "model": "fake-asset-editor-v1",
+      "input_assets": [
+        {
+          "asset_id": "icon:business:company:v1",
+          "version": "v1",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "changes": ["Mapped editable primary color to the approved Brand Theme."],
+      "result": "generated",
+      "approval_status": "pending",
+      "source_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "proposal_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "validation": {
+        "profile": "ai-asset-editing-v1",
+        "passed": true,
+        "codes": []
+      },
+      "previous_entry_sha256": null
+    }
+  ]
+}

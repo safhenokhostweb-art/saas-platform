@@ -1,0 +1,29 @@
+نام دارایی: شبکه کسب‌وکارهای ایران
+نسخه: v2
+
+مفهوم منحصربه‌فرد:
+نقشه واقعی ایران با استان‌ها، هسته تجاری قزوین، مسیرهای منطقه‌ای و توسعه بازار.
+
+شیوه روایت:
+geographic market expansion across Iran
+
+عناصر قابل ویرایش:
+رنگ استان‌ها، رنگ قزوین، شهرهای مقصد، مسیرهای بازار، متن فارسی، سرعت و نشان شرکت. هندسه استان‌ها فقط با منبع جغرافیایی معتبر تغییر کند.
+
+تنوع آینده:
+شبکه فروش، لجستیک، شعب شرکت، پوشش خدمات، بازار استانی و نسخه دارای نام تمام استان‌ها.
+
+امنیت:
+هیچ نقشه remote، script، event handler، foreignObject، فونت یا URL خارجی اضافه نشود. v1 تغییر نکند و اصلاح بعدی نسخه جدید باشد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+نقشه دقیق استان‌های ایران با قزوین به‌عنوان هسته آغاز و اتصال بازارهای منطقه‌ای در سراسر کشور.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

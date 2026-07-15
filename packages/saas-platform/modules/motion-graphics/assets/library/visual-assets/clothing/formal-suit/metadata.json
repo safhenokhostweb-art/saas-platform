@@ -1,0 +1,99 @@
+{
+    "name":  "کت‌وشلوار رسمی",
+    "slug":  "formal-suit",
+    "category":  "clothing",
+    "description":  "کت‌وشلوار رسمی ایزوله برای خدمات حرفه‌ای و شخصی",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "suit",
+                 "formal",
+                 "professional",
+                 "business",
+                 "clothing",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "consumer",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:clothing:formal-suit:v1",
+    "name_fa":  "کت‌وشلوار رسمی",
+    "name_en":  "Formal Suit",
+    "keywords":  [
+                     "کت‌وشلوار رسمی",
+                     "Formal Suit",
+                     "formal-suit",
+                     "clothing",
+                     "پوشاک",
+                     "suit",
+                     "formal",
+                     "professional",
+                     "business",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "consumer",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "clothing",
+                     "visual",
+                     "visual-assets",
+                     "پوشاک",
+                     "consumer"
+                 ],
+    "industry":  [
+                     "consumer"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

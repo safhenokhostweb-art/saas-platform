@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "AI_EDIT_HISTORY.schema.json",
+  "title": "Immutable AI Asset Edit History",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "history_id", "customer_id", "asset_id", "source_version", "entries"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "history_id": { "$ref": "#/$defs/opaqueId" },
+    "customer_id": { "$ref": "#/$defs/opaqueId" },
+    "asset_id": { "type": "string", "minLength": 3, "maxLength": 255 },
+    "source_version": { "type": "string", "pattern": "^v?[1-9][0-9]*$" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/historyEntry" }
+    }
+  },
+  "$defs": {
+    "opaqueId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "historyEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "sequence",
+        "event",
+        "recorded_at",
+        "session_id",
+        "requested_by",
+        "prompt",
+        "provider",
+        "model",
+        "input_assets",
+        "changes",
+        "result",
+        "approval_status"
+      ],
+      "properties": {
+        "entry_id": { "$ref": "#/$defs/opaqueId" },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "event": {
+          "enum": [
+            "session_created",
+            "provider_requested",
+            "proposal_received",
+            "proposal_validated",
+            "proposal_rejected",
+            "proposal_approved",
+            "variant_created",
+            "session_cancelled",
+            "history_redacted"
+          ]
+        },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "session_id": { "$ref": "#/$defs/opaqueId" },
+        "attempt_id": { "$ref": "#/$defs/opaqueId" },
+        "proposal_id": { "$ref": "#/$defs/opaqueId" },
+        "variant_id": { "$ref": "#/$defs/opaqueId" },
+        "requested_by": { "$ref": "#/$defs/opaqueId" },
+        "prompt": { "type": "string", "maxLength": 16000 },
+        "provider": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+        "model": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "input_assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["asset_id", "version", "sha256"],
+            "properties": {
+              "asset_id": { "type": "string", "minLength": 3, "maxLength": 255 },
+              "version": { "type": "string", "pattern": "^v?[1-9][0-9]*$" },
+              "sha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        },
+        "changes": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "type": "string", "maxLength": 1000 }
+        },
+        "result": { "enum": ["pending", "generated", "validation_failed", "approved", "rejected", "cancelled", "variant_created", "redacted"] },
+        "approval_status": { "enum": ["not_applicable", "pending", "approved", "rejected"] },
+        "source_sha256": { "$ref": "#/$defs/sha256" },
+        "proposal_sha256": { "$ref": "#/$defs/sha256" },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "profile": { "type": "string", "maxLength": 128 },
+            "passed": { "type": "boolean" },
+            "codes": { "type": "array", "items": { "type": "string", "maxLength": 128 } }
+          }
+        },
+        "decision_reason": { "type": "string", "maxLength": 2000 },
+        "previous_entry_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

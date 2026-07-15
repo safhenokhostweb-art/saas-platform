@@ -1,0 +1,106 @@
+{
+    "name":  "استکان سنتی",
+    "slug":  "traditional-cup",
+    "category":  "iranian-objects",
+    "description":  "استکان چای سنتی با نعلبکی و بخار لطیف",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "tea",
+                 "cup",
+                 "traditional",
+                 "hospitality",
+                 "iranian-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-objects:traditional-cup:v1",
+    "name_fa":  "استکان سنتی",
+    "name_en":  "Traditional Cup",
+    "keywords":  [
+                     "استکان سنتی",
+                     "Traditional Cup",
+                     "traditional-cup",
+                     "iranian-objects",
+                     "اشیای ایرانی",
+                     "tea",
+                     "cup",
+                     "traditional",
+                     "hospitality",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "اشیای ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

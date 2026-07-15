@@ -1,0 +1,45 @@
+{
+  "request_id": "request_demo_001",
+  "customer_scope": "site_demo_1001",
+  "asset_id": "icon:business:company:v1",
+  "asset_version": "v1",
+  "asset_files": [
+    {
+      "file_id": "file_master_svg_001",
+      "role": "primary",
+      "media_type": "image/svg+xml",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sanitized_content": "<svg viewBox=\"0 0 24 24\" role=\"img\"><title>Company</title><desc>Sanitized fake test asset</desc><path id=\"editable-primary\" d=\"M4 20V4h16v16z\"/></svg>"
+    }
+  ],
+  "metadata": {
+    "asset_type": "icon",
+    "engine": "SVG",
+    "editable_properties": ["colors", "theme"],
+    "safe_context": {
+      "category": "business",
+      "style": "outline"
+    }
+  },
+  "brand_theme": {
+    "primary": "#0F766E",
+    "secondary": "#134E4A",
+    "accent": "#F59E0B",
+    "background": "#FFFFFF",
+    "border": "#CBD5E1"
+  },
+  "logo": {
+    "sanitized_ref": "logo_demo_001",
+    "media_type": "image/svg+xml",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "instruction": "Apply the approved company palette while preserving structure and accessibility.",
+  "prompt": "Return one safe SVG proposal. Change only editable color/theme properties. Preserve viewBox, title, desc, IDs, and all security constraints. Do not approve or publish.",
+  "constraints": {
+    "preserve_master": true,
+    "preserve_structure": true,
+    "preserve_accessibility": true,
+    "allow_external_dependencies": false,
+    "allowed_changes": ["recolor", "theme-variant"]
+  }
+}

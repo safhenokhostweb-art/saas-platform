@@ -1,0 +1,103 @@
+{
+    "name":  "پرونده پزشکی",
+    "slug":  "medical-record",
+    "category":  "medical",
+    "description":  "پرونده و سوابق سلامت بیمار",
+    "style":  "outline",
+    "usage":  [
+                  "hero",
+                  "feature-card",
+                  "service-section",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "medical",
+                 "medical-record",
+                 "saas-icon",
+                 "icons",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "minimal",
+                 "corporate",
+                 "feature",
+                 "card",
+                 "service",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "stroke",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "icon",
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "icon:medical:medical-record:v1",
+    "name_fa":  "پرونده پزشکی",
+    "name_en":  "Medical Record",
+    "keywords":  [
+                     "پرونده پزشکی",
+                     "Medical Record",
+                     "medical-record",
+                     "medical",
+                     "پزشکی",
+                     "saas-icon",
+                     "icons",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "minimal",
+                     "corporate",
+                     "feature",
+                     "card",
+                     "service",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "record"
+                 ],
+    "synonyms":  [
+                     "medical",
+                     "icon",
+                     "icons",
+                     "پزشکی"
+                 ],
+    "industry":  [
+                     "medical"
+                 ],
+    "subcategory":  "outline",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  90,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "vector-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,24 @@
+نام آیکن: فضای ابری
+Slug: cloud
+دسته: technology
+
+معنا:
+زیرساخت ابری و سرویس‌های آنلاین
+
+ویرایش توسط AI:
+رنگ اصلی با --icon-color و رنگ تأکیدی با --icon-accent تغییر می‌کند. ضخامت stroke، اندازه و جزئیات هندسی قابل تنظیم‌اند. تناسب viewBox و خوانایی در اندازه کوچک حفظ شود.
+
+سازگاری برند و صنعت:
+رنگ‌ها با هویت برند هماهنگ شوند و جزئیات فرعی متناسب با صنعت تغییر کنند، اما معنای اصلی آیکن ثابت بماند. script، فونت، تصویر و URL خارجی ممنوع است.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+زیرساخت ابری و سرویس‌های آنلاین
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

@@ -1,0 +1,105 @@
+{
+    "name":  "رمزگذاری",
+    "slug":  "encryption",
+    "category":  "security",
+    "description":  "رمزگذاری و تبدیل امن داده",
+    "style":  "outline",
+    "usage":  [
+                  "hero",
+                  "feature-card",
+                  "service-section",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "tags":  [
+                 "security",
+                 "encryption",
+                 "saas-icon",
+                 "icons",
+                 "master-asset",
+                 "themeable",
+                 "technology",
+                 "premium",
+                 "modern",
+                 "minimal",
+                 "corporate",
+                 "feature",
+                 "card",
+                 "service",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "stroke",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "icon",
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "icon:security:encryption:v1",
+    "name_fa":  "رمزگذاری",
+    "name_en":  "Encryption",
+    "keywords":  [
+                     "رمزگذاری",
+                     "Encryption",
+                     "encryption",
+                     "security",
+                     "امنیت",
+                     "saas-icon",
+                     "icons",
+                     "master-asset",
+                     "themeable",
+                     "technology",
+                     "premium",
+                     "modern",
+                     "minimal",
+                     "corporate",
+                     "feature",
+                     "card",
+                     "service",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "security",
+                     "icon",
+                     "icons",
+                     "امنیت",
+                     "technology"
+                 ],
+    "industry":  [
+                     "technology"
+                 ],
+    "subcategory":  "outline",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  90,
+                          "reusability":  98,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "vector-library-authoring",
+    "status":  "active"
+}

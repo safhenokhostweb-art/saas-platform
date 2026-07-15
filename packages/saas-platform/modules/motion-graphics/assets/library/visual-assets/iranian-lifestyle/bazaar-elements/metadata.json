@@ -1,0 +1,109 @@
+{
+    "name":  "عناصر بازار ایرانی",
+    "slug":  "bazaar-elements",
+    "category":  "iranian-lifestyle",
+    "description":  "ویترین و سایه‌بان بازار ایرانی با کالاهای دست‌ساز",
+    "type":  "illustration",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "bazaar",
+                 "market",
+                 "iranian",
+                 "commerce",
+                 "iranian-lifestyle",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-lifestyle:bazaar-elements:v1",
+    "name_fa":  "عناصر بازار ایرانی",
+    "name_en":  "Bazaar Elements",
+    "keywords":  [
+                     "عناصر بازار ایرانی",
+                     "Bazaar Elements",
+                     "bazaar-elements",
+                     "iranian-lifestyle",
+                     "سبک زندگی ایرانی",
+                     "bazaar",
+                     "market",
+                     "iranian",
+                     "commerce",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "elements"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "lifestyle",
+                     "visual",
+                     "visual-assets",
+                     "سبک زندگی ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "illustration",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

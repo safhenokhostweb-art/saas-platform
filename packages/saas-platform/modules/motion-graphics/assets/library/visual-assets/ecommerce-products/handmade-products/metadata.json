@@ -1,0 +1,102 @@
+{
+    "name":  "محصولات دست‌ساز",
+    "slug":  "handmade-products",
+    "category":  "ecommerce-products",
+    "description":  "مجموعه محصول دست‌ساز شامل سفال و بافت",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "handmade",
+                 "craft",
+                 "product",
+                 "marketplace",
+                 "ecommerce-products",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "ecommerce",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:ecommerce-products:handmade-products:v1",
+    "name_fa":  "محصولات دست‌ساز",
+    "name_en":  "Handmade Products",
+    "keywords":  [
+                     "محصولات دست‌ساز",
+                     "Handmade Products",
+                     "handmade-products",
+                     "ecommerce-products",
+                     "محصولات فروشگاهی",
+                     "handmade",
+                     "craft",
+                     "product",
+                     "marketplace",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "ecommerce",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "consumer",
+                     "ai-editable",
+                     "products"
+                 ],
+    "synonyms":  [
+                     "ecommerce",
+                     "products",
+                     "visual",
+                     "visual-assets",
+                     "محصولات فروشگاهی"
+                 ],
+    "industry":  [
+                     "ecommerce"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

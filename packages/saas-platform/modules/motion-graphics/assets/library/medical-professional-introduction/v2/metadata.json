@@ -1,0 +1,120 @@
+{
+    "name":  "معرفی حرفه‌ای پزشک",
+    "slug":  "medical-professional-introduction",
+    "category":  "medical",
+    "description":  "روایت ارتباط امن و انسانی میان پزشک و بیمار با خدمات سلامت دیجیتال.",
+    "purpose":  "Doctor and patient trust animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "healthcare",
+                 "iranian-business",
+                 "premium-motion",
+                 "web-animation",
+                 "medical",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "پزشک و بیمار در دو سوی یک پنل سلامت با موج قلب و گفت‌وگوی امن.",
+    "storytelling_style":  "doctor-patient consultation scene",
+    "unique_elements":  [
+                            "doctor portrait",
+                            "patient portrait",
+                            "heart waveform",
+                            "digital health panel",
+                            "secure consultation"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:medical:medical-professional-introduction:v2",
+    "name_fa":  "معرفی حرفه‌ای پزشک",
+    "name_en":  "Medical Professional Introduction",
+    "keywords":  [
+                     "معرفی حرفه‌ای پزشک",
+                     "Medical Professional Introduction",
+                     "medical-professional-introduction",
+                     "medical",
+                     "پزشکی",
+                     "healthcare",
+                     "iranian-business",
+                     "premium-motion",
+                     "web-animation",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "introduction"
+                 ],
+    "synonyms":  [
+                     "medical",
+                     "motion",
+                     "پزشکی"
+                 ],
+    "industry":  [
+                     "medical"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

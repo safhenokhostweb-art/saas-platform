@@ -1,0 +1,36 @@
+نام دارایی: آموزش و یادگیری آنلاین
+نسخه: v2
+
+مفهوم منحصربه‌فرد:
+دانش از کتاب باز وارد کلاس آنلاین می‌شود و در قالب دوره و پیشرفت دانش‌پذیر ادامه می‌یابد.
+
+شیوه روایت:
+knowledge unfolding into a digital classroom
+
+عناصر اختصاصی:
+- open book
+- teacher screen
+- course cards
+- student workspace
+- progress ribbon
+
+قابل ویرایش توسط AI:
+رنگ‌ها، متن فارسی، لوگو، سرعت، تم و جزئیات عناصر. متغیرهای --primary، --accent، --ink، --muted، --surface و --soft برای تم هستند.
+
+تنوع صنعتی:
+جزئیات را می‌توان برای زیرشاخه‌های Education تغییر داد، اما استعاره و داستان اختصاصی حفظ شود.
+
+امنیت:
+script، event handler، foreignObject، فونت و URL خارجی ممنوع است. v1 تغییر نکند و اصلاح بعدی نسخه جدید بسازد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+روایت یادگیری دیجیتال با مدرس، کتاب باز، رابط دوره، دانش‌پذیر و مسیر پیشرفت.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

@@ -1,0 +1,109 @@
+{
+    "name":  "بته‌جقه",
+    "slug":  "boteh-jegheh",
+    "category":  "iranian-patterns",
+    "description":  "الگوی بته‌جقه بازطراحی‌شده برای رابط‌های مدرن",
+    "type":  "pattern",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "iranian",
+                 "paisley",
+                 "boteh-jegheh",
+                 "pattern",
+                 "iranian-patterns",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-patterns:boteh-jegheh:v1",
+    "name_fa":  "بته‌جقه",
+    "name_en":  "Boteh Jegheh",
+    "keywords":  [
+                     "بته‌جقه",
+                     "Boteh Jegheh",
+                     "boteh-jegheh",
+                     "iranian-patterns",
+                     "نقوش ایرانی",
+                     "iranian",
+                     "paisley",
+                     "pattern",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "boteh",
+                     "jegheh"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "patterns",
+                     "visual",
+                     "visual-assets",
+                     "نقوش ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "pattern",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

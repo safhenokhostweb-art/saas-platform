@@ -1,0 +1,36 @@
+نام دارایی: نمایش خدمات ساخت‌وساز
+نسخه: v2
+
+مفهوم منحصربه‌فرد:
+نقشه blueprint روی میز به کمک جرثقیل و فرایند مهندسی به ساختمان واقعی تبدیل می‌شود.
+
+شیوه روایت:
+blueprint-to-building construction sequence
+
+عناصر اختصاصی:
+- blueprint grid
+- architecture drawing
+- tower crane
+- rising floors
+- location marker
+
+قابل ویرایش توسط AI:
+رنگ‌ها، متن فارسی، لوگو، سرعت، تم و جزئیات عناصر. متغیرهای --primary، --accent، --ink، --muted، --surface و --soft برای تم هستند.
+
+تنوع صنعتی:
+جزئیات را می‌توان برای زیرشاخه‌های Construction تغییر داد، اما استعاره و داستان اختصاصی حفظ شود.
+
+امنیت:
+script، event handler، foreignObject، فونت و URL خارجی ممنوع است. v1 تغییر نکند و اصلاح بعدی نسخه جدید بسازد.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+روایت شکل‌گیری پروژه از نقشه معماری و خطوط مهندسی تا بالا آمدن ساختمان.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

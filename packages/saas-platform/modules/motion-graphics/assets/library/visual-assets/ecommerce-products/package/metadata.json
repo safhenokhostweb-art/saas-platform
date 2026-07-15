@@ -1,0 +1,98 @@
+{
+    "name":  "بسته محصول",
+    "slug":  "package",
+    "category":  "ecommerce-products",
+    "description":  "بسته ارسال محصول با نشان تجاری قابل جایگزینی",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "package",
+                 "shipping",
+                 "ecommerce",
+                 "delivery",
+                 "ecommerce-products",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "consumer",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:ecommerce-products:package:v1",
+    "name_fa":  "بسته محصول",
+    "name_en":  "Package",
+    "keywords":  [
+                     "بسته محصول",
+                     "Package",
+                     "package",
+                     "ecommerce-products",
+                     "محصولات فروشگاهی",
+                     "shipping",
+                     "ecommerce",
+                     "delivery",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "consumer",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "ecommerce",
+                     "products",
+                     "visual",
+                     "visual-assets",
+                     "محصولات فروشگاهی"
+                 ],
+    "industry":  [
+                     "ecommerce"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

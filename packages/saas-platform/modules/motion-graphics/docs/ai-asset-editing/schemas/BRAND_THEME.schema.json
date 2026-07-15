@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "BRAND_THEME.schema.json",
+  "title": "Brand Theme",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["primary", "secondary", "accent", "background", "border"],
+  "properties": {
+    "primary": { "$ref": "#/$defs/color" },
+    "secondary": { "$ref": "#/$defs/color" },
+    "accent": { "$ref": "#/$defs/color" },
+    "background": { "$ref": "#/$defs/color" },
+    "border": { "$ref": "#/$defs/color" }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"
+    }
+  }
+}

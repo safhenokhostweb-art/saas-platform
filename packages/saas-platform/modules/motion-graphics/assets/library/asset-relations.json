@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "relation_type": "recommended-bundle",
+  "relationships": [
+    {
+      "id": "company-website",
+      "name_fa": "وب‌سایت شرکتی",
+      "tags": [
+        "business",
+        "company",
+        "corporate"
+      ],
+      "assets": [
+        "icon:business:company:v1",
+        "object:office:briefcase:v1",
+        "visual:business-objects:office-desk:v1",
+        "motion:corporate:iranian-company-introduction:v1"
+      ]
+    },
+    {
+      "id": "technology-startup",
+      "name_fa": "استارتاپ فناوری",
+      "tags": [
+        "technology",
+        "startup",
+        "modern"
+      ],
+      "assets": [
+        "icon:technology:artificial-intelligence:v1",
+        "object:electronics:laptop:v1",
+        "motion:technology:iranian-business-digital-transformation:v2",
+        "motion:ai:ai-business-assistant:v2"
+      ]
+    },
+    {
+      "id": "ecommerce-store",
+      "name_fa": "فروشگاه اینترنتی",
+      "tags": [
+        "ecommerce",
+        "consumer",
+        "product"
+      ],
+      "assets": [
+        "icon:ecommerce:shopping-cart:v1",
+        "object:electronics:smartphone:v1",
+        "visual:ecommerce-products:mobile-phone:v1",
+        "motion:ecommerce:iranian-ecommerce-journey:v2"
+      ]
+    },
+    {
+      "id": "restaurant-brand",
+      "name_fa": "برند رستوران",
+      "tags": [
+        "restaurant",
+        "consumer",
+        "service"
+      ],
+      "assets": [
+        "object:restaurant:chef-hat:v1",
+        "object:food:kebab:v1",
+        "visual:iranian-lifestyle:cafe-elements:v1",
+        "icon:business:brand:v1"
+      ]
+    },
+    {
+      "id": "medical-service",
+      "name_fa": "خدمات پزشکی",
+      "tags": [
+        "medical",
+        "professional",
+        "service"
+      ],
+      "assets": [
+        "icon:medical:doctor:v1",
+        "object:medical:stethoscope:v1",
+        "object:medical:first-aid-kit:v1",
+        "motion:medical:medical-professional-introduction:v2"
+      ]
+    },
+    {
+      "id": "construction-company",
+      "name_fa": "شرکت ساختمانی",
+      "tags": [
+        "construction",
+        "company",
+        "service"
+      ],
+      "assets": [
+        "icon:industry:engineering:v1",
+        "object:construction:safety-helmet:v1",
+        "object:construction:blueprint:v1",
+        "motion:construction:construction-business-showcase:v2"
+      ]
+    },
+    {
+      "id": "education-platform",
+      "name_fa": "پلتفرم آموزشی",
+      "tags": [
+        "education",
+        "professional",
+        "feature"
+      ],
+      "assets": [
+        "icon:education:course:v1",
+        "object:education:graduation-cap:v1",
+        "object:education:online-learning:v1",
+        "motion:education:online-learning-platform:v2"
+      ]
+    },
+    {
+      "id": "tourism-landing",
+      "name_fa": "لندینگ گردشگری",
+      "tags": [
+        "tourism",
+        "consumer",
+        "landing-page"
+      ],
+      "assets": [
+        "object:tourism:suitcase:v1",
+        "object:tourism:hotel:v1",
+        "object:tourism:location-pin:v1",
+        "visual:iranian-lifestyle:traditional-architecture-details:v1"
+      ]
+    },
+    {
+      "id": "professional-profile",
+      "name_fa": "پروفایل حرفه‌ای",
+      "tags": [
+        "professional",
+        "personal",
+        "service"
+      ],
+      "assets": [
+        "icon:personal:professional-profile:v1",
+        "object:office:business-card:v1",
+        "visual:business-objects:business-cards:v1",
+        "motion:personal-brand:professional-personal-brand:v2"
+      ]
+    },
+    {
+      "id": "manufacturing-company",
+      "name_fa": "شرکت تولیدی",
+      "tags": [
+        "manufacturing",
+        "company",
+        "industry"
+      ],
+      "assets": [
+        "icon:industry:factory:v1",
+        "object:construction:toolbox:v1",
+        "icon:industry:production:v1",
+        "motion:industry:iranian-industry-production:v2"
+      ]
+    },
+    {
+      "id": "security-service",
+      "name_fa": "خدمات امنیت دیجیتال",
+      "tags": [
+        "technology",
+        "security",
+        "professional"
+      ],
+      "assets": [
+        "icon:security:shield:v1",
+        "icon:technology:cybersecurity:v1",
+        "object:electronics:server:v1",
+        "motion:security:digital-security-trust:v2"
+      ]
+    },
+    {
+      "id": "iranian-cultural-brand",
+      "name_fa": "برند فرهنگی ایرانی",
+      "tags": [
+        "culture",
+        "traditional",
+        "luxury"
+      ],
+      "assets": [
+        "object:iranian-traditional:samovar:v1",
+        "object:iranian-traditional:persian-carpet:v1",
+        "visual:iranian-patterns:iranian-toranj:v1",
+        "visual:iranian-objects:persian-tea-set:v1"
+      ]
+    },
+    {
+      "id": "beauty-store",
+      "name_fa": "فروشگاه زیبایی",
+      "tags": [
+        "beauty",
+        "consumer",
+        "product"
+      ],
+      "assets": [
+        "object:beauty:perfume:v1",
+        "object:beauty:makeup:v1",
+        "visual:ecommerce-products:cosmetics:v1"
+      ]
+    },
+    {
+      "id": "agriculture-business",
+      "name_fa": "کسب‌وکار کشاورزی",
+      "tags": [
+        "agriculture",
+        "business",
+        "product"
+      ],
+      "assets": [
+        "object:agriculture:tractor:v1",
+        "object:agriculture:wheat:v1",
+        "object:agriculture:greenhouse:v1",
+        "visual:iranian-lifestyle:garden-elements:v1"
+      ]
+    }
+  ]
+}
+

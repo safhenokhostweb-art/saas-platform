@@ -1,0 +1,18 @@
+نام آیکن: ماشین‌آلات
+دسته: industry
+
+معنا: چرخ‌دنده و ماشین صنعتی
+
+AI می‌تواند رنگ‌ها، stroke، اندازه و جزئیات صنعتی را تغییر دهد. --icon-color و --icon-accent برای برند استفاده شوند. viewBox و معنای اصلی حفظ شوند؛ script، فونت، تصویر و URL خارجی ممنوع است.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+چرخ‌دنده و ماشین صنعتی
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.

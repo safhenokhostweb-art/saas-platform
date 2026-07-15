@@ -1,0 +1,104 @@
+{
+    "name":  "کارت ویزیت",
+    "slug":  "business-cards",
+    "category":  "business-objects",
+    "description":  "کارت‌های ویزیت لایه‌ای با محل لوگوی قابل ویرایش",
+    "type":  "object",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "business-card",
+                 "brand",
+                 "identity",
+                 "print",
+                 "business-objects",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "business",
+                 "premium",
+                 "modern",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:business-objects:business-cards:v1",
+    "name_fa":  "کارت ویزیت",
+    "name_en":  "Business Cards",
+    "keywords":  [
+                     "کارت ویزیت",
+                     "Business Cards",
+                     "business-cards",
+                     "business-objects",
+                     "ابزار کسب‌وکار",
+                     "business-card",
+                     "brand",
+                     "identity",
+                     "print",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "business",
+                     "premium",
+                     "modern",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable",
+                     "cards"
+                 ],
+    "synonyms":  [
+                     "business",
+                     "objects",
+                     "visual",
+                     "visual-assets",
+                     "ابزار کسب‌وکار"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "object",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

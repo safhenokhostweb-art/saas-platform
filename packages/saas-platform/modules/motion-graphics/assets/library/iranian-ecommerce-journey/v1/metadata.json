@@ -1,0 +1,110 @@
+{
+    "name":  "سفر مشتری فروشگاه اینترنتی",
+    "slug":  "iranian-ecommerce-journey",
+    "category":  "ecommerce",
+    "description":  "مسیر کامل خرید آنلاین از کشف محصول تا سبد خرید، پرداخت امن، ارسال و رضایت مشتری.",
+    "purpose":  "E-commerce customer journey animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "ecommerce",
+                 "online-shopping",
+                 "secure-payment",
+                 "delivery",
+                 "customer",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "consumer",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:ecommerce:iranian-ecommerce-journey:v1",
+    "name_fa":  "سفر مشتری فروشگاه اینترنتی",
+    "name_en":  "Iranian Ecommerce Journey",
+    "keywords":  [
+                     "سفر مشتری فروشگاه اینترنتی",
+                     "Iranian Ecommerce Journey",
+                     "iranian-ecommerce-journey",
+                     "ecommerce",
+                     "فروشگاه اینترنتی",
+                     "online-shopping",
+                     "secure-payment",
+                     "delivery",
+                     "customer",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "consumer",
+                     "motion",
+                     "ai-editable",
+                     "iranian",
+                     "journey"
+                 ],
+    "synonyms":  [
+                     "ecommerce",
+                     "motion",
+                     "فروشگاه اینترنتی"
+                 ],
+    "industry":  [
+                     "ecommerce"
+                 ],
+    "subcategory":  "animated-svg",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

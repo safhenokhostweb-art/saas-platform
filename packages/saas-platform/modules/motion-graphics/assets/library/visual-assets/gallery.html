@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>گالری دارایی‌های بصری ایرانی</title>
+  <style>
+    :root{--bg:#07111f;--panel:#0d1b2d;--panel-2:#12243a;--line:#213a55;--text:#eef6f5;--muted:#9eb1c4;--teal:#53d2bd;--gold:#e2b34d;--danger:#ff8c8c}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 85% 5%,rgba(42,163,151,.15),transparent 28rem),radial-gradient(circle at 10% 90%,rgba(218,166,58,.1),transparent 26rem),var(--bg);color:var(--text);font-family:Tahoma,"Segoe UI",sans-serif}
+    a{color:inherit}
+    .shell{width:min(1440px,calc(100% - 32px));margin:auto;padding:54px 0 72px}
+    .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:30px}
+    .eyebrow{margin:0 0 9px;color:var(--teal);font-size:.82rem;font-weight:700;letter-spacing:.08em}
+    h1{margin:0;font-size:clamp(1.65rem,4vw,3.1rem);line-height:1.3}
+    .lead{max-width:720px;margin:13px 0 0;color:var(--muted);line-height:2}
+    .count{flex:0 0 auto;padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:rgba(13,27,45,.72);color:var(--gold);font-weight:700}
+    .toolbar{position:sticky;z-index:10;top:12px;display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:14px;margin-bottom:28px;padding:14px;border:1px solid rgba(70,106,137,.5);border-radius:20px;background:rgba(7,17,31,.88);box-shadow:0 18px 50px rgba(0,0,0,.2);backdrop-filter:blur(16px)}
+    .search{width:100%;min-height:46px;padding:0 16px;border:1px solid var(--line);border-radius:13px;outline:none;background:var(--panel);color:var(--text);font:inherit}
+    .search:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(83,210,189,.12)}
+    .filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+    button,.button{min-height:42px;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--muted);padding:0 13px;font:inherit;font-size:.86rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;transition:.2s ease}
+    button:hover,.button:hover{border-color:#55718d;color:var(--text);transform:translateY(-1px)}
+    button[aria-pressed="true"]{border-color:var(--teal);background:rgba(83,210,189,.12);color:var(--teal)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+    .card{overflow:hidden;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(18,36,58,.96),rgba(10,24,40,.96));box-shadow:0 16px 38px rgba(0,0,0,.16);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+    .card:hover{transform:translateY(-4px);border-color:#3f647f;box-shadow:0 22px 54px rgba(0,0,0,.25)}
+    .visual{position:relative;display:block;aspect-ratio:4/3;overflow:hidden;background:#081526;border-bottom:1px solid var(--line)}
+    .visual img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .35s ease}
+    .card:hover .visual img{transform:scale(1.025)}
+    .type{position:absolute;top:12px;right:12px;padding:6px 9px;border:1px solid rgba(255,255,255,.12);border-radius:9px;background:rgba(7,17,31,.75);color:#c4d3df;font-size:.72rem;backdrop-filter:blur(8px)}
+    .body{padding:17px}
+    .category{margin:0 0 6px;color:var(--teal);font-size:.75rem}
+    h2{margin:0;font-size:1.04rem;line-height:1.7}
+    .slug{margin:3px 0 14px;color:#7890a6;font-size:.72rem;direction:ltr;text-align:right;overflow-wrap:anywhere}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .actions .primary{grid-column:1/-1;border-color:rgba(226,179,77,.55);background:rgba(226,179,77,.1);color:#f4cf75}
+    .empty,.error{grid-column:1/-1;padding:52px 22px;border:1px dashed var(--line);border-radius:20px;text-align:center;color:var(--muted)}
+    .error{color:var(--danger)}
+    footer{margin-top:36px;text-align:center;color:#6f859a;font-size:.8rem}
+    @media(max-width:780px){.shell{width:min(100% - 20px,1440px);padding-top:30px}.hero{align-items:flex-start;flex-direction:column}.toolbar{position:static;grid-template-columns:1fr}.filters{overflow:auto;flex-wrap:nowrap;padding-bottom:3px}.filters button{white-space:nowrap}.grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">MOTION GRAPHICS · VISUAL ASSETS</p>
+        <h1>کتابخانه دارایی‌های بصری ایرانی</h1>
+        <p class="lead">پیش‌نمایش کامل دارایی‌های SVG مستقل و تم‌پذیر. برای بررسی هر بسته، فایل اصلی، Preview یا Metadata را مستقیماً باز کنید.</p>
+      </div>
+      <output class="count" id="result-count" aria-live="polite">در حال بارگذاری…</output>
+    </header>
+
+    <section class="toolbar" aria-label="ابزارهای جستجو و فیلتر">
+      <input class="search" id="search" type="search" placeholder="جستجو بر اساس نام، دسته یا برچسب…" autocomplete="off" aria-label="جستجوی دارایی‌ها">
+      <div class="filters" id="filters" role="group" aria-label="فیلتر دسته‌بندی"></div>
+    </section>
+
+    <section class="grid" id="gallery" aria-label="دارایی‌های بصری">
+      <p class="empty">در حال خواندن فهرست دارایی‌ها…</p>
+    </section>
+
+    <footer>صفحه تست مستقل — بدون وابستگی به Laravel یا کتابخانه خارجی</footer>
+  </main>
+
+  <script>
+    'use strict';
+    const categoryLabels={
+      'iranian-patterns':'نقوش ایرانی',
+      'iranian-objects':'اشیای ایرانی',
+      'clothing':'پوشاک',
+      'ecommerce-products':'محصولات فروشگاهی',
+      'business-objects':'لوازم کسب‌وکار',
+      'iranian-lifestyle':'سبک زندگی ایرانی',
+      'furniture':'مبلمان',
+      'electronics':'الکترونیک',
+      'kitchen':'آشپزخانه',
+      'office':'اداری',
+      'medical':'پزشکی',
+      'construction':'ساخت‌وساز',
+      'agriculture':'کشاورزی',
+      'food':'مواد غذایی',
+      'transportation':'حمل‌ونقل',
+      'education':'آموزش',
+      'tourism':'گردشگری',
+      'restaurant':'رستوران',
+      'beauty':'زیبایی',
+      'iranian-traditional':'سنتی ایرانی'
+    };
+    const typeLabels={pattern:'الگو',object:'شیء',illustration:'تصویرسازی'};
+    const state={assets:[],category:'all',query:''};
+    const gallery=document.getElementById('gallery');
+    const filters=document.getElementById('filters');
+    const search=document.getElementById('search');
+    const resultCount=document.getElementById('result-count');
+
+    function createElement(tag,className,text){
+      const element=document.createElement(tag);
+      if(className) element.className=className;
+      if(text!==undefined) element.textContent=text;
+      return element;
+    }
+
+    function safeSearchText(asset){
+      return [asset.name,asset.slug,asset.category,asset.type,...(asset.tags||[])].join(' ').toLocaleLowerCase('fa');
+    }
+
+    function assetLink(href,label,className='button'){
+      const link=createElement('a',className,label);
+      link.href=href;
+      link.target='_blank';
+      link.rel='noopener';
+      return link;
+    }
+
+    function renderFilters(categories){
+      filters.replaceChildren();
+      const options=[['all','همه'],...categories.map(category=>[category,categoryLabels[category]||category])];
+      options.forEach(([value,label])=>{
+        const button=createElement('button','',label);
+        button.type='button';
+        button.dataset.category=value;
+        button.setAttribute('aria-pressed',String(state.category===value));
+        button.addEventListener('click',()=>{
+          state.category=value;
+          filters.querySelectorAll('button').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.category===value)));
+          renderGallery();
+        });
+        filters.append(button);
+      });
+    }
+
+    function renderCard(asset){
+      const card=createElement('article','card');
+      const visual=assetLink(asset.preview,'','visual');
+      visual.setAttribute('aria-label',`باز کردن پیش‌نمایش ${asset.name}`);
+      const image=document.createElement('img');
+      image.src=asset.preview;
+      image.alt=`پیش‌نمایش ${asset.name}`;
+      image.loading='lazy';
+      image.decoding='async';
+      const type=createElement('span','type',typeLabels[asset.type]||asset.type);
+      visual.append(image,type);
+
+      const body=createElement('div','body');
+      body.append(
+        createElement('p','category',categoryLabels[asset.category]||asset.category),
+        createElement('h2','',asset.name),
+        createElement('p','slug',asset.slug)
+      );
+      const actions=createElement('div','actions');
+      actions.append(
+        assetLink(asset.path,'نمایش فایل اصلی','button primary'),
+        assetLink(asset.preview,'Preview'),
+        assetLink(asset.metadata,'Metadata')
+      );
+      body.append(actions);
+      card.append(visual,body);
+      return card;
+    }
+
+    function renderGallery(){
+      const query=state.query.trim().toLocaleLowerCase('fa');
+      const filtered=state.assets.filter(asset=>
+        (state.category==='all'||asset.category===state.category)&&
+        (!query||safeSearchText(asset).includes(query))
+      );
+      gallery.replaceChildren();
+      if(!filtered.length){
+        gallery.append(createElement('p','empty','موردی با این جستجو پیدا نشد.'));
+      }else{
+        const fragment=document.createDocumentFragment();
+        filtered.forEach(asset=>fragment.append(renderCard(asset)));
+        gallery.append(fragment);
+      }
+      resultCount.textContent=`${filtered.length.toLocaleString('fa-IR')} از ${state.assets.length.toLocaleString('fa-IR')} مورد`;
+    }
+
+    search.addEventListener('input',event=>{state.query=event.target.value;renderGallery()});
+
+    fetch('./visual-assets-index.json',{cache:'no-store'})
+      .then(response=>{if(!response.ok) throw new Error(`HTTP ${response.status}`);return response.json()})
+      .then(index=>{
+        if(!Array.isArray(index.assets)) throw new Error('ساختار index معتبر نیست.');
+        state.assets=index.assets;
+        renderFilters(index.categories||[]);
+        renderGallery();
+      })
+      .catch(error=>{
+        gallery.replaceChildren(createElement('p','error',`فهرست بارگذاری نشد: ${error.message}. صفحه را از طریق وب‌سرور محلی باز کنید.`));
+        resultCount.textContent='خطا در بارگذاری';
+      });
+  </script>
+</body>
+</html>

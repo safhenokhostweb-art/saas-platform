@@ -1,0 +1,108 @@
+{
+    "name":  "نقوش هندسی ایرانی",
+    "slug":  "iranian-geometric-pattern",
+    "category":  "iranian-patterns",
+    "description":  "شبکه هندسی ستاره‌ای الهام‌گرفته از هنر ایرانی",
+    "type":  "pattern",
+    "usage":  [
+                  "hero",
+                  "background",
+                  "product",
+                  "section",
+                  "card"
+              ],
+    "tags":  [
+                 "iranian",
+                 "geometric",
+                 "star",
+                 "pattern",
+                 "iranian-patterns",
+                 "visual-assets",
+                 "master-asset",
+                 "themeable",
+                 "culture",
+                 "premium",
+                 "modern",
+                 "traditional",
+                 "luxury",
+                 "background",
+                 "decoration",
+                 "hero",
+                 "company",
+                 "professional",
+                 "ai-editable"
+             ],
+    "editable_properties":  [
+                                "color",
+                                "size",
+                                "theme",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "visual:iranian-patterns:iranian-geometric-pattern:v1",
+    "name_fa":  "نقوش هندسی ایرانی",
+    "name_en":  "Iranian Geometric Pattern",
+    "keywords":  [
+                     "نقوش هندسی ایرانی",
+                     "Iranian Geometric Pattern",
+                     "iranian-geometric-pattern",
+                     "iranian-patterns",
+                     "نقوش ایرانی",
+                     "iranian",
+                     "geometric",
+                     "star",
+                     "pattern",
+                     "visual-assets",
+                     "master-asset",
+                     "themeable",
+                     "culture",
+                     "premium",
+                     "modern",
+                     "traditional",
+                     "luxury",
+                     "background",
+                     "decoration",
+                     "hero",
+                     "company",
+                     "professional",
+                     "ai-editable"
+                 ],
+    "synonyms":  [
+                     "iranian",
+                     "patterns",
+                     "visual",
+                     "visual-assets",
+                     "نقوش ایرانی",
+                     "culture"
+                 ],
+    "industry":  [
+                     "culture"
+                 ],
+    "subcategory":  "pattern",
+    "version":  "v1",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  91,
+                          "reusability":  96,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "visual-library-authoring",
+    "status":  "active"
+}

@@ -1,0 +1,123 @@
+{
+    "name":  "شبکه کسب‌وکارهای ایران",
+    "slug":  "iran-business-network-map",
+    "category":  "business-network",
+    "description":  "نقشه دقیق استان‌های ایران با قزوین به‌عنوان هسته آغاز و اتصال بازارهای منطقه‌ای در سراسر کشور.",
+    "purpose":  "Iran regional business ecosystem animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "iran-map",
+                 "business-network",
+                 "regional-market",
+                 "iranian-business",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "business",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "نقشه واقعی ایران با استان‌ها، هسته تجاری قزوین، مسیرهای منطقه‌ای و توسعه بازار.",
+    "storytelling_style":  "geographic market expansion across Iran",
+    "unique_elements":  [
+                            "recognizable provincial Iran map",
+                            "Qazvin origin",
+                            "regional business locations",
+                            "market routes",
+                            "province-level geometry"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:business-network:iran-business-network-map:v2",
+    "name_fa":  "شبکه کسب‌وکارهای ایران",
+    "name_en":  "Iran Business Network Map",
+    "keywords":  [
+                     "شبکه کسب‌وکارهای ایران",
+                     "Iran Business Network Map",
+                     "iran-business-network-map",
+                     "business-network",
+                     "شبکه کسب‌وکار",
+                     "iran-map",
+                     "regional-market",
+                     "iranian-business",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "business",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "iran",
+                     "network",
+                     "map"
+                 ],
+    "synonyms":  [
+                     "business",
+                     "network",
+                     "motion",
+                     "شبکه کسب‌وکار"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

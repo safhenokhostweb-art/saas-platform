@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title-bed desc-bed" aria-label="Bed">
+<title id="title-bed">Bed</title>
+<desc id="desc-bed">دارایی برداری Bed از مجموعه مبلمان با پشتیبانی کامل از رنگ‌بندی پوسته.</desc>
+<style>:root{--asset-primary:var(--theme-primary,#42c7b5);--asset-secondary:var(--theme-secondary,#1b3554);--asset-accent:var(--theme-accent,#e4b94f);--asset-background:var(--theme-background,#f3f7f7);--asset-border:var(--theme-border,#17304d);--asset-shadow:var(--theme-shadow,rgba(7,18,34,.16));color:var(--asset-border)}.primary{fill:var(--asset-primary)}.secondary{fill:var(--asset-secondary)}.accent{fill:var(--asset-accent)}.background{fill:var(--asset-background)}.border{stroke:var(--asset-border);stroke-width:5;stroke-linejoin:round}.outline{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.detail{fill:none;stroke:currentColor;stroke-width:4;stroke-linecap:round}.current{color:var(--asset-border)}.shadow{fill:var(--asset-shadow)}.subtle{opacity:.2}</style>
+
+<ellipse class="shadow" cx="128" cy="218" rx="76" ry="12"/><rect class="secondary border" x="39" y="102" width="178" height="106" rx="13"/><rect class="primary" x="51" y="121" width="154" height="66" rx="10"/><path class="current outline" d="M49 208v21m158-21v21M39 151h178"/><g class="semantic-identity" data-asset-identity="bed" transform="translate(207 46) scale(.72)"><path class="current detail" d="M-18 8v-18h36V8m-30 0v10m24-10v10"/><path class="current detail" d="M-24 28h48"/><path class="current detail identity-weave" d="M-15 44 L-5 45 L10 51 M-19 63 h7"/></g>
+</svg>
+

@@ -1,0 +1,121 @@
+{
+    "name":  "برند شخصی حرفه‌ای",
+    "slug":  "professional-personal-brand",
+    "category":  "personal-brand",
+    "description":  "روایت مسیر رشد یک متخصص از هویت و مهارت‌ها تا تجربه، دستاورد و ارتباط حرفه‌ای.",
+    "purpose":  "Professional personal journey animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "personal-brand",
+                 "iranian-business",
+                 "premium-motion",
+                 "web-animation",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "business",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "پروفایل متخصص در کنار یک تایم‌لاین عمودی از مهارت، تجربه، دستاورد و ارتباط.",
+    "storytelling_style":  "vertical professional timeline",
+    "unique_elements":  [
+                            "expert portrait",
+                            "skill badges",
+                            "experience timeline",
+                            "achievement medal",
+                            "communication card"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:personal-brand:professional-personal-brand:v2",
+    "name_fa":  "برند شخصی حرفه‌ای",
+    "name_en":  "Professional Personal Brand",
+    "keywords":  [
+                     "برند شخصی حرفه‌ای",
+                     "Professional Personal Brand",
+                     "professional-personal-brand",
+                     "personal-brand",
+                     "برند شخصی",
+                     "iranian-business",
+                     "premium-motion",
+                     "web-animation",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "business",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "personal",
+                     "brand"
+                 ],
+    "synonyms":  [
+                     "personal",
+                     "brand",
+                     "motion",
+                     "برند شخصی",
+                     "business"
+                 ],
+    "industry":  [
+                     "business"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

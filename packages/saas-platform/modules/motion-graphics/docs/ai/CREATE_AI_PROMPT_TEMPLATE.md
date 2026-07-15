@@ -9,7 +9,9 @@ Before changing anything, read completely:
 
 - PROJECT_CONSTITUTION.md
 - AGENTS.md
-- docs/architecture/MOTION_GRAPHICS_OWNERSHIP.md
+- docs/STANDALONE_MODULE_STATUS.md
+- docs/FUTURE_INTEGRATION_CONTRACT.md
+- docs/CLAUDE_INTEGRATION_HANDOFF.md
 - packages/saas-platform/modules/motion-graphics/docs/ai/AI_MODULE_INDEX.json
 - every document listed by that index
 

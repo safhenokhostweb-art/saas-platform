@@ -1,0 +1,120 @@
+{
+    "name":  "آموزش و یادگیری آنلاین",
+    "slug":  "online-learning-platform",
+    "category":  "education",
+    "description":  "روایت یادگیری دیجیتال با مدرس، کتاب باز، رابط دوره، دانش‌پذیر و مسیر پیشرفت.",
+    "purpose":  "Online learning journey animation",
+    "target_usage":  [
+                         "homepage hero",
+                         "about section",
+                         "services section"
+                     ],
+    "tags":  [
+                 "education",
+                 "iranian-business",
+                 "premium-motion",
+                 "web-animation",
+                 "motion-graphics",
+                 "master-asset",
+                 "themeable",
+                 "premium",
+                 "modern",
+                 "hero",
+                 "landing-page",
+                 "company",
+                 "professional",
+                 "motion",
+                 "ai-editable"
+             ],
+    "engine":  "SVG",
+    "visual_concept":  "دانش از کتاب باز وارد کلاس آنلاین می‌شود و در قالب دوره و پیشرفت دانش‌پذیر ادامه می‌یابد.",
+    "storytelling_style":  "knowledge unfolding into a digital classroom",
+    "unique_elements":  [
+                            "open book",
+                            "teacher screen",
+                            "course cards",
+                            "student workspace",
+                            "progress ribbon"
+                        ],
+    "editable_properties":  [
+                                "colors",
+                                "text",
+                                "logo",
+                                "speed",
+                                "theme",
+                                "elements",
+                                "color",
+                                "size",
+                                "style"
+                            ],
+    "ai_editable":  true,
+    "version":  "v2",
+    "type":  "motion",
+    "usage":  [
+                  "hero",
+                  "section",
+                  "card",
+                  "background"
+              ],
+    "theme_support":  true,
+    "asset_role":  "master",
+    "variant_supported":  true,
+    "source_asset":  null,
+    "theme_tokens":  {
+                         "primary":  true,
+                         "secondary":  true,
+                         "accent":  true,
+                         "background":  true,
+                         "border":  true,
+                         "currentColor":  true
+                     },
+    "library_id":  "motion:education:online-learning-platform:v2",
+    "name_fa":  "آموزش و یادگیری آنلاین",
+    "name_en":  "Online Learning Platform",
+    "keywords":  [
+                     "آموزش و یادگیری آنلاین",
+                     "Online Learning Platform",
+                     "online-learning-platform",
+                     "education",
+                     "آموزش",
+                     "iranian-business",
+                     "premium-motion",
+                     "web-animation",
+                     "motion-graphics",
+                     "master-asset",
+                     "themeable",
+                     "premium",
+                     "modern",
+                     "hero",
+                     "landing-page",
+                     "company",
+                     "professional",
+                     "motion",
+                     "ai-editable",
+                     "online",
+                     "learning",
+                     "platform"
+                 ],
+    "synonyms":  [
+                     "education",
+                     "motion",
+                     "آموزش"
+                 ],
+    "industry":  [
+                     "education"
+                 ],
+    "subcategory":  "animated-svg",
+    "quality_score":  {
+                          "technical":  100,
+                          "visual":  92,
+                          "reusability":  94,
+                          "ai_readiness":  100
+                      },
+    "ownership":  {
+                      "type":  "platform",
+                      "license":  "internal",
+                      "customer_restriction":  false
+                  },
+    "created_source":  "motion-library-authoring",
+    "status":  "active"
+}

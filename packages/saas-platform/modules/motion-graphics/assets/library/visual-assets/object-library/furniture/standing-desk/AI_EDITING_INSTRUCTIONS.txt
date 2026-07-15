@@ -1,0 +1,29 @@
+AI EDITING INSTRUCTIONS — Standing Desk
+
+معنا
+این فایل یک دارایی مستقل «Standing Desk» در دسته مبلمان است.
+
+سیستم رنگ
+تمام رنگ‌ها فقط از --asset-primary، --asset-secondary، --asset-accent، --asset-background و --asset-border دریافت می‌شوند. currentColor برای خطوط جزئی استفاده شده است. رنگ مستقیم روی shapeها اضافه نکنید.
+
+تغییرات مجاز
+- رنگ، جنس و بافت بصری
+- سبک outline یا filled
+- شدت یا حذف سایه
+- اندازه، چرخش و ترکیب‌بندی
+- تطبیق با برند و نسخه روشن/تیره
+
+قواعد
+viewBox را حفظ کنید، asset.svg را شفاف نگه دارید و هیچ script، فونت، URL یا وابستگی خارجی اضافه نکنید. پس از تغییر، XML، دسترس‌پذیری و کنتراست هر پنج متغیر تم را بررسی کنید.
+
+NORMALIZED AI EDITING CONTRACT
+
+Asset purpose:
+دارایی برداری Standing Desk از مجموعه مبلمان برای قالب‌ها و اجزای وب.
+
+Editable elements:
+- Semantic colors, theme, size, layout, material, outline/filled style, timing when animated, and safe visual details.
+- Color customization must use --asset-primary, --asset-secondary, --asset-accent, --asset-background, --asset-border, and currentColor.
+- Logo replacement is allowed only when an explicit editable logo placeholder exists; never replace structural artwork with an unsanitized upload.
+- Industry adaptation may adjust category symbols and materials while preserving the purpose, slug, viewBox, accessibility, and safe SVG structure.
+- Future AI modifications must create a new variant/version and must not overwrite this master asset.
