@@ -92,17 +92,22 @@ class PipelineTest extends TestCase
         ]);
     }
 
-    public function test_orchestrator_builds_22_stages_for_fresh_mode(): void
+    /**
+     * Phase 15-B1 — count raised 22 -> 23: IssueSslStage added between
+     * CONFIGURE_WEB_SERVER and PROVISION_LICENSE.
+     */
+    public function test_orchestrator_builds_23_stages_for_fresh_mode(): void
     {
         $orchestrator = app(CustomerInstallationOrchestrator::class);
         $stages = $orchestrator->buildStageList('MODE_FRESH');
 
-        $this->assertCount(22, $stages);
+        $this->assertCount(23, $stages);
 
         $names = array_map(fn($s) => $s->name(), $stages);
         $this->assertContains('VALIDATE_SERVER', $names);
         $this->assertContains('UPLOAD_PACKAGE', $names);
         $this->assertContains('CREATE_DATABASE', $names);
+        $this->assertContains('ISSUE_SSL', $names);
         $this->assertContains('CUSTOMER_READY', $names);
     }
 
@@ -197,7 +202,7 @@ class PipelineTest extends TestCase
 
         $names = array_map(fn($s) => $s->name(), $stages);
 
-        foreach (['CREATE_DATABASE', 'RUN_SEEDER', 'CONFIGURE_DNS', 'CONFIGURE_WEB_SERVER',
+        foreach (['CREATE_DATABASE', 'RUN_SEEDER', 'CONFIGURE_DNS', 'CONFIGURE_WEB_SERVER', 'ISSUE_SSL',
                   'PROVISION_LICENSE', 'INSTALL_THEME', 'CUSTOMER_READY', 'EXTRACT_PACKAGE',
                   'INITIALIZE_BACKUP'] as $excluded) {
             $this->assertNotContains($excluded, $names, "{$excluded} should not appear in MODE_MODULE_UPDATE");

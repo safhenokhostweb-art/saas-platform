@@ -21,6 +21,9 @@ use App\Services\CustomerInstallation\Provisioning\QueueProvisionerFactory;
 use App\Services\CustomerInstallation\Provisioning\VpsCronProvisioner;
 use App\Services\CustomerInstallation\Provisioning\VpsDatabaseProvisioner;
 use App\Services\CustomerInstallation\Provisioning\VpsQueueProvisioner;
+use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
+use App\Services\CustomerInstallation\Ssl\NginxVhostWriter;
+use App\Services\CustomerInstallation\Ssl\VpsSslProvisioner;
 use App\Services\CustomerInstallation\Stages\AbstractStage;
 use App\Services\CustomerInstallation\Stages\ConfigureQueueStage;
 use App\Services\CustomerInstallation\Stages\ConfigureSchedulerStage;
@@ -161,7 +164,7 @@ class StageCapabilityTest extends TestCase
 
     public function test_configure_web_server_stage_is_missing_on_cpanel_and_optional(): void
     {
-        $stage = new ConfigureWebServerStage();
+        $stage = new ConfigureWebServerStage(new NginxVhostWriter(new ArvanCdnDomainDecider(), new VpsSslProvisioner()));
 
         $this->assertSame(['supportsWebServerConfiguration'], $this->gate()->missingCapabilities($stage, $this->cpanelDriver()));
         $this->assertFalse($stage->isCapabilityRequiredToProceed(), 'cPanel/WHM manages vhosts automatically — must skip, not fail');

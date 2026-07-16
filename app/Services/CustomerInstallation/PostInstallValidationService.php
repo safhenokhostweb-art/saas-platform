@@ -3,9 +3,16 @@
 namespace App\Services\CustomerInstallation;
 
 use App\Services\CustomerInstallation\Dto\InstallationContext;
+use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
+use App\Services\CustomerInstallation\Ssl\SslProvisionerFactory;
 
 class PostInstallValidationService
 {
+    public function __construct(
+        private readonly SslProvisionerFactory $sslProvisioners,
+        private readonly ArvanCdnDomainDecider  $arvanDecider,
+    ) {}
+
     public function runAll(InstallationContext $ctx): array
     {
         $webRoot = $ctx->webRoot();
@@ -188,18 +195,28 @@ class PostInstallValidationService
         return $this->check('WARN', "Domain {$domain} returned HTTP {$code}", false, (string) $code);
     }
 
+    /**
+     * Phase 15-B1 — replaces the previous curl-only check with
+     * SslProvisionerInterface::checkCertificate(), the same source of truth
+     * ConfigureWebServerStage and IssueSslStage use to decide whether a real
+     * certificate exists. ArvanCloud-managed domains are reported PASS
+     * without a provisioner call — their certificate is issued and verified
+     * at the Arvan edge, not on the origin server (see ArvanCdnDomainDecider).
+     */
     private function checkSsl(InstallationContext $ctx, string $domain): array
     {
-        $result = $ctx->connection->execute(
-            "curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://{$domain} 2>/dev/null || echo 0"
-        );
-        $code = (int) trim($result->stdout);
-
-        if (in_array($code, [200, 301, 302, 307, 308])) {
-            return $this->check('PASS', "SSL active — HTTPS {$domain} returns {$code}", false, (string) $code);
+        if ($this->arvanDecider->isManagedByArvan($domain)) {
+            return $this->check('PASS', "SSL managed by ArvanCloud CDN for {$domain}", false, 'arvan_managed');
         }
 
-        return $this->check('WARN', "SSL not yet active — HTTPS returned {$code} (Let's Encrypt may be pending)", false, (string) $code);
+        $status = $this->sslProvisioners->forDriverType($ctx->connection->driverType())->checkCertificate($ctx, $domain);
+
+        if ($status->active) {
+            $expiry = $status->expiresAt ? ", expires {$status->expiresAt}" : '';
+            return $this->check('PASS', "SSL active — {$status->provider} certificate present{$expiry}", false, $status->provider);
+        }
+
+        return $this->check('WARN', "SSL not yet active for {$domain}: {$status->message}", false, $status->provider);
     }
 
     private function check(string $status, string $message, bool $required, string $output): array

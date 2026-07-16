@@ -19,6 +19,9 @@ use App\Services\CustomerInstallation\Provisioning\QueueProvisionerFactory;
 use App\Services\CustomerInstallation\Provisioning\VpsCronProvisioner;
 use App\Services\CustomerInstallation\Provisioning\VpsDatabaseProvisioner;
 use App\Services\CustomerInstallation\Provisioning\VpsQueueProvisioner;
+use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
+use App\Services\CustomerInstallation\Ssl\NginxVhostWriter;
+use App\Services\CustomerInstallation\Ssl\VpsSslProvisioner;
 use App\Services\CustomerInstallation\Stages\ConfigureMonitoringStage;
 use App\Services\CustomerInstallation\Stages\ConfigureQueueStage;
 use App\Services\CustomerInstallation\Stages\ConfigureSchedulerStage;
@@ -80,7 +83,7 @@ class CpanelCapabilityMatrixTest extends TestCase
             'ExtractPackage'      => new ExtractPackageStage(),
             'GenerateEnvironment' => new GenerateEnvironmentStage($vault),
             'CreateDatabase'      => new CreateDatabaseStage($databaseFactory),
-            'ConfigureWebServer'  => new ConfigureWebServerStage(),
+            'ConfigureWebServer'  => new ConfigureWebServerStage(new NginxVhostWriter(new ArvanCdnDomainDecider(), new VpsSslProvisioner())),
             'ConfigureScheduler'  => new ConfigureSchedulerStage($cronFactory),
             'ConfigureQueue'      => new ConfigureQueueStage($queueFactory),
             'ConfigureStorage'    => new ConfigureStorageStage(),

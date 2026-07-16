@@ -99,4 +99,25 @@ return [
         'uapi_verify_ssl' => env('CI_CPANEL_UAPI_VERIFY_SSL', true),
     ],
 
+    /*
+     * Phase 15-B1/15-B2 — SSL provisioning settings.
+     *
+     * certbot_bin: allows an operator to point at a non-PATH certbot binary
+     * (e.g. a snap/venv install path) without a code change.
+     *
+     * cpanel_autossl_enabled: CpanelSslProvisioner calls UAPI SSL module
+     * functions (`start_autossl_check`, `list_certs`) whose exact names have
+     * NOT been verified against a live cPanel account (see
+     * CpanelSslProvisioner's docblock) — every call already degrades
+     * gracefully on any failure, but this flag is a zero-deploy escape hatch:
+     * if those UAPI calls turn out wrong on a specific cPanel version in
+     * production, an operator can disable AutoSSL provisioning entirely via
+     * this env var (no code change, no redeploy) until the correct function
+     * names are confirmed and the code updated.
+     */
+    'ssl' => [
+        'certbot_bin'            => env('CI_CERTBOT_BIN', 'certbot'),
+        'cpanel_autossl_enabled' => env('CI_CPANEL_AUTOSSL_ENABLED', true),
+    ],
+
 ];
