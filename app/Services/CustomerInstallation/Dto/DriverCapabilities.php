@@ -67,6 +67,15 @@ namespace App\Services\CustomerInstallation\Dto;
  * itself was never gated on this flag before 14-F5 (it always ran
  * unconditionally), so this correction has no observable behavior change —
  * it only makes the declared metadata match what was already true.
+ *
+ * Phase 15-D — added supportsDomainCreation, consumed by the new
+ * ProvisionDomainStage/DomainProvisionerFactory. Mirrors
+ * supportsDatabaseCreation's true/false split exactly: true for VPS/cPanel/
+ * Docker (each has a real DomainProvisionerInterface implementation — VPS's
+ * is a documented no-op since nginx vhost creation already covers it, see
+ * VpsDomainProvisioner), false for SFTP (no command execution at all) and
+ * DirectAdmin (no provisioner exists yet — flip only once one does, same
+ * rule as every other DirectAdmin flag in this class).
  */
 readonly class DriverCapabilities
 {
@@ -84,6 +93,7 @@ readonly class DriverCapabilities
         public readonly bool $supportsWebServerConfiguration  = false,
         public readonly bool $supportsQueueWorker              = false,
         public readonly bool $supportsDatabaseDeletion         = false,
+        public readonly bool $supportsDomainCreation           = false,
     ) {}
 
     // ─── Named constructors per hosting type ──────────────────────────────────
@@ -104,6 +114,7 @@ readonly class DriverCapabilities
             supportsWebServerConfiguration: true,
             supportsQueueWorker:            true,
             supportsDatabaseDeletion:       true,
+            supportsDomainCreation:         true,
         );
     }
 
@@ -130,6 +141,8 @@ readonly class DriverCapabilities
                                                     // not Supervisor. supportsSupervisor stays false.
             supportsDatabaseDeletion:       true,  // Phase 14-G3: UAPI Mysql::delete_database /
                                                     // delete_user via CpanelDatabaseProvisioner.
+            supportsDomainCreation:         true,  // Phase 15-D: CpanelDomainProvisioner via UAPI
+                                                    // SubDomain/AddonDomain/DomainInfo modules.
         );
     }
 
@@ -150,6 +163,7 @@ readonly class DriverCapabilities
             supportsWebServerConfiguration: false, // DirectAdmin manages vhosts automatically.
             supportsQueueWorker:            false, // no DirectAdmin queue provisioner exists yet.
             supportsDatabaseDeletion:       false, // no DirectAdmin provisioner exists yet.
+            supportsDomainCreation:         false, // no DirectAdmin domain provisioner exists yet.
         );
     }
 
@@ -170,6 +184,7 @@ readonly class DriverCapabilities
             supportsWebServerConfiguration: false,
             supportsQueueWorker:            false,
             supportsDatabaseDeletion:       false,
+            supportsDomainCreation:         false,
         );
     }
 
@@ -191,6 +206,9 @@ readonly class DriverCapabilities
                                                     // VpsQueueProvisioner (Supervisor-style).
             supportsDatabaseDeletion:       true,  // DatabaseProvisionerFactory maps Docker to
                                                     // VpsDatabaseProvisioner (root mysql CLI).
+            supportsDomainCreation:         true,  // DomainProvisionerFactory maps Docker to
+                                                    // VpsDomainProvisioner (no-op — reverse proxy
+                                                    // owns vhost/domain routing, not this pipeline).
         );
     }
 
@@ -212,6 +230,7 @@ readonly class DriverCapabilities
             'supports_web_server_configuration'  => $this->supportsWebServerConfiguration,
             'supports_queue_worker'              => $this->supportsQueueWorker,
             'supports_database_deletion'         => $this->supportsDatabaseDeletion,
+            'supports_domain_creation'           => $this->supportsDomainCreation,
         ];
     }
 
@@ -231,6 +250,7 @@ readonly class DriverCapabilities
             supportsWebServerConfiguration: (bool) ($data['supports_web_server_configuration']  ?? false),
             supportsQueueWorker:            (bool) ($data['supports_queue_worker']              ?? false),
             supportsDatabaseDeletion:       (bool) ($data['supports_database_deletion']          ?? false),
+            supportsDomainCreation:         (bool) ($data['supports_domain_creation']            ?? false),
         );
     }
 }

@@ -95,20 +95,27 @@ class PipelineTest extends TestCase
     /**
      * Phase 15-B1 — count raised 22 -> 23: IssueSslStage added between
      * CONFIGURE_WEB_SERVER and PROVISION_LICENSE.
+     * Phase 15-D — count raised 23 -> 24: ProvisionDomainStage added between
+     * VALIDATE_PERMISSIONS and UPLOAD_PACKAGE.
      */
-    public function test_orchestrator_builds_23_stages_for_fresh_mode(): void
+    public function test_orchestrator_builds_24_stages_for_fresh_mode(): void
     {
         $orchestrator = app(CustomerInstallationOrchestrator::class);
         $stages = $orchestrator->buildStageList('MODE_FRESH');
 
-        $this->assertCount(23, $stages);
+        $this->assertCount(24, $stages);
 
         $names = array_map(fn($s) => $s->name(), $stages);
         $this->assertContains('VALIDATE_SERVER', $names);
+        $this->assertContains('PROVISION_DOMAIN', $names);
         $this->assertContains('UPLOAD_PACKAGE', $names);
         $this->assertContains('CREATE_DATABASE', $names);
         $this->assertContains('ISSUE_SSL', $names);
         $this->assertContains('CUSTOMER_READY', $names);
+
+        $domainPos = array_search('PROVISION_DOMAIN', $names, true);
+        $uploadPos = array_search('UPLOAD_PACKAGE', $names, true);
+        $this->assertLessThan($uploadPos, $domainPos, 'PROVISION_DOMAIN must resolve the domain/document-root before any file is uploaded');
     }
 
     public function test_orchestrator_skips_db_stages_for_restore_mode(): void
@@ -203,7 +210,7 @@ class PipelineTest extends TestCase
         $names = array_map(fn($s) => $s->name(), $stages);
 
         foreach (['CREATE_DATABASE', 'RUN_SEEDER', 'CONFIGURE_DNS', 'CONFIGURE_WEB_SERVER', 'ISSUE_SSL',
-                  'PROVISION_LICENSE', 'INSTALL_THEME', 'CUSTOMER_READY', 'EXTRACT_PACKAGE',
+                  'PROVISION_DOMAIN', 'PROVISION_LICENSE', 'INSTALL_THEME', 'CUSTOMER_READY', 'EXTRACT_PACKAGE',
                   'INITIALIZE_BACKUP'] as $excluded) {
             $this->assertNotContains($excluded, $names, "{$excluded} should not appear in MODE_MODULE_UPDATE");
         }

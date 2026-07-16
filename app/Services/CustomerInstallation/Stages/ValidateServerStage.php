@@ -4,9 +4,12 @@ namespace App\Services\CustomerInstallation\Stages;
 
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
+use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
 
 class ValidateServerStage extends AbstractStage
 {
+    public function __construct(private readonly ArvanCdnDomainDecider $arvanDecider) {}
+
     public function name(): string { return 'VALIDATE_SERVER'; }
     public function label(): string { return 'اعتبارسنجی سرور'; }
     public function estimatedSeconds(): int { return 5; }
@@ -25,7 +28,57 @@ class ValidateServerStage extends AbstractStage
                 // Accept anyway — some systems output differently
             }
 
+            $certbotCheck = $this->checkCertbotPreflight($ctx);
+            if ($certbotCheck !== null) {
+                return $certbotCheck;
+            }
+
             return StageResult::success($this->name(), ['server_info' => trim($output)], [], $this->elapsed());
         });
+    }
+
+    /**
+     * Phase 15-D — was previously discoverable only at the very last stage
+     * (IssueSslStage), after upload/extract/database/env/webserver had all
+     * already run — wasting the entire pipeline's work before failing. Fails
+     * here instead, before a single byte is uploaded.
+     *
+     * VPS/Docker only, and only when SSL is actually requested for a domain
+     * this pipeline is actually responsible for issuing a certificate for
+     * (not Arvan-managed — see ArvanCdnDomainDecider, and not cPanel, which
+     * uses AutoSSL, not certbot). Returns null when the check does not apply
+     * (nothing to report); a real StageResult only on an actual failure.
+     */
+    private function checkCertbotPreflight(InstallationContext $ctx): ?StageResult
+    {
+        $req = $ctx->request;
+
+        if (!$req->sslEnabled) {
+            return null;
+        }
+
+        if (!$ctx->connection->driverType()->isVpsFamily()) {
+            return null; // cPanel (AutoSSL) and any other non-VPS driver: not applicable here.
+        }
+
+        if ($this->arvanDecider->isManagedByArvan($req->domain)) {
+            return null; // Arvan terminates SSL at its edge — certbot is never invoked for this domain.
+        }
+
+        $bin    = config('customer_installation.ssl.certbot_bin', 'certbot');
+        $result = $ctx->connection->execute('command -v ' . escapeshellarg($bin) . ' >/dev/null 2>&1 && echo present || echo missing');
+
+        if (!str_contains($result->stdout, 'present')) {
+            return StageResult::failure(
+                $this->name(),
+                "Certbot is required for VPS SSL provisioning. SSL was requested for {$req->domain} "
+                . "but certbot is not installed on this server (checked for '{$bin}' on PATH). "
+                . 'Install certbot before starting an SSL-enabled installation for a custom domain, '
+                . 'or disable SSL for this install.',
+                $this->elapsed()
+            );
+        }
+
+        return null;
     }
 }

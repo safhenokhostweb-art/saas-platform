@@ -45,4 +45,23 @@ enum DriverType: string
             self::FAKE              => 22,
         };
     }
+
+    /**
+     * Phase 15-D — true for the driver bucket that every hosting-agnostic
+     * Provisioner factory in this pipeline (Database/Cron/Queue/Ssl/Domain)
+     * already routes to its "Vps*" implementation: SSH, Docker (reverse-proxy/
+     * root-shell hosts), and Fake (tests). Extracted here — rather than left
+     * duplicated as a private array-literal check in IssueSslStage and
+     * ValidateServerStage's Phase 15-D certbot preflight — because both
+     * needed the exact same "is this a VPS-shaped driver" question and a
+     * third duplicate would compound the Phase 15-C-flagged duplication risk
+     * instead of closing it.
+     */
+    public function isVpsFamily(): bool
+    {
+        return match($this) {
+            self::SSH, self::DOCKER, self::FAKE => true,
+            default                              => false,
+        };
+    }
 }

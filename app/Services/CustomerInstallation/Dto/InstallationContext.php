@@ -71,7 +71,11 @@ class InstallationContext
     {
         if ($this->resolvedWebRoot === null) {
             $server = CustomerRemoteServer::find($this->installation->remote_server_id);
-            $this->resolvedWebRoot = (new WebRootResolver())->resolve($this->connection, $this->customerSlug(), $server);
+            // Phase 15-D — resolveForInstallation() (not resolve()) so a
+            // real cPanel document root from ProvisionDomainStage is
+            // preferred over the hosting-type default guess. See
+            // WebRootResolver's docblock for the full priority order.
+            $this->resolvedWebRoot = (new WebRootResolver())->resolveForInstallation($this, $this->customerSlug(), $server);
         }
 
         return $this->resolvedWebRoot;

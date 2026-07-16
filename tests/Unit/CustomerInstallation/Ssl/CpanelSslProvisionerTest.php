@@ -9,6 +9,7 @@ use App\Services\CustomerInstallation\Dto\CustomerInstallRequest;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver;
 use App\Services\CustomerInstallation\Provisioning\CpanelUapiClient;
+use App\Services\CustomerInstallation\Ssl\CpanelSslApiAdapter;
 use App\Services\CustomerInstallation\Ssl\CpanelSslProvisioner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -23,6 +24,11 @@ use Tests\TestCase;
  * live cPanel account — these tests verify THIS CLASS'S behavior (correct
  * request shape, graceful degradation on any failure), not that cPanel's
  * real API matches these names.
+ *
+ * Phase 15-D — CpanelSslProvisioner now depends on CpanelSslApiAdapter
+ * rather than CpanelUapiClient directly; provisioner() below wires the real
+ * adapter (over the real Http::fake()) so these HTTP-shape assertions are
+ * unchanged.
  */
 class CpanelSslProvisionerTest extends TestCase
 {
@@ -74,7 +80,7 @@ class CpanelSslProvisionerTest extends TestCase
 
     private function provisioner(): CpanelSslProvisioner
     {
-        return new CpanelSslProvisioner(new CpanelUapiClient(new CredentialVault()));
+        return new CpanelSslProvisioner(new CpanelSslApiAdapter(new CpanelUapiClient(new CredentialVault())));
     }
 
     public function test_issue_certificate_triggers_autossl_check_via_uapi(): void

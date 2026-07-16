@@ -4,7 +4,6 @@ namespace App\Services\CustomerInstallation\Stages;
 
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
-use App\Services\CustomerInstallation\Enums\DriverType;
 use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
 use App\Services\CustomerInstallation\Ssl\NginxVhostWriter;
 use App\Services\CustomerInstallation\Ssl\SslProvisionerFactory;
@@ -101,7 +100,7 @@ class IssueSslStage extends AbstractStage
             $result      = $provisioner->issueCertificate($ctx, $domain);
 
             if (!$result->success) {
-                if ($this->isVpsFamily($driverType)) {
+                if ($driverType->isVpsFamily()) {
                     // VPS/Docker: no fallback SSL owner exists for this
                     // domain (no CDN, no hosting-panel AutoSSL) — a
                     // requested-and-unissued certificate is a real
@@ -139,10 +138,5 @@ class IssueSslStage extends AbstractStage
                 'web_server_reconfigured' => $vhostResult->success,
             ], [], $this->elapsed());
         });
-    }
-
-    private function isVpsFamily(DriverType $type): bool
-    {
-        return in_array($type, [DriverType::SSH, DriverType::FAKE, DriverType::DOCKER], true);
     }
 }

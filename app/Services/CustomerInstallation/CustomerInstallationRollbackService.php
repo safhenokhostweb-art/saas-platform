@@ -12,6 +12,7 @@ use App\Services\CustomerInstallation\Stages\ValidatePhpStage;
 use App\Services\CustomerInstallation\Stages\ValidateExtensionsStage;
 use App\Services\CustomerInstallation\Stages\ValidateDiskStage;
 use App\Services\CustomerInstallation\Stages\ValidatePermissionsStage;
+use App\Services\CustomerInstallation\Stages\ProvisionDomainStage;
 use App\Services\CustomerInstallation\Stages\UploadPackageStage;
 use App\Services\CustomerInstallation\Stages\VerifyPackageStage;
 use App\Services\CustomerInstallation\Stages\ExtractPackageStage;
@@ -24,6 +25,7 @@ use App\Services\CustomerInstallation\Stages\ConfigureQueueStage;
 use App\Services\CustomerInstallation\Stages\ConfigureSchedulerStage;
 use App\Services\CustomerInstallation\Stages\ConfigureDnsStage;
 use App\Services\CustomerInstallation\Stages\ConfigureWebServerStage;
+use App\Services\CustomerInstallation\Stages\IssueSslStage;
 use App\Services\CustomerInstallation\Stages\ProvisionLicenseStage;
 use App\Services\CustomerInstallation\Stages\InitializeBackupStage;
 use App\Services\CustomerInstallation\Stages\ConfigureMonitoringStage;
@@ -136,6 +138,8 @@ class CustomerInstallationRollbackService
             app(ValidateExtensionsStage::class),
             app(ValidateDiskStage::class),
             app(ValidatePermissionsStage::class),
+            // Phase 15-D
+            app(ProvisionDomainStage::class),
             app(UploadPackageStage::class),
             app(VerifyPackageStage::class),
             app(ExtractPackageStage::class),
@@ -148,6 +152,12 @@ class CustomerInstallationRollbackService
             app(ConfigureSchedulerStage::class),
             app(ConfigureDnsStage::class),
             app(ConfigureWebServerStage::class),
+            // Phase 15-D — completes the Phase 15-C-flagged gap: IssueSslStage
+            // was never registered here (canRollback()=false today, so no
+            // checkpoint is ever created for it — this is currently inert,
+            // not a live bug), added for map completeness/future-proofing in
+            // case that ever changes without this map being updated too.
+            app(IssueSslStage::class),
             app(ProvisionLicenseStage::class),
             app(InitializeBackupStage::class),
             app(ConfigureMonitoringStage::class),

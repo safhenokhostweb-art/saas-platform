@@ -4,39 +4,28 @@ namespace App\Services\CustomerInstallation\Ssl;
 
 use App\Models\CustomerRemoteServer;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
-use App\Services\CustomerInstallation\Provisioning\CpanelUapiClient;
 use App\Services\CustomerInstallation\Ssl\Dto\SslResult;
 use App\Services\CustomerInstallation\Ssl\Dto\SslStatus;
 use Illuminate\Http\Client\ConnectionException;
 use RuntimeException;
 
 /**
- * Phase 15-B1/15-B2 — cPanel AutoSSL trigger/check via UAPI, no WHM/root.
+ * Phase 15-B1/15-B2/15-D — cPanel AutoSSL trigger/check via UAPI, no WHM/root.
  *
- * IMPORTANT — unverified API surface, confidence LOW: the UAPI `SSL` module
- * function names used below (`start_autossl_check`, `list_certs`) are this
- * implementation's best-documented understanding of cPanel's end-user "Run
- * AutoSSL Check" feature, but they have NOT been exercised against a live
- * cPanel account from this environment (no live cPanel access was available
- * during implementation — see the Phase 15-A audit). AutoSSL's UAPI surface
- * has also changed across cPanel versions historically, so a name that is
- * correct on one target version may not be on another.
- *
- * How to verify before removing this notice: register a real (or trial)
- * cPanel account with a test domain, point CpanelUapiClient at it, and run
- * issueCertificate()/checkCertificate() with a debugger or temporary
- * var_dump() of the raw UAPI response — then update
- * CpanelDatabaseProvisionerTest-style Http::fake() assertions here to lock
- * in the confirmed shape (see CpanelDatabaseProvisionerTest for the pattern
- * this class's own tests already follow structurally, just against
- * unconfirmed endpoint names).
+ * Phase 15-D — no longer calls CpanelUapiClient directly. All UAPI SSL calls
+ * now go through CpanelSslApiAdapter, so that if the exact function names
+ * below turn out wrong once verified against a live cPanel account, only
+ * the Adapter needs to change — this class, IssueSslStage, and
+ * PostInstallValidationService are untouched. See CpanelSslApiAdapter's
+ * docblock for the seam rationale, and its own docblock for the same
+ * unverified-API-surface caveat that applied here before this refactor
+ * (confidence LOW on `start_autossl_check`/`list_certs`).
  *
  * Regardless of whether the exact function name is correct, every call here
  * is wrapped so that ANY UAPI-level or transport-level failure — including
  * "unknown function", AutoSSL not enabled on the hosting package (a WHM/root
  * decision this class can never make), or a timeout — degrades to a graceful
- * skip (SslResult::skipped() / SslStatus::unknown()), never a crash. This
- * satisfies the Phase 15-B1 requirement independent of API-name accuracy.
+ * skip (SslResult::skipped() / SslStatus::unknown()), never a crash.
  *
  * Zero-deploy escape hatch: config('customer_installation.ssl.cpanel_autossl_enabled')
  * (env CI_CPANEL_AUTOSSL_ENABLED, default true) lets an operator disable
@@ -49,7 +38,7 @@ use RuntimeException;
  */
 class CpanelSslProvisioner implements SslProvisionerInterface
 {
-    public function __construct(private readonly CpanelUapiClient $uapi) {}
+    public function __construct(private readonly CpanelSslApiAdapter $adapter) {}
 
     public function issueCertificate(InstallationContext $ctx, string $domain): SslResult
     {
@@ -60,10 +49,23 @@ class CpanelSslProvisioner implements SslProvisionerInterface
             );
         }
 
+        $server = $this->server($ctx);
+
+        // Phase 15-E — Part 5: distinguish "the SSL UAPI module does not
+        // respond on this account at all" (this check) from "the module
+        // responded but the actual trigger call failed" (the catch block
+        // below) — both still degrade to a safe skip, but with a message
+        // that tells the operator which situation they are actually in.
+        if (!$this->adapter->verifyAutoSslAvailable($server)) {
+            return SslResult::skipped(
+                'cPanel SSL API is not reachable on this account for ' . $domain . ' — AutoSSL may not be '
+                . 'available on this cPanel version/package. Install a certificate manually or ask the '
+                . 'hosting provider.'
+            );
+        }
+
         try {
-            $this->uapi->call($this->server($ctx), 'SSL', 'start_autossl_check', [
-                'domain' => $domain,
-            ]);
+            $this->adapter->triggerAutoSslCheck($server, $domain);
         } catch (RuntimeException|ConnectionException $e) {
             return SslResult::skipped(
                 'cPanel AutoSSL check could not be triggered for ' . $domain . ': ' . $e->getMessage()
@@ -93,46 +95,17 @@ class CpanelSslProvisioner implements SslProvisionerInterface
 
     public function checkCertificate(InstallationContext $ctx, string $domain): SslStatus
     {
-        try {
-            $data = $this->uapi->call($this->server($ctx), 'SSL', 'list_certs', ['domain' => $domain]);
-        } catch (RuntimeException|ConnectionException) {
+        $status = $this->adapter->certificateStatus($this->server($ctx), $domain);
+
+        if ($status === null) {
             return SslStatus::unknown('cPanel SSL status could not be verified via UAPI');
         }
 
-        $cert = $this->findCertForDomain($data, $domain);
-        if ($cert === null) {
+        if ($status === []) {
             return SslStatus::none('No certificate found on this cPanel account for ' . $domain);
         }
 
-        return SslStatus::active(
-            'cpanel_autossl',
-            $cert['not_after'] ?? null,
-            'Certificate present on cPanel account'
-        );
-    }
-
-    /**
-     * UAPI list responses vary in shape between cPanel versions — handle
-     * defensively, same posture as CpanelDatabaseProvisioner::listContains().
-     */
-    private function findCertForDomain(array $data, string $domain): ?array
-    {
-        foreach ($data as $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-
-            $domains = $entry['domains'] ?? ($entry['domain'] ?? null);
-            $domains = is_array($domains) ? $domains : [$domains];
-
-            if (in_array($domain, $domains, true)) {
-                return [
-                    'not_after' => $entry['not_after'] ?? $entry['expires_at'] ?? null,
-                ];
-            }
-        }
-
-        return null;
+        return SslStatus::active('cpanel_autossl', $status['not_after'] ?? null, 'Certificate present on cPanel account');
     }
 
     /**

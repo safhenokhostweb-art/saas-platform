@@ -21,6 +21,7 @@ use App\Services\CustomerInstallation\Stages\ValidatePhpStage;
 use App\Services\CustomerInstallation\Stages\ValidateExtensionsStage;
 use App\Services\CustomerInstallation\Stages\ValidateDiskStage;
 use App\Services\CustomerInstallation\Stages\ValidatePermissionsStage;
+use App\Services\CustomerInstallation\Stages\ProvisionDomainStage;
 use App\Services\CustomerInstallation\Stages\UploadPackageStage;
 use App\Services\CustomerInstallation\Stages\VerifyPackageStage;
 use App\Services\CustomerInstallation\Stages\ExtractPackageStage;
@@ -235,6 +236,12 @@ class CustomerInstallationOrchestrator
             app(ValidateExtensionsStage::class),
             app(ValidateDiskStage::class),
             app(ValidatePermissionsStage::class),
+            // Phase 15-D — must run before UPLOAD_PACKAGE: ExtractPackageStage
+            // is the first stage to call $ctx->webRoot() (in its own
+            // buildPreSnapshot()), so the domain/document-root must already
+            // be resolved by then. See ProvisionDomainStage's docblock for
+            // the full placement rationale.
+            app(ProvisionDomainStage::class),
             app(UploadPackageStage::class),
             app(VerifyPackageStage::class),
             app(ExtractPackageStage::class),
