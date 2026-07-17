@@ -31,6 +31,25 @@ class ModuleReleaseProducerAdapter implements ModuleReleaseProducerInterface
             );
         }
 
+        // Phase 17-B — Part 4: an internal (platform-only) module must never
+        // get a customer-shippable release. Module::scopeAssignableToSite()
+        // already excludes TYPE_INTERNAL from site assignment; this closes
+        // the same gap one step earlier, at release creation, so no package
+        // can ever be built for one in the first place (see
+        // ModulePackageBuilderService::build() for the second, independent
+        // guard at the packaging step).
+        if ($module->type === Module::TYPE_INTERNAL) {
+            Log::warning('module_release.internal_module_release_blocked', [
+                'slug' => $request->slug,
+                'version' => $request->version,
+            ]);
+
+            return new ModuleReleaseResult(
+                status: ModuleReleaseResult::STATUS_SKIPPED_INTERNAL_MODULE,
+                reason: "ماژول {$request->slug} از نوع internal (فقط پلتفرم) است و هرگز release دریافت نمی‌کند."
+            );
+        }
+
         $duplicateExists = ModuleRelease::where('module_id', $module->id)
             ->where('version', $request->version)
             ->where('is_active', true)

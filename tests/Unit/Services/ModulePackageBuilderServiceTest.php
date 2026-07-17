@@ -63,6 +63,34 @@ class ModulePackageBuilderServiceTest extends TestCase
         $this->assertNull($release->package_key);
     }
 
+    /**
+     * Phase 17-B — Part 4: independent guard from
+     * ModuleReleaseProducerAdapter's — fires even if a release row already
+     * exists (e.g. one created before this phase), since this is the point
+     * that actually produces a shippable ZIP artifact.
+     */
+    public function test_build_fails_for_an_internal_module_even_with_an_existing_release_row(): void
+    {
+        $module = Module::create([
+            'slug' => 'test-internal-' . uniqid('', true),
+            'title' => 'ماژول داخلی تست',
+            'is_active' => true,
+            'version' => '1.0.0',
+            'type' => Module::TYPE_INTERNAL,
+        ]);
+        ModuleRelease::create([
+            'module_id' => $module->id,
+            'version' => '9.9.9',
+            'release_type' => 'patch',
+            'is_active' => true,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/type=internal/');
+
+        app(ModulePackageBuilderService::class)->build($module->slug, '9.9.9');
+    }
+
     public function test_build_fails_without_existing_release_row(): void
     {
         $this->makeModule();

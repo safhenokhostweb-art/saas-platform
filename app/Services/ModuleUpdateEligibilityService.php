@@ -174,8 +174,9 @@ class ModuleUpdateEligibilityService
 
     /**
      * Phase 13-M4 — optimistic write of installed_version right after a
-     * MODE_MODULE_UPDATE pipeline completes successfully, so the platform
-     * UI doesn't show a stale version until the tenant's next heartbeat.
+     * MODE_MODULE_UPDATE/MODE_MODULE_INSTALL pipeline completes successfully,
+     * so the platform UI doesn't show a stale version until the tenant's
+     * next heartbeat.
      *
      * Deliberately does NOT touch version_reported_at — that column stays
      * exclusively owned by recordReportedVersions() (the tenant's own
@@ -186,9 +187,56 @@ class ModuleUpdateEligibilityService
      * reconciling any drift. Mirrors the module-version-authority ADR's
      * treatment of modules.version as "cache, never a decision point."
      *
+     * Phase 17-C — Part 5: also sets deployment_status='installed' and
+     * last_installation_id, closing the gap where is_active could be true
+     * while nothing tracked whether the code was actually deployed.
+     *
      * @return bool  true if a site_modules row was actually updated
      */
-    public function recordPipelineAssertedVersion(int $siteId, string $moduleSlug, string $version): bool
+    public function recordPipelineAssertedVersion(int $siteId, string $moduleSlug, string $version, ?int $installationId = null): bool
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
+            return false;
+        }
+
+        $moduleId = Module::where('slug', $moduleSlug)->value('id');
+        if ($moduleId === null) {
+            return false;
+        }
+
+        $update = [
+            'installed_version' => $version,
+            'deployment_status' => 'installed',
+            'updated_at' => now(),
+        ];
+        if ($installationId !== null) {
+            $update['last_installation_id'] = $installationId;
+        }
+
+        $updated = \Illuminate\Support\Facades\DB::table('site_modules')
+            ->where('site_id', $siteId)
+            ->where('module_id', $moduleId)
+            ->update($update);
+
+        return $updated > 0;
+    }
+
+    /**
+     * Phase 17-C — Part 5: marks a module's deployment as failed after a
+     * MODE_MODULE_UPDATE/MODE_MODULE_INSTALL pipeline ends in any non-success
+     * status (failed, rollback_failed, rolled_back). Never leaves the row
+     * sitting in 'pending_install'/'installing'/'upgrading' after the
+     * pipeline has actually stopped running — see
+     * CustomerInstallationPipelineJob, the only caller.
+     *
+     * Entitlement (is_active) is deliberately left untouched here — a
+     * failed deployment doesn't retroactively revoke access the admin
+     * granted; it only means the code isn't there yet. An admin/operator
+     * decides separately whether to retry or disable.
+     *
+     * @return bool  true if a site_modules row was actually updated
+     */
+    public function markDeploymentFailed(int $siteId, string $moduleSlug): bool
     {
         if (!\Illuminate\Support\Facades\Schema::hasTable('site_modules')) {
             return false;
@@ -202,8 +250,9 @@ class ModuleUpdateEligibilityService
         $updated = \Illuminate\Support\Facades\DB::table('site_modules')
             ->where('site_id', $siteId)
             ->where('module_id', $moduleId)
+            ->whereNotIn('deployment_status', ['installed'])
             ->update([
-                'installed_version' => $version,
+                'deployment_status' => 'failed',
                 'updated_at' => now(),
             ]);
 

@@ -161,6 +161,63 @@ class CompleteModuleUpgradeStageTest extends TestCase
     }
 
     /**
+     * Phase 17-C — Part 5: a successful upgrade also closes the Entitlement
+     * vs. Deployment gap — deployment_status flips to 'installed' and
+     * last_installation_id points at the installation that did it.
+     */
+    public function test_syncs_deployment_status_and_last_installation_id_on_success(): void
+    {
+        ['site' => $site, 'module' => $module] = $this->makeSiteWithModule('1.0.0');
+        DB::table('site_modules')->where('site_id', $site->id)->where('module_id', $module->id)
+            ->update(['deployment_status' => 'upgrading']);
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('public/storage', 0, "linked\n");
+        $driver->addResponse('.cie_health', 0, "writable\n");
+
+        $ctx = $this->makeContext($driver, [
+            'site_id' => $site->id,
+            'metadata' => ['module_slug' => $module->slug, 'target_version' => '1.1.0'],
+        ]);
+
+        $result = app(CompleteModuleUpgradeStage::class)->execute($ctx);
+
+        $this->assertTrue($result->success);
+
+        $after = $this->fetchSiteModuleRow($site->id, $module->id);
+        $this->assertSame('installed', $after->deployment_status);
+        $this->assertSame($ctx->installation->id, $after->last_installation_id);
+    }
+
+    /**
+     * Phase 17-C — Part 4/5: MODE_MODULE_INSTALL (a module's first-ever
+     * deployment) syncs identically to MODE_MODULE_UPDATE — same stage,
+     * same sync call.
+     */
+    public function test_syncs_deployment_status_for_a_fresh_module_install(): void
+    {
+        ['site' => $site, 'module' => $module] = $this->makeSiteWithModule('1.0.0');
+
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('public/storage', 0, "linked\n");
+        $driver->addResponse('.cie_health', 0, "writable\n");
+
+        $ctx = $this->makeContext($driver, [
+            'install_mode' => 'MODE_MODULE_INSTALL',
+            'site_id' => $site->id,
+            'metadata' => ['module_slug' => $module->slug, 'target_version' => '1.0.0'],
+        ]);
+
+        $result = app(CompleteModuleUpgradeStage::class)->execute($ctx);
+
+        $this->assertTrue($result->success);
+
+        $after = $this->fetchSiteModuleRow($site->id, $module->id);
+        $this->assertSame('installed', $after->deployment_status);
+        $this->assertSame($ctx->installation->id, $after->last_installation_id);
+    }
+
+    /**
      * Scenario 2 — incomplete metadata (target_version missing) must not
      * fail the stage; it just skips the sync and logs a warning.
      */

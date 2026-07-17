@@ -7,10 +7,11 @@ namespace SaaSPlatform\CoreUtils\Contracts\Services\Dto;
  */
 readonly class ModuleReleaseResult
 {
-    public const STATUS_CREATED               = 'created';
-    public const STATUS_SKIPPED_NO_MODULE_ROW = 'skipped_no_module_row';
-    public const STATUS_SKIPPED_DUPLICATE     = 'skipped_duplicate';
-    public const STATUS_FAILED                = 'failed';
+    public const STATUS_CREATED                  = 'created';
+    public const STATUS_SKIPPED_NO_MODULE_ROW    = 'skipped_no_module_row';
+    public const STATUS_SKIPPED_DUPLICATE        = 'skipped_duplicate';
+    public const STATUS_SKIPPED_INTERNAL_MODULE  = 'skipped_internal_module';
+    public const STATUS_FAILED                   = 'failed';
 
     public function __construct(
         public string $status,

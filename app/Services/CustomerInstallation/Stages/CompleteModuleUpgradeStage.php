@@ -85,7 +85,10 @@ class CompleteModuleUpgradeStage extends AbstractStage
      */
     private function syncInstalledVersion(InstallationContext $ctx): void
     {
-        if ($ctx->installation->install_mode !== 'MODE_MODULE_UPDATE') {
+        // Phase 17-C — Part 5: MODE_MODULE_INSTALL (first-ever deployment of
+        // a module to a site) runs this exact same stage and must sync the
+        // same way a MODE_MODULE_UPDATE run does.
+        if (!in_array($ctx->installation->install_mode, ['MODE_MODULE_UPDATE', 'MODE_MODULE_INSTALL'], true)) {
             return;
         }
 
@@ -105,7 +108,12 @@ class CompleteModuleUpgradeStage extends AbstractStage
         }
 
         try {
-            $updated = $this->eligibilityService->recordPipelineAssertedVersion((int) $siteId, $moduleSlug, $targetVersion);
+            $updated = $this->eligibilityService->recordPipelineAssertedVersion(
+                (int) $siteId,
+                $moduleSlug,
+                $targetVersion,
+                $ctx->installation->id
+            );
 
             if (!$updated) {
                 Log::warning('CIE COMPLETE_MODULE_UPGRADE: version sync matched no site_modules row', [

@@ -94,6 +94,37 @@ class ModuleReleaseProducerAdapterTest extends TestCase
         $this->assertNotNull($result->reason);
     }
 
+    /**
+     * Phase 17-B — Part 4: an internal (platform-only) module must never
+     * receive a customer-shippable release, regardless of whether a
+     * duplicate/version check would otherwise have allowed it.
+     */
+    public function test_internal_module_release_is_skipped(): void
+    {
+        $module = Module::create([
+            'slug' => 'test-internal-module-' . uniqid('', true),
+            'title' => 'ماژول داخلی تست',
+            'is_active' => true,
+            'version' => '1.0.0',
+            'type' => Module::TYPE_INTERNAL,
+        ]);
+
+        $result = $this->adapter->record(new ModuleReleaseRequest(
+            slug: $module->slug,
+            version: '1.1.0',
+            releaseType: 'minor',
+        ));
+
+        $this->assertSame(ModuleReleaseResult::STATUS_SKIPPED_INTERNAL_MODULE, $result->status);
+        $this->assertNotNull($result->reason);
+        $this->assertDatabaseMissing('module_releases', [
+            'module_id' => $module->id,
+            'version' => '1.1.0',
+        ]);
+        // version cache on the Module row itself must not move either.
+        $this->assertSame('1.0.0', $module->fresh()->version);
+    }
+
     public function test_database_transaction_failure_returns_failed(): void
     {
         $module = $this->makeModule('1.0.0');

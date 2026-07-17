@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Models\Module;
 use App\Models\Site;
+use App\Services\Modules\ModuleInstallationDispatcher;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -10,12 +11,19 @@ use Illuminate\Support\Facades\DB;
  * قانون ساده: ماژول فعال = چک‌باکس در پنل ادمین پلتفرم روشن باشد.
  * تیک زدن = ماژول برای سایت فعال و در پنل مشتری نمایش داده می‌شود؛ برداشتن تیک = غیرفعال و مخفی.
  * لایسنس سایت (کلید یکجا) برای فعال‌سازی دسترسی به همان لیست ماژول‌های تیک‌خورده است.
+ *
+ * Phase 17-C — Part 3: enableForSite() no longer flips is_active directly.
+ * Entitlement (is_active) and deployment (deployment_status) are separate
+ * concerns now — see ModuleInstallationDispatcher's docblock — so enabling a
+ * module dispatches a real CustomerInstallation Pipeline run instead of just
+ * writing a database flag.
  */
 class ModuleAssignmentService
 {
     public function __construct(
         protected ModulePurchaseService $purchaseService,
-        protected ModuleLicenseService $licenseService
+        protected ModuleLicenseService $licenseService,
+        protected ModuleInstallationDispatcher $installationDispatcher,
     ) {}
 
     /**
@@ -58,6 +66,14 @@ class ModuleAssignmentService
      * فعال کردن ماژول برای سایت.
      * فقط برای FREE ASSIGNABLE یا LICENSE-ONLY (با لایسنس معتبر) مجاز است.
      * ماژول‌های PAID فقط از طریق خرید فعال می‌شوند.
+     *
+     * Phase 17-C — Part 3: دیگر مستقیماً is_active را نمی‌نویسد. بعد از عبور
+     * از چک‌های مجوز/لایسنس، ModuleInstallationDispatcher را صدا می‌زند که
+     * یک CustomerInstallation واقعی می‌سازد و Pipeline را dispatch می‌کند.
+     * site_modules.is_active فقط وقتی true می‌شود که این Dispatch موفق شود —
+     * نه صرفاً به این خاطر که ادمین تیک زده است. اگر Dispatch شکست بخورد،
+     * وضعیت به deployment_status=failed می‌رود (توسط Dispatcher نوشته
+     * می‌شود)، نه یک site_module فعال بدون استقرار واقعی.
      */
     public function enableForSite(Site $site, int $moduleId, ?int $grantedByUserId = null): bool
     {
@@ -69,10 +85,9 @@ class ModuleAssignmentService
             return false;
         }
 
-        $site->modules()->syncWithoutDetaching([
-            $moduleId => ['is_active' => true, 'activated_at' => now()],
-        ]);
-        return true;
+        $result = $this->installationDispatcher->dispatch($site, $module, $grantedByUserId);
+
+        return $result['success'];
     }
 
     /**

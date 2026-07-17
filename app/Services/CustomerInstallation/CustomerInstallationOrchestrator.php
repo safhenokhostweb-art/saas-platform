@@ -62,7 +62,7 @@ class CustomerInstallationOrchestrator
         $server = CustomerRemoteServer::findOrFail($installation->remote_server_id);
 
         $moduleTarget = null;
-        if ($request->installMode === 'MODE_MODULE_UPDATE') {
+        if (in_array($request->installMode, ['MODE_MODULE_UPDATE', 'MODE_MODULE_INSTALL'], true)) {
             try {
                 $moduleTarget = ModuleUpdateTarget::fromArray($installation->metadata ?? []);
             } catch (\Throwable $e) {
@@ -173,7 +173,12 @@ class CustomerInstallationOrchestrator
      */
     public function buildStageList(string $mode, ?ModuleUpdateTarget $target = null): array
     {
-        if ($mode === 'MODE_MODULE_UPDATE') {
+        // Phase 17-C — Part 4: MODE_MODULE_INSTALL (a module's first-ever
+        // deployment to a site) reuses moduleUpdateStages() unchanged. See
+        // that method's docblock, and the migration adding this enum value,
+        // for why a separate stage list isn't needed: every stage already
+        // behaves correctly whether the module existed before or not.
+        if ($mode === 'MODE_MODULE_UPDATE' || $mode === 'MODE_MODULE_INSTALL') {
             return $this->moduleUpdateStages($target);
         }
 

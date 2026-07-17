@@ -41,6 +41,21 @@ class ModulePackageBuilderService
             throw new RuntimeException("Module [{$slug}] not found in the modules table.");
         }
 
+        // Phase 17-B — Part 4: hard guard, independent of the release-creation
+        // guard in ModuleReleaseProducerAdapter. A platform-only module must
+        // never be packaged for customer-site deployment even if a release
+        // row somehow exists for it (e.g. one created before this phase, or
+        // via a future caller that bypasses the producer adapter). Mirrors
+        // Module::scopeAssignableToSite()'s "core and paid; internal never"
+        // rule at the one point that actually produces a shippable artifact.
+        if ($module->type === Module::TYPE_INTERNAL) {
+            throw new RuntimeException(
+                "Module [{$slug}] is type=internal (platform-only) and must never be packaged "
+                . 'for customer-site deployment. Internal modules are excluded from '
+                . 'Module::scopeAssignableToSite() and from release/package production by design.'
+            );
+        }
+
         $release = ModuleRelease::where('module_id', $module->id)
             ->where('version', $version)
             ->first();

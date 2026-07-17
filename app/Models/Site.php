@@ -122,7 +122,7 @@ class Site extends Model implements SiteModelInterface
     public function modules()
     {
         return $this->belongsToMany(\App\Models\Module::class, 'site_modules')
-            ->withPivot(['is_active', 'installed_version', 'version_reported_at', 'activated_at'])
+            ->withPivot(['is_active', 'deployment_status', 'last_installation_id', 'installed_version', 'version_reported_at', 'activated_at'])
             ->withTimestamps();
     }
 

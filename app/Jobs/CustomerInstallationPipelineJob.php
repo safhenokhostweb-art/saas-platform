@@ -6,6 +6,7 @@ use App\Models\CustomerInstallation;
 use App\Services\CustomerInstallation\CustomerInstallationOrchestrator;
 use App\Services\CustomerInstallation\RollbackDispatcher;
 use App\Services\Infrastructure\SlackAlertService;
+use App\Services\ModuleUpdateEligibilityService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -80,6 +81,53 @@ class CustomerInstallationPipelineJob implements ShouldQueue
         Log::info("CIE: Starting pipeline for installation {$this->installationId}");
 
         $orchestrator->run($installation);
+
+        // Phase 17-C — Part 5: the orchestrator itself never throws out of
+        // run() (every stage/capability/unexpected-error path is caught
+        // internally and resolved via markFailed()), so this is the one
+        // reliable point after ANY module pipeline outcome — success or
+        // failure, from any stage — to reconcile site_modules.deployment_status.
+        // Deliberately outside CustomerInstallationOrchestrator/Stages: this
+        // touches an unrelated table (site_modules), not pipeline behavior.
+        $this->syncModuleDeploymentStatus($installation->fresh());
+    }
+
+    /**
+     * Phase 17-C — Part 5: no-op for every install_mode except
+     * MODE_MODULE_UPDATE/MODE_MODULE_INSTALL. A 'complete' installation is
+     * already synced by CompleteModuleUpgradeStage itself (it has the
+     * target version in hand, this method does not); anything else
+     * (failed/rollback_failed/rolled_back) is marked failed here so no
+     * site_modules row is ever left sitting in pending_install/installing/
+     * upgrading after the pipeline has actually stopped running.
+     */
+    private function syncModuleDeploymentStatus(?CustomerInstallation $installation): void
+    {
+        if (!$installation || $installation->isComplete()) {
+            return;
+        }
+
+        if (!in_array($installation->install_mode, ['MODE_MODULE_UPDATE', 'MODE_MODULE_INSTALL'], true)) {
+            return;
+        }
+
+        $siteId = $installation->site_id;
+        $moduleSlug = $installation->metadata['module_slug'] ?? null;
+
+        if (!$siteId || !$moduleSlug) {
+            return;
+        }
+
+        try {
+            app(ModuleUpdateEligibilityService::class)->markDeploymentFailed((int) $siteId, $moduleSlug);
+        } catch (\Throwable $e) {
+            Log::error('CIE: module deployment_status sync failed', [
+                'installation_id' => $installation->id,
+                'site_id' => $siteId,
+                'module_slug' => $moduleSlug,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function failed(\Throwable $exception): void
@@ -98,6 +146,8 @@ class CustomerInstallationPipelineJob implements ShouldQueue
                 'failure_reason' => 'Queue job failed: ' . $exception->getMessage(),
             ]);
         }
+
+        $this->syncModuleDeploymentStatus($installation?->fresh());
 
         try {
             app(SlackAlertService::class)->critical(
