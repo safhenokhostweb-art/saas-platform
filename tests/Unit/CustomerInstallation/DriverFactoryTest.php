@@ -3,7 +3,6 @@
 namespace Tests\Unit\CustomerInstallation;
 
 use App\Models\CustomerRemoteServer;
-use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\DriverFactory;
 use App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver;
@@ -55,19 +54,6 @@ class DriverFactoryTest extends TestCase
         $server = new CustomerRemoteServer(['type' => 'fake']);
 
         $this->assertInstanceOf(FakeRemoteDriver::class, $this->factory()->buildForServer($server));
-    }
-
-    public function test_build_for_target_with_ssh_type_still_resolves(): void
-    {
-        // Phase 14-B1 — DeploymentTarget path (buildForTarget) has no
-        // production caller, but must keep resolving through the same
-        // unified registry as the legacy CustomerRemoteServer path.
-        $target = new DeploymentTarget([
-            'connection_driver' => 'ssh', 'host' => 'example.test', 'port' => 22,
-            'username' => 'deploy', 'auth_method' => 'ssh_key',
-        ]);
-
-        $this->assertInstanceOf(SshRemoteDriver::class, $this->factory()->buildForTarget($target));
     }
 
     public function test_unknown_driver_type_throws_not_registered_exception(): void

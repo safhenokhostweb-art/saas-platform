@@ -3,7 +3,6 @@
 namespace App\Services\CustomerInstallation\Drivers;
 
 use App\Models\CustomerRemoteServer;
-use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\Dto\CommandResult;
@@ -54,7 +53,7 @@ class CpanelDeploymentDriver implements DeploymentDriverInterface
     private readonly SshRemoteDriver $transport;
 
     public function __construct(
-        private readonly CustomerRemoteServer|DeploymentTarget $server,
+        private readonly CustomerRemoteServer $server,
         private readonly CredentialVault $vault,
     ) {
         $this->transport = new SshRemoteDriver($server, $vault);
@@ -174,11 +173,7 @@ class CpanelDeploymentDriver implements DeploymentDriverInterface
     }
 
     /**
-     * True for both CustomerRemoteServer's plain 'api_token' auth_method and
-     * DeploymentTarget's AuthMethod-enum values ('cpanel_api_token',
-     * 'directadmin_api_token') — the two models use different vocabularies
-     * for the same concept, and this driver's union-typed $server accepts
-     * either.
+     * True for CustomerRemoteServer's plain 'api_token' auth_method.
      */
     private function isApiTokenAuth(): bool
     {

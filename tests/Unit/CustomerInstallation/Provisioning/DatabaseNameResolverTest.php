@@ -7,7 +7,6 @@ use App\Models\CustomerRemoteServer;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Dto\CustomerInstallRequest;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
-use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver;
 use App\Services\CustomerInstallation\Drivers\DirectAdminDeploymentDriver;
 use App\Services\CustomerInstallation\Drivers\FakeRemoteDriver;
@@ -112,9 +111,8 @@ class DatabaseNameResolverTest extends TestCase
         // real (non-stub) method on the architecture-stub driver, so this
         // exercises the resolver's DIRECTADMIN match arm for real rather
         // than asserting nothing.
-        $target = new DeploymentTarget([
-            'name' => 'DA', 'type' => 'directadmin', 'connection_driver' => 'directadmin',
-            'host' => 'da.example.test', 'port' => 2222, 'username' => 'janedoe',
+        $target = new CustomerRemoteServer([
+            'type' => 'directadmin', 'host' => 'da.example.test', 'port' => 2222, 'username' => 'janedoe',
         ]);
         $driver = new DirectAdminDeploymentDriver($target, new CredentialVault());
 

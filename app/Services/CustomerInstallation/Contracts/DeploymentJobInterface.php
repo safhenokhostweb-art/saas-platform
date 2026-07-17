@@ -2,8 +2,6 @@
 
 namespace App\Services\CustomerInstallation\Contracts;
 
-use App\Models\DeploymentTarget;
-
 interface DeploymentJobInterface
 {
     public function deploymentId(): string;
@@ -11,11 +9,7 @@ interface DeploymentJobInterface
     /** Current queue attempt, starting at one. */
     public function attempt(): int;
 
-    /**
-     * Targets keyed by ssh, cpanel, and file_upload (or sftp).
-     *
-     * @return array<string, DeploymentTarget>
-     */
+    /** Targets keyed by ssh, cpanel, and file_upload (or sftp). */
     public function targets(): array;
 
     /** Execute the package deployment through the selected driver. */

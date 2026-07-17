@@ -3,7 +3,6 @@
 namespace App\Services\CustomerInstallation\Drivers;
 
 use App\Models\CustomerRemoteServer;
-use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\Dto\CommandResult;
@@ -20,13 +19,15 @@ use RuntimeException;
 /**
  * SSH transport driver for VPS / dedicated servers.
  *
- * Phase 14-B1 — merged with the former SshDeploymentDriver (which targeted
- * DeploymentTarget only and lacked this class's exit-status/timeout
- * fail-closed handling and upload retry/resume logic). This is now the only
- * SSH driver; it accepts either connection-source model since both
- * CustomerRemoteServer and DeploymentTarget expose the same shape
- * (host/port/username/private_key_encrypted/password_encrypted/
- * key_fingerprint + isKeyAuth()).
+ * Phase 14-B1 — merged with the former SshDeploymentDriver (which lacked this
+ * class's exit-status/timeout fail-closed handling and upload retry/resume
+ * logic). This is now the only SSH driver.
+ *
+ * Phase 16-C — previously accepted a second "universal deployment" model
+ * alongside CustomerRemoteServer, but that model was never actually wired to
+ * any production caller. Narrowed back to CustomerRemoteServer only, the
+ * sole model this driver has ever actually been constructed with in
+ * production.
  */
 class SshRemoteDriver implements DeploymentDriverInterface
 {
@@ -36,7 +37,7 @@ class SshRemoteDriver implements DeploymentDriverInterface
     private const MAX_RECONNECTS = 2;
 
     public function __construct(
-        private readonly CustomerRemoteServer|DeploymentTarget $server,
+        private readonly CustomerRemoteServer $server,
         private readonly CredentialVault $vault,
     ) {}
 

@@ -2,7 +2,7 @@
 
 namespace App\Services\CustomerInstallation\Drivers;
 
-use App\Models\DeploymentTarget;
+use App\Models\CustomerRemoteServer;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\Dto\CommandResult;
@@ -26,7 +26,7 @@ use App\Services\CustomerInstallation\Enums\DriverType;
 class DirectAdminDeploymentDriver implements DeploymentDriverInterface
 {
     public function __construct(
-        private readonly DeploymentTarget $target,
+        private readonly CustomerRemoteServer $target,
         private readonly CredentialVault  $vault,
     ) {}
 

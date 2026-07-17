@@ -3,7 +3,6 @@
 namespace Tests\Unit\CustomerInstallation;
 
 use App\Models\CustomerRemoteServer;
-use App\Models\DeploymentTarget;
 use App\Services\CustomerInstallation\Contracts\DeploymentDriverInterface;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver;
@@ -64,7 +63,7 @@ class SslCapabilityTest extends TestCase
 
     public function test_docker_driver_does_not_satisfy_supports_ssl_and_stage_skips_not_fails(): void
     {
-        $target = new DeploymentTarget(['type' => 'docker', 'connection_driver' => 'docker', 'host' => 'docker.example.test', 'username' => 'root']);
+        $target = new CustomerRemoteServer(['type' => 'docker', 'host' => 'docker.example.test', 'username' => 'root']);
         $driver = new DockerDeploymentDriver($target, new CredentialVault());
         $stage = $this->issueSslStage();
 
@@ -74,7 +73,7 @@ class SslCapabilityTest extends TestCase
 
     public function test_sftp_driver_does_not_satisfy_supports_ssl(): void
     {
-        $target = new DeploymentTarget(['type' => 'sftp', 'connection_driver' => 'sftp', 'host' => 'sftp.example.test', 'username' => 'cust1']);
+        $target = new CustomerRemoteServer(['type' => 'sftp', 'host' => 'sftp.example.test', 'username' => 'cust1']);
         $driver = new SftpDeploymentDriver($target, new CredentialVault());
 
         $this->assertSame(['supportsSSL'], $this->gate()->missingCapabilities($this->issueSslStage(), $driver));
@@ -89,7 +88,7 @@ class SslCapabilityTest extends TestCase
      */
     public function test_directadmin_driver_declares_supports_ssl_true_but_driver_is_unimplemented(): void
     {
-        $target = new DeploymentTarget(['type' => 'directadmin', 'connection_driver' => 'directadmin', 'host' => 'da.example.test', 'username' => 'cust1']);
+        $target = new CustomerRemoteServer(['type' => 'directadmin', 'host' => 'da.example.test', 'username' => 'cust1']);
         $driver = new DirectAdminDeploymentDriver($target, new CredentialVault());
 
         $this->assertTrue($this->gate()->isSatisfied($this->issueSslStage(), $driver));
