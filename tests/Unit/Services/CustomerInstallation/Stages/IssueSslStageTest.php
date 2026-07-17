@@ -7,6 +7,7 @@ use App\Models\CustomerRemoteServer;
 use App\Models\Infrastructure\DnsProviderSetting;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Dto\CustomerInstallRequest;
+use App\Services\CustomerInstallation\Dto\DriverCapabilities;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use App\Services\CustomerInstallation\Drivers\FakeRemoteDriver;
@@ -251,5 +252,55 @@ class IssueSslStageTest extends TestCase
 
         $this->assertTrue($result->success, 'Certificate is already issued and site still reachable over HTTP — must not fail');
         $this->assertFalse($result->output['web_server_reconfigured']);
+    }
+
+    /**
+     * Phase 15-G — Part 5: cPanel/WHM already declares
+     * supportsWebServerConfiguration=false (it manages its own vhost/SSL
+     * binding), yet a successful issuance called NginxVhostWriter::write()
+     * unconditionally — an SSH write to /etc/nginx/... on an account that
+     * can't touch that path, on every single cPanel SSL issuance. This test
+     * locks in the fix: the vhost writer must never be invoked when the
+     * driver doesn't support web-server configuration, while the
+     * certificate itself is still reported as issued.
+     */
+    public function test_cpanel_successful_issuance_never_calls_the_vhost_writer(): void
+    {
+        $calls = [];
+        $writeCalls = [];
+        $stage = $this->stage(
+            $this->createStub(VpsSslProvisioner::class),
+            $this->spyCpanelProvisioner(SslResult::issued('/var/cpanel/ssl/installed/keys/cp.example.com.key', '/var/cpanel/ssl/installed/certs/cp.example.com.crt'), $calls),
+            $this->vhostWriterSpy(true, $writeCalls),
+        );
+
+        $cpanelDriver = new FakeRemoteDriver(DriverCapabilities::forCpanel(), DriverType::CPANEL);
+        $ctx = $this->context($cpanelDriver, sslEnabled: true, domain: 'cp.example.com');
+        $result = $stage->execute($ctx);
+
+        $this->assertTrue($result->success);
+        $this->assertSame('issued', $result->output['status']);
+        $this->assertFalse($result->output['web_server_reconfigured'], 'cPanel never has a vhost to reconfigure');
+        $this->assertSame([], $writeCalls, 'NginxVhostWriter::write() must never be called for a driver without supportsWebServerConfiguration');
+        $this->assertSame(['cp.example.com'], $calls);
+    }
+
+    public function test_vps_successful_issuance_still_calls_the_vhost_writer(): void
+    {
+        $calls = [];
+        $writeCalls = [];
+        $stage = $this->stage(
+            $this->spyVpsProvisioner(SslResult::issued('/etc/letsencrypt/live/example.com/fullchain.pem', '/etc/letsencrypt/live/example.com/privkey.pem'), $calls),
+            $this->createStub(CpanelSslProvisioner::class),
+            $this->vhostWriterSpy(true, $writeCalls),
+        );
+
+        $vpsDriver = new FakeRemoteDriver(DriverCapabilities::forVps(), DriverType::SSH);
+        $ctx = $this->context($vpsDriver, sslEnabled: true, domain: 'example.com');
+        $result = $stage->execute($ctx);
+
+        $this->assertTrue($result->success);
+        $this->assertTrue($result->output['web_server_reconfigured']);
+        $this->assertCount(1, $writeCalls, 'Part 5 must not change VPS behavior');
     }
 }

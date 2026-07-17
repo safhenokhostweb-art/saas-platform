@@ -129,13 +129,24 @@ class IssueSslStage extends AbstractStage
             // vhost so it picks up the real path instead of leaving the
             // HTTP-only vhost in place. Best-effort: a failure here still
             // leaves the certificate issued and the site reachable over HTTP.
-            $vhostResult = $this->vhostWriter->write($ctx);
+            //
+            // Phase 15-G — Part 5: guarded by supportsWebServerConfiguration.
+            // cPanel/WHM already declares this capability false (it manages
+            // its own vhost/SSL binding — see CONFIGURE_WEB_SERVER's
+            // capability-gate skip) yet this call was unconditional, so every
+            // cPanel SSL issuance still attempted an SSH write to
+            // /etc/nginx/... that could only ever fail. VPS/Docker: unchanged.
+            $vhostReconfigured = false;
+
+            if ($ctx->connection->capabilities()->supportsWebServerConfiguration) {
+                $vhostReconfigured = $this->vhostWriter->write($ctx)->success;
+            }
 
             return StageResult::success($this->name(), [
                 'ssl_managed_by'          => $driverType->value,
                 'status'                  => $result->status,
                 'cert_path'               => $result->certPath,
-                'web_server_reconfigured' => $vhostResult->success,
+                'web_server_reconfigured' => $vhostReconfigured,
             ], [], $this->elapsed());
         });
     }

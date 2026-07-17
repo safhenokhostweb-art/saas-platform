@@ -97,6 +97,18 @@ return [
         'uapi_port'       => (int) env('CI_CPANEL_UAPI_PORT', 2083),
         'uapi_timeout'    => (int) env('CI_CPANEL_UAPI_TIMEOUT', 30),
         'uapi_verify_ssl' => env('CI_CPANEL_UAPI_VERIFY_SSL', true),
+
+        /*
+         * Phase 15-G — Part 1: CpanelUapiClient retry policy. Applies
+         * uniformly to every UAPI-based provisioner (SSL, domain, database,
+         * cron, queue) since they all funnel through the same client. Only
+         * transport-level failures (connection/timeout, temporary HTTP 5xx)
+         * are retried — see CpanelUapiClient::call()'s docblock for why
+         * auth/permission/business errors are never retried. Conservative
+         * defaults: 2 attempts total (1 retry), 300ms apart.
+         */
+        'uapi_retry_attempts' => (int) env('CI_CPANEL_UAPI_RETRY_ATTEMPTS', 2),
+        'uapi_retry_delay'    => (int) env('CI_CPANEL_UAPI_RETRY_DELAY_MS', 300),
     ],
 
     /*

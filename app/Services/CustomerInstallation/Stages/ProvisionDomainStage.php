@@ -89,7 +89,27 @@ class ProvisionDomainStage extends AbstractStage
                 );
             }
 
-            $createdByInstaller = $result->status === 'created';
+            if ($result->status === 'created') {
+                // Phase 15-G — Part 3: persist ownership evidence to the
+                // installation's own metadata IMMEDIATELY, right next to the
+                // remote success — not at the end of execute(), and not left
+                // to CustomerInstallationOrchestrator's post-stage bookkeeping
+                // (recordRollbackCheckpoint/recordStageComplete). Those run
+                // strictly after this method returns, so if the process is
+                // killed in that window, the checkpoint/log this installer
+                // would otherwise rely on never gets written. This write is
+                // as close to the remote side effect as PHP allows, closing
+                // that crash window almost entirely. See
+                // resolveCreatedByInstaller() for how a resumed run reads it
+                // back.
+                $ctx->installation->update([
+                    'metadata' => array_merge($ctx->installation->metadata ?? [], [
+                        'provision_domain_created_by_installer' => true,
+                    ]),
+                ]);
+            }
+
+            $createdByInstaller = $this->resolveCreatedByInstaller($ctx, $result->status);
 
             return StageResult::success($this->name(), [
                 'domain'               => $domain,
@@ -105,6 +125,31 @@ class ProvisionDomainStage extends AbstractStage
                 'created_by_installer' => $createdByInstaller,
             ], $this->elapsed());
         });
+    }
+
+    /**
+     * Phase 15-G — Part 3: a domain the LIVE query now finds is not
+     * automatically "pre-existing". If THIS installation's own metadata
+     * already records that a prior run of this exact stage created it
+     * (written immediately after that earlier successful createDomain()
+     * call, before any crash-prone bookkeeping), that evidence wins over the
+     * provisioner's fresh "already_exists" classification — the domain
+     * exists now only because this installer put it there moments ago,
+     * possibly in a crashed earlier attempt. A domain this installation has
+     * no such record for is treated exactly as before: created=true only on
+     * a fresh create, false for anything the live query finds already there.
+     */
+    private function resolveCreatedByInstaller(InstallationContext $ctx, string $status): bool
+    {
+        if ($status === 'created') {
+            return true;
+        }
+
+        if ($status === 'already_exists') {
+            return ($ctx->installation->metadata['provision_domain_created_by_installer'] ?? false) === true;
+        }
+
+        return false;
     }
 
     public function rollback(InstallationContext $ctx, array $snapshot): void

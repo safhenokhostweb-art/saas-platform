@@ -216,11 +216,32 @@ class CpanelDomainProvisioner implements DomainProvisionerInterface
         foreach ($domains as $key => $entry) {
             $entryDomain = is_array($entry) ? ($entry['domain'] ?? $key) : $entry;
             if ($this->normalize((string) $entryDomain) === $domain && is_array($entry)) {
-                return $entry['domain_type'] ?? null;
+                return $this->canonicalType($entry['domain_type'] ?? null);
             }
         }
 
         return null;
+    }
+
+    /**
+     * Phase 15-G — Part 3: found while verifying the resume-ownership fix.
+     * cPanel's raw DomainInfo::domains_data `domain_type` field ('sub' /
+     * 'addon', naming unverified against a live account — same confidence
+     * posture as the rest of this class) never matched the internal type
+     * labels createSubdomain()/createAddonDomain() write ('subdomain' /
+     * 'addon'). removeDomain() only recognizes the latter, so a domain
+     * resolved through the "already exists" path (this method) was silently
+     * never removable on rollback even when created_by_installer correctly
+     * became true — the exact case Part 3's fix makes reachable for the
+     * first time. Normalizing here means both paths agree on one label set.
+     */
+    private function canonicalType(?string $rawType): ?string
+    {
+        return match ($rawType) {
+            'sub', 'subdomain' => 'subdomain',
+            'addon', 'addondomain' => 'addon',
+            default => $rawType,
+        };
     }
 
     private function isDirectSubdomainOf(string $domain, string $mainDomain): bool

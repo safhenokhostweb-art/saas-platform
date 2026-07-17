@@ -2,6 +2,7 @@
 
 namespace App\Services\CustomerInstallation;
 
+use App\Models\CustomerInstallationLog;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
 use App\Services\CustomerInstallation\Ssl\SslProvisionerFactory;
@@ -90,6 +91,15 @@ class PostInstallValidationService
 
     private function checkQueue(InstallationContext $ctx, string $slug): array
     {
+        // Phase 15-G — Part 4: non-VPS-family drivers (cPanel etc.) never run
+        // Supervisor — CONFIGURE_QUEUE provisions a cron-based worker instead
+        // (CpanelQueueProvisioner). Probing supervisorctl there always hit
+        // the "unavailable" branch and produced a false WARN. See
+        // checkNonVpsBackgroundTask().
+        if (!$ctx->connection->driverType()->isVpsFamily()) {
+            return $this->checkNonVpsBackgroundTask($ctx, 'CONFIGURE_QUEUE', 'Queue worker');
+        }
+
         $workerName = "{$slug}_worker";
         $result     = $ctx->connection->execute(
             "supervisorctl status {$workerName} 2>/dev/null || echo 'supervisor-unavailable'"
@@ -163,6 +173,14 @@ class PostInstallValidationService
 
     private function checkScheduler(InstallationContext $ctx, string $slug): array
     {
+        // Phase 15-G — Part 4: non-VPS-family drivers (cPanel etc.) never
+        // write /etc/cron.d — CONFIGURE_SCHEDULER provisions the scheduler
+        // via UAPI Cron instead (CpanelCronProvisioner). Probing the file
+        // there always reported "missing" and produced a false WARN.
+        if (!$ctx->connection->driverType()->isVpsFamily()) {
+            return $this->checkNonVpsBackgroundTask($ctx, 'CONFIGURE_SCHEDULER', 'Scheduler');
+        }
+
         $cronPath = "/etc/cron.d/{$slug}";
         $result   = $ctx->connection->execute(
             "test -f " . escapeshellarg($cronPath) . " && echo found || echo missing"
@@ -174,6 +192,42 @@ class PostInstallValidationService
         }
 
         return $this->check('WARN', "Cron entry missing at {$cronPath} — scheduler needs manual setup", false, $out);
+    }
+
+    /**
+     * Phase 15-G — Part 4: for a non-VPS-family driver, "is this background
+     * task configured" is answered by reading the provisioning stage's own
+     * recorded outcome (CpanelCronLine/ProvisioningResult, surfaced through
+     * ConfigureQueueStage/ConfigureSchedulerStage's output), not by probing a
+     * VPS-only filesystem path or binary that was never expected to exist on
+     * this driver. Reads the in-memory context first (same pipeline run);
+     * falls back to the persisted log if this run resumed past that stage.
+     */
+    private function checkNonVpsBackgroundTask(InstallationContext $ctx, string $stageName, string $label): array
+    {
+        $output = $ctx->getOutput($stageName);
+
+        if (empty($output)) {
+            $log = CustomerInstallationLog::where('installation_id', $ctx->installation->id)
+                ->where('stage', $stageName)
+                ->where('event', 'completed')
+                ->latest('id')
+                ->first();
+
+            $output = $log?->output ?? [];
+        }
+
+        $isSkipped = ($output['skipped'] ?? false) === true || ($output['status'] ?? null) === 'skipped';
+
+        if ($isSkipped) {
+            return $this->check('WARN', "{$label} could not be configured on this hosting account — manual setup may be needed", false, 'skipped');
+        }
+
+        if (!empty($output)) {
+            return $this->check('PASS', "{$label} configured via hosting-panel API", false, 'OK');
+        }
+
+        return $this->check('WARN', "{$label} status could not be determined for this hosting type", false, 'unknown');
     }
 
     private function checkDomain(InstallationContext $ctx, string $domain): array

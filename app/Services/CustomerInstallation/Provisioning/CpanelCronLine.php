@@ -20,8 +20,26 @@ final class CpanelCronLine
 
     public function install(InstallationContext $ctx, string $command, string $failureContext): ProvisioningResult
     {
+        $server = $this->server($ctx);
+        $line   = "* * * * * {$command}";
+
+        // Phase 15-G — Part 2: check for the exact command before adding a
+        // new line. Without this, resuming CONFIGURE_SCHEDULER/CONFIGURE_QUEUE
+        // after a crash that happened between the UAPI call succeeding and
+        // CustomerInstallationOrchestrator recording the stage complete would
+        // add a second, duplicate line (see CpanelCronDuplicationOnResumeTest,
+        // Phase 15-F). If the existence check itself fails (listing not
+        // available/blocked), fall through to add_line as before — never
+        // worse than the pre-Part-2 behavior, only potentially not better.
+        if ($this->lineAlreadyExists($server, $command)) {
+            return ProvisioningResult::installed(
+                ['cron_line' => $line, 'already_existed' => true],
+                ['cron_line' => $line]
+            );
+        }
+
         try {
-            $this->uapi->call($this->server($ctx), 'Cron', 'add_line', [
+            $this->uapi->call($server, 'Cron', 'add_line', [
                 'command' => $command,
                 'minute'  => '*',
                 'hour'    => '*',
@@ -41,9 +59,34 @@ final class CpanelCronLine
             return ProvisioningResult::skipped("{$failureContext}: " . $e->getMessage());
         }
 
-        $line = "* * * * * {$command}";
-
         return ProvisioningResult::installed(['cron_line' => $line], ['cron_line' => $line]);
+    }
+
+    /**
+     * Best-effort existence check — UAPI function name (Cron::list_lines) is
+     * unverified against a live cPanel account, same confidence posture as
+     * every other UAPI call added in Phase 15-D/15-E (see this class's
+     * docblock precedent). Any failure here (wrong function name, transport
+     * error) is swallowed and treated as "unknown", never as "not found" —
+     * install() falls back to its prior unconditional add_line behavior.
+     */
+    private function lineAlreadyExists(CustomerRemoteServer $server, string $command): bool
+    {
+        try {
+            $data = $this->uapi->call($server, 'Cron', 'list_lines');
+        } catch (RuntimeException | ConnectionException) {
+            return false;
+        }
+
+        foreach ($data as $entry) {
+            $existingCommand = is_array($entry) ? ($entry['command'] ?? null) : $entry;
+
+            if ($existingCommand !== null && str_contains((string) $existingCommand, $command)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Best-effort — must not throw. */

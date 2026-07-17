@@ -4,6 +4,8 @@ namespace App\Services\CustomerInstallation\Provisioning;
 
 use App\Models\CustomerRemoteServer;
 use App\Services\CustomerInstallation\CredentialVault;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -29,35 +31,90 @@ class CpanelUapiClient
     /**
      * @return array The decoded "data" payload on success.
      * @throws RuntimeException on HTTP failure or a UAPI-level error (status=0).
+     * @throws ConnectionException if every attempt exhausts on a transport failure.
      */
     public function call(CustomerRemoteServer $server, string $module, string $function, array $params = []): array
     {
         $url = $this->endpoint($server, $module, $function);
 
-        $response = Http::withHeaders([
-            'Authorization' => 'cpanel ' . $server->username . ':' . $this->credential($server),
-        ])
-            ->withOptions(['verify' => (bool) config('customer_installation.cpanel.uapi_verify_ssl', true)])
-            ->timeout((int) config('customer_installation.cpanel.uapi_timeout', 30))
-            ->asForm()
-            ->post($url, $params);
+        $maxAttempts = max(1, (int) config('customer_installation.cpanel.uapi_retry_attempts', 2));
+        $delayMs     = max(0, (int) config('customer_installation.cpanel.uapi_retry_delay', 300));
 
-        if (!$response->successful()) {
-            throw new RuntimeException(
-                "cPanel UAPI {$module}::{$function} HTTP {$response->status()}: " . $response->body()
-            );
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'cpanel ' . $server->username . ':' . $this->credential($server),
+                ])
+                    ->withOptions(['verify' => (bool) config('customer_installation.cpanel.uapi_verify_ssl', true)])
+                    ->timeout((int) config('customer_installation.cpanel.uapi_timeout', 30))
+                    ->asForm()
+                    ->post($url, $params);
+            } catch (ConnectionException $e) {
+                if ($attempt < $maxAttempts) {
+                    $this->wait($delayMs);
+                    continue;
+                }
+                throw $e;
+            }
+
+            // Retry ONLY a transient server-side failure (5xx) — a 4xx
+            // (invalid token, permission denied, bad parameters) is a
+            // permanent client-side failure and must never be retried.
+            if ($response->serverError() && $attempt < $maxAttempts) {
+                $this->wait($delayMs);
+                continue;
+            }
+
+            if (!$response->successful()) {
+                throw new RuntimeException(
+                    "cPanel UAPI {$module}::{$function} HTTP {$response->status()}: " . $this->summarize($response)
+                );
+            }
+
+            $json = $response->json();
+
+            // A UAPI-level error (status=0) is a business/API failure, not a
+            // transport failure — it is returned on a normal 200 response and
+            // is never retried, even on the very first attempt.
+            if (!is_array($json) || (int) ($json['status'] ?? 0) !== 1) {
+                $errors = $json['errors'] ?? ['Unknown UAPI error'];
+                throw new RuntimeException(
+                    "cPanel UAPI {$module}::{$function} failed: " . implode('; ', (array) $errors)
+                );
+            }
+
+            return $json['data'] ?? [];
         }
 
-        $json = $response->json();
+        // Unreachable in practice (the loop above always returns or throws
+        // on its final iteration) but keeps the method's return type honest.
+        throw new RuntimeException("cPanel UAPI {$module}::{$function}: retries exhausted");
+    }
 
-        if (!is_array($json) || (int) ($json['status'] ?? 0) !== 1) {
-            $errors = $json['errors'] ?? ['Unknown UAPI error'];
-            throw new RuntimeException(
-                "cPanel UAPI {$module}::{$function} failed: " . implode('; ', (array) $errors)
-            );
+    private function wait(int $ms): void
+    {
+        if ($ms > 0) {
+            usleep($ms * 1000);
+        }
+    }
+
+    /**
+     * Phase 15-G — Part 6: never embed the full raw response body in an
+     * exception message. The body is attacker/host-controlled content that
+     * previously flowed straight into StageResult output and
+     * customer_installation_logs verbatim; a short, truncated summary is
+     * enough to diagnose a failure without persisting arbitrary remote
+     * content indefinitely.
+     */
+    private function summarize(Response $response): string
+    {
+        $body = trim((string) $response->body());
+
+        if ($body === '') {
+            return '(empty response body)';
         }
 
-        return $json['data'] ?? [];
+        return mb_strlen($body) > 200 ? mb_substr($body, 0, 200) . '…' : $body;
     }
 
     private function endpoint(CustomerRemoteServer $server, string $module, string $function): string
