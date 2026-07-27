@@ -1,0 +1,12 @@
+{
+  "roles": ["creator", "reviewer", "platform_admin", "tenant", "ai_provider"],
+  "permissions": {
+    "creator": ["create_draft", "submit_review"],
+    "reviewer": ["review"],
+    "platform_admin": ["create_draft", "submit_review", "review", "approve", "publish", "rollback", "change_ownership", "deprecate"],
+    "tenant": ["consume_published", "request_variant"],
+    "ai_provider": ["propose"]
+  },
+  "platform_admin_only": ["approve", "publish", "rollback", "change_ownership", "deprecate"]
+}
+

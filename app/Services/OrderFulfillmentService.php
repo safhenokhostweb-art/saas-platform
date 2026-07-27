@@ -120,9 +120,24 @@ class OrderFulfillmentService
         $moduleId = $item->product->module_id;
         $module = Module::find($moduleId);
 
-        $site->modules()->syncWithoutDetaching([
-            $moduleId => ['is_active' => true, 'activated_at' => now()],
-        ]);
+        // Phase 17-D — Part 5: previously a direct syncWithoutDetaching(),
+        // which granted entitlement without ever attempting to deploy the
+        // module's code — a paying customer could end up with is_active=true
+        // and no working module. activatePaidPurchase() still guarantees
+        // is_active=true unconditionally (payment already happened; access
+        // must never hinge on an infra hiccup) but also runs the real
+        // CustomerInstallation Pipeline dispatch, so deployment_status
+        // honestly reflects whether the code is actually on its way.
+        $activation = app(\App\Services\ModuleAssignmentService::class)->activatePaidPurchase($site, $moduleId);
+        if (! $activation['success']) {
+            Log::warning('Module addon fulfillment: deployment dispatch failed (entitlement still granted)', [
+                'site_id' => $site->id,
+                'module_id' => $moduleId,
+                'invoice_id' => $item->invoice_id,
+                'error' => $activation['error'] ?? null,
+            ]);
+        }
+
         $purchase = app(ModulePurchaseService::class)->recordPurchaseFromInvoice($site, $moduleId, $item);
 
         // Wave 5.1 / P1-1 — record ledger entry (best-effort; ledger has its

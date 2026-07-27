@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "primary_filenames": ["animation.svg", "icon.svg", "asset.svg"],
+  "common_required_files": [
+    "preview.svg",
+    "metadata.json",
+    "README.md",
+    "AI_EDITING_INSTRUCTIONS.txt"
+  ],
+  "disallowed_elements": ["script", "foreignObject", "image", "iframe", "object", "embed", "audio", "video", "canvas"],
+  "disallowed_attribute_prefixes": ["on"],
+  "disallowed_schemes": ["http:", "https:", "//", "file:", "javascript:", "data:"],
+  "disallow_doctype": true,
+  "disallow_entity_declarations": true,
+  "accessibility": {
+    "required_elements": ["title", "desc"],
+    "required_role": "img",
+    "accessible_name_any_of": ["aria-label", "aria-labelledby"]
+  },
+  "allowed_internal_reference_prefix": "#",
+  "max_file_bytes": 102400
+}

@@ -1,0 +1,2 @@
+{"name":"broken integration assumption","patch":{"assumptions":{"no_direct_database_access":false}},"expected_codes":["INTEGRATION_ASSUMPTION_BROKEN"]}
+

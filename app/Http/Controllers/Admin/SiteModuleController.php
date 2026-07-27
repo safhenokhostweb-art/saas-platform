@@ -7,7 +7,19 @@ use App\Models\Site;
 use App\Services\ModuleAssignmentService;
 use App\Services\SiteModuleEntitlementAuditor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Phase 17-D — this controller no longer touches site_modules directly at
+ * all (no sync()/attach()/updateExistingPivot()). Every activation goes
+ * through ModuleAssignmentService::enableForSite() (which owns the license/
+ * internal/retired/package/conflict guards and the real CustomerInstallation
+ * Pipeline dispatch via ModuleDeploymentRequestService); every deactivation
+ * goes through ModuleAssignmentService::disableForSite(). This controller's
+ * only job is: validate input, call the service, translate the result into
+ * a message the admin understands.
+ */
 class SiteModuleController extends Controller
 {
     public function __construct(
@@ -38,57 +50,49 @@ class SiteModuleController extends Controller
         $modulesInput = $request->input('modules', []);
         $featuresInput = $request->input('features', []);
 
-        $assignableModules = $this->assignmentService->modulesForManualAssign()->keyBy('id');
-        $licenseService = app(\App\Services\ModuleLicenseService::class);
-        $site->load('modules');
-
-        $beforeActive = [];
-        foreach ($site->modules as $m) {
-            $beforeActive[(int) $m->id] = (bool) $m->pivot->is_active;
-        }
-
-        // همهٔ ماژول‌های فعلی سایت را نگه می‌داریم (شامل PAID که از خرید فعال شده)
-        $syncModules = [];
-        foreach ($site->modules as $m) {
-            $syncModules[$m->id] = [
-                'is_active' => (bool) $m->pivot->is_active,
-                'activated_at' => $m->pivot->activated_at,
-            ];
-        }
-
-        foreach ($modulesInput as $moduleId => $isActive) {
-            $moduleId = (int) $moduleId;
-            $module = $assignableModules->get($moduleId);
-            if (! $module) {
-                continue;
-            }
-            $active = (bool) $isActive;
-            if ($active && $module->isLicenseOnly() && ! $licenseService->hasValidLicense($site, $moduleId)) {
-                continue;
-            }
-            $current = $site->modules->firstWhere('id', $moduleId);
-            $wasActive = $current && $current->pivot->is_active;
-            $activatedAt = $active ? ($wasActive ? ($current->pivot->activated_at ?? now()) : now()) : null;
-            $syncModules[$moduleId] = [
-                'is_active' => $active,
-                'activated_at' => $activatedAt,
-            ];
-        }
-        $site->modules()->sync($syncModules);
+        $assignableModules = $this->assignmentService->modulesForManualAssign();
+        $assignableIds = $assignableModules->pluck('id')->all();
 
         $site->load('modules');
-        foreach ($assignableModules as $moduleId => $module) {
-            $mid = (int) $moduleId;
-            $before = $beforeActive[$mid] ?? false;
-            $pivotRow = $site->modules->firstWhere('id', $mid);
-            $after = $pivotRow ? (bool) $pivotRow->pivot->is_active : false;
-            $this->entitlementAuditor->syncAfterPivotChange($site, $module, $before, $after);
+        $currentActiveMap = [];
+        foreach ($assignableModules as $m) {
+            $pivot = $site->modules->firstWhere('id', $m->id);
+            $currentActiveMap[$m->id] = $pivot ? (bool) $pivot->pivot->is_active : false;
         }
+
+        // Phase 17-D — the view's checkboxes have no hidden "0" fallback
+        // input, so an unchecked box is simply ABSENT from $modulesInput
+        // (standard HTML behavior), not present with a falsy value. A
+        // module missing from the input entirely must be treated as
+        // "no change requested" (preserve its current state) exactly like
+        // the pre-17-D sync()-based code did — never silently disabled.
+        // Only a module explicitly present with a falsy value (not
+        // currently produced by this view, but honored if a future form
+        // adds one) is treated as "wants inactive."
+        $requestedActiveIds = [];
+        foreach ($assignableIds as $id) {
+            if (array_key_exists($id, $modulesInput) || array_key_exists((string) $id, $modulesInput)) {
+                $value = $modulesInput[$id] ?? $modulesInput[(string) $id];
+                if ((bool) $value) {
+                    $requestedActiveIds[] = $id;
+                }
+            } elseif ($currentActiveMap[$id]) {
+                $requestedActiveIds[] = $id;
+            }
+        }
+
+        $results = $this->assignmentService->syncManualAssignmentsForSite(
+            $site,
+            $assignableIds,
+            $requestedActiveIds,
+            Auth::id()
+        );
 
         // سینک فیچرها: جدول site_module_features با site_module_id کار می‌کند، نه site_id
+        // (بدون تغییر منطق — مستقل از فعال/غیرفعال شدن ماژول در بالا)
         $site->load('modules');
         foreach ($site->modules as $module) {
-            $siteModule = \Illuminate\Support\Facades\DB::table('site_modules')
+            $siteModule = DB::table('site_modules')
                 ->where('site_id', $site->id)
                 ->where('module_id', $module->id)
                 ->first();
@@ -97,12 +101,12 @@ class SiteModuleController extends Controller
             }
             $siteModuleId = $siteModule->id;
             $featureIdsForModule = \App\Models\ModuleFeature::where('module_id', $module->id)->pluck('id')->all();
-            \Illuminate\Support\Facades\DB::table('site_module_features')
+            DB::table('site_module_features')
                 ->where('site_module_id', $siteModuleId)
                 ->delete();
             foreach ($featureIdsForModule as $fid) {
                 if (!empty($featuresInput[$fid])) {
-                    \Illuminate\Support\Facades\DB::table('site_module_features')->insert([
+                    DB::table('site_module_features')->insert([
                         'site_module_id' => $siteModuleId,
                         'module_feature_id' => $fid,
                         'is_active' => true,
@@ -113,7 +117,7 @@ class SiteModuleController extends Controller
             }
         }
 
-        return back()->with('success', 'ماژول‌ها با موفقیت ذخیره شدند.');
+        return back()->with(...$this->summarizeBulkResult($results));
     }
 
     /**
@@ -124,47 +128,81 @@ class SiteModuleController extends Controller
         $request->validate(['module_id' => 'required|exists:modules,id']);
         $moduleId = (int) $request->module_id;
         $module = $this->assignmentService->modulesForManualAssign()->firstWhere('id', $moduleId);
+
         if (! $module) {
-            if ($request->wantsJson()) {
-                return response()->json(['ok' => false, 'error' => 'ماژول قابل اختصاص دستی نیست یا یافت نشد.'], 404);
-            }
-            return back()->with('error', 'این ماژول از طریق این بخش قابل تغییر نیست (فقط ماژول‌های رایگان یا لایسنس‌دار).');
-        }
-        if ($module->isLicenseOnly() && ! app(\App\Services\ModuleLicenseService::class)->hasValidLicense($site, $moduleId)) {
-            if ($request->wantsJson()) {
-                return response()->json(['ok' => false, 'error' => 'برای فعال‌سازی ابتدا لایسنس ماژول را صادر کنید.'], 403);
-            }
-            return back()->with('error', 'برای فعال‌سازی این ماژول ابتدا لایسنس را از بخش لایسنس ماژول صادر کنید.');
+            $message = 'این ماژول از طریق این بخش قابل تغییر نیست (فقط ماژول‌های رایگان یا لایسنس‌دار).';
+            return $this->respond($request, false, $message, $site);
         }
 
         $current = $site->modules()->where('module_id', $moduleId)->first();
         $wasActive = $current && $current->pivot->is_active;
-        $newActive = ! $wasActive;
 
-        $assignableIds = $this->assignmentService->modulesForManualAssign()->pluck('id')->all();
-        $site->load('modules');
-        $sync = [];
-        foreach ($site->modules as $m) {
-            $sync[$m->id] = [
-                'is_active' => $m->id === $moduleId ? $newActive : (bool) $m->pivot->is_active,
-                'activated_at' => $m->id === $moduleId && $newActive ? now() : $m->pivot->activated_at,
-            ];
+        if ($wasActive) {
+            $result = $this->assignmentService->disableForSite($site, $moduleId);
+            $message = $result['success']
+                ? 'ماژول غیرفعال شد.'
+                : ($result['error'] ?? 'غیرفعال‌سازی ماژول با خطا مواجه شد.');
+        } else {
+            $result = $this->assignmentService->enableForSite($site, $moduleId, Auth::id());
+            // Phase 17-D — Part 6: success here means the Pipeline was
+            // queued, not that the module is already installed on the site.
+            $message = $result['success']
+                ? 'نصب ماژول در صف قرار گرفت و به‌زودی روی سایت اعمال می‌شود.'
+                : ($result['error'] ?? 'فعال‌سازی ماژول با خطا مواجه شد.');
         }
-        if (! isset($sync[$moduleId])) {
-            $sync[$moduleId] = ['is_active' => $newActive, 'activated_at' => $newActive ? now() : null];
-        }
-        $site->modules()->sync($sync);
 
-        $site->load('modules');
-        $pivotRow = $site->modules->firstWhere('id', $moduleId);
-        $nowActive = $pivotRow ? (bool) $pivotRow->pivot->is_active : false;
-        $this->entitlementAuditor->syncAfterPivotChange($site, $module, (bool) $wasActive, $nowActive);
+        return $this->respond($request, $result['success'], $message, $site);
+    }
 
+    private function respond(Request $request, bool $ok, string $message, Site $site)
+    {
         if ($request->wantsJson()) {
             $site->load('modules');
             $activeSlugs = $site->modules->filter(fn ($m) => $m->pivot->is_active)->pluck('slug')->all();
-            return response()->json(['ok' => true, 'modules' => $activeSlugs]);
+            return response()->json([
+                'ok' => $ok,
+                'message' => $message,
+                'error' => $ok ? null : $message,
+                'modules' => $activeSlugs,
+            ], $ok ? 200 : 422);
         }
-        return back()->with('success', 'ماژول به‌روزرسانی شد.');
+
+        return back()->with($ok ? 'success' : 'error', $message);
+    }
+
+    /**
+     * Phase 17-D — Part 4/6: تبدیل نتیجهٔ per-module syncManualAssignmentsForSite()
+     * به یک پیام خلاصهٔ واحد — چون View فعلی فقط یک flash message ساده
+     * نمایش می‌دهد (کم‌ریسک‌ترین سازگاری با UI موجود، به‌جای بازطراحی کامل صفحه).
+     *
+     * @param array<int, array{module_id:int, slug:string, title:string, result:string, error?:string}> $results
+     * @return array{0: string, 1: string} [flashKey, message]
+     */
+    private function summarizeBulkResult(array $results): array
+    {
+        $enabled = array_filter($results, fn ($r) => $r['result'] === 'enabled');
+        $disabled = array_filter($results, fn ($r) => $r['result'] === 'disabled');
+        $failed = array_filter($results, fn ($r) => $r['result'] === 'failed');
+
+        $parts = [];
+        if (count($enabled)) {
+            $parts[] = count($enabled) . ' ماژول در صف نصب قرار گرفت';
+        }
+        if (count($disabled)) {
+            $parts[] = count($disabled) . ' ماژول غیرفعال شد';
+        }
+        if (count($failed)) {
+            $reasons = implode('؛ ', array_map(
+                fn ($r) => $r['title'] . ': ' . ($r['error'] ?? 'نامشخص'),
+                $failed
+            ));
+            $parts[] = count($failed) . " ماژول ناموفق ({$reasons})";
+        }
+
+        if (empty($parts)) {
+            return ['success', 'هیچ تغییری در ماژول‌ها اعمال نشد.'];
+        }
+
+        return [count($failed) ? 'error' : 'success', implode('، ', $parts) . '.'];
     }
 }

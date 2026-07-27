@@ -15,6 +15,8 @@ use SaaSPlatform\CoreUtils\Console\Commands\ValidateAuthorityCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\DriftAuthorityCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleVersionCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleBuildCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\ModuleCreateCommand;
+use SaaSPlatform\CoreUtils\Console\Commands\ModuleValidateCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleReleaseBackfillCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleReleaseCommand;
 use SaaSPlatform\CoreUtils\Console\Commands\ModuleListCommand;
@@ -1125,6 +1127,8 @@ class CoreUtilsServiceProvider extends ServiceProvider
                 // PHASE 6.98 — TASK 2: Module version management commands
                 ModuleVersionCommand::class,
                 ModuleBuildCommand::class,
+                ModuleCreateCommand::class,
+                ModuleValidateCommand::class,
                 ModuleReleaseCommand::class,
                 // Commit 12-H: one-time module_releases backfill
                 ModuleReleaseBackfillCommand::class,

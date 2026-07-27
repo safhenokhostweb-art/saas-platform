@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "library_root": "../../packages/saas-platform/modules/motion-graphics/assets/library",
+  "reports_directory": "reports",
+  "rules": {
+    "svg": "rules/svg-rules.json",
+    "metadata": "rules/metadata-rules.json",
+    "theme": "rules/theme-rules.json",
+    "ai": "rules/ai-rules.json"
+  },
+  "required_indexes": [
+    {
+      "name": "library-index",
+      "path": "library-index.json",
+      "base": ".",
+      "entries_property": "assets",
+      "count_property": "total_assets",
+      "required": true,
+      "canonical": true
+    },
+    {
+      "name": "icons-index",
+      "path": "icons/index.json",
+      "base": "icons",
+      "entries_property": "icons",
+      "count_property": "total_icons",
+      "required": true
+    },
+    {
+      "name": "visual-assets-index",
+      "path": "visual-assets/visual-assets-index.json",
+      "base": "visual-assets",
+      "entries_property": "assets",
+      "count_property": "total_assets",
+      "required": true
+    },
+    {
+      "name": "object-library-index",
+      "path": "visual-assets/object-library/object-library-index.json",
+      "base": "visual-assets",
+      "entries_property": "assets",
+      "count_property": "total_assets",
+      "required": true
+    }
+  ],
+  "report": {
+    "max_issues_in_markdown": 250,
+    "max_members_per_duplicate_group": 100
+  },
+  "safety": {
+    "read_only_library": true,
+    "allow_asset_writes": false,
+    "write_only_to_reports_directory": true
+  }
+}

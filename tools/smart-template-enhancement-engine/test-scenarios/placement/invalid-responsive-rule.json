@@ -1,0 +1,11 @@
+{
+  "name": "mobile width exceeds 100 percent",
+  "asset_id": "visual:business-objects:office-desk:v1",
+  "asset_type": "visual-asset",
+  "industry": "company",
+  "audience": "company",
+  "section": "about",
+  "position": "leading",
+  "override": { "responsive_rules": { "mobile": { "width_percent": 120 } } },
+  "expected_error": "responsive_rules.mobile is invalid"
+}

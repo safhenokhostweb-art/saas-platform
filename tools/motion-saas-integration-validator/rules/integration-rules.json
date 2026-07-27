@@ -1,0 +1,16 @@
+{
+  "ownership_sequence":["platform_master","template_reference","site_package","customer_variant"],
+  "required_entities":["MotionAsset","MotionVersion","TemplateAssetPackage","SiteAssetPackage","AssetVariant","ApprovalRecord","LicenseSnapshot","DeploymentRecord","AuditRecord"],
+  "deployment_operations":["prepareTemplateAssets","resolveSitePackage","validatePackage","activateRuntimeProjection","rollbackPackage"],
+  "required_assumptions":{
+    "module_remains_independent":true,
+    "adapter_is_translation_boundary":true,
+    "deny_by_default":true,
+    "published_projection_only":true,
+    "no_direct_database_access":true,
+    "no_host_models_in_module":true,
+    "deployment_owned_by_platform":true,
+    "rollback_creates_new_version":true
+  }
+}
+

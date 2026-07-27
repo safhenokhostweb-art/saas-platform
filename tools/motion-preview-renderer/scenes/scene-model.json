@@ -1,0 +1,1 @@
+{"version":1,"supported_layers":["brand","text","asset","data","subtitle","audio-cue","placeholder"],"transform":{"position":{"x_percent":[0,100],"y_percent":[0,100]},"scale":[0.1,4],"opacity":[0,1],"rotation_degrees":[-360,360]},"directions":["rtl","ltr","auto"],"text_alignments":["start","center","end"],"safe_area_percent":8}

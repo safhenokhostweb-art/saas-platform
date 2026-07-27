@@ -1,0 +1,10 @@
+{
+  "name": "object forbidden in footer",
+  "asset_id": "object:restaurant:chef-hat:v1",
+  "asset_type": "object",
+  "industry": "restaurant",
+  "audience": "consumer",
+  "section": "footer",
+  "position": "inline",
+  "expected_error": "asset type object is not allowed in footer"
+}

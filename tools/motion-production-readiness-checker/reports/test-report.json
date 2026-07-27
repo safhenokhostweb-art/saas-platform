@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-07-18T17:52:12.973Z",
+  "total": 9,
+  "passed": 9,
+  "failed": 0,
+  "asset_library_unchanged": true,
+  "asset_library_sha256": "389ba4b82eb2b6258b9e69d9c20e2a17d9e51179c247e9f792d30a4b15dcf1d2",
+  "scenarios": [
+    {
+      "name": "valid production package",
+      "passed": true,
+      "codes": []
+    },
+    {
+      "name": "broken motion reference",
+      "passed": true,
+      "codes": [
+        "MOTION_REFERENCE_BROKEN"
+      ]
+    },
+    {
+      "name": "customer modifying master asset",
+      "passed": true,
+      "codes": [
+        "ACTION_UNAUTHORIZED",
+        "TENANT_MASTER_MODIFICATION"
+      ]
+    },
+    {
+      "name": "invalid license",
+      "passed": true,
+      "codes": [
+        "LICENSE_CLASS_INVALID",
+        "LICENSE_USAGE_INVALID",
+        "LICENSE_EXPIRY_INVALID"
+      ]
+    },
+    {
+      "name": "invalid lifecycle transition",
+      "passed": true,
+      "codes": [
+        "LIFECYCLE_TRANSITION_INVALID"
+      ]
+    },
+    {
+      "name": "missing approval",
+      "passed": true,
+      "codes": [
+        "APPROVAL_MISSING"
+      ]
+    },
+    {
+      "name": "performance warning",
+      "passed": true,
+      "codes": [
+        "PERFORMANCE_WARNING"
+      ]
+    },
+    {
+      "name": "unauthorized publish",
+      "passed": true,
+      "codes": [
+        "ACTION_UNAUTHORIZED",
+        "PLATFORM_ADMIN_REQUIRED",
+        "TENANT_MASTER_MODIFICATION"
+      ]
+    },
+    {
+      "name": "unsafe SVG detection",
+      "passed": true,
+      "codes": [
+        "SVG_SCRIPT"
+      ]
+    }
+  ]
+}

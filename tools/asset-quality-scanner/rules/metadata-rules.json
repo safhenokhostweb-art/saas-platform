@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "required_fields": [
+    "library_id",
+    "name",
+    "name_fa",
+    "name_en",
+    "slug",
+    "category",
+    "tags",
+    "usage",
+    "theme_support",
+    "ai_editable",
+    "asset_role",
+    "variant_supported",
+    "ownership",
+    "quality_score"
+  ],
+  "array_fields": ["tags", "usage", "editable_properties"],
+  "non_empty_string_fields": ["library_id", "name", "name_fa", "name_en", "slug", "category"],
+  "boolean_fields": ["theme_support", "ai_editable", "variant_supported"],
+  "slug_pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+  "library_id_pattern": "^[a-z][a-z0-9-]*:[a-z0-9-]+:[a-z0-9-]+:v[1-9][0-9]*$",
+  "quality_score_fields": ["technical", "visual", "reusability", "ai_readiness"],
+  "quality_score_min": 0,
+  "quality_score_max": 100
+}

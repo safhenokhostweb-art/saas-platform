@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="آزمایشگاه مستقل شبیه‌سازی ارتقای قالب با دارایی‌های Motion Graphics">
+  <title>آزمایشگاه شبیه‌سازی ارتقای قالب</title>
+  <link rel="stylesheet" href="./data/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><div><small>Motion Graphics / Simulation Lab</small><h1>آزمایشگاه ارتقای هوشمند قالب</h1></div></div>
+    <button id="ai-open" class="button ghost" type="button">بهبود قالب با AI <span>Prototype</span></button>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">Read-only evaluation</p><h2>از قالب عمومی تا تجربه حرفه‌ای متناسب با کسب‌وکار</h2><p>این محیط قراردادهای واقعی Recommendation، Placement و Brand Theme را بدون تولید Asset یا اتصال به سرویس خارجی شبیه‌سازی می‌کند.</p></div>
+      <label class="scenario-picker">سناریوی کسب‌وکار<select id="scenario-select" aria-label="انتخاب سناریوی کسب‌وکار"></select></label>
+    </section>
+
+    <section class="summary" aria-live="polite">
+      <article><span>کسب‌وکار</span><strong id="business-name">—</strong></article>
+      <article><span>صنعت</span><strong id="industry">—</strong></article>
+      <article><span>امتیاز قبل</span><strong id="before-score">—</strong></article>
+      <article class="improved"><span>امتیاز بعد</span><strong id="after-score">—</strong></article>
+      <article><span>بهبود</span><strong id="delta-score">—</strong></article>
+    </section>
+
+    <section class="theme-strip"><div><span>شبیه‌سازی تم برند</span><div id="theme-tokens" class="tokens"></div></div><p>رنگ‌ها در حافظه مرورگر به CSS Token تبدیل می‌شوند؛ هیچ Variant واقعی ساخته نمی‌شود.</p></section>
+
+    <section class="comparison" aria-label="مقایسه قبل و بعد">
+      <div class="column before-column"><header><span>قبل از ارتقا</span><h2>قالب عمومی</h2><p id="template-name">—</p></header><div id="before-sections" class="sections"></div></div>
+      <div class="transform-arrow" aria-hidden="true"><span>←</span><small>Enhance</small></div>
+      <div class="column after-column"><header><span>بعد از ارتقا</span><h2>قالب تخصصی کسب‌وکار</h2><p>Asset واقعی + Placement معتبر + تم برند</p></header><div id="after-sections" class="sections"></div></div>
+    </section>
+
+    <section class="validation"><div><p class="eyebrow">Contract validation</p><h2>کنترل‌های شبیه‌سازی</h2></div><div id="validation-grid" class="validation-grid"></div></section>
+  </main>
+
+  <dialog id="ai-modal">
+    <form method="dialog" class="modal-card" id="ai-form">
+      <header><div><p class="eyebrow">Future interface only</p><h2>بهبود قالب با هوش مصنوعی</h2></div><button value="cancel" aria-label="بستن">×</button></header>
+      <p class="notice">هیچ API یا Provider واقعی فراخوانی نمی‌شود و پیشنهاد قابلیت انتشار ندارد.</p>
+      <label>ارائه‌دهنده<select id="ai-provider"><option>OpenAI</option><option>Claude</option><option>Gemini</option><option>Other</option></select></label>
+      <label>توضیح کسب‌وکار<textarea id="ai-description" rows="5" placeholder="نیازها و هدف وب‌سایت را بنویسید"></textarea></label>
+      <pre id="ai-output">برای مشاهده Proposal آزمایشی، دکمه زیر را انتخاب کنید.</pre>
+      <footer><button value="cancel" class="button ghost">انصراف</button><button id="ai-propose" value="default" class="button primary">ساخت Proposal محلی</button></footer>
+    </form>
+  </dialog>
+  <script type="module" src="./engine/browser-app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "performance warning",
+  "patch": {"performance": {"transfer_kb": 150}},
+  "expected_codes": ["PERFORMANCE_WARNING"],
+  "expected_valid": true
+}
+

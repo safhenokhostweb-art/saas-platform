@@ -1,0 +1,6 @@
+{
+  "name": "unsafe SVG detection",
+  "patch": {"motion": {"svg_file": "unsafe-motion.svg"}},
+  "expected_codes": ["SVG_SCRIPT"]
+}
+

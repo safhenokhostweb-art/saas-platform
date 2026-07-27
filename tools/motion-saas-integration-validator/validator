@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {loadRules,markdown,readJson,validateIntegrationContract} from './lib/validator-core.js';
+const root=path.dirname(fileURLToPath(import.meta.url));const args=process.argv.slice(2);let input=null,write=true,output=path.join(root,'reports');
+for(let i=0;i<args.length;i+=1){if(args[i]==='--input')input=args[++i];else if(args[i]==='--output')output=args[++i];else if(args[i]==='--no-write')write=false;else if(args[i]==='--help'){console.log('Usage: node validator --input <integration-contract.json> [--output <dir>] [--no-write]');process.exit(0);}else throw new Error(`Unknown argument: ${args[i]}`);}
+if(!input)throw new Error('--input is required');const file=path.resolve(process.cwd(),input);const {rules}=loadRules(root);const report=validateIntegrationContract(readJson(file),{rules});report.generated_at=new Date().toISOString();report.input=file;
+if(write){const dir=path.resolve(process.cwd(),output);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'latest-report.json'),`${JSON.stringify(report,null,2)}\n`);fs.writeFileSync(path.join(dir,'latest-report.md'),markdown(report,path.basename(file)));}
+console.log(`valid=${report.valid} errors=${report.errors}`);process.exitCode=report.valid?0:1;
+

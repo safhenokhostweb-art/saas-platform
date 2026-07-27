@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "minimum_quality": 70,
+  "maximum_recommendations_per_section": 4,
+  "weights": {
+    "industry": 34,
+    "section_usage": 26,
+    "asset_type": 16,
+    "style": 10,
+    "audience": 6,
+    "quality": 8
+  },
+  "industry_aliases": {
+    "company": ["business", "corporate", "company"],
+    "personal-brand": ["personal", "personal-brand", "professional"],
+    "manufacturing": ["manufacturing", "industry", "production", "factory"],
+    "finance": ["finance", "business", "security", "trust"]
+  },
+  "section_rules": {
+    "hero": { "usage": ["hero", "landing-page"], "asset_types": ["motion", "visual-asset", "object"], "visual_roles": ["business-story", "identity", "attention"] },
+    "features": { "usage": ["feature", "feature-card", "card"], "asset_types": ["icon", "object"], "visual_roles": ["feature-symbol", "scannability"] },
+    "services": { "usage": ["service", "service-section", "card"], "asset_types": ["icon", "object", "visual-asset"], "visual_roles": ["service-symbol", "capability"] },
+    "about": { "usage": ["about", "section", "hero"], "asset_types": ["visual-asset", "motion", "object"], "visual_roles": ["identity", "credibility"] },
+    "products": { "usage": ["product", "card", "section"], "asset_types": ["object", "visual-asset", "icon"], "visual_roles": ["product-focus", "category-symbol"] },
+    "portfolio": { "usage": ["portfolio", "showcase", "section"], "asset_types": ["visual-asset", "object", "motion"], "visual_roles": ["project-proof", "showcase"] },
+    "testimonials": { "usage": ["testimonial", "card", "section"], "asset_types": ["icon", "visual-asset"], "visual_roles": ["trust", "customer-proof"] },
+    "team": { "usage": ["team", "profile", "section"], "asset_types": ["visual-asset", "icon", "object"], "visual_roles": ["people", "credibility"] },
+    "contact": { "usage": ["contact", "communication", "section"], "asset_types": ["icon", "visual-asset", "object"], "visual_roles": ["communication", "location"] },
+    "cta": { "usage": ["cta", "hero", "section"], "asset_types": ["motion", "icon", "visual-asset"], "visual_roles": ["action", "trust"] },
+    "footer": { "usage": ["footer", "contact", "section"], "asset_types": ["icon", "visual-asset"], "visual_roles": ["navigation", "contact"] }
+  },
+  "industry_section_preferences": {
+    "company": { "hero": ["corporate", "business"], "about": ["team", "company"], "services": ["services", "business"] },
+    "medical": { "hero": ["medical", "doctor"], "features": ["health", "trust"], "services": ["medical", "clinic"], "about": ["doctor", "professional"], "cta": ["trust", "security"] },
+    "restaurant": { "hero": ["restaurant", "food"], "features": ["service", "customer"], "services": ["food", "restaurant"], "products": ["food", "menu"] },
+    "ecommerce": { "hero": ["ecommerce", "shopping"], "features": ["payment", "delivery", "trust"], "products": ["product", "ecommerce"], "cta": ["checkout", "secure-payment"] },
+    "education": { "hero": ["education", "online-learning"], "features": ["course", "knowledge"], "services": ["education", "course"] },
+    "construction": { "hero": ["construction", "engineering"], "features": ["quality-control", "safety"], "services": ["engineering", "construction"], "about": ["project", "company"] },
+    "personal-brand": { "hero": ["personal-brand", "professional-profile"], "features": ["skills", "experience"], "services": ["consultation", "portfolio"], "about": ["resume", "profile"] },
+    "tourism": { "hero": ["tourism", "travel"], "features": ["hotel", "location"], "services": ["tourism", "service"] },
+    "finance": { "hero": ["finance", "trust"], "features": ["security", "analytics"], "services": ["payment", "finance"], "cta": ["verification", "trust"] },
+    "technology": { "hero": ["technology", "ai", "digital"], "features": ["software", "cloud", "automation"], "services": ["technology", "api"], "about": ["team", "innovation"] },
+    "manufacturing": { "hero": ["manufacturing", "factory", "production"], "features": ["quality-control", "engineering"], "services": ["production", "industry"], "about": ["factory", "team"] }
+  }
+}

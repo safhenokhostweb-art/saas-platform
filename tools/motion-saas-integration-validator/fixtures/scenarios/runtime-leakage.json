@@ -1,0 +1,2 @@
+{"name":"runtime data leakage","patch":{"runtime_projection_example":{"source_svg":"<svg/>"}},"expected_codes":["RUNTIME_DATA_LEAK"]}
+

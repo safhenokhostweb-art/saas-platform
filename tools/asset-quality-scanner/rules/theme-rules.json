@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "required_variables": [
+    "--asset-primary",
+    "--asset-secondary",
+    "--asset-accent",
+    "--asset-background",
+    "--asset-border"
+  ],
+  "require_current_color": true,
+  "metadata_theme_support_value": true,
+  "allow_colors_in_custom_property_fallbacks": true,
+  "allow_colors_in_asset_variable_declarations": true,
+  "hardcoded_color_properties": [
+    "fill",
+    "stroke",
+    "color",
+    "stop-color",
+    "flood-color",
+    "lighting-color",
+    "background",
+    "background-color",
+    "border-color"
+  ],
+  "named_colors": ["black", "white", "red", "green", "blue", "yellow", "gray", "grey", "orange", "purple", "pink", "brown"]
+}

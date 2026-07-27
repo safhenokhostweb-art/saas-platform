@@ -1,0 +1,14 @@
+{
+  "states": ["draft", "review", "approved", "published", "deprecated"],
+  "transitions": {
+    "draft": ["review"],
+    "review": ["approved"],
+    "approved": ["published"],
+    "published": ["deprecated"],
+    "deprecated": []
+  },
+  "immutable_states": ["published", "deprecated"],
+  "rollback_creates_new_version": true,
+  "approval_required_for": ["approved", "published", "deprecated"]
+}
+

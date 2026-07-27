@@ -29,4 +29,10 @@ return [
 
     // General
     'debug_mode' => env('FEATURE_DEBUG_MODE', false),
+
+    // Motion Graphics SaaS Integration (Phase 1 — Adapter Foundation)
+    // Disabled: existing standalone-module behavior is unchanged.
+    // Enabled: the Laravel adapter layer (app/Modules/MotionGraphics) becomes reachable.
+    // See docs/motion-saas-integration/FEATURE_FLAG_STRATEGY.md.
+    'motion_graphics_integration' => env('FEATURE_MOTION_GRAPHICS_INTEGRATION', false),
 ];

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "instructions_filename": "AI_EDITING_INSTRUCTIONS.txt",
+  "minimum_instruction_bytes": 40,
+  "required_ai_editable_value": true,
+  "editable_properties_field": "editable_properties",
+  "minimum_editable_properties": 1,
+  "forbidden_instruction_patterns": [
+    "api[_ -]?key",
+    "secret",
+    "password",
+    "bearer\\s+[a-z0-9._-]+"
+  ]
+}

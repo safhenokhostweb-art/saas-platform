@@ -1,0 +1,5 @@
+{
+  "allowed_fields":["projection_version","package_id","assets","asset_id","published_version","optimized_reference","integrity","theme_tokens","placement_rules","responsive_rules","reduced_motion","engine","type","accessibility_label","cache_version"],
+  "forbidden_fields":["source_svg","source_definition_json","ai_prompt","ai_metadata_json","provider_payload","editable_schema_json","ownership","customer_id","site_id","approval_record","audit_record","license_snapshot","license_internal","storage_path","draft_reference"]
+}
+

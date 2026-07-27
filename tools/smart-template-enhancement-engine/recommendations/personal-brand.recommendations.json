@@ -1,0 +1,703 @@
+{
+  "contract": "smart-template-enhancement/v1",
+  "prototype": true,
+  "business": {
+    "name": "مهندس آرمان رضایی",
+    "industry": "personal-brand"
+  },
+  "template_before": [
+    {
+      "id": "hero-1",
+      "type": "hero",
+      "title": "معرفی حرفه‌ای",
+      "existing_visuals": []
+    },
+    {
+      "id": "features-2",
+      "type": "features",
+      "title": "مهارت‌ها",
+      "existing_visuals": []
+    },
+    {
+      "id": "services-3",
+      "type": "services",
+      "title": "مشاوره",
+      "existing_visuals": []
+    },
+    {
+      "id": "about-4",
+      "type": "about",
+      "title": "رزومه و تجربه",
+      "existing_visuals": []
+    },
+    {
+      "id": "cta-5",
+      "type": "cta",
+      "title": "درخواست همکاری",
+      "existing_visuals": []
+    }
+  ],
+  "template_after": [
+    {
+      "section_id": "hero-1",
+      "section_type": "hero",
+      "recommended_asset_ids": [
+        "visual:business-objects:business-cards:v1",
+        "motion:education:online-learning-platform:v2",
+        "object:education:graduation-cap:v1",
+        "object:education:online-learning:v1"
+      ]
+    },
+    {
+      "section_id": "features-2",
+      "section_type": "features",
+      "recommended_asset_ids": [
+        "icon:education:course:v1",
+        "object:education:graduation-cap:v1",
+        "object:education:online-learning:v1",
+        "object:electronics:server:v1"
+      ]
+    },
+    {
+      "section_id": "services-3",
+      "section_type": "services",
+      "recommended_asset_ids": [
+        "icon:education:course:v1",
+        "object:education:graduation-cap:v1",
+        "visual:business-objects:business-cards:v1",
+        "object:agriculture:barn:v1"
+      ]
+    },
+    {
+      "section_id": "about-4",
+      "section_type": "about",
+      "recommended_asset_ids": [
+        "visual:business-objects:business-cards:v1",
+        "motion:education:online-learning-platform:v2",
+        "object:education:graduation-cap:v1",
+        "object:education:online-learning:v1"
+      ]
+    },
+    {
+      "section_id": "cta-5",
+      "section_type": "cta",
+      "recommended_asset_ids": [
+        "icon:education:course:v1",
+        "motion:education:online-learning-platform:v2",
+        "visual:business-objects:business-cards:v1",
+        "icon:business:brand:v1"
+      ]
+    }
+  ],
+  "section_analysis": [
+    {
+      "id": "hero-1",
+      "type": "hero",
+      "purpose": [
+        "business-story",
+        "identity",
+        "attention"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "motion",
+        "visual-asset",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "motion",
+        "visual-asset",
+        "object"
+      ],
+      "recommended_usage": [
+        "hero",
+        "landing-page"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "features-2",
+      "type": "features",
+      "purpose": [
+        "feature-symbol",
+        "scannability"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "icon",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "icon",
+        "object"
+      ],
+      "recommended_usage": [
+        "feature",
+        "feature-card",
+        "card"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "services-3",
+      "type": "services",
+      "purpose": [
+        "service-symbol",
+        "capability"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "icon",
+        "object",
+        "visual-asset"
+      ],
+      "recommended_asset_types": [
+        "icon",
+        "object",
+        "visual-asset"
+      ],
+      "recommended_usage": [
+        "service",
+        "service-section",
+        "card"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "about-4",
+      "type": "about",
+      "purpose": [
+        "identity",
+        "credibility"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "visual-asset",
+        "motion",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "visual-asset",
+        "motion",
+        "object"
+      ],
+      "recommended_usage": [
+        "about",
+        "section",
+        "hero"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "cta-5",
+      "type": "cta",
+      "purpose": [
+        "action",
+        "trust"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "motion",
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_asset_types": [
+        "motion",
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_usage": [
+        "cta",
+        "hero",
+        "section"
+      ],
+      "needs_enhancement": true
+    }
+  ],
+  "recommendations": [
+    {
+      "section_id": "hero-1",
+      "section_type": "hero",
+      "recommendations": [
+        {
+          "asset_id": "visual:business-objects:business-cards:v1",
+          "slug": "business-cards",
+          "type": "visual-asset",
+          "category": "business-objects",
+          "version": "v1",
+          "path": "visual-assets/business-objects/business-cards/asset.svg",
+          "match_score": 100,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:hero",
+            "type:visual-asset",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "motion:education:online-learning-platform:v2",
+          "slug": "online-learning-platform",
+          "type": "motion",
+          "category": "education",
+          "version": "v2",
+          "path": "online-learning-platform/v2/animation.svg",
+          "match_score": 100,
+          "quality_score": 96.5,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:hero",
+            "type:motion",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:graduation-cap:v1",
+          "slug": "graduation-cap",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/graduation-cap/asset.svg",
+          "match_score": 98.9,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:hero",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:online-learning:v1",
+          "slug": "online-learning",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/online-learning/asset.svg",
+          "match_score": 98.9,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:hero",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "features-2",
+      "section_type": "features",
+      "recommendations": [
+        {
+          "asset_id": "icon:education:course:v1",
+          "slug": "course",
+          "type": "icon",
+          "category": "education",
+          "version": "v1",
+          "path": "icons/education/course/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:features",
+            "type:icon",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:graduation-cap:v1",
+          "slug": "graduation-cap",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/graduation-cap/asset.svg",
+          "match_score": 100,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:features",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:online-learning:v1",
+          "slug": "online-learning",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/online-learning/asset.svg",
+          "match_score": 100,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:features",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:electronics:server:v1",
+          "slug": "server",
+          "type": "object",
+          "category": "electronics",
+          "version": "v1",
+          "path": "visual-assets/object-library/electronics/server/asset.svg",
+          "match_score": 100,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:features",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "services-3",
+      "section_type": "services",
+      "recommendations": [
+        {
+          "asset_id": "icon:education:course:v1",
+          "slug": "course",
+          "type": "icon",
+          "category": "education",
+          "version": "v1",
+          "path": "icons/education/course/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:services",
+            "type:icon",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:graduation-cap:v1",
+          "slug": "graduation-cap",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/graduation-cap/asset.svg",
+          "match_score": 100,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:services",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:business-objects:business-cards:v1",
+          "slug": "business-cards",
+          "type": "visual-asset",
+          "category": "business-objects",
+          "version": "v1",
+          "path": "visual-assets/business-objects/business-cards/asset.svg",
+          "match_score": 99,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:services",
+            "type:visual-asset",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:agriculture:barn:v1",
+          "slug": "barn",
+          "type": "object",
+          "category": "agriculture",
+          "version": "v1",
+          "path": "visual-assets/object-library/agriculture/barn/asset.svg",
+          "match_score": 96.8,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:services",
+            "type:object",
+            "style:premium"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "about-4",
+      "section_type": "about",
+      "recommendations": [
+        {
+          "asset_id": "visual:business-objects:business-cards:v1",
+          "slug": "business-cards",
+          "type": "visual-asset",
+          "category": "business-objects",
+          "version": "v1",
+          "path": "visual-assets/business-objects/business-cards/asset.svg",
+          "match_score": 100,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:about",
+            "type:visual-asset",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "motion:education:online-learning-platform:v2",
+          "slug": "online-learning-platform",
+          "type": "motion",
+          "category": "education",
+          "version": "v2",
+          "path": "online-learning-platform/v2/animation.svg",
+          "match_score": 100,
+          "quality_score": 96.5,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:about",
+            "type:motion",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:graduation-cap:v1",
+          "slug": "graduation-cap",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/graduation-cap/asset.svg",
+          "match_score": 98.9,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:about",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:education:online-learning:v1",
+          "slug": "online-learning",
+          "type": "object",
+          "category": "education",
+          "version": "v1",
+          "path": "visual-assets/object-library/education/online-learning/asset.svg",
+          "match_score": 98.9,
+          "quality_score": 96,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:about",
+            "type:object",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "cta-5",
+      "section_type": "cta",
+      "recommendations": [
+        {
+          "asset_id": "icon:education:course:v1",
+          "slug": "course",
+          "type": "icon",
+          "category": "education",
+          "version": "v1",
+          "path": "icons/education/course/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:cta",
+            "type:icon",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "motion:education:online-learning-platform:v2",
+          "slug": "online-learning-platform",
+          "type": "motion",
+          "category": "education",
+          "version": "v2",
+          "path": "online-learning-platform/v2/animation.svg",
+          "match_score": 100,
+          "quality_score": 96.5,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:cta",
+            "type:motion",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:business-objects:business-cards:v1",
+          "slug": "business-cards",
+          "type": "visual-asset",
+          "category": "business-objects",
+          "version": "v1",
+          "path": "visual-assets/business-objects/business-cards/asset.svg",
+          "match_score": 99,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:cta",
+            "type:visual-asset",
+            "style:premium",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:business:brand:v1",
+          "slug": "brand",
+          "type": "icon",
+          "category": "business",
+          "version": "v1",
+          "path": "icons/business/brand/icon.svg",
+          "match_score": 96.9,
+          "quality_score": 97,
+          "reasons": [
+            "industry:personal-brand",
+            "usage:cta",
+            "type:icon",
+            "style:premium"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    }
+  ],
+  "enhancement_score": {
+    "before": 47,
+    "after": 92,
+    "improvement": 45,
+    "metrics": {
+      "visual_uniqueness": {
+        "before": 8,
+        "after": 18,
+        "maximum": 20
+      },
+      "business_relevance": {
+        "before": 8,
+        "after": 23,
+        "maximum": 25
+      },
+      "brand_consistency": {
+        "before": 11,
+        "after": 18,
+        "maximum": 20
+      },
+      "asset_coverage": {
+        "before": 10,
+        "after": 19,
+        "maximum": 20
+      },
+      "professional_appearance": {
+        "before": 10,
+        "after": 14,
+        "maximum": 15
+      }
+    },
+    "coverage": {
+      "existing_visual_sections_percent": 0,
+      "recommended_sections_percent": 100,
+      "recommended_assets_theme_ready_percent": 100
+    }
+  },
+  "brand_adaptation": {
+    "status": "proposal-only",
+    "create_variant": false,
+    "publish": false,
+    "theme_tokens": {
+      "--brand-primary": "#312E81",
+      "--brand-secondary": "#4F46E5",
+      "--brand-accent": "#06B6D4",
+      "--brand-background": "#F8FAFC",
+      "--brand-border": "#C7D2FE"
+    },
+    "asset_token_mapping": {
+      "--asset-primary": "var(--brand-primary)",
+      "--asset-secondary": "var(--brand-secondary)",
+      "--asset-accent": "var(--brand-accent)",
+      "--asset-background": "var(--brand-background)",
+      "--asset-border": "var(--brand-border)"
+    },
+    "approval_required": "platform-admin"
+  },
+  "ai_recommendation": {
+    "interface": "future-ai-recommendation/v1",
+    "mode": "placeholder",
+    "provider_called": false,
+    "detected_industry": "personal-brand",
+    "suggested_query": [
+      "personal-brand",
+      "premium",
+      "professional"
+    ],
+    "can_publish": false,
+    "note": "A future provider may propose query terms only; canonical validation and Platform Admin approval remain mandatory."
+  },
+  "safety": {
+    "source_mode": "read-only",
+    "asset_writes": false,
+    "variants_created": false,
+    "published": false
+  }
+}

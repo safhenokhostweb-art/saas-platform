@@ -1,0 +1,14 @@
+{
+  "id": "manufacturing", "label": "شرکت تولیدی ایرانی",
+  "business_profile": { "name": "پارس قطعه", "description": "تولید قطعات صنعتی و خدمات مهندسی", "industry": "manufacturing", "business_type": "industrial-company", "audience": "company", "style": "corporate", "brand_theme": { "primary": "#16324F", "secondary": "#2A628F", "accent": "#F2B134", "background": "#F7FAFC", "border": "#CBD5E1" }, "required_sections": ["hero", "about", "services", "features", "portfolio", "team", "contact", "cta"] },
+  "template": { "template_name": "Generic Corporate", "template_type": "corporate", "sections": [
+    { "type": "hero", "title": "راهکار حرفه‌ای برای کسب‌وکار شما", "content": "متن عمومی معرفی", "existing_visuals": [] },
+    { "type": "about", "title": "درباره ما", "content": "معرفی عمومی شرکت", "existing_visuals": [] },
+    { "type": "services", "title": "خدمات", "existing_visuals": [] },
+    { "type": "features", "title": "مزیت‌ها", "existing_visuals": [] },
+    { "type": "portfolio", "title": "پروژه‌ها", "existing_visuals": [] },
+    { "type": "team", "title": "تیم ما", "existing_visuals": [] },
+    { "type": "contact", "title": "ارتباط", "existing_visuals": [] },
+    { "type": "cta", "title": "شروع همکاری", "existing_visuals": [] }
+  ] }
+}

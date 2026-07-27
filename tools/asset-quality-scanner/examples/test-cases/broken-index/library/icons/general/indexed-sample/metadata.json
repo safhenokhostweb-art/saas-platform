@@ -1,0 +1,17 @@
+{
+  "library_id": "icon:general:indexed-sample:v1",
+  "name": "نمونه ایندکس",
+  "name_fa": "نمونه ایندکس",
+  "name_en": "Indexed Sample",
+  "slug": "indexed-sample",
+  "category": "general",
+  "tags": ["test", "index"],
+  "usage": ["test"],
+  "theme_support": true,
+  "ai_editable": true,
+  "editable_properties": ["colors"],
+  "asset_role": "master",
+  "variant_supported": true,
+  "ownership": { "type": "platform" },
+  "quality_score": { "technical": 100, "visual": 100, "reusability": 100, "ai_readiness": 100 }
+}

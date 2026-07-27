@@ -1,0 +1,10 @@
+{
+  "id": "ecommerce", "label": "فروشگاه آنلاین",
+  "business_profile": { "name": "فروشگاه بازار ایرانی", "description": "خرید آنلاین با پرداخت امن و ارسال سریع", "industry": "ecommerce", "business_type": "online-store", "audience": "consumer", "style": "modern", "brand_theme": { "primary": "#1D4ED8", "secondary": "#3B82F6", "accent": "#F97316", "background": "#F8FAFC", "border": "#BFDBFE" }, "required_sections": ["hero", "services", "features", "products", "testimonials", "contact", "cta"] },
+  "template": { "template_name": "Generic Shop", "template_type": "ecommerce", "sections": [
+    { "type": "hero", "title": "فروشگاه آنلاین", "existing_visuals": [] }, { "type": "services", "title": "خدمات", "existing_visuals": [] },
+    { "type": "features", "title": "مزیت‌ها", "existing_visuals": [] }, { "type": "products", "title": "محصولات", "existing_visuals": [] },
+    { "type": "testimonials", "title": "نظر مشتریان", "existing_visuals": [] }, { "type": "contact", "title": "پشتیبانی", "existing_visuals": [] },
+    { "type": "cta", "title": "شروع خرید", "existing_visuals": [] }
+  ] }
+}

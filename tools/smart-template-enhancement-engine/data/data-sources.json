@@ -1,0 +1,8 @@
+{
+  "mode": "read-only",
+  "library_index": "../../packages/saas-platform/modules/motion-graphics/assets/library/library-index.json",
+  "tag_registry": "../../packages/saas-platform/modules/motion-graphics/assets/library/tags.json",
+  "relation_registry": "../../packages/saas-platform/modules/motion-graphics/assets/library/asset-relations.json",
+  "allow_asset_writes": false,
+  "allow_publish": false
+}

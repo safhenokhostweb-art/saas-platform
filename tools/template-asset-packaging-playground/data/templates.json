@@ -1,0 +1,28 @@
+{
+  "contract_version":"1.0.0",
+  "templates":[
+    {
+      "template_id":"construction-pro","template_version":2,"name_fa":"قالب حرفه‌ای ساخت‌وساز","ownership":{"type":"template","template_id":"construction-pro"},"industry":["construction"],"style":["corporate","premium"],"theme":{"required_tokens":["--brand-primary","--brand-accent"]},"performance_budget":120,"typography":{"direction":"rtl","profile":"corporate-fa"},
+      "assets":[
+        {"type":"motion","asset_id":"motion.company-introduction","version":2,"required":true,"sections":["hero"],"fallback_asset_id":"motion.company-introduction-static"},
+        {"type":"icon","asset_id":"icon.construction-pack","version":3,"required":true,"sections":["services"]},
+        {"type":"object","asset_id":"object.building-set","version":1,"required":false,"sections":["about","portfolio"]}
+      ]
+    },
+    {
+      "template_id":"medical-clinic","template_version":1,"name_fa":"قالب کلینیک پزشکی","ownership":{"type":"template","template_id":"medical-clinic"},"industry":["medical"],"style":["clean","professional"],"theme":{"required_tokens":["--brand-primary","--brand-accent"]},"performance_budget":100,"typography":{"direction":"rtl","profile":"medical-fa"},
+      "assets":[
+        {"type":"motion","asset_id":"motion.medical-trust","version":1,"required":true,"sections":["hero"]},
+        {"type":"object","asset_id":"object.medical-kit","version":1,"required":true,"sections":["services"]}
+      ]
+    },
+    {
+      "template_id":"company-standard","template_version":1,"name_fa":"قالب شرکتی استاندارد","ownership":{"type":"template","template_id":"company-standard"},"industry":["company"],"style":["corporate"],"theme":{"required_tokens":["--brand-primary"]},"performance_budget":90,"typography":{"direction":"rtl","profile":"corporate-fa"},
+      "assets":[
+        {"type":"motion","asset_id":"motion.company-introduction","version":2,"required":true,"sections":["hero"],"fallback_asset_id":"motion.company-introduction-static"},
+        {"type":"icon","asset_id":"icon.business-pack","version":1,"required":false,"sections":["services"]}
+      ]
+    }
+  ]
+}
+

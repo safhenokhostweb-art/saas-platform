@@ -1,0 +1,11 @@
+{
+  "required_contracts":{
+    "MotionAssetResolverContract":["resolveCanonical","validateCompatibility"],
+    "TemplateAssetPackageContract":["validateManifest","resolveRequiredAssets","createPackageDefinition"],
+    "SiteAssetPackageContract":["createCandidate","validateOwnership","lineage"],
+    "MotionRuntimeProjectionContract":["projectPublished","validateProjection"],
+    "MotionAuthorizationContract":["authorize","validateOwnership","validateTenantAccess"],
+    "MotionVersionContract":["find","validateLifecycle","createRollbackReference"]
+  }
+}
+

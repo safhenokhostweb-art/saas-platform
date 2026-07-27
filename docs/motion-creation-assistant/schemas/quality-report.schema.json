@@ -1,0 +1,6 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"motion-creation/quality-report/v1","type":"object","additionalProperties":false,
+  "required":["contract_version","status","scores","final_score","warnings","blocking_issues"],
+  "properties":{"contract_version":{"const":"1.0"},"status":{"enum":["pass","warning","blocked"]},"scores":{"type":"object","additionalProperties":false,"required":["storytelling","typography","animation","brand_compatibility","performance","accessibility"],"properties":{"storytelling":{"$ref":"#/$defs/score"},"typography":{"$ref":"#/$defs/score"},"animation":{"$ref":"#/$defs/score"},"brand_compatibility":{"$ref":"#/$defs/score"},"performance":{"$ref":"#/$defs/score"},"accessibility":{"$ref":"#/$defs/score"}}},"final_score":{"$ref":"#/$defs/score"},"warnings":{"type":"array","items":{"$ref":"#/$defs/issue"}},"blocking_issues":{"type":"array","items":{"$ref":"#/$defs/issue"}}},
+  "$defs":{"score":{"type":"integer","minimum":0,"maximum":100},"issue":{"type":"object","additionalProperties":false,"required":["code","area","severity","message","recommendation"],"properties":{"code":{"type":"string"},"area":{"enum":["typography","layout","animation","color","performance","accessibility","audio"]},"severity":{"enum":["info","warning","blocker"]},"message":{"type":"string"},"recommendation":{"type":"string"}}}}
+}

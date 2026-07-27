@@ -1,0 +1,13 @@
+{
+  "contract_version": "1.0.0",
+  "read_only": true,
+  "rules": {
+    "lifecycle": "rules/lifecycle-rules.json",
+    "authorization": "rules/authorization-rules.json",
+    "license": "rules/license-rules.json",
+    "security": "rules/security-rules.json",
+    "performance": "rules/performance-budget.json"
+  },
+  "reports_directory": "reports"
+}
+

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "total_assets": 1,
+  "assets": [
+    {
+      "id": "icon:general:indexed-sample:v1",
+      "slug": "indexed-sample",
+      "path": "icons/general/missing/icon.svg"
+    }
+  ]
+}

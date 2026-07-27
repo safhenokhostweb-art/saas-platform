@@ -22,7 +22,10 @@ class DeploymentResolver implements DeploymentResolverInterface
     public function resolve(Site $site, Module $module): DeploymentState
     {
         $installedVersion = $this->installedVersion($site, $module);
-        $latestVersion = ModuleRelease::getLatestVersionForModule($module);
+        // Phase 17-H — Part 7: a draft/deprecated release must never be
+        // reported to a customer as "the latest version" — that would
+        // show "update available" for something they can't actually get.
+        $latestVersion = ModuleRelease::getLatestPublishedVersionForModule($module);
 
         if ($installedVersion === null || $installedVersion === '') {
             return new DeploymentState(

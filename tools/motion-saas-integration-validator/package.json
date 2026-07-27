@@ -1,0 +1,9 @@
+{
+  "name":"motion-saas-integration-validator",
+  "version":"1.0.0",
+  "private":true,
+  "type":"module",
+  "scripts":{"validate":"node validator --input fixtures/valid-integration-contract.json","test":"node tests/test.js"},
+  "engines":{"node":">=18"}
+}
+

@@ -1,0 +1,17 @@
+{
+  "library_id": "icon:general:hardcoded-color:v1",
+  "name": "رنگ ثابت",
+  "name_fa": "رنگ ثابت",
+  "name_en": "Hardcoded Color",
+  "slug": "hardcoded-color",
+  "category": "general",
+  "tags": ["test", "theme"],
+  "usage": ["test"],
+  "theme_support": true,
+  "ai_editable": true,
+  "editable_properties": ["colors"],
+  "asset_role": "master",
+  "variant_supported": true,
+  "ownership": { "type": "platform" },
+  "quality_score": { "technical": 20, "visual": 70, "reusability": 20, "ai_readiness": 100 }
+}

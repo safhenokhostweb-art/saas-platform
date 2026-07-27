@@ -1,0 +1,14 @@
+{
+  "name": "motion-production-readiness-checker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node checker --input tests/fixtures/valid-production-package.json",
+    "test": "node tests/test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+

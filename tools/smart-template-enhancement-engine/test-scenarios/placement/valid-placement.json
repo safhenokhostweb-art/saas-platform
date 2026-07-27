@@ -1,0 +1,12 @@
+{
+  "name": "valid medical hero motion",
+  "asset_id": "motion:medical:medical-professional-introduction:v2",
+  "asset_type": "motion",
+  "industry": "medical",
+  "audience": "professional",
+  "section": "hero",
+  "position": "trailing",
+  "asset_terms": ["medical", "doctor", "trust"],
+  "palette": { "primary": "#0F172A", "secondary": "#334155", "accent": "#F59E0B", "background": "#FFFFFF", "border": "#CBD5E1" },
+  "expected_valid": true
+}

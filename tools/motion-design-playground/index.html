@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="محیط مستقل ارزیابی بصری کتابخانه موشن گرافیک">
+  <title>آزمایشگاه طراحی موشن گرافیک</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#asset-gallery">رفتن به کتابخانه</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="brand-lockup">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <div>
+        <p class="eyebrow">Motion Graphics Library</p>
+        <h1>آزمایشگاه طراحی دارایی‌ها</h1>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="load-state" id="load-state" role="status"><span class="status-dot"></span>در حال بارگذاری کتابخانه</div>
+      <button class="button button-ghost" id="ai-edit-button" type="button">ویرایش با AI <span class="prototype-pill">Prototype</span></button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="control-rail" aria-label="کنترل‌های Playground">
+      <section class="panel filter-panel">
+        <div class="panel-heading">
+          <div><span class="section-number">01</span><h2>کاوش دارایی‌ها</h2></div>
+          <button class="text-button" id="reset-filters" type="button">پاک‌کردن</button>
+        </div>
+        <label class="field search-field">
+          <span>جستجو</span>
+          <input id="search-input" type="search" placeholder="نام، کلیدواژه یا شناسه…" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <div id="type-tabs" class="type-tabs" role="group" aria-label="نوع دارایی"></div>
+        <div class="filter-grid">
+          <label class="field"><span>دسته‌بندی</span><select id="category-filter"><option value="">همه</option></select></label>
+          <label class="field"><span>صنعت</span><select id="industry-filter"><option value="">همه</option></select></label>
+          <label class="field"><span>کاربرد</span><select id="usage-filter"><option value="">همه</option></select></label>
+          <label class="field"><span>برچسب</span><select id="tag-filter"><option value="">همه</option></select></label>
+        </div>
+      </section>
+
+      <section class="panel theme-panel">
+        <div class="panel-heading"><div><span class="section-number">02</span><h2>تم زنده</h2></div></div>
+        <label class="field"><span>پیش‌تنظیم</span><select id="theme-preset"></select></label>
+        <div id="theme-colors" class="color-fields"></div>
+        <div class="token-preview" id="token-preview" aria-label="رنگ‌های تم"></div>
+      </section>
+
+      <section class="panel brand-panel">
+        <div class="panel-heading"><div><span class="section-number">03</span><h2>تحلیل برند</h2></div><span class="mock-badge">Fake adapter</span></div>
+        <p class="panel-copy">لوگو فقط داخل مرورگر تحلیل می‌شود و هیچ فایلی ارسال نخواهد شد.</p>
+        <label class="logo-drop" id="logo-drop">
+          <input id="logo-input" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+          <span class="upload-icon" aria-hidden="true">＋</span>
+          <strong>بارگذاری لوگو</strong>
+          <small>PNG، JPG، WebP یا SVG</small>
+        </label>
+        <div class="brand-result" id="brand-result" hidden>
+          <div class="logo-preview"><img id="logo-preview" alt="پیش‌نمایش لوگوی بارگذاری‌شده"></div>
+          <div><strong>پالت پیشنهادی</strong><div class="token-preview" id="brand-token-preview"></div></div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="metrics" aria-label="آمار کتابخانه">
+        <article><span>دارایی بارگذاری‌شده</span><strong id="metric-assets">—</strong></article>
+        <article><span>نتیجه فیلتر</span><strong id="metric-results">—</strong></article>
+        <article><span>آماده تم</span><strong id="metric-theme">—</strong></article>
+        <article><span>آماده AI</span><strong id="metric-ai">—</strong></article>
+      </div>
+
+      <section class="library-stage" aria-labelledby="library-title">
+        <div class="stage-heading">
+          <div><p class="eyebrow">Asset Explorer</p><h2 id="library-title">کتابخانه بصری</h2></div>
+          <div class="preview-modes" role="group" aria-label="حالت پیش‌نمایش">
+            <button type="button" data-mode="master">نسخه اصلی</button>
+            <button type="button" data-mode="theme" class="active">تم اعمال‌شده</button>
+            <button type="button" data-mode="brand">پیش‌نمایش برند</button>
+          </div>
+        </div>
+        <div id="active-filters" class="active-filters" aria-live="polite"></div>
+        <div id="asset-gallery" class="asset-gallery" tabindex="-1"></div>
+        <div class="empty-state" id="empty-state" hidden><span>⌁</span><h3>دارایی‌ای پیدا نشد</h3><p>فیلترها یا عبارت جستجو را تغییر دهید.</p></div>
+        <div class="pagination"><button class="button button-secondary" id="load-more" type="button">نمایش موارد بیشتر</button></div>
+      </section>
+
+      <section class="template-lab" aria-labelledby="template-title">
+        <div class="stage-heading">
+          <div><p class="eyebrow">Template Quality Preview</p><h2 id="template-title">ارزیابی در قالب سایت</h2></div>
+          <label class="compact-select">نوع سکشن <select id="section-select"></select></label>
+        </div>
+        <div id="template-preview" class="template-preview"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="ai-modal" class="ai-modal" aria-labelledby="ai-modal-title">
+    <form method="dialog" class="modal-card" id="ai-form">
+      <div class="modal-header"><div><p class="eyebrow">Future contract</p><h2 id="ai-modal-title">ویرایش با هوش مصنوعی</h2></div><button class="icon-button" value="cancel" aria-label="بستن">×</button></div>
+      <p class="notice">این بخش فقط قرارداد رابط کاربری است و هیچ API یا ارائه‌دهنده‌ای فراخوانی نمی‌شود.</p>
+      <label class="field"><span>ارائه‌دهنده</span><select id="ai-provider"><option>OpenAI</option><option>Claude</option><option>Gemini</option><option>Other</option></select></label>
+      <label class="field"><span>تغییرات موردنظر</span><textarea id="ai-prompt" rows="5" placeholder="Describe changes…"></textarea></label>
+      <div class="contract-preview"><code id="ai-contract-preview"></code></div>
+      <div class="modal-actions"><button class="button button-secondary" value="cancel">انصراف</button><button class="button button-primary" id="mock-proposal" value="default">ساخت پیشنهاد آزمایشی</button></div>
+    </form>
+  </dialog>
+
+  <template id="asset-card-template">
+    <article class="asset-card">
+      <button class="asset-visual" type="button"><span class="asset-loader"></span></button>
+      <div class="asset-body">
+        <div class="asset-title-row"><div><span class="asset-family"></span><h3 class="asset-name"></h3></div><span class="asset-category"></span></div>
+        <div class="asset-tags"></div>
+        <div class="asset-flags"></div>
+        <div class="score-grid"></div>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="./scripts/app.js"></script>
+</body>
+</html>

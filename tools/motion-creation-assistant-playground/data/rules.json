@@ -1,0 +1,18 @@
+{
+  "purposes":["brand-introduction","product-presentation","educational-content","service-explanation","advertisement","social-media-content","website-hero-motion","ui-explanation"],
+  "audiences":["general-users","professional-audience","customers","students","internal-training"],
+  "styles":["modern","minimal","corporate","luxury","iranian-traditional","technology","friendly"],
+  "durations":[5,10,15,30,60],
+  "recommended_duration":{"brand-introduction":15,"product-presentation":30,"educational-content":60,"service-explanation":30,"advertisement":15,"social-media-content":10,"website-hero-motion":10,"ui-explanation":30},
+  "purpose_assets":{
+    "brand-introduction":["motion:corporate:iranian-company-introduction:v1","icon:business:brand:v1"],
+    "product-presentation":["motion:ecommerce:iranian-ecommerce-journey:v2","icon:ecommerce:product:v1"],
+    "educational-content":["motion:education:online-learning-platform:v2","icon:education:course:v1"],
+    "service-explanation":["motion:corporate:iranian-company-introduction:v1","icon:business:strategy:v1"],
+    "advertisement":["motion:business-network:iran-business-network-map:v2","icon:business:target:v1"],
+    "social-media-content":["motion:personal-brand:professional-personal-brand:v2","icon:personal:communication:v1"],
+    "website-hero-motion":["motion:technology:iranian-business-digital-transformation:v2","icon:technology:software:v1"],
+    "ui-explanation":["motion:ai:ai-business-assistant:v2","icon:technology:dashboard:v1"]
+  },
+  "score_weights":{"storytelling":0.20,"typography":0.18,"animation":0.18,"brand_compatibility":0.16,"performance":0.14,"accessibility":0.14}
+}

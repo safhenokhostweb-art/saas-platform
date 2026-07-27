@@ -1,0 +1,12 @@
+{"version":1,"presets":[
+{"id":"fade","tier":"basic","name":"Fade","duration":0.6,"easing":"ease-out","asset_types":["motion","icon","object","visual-asset","text"]},
+{"id":"slide","tier":"basic","name":"Slide","duration":0.7,"easing":"cubic-bezier(.22,1,.36,1)","asset_types":["motion","icon","object","visual-asset","text"]},
+{"id":"scale","tier":"basic","name":"Scale","duration":0.6,"easing":"ease-out","asset_types":["motion","icon","object","visual-asset","text"]},
+{"id":"rotate","tier":"basic","name":"Rotate","duration":0.8,"easing":"ease-in-out","asset_types":["icon","object","text"]},
+{"id":"reveal","tier":"basic","name":"Reveal","duration":0.9,"easing":"ease-out","asset_types":["motion","visual-asset","text"]},
+{"id":"logo-reveal","tier":"professional","name":"Logo Reveal","duration":1.2,"easing":"cubic-bezier(.16,1,.3,1)","asset_types":["motion","icon","visual-asset"]},
+{"id":"text-formation","tier":"professional","name":"Text Formation","duration":1.1,"easing":"ease-out","asset_types":["text"]},
+{"id":"network-build","tier":"professional","name":"Network Build","duration":1.8,"easing":"ease-in-out","asset_types":["motion","icon"]},
+{"id":"object-showcase","tier":"professional","name":"Object Showcase","duration":1.3,"easing":"cubic-bezier(.22,1,.36,1)","asset_types":["object","visual-asset"]},
+{"id":"particle-appearance","tier":"professional","name":"Particle Appearance","duration":1.5,"easing":"ease-out","asset_types":["motion","visual-asset"]}
+]}

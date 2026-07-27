@@ -1,0 +1,6 @@
+{
+  "name": "invalid license",
+  "patch": {"license": {"class": "unlimited_public", "usage_limit": -1, "expiration": "tomorrow"}},
+  "expected_codes": ["LICENSE_CLASS_INVALID", "LICENSE_USAGE_INVALID", "LICENSE_EXPIRY_INVALID"]
+}
+

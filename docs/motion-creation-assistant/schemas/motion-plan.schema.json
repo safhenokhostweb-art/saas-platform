@@ -1,0 +1,10 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"motion-creation/plan/v1","type":"object","additionalProperties":false,
+  "required":["contract_version","status","total_duration_seconds","scenes","asset_recommendations","quality_target","approval_required"],
+  "properties":{
+    "contract_version":{"const":"1.0"},"status":{"const":"proposal"},"total_duration_seconds":{"type":"number","minimum":5,"maximum":300},
+    "scenes":{"type":"array","minItems":1,"maxItems":30,"items":{"type":"object","additionalProperties":false,"required":["scene_id","chapter","start_seconds","duration_seconds","purpose","layers","text_placement","transition"],"properties":{"scene_id":{"type":"string","pattern":"^scene-[0-9]+$"},"chapter":{"type":"string","minLength":1},"start_seconds":{"type":"number","minimum":0},"duration_seconds":{"type":"number","exclusiveMinimum":0,"maximum":60},"purpose":{"type":"string","minLength":1},"layers":{"type":"array","minItems":1,"items":{"enum":["brand","text","asset","data","subtitle","audio-cue"]}},"text_placement":{"enum":["start","center","end","lower-third","none"]},"transition":{"enum":["cut","fade","slide","scale","morph","none"]}}}},
+    "asset_recommendations":{"type":"array","items":{"type":"object","required":["asset_id","scene_id","reason"],"properties":{"asset_id":{"type":"string","minLength":1},"scene_id":{"type":"string"},"reason":{"type":"string"}}}},
+    "quality_target":{"type":"integer","minimum":70,"maximum":100},"approval_required":{"const":"platform-admin"},"publish":{"const":false}
+  }
+}

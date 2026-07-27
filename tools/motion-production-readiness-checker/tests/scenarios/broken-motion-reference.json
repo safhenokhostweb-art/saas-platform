@@ -1,0 +1,6 @@
+{
+  "name": "broken motion reference",
+  "patch": {"motion": {"asset_references": ["visual:missing:v1"]}},
+  "expected_codes": ["MOTION_REFERENCE_BROKEN"]
+}
+

@@ -1,0 +1,22 @@
+{
+  "library_id": "icon:general:sample:v1",
+  "name": "نمونه معتبر",
+  "name_fa": "نمونه معتبر",
+  "name_en": "Valid Sample",
+  "slug": "sample",
+  "category": "general",
+  "tags": ["sample", "themeable"],
+  "usage": ["test"],
+  "theme_support": true,
+  "ai_editable": true,
+  "editable_properties": ["colors", "size"],
+  "asset_role": "master",
+  "variant_supported": true,
+  "ownership": { "type": "platform" },
+  "quality_score": {
+    "technical": 100,
+    "visual": 100,
+    "reusability": 100,
+    "ai_readiness": 100
+  }
+}

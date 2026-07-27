@@ -1,0 +1,50 @@
+{
+  "contract_version": "1.0",
+  "inheritance": "defaults-may-be-narrowed-but-never-broadened-without-validation",
+  "asset_types": {
+    "motion": {
+      "allowed_sections": ["hero", "about", "services", "features", "products", "portfolio", "testimonials", "team", "contact", "cta"],
+      "recommended_sections": ["hero", "about", "cta"],
+      "placement_priority": 90,
+      "size_rules": { "preferred": "large", "min_width_px": 240, "max_width_px": 1200, "aspect_ratio_mode": "contain" },
+      "responsive_rules": { "preserve_aspect_ratio": true, "desktop": { "display": "show", "width_percent": 50, "alignment": "inline-end" }, "tablet": { "display": "show", "width_percent": 70, "alignment": "center" }, "mobile": { "display": "static-preview", "width_percent": 90, "alignment": "center" } },
+      "animation_behavior": { "intensity": "moderate", "autoplay": true, "loop": true, "viewport_trigger": "on-visible", "reduced_motion": "static-preview", "max_duration_seconds": 15 },
+      "alignment_rules": { "preferred": "inline-end", "allowed": ["center", "inline-start", "inline-end"], "rtl_aware": true },
+      "spacing_rules": { "desktop": { "block_px": 32, "inline_px": 32 }, "tablet": { "block_px": 24, "inline_px": 24 }, "mobile": { "block_px": 16, "inline_px": 8 } },
+      "theme_requirements": { "theme_ready": true, "required_tokens": ["--brand-primary", "--brand-secondary", "--brand-accent", "--brand-background", "--brand-border"], "contrast_validation": true, "transparent_background": true }
+    },
+    "icon": {
+      "allowed_sections": ["hero", "about", "services", "features", "products", "portfolio", "testimonials", "team", "contact", "cta", "footer"],
+      "recommended_sections": ["services", "features", "contact", "footer"],
+      "placement_priority": 75,
+      "size_rules": { "preferred": "small", "min_width_px": 24, "max_width_px": 160, "aspect_ratio_mode": "preserve" },
+      "responsive_rules": { "preserve_aspect_ratio": true, "desktop": { "display": "show", "width_percent": 20, "alignment": "inline-start" }, "tablet": { "display": "show", "width_percent": 24, "alignment": "inline-start" }, "mobile": { "display": "show", "width_percent": 28, "alignment": "inline-start" } },
+      "animation_behavior": { "intensity": "subtle", "autoplay": false, "loop": false, "viewport_trigger": "on-visible", "reduced_motion": "disable", "max_duration_seconds": 2 },
+      "alignment_rules": { "preferred": "inline-start", "allowed": ["start", "center", "inline-start", "inline-end"], "rtl_aware": true },
+      "spacing_rules": { "desktop": { "block_px": 12, "inline_px": 12 }, "tablet": { "block_px": 10, "inline_px": 10 }, "mobile": { "block_px": 8, "inline_px": 8 } },
+      "theme_requirements": { "theme_ready": true, "required_tokens": ["--brand-primary", "--brand-secondary", "--brand-accent", "--brand-border"], "contrast_validation": true, "transparent_background": true }
+    },
+    "object": {
+      "allowed_sections": ["hero", "about", "services", "features", "products", "portfolio", "team", "contact", "cta"],
+      "recommended_sections": ["products", "about", "portfolio"],
+      "placement_priority": 70,
+      "size_rules": { "preferred": "medium", "min_width_px": 96, "max_width_px": 640, "aspect_ratio_mode": "contain" },
+      "responsive_rules": { "preserve_aspect_ratio": true, "desktop": { "display": "show", "width_percent": 35, "alignment": "center" }, "tablet": { "display": "show", "width_percent": 45, "alignment": "center" }, "mobile": { "display": "show", "width_percent": 60, "alignment": "center" } },
+      "animation_behavior": { "intensity": "subtle", "autoplay": false, "loop": false, "viewport_trigger": "on-visible", "reduced_motion": "disable", "max_duration_seconds": 3 },
+      "alignment_rules": { "preferred": "center", "allowed": ["center", "inline-start", "inline-end"], "rtl_aware": true },
+      "spacing_rules": { "desktop": { "block_px": 24, "inline_px": 24 }, "tablet": { "block_px": 18, "inline_px": 18 }, "mobile": { "block_px": 12, "inline_px": 8 } },
+      "theme_requirements": { "theme_ready": true, "required_tokens": ["--brand-primary", "--brand-secondary", "--brand-accent", "--brand-background", "--brand-border"], "contrast_validation": true, "transparent_background": true }
+    },
+    "visual-asset": {
+      "allowed_sections": ["hero", "about", "services", "features", "products", "portfolio", "testimonials", "team", "contact", "cta", "footer"],
+      "recommended_sections": ["hero", "about", "portfolio"],
+      "placement_priority": 80,
+      "size_rules": { "preferred": "fluid", "min_width_px": 160, "max_width_px": 1600, "aspect_ratio_mode": "contain" },
+      "responsive_rules": { "preserve_aspect_ratio": true, "desktop": { "display": "show", "width_percent": 60, "alignment": "center" }, "tablet": { "display": "show", "width_percent": 75, "alignment": "center" }, "mobile": { "display": "show", "width_percent": 100, "alignment": "center" } },
+      "animation_behavior": { "intensity": "none", "autoplay": false, "loop": false, "viewport_trigger": "immediate", "reduced_motion": "disable", "max_duration_seconds": 0 },
+      "alignment_rules": { "preferred": "center", "allowed": ["start", "center", "end", "inline-start", "inline-end"], "rtl_aware": true },
+      "spacing_rules": { "desktop": { "block_px": 24, "inline_px": 24 }, "tablet": { "block_px": 18, "inline_px": 18 }, "mobile": { "block_px": 12, "inline_px": 0 } },
+      "theme_requirements": { "theme_ready": true, "required_tokens": ["--brand-primary", "--brand-secondary", "--brand-accent", "--brand-background", "--brand-border"], "contrast_validation": true, "transparent_background": true }
+    }
+  }
+}

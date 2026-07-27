@@ -1,0 +1,4439 @@
+{
+  "generated_by": "read-only-contract-simulation",
+  "simulations": [
+    {
+      "simulation_contract": "template-enhancement-simulation/v1",
+      "scenario": {
+        "id": "ecommerce",
+        "label": "فروشگاه آنلاین",
+        "template_name": "Generic Shop"
+      },
+      "business_profile": {
+        "name": "فروشگاه بازار ایرانی",
+        "description": "خرید آنلاین با پرداخت امن و ارسال سریع",
+        "industry": "ecommerce",
+        "business_type": "online-store",
+        "audience": "consumer",
+        "style": "modern",
+        "brand_theme": {
+          "primary": "#1D4ED8",
+          "secondary": "#3B82F6",
+          "accent": "#F97316",
+          "background": "#F8FAFC",
+          "border": "#BFDBFE"
+        },
+        "required_sections": [
+          "hero",
+          "services",
+          "features",
+          "products",
+          "testimonials",
+          "contact",
+          "cta"
+        ]
+      },
+      "before": {
+        "template_type": "ecommerce",
+        "sections": [
+          {
+            "type": "hero",
+            "title": "فروشگاه آنلاین",
+            "existing_visuals": []
+          },
+          {
+            "type": "services",
+            "title": "خدمات",
+            "existing_visuals": []
+          },
+          {
+            "type": "features",
+            "title": "مزیت‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "products",
+            "title": "محصولات",
+            "existing_visuals": []
+          },
+          {
+            "type": "testimonials",
+            "title": "نظر مشتریان",
+            "existing_visuals": []
+          },
+          {
+            "type": "contact",
+            "title": "پشتیبانی",
+            "existing_visuals": []
+          },
+          {
+            "type": "cta",
+            "title": "شروع خرید",
+            "existing_visuals": []
+          }
+        ],
+        "score": 47
+      },
+      "after": {
+        "enhancement_plan": [
+          {
+            "section": "hero",
+            "title": "فروشگاه آنلاین",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:ecommerce-products:cosmetics:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:hero",
+                  "industry-section-preference",
+                  "type:visual-asset",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "محصولات آرایشی",
+                "type": "visual-asset",
+                "category": "ecommerce-products",
+                "preview_path": "visual-assets/ecommerce-products/cosmetics/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:hero",
+                  "industry-section-preference",
+                  "type:motion",
+                  "style:modern"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "سفر مشتری فروشگاه اینترنتی",
+                "type": "motion",
+                "category": "ecommerce",
+                "preview_path": "iranian-ecommerce-journey/v1/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:hero",
+              "industry-section-preference",
+              "type:visual-asset",
+              "style:modern",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "services",
+            "title": "خدمات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:services",
+                  "type:icon",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "سبد خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:ecommerce-products:cosmetics:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:services",
+                  "type:visual-asset",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "محصولات آرایشی",
+                "type": "visual-asset",
+                "category": "ecommerce-products",
+                "preview_path": "visual-assets/ecommerce-products/cosmetics/preview.svg",
+                "match_score": 99,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:services",
+              "type:icon",
+              "style:modern",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "features",
+            "title": "مزیت‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:delivery:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:features",
+                  "industry-section-preference",
+                  "type:icon",
+                  "style:modern"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "ارسال کالا",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/delivery/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:beauty:makeup:v1",
+                "reason": [
+                  "usage:features",
+                  "type:object",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "زیبایی — Makeup",
+                "type": "object",
+                "category": "beauty",
+                "preview_path": "visual-assets/object-library/beauty/makeup/preview.svg",
+                "match_score": 67.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:features",
+              "industry-section-preference",
+              "type:icon",
+              "style:modern"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "products",
+            "title": "محصولات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:checkout:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:products",
+                  "industry-section-preference",
+                  "type:icon",
+                  "style:modern"
+                ],
+                "placement": {
+                  "section": "products",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "تکمیل خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/checkout/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:ecommerce-products:cosmetics:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:products",
+                  "industry-section-preference",
+                  "type:visual-asset",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "products",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "محصولات آرایشی",
+                "type": "visual-asset",
+                "category": "ecommerce-products",
+                "preview_path": "visual-assets/ecommerce-products/cosmetics/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "products",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:products",
+              "industry-section-preference",
+              "type:icon",
+              "style:modern"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "testimonials",
+            "title": "نظر مشتریان",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:testimonials",
+                  "type:icon",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "testimonials",
+                  "position": "inline",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "سبد خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:ecommerce-products:cosmetics:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:testimonials",
+                  "type:visual-asset",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "testimonials",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "محصولات آرایشی",
+                "type": "visual-asset",
+                "category": "ecommerce-products",
+                "preview_path": "visual-assets/ecommerce-products/cosmetics/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "testimonials",
+              "position": "inline",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:testimonials",
+              "type:icon",
+              "style:modern",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "contact",
+            "title": "پشتیبانی",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:ecommerce-products:cosmetics:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:contact",
+                  "type:visual-asset",
+                  "style:modern",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "contact",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "محصولات آرایشی",
+                "type": "visual-asset",
+                "category": "ecommerce-products",
+                "preview_path": "visual-assets/ecommerce-products/cosmetics/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "contact",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:contact",
+              "type:visual-asset",
+              "style:modern",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": [
+              {
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:beauty:makeup:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:beauty:perfume:v1",
+                "reason": "animation intensity exceeds contact limit"
+              }
+            ]
+          },
+          {
+            "section": "cta",
+            "title": "شروع خرید",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:checkout:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:cta",
+                  "industry-section-preference",
+                  "type:icon",
+                  "style:modern"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "تکمیل خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/checkout/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v1",
+                "reason": [
+                  "industry:ecommerce",
+                  "usage:cta",
+                  "industry-section-preference",
+                  "type:motion",
+                  "style:modern"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "سفر مشتری فروشگاه اینترنتی",
+                "type": "motion",
+                "category": "ecommerce",
+                "preview_path": "iranian-ecommerce-journey/v1/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#1D4ED8",
+                  "--brand-secondary": "#3B82F6",
+                  "--brand-accent": "#F97316",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#BFDBFE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:ecommerce",
+              "usage:cta",
+              "industry-section-preference",
+              "type:icon",
+              "style:modern"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          }
+        ],
+        "score": 92,
+        "brand_theme": {
+          "primary": "#1D4ED8",
+          "secondary": "#3B82F6",
+          "accent": "#F97316",
+          "background": "#F8FAFC",
+          "border": "#BFDBFE"
+        }
+      },
+      "scoring": {
+        "before": 47,
+        "after": 92,
+        "improvement": 45,
+        "metrics": {
+          "visual_uniqueness": {
+            "before": 8,
+            "after": 18,
+            "maximum": 20
+          },
+          "business_relevance": {
+            "before": 8,
+            "after": 23,
+            "maximum": 25
+          },
+          "brand_consistency": {
+            "before": 11,
+            "after": 18,
+            "maximum": 20
+          },
+          "asset_coverage": {
+            "before": 10,
+            "after": 19,
+            "maximum": 20
+          },
+          "professional_appearance": {
+            "before": 10,
+            "after": 14,
+            "maximum": 15
+          }
+        },
+        "coverage": {
+          "existing_visual_sections_percent": 0,
+          "recommended_sections_percent": 100,
+          "recommended_assets_theme_ready_percent": 100
+        }
+      },
+      "ai_placeholder": {
+        "enabled": false,
+        "providers": [
+          "OpenAI",
+          "Claude",
+          "Gemini",
+          "Other"
+        ],
+        "provider_called": false,
+        "can_publish": false
+      },
+      "validation": {
+        "canonical_assets_only": true,
+        "no_broken_references": true,
+        "placement_rules_respected": true,
+        "theme_rules_respected": true,
+        "industry_rules_respected": true,
+        "asset_writes": false
+      }
+    },
+    {
+      "simulation_contract": "template-enhancement-simulation/v1",
+      "scenario": {
+        "id": "manufacturing",
+        "label": "شرکت تولیدی ایرانی",
+        "template_name": "Generic Corporate"
+      },
+      "business_profile": {
+        "name": "پارس قطعه",
+        "description": "تولید قطعات صنعتی و خدمات مهندسی",
+        "industry": "manufacturing",
+        "business_type": "industrial-company",
+        "audience": "company",
+        "style": "corporate",
+        "brand_theme": {
+          "primary": "#16324F",
+          "secondary": "#2A628F",
+          "accent": "#F2B134",
+          "background": "#F7FAFC",
+          "border": "#CBD5E1"
+        },
+        "required_sections": [
+          "hero",
+          "about",
+          "services",
+          "features",
+          "portfolio",
+          "team",
+          "contact",
+          "cta"
+        ]
+      },
+      "before": {
+        "template_type": "corporate",
+        "sections": [
+          {
+            "type": "hero",
+            "title": "راهکار حرفه‌ای برای کسب‌وکار شما",
+            "content": "متن عمومی معرفی",
+            "existing_visuals": []
+          },
+          {
+            "type": "about",
+            "title": "درباره ما",
+            "content": "معرفی عمومی شرکت",
+            "existing_visuals": []
+          },
+          {
+            "type": "services",
+            "title": "خدمات",
+            "existing_visuals": []
+          },
+          {
+            "type": "features",
+            "title": "مزیت‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "portfolio",
+            "title": "پروژه‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "team",
+            "title": "تیم ما",
+            "existing_visuals": []
+          },
+          {
+            "type": "contact",
+            "title": "ارتباط",
+            "existing_visuals": []
+          },
+          {
+            "type": "cta",
+            "title": "شروع همکاری",
+            "existing_visuals": []
+          }
+        ],
+        "score": 47
+      },
+      "after": {
+        "enhancement_plan": [
+          {
+            "section": "hero",
+            "title": "راهکار حرفه‌ای برای کسب‌وکار شما",
+            "before": {
+              "content": "متن عمومی معرفی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:industry:iranian-industry-production:v2",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:hero",
+                  "industry-section-preference",
+                  "type:motion",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "صنعت و تولید ایران",
+                "type": "motion",
+                "category": "industry",
+                "preview_path": "iranian-industry-production/v2/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:office-desk:v1",
+                "reason": [
+                  "usage:hero",
+                  "type:visual-asset",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "میز اداری",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/office-desk/preview.svg",
+                "match_score": 57.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:hero",
+              "industry-section-preference",
+              "type:motion",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "about",
+            "title": "درباره ما",
+            "before": {
+              "content": "معرفی عمومی شرکت",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:industry:iranian-industry-production:v1",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:about",
+                  "industry-section-preference",
+                  "type:motion"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "صنعت و تولید ایران",
+                "type": "motion",
+                "category": "industry",
+                "preview_path": "iranian-industry-production/v1/preview.svg",
+                "match_score": 94.8,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:office-desk:v1",
+                "reason": [
+                  "usage:about",
+                  "type:visual-asset",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "میز اداری",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/office-desk/preview.svg",
+                "match_score": 60.7,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "about",
+              "position": "leading",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:about",
+              "industry-section-preference",
+              "type:motion"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "services",
+            "title": "خدمات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:industry:engineering:v1",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:services",
+                  "industry-section-preference",
+                  "type:icon",
+                  "style:corporate",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مهندسی",
+                "type": "icon",
+                "category": "industry",
+                "preview_path": "icons/industry/engineering/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:construction:blueprint:v1",
+                "reason": [
+                  "usage:services",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "ساخت‌وساز — Blueprint",
+                "type": "object",
+                "category": "construction",
+                "preview_path": "visual-assets/object-library/construction/blueprint/preview.svg",
+                "match_score": 57.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:services",
+              "industry-section-preference",
+              "type:icon",
+              "style:corporate",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "features",
+            "title": "مزیت‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:industry:engineering:v1",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:features",
+                  "industry-section-preference",
+                  "type:icon",
+                  "style:corporate",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مهندسی",
+                "type": "icon",
+                "category": "industry",
+                "preview_path": "icons/industry/engineering/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:construction:blueprint:v1",
+                "reason": [
+                  "usage:features",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "ساخت‌وساز — Blueprint",
+                "type": "object",
+                "category": "construction",
+                "preview_path": "visual-assets/object-library/construction/blueprint/preview.svg",
+                "match_score": 57.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:features",
+              "industry-section-preference",
+              "type:icon",
+              "style:corporate",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "portfolio",
+            "title": "پروژه‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:industry:iranian-industry-production:v2",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:portfolio",
+                  "type:motion",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "portfolio",
+                  "position": "card-media",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "صنعت و تولید ایران",
+                "type": "motion",
+                "category": "industry",
+                "preview_path": "iranian-industry-production/v2/preview.svg",
+                "match_score": 89,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:office-desk:v1",
+                "reason": [
+                  "usage:portfolio",
+                  "type:visual-asset",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "portfolio",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "میز اداری",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/office-desk/preview.svg",
+                "match_score": 60.7,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "portfolio",
+              "position": "card-media",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:portfolio",
+              "type:motion",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "team",
+            "title": "تیم ما",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:industry:engineering:v1",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:team",
+                  "type:icon",
+                  "style:corporate",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "team",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مهندسی",
+                "type": "icon",
+                "category": "industry",
+                "preview_path": "icons/industry/engineering/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:office-desk:v1",
+                "reason": [
+                  "usage:team",
+                  "type:visual-asset",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "team",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "میز اداری",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/office-desk/preview.svg",
+                "match_score": 60.7,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "team",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:team",
+              "type:icon",
+              "style:corporate",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "contact",
+            "title": "ارتباط",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:office-desk:v1",
+                "reason": [
+                  "usage:contact",
+                  "type:visual-asset",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "contact",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "میز اداری",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/office-desk/preview.svg",
+                "match_score": 57.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "contact",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "usage:contact",
+              "type:visual-asset",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": [
+              {
+                "asset_id": "icon:industry:engineering:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:construction:blueprint:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:construction:safety-helmet:v1",
+                "reason": "animation intensity exceeds contact limit"
+              }
+            ]
+          },
+          {
+            "section": "cta",
+            "title": "شروع همکاری",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:industry:engineering:v1",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:cta",
+                  "type:icon",
+                  "style:corporate",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مهندسی",
+                "type": "icon",
+                "category": "industry",
+                "preview_path": "icons/industry/engineering/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:industry:iranian-industry-production:v2",
+                "reason": [
+                  "industry:manufacturing",
+                  "usage:cta",
+                  "type:motion",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "صنعت و تولید ایران",
+                "type": "motion",
+                "category": "industry",
+                "preview_path": "iranian-industry-production/v2/preview.svg",
+                "match_score": 94.7,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#16324F",
+                  "--brand-secondary": "#2A628F",
+                  "--brand-accent": "#F2B134",
+                  "--brand-background": "#F7FAFC",
+                  "--brand-border": "#CBD5E1"
+                }
+              }
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:manufacturing",
+              "usage:cta",
+              "type:icon",
+              "style:corporate",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          }
+        ],
+        "score": 92,
+        "brand_theme": {
+          "primary": "#16324F",
+          "secondary": "#2A628F",
+          "accent": "#F2B134",
+          "background": "#F7FAFC",
+          "border": "#CBD5E1"
+        }
+      },
+      "scoring": {
+        "before": 47,
+        "after": 92,
+        "improvement": 45,
+        "metrics": {
+          "visual_uniqueness": {
+            "before": 8,
+            "after": 18,
+            "maximum": 20
+          },
+          "business_relevance": {
+            "before": 8,
+            "after": 23,
+            "maximum": 25
+          },
+          "brand_consistency": {
+            "before": 11,
+            "after": 18,
+            "maximum": 20
+          },
+          "asset_coverage": {
+            "before": 10,
+            "after": 19,
+            "maximum": 20
+          },
+          "professional_appearance": {
+            "before": 10,
+            "after": 14,
+            "maximum": 15
+          }
+        },
+        "coverage": {
+          "existing_visual_sections_percent": 0,
+          "recommended_sections_percent": 100,
+          "recommended_assets_theme_ready_percent": 100
+        }
+      },
+      "ai_placeholder": {
+        "enabled": false,
+        "providers": [
+          "OpenAI",
+          "Claude",
+          "Gemini",
+          "Other"
+        ],
+        "provider_called": false,
+        "can_publish": false
+      },
+      "validation": {
+        "canonical_assets_only": true,
+        "no_broken_references": true,
+        "placement_rules_respected": true,
+        "theme_rules_respected": true,
+        "industry_rules_respected": true,
+        "asset_writes": false
+      }
+    },
+    {
+      "simulation_contract": "template-enhancement-simulation/v1",
+      "scenario": {
+        "id": "medical",
+        "label": "کلینیک پزشکی",
+        "template_name": "Generic Services"
+      },
+      "business_profile": {
+        "name": "کلینیک سلامت ایرانیان",
+        "description": "کلینیک تخصصی پزشک و خدمات سلامت",
+        "industry": "medical",
+        "business_type": "clinic",
+        "audience": "professional",
+        "style": "minimal",
+        "brand_theme": {
+          "primary": "#0F766E",
+          "secondary": "#115E59",
+          "accent": "#F59E0B",
+          "background": "#F0FDFA",
+          "border": "#99F6E4"
+        },
+        "required_sections": [
+          "hero",
+          "about",
+          "services",
+          "features",
+          "team",
+          "contact",
+          "cta"
+        ]
+      },
+      "before": {
+        "template_type": "services",
+        "sections": [
+          {
+            "type": "hero",
+            "title": "خدمات حرفه‌ای",
+            "content": "تصویر عمومی",
+            "existing_visuals": []
+          },
+          {
+            "type": "about",
+            "title": "درباره مجموعه",
+            "existing_visuals": []
+          },
+          {
+            "type": "services",
+            "title": "خدمات ما",
+            "existing_visuals": []
+          },
+          {
+            "type": "features",
+            "title": "ویژگی‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "team",
+            "title": "متخصصان",
+            "existing_visuals": []
+          },
+          {
+            "type": "contact",
+            "title": "اطلاعات تماس",
+            "existing_visuals": []
+          },
+          {
+            "type": "cta",
+            "title": "درخواست خدمات",
+            "existing_visuals": []
+          }
+        ],
+        "score": 47
+      },
+      "after": {
+        "enhancement_plan": [
+          {
+            "section": "hero",
+            "title": "خدمات حرفه‌ای",
+            "before": {
+              "content": "تصویر عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:medical:medical-professional-introduction:v2",
+                "reason": [
+                  "industry:medical",
+                  "usage:hero",
+                  "industry-section-preference",
+                  "type:motion",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "معرفی حرفه‌ای پزشک",
+                "type": "motion",
+                "category": "medical",
+                "preview_path": "medical-professional-introduction/v2/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:medical:first-aid-kit:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:hero",
+                  "industry-section-preference",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشکی — First Aid Kit",
+                "type": "object",
+                "category": "medical",
+                "preview_path": "visual-assets/object-library/medical/first-aid-kit/preview.svg",
+                "match_score": 96.9,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "reason": [
+              "industry:medical",
+              "usage:hero",
+              "industry-section-preference",
+              "type:motion",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "about",
+            "title": "درباره مجموعه",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:medical:medical-professional-introduction:v2",
+                "reason": [
+                  "industry:medical",
+                  "usage:about",
+                  "industry-section-preference",
+                  "type:motion",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "معرفی حرفه‌ای پزشک",
+                "type": "motion",
+                "category": "medical",
+                "preview_path": "medical-professional-introduction/v2/preview.svg",
+                "match_score": 99.8,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:medical:first-aid-kit:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:about",
+                  "industry-section-preference",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشکی — First Aid Kit",
+                "type": "object",
+                "category": "medical",
+                "preview_path": "visual-assets/object-library/medical/first-aid-kit/preview.svg",
+                "match_score": 96.9,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "about",
+              "position": "leading",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "reason": [
+              "industry:medical",
+              "usage:about",
+              "industry-section-preference",
+              "type:motion",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "services",
+            "title": "خدمات ما",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:medical:appointment:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:services",
+                  "industry-section-preference",
+                  "type:icon",
+                  "style:minimal"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "نوبت پزشکی",
+                "type": "icon",
+                "category": "medical",
+                "preview_path": "icons/medical/appointment/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:medical:first-aid-kit:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:services",
+                  "industry-section-preference",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشکی — First Aid Kit",
+                "type": "object",
+                "category": "medical",
+                "preview_path": "visual-assets/object-library/medical/first-aid-kit/preview.svg",
+                "match_score": 99.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:medical",
+              "usage:services",
+              "industry-section-preference",
+              "type:icon",
+              "style:minimal"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "features",
+            "title": "ویژگی‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:medical:doctor:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:features",
+                  "type:icon",
+                  "style:minimal",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشک",
+                "type": "icon",
+                "category": "medical",
+                "preview_path": "icons/medical/doctor/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:medical:first-aid-kit:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:features",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشکی — First Aid Kit",
+                "type": "object",
+                "category": "medical",
+                "preview_path": "visual-assets/object-library/medical/first-aid-kit/preview.svg",
+                "match_score": 91.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:medical",
+              "usage:features",
+              "type:icon",
+              "style:minimal",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "team",
+            "title": "متخصصان",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:medical:doctor:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:team",
+                  "type:icon",
+                  "style:minimal",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "team",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشک",
+                "type": "icon",
+                "category": "medical",
+                "preview_path": "icons/medical/doctor/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:medical:first-aid-kit:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:team",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "team",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشکی — First Aid Kit",
+                "type": "object",
+                "category": "medical",
+                "preview_path": "visual-assets/object-library/medical/first-aid-kit/preview.svg",
+                "match_score": 88.9,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "team",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:medical",
+              "usage:team",
+              "type:icon",
+              "style:minimal",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "contact",
+            "title": "اطلاعات تماس",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:business-cards:v1",
+                "reason": [
+                  "usage:contact",
+                  "type:visual-asset",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "contact",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "کارت ویزیت",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/business-cards/preview.svg",
+                "match_score": 57.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "contact",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "usage:contact",
+              "type:visual-asset",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": [
+              {
+                "asset_id": "icon:medical:doctor:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:medical:first-aid-kit:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:education:graduation-cap:v1",
+                "reason": "animation intensity exceeds contact limit"
+              }
+            ]
+          },
+          {
+            "section": "cta",
+            "title": "درخواست خدمات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:medical:doctor:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:cta",
+                  "type:icon",
+                  "style:minimal",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "پزشک",
+                "type": "icon",
+                "category": "medical",
+                "preview_path": "icons/medical/doctor/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:medical:medical-professional-introduction:v1",
+                "reason": [
+                  "industry:medical",
+                  "usage:cta",
+                  "industry-section-preference",
+                  "type:motion"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "معرفی حرفه‌ای پزشک",
+                "type": "motion",
+                "category": "medical",
+                "preview_path": "medical-professional-introduction/v1/preview.svg",
+                "match_score": 97.7,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#0F766E",
+                  "--brand-secondary": "#115E59",
+                  "--brand-accent": "#F59E0B",
+                  "--brand-background": "#F0FDFA",
+                  "--brand-border": "#99F6E4"
+                }
+              }
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:medical",
+              "usage:cta",
+              "type:icon",
+              "style:minimal",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          }
+        ],
+        "score": 92,
+        "brand_theme": {
+          "primary": "#0F766E",
+          "secondary": "#115E59",
+          "accent": "#F59E0B",
+          "background": "#F0FDFA",
+          "border": "#99F6E4"
+        }
+      },
+      "scoring": {
+        "before": 47,
+        "after": 92,
+        "improvement": 45,
+        "metrics": {
+          "visual_uniqueness": {
+            "before": 8,
+            "after": 18,
+            "maximum": 20
+          },
+          "business_relevance": {
+            "before": 8,
+            "after": 23,
+            "maximum": 25
+          },
+          "brand_consistency": {
+            "before": 11,
+            "after": 18,
+            "maximum": 20
+          },
+          "asset_coverage": {
+            "before": 10,
+            "after": 19,
+            "maximum": 20
+          },
+          "professional_appearance": {
+            "before": 10,
+            "after": 14,
+            "maximum": 15
+          }
+        },
+        "coverage": {
+          "existing_visual_sections_percent": 0,
+          "recommended_sections_percent": 100,
+          "recommended_assets_theme_ready_percent": 100
+        }
+      },
+      "ai_placeholder": {
+        "enabled": false,
+        "providers": [
+          "OpenAI",
+          "Claude",
+          "Gemini",
+          "Other"
+        ],
+        "provider_called": false,
+        "can_publish": false
+      },
+      "validation": {
+        "canonical_assets_only": true,
+        "no_broken_references": true,
+        "placement_rules_respected": true,
+        "theme_rules_respected": true,
+        "industry_rules_respected": true,
+        "asset_writes": false
+      }
+    },
+    {
+      "simulation_contract": "template-enhancement-simulation/v1",
+      "scenario": {
+        "id": "personal-brand",
+        "label": "برند شخصی",
+        "template_name": "Generic Profile"
+      },
+      "business_profile": {
+        "name": "آرمان رضایی",
+        "description": "مشاور فناوری و متخصص تحول دیجیتال",
+        "industry": "personal-brand",
+        "business_type": "consultant",
+        "audience": "professional",
+        "style": "premium",
+        "brand_theme": {
+          "primary": "#312E81",
+          "secondary": "#4F46E5",
+          "accent": "#06B6D4",
+          "background": "#F8FAFC",
+          "border": "#C7D2FE"
+        },
+        "required_sections": [
+          "hero",
+          "about",
+          "services",
+          "features",
+          "portfolio",
+          "testimonials",
+          "contact",
+          "cta"
+        ]
+      },
+      "before": {
+        "template_type": "profile",
+        "sections": [
+          {
+            "type": "hero",
+            "title": "معرفی من",
+            "existing_visuals": []
+          },
+          {
+            "type": "about",
+            "title": "درباره من",
+            "existing_visuals": []
+          },
+          {
+            "type": "services",
+            "title": "خدمات",
+            "existing_visuals": []
+          },
+          {
+            "type": "features",
+            "title": "مهارت‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "portfolio",
+            "title": "نمونه‌کار",
+            "existing_visuals": []
+          },
+          {
+            "type": "testimonials",
+            "title": "دیدگاه‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "contact",
+            "title": "ارتباط",
+            "existing_visuals": []
+          },
+          {
+            "type": "cta",
+            "title": "همکاری",
+            "existing_visuals": []
+          }
+        ],
+        "score": 47
+      },
+      "after": {
+        "enhancement_plan": [
+          {
+            "section": "hero",
+            "title": "معرفی من",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:business-cards:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:hero",
+                  "type:visual-asset",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "کارت ویزیت",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/business-cards/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:education:online-learning-platform:v2",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:hero",
+                  "type:motion",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "آموزش و یادگیری آنلاین",
+                "type": "motion",
+                "category": "education",
+                "preview_path": "online-learning-platform/v2/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:hero",
+              "type:visual-asset",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "about",
+            "title": "درباره من",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:business-cards:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:about",
+                  "type:visual-asset",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "کارت ویزیت",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/business-cards/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:education:online-learning-platform:v2",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:about",
+                  "type:motion",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "آموزش و یادگیری آنلاین",
+                "type": "motion",
+                "category": "education",
+                "preview_path": "online-learning-platform/v2/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "about",
+              "position": "leading",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:about",
+              "type:visual-asset",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "services",
+            "title": "خدمات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:education:course:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:services",
+                  "type:icon",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "دوره آموزشی",
+                "type": "icon",
+                "category": "education",
+                "preview_path": "icons/education/course/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:education:graduation-cap:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:services",
+                  "type:object",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "آموزش — Graduation Cap",
+                "type": "object",
+                "category": "education",
+                "preview_path": "visual-assets/object-library/education/graduation-cap/preview.svg",
+                "match_score": 100,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:services",
+              "type:icon",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "features",
+            "title": "مهارت‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:education:course:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:features",
+                  "type:icon",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "دوره آموزشی",
+                "type": "icon",
+                "category": "education",
+                "preview_path": "icons/education/course/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:education:graduation-cap:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:features",
+                  "type:object",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "آموزش — Graduation Cap",
+                "type": "object",
+                "category": "education",
+                "preview_path": "visual-assets/object-library/education/graduation-cap/preview.svg",
+                "match_score": 100,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:features",
+              "type:icon",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "portfolio",
+            "title": "نمونه‌کار",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:business-cards:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:portfolio",
+                  "type:visual-asset",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "portfolio",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "کارت ویزیت",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/business-cards/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:education:graduation-cap:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:portfolio",
+                  "type:object",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "portfolio",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "آموزش — Graduation Cap",
+                "type": "object",
+                "category": "education",
+                "preview_path": "visual-assets/object-library/education/graduation-cap/preview.svg",
+                "match_score": 100,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "portfolio",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:portfolio",
+              "type:visual-asset",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "testimonials",
+            "title": "دیدگاه‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:education:course:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:testimonials",
+                  "type:icon",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "testimonials",
+                  "position": "inline",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "دوره آموزشی",
+                "type": "icon",
+                "category": "education",
+                "preview_path": "icons/education/course/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:business-cards:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:testimonials",
+                  "type:visual-asset",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "testimonials",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "کارت ویزیت",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/business-cards/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "testimonials",
+              "position": "inline",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:testimonials",
+              "type:icon",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "contact",
+            "title": "ارتباط",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:business-objects:business-cards:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:contact",
+                  "type:visual-asset",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "contact",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "کارت ویزیت",
+                "type": "visual-asset",
+                "category": "business-objects",
+                "preview_path": "visual-assets/business-objects/business-cards/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "contact",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:contact",
+              "type:visual-asset",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": [
+              {
+                "asset_id": "icon:education:course:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:education:graduation-cap:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:education:online-learning:v1",
+                "reason": "animation intensity exceeds contact limit"
+              }
+            ]
+          },
+          {
+            "section": "cta",
+            "title": "همکاری",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:education:course:v1",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:cta",
+                  "type:icon",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "دوره آموزشی",
+                "type": "icon",
+                "category": "education",
+                "preview_path": "icons/education/course/preview.svg",
+                "match_score": 100,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:education:online-learning-platform:v2",
+                "reason": [
+                  "industry:personal-brand",
+                  "usage:cta",
+                  "type:motion",
+                  "style:premium",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "آموزش و یادگیری آنلاین",
+                "type": "motion",
+                "category": "education",
+                "preview_path": "online-learning-platform/v2/preview.svg",
+                "match_score": 100,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#312E81",
+                  "--brand-secondary": "#4F46E5",
+                  "--brand-accent": "#06B6D4",
+                  "--brand-background": "#F8FAFC",
+                  "--brand-border": "#C7D2FE"
+                }
+              }
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "reason": [
+              "industry:personal-brand",
+              "usage:cta",
+              "type:icon",
+              "style:premium",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          }
+        ],
+        "score": 92,
+        "brand_theme": {
+          "primary": "#312E81",
+          "secondary": "#4F46E5",
+          "accent": "#06B6D4",
+          "background": "#F8FAFC",
+          "border": "#C7D2FE"
+        }
+      },
+      "scoring": {
+        "before": 47,
+        "after": 92,
+        "improvement": 45,
+        "metrics": {
+          "visual_uniqueness": {
+            "before": 8,
+            "after": 18,
+            "maximum": 20
+          },
+          "business_relevance": {
+            "before": 8,
+            "after": 23,
+            "maximum": 25
+          },
+          "brand_consistency": {
+            "before": 11,
+            "after": 18,
+            "maximum": 20
+          },
+          "asset_coverage": {
+            "before": 10,
+            "after": 19,
+            "maximum": 20
+          },
+          "professional_appearance": {
+            "before": 10,
+            "after": 14,
+            "maximum": 15
+          }
+        },
+        "coverage": {
+          "existing_visual_sections_percent": 0,
+          "recommended_sections_percent": 100,
+          "recommended_assets_theme_ready_percent": 100
+        }
+      },
+      "ai_placeholder": {
+        "enabled": false,
+        "providers": [
+          "OpenAI",
+          "Claude",
+          "Gemini",
+          "Other"
+        ],
+        "provider_called": false,
+        "can_publish": false
+      },
+      "validation": {
+        "canonical_assets_only": true,
+        "no_broken_references": true,
+        "placement_rules_respected": true,
+        "theme_rules_respected": true,
+        "industry_rules_respected": true,
+        "asset_writes": false
+      }
+    },
+    {
+      "simulation_contract": "template-enhancement-simulation/v1",
+      "scenario": {
+        "id": "restaurant",
+        "label": "رستوران ایرانی",
+        "template_name": "Generic Restaurant"
+      },
+      "business_profile": {
+        "name": "سفره ایرانی",
+        "description": "رستوران غذای ایرانی و منوی اصیل",
+        "industry": "restaurant",
+        "business_type": "restaurant",
+        "audience": "consumer",
+        "style": "traditional",
+        "brand_theme": {
+          "primary": "#7C2D12",
+          "secondary": "#C2410C",
+          "accent": "#EAB308",
+          "background": "#FFFBEB",
+          "border": "#FED7AA"
+        },
+        "required_sections": [
+          "hero",
+          "about",
+          "services",
+          "features",
+          "products",
+          "testimonials",
+          "contact",
+          "cta"
+        ]
+      },
+      "before": {
+        "template_type": "restaurant",
+        "sections": [
+          {
+            "type": "hero",
+            "title": "به وب‌سایت ما خوش آمدید",
+            "existing_visuals": []
+          },
+          {
+            "type": "about",
+            "title": "درباره ما",
+            "existing_visuals": []
+          },
+          {
+            "type": "services",
+            "title": "خدمات",
+            "existing_visuals": []
+          },
+          {
+            "type": "features",
+            "title": "ویژگی‌ها",
+            "existing_visuals": []
+          },
+          {
+            "type": "products",
+            "title": "محصولات",
+            "existing_visuals": []
+          },
+          {
+            "type": "testimonials",
+            "title": "نظر مشتریان",
+            "existing_visuals": []
+          },
+          {
+            "type": "contact",
+            "title": "تماس",
+            "existing_visuals": []
+          },
+          {
+            "type": "cta",
+            "title": "رزرو",
+            "existing_visuals": []
+          }
+        ],
+        "score": 47
+      },
+      "after": {
+        "enhancement_plan": [
+          {
+            "section": "hero",
+            "title": "به وب‌سایت ما خوش آمدید",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:food:kebab:v1",
+                "reason": [
+                  "industry:restaurant",
+                  "usage:hero",
+                  "industry-section-preference",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مواد غذایی — Kebab",
+                "type": "object",
+                "category": "food",
+                "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+                "match_score": 96.9,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+                "reason": [
+                  "usage:hero",
+                  "type:visual-asset",
+                  "style:traditional",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "hero",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "عناصر کافه",
+                "type": "visual-asset",
+                "category": "iranian-lifestyle",
+                "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+                "match_score": 61.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "center",
+              "priority": 70
+            },
+            "reason": [
+              "industry:restaurant",
+              "usage:hero",
+              "industry-section-preference",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "about",
+            "title": "درباره ما",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:food:kebab:v1",
+                "reason": [
+                  "industry:restaurant",
+                  "usage:about",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مواد غذایی — Kebab",
+                "type": "object",
+                "category": "food",
+                "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+                "match_score": 88.9,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+                "reason": [
+                  "usage:about",
+                  "type:visual-asset",
+                  "style:traditional",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "about",
+                  "position": "leading",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "عناصر کافه",
+                "type": "visual-asset",
+                "category": "iranian-lifestyle",
+                "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+                "match_score": 64.7,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "about",
+              "position": "leading",
+              "alignment": "center",
+              "priority": 70
+            },
+            "reason": [
+              "industry:restaurant",
+              "usage:about",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "services",
+            "title": "خدمات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:food:kebab:v1",
+                "reason": [
+                  "industry:restaurant",
+                  "usage:services",
+                  "industry-section-preference",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مواد غذایی — Kebab",
+                "type": "object",
+                "category": "food",
+                "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+                "match_score": 99.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": [
+                  "usage:services",
+                  "type:icon",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "services",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "سبد خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+                "match_score": 60.8,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 70
+            },
+            "reason": [
+              "industry:restaurant",
+              "usage:services",
+              "industry-section-preference",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "features",
+            "title": "ویژگی‌ها",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:food:kebab:v1",
+                "reason": [
+                  "industry:restaurant",
+                  "usage:features",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مواد غذایی — Kebab",
+                "type": "object",
+                "category": "food",
+                "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+                "match_score": 91.8,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": [
+                  "usage:features",
+                  "industry-section-preference",
+                  "type:icon",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "features",
+                  "position": "card-media",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "سبد خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+                "match_score": 68.8,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 70
+            },
+            "reason": [
+              "industry:restaurant",
+              "usage:features",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "products",
+            "title": "محصولات",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "object:food:kebab:v1",
+                "reason": [
+                  "industry:restaurant",
+                  "usage:products",
+                  "industry-section-preference",
+                  "type:object",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "products",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 70
+                },
+                "size": "medium",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "مواد غذایی — Kebab",
+                "type": "object",
+                "category": "food",
+                "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+                "match_score": 100,
+                "quality_score": 96,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+                "reason": [
+                  "usage:products",
+                  "type:visual-asset",
+                  "style:traditional",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "products",
+                  "position": "card-media",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "عناصر کافه",
+                "type": "visual-asset",
+                "category": "iranian-lifestyle",
+                "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+                "match_score": 61.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "products",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 70
+            },
+            "reason": [
+              "industry:restaurant",
+              "usage:products",
+              "industry-section-preference",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "testimonials",
+            "title": "نظر مشتریان",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+                "reason": [
+                  "usage:testimonials",
+                  "type:visual-asset",
+                  "style:traditional",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "testimonials",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "عناصر کافه",
+                "type": "visual-asset",
+                "category": "iranian-lifestyle",
+                "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+                "match_score": 61.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": [
+                  "usage:testimonials",
+                  "type:icon",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "testimonials",
+                  "position": "inline",
+                  "alignment": "inline-start",
+                  "priority": 75
+                },
+                "size": "small",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "سبد خرید",
+                "type": "icon",
+                "category": "ecommerce",
+                "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+                "match_score": 60.8,
+                "quality_score": 97,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "testimonials",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "usage:testimonials",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          },
+          {
+            "section": "contact",
+            "title": "تماس",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+                "reason": [
+                  "usage:contact",
+                  "type:visual-asset",
+                  "style:traditional",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "contact",
+                  "position": "inline",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "عناصر کافه",
+                "type": "visual-asset",
+                "category": "iranian-lifestyle",
+                "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+                "match_score": 61.9,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "contact",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "reason": [
+              "usage:contact",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": [
+              {
+                "asset_id": "object:food:kebab:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "icon:ecommerce:shopping-cart:v1",
+                "reason": "animation intensity exceeds contact limit"
+              },
+              {
+                "asset_id": "object:iranian-traditional:persian-carpet:v1",
+                "reason": "animation intensity exceeds contact limit"
+              }
+            ]
+          },
+          {
+            "section": "cta",
+            "title": "رزرو",
+            "before": {
+              "content": "محتوای عمومی",
+              "existing_visuals": [],
+              "state": "generic"
+            },
+            "recommended_assets": [
+              {
+                "contract_version": "1.0",
+                "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v2",
+                "reason": [
+                  "usage:cta",
+                  "type:motion",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "inline-end",
+                  "priority": 90
+                },
+                "size": "large",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "static-preview",
+                  "reduced_motion": "static-preview"
+                },
+                "name": "سفر مشتری فروشگاه اینترنتی",
+                "type": "motion",
+                "category": "ecommerce",
+                "preview_path": "iranian-ecommerce-journey/v2/preview.svg",
+                "match_score": 60.7,
+                "quality_score": 96.5,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              },
+              {
+                "contract_version": "1.0",
+                "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+                "reason": [
+                  "usage:cta",
+                  "type:visual-asset",
+                  "style:traditional",
+                  "canonical-relation-bundle"
+                ],
+                "placement": {
+                  "section": "cta",
+                  "position": "background",
+                  "alignment": "center",
+                  "priority": 80
+                },
+                "size": "fluid",
+                "theme_variant": "brand-proposal",
+                "responsive_behavior": {
+                  "desktop": "show",
+                  "tablet": "show",
+                  "mobile": "show",
+                  "reduced_motion": "disable"
+                },
+                "name": "عناصر کافه",
+                "type": "visual-asset",
+                "category": "iranian-lifestyle",
+                "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+                "match_score": 59,
+                "quality_score": 96.8,
+                "theme_tokens": {
+                  "--brand-primary": "#7C2D12",
+                  "--brand-secondary": "#C2410C",
+                  "--brand-accent": "#EAB308",
+                  "--brand-background": "#FFFBEB",
+                  "--brand-border": "#FED7AA"
+                }
+              }
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "reason": [
+              "usage:cta",
+              "type:motion",
+              "canonical-relation-bundle"
+            ],
+            "expected_improvement": "+6 امتیاز تخمینی",
+            "rejected_candidates": []
+          }
+        ],
+        "score": 92,
+        "brand_theme": {
+          "primary": "#7C2D12",
+          "secondary": "#C2410C",
+          "accent": "#EAB308",
+          "background": "#FFFBEB",
+          "border": "#FED7AA"
+        }
+      },
+      "scoring": {
+        "before": 47,
+        "after": 92,
+        "improvement": 45,
+        "metrics": {
+          "visual_uniqueness": {
+            "before": 8,
+            "after": 18,
+            "maximum": 20
+          },
+          "business_relevance": {
+            "before": 8,
+            "after": 23,
+            "maximum": 25
+          },
+          "brand_consistency": {
+            "before": 11,
+            "after": 18,
+            "maximum": 20
+          },
+          "asset_coverage": {
+            "before": 10,
+            "after": 19,
+            "maximum": 20
+          },
+          "professional_appearance": {
+            "before": 10,
+            "after": 14,
+            "maximum": 15
+          }
+        },
+        "coverage": {
+          "existing_visual_sections_percent": 0,
+          "recommended_sections_percent": 100,
+          "recommended_assets_theme_ready_percent": 100
+        }
+      },
+      "ai_placeholder": {
+        "enabled": false,
+        "providers": [
+          "OpenAI",
+          "Claude",
+          "Gemini",
+          "Other"
+        ],
+        "provider_called": false,
+        "can_publish": false
+      },
+      "validation": {
+        "canonical_assets_only": true,
+        "no_broken_references": true,
+        "placement_rules_respected": true,
+        "theme_rules_respected": true,
+        "industry_rules_respected": true,
+        "asset_writes": false
+      }
+    }
+  ]
+}

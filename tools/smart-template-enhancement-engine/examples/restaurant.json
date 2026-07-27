@@ -1,0 +1,19 @@
+{
+  "business_profile": {
+    "name": "رستوران سفره ایرانی",
+    "description": "رستوران غذای ایرانی با منوی اصیل",
+    "industry": "restaurant",
+    "business_type": "restaurant",
+    "audience": "consumer",
+    "style": "traditional",
+    "brand_theme": { "primary": "#7C2D12", "secondary": "#C2410C", "accent": "#EAB308", "background": "#FFFBEB", "border": "#FED7AA" },
+    "required_sections": ["hero", "features", "services", "products", "cta"]
+  },
+  "template_sections": [
+    { "type": "hero", "title": "طعم اصیل ایرانی" },
+    { "type": "features", "title": "چرا ما" },
+    { "type": "services", "title": "خدمات پذیرایی" },
+    { "type": "products", "title": "منوی محبوب" },
+    { "type": "cta", "title": "رزرو میز" }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "restaurant terms cannot satisfy medical profile",
+  "industry": "medical",
+  "section": "hero",
+  "asset_terms": ["food", "restaurant", "menu"],
+  "expected_compatible": false
+}

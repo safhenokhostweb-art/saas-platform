@@ -1,0 +1,917 @@
+{
+  "simulation_contract": "template-enhancement-simulation/v1",
+  "scenario": {
+    "id": "restaurant",
+    "label": "رستوران ایرانی",
+    "template_name": "Generic Restaurant"
+  },
+  "business_profile": {
+    "name": "سفره ایرانی",
+    "description": "رستوران غذای ایرانی و منوی اصیل",
+    "industry": "restaurant",
+    "business_type": "restaurant",
+    "audience": "consumer",
+    "style": "traditional",
+    "brand_theme": {
+      "primary": "#7C2D12",
+      "secondary": "#C2410C",
+      "accent": "#EAB308",
+      "background": "#FFFBEB",
+      "border": "#FED7AA"
+    },
+    "required_sections": [
+      "hero",
+      "about",
+      "services",
+      "features",
+      "products",
+      "testimonials",
+      "contact",
+      "cta"
+    ]
+  },
+  "before": {
+    "template_type": "restaurant",
+    "sections": [
+      {
+        "type": "hero",
+        "title": "به وب‌سایت ما خوش آمدید",
+        "existing_visuals": []
+      },
+      {
+        "type": "about",
+        "title": "درباره ما",
+        "existing_visuals": []
+      },
+      {
+        "type": "services",
+        "title": "خدمات",
+        "existing_visuals": []
+      },
+      {
+        "type": "features",
+        "title": "ویژگی‌ها",
+        "existing_visuals": []
+      },
+      {
+        "type": "products",
+        "title": "محصولات",
+        "existing_visuals": []
+      },
+      {
+        "type": "testimonials",
+        "title": "نظر مشتریان",
+        "existing_visuals": []
+      },
+      {
+        "type": "contact",
+        "title": "تماس",
+        "existing_visuals": []
+      },
+      {
+        "type": "cta",
+        "title": "رزرو",
+        "existing_visuals": []
+      }
+    ],
+    "score": 47
+  },
+  "after": {
+    "enhancement_plan": [
+      {
+        "section": "hero",
+        "title": "به وب‌سایت ما خوش آمدید",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "object:food:kebab:v1",
+            "reason": [
+              "industry:restaurant",
+              "usage:hero",
+              "industry-section-preference",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "center",
+              "priority": 70
+            },
+            "size": "medium",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "مواد غذایی — Kebab",
+            "type": "object",
+            "category": "food",
+            "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+            "match_score": 96.9,
+            "quality_score": 96,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+            "reason": [
+              "usage:hero",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "hero",
+              "position": "background",
+              "alignment": "center",
+              "priority": 80
+            },
+            "size": "fluid",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "عناصر کافه",
+            "type": "visual-asset",
+            "category": "iranian-lifestyle",
+            "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+            "match_score": 61.9,
+            "quality_score": 96.8,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "hero",
+          "position": "background",
+          "alignment": "center",
+          "priority": 70
+        },
+        "reason": [
+          "industry:restaurant",
+          "usage:hero",
+          "industry-section-preference",
+          "type:object",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      },
+      {
+        "section": "about",
+        "title": "درباره ما",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "object:food:kebab:v1",
+            "reason": [
+              "industry:restaurant",
+              "usage:about",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "about",
+              "position": "leading",
+              "alignment": "center",
+              "priority": 70
+            },
+            "size": "medium",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "مواد غذایی — Kebab",
+            "type": "object",
+            "category": "food",
+            "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+            "match_score": 88.9,
+            "quality_score": 96,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+            "reason": [
+              "usage:about",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "about",
+              "position": "leading",
+              "alignment": "center",
+              "priority": 80
+            },
+            "size": "fluid",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "عناصر کافه",
+            "type": "visual-asset",
+            "category": "iranian-lifestyle",
+            "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+            "match_score": 64.7,
+            "quality_score": 96.8,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "about",
+          "position": "leading",
+          "alignment": "center",
+          "priority": 70
+        },
+        "reason": [
+          "industry:restaurant",
+          "usage:about",
+          "type:object",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      },
+      {
+        "section": "services",
+        "title": "خدمات",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "object:food:kebab:v1",
+            "reason": [
+              "industry:restaurant",
+              "usage:services",
+              "industry-section-preference",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 70
+            },
+            "size": "medium",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "مواد غذایی — Kebab",
+            "type": "object",
+            "category": "food",
+            "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+            "match_score": 99.8,
+            "quality_score": 96,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "icon:ecommerce:shopping-cart:v1",
+            "reason": [
+              "usage:services",
+              "type:icon",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "services",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "size": "small",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "سبد خرید",
+            "type": "icon",
+            "category": "ecommerce",
+            "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+            "match_score": 60.8,
+            "quality_score": 97,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "services",
+          "position": "card-media",
+          "alignment": "center",
+          "priority": 70
+        },
+        "reason": [
+          "industry:restaurant",
+          "usage:services",
+          "industry-section-preference",
+          "type:object",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      },
+      {
+        "section": "features",
+        "title": "ویژگی‌ها",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "object:food:kebab:v1",
+            "reason": [
+              "industry:restaurant",
+              "usage:features",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 70
+            },
+            "size": "medium",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "مواد غذایی — Kebab",
+            "type": "object",
+            "category": "food",
+            "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+            "match_score": 91.8,
+            "quality_score": 96,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "icon:ecommerce:shopping-cart:v1",
+            "reason": [
+              "usage:features",
+              "industry-section-preference",
+              "type:icon",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "features",
+              "position": "card-media",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "size": "small",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "سبد خرید",
+            "type": "icon",
+            "category": "ecommerce",
+            "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+            "match_score": 68.8,
+            "quality_score": 97,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "features",
+          "position": "card-media",
+          "alignment": "center",
+          "priority": 70
+        },
+        "reason": [
+          "industry:restaurant",
+          "usage:features",
+          "type:object",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      },
+      {
+        "section": "products",
+        "title": "محصولات",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "object:food:kebab:v1",
+            "reason": [
+              "industry:restaurant",
+              "usage:products",
+              "industry-section-preference",
+              "type:object",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "products",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 70
+            },
+            "size": "medium",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "مواد غذایی — Kebab",
+            "type": "object",
+            "category": "food",
+            "preview_path": "visual-assets/object-library/food/kebab/preview.svg",
+            "match_score": 100,
+            "quality_score": 96,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+            "reason": [
+              "usage:products",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "products",
+              "position": "card-media",
+              "alignment": "center",
+              "priority": 80
+            },
+            "size": "fluid",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "عناصر کافه",
+            "type": "visual-asset",
+            "category": "iranian-lifestyle",
+            "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+            "match_score": 61.9,
+            "quality_score": 96.8,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "products",
+          "position": "card-media",
+          "alignment": "center",
+          "priority": 70
+        },
+        "reason": [
+          "industry:restaurant",
+          "usage:products",
+          "industry-section-preference",
+          "type:object",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      },
+      {
+        "section": "testimonials",
+        "title": "نظر مشتریان",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+            "reason": [
+              "usage:testimonials",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "testimonials",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "size": "fluid",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "عناصر کافه",
+            "type": "visual-asset",
+            "category": "iranian-lifestyle",
+            "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+            "match_score": 61.9,
+            "quality_score": 96.8,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "icon:ecommerce:shopping-cart:v1",
+            "reason": [
+              "usage:testimonials",
+              "type:icon",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "testimonials",
+              "position": "inline",
+              "alignment": "inline-start",
+              "priority": 75
+            },
+            "size": "small",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "سبد خرید",
+            "type": "icon",
+            "category": "ecommerce",
+            "preview_path": "icons/ecommerce/shopping-cart/preview.svg",
+            "match_score": 60.8,
+            "quality_score": 97,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "testimonials",
+          "position": "inline",
+          "alignment": "center",
+          "priority": 80
+        },
+        "reason": [
+          "usage:testimonials",
+          "type:visual-asset",
+          "style:traditional",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      },
+      {
+        "section": "contact",
+        "title": "تماس",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+            "reason": [
+              "usage:contact",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "contact",
+              "position": "inline",
+              "alignment": "center",
+              "priority": 80
+            },
+            "size": "fluid",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "عناصر کافه",
+            "type": "visual-asset",
+            "category": "iranian-lifestyle",
+            "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+            "match_score": 61.9,
+            "quality_score": 96.8,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "contact",
+          "position": "inline",
+          "alignment": "center",
+          "priority": 80
+        },
+        "reason": [
+          "usage:contact",
+          "type:visual-asset",
+          "style:traditional",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": [
+          {
+            "asset_id": "object:food:kebab:v1",
+            "reason": "animation intensity exceeds contact limit"
+          },
+          {
+            "asset_id": "icon:ecommerce:shopping-cart:v1",
+            "reason": "animation intensity exceeds contact limit"
+          },
+          {
+            "asset_id": "object:iranian-traditional:persian-carpet:v1",
+            "reason": "animation intensity exceeds contact limit"
+          }
+        ]
+      },
+      {
+        "section": "cta",
+        "title": "رزرو",
+        "before": {
+          "content": "محتوای عمومی",
+          "existing_visuals": [],
+          "state": "generic"
+        },
+        "recommended_assets": [
+          {
+            "contract_version": "1.0",
+            "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v2",
+            "reason": [
+              "usage:cta",
+              "type:motion",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "inline-end",
+              "priority": 90
+            },
+            "size": "large",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "static-preview",
+              "reduced_motion": "static-preview"
+            },
+            "name": "سفر مشتری فروشگاه اینترنتی",
+            "type": "motion",
+            "category": "ecommerce",
+            "preview_path": "iranian-ecommerce-journey/v2/preview.svg",
+            "match_score": 60.7,
+            "quality_score": 96.5,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          },
+          {
+            "contract_version": "1.0",
+            "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+            "reason": [
+              "usage:cta",
+              "type:visual-asset",
+              "style:traditional",
+              "canonical-relation-bundle"
+            ],
+            "placement": {
+              "section": "cta",
+              "position": "background",
+              "alignment": "center",
+              "priority": 80
+            },
+            "size": "fluid",
+            "theme_variant": "brand-proposal",
+            "responsive_behavior": {
+              "desktop": "show",
+              "tablet": "show",
+              "mobile": "show",
+              "reduced_motion": "disable"
+            },
+            "name": "عناصر کافه",
+            "type": "visual-asset",
+            "category": "iranian-lifestyle",
+            "preview_path": "visual-assets/iranian-lifestyle/cafe-elements/preview.svg",
+            "match_score": 59,
+            "quality_score": 96.8,
+            "theme_tokens": {
+              "--brand-primary": "#7C2D12",
+              "--brand-secondary": "#C2410C",
+              "--brand-accent": "#EAB308",
+              "--brand-background": "#FFFBEB",
+              "--brand-border": "#FED7AA"
+            }
+          }
+        ],
+        "placement": {
+          "section": "cta",
+          "position": "background",
+          "alignment": "inline-end",
+          "priority": 90
+        },
+        "reason": [
+          "usage:cta",
+          "type:motion",
+          "canonical-relation-bundle"
+        ],
+        "expected_improvement": "+6 امتیاز تخمینی",
+        "rejected_candidates": []
+      }
+    ],
+    "score": 92,
+    "brand_theme": {
+      "primary": "#7C2D12",
+      "secondary": "#C2410C",
+      "accent": "#EAB308",
+      "background": "#FFFBEB",
+      "border": "#FED7AA"
+    }
+  },
+  "scoring": {
+    "before": 47,
+    "after": 92,
+    "improvement": 45,
+    "metrics": {
+      "visual_uniqueness": {
+        "before": 8,
+        "after": 18,
+        "maximum": 20
+      },
+      "business_relevance": {
+        "before": 8,
+        "after": 23,
+        "maximum": 25
+      },
+      "brand_consistency": {
+        "before": 11,
+        "after": 18,
+        "maximum": 20
+      },
+      "asset_coverage": {
+        "before": 10,
+        "after": 19,
+        "maximum": 20
+      },
+      "professional_appearance": {
+        "before": 10,
+        "after": 14,
+        "maximum": 15
+      }
+    },
+    "coverage": {
+      "existing_visual_sections_percent": 0,
+      "recommended_sections_percent": 100,
+      "recommended_assets_theme_ready_percent": 100
+    }
+  },
+  "ai_placeholder": {
+    "enabled": false,
+    "providers": [
+      "OpenAI",
+      "Claude",
+      "Gemini",
+      "Other"
+    ],
+    "provider_called": false,
+    "can_publish": false
+  },
+  "validation": {
+    "canonical_assets_only": true,
+    "no_broken_references": true,
+    "placement_rules_respected": true,
+    "theme_rules_respected": true,
+    "industry_rules_respected": true,
+    "asset_writes": false
+  }
+}

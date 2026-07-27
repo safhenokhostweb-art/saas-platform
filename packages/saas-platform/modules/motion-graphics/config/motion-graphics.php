@@ -9,6 +9,10 @@ return [
     'ai_enabled' => false,
     'customer_runtime_enabled' => false,
     'real_storage_enabled' => false,
+    // Phase 2 read contracts: whether a retired ("deprecated") version
+    // remains readable through MotionVersionReadContract / MotionAssetReadContract.
+    // Published and approved versions are always readable regardless of this flag.
+    'deprecated_versions_readable' => false,
     'limits' => [
         'max_source_bytes' => 2 * 1024 * 1024,
         'max_asset_bytes' => 5 * 1024 * 1024,

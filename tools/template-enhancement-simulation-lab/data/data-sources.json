@@ -1,0 +1,11 @@
+{
+  "mode": "read-only",
+  "library_index": "../../packages/saas-platform/modules/motion-graphics/assets/library/library-index.json",
+  "asset_relations": "../../packages/saas-platform/modules/motion-graphics/assets/library/asset-relations.json",
+  "tag_registry": "../../packages/saas-platform/modules/motion-graphics/assets/library/tags.json",
+  "placement_contract": "../../packages/saas-platform/modules/motion-graphics/docs/template-builder-contract",
+  "enhancement_engine": "../smart-template-enhancement-engine/scripts/engine.js",
+  "placement_validator": "../smart-template-enhancement-engine/scripts/placement-validator.js",
+  "asset_writes": false,
+  "provider_calls": false
+}

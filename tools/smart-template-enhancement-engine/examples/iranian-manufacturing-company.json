@@ -1,0 +1,19 @@
+{
+  "business_profile": {
+    "name": "شرکت تولید قطعات ایرانی",
+    "description": "شرکت تولید قطعات صنعتی و خدمات مهندسی",
+    "industry": "manufacturing",
+    "business_type": "industrial-company",
+    "audience": "company",
+    "style": "corporate",
+    "brand_theme": { "primary": "#16324F", "secondary": "#2A628F", "accent": "#F2B134", "background": "#F7FAFC", "border": "#CBD5E1" },
+    "required_sections": ["hero", "features", "services", "about", "cta"]
+  },
+  "template_sections": [
+    { "type": "hero", "title": "توان تولید ایرانی", "content": "راهکارهای صنعتی دقیق" },
+    { "type": "features", "title": "توانمندی‌ها" },
+    { "type": "services", "title": "خدمات مهندسی" },
+    { "type": "about", "title": "درباره کارخانه" },
+    { "type": "cta", "title": "شروع همکاری" }
+  ]
+}

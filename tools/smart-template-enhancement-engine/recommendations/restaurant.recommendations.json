@@ -1,0 +1,681 @@
+{
+  "contract": "smart-template-enhancement/v1",
+  "prototype": true,
+  "business": {
+    "name": "رستوران سفره ایرانی",
+    "industry": "restaurant"
+  },
+  "template_before": [
+    {
+      "id": "hero-1",
+      "type": "hero",
+      "title": "طعم اصیل ایرانی",
+      "existing_visuals": []
+    },
+    {
+      "id": "features-2",
+      "type": "features",
+      "title": "چرا ما",
+      "existing_visuals": []
+    },
+    {
+      "id": "services-3",
+      "type": "services",
+      "title": "خدمات پذیرایی",
+      "existing_visuals": []
+    },
+    {
+      "id": "products-4",
+      "type": "products",
+      "title": "منوی محبوب",
+      "existing_visuals": []
+    },
+    {
+      "id": "cta-5",
+      "type": "cta",
+      "title": "رزرو میز",
+      "existing_visuals": []
+    }
+  ],
+  "template_after": [
+    {
+      "section_id": "hero-1",
+      "section_type": "hero",
+      "recommended_asset_ids": [
+        "object:food:kebab:v1",
+        "visual:iranian-lifestyle:cafe-elements:v1",
+        "motion:ecommerce:iranian-ecommerce-journey:v2",
+        "object:iranian-traditional:persian-carpet:v1"
+      ]
+    },
+    {
+      "section_id": "features-2",
+      "section_type": "features",
+      "recommended_asset_ids": [
+        "object:food:kebab:v1",
+        "icon:ecommerce:shopping-cart:v1",
+        "icon:business:brand:v1",
+        "object:iranian-traditional:persian-carpet:v1"
+      ]
+    },
+    {
+      "section_id": "services-3",
+      "section_type": "services",
+      "recommended_asset_ids": [
+        "object:food:kebab:v1",
+        "icon:ecommerce:shopping-cart:v1",
+        "visual:iranian-lifestyle:cafe-elements:v1",
+        "visual:iranian-lifestyle:traditional-architecture-details:v1"
+      ]
+    },
+    {
+      "section_id": "products-4",
+      "section_type": "products",
+      "recommended_asset_ids": [
+        "object:food:kebab:v1",
+        "visual:iranian-lifestyle:cafe-elements:v1",
+        "icon:ecommerce:shopping-cart:v1",
+        "object:electronics:smartphone:v1"
+      ]
+    },
+    {
+      "section_id": "cta-5",
+      "section_type": "cta",
+      "recommended_asset_ids": [
+        "motion:ecommerce:iranian-ecommerce-journey:v2",
+        "visual:iranian-lifestyle:cafe-elements:v1",
+        "icon:ecommerce:shopping-cart:v1",
+        "visual:ecommerce-products:cosmetics:v1"
+      ]
+    }
+  ],
+  "section_analysis": [
+    {
+      "id": "hero-1",
+      "type": "hero",
+      "purpose": [
+        "business-story",
+        "identity",
+        "attention"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "motion",
+        "visual-asset",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "motion",
+        "visual-asset",
+        "object"
+      ],
+      "recommended_usage": [
+        "hero",
+        "landing-page"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "features-2",
+      "type": "features",
+      "purpose": [
+        "feature-symbol",
+        "scannability"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "icon",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "icon",
+        "object"
+      ],
+      "recommended_usage": [
+        "feature",
+        "feature-card",
+        "card"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "services-3",
+      "type": "services",
+      "purpose": [
+        "service-symbol",
+        "capability"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "icon",
+        "object",
+        "visual-asset"
+      ],
+      "recommended_asset_types": [
+        "icon",
+        "object",
+        "visual-asset"
+      ],
+      "recommended_usage": [
+        "service",
+        "service-section",
+        "card"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "products-4",
+      "type": "products",
+      "purpose": [
+        "product-focus",
+        "category-symbol"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "object",
+        "visual-asset",
+        "icon"
+      ],
+      "recommended_asset_types": [
+        "object",
+        "visual-asset",
+        "icon"
+      ],
+      "recommended_usage": [
+        "product",
+        "card",
+        "section"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "cta-5",
+      "type": "cta",
+      "purpose": [
+        "action",
+        "trust"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "motion",
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_asset_types": [
+        "motion",
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_usage": [
+        "cta",
+        "hero",
+        "section"
+      ],
+      "needs_enhancement": true
+    }
+  ],
+  "recommendations": [
+    {
+      "section_id": "hero-1",
+      "section_type": "hero",
+      "recommendations": [
+        {
+          "asset_id": "object:food:kebab:v1",
+          "slug": "kebab",
+          "type": "object",
+          "category": "food",
+          "version": "v1",
+          "path": "visual-assets/object-library/food/kebab/asset.svg",
+          "match_score": 96.9,
+          "quality_score": 96,
+          "reasons": [
+            "industry:restaurant",
+            "usage:hero",
+            "industry-section-preference",
+            "type:object",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+          "slug": "cafe-elements",
+          "type": "visual-asset",
+          "category": "iranian-lifestyle",
+          "version": "v1",
+          "path": "visual-assets/iranian-lifestyle/cafe-elements/asset.svg",
+          "match_score": 61.9,
+          "quality_score": 96.8,
+          "reasons": [
+            "usage:hero",
+            "type:visual-asset",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v2",
+          "slug": "iranian-ecommerce-journey",
+          "type": "motion",
+          "category": "ecommerce",
+          "version": "v2",
+          "path": "iranian-ecommerce-journey/v2/animation.svg",
+          "match_score": 60.7,
+          "quality_score": 96.5,
+          "reasons": [
+            "usage:hero",
+            "type:motion",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:iranian-traditional:persian-carpet:v1",
+          "slug": "persian-carpet",
+          "type": "object",
+          "category": "iranian-traditional",
+          "version": "v1",
+          "path": "visual-assets/object-library/iranian-traditional/persian-carpet/asset.svg",
+          "match_score": 58.9,
+          "quality_score": 96,
+          "reasons": [
+            "usage:hero",
+            "type:object",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "features-2",
+      "section_type": "features",
+      "recommendations": [
+        {
+          "asset_id": "object:food:kebab:v1",
+          "slug": "kebab",
+          "type": "object",
+          "category": "food",
+          "version": "v1",
+          "path": "visual-assets/object-library/food/kebab/asset.svg",
+          "match_score": 91.8,
+          "quality_score": 96,
+          "reasons": [
+            "industry:restaurant",
+            "usage:features",
+            "type:object",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:ecommerce:shopping-cart:v1",
+          "slug": "shopping-cart",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/shopping-cart/icon.svg",
+          "match_score": 68.8,
+          "quality_score": 97,
+          "reasons": [
+            "usage:features",
+            "industry-section-preference",
+            "type:icon",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:business:brand:v1",
+          "slug": "brand",
+          "type": "icon",
+          "category": "business",
+          "version": "v1",
+          "path": "icons/business/brand/icon.svg",
+          "match_score": 62.8,
+          "quality_score": 97,
+          "reasons": [
+            "usage:features",
+            "industry-section-preference",
+            "type:icon",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:iranian-traditional:persian-carpet:v1",
+          "slug": "persian-carpet",
+          "type": "object",
+          "category": "iranian-traditional",
+          "version": "v1",
+          "path": "visual-assets/object-library/iranian-traditional/persian-carpet/asset.svg",
+          "match_score": 61.8,
+          "quality_score": 96,
+          "reasons": [
+            "usage:features",
+            "type:object",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "services-3",
+      "section_type": "services",
+      "recommendations": [
+        {
+          "asset_id": "object:food:kebab:v1",
+          "slug": "kebab",
+          "type": "object",
+          "category": "food",
+          "version": "v1",
+          "path": "visual-assets/object-library/food/kebab/asset.svg",
+          "match_score": 99.8,
+          "quality_score": 96,
+          "reasons": [
+            "industry:restaurant",
+            "usage:services",
+            "industry-section-preference",
+            "type:object",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:ecommerce:shopping-cart:v1",
+          "slug": "shopping-cart",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/shopping-cart/icon.svg",
+          "match_score": 60.8,
+          "quality_score": 97,
+          "reasons": [
+            "usage:services",
+            "type:icon",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+          "slug": "cafe-elements",
+          "type": "visual-asset",
+          "category": "iranian-lifestyle",
+          "version": "v1",
+          "path": "visual-assets/iranian-lifestyle/cafe-elements/asset.svg",
+          "match_score": 59,
+          "quality_score": 96.8,
+          "reasons": [
+            "usage:services",
+            "type:visual-asset",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:iranian-lifestyle:traditional-architecture-details:v1",
+          "slug": "traditional-architecture-details",
+          "type": "visual-asset",
+          "category": "iranian-lifestyle",
+          "version": "v1",
+          "path": "visual-assets/iranian-lifestyle/traditional-architecture-details/asset.svg",
+          "match_score": 59,
+          "quality_score": 96.8,
+          "reasons": [
+            "usage:services",
+            "type:visual-asset",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "products-4",
+      "section_type": "products",
+      "recommendations": [
+        {
+          "asset_id": "object:food:kebab:v1",
+          "slug": "kebab",
+          "type": "object",
+          "category": "food",
+          "version": "v1",
+          "path": "visual-assets/object-library/food/kebab/asset.svg",
+          "match_score": 100,
+          "quality_score": 96,
+          "reasons": [
+            "industry:restaurant",
+            "usage:products",
+            "industry-section-preference",
+            "type:object",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+          "slug": "cafe-elements",
+          "type": "visual-asset",
+          "category": "iranian-lifestyle",
+          "version": "v1",
+          "path": "visual-assets/iranian-lifestyle/cafe-elements/asset.svg",
+          "match_score": 61.9,
+          "quality_score": 96.8,
+          "reasons": [
+            "usage:products",
+            "type:visual-asset",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:ecommerce:shopping-cart:v1",
+          "slug": "shopping-cart",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/shopping-cart/icon.svg",
+          "match_score": 55,
+          "quality_score": 97,
+          "reasons": [
+            "usage:products",
+            "type:icon",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:electronics:smartphone:v1",
+          "slug": "smartphone",
+          "type": "object",
+          "category": "electronics",
+          "version": "v1",
+          "path": "visual-assets/object-library/electronics/smartphone/asset.svg",
+          "match_score": 54.7,
+          "quality_score": 96,
+          "reasons": [
+            "usage:products",
+            "type:object",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "cta-5",
+      "section_type": "cta",
+      "recommendations": [
+        {
+          "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v2",
+          "slug": "iranian-ecommerce-journey",
+          "type": "motion",
+          "category": "ecommerce",
+          "version": "v2",
+          "path": "iranian-ecommerce-journey/v2/animation.svg",
+          "match_score": 60.7,
+          "quality_score": 96.5,
+          "reasons": [
+            "usage:cta",
+            "type:motion",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:iranian-lifestyle:cafe-elements:v1",
+          "slug": "cafe-elements",
+          "type": "visual-asset",
+          "category": "iranian-lifestyle",
+          "version": "v1",
+          "path": "visual-assets/iranian-lifestyle/cafe-elements/asset.svg",
+          "match_score": 59,
+          "quality_score": 96.8,
+          "reasons": [
+            "usage:cta",
+            "type:visual-asset",
+            "style:traditional",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:ecommerce:shopping-cart:v1",
+          "slug": "shopping-cart",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/shopping-cart/icon.svg",
+          "match_score": 57.9,
+          "quality_score": 97,
+          "reasons": [
+            "usage:cta",
+            "type:icon",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:ecommerce-products:cosmetics:v1",
+          "slug": "cosmetics",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/cosmetics/asset.svg",
+          "match_score": 55,
+          "quality_score": 96.8,
+          "reasons": [
+            "usage:cta",
+            "type:visual-asset",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    }
+  ],
+  "enhancement_score": {
+    "before": 47,
+    "after": 92,
+    "improvement": 45,
+    "metrics": {
+      "visual_uniqueness": {
+        "before": 8,
+        "after": 18,
+        "maximum": 20
+      },
+      "business_relevance": {
+        "before": 8,
+        "after": 23,
+        "maximum": 25
+      },
+      "brand_consistency": {
+        "before": 11,
+        "after": 18,
+        "maximum": 20
+      },
+      "asset_coverage": {
+        "before": 10,
+        "after": 19,
+        "maximum": 20
+      },
+      "professional_appearance": {
+        "before": 10,
+        "after": 14,
+        "maximum": 15
+      }
+    },
+    "coverage": {
+      "existing_visual_sections_percent": 0,
+      "recommended_sections_percent": 100,
+      "recommended_assets_theme_ready_percent": 100
+    }
+  },
+  "brand_adaptation": {
+    "status": "proposal-only",
+    "create_variant": false,
+    "publish": false,
+    "theme_tokens": {
+      "--brand-primary": "#7C2D12",
+      "--brand-secondary": "#C2410C",
+      "--brand-accent": "#EAB308",
+      "--brand-background": "#FFFBEB",
+      "--brand-border": "#FED7AA"
+    },
+    "asset_token_mapping": {
+      "--asset-primary": "var(--brand-primary)",
+      "--asset-secondary": "var(--brand-secondary)",
+      "--asset-accent": "var(--brand-accent)",
+      "--asset-background": "var(--brand-background)",
+      "--asset-border": "var(--brand-border)"
+    },
+    "approval_required": "platform-admin"
+  },
+  "ai_recommendation": {
+    "interface": "future-ai-recommendation/v1",
+    "mode": "placeholder",
+    "provider_called": false,
+    "detected_industry": "restaurant",
+    "suggested_query": [
+      "restaurant",
+      "traditional",
+      "consumer"
+    ],
+    "can_publish": false,
+    "note": "A future provider may propose query terms only; canonical validation and Platform Admin approval remain mandatory."
+  },
+  "safety": {
+    "source_mode": "read-only",
+    "asset_writes": false,
+    "variants_created": false,
+    "published": false
+  }
+}

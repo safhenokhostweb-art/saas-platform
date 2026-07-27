@@ -1,0 +1,6 @@
+{
+  "name": "customer modifying master asset",
+  "patch": {"action": {"actor_role": "tenant", "name": "modify_master"}},
+  "expected_codes": ["ACTION_UNAUTHORIZED", "TENANT_MASTER_MODIFICATION"]
+}
+

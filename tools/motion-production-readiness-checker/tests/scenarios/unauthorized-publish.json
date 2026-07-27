@@ -1,0 +1,6 @@
+{
+  "name": "unauthorized publish",
+  "patch": {"action": {"actor_role": "tenant", "name": "publish"}},
+  "expected_codes": ["ACTION_UNAUTHORIZED", "PLATFORM_ADMIN_REQUIRED"]
+}
+

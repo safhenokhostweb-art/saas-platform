@@ -1,0 +1,11 @@
+{
+  "name": "priority outside contract",
+  "asset_id": "icon:medical:doctor:v1",
+  "asset_type": "icon",
+  "industry": "medical",
+  "audience": "professional",
+  "section": "services",
+  "position": "card-media",
+  "override": { "placement_priority": 0 },
+  "expected_error": "placement_priority must be 1..100"
+}

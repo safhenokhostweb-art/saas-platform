@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-07-18T18:27:37.265Z",
+  "total": 7,
+  "passed": 7,
+  "failed": 0,
+  "asset_library_unchanged": true,
+  "asset_library_sha256": "389ba4b82eb2b6258b9e69d9c20e2a17d9e51179c247e9f792d30a4b15dcf1d2",
+  "scenarios": [
+    "valid integration contract",
+    "broken integration assumption",
+    "contract completeness",
+    "permission matrix consistency",
+    "invalid ownership flow",
+    "missing contract reference",
+    "runtime data leakage"
+  ]
+}

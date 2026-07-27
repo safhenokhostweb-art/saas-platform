@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hardcoded color preview">
+  <title>Hardcoded color preview</title><desc>A valid theme-ready preview.</desc>
+  <style>:root{--asset-primary:#2563eb;--asset-secondary:#1e3a8a;--asset-accent:#f59e0b;--asset-background:#ffffff;--asset-border:#334155;color:var(--asset-border)}.shape{fill:var(--asset-primary);stroke:currentColor}</style>
+  <circle class="shape" cx="32" cy="32" r="20"/>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "library_id": "icon:general:invalid-svg:v1",
+  "name": "SVG نامعتبر",
+  "name_fa": "SVG نامعتبر",
+  "name_en": "Invalid SVG",
+  "slug": "invalid-svg",
+  "category": "general",
+  "tags": ["test", "invalid"],
+  "usage": ["test"],
+  "theme_support": true,
+  "ai_editable": true,
+  "editable_properties": ["colors"],
+  "asset_role": "master",
+  "variant_supported": true,
+  "ownership": { "type": "platform" },
+  "quality_score": { "technical": 0, "visual": 50, "reusability": 50, "ai_readiness": 100 }
+}

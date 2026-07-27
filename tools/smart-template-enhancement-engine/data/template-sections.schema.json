@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "smart-template-enhancement/template-sections/v1",
+  "title": "Template Sections",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["type"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "type": { "type": "string", "enum": ["hero", "features", "services", "about", "products", "portfolio", "testimonials", "team", "contact", "cta", "footer"] },
+      "title": { "type": "string", "maxLength": 200 },
+      "content": { "type": "string", "maxLength": 4000 },
+      "existing_visuals": { "type": "array", "items": { "type": "string", "enum": ["motion", "icon", "object", "visual-asset"] }, "uniqueItems": true }
+    }
+  }
+}

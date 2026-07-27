@@ -10,6 +10,13 @@ use Tests\TestCase;
  * Phase 13-M1 — isolates the exact Cache::lock() mechanism
  * SiteModuleUpgradeController::store() relies on, using the same key
  * format (SiteModuleUpgradeController::lockKey()) production code uses.
+ *
+ * Phase 17-E — lockKey() now delegates to
+ * ModuleDeploymentRequestService::lockKey(), which store() acquires
+ * indirectly via upgradeModule(). The key format changed
+ * (module-deployment-lock:{id}, shared with every other deployment
+ * caller) but this test still exercises the exact lock the real request
+ * path acquires.
  */
 class SiteModuleUpgradeControllerLockTest extends TestCase
 {
@@ -59,7 +66,7 @@ class SiteModuleUpgradeControllerLockTest extends TestCase
 
     public function test_lock_key_format_is_stable_and_scoped_per_site(): void
     {
-        $this->assertSame('site-upgrade-lock:5', SiteModuleUpgradeController::lockKey(5));
+        $this->assertSame('module-deployment-lock:5', SiteModuleUpgradeController::lockKey(5));
         $this->assertNotSame(
             SiteModuleUpgradeController::lockKey(5),
             SiteModuleUpgradeController::lockKey(6)

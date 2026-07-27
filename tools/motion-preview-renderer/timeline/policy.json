@@ -1,0 +1,1 @@
+{"version":1,"minimum_scene_seconds":1,"maximum_duration_seconds":300,"allow_overlap":false,"transitions":["cut","fade","slide","scale","morph","none"],"playback_rates":[0.5,1,1.5,2]}

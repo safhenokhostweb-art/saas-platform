@@ -1,0 +1,1 @@
+This fixture allows theme color editing and intentionally demonstrates a non-themeable hardcoded fill.

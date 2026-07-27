@@ -1,0 +1,16 @@
+{
+  "contract_version": "1.0",
+  "industries": {
+    "medical": { "preferred": { "hero": ["medical motion", "doctor visual"], "services": ["healthcare icons", "medical objects"], "cta": ["trust animation", "security icons"] }, "asset_terms": ["doctor", "clinic", "health", "medical", "trust"] },
+    "manufacturing": { "preferred": { "hero": ["industry motion", "factory visual"], "features": ["technology icons", "quality-control icons"], "about": ["factory objects", "team visual"] }, "asset_terms": ["factory", "production", "industry", "engineering", "technology"] },
+    "restaurant": { "preferred": { "hero": ["food objects", "lifestyle visual"], "products": ["menu visuals", "food objects"], "services": ["restaurant icons"] }, "asset_terms": ["food", "restaurant", "menu", "chef", "lifestyle"] },
+    "personal-brand": { "preferred": { "hero": ["professional motion", "profile visual"], "about": ["resume visual", "professional objects"], "contact": ["social icons", "communication icons"] }, "asset_terms": ["profile", "professional", "resume", "portfolio", "communication"] },
+    "ecommerce": { "preferred": { "hero": ["shopping animation", "product visual"], "products": ["product objects", "ecommerce visuals"], "features": ["payment icons", "delivery icons"] }, "asset_terms": ["ecommerce", "product", "shopping", "payment", "delivery"] },
+    "company": { "preferred": { "hero": ["corporate motion"], "services": ["business icons"], "team": ["team visuals"] }, "asset_terms": ["business", "company", "corporate", "team", "services"] },
+    "education": { "preferred": { "hero": ["education motion"], "features": ["course icons"], "services": ["learning objects"] }, "asset_terms": ["education", "course", "knowledge", "student", "teacher"] },
+    "construction": { "preferred": { "hero": ["construction motion"], "portfolio": ["project visuals"], "services": ["engineering icons"] }, "asset_terms": ["construction", "engineering", "project", "helmet", "blueprint"] },
+    "tourism": { "preferred": { "hero": ["travel visual"], "services": ["tourism icons"], "portfolio": ["destination visuals"] }, "asset_terms": ["tourism", "travel", "hotel", "location", "suitcase"] },
+    "finance": { "preferred": { "hero": ["trust motion"], "features": ["security icons"], "cta": ["verification visual"] }, "asset_terms": ["finance", "trust", "security", "payment", "analytics"] },
+    "technology": { "preferred": { "hero": ["technology motion"], "features": ["software icons"], "services": ["cloud and API objects"] }, "asset_terms": ["technology", "ai", "software", "cloud", "api", "automation"] }
+  }
+}

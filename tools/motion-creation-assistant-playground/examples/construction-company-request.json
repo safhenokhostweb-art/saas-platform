@@ -1,0 +1,7 @@
+{
+  "contract_version":"1.0","mode":"beginner","purpose":"service-explanation","audience":"customers","style":"corporate","duration_seconds":30,
+  "brief":"ساخت موشن معرفی شرکت ساختمانی ایرانی، پروژه‌ها، دستاوردها و دعوت به همکاری",
+  "brand_theme":{"primary":"#16324F","secondary":"#2A628F","accent":"#F2B134","background":"#F7FAFC","border":"#CBD5E1"},
+  "language":"fa","output_context":"website","educational_mode":false,
+  "voice_layer":{"mode":"none","enabled":false,"tracks":[]}
+}

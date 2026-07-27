@@ -1,0 +1,6 @@
+{
+  "name": "invalid lifecycle transition",
+  "patch": {"version": {"previous_state": "draft", "state": "published"}},
+  "expected_codes": ["LIFECYCLE_TRANSITION_INVALID"]
+}
+

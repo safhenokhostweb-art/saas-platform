@@ -1,0 +1,2 @@
+{"name":"permission matrix consistency","patch":{"authorization_matrix":{"designer":{"publish":true}}},"expected_codes":["AUTH_MATRIX_INCONSISTENT","ADMIN_ONLY_PERMISSION_LEAK"]}
+

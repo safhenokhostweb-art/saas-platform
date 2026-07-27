@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "metrics": {
+    "visual_uniqueness": { "weight": 20, "generic": 8, "enhanced": 18 },
+    "business_relevance": { "weight": 25, "generic": 8, "enhanced": 23 },
+    "brand_consistency": { "weight": 20, "generic": 11, "enhanced": 18 },
+    "asset_coverage": { "weight": 20, "generic": 10, "enhanced": 19 },
+    "professional_appearance": { "weight": 15, "generic": 10, "enhanced": 14 }
+  },
+  "rules": {
+    "before_score_uses_existing_visual_coverage": true,
+    "after_score_uses_recommendation_coverage": true,
+    "theme_compatibility_required_for_brand_consistency": true,
+    "maximum": 100
+  }
+}

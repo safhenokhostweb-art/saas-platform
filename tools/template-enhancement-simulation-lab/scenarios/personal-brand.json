@@ -1,0 +1,10 @@
+{
+  "id": "personal-brand", "label": "برند شخصی",
+  "business_profile": { "name": "آرمان رضایی", "description": "مشاور فناوری و متخصص تحول دیجیتال", "industry": "personal-brand", "business_type": "consultant", "audience": "professional", "style": "premium", "brand_theme": { "primary": "#312E81", "secondary": "#4F46E5", "accent": "#06B6D4", "background": "#F8FAFC", "border": "#C7D2FE" }, "required_sections": ["hero", "about", "services", "features", "portfolio", "testimonials", "contact", "cta"] },
+  "template": { "template_name": "Generic Profile", "template_type": "profile", "sections": [
+    { "type": "hero", "title": "معرفی من", "existing_visuals": [] }, { "type": "about", "title": "درباره من", "existing_visuals": [] },
+    { "type": "services", "title": "خدمات", "existing_visuals": [] }, { "type": "features", "title": "مهارت‌ها", "existing_visuals": [] },
+    { "type": "portfolio", "title": "نمونه‌کار", "existing_visuals": [] }, { "type": "testimonials", "title": "دیدگاه‌ها", "existing_visuals": [] },
+    { "type": "contact", "title": "ارتباط", "existing_visuals": [] }, { "type": "cta", "title": "همکاری", "existing_visuals": [] }
+  ] }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "motion-graphics/template-builder/ai-input/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "business_profile", "template_structure"],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "business_profile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["industry", "audience", "brand_style", "colors", "website_goal"],
+      "properties": {
+        "industry": { "enum": ["company", "medical", "restaurant", "ecommerce", "education", "construction", "personal-brand", "tourism", "finance", "technology", "manufacturing"] },
+        "audience": { "enum": ["company", "startup", "professional", "consumer"] },
+        "brand_style": { "enum": ["modern", "premium", "minimal", "traditional", "corporate", "luxury", "playful"] },
+        "colors": {
+          "type": "object", "additionalProperties": false,
+          "required": ["primary", "secondary", "accent", "background", "border"],
+          "properties": {
+            "primary": { "$ref": "#/$defs/color" }, "secondary": { "$ref": "#/$defs/color" }, "accent": { "$ref": "#/$defs/color" }, "background": { "$ref": "#/$defs/color" }, "border": { "$ref": "#/$defs/color" }
+          }
+        },
+        "website_goal": { "type": "string", "minLength": 3, "maxLength": 500 }
+      }
+    },
+    "template_structure": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["section_name", "available_position", "required_visual_type"],
+        "properties": {
+          "section_name": { "enum": ["hero", "about", "services", "features", "products", "portfolio", "testimonials", "team", "contact", "cta", "footer"] },
+          "available_position": { "enum": ["background", "leading", "trailing", "inline", "full-width", "card-media"] },
+          "required_visual_type": { "enum": ["motion", "icon", "object", "visual-asset", "any"] }
+        }
+      }
+    }
+  },
+  "$defs": { "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" } }
+}

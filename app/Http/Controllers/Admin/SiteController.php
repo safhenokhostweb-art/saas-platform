@@ -18,12 +18,15 @@ use App\Services\ExpiryReminderService;
 use App\Helpers\PlatformSettings;
 use App\Models\PlatformSiteNotification;
 use App\Services\CustomerInstallation\CredentialVault;
+use App\Services\ModuleAssignmentService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class SiteController extends Controller
 {
     public function __construct(
         private readonly CredentialVault $credentialVault,
+        private readonly ModuleAssignmentService $moduleAssignmentService,
     ) {}
 
     /**
@@ -57,7 +60,11 @@ class SiteController extends Controller
     public function create()
     {
         $customers = Customer::all();
-        $modules = Module::where('is_active', true)->get();
+        // Phase 17-D — Part 5: was Module::where('is_active', true)->get(),
+        // which included TYPE_INTERNAL (platform-only) modules in this
+        // checklist. modulesForManualAssign() is the same assignable-only
+        // filter SiteModuleController's dedicated page already used.
+        $modules = $this->moduleAssignmentService->modulesForManualAssign();
         $paymentGateways = Schema::hasTable('payment_gateways') ? PaymentGateway::where('is_active', true)->orderBy('sort_order')->get() : collect();
         return view('admin.sites.create', compact('customers', 'modules', 'paymentGateways'));
     }
@@ -68,7 +75,7 @@ class SiteController extends Controller
     public function wizard()
     {
         $customers = Customer::orderBy('name')->get(['id', 'name', 'mobile']);
-        $modules   = Module::where('is_active', true)->orderBy('title')->get(['id', 'title', 'slug', 'category']);
+        $modules   = $this->moduleAssignmentService->modulesForManualAssign();
         $modulesByCategory = $modules->groupBy('category');
         return view('admin.sites.wizard', compact('customers', 'modules', 'modulesByCategory'));
     }
@@ -137,10 +144,17 @@ class SiteController extends Controller
 
         $site = Site::create($data);
 
-        // اتصال ماژول‌ها به سایت
-        if ($request->has('modules')) {
-            $site->modules()->sync($request->modules);
-        }
+        // Phase 17-D — Part 5: module selection at creation time is
+        // intentionally NOT processed here anymore. A brand-new site has no
+        // completed CustomerInstallation yet, so ModuleDeploymentRequestService
+        // can never resolve a remote server to deploy to at this point —
+        // calling enableForSite() here would just fail every time. The
+        // previous code used $site->modules()->sync($request->modules)
+        // directly (a plain array of IDs, unfiltered — including
+        // TYPE_INTERNAL modules, bypassing every eligibility/deployment
+        // guard). Module assignment now happens exclusively via the
+        // dedicated "ماژول‌های این سایت" page (SiteModuleController), after
+        // the site's initial deployment has actually completed.
 
         // ارسال خودکار اعلان‌های خوش‌آمدگویی (در صورت فعال بودن ماژول اعلان)
         $welcomeCount = 0;
@@ -178,7 +192,8 @@ class SiteController extends Controller
     public function edit(Site $site)
     {
         $customers = Customer::all();
-        $modules = Module::where('is_active', true)->get();
+        // Phase 17-D — Part 5: same assignable-only filter as create()/wizard().
+        $modules = $this->moduleAssignmentService->modulesForManualAssign();
         $paymentGateways = Schema::hasTable('payment_gateways') ? PaymentGateway::where('is_active', true)->orderBy('sort_order')->get() : collect();
         $site->load('modules');
         $customerMenuKeys = Schema::hasColumn('sites', 'customer_menu_keys') ? ($site->customer_menu_keys ?? array_keys(CustomerMenu::MENU_KEYS)) : array_keys(CustomerMenu::MENU_KEYS);
@@ -251,14 +266,23 @@ class SiteController extends Controller
         // sync expiry notifications after renewal
         $this->syncExpiryNotifications($site);
 
-        // بروزرسانی ماژول‌ها
-        $allModules = Module::where('is_active', true)->get();
-        $checkedIds = array_map('intval', $request->input('modules', []));
-        $sync = [];
-        foreach ($allModules as $m) {
-            $sync[$m->id] = ['is_active' => in_array($m->id, $checkedIds)];
-        }
-        $site->modules()->sync($sync);
+        // Phase 17-D — Part 5: بروزرسانی ماژول‌ها — دیگر sync() مستقیم روی
+        // همهٔ ماژول‌های فعال پلتفرم (شامل internal) نیست. فقط ماژول‌های
+        // قابل اختصاص دستی (همان فهرست فیلترشدهٔ نمایش‌داده‌شده در فرم) لمس
+        // می‌شوند؛ ماژول‌های PAID خریداری‌شده که در این فرم اصلاً نمایش داده
+        // نمی‌شوند دست‌نخورده باقی می‌مانند. مطابق معنای همین فرم پیش از این
+        // فاز، «غایب از input» یعنی «کاربر نمی‌خواهدش فعال باشد» (checkbox
+        // بدون ورودی مخفی fallback) — نه «بدون تغییر» (که معنای فرم دیگر،
+        // SiteModuleController::update()، است؛ دو فرم عمداً دو معنای متفاوت
+        // برای «غایب» دارند و این تفاوت همان‌طور که پیش از این فاز بود حفظ شد).
+        $assignableIds = $this->moduleAssignmentService->modulesForManualAssign()->pluck('id')->all();
+        $requestedActiveIds = array_map('intval', $request->input('modules', []));
+        $moduleResults = $this->moduleAssignmentService->syncManualAssignmentsForSite(
+            $site,
+            $assignableIds,
+            $requestedActiveIds,
+            Auth::id()
+        );
 
         // ذخیره تنظیمات ظاهر اختصاصی سایت (فقط اگر فیلد در فرم وجود داشته باشد)
         if (Schema::hasTable('site_settings') && $request->has('site_design_section')) {
@@ -274,8 +298,18 @@ class SiteController extends Controller
 
         ActivityLogger::log('site.updated', 'ویرایش سایت: ' . $site->title, $site);
 
+        $failedModules = array_filter($moduleResults, fn ($r) => $r['result'] === 'failed');
+        $message = 'سایت بروزرسانی شد';
+        if (count($failedModules)) {
+            $reasons = implode('؛ ', array_map(
+                fn ($r) => $r['title'] . ': ' . ($r['error'] ?? 'نامشخص'),
+                $failedModules
+            ));
+            $message .= ' — اما ' . count($failedModules) . " ماژول با خطا مواجه شد ({$reasons})";
+        }
+
         return redirect()->route('admin.sites.index')
-            ->with('success', 'سایت بروزرسانی شد');
+            ->with(count($failedModules) ? 'error' : 'success', $message);
     }
 
     /**

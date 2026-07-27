@@ -1,0 +1,6 @@
+{
+  "library_index": "../../packages/saas-platform/modules/motion-graphics/assets/library/library-index.json",
+  "tags": "../../packages/saas-platform/modules/motion-graphics/assets/library/tags.json",
+  "relations": "../../packages/saas-platform/modules/motion-graphics/assets/library/asset-relations.json",
+  "asset_root": "../../packages/saas-platform/modules/motion-graphics/assets/library/"
+}

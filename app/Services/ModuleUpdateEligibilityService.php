@@ -50,7 +50,9 @@ class ModuleUpdateEligibilityService
 
         foreach ($site->modules as $module) {
             $installed = $module->pivot->installed_version ?? null;
-            $available = ModuleRelease::getLatestVersionForModule($module);
+            // Phase 17-H — Part 7: an upgrade must never be offered to a
+            // draft/deprecated release, no matter its version number.
+            $available = ModuleRelease::getLatestPublishedVersionForModule($module);
 
             if (!$this->hasUpdateAvailable($installed, $available)) {
                 continue;

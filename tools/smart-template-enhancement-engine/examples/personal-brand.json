@@ -1,0 +1,19 @@
+{
+  "business_profile": {
+    "name": "مهندس آرمان رضایی",
+    "description": "مشاور فناوری و متخصص تحول دیجیتال",
+    "industry": "personal-brand",
+    "business_type": "consultant",
+    "audience": "professional",
+    "style": "premium",
+    "brand_theme": { "primary": "#312E81", "secondary": "#4F46E5", "accent": "#06B6D4", "background": "#F8FAFC", "border": "#C7D2FE" },
+    "required_sections": ["hero", "features", "services", "about", "cta"]
+  },
+  "template_sections": [
+    { "type": "hero", "title": "معرفی حرفه‌ای" },
+    { "type": "features", "title": "مهارت‌ها" },
+    { "type": "services", "title": "مشاوره" },
+    { "type": "about", "title": "رزومه و تجربه" },
+    { "type": "cta", "title": "درخواست همکاری" }
+  ]
+}

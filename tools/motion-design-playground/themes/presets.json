@@ -1,0 +1,40 @@
+{
+  "presets": [
+    {
+      "id": "safhe-premium",
+      "name": "صفحه نخست",
+      "primary": "#42c7b5",
+      "secondary": "#1b3554",
+      "accent": "#e4b94f",
+      "background": "#f3f7f7",
+      "border": "#17304d"
+    },
+    {
+      "id": "corporate-blue",
+      "name": "آبی شرکتی",
+      "primary": "#2563eb",
+      "secondary": "#172554",
+      "accent": "#f59e0b",
+      "background": "#f8fafc",
+      "border": "#334155"
+    },
+    {
+      "id": "growth-green",
+      "name": "سبز رشد",
+      "primary": "#059669",
+      "secondary": "#064e3b",
+      "accent": "#fbbf24",
+      "background": "#f0fdf4",
+      "border": "#14532d"
+    },
+    {
+      "id": "premium-dark",
+      "name": "تیره ممتاز",
+      "primary": "#8b5cf6",
+      "secondary": "#312e81",
+      "accent": "#fbbf24",
+      "background": "#0f172a",
+      "border": "#64748b"
+    }
+  ]
+}

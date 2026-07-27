@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadRules, markdownReport, readJson, validateManifest } from './lib/checker-core.js';
+
+const toolRoot = path.dirname(fileURLToPath(import.meta.url));
+const args = process.argv.slice(2);
+let input = null;
+let output = path.join(toolRoot, 'reports');
+let strict = false;
+let write = true;
+
+for (let i = 0; i < args.length; i += 1) {
+  if (args[i] === '--input') input = args[++i];
+  else if (args[i] === '--output') output = args[++i];
+  else if (args[i] === '--strict') strict = true;
+  else if (args[i] === '--no-write') write = false;
+  else if (args[i] === '--help') {
+    console.log('Usage: node checker --input <production-manifest.json> [--output <reports-dir>] [--strict] [--no-write]');
+    process.exit(0);
+  } else throw new Error(`Unknown argument: ${args[i]}`);
+}
+
+if (!input) throw new Error('--input is required');
+const inputFile = path.resolve(process.cwd(), input);
+const { rules } = loadRules(toolRoot);
+const report = validateManifest(readJson(inputFile), { root: path.dirname(inputFile), rules });
+report.generated_at = new Date().toISOString();
+report.input = inputFile;
+
+if (write) {
+  const outputDir = path.resolve(process.cwd(), output);
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(path.join(outputDir, 'latest-report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  fs.writeFileSync(path.join(outputDir, 'latest-report.md'), markdownReport(report, path.basename(inputFile)));
+}
+
+console.log(`valid=${report.valid} errors=${report.errors} warnings=${report.warnings} performance=${report.performance.overall}`);
+process.exitCode = report.errors > 0 || (strict && report.warnings > 0) ? 1 : 0;
+

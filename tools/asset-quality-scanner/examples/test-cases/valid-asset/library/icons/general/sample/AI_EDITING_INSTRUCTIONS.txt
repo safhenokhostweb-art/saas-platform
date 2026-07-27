@@ -1,0 +1,1 @@
+This fixture permits AI to change approved theme colors and size while preserving SVG structure and accessibility.

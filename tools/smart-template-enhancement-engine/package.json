@@ -1,0 +1,15 @@
+{
+    "name":  "@safhe-nokhost/smart-template-enhancement-engine",
+    "version":  "1.0.0",
+    "private":  true,
+    "description":  "Read-only prototype for recommending Motion Graphics Library assets to template sections.",
+    "type":  "commonjs",
+    "scripts":  {
+                    "analyze":  "node scripts/generate-report.js",
+                    "examples":  "node scripts/generate-examples.js",
+                    "test":  "node scripts/test.js \u0026\u0026 node scripts/placement-test.js",
+                    "test:core":  "node scripts/test.js",
+                    "test:placement":  "node scripts/placement-test.js",
+                    "analyze:placement":  "node scripts/generate-placement-report.js"
+                }
+}

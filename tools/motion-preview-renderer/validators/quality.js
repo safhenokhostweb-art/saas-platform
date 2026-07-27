@@ -1,0 +1,4 @@
+import{validateTimeline,validateTheme,validateTypography}from'../engine/core.js';
+function lum(hex){const c=hex.slice(1).match(/../g).map(x=>parseInt(x,16)/255).map(v=>v<=.03928?v/12.92:((v+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722}
+export function contrast(a,b){return(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05)}
+export function qualityReport(example){const warnings=[...validateTimeline(example.motion_plan),...validateTypography(example.preview)];if(!validateTheme(example.preview.theme))warnings.push('Theme tokens are invalid');else if(contrast(example.preview.theme.primary,example.preview.theme.background)<3)warnings.push('Brand contrast is below 3:1');const animations=example.motion_plan.scenes.reduce((sum,s)=>sum+s.layers.length,0);if(animations>18)warnings.push('Animation density is high');const score=Math.max(0,100-warnings.length*8-(animations>15?4:0));return{score,warnings,reduced_motion:true,semantic_labels:true}}

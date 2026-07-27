@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "smart-template-enhancement/business-profile/v1",
+  "title": "Business Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "industry", "business_type", "audience", "style", "brand_theme", "required_sections"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "description": { "type": "string", "maxLength": 2000 },
+    "industry": {
+      "type": "string",
+      "enum": ["company", "medical", "restaurant", "ecommerce", "education", "construction", "personal-brand", "tourism", "finance", "technology", "manufacturing"]
+    },
+    "business_type": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "audience": { "type": "string", "enum": ["company", "startup", "professional", "consumer"] },
+    "style": { "type": "string", "enum": ["modern", "premium", "minimal", "traditional", "corporate", "luxury", "playful"] },
+    "brand_theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "secondary", "accent", "background", "border"],
+      "properties": {
+        "primary": { "$ref": "#/$defs/color" },
+        "secondary": { "$ref": "#/$defs/color" },
+        "accent": { "$ref": "#/$defs/color" },
+        "background": { "$ref": "#/$defs/color" },
+        "border": { "$ref": "#/$defs/color" }
+      }
+    },
+    "required_sections": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["hero", "features", "services", "about", "products", "portfolio", "testimonials", "team", "contact", "cta", "footer"] }
+    }
+  },
+  "$defs": {
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+  }
+}

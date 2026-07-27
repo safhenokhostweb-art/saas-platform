@@ -1,0 +1,11 @@
+{
+  "name": "brand colors lack contrast",
+  "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v2",
+  "asset_type": "motion",
+  "industry": "ecommerce",
+  "audience": "consumer",
+  "section": "hero",
+  "position": "trailing",
+  "palette": { "primary": "#FFFFFF", "secondary": "#EEEEEE", "accent": "#DDDDDD", "background": "#FFFFFF", "border": "#CCCCCC" },
+  "expected_error": "primary/background contrast is below 3:1"
+}

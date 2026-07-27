@@ -1,0 +1,1732 @@
+{
+  "scanner": "asset-quality-scanner",
+  "scanner_version": "1.0.0",
+  "generated_at": "2026-07-18T12:32:36.035Z",
+  "duration_ms": 4139,
+  "library_root": "C:/laragon/www/saas-platform/packages/saas-platform/modules/motion-graphics/assets/library",
+  "read_only": true,
+  "passed": false,
+  "total_assets": 601,
+  "valid": 601,
+  "valid_assets": 601,
+  "issues": 86,
+  "errors": 4,
+  "warnings": 82,
+  "theme_ready": 601,
+  "ai_ready": 601,
+  "accessibility_ready": 601,
+  "scores": {
+    "technical": 100,
+    "theme_ready": 100,
+    "ai_ready": 100,
+    "accessibility": 100,
+    "declared_quality_average": {
+      "technical": 100,
+      "visual": 87.16,
+      "reusability": 97.69,
+      "ai_readiness": 100
+    }
+  },
+  "asset_families": {
+    "motion": 22,
+    "icon": 80,
+    "visual-asset": 49,
+    "object-library": 450
+  },
+  "indexes": [
+    {
+      "name": "library-index",
+      "path": "library-index.json",
+      "entries": 601,
+      "valid": false
+    },
+    {
+      "name": "icons-index",
+      "path": "icons/index.json",
+      "entries": 80,
+      "valid": true
+    },
+    {
+      "name": "visual-assets-index",
+      "path": "visual-assets/visual-assets-index.json",
+      "entries": 499,
+      "valid": true
+    },
+    {
+      "name": "object-library-index",
+      "path": "visual-assets/object-library/object-library-index.json",
+      "entries": 450,
+      "valid": true
+    }
+  ],
+  "duplicates": {
+    "duplicate_library_id_groups": 0,
+    "duplicate_slug_groups": 53,
+    "exact_svg_groups": 0,
+    "structural_svg_groups": 29
+  },
+  "issue_counts": {
+    "INDEX_TYPE_COUNT_MISMATCH": 4,
+    "DUPLICATE_SLUG": 53,
+    "DUPLICATE_SVG_STRUCTURE": 29
+  },
+  "issue_list": [
+    {
+      "severity": "error",
+      "domain": "index",
+      "code": "INDEX_TYPE_COUNT_MISMATCH",
+      "message": "Canonical asset_types.motion is 0; expected 22",
+      "asset_id": null,
+      "path": "library-index.json"
+    },
+    {
+      "severity": "error",
+      "domain": "index",
+      "code": "INDEX_TYPE_COUNT_MISMATCH",
+      "message": "Canonical asset_types.icons is 0; expected 80",
+      "asset_id": null,
+      "path": "library-index.json"
+    },
+    {
+      "severity": "error",
+      "domain": "index",
+      "code": "INDEX_TYPE_COUNT_MISMATCH",
+      "message": "Canonical asset_types.objects is 0; expected 450",
+      "asset_id": null,
+      "path": "library-index.json"
+    },
+    {
+      "severity": "error",
+      "domain": "index",
+      "code": "INDEX_TYPE_COUNT_MISMATCH",
+      "message": "Canonical asset_types.visual_assets is 0; expected 49",
+      "asset_id": null,
+      "path": "library-index.json"
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: ai-business-assistant",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:ai:ai-business-assistant:v1",
+          "motion:ai:ai-business-assistant:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: construction-business-showcase",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:construction:construction-business-showcase:v1",
+          "motion:construction:construction-business-showcase:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: digital-security-trust",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:security:digital-security-trust:v1",
+          "motion:security:digital-security-trust:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: package",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:ecommerce:package:v1",
+          "visual:ecommerce-products:package:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: book",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:education:book:v1",
+          "visual:iranian-objects:book:v1",
+          "object:education:book:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: certificate",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:education:certificate:v1",
+          "icon:personal:certificate:v1",
+          "object:education:certificate:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: online-learning",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:education:online-learning:v1",
+          "object:education:online-learning:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: student",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:education:student:v1",
+          "object:education:student:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: teacher",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:education:teacher:v1",
+          "object:education:teacher:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: menu",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:general:menu:v1",
+          "object:restaurant:menu:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: server",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:technology:server:v1",
+          "object:electronics:server:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: iran-business-network-map",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:business-network:iran-business-network-map:v1",
+          "motion:business-network:iran-business-network-map:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: iranian-business-digital-transformation",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:technology:iranian-business-digital-transformation:v1",
+          "motion:technology:iranian-business-digital-transformation:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: iranian-ecommerce-journey",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:ecommerce:iranian-ecommerce-journey:v1",
+          "motion:ecommerce:iranian-ecommerce-journey:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: iranian-industry-production",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:industry:iranian-industry-production:v1",
+          "motion:industry:iranian-industry-production:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: medical-professional-introduction",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:medical:medical-professional-introduction:v1",
+          "motion:medical:medical-professional-introduction:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: online-learning-platform",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:education:online-learning-platform:v1",
+          "motion:education:online-learning-platform:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: professional-personal-brand",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:personal-brand:professional-personal-brand:v1",
+          "motion:personal-brand:professional-personal-brand:v2"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: presentation-board",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "visual:business-objects:presentation-board:v1",
+          "object:office:presentation-board:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: laptop",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "visual:ecommerce-products:laptop:v1",
+          "object:electronics:laptop:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: pen",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "visual:iranian-objects:pen:v1",
+          "object:office:pen:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: persian-carpet",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "visual:iranian-objects:persian-carpet:v1",
+          "object:iranian-traditional:persian-carpet:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: pottery",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "visual:iranian-objects:pottery:v1",
+          "object:iranian-traditional:pottery:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: boteh-jegheh",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "visual:iranian-patterns:boteh-jegheh:v1",
+          "object:iranian-traditional:boteh-jegheh:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: shovel",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:agriculture:shovel:v1",
+          "object:construction:shovel:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: tractor",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:agriculture:tractor:v1",
+          "object:transportation:tractor:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: wheelbarrow",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:agriculture:wheelbarrow:v1",
+          "object:construction:wheelbarrow:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: bottle",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:beauty:bottle:v1",
+          "object:kitchen:bottle:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: scissors",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:beauty:scissors:v1",
+          "object:office:scissors:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: backpack",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:clothing:backpack:v1",
+          "object:tourism:backpack:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: gloves",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:clothing:gloves:v1",
+          "object:medical:gloves:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: sunglasses",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:clothing:sunglasses:v1",
+          "object:tourism:sunglasses:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: calculator",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:calculator:v1",
+          "object:electronics:calculator:v1",
+          "object:office:calculator:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: desk",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:desk:v1",
+          "object:furniture:desk:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: microscope",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:microscope:v1",
+          "object:medical:microscope:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: notebook",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:notebook:v1",
+          "object:office:notebook:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: pencil",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:pencil:v1",
+          "object:office:pencil:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: ruler",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:ruler:v1",
+          "object:office:ruler:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: camera",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:electronics:camera:v1",
+          "object:tourism:camera:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: bed",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:furniture:bed:v1",
+          "object:tourism:bed:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: chair",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:furniture:chair:v1",
+          "object:restaurant:chair:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: teapot",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:iranian-traditional:teapot:v1",
+          "object:kitchen:teapot:v1",
+          "object:restaurant:teapot:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: bowl",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:kitchen:bowl:v1",
+          "object:restaurant:bowl:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: fork",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:kitchen:fork:v1",
+          "object:restaurant:fork:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: knife",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:kitchen:knife:v1",
+          "object:restaurant:knife:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: oven",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:kitchen:oven:v1",
+          "object:restaurant:oven:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: plate",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:kitchen:plate:v1",
+          "object:restaurant:plate:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: spoon",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:kitchen:spoon:v1",
+          "object:restaurant:spoon:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: ambulance",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:medical:ambulance:v1",
+          "object:transportation:ambulance:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: airplane",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:tourism:airplane:v1",
+          "object:transportation:airplane:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: ship",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:tourism:ship:v1",
+          "object:transportation:ship:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: taxi",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:tourism:taxi:v1",
+          "object:transportation:taxi:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SLUG",
+      "message": "Duplicate slug across library: train",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:tourism:train:v1",
+          "object:transportation:train:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 0e70615dc636a180c0e848bff2f97a1ad4128652f96306ce9ddd1ff22d33bb24",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:ai:ai-business-assistant:v1",
+          "motion:construction:construction-business-showcase:v1",
+          "motion:security:digital-security-trust:v1",
+          "motion:technology:iranian-business-digital-transformation:v1",
+          "motion:ecommerce:iranian-ecommerce-journey:v1",
+          "motion:industry:iranian-industry-production:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 8a28b179013fba98069ec2d22097f8f1c7d2610fba9ddd441983e6e5e83bb3f1",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:brand:v1",
+          "icon:general:location:v1",
+          "icon:personal:resume:v1",
+          "icon:technology:analytics:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 5b41013b70738b73e36675a9beef02ef3b56b44380bd200fa643f1ee02fc2cd8",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:business-growth:v1",
+          "icon:ecommerce:customer-review:v1",
+          "icon:ecommerce:delivery:v1",
+          "icon:ecommerce:package:v1",
+          "icon:ecommerce:product:v1",
+          "icon:ecommerce:shopping-cart:v1",
+          "icon:education:knowledge:v1",
+          "icon:industry:engineering:v1",
+          "icon:industry:export:v1",
+          "icon:industry:logistics:v1",
+          "icon:industry:production:v1",
+          "icon:industry:quality-control:v1",
+          "icon:industry:warehouse:v1",
+          "icon:medical:emergency:v1",
+          "icon:medical:health:v1",
+          "icon:medical:pharmacy:v1",
+          "icon:personal:consultation:v1",
+          "icon:personal:skills:v1",
+          "icon:security:encryption:v1",
+          "icon:security:shield:v1",
+          "icon:security:trust:v1",
+          "icon:technology:cloud:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: a19777b2609a02d72e6038705b3a820595b1be949bafbba986f9ec2b8ea49ab4",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:company:v1",
+          "icon:business:partnership:v1",
+          "icon:ecommerce:marketplace:v1",
+          "icon:education:book:v1",
+          "icon:general:arrow-left:v1",
+          "icon:general:arrow-right:v1",
+          "icon:general:menu:v1",
+          "icon:general:phone:v1",
+          "icon:industry:factory:v1",
+          "icon:medical:clinic:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: b2c4287f09a10e71a96d5ba73e05d3ac290eda0e74ebd68b27f6a0062939f814",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:customer:v1",
+          "icon:education:student:v1",
+          "icon:education:teacher:v1",
+          "icon:medical:doctor:v1",
+          "icon:medical:patient:v1",
+          "icon:security:verification:v1",
+          "icon:technology:automation:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: d44e1ca175c06ccbfc336713ca91196fb51d8b1e8b8b375cb8ad8e5cb655d58c",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:office:v1",
+          "icon:general:email:v1",
+          "icon:technology:software:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 69741ac849004aecab0aa8890031b320b07fe0d91b5aa24bb2b9dffe952acf54",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:startup:v1",
+          "icon:ecommerce:discount:v1",
+          "icon:security:privacy:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 8089b0392d1a469e9a31755f9ffd4dc3b3144d9f3c663c1ce2d271ec43be5dc2",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:business:target:v1",
+          "icon:business:team:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: f3033e8a6c2402aab3e1424cb990e72dc1e44996252b279977a10608c2fef5fe",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:ecommerce:checkout:v1",
+          "icon:ecommerce:online-store:v1",
+          "icon:education:online-learning:v1",
+          "icon:medical:appointment:v1",
+          "icon:medical:medical-record:v1",
+          "icon:personal:experience:v1",
+          "icon:personal:portfolio:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: f52435a235db191a3a4dc0fd8ba8d45e0e67fc34614cd0c33231d910ea8baf4e",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:ecommerce:payment:v1",
+          "icon:education:course:v1",
+          "icon:security:lock:v1",
+          "icon:security:secure-payment:v1",
+          "icon:technology:artificial-intelligence:v1",
+          "icon:technology:dashboard:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: b2fa48c0d8789ae72e6e3b5e001ca1798d16da5cafe384dcb80825229183fecc",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:education:certificate:v1",
+          "icon:personal:certificate:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 6e94d23b138a3c6f5648b96861cc55c5d23802bfd7a8ed863be8d2dbac7a6dae",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:general:check:v1",
+          "icon:general:close:v1",
+          "icon:general:play:v1",
+          "icon:general:plus:v1",
+          "icon:general:search:v1",
+          "icon:general:website:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 5e233a5ed98d0d9e6aa33f58a1bcbd3ffc8af8a1a969775ebc457976dda2fc00",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "icon:industry:machine:v1",
+          "icon:personal:professional-profile:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 70ddd6fd9b92dbe1ec3a0dec9a6bdf6e68d542c6e0b5c1d60984d7682480b5d7",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "motion:medical:medical-professional-introduction:v1",
+          "motion:personal-brand:professional-personal-brand:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 2218c5f7827267c305e3179a5da7ac8960a75ee1a64d6b506eb011ea847c8a89",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:agriculture:barn:v1",
+          "object:agriculture:chicken:v1",
+          "object:agriculture:cow:v1",
+          "object:agriculture:crop-field:v1",
+          "object:agriculture:farm:v1",
+          "object:agriculture:fertilizer:v1",
+          "object:agriculture:fruit-tree:v1",
+          "object:agriculture:garden-fork:v1",
+          "object:agriculture:greenhouse:v1",
+          "object:agriculture:irrigation:v1",
+          "object:agriculture:pesticide-sprayer:v1",
+          "object:agriculture:pruning-shears:v1",
+          "object:agriculture:rake:v1",
+          "object:agriculture:sheep:v1",
+          "object:agriculture:shovel:v1",
+          "object:agriculture:silo:v1",
+          "object:agriculture:soil:v1",
+          "object:agriculture:solar-farm:v1",
+          "object:agriculture:sprout:v1",
+          "object:agriculture:wheat:v1",
+          "object:agriculture:windmill:v1",
+          "object:construction:bricks:v1",
+          "object:construction:building-block:v1",
+          "object:construction:cement-bag:v1",
+          "object:construction:house-frame:v1",
+          "object:construction:rebar:v1",
+          "object:construction:steel-beam:v1",
+          "object:education:library:v1",
+          "object:education:school:v1",
+          "object:education:university:v1",
+          "object:tourism:hotel:v1",
+          "object:tourism:hotel-key:v1",
+          "object:tourism:information-desk:v1",
+          "object:tourism:landmark:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 6678f9f4a5552bf3bfb6e1a02e89e61b1ae3c875a8201872be13b331223b31de",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:agriculture:beehive:v1",
+          "object:agriculture:grain-sack:v1",
+          "object:agriculture:harvest-basket:v1",
+          "object:agriculture:milk-can:v1",
+          "object:agriculture:seed-bag:v1",
+          "object:agriculture:watering-can:v1",
+          "object:food:coffee:v1",
+          "object:food:honey:v1",
+          "object:food:milk:v1",
+          "object:food:olive-oil:v1",
+          "object:food:saffron:v1",
+          "object:food:spices:v1",
+          "object:food:tea:v1",
+          "object:food:yogurt:v1",
+          "object:kitchen:bottle:v1",
+          "object:kitchen:bowl:v1",
+          "object:kitchen:cooking-pot:v1",
+          "object:kitchen:cup:v1",
+          "object:kitchen:frying-pan:v1",
+          "object:kitchen:jar:v1",
+          "object:kitchen:kettle:v1",
+          "object:kitchen:mug:v1",
+          "object:kitchen:saucepan:v1",
+          "object:kitchen:teapot:v1",
+          "object:restaurant:bowl:v1",
+          "object:restaurant:cloche:v1",
+          "object:restaurant:coffee-cup:v1",
+          "object:restaurant:food-tray:v1",
+          "object:restaurant:juice-glass:v1",
+          "object:restaurant:plate:v1",
+          "object:restaurant:takeaway-box:v1",
+          "object:restaurant:teapot:v1",
+          "object:restaurant:water-glass:v1",
+          "object:transportation:boat:v1",
+          "object:transportation:ship:v1",
+          "object:transportation:shipping-container:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: e486a1821f23d5317e625c4616707bd482da5da738d894945f5da44b796385fb",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:agriculture:tractor:v1",
+          "object:agriculture:water-pump:v1",
+          "object:agriculture:wheelbarrow:v1",
+          "object:construction:bulldozer:v1",
+          "object:construction:concrete-mixer:v1",
+          "object:construction:excavator:v1",
+          "object:construction:tower-crane:v1",
+          "object:construction:wheelbarrow:v1",
+          "object:medical:ambulance:v1",
+          "object:tourism:airplane:v1",
+          "object:tourism:car-rental:v1",
+          "object:tourism:ship:v1",
+          "object:tourism:taxi:v1",
+          "object:tourism:train:v1",
+          "object:transportation:ambulance:v1",
+          "object:transportation:bicycle:v1",
+          "object:transportation:bus:v1",
+          "object:transportation:cable-car:v1",
+          "object:transportation:car:v1",
+          "object:transportation:delivery-vehicle:v1",
+          "object:transportation:electric-car:v1",
+          "object:transportation:fire-truck:v1",
+          "object:transportation:motorcycle:v1",
+          "object:transportation:pickup-truck:v1",
+          "object:transportation:scooter:v1",
+          "object:transportation:subway:v1",
+          "object:transportation:taxi:v1",
+          "object:transportation:tractor:v1",
+          "object:transportation:train:v1",
+          "object:transportation:tram:v1",
+          "object:transportation:truck:v1",
+          "object:transportation:van:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 09fe14abb46eafe72dded346389992a4a7271fa4d6efc17f3a4df0a9945bac50",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:beauty:beauty-chair:v1",
+          "object:beauty:beauty-salon:v1",
+          "object:clothing:backpack:v1",
+          "object:clothing:belt:v1",
+          "object:clothing:boots:v1",
+          "object:clothing:cap:v1",
+          "object:clothing:coat:v1",
+          "object:clothing:dress:v1",
+          "object:clothing:fabric-roll:v1",
+          "object:clothing:gloves:v1",
+          "object:clothing:handbag:v1",
+          "object:clothing:hat:v1",
+          "object:clothing:headscarf:v1",
+          "object:clothing:jacket:v1",
+          "object:clothing:jeans:v1",
+          "object:clothing:scarf:v1",
+          "object:clothing:shirt:v1",
+          "object:clothing:shoes:v1",
+          "object:clothing:skirt:v1",
+          "object:clothing:sneakers:v1",
+          "object:clothing:socks:v1",
+          "object:clothing:sportswear:v1",
+          "object:clothing:suit:v1",
+          "object:clothing:sunglasses:v1",
+          "object:clothing:t-shirt:v1",
+          "object:clothing:tie:v1",
+          "object:clothing:traditional-dress:v1",
+          "object:clothing:trousers:v1",
+          "object:clothing:uniform:v1",
+          "object:clothing:wallet:v1",
+          "object:clothing:watch:v1",
+          "object:clothing:workwear:v1",
+          "object:furniture:armchair:v1",
+          "object:furniture:bench:v1",
+          "object:furniture:chair:v1",
+          "object:furniture:dining-chair:v1",
+          "object:furniture:lounge-chair:v1",
+          "object:furniture:office-chair:v1",
+          "object:furniture:ottoman:v1",
+          "object:furniture:rocking-chair:v1",
+          "object:furniture:sectional-sofa:v1",
+          "object:furniture:sofa:v1",
+          "object:furniture:stool:v1",
+          "object:medical:dental-chair:v1",
+          "object:medical:hospital-bed:v1",
+          "object:medical:wheelchair:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 2d62d418dd85c0ee5f2f5514d6f22b7f0a0882b35507ee4858bcaa31ef38568b",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:beauty:bottle:v1",
+          "object:beauty:candle:v1",
+          "object:beauty:cream:v1",
+          "object:beauty:essential-oil:v1",
+          "object:beauty:eyeliner:v1",
+          "object:beauty:face-mask:v1",
+          "object:beauty:face-powder:v1",
+          "object:beauty:flower:v1",
+          "object:beauty:foundation:v1",
+          "object:beauty:lipstick:v1",
+          "object:beauty:makeup:v1",
+          "object:beauty:mascara:v1",
+          "object:beauty:nail-polish:v1",
+          "object:beauty:perfume:v1",
+          "object:beauty:serum:v1",
+          "object:beauty:shampoo:v1",
+          "object:beauty:skincare:v1",
+          "object:beauty:soap:v1",
+          "object:beauty:spa-stones:v1",
+          "object:beauty:towel:v1",
+          "object:construction:blueprint:v1",
+          "object:education:book:v1",
+          "object:education:bookmark:v1",
+          "object:education:certificate:v1",
+          "object:education:diploma:v1",
+          "object:education:exam-paper:v1",
+          "object:education:notebook:v1",
+          "object:education:open-book:v1",
+          "object:education:quiz:v1",
+          "object:medical:doctor-bag:v1",
+          "object:medical:dropper:v1",
+          "object:medical:first-aid-kit:v1",
+          "object:medical:inhaler:v1",
+          "object:medical:iv-bag:v1",
+          "object:medical:medicine-bottle:v1",
+          "object:medical:tablets:v1",
+          "object:medical:vaccine-vial:v1",
+          "object:office:binder:v1",
+          "object:office:business-card:v1",
+          "object:office:calendar:v1",
+          "object:office:clipboard:v1",
+          "object:office:document:v1",
+          "object:office:envelope:v1",
+          "object:office:folder:v1",
+          "object:office:id-card:v1",
+          "object:office:name-badge:v1",
+          "object:office:notebook:v1",
+          "object:office:presentation-board:v1",
+          "object:office:sticky-notes:v1",
+          "object:restaurant:bill:v1",
+          "object:restaurant:food-order:v1",
+          "object:restaurant:menu:v1",
+          "object:restaurant:recipe-book:v1",
+          "object:restaurant:reservation:v1",
+          "object:restaurant:restaurant-sign:v1",
+          "object:tourism:boarding-pass:v1",
+          "object:tourism:compass:v1",
+          "object:tourism:guidebook:v1",
+          "object:tourism:map:v1",
+          "object:tourism:passport:v1",
+          "object:tourism:ticket:v1",
+          "object:tourism:travel-insurance:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 98f623a43397abac158891e6c30599a4ad77ef775ba9e4d806c604dc8e866bd2",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:beauty:comb:v1",
+          "object:beauty:hair-dryer:v1",
+          "object:beauty:hairbrush:v1",
+          "object:beauty:makeup-brush:v1",
+          "object:beauty:manicure:v1",
+          "object:beauty:scissors:v1",
+          "object:construction:construction-barrier:v1",
+          "object:construction:drill:v1",
+          "object:construction:hammer:v1",
+          "object:construction:hard-hat-vest:v1",
+          "object:construction:hook:v1",
+          "object:construction:ladder:v1",
+          "object:construction:level-tool:v1",
+          "object:construction:measuring-tape:v1",
+          "object:construction:paint-roller:v1",
+          "object:construction:pliers:v1",
+          "object:construction:safety-boots:v1",
+          "object:construction:safety-helmet:v1",
+          "object:construction:saw:v1",
+          "object:construction:screwdriver:v1",
+          "object:construction:shovel:v1",
+          "object:construction:toolbox:v1",
+          "object:construction:traffic-cone:v1",
+          "object:construction:wrench:v1",
+          "object:electronics:calculator:v1",
+          "object:electronics:earbuds:v1",
+          "object:electronics:game-controller:v1",
+          "object:electronics:keyboard:v1",
+          "object:electronics:mouse:v1",
+          "object:electronics:printer:v1",
+          "object:electronics:scanner:v1",
+          "object:electronics:speaker:v1",
+          "object:electronics:vr-headset:v1",
+          "object:kitchen:fork:v1",
+          "object:kitchen:knife:v1",
+          "object:kitchen:ladle:v1",
+          "object:kitchen:mortar-pestle:v1",
+          "object:kitchen:rolling-pin:v1",
+          "object:kitchen:spatula:v1",
+          "object:kitchen:spoon:v1",
+          "object:kitchen:whisk:v1",
+          "object:medical:bandage:v1",
+          "object:medical:crutches:v1",
+          "object:medical:dna:v1",
+          "object:medical:gloves:v1",
+          "object:medical:medical-cross:v1",
+          "object:medical:medical-mask:v1",
+          "object:medical:otoscope:v1",
+          "object:medical:pulse-oximeter:v1",
+          "object:medical:scalpel:v1",
+          "object:medical:stethoscope:v1",
+          "object:medical:syringe:v1",
+          "object:medical:test-tube:v1",
+          "object:medical:thermometer:v1",
+          "object:office:calculator:v1",
+          "object:office:desk-lamp:v1",
+          "object:office:eraser:v1",
+          "object:office:hole-punch:v1",
+          "object:office:marker:v1",
+          "object:office:office-phone:v1",
+          "object:office:paperclip:v1",
+          "object:office:pen:v1",
+          "object:office:pencil:v1",
+          "object:office:push-pin:v1",
+          "object:office:ruler:v1",
+          "object:office:scissors:v1",
+          "object:office:stamp:v1",
+          "object:office:stapler:v1",
+          "object:office:tape-dispenser:v1",
+          "object:restaurant:apron:v1",
+          "object:restaurant:barbecue:v1",
+          "object:restaurant:chef-hat:v1",
+          "object:restaurant:delivery-bag:v1",
+          "object:restaurant:fork:v1",
+          "object:restaurant:knife:v1",
+          "object:restaurant:napkin:v1",
+          "object:restaurant:oven:v1",
+          "object:restaurant:salt-pepper:v1",
+          "object:restaurant:spoon:v1",
+          "object:restaurant:waiter-bell:v1",
+          "object:transportation:charging-station:v1",
+          "object:transportation:fuel-station:v1",
+          "object:transportation:parking:v1",
+          "object:transportation:road-sign:v1",
+          "object:transportation:steering-wheel:v1",
+          "object:transportation:traffic-light:v1",
+          "object:transportation:wheel:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 3e79818c92ef9d5339d7a689fd22c378306caf78f014b9dd43bf78fc9d33c230",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:beauty:cosmetic-bag:v1",
+          "object:beauty:mirror:v1",
+          "object:education:graduation-cap:v1",
+          "object:education:school-bag:v1",
+          "object:education:school-bell:v1",
+          "object:education:trophy:v1",
+          "object:office:briefcase:v1",
+          "object:office:desk-organizer:v1",
+          "object:office:filing-box:v1",
+          "object:tourism:backpack:v1",
+          "object:tourism:beach-umbrella:v1",
+          "object:tourism:bed:v1",
+          "object:tourism:binoculars:v1",
+          "object:tourism:camera:v1",
+          "object:tourism:campfire:v1",
+          "object:tourism:location-pin:v1",
+          "object:tourism:mountain:v1",
+          "object:tourism:route:v1",
+          "object:tourism:suitcase:v1",
+          "object:tourism:sun:v1",
+          "object:tourism:sunglasses:v1",
+          "object:tourism:tent:v1",
+          "object:tourism:travel-bag:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: ba1b44d00e37534ad4b8fe1ff3fe5d4afceb4366d404860146c2e4040722a966",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:education:abacus:v1",
+          "object:education:alphabet-blocks:v1",
+          "object:education:calculator:v1",
+          "object:education:chalkboard:v1",
+          "object:education:compass-tool:v1",
+          "object:education:desk:v1",
+          "object:education:globe:v1",
+          "object:education:microscope:v1",
+          "object:education:online-learning:v1",
+          "object:education:pencil:v1",
+          "object:education:protractor:v1",
+          "object:education:ruler:v1",
+          "object:education:student:v1",
+          "object:education:teacher:v1",
+          "object:education:video-course:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 772e7f68617a802ed7c081ef3b9e1e89db1aff289f05d94d7cd2768aa73f8f43",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:electronics:camera:v1",
+          "object:electronics:drone:v1",
+          "object:electronics:webcam:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 40b740e72d80f1350f5e3e75799f886c0822daa5e03d5e2c3e5a36ccd461b444",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:electronics:charger:v1",
+          "object:electronics:hard-drive:v1",
+          "object:electronics:headphones:v1",
+          "object:electronics:microphone:v1",
+          "object:electronics:power-bank:v1",
+          "object:electronics:router:v1",
+          "object:electronics:server:v1",
+          "object:electronics:smartphone:v1",
+          "object:electronics:smartwatch:v1",
+          "object:electronics:ssd:v1",
+          "object:electronics:usb-drive:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: e6d8a8c4c43ab48c539908924ec5a6bf52370e5a44b3dac445f667aecd03417f",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:electronics:desktop-computer:v1",
+          "object:electronics:graphics-tablet:v1",
+          "object:electronics:laptop:v1",
+          "object:electronics:monitor:v1",
+          "object:electronics:projector:v1",
+          "object:electronics:smart-tv:v1",
+          "object:electronics:tablet:v1",
+          "object:kitchen:blender:v1",
+          "object:kitchen:coffee-maker:v1",
+          "object:kitchen:colander:v1",
+          "object:kitchen:cutting-board:v1",
+          "object:kitchen:kitchen-scale:v1",
+          "object:kitchen:microwave:v1",
+          "object:kitchen:mixer:v1",
+          "object:kitchen:oven:v1",
+          "object:kitchen:plate:v1",
+          "object:kitchen:refrigerator:v1",
+          "object:kitchen:serving-tray:v1",
+          "object:kitchen:toaster:v1",
+          "object:medical:blood-pressure-monitor:v1",
+          "object:medical:defibrillator:v1",
+          "object:medical:heart-monitor:v1",
+          "object:medical:microscope:v1",
+          "object:medical:x-ray:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 27d27913762916f6e3c5d332981b382bdeafbcadd49f65358cd486de83c11939",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:food:almond:v1",
+          "object:food:apple:v1",
+          "object:food:bread:v1",
+          "object:food:cake:v1",
+          "object:food:cheese:v1",
+          "object:food:chicken-meal:v1",
+          "object:food:chocolate:v1",
+          "object:food:cookie:v1",
+          "object:food:dates:v1",
+          "object:food:egg:v1",
+          "object:food:fish:v1",
+          "object:food:grapes:v1",
+          "object:food:kebab:v1",
+          "object:food:orange:v1",
+          "object:food:pistachio:v1",
+          "object:food:pomegranate:v1",
+          "object:food:rice:v1",
+          "object:food:salad:v1",
+          "object:food:sandwich:v1",
+          "object:food:soup:v1",
+          "object:food:walnut:v1",
+          "object:food:watermelon:v1",
+          "object:iranian-traditional:boteh-jegheh:v1",
+          "object:iranian-traditional:calligraphy-frame:v1",
+          "object:iranian-traditional:copper-pot:v1",
+          "object:iranian-traditional:copper-tray:v1",
+          "object:iranian-traditional:copperware:v1",
+          "object:iranian-traditional:fountain:v1",
+          "object:iranian-traditional:haft-sin:v1",
+          "object:iranian-traditional:handicraft-box:v1",
+          "object:iranian-traditional:kilim:v1",
+          "object:iranian-traditional:korsi:v1",
+          "object:iranian-traditional:miniature-painting:v1",
+          "object:iranian-traditional:muqarnas:v1",
+          "object:iranian-traditional:persian-carpet:v1",
+          "object:iranian-traditional:persian-garden:v1",
+          "object:iranian-traditional:persian-tile:v1",
+          "object:iranian-traditional:poetry-book:v1",
+          "object:iranian-traditional:pottery:v1",
+          "object:iranian-traditional:rosewater-bottle:v1",
+          "object:iranian-traditional:saffron-box:v1",
+          "object:iranian-traditional:samovar:v1",
+          "object:iranian-traditional:tea-glass:v1",
+          "object:iranian-traditional:tea-set:v1",
+          "object:iranian-traditional:teapot:v1",
+          "object:iranian-traditional:termeh:v1",
+          "object:iranian-traditional:toranj:v1",
+          "object:iranian-traditional:traditional-door:v1",
+          "object:iranian-traditional:traditional-lantern:v1",
+          "object:iranian-traditional:traditional-window:v1",
+          "object:iranian-traditional:windcatcher:v1",
+          "object:iranian-traditional:wooden-inlay:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: 063bf14a101e38cc56f124886a056f4599744d31db2fce896025e1f33789d0e7",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:furniture:bookcase:v1",
+          "object:furniture:bookshelf:v1",
+          "object:furniture:cabinet:v1",
+          "object:furniture:coat-rack:v1",
+          "object:furniture:drawer-unit:v1",
+          "object:furniture:filing-cabinet:v1",
+          "object:furniture:room-divider:v1",
+          "object:furniture:shelf:v1",
+          "object:furniture:wall-shelf:v1",
+          "object:furniture:wardrobe:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: f51453e8858f73227e92640e5d8dbd3f21a837c3ace317131b8823c76a6d0bba",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:furniture:coffee-table:v1",
+          "object:furniture:console-table:v1",
+          "object:furniture:desk:v1",
+          "object:furniture:dining-table:v1",
+          "object:furniture:nightstand:v1",
+          "object:furniture:side-table:v1",
+          "object:furniture:standing-desk:v1",
+          "object:furniture:tv-stand:v1",
+          "object:restaurant:chair:v1",
+          "object:restaurant:restaurant-table:v1",
+          "object:restaurant:serving-cart:v1",
+          "object:restaurant:table-number:v1"
+        ]
+      }
+    },
+    {
+      "severity": "warning",
+      "domain": "duplicate",
+      "code": "DUPLICATE_SVG_STRUCTURE",
+      "message": "Identical SVG element/attribute structure: d8c731a0305f6d7a9fa89fa58b45981ca9ddfb95d2e3d93760395b4ee7bea61e",
+      "asset_id": null,
+      "path": null,
+      "details": {
+        "members": [
+          "object:transportation:airplane:v1",
+          "object:transportation:helicopter:v1"
+        ]
+      }
+    }
+  ]
+}

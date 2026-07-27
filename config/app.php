@@ -173,6 +173,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class, // ← Repository DI
         App\Providers\CustomerInstallationServiceProvider::class,
+        App\Providers\MotionGraphicsAdapterServiceProvider::class, // Phase 1 — Motion Graphics adapter foundation
     ])->toArray(),
 
     /*

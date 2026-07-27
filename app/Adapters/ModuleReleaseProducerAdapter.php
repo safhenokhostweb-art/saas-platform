@@ -15,6 +15,16 @@ use SaaSPlatform\CoreUtils\Contracts\Services\ModuleReleaseProducerInterface;
  * Module and ModuleRelease models. Packages call this via the interface —
  * they never write to module_releases directly (see
  * docs/architecture/module-version-authority-adr.md).
+ *
+ * Phase 17-H — Part 2/6: $request->status, when given, is written as-is
+ * (e.g. 'draft' from the interactive `module:release` CLI — see
+ * ModuleReleaseCommand). When omitted (every other caller: the backfill
+ * command, for which a freshly-discovered release represents code that
+ * was already live in production and should be immediately usable; and
+ * any direct ModuleRelease::create() call, e.g. throughout the test
+ * suite), the module_releases.status column's own default ('published')
+ * applies — preserving the exact pre-17-H behavior for everything that
+ * doesn't explicitly opt into the new draft-then-publish gate.
  */
 class ModuleReleaseProducerAdapter implements ModuleReleaseProducerInterface
 {
@@ -84,14 +94,19 @@ class ModuleReleaseProducerAdapter implements ModuleReleaseProducerInterface
 
         try {
             $releaseId = DB::transaction(function () use ($module, $request) {
-                $release = ModuleRelease::create([
+                $attributes = [
                     'module_id' => $module->id,
                     'version' => $request->version,
                     'release_type' => $request->releaseType,
                     'changelog' => $request->changelog,
                     'distributed_at' => $request->distributedAt,
                     'is_active' => $request->isActive,
-                ]);
+                ];
+                if ($request->status !== null) {
+                    $attributes['status'] = $request->status;
+                }
+
+                $release = ModuleRelease::create($attributes);
 
                 $module->update(['version' => $request->version]);
 

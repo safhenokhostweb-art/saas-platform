@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"motion-creation/request/v1","type":"object","additionalProperties":false,
+  "required":["contract_version","mode","purpose","audience","style","duration_seconds","brief","brand_theme","language","output_context"],
+  "properties":{
+    "contract_version":{"const":"1.0"},"mode":{"enum":["beginner","expert"]},
+    "purpose":{"enum":["brand-introduction","product-presentation","educational-content","service-explanation","advertisement","social-media-content","website-hero-motion","ui-explanation"]},
+    "audience":{"enum":["general-users","professional-audience","customers","students","internal-training"]},
+    "style":{"enum":["modern","minimal","corporate","luxury","iranian-traditional","technology","friendly"]},
+    "duration_seconds":{"enum":[5,10,15,30,60]},"brief":{"type":"string","minLength":10,"maxLength":2000},
+    "brand_theme":{"type":"object","additionalProperties":false,"required":["primary","secondary","accent","background","border"],"properties":{"primary":{"$ref":"#/$defs/color"},"secondary":{"$ref":"#/$defs/color"},"accent":{"$ref":"#/$defs/color"},"background":{"$ref":"#/$defs/color"},"border":{"$ref":"#/$defs/color"}}},
+    "language":{"enum":["fa","ar","en","fa-en","ar-en"]},"output_context":{"enum":["website","social","presentation","training","advertising"]},
+    "educational_mode":{"type":"boolean"},"voice_layer":{"$ref":"voice-layer.schema.json"}
+  },"$defs":{"color":{"type":"string","pattern":"^#[0-9A-Fa-f]{6}$"}}
+}

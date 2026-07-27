@@ -1,0 +1,6 @@
+{
+  "name": "missing approval",
+  "patch": {"approval": null},
+  "expected_codes": ["APPROVAL_MISSING"]
+}
+

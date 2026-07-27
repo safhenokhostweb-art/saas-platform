@@ -1,0 +1,699 @@
+{
+  "contract": "smart-template-enhancement/v1",
+  "prototype": true,
+  "business": {
+    "name": "فروشگاه آنلاین ایرانی",
+    "industry": "ecommerce"
+  },
+  "template_before": [
+    {
+      "id": "hero-1",
+      "type": "hero",
+      "title": "خرید آسان و مطمئن",
+      "existing_visuals": []
+    },
+    {
+      "id": "features-2",
+      "type": "features",
+      "title": "ارسال و پرداخت",
+      "existing_visuals": []
+    },
+    {
+      "id": "products-3",
+      "type": "products",
+      "title": "محصولات منتخب",
+      "existing_visuals": []
+    },
+    {
+      "id": "testimonials-4",
+      "type": "testimonials",
+      "title": "نظر مشتریان",
+      "existing_visuals": []
+    },
+    {
+      "id": "cta-5",
+      "type": "cta",
+      "title": "شروع خرید",
+      "existing_visuals": []
+    }
+  ],
+  "template_after": [
+    {
+      "section_id": "hero-1",
+      "section_type": "hero",
+      "recommended_asset_ids": [
+        "visual:ecommerce-products:cosmetics:v1",
+        "motion:ecommerce:iranian-ecommerce-journey:v1",
+        "object:beauty:makeup:v1",
+        "object:beauty:perfume:v1"
+      ]
+    },
+    {
+      "section_id": "features-2",
+      "section_type": "features",
+      "recommended_asset_ids": [
+        "icon:ecommerce:delivery:v1",
+        "object:beauty:makeup:v1",
+        "object:beauty:perfume:v1",
+        "object:food:kebab:v1"
+      ]
+    },
+    {
+      "section_id": "products-3",
+      "section_type": "products",
+      "recommended_asset_ids": [
+        "icon:ecommerce:checkout:v1",
+        "visual:ecommerce-products:cosmetics:v1",
+        "object:beauty:makeup:v1",
+        "object:beauty:perfume:v1"
+      ]
+    },
+    {
+      "section_id": "testimonials-4",
+      "section_type": "testimonials",
+      "recommended_asset_ids": [
+        "icon:ecommerce:shopping-cart:v1",
+        "visual:ecommerce-products:cosmetics:v1",
+        "visual:ecommerce-products:mobile-phone:v1",
+        "icon:ecommerce:checkout:v1"
+      ]
+    },
+    {
+      "section_id": "cta-5",
+      "section_type": "cta",
+      "recommended_asset_ids": [
+        "icon:ecommerce:checkout:v1",
+        "motion:ecommerce:iranian-ecommerce-journey:v1",
+        "visual:ecommerce-products:cosmetics:v1",
+        "visual:ecommerce-products:mobile-phone:v1"
+      ]
+    }
+  ],
+  "section_analysis": [
+    {
+      "id": "hero-1",
+      "type": "hero",
+      "purpose": [
+        "business-story",
+        "identity",
+        "attention"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "motion",
+        "visual-asset",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "motion",
+        "visual-asset",
+        "object"
+      ],
+      "recommended_usage": [
+        "hero",
+        "landing-page"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "features-2",
+      "type": "features",
+      "purpose": [
+        "feature-symbol",
+        "scannability"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "icon",
+        "object"
+      ],
+      "recommended_asset_types": [
+        "icon",
+        "object"
+      ],
+      "recommended_usage": [
+        "feature",
+        "feature-card",
+        "card"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "products-3",
+      "type": "products",
+      "purpose": [
+        "product-focus",
+        "category-symbol"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "object",
+        "visual-asset",
+        "icon"
+      ],
+      "recommended_asset_types": [
+        "object",
+        "visual-asset",
+        "icon"
+      ],
+      "recommended_usage": [
+        "product",
+        "card",
+        "section"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "testimonials-4",
+      "type": "testimonials",
+      "purpose": [
+        "trust",
+        "customer-proof"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_asset_types": [
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_usage": [
+        "testimonial",
+        "card",
+        "section"
+      ],
+      "needs_enhancement": true
+    },
+    {
+      "id": "cta-5",
+      "type": "cta",
+      "purpose": [
+        "action",
+        "trust"
+      ],
+      "existing_visuals": [],
+      "missing_visual_types": [
+        "motion",
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_asset_types": [
+        "motion",
+        "icon",
+        "visual-asset"
+      ],
+      "recommended_usage": [
+        "cta",
+        "hero",
+        "section"
+      ],
+      "needs_enhancement": true
+    }
+  ],
+  "recommendations": [
+    {
+      "section_id": "hero-1",
+      "section_type": "hero",
+      "recommendations": [
+        {
+          "asset_id": "visual:ecommerce-products:cosmetics:v1",
+          "slug": "cosmetics",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/cosmetics/asset.svg",
+          "match_score": 100,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:hero",
+            "industry-section-preference",
+            "type:visual-asset",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v1",
+          "slug": "iranian-ecommerce-journey",
+          "type": "motion",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "iranian-ecommerce-journey/v1/animation.svg",
+          "match_score": 100,
+          "quality_score": 96.5,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:hero",
+            "industry-section-preference",
+            "type:motion",
+            "style:modern"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:beauty:makeup:v1",
+          "slug": "makeup",
+          "type": "object",
+          "category": "beauty",
+          "version": "v1",
+          "path": "visual-assets/object-library/beauty/makeup/asset.svg",
+          "match_score": 64.9,
+          "quality_score": 96,
+          "reasons": [
+            "usage:hero",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:beauty:perfume:v1",
+          "slug": "perfume",
+          "type": "object",
+          "category": "beauty",
+          "version": "v1",
+          "path": "visual-assets/object-library/beauty/perfume/asset.svg",
+          "match_score": 64.9,
+          "quality_score": 96,
+          "reasons": [
+            "usage:hero",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "features-2",
+      "section_type": "features",
+      "recommendations": [
+        {
+          "asset_id": "icon:ecommerce:delivery:v1",
+          "slug": "delivery",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/delivery/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:features",
+            "industry-section-preference",
+            "type:icon",
+            "style:modern"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:beauty:makeup:v1",
+          "slug": "makeup",
+          "type": "object",
+          "category": "beauty",
+          "version": "v1",
+          "path": "visual-assets/object-library/beauty/makeup/asset.svg",
+          "match_score": 67.8,
+          "quality_score": 96,
+          "reasons": [
+            "usage:features",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:beauty:perfume:v1",
+          "slug": "perfume",
+          "type": "object",
+          "category": "beauty",
+          "version": "v1",
+          "path": "visual-assets/object-library/beauty/perfume/asset.svg",
+          "match_score": 67.8,
+          "quality_score": 96,
+          "reasons": [
+            "usage:features",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:food:kebab:v1",
+          "slug": "kebab",
+          "type": "object",
+          "category": "food",
+          "version": "v1",
+          "path": "visual-assets/object-library/food/kebab/asset.svg",
+          "match_score": 67.8,
+          "quality_score": 96,
+          "reasons": [
+            "usage:features",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "products-3",
+      "section_type": "products",
+      "recommendations": [
+        {
+          "asset_id": "icon:ecommerce:checkout:v1",
+          "slug": "checkout",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/checkout/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:products",
+            "industry-section-preference",
+            "type:icon",
+            "style:modern"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:ecommerce-products:cosmetics:v1",
+          "slug": "cosmetics",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/cosmetics/asset.svg",
+          "match_score": 100,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:products",
+            "industry-section-preference",
+            "type:visual-asset",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:beauty:makeup:v1",
+          "slug": "makeup",
+          "type": "object",
+          "category": "beauty",
+          "version": "v1",
+          "path": "visual-assets/object-library/beauty/makeup/asset.svg",
+          "match_score": 78.7,
+          "quality_score": 96,
+          "reasons": [
+            "usage:products",
+            "industry-section-preference",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "object:beauty:perfume:v1",
+          "slug": "perfume",
+          "type": "object",
+          "category": "beauty",
+          "version": "v1",
+          "path": "visual-assets/object-library/beauty/perfume/asset.svg",
+          "match_score": 78.7,
+          "quality_score": 96,
+          "reasons": [
+            "usage:products",
+            "industry-section-preference",
+            "type:object",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "testimonials-4",
+      "section_type": "testimonials",
+      "recommendations": [
+        {
+          "asset_id": "icon:ecommerce:shopping-cart:v1",
+          "slug": "shopping-cart",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/shopping-cart/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:testimonials",
+            "type:icon",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:ecommerce-products:cosmetics:v1",
+          "slug": "cosmetics",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/cosmetics/asset.svg",
+          "match_score": 100,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:testimonials",
+            "type:visual-asset",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:ecommerce-products:mobile-phone:v1",
+          "slug": "mobile-phone",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/mobile-phone/asset.svg",
+          "match_score": 100,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:testimonials",
+            "type:visual-asset",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "icon:ecommerce:checkout:v1",
+          "slug": "checkout",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/checkout/icon.svg",
+          "match_score": 99.8,
+          "quality_score": 97,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:testimonials",
+            "type:icon",
+            "style:modern"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    },
+    {
+      "section_id": "cta-5",
+      "section_type": "cta",
+      "recommendations": [
+        {
+          "asset_id": "icon:ecommerce:checkout:v1",
+          "slug": "checkout",
+          "type": "icon",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "icons/ecommerce/checkout/icon.svg",
+          "match_score": 100,
+          "quality_score": 97,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:cta",
+            "industry-section-preference",
+            "type:icon",
+            "style:modern"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "motion:ecommerce:iranian-ecommerce-journey:v1",
+          "slug": "iranian-ecommerce-journey",
+          "type": "motion",
+          "category": "ecommerce",
+          "version": "v1",
+          "path": "iranian-ecommerce-journey/v1/animation.svg",
+          "match_score": 100,
+          "quality_score": 96.5,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:cta",
+            "industry-section-preference",
+            "type:motion",
+            "style:modern"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:ecommerce-products:cosmetics:v1",
+          "slug": "cosmetics",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/cosmetics/asset.svg",
+          "match_score": 99,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:cta",
+            "type:visual-asset",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        },
+        {
+          "asset_id": "visual:ecommerce-products:mobile-phone:v1",
+          "slug": "mobile-phone",
+          "type": "visual-asset",
+          "category": "ecommerce-products",
+          "version": "v1",
+          "path": "visual-assets/ecommerce-products/mobile-phone/asset.svg",
+          "match_score": 99,
+          "quality_score": 96.8,
+          "reasons": [
+            "industry:ecommerce",
+            "usage:cta",
+            "type:visual-asset",
+            "style:modern",
+            "canonical-relation-bundle"
+          ],
+          "theme_ready": true,
+          "ownership": "platform"
+        }
+      ]
+    }
+  ],
+  "enhancement_score": {
+    "before": 47,
+    "after": 92,
+    "improvement": 45,
+    "metrics": {
+      "visual_uniqueness": {
+        "before": 8,
+        "after": 18,
+        "maximum": 20
+      },
+      "business_relevance": {
+        "before": 8,
+        "after": 23,
+        "maximum": 25
+      },
+      "brand_consistency": {
+        "before": 11,
+        "after": 18,
+        "maximum": 20
+      },
+      "asset_coverage": {
+        "before": 10,
+        "after": 19,
+        "maximum": 20
+      },
+      "professional_appearance": {
+        "before": 10,
+        "after": 14,
+        "maximum": 15
+      }
+    },
+    "coverage": {
+      "existing_visual_sections_percent": 0,
+      "recommended_sections_percent": 100,
+      "recommended_assets_theme_ready_percent": 100
+    }
+  },
+  "brand_adaptation": {
+    "status": "proposal-only",
+    "create_variant": false,
+    "publish": false,
+    "theme_tokens": {
+      "--brand-primary": "#1D4ED8",
+      "--brand-secondary": "#3B82F6",
+      "--brand-accent": "#F97316",
+      "--brand-background": "#F8FAFC",
+      "--brand-border": "#BFDBFE"
+    },
+    "asset_token_mapping": {
+      "--asset-primary": "var(--brand-primary)",
+      "--asset-secondary": "var(--brand-secondary)",
+      "--asset-accent": "var(--brand-accent)",
+      "--asset-background": "var(--brand-background)",
+      "--asset-border": "var(--brand-border)"
+    },
+    "approval_required": "platform-admin"
+  },
+  "ai_recommendation": {
+    "interface": "future-ai-recommendation/v1",
+    "mode": "placeholder",
+    "provider_called": false,
+    "detected_industry": "ecommerce",
+    "suggested_query": [
+      "ecommerce",
+      "modern",
+      "consumer"
+    ],
+    "can_publish": false,
+    "note": "A future provider may propose query terms only; canonical validation and Platform Admin approval remain mandatory."
+  },
+  "safety": {
+    "source_mode": "read-only",
+    "asset_writes": false,
+    "variants_created": false,
+    "published": false
+  }
+}

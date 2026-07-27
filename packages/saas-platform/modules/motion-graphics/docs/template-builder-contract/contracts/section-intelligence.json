@@ -1,0 +1,16 @@
+{
+  "contract_version": "1.0",
+  "sections": {
+    "hero": { "recommended_asset_types": ["motion", "visual-asset", "object"], "visual_hierarchy": "primary", "animation_intensity": "high", "responsive_behavior": "stack-and-static-preview-on-mobile", "allowed_positions": ["background", "leading", "trailing", "full-width"] },
+    "about": { "recommended_asset_types": ["visual-asset", "motion", "object"], "visual_hierarchy": "secondary", "animation_intensity": "moderate", "responsive_behavior": "stack-below-copy-on-mobile", "allowed_positions": ["leading", "trailing", "inline"] },
+    "services": { "recommended_asset_types": ["icon", "object", "visual-asset"], "visual_hierarchy": "supporting", "animation_intensity": "subtle", "responsive_behavior": "responsive-card-grid", "allowed_positions": ["card-media", "inline", "leading"] },
+    "features": { "recommended_asset_types": ["icon", "object"], "visual_hierarchy": "supporting", "animation_intensity": "subtle", "responsive_behavior": "responsive-card-grid", "allowed_positions": ["card-media", "inline", "leading"] },
+    "products": { "recommended_asset_types": ["object", "visual-asset", "icon"], "visual_hierarchy": "primary", "animation_intensity": "subtle", "responsive_behavior": "contain-within-product-card", "allowed_positions": ["card-media", "leading", "trailing", "full-width"] },
+    "portfolio": { "recommended_asset_types": ["visual-asset", "object", "motion"], "visual_hierarchy": "primary", "animation_intensity": "moderate", "responsive_behavior": "preserve-crop-and-grid", "allowed_positions": ["card-media", "full-width", "background"] },
+    "testimonials": { "recommended_asset_types": ["icon", "visual-asset"], "visual_hierarchy": "tertiary", "animation_intensity": "subtle", "responsive_behavior": "single-column-on-mobile", "allowed_positions": ["inline", "card-media", "background"] },
+    "team": { "recommended_asset_types": ["visual-asset", "icon", "object"], "visual_hierarchy": "secondary", "animation_intensity": "subtle", "responsive_behavior": "responsive-profile-grid", "allowed_positions": ["card-media", "inline"] },
+    "contact": { "recommended_asset_types": ["icon", "visual-asset", "object"], "visual_hierarchy": "supporting", "animation_intensity": "none", "responsive_behavior": "stack-contact-channels", "allowed_positions": ["inline", "leading", "background"] },
+    "cta": { "recommended_asset_types": ["motion", "icon", "visual-asset"], "visual_hierarchy": "secondary", "animation_intensity": "moderate", "responsive_behavior": "compact-and-static-preview-on-mobile", "allowed_positions": ["background", "leading", "trailing", "inline"] },
+    "footer": { "recommended_asset_types": ["icon", "visual-asset"], "visual_hierarchy": "tertiary", "animation_intensity": "none", "responsive_behavior": "compact-wrap", "allowed_positions": ["inline", "background"] }
+  }
+}

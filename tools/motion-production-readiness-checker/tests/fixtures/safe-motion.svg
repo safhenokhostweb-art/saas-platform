@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Safe motion fixture</title>
+  <desc id="desc">A static circle used by the production readiness checker tests.</desc>
+  <circle cx="32" cy="32" r="20" fill="currentColor"/>
+</svg>
+

@@ -1,0 +1,10 @@
+{
+  "id": "restaurant", "label": "رستوران ایرانی",
+  "business_profile": { "name": "سفره ایرانی", "description": "رستوران غذای ایرانی و منوی اصیل", "industry": "restaurant", "business_type": "restaurant", "audience": "consumer", "style": "traditional", "brand_theme": { "primary": "#7C2D12", "secondary": "#C2410C", "accent": "#EAB308", "background": "#FFFBEB", "border": "#FED7AA" }, "required_sections": ["hero", "about", "services", "features", "products", "testimonials", "contact", "cta"] },
+  "template": { "template_name": "Generic Restaurant", "template_type": "restaurant", "sections": [
+    { "type": "hero", "title": "به وب‌سایت ما خوش آمدید", "existing_visuals": [] }, { "type": "about", "title": "درباره ما", "existing_visuals": [] },
+    { "type": "services", "title": "خدمات", "existing_visuals": [] }, { "type": "features", "title": "ویژگی‌ها", "existing_visuals": [] },
+    { "type": "products", "title": "محصولات", "existing_visuals": [] }, { "type": "testimonials", "title": "نظر مشتریان", "existing_visuals": [] },
+    { "type": "contact", "title": "تماس", "existing_visuals": [] }, { "type": "cta", "title": "رزرو", "existing_visuals": [] }
+  ] }
+}

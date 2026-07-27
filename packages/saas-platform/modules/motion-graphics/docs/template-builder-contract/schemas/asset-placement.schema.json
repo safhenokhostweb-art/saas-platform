@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "motion-graphics/template-builder/asset-placement/v1",
+  "title": "Motion Graphics Asset Placement",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "asset_id", "asset_type", "allowed_sections", "recommended_sections", "placement_priority", "size_rules", "responsive_rules", "animation_behavior", "alignment_rules", "spacing_rules", "theme_requirements", "industry_usage", "audience_usage"],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "asset_id": { "type": "string", "pattern": "^(motion|icon|object|visual):[a-z0-9-]+:[a-z0-9-]+:v[0-9]+$" },
+    "asset_type": { "enum": ["motion", "icon", "object", "visual-asset"] },
+    "allowed_sections": { "$ref": "#/$defs/sections" },
+    "recommended_sections": { "$ref": "#/$defs/sections" },
+    "placement_priority": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "size_rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["preferred", "min_width_px", "max_width_px", "aspect_ratio_mode"],
+      "properties": {
+        "preferred": { "enum": ["small", "medium", "large", "fluid"] },
+        "min_width_px": { "type": "integer", "minimum": 16, "maximum": 1600 },
+        "max_width_px": { "type": "integer", "minimum": 16, "maximum": 2400 },
+        "aspect_ratio_mode": { "enum": ["preserve", "contain", "cover"] }
+      }
+    },
+    "responsive_rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["preserve_aspect_ratio", "desktop", "tablet", "mobile"],
+      "properties": {
+        "preserve_aspect_ratio": { "type": "boolean" },
+        "desktop": { "$ref": "#/$defs/breakpoint" },
+        "tablet": { "$ref": "#/$defs/breakpoint" },
+        "mobile": { "$ref": "#/$defs/breakpoint" }
+      }
+    },
+    "animation_behavior": {
+      "type": "object", "additionalProperties": false,
+      "required": ["intensity", "autoplay", "loop", "viewport_trigger", "reduced_motion"],
+      "properties": {
+        "intensity": { "enum": ["none", "subtle", "moderate", "high"] },
+        "autoplay": { "type": "boolean" },
+        "loop": { "type": "boolean" },
+        "viewport_trigger": { "enum": ["immediate", "on-visible", "manual"] },
+        "reduced_motion": { "enum": ["static-preview", "disable", "simplified"] },
+        "max_duration_seconds": { "type": "number", "minimum": 0, "maximum": 30 }
+      }
+    },
+    "alignment_rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["preferred", "allowed", "rtl_aware"],
+      "properties": {
+        "preferred": { "$ref": "#/$defs/alignment" },
+        "allowed": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/alignment" } },
+        "rtl_aware": { "type": "boolean" }
+      }
+    },
+    "spacing_rules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["desktop", "tablet", "mobile"],
+      "properties": {
+        "desktop": { "$ref": "#/$defs/spacing" },
+        "tablet": { "$ref": "#/$defs/spacing" },
+        "mobile": { "$ref": "#/$defs/spacing" }
+      }
+    },
+    "theme_requirements": {
+      "type": "object", "additionalProperties": false,
+      "required": ["theme_ready", "required_tokens", "contrast_validation", "transparent_background"],
+      "properties": {
+        "theme_ready": { "type": "boolean" },
+        "required_tokens": { "type": "array", "uniqueItems": true, "items": { "enum": ["--brand-primary", "--brand-secondary", "--brand-accent", "--brand-background", "--brand-border"] } },
+        "contrast_validation": { "type": "boolean" },
+        "transparent_background": { "type": "boolean" }
+      }
+    },
+    "industry_usage": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/industry" } },
+    "audience_usage": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["company", "startup", "professional", "consumer"] } }
+  },
+  "$defs": {
+    "section": { "enum": ["hero", "about", "services", "features", "products", "portfolio", "testimonials", "team", "contact", "cta", "footer"] },
+    "sections": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/section" } },
+    "industry": { "enum": ["company", "medical", "restaurant", "ecommerce", "education", "construction", "personal-brand", "tourism", "finance", "technology", "manufacturing"] },
+    "alignment": { "enum": ["start", "center", "end", "inline-start", "inline-end"] },
+    "breakpoint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["display", "width_percent", "alignment"],
+      "properties": {
+        "display": { "enum": ["show", "hide", "static-preview"] },
+        "width_percent": { "type": "integer", "minimum": 10, "maximum": 100 },
+        "alignment": { "$ref": "#/$defs/alignment" }
+      }
+    },
+    "spacing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["block_px", "inline_px"],
+      "properties": {
+        "block_px": { "type": "integer", "minimum": 0, "maximum": 160 },
+        "inline_px": { "type": "integer", "minimum": 0, "maximum": 160 }
+      }
+    }
+  }
+}

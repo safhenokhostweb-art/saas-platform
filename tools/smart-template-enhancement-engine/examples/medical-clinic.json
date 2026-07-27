@@ -1,0 +1,19 @@
+{
+  "business_profile": {
+    "name": "کلینیک سلامت ایرانیان",
+    "description": "کلینیک تخصصی پزشک و خدمات سلامت",
+    "industry": "medical",
+    "business_type": "clinic",
+    "audience": "professional",
+    "style": "minimal",
+    "brand_theme": { "primary": "#0F766E", "secondary": "#14B8A6", "accent": "#F59E0B", "background": "#F0FDFA", "border": "#99F6E4" },
+    "required_sections": ["hero", "features", "services", "about", "cta"]
+  },
+  "template_sections": [
+    { "type": "hero", "title": "مراقبت تخصصی" },
+    { "type": "features", "title": "مزیت‌های کلینیک" },
+    { "type": "services", "title": "خدمات درمانی" },
+    { "type": "about", "title": "معرفی پزشک" },
+    { "type": "cta", "title": "رزرو نوبت" }
+  ]
+}

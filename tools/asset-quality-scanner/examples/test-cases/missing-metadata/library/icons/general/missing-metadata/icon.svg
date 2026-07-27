@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Missing metadata fixture">
+  <title>Missing metadata</title><desc>This package intentionally omits metadata.json.</desc>
+  <style>:root{--asset-primary:#2563eb;--asset-secondary:#1e3a8a;--asset-accent:#f59e0b;--asset-background:#ffffff;--asset-border:#334155;color:var(--asset-border)}.shape{fill:var(--asset-primary);stroke:currentColor}</style>
+  <rect class="shape" x="12" y="12" width="40" height="40"/>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "name": "@safhe-nokhost/asset-quality-scanner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only quality scanner for the Motion Graphics Asset Library",
+  "scripts": {
+    "scan": "node scanner",
+    "test": "node tests/run-tests.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

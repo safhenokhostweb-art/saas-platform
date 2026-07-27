@@ -1,0 +1,1 @@
+{"name":"@safhe-nokhost/motion-creation-assistant-playground","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node tests/test.js","serve":"node scripts/server.js"}}

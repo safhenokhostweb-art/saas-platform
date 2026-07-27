@@ -1,0 +1,7 @@
+{
+  "classes": ["internal", "customer_available", "premium", "restricted"],
+  "ownership_types": ["platform", "customer"],
+  "runtime_eligible": ["customer_available", "premium", "restricted"],
+  "restricted_requires_site_allowlist": true
+}
+

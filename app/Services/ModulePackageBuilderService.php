@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Module;
 use App\Models\ModuleRelease;
+use App\Services\Modules\ModulePackageValidator;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use SaaSPlatform\CoreUtils\Support\ModuleVersionRegistry;
@@ -20,6 +21,13 @@ use ZipArchive;
  * service only attaches an artifact reference to a release that already
  * exists, and only touches App\Models directly because it must — that's
  * why it lives in the host app rather than core-utils.
+ *
+ * Phase 17-F — Part 3: the ZIP is validated (ModulePackageValidator)
+ * before package_sha256/path/size are persisted. A release that fails
+ * validation never gets those columns set, so
+ * ModuleDeploymentRequestService's existing "empty package_sha256 = not
+ * deployable" check already keeps an invalid package out of every
+ * install/upgrade path — no separate re-validation at deploy time needed.
  */
 class ModulePackageBuilderService
 {
@@ -29,6 +37,7 @@ class ModulePackageBuilderService
 
     public function __construct(
         protected ModuleVersionRegistry $registry,
+        protected ModulePackageValidator $validator,
     ) {}
 
     /**
@@ -91,12 +100,51 @@ class ModulePackageBuilderService
         $sha256 = hash_file('sha256', $zipPath);
         $sizeBytes = filesize($zipPath);
 
-        $release->update([
+        // Phase 17-F — Part 3: validate before this release is ever allowed
+        // to become deployable. Uses a throwaway release snapshot (not yet
+        // saved) so validation runs against the exact sha256/path this
+        // build produced, without persisting a broken package's identity
+        // onto the real row first.
+        $candidate = (clone $release);
+        $candidate->package_path = $zipPath;
+        $candidate->package_sha256 = $sha256;
+        $validation = $this->validator->validate($candidate);
+
+        if (!$validation['valid']) {
+            unlink($zipPath);
+            Log::error('module_package.validation_failed', [
+                'slug' => $slug,
+                'version' => $version,
+                'errors' => $validation['errors'],
+            ]);
+            throw new RuntimeException(
+                "Package for {$slug} v{$version} failed validation: " . implode(' | ', $validation['errors'])
+            );
+        }
+
+        if (!empty($validation['warnings'])) {
+            Log::warning('module_package.validation_warnings', [
+                'slug' => $slug,
+                'version' => $version,
+                'warnings' => $validation['warnings'],
+            ]);
+        }
+
+        $attributes = [
             'package_sha256' => $sha256,
             'package_path' => $zipPath,
             'package_key' => null,
             'package_size_bytes' => $sizeBytes,
-        ]);
+        ];
+
+        // Phase 17-H — Part 2: advance draft/validated → built now that a
+        // real artifact exists. Never downgrades an already-published or
+        // deprecated release just because --force rebuilt its package.
+        if (in_array($release->status, [ModuleRelease::STATUS_DRAFT, ModuleRelease::STATUS_VALIDATED], true)) {
+            $attributes['status'] = ModuleRelease::STATUS_BUILT;
+        }
+
+        $release->update($attributes);
 
         Log::info('module_package.built', [
             'slug' => $slug,

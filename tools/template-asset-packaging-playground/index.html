@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="آزمایشگاه مستقل بسته‌بندی Asset قالب و مالکیت سایت">
+  <title>Template Asset Packaging Playground</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="identity"><span class="logo" aria-hidden="true"></span><div><small>Motion Graphics / Packaging Contract</small><h1>بسته‌بندی Asset قالب و مالکیت سایت</h1></div></div>
+    <span class="status">Standalone Prototype</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div><p class="eyebrow">Template Builder Bridge</p><h2>از ارجاع Canonical تا بسته اختصاصی و ایزوله هر سایت</h2><p>قالب فایل Master را نگهداری نمی‌کند. این محیط فقط قرارداد Resolution، سازگاری، Brand Adaptation و مالکیت سه‌سطحی را با داده‌های آزمایشی شبیه‌سازی می‌کند.</p></div>
+      <div class="flow" aria-label="جریان بسته‌بندی"><span>Master Library</span><i>←</i><span>Template Reference</span><i>←</i><span>Site Package</span></div>
+    </section>
+
+    <section class="controls card">
+      <label>قالب<select id="template-select"></select></label>
+      <label>سایت مشتری<select id="site-select"></select></label>
+      <label>نسخه Package<input id="package-version" type="number" min="1" value="1"></label>
+      <button id="generate" type="button">تولید بسته آزمایشی</button>
+    </section>
+
+    <section class="stats" aria-live="polite">
+      <article><span>مالک Master</span><strong>Platform</strong></article>
+      <article><span>مالک Manifest</span><strong id="template-owner">—</strong></article>
+      <article><span>مالک Package</span><strong id="site-owner">—</strong></article>
+      <article><span>وضعیت</span><strong id="validation-state">—</strong></article>
+    </section>
+
+    <section class="workspace">
+      <article class="card panel">
+        <header><div><p class="eyebrow">Template manifest</p><h2>دارایی‌های مورد نیاز</h2></div><span id="asset-count" class="pill">۰ مورد</span></header>
+        <div id="asset-list" class="asset-list"></div>
+      </article>
+
+      <article class="card panel">
+        <header><div><p class="eyebrow">Compatibility</p><h2>نتیجه Resolution</h2></div><span id="performance" class="pill">—</span></header>
+        <div id="validation-list" class="validation-list"></div>
+      </article>
+    </section>
+
+    <section class="card lineage-panel">
+      <header><div><p class="eyebrow">Immutable lineage</p><h2>زنجیره مالکیت و وراثت</h2></div><label>انتخاب Asset<select id="lineage-select"></select></label></header>
+      <div id="lineage" class="lineage"></div>
+    </section>
+
+    <section class="card package-panel">
+      <header><div><p class="eyebrow">Site package / simulation only</p><h2>Manifest بسته مشتری</h2></div><button id="download" class="secondary" type="button" disabled>دانلود JSON آزمایشی</button></header>
+      <pre id="package-output" tabindex="0">برای تولید Package، قالب و سایت را انتخاب کنید.</pre>
+    </section>
+  </main>
+
+  <footer>بدون Backend، Laravel، دیتابیس، AI Provider یا Deployment واقعی — Master Assetها فقط خواندنی هستند.</footer>
+  <script type="module" src="./scripts/app.js"></script>
+</body>
+</html>
+

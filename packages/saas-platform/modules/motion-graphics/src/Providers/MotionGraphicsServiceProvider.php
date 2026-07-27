@@ -16,6 +16,11 @@ use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionOptimizerContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionPermissionGatewayContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionPreviewGeneratorContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\PlatformAdminResolverContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionVersionReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\SiteAssetPackageReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\TemplateAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\SiteResolverContract;
 use SaaSPlatform\Modules\MotionGraphics\Http\View\Components\MotionGraphicsComponent;
 use SaaSPlatform\Modules\MotionGraphics\Models\MotionGraphic;
@@ -34,6 +39,11 @@ use SaaSPlatform\Modules\MotionGraphics\Support\NullMotionPreviewGenerator;
 use SaaSPlatform\Modules\MotionGraphics\Support\NullSiteResolver;
 use SaaSPlatform\Modules\MotionGraphics\Support\PassThroughMotionCompiler;
 use SaaSPlatform\Modules\MotionGraphics\Support\PassThroughMotionOptimizer;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionAssetReader;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionVersionReader;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\PublishedRuntimeProjectionProvider;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\SitePackageReader;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\TemplateAssetReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\SystemClock;
 
 final class MotionGraphicsServiceProvider extends ServiceProvider
@@ -53,6 +63,14 @@ final class MotionGraphicsServiceProvider extends ServiceProvider
         $this->bindDefault(MotionAuditLoggerContract::class, NullMotionAuditLogger::class);
         $this->bindDefault(MotionPermissionGatewayContract::class, DenyAllMotionPermissionGateway::class);
         $this->bindDefault(ClockContract::class, SystemClock::class);
+
+        // Phase 2 — provider-neutral read contracts (docs/motion-read-contracts/).
+        $this->bindDefault(MotionAssetReadContract::class, DatabaseMotionAssetReader::class);
+        $this->bindDefault(MotionVersionReadContract::class, DatabaseMotionVersionReader::class);
+        $this->bindDefault(MotionRuntimeProjectionReadContract::class, PublishedRuntimeProjectionProvider::class);
+        $this->bindDefault(TemplateAssetReadContract::class, TemplateAssetReader::class);
+        $this->bindDefault(SiteAssetPackageReadContract::class, SitePackageReader::class);
+
         $this->app->singleton(MotionAssetPipelineContract::class, MotionAssetPipeline::class);
         $this->app->singleton(MotionLibraryService::class);
         $this->app->singleton(MotionDeploymentService::class);

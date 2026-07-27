@@ -1,0 +1,21 @@
+{
+  "contract_version": "1.0.0",
+  "valid": true,
+  "errors": 0,
+  "warnings": 0,
+  "performance": {
+    "bands": {
+      "transfer_kb": "excellent",
+      "svg_nodes": "excellent",
+      "animated_elements": "excellent",
+      "timeline_seconds": "excellent",
+      "load_ms": "excellent",
+      "long_tasks": "excellent"
+    },
+    "overall": "excellent",
+    "score": 100
+  },
+  "issues": [],
+  "generated_at": "2026-07-18T17:51:57.978Z",
+  "input": "C:\\laragon\\www\\saas-platform\\tools\\motion-production-readiness-checker\\tests\\fixtures\\valid-production-package.json"
+}

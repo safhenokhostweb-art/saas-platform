@@ -1,0 +1,53 @@
+{
+  "contract_version": "1.0.0",
+  "asset": {
+    "id": "motion:company-introduction:v4",
+    "role": "master",
+    "ownership": {"type": "platform", "customer_id": null},
+    "checksum": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "metadata_complete": true,
+    "theme_compatible": true
+  },
+  "version": {
+    "number": 4,
+    "previous_state": "approved",
+    "state": "published",
+    "operation": "publish",
+    "mutates_existing": false,
+    "existing_state": "approved"
+  },
+  "action": {"actor_role": "platform_admin", "name": "publish"},
+  "approval": {
+    "status": "approved",
+    "actor_role": "platform_admin",
+    "checksum": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "license": {
+    "class": "customer_available",
+    "usage_limit": 5,
+    "allowed_sites": ["site-fixture"],
+    "expiration": null,
+    "ownership": {"type": "platform", "customer_id": null}
+  },
+  "available_asset_ids": ["visual:company-node:v1"],
+  "motion": {
+    "timeline": {"start": 0, "end": 7.5},
+    "asset_references": ["visual:company-node:v1"],
+    "svg_file": "safe-motion.svg",
+    "accessibility": {"label": "Company introduction", "reduced_motion": "static_end_state"}
+  },
+  "runtime_projection": {
+    "published_version": 4,
+    "engine": "svg",
+    "artifact": "animation.svg"
+  },
+  "performance": {
+    "transfer_kb": 42,
+    "svg_nodes": 190,
+    "animated_elements": 10,
+    "timeline_seconds": 7.5,
+    "load_ms": 280,
+    "long_tasks": 0
+  }
+}
+

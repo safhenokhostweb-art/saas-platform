@@ -1,0 +1,12 @@
+{
+  "actions":["create_asset","edit_asset","approve_variant","publish","rollback","use_runtime_asset","export_package"],
+  "roles":{
+    "platform_admin":{"create_asset":true,"edit_asset":true,"approve_variant":true,"publish":true,"rollback":true,"use_runtime_asset":true,"export_package":true},
+    "template_manager":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":true},
+    "designer":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":false},
+    "customer_admin":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":false},
+    "customer_user":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":false}
+  },
+  "platform_admin_only":["create_asset","edit_asset","approve_variant","publish","rollback"]
+}
+

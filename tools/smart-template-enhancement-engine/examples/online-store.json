@@ -1,0 +1,19 @@
+{
+  "business_profile": {
+    "name": "فروشگاه آنلاین ایرانی",
+    "description": "خرید آنلاین محصولات با پرداخت امن و ارسال سریع",
+    "industry": "ecommerce",
+    "business_type": "online-store",
+    "audience": "consumer",
+    "style": "modern",
+    "brand_theme": { "primary": "#1D4ED8", "secondary": "#3B82F6", "accent": "#F97316", "background": "#F8FAFC", "border": "#BFDBFE" },
+    "required_sections": ["hero", "features", "products", "testimonials", "cta"]
+  },
+  "template_sections": [
+    { "type": "hero", "title": "خرید آسان و مطمئن" },
+    { "type": "features", "title": "ارسال و پرداخت" },
+    { "type": "products", "title": "محصولات منتخب" },
+    { "type": "testimonials", "title": "نظر مشتریان" },
+    { "type": "cta", "title": "شروع خرید" }
+  ]
+}

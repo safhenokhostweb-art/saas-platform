@@ -91,6 +91,37 @@ class ModuleVersionRegistry
     }
 
     /**
+     * Phase 17-F — Part 5: declared dependencies for a module, straight
+     * from its module.json. Entries in `modules` may be a bare slug
+     * ("core-users") or a slug with a version constraint
+     * ("core-users>=1.0") — see App\Services\Modules\
+     * ModuleDeploymentDependencyResolver, the only current consumer.
+     *
+     * @return array{packages: string[], modules: string[]}
+     */
+    public function dependencies(string $module): array
+    {
+        $deps = $this->get($module)['dependencies'] ?? [];
+
+        return [
+            'packages' => $deps['packages'] ?? [],
+            'modules' => $deps['modules'] ?? [],
+        ];
+    }
+
+    /**
+     * Phase 17-F — Part 6: declared uninstall strategy, if any. Contract
+     * only — see ModuleUninstallStrategyInterface; nothing reads this for
+     * a real uninstall yet.
+     *
+     * @return array{type?: string, cleanup?: string[]}|null
+     */
+    public function uninstallStrategy(string $module): ?array
+    {
+        return $this->get($module)['uninstall'] ?? null;
+    }
+
+    /**
      * Check if a module is compatible with a given platform version.
      */
     public function isCompatible(string $module, string $platformVersion): bool

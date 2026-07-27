@@ -1,0 +1,7 @@
+{
+  "sites":[
+    {"site_id":"site-alpha","customer_id":"customer-alpha","name_fa":"شرکت سازه آلفا","industry":"construction","styles":["corporate","premium"],"theme":{"--brand-primary":"#EAB308","--brand-secondary":"#1E293B","--brand-accent":"#38BDF8","--brand-background":"#07111F","--brand-border":"#334155"}},
+    {"site_id":"site-sina","customer_id":"customer-sina","name_fa":"کلینیک سینا","industry":"medical","styles":["clean","professional"],"theme":{"--brand-primary":"#0EA5A4","--brand-secondary":"#164E63","--brand-accent":"#22C55E","--brand-background":"#F8FAFC","--brand-border":"#CBD5E1"}}
+  ]
+}
+

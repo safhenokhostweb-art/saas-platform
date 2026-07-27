@@ -22,9 +22,28 @@ class ModulePackageBuilderServiceTest extends TestCase
 
     private const SLUG = 'forms';
 
+    /**
+     * Phase 17-F — Part 3: ModulePackageValidator now cross-checks the
+     * package's real, on-disk module.json version against the
+     * module_releases row it's being attached to — a mismatch is a hard
+     * failure. Tests that actually build the real forms ZIP must therefore
+     * register the release under forms/module.json's real version, not an
+     * arbitrary placeholder like the old "9.9.9". Read dynamically so this
+     * never drifts if forms/module.json's version is bumped later.
+     */
+    private function realFormsVersion(): string
+    {
+        $manifest = json_decode(
+            file_get_contents(base_path('packages/saas-platform/modules/forms/module.json')),
+            true
+        );
+
+        return $manifest['version'];
+    }
+
     protected function tearDown(): void
     {
-        $zip = storage_path('app/modules/packages/' . self::SLUG . '-9.9.9.zip');
+        $zip = storage_path('app/modules/packages/' . self::SLUG . '-' . $this->realFormsVersion() . '.zip');
         @unlink($zip);
         parent::tearDown();
     }
@@ -39,15 +58,16 @@ class ModulePackageBuilderServiceTest extends TestCase
 
     public function test_build_registers_artifact_on_existing_release(): void
     {
+        $version = $this->realFormsVersion();
         $module = $this->makeModule();
         $release = ModuleRelease::create([
             'module_id' => $module->id,
-            'version' => '9.9.9',
+            'version' => $version,
             'release_type' => 'patch',
             'is_active' => true,
         ]);
 
-        $result = app(ModulePackageBuilderService::class)->build(self::SLUG, '9.9.9');
+        $result = app(ModulePackageBuilderService::class)->build(self::SLUG, $version);
 
         $this->assertSame($release->id, $result['module_release_id']);
         $this->assertFileExists($result['package_path']);
@@ -122,10 +142,11 @@ class ModulePackageBuilderServiceTest extends TestCase
 
     public function test_build_with_force_overwrites_existing_registration(): void
     {
+        $version = $this->realFormsVersion();
         $module = $this->makeModule();
         $release = ModuleRelease::create([
             'module_id' => $module->id,
-            'version' => '9.9.9',
+            'version' => $version,
             'release_type' => 'patch',
             'is_active' => true,
             'package_sha256' => str_repeat('a', 64),
@@ -133,7 +154,7 @@ class ModulePackageBuilderServiceTest extends TestCase
             'package_size_bytes' => 123,
         ]);
 
-        $result = app(ModulePackageBuilderService::class)->build(self::SLUG, '9.9.9', force: true);
+        $result = app(ModulePackageBuilderService::class)->build(self::SLUG, $version, force: true);
 
         $release->refresh();
         $this->assertNotSame(str_repeat('a', 64), $release->package_sha256);

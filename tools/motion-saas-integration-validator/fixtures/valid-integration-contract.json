@@ -1,0 +1,56 @@
+{
+  "contract_version":"1.0.0",
+  "contracts":{
+    "MotionAssetResolverContract":{"operations":["resolveCanonical","validateCompatibility"]},
+    "TemplateAssetPackageContract":{"operations":["validateManifest","resolveRequiredAssets","createPackageDefinition"]},
+    "SiteAssetPackageContract":{"operations":["createCandidate","validateOwnership","lineage"]},
+    "MotionRuntimeProjectionContract":{"operations":["projectPublished","validateProjection"]},
+    "MotionAuthorizationContract":{"operations":["authorize","validateOwnership","validateTenantAccess"]},
+    "MotionVersionContract":{"operations":["find","validateLifecycle","createRollbackReference"]}
+  },
+  "contract_references":["MotionAssetResolverContract","TemplateAssetPackageContract","SiteAssetPackageContract","MotionRuntimeProjectionContract","MotionAuthorizationContract","MotionVersionContract"],
+  "authorization_matrix":{
+    "platform_admin":{"create_asset":true,"edit_asset":true,"approve_variant":true,"publish":true,"rollback":true,"use_runtime_asset":true,"export_package":true},
+    "template_manager":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":true},
+    "designer":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":false},
+    "customer_admin":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":false},
+    "customer_user":{"create_asset":false,"edit_asset":false,"approve_variant":false,"publish":false,"rollback":false,"use_runtime_asset":true,"export_package":false}
+  },
+  "ownership_flow":[
+    {"level":"platform_master","owner":"platform"},
+    {"level":"template_reference","owner":"template:construction-pro"},
+    {"level":"site_package","owner":"customer:alpha","site_id":"site-alpha"},
+    {"level":"customer_variant","owner":"customer:alpha","site_id":"site-alpha"}
+  ],
+  "runtime_projection_example":{
+    "projection_version":"1.0.0",
+    "package_id":"opaque-package",
+    "assets":[{
+      "asset_id":"motion.company-introduction",
+      "published_version":2,
+      "optimized_reference":"opaque://motion/2",
+      "integrity":"sha256-example",
+      "theme_tokens":["--brand-primary","--brand-accent"],
+      "placement_rules":["hero"],
+      "responsive_rules":["contain"],
+      "reduced_motion":"static_end_state",
+      "engine":"svg",
+      "type":"motion",
+      "accessibility_label":"Company introduction",
+      "cache_version":"v2"
+    }]
+  },
+  "persistence_entities":["MotionAsset","MotionVersion","TemplateAssetPackage","SiteAssetPackage","AssetVariant","ApprovalRecord","LicenseSnapshot","DeploymentRecord","AuditRecord"],
+  "deployment_operations":["prepareTemplateAssets","resolveSitePackage","validatePackage","activateRuntimeProjection","rollbackPackage"],
+  "assumptions":{
+    "module_remains_independent":true,
+    "adapter_is_translation_boundary":true,
+    "deny_by_default":true,
+    "published_projection_only":true,
+    "no_direct_database_access":true,
+    "no_host_models_in_module":true,
+    "deployment_owned_by_platform":true,
+    "rollback_creates_new_version":true
+  }
+}
+

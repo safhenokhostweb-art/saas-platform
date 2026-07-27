@@ -1,0 +1,923 @@
+#!/usr/bin/env node
+'use strict';
+
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const TOOL_ROOT = __dirname;
+const DEFAULT_CONFIG = path.join(TOOL_ROOT, 'config.json');
+const PRIMARY_FILES = new Set(['animation.svg', 'icon.svg', 'asset.svg']);
+
+function toPosix(value) {
+  return value.split(path.sep).join('/');
+}
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function percentage(value, total) {
+  return total === 0 ? 100 : Number(((value / total) * 100).toFixed(2));
+}
+
+function average(values) {
+  const numbers = values.filter((value) => Number.isFinite(value));
+  return numbers.length === 0
+    ? null
+    : Number((numbers.reduce((sum, value) => sum + value, 0) / numbers.length).toFixed(2));
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function resolveFrom(base, value) {
+  return path.resolve(base, value || '.');
+}
+
+function isInside(parent, candidate) {
+  const relative = path.relative(path.resolve(parent), path.resolve(candidate));
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+}
+
+function walkFiles(root) {
+  const files = [];
+  const queue = [root];
+  while (queue.length > 0) {
+    const directory = queue.pop();
+    const entries = fs.readdirSync(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      const absolute = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        queue.push(absolute);
+      } else if (entry.isFile()) {
+        files.push(absolute);
+      }
+    }
+  }
+  return files;
+}
+
+function parseArguments(argv) {
+  const options = {
+    configPath: DEFAULT_CONFIG,
+    libraryRoot: null,
+    outputDirectory: null,
+    writeReports: true,
+    quiet: false,
+    strict: false,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+    const next = () => {
+      index += 1;
+      if (index >= argv.length) {
+        throw new Error(`Missing value for ${argument}`);
+      }
+      return argv[index];
+    };
+
+    if (argument === '--config') options.configPath = path.resolve(next());
+    else if (argument === '--library') options.libraryRoot = path.resolve(next());
+    else if (argument === '--output') options.outputDirectory = path.resolve(next());
+    else if (argument === '--no-write') options.writeReports = false;
+    else if (argument === '--quiet') options.quiet = true;
+    else if (argument === '--strict') options.strict = true;
+    else if (argument === '--help' || argument === '-h') options.help = true;
+    else throw new Error(`Unknown option: ${argument}`);
+  }
+  return options;
+}
+
+function usage() {
+  return [
+    'Asset Quality Scanner',
+    '',
+    'Usage:',
+    '  node scanner [options]',
+    '',
+    'Options:',
+    '  --config <file>   Configuration file (default: config.json)',
+    '  --library <dir>   Override the library root',
+    '  --output <dir>    Report directory; must remain under tools/asset-quality-scanner/reports',
+    '  --no-write        Audit without writing report files',
+    '  --strict          Treat warnings as a failing exit status',
+    '  --quiet           Suppress console summary',
+    '  --help            Show this help',
+  ].join('\n');
+}
+
+function loadConfiguration(configPath, overrides = {}) {
+  const absoluteConfig = path.resolve(configPath || DEFAULT_CONFIG);
+  const configDirectory = path.dirname(absoluteConfig);
+  const config = readJson(absoluteConfig);
+  const rules = {};
+
+  for (const [name, relative] of Object.entries(config.rules || {})) {
+    rules[name] = readJson(resolveFrom(configDirectory, relative));
+  }
+
+  const libraryRoot = overrides.libraryRoot
+    ? path.resolve(overrides.libraryRoot)
+    : resolveFrom(configDirectory, config.library_root);
+  const outputDirectory = overrides.outputDirectory
+    ? path.resolve(overrides.outputDirectory)
+    : resolveFrom(configDirectory, config.reports_directory || 'reports');
+
+  if (!fs.existsSync(libraryRoot) || !fs.statSync(libraryRoot).isDirectory()) {
+    throw new Error(`Library root does not exist or is not a directory: ${libraryRoot}`);
+  }
+  if (isInside(libraryRoot, outputDirectory)) {
+    throw new Error('Safety violation: report output cannot be inside the audited library.');
+  }
+  const allowedReportsRoot = path.join(TOOL_ROOT, 'reports');
+  if (!isInside(allowedReportsRoot, outputDirectory)) {
+    throw new Error(`Safety violation: report output must remain inside ${allowedReportsRoot}`);
+  }
+  if (config.safety?.read_only_library !== true || config.safety?.allow_asset_writes !== false) {
+    throw new Error('Safety configuration must explicitly enforce a read-only asset library.');
+  }
+
+  return {
+    config,
+    rules,
+    configPath: absoluteConfig,
+    configDirectory,
+    libraryRoot,
+    outputDirectory,
+  };
+}
+
+function parseAttributes(source) {
+  const attributes = {};
+  const errors = [];
+  let index = 0;
+
+  while (index < source.length) {
+    while (/\s/.test(source[index] || '')) index += 1;
+    if (index >= source.length) break;
+
+    const nameMatch = source.slice(index).match(/^([A-Za-z_][A-Za-z0-9_.:-]*)/);
+    if (!nameMatch) {
+      errors.push(`Malformed attribute near: ${source.slice(index, index + 30)}`);
+      break;
+    }
+    const name = nameMatch[1];
+    index += name.length;
+    while (/\s/.test(source[index] || '')) index += 1;
+    if (source[index] !== '=') {
+      errors.push(`Attribute ${name} has no quoted value`);
+      break;
+    }
+    index += 1;
+    while (/\s/.test(source[index] || '')) index += 1;
+    const quote = source[index];
+    if (quote !== '"' && quote !== "'") {
+      errors.push(`Attribute ${name} is not quoted`);
+      break;
+    }
+    index += 1;
+    const end = source.indexOf(quote, index);
+    if (end === -1) {
+      errors.push(`Attribute ${name} has an unterminated value`);
+      break;
+    }
+    if (Object.prototype.hasOwnProperty.call(attributes, name)) {
+      errors.push(`Duplicate attribute ${name}`);
+    }
+    attributes[name] = source.slice(index, end);
+    index = end + 1;
+  }
+  return { attributes, errors };
+}
+
+function parseXml(source) {
+  const errors = [];
+  const elements = [];
+  const stack = [];
+  let index = 0;
+  let rootCount = 0;
+
+  while (index < source.length) {
+    const opening = source.indexOf('<', index);
+    if (opening === -1) {
+      if (stack.length === 0 && source.slice(index).trim() !== '') errors.push('Text appears outside the root element');
+      break;
+    }
+    if (stack.length === 0 && source.slice(index, opening).trim() !== '') errors.push('Text appears outside the root element');
+
+    if (source.startsWith('<!--', opening)) {
+      const end = source.indexOf('-->', opening + 4);
+      if (end === -1) { errors.push('Unterminated XML comment'); break; }
+      index = end + 3;
+      continue;
+    }
+    if (source.startsWith('<![CDATA[', opening)) {
+      const end = source.indexOf(']]>', opening + 9);
+      if (end === -1) { errors.push('Unterminated CDATA section'); break; }
+      index = end + 3;
+      continue;
+    }
+    if (source.startsWith('<?', opening)) {
+      const end = source.indexOf('?>', opening + 2);
+      if (end === -1) { errors.push('Unterminated processing instruction'); break; }
+      index = end + 2;
+      continue;
+    }
+    if (/^<!DOCTYPE/i.test(source.slice(opening))) {
+      errors.push('DOCTYPE is not allowed');
+      const end = source.indexOf('>', opening + 2);
+      if (end === -1) break;
+      index = end + 1;
+      continue;
+    }
+    if (source.startsWith('<!', opening)) {
+      errors.push('Unsupported XML declaration');
+      const end = source.indexOf('>', opening + 2);
+      if (end === -1) break;
+      index = end + 1;
+      continue;
+    }
+
+    let cursor = opening + 1;
+    let quote = null;
+    while (cursor < source.length) {
+      const character = source[cursor];
+      if (quote) {
+        if (character === quote) quote = null;
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === '>') {
+        break;
+      } else if (character === '<') {
+        errors.push('Nested opening bracket in tag');
+        break;
+      }
+      cursor += 1;
+    }
+    if (cursor >= source.length || source[cursor] !== '>') {
+      errors.push('Unterminated XML tag');
+      break;
+    }
+
+    let body = source.slice(opening + 1, cursor).trim();
+    if (body.startsWith('/')) {
+      const name = body.slice(1).trim();
+      if (!/^[A-Za-z_][A-Za-z0-9_.:-]*$/.test(name)) errors.push(`Malformed closing tag: ${name}`);
+      const expected = stack.pop();
+      if (!expected || expected !== name) errors.push(`Mismatched closing tag: ${name}; expected ${expected || 'none'}`);
+    } else {
+      const selfClosing = body.endsWith('/');
+      if (selfClosing) body = body.slice(0, -1).trim();
+      const nameMatch = body.match(/^([A-Za-z_][A-Za-z0-9_.:-]*)/);
+      if (!nameMatch) {
+        errors.push(`Malformed opening tag near offset ${opening}`);
+      } else {
+        const name = nameMatch[1];
+        const parsedAttributes = parseAttributes(body.slice(name.length));
+        errors.push(...parsedAttributes.errors);
+        elements.push({ name, localName: name.split(':').pop().toLowerCase(), attributes: parsedAttributes.attributes });
+        if (stack.length === 0) rootCount += 1;
+        if (!selfClosing) stack.push(name);
+      }
+    }
+    index = cursor + 1;
+  }
+
+  if (stack.length > 0) errors.push(`Unclosed tags: ${stack.join(', ')}`);
+  if (rootCount !== 1) errors.push(`Expected one root element; found ${rootCount}`);
+  if (!elements[0] || elements[0].localName !== 'svg') errors.push('Root element is not svg');
+
+  const invalidEntity = source.match(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/);
+  if (invalidEntity) errors.push(`Invalid or undeclared entity near offset ${invalidEntity.index}`);
+
+  return { valid: errors.length === 0, errors, elements, root: elements[0] || null };
+}
+
+function findHardcodedColors(source, themeRules) {
+  let candidate = source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/--asset-[a-z0-9-]+\s*:\s*(?:#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)|[a-z]+)/gi, '')
+    .replace(/var\(\s*--[a-z0-9-]+\s*,\s*(?:#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)|[a-z]+)\s*\)/gi, 'var(--token)');
+
+  const property = themeRules.hardcoded_color_properties.map((value) => value.replace('-', '\\-')).join('|');
+  const named = themeRules.named_colors.join('|');
+  const color = `(?:#[0-9a-f]{3,8}\\b|rgba?\\([^)]*\\)|hsla?\\([^)]*\\)|(?:${named})\\b)`;
+  const patterns = [
+    new RegExp(`(?:${property})\\s*=\\s*["']\\s*(${color})`, 'gi'),
+    new RegExp(`(?:${property})\\s*:\\s*(${color})`, 'gi'),
+  ];
+  const matches = [];
+  for (const pattern of patterns) {
+    for (const match of candidate.matchAll(pattern)) matches.push(match[1]);
+  }
+  return [...new Set(matches)];
+}
+
+function familyFor(relativeDirectory, metadata, primaryNames) {
+  const normalized = `/${toPosix(relativeDirectory)}/`;
+  if (normalized.includes('/icons/')) return 'icon';
+  if (normalized.includes('/visual-assets/object-library/')) return 'object-library';
+  if (normalized.includes('/visual-assets/')) return 'visual-asset';
+  if (primaryNames.includes('animation.svg') || metadata?.type === 'motion') return 'motion';
+  return 'unknown';
+}
+
+function expectedPrimary(family) {
+  if (family === 'motion') return 'animation.svg';
+  if (family === 'icon') return 'icon.svg';
+  return 'asset.svg';
+}
+
+function discoverAssets(libraryRoot) {
+  const files = walkFiles(libraryRoot);
+  const directories = new Set();
+  for (const file of files) {
+    const name = path.basename(file);
+    if (name === 'metadata.json' || PRIMARY_FILES.has(name)) directories.add(path.dirname(file));
+  }
+
+  return [...directories].sort().map((directory) => {
+    const relativeDirectory = toPosix(path.relative(libraryRoot, directory));
+    const names = fs.readdirSync(directory, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name);
+    const primaryNames = names.filter((name) => PRIMARY_FILES.has(name));
+    const metadataPath = path.join(directory, 'metadata.json');
+    let metadata = null;
+    let metadataError = null;
+    if (fs.existsSync(metadataPath)) {
+      try { metadata = readJson(metadataPath); } catch (error) { metadataError = error.message; }
+    }
+    const family = familyFor(relativeDirectory, metadata, primaryNames);
+    return {
+      directory,
+      relativeDirectory,
+      names,
+      primaryNames,
+      primaryPath: primaryNames.length === 1 ? path.join(directory, primaryNames[0]) : null,
+      metadataPath,
+      metadata,
+      metadataError,
+      family,
+      id: metadata?.library_id || `unidentified:${relativeDirectory}`,
+      slug: metadata?.slug || path.basename(directory),
+      state: {
+        structure: true,
+        svg: true,
+        theme: true,
+        metadata: true,
+        ai: true,
+        ownership: true,
+        accessibility: true,
+      },
+      errorCount: 0,
+    };
+  });
+}
+
+function createIssueCollector(issues) {
+  return function addIssue({ severity = 'error', domain = 'general', code, message, asset = null, file = null, details = null }) {
+    const issue = {
+      severity,
+      domain,
+      code,
+      message,
+      asset_id: asset?.metadata?.library_id || asset?.id || null,
+      path: file ? toPosix(file) : (asset?.relativeDirectory || null),
+    };
+    if (details) issue.details = details;
+    issues.push(issue);
+    if (asset && severity === 'error') {
+      asset.errorCount += 1;
+      if (Object.prototype.hasOwnProperty.call(asset.state, domain)) asset.state[domain] = false;
+    }
+  };
+}
+
+function validateMetadata(asset, rules, addIssue) {
+  if (!fs.existsSync(asset.metadataPath)) {
+    addIssue({ domain: 'metadata', code: 'METADATA_MISSING', message: 'metadata.json is missing', asset });
+    return;
+  }
+  if (asset.metadataError || !asset.metadata) {
+    addIssue({ domain: 'metadata', code: 'METADATA_INVALID_JSON', message: `metadata.json is invalid: ${asset.metadataError}`, asset, file: asset.metadataPath });
+    return;
+  }
+  const metadata = asset.metadata;
+  for (const field of rules.required_fields) {
+    if (!Object.prototype.hasOwnProperty.call(metadata, field) || metadata[field] === null) {
+      addIssue({ domain: 'metadata', code: 'METADATA_REQUIRED_FIELD', message: `Required metadata field is missing: ${field}`, asset, file: asset.metadataPath });
+    }
+  }
+  for (const field of rules.non_empty_string_fields) {
+    if (typeof metadata[field] !== 'string' || metadata[field].trim() === '') {
+      addIssue({ domain: 'metadata', code: 'METADATA_STRING_FIELD', message: `Metadata field must be a non-empty string: ${field}`, asset, file: asset.metadataPath });
+    }
+  }
+  for (const field of rules.array_fields) {
+    if (!Array.isArray(metadata[field]) || metadata[field].length === 0) {
+      addIssue({ domain: field === 'editable_properties' ? 'ai' : 'metadata', code: 'METADATA_ARRAY_FIELD', message: `Metadata field must be a non-empty array: ${field}`, asset, file: asset.metadataPath });
+    }
+  }
+  for (const field of rules.boolean_fields) {
+    if (typeof metadata[field] !== 'boolean') {
+      addIssue({ domain: 'metadata', code: 'METADATA_BOOLEAN_FIELD', message: `Metadata field must be boolean: ${field}`, asset, file: asset.metadataPath });
+    }
+  }
+  if (typeof metadata.slug === 'string' && !(new RegExp(rules.slug_pattern).test(metadata.slug))) {
+    addIssue({ domain: 'metadata', code: 'METADATA_INVALID_SLUG', message: `Invalid slug: ${metadata.slug}`, asset, file: asset.metadataPath });
+  }
+  if (typeof metadata.library_id === 'string' && !(new RegExp(rules.library_id_pattern).test(metadata.library_id))) {
+    addIssue({ domain: 'metadata', code: 'METADATA_INVALID_LIBRARY_ID', message: `Invalid library_id: ${metadata.library_id}`, asset, file: asset.metadataPath });
+  }
+  if (!metadata.quality_score || typeof metadata.quality_score !== 'object' || Array.isArray(metadata.quality_score)) return;
+  for (const field of rules.quality_score_fields) {
+    const value = metadata.quality_score[field];
+    if (!Number.isFinite(value) || value < rules.quality_score_min || value > rules.quality_score_max) {
+      addIssue({ domain: 'metadata', code: 'METADATA_INVALID_QUALITY_SCORE', message: `quality_score.${field} must be between ${rules.quality_score_min} and ${rules.quality_score_max}`, asset, file: asset.metadataPath });
+    }
+  }
+}
+
+function validateStructure(asset, svgRules, addIssue) {
+  if (asset.primaryNames.length === 0) {
+    addIssue({ domain: 'structure', code: 'PRIMARY_SVG_MISSING', message: `Missing family primary SVG (${expectedPrimary(asset.family)})`, asset });
+  } else if (asset.primaryNames.length > 1) {
+    addIssue({ domain: 'structure', code: 'MULTIPLE_PRIMARY_SVG', message: `Multiple primary SVG files found: ${asset.primaryNames.join(', ')}`, asset });
+  } else {
+    const expected = expectedPrimary(asset.family);
+    if (asset.primaryNames[0] !== expected) {
+      addIssue({ domain: 'structure', code: 'WRONG_PRIMARY_SVG', message: `Expected ${expected} for ${asset.family}; found ${asset.primaryNames[0]}`, asset });
+    }
+  }
+  for (const required of svgRules.common_required_files) {
+    if (!asset.names.includes(required)) {
+      addIssue({ domain: 'structure', code: 'REQUIRED_FILE_MISSING', message: `Required package file is missing: ${required}`, asset });
+    }
+  }
+}
+
+function validateSvgFile(asset, file, svgRules, themeRules, addIssue, isPrimary) {
+  if (!fs.existsSync(file)) return null;
+  const relative = toPosix(path.relative(path.dirname(asset.directory), file));
+  const bytes = fs.statSync(file).size;
+  if (bytes > svgRules.max_file_bytes) {
+    addIssue({ domain: 'svg', code: 'SVG_FILE_TOO_LARGE', message: `SVG exceeds ${svgRules.max_file_bytes} bytes (${bytes})`, asset, file });
+  }
+  const source = fs.readFileSync(file, 'utf8');
+  const parsed = parseXml(source);
+  if (!parsed.valid) {
+    addIssue({ domain: 'svg', code: 'SVG_INVALID_XML', message: `Malformed SVG/XML: ${parsed.errors.join('; ')}`, asset, file });
+    if (isPrimary) asset.state.accessibility = false;
+    return { source, parsed, exactHash: sha256(source), structureHash: null };
+  }
+
+  const disallowed = new Set(svgRules.disallowed_elements.map((value) => value.toLowerCase()));
+  for (const element of parsed.elements) {
+    if (disallowed.has(element.localName)) {
+      addIssue({ domain: 'svg', code: 'SVG_DISALLOWED_ELEMENT', message: `Disallowed SVG element: ${element.name}`, asset, file });
+    }
+    for (const [name, value] of Object.entries(element.attributes)) {
+      const localName = name.split(':').pop().toLowerCase();
+      if (svgRules.disallowed_attribute_prefixes.some((prefix) => localName.startsWith(prefix.toLowerCase()))) {
+        addIssue({ domain: 'svg', code: 'SVG_EVENT_HANDLER', message: `Disallowed event attribute: ${name}`, asset, file });
+      }
+      if (localName === 'href' && !value.startsWith(svgRules.allowed_internal_reference_prefix)) {
+        addIssue({ domain: 'svg', code: 'SVG_EXTERNAL_REFERENCE', message: `Non-internal href is disallowed: ${value.slice(0, 100)}`, asset, file });
+      }
+      if (!localName.startsWith('xmlns') && svgRules.disallowed_schemes.some((scheme) => value.trim().toLowerCase().startsWith(scheme))) {
+        addIssue({ domain: 'svg', code: 'SVG_UNSAFE_SCHEME', message: `Disallowed URI scheme in ${name}`, asset, file });
+      }
+    }
+  }
+  const withoutNamespaces = source.replace(/xmlns(?::[a-z0-9_-]+)?\s*=\s*["'][^"']+["']/gi, '');
+  if (/(?:javascript:|file:|@import\s|url\(\s*["']?https?:|url\(\s*["']?\/\/|url\(\s*["']?data:|data:image\/)/i.test(withoutNamespaces)) {
+    addIssue({ domain: 'svg', code: 'SVG_UNSAFE_CONTENT', message: 'Unsafe script, import, file, or external URL content detected', asset, file });
+  }
+  if (/<!ENTITY/i.test(source)) {
+    addIssue({ domain: 'svg', code: 'SVG_ENTITY_DECLARATION', message: 'XML entity declarations are disallowed', asset, file });
+  }
+
+  const root = parsed.root;
+  const elementNames = new Set(parsed.elements.map((element) => element.localName));
+  if (!elementNames.has('title')) addIssue({ domain: 'accessibility', code: 'A11Y_TITLE_MISSING', message: 'SVG title element is missing', asset, file });
+  if (!elementNames.has('desc')) addIssue({ domain: 'accessibility', code: 'A11Y_DESC_MISSING', message: 'SVG desc element is missing', asset, file });
+  if (root?.attributes?.role !== svgRules.accessibility.required_role) {
+    addIssue({ domain: 'accessibility', code: 'A11Y_ROLE_MISSING', message: `SVG root role must be ${svgRules.accessibility.required_role}`, asset, file });
+  }
+  const hasAccessibleName = svgRules.accessibility.accessible_name_any_of.some((name) => typeof root?.attributes?.[name] === 'string' && root.attributes[name].trim() !== '');
+  if (!hasAccessibleName) {
+    addIssue({ domain: 'accessibility', code: 'A11Y_NAME_MISSING', message: `SVG root needs one of: ${svgRules.accessibility.accessible_name_any_of.join(', ')}`, asset, file });
+  }
+
+  for (const variable of themeRules.required_variables) {
+    if (!source.includes(variable)) addIssue({ domain: 'theme', code: 'THEME_VARIABLE_MISSING', message: `Required theme variable is missing: ${variable}`, asset, file });
+  }
+  if (themeRules.require_current_color && !/currentColor/i.test(source)) {
+    addIssue({ domain: 'theme', code: 'THEME_CURRENT_COLOR_MISSING', message: 'currentColor usage is missing', asset, file });
+  }
+  const hardcoded = findHardcodedColors(source, themeRules);
+  if (hardcoded.length > 0) {
+    addIssue({ domain: 'theme', code: 'THEME_HARDCODED_COLOR', message: `Hardcoded presentation colors found outside allowed token declarations/fallbacks: ${hardcoded.join(', ')}`, asset, file });
+  }
+
+  const structure = parsed.elements.map((element) => [element.localName, Object.keys(element.attributes).map((name) => name.toLowerCase()).sort()]);
+  return { source, parsed, exactHash: sha256(source), structureHash: sha256(JSON.stringify(structure)), relative };
+}
+
+function validateAi(asset, rules, addIssue) {
+  const instructions = path.join(asset.directory, rules.instructions_filename);
+  if (!fs.existsSync(instructions)) {
+    addIssue({ domain: 'ai', code: 'AI_INSTRUCTIONS_MISSING', message: `${rules.instructions_filename} is missing`, asset });
+  } else {
+    const source = fs.readFileSync(instructions, 'utf8');
+    if (Buffer.byteLength(source) < rules.minimum_instruction_bytes) {
+      addIssue({ domain: 'ai', code: 'AI_INSTRUCTIONS_TOO_SHORT', message: `AI instructions are shorter than ${rules.minimum_instruction_bytes} bytes`, asset, file: instructions });
+    }
+    for (const expression of rules.forbidden_instruction_patterns) {
+      if (new RegExp(expression, 'i').test(source)) {
+        addIssue({ domain: 'ai', code: 'AI_INSTRUCTIONS_SENSITIVE_PATTERN', message: `Potential sensitive pattern in AI instructions: ${expression}`, asset, file: instructions });
+      }
+    }
+  }
+  if (!asset.metadata) return;
+  if (asset.metadata.ai_editable !== rules.required_ai_editable_value) {
+    addIssue({ domain: 'ai', code: 'AI_EDITABLE_INVALID', message: `ai_editable must be ${rules.required_ai_editable_value}`, asset, file: asset.metadataPath });
+  }
+  const editable = asset.metadata[rules.editable_properties_field];
+  if (!Array.isArray(editable) || editable.length < rules.minimum_editable_properties) {
+    addIssue({ domain: 'ai', code: 'AI_EDITABLE_PROPERTIES_MISSING', message: `${rules.editable_properties_field} must contain at least ${rules.minimum_editable_properties} item(s)`, asset, file: asset.metadataPath });
+  }
+}
+
+function validateOwnership(asset, addIssue) {
+  if (!asset.metadata) return;
+  if (asset.metadata.asset_role !== 'master') {
+    addIssue({ domain: 'ownership', code: 'OWNERSHIP_INVALID_ASSET_ROLE', message: 'Master library asset_role must be master', asset, file: asset.metadataPath });
+  }
+  if (!asset.metadata.ownership || asset.metadata.ownership.type !== 'platform') {
+    addIssue({ domain: 'ownership', code: 'OWNERSHIP_INVALID_TYPE', message: 'Master library ownership.type must be platform', asset, file: asset.metadataPath });
+  }
+  if (asset.metadata.ownership?.customer_id || asset.metadata.customer_id || asset.metadata.site_id) {
+    addIssue({ domain: 'ownership', code: 'OWNERSHIP_CUSTOMER_SCOPE_ON_MASTER', message: 'Master asset contains customer/site ownership data', asset, file: asset.metadataPath });
+  }
+}
+
+function validateThemeMetadata(asset, themeRules, addIssue) {
+  if (asset.metadata && asset.metadata.theme_support !== themeRules.metadata_theme_support_value) {
+    addIssue({ domain: 'theme', code: 'THEME_METADATA_NOT_READY', message: `metadata.theme_support must be ${themeRules.metadata_theme_support_value}`, asset, file: asset.metadataPath });
+  }
+}
+
+function validateIndexes(libraryRoot, definitions, assets, addIssue) {
+  const assetById = new Map(assets.filter((asset) => asset.metadata?.library_id).map((asset) => [asset.metadata.library_id, asset]));
+  const indexSummaries = [];
+  let canonicalIds = new Set();
+
+  for (const definition of definitions) {
+    const indexPath = path.join(libraryRoot, definition.path);
+    const base = path.resolve(libraryRoot, definition.base || '.');
+    const summary = { name: definition.name, path: definition.path, entries: 0, valid: true };
+    const reportIndexIssue = (issue) => {
+      if ((issue.severity || 'error') === 'error') summary.valid = false;
+      addIssue(issue);
+    };
+    indexSummaries.push(summary);
+    if (!fs.existsSync(indexPath)) {
+      if (definition.required) reportIndexIssue({ domain: 'index', code: 'INDEX_MISSING', message: `Required index is missing: ${definition.path}`, file: definition.path });
+      summary.valid = false;
+      continue;
+    }
+    let index;
+    try { index = readJson(indexPath); } catch (error) {
+      reportIndexIssue({ domain: 'index', code: 'INDEX_INVALID_JSON', message: `Invalid index JSON: ${error.message}`, file: definition.path });
+      summary.valid = false;
+      continue;
+    }
+    const entries = index[definition.entries_property];
+    if (!Array.isArray(entries)) {
+      reportIndexIssue({ domain: 'index', code: 'INDEX_ENTRIES_MISSING', message: `Index property ${definition.entries_property} must be an array`, file: definition.path });
+      summary.valid = false;
+      continue;
+    }
+    summary.entries = entries.length;
+    if (definition.count_property && index[definition.count_property] !== entries.length) {
+      reportIndexIssue({ domain: 'index', code: 'INDEX_COUNT_MISMATCH', message: `${definition.path} declares ${index[definition.count_property]} but contains ${entries.length} entries`, file: definition.path });
+      summary.valid = false;
+    }
+    const seenIds = new Set();
+    const seenPaths = new Set();
+    for (const entry of entries) {
+      if (entry.id) {
+        if (seenIds.has(entry.id)) reportIndexIssue({ domain: 'index', code: 'INDEX_DUPLICATE_ID', message: `Duplicate ID in ${definition.path}: ${entry.id}`, file: definition.path });
+        seenIds.add(entry.id);
+        if (definition.canonical) canonicalIds.add(entry.id);
+      }
+      for (const field of ['path', 'preview', 'metadata']) {
+        if (!entry[field]) continue;
+        const target = path.resolve(base, entry[field]);
+        if (!isInside(libraryRoot, target)) {
+          reportIndexIssue({ domain: 'index', code: 'INDEX_PATH_TRAVERSAL', message: `Index path leaves library: ${entry[field]}`, file: definition.path });
+        } else if (!fs.existsSync(target)) {
+          reportIndexIssue({ domain: 'index', code: 'INDEX_BROKEN_PATH', message: `Broken ${field} reference in ${definition.path}: ${entry[field]}`, file: definition.path });
+        }
+        if (field === 'path') {
+          const key = toPosix(path.relative(libraryRoot, target));
+          if (seenPaths.has(key)) reportIndexIssue({ domain: 'index', code: 'INDEX_DUPLICATE_PATH', message: `Duplicate asset path in ${definition.path}: ${entry[field]}`, file: definition.path });
+          seenPaths.add(key);
+        }
+      }
+      if (entry.metadata) {
+        const metadataPath = path.resolve(base, entry.metadata);
+        if (isInside(libraryRoot, metadataPath) && fs.existsSync(metadataPath)) {
+          try {
+            const metadata = readJson(metadataPath);
+            if (entry.slug && metadata.slug !== entry.slug) reportIndexIssue({ domain: 'index', code: 'INDEX_SLUG_MISMATCH', message: `Index slug ${entry.slug} does not match metadata slug ${metadata.slug}`, file: definition.path });
+          } catch (_) { /* metadata validator reports the parse error */ }
+        }
+      }
+    }
+    if (definition.canonical) {
+      for (const id of assetById.keys()) {
+        if (!canonicalIds.has(id)) reportIndexIssue({ domain: 'index', code: 'INDEX_ASSET_MISSING', message: `Asset is absent from canonical index: ${id}`, file: definition.path });
+      }
+      for (const id of canonicalIds) {
+        if (!assetById.has(id)) reportIndexIssue({ domain: 'index', code: 'INDEX_UNKNOWN_ASSET', message: `Canonical index references unknown asset ID: ${id}`, file: definition.path });
+      }
+      if (index.asset_types && typeof index.asset_types === 'object') {
+        const expected = {
+          motion: assets.filter((asset) => asset.family === 'motion').length,
+          icons: assets.filter((asset) => asset.family === 'icon').length,
+          objects: assets.filter((asset) => asset.family === 'object-library').length,
+          visual_assets: assets.filter((asset) => asset.family === 'visual-asset').length,
+        };
+        for (const [type, count] of Object.entries(expected)) {
+          if (index.asset_types[type] !== count) reportIndexIssue({ domain: 'index', code: 'INDEX_TYPE_COUNT_MISMATCH', message: `Canonical asset_types.${type} is ${index.asset_types[type]}; expected ${count}`, file: definition.path });
+        }
+      }
+    }
+  }
+  return indexSummaries;
+}
+
+function detectDuplicates(assets, primaryResults, addIssue, maxMembers) {
+  const group = (items, selector) => {
+    const map = new Map();
+    for (const item of items) {
+      const key = selector(item);
+      if (!key) continue;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(item);
+    }
+    return [...map.entries()].filter(([, members]) => members.length > 1);
+  };
+  const describeAssets = (members) => members.slice(0, maxMembers).map((asset) => asset.metadata?.library_id || asset.relativeDirectory);
+
+  const duplicateIds = group(assets.filter((asset) => asset.metadata), (asset) => asset.metadata.library_id);
+  for (const [id, members] of duplicateIds) {
+    addIssue({ domain: 'duplicate', code: 'DUPLICATE_LIBRARY_ID', message: `Duplicate library_id: ${id}`, details: { members: describeAssets(members) } });
+  }
+  const duplicateSlugs = group(assets.filter((asset) => asset.metadata), (asset) => asset.metadata.slug);
+  for (const [slug, members] of duplicateSlugs) {
+    addIssue({ severity: 'warning', domain: 'duplicate', code: 'DUPLICATE_SLUG', message: `Duplicate slug across library: ${slug}`, details: { members: describeAssets(members) } });
+  }
+  const exact = group(primaryResults.filter((item) => item.result), (item) => item.result.exactHash);
+  for (const [hash, members] of exact) {
+    addIssue({ severity: 'warning', domain: 'duplicate', code: 'DUPLICATE_EXACT_SVG', message: `Exact duplicate primary SVG: ${hash}`, details: { members: describeAssets(members.map((item) => item.asset)) } });
+  }
+  const structural = group(primaryResults.filter((item) => item.result?.structureHash), (item) => item.result.structureHash);
+  for (const [hash, members] of structural) {
+    addIssue({ severity: 'warning', domain: 'duplicate', code: 'DUPLICATE_SVG_STRUCTURE', message: `Identical SVG element/attribute structure: ${hash}`, details: { members: describeAssets(members.map((item) => item.asset)) } });
+  }
+  return {
+    duplicate_library_id_groups: duplicateIds.length,
+    duplicate_slug_groups: duplicateSlugs.length,
+    exact_svg_groups: exact.length,
+    structural_svg_groups: structural.length,
+  };
+}
+
+function createReport(runtime, assets, issues, indexSummaries, duplicates, startedAt) {
+  const total = assets.length;
+  const validAssets = assets.filter((asset) => asset.errorCount === 0).length;
+  const themeReady = assets.filter((asset) => asset.state.theme).length;
+  const aiReady = assets.filter((asset) => asset.state.ai).length;
+  const accessibilityReady = assets.filter((asset) => asset.state.accessibility).length;
+  const errors = issues.filter((issue) => issue.severity === 'error').length;
+  const warnings = issues.filter((issue) => issue.severity === 'warning').length;
+  const declared = {};
+  for (const field of runtime.rules.metadata.quality_score_fields) {
+    declared[field] = average(assets.map((asset) => asset.metadata?.quality_score?.[field]));
+  }
+  const byFamily = {};
+  for (const family of ['motion', 'icon', 'visual-asset', 'object-library', 'unknown']) {
+    const count = assets.filter((asset) => asset.family === family).length;
+    if (count > 0) byFamily[family] = count;
+  }
+  const byCode = {};
+  for (const issue of issues) byCode[issue.code] = (byCode[issue.code] || 0) + 1;
+
+  return {
+    scanner: 'asset-quality-scanner',
+    scanner_version: '1.0.0',
+    generated_at: new Date().toISOString(),
+    duration_ms: Date.now() - startedAt,
+    library_root: toPosix(runtime.libraryRoot),
+    read_only: true,
+    passed: errors === 0,
+    total_assets: total,
+    valid: validAssets,
+    valid_assets: validAssets,
+    issues: issues.length,
+    errors,
+    warnings,
+    theme_ready: themeReady,
+    ai_ready: aiReady,
+    accessibility_ready: accessibilityReady,
+    scores: {
+      technical: percentage(validAssets, total),
+      theme_ready: percentage(themeReady, total),
+      ai_ready: percentage(aiReady, total),
+      accessibility: percentage(accessibilityReady, total),
+      declared_quality_average: declared,
+    },
+    asset_families: byFamily,
+    indexes: indexSummaries,
+    duplicates,
+    issue_counts: byCode,
+    issue_list: issues,
+  };
+}
+
+function markdownReport(report, maxIssues) {
+  const lines = [
+    '# Asset Quality Scanner Report',
+    '',
+    `Generated: ${report.generated_at}`,
+    '',
+    `Result: **${report.passed ? 'PASS' : 'FAIL'}**`,
+    '',
+    '## Summary',
+    '',
+    '| Metric | Count / Score |',
+    '|---|---:|',
+    `| Total assets | ${report.total_assets} |`,
+    `| Valid assets | ${report.valid_assets} |`,
+    `| Errors | ${report.errors} |`,
+    `| Warnings | ${report.warnings} |`,
+    `| Technical score | ${report.scores.technical}% |`,
+    `| Theme ready | ${report.theme_ready} (${report.scores.theme_ready}%) |`,
+    `| AI ready | ${report.ai_ready} (${report.scores.ai_ready}%) |`,
+    `| Accessibility ready | ${report.accessibility_ready} (${report.scores.accessibility}%) |`,
+    '',
+    '## Asset families',
+    '',
+    ...Object.entries(report.asset_families).map(([name, count]) => `- ${name}: ${count}`),
+    '',
+    '## Indexes',
+    '',
+    '| Index | Entries | Valid |',
+    '|---|---:|:---:|',
+    ...report.indexes.map((index) => `| ${index.path} | ${index.entries} | ${index.valid ? 'yes' : 'no'} |`),
+    '',
+    '## Duplicate analysis',
+    '',
+    `- Duplicate library ID groups: ${report.duplicates.duplicate_library_id_groups}`,
+    `- Duplicate slug groups: ${report.duplicates.duplicate_slug_groups}`,
+    `- Exact duplicate primary SVG groups: ${report.duplicates.exact_svg_groups}`,
+    `- Identical SVG structure groups: ${report.duplicates.structural_svg_groups}`,
+    '',
+    '## Issues',
+    '',
+  ];
+  if (report.issue_list.length === 0) {
+    lines.push('No issues detected.');
+  } else {
+    lines.push('| Severity | Code | Asset / Path | Message |', '|---|---|---|---|');
+    for (const issue of report.issue_list.slice(0, maxIssues)) {
+      const message = issue.message.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+      lines.push(`| ${issue.severity} | ${issue.code} | ${issue.asset_id || issue.path || '-'} | ${message} |`);
+    }
+    if (report.issue_list.length > maxIssues) lines.push('', `Report truncated: ${report.issue_list.length - maxIssues} more issue(s) are available in latest-report.json.`);
+  }
+  lines.push('', 'The scanner is read-only and performs no automatic fixes.', '');
+  return lines.join('\n');
+}
+
+function qualityReport(report) {
+  return [
+    '# QUALITY REPORT',
+    '',
+    `Total Assets: ${report.total_assets}`,
+    '',
+    `Valid Assets: ${report.valid_assets}`,
+    '',
+    `Technical Score: ${report.scores.technical}%`,
+    '',
+    `Theme Ready: ${report.scores.theme_ready}%`,
+    '',
+    `AI Ready: ${report.scores.ai_ready}%`,
+    '',
+    `Accessibility: ${report.scores.accessibility}%`,
+    '',
+    `Issues: ${report.issues} (${report.errors} errors, ${report.warnings} warnings)`,
+    '',
+    `Result: ${report.passed ? 'PASS' : 'FAIL'}`,
+    '',
+    'This report is generated by a read-only scanner. No assets were modified.',
+    '',
+  ].join('\n');
+}
+
+function writeAtomic(file, content) {
+  const temporary = `${file}.tmp-${process.pid}`;
+  fs.writeFileSync(temporary, content, 'utf8');
+  fs.renameSync(temporary, file);
+}
+
+function writeReports(runtime, report) {
+  fs.mkdirSync(runtime.outputDirectory, { recursive: true });
+  const maxIssues = runtime.config.report?.max_issues_in_markdown || 250;
+  writeAtomic(path.join(runtime.outputDirectory, 'latest-report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  writeAtomic(path.join(runtime.outputDirectory, 'latest-report.md'), markdownReport(report, maxIssues));
+  writeAtomic(path.join(runtime.outputDirectory, 'QUALITY_REPORT.md'), qualityReport(report));
+}
+
+function runAudit(options = {}) {
+  const startedAt = Date.now();
+  const runtime = loadConfiguration(options.configPath || DEFAULT_CONFIG, options);
+  if (options.requiredIndexes) runtime.config.required_indexes = options.requiredIndexes;
+  const issues = [];
+  const addIssue = createIssueCollector(issues);
+  const assets = discoverAssets(runtime.libraryRoot);
+  const primaryResults = [];
+
+  for (const asset of assets) {
+    validateStructure(asset, runtime.rules.svg, addIssue);
+    validateMetadata(asset, runtime.rules.metadata, addIssue);
+    validateThemeMetadata(asset, runtime.rules.theme, addIssue);
+    validateAi(asset, runtime.rules.ai, addIssue);
+    validateOwnership(asset, addIssue);
+
+    if (asset.primaryPath) {
+      const result = validateSvgFile(asset, asset.primaryPath, runtime.rules.svg, runtime.rules.theme, addIssue, true);
+      primaryResults.push({ asset, result });
+    }
+    const preview = path.join(asset.directory, 'preview.svg');
+    if (fs.existsSync(preview)) validateSvgFile(asset, preview, runtime.rules.svg, runtime.rules.theme, addIssue, false);
+  }
+
+  const indexSummaries = validateIndexes(runtime.libraryRoot, runtime.config.required_indexes || [], assets, addIssue);
+  const duplicates = detectDuplicates(
+    assets,
+    primaryResults,
+    addIssue,
+    runtime.config.report?.max_members_per_duplicate_group || 100,
+  );
+  const report = createReport(runtime, assets, issues, indexSummaries, duplicates, startedAt);
+  if (options.writeReports !== false) writeReports(runtime, report);
+  return report;
+}
+
+function main() {
+  try {
+    const options = parseArguments(process.argv.slice(2));
+    if (options.help) {
+      process.stdout.write(`${usage()}\n`);
+      return 0;
+    }
+    const report = runAudit(options);
+    if (!options.quiet) {
+      process.stdout.write([
+        `Assets: ${report.total_assets}`,
+        `Valid: ${report.valid_assets}`,
+        `Errors: ${report.errors}`,
+        `Warnings: ${report.warnings}`,
+        `Theme ready: ${report.scores.theme_ready}%`,
+        `AI ready: ${report.scores.ai_ready}%`,
+        `Accessibility: ${report.scores.accessibility}%`,
+        `Result: ${report.passed ? 'PASS' : 'FAIL'}`,
+      ].join('\n') + '\n');
+    }
+    return report.errors > 0 || (options.strict && report.warnings > 0) ? 1 : 0;
+  } catch (error) {
+    process.stderr.write(`Asset Quality Scanner failed: ${error.message}\n`);
+    return 2;
+  }
+}
+
+export {
+  runAudit,
+  loadConfiguration,
+  parseXml,
+  findHardcodedColors,
+};
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) process.exitCode = main();

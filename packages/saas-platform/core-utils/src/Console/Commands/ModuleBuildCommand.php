@@ -3,6 +3,7 @@
 namespace SaaSPlatform\CoreUtils\Console\Commands;
 
 use Illuminate\Console\Command;
+use SaaSPlatform\CoreUtils\Support\ModuleManifestSchema;
 use SaaSPlatform\CoreUtils\Support\ModuleVersionRegistry;
 
 /**
@@ -77,18 +78,31 @@ class ModuleBuildCommand extends Command
 
     // ─── Checks ─────────────────────────────────────────────────────────────
 
+    /**
+     * Phase 17-G — Part 5: delegates the required/recommended field lists
+     * to ModuleManifestSchema (Phase 17-F) instead of a second, separately
+     * maintained copy — the two commands check different things (this one
+     * also does authority/tenant-segregation/provider-registration
+     * governance checks ModuleManifestSchema knows nothing about) but must
+     * never disagree about what module.json itself requires.
+     */
     protected function checkModuleJson(array $data, string $path): void
     {
-        $required = ['name', 'module_slug', 'version', 'type', 'namespace', 'provider', 'compatibility'];
-        foreach ($required as $field) {
+        $schemaResult = (new ModuleManifestSchema())->validate($data);
+
+        foreach (ModuleManifestSchema::REQUIRED_FIELDS as $field) {
             $pass = !empty($data[$field]);
             $this->addResult("module.json → {$field}", $pass ? 'PASS' : 'FAIL', $pass ? '' : 'Field missing or empty');
         }
 
-        // version format
-        $validVersion = preg_match('/^\d+\.\d+\.\d+$/', $data['version'] ?? '');
-        $this->addResult('module.json → version format', $validVersion ? 'PASS' : 'FAIL',
-            $validVersion ? '' : 'Expected semver x.y.z');
+        foreach (ModuleManifestSchema::RECOMMENDED_FIELDS as $field) {
+            $pass = !empty($data[$field]);
+            $this->addResult("module.json → {$field}", $pass ? 'PASS' : 'WARN', $pass ? '' : 'Recommended field missing');
+        }
+
+        foreach ($schemaResult['errors'] as $error) {
+            $this->addResult('module.json → schema', 'FAIL', $error);
+        }
     }
 
     protected function checkComposerJson(string $path): void

@@ -1,0 +1,1 @@
+This intentionally incomplete fixture still contains safe editing guidance for scanner testing.

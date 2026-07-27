@@ -1,0 +1,21 @@
+{
+  "forbidden_svg_patterns": [
+    {"code": "SVG_SCRIPT", "pattern": "<\\s*script\\b"},
+    {"code": "SVG_FOREIGN_OBJECT", "pattern": "<\\s*foreignObject\\b"},
+    {"code": "SVG_EVENT_HANDLER", "pattern": "\\son[a-z]+\\s*="},
+    {"code": "SVG_JAVASCRIPT_URL", "pattern": "javascript\\s*:"},
+    {"code": "SVG_EXTERNAL_URL", "pattern": "(?:href|xlink:href)\\s*=\\s*[\\\"'](?:https?:)?//"},
+    {"code": "SVG_UNSAFE_CSS_IMPORT", "pattern": "@import\\b"},
+    {"code": "SVG_EMBEDDED_IMAGE", "pattern": "<\\s*image\\b"},
+    {"code": "SVG_DOCTYPE", "pattern": "<!DOCTYPE\\b|<!ENTITY\\b"}
+  ],
+  "required_accessibility": ["title", "desc", "role", "aria-label-or-labelledby"],
+  "protected_runtime_fields": [
+    "source_definition_json",
+    "editable_schema_json",
+    "ai_metadata_json",
+    "ai_prompt",
+    "provider_payload"
+  ]
+}
+

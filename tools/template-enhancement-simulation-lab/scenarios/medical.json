@@ -1,0 +1,13 @@
+{
+  "id": "medical", "label": "کلینیک پزشکی",
+  "business_profile": { "name": "کلینیک سلامت ایرانیان", "description": "کلینیک تخصصی پزشک و خدمات سلامت", "industry": "medical", "business_type": "clinic", "audience": "professional", "style": "minimal", "brand_theme": { "primary": "#0F766E", "secondary": "#115E59", "accent": "#F59E0B", "background": "#F0FDFA", "border": "#99F6E4" }, "required_sections": ["hero", "about", "services", "features", "team", "contact", "cta"] },
+  "template": { "template_name": "Generic Services", "template_type": "services", "sections": [
+    { "type": "hero", "title": "خدمات حرفه‌ای", "content": "تصویر عمومی", "existing_visuals": [] },
+    { "type": "about", "title": "درباره مجموعه", "existing_visuals": [] },
+    { "type": "services", "title": "خدمات ما", "existing_visuals": [] },
+    { "type": "features", "title": "ویژگی‌ها", "existing_visuals": [] },
+    { "type": "team", "title": "متخصصان", "existing_visuals": [] },
+    { "type": "contact", "title": "اطلاعات تماس", "existing_visuals": [] },
+    { "type": "cta", "title": "درخواست خدمات", "existing_visuals": [] }
+  ] }
+}

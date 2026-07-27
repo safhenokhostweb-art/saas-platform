@@ -1,0 +1,2 @@
+{"name":"contract completeness","patch":{"contracts":{"MotionAssetResolverContract":{"operations":[]}}},"expected_codes":["CONTRACT_OPERATION_MISSING"]}
+

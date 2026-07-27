@@ -1,0 +1,13 @@
+{
+  "name": "@safhe-nokhost/template-enhancement-simulation-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone read-only Before/After simulation for Motion Graphics template enhancement contracts.",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node engine/build-simulations.js",
+    "report": "node engine/generate-report.js",
+    "test": "node tests/test.js",
+    "serve": "node engine/server.js"
+  }
+}

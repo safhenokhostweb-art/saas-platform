@@ -1,0 +1,12 @@
+{
+  "metrics": {
+    "transfer_kb": {"excellent": 50, "good": 100, "warning": 200},
+    "svg_nodes": {"excellent": 250, "good": 500, "warning": 1000},
+    "animated_elements": {"excellent": 12, "good": 24, "warning": 40},
+    "timeline_seconds": {"excellent": 8, "good": 15, "warning": 30},
+    "load_ms": {"excellent": 300, "good": 700, "warning": 1500},
+    "long_tasks": {"excellent": 0, "good": 1, "warning": 3}
+  },
+  "scores": {"excellent": 100, "good": 85, "warning": 65, "fail": 0}
+}
+

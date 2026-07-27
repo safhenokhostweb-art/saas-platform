@@ -1,0 +1,1 @@
+This fixture allows safe theme editing while the separate library index intentionally contains a broken path.

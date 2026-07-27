@@ -1,0 +1,2 @@
+{"name":"invalid ownership flow","patch":{"ownership_flow":[{"level":"platform_master","owner":"platform"},{"level":"template_reference","owner":"template:construction-pro"},{"level":"site_package","owner":"customer:alpha","site_id":"site-alpha"},{"level":"customer_variant","owner":"customer:beta","site_id":"site-beta"}]},"expected_codes":["CROSS_SITE_OWNERSHIP"]}
+

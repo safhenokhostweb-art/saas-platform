@@ -1,0 +1,12 @@
+{
+  "contract_version":"1.0.0",
+  "read_only":true,
+  "rules":{
+    "contracts":"rules/contract-rules.json",
+    "authorization":"rules/authorization-rules.json",
+    "runtime":"rules/runtime-rules.json",
+    "integration":"rules/integration-rules.json"
+  },
+  "reports_directory":"reports"
+}
+
