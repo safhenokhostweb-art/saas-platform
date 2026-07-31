@@ -1,0 +1,25 @@
+{
+    "name": "saas-platform/modules-seo-advanced",
+    "description": "seo-advanced module for SaaS Platform",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^10.0|^11.0",
+        "saas-platform/core-utils": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "SaaSPlatform\\Modules\\SeoAdvanced\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SaaSPlatform\\Modules\\SeoAdvanced\\Providers\\SeoAdvancedServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -21,6 +21,10 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
+        <!-- config/cache.php reads CACHE_STORE (Laravel 10), not CACHE_DRIVER;
+             without this, tests fall back to the app's real redis default and
+             fail wherever Redis isn't running locally. -->
+        <env name="CACHE_STORE" value="array"/>
         <!-- دیتابیس تست: یک دیتابیس جدا (مثلاً saas_platform_test) بسازید تا دیتای اصلی پاک نشود -->
         <env name="DB_DATABASE" value="saas_platform_test"/>
         <env name="MAIL_MAILER" value="array"/>

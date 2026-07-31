@@ -1,0 +1,42 @@
+{
+    "name": "SEO Advanced",
+    "module_slug": "seo-advanced",
+    "version": "1.0.0",
+    "type": "paid",
+    "namespace": "SaaSPlatform\\Modules\\SeoAdvanced",
+    "provider": "SaaSPlatform\\Modules\\SeoAdvanced\\Providers\\SeoAdvancedServiceProvider",
+    "compatibility": {
+        "php": "^8.1",
+        "laravel": "^10.0|^11.0",
+        "saas-platform": ">=1.0.0"
+    },
+    "dependencies": {
+        "packages": [
+            "saas-platform/core-utils"
+        ],
+        "modules": []
+    },
+    "update_type": "minor",
+    "install": {
+        "command": "",
+        "publishes": [
+            "seo-advanced-config",
+            "seo-advanced-views",
+            "seo-advanced-migrations"
+        ]
+    },
+    "uninstall": {
+        "type": "soft",
+        "cleanup": [
+            "tables",
+            "files",
+            "permissions"
+        ]
+    },
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "SaaS Platform Team"
+        }
+    ]
+}

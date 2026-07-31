@@ -68,7 +68,7 @@ class ModuleCreateCommand extends Command
         $this->makeDirectories($modulePath);
         $this->writeManifest($modulePath, $slug, $displayName, $type, $namespace, $providerFqcn);
         $this->writeComposerJson($modulePath, $slug, $namespace, $providerFqcn);
-        $this->writeServiceProvider($modulePath, $namespace, $providerClass);
+        $this->writeServiceProvider($modulePath, $namespace, $providerClass, $slug);
         $this->writeRoutesStub($modulePath);
         $this->writeReadme($modulePath, $slug, $displayName);
 
@@ -171,7 +171,7 @@ class ModuleCreateCommand extends Command
      * file exists at the path derived from module.json's `provider`, and
      * contains both boot() and register().
      */
-    private function writeServiceProvider(string $path, string $namespace, string $providerClass): void
+    private function writeServiceProvider(string $path, string $namespace, string $providerClass, string $slug): void
     {
         $content = <<<PHP
         <?php
@@ -191,7 +191,7 @@ class ModuleCreateCommand extends Command
             {
                 \$this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
                 \$this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
-                \$this->loadViewsFrom(__DIR__ . '/../../resources/views', '{$providerClass}');
+                \$this->loadViewsFrom(__DIR__ . '/../../resources/views', '{$slug}');
             }
         }
 

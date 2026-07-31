@@ -23,6 +23,14 @@
         {
             "type": "path",
             "url": "packages/saas-platform/modules/education"
+        },
+        {
+            "type": "path",
+            "url": "packages/saas-platform/modules/seo-advanced"
+        },
+        {
+            "type": "path",
+            "url": "packages/saas-platform/modules/crm"
         }
     ],
     "require": {
@@ -40,8 +48,10 @@
         "phpseclib/phpseclib": "^3.0",
         "predis/predis": "^3.4",
         "pusher/pusher-php-server": "^7.2",
+        "saas-platform/modules-crm": "@dev",
         "saas-platform/modules-education": "@dev",
         "saas-platform/modules-forms": "@dev",
+        "saas-platform/modules-seo-advanced": "@dev",
         "saas-platform/modules-tickets": "@dev"
     },
     "require-dev": {

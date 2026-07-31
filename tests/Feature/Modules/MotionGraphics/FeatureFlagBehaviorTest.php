@@ -38,7 +38,10 @@ class FeatureFlagBehaviorTest extends TestCase
 
     public function test_the_integration_flag_defaults_to_disabled(): void
     {
-        $this->assertFalse(config('feature-flags.motion_graphics_integration'));
+        // Phase 6: global default is now `null` (enables per-site override,
+        // docs/motion-integration-phase6-audit.md §6) but still resolves
+        // to effectively disabled with no override present.
+        $this->assertFalse((bool) config('feature-flags.motion_graphics_integration'));
     }
 
     public function test_the_adapter_denies_everything_while_the_flag_is_disabled(): void

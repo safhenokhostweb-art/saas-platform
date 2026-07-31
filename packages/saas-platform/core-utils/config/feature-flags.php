@@ -34,5 +34,17 @@ return [
     // Disabled: existing standalone-module behavior is unchanged.
     // Enabled: the Laravel adapter layer (app/Modules/MotionGraphics) becomes reachable.
     // See docs/motion-saas-integration/FEATURE_FLAG_STRATEGY.md.
-    'motion_graphics_integration' => env('FEATURE_MOTION_GRAPHICS_INTEGRATION', false),
+    //
+    // Phase 6 (docs/motion-integration-phase6/FEATURE_FLAG_USAGE.md): the
+    // default changed from `false` to `null` so this flag can use the
+    // per-tenant override documented above ($tenant->features[...]) — the
+    // task requires enabling this for one internal test site only, never
+    // globally. Leaving this env var unset means every site still
+    // effectively defaults to disabled (step 2's `?? false` fallback);
+    // only a site whose `features` JSON explicitly sets
+    // `motion_graphics_integration => true` is enabled. Setting this env
+    // var to true/false would still force that value globally, exactly
+    // as before — this change only removes the *forced* global false, it
+    // does not add a forced global true anywhere.
+    'motion_graphics_integration' => env('FEATURE_MOTION_GRAPHICS_INTEGRATION', null),
 ];

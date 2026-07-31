@@ -26,7 +26,7 @@ class CheckTenantMaintenance
             return $next($request);
         }
 
-        $siteId = $this->tenantContext->getSiteId();
+        $siteId = $this->tenantContext->id();
         if (!$siteId) {
             return $next($request);
         }

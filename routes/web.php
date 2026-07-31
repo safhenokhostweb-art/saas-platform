@@ -1046,4 +1046,22 @@ Route::prefix('admin')
                 'icons' => \SaaSPlatform\CoreUtils\Icons\IconRegistry::all(),
             ]);
         })->name('design.icons');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Phase 7 — Motion Graphics Admin Management & Internal Site Activation
+        | (docs/motion-admin-management/). Platform-Admin-only, internal
+        | testing tool — no customer-facing route exists anywhere for this.
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('motion-graphics')->name('motion-graphics.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'selectSite'])->name('select-site');
+            Route::get('{site}/dashboard', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'dashboard'])->name('dashboard');
+            Route::get('{site}/templates', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'templates'])->name('templates');
+            Route::post('{site}/templates/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewCompatibility'])->name('templates.preview');
+            Route::post('{site}/templates/{template}/assign', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'assignPackage'])->name('templates.assign');
+            Route::post('{site}/templates/{template}/activate', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'activateSite'])->name('templates.activate');
+            Route::get('{site}/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'preview'])->name('preview');
+            Route::get('{site}/preview/{sitePackage}', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewProjection'])->name('preview.show');
+        });
     });

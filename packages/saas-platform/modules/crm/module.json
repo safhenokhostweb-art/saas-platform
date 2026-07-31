@@ -1,0 +1,42 @@
+{
+    "name": "CRM",
+    "module_slug": "crm",
+    "version": "1.0.0",
+    "type": "paid",
+    "namespace": "SaaSPlatform\\Modules\\Crm",
+    "provider": "SaaSPlatform\\Modules\\Crm\\Providers\\CrmServiceProvider",
+    "compatibility": {
+        "php": "^8.1",
+        "laravel": "^10.0|^11.0",
+        "saas-platform": ">=1.0.0"
+    },
+    "dependencies": {
+        "packages": [
+            "saas-platform/core-utils"
+        ],
+        "modules": []
+    },
+    "update_type": "minor",
+    "install": {
+        "command": "",
+        "publishes": [
+            "crm-config",
+            "crm-views",
+            "crm-migrations"
+        ]
+    },
+    "uninstall": {
+        "type": "soft",
+        "cleanup": [
+            "tables",
+            "files",
+            "permissions"
+        ]
+    },
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "SaaS Platform Team"
+        }
+    ]
+}

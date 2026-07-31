@@ -13,19 +13,31 @@ use App\Modules\MotionGraphics\Bindings\PlatformAdminResolverAdapter;
 use App\Modules\MotionGraphics\Bindings\SiteResolverAdapter;
 use App\Modules\MotionGraphics\Contracts\MotionAssetResolverInterface;
 use App\Modules\MotionGraphics\Contracts\MotionAuthorizationInterface;
+use App\Modules\MotionGraphics\Contracts\MotionDeploymentGatewayContract;
+use App\Modules\MotionGraphics\Contracts\MotionLicenseGatewayContract;
 use App\Modules\MotionGraphics\Contracts\MotionRuntimeProjectionInterface;
 use App\Modules\MotionGraphics\Contracts\SiteAssetPackageResolverInterface;
 use App\Modules\MotionGraphics\Contracts\TemplateAssetResolverInterface;
+use App\Modules\MotionGraphics\Services\MotionDeploymentPreparationService;
+use App\Modules\MotionGraphics\Services\MotionGraphicsAdminService;
+use App\Modules\MotionGraphics\Services\MotionRuntimeInstallationService;
+use App\Modules\MotionGraphics\Services\SiteAssetPackageActivationService;
+use App\Modules\MotionGraphics\Services\TemplateAssetPackageService;
+use App\Modules\MotionGraphics\Support\FakeMotionDeploymentGateway;
+use App\Modules\MotionGraphics\Support\RealMotionLicenseGateway;
+use App\Modules\MotionGraphics\Support\TemplateBuilderCompatibilityValidator;
 use Illuminate\Support\ServiceProvider;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionAuditLoggerContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionPermissionGatewayContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\PlatformAdminResolverContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibrarySummaryContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionVersionReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\SiteAssetPackageReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\TemplateAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\SiteResolverContract;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionAssetLibrarySummaryReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionAssetReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionVersionReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\Read\PublishedRuntimeProjectionProvider;
@@ -69,6 +81,7 @@ class MotionGraphicsAdapterServiceProvider extends ServiceProvider
 
         // Phase 2 — provider-neutral read contracts (docs/motion-read-contracts/).
         $this->app->singleton(MotionAssetReadContract::class, DatabaseMotionAssetReader::class);
+        $this->app->singleton(MotionAssetLibrarySummaryContract::class, DatabaseMotionAssetLibrarySummaryReader::class);
         $this->app->singleton(MotionVersionReadContract::class, DatabaseMotionVersionReader::class);
         $this->app->singleton(MotionRuntimeProjectionReadContract::class, PublishedRuntimeProjectionProvider::class);
         $this->app->singleton(TemplateAssetReadContract::class, TemplateAssetReader::class);
@@ -80,5 +93,41 @@ class MotionGraphicsAdapterServiceProvider extends ServiceProvider
         $this->app->singleton(TemplateAssetResolverInterface::class, TemplateAssetResolverAdapter::class);
         $this->app->singleton(SiteAssetPackageResolverInterface::class, SiteAssetPackageResolverAdapter::class);
         $this->app->singleton(MotionRuntimeProjectionInterface::class, MotionRuntimeProjectionAdapter::class);
+
+        // Phase 3 — persistence & site package activation
+        // (docs/motion-persistence/). Host-owned concrete services, not
+        // package-facing contracts, so they are bound directly rather
+        // than behind an interface.
+        $this->app->singleton(TemplateAssetPackageService::class);
+        $this->app->singleton(SiteAssetPackageActivationService::class);
+
+        // Phase 4 — runtime installation & template activation bridge
+        // (docs/motion-runtime-installation/).
+        $this->app->singleton(TemplateBuilderCompatibilityValidator::class);
+        $this->app->singleton(MotionRuntimeInstallationService::class);
+
+        // Phase 5 — SaaS deployment & customer runtime integration
+        // preparation (docs/motion-deployment-preparation/).
+        //
+        // Phase 6 (docs/motion-integration-phase6-audit.md §4): the
+        // License Gateway is now REAL — it wraps the platform's canonical
+        // ModuleLicenseServiceInterface, exactly like every other module.
+        // The Deployment Gateway deliberately remains FakeMotionDeploymentGateway:
+        // no real canonical service exists for "lightweight, DB-only
+        // activation of an already-installed site's content" — the
+        // heavyweight SSH-based CustomerInstallationOrchestrator/
+        // ModuleDeploymentRequestService pipeline is structurally for a
+        // different problem (shipping files to a remote server) and using
+        // it here would misuse it rather than reuse it. This is a
+        // documented, deliberate limitation, not an oversight — see
+        // docs/motion-integration-phase6/SAAS_CONNECTION_FLOW.md.
+        $this->app->singleton(MotionDeploymentGatewayContract::class, FakeMotionDeploymentGateway::class);
+        $this->app->singleton(MotionLicenseGatewayContract::class, RealMotionLicenseGateway::class);
+        $this->app->singleton(MotionDeploymentPreparationService::class);
+
+        // Phase 7 — admin management & internal site activation
+        // (docs/motion-admin-management/). Pure composition over the
+        // services above; no new business logic.
+        $this->app->singleton(MotionGraphicsAdminService::class);
     }
 }
