@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\CaptchaServiceInterface;
 use SaaSPlatform\CoreUtils\Http\BaseController as Controller;
+use SaaSPlatform\Modules\Forms\Events\FormSubmissionCreated;
 use SaaSPlatform\Modules\Forms\Models\Form;
 use SaaSPlatform\Modules\Forms\Models\FormSubmission;
 
@@ -138,13 +139,19 @@ class FormFrontendController extends Controller
 
         $validated = $request->validate($rules);
 
-        FormSubmission::create([
+        $submission = FormSubmission::create([
             'form_id' => $form->id,
             'site_id' => $siteModel->getId(),
             'data'    => $validated,
             'ip'      => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
+
+        // Phase 20 — Part 7: generic extension point — Forms never knows
+        // who's listening (e.g. CRM turning a contact-form submission
+        // into a Lead). Only dispatched for site-scoped submissions,
+        // which always have a real tenant context.
+        event(new FormSubmissionCreated($submission));
 
         return back()->with('success', 'فرم با موفقیت ارسال شد ✅');
     }

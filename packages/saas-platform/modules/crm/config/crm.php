@@ -31,6 +31,21 @@ return [
 
     'task_statuses' => ['pending', 'completed', 'cancelled'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Polymorphic Subject Type Aliases
+    |--------------------------------------------------------------------------
+    |
+    | Short, URL-safe aliases for the entities Activity/Task/Attachment can
+    | attach to — never expose the full class name in a route.
+    */
+    'subject_types' => [
+        'contact' => \SaaSPlatform\Modules\Crm\Models\CrmContact::class,
+        'company' => \SaaSPlatform\Modules\Crm\Models\CrmCompany::class,
+        'lead' => \SaaSPlatform\Modules\Crm\Models\CrmLead::class,
+        'opportunity' => \SaaSPlatform\Modules\Crm\Models\CrmOpportunity::class,
+    ],
+
     'attachments' => [
         'max_files' => 5,
         'max_size' => 5120, // KB

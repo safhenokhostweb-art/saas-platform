@@ -21,6 +21,11 @@ class Kernel extends ConsoleKernel
         // اعلان خودکار انقضا: یک ماه قبل و هر ۱۰ روز — هر روز یک‌بار چک می‌شود
         $schedule->command('expiry:send-reminders')->daily()->at('08:00');
 
+        // Phase 20 — Part 6: CRM task/opportunity reminders (deadline, overdue, stale deals) — only registered when the crm module is installed.
+        if (class_exists(\SaaSPlatform\Modules\Crm\Console\Commands\SendCrmTaskRemindersCommand::class)) {
+            $schedule->command('crm:send-task-reminders')->hourly();
+        }
+
         // Wave 8.0b — prune platform admin activity_logs (respect AUDIT_PRUNE_DRY_RUN)
         $schedule->command('activity-log:prune')->dailyAt('03:00');
 

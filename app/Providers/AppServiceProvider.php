@@ -21,6 +21,9 @@ use App\Repositories\SupportTicketRepository;
 use App\Repositories\SupportTicketReplyRepository;
 use App\Services\SupportTicketService;
 use App\Services\Payment\PaymentGatewayInterface;
+use App\Services\CoreSiteNotificationDispatcher;
+use App\Services\Sms\SmsGatewayResolver;
+use SaaSPlatform\CoreUtils\Contracts\Services\SiteNotificationDispatcherInterface;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SupportTicketRepositoryInterface::class, SupportTicketRepository::class);
         $this->app->bind(SupportTicketReplyRepositoryInterface::class, SupportTicketReplyRepository::class);
         $this->app->bind(SupportTicketServiceInterface::class, SupportTicketService::class);
+
+        // Phase 20 — Part 6/7: generic extension point so independent modules
+        // (e.g. CRM) can notify a site admin without touching App\Models\*.
+        $this->app->bind(SiteNotificationDispatcherInterface::class, fn () => new CoreSiteNotificationDispatcher(SmsGatewayResolver::resolve()));
 
         // PHASE M3.2 — DOMAIN B: Platform Messaging Runtime
         $this->app->singleton(\App\Services\PlatformMessaging\PlatformParticipantService::class);

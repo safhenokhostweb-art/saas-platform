@@ -1,6 +1,6 @@
 {
     "name": "CRM",
-    "module_slug": "crm",
+    "module_slug": "crm-suite",
     "version": "1.0.0",
     "type": "paid",
     "namespace": "SaaSPlatform\\Modules\\Crm",
