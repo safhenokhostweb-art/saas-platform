@@ -11,6 +11,8 @@ class SeoAdvancedAudit extends Model
     protected $fillable = [
         'site_id',
         'page_url',
+        'title',
+        'description',
         'title_length',
         'description_length',
         'missing_meta',

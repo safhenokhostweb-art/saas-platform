@@ -26,6 +26,11 @@ class Kernel extends ConsoleKernel
             $schedule->command('crm:send-task-reminders')->hourly();
         }
 
+        // Phase 18-E — Part 8: SEO Advanced scheduled audit (rank drops, sitemap/technical errors, score drops) — only registered when the module is installed.
+        if (class_exists(\SaaSPlatform\Modules\SeoAdvanced\Console\Commands\RunSeoAutomationCommand::class)) {
+            $schedule->command('seo-advanced:run-automation')->daily()->at('07:00');
+        }
+
         // Wave 8.0b — prune platform admin activity_logs (respect AUDIT_PRUNE_DRY_RUN)
         $schedule->command('activity-log:prune')->dailyAt('03:00');
 

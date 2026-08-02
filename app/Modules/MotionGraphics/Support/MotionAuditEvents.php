@@ -45,6 +45,22 @@ class MotionAuditEvents
     public const ADMIN_SITE_ACTIVATION = 'motion.admin.site_activation';
     public const ADMIN_RUNTIME_PREVIEW = 'motion.admin.runtime_preview';
 
+    // Phase 8 — real customer-site runtime integration & controlled live
+    // test (docs/motion-customer-runtime-phase8/). Exactly the 9 events
+    // the task specifies; every call site includes actor, site, template,
+    // package, manifest checksum (where applicable), previous/new state,
+    // correlation ID, and timestamp (via the shared audit logger), plus a
+    // failure reason on the two failure events.
+    public const CUSTOMER_DEPLOYMENT_PREPARED = 'motion.customer.deployment.prepared';
+    public const CUSTOMER_DEPLOYMENT_STARTED = 'motion.customer.deployment.started';
+    public const CUSTOMER_DEPLOYMENT_COMPLETED = 'motion.customer.deployment.completed';
+    public const CUSTOMER_DEPLOYMENT_FAILED = 'motion.customer.deployment.failed';
+    public const CUSTOMER_RUNTIME_ENABLED = 'motion.customer.runtime.enabled';
+    public const CUSTOMER_RUNTIME_DISABLED = 'motion.customer.runtime.disabled';
+    public const CUSTOMER_ROLLBACK_STARTED = 'motion.customer.rollback.started';
+    public const CUSTOMER_ROLLBACK_COMPLETED = 'motion.customer.rollback.completed';
+    public const CUSTOMER_HEALTHCHECK_FAILED = 'motion.customer.healthcheck.failed';
+
     public function __construct(
         private readonly ActivityLoggerInterface $logger,
     ) {}

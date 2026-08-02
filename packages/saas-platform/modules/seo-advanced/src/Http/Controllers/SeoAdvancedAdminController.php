@@ -11,6 +11,7 @@ use SaaSPlatform\Modules\SeoAdvanced\Models\SeoAdvancedAudit;
 use SaaSPlatform\Modules\SeoAdvanced\Models\SeoAdvancedKeyword;
 use SaaSPlatform\Modules\SeoAdvanced\Models\SeoAdvancedRedirect;
 use SaaSPlatform\Modules\SeoAdvanced\Models\SeoAdvancedSetting;
+use SaaSPlatform\Modules\SeoAdvanced\Services\SchemaBuilder;
 use SaaSPlatform\Modules\SeoAdvanced\Services\SeoAuditor;
 use SaaSPlatform\Modules\SeoAdvanced\Services\SeoReportService;
 use SaaSPlatform\Modules\SeoAdvanced\Services\SitemapUrlCollector;
@@ -89,8 +90,41 @@ class SeoAdvancedAdminController extends Controller
     public function schemaPreview(int $siteId, SchemaBuilderInterface $schemaBuilder)
     {
         $schema = $schemaBuilder->build($siteId);
+        $supportedTypes = SchemaBuilder::SUPPORTED_TYPES;
 
-        return view('seo-advanced::admin.schema', compact('siteId', 'schema'));
+        return view('seo-advanced::admin.schema', compact('siteId', 'schema', 'supportedTypes'));
+    }
+
+    /**
+     * Phase 18-E — Part 5: lets an admin try any of the 8 supported
+     * schema types against arbitrary JSON data — the same buildType()
+     * a future module would call programmatically.
+     */
+    public function schemaBuilderPreview(Request $request, int $siteId, SchemaBuilderInterface $schemaBuilder)
+    {
+        $data = $request->validate([
+            'type' => 'required|string',
+            'payload' => 'nullable|string',
+        ]);
+
+        $payload = json_decode($data['payload'] ?? '{}', true);
+        $error = null;
+        $built = [];
+
+        if (!is_array($payload)) {
+            $error = 'JSON نامعتبر است.';
+        } else {
+            $built = $schemaBuilder->buildType($data['type'], $payload);
+            if (empty($built)) {
+                $error = 'فیلدهای الزامی این نوع Schema کامل نیست.';
+            }
+        }
+
+        $schema = $schemaBuilder->build($siteId);
+        $supportedTypes = SchemaBuilder::SUPPORTED_TYPES;
+
+        return view('seo-advanced::admin.schema', compact('siteId', 'schema', 'supportedTypes', 'built', 'error'))
+            ->with(['selectedType' => $data['type'], 'payloadInput' => $data['payload'] ?? '']);
     }
 
     public function redirects(int $siteId)

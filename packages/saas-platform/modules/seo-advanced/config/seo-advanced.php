@@ -14,4 +14,18 @@ return [
         'site' => env('SEO_ADVANCED_LAYOUT_SITE', 'layouts.app'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google Search Console (Phase 18-E — Part 2)
+    |--------------------------------------------------------------------------
+    |
+    | Unset by default — GoogleSearchConsoleService::isConnected() and every
+    | admin action degrade gracefully (empty/"not connected") until a real
+    | Google Cloud OAuth client is configured here.
+    */
+    'search_console' => [
+        'client_id' => env('SEO_ADVANCED_GOOGLE_CLIENT_ID'),
+        'client_secret' => env('SEO_ADVANCED_GOOGLE_CLIENT_SECRET'),
+    ],
+
 ];

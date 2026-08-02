@@ -95,6 +95,18 @@ Route::prefix('lifecycle')->middleware(['throttle:20,1', 'tenant.api'])->group(f
     Route::post('/confirm-restore', [\App\Http\Controllers\Api\ApiLifecycleController::class, 'confirmRestore'])->name('api.lifecycle.confirm-restore');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Motion Graphics Customer Runtime API — PHASE 8
+|--------------------------------------------------------------------------
+| Auth: license_key + domain (tenant.api middleware). Read-only. Fails
+| closed to {"available": false} for a disabled/not-entitled/unpackaged
+| site — never a 500. See docs/motion-customer-runtime-phase8/.
+*/
+Route::prefix('motion-runtime')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
+    Route::get('/manifest', [\App\Http\Controllers\Api\MotionCustomerRuntimeApiController::class, 'manifest'])->name('api.motion-runtime.manifest');
+});
+
 // Finance Ledger API — customer-site pushes payment events to platform ledger
 Route::prefix('ledger')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
     Route::post('/push-event', [\App\Http\Controllers\Api\FinanceLedgerApiController::class, 'pushEvent'])->name('api.ledger.push-event');

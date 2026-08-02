@@ -18,6 +18,8 @@ use App\Modules\MotionGraphics\Contracts\MotionLicenseGatewayContract;
 use App\Modules\MotionGraphics\Contracts\MotionRuntimeProjectionInterface;
 use App\Modules\MotionGraphics\Contracts\SiteAssetPackageResolverInterface;
 use App\Modules\MotionGraphics\Contracts\TemplateAssetResolverInterface;
+use App\Modules\MotionGraphics\Services\MotionCustomerActivationService;
+use App\Modules\MotionGraphics\Services\MotionCustomerRuntimeService;
 use App\Modules\MotionGraphics\Services\MotionDeploymentPreparationService;
 use App\Modules\MotionGraphics\Services\MotionGraphicsAdminService;
 use App\Modules\MotionGraphics\Services\MotionRuntimeInstallationService;
@@ -129,5 +131,12 @@ class MotionGraphicsAdapterServiceProvider extends ServiceProvider
         // (docs/motion-admin-management/). Pure composition over the
         // services above; no new business logic.
         $this->app->singleton(MotionGraphicsAdminService::class);
+
+        // Phase 8 — real customer-site runtime integration & controlled
+        // live test (docs/motion-customer-runtime-phase8/). No new
+        // gateway bindings — MotionCustomerRuntimeService reuses the same
+        // real MotionLicenseGatewayContract bound above.
+        $this->app->singleton(MotionCustomerRuntimeService::class);
+        $this->app->singleton(MotionCustomerActivationService::class);
     }
 }

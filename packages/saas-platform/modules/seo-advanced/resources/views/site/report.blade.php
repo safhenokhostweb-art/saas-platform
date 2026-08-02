@@ -41,6 +41,33 @@
         </div>
     </div>
 
+    @if ($google_performance)
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5">عملکرد در گوگل (۳۰ روز اخیر)</h2>
+                <div class="row g-3">
+                    <div class="col-md-3"><div class="text-muted small">Clicks</div><div class="fw-bold">{{ number_format($google_performance['clicks']) }}</div></div>
+                    <div class="col-md-3"><div class="text-muted small">Impressions</div><div class="fw-bold">{{ number_format($google_performance['impressions']) }}</div></div>
+                    <div class="col-md-3"><div class="text-muted small">CTR</div><div class="fw-bold">{{ $google_performance['ctr'] }}%</div></div>
+                    <div class="col-md-3"><div class="text-muted small">Average Position</div><div class="fw-bold">{{ $google_performance['average_position'] }}</div></div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (!empty($recommendations))
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5">پیشنهادات بهبود</h2>
+                <ul class="mb-0">
+                    @foreach ($recommendations as $recommendation)
+                        <li>{{ $recommendation }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
     @if ($latest_audit && !empty($latest_audit->issues))
         <div class="card mb-4">
             <div class="card-body">
@@ -50,6 +77,22 @@
                         <li>{{ $issue['message'] ?? '' }} — <em class="text-muted">{{ $issue['suggested_fix'] ?? '' }}</em></li>
                     @endforeach
                 </ul>
+            </div>
+        </div>
+    @endif
+
+    @if (!empty($score_history))
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5">روند امتیاز (History)</h2>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>تاریخ</th><th>امتیاز</th></tr></thead>
+                    <tbody>
+                        @foreach ($score_history as $point)
+                            <tr><td>{{ $point['date'] }}</td><td>{{ $point['score'] }}</td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     @endif

@@ -289,6 +289,8 @@ class SeoAuditor implements SeoAuditorInterface
         return SeoAdvancedAudit::create([
             'site_id' => $siteId,
             'page_url' => $pageUrl,
+            'title' => $title,
+            'description' => $description,
             'title_length' => $result['title_length'],
             'description_length' => $result['description_length'],
             'missing_meta' => $missingMeta,

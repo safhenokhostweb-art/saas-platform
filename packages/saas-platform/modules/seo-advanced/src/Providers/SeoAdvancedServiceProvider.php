@@ -5,13 +5,19 @@ namespace SaaSPlatform\Modules\SeoAdvanced\Providers;
 use Illuminate\Support\ServiceProvider;
 use SaaSPlatform\CoreUtils\Contracts\Services\SeoOverrideProviderInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Adapters\SeoOverrideProviderAdapter;
+use SaaSPlatform\Modules\SeoAdvanced\Contracts\AiSeoProviderInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Contracts\MetaBuilderInterface;
+use SaaSPlatform\Modules\SeoAdvanced\Contracts\RankProviderInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Contracts\RobotsBuilderInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Contracts\SchemaBuilderInterface;
+use SaaSPlatform\Modules\SeoAdvanced\Contracts\SearchConsolePerformanceProviderInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Contracts\SeoAuditorInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Contracts\SeoHeadRendererInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Contracts\SitemapBuilderInterface;
 use SaaSPlatform\Modules\SeoAdvanced\Http\Middleware\SeoAdvancedRedirectMiddleware;
+use SaaSPlatform\Modules\SeoAdvanced\Services\AiSeo\NullAiSeoProvider;
+use SaaSPlatform\Modules\SeoAdvanced\Services\GoogleSearchConsoleService;
+use SaaSPlatform\Modules\SeoAdvanced\Services\ManualRankProvider;
 use SaaSPlatform\Modules\SeoAdvanced\Services\MetaBuilder;
 use SaaSPlatform\Modules\SeoAdvanced\Services\RobotsBuilder;
 use SaaSPlatform\Modules\SeoAdvanced\Services\SchemaBuilder;
@@ -45,6 +51,21 @@ class SeoAdvancedServiceProvider extends ServiceProvider
         $this->app->bind(SeoAuditorInterface::class, SeoAuditor::class);
         $this->app->bind(SeoHeadRendererInterface::class, SeoHeadRenderer::class);
         $this->app->bind(SeoOverrideProviderInterface::class, SeoOverrideProviderAdapter::class);
+
+        // Phase 18-E — Part 3/4: default, external-service-free bindings.
+        // A real provider (Google Search Console, an AI vendor, a rank API)
+        // rebinds these same interfaces without any calling code changing —
+        // same "Core/module binds a default, something rebinds to the real
+        // thing" pattern as SeoOverrideProviderInterface above.
+        $this->app->bind(RankProviderInterface::class, ManualRankProvider::class);
+        $this->app->bind(AiSeoProviderInterface::class, NullAiSeoProvider::class);
+
+        // Phase 18-E — Part 2: this module owns its own connection storage
+        // (seo_advanced_search_console_connections), so — like
+        // SitemapUrlProviderInterface's precedent — the default binding is
+        // the real service, which itself degrades gracefully when a site
+        // has no connection yet (see isConnected()).
+        $this->app->bind(SearchConsolePerformanceProviderInterface::class, GoogleSearchConsoleService::class);
     }
 
     public function boot(): void
@@ -63,6 +84,10 @@ class SeoAdvancedServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../database/migrations' => database_path('migrations'),
         ], 'seo-advanced-migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([\SaaSPlatform\Modules\SeoAdvanced\Console\Commands\RunSeoAutomationCommand::class]);
+        }
 
         $this->registerRedirectMiddleware();
     }
