@@ -685,11 +685,15 @@ class RestoreService
             ) . ' 2>&1', $o, $c);
             if ($c !== 0) throw new \RuntimeException("ایجاد دیتابیس موقت ناموفق: " . implode(' ', $o));
 
+            // MYSQL_PWD must be set for mysql (right side of pipe), not just gunzip.
+            // Wrap in bash -c so the env var is exported to both sides of the pipeline
+            // (same fix as executePlatformDatabaseRestore() above).
             $this->push($token, $events, 48, 'بازیابی بکاپ در دیتابیس موقت...');
-            exec(
-                "{$envPwd}gunzip -c " . escapeshellarg($localPath) . " | mysql {$connFlags} " . escapeshellarg($tmpDb) . ' 2>&1',
-                $o, $c
-            );
+            $importCmd = "bash -c " . escapeshellarg(
+                "{$envPwd}gunzip -c " . escapeshellarg($localPath) .
+                " | {$envPwd}mysql {$connFlags} " . escapeshellarg($tmpDb)
+            ) . ' 2>&1';
+            exec($importCmd, $o, $c);
             if ($c !== 0) {
                 exec("{$envPwd}mysql {$connFlags} -e " . escapeshellarg("DROP DATABASE IF EXISTS `{$tmpDb}`") . ' 2>&1');
                 throw new \RuntimeException("بازیابی در دیتابیس موقت ناموفق: " . implode(' ', $o));
