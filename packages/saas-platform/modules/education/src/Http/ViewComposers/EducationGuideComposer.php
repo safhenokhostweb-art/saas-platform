@@ -56,7 +56,15 @@ class EducationGuideComposer
 
         $cacheKey = "edu_guide_composer.{$userId}.{$routeName}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, fn() => $this->buildPayload($userId, $siteId, $routeName, $role));
+        // Cache::remember() talks to the cache backend (Redis in this app) outside any of the
+        // try/catch guards in buildPayload(). If that backend is unreachable, this composer —
+        // bound to every admin.* view — must degrade to an uncached lookup instead of throwing
+        // and taking down the whole admin panel with a 500.
+        try {
+            return Cache::remember($cacheKey, self::CACHE_TTL, fn() => $this->buildPayload($userId, $siteId, $routeName, $role));
+        } catch (\Throwable) {
+            return $this->buildPayload($userId, $siteId, $routeName, $role);
+        }
     }
 
     private function buildPayload(?int $userId, ?int $siteId, ?string $routeName, ?string $role): array
