@@ -3,22 +3,14 @@
 namespace Tests\Unit\Modules\MotionGraphics\Services;
 
 use App\Models\Site;
-use App\Modules\MotionGraphics\Contracts\MotionAssetResolverInterface;
-use App\Modules\MotionGraphics\Contracts\MotionAuthorizationInterface;
-use App\Modules\MotionGraphics\DTO\AuthorizationDecision;
-use App\Modules\MotionGraphics\DTO\CompatibilityDecision;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Models\SiteAssetPackageItem;
 use App\Modules\MotionGraphics\Models\TemplateAssetPackage;
 use App\Modules\MotionGraphics\Services\MotionCustomerRuntimeService;
-use App\Modules\MotionGraphics\Services\MotionRuntimeInstallationService;
-use App\Modules\MotionGraphics\Services\SiteAssetPackageActivationService;
-use App\Modules\MotionGraphics\Services\TemplateAssetPackageService;
 use App\Modules\MotionGraphics\Support\FakeMotionLicenseGateway;
 use App\Modules\MotionGraphics\Support\MotionAuditEvents;
-use App\Modules\MotionGraphics\Support\TemplateBuilderCompatibilityValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
@@ -26,10 +18,17 @@ use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\AssetReadModel;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\RuntimeProjectionReadModel;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
-use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionVersionReadContract;
 use Tests\Support\CreatesMotionTestSite;
 use Tests\TestCase;
 
+/**
+ * MotionCustomerRuntimeService deliberately never touches
+ * MotionAuthorizationInterface (see the class's own docblock: the
+ * `tenant.api` machine-to-machine channel has no Laravel Auth::user()),
+ * so — unlike every other Motion service's Unit test — nothing here
+ * mocks authorization. Only the read contracts and the license gateway
+ * are collaborators.
+ */
 class MotionCustomerRuntimeServiceTest extends TestCase
 {
     use RefreshDatabase;
@@ -49,14 +48,6 @@ class MotionCustomerRuntimeServiceTest extends TestCase
         $tenantContext->shouldReceive('set')->withAnyArgs()->andReturnNull();
 
         return $tenantContext;
-    }
-
-    private function allowingAuthorization(): MotionAuthorizationInterface
-    {
-        $authorization = Mockery::mock(MotionAuthorizationInterface::class);
-        $authorization->shouldReceive('authorize')->andReturn(AuthorizationDecision::allow());
-
-        return $authorization;
     }
 
     private function activePackage(Site $site, string $assetId = 'motion-1', int $version = 1): SiteAssetPackage
@@ -96,31 +87,21 @@ class MotionCustomerRuntimeServiceTest extends TestCase
     ): array {
         $tenantContext = $this->tenantContext($site, $flagEnabled);
         $auditEvents = Mockery::mock(MotionAuditEvents::class)->shouldIgnoreMissing();
-        $authorization = $this->allowingAuthorization();
         $assets ??= Mockery::mock(MotionAssetReadContract::class);
         $projections ??= Mockery::mock(MotionRuntimeProjectionReadContract::class);
 
-        $templatePackages = new TemplateAssetPackageService($tenantContext, $auditEvents, $authorization, $assets);
-        $assetResolver = Mockery::mock(MotionAssetResolverInterface::class);
-        $assetResolver->shouldReceive('validateCompatibility')->andReturn(CompatibilityDecision::compatible());
-        $activation = new SiteAssetPackageActivationService(
-            $tenantContext, $auditEvents, $authorization, $assetResolver, $assets,
-            Mockery::mock(MotionVersionReadContract::class), $projections,
-        );
-        $installation = new MotionRuntimeInstallationService(
-            $tenantContext, $auditEvents, $authorization, $templatePackages, $activation, $assets, $projections,
-            new TemplateBuilderCompatibilityValidator(),
-        );
-
         $service = new MotionCustomerRuntimeService(
-            $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $installation,
+            $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $assets, $projections,
         );
 
         return [$service, $assets, $projections];
     }
 
-    private function stubProjection(MotionRuntimeProjectionReadContract $projections, Site $site, string $assetId, int $version): void
+    private function stubAssetAndProjection(MotionAssetReadContract $assets, MotionRuntimeProjectionReadContract $projections, Site $site, string $assetId, int $version): void
     {
+        $assets->shouldReceive('findByCanonicalId')->with($assetId, $version)->andReturn(
+            new AssetReadModel($assetId, $version, 'lottie', null, ['checksum' => str_repeat('a', 64)], 'checksum-'.$version, false)
+        );
         $projections->shouldReceive('projectAsset')->with($assetId, (string) $site->id)->andReturn(
             new RuntimeProjectionReadModel(
                 assetReference: new AssetReadModel($assetId, $version, 'lottie', null, ['checksum' => str_repeat('a', 64)], 'checksum-'.$version, false),
@@ -136,8 +117,8 @@ class MotionCustomerRuntimeServiceTest extends TestCase
     {
         $site = $this->createSite();
         $package = $this->activePackage($site);
-        [$service, , $projections] = $this->service($site);
-        $this->stubProjection($projections, $site, 'motion-1', 1);
+        [$service, $assets, $projections] = $this->service($site);
+        $this->stubAssetAndProjection($assets, $projections, $site, 'motion-1', 1);
 
         $manifest = $service->buildManifestForSite($site, new MotionAdapterContext('customer-site:'.$site->id, (string) $site->id, 'corr-1'));
 
@@ -155,8 +136,8 @@ class MotionCustomerRuntimeServiceTest extends TestCase
     {
         $site = $this->createSite();
         $this->activePackage($site);
-        [$service, , $projections] = $this->service($site);
-        $this->stubProjection($projections, $site, 'motion-1', 1);
+        [$service, $assets, $projections] = $this->service($site);
+        $this->stubAssetAndProjection($assets, $projections, $site, 'motion-1', 1);
 
         $context = new MotionAdapterContext('customer-site:'.$site->id, (string) $site->id, 'corr-1');
         $first = $service->buildManifestForSite($site, $context);
@@ -210,8 +191,8 @@ class MotionCustomerRuntimeServiceTest extends TestCase
     {
         $site = $this->createSite();
         $this->activePackage($site);
-        [$service, , $projections] = $this->service($site);
-        $this->stubProjection($projections, $site, 'motion-1', 1);
+        [$service, $assets, $projections] = $this->service($site);
+        $this->stubAssetAndProjection($assets, $projections, $site, 'motion-1', 1);
 
         $manifest = $service->buildManifestForSite($site, new MotionAdapterContext('customer-site:'.$site->id, (string) $site->id, 'corr-1'));
         $array = $manifest->toArray();

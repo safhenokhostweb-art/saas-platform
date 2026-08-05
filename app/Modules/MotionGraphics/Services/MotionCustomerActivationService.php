@@ -65,27 +65,32 @@ final class MotionCustomerActivationService
 
     /**
      * Step "Enable site-specific flag" — the only site-mutating action in
-     * this whole service. Fails closed if any *other* site already has
-     * the flag on (task: "Do not activate any other customer site" /
-     * "Motion Graphics feature is not enabled for another site").
+     * this whole service.
+     *
+     * Phase 8 hard-capped this at exactly one site globally
+     * (`another_site_already_enabled`) — a deliberate stand-in for real
+     * entitlement, appropriate for "one controlled test site" when no
+     * commercial entitlement existed yet. Phase 9
+     * (docs/motion-commercialization/ENTITLEMENT_RULES.md) removes that
+     * cap: `prepare()` above already calls
+     * MotionCustomerRuntimeService::buildManifestForSite(), which already
+     * calls RealMotionLicenseGateway::validateEntitlement() — and since
+     * the `motion-graphics` module is now `type=paid`
+     * (docs/motion-commercialization/AUDIT_REPORT.md §5), that check now
+     * requires a real, site-specific `ModuleLicense` row
+     * (ModuleLicenseService::hasValidLicense()'s existing TYPE_PAID gate,
+     * unmodified). A real, per-site, revocable/expirable entitlement
+     * check is strictly stronger than an arbitrary single-site cap — this
+     * still satisfies "do not enable globally" (every site needs its own
+     * valid license) and "do not activate real customers automatically"
+     * (this method is never called by the purchase-fulfillment pipeline
+     * itself — see ENTITLEMENT_RULES.md).
      *
      * @throws MotionAdapterFailClosedException
      */
     public function enable(Site $site, MotionAdapterContext $context): CustomerRuntimeManifest
     {
         $manifest = $this->prepare($site, $context);
-
-        $otherEnabledSite = Site::query()
-            ->where('id', '!=', $site->id)
-            ->where('features->'.self::FEATURE_KEY, true)
-            ->first(['id']);
-
-        if ($otherEnabledSite !== null) {
-            $this->fail($site, $context, 'another_site_already_enabled', sprintf(
-                'Site #%d is already enabled for Motion Graphics; only one site may be active at a time.',
-                $otherEnabledSite->id
-            ));
-        }
 
         $this->auditEvents->record(MotionAuditEvents::CUSTOMER_DEPLOYMENT_STARTED, [
             'site_id' => $site->id,

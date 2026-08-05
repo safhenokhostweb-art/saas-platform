@@ -7,13 +7,15 @@ use App\Modules\MotionGraphics\Contracts\MotionLicenseGatewayContract;
 use App\Modules\MotionGraphics\DTO\CustomerRuntimeAssetEntry;
 use App\Modules\MotionGraphics\DTO\CustomerRuntimeManifest;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
-use App\Modules\MotionGraphics\DTO\RuntimeProjectionDTO;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Support\AbstractMotionAdapter;
 use App\Modules\MotionGraphics\Support\MotionAuditEvents;
+use App\Modules\MotionGraphics\Support\ReadModelMapper;
 use Illuminate\Support\Carbon;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
 
 /**
  * Phase 8 (docs/motion-customer-runtime-phase8/CUSTOMER_RUNTIME_ARCHITECTURE.md):
@@ -24,12 +26,22 @@ use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
  * this for this site" signal, matching task requirement 7's "deployment
  * state READY or ACTIVE" gate without introducing new schema.
  *
- * Never duplicates resolution/projection logic — delegates entirely to
- * MotionRuntimeInstallationService::projectSitePackage() (Phase 4) for
- * the actual asset data, and to MotionLicenseGatewayContract (Phase 6's
- * real gateway) for entitlement. This class only shapes the result into
- * the narrower, versioned, customer-facing contract and computes its
- * checksum.
+ * Deliberately does NOT delegate to MotionRuntimeInstallationService::
+ * projectSitePackage() / MotionRuntimeProjectionAdapter — both call
+ * MotionAuthorizationInterface::authorize(), which requires a real
+ * Laravel Auth::user() (an authenticated admin/customer session). This
+ * service is reached from the `tenant.api` machine-to-machine channel
+ * (license_key + domain, no Laravel user at all — see AUDIT_REPORT.md
+ * §2), exactly like every other tenant.api controller
+ * (ThemeMarketplaceApiController etc.), none of which go through
+ * MotionAuthorizationInterface either. The license/entitlement check
+ * below (MotionLicenseGatewayContract, Phase 6's real gateway) *is* the
+ * authorization for this channel — requiring a second, user-session-based
+ * check on top of it would conflate two different trust models, not add
+ * real safety. It still reuses the same provider-neutral read contracts
+ * (MotionAssetReadContract, MotionRuntimeProjectionReadContract) and the
+ * same ReadModelMapper every other phase uses — no duplicated resolution
+ * logic, only the authorization *path* differs.
  */
 final class MotionCustomerRuntimeService extends AbstractMotionAdapter
 {
@@ -37,7 +49,8 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
         TenantContextContract $tenantContext,
         MotionAuditEvents $auditEvents,
         private readonly MotionLicenseGatewayContract $license,
-        private readonly MotionRuntimeInstallationService $runtimeInstallation,
+        private readonly MotionAssetReadContract $assets,
+        private readonly MotionRuntimeProjectionReadContract $projections,
     ) {
         parent::__construct($tenantContext, $auditEvents);
     }
@@ -78,21 +91,37 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
             );
         }
 
-        $projections = $this->runtimeInstallation->projectSitePackage($sitePackage, $context);
+        $assets = [];
+        foreach ($sitePackage->items as $item) {
+            $assetModel = $this->assets->findByCanonicalId($item->asset_id, $item->active_version);
+            if ($assetModel === null) {
+                throw new MotionAdapterFailClosedException(
+                    'asset_not_available',
+                    "Asset [{$item->asset_id}] is not currently readable."
+                );
+            }
 
-        $assets = array_map(
-            fn (RuntimeProjectionDTO $projection): CustomerRuntimeAssetEntry => new CustomerRuntimeAssetEntry(
-                assetId: $projection->assetReference->assetId,
-                publishedVersion: $projection->publishedVersion,
-                optimizedReference: $projection->optimizedReference,
-                checksum: (string) ($projection->assetReference->compatibility['checksum'] ?? ''),
-                assetType: $projection->assetReference->type,
-                themeTokens: $projection->themeTokens,
-                placementRules: $projection->placementRules,
+            $projection = $this->projections->projectAsset($item->asset_id, $context->siteId);
+            if ($projection === null) {
+                throw new MotionAdapterFailClosedException(
+                    'asset_not_available_for_site',
+                    "Asset [{$item->asset_id}] does not have a published runtime projection for this site."
+                );
+            }
+
+            $projectionDto = ReadModelMapper::toRuntimeProjectionDTO($projection);
+
+            $assets[] = new CustomerRuntimeAssetEntry(
+                assetId: $projectionDto->assetReference->assetId,
+                publishedVersion: $projectionDto->publishedVersion,
+                optimizedReference: $projectionDto->optimizedReference,
+                checksum: (string) ($projectionDto->assetReference->compatibility['checksum'] ?? ''),
+                assetType: $projectionDto->assetReference->type,
+                themeTokens: $projectionDto->themeTokens,
+                placementRules: $projectionDto->placementRules,
                 responsiveRules: [],
-            ),
-            $projections
-        );
+            );
+        }
 
         $generatedAt = Carbon::now()->toIso8601String();
         $manifestChecksum = $this->computeChecksum($site, $sitePackage, $assets);

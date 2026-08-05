@@ -89,8 +89,8 @@ class SeoTenantIsolationTest extends TestCase
         SeoAdvancedKeyword::create(['site_id' => 61, 'keyword' => 'ب']);
         SeoAdvancedKeyword::create(['site_id' => 61, 'keyword' => 'ج']);
 
-        $reportFor60 = (new SeoReportService())->build(60);
-        $reportFor61 = (new SeoReportService())->build(61);
+        $reportFor60 = app(SeoReportService::class)->build(60);
+        $reportFor61 = app(SeoReportService::class)->build(61);
 
         $this->assertSame(95, $reportFor60['latest_audit']->score);
         $this->assertSame(1, $reportFor60['keyword_count']);

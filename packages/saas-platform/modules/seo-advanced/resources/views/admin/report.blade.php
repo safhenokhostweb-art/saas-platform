@@ -41,6 +41,33 @@
         </div>
     </div>
 
+    @if ($google_performance)
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5">عملکرد در گوگل (۳۰ روز اخیر)</h2>
+                <div class="row g-3">
+                    <div class="col-md-3"><div class="text-muted small">Clicks</div><div class="fw-bold">{{ number_format($google_performance['clicks']) }}</div></div>
+                    <div class="col-md-3"><div class="text-muted small">Impressions</div><div class="fw-bold">{{ number_format($google_performance['impressions']) }}</div></div>
+                    <div class="col-md-3"><div class="text-muted small">CTR</div><div class="fw-bold">{{ $google_performance['ctr'] }}%</div></div>
+                    <div class="col-md-3"><div class="text-muted small">Average Position</div><div class="fw-bold">{{ $google_performance['average_position'] }}</div></div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (!empty($recommendations))
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5">پیشنهادات بهبود</h2>
+                <ul class="mb-0">
+                    @foreach ($recommendations as $recommendation)
+                        <li>{{ $recommendation }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
     <div class="card mb-4">
         <div class="card-body">
             <h2 class="h5">روند امتیاز (Score Over Time)</h2>

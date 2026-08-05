@@ -85,6 +85,8 @@
         <a href="{{ route('seo-advanced.admin.audit', $siteId) }}" class="list-group-item list-group-item-action">ارزیابی SEO</a>
         <a href="{{ route('seo-advanced.admin.keywords', $siteId) }}" class="list-group-item list-group-item-action">پیگیری کلمات کلیدی (Keyword Tracking)</a>
         <a href="{{ route('seo-advanced.admin.report', $siteId) }}" class="list-group-item list-group-item-action">گزارش SEO</a>
+        <a href="{{ route('seo-advanced.admin.search-console', $siteId) }}" class="list-group-item list-group-item-action">Google Search Console</a>
+        <a href="{{ route('seo-advanced.admin.ai-assistant', $siteId) }}" class="list-group-item list-group-item-action">دستیار هوشمند SEO (AI Assistant)</a>
     </div>
 </div>
 @endsection

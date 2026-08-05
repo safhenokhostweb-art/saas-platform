@@ -98,19 +98,14 @@ class MotionCustomerActivationServiceTest extends TestCase
             )
         )->byDefault();
 
-        $templatePackages = new TemplateAssetPackageService($tenantContext, $auditEvents, $authorization, $assets);
-        $assetResolver = Mockery::mock(MotionAssetResolverInterface::class);
-        $assetResolver->shouldReceive('validateCompatibility')->andReturn(CompatibilityDecision::compatible());
-        $activation = new SiteAssetPackageActivationService(
-            $tenantContext, $auditEvents, $authorization, $assetResolver, $assets,
-            Mockery::mock(MotionVersionReadContract::class), $projections,
-        );
-        $installation = new MotionRuntimeInstallationService(
-            $tenantContext, $auditEvents, $authorization, $templatePackages, $activation, $assets, $projections,
-            new TemplateBuilderCompatibilityValidator(),
-        );
+        // MotionCustomerRuntimeService deliberately bypasses
+        // MotionAuthorizationInterface (see its own docblock — the
+        // tenant.api machine-to-machine channel has no Auth::user()), so
+        // only the read contracts and license gateway are needed here;
+        // activePackage() below builds its fixtures directly rather than
+        // through SiteAssetPackageActivationService/MotionRuntimeInstallationService.
         $runtimeService = new MotionCustomerRuntimeService(
-            $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $installation,
+            $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $assets, $projections,
         );
 
         return new MotionCustomerActivationService($tenantContext, $auditEvents, $runtimeService);
@@ -130,23 +125,29 @@ class MotionCustomerActivationServiceTest extends TestCase
         $this->assertNotEmpty($manifest->manifestChecksum);
     }
 
-    public function test_enable_refuses_when_another_site_is_already_enabled(): void
+    /**
+     * Phase 9 (docs/motion-commercialization/ENTITLEMENT_RULES.md):
+     * replaces Phase 8's artificial "only one site, ever" cap. Two
+     * separately-entitled sites can each be enabled independently — real
+     * per-site entitlement (proven in the Feature-level
+     * MotionCommercializationTest against the REAL RealMotionLicenseGateway)
+     * is the actual gate now; this fake-gateway-based unit test only
+     * proves the *cap itself* is gone, not the real entitlement check
+     * (which this file's fake gateway bypasses by design).
+     */
+    public function test_enable_no_longer_caps_at_a_single_site(): void
     {
         $siteA = $this->createSite('Site A');
-        $siteA->features = ['motion_graphics_integration' => true];
-        $siteA->save();
+        $this->activePackage($siteA, 'motion-1');
         $siteB = $this->createSite('Site B');
-        $this->activePackage($siteB);
+        $this->activePackage($siteB, 'motion-1');
         $service = $this->activationService();
 
-        try {
-            $service->enable($siteB, new MotionAdapterContext('user:1', (string) $siteB->id, 'corr-1'));
-            $this->fail('Expected a fail-closed exception.');
-        } catch (MotionAdapterFailClosedException $e) {
-            $this->assertSame('another_site_already_enabled', $e->failureCode);
-        }
+        $service->enable($siteA, new MotionAdapterContext('user:1', (string) $siteA->id, 'corr-1'));
+        $service->enable($siteB, new MotionAdapterContext('user:1', (string) $siteB->id, 'corr-2'));
 
-        $this->assertFalse((bool) ($siteB->fresh()->features['motion_graphics_integration'] ?? false));
+        $this->assertTrue((bool) $siteA->fresh()->features['motion_graphics_integration']);
+        $this->assertTrue((bool) $siteB->fresh()->features['motion_graphics_integration']);
     }
 
     public function test_disable_turns_off_the_site_flag(): void
@@ -211,5 +212,27 @@ class MotionCustomerActivationServiceTest extends TestCase
         } catch (MotionAdapterFailClosedException $e) {
             $this->assertSame('site_inactive', $e->failureCode);
         }
+    }
+
+    /**
+     * Rollback rehearsal (ROLLBACK_PLAN_AND_REHEARSAL.md): enable, disable
+     * (rollback), then enable again for the *same* site — the exact
+     * sequence a real re-activation after a rollback would follow.
+     */
+    public function test_a_site_can_be_enabled_rolled_back_and_re_enabled(): void
+    {
+        $site = $this->createSite();
+        $this->activePackage($site);
+        $service = $this->activationService();
+        $context = new MotionAdapterContext('user:1', (string) $site->id, 'corr-1');
+
+        $service->enable($site, $context);
+        $this->assertTrue((bool) $site->fresh()->features['motion_graphics_integration']);
+
+        $service->disable($site, $context, 'rollback rehearsal');
+        $this->assertFalse((bool) $site->fresh()->features['motion_graphics_integration']);
+
+        $service->enable($site, $context);
+        $this->assertTrue((bool) $site->fresh()->features['motion_graphics_integration']);
     }
 }

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use SaaSPlatform\Modules\SeoAdvanced\Http\Controllers\SeoAdvancedAdminController;
+use SaaSPlatform\Modules\SeoAdvanced\Http\Controllers\SeoAdvancedAiAssistantController;
 use SaaSPlatform\Modules\SeoAdvanced\Http\Controllers\SeoAdvancedRuntimeController;
 use SaaSPlatform\Modules\SeoAdvanced\Http\Controllers\SeoAdvancedSearchConsoleController;
 
@@ -48,4 +49,7 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/seo-advanced/{siteId}
     Route::post('/search-console/select-property', [SeoAdvancedSearchConsoleController::class, 'selectProperty'])->name('search-console.select-property');
     Route::post('/search-console/disconnect', [SeoAdvancedSearchConsoleController::class, 'disconnect'])->name('search-console.disconnect');
     Route::get('/search-console/performance', [SeoAdvancedSearchConsoleController::class, 'performance'])->name('search-console.performance');
+
+    Route::get('/ai-assistant', [SeoAdvancedAiAssistantController::class, 'show'])->name('ai-assistant');
+    Route::post('/ai-assistant', [SeoAdvancedAiAssistantController::class, 'analyze'])->name('ai-assistant.analyze');
 });

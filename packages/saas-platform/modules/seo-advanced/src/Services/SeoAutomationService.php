@@ -61,7 +61,7 @@ class SeoAutomationService
 
             if ($latest->position - $previous->position >= self::RANK_DROP_THRESHOLD) {
                 $dispatcher->notifySiteAdmin(
-                    $siteId,
+                    $keyword->site_id,
                     'افت رتبه کلمه کلیدی',
                     "رتبه «{$keyword->keyword}» از {$previous->position} به {$latest->position} افت کرد."
                 );
