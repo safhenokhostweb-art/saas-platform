@@ -12,12 +12,14 @@ class InfraBackupRun extends Model
         'backup_type', 'site_id', 'status', 'file_path',
         'file_size_mb', 'duration_seconds', 'error_message',
         'started_at', 'completed_at',
+        'table_coverage', 'completeness_status',
     ];
 
     protected $casts = [
-        'started_at'   => 'datetime',
-        'completed_at' => 'datetime',
-        'file_size_mb' => 'float',
+        'started_at'     => 'datetime',
+        'completed_at'   => 'datetime',
+        'file_size_mb'   => 'float',
+        'table_coverage' => 'array',
     ];
 
     public function site()
@@ -62,23 +64,30 @@ class InfraBackupRun extends Model
         ]);
     }
 
-    public function endSuccess(string $filePath, float $sizeMb, int $durationSec): void
+    /**
+     * @param array{included_tables?: list<string>, skipped_tables?: list<array{table: string, reason: string}>, insert_counts?: array<string, int>, total_insert_count?: int, completeness_status?: string} $coverage
+     */
+    public function endSuccess(string $filePath, float $sizeMb, int $durationSec, array $coverage = []): void
     {
         $this->update([
-            'status'           => 'success',
-            'file_path'        => $filePath,
-            'file_size_mb'     => $sizeMb,
-            'duration_seconds' => $durationSec,
-            'completed_at'     => now(),
+            'status'              => 'success',
+            'file_path'           => $filePath,
+            'file_size_mb'        => $sizeMb,
+            'duration_seconds'    => $durationSec,
+            'completed_at'        => now(),
+            'table_coverage'      => $coverage ?: null,
+            'completeness_status' => $coverage['completeness_status'] ?? null,
         ]);
     }
 
-    public function endFailed(string $error): void
+    public function endFailed(string $error, array $coverage = []): void
     {
         $this->update([
-            'status'        => 'failed',
-            'error_message' => $error,
-            'completed_at'  => now(),
+            'status'              => 'failed',
+            'error_message'       => $error,
+            'completed_at'        => now(),
+            'table_coverage'      => $coverage ?: null,
+            'completeness_status' => $coverage['completeness_status'] ?? ($coverage ? 'failed' : null),
         ]);
     }
 }
