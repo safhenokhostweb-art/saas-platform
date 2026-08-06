@@ -2,7 +2,11 @@
 
 namespace Tests\Unit\Services\Infrastructure;
 
+use App\Models\Infrastructure\RestoreLog;
+use App\Services\Infrastructure\ArvanBackupService;
 use App\Services\Infrastructure\RestoreService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -19,6 +23,8 @@ use Tests\TestCase;
  */
 class TenantBackupFormatContractTest extends TestCase
 {
+    use RefreshDatabase;
+
     private RestoreService $restore;
 
     protected function setUp(): void
@@ -79,5 +85,70 @@ class TenantBackupFormatContractTest extends TestCase
     {
         $this->assertTrue($this->restore->isTenantScopedBackupFilename('db_backup_1_2026-08-06_023014.sql.gz', 1));
         $this->assertFalse($this->restore->isTenantScopedBackupFilename('backup_2026-08-06_02-00-04.sql.gz', 1));
+    }
+
+    // ─── Defense-in-depth: the service layer must reject on its own ──────────
+    //
+    // Reproduces the 2026-08-06 "validation bypass" report: a caller that
+    // never went through RestoreWizardController::execute() (a direct
+    // RestoreService::executeTenantDatabaseRestore() call — exactly what a
+    // stale/queued job or a future alternate dispatch path would do) must
+    // still be rejected. If this test fails, the service-level gate has
+    // regressed and the controller is the ONLY thing standing between an
+    // incompatible file and `CREATE DATABASE restore_tmp_{siteId}`.
+
+    public function test_executeTenantDatabaseRestore_rejects_incompatible_filename_without_calling_arvan_at_all(): void
+    {
+        $this->mock(ArvanBackupService::class, function ($mock) {
+            $mock->shouldNotReceive('download');
+        });
+
+        $log = RestoreLog::create([
+            'restore_type'  => RestoreLog::TYPE_TENANT_DATABASE,
+            'site_id'       => 1,
+            'backup_file'   => 'customer-sites/tenant-1/database/backup_2026-08-06_02-00-04.sql.gz',
+            'status'        => RestoreLog::STATUS_PENDING,
+            'restore_token' => Str::random(40),
+        ]);
+
+        app(RestoreService::class)->executeTenantDatabaseRestore(
+            $log,
+            'customer-sites/tenant-1/database/backup_2026-08-06_02-00-04.sql.gz',
+            1
+        );
+
+        $log->refresh();
+        $this->assertSame(RestoreLog::STATUS_FAILED, $log->status);
+        $this->assertStringContainsString('سازگار نیست', $log->error_message);
+        $this->assertStringContainsString('backup_2026-08-06_02-00-04.sql.gz', $log->error_message);
+    }
+
+    public function test_executeTenantDatabaseRestore_proceeds_past_the_gate_for_a_compatible_filename(): void
+    {
+        // Compatible filename must clear the Step-0 gate and reach the
+        // download step (which then fails cleanly because Arvan has no
+        // real file for this test) — proving the gate isn't over-broad and
+        // rejecting the format it's supposed to accept.
+        $this->mock(ArvanBackupService::class, function ($mock) {
+            $mock->shouldReceive('download')->once()->andReturn(false);
+        });
+
+        $log = RestoreLog::create([
+            'restore_type'  => RestoreLog::TYPE_TENANT_DATABASE,
+            'site_id'       => 1,
+            'backup_file'   => 'customer-sites/tenant-1/database/db_backup_1_2026-08-06_023014.sql.gz',
+            'status'        => RestoreLog::STATUS_PENDING,
+            'restore_token' => Str::random(40),
+        ]);
+
+        app(RestoreService::class)->executeTenantDatabaseRestore(
+            $log,
+            'customer-sites/tenant-1/database/db_backup_1_2026-08-06_023014.sql.gz',
+            1
+        );
+
+        $log->refresh();
+        $this->assertSame(RestoreLog::STATUS_FAILED, $log->status);
+        $this->assertStringContainsString('دانلود', $log->error_message);
     }
 }

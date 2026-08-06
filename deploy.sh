@@ -75,6 +75,36 @@ run_step "php artisan migrate --force"  php artisan migrate --force
 run_step "php artisan optimize:clear"   php artisan optimize:clear
 run_step "php artisan optimize"         php artisan optimize
 
+# --- reload code caches: optimize:clear/optimize only touch Laravel's own
+# framework caches (config/route/view) — they do NOT invalidate OPcache or
+# restart any long-lived PHP process. Without this, PHP-FPM workers and any
+# queue/restore-worker daemon keep serving pre-deploy bytecode from files
+# that were already overwritten on disk, so a code fix can be "deployed"
+# (present on disk) yet never take effect at runtime. Best-effort: don't
+# fail the whole deploy if a given mechanism isn't present on this host.
+echo
+info "Reloading PHP processes so OPcache picks up the new code..."
+run_step "php artisan queue:restart" php artisan queue:restart
+if command -v systemctl >/dev/null 2>&1; then
+  FPM_UNIT="$(systemctl list-units --type=service --no-legend 2>/dev/null | awk '{print $1}' | grep -m1 '^php.*-fpm\.service$' || true)"
+  if [[ -n "${FPM_UNIT}" ]]; then
+    if sudo systemctl reload "${FPM_UNIT}" 2>&1; then
+      ok "Reloaded ${FPM_UNIT} (OPcache invalidated)"
+    else
+      warn "Could not reload ${FPM_UNIT} — restart it manually or OPcache may still serve stale bytecode"
+    fi
+  else
+    warn "No php-fpm systemd unit detected — if OPcache is enabled with validate_timestamps=0, restart it manually"
+  fi
+  if systemctl list-units --all --type=service --no-legend 2>/dev/null | grep -q '^restore-worker\.service'; then
+    if sudo systemctl restart restore-worker 2>&1; then
+      ok "Restarted restore-worker.service"
+    else
+      warn "Could not restart restore-worker.service — restart it manually so it picks up the new RestoreService code"
+    fi
+  fi
+fi
+
 # --- optional: node assets ---
 echo
 if [[ -f package-lock.json ]] && command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
