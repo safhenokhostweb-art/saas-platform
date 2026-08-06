@@ -123,11 +123,25 @@ class RestoreService
         $prefix = $this->remotePrefixFor($type, $siteId);
         $files  = $this->arvan->listFiles($prefix);
 
-        return array_map(function ($file) {
+        return array_map(function ($file) use ($type, $siteId) {
             $file['size_human'] = $this->humanSize($file['size']);
             $file['date_human'] = $file['last_modified']
                 ? date('Y/m/d H:i', $file['last_modified'])
                 : '—';
+
+            // Both producers write to the same Arvan prefix (see the "Backup
+            // Format Contract" note above isTenantScopedBackupFilename()) —
+            // the wizard must not let an operator pick an incompatible file
+            // for this restore type, but it also must not make it disappear
+            // (it may still be needed for a manual/dedicated-server restore).
+            if ($type === RestoreLog::TYPE_TENANT_DATABASE) {
+                $compatible               = $this->isTenantScopedBackupFilename($file['filename'], $siteId);
+                $file['compatible']       = $compatible;
+                $file['incompatible_reason'] = $compatible
+                    ? null
+                    : 'این فایل با فرمت بازیابی tenant-scoped سازگار نیست (احتمالاً بکاپ کامل دیتابیس اختصاصی تِنِنت است). برای این نوع بازیابی قابل انتخاب نیست — در صورت نیاز باید مستقیماً روی سرور اختصاصی همان تِنِنت بازیابی شود.';
+            }
+
             return $file;
         }, $files);
     }
@@ -145,7 +159,7 @@ class RestoreService
 
     // ─── Backup Validation ────────────────────────────────────────────────────
 
-    public function validateBackup(string $remotePath, string $type): array
+    public function validateBackup(string $remotePath, string $type, ?int $siteId = null): array
     {
         $checks = [];
         $valid  = true;
@@ -170,13 +184,19 @@ class RestoreService
         ];
         if (!$sizeOk) $valid = false;
 
-        $filename = basename($remotePath);
-        $formatOk = $this->isValidBackupFilename($filename, $type);
+        $filename     = basename($remotePath);
+        $formatOk     = $this->isValidBackupFilename($filename, $type, $siteId);
+        $isTenantType = $type === RestoreLog::TYPE_TENANT_DATABASE;
         $checks[] = [
-            'check'  => 'فرمت نام فایل',
-            'result' => $formatOk ? 'pass' : 'warn',
-            'detail' => $formatOk ? "نام فایل معتبر: {$filename}" : "نام فایل با فرمت استاندارد مطابقت ندارد: {$filename}",
+            'check'  => 'فرمت نام فایل و سازگاری با نوع بازیابی',
+            'result' => $formatOk ? 'pass' : ($isTenantType ? 'fail' : 'warn'),
+            'detail' => $formatOk
+                ? "نام فایل معتبر: {$filename}"
+                : ($isTenantType
+                    ? "این فایل با فرمت tenant-scoped (db_backup_{site_id}_YYYY-MM-DD_His.sql.gz) مطابقت ندارد — احتمالاً یک بکاپ کامل دیتابیس اختصاصی تِنِنت است (مثل backup_*.sql.gz) که برای import در restore_tmp ناسازگار است."
+                    : "نام فایل با فرمت استاندارد مطابقت ندارد: {$filename}"),
         ];
+        if ($isTenantType && !$formatOk) $valid = false;
 
         $lockFree = !$this->isLocked();
         $checks[] = [
@@ -201,7 +221,7 @@ class RestoreService
 
     public function dryRun(string $type, string $remotePath, ?int $siteId = null): array
     {
-        $validation = $this->validateBackup($remotePath, $type);
+        $validation = $this->validateBackup($remotePath, $type, $siteId);
         $steps      = $this->describeRestoreSteps($type, $remotePath, $siteId);
         $warnings   = $this->collectWarnings($type, $siteId);
         $impact     = $this->estimateImpact($type, $siteId);
@@ -358,6 +378,102 @@ class RestoreService
     {
         exec('gzip -t ' . escapeshellarg($localPath) . ' 2>&1', $output, $code);
         return $code === 0;
+    }
+
+    // ─── Backup Format Contract ────────────────────────────────────────────────
+    //
+    // Two producers write to the exact same Arvan prefix
+    // (customer-sites/tenant-{siteId}/database/) with incompatible content:
+    //  - db:backup-tenants (this app)  -> db_backup_{siteId}_{Y-m-d_His}.sql.gz
+    //    A `--where="site_id=X"` filtered dump of the SHARED customer_site
+    //    database. The ONLY format executeTenantDatabaseRestore() can safely
+    //    import into restore_tmp_{siteId} and row-copy back by site_id.
+    //  - the tenant's own dedicated-install `db:backup` (customer-site repo)
+    //    -> backup_{Y-m-d_H-i-s}.sql(.gz)
+    //    A full, unfiltered dump of that tenant's OWN dedicated database
+    //    (different schema entirely, --routines --triggers included). Never
+    //    safe to import into restore_tmp_{siteId} — the tables don't even
+    //    correspond to customer_site's schema.
+
+    /**
+     * True only for the tenant-row-scoped format produced by db:backup-tenants
+     * — the only backup format executeTenantDatabaseRestore() is designed for.
+     * If $siteId is given, the filename's embedded site id must match it too
+     * (defense against a cross-tenant file being selected/dispatched).
+     */
+    public function isTenantScopedBackupFilename(string $filename, ?int $siteId = null): bool
+    {
+        if (!preg_match('/^db_backup_(\d+)_\d{4}-\d{2}-\d{2}_\d{6}\.sql\.gz$/', $filename, $m)) {
+            return false;
+        }
+
+        return $siteId === null || (int) $m[1] === $siteId;
+    }
+
+    /**
+     * Scans decompressed SQL text for directives that are incompatible with
+     * importing into a shared-schema restore_tmp_{siteId} database: they only
+     * make sense against a dump's OWN dedicated database, never a tenant-row-
+     * scoped one. FK/REFERENCES statements are deliberately not flagged here
+     * — that privilege gap is already fixed at the grant level, and a
+     * legitimate tenant-scoped dump of a schema with real FKs would trip it.
+     */
+    public function detectIncompatibleTenantRestoreDirective(string $sql): ?string
+    {
+        $patterns = [
+            'CREATE DATABASE'              => '/^\s*CREATE\s+DATABASE\b/im',
+            'ALTER DATABASE'                => '/^\s*ALTER\s+DATABASE\b/im',
+            'USE statement'                 => '/^\s*USE\s+`?[a-zA-Z0-9_]+`?\s*;/im',
+            'DEFINER clause'                => '/\bDEFINER\s*=/i',
+            'LOCK TABLES'                   => '/^\s*LOCK\s+TABLES\b/im',
+            'database-qualified table name' => '/\b(?:CREATE\s+TABLE|INSERT\s+INTO)\s+`[^`]+`\.`[^`]+`/i',
+        ];
+
+        foreach ($patterns as $label => $pattern) {
+            if (preg_match($pattern, $sql)) {
+                return $label;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Streams a gzip file through detectIncompatibleTenantRestoreDirective()
+     * without loading the whole (possibly large) dump into memory at once.
+     * A small overlap buffer between chunks covers directives that straddle
+     * a chunk boundary.
+     */
+    public function scanGzipForIncompatibleTenantRestoreDirective(string $gzPath, int $maxBytes = 20 * 1024 * 1024): ?string
+    {
+        $handle = @gzopen($gzPath, 'rb');
+        if (!$handle) {
+            return null;
+        }
+
+        $carry     = '';
+        $readBytes = 0;
+
+        try {
+            while (!gzeof($handle) && $readBytes < $maxBytes) {
+                $chunk = gzread($handle, 65536);
+                if ($chunk === false || $chunk === '') {
+                    break;
+                }
+                $readBytes += strlen($chunk);
+                $window     = $carry . $chunk;
+
+                if ($violation = $this->detectIncompatibleTenantRestoreDirective($window)) {
+                    return $violation;
+                }
+
+                $carry = substr($window, -256);
+            }
+        } finally {
+            gzclose($handle);
+        }
+
+        return null;
     }
 
     public function verifyTar(string $localPath): bool
@@ -640,6 +756,18 @@ class RestoreService
         try {
             $this->push($token, $events, 5, 'آغاز بازیابی دیتابیس تِنِنت', 'running');
 
+            // Step 0: Reject an incompatible backup by filename before touching
+            // anything — defense-in-depth behind the wizard's own validateBackup()
+            // gate, in case this is invoked directly (e.g. a stale queued job).
+            $filename = basename($remotePath);
+            if (!$this->isTenantScopedBackupFilename($filename, $siteId)) {
+                throw new \RuntimeException(
+                    "فرمت فایل بکاپ با بازیابی tenant-scoped سازگار نیست: {$filename}. " .
+                    "این فایل احتمالاً یک بکاپ کامل دیتابیس اختصاصی تِنِنت است، نه بکاپ سطر-محدود — " .
+                    "import آن در restore_tmp_{$siteId} رد شد."
+                );
+            }
+
             // Step 1: Download from Arvan
             $this->push($token, $events, 10, 'دانلود فایل بکاپ از Arvan...');
             $ts        = now()->format('Y-m-d_His');
@@ -657,6 +785,23 @@ class RestoreService
                 throw new \RuntimeException('فایل بکاپ خراب است (gzip integrity check failed)');
             }
             $this->push($token, $events, 30, 'یکپارچگی فایل تأیید شد');
+
+            // Step 2.5: Content-level validation — reject SQL directives that
+            // are incompatible with importing into a shared-schema
+            // restore_tmp_{siteId} database, BEFORE that database is created
+            // or touched. A dedicated-full-DB dump (the incompatible producer)
+            // can pass the filename check upstream only if something bypassed
+            // validateBackup() — this is the last line of defense.
+            $this->push($token, $events, 31, 'بررسی محتوای SQL برای دستورات ناسازگار...');
+            $violation = $this->scanGzipForIncompatibleTenantRestoreDirective($localPath);
+            if ($violation) {
+                @unlink($localPath);
+                throw new \RuntimeException(
+                    "فایل بکاپ حاوی دستور ناسازگار با بازیابی tenant-scoped است ({$violation}). " .
+                    "این فایل احتمالاً یک بکاپ کامل دیتابیس اختصاصی تِنِنت است — import آن رد شد."
+                );
+            }
+            $this->push($token, $events, 32, 'محتوای SQL سازگار تأیید شد');
 
             // Step 3: Pre-restore snapshot
             $this->push($token, $events, 33, 'ایجاد snapshot قبل از بازیابی...');
@@ -926,9 +1071,12 @@ class RestoreService
         }
     }
 
-    private function isValidBackupFilename(string $filename, string $type): bool
+    private function isValidBackupFilename(string $filename, string $type, ?int $siteId = null): bool
     {
-        if (str_contains($type, 'database')) {
+        if ($type === RestoreLog::TYPE_TENANT_DATABASE) {
+            return $this->isTenantScopedBackupFilename($filename, $siteId);
+        }
+        if ($type === RestoreLog::TYPE_PLATFORM_DATABASE) {
             return (bool) preg_match('/^db_backup_\d{4}-\d{2}-\d{2}_\d{6}\.sql\.gz$/', $filename);
         }
         if (str_contains($type, 'storage')) {

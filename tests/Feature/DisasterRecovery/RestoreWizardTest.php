@@ -299,7 +299,7 @@ class RestoreWizardTest extends TestCase
         $response = $this->actingAs($this->admin)
              ->postJson(route('admin.disaster-recovery.execute'), [
                  'type'         => 'tenant_database',
-                 'backup_file'  => "customer-sites/tenant-{$this->site->id}/database/db_backup_2026-06-25_020000.sql.gz",
+                 'backup_file'  => "customer-sites/tenant-{$this->site->id}/database/db_backup_{$this->site->id}_2026-06-25_020000.sql.gz",
                  'site_id'      => $this->site->id,
                  'confirmation' => true,
              ]);
@@ -472,5 +472,198 @@ class RestoreWizardTest extends TestCase
         $this->assertEquals('1 KB', $service->humanSize(1024));
         $this->assertEquals('1 MB', $service->humanSize(1048576));
         $this->assertEquals('5 MB', $service->humanSize(5242880));
+    }
+
+    // ─── Backup Format Contract — both naming formats, both producers ────────
+    //
+    // Reproduces the 2026-08-06 incident: db:backup-tenants (this app) and the
+    // tenant's own dedicated-install db:backup (customer-site repo) both write
+    // to customer-sites/tenant-{siteId}/database/ but with incompatible
+    // content — one is a `--where site_id=X` row-scoped dump of the shared
+    // customer_site DB, the other is a full unfiltered dump of the tenant's
+    // own dedicated database. Only the first is safe to import into
+    // restore_tmp_{siteId}.
+
+    public function test_tenant_scoped_filename_matches_db_backup_tenants_format(): void
+    {
+        $service = app(RestoreService::class);
+
+        $this->assertTrue($service->isTenantScopedBackupFilename('db_backup_1_2026-08-06_023014.sql.gz'));
+        $this->assertTrue($service->isTenantScopedBackupFilename('db_backup_1_2026-08-06_023014.sql.gz', 1));
+    }
+
+    public function test_tenant_scoped_filename_rejects_dedicated_full_db_backup_format(): void
+    {
+        $service = app(RestoreService::class);
+
+        // The customer-site repo's own db:backup command — a full dump of
+        // that tenant's OWN dedicated database, not the shared customer_site DB.
+        $this->assertFalse($service->isTenantScopedBackupFilename('backup_2026-08-06_02-00-04.sql.gz'));
+    }
+
+    public function test_tenant_scoped_filename_rejects_mismatched_site_id(): void
+    {
+        $service = app(RestoreService::class);
+
+        // Filename belongs to tenant 2 — must not be accepted for tenant 1's restore.
+        $this->assertFalse($service->isTenantScopedBackupFilename('db_backup_2_2026-08-06_023014.sql.gz', 1));
+    }
+
+    public function test_validate_rejects_dedicated_full_db_backup_for_tenant_database_type(): void
+    {
+        $this->mock(ArvanBackupService::class, function ($mock) {
+            $mock->shouldReceive('exists')->andReturn(true);
+            $mock->shouldReceive('size')->andReturn(147 * 1024);
+            $mock->shouldReceive('lastModified')->andReturn(1750857600);
+        });
+
+        $response = $this->actingAs($this->admin)
+             ->postJson(route('admin.disaster-recovery.validate'), [
+                 'backup_file' => "customer-sites/tenant-{$this->site->id}/database/backup_2026-08-06_02-00-04.sql.gz",
+                 'type'        => 'tenant_database',
+                 'site_id'     => $this->site->id,
+             ]);
+
+        $response->assertOk()->assertJsonPath('valid', false);
+    }
+
+    public function test_validate_accepts_tenant_scoped_backup_for_tenant_database_type(): void
+    {
+        $this->mock(ArvanBackupService::class, function ($mock) {
+            $mock->shouldReceive('exists')->andReturn(true);
+            $mock->shouldReceive('size')->andReturn(810);
+            $mock->shouldReceive('lastModified')->andReturn(1750857600);
+        });
+
+        $response = $this->actingAs($this->admin)
+             ->postJson(route('admin.disaster-recovery.validate'), [
+                 'backup_file' => "customer-sites/tenant-{$this->site->id}/database/db_backup_{$this->site->id}_2026-08-06_023014.sql.gz",
+                 'type'        => 'tenant_database',
+                 'site_id'     => $this->site->id,
+             ]);
+
+        $response->assertOk()->assertJsonPath('valid', true);
+    }
+
+    public function test_execute_rejects_dedicated_full_db_backup_for_tenant_database_type(): void
+    {
+        $this->mock(ArvanBackupService::class, function ($mock) {
+            $mock->shouldReceive('exists')->andReturn(true);
+            $mock->shouldReceive('size')->andReturn(147 * 1024);
+            $mock->shouldReceive('lastModified')->andReturn(1750857600);
+        });
+
+        $response = $this->actingAs($this->admin)
+             ->postJson(route('admin.disaster-recovery.execute'), [
+                 'type'         => 'tenant_database',
+                 'backup_file'  => "customer-sites/tenant-{$this->site->id}/database/backup_2026-08-06_02-00-04.sql.gz",
+                 'site_id'      => $this->site->id,
+                 'confirmation' => true,
+             ]);
+
+        $response->assertStatus(422);
+        $this->assertDatabaseMissing('restore_logs', [
+            'restore_type' => 'tenant_database',
+            'site_id'      => $this->site->id,
+            'status'       => RestoreLog::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_browse_tenant_database_flags_incompatible_backups_but_keeps_them_listed(): void
+    {
+        $siteId = $this->site->id;
+
+        $this->mock(ArvanBackupService::class, function ($mock) use ($siteId) {
+            $mock->shouldReceive('listFiles')
+                 ->with("customer-sites/tenant-{$siteId}/database")
+                 ->once()
+                 ->andReturn([
+                     ['path' => "customer-sites/tenant-{$siteId}/database/db_backup_{$siteId}_2026-08-06_023014.sql.gz", 'filename' => "db_backup_{$siteId}_2026-08-06_023014.sql.gz", 'size' => 810, 'last_modified' => 1754440214],
+                     ['path' => "customer-sites/tenant-{$siteId}/database/backup_2026-08-06_02-00-04.sql.gz", 'filename' => 'backup_2026-08-06_02-00-04.sql.gz', 'size' => 147 * 1024, 'last_modified' => 1754438404],
+                 ]);
+        });
+
+        $response = $this->actingAs($this->admin)
+             ->getJson(route('admin.disaster-recovery.browse', ['type' => 'tenant_database', 'site_id' => $siteId]));
+
+        $response->assertOk()->assertJsonPath('count', 2);
+
+        $files = $response->json('files');
+        $this->assertTrue($files[0]['compatible']);
+        $this->assertNull($files[0]['incompatible_reason']);
+        $this->assertFalse($files[1]['compatible']);
+        $this->assertNotEmpty($files[1]['incompatible_reason']);
+    }
+
+    // ─── Content-level directive detection ────────────────────────────────────
+
+    public function test_detects_create_database_as_incompatible(): void
+    {
+        $service = app(RestoreService::class);
+        $sql = "CREATE DATABASE `customer_site`;\nINSERT INTO `users` VALUES (1);";
+
+        $this->assertSame('CREATE DATABASE', $service->detectIncompatibleTenantRestoreDirective($sql));
+    }
+
+    public function test_detects_definer_clause_as_incompatible(): void
+    {
+        $service = app(RestoreService::class);
+        $sql = "/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`%`*/ /*!50003 TRIGGER `trg` BEFORE INSERT ON `orders` */;";
+
+        $this->assertSame('DEFINER clause', $service->detectIncompatibleTenantRestoreDirective($sql));
+    }
+
+    public function test_detects_lock_tables_as_incompatible(): void
+    {
+        $service = app(RestoreService::class);
+        $sql = "LOCK TABLES `orders` WRITE;\nINSERT INTO `orders` VALUES (1);\nUNLOCK TABLES;";
+
+        $this->assertSame('LOCK TABLES', $service->detectIncompatibleTenantRestoreDirective($sql));
+    }
+
+    public function test_detects_database_qualified_table_name_as_incompatible(): void
+    {
+        $service = app(RestoreService::class);
+        $sql = "INSERT INTO `customer_dedicated_db`.`orders` VALUES (1);";
+
+        $this->assertSame('database-qualified table name', $service->detectIncompatibleTenantRestoreDirective($sql));
+    }
+
+    public function test_row_scoped_dump_content_has_no_incompatible_directives(): void
+    {
+        $service = app(RestoreService::class);
+        // Shape of a real db:backup-tenants dump: no --databases flag, so no
+        // CREATE DATABASE/USE, no --routines/--triggers, so no DEFINER.
+        $sql = "-- MySQL dump\nINSERT INTO `sites` (`id`, `site_id`) VALUES (1, 1);\n";
+
+        $this->assertNull($service->detectIncompatibleTenantRestoreDirective($sql));
+    }
+
+    public function test_scans_gzipped_dump_for_incompatible_directives(): void
+    {
+        $service = app(RestoreService::class);
+        $path    = tempnam(sys_get_temp_dir(), 'restore-scan-test') . '.sql.gz';
+
+        file_put_contents($path, gzencode("CREATE DATABASE `customer_dedicated_db`;\nINSERT INTO `orders` VALUES (1);"));
+
+        try {
+            $this->assertSame('CREATE DATABASE', $service->scanGzipForIncompatibleTenantRestoreDirective($path));
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_scans_gzipped_row_scoped_dump_as_compatible(): void
+    {
+        $service = app(RestoreService::class);
+        $path    = tempnam(sys_get_temp_dir(), 'restore-scan-test') . '.sql.gz';
+
+        file_put_contents($path, gzencode("-- MySQL dump\nINSERT INTO `sites` (`id`, `site_id`) VALUES (1, 1);\n"));
+
+        try {
+            $this->assertNull($service->scanGzipForIncompatibleTenantRestoreDirective($path));
+        } finally {
+            @unlink($path);
+        }
     }
 }

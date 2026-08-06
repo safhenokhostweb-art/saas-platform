@@ -70,11 +70,13 @@ class RestoreWizardController extends Controller
         $request->validate([
             'backup_file' => 'required|string|max:500',
             'type'        => 'required|string',
+            'site_id'     => 'nullable|integer|exists:sites,id',
         ]);
 
         $type   = $request->input('type');
         $file   = $request->input('backup_file');
-        $result = $this->restore->validateBackup($file, $type);
+        $siteId = $request->input('site_id') ? (int) $request->input('site_id') : null;
+        $result = $this->restore->validateBackup($file, $type, $siteId);
 
         return response()->json($result);
     }
@@ -167,7 +169,7 @@ class RestoreWizardController extends Controller
         }
 
         // Validate backup file
-        $validation = $this->restore->validateBackup($backupFile, $type);
+        $validation = $this->restore->validateBackup($backupFile, $type, $siteId);
         if (!$validation['valid']) {
             return response()->json([
                 'error'      => 'فایل بکاپ معتبر نیست',

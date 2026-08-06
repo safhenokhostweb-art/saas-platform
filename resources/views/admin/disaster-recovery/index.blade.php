@@ -253,16 +253,20 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             <template x-for="(file, idx) in backups" :key="file.path">
-                                <tr class="hover:bg-gray-50 transition"
-                                    x-bind:class="form.backup_file === file.path ? 'bg-blue-50' : ''">
+                                <tr class="transition"
+                                    x-bind:class="file.compatible === false ? 'bg-gray-50 opacity-60' : (form.backup_file === file.path ? 'bg-blue-50' : 'hover:bg-gray-50')">
                                     <td class="px-4 py-3">
                                         <div class="flex items-center gap-2">
                                             <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                             </svg>
                                             <span class="font-mono text-xs text-gray-700" x-text="file.filename"></span>
-                                            <template x-if="idx === 0">
+                                            <template x-if="idx === 0 && file.compatible !== false">
                                                 <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">جدیدترین</span>
+                                            </template>
+                                            <template x-if="file.compatible === false">
+                                                <span class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full"
+                                                      x-bind:title="file.incompatible_reason">ناسازگار با این نوع بازیابی</span>
                                             </template>
                                         </div>
                                     </td>
@@ -271,7 +275,8 @@
                                     <td class="px-4 py-3 text-left">
                                         <button type="button"
                                                 x-on:click="selectBackup(file)"
-                                                class="px-3 py-1 rounded-lg text-xs font-medium transition"
+                                                x-bind:disabled="file.compatible === false"
+                                                class="px-3 py-1 rounded-lg text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed"
                                                 x-bind:class="form.backup_file === file.path ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
                                             <span x-text="form.backup_file === file.path ? '✓ انتخاب شد' : 'انتخاب'"></span>
                                         </button>
