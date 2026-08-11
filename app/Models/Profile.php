@@ -32,4 +32,24 @@ class Profile extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Resolve the avatar's public URL through MediaStorage instead of the raw
+     * url() helper, so it keeps working once avatars move off the local
+     * 'uploads' disk. Preserves the legacy "uploads/..." stored-path
+     * convention and passes already-absolute URLs (e.g. http...) through
+     * unchanged.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        if (str_starts_with($this->avatar, 'http')) {
+            return $this->avatar;
+        }
+
+        return app(\App\Services\Infrastructure\MediaStorage::class)->avatarUrl($this->avatar);
+    }
 }

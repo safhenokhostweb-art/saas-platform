@@ -251,10 +251,7 @@ function editUserForm() {
                 $nameParts = explode(' ', $fullName, 2);
                 $firstName = $nameParts[0] ?? '';
                 $lastName  = $nameParts[1] ?? '';
-                $avatarRaw = $user->profile?->avatar ?? '';
-                $avatarUrl = ($avatarRaw !== '')
-                    ? (str_starts_with($avatarRaw, 'http') ? $avatarRaw : url($avatarRaw))
-                    : '';
+                $avatarUrl = $user->profile?->avatar_url ?? '';
             @endphp
             this.form.mobile             = '{{ addslashes($user->mobile) }}';
             this.form.first_name         = '{{ addslashes($firstName) }}';

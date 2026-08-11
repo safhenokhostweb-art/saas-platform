@@ -5,9 +5,14 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Site;
+use App\Services\Infrastructure\MediaStorage;
 
 class SitemapService
 {
+    public function __construct(private readonly MediaStorage $media)
+    {
+    }
+
     /**
      * ساخت فایل sitemap.xml برای کل سایت
      */
@@ -73,7 +78,7 @@ class SitemapService
 
         $xml = view('seo.sitemap', compact('urls'))->render();
 
-        Storage::disk('public')->put('sitemap.xml', $xml);
+        Storage::disk($this->media->diskNameFor('public'))->put('sitemap.xml', $xml);
 
         Cache::put('seo:sitemap_last_generated', now()->toDateTimeString(), now()->addDay());
     }

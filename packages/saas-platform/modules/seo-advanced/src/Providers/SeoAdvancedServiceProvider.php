@@ -43,6 +43,7 @@ class SeoAdvancedServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/seo-advanced.php', 'seo-advanced');
+        $this->mergeConfigFrom(__DIR__ . '/../../config/module-manifest.php', 'module-manifest-seo-advanced');
 
         $this->app->bind(MetaBuilderInterface::class, MetaBuilder::class);
         $this->app->bind(RobotsBuilderInterface::class, RobotsBuilder::class);
@@ -70,7 +71,9 @@ class SeoAdvancedServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
+        if (config('seo-advanced.routes.web', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
+        }
         $this->loadRoutesFrom(__DIR__ . '/../../routes/site.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'seo-advanced');
@@ -78,6 +81,9 @@ class SeoAdvancedServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../config/seo-advanced.php' => config_path('seo-advanced.php'),
         ], 'seo-advanced-config');
+        $this->publishes([
+            __DIR__ . '/../../config/module-manifest.php' => config_path('module-manifest-seo-advanced.php'),
+        ], 'seo-advanced-manifest');
         $this->publishes([
             __DIR__ . '/../../resources/views' => resource_path('views/vendor/seo-advanced'),
         ], 'seo-advanced-views');
@@ -90,6 +96,23 @@ class SeoAdvancedServiceProvider extends ServiceProvider
         }
 
         $this->registerRedirectMiddleware();
+        $this->registerModuleManifest();
+    }
+
+    /**
+     * Phase X — self-registers this module's manifest slug into a shared,
+     * host-app-agnostic registry, mirroring TicketsServiceProvider's
+     * registerModuleAssets() pattern. Lets AdminMenu (customer-site)
+     * discover this module's config('module-manifest-seo-advanced')
+     * without ever hardcoding the 'seo-advanced' slug itself.
+     */
+    private function registerModuleManifest(): void
+    {
+        $installed = config('module-manifests.installed', []);
+        if (!in_array('seo-advanced', $installed, true)) {
+            $installed[] = 'seo-advanced';
+        }
+        config(['module-manifests.installed' => $installed]);
     }
 
     /**

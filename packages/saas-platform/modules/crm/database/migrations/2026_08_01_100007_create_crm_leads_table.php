@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('source', 100)->nullable(); // e.g. website, referral, campaign
             $table->string('status', 20)->default('new'); // new|contacted|qualified|unqualified|converted
             $table->foreignId('owner_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('converted_contact_id')->nullable()->constrained('crm_contacts')->nullOnDelete();
+            $table->foreignId('converted_contact_id')->nullable()->constrained('crm_suite_contacts')->nullOnDelete();
             $table->foreignId('converted_company_id')->nullable()->constrained('crm_companies')->nullOnDelete();
             $table->foreignId('converted_opportunity_id')->nullable()->constrained('crm_opportunities')->nullOnDelete();
             $table->timestamp('converted_at')->nullable();

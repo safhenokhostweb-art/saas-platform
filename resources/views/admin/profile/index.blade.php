@@ -50,8 +50,7 @@
     </div>
 
     @php
-        $avatarPath = $user->profile?->avatar;
-        $avatarUrl  = $avatarPath ? url($avatarPath) : null;
+        $avatarUrl  = $user->profile?->avatar_url;
         $displayName = $user->profile?->full_name ?: $user->mobile;
         $initial    = mb_substr($displayName, 0, 1);
     @endphp

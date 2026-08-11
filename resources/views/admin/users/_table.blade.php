@@ -130,7 +130,7 @@
                         {{-- آواتار --}}
                         <td class="p-3">
                             @if($user->profile?->avatar)
-                                @php $avatarSrc = str_starts_with($user->profile->avatar, 'http') ? $user->profile->avatar : url($user->profile->avatar); @endphp
+                                @php $avatarSrc = $user->profile->avatar_url; @endphp
                                 <img src="{{ $avatarSrc }}"
                                      class="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm" alt="">
                             @else

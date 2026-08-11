@@ -49,11 +49,14 @@ class MotionCustomerActivationServiceTest extends TestCase
 
     private function activePackage(Site $site, string $assetId = 'motion-1'): SiteAssetPackage
     {
-        $templatePackage = TemplateAssetPackage::query()->create([
-            'template_reference' => 'template-1',
-            'required_assets' => [['asset_id' => $assetId, 'version' => 1]],
-            'package_version' => 1,
-        ]);
+        // firstOrCreate: TemplateAssetPackage is shared across sites by
+        // (template_reference, package_version) — a second site reusing
+        // the same reference must reuse the existing row, not violate
+        // the unique constraint by creating a duplicate.
+        $templatePackage = TemplateAssetPackage::query()->firstOrCreate(
+            ['template_reference' => 'template-1', 'package_version' => 1],
+            ['required_assets' => [['asset_id' => $assetId, 'version' => 1]]],
+        );
         $sitePackage = SiteAssetPackage::query()->create([
             'site_id' => $site->id,
             'template_reference' => 'template-1',

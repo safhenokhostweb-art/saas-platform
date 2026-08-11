@@ -19,7 +19,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('site_id')->nullable()->constrained('sites')->nullOnDelete();
             $table->string('name', 255);
-            $table->foreignId('contact_id')->nullable()->constrained('crm_contacts')->nullOnDelete();
+            $table->foreignId('contact_id')->nullable()->constrained('crm_suite_contacts')->nullOnDelete();
             $table->foreignId('company_id')->nullable()->constrained('crm_companies')->nullOnDelete();
             $table->foreignId('pipeline_id')->constrained('crm_pipelines')->restrictOnDelete();
             $table->foreignId('stage_id')->constrained('crm_stages')->restrictOnDelete();

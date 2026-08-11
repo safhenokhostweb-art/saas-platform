@@ -16,6 +16,7 @@ class CustomerMenu
         'profile' => 'پروفایل',
         'forms' => 'فرم‌ها',
         'support-tickets' => 'تیکت‌های پشتیبانی',
+        'motion-graphics' => 'موشن گرافیک',
     ];
 
     /** مسیر هر آیتم منو (روت‌های قابل دسترسی برای مشتری، بدون پیشوند admin) */
@@ -24,6 +25,7 @@ class CustomerMenu
         'profile' => 'profile.edit',
         'forms' => 'customer.forms.index',
         'support-tickets' => 'customer.support-tickets.index',
+        'motion-graphics' => 'customer.motion-graphics.index',
     ];
 
     /** الگوی روت برای حالت فعال (برای routeIs) */
@@ -32,6 +34,7 @@ class CustomerMenu
         'profile' => 'profile.*',
         'forms' => 'customer.forms.*',
         'support-tickets' => 'customer.support-tickets.*',
+        'motion-graphics' => 'customer.motion-graphics.*',
     ];
 
     /** آیتم‌هایی که همیشه برای مشتری نمایش داده می‌شوند */

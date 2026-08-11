@@ -72,7 +72,55 @@ class OrderFulfillmentService
             case Product::TYPE_SUPPORT_PLAN:
                 $this->fulfillSupportPlan($item, $site);
                 break;
+            case Product::TYPE_MOTION_ASSET:
+                $this->fulfillMotionAsset($item, $site);
+                break;
         }
+    }
+
+    /**
+     * Phase X — bespoke Motion commercialization. Records the purchase
+     * ONLY. Deliberately does not create a MotionBespokeAssignment, does
+     * not touch site_modules, and does not call ModuleAssignmentService —
+     * per the task's explicit rule that a paid-for custom Motion must
+     * never be automatically activated; assignment stays a separate,
+     * deliberate Platform-Admin action (MotionBespokeAssignmentService).
+     */
+    protected function fulfillMotionAsset(InvoiceItem $item, ?Site $site): void
+    {
+        if (! $site) {
+            return;
+        }
+
+        $commission = \App\Modules\MotionGraphics\Models\MotionBespokeCommission::query()
+            ->where('product_id', $item->product_id)
+            ->first();
+
+        if ($commission === null || (int) $commission->site_id !== (int) $site->id) {
+            Log::error('Motion asset fulfillment skipped: no matching commission for this site', [
+                'invoice_item_id' => $item->id,
+                'invoice_id' => $item->invoice_id,
+                'site_id' => $item->site_id,
+                'product_id' => $item->product_id,
+            ]);
+            return;
+        }
+
+        \App\Modules\MotionGraphics\Models\MotionBespokePurchase::query()->create([
+            'commission_id' => $commission->id,
+            'site_id' => $site->id,
+            'invoice_id' => $item->invoice_id,
+            'invoice_item_id' => $item->id,
+            'amount_irr' => $item->price_irr * $item->quantity,
+            'purchased_at' => now(),
+        ]);
+
+        Log::info('موشن اختصاصی خریداری شد (بدون فعال‌سازی خودکار)', [
+            'site_id' => $site->id,
+            'commission_id' => $commission->id,
+            'invoice_id' => $item->invoice_id,
+            'invoice_item_id' => $item->id,
+        ]);
     }
 
     protected function fulfillLicenseTemplate(InvoiceItem $item, ?Site $site): void

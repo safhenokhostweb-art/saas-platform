@@ -105,6 +105,8 @@ Route::prefix('lifecycle')->middleware(['throttle:20,1', 'tenant.api'])->group(f
 */
 Route::prefix('motion-runtime')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
     Route::get('/manifest', [\App\Http\Controllers\Api\MotionCustomerRuntimeApiController::class, 'manifest'])->name('api.motion-runtime.manifest');
+    Route::get('/bespoke-manifest', [\App\Http\Controllers\Api\MotionCustomerRuntimeApiController::class, 'bespokeManifest'])->name('api.motion-runtime.bespoke-manifest');
+    Route::get('/bespoke-commissions', [\App\Http\Controllers\Api\MotionCustomerRuntimeApiController::class, 'bespokeCommissions'])->name('api.motion-runtime.bespoke-commissions');
 });
 
 // Finance Ledger API — customer-site pushes payment events to platform ledger

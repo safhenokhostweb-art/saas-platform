@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppRelease;
+use App\Services\Infrastructure\MediaStorage;
 use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ use Illuminate\View\View;
 
 class AppReleaseController extends Controller
 {
-    public function __construct(private StorageManager $storage) {}
+    public function __construct(private StorageManager $storage, private MediaStorage $media) {}
 
     // ── GET /admin/app-releases ───────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ class AppReleaseController extends Controller
         $fileSize     = $file->getSize();
         $mimeType     = $file->getMimeType() ?? 'application/octet-stream';
 
-        $stored = $this->storage->storeUploadedFile($file, "app-releases/{$platform}", 'private', $filename);
+        $stored = $this->storage->storeUploadedFile($file, "app-releases/{$platform}", $this->media->diskNameFor('private'), $filename);
 
         $setLatest = $request->boolean('set_latest', true);
 
@@ -90,13 +91,15 @@ class AppReleaseController extends Controller
 
     public function download(AppRelease $release): mixed
     {
-        if (!$this->storage->exists($release->file_path, 'private')) {
+        $disk = $this->media->diskNameFor('private');
+
+        if (!$this->storage->exists($release->file_path, $disk)) {
             abort(404, 'فایل یافت نشد.');
         }
 
         $release->increment('download_count');
 
-        return $this->storage->download($release->file_path, 'private', $release->file_name);
+        return $this->storage->download($release->file_path, $disk, $release->file_name);
     }
 
     // ── PATCH /admin/app-releases/{release}/set-latest ────────────────────────
@@ -113,7 +116,7 @@ class AppReleaseController extends Controller
 
     public function destroy(AppRelease $release): RedirectResponse
     {
-        $this->storage->delete($release->file_path, 'private');
+        $this->storage->delete($release->file_path, $this->media->diskNameFor('private'));
         $release->delete();
 
         return back()->with('success', 'نسخه حذف شد.');

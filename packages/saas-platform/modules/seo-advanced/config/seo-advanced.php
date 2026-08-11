@@ -16,6 +16,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Route Loading
+    |--------------------------------------------------------------------------
+    |
+    | Phase X: routes/web.php is the platform-staff CRUD surface
+    | (admin/seo-advanced/{siteId}/..., {siteId} route param, auth+admin
+    | gate) — it belongs only in saas-platform, never in customer-site.
+    | routes/site.php (tenant-scoped, no {siteId}) always loads regardless
+    | of this flag. Mirrors TicketsServiceProvider's
+    | config('tickets.routes.site', true) convention, inverted since here
+    | it's the *web* file that's optional.
+    */
+    'routes' => [
+        'web' => env('SEO_ADVANCED_ROUTES_WEB', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Google Search Console (Phase 18-E — Part 2)
     |--------------------------------------------------------------------------
     |

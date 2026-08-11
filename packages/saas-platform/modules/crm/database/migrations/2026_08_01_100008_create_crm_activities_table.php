@@ -12,12 +12,18 @@ use Illuminate\Support\Facades\Schema;
  * Part 2's design rationale). Append-only, matching TicketActivity's
  * precedent (packages/saas-platform/modules/tickets/src/Models/
  * TicketActivity.php) — no `updated_at`.
+ *
+ * Phase X: table is 'crm_suite_activities', not 'crm_activities' —
+ * customer-site already has its own unrelated 'crm_activities' table (a
+ * separate, pre-existing local CRM feature,
+ * database/migrations/2026_06_15_100000_create_crm_tables.php, different
+ * schema entirely) — the plain 'crm_activities' name is taken.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('crm_activities', function (Blueprint $table) {
+        Schema::create('crm_suite_activities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('site_id')->nullable()->constrained('sites')->nullOnDelete();
             $table->string('subject_type', 100);
@@ -38,6 +44,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('crm_activities');
+        Schema::dropIfExists('crm_suite_activities');
     }
 };

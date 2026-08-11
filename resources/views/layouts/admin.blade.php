@@ -448,7 +448,7 @@
                     @php
                         $__adminUser    = auth()->user();
                         $__adminProfile = $__adminUser->profile;
-                        $__adminAvatar  = $__adminProfile?->avatar ? url($__adminProfile->avatar) : null;
+                        $__adminAvatar  = $__adminProfile?->avatar_url;
                         $__adminName    = $__adminProfile?->full_name ?: $__adminUser->mobile;
                         $__adminInitial = mb_substr($__adminName, 0, 1);
                     @endphp

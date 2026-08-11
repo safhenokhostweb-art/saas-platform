@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Theme;
+use App\Services\Infrastructure\MediaStorage;
 use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,18 +11,22 @@ use Illuminate\Support\Facades\Storage;
 
 class ThemeMediaController extends Controller
 {
-    private const DISK = 'public';
     private const MAX_BYTES = 5 * 1024 * 1024;
     private const ALLOWED   = ['jpg','jpeg','png','gif','webp','svg'];
 
+    public function __construct(private readonly MediaStorage $media)
+    {
+    }
+
     public function index(Theme $theme): JsonResponse
     {
+        $disk  = $this->media->diskNameFor('public');
         $dir   = "theme-media/{$theme->id}";
-        $files = Storage::disk(self::DISK)->files($dir);
+        $files = Storage::disk($disk)->files($dir);
         $images = array_map(fn ($f) => [
-            'url'  => Storage::disk(self::DISK)->url($f),
+            'url'  => Storage::disk($disk)->url($f),
             'name' => basename($f),
-            'size' => Storage::disk(self::DISK)->size($f),
+            'size' => Storage::disk($disk)->size($f),
         ], $files);
         // newest first
         usort($images, fn ($a, $b) => strcmp($b['name'], $a['name']));
@@ -39,22 +44,24 @@ class ThemeMediaController extends Controller
             return response()->json(['error' => 'حداکثر اندازه ۵ مگابایت'], 422);
         }
 
+        $disk = $this->media->diskNameFor('public');
         $dir  = "theme-media/{$theme->id}";
-        $path = $storage->storeUploadedFile($file, $dir, self::DISK);
+        $path = $storage->storeUploadedFile($file, $dir, $disk);
         if (!$path) {
             return response()->json(['error' => 'خطا در ذخیره فایل'], 500);
         }
 
         return response()->json([
-            'url'  => Storage::disk(self::DISK)->url($path),
+            'url'  => Storage::disk($disk)->url($path),
             'name' => basename($path),
         ]);
     }
 
     public function destroy(Request $request, Theme $theme): JsonResponse
     {
+        $disk = $this->media->diskNameFor('public');
         $url  = $request->input('url', '');
-        $base = Storage::disk(self::DISK)->url('');
+        $base = Storage::disk($disk)->url('');
         if (!str_starts_with($url, $base)) {
             return response()->json(['error' => 'مسیر نامعتبر'], 422);
         }
@@ -65,7 +72,7 @@ class ThemeMediaController extends Controller
             return response()->json(['error' => 'دسترسی رد شد'], 403);
         }
 
-        Storage::disk(self::DISK)->delete($path);
+        Storage::disk($disk)->delete($path);
         return response()->json(['ok' => true]);
     }
 }

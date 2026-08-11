@@ -61,6 +61,15 @@ class MotionAuditEvents
     public const CUSTOMER_ROLLBACK_COMPLETED = 'motion.customer.rollback.completed';
     public const CUSTOMER_HEALTHCHECK_FAILED = 'motion.customer.healthcheck.failed';
 
+    // Phase X — bespoke/custom Motion commercialization
+    // (docs/motion-custom-assets/). One event per commission lifecycle
+    // transition and per assignment/rollback action.
+    public const BESPOKE_COMMISSION_CREATED = 'motion.bespoke.commission.created';
+    public const BESPOKE_COMMISSION_TRANSITIONED = 'motion.bespoke.commission.transitioned';
+    public const BESPOKE_ASSIGNED = 'motion.bespoke.assigned';
+    public const BESPOKE_ROLLBACK = 'motion.bespoke.rollback';
+    public const BESPOKE_REVOKED = 'motion.bespoke.revoked';
+
     public function __construct(
         private readonly ActivityLoggerInterface $logger,
     ) {}

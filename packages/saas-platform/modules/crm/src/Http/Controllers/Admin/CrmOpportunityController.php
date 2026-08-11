@@ -64,7 +64,7 @@ class CrmOpportunityController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'contact_id' => 'nullable|integer|exists:crm_contacts,id',
+            'contact_id' => 'nullable|integer|exists:crm_suite_contacts,id',
             'company_id' => 'nullable|integer|exists:crm_companies,id',
             'pipeline_id' => 'required|integer|exists:crm_pipelines,id',
             'stage_id' => 'required|integer|exists:crm_stages,id',
@@ -86,7 +86,7 @@ class CrmOpportunityController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'contact_id' => 'nullable|integer|exists:crm_contacts,id',
+            'contact_id' => 'nullable|integer|exists:crm_suite_contacts,id',
             'company_id' => 'nullable|integer|exists:crm_companies,id',
             'amount' => 'nullable|integer|min:0',
             'probability' => 'nullable|integer|min:0|max:100',

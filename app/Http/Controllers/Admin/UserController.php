@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Services\ActivityLogger;
+use App\Services\Infrastructure\MediaStorage;
 use App\Services\Infrastructure\StorageManager;
 use App\UseCases\User\BulkDeleteUserUseCase;
 use App\UseCases\User\BulkRestoreUserUseCase;
@@ -39,6 +40,7 @@ class UserController extends Controller
         private SearchUsersUseCase $searchUsersUseCase,
         private UserRepositoryInterface $userRepository,
         private StorageManager $storage,
+        private MediaStorage $media,
     ) {}
 
     /**
@@ -116,7 +118,7 @@ class UserController extends Controller
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
                 try {
-                    $diskPath            = $this->storage->storeUploadedFile($file, 'avatars/' . $user->id, 'uploads');
+                    $diskPath            = $this->storage->storeUploadedFile($file, 'avatars/' . $user->id, $this->media->diskNameFor('uploads'));
                     $data['avatar_path'] = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Avatar upload error: ' . $e->getMessage());

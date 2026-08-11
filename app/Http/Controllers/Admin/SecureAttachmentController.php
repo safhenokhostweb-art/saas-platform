@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Infrastructure\MediaStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,6 +22,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SecureAttachmentController extends Controller
 {
+    public function __construct(private readonly MediaStorage $media)
+    {
+    }
+
     private const ALLOWED_MIME_EXTENSIONS = [
         'jpg'  => 'image/jpeg',
         'jpeg' => 'image/jpeg',
@@ -49,7 +54,9 @@ class SecureAttachmentController extends Controller
             abort(400, 'Invalid attachment path.');
         }
 
-        if (!Storage::disk('private')->exists($path)) {
+        $disk = $this->media->diskNameFor('private');
+
+        if (!Storage::disk($disk)->exists($path)) {
             abort(404, 'Attachment not found.');
         }
 
@@ -57,7 +64,7 @@ class SecureAttachmentController extends Controller
         $mime      = static::ALLOWED_MIME_EXTENSIONS[$extension] ?? 'application/octet-stream';
         $filename  = basename($path);
 
-        return Storage::disk('private')->download($path, $filename, [
+        return Storage::disk($disk)->download($path, $filename, [
             'Content-Type'              => $mime,
             'X-Content-Type-Options'    => 'nosniff',
             'Content-Disposition'       => 'attachment; filename="' . addslashes($filename) . '"',
@@ -88,7 +95,9 @@ class SecureAttachmentController extends Controller
             abort(403, 'Access to this attachment is not allowed for your tenant.');
         }
 
-        if (!Storage::disk('private')->exists($path)) {
+        $disk = $this->media->diskNameFor('private');
+
+        if (!Storage::disk($disk)->exists($path)) {
             abort(404, 'Attachment not found.');
         }
 
@@ -96,7 +105,7 @@ class SecureAttachmentController extends Controller
         $mime      = static::ALLOWED_MIME_EXTENSIONS[$extension] ?? 'application/octet-stream';
         $filename  = basename($path);
 
-        return Storage::disk('private')->download($path, $filename, [
+        return Storage::disk($disk)->download($path, $filename, [
             'Content-Type'           => $mime,
             'X-Content-Type-Options' => 'nosniff',
             'Content-Disposition'    => 'attachment; filename="' . addslashes($filename) . '"',

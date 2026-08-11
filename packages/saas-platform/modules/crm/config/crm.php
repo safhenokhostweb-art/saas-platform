@@ -16,6 +16,22 @@ return [
         'site' => env('CRM_LAYOUT_SITE', 'layouts.app'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Route Loading
+    |--------------------------------------------------------------------------
+    |
+    | Phase X: routes/web.php is the platform-staff CRUD surface
+    | (admin/crm/{siteId}/..., {siteId} route param, auth+admin gate) — it
+    | belongs only in saas-platform, never in customer-site. routes/site.php
+    | (tenant-scoped, no {siteId}) always loads regardless of this flag.
+    | Mirrors TicketsServiceProvider's config('tickets.routes.site', true)
+    | convention, inverted since here it's the *web* file that's optional.
+    */
+    'routes' => [
+        'web' => env('CRM_ROUTES_WEB', true),
+    ],
+
     'site_model' => \App\Models\Site::class,
     'user_model' => \App\Models\User::class,
 

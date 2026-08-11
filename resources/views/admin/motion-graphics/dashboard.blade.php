@@ -31,6 +31,27 @@
                 <div class="text-2xl font-bold text-gray-900">{{ $summary->activatedInternalSites }}</div>
             </div></div>
         </div>
+
+        {{-- Phase 9 (docs/motion-commercialization/ADMIN_MANAGEMENT.md): commercial/licensing summary --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="card"><div class="card-body">
+                <div class="text-xs text-gray-500 mb-1">سایت‌های دارای لایسنس معتبر</div>
+                <div class="text-2xl font-bold text-gray-900">{{ $summary->licensedSitesCount }}</div>
+                <div class="text-[11px] text-gray-400 mt-1">لایسنس با فعال‌سازی فنی یکسان نیست — سایت می‌تواند لایسنس داشته باشد ولی هنوز فعال نشده باشد.</div>
+            </div></div>
+            <div class="card"><div class="card-body">
+                <div class="text-xs text-gray-500 mb-1">وضعیت ماژول در فروشگاه</div>
+                <div class="text-2xl font-bold text-gray-900">
+                    @if($summary->moduleStatus === 'active')
+                        <span class="text-emerald-600">فعال و قابل فروش</span>
+                    @elseif($summary->moduleStatus === 'inactive')
+                        <span class="text-amber-600">غیرفعال</span>
+                    @else
+                        <span class="text-red-600">ثبت نشده</span>
+                    @endif
+                </div>
+            </div></div>
+        </div>
     @endif
 </div>
 @endsection

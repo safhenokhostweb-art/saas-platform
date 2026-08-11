@@ -48,7 +48,7 @@
     @endif
 
     @php
-        $avatarUrl   = $profile->avatar ? url($profile->avatar) : null;
+        $avatarUrl   = $profile->avatar_url;
         $displayName = $profile->full_name ?: auth()->user()->mobile;
         $initial     = mb_substr($displayName, 0, 1);
     @endphp

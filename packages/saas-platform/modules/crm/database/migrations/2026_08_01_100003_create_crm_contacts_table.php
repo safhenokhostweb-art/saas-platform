@@ -8,12 +8,17 @@ use Illuminate\Support\Facades\Schema;
  * Phase 19 — Part 3: depends on crm_companies (nullable — a Contact need
  * not belong to a Company). `lifecycle_stage` again absorbs the
  * "Customer" concept — see crm_companies migration's docblock.
+ *
+ * Phase X: table is 'crm_suite_contacts', not 'crm_contacts' — customer-site
+ * already has its own unrelated 'crm_contacts' table (a separate, pre-existing
+ * local CRM feature, database/migrations/2026_06_15_100000_create_crm_tables.php,
+ * different schema entirely) — the plain 'crm_contacts' name is taken.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('crm_contacts', function (Blueprint $table) {
+        Schema::create('crm_suite_contacts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('site_id')->nullable()->constrained('sites')->nullOnDelete();
             $table->foreignId('company_id')->nullable()->constrained('crm_companies')->nullOnDelete();
@@ -38,6 +43,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('crm_contacts');
+        Schema::dropIfExists('crm_suite_contacts');
     }
 };

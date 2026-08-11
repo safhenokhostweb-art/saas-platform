@@ -71,6 +71,8 @@ final class MotionGraphicsAdminService extends AbstractMotionAdapter
     {
         $this->authorizeAdmin($context, self::ABILITY_VIEW_LIBRARY);
 
+        $module = \App\Models\Module::where('slug', \App\Modules\MotionGraphics\Support\RealMotionLicenseGateway::MODULE_SLUG)->first();
+
         return new MotionAdminDashboardSummary(
             totalAssets: $this->assetLibrary->countPublishedAssets(),
             totalTemplates: ThemeTemplate::query()->count(),
@@ -79,6 +81,15 @@ final class MotionGraphicsAdminService extends AbstractMotionAdapter
                 ->where('activation_status', SiteAssetPackage::STATUS_ACTIVE)
                 ->distinct('site_id')
                 ->count('site_id'),
+            licensedSitesCount: $module === null ? 0 : \App\Models\ModuleLicense::query()
+                ->where('module_id', $module->id)
+                ->where('status', \App\Models\ModuleLicense::STATUS_ACTIVE)
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->distinct('site_id')
+                ->count('site_id'),
+            moduleStatus: $module === null ? 'not_registered' : ($module->is_active ? 'active' : 'inactive'),
         );
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Services\Infrastructure\MediaStorage;
 use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class MobileTicketController extends Controller
         private readonly TicketServiceInterface $ticketService,
         private readonly TicketNotificationService $notificationService,
         private readonly StorageManager $storage,
+        private readonly MediaStorage $media,
     ) {}
 
     // ── GET /api/mobile/tickets ────────────────────────────────────────────
@@ -214,7 +216,7 @@ class MobileTicketController extends Controller
         $mime     = $file->getMimeType();
 
         $storedName = now()->format('YmdHis') . '_' . $file->hashName();
-        $path = $this->storage->storeUploadedFile($file, "ticket-attachments/{$ticket->id}", 'private', $storedName);
+        $path = $this->storage->storeUploadedFile($file, "ticket-attachments/{$ticket->id}", $this->media->diskNameFor('private'), $storedName);
 
         $attachments   = $ticket->attachments ?? [];
         $attachments[] = ['name' => $filename, 'path' => $path, 'size' => $size, 'mime' => $mime];

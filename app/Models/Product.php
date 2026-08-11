@@ -27,6 +27,7 @@ class Product extends Model
     public const TYPE_LICENSE_TEMPLATE = 'license_template';
     public const TYPE_MODULE_ADDON = 'module_addon';
     public const TYPE_SUPPORT_PLAN = 'support_plan';
+    public const TYPE_MOTION_ASSET = 'motion_asset';
 
     public function module()
     {
@@ -44,6 +45,7 @@ class Product extends Model
             self::TYPE_LICENSE_TEMPLATE => 'لایسنس قالب سایت',
             self::TYPE_MODULE_ADDON => 'ماژول افزودنی',
             self::TYPE_SUPPORT_PLAN => 'پلن پشتیبانی',
+            self::TYPE_MOTION_ASSET => 'موشن گرافیک اختصاصی',
             default => $this->type,
         };
     }

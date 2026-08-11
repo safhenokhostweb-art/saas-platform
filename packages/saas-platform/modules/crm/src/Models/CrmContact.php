@@ -26,7 +26,9 @@ class CrmContact extends Model
     public const STAGE_PROSPECT = 'prospect';
     public const STAGE_CUSTOMER = 'customer';
 
-    protected $table = 'crm_contacts';
+    // Phase X: 'crm_suite_contacts', not 'crm_contacts' — that name is taken
+    // by customer-site's own, unrelated, pre-existing local CRM table.
+    protected $table = 'crm_suite_contacts';
 
     protected $attributes = [
         'lifecycle_stage' => self::STAGE_LEAD,

@@ -24,7 +24,20 @@ class StoreController extends Controller
         return $query->where(function (Builder $q) {
             $q->whereNull('module_id')
                 ->orWhereHas('module', fn (Builder $m) => $m->customerFacing());
-        });
+        })->where($this->excludeBespokeMotionAssets(...));
+    }
+
+    /**
+     * A motion_asset Product is a licensed, customer-specific commission
+     * (Phase X/11) — it must never appear in the generic storefront, which
+     * has no concept of "this product belongs to one specific customer"
+     * (Products aren't customer-scoped anywhere else in this codebase).
+     * It is only ever surfaced via Customer\MotionGraphicsController,
+     * scoped to the caller's own site's commissions.
+     */
+    protected function excludeBespokeMotionAssets(Builder $q): void
+    {
+        $q->where('type', '!=', Product::TYPE_MOTION_ASSET);
     }
 
     public function index(Request $request, CartService $cart)

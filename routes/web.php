@@ -229,6 +229,13 @@ Route::middleware('auth')->group(function () {
     // Theme Bundle payment callback
     Route::get('/theme-bundles/payment-callback', [\App\Http\Controllers\Api\ThemeBundlePaymentCallbackController::class, 'handle'])->name('theme-bundles.payment-callback')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
+    // موشن گرافیک (پنل مشتری) — Phase 11
+    Route::prefix('dashboard/motion-graphics')->name('customer.motion-graphics.')->middleware(EnsureProfileIsComplete::class)->group(function () {
+        Route::get('/', [\App\Http\Controllers\Customer\MotionGraphicsController::class, 'index'])->name('index');
+        Route::post('/request', [\App\Http\Controllers\Customer\MotionGraphicsController::class, 'requestMotion'])->name('request');
+        Route::post('/{commission}/purchase', [\App\Http\Controllers\Customer\MotionGraphicsController::class, 'purchase'])->name('purchase');
+    });
+
     // پنل نمایندگی (فقط برای کاربران دارای رکورد Reseller)
     Route::prefix('reseller')->name('reseller.')->middleware('reseller')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Reseller\DashboardController::class, 'index'])->name('dashboard');
@@ -1063,5 +1070,23 @@ Route::prefix('admin')
             Route::post('{site}/templates/{template}/activate', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'activateSite'])->name('templates.activate');
             Route::get('{site}/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'preview'])->name('preview');
             Route::get('{site}/preview/{sitePackage}', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewProjection'])->name('preview.show');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Phase X — Bespoke/Custom Motion Commercialization
+        | (docs/motion-custom-assets/). Platform-Admin-only. Never
+        | auto-activates a customer; assignment is always a separate action.
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('motion-graphics/{site}/bespoke')->name('motion-graphics.bespoke.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'store'])->name('store');
+            Route::post('{commission}/transition', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'transition'])->name('transition');
+            Route::post('{commission}/attach-asset', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'attachAsset'])->name('attach-asset');
+            Route::post('{commission}/link-product', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'linkProduct'])->name('link-product');
+            Route::post('{commission}/assign', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'assign'])->name('assign');
+            Route::post('{commission}/rollback', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'rollback'])->name('rollback');
+            Route::post('{commission}/revoke', [\App\Http\Controllers\Admin\MotionBespokeAdminController::class, 'revoke'])->name('revoke');
         });
     });

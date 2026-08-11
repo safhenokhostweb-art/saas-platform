@@ -14,11 +14,14 @@ class CrmServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/crm.php', 'crm');
+        $this->mergeConfigFrom(__DIR__ . '/../../config/module-manifest.php', 'module-manifest-crm-suite');
     }
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
+        if (config('crm.routes.web', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
+        }
         $this->loadRoutesFrom(__DIR__ . '/../../routes/site.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'crm');
@@ -28,16 +31,36 @@ class CrmServiceProvider extends ServiceProvider
         }
 
         $this->registerCrossModuleListeners();
+        $this->registerModuleManifest();
 
         $this->publishes([
             __DIR__ . '/../../config/crm.php' => config_path('crm.php'),
         ], 'crm-config');
+        $this->publishes([
+            __DIR__ . '/../../config/module-manifest.php' => config_path('module-manifest-crm-suite.php'),
+        ], 'crm-manifest');
         $this->publishes([
             __DIR__ . '/../../resources/views' => resource_path('views/vendor/crm'),
         ], 'crm-views');
         $this->publishes([
             __DIR__ . '/../../database/migrations' => database_path('migrations'),
         ], 'crm-migrations');
+    }
+
+    /**
+     * Phase X — self-registers this module's manifest slug into a shared,
+     * host-app-agnostic registry, mirroring TicketsServiceProvider's
+     * registerModuleAssets() pattern. Lets AdminMenu (customer-site)
+     * discover this module's config('module-manifest-crm-suite') without
+     * ever hardcoding the 'crm-suite' slug itself.
+     */
+    private function registerModuleManifest(): void
+    {
+        $installed = config('module-manifests.installed', []);
+        if (!in_array('crm-suite', $installed, true)) {
+            $installed[] = 'crm-suite';
+        }
+        config(['module-manifests.installed' => $installed]);
     }
 
     /**

@@ -25,7 +25,9 @@ class CrmActivity extends Model
     public const TYPE_NOTE = 'note';
     public const TYPE_SYSTEM = 'system';
 
-    protected $table = 'crm_activities';
+    // Phase X: 'crm_suite_activities', not 'crm_activities' — that name is
+    // taken by customer-site's own, unrelated, pre-existing local CRM table.
+    protected $table = 'crm_suite_activities';
 
     protected $fillable = [
         'site_id',

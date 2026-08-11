@@ -23,7 +23,7 @@
                     @php
                         $__navUser    = auth()->user();
                         $__navProfile = $__navUser->profile;
-                        $__navAvatar  = $__navProfile?->avatar ? url($__navProfile->avatar) : null;
+                        $__navAvatar  = $__navProfile?->avatar_url;
                         $__navName    = $__navProfile?->full_name ?: $__navUser->mobile;
                         $__navInitial = mb_substr($__navName, 0, 1);
                     @endphp

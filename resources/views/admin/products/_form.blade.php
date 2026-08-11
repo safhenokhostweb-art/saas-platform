@@ -16,6 +16,7 @@
         <option value="license_template" {{ old('type', isset($product) ? $product->type : ($preselectedModuleId ? 'module_addon' : '')) === 'license_template' ? 'selected' : '' }}>لایسنس قالب سایت</option>
         <option value="module_addon" {{ old('type', isset($product) ? $product->type : ($preselectedModuleId ? 'module_addon' : '')) === 'module_addon' ? 'selected' : '' }}>ماژول افزودنی</option>
         <option value="support_plan" {{ old('type', isset($product) ? $product->type : ($preselectedModuleId ? 'module_addon' : '')) === 'support_plan' ? 'selected' : '' }}>پلن پشتیبانی</option>
+        <option value="motion_asset" {{ old('type', isset($product) ? $product->type : '') === 'motion_asset' ? 'selected' : '' }}>موشن سفارشی (Bespoke)</option>
     </select>
 </div>
 <div class="mb-3">

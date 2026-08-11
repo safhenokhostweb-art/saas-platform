@@ -40,9 +40,12 @@ final class MotionCustomerActivationService
     /**
      * Step "Validate site, license and health" + "Prepare deployment
      * manifest" + "Generate customer runtime package" — verifies every
-     * precondition and returns the manifest that *would* be delivered,
-     * without enabling anything. Safe to call repeatedly (read-only
-     * against this site; never touches another site).
+     * precondition and returns the manifest that *would* be delivered.
+     * Net effect is read-only (never touches another site, and its own
+     * flag flip — see withFlagTemporarilyOn() — is always reverted), so
+     * it's safe to call repeatedly, including *before* a site has ever
+     * been enabled (task's own "pre-flight checklist" in
+     * REAL_CUSTOMER_TEST_PLAN.md calls this before `enable()`).
      *
      * @throws MotionAdapterFailClosedException on any unmet precondition
      */
@@ -52,15 +55,54 @@ final class MotionCustomerActivationService
             $this->fail($site, $context, 'site_inactive', 'The site is not active.');
         }
 
-        $this->tenantContext->set($site);
-
         try {
-            $manifest = $this->runtimeService->buildManifestForSite($site, $context);
+            $manifest = $this->withFlagTemporarilyOn($site, $context, keepOnSuccess: false);
         } catch (MotionAdapterFailClosedException $e) {
             $this->fail($site, $context, $e->failureCode, $e->getMessage());
         }
 
         return $manifest;
+    }
+
+    /**
+     * MotionCustomerRuntimeService::buildManifestForSite() requires
+     * `ensureEnabled()` — the flag must already be on — which is correct
+     * for the customer-facing fetch path (Phase 8's API controller) but
+     * means a *validation-only* call (prepare()/healthCheck(), or the
+     * first half of enable()) can't call it while the flag is still off,
+     * exactly the state a not-yet-activated site is in. This is not a
+     * bypass of ensureEnabled() — it still runs, and still fails closed —
+     * it's flipped on first, inside the same DB transaction, so a failed
+     * validation rolls the flag back to `$site`'s state *before this
+     * call* automatically (both in the DB and, explicitly, in the
+     * in-memory model, which a rolled-back transaction does not revert
+     * on its own).
+     *
+     * @throws MotionAdapterFailClosedException
+     */
+    private function withFlagTemporarilyOn(Site $site, MotionAdapterContext $context, bool $keepOnSuccess): CustomerRuntimeManifest
+    {
+        $previousState = (bool) ($site->features[self::FEATURE_KEY] ?? false);
+
+        try {
+            return DB::transaction(function () use ($site, $context, $keepOnSuccess, $previousState): CustomerRuntimeManifest {
+                $site->features = array_merge($site->features ?? [], [self::FEATURE_KEY => true]);
+                $site->save();
+
+                $manifest = $this->runtimeService->buildManifestForSite($site, $context);
+
+                if (! $keepOnSuccess) {
+                    $site->features = array_merge($site->features ?? [], [self::FEATURE_KEY => $previousState]);
+                    $site->save();
+                }
+
+                return $manifest;
+            });
+        } catch (MotionAdapterFailClosedException $e) {
+            $site->features = array_merge($site->features ?? [], [self::FEATURE_KEY => $previousState]);
+            $site->save();
+            throw $e;
+        }
     }
 
     /**
@@ -90,24 +132,24 @@ final class MotionCustomerActivationService
      */
     public function enable(Site $site, MotionAdapterContext $context): CustomerRuntimeManifest
     {
-        $manifest = $this->prepare($site, $context);
+        if (! $site->is_active) {
+            $this->fail($site, $context, 'site_inactive', 'The site is not active.');
+        }
+
+        $previousState = (bool) ($site->features[self::FEATURE_KEY] ?? false);
 
         $this->auditEvents->record(MotionAuditEvents::CUSTOMER_DEPLOYMENT_STARTED, [
             'site_id' => $site->id,
-            'template_reference' => $manifest->templateReference,
-            'package_id' => $manifest->packageId,
-            'manifest_checksum' => $manifest->manifestChecksum,
-            'previous_state' => (bool) ($site->features[self::FEATURE_KEY] ?? false),
+            'previous_state' => $previousState,
             'actor' => $context->actorId,
             'correlation_id' => $context->correlationId,
         ]);
 
-        DB::transaction(function () use ($site): void {
-            $features = $site->features ?? [];
-            $features[self::FEATURE_KEY] = true;
-            $site->features = $features;
-            $site->save();
-        });
+        try {
+            $manifest = $this->withFlagTemporarilyOn($site, $context, true);
+        } catch (MotionAdapterFailClosedException $e) {
+            $this->fail($site, $context, $e->failureCode, $e->getMessage());
+        }
 
         $this->auditEvents->record(MotionAuditEvents::CUSTOMER_DEPLOYMENT_COMPLETED, [
             'site_id' => $site->id,

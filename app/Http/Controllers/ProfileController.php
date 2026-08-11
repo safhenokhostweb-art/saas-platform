@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Services\Infrastructure\MediaStorage;
 use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\Request;
 use App\Models\Profile;
@@ -12,7 +13,7 @@ use App\Rules\IranianPostalCode;
 
 class ProfileController extends Controller
 {
-    public function __construct(private StorageManager $storage) {}
+    public function __construct(private StorageManager $storage, private MediaStorage $media) {}
 
     public function show()
     {
@@ -175,7 +176,7 @@ class ProfileController extends Controller
                 try {
                     $ext      = $file->guessExtension() ?: 'jpg';
                     $filename = 'user_' . $user->id . '_' . time() . '.' . $ext;
-                    $diskPath = $this->storage->storeUploadedFile($file, 'avatars', 'uploads', $filename);
+                    $diskPath = $this->storage->storeUploadedFile($file, 'avatars', $this->media->diskNameFor('uploads'), $filename);
                     $profile->avatar = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Profile avatar upload: ' . $e->getMessage());

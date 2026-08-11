@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Infrastructure\MediaStorage;
 use App\Services\Infrastructure\StorageManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AdminProfileController extends Controller
 {
-    public function __construct(private StorageManager $storage) {}
+    public function __construct(private StorageManager $storage, private MediaStorage $media) {}
 
     public function index()
     {
@@ -48,7 +49,7 @@ class AdminProfileController extends Controller
                 try {
                     $ext      = $file->guessExtension() ?: 'jpg';
                     $filename = 'admin_' . $user->id . '_' . time() . '.' . $ext;
-                    $diskPath = $this->storage->storeUploadedFile($file, 'admin-avatars', 'uploads', $filename);
+                    $diskPath = $this->storage->storeUploadedFile($file, 'admin-avatars', $this->media->diskNameFor('uploads'), $filename);
                     $profileData['avatar'] = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Admin avatar upload: ' . $e->getMessage());
@@ -60,8 +61,7 @@ class AdminProfileController extends Controller
             $user->profile()->updateOrCreate(['user_id' => $user->id], $profileData);
         }
 
-        $avatarPath = $user->fresh('profile')->profile?->avatar ?? '';
-        $avatarUrl  = $avatarPath ? url($avatarPath) : null;
+        $avatarUrl = $user->fresh('profile')->profile?->avatar_url;
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
