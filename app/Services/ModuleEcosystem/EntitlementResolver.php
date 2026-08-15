@@ -8,8 +8,11 @@ use App\Models\ModuleLicense;
 use App\Models\PlatformLicense;
 use App\Models\Site;
 use App\Services\ModuleEcosystem\Contracts\EntitlementResolverInterface;
+use App\Services\ModuleEcosystem\Contracts\ModuleEntitlementResolverContract;
 use App\Services\ModuleEcosystem\Dto\EntitlementState;
 use App\Services\ModuleLicenseService;
+use Illuminate\Support\Facades\Schema;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * Read-only. Answers "is this site allowed to use this module?" by
@@ -21,11 +24,51 @@ use App\Services\ModuleLicenseService;
  * re-implement it. Never writes site_modules.is_active, never issues a
  * license, never records a purchase, never mutates the ledger.
  */
-class EntitlementResolver implements EntitlementResolverInterface
+class EntitlementResolver implements EntitlementResolverInterface, ModuleEntitlementResolverContract
 {
     public function __construct(
         protected ModuleLicenseService $moduleLicenseService,
+        protected ?SiteContextContract $siteContext = null,
     ) {}
+
+    public function resolveForCurrentSite(Module $module): EntitlementState
+    {
+        return $this->resolve($this->currentSite(), $module);
+    }
+
+    /** @return array<string> */
+    public function projectionForCurrentSite(): array
+    {
+        return $this->projectionForSite($this->currentSite());
+    }
+
+    /**
+     * Runtime projection intersects commercial entitlement with the separate
+     * operational activation pivot. Deployment failure cannot erase a license.
+     *
+     * @return array<string>
+     */
+    public function projectionForSite(Site $site): array
+    {
+        if (! Schema::hasTable('site_modules') || ! Schema::hasTable('modules')) {
+            return [];
+        }
+
+        return $site->modules()->wherePivot('is_active', true)->get()
+            ->filter(fn (Module $module) => ! $module->isDistributionDisabled() && $this->resolve($site, $module)->allowed)
+            ->pluck('slug')->unique()->values()->all();
+    }
+
+    protected function currentSite(): Site
+    {
+        if ($this->siteContext === null) {
+            throw new \LogicException('Site context is required for contextual entitlement resolution.');
+        }
+
+        $siteId = $this->siteContext->requireSiteId();
+
+        return Site::query()->findOrFail($siteId);
+    }
 
     public function resolve(Site $site, Module $module): EntitlementState
     {

@@ -13,8 +13,9 @@ The first customer-facing UI for Motion Graphics inside the SaaS platform's own 
 - [CUSTOM_MOTION_REQUEST.md](CUSTOM_MOTION_REQUEST.md) — the new, narrow customer-writable "request a custom motion" path and why it doesn't weaken the existing admin-only commission lifecycle.
 - [ENTITLEMENT_DISPLAY.md](ENTITLEMENT_DISPLAY.md) — how license/entitlement status is shown without duplicating any entitlement system.
 - [VERSIONING_MODEL.md](VERSIONING_MODEL.md) — what a customer can and cannot see of Motion Asset versioning.
+- [STORAGE_MODEL.md](STORAGE_MODEL.md) — how this phase relates to `MediaStorage`, and the honest current state of Motion asset binary persistence (in-memory only, not yet durable).
 - [SECURITY_MODEL.md](SECURITY_MODEL.md) — the real authorization boundary behind every new route.
-- [FINAL_REPORT.md](FINAL_REPORT.md) — the final report.
+- [FINAL_REPORT.md](FINAL_REPORT.md) — the final report, including the addendum verdict on SaaS-scale readiness.
 
 ## One-paragraph summary
 

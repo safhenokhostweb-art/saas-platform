@@ -1,5 +1,9 @@
 # Deployment Guide — saas-platform
 
+> **Legacy notice:** `deploy.ps1`, `deploy.sh`, and `deploy.bat` are blocked and must not be used for production. Production authority is transitioning to `deployment-system`; releases must originate from an explicit committed revision and its validated artifact.
+
+Run `php scripts/release-compatibility.php` before handing a clean source revision to `deployment-system`. Its `--require-vendor` mode is for validating a built artifact.
+
 > Production-ready deployment scripts and rollback procedure for the **saas-platform** (main admin panel) repository.
 
 ## 1. What gets deployed

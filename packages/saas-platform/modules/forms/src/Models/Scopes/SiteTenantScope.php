@@ -5,6 +5,7 @@ namespace SaaSPlatform\Modules\Forms\Models\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * PHASE 8.0 — Structural tenant isolation for form models with a site_id column.
@@ -15,28 +16,17 @@ class SiteTenantScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        $site = $this->resolveCurrentSite();
-
-        if ($site === null) {
+        $siteId = $this->resolveCurrentSiteId();
+        if ($siteId === null) {
             return;
         }
 
         $table = $model->getTable();
-        $builder->where("{$table}.site_id", $site->id);
+        $builder->where("{$table}.site_id", $siteId);
     }
 
-    private function resolveCurrentSite(): ?object
+    private function resolveCurrentSiteId(): ?int
     {
-        if (!app()->bound('request')) {
-            return null;
-        }
-
-        $request = app('request');
-
-        if (!$request || !method_exists($request, 'attributes')) {
-            return null;
-        }
-
-        return $request->attributes->get('tenant_site');
+        return app(SiteContextContract::class)->siteId();
     }
 }

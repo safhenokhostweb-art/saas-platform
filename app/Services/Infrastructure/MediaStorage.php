@@ -50,9 +50,15 @@ class MediaStorage
 
         $mode = config('filesystems.upload_disk', 'public');
 
-        // Local disks keep their historical, distinct roots.
+        // Local disks keep their historical, distinct roots — regardless of
+        // which of the two local disks MEDIA_DISK/UPLOAD_DISK happens to
+        // name, 'uploads' content stays on the 'uploads' disk and 'public'
+        // content stays on the 'public' disk. (Bug fixed here: this used to
+        // return $mode for the 'public' kind, so setting UPLOAD_DISK=uploads
+        // silently moved theme-media/sitemap reads onto the wrong disk and
+        // made existing files 404.)
         if (in_array($mode, ['public', 'uploads'], true)) {
-            return $kind === 'uploads' ? 'uploads' : $mode;
+            return $kind === 'uploads' ? 'uploads' : 'public';
         }
 
         // Remote/object-storage mode: public and uploads content share one disk.

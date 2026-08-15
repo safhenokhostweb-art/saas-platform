@@ -4,6 +4,7 @@ namespace App\Modules\MotionGraphics\Bindings;
 
 use App\Models\Site;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\SiteResolverContract;
 
 /**
@@ -16,6 +17,7 @@ final class SiteResolverAdapter implements SiteResolverContract
 {
     public function __construct(
         private readonly TenantContextContract $tenantContext,
+        private readonly SiteContextContract $siteContext,
     ) {}
 
     public function exists(string $siteIdentifier): bool
@@ -37,8 +39,6 @@ final class SiteResolverAdapter implements SiteResolverContract
             return null;
         }
 
-        $site = $this->tenantContext->site();
-
-        return $site !== null && isset($site->id) ? (string) $site->id : null;
+        return $this->siteContext->siteId() !== null ? (string) $this->siteContext->siteId() : null;
     }
 }

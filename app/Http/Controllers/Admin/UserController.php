@@ -114,6 +114,7 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
+        $avatarError = null;
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
@@ -122,7 +123,10 @@ class UserController extends Controller
                     $data['avatar_path'] = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Avatar upload error: ' . $e->getMessage());
+                    $avatarError = 'آپلود تصویر پروفایل ناموفق بود. سایر تغییرات ذخیره شد.';
                 }
+            } else {
+                $avatarError = 'فایل تصویر ارسال‌شده معتبر نیست.';
             }
         }
 
@@ -130,9 +134,10 @@ class UserController extends Controller
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success'  => true,
-                'message'  => "کاربر {$updated->mobile} با موفقیت به‌روزرسانی شد.",
-                'redirect' => route('admin.users.index'),
+                'success'      => true,
+                'message'      => "کاربر {$updated->mobile} با موفقیت به‌روزرسانی شد.",
+                'redirect'     => route('admin.users.index'),
+                'avatar_error' => $avatarError,
             ]);
         }
 

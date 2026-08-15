@@ -4,12 +4,18 @@ namespace App\Services;
 use App\Models\PlatformLicense;
 use App\Models\Site;
 use App\Services\ModuleAssignmentService;
+use App\Services\ModuleEcosystem\Contracts\ModuleEntitlementResolverContract;
+use App\Services\SiteContextRunner;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class LicenseServerService
 {
+    public function __construct(
+        private readonly ModuleEntitlementResolverContract $entitlements,
+        private readonly SiteContextRunner $siteContextRunner,
+    ) {}
     /**
      * Phase 5 / P0-5:
      * هش کلید لایسنس با HMAC-SHA256 (به‌جای SHA256 ساده) محاسبه می‌شود تا
@@ -150,10 +156,12 @@ class LicenseServerService
                 return ['valid' => false, 'error' => 'site_inactive', 'message' => 'سایت در پلتفرم غیرفعال است.'];
             }
 
-            $modules = [];
-            if (Schema::hasTable('site_modules') && Schema::hasTable('modules')) {
-                $modules = app(ModuleAssignmentService::class)->getEnabledSlugsForSite($site);
-            }
+            // Customer-site receives a runtime projection, evaluated through
+            // the canonical resolver under the canonical SiteContext.
+            $modules = $this->siteContextRunner->runForSiteId(
+                (int) $site->id,
+                fn () => $this->entitlements->projectionForCurrentSite(),
+            );
 
             $expiresAt = null;
             if ($license->expires_at) {

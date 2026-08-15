@@ -22,6 +22,21 @@ class MediaStorageTest extends TestCase
         $this->assertSame('private', $media->diskNameFor('private'));
     }
 
+    public function test_explicit_local_uploads_mode_does_not_move_public_kind_off_the_public_disk(): void
+    {
+        // Regression: config/.env.example documents MEDIA_DISK=uploads as a
+        // legal local value. diskNameFor() used to return $mode verbatim for
+        // the 'public' kind, so this setting silently moved theme-media and
+        // sitemap.xml reads onto the 'uploads' disk while the actual files
+        // stayed on 'public' — a 404 for every existing file.
+        Config::set('filesystems.upload_disk', 'uploads');
+
+        $media = app(MediaStorage::class);
+
+        $this->assertSame('public', $media->diskNameFor('public'));
+        $this->assertSame('uploads', $media->diskNameFor('uploads'));
+    }
+
     public function test_media_disk_env_toggle_unifies_public_and_uploads_kinds(): void
     {
         // Simulates MEDIA_DISK=arvan without touching real env/files.

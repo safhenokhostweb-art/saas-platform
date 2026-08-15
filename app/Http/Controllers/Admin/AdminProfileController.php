@@ -43,6 +43,7 @@ class AdminProfileController extends Controller
             $profileData['full_name'] = $request->input('full_name');
         }
 
+        $avatarError = null;
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
@@ -53,7 +54,10 @@ class AdminProfileController extends Controller
                     $profileData['avatar'] = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Admin avatar upload: ' . $e->getMessage());
+                    $avatarError = 'آپلود تصویر پروفایل ناموفق بود. سایر تغییرات ذخیره شد.';
                 }
+            } else {
+                $avatarError = 'فایل تصویر ارسال‌شده معتبر نیست.';
             }
         }
 
@@ -65,10 +69,16 @@ class AdminProfileController extends Controller
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success'    => true,
-                'message'    => 'پروفایل با موفقیت به‌روزرسانی شد.',
-                'avatar_url' => $avatarUrl,
+                'success'      => true,
+                'message'      => 'پروفایل با موفقیت به‌روزرسانی شد.',
+                'avatar_url'   => $avatarUrl,
+                'avatar_error' => $avatarError,
             ]);
+        }
+
+        if ($avatarError) {
+            return back()->withErrors(['avatar' => $avatarError])
+                ->with('success', 'پروفایل با موفقیت به‌روزرسانی شد.');
         }
 
         return back()->with('success', 'پروفایل با موفقیت به‌روزرسانی شد.');

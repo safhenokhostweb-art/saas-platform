@@ -3,6 +3,7 @@ namespace App\Jobs;
 
 use App\Models\Infrastructure\RestoreLog;
 use App\Services\Infrastructure\RestoreService;
+use App\Services\SiteContextRunner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,15 +25,14 @@ class RestoreTenantDatabaseJob implements ShouldQueue
         $this->onQueue('restore');
     }
 
-    public function handle(RestoreService $service): void
+    public function handle(RestoreService $service, SiteContextRunner $siteContext): void
     {
-        $log = RestoreLog::findOrFail($this->restoreLogId);
-        if ($log->status !== RestoreLog::STATUS_PENDING) {
-            return;
-        }
-        $log->markRunning();
-
-        $service->executeTenantDatabaseRestore($log, $this->remotePath, $this->siteId);
+        $siteContext->runForSiteId($this->siteId, function () use ($service): void {
+            $log = RestoreLog::findOrFail($this->restoreLogId);
+            if ($log->status !== RestoreLog::STATUS_PENDING) return;
+            $log->markRunning();
+            $service->executeTenantDatabaseRestore($log, $this->remotePath, $this->siteId);
+        });
     }
 
     public function failed(\Throwable $e): void

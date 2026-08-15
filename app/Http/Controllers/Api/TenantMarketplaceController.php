@@ -2,7 +2,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\LicenseServerService;
 use App\Services\ModuleAssignmentService;
 use App\Services\ModuleEcosystem\DeploymentResolver;
 use App\Services\ModuleEcosystem\Dto\VisibilityState;
@@ -10,6 +9,7 @@ use App\Services\ModuleEcosystem\EntitlementResolver;
 use App\Services\ModuleEcosystem\VisibilityResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * API فروشگاه ماژول برای پنل tenant: لیست ماژول‌های قابل خرید + وضعیت نصب.
@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 class TenantMarketplaceController extends Controller
 {
     public function __construct(
-        protected LicenseServerService $licenseService,
+        protected SiteContextContract $siteContext,
         protected ModuleAssignmentService $assignmentService,
         protected DeploymentResolver $deploymentResolver,
         protected EntitlementResolver $entitlementResolver,
@@ -30,33 +30,9 @@ class TenantMarketplaceController extends Controller
      */
     public function modules(Request $request): JsonResponse
     {
-        $request->validate([
-            'license_key' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
-        ]);
-
-        $result = $this->licenseService->validate(
-            $request->input('license_key'),
-            $request->input('domain')
-        );
-
-        if (empty($result['valid'])) {
-            return response()->json([
-                'allowed' => false,
-                'error' => $result['error'] ?? 'invalid_license',
-                'modules' => [],
-            ], 403);
-        }
-
-        $siteId = $result['site_id'] ?? null;
-        if (! $siteId) {
-            return response()->json(['allowed' => true, 'modules' => []]);
-        }
-
-        $site = \App\Models\Site::find($siteId);
-        if (! $site) {
-            return response()->json(['allowed' => true, 'modules' => []]);
-        }
+        // tenant.api established this identity from the validated credential.
+        // Query/body identity hints are never used as authority here.
+        $site = \App\Models\Site::query()->findOrFail($this->siteContext->requireSiteId());
 
         $enabledSlugs = $this->assignmentService->getEnabledSlugsForSite($site);
 

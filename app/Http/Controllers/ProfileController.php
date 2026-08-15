@@ -170,6 +170,7 @@ class ProfileController extends Controller
             $profile->full_name = $request->full_name;
         }
 
+        $avatarError = null;
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && $file->getSize() > 0) {
@@ -180,7 +181,10 @@ class ProfileController extends Controller
                     $profile->avatar = 'uploads/' . $diskPath;
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Profile avatar upload: ' . $e->getMessage());
+                    $avatarError = 'آپلود تصویر پروفایل ناموفق بود. سایر تغییرات ذخیره شد.';
                 }
+            } else {
+                $avatarError = 'فایل تصویر ارسال‌شده معتبر نیست.';
             }
         }
 
@@ -188,6 +192,12 @@ class ProfileController extends Controller
             $profile->is_complete = true;
         }
         $profile->save();
+
+        if ($avatarError) {
+            return redirect()->route('profile.edit')
+                ->withErrors(['avatar' => $avatarError])
+                ->with('success', 'پروفایل با موفقیت بروزرسانی شد');
+        }
 
         return redirect()->route('profile.edit')
             ->with('success', 'پروفایل با موفقیت بروزرسانی شد');

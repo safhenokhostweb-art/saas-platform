@@ -341,6 +341,11 @@ function editUserForm() {
                 window.dispatchEvent(new CustomEvent('toast', {
                     detail: { message: result.message || 'تغییرات با موفقیت ذخیره شد', type: 'success' }
                 }));
+                if (result.avatar_error) {
+                    this.serverErrors.push(result.avatar_error);
+                    this.isSubmitting = false;
+                    return;
+                }
                 setTimeout(() => {
                     window.location.href = result.redirect || '{{ route('admin.users.index') }}';
                 }, 800);

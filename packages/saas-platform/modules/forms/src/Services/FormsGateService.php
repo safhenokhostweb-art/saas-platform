@@ -4,12 +4,12 @@ namespace SaaSPlatform\Modules\Forms\Services;
 
 use Illuminate\Support\Facades\Log;
 use SaaSPlatform\CoreUtils\Contracts\Platform\SiteModelInterface;
-use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 class FormsGateService
 {
     public function __construct(
-        protected TenantContextContract $tenantContext,
+        protected SiteContextContract $siteContext,
         protected FormsLicensingService $licensingService
     ) {}
 
@@ -21,7 +21,8 @@ class FormsGateService
      */
     public function authorize(): array
     {
-        $site = $this->tenantContext->site();
+        $siteId = $this->siteContext->siteId();
+        $site = $siteId === null ? null : app(\SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface::class)->find($siteId);
 
         if (!$site instanceof SiteModelInterface) {
             Log::warning('forms.gate.no_tenant');

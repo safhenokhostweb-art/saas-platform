@@ -5,6 +5,7 @@ namespace SaaSPlatform\Modules\Tickets\Models\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * PHASE 8.0 — Structural tenant isolation for ticket models.
@@ -22,35 +23,23 @@ class SiteTenantScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        $site = $this->resolveCurrentSite();
-
-        if ($site === null) {
+        $siteId = $this->resolveCurrentSiteId();
+        if ($siteId === null) {
             // No authenticated tenant context — allow query through unscoped.
             // Admin routes intentionally do not set tenant_site.
             return;
         }
 
         $table = $model->getTable();
-        $builder->where("{$table}.site_id", $site->id);
+        $builder->where("{$table}.site_id", $siteId);
     }
 
     /**
      * Resolve the currently authenticated tenant site from the request.
      * Returns null when running in admin, console, or queue contexts.
      */
-    private function resolveCurrentSite(): ?object
+    private function resolveCurrentSiteId(): ?int
     {
-        if (!app()->bound('request')) {
-            return null;
-        }
-
-        /** @var \Illuminate\Http\Request|null $request */
-        $request = app('request');
-
-        if (!$request || !method_exists($request, 'attributes')) {
-            return null;
-        }
-
-        return $request->attributes->get('tenant_site');
+        return app(SiteContextContract::class)->siteId();
     }
 }

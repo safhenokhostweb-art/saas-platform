@@ -53,6 +53,20 @@ Full regression, three sweeps:
 
 **Feature flags remain OFF by default. No site was globally or automatically activated. No production deployment. No commit, no push.**
 
----
+## 12. Addendum — verified in a follow-up pass
 
-Is Motion Graphics ready for controlled customer-facing sales and usage?
+Two items closed, one structural gap confirmed and documented (not fixed, per this phase's own "do not redesign the storage/ownership/versioning systems" constraint):
+
+- `STORAGE_MODEL.md` was missing from this directory despite being explicitly requested; added. It traces, by grep (zero matches for `Storage::disk(`/`asset(`/`storage_path(` anywhere in Motion Graphics code), that nothing in this phase or any prior phase bypasses `MediaStorage` — but also documents, honestly, that Motion asset **binaries have no durable storage backend at all yet** (`MotionAssetStorageContract`'s only bound implementation is `InMemoryMotionAssetStorage` — in-process, non-persistent). This predates Phase 11 and is unrelated to `MediaStorage`'s own readiness (which is real and tested, per the separate Storage Abstraction Refactor). See `STORAGE_MODEL.md` §2-4 for the exact integration shape a future real implementation must follow.
+- Re-ran the full `CustomerMotionGraphicsTest` suite after this pass: **9/9 still passing**, unchanged.
+- **"Ready Motion Assets"** (task's category B — off-the-shelf, non-bespoke items like a generic "Logo Animation" any customer could buy directly) is **not implemented**. Everything customer-purchasable today is bespoke: created only via a customer `requestFromCustomer()` call or an admin `create()` call, always tied to exactly one `site_id` (`motion_bespoke_commissions.site_id` is a required, non-nullable foreign key — confirmed in the migration). Building a true shared/generic catalog item would require either a schema change (nullable `site_id`) or a per-purchase commission-cloning mechanism — both are a genuine redesign of the commission/ownership model this phase was explicitly told not to touch. Correctly deferred, not silently missed.
+
+## 13. Final answer
+
+**Is Motion Graphics ready for controlled customer-facing sales and usage at SaaS scale?**
+
+**Commerce, entitlement, and security: yes.** The purchase pipeline, entitlement checks, tenant isolation, and forbidden-field guarantees are real, reused (not duplicated), and covered by passing tests at both the unit level (`ForbiddenFieldGuardTest`, `MotionCustomerRuntimeServiceTest`) and the feature/HTTP level (`CustomerMotionGraphicsTest`, Phase X's `SecurityTest`/`EntitlementRulesTest`). A customer cannot see, request, or buy another customer's asset; cannot reach a draft/internal version; cannot escalate to admin-only actions.
+
+**Usage at scale: not yet — one structural blocker.** A customer can pay for a bespoke motion asset and have it "assigned" today, but there is no durable storage backend behind that asset (§12) — so there is currently nothing real to deliver or render at runtime for *any* site, regardless of entitlement correctness. This is not a policy gap or a missing UI; it is that `MotionAssetStorageContract` has never been bound to persistent storage.
+
+**Recommendation:** safe for a **controlled pilot** of the request → design → publish → purchase flow *up to and including payment and assignment bookkeeping*, with real customers, real money, and real admin review — because every layer up to that point is genuinely tested and isolated. Do not yet promise **runtime delivery** of a purchased asset to a live customer site until a real `MotionAssetStorageContract` implementation (backed by `MediaStorage`, per `STORAGE_MODEL.md` §4) exists — that is the one remaining piece between "commercially sound" and "operationally complete."

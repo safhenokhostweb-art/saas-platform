@@ -29,6 +29,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\AddNoindexHeaders::class,
             \App\Http\Middleware\DetectResellerFromDomain::class,
             \App\Http\Middleware\SetTenantContext::class,
+            \App\Http\Middleware\ClearSiteContext::class,
             // PHASE 8.2 — Per-tenant maintenance isolation (must run after SetTenantContext)
             \App\Http\Middleware\CheckTenantMaintenance::class,
         ],

@@ -1,5 +1,7 @@
 # راهنمای استقرار (Deploy) — saas-platform
 
+> **هشدار مسیر قدیمی:** فایل‌های `deploy.ps1`، `deploy.sh` و `deploy.bat` مسدود شده‌اند و نباید برای production استفاده شوند. مرجع انتشار در حال انتقال به `deployment-system` است؛ انتشار فقط از revision کامیت‌شده و artifact اعتبارسنجی‌شده انجام می‌شود.
+
 > راهنمای فارسی استفاده از اسکریپت‌های `deploy.sh` و `deploy.bat` در مخزن **saas-platform**.
 > برای مرجع فنی کامل (انگلیسی) به [`DEPLOY.md`](./DEPLOY.md) مراجعه کنید.
 

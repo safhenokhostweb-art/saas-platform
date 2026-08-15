@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * Phase 7 (docs/motion-admin-management/): the first — and, per the
@@ -36,6 +37,7 @@ class MotionGraphicsAdminController extends Controller
     public function __construct(
         private readonly MotionGraphicsAdminService $adminService,
         private readonly TenantContextContract $tenantContext,
+        private readonly SiteContextContract $siteContext,
     ) {}
 
     /**
@@ -206,6 +208,7 @@ class MotionGraphicsAdminController extends Controller
     private function contextFor(Site $site): MotionAdapterContext
     {
         $this->tenantContext->set($site);
+        $this->siteContext->setSiteId((int) $site->getKey());
 
         return new MotionAdapterContext(
             actorId: 'user:'.Auth::id(),

@@ -14,7 +14,6 @@ use App\Services\ModuleEcosystem\Dto\EntitlementState;
  * site_modules.is_active — VisibilityResolverInterface and
  * DeploymentResolverInterface must not.
  */
-interface EntitlementResolverInterface
+interface EntitlementResolverInterface extends ModuleEntitlementResolverContract
 {
-    public function resolve(Site $site, Module $module): EntitlementState;
 }

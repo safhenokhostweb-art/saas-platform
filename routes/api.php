@@ -153,7 +153,7 @@ Route::prefix('support-tickets')->middleware(['throttle:30,1', 'tenant.api'])->g
 | Tenant marketplace (فروشگاه ماژول داخل پنل مشتری)
 |--------------------------------------------------------------------------
 */
-Route::prefix('tenant-marketplace')->middleware('throttle:60,1')->group(function () {
+Route::prefix('tenant-marketplace')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
     Route::get('modules', [\App\Http\Controllers\Api\TenantMarketplaceController::class, 'modules'])->name('api.tenant-marketplace.modules');
 });
 

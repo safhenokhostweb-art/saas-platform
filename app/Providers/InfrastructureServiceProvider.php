@@ -22,6 +22,9 @@ use SaaSPlatform\CoreUtils\Contracts\Services\ModuleLicenseServiceInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\ModuleReleaseProducerInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\SiteRepositoryInterface;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
+use App\Services\ModuleEcosystem\Contracts\ModuleEntitlementResolverContract;
+use App\Services\ModuleEcosystem\EntitlementResolver;
 
 /**
  * Binds all package contracts to their host-app adapter implementations.
@@ -43,6 +46,10 @@ class InfrastructureServiceProvider extends ServiceProvider
         $this->app->singleton(TenantContextContract::class, function ($app) {
             return $app->make(\App\Services\TenantContext::class);
         });
+
+        // SiteContext is deliberately distinct from the legacy reseller-aware TenantContext.
+        $this->app->singleton(SiteContextContract::class, \App\Services\SiteContext::class);
+        $this->app->singleton(ModuleEntitlementResolverContract::class, EntitlementResolver::class);
 
         // Repository adapters
         $this->app->singleton(SiteRepositoryInterface::class, SiteRepositoryAdapter::class);

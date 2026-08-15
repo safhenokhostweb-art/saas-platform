@@ -6,6 +6,7 @@
 <div x-data="{
     isSaving: false,
     showSuccess: false,
+    errorMessage: null,
     avatarPreview: null,
     previewAvatar(e) {
         const f = e.target.files[0];
@@ -16,6 +17,7 @@
     },
     async save(form) {
         this.isSaving = true;
+        this.errorMessage = null;
         try {
             const fd = new FormData(form);
             fd.append('_method', 'PUT');
@@ -33,9 +35,18 @@
                     });
                     document.querySelectorAll('.admin-avatar-initials').forEach(el => el.style.display = 'none');
                 }
-                this.showSuccess = true;
-                setTimeout(() => this.showSuccess = false, 3500);
+                if (data.avatar_error) {
+                    this.avatarPreview = null;
+                    this.errorMessage = data.avatar_error;
+                } else {
+                    this.showSuccess = true;
+                    setTimeout(() => this.showSuccess = false, 3500);
+                }
+            } else {
+                this.errorMessage = data.message || 'ذخیره تغییرات ناموفق بود.';
             }
+        } catch (e) {
+            this.errorMessage = 'خطای شبکه رخ داد. لطفاً دوباره تلاش کنید.';
         } finally { this.isSaving = false; }
     }
 }" class="max-w-3xl mx-auto space-y-5">
@@ -47,6 +58,14 @@
          style="display:none">
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         پروفایل با موفقیت به‌روزرسانی شد.
+    </div>
+
+    {{-- Async error (e.g. avatar upload failure) --}}
+    <div x-show="errorMessage" x-transition
+         class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm font-medium"
+         style="display:none">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+        <span x-text="errorMessage"></span>
     </div>
 
     @php

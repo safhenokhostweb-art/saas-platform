@@ -20,13 +20,29 @@ class LicenseController extends Controller
     public function validateLicense(Request $request): JsonResponse
     {
         $request->validate([
-            'license_key' => 'required|string|max:255',
             'domain' => 'required|string|max:255',
         ]);
 
+        $headerCredential = (string) ($request->bearerToken() ?? '');
+        $legacyCredential = (string) $request->input('license_key', '');
+        if ($headerCredential !== '' && $legacyCredential !== '' && ! hash_equals($headerCredential, $legacyCredential)) {
+            return response()->json(['valid' => false, 'error' => 'conflicting_credentials'], 401);
+        }
+        $licenseKey = $headerCredential !== '' ? $headerCredential : $legacyCredential;
+        if ($licenseKey === '') {
+            return response()->json(['valid' => false, 'error' => 'missing_credentials'], 401);
+        }
+
+        if ($headerCredential === '' && $legacyCredential !== '') {
+            Log::warning('DEPRECATED_CREDENTIAL_TRANSPORT', [
+                'source' => $request->query->has('license_key') ? 'query' : 'body',
+                'endpoint' => 'license.validate',
+            ]);
+        }
+
         try {
             $result = $this->licenseService->validate(
-                $request->input('license_key'),
+                $licenseKey,
                 $request->input('domain')
             );
             return response()->json($result);
