@@ -7,12 +7,9 @@ class SiteUpdate extends Model
 {
     protected $fillable = ['site_id', 'version_label', 'distributed_at', 'notes'];
 
-    protected function casts(): array
-    {
-        return [
-            'distributed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'distributed_at' => 'datetime',
+    ];
 
     public function site()
     {

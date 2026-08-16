@@ -8,6 +8,7 @@ use App\Services\ModuleUpdateEligibilityService;
 use App\Services\SupportLicenseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * API سرور بروزرسانی: قالب سایت و ماژول‌ها.
@@ -15,7 +16,8 @@ use Illuminate\Http\Request;
 class UpdateController extends Controller
 {
     public function __construct(
-        protected LicenseServerService $licenseService
+        protected LicenseServerService $licenseService,
+        protected SiteContextContract $siteContext,
     ) {}
 
     /**
@@ -26,30 +28,8 @@ class UpdateController extends Controller
         $request->validate([
             'product' => 'required|string|max:64',
             'current_version' => 'nullable|string|max:32',
-            'license_key' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
         ]);
-
-        $valid = $this->licenseService->validate(
-            $request->input('license_key'),
-            $request->input('domain')
-        );
-
-        if (empty($valid['valid'])) {
-            return response()->json([
-                'allowed' => false,
-                'error' => $valid['error'] ?? 'invalid_license',
-            ], 403);
-        }
-
-        // Phase 5 / P0-5: یافتن لایسنس از طریق سرویس مرکزی (HMAC + lazy rehash از SHA256 legacy).
-        $license = $this->licenseService->findByKey($request->input('license_key'));
-
-        if (!$license || !$license->site) {
-            return response()->json(['allowed' => false], 403);
-        }
-
-        $site = $license->site;
+        $site = $this->currentSite();
 
         // دریافت بروزرسانی فقط در دورهٔ فعال پشتیبانی یا grace period امکان‌پذیر است.
         $supportService = app(SupportLicenseService::class);
@@ -88,38 +68,18 @@ class UpdateController extends Controller
     public function checkModules(Request $request): JsonResponse
     {
         $request->validate([
-            'license_key' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
         ]);
-
-        $valid = $this->licenseService->validate(
-            $request->input('license_key'),
-            $request->input('domain')
-        );
-
-        if (empty($valid['valid'])) {
-            return response()->json([
-                'allowed' => false,
-                'error' => $valid['error'] ?? 'invalid_license',
-            ], 403);
-        }
-
-        // Phase 5 / P0-5: یافتن لایسنس از طریق سرویس مرکزی (HMAC + lazy rehash از SHA256 legacy).
-        $license = $this->licenseService->findByKey($request->input('license_key'));
-
-        if (!$license || !$license->site) {
-            return response()->json(['allowed' => false], 403);
-        }
+        $site = $this->currentSite();
 
         $eligibilityService = app(ModuleUpdateEligibilityService::class);
-        if (!$eligibilityService->isEligibleForModuleUpdates($license->site)) {
+        if (!$eligibilityService->isEligibleForModuleUpdates($site)) {
             return response()->json([
                 'allowed' => false,
                 'error' => 'support_expired',
             ], 403);
         }
 
-        $updates = $eligibilityService->getAvailableModuleUpdates($license->site);
+        $updates = $eligibilityService->getAvailableModuleUpdates($site);
 
         return response()->json([
             'allowed' => true,
@@ -141,31 +101,12 @@ class UpdateController extends Controller
     public function moduleHistory(Request $request): JsonResponse
     {
         $request->validate([
-            'license_key' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
             'limit' => 'nullable|integer|min:1|max:200',
         ]);
-
-        $valid = $this->licenseService->validate(
-            $request->input('license_key'),
-            $request->input('domain')
-        );
-
-        if (empty($valid['valid'])) {
-            return response()->json([
-                'allowed' => false,
-                'error' => $valid['error'] ?? 'invalid_license',
-            ], 403);
-        }
-
-        $license = $this->licenseService->findByKey($request->input('license_key'));
-
-        if (!$license || !$license->site) {
-            return response()->json(['allowed' => false, 'error' => 'invalid_license'], 403);
-        }
+        $site = $this->currentSite();
 
         $eligibilityService = app(ModuleUpdateEligibilityService::class);
-        if (!$eligibilityService->isEligibleForModuleUpdates($license->site)) {
+        if (!$eligibilityService->isEligibleForModuleUpdates($site)) {
             return response()->json([
                 'allowed' => false,
                 'error' => 'support_expired',
@@ -177,20 +118,10 @@ class UpdateController extends Controller
 
         // فقط ماژول‌هایی که این سایت به‌صورت فعال در site_modules دارد + ماژول‌های license-driven.
         $siteModuleIds = \Illuminate\Support\Facades\DB::table('site_modules')
-            ->where('site_id', $license->site->id)
+            ->where('site_id', $site->id)
             ->where('is_active', true)
             ->pluck('module_id')
             ->all();
-
-        // اگر site_modules خالی بود (یا جدول مفقود)، fallback بر اساس license modules.
-        if (empty($siteModuleIds)) {
-            $licensedSlugs = is_array($license->modules ?? null) ? $license->modules : [];
-            if (!empty($licensedSlugs)) {
-                $siteModuleIds = \App\Models\Module::whereIn('slug', $licensedSlugs)
-                    ->pluck('id')
-                    ->all();
-            }
-        }
 
         if (empty($siteModuleIds)) {
             return response()->json(['allowed' => true, 'history' => []]);
@@ -247,33 +178,14 @@ class UpdateController extends Controller
     public function reportVersions(Request $request): JsonResponse
     {
         $request->validate([
-            'license_key' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
             'versions' => 'required|array',
             'versions.*' => 'string|max:32',
         ]);
 
-        $valid = $this->licenseService->validate(
-            $request->input('license_key'),
-            $request->input('domain')
-        );
-
-        if (empty($valid['valid'])) {
-            return response()->json([
-                'success' => false,
-                'error' => $valid['error'] ?? 'invalid_license',
-            ], 403);
-        }
-
-        // Phase 5 / P0-5: یافتن لایسنس از طریق سرویس مرکزی (HMAC + lazy rehash از SHA256 legacy).
-        $license = $this->licenseService->findByKey($request->input('license_key'));
-
-        if (!$license || !$license->site) {
-            return response()->json(['success' => false, 'error' => 'invalid_license'], 403);
-        }
+        $site = $this->currentSite();
 
         $eligibilityService = app(ModuleUpdateEligibilityService::class);
-        if (!$eligibilityService->isEligibleForModuleUpdates($license->site)) {
+        if (!$eligibilityService->isEligibleForModuleUpdates($site)) {
             return response()->json([
                 'success' => false,
                 'error' => 'support_expired',
@@ -281,8 +193,13 @@ class UpdateController extends Controller
         }
 
         $versions = $request->input('versions', []);
-        $eligibilityService->recordReportedVersions($license->site, $versions);
+        $eligibilityService->recordReportedVersions($site, $versions);
 
         return response()->json(['success' => true]);
+    }
+
+    private function currentSite(): \App\Models\Site
+    {
+        return \App\Models\Site::query()->findOrFail($this->siteContext->requireSiteId());
     }
 }

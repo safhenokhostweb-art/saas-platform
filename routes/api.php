@@ -36,14 +36,14 @@ Route::prefix('license')->middleware('throttle:60,1')->group(function () {
     Route::post('validate', [ApiLicenseController::class, 'validateLicense'])->name('api.license.validate');
 });
 
-Route::prefix('updates')->middleware('throttle:30,1')->group(function () {
+Route::prefix('updates')->middleware(['throttle:30,1', 'tenant.api'])->group(function () {
     Route::get('check', [ApiUpdateController::class, 'check'])->name('api.updates.check');
     Route::get('modules', [ApiUpdateController::class, 'checkModules'])->name('api.updates.modules');
     Route::get('module-history', [ApiUpdateController::class, 'moduleHistory'])->name('api.updates.module-history');
     Route::post('report-versions', [ApiUpdateController::class, 'reportVersions'])->name('api.updates.report-versions');
 });
 
-Route::prefix('site-config')->middleware('throttle:60,1')->group(function () {
+Route::prefix('site-config')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
     Route::get('/', [ApiSiteConfigController::class, 'show'])->name('api.site-config.show');
 });
 

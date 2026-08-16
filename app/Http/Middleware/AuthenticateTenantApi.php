@@ -35,6 +35,7 @@ class AuthenticateTenantApi
         if ($conflict) {
             return response()->json([
                 'success' => false,
+                'allowed' => false,
                 'error' => 'conflicting_credentials',
                 'message' => 'اعتبارنامه‌های ارسالی با هم مطابقت ندارند.',
             ], 401);
@@ -43,6 +44,7 @@ class AuthenticateTenantApi
         if ($licenseKey === '' || $domain === '') {
             return response()->json([
                 'success' => false,
+                'allowed' => false,
                 'error'   => 'missing_credentials',
                 'message' => 'احراز هویت الزامی است. از Authorization: Bearer <license_key> استفاده کنید.',
             ], 401);
@@ -65,6 +67,7 @@ class AuthenticateTenantApi
         if (!($result['valid'] ?? false)) {
             return response()->json([
                 'success' => false,
+                'allowed' => false,
                 'error'   => $result['error'] ?? 'invalid_license',
                 'message' => $result['message'] ?? 'لایسنس نامعتبر است.',
                 // credential value is never returned to caller
@@ -75,6 +78,7 @@ class AuthenticateTenantApi
         if ($siteId < 1) {
             return response()->json([
                 'success' => false,
+                'allowed' => false,
                 'error'   => 'site_not_found',
                 'message' => 'سایت مورد نظر یافت نشد.',
             ], 403);

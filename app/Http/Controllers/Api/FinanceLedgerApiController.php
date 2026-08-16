@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Finance\FinanceLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * Tenant-facing endpoint: customer-site pushes payment events to the platform ledger.
@@ -14,7 +15,10 @@ use Illuminate\Http\Request;
  */
 class FinanceLedgerApiController extends Controller
 {
-    public function __construct(private FinanceLedgerService $ledger) {}
+    public function __construct(
+        private FinanceLedgerService $ledger,
+        private SiteContextContract $siteContext,
+    ) {}
 
     public function pushEvent(Request $request): JsonResponse
     {
@@ -31,9 +35,7 @@ class FinanceLedgerApiController extends Controller
             'transaction_at' => 'nullable|date',
         ]);
 
-        $site = $request->attributes->get('tenant_site');
-
-        $validated['site_id'] = $site?->id;
+        $validated['site_id'] = $this->siteContext->requireSiteId();
 
         $entry = $this->ledger->fromCustomerSitePush($validated);
 

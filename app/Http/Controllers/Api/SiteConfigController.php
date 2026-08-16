@@ -3,11 +3,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\PlatformSettings;
 use App\Http\Controllers\Controller;
+use App\Models\Site;
+use App\Services\ModuleEcosystem\Contracts\ModuleEntitlementResolverContract;
 use App\Services\DesignSystemService;
 use App\Services\ExpiryReminderService;
-use App\Services\LicenseServerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * API تنظیمات سایت برای customer-site: نام سایت، ماژول‌های فعال، انقضای پشتیبانی، و UX (رنگ، فونت، لوگو).
@@ -15,7 +17,8 @@ use Illuminate\Http\Request;
 class SiteConfigController extends Controller
 {
     public function __construct(
-        protected LicenseServerService $licenseService
+        protected SiteContextContract $siteContext,
+        protected ModuleEntitlementResolverContract $entitlements,
     ) {}
 
     /**
@@ -23,25 +26,10 @@ class SiteConfigController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        $request->validate([
-            'license_key' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
-        ]);
-
-        $result = $this->licenseService->validate(
-            $request->input('license_key'),
-            $request->input('domain')
-        );
-
-        if (empty($result['valid'])) {
-            return response()->json([
-                'allowed' => false,
-                'error' => $result['error'] ?? 'invalid_license',
-            ], 403);
-        }
-
         $baseUrl = rtrim($request->getSchemeAndHttpHost() ?: config('app.url'), '/');
-        $siteId = $result['site_id'] ?? null;
+        $siteId = $this->siteContext->requireSiteId();
+        $site = Site::query()->findOrFail($siteId);
+        $modules = $this->entitlements->projectionForSite($site);
         $designSystem = app(DesignSystemService::class);
         $theme = $designSystem->resolveTheme($siteId);
         $font = $designSystem->resolveFont($siteId);
@@ -209,7 +197,6 @@ class SiteConfigController extends Controller
         }
 
         $menus = [];
-        $modules = $result['modules'] ?? [];
         if ($siteId && \Illuminate\Support\Facades\Schema::hasTable('menus') && in_array('menu', $modules, true)) {
             $menuList = \App\Models\Menu::where('site_id', $siteId)
                 ->with(['items' => function ($q) {
@@ -254,14 +241,14 @@ class SiteConfigController extends Controller
         $payload = [
             'allowed'            => true,
             'theme_preset_slug'  => $themePresetSlug,
-            'site_title'         => $result['site_title'] ?? null,
-            'modules' => $result['modules'] ?? [],
+            'site_title'         => $site->title,
+            'modules' => $modules,
             'menus' => $menus,
             'notifications' => $notifications,
             'notifications_count' => count($notifications),
-            'support_expires_at' => $result['support_expires_at'] ?? null,
-            'support_starts_at' => $result['support_starts_at'] ?? null,
-            'support_level' => $result['support_level'] ?? 'basic',
+            'support_expires_at' => $site->support_expires_at?->toIso8601String(),
+            'support_starts_at' => $site->support_starts_at?->toIso8601String(),
+            'support_level' => $site->support_level ?? 'basic',
             'seo' => $seo,
             'ux' => [
                 'general' => [

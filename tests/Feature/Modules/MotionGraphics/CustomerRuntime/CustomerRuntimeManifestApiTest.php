@@ -163,7 +163,11 @@ class CustomerRuntimeManifestApiTest extends TestCase
 
         $keyForA = $this->issueLicenseFor($siteA, 'site-a.test');
 
-        $response = $this->withToken($keyForA)->getJson('/api/motion-runtime/manifest?domain=site-a.test');
+        $response = $this->withToken($keyForA)->getJson('/api/motion-runtime/manifest?' . http_build_query([
+            'domain' => 'site-a.test',
+            'site_id' => $siteB->id,
+            'site_identifier' => (string) $siteB->id,
+        ]));
 
         $response->assertOk()->assertJsonPath('site_reference', (string) $siteA->id);
         $this->assertNotEquals((string) $siteB->id, $response->json('site_reference'));

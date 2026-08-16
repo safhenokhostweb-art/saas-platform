@@ -12,6 +12,7 @@ use App\Modules\MotionGraphics\Services\MotionCustomerRuntimeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use SaaSPlatform\CoreUtils\Contracts\SiteContextContract;
 
 /**
  * Phase 8 (docs/motion-customer-runtime-phase8/CUSTOMER_RUNTIME_ARCHITECTURE.md):
@@ -31,13 +32,14 @@ class MotionCustomerRuntimeApiController extends Controller
     public function __construct(
         private readonly MotionCustomerRuntimeService $runtimeService,
         private readonly MotionBespokeCustomerRuntimeService $bespokeRuntimeService,
+        private readonly SiteContextContract $siteContext,
     ) {}
 
     // GET /api/motion-runtime/manifest
     public function manifest(Request $request): JsonResponse
     {
         /** @var Site $site */
-        $site = $request->attributes->get('tenant_site');
+        $site = $this->currentSite();
 
         $context = new MotionAdapterContext(
             actorId: 'customer-site:'.$site->id,
@@ -60,7 +62,7 @@ class MotionCustomerRuntimeApiController extends Controller
     public function bespokeManifest(Request $request): JsonResponse
     {
         /** @var Site $site */
-        $site = $request->attributes->get('tenant_site');
+        $site = $this->currentSite();
 
         $context = new MotionAdapterContext(
             actorId: 'customer-site:'.$site->id,
@@ -85,10 +87,15 @@ class MotionCustomerRuntimeApiController extends Controller
     public function bespokeCommissions(Request $request): JsonResponse
     {
         /** @var Site $site */
-        $site = $request->attributes->get('tenant_site');
+        $site = $this->currentSite();
 
         return response()->json([
             'commissions' => $this->bespokeRuntimeService->commissionsStatusForSite($site),
         ]);
+    }
+
+    private function currentSite(): Site
+    {
+        return Site::query()->findOrFail($this->siteContext->requireSiteId());
     }
 }
