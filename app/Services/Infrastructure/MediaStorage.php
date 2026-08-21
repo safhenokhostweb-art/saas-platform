@@ -98,9 +98,21 @@ class MediaStorage
             return null;
         }
 
-        $relative = str_starts_with($storedPath, 'uploads/') ? substr($storedPath, 8) : $storedPath;
+        try {
+            $relative = str_starts_with($storedPath, 'uploads/') ? substr($storedPath, 8) : $storedPath;
 
-        return $this->url($relative, 'uploads', $site);
+            return $this->url($relative, 'uploads', $site);
+        } catch (\Throwable $e) {
+            // Fail gracefully instead of an HTTP 500: if the uploads disk cannot
+            // be resolved (e.g. its root directory is missing and not creatable),
+            // hide the avatar — the rest of the page keeps rendering.
+            \Illuminate\Support\Facades\Log::warning('avatarUrl: unable to resolve avatar URL', [
+                'stored_path' => $storedPath,
+                'exception'   => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     public function delete(string $path, string $kind = 'public', ?Site $site = null): bool

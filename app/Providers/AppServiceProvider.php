@@ -76,6 +76,17 @@ class AppServiceProvider extends ServiceProvider
             throw new \RuntimeException('Production requires CACHE_DRIVER=redis — file cache breaks multi-tenant isolation.');
         }
 
+        // Root-cause fix (MediaStorage refactor regression): Flysystem's
+        // LocalFilesystemAdapter creates its ROOT DIRECTORY inside its
+        // constructor (lazyRootCreation defaults to false), so merely resolving
+        // Storage::disk('uploads') throws UnableToCreateDirectory when e.g.
+        // public/uploads is missing — turning a read-only avatar URL render on
+        // /admin/dashboard into an HTTP 500. Guarantee every local disk root
+        // exists at bootstrap using native filesystem calls (never
+        // Storage::disk(), which would trigger the same constructor). This is
+        // best-effort: a creation failure is logged, never fatal at boot.
+        $this->ensureLocalStorageRoots();
+
         Product::observe(ProductObserver::class);
         Site::observe(SiteObserver::class);
         ThemePurchaseOrder::observe(ThemePurchaseOrderObserver::class);
@@ -131,5 +142,51 @@ class AppServiceProvider extends ServiceProvider
         \Blade::directive('digitsFa', function ($expression) {
             return "<?php echo \\App\\Services\\PersianFormatter::digits($expression); ?>";
         });
+    }
+
+    /**
+     * Guarantee every configured LOCAL filesystem disk root exists before any
+     * Storage::disk() is resolved.
+     *
+     * Why: league/flysystem-local's LocalFilesystemAdapter creates its root
+     * inside its CONSTRUCTOR (lazyRootCreation defaults to false in the
+     * installed version, and Laravel's createLocalDriver never passes true).
+     * The first time any code resolves a local disk — even for a read-only
+     * `url()` — the adapter tries `mkdir($root)` and throws
+     * UnableToCreateDirectory when the root is missing and not creatable.
+     * The MediaStorage refactor routed avatar/theme/sitemap reads through
+     * Storage::disk(), which turned this latent behavior into an HTTP 500.
+     *
+     * Native is_dir()/ensureDirectoryExists() are used here (never
+     * Storage::disk(), which would recurse into the same constructor), so a
+     * missing or unwritable root is created when possible and otherwise only
+     * logged. This is idempotent and safe to run on every request.
+     */
+    private function ensureLocalStorageRoots(): void
+    {
+        $files = app(\Illuminate\Filesystem\Filesystem::class);
+
+        foreach ((array) config('filesystems.disks', []) as $name => $disk) {
+            if (($disk['driver'] ?? null) !== 'local' || empty($disk['root'])) {
+                continue;
+            }
+
+            $root = $disk['root'];
+
+            try {
+                if (! $files->isDirectory($root)) {
+                    $files->ensureDirectoryExists($root, 0775, true);
+
+                    if ($files->isDirectory($root)) {
+                        @chmod($root, 0775);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning(
+                    "Unable to guarantee filesystem root for disk '{$name}' at {$root}",
+                    ['exception' => $e->getMessage()]
+                );
+            }
+        }
     }
 }
