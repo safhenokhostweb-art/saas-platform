@@ -1,151 +1,46 @@
-# Rollback Runbook
+# SaaS Platform artifact rollback runbook
 
-**Phase 8.2 — Production Rollback Procedures**
+Rollback is performed only through Deployment System using a previously
+validated artifact and its recorded SHA-256 checksum. Never check out Git,
+install Composer dependencies, build assets, create tags/releases, or push from
+production.
 
----
+## Before activation
 
-## When to Roll Back
+- retain the currently active release within the configured retention window;
+- record the prior artifact ID, commit SHA, checksum, and health result;
+- take and verify a database backup;
+- review every pending migration for backward compatibility;
+- stop the release if the previous code cannot run against the post-migration
+  schema and no verified database recovery path exists.
 
-- Health check fails after deployment (`platform:health ready` → 503)
-- Critical bug discovered within first 30 minutes of release
-- Failed deployment that left the system in an inconsistent state
-- Migration applied that is causing data issues
+## Failed release
 
----
+1. Keep maintenance/drain state active.
+2. Ask Deployment System to activate the last known-good artifact.
+3. Verify the selected artifact checksum and release manifest before swap.
+4. Restore persistent `.env`, `storage`, and upload references unchanged.
+5. Run `php artisan optimize` against the restored code.
+6. Run `php artisan queue:restart` and verify worker processes return.
+7. Require HTTP 200 from `/health/ready` before restoring traffic.
+8. Record the failed and restored artifact IDs, SHAs, checksums, migration state,
+   and operator in the Deployment System audit trail.
 
-## Step 1 — Assess the Situation
+## Database compatibility
 
-```bash
-php artisan deployment:status
-php artisan platform:health --json
-php artisan migration:detect-drift
-```
+Code rollback does not automatically reverse migrations. Prefer additive,
+expand/contract migrations that allow the previous release to continue running.
+Do not run `migrate:rollback` automatically: a `down()` method can discard data
+or be incompatible with later writes.
 
-Identify the last known-good release UUID from `deployment:status`.
+When schema recovery is required, keep traffic drained and restore the verified
+pre-release database backup as a separately authorized recovery operation. Then
+activate the matching artifact, optimize, restart queues, and repeat health
+validation.
 
----
+## Rollback failure
 
-## Step 2 — Dry Run First
-
-```bash
-php artisan deployment:rollback {uuid} --dry-run
-```
-
-Review the output:
-- Which migration batches need to be rolled back
-- Which module versions will change
-- What next steps are required
-
----
-
-## Step 3 — Isolate Affected Tenants
-
-```bash
-php artisan tenant:down {site_id} --message="در حال بازیابی سیستم"
-```
-
----
-
-## Step 4 — Acquire Rollback Lock
-
-```bash
-php artisan deployment:lock --ttl=1800
-```
-
----
-
-## Step 5 — Revert Code
-
-```bash
-git checkout {previous-commit-hash}
-composer install --no-dev --optimize-autoloader
-```
-
----
-
-## Step 6 — Roll Back Migrations
-
-```bash
-# Determine how many batches to roll back (from dry-run output)
-php artisan migrate:rollback --step=N --force
-```
-
-**WARNING:** Only possible if `down()` methods are implemented. Irreversible migrations cannot be rolled back — restore from database backup instead.
-
----
-
-## Step 7 — Rebuild Assets
-
-```bash
-npm ci && npm run build
-php artisan vendor:publish --tag=forms-assets --force
-php artisan vendor:publish --tag=tickets-assets --force
-```
-
----
-
-## Step 8 — Clear All Caches
-
-```bash
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-php artisan cache:clear
-php artisan optimize:clear
-```
-
----
-
-## Step 9 — Restart Queues
-
-```bash
-php artisan queue:restart
-```
-
----
-
-## Step 10 — Re-check Health
-
-```bash
-php artisan platform:health --fail-on-warn
-```
-
----
-
-## Step 11 — Restore Tenants
-
-```bash
-php artisan tenant:up {site_id}
-```
-
----
-
-## Step 12 — Release Lock and Audit
-
-```bash
-php artisan deployment:unlock --force
-php artisan deployment:validate-governance
-```
-
----
-
-## Irreversible Migrations
-
-If a migration's `down()` method is empty or throws, manual database intervention is required:
-
-1. Restore from pre-deployment database backup
-2. Run `php artisan migrate:fresh` (DANGER: loses all data — staging only)
-3. Or manually reverse the schema change via SQL
-
-Always keep a database dump immediately before applying migrations.
-
----
-
-## Rollback Time Budget
-
-| Scenario | Expected RTO |
-|---|---|
-| Code revert only (no migrations) | < 10 minutes |
-| Code + 1-2 migration batches | 10–30 minutes |
-| Code + DB backup restore | 30–90 minutes |
-| Multi-tenant isolation restore | < 5 minutes per tenant |
+If the prior artifact, checksum, persistent targets, or compatible database
+state cannot be verified, do not improvise with production Git. Keep the
+service in maintenance, preserve all evidence and backups, and mark the
+Deployment System operation failed for controlled recovery.

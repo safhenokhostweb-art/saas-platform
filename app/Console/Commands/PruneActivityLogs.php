@@ -25,7 +25,7 @@ class PruneActivityLogs extends Command
             : max(1, (int) config('audit.retention_days', 365));
 
         $cutoff = now()->subDays($days);
-        $dry = filter_var(env('AUDIT_PRUNE_DRY_RUN', false), FILTER_VALIDATE_BOOLEAN);
+        $dry = (bool) config('audit.prune_dry_run', false);
 
         $count = ActivityLog::query()->where('created_at', '<', $cutoff)->count();
 

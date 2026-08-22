@@ -47,7 +47,7 @@ class GenerateContentCommand extends Command
         $module   = $this->option('module') ? (string) $this->option('module') : null;
         $limit    = $this->option('limit')  ? (int) $this->option('limit')    : null;
         $dryRun   = (bool) $this->option('dry-run');
-        $authorId = (int) env('EDUCATION_AI_AUTHOR_ID', 1);
+        $authorId = (int) config('education.ai.author_id', 1);
 
         if ($dryRun) {
             $this->warn('[DRY-RUN] No articles will be persisted.');

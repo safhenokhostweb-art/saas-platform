@@ -53,7 +53,7 @@ class AppServiceProvider extends ServiceProvider
         // TB-3: Theme AI Analyzer (reads ANTHROPIC_API_KEY at resolve time)
         $this->app->singleton(\App\Services\ThemeBuilder\ThemeAiAnalyzerService::class, function () {
             return new \App\Services\ThemeBuilder\ThemeAiAnalyzerService(
-                (string) config('services.anthropic.key', env('ANTHROPIC_API_KEY', ''))
+                (string) config('services.anthropic.key', '')
             );
         });
 

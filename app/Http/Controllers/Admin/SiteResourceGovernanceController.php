@@ -171,9 +171,23 @@ class SiteResourceGovernanceController extends Controller
             'RESOURCE_SNAPSHOT_RETENTION_DAYS',
         ];
 
+        $configKeys = [
+            'RESOURCE_STORAGE_LIMIT_BYTES' => 'resource_governance.storage_limit_bytes',
+            'RESOURCE_BANDWIDTH_LIMIT_BYTES' => 'resource_governance.bandwidth_limit_bytes',
+            'RESOURCE_ARCHIVE_RETENTION_DAYS' => 'resource_governance.archive_retention_days',
+            'RESOURCE_BACKUP_RETENTION_DAYS' => 'resource_governance.backup_retention_days',
+            'RESOURCE_STORAGE_OVERAGE_FEE' => 'resource_governance.storage_overage_fee_per_gb',
+            'RESOURCE_BANDWIDTH_OVERAGE_FEE' => 'resource_governance.bandwidth_overage_fee_per_gb',
+            'RESOURCE_ARCHIVE_RETENTION_FEE' => 'resource_governance.archive_retention_fee',
+            'RESOURCE_RESTORE_FEE' => 'resource_governance.restore_fee',
+            'RESOURCE_ALERT_WARNING_PCT' => 'resource_governance.alert_warning_percent',
+            'RESOURCE_ALERT_CRITICAL_PCT' => 'resource_governance.alert_critical_percent',
+            'RESOURCE_SNAPSHOT_RETENTION_DAYS' => 'resource_governance.snapshot_retention_days',
+        ];
+
         $current = [];
         foreach ($keys as $key) {
-            $current[$key] = env($key, '');
+            $current[$key] = config($configKeys[$key], '');
         }
 
         $defaultStorageGb    = round(config('resource_governance.storage_limit_bytes') / 1073741824, 0);

@@ -302,11 +302,11 @@ class SiteResourceCalculatorService
         config([
             "database.connections.{$key}" => [
                 'driver'    => 'mysql',
-                'host'      => $site->db_host     ?: env('DB_HOST', '127.0.0.1'),
-                'port'      => env('DB_PORT', 3306),
+                'host'      => $site->db_host     ?: config('database.connections.mysql.host', '127.0.0.1'),
+                'port'      => config('database.connections.mysql.port', 3306),
                 'database'  => $site->db_name,
-                'username'  => $site->db_user     ?: env('DB_USERNAME'),
-                'password'  => $site->getDecryptedDbPassword() ?: env('DB_PASSWORD'),
+                'username'  => $site->db_user     ?: config('database.connections.mysql.username'),
+                'password'  => $site->getDecryptedDbPassword() ?: config('database.connections.mysql.password'),
                 'charset'   => 'utf8mb4',
                 'collation' => 'utf8mb4_unicode_ci',
                 'prefix'    => '',

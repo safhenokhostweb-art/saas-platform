@@ -106,6 +106,8 @@ return [
         'key' => env('ANTHROPIC_API_KEY', ''),
     ],
 
+    'customer_provision_secret' => env('CUSTOMER_PROVISION_SECRET', ''),
+
     // TB-AI Studio — local developer tool import pipeline
     'studio' => [
         'api_key' => env('STUDIO_API_KEY', ''),

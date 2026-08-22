@@ -62,7 +62,7 @@ class ThemePurchaseOrderObserver
             $endpoint = $baseUrl . '/builder/api/theme/provision';
 
             // Use the internal provision token (shared secret) for auth
-            $secret = config('services.customer_provision_secret', env('CUSTOMER_PROVISION_SECRET', ''));
+            $secret = config('services.customer_provision_secret', '');
 
             $response = Http::withHeaders([
                 'X-Provision-Secret' => $secret,

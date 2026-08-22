@@ -9,6 +9,8 @@ node_modules/
 /storage/framework/cache/data/
 /storage/framework/sessions/
 /storage/logs/
+/storage/backups/
+/storage/installed.lock
 /vendor
 /bootstrap/cache/*.php
 /public/vendor/leaflet/*.map
@@ -17,6 +19,8 @@ node_modules/
 vendor.zip
 deploy.zip
 .env
+.env.*
+!.env.example
 .env.backup
 .env.backup-*
 .env.production
@@ -39,6 +43,13 @@ id_ed25519
 id_ed25519.pub
 *.pem
 /*.key
+*.sql
+*.sql.*
+*.dump
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
 
 # Runtime artifacts
 dump.rdb
