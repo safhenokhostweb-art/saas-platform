@@ -468,3 +468,25 @@ GitHub and production must remain recoverable, auditable delivery targets rather
 - Task completion now includes Git commit, Git push, server synchronization, and health verification.
 - Unrelated dirty workspace or server changes must remain isolated from the task release.
 - Selective deployment is required when a full canonical deployment would overwrite unrelated live changes.
+
+---
+
+## ADR-020
+
+**Date:** 2026-08-25
+**Title:** Adopt the Commercial Product Architecture Contract as the Product-Ecosystem Constitution
+
+**Context:**
+The platform's product-class model (themes, modules, motion graphics, and future capabilities such as icon systems and design systems) had no single, permanent, binding reference for versioning authority, master-vs-customer-instance doctrine, update safety, and marketplace/licensing reuse. A draft document, `docs/architecture/COMMERCIAL_PRODUCT_ARCHITECTURE_CONTRACT.md`, had been written covering this ground with concrete code-level evidence, but it declared itself "Accepted — Permanent Reference" without ever passing through this project's own ADR process, creating an unauthorized competing authority alongside `PROJECT_CONSTITUTION.md`. A subsequent audit of `customer-site` (this task) also found two of its factual claims did not match the actual `customer-site` implementation, and surfaced two previously undocumented gaps: `customer-site`'s module entitlement adapter (`NullModuleLicenseAdapter`) is fail-open, contradicting `docs/architecture/entitlement/CUSTOMER_PROJECTION.md`'s fail-closed claim; and `SiteThemeTemplate` plus `TenantThemeResolver`'s 20 hardcoded presets are local, versionless theme assets outside any product/marketplace governance.
+
+**Decision:**
+Formally adopt `docs/architecture/COMMERCIAL_PRODUCT_ARCHITECTURE_CONTRACT.md` as the binding, permanent product-ecosystem architecture reference for saas-platform and customer-site, subordinate to `PROJECT_CONSTITUTION.md` (per ADR-018's authority hierarchy) rather than competing with it. The document was corrected in place before adoption: §3.3's master/customer-instance claim was scoped correctly (the pattern is implemented saas-platform-side; `customer-site` never persists master authoring data locally at all — a stricter form of the same doctrine), and two new findings were recorded as §9.8 (module entitlement fail-open, flagged for an explicit owner decision rather than silently patched) and §9.9 (ungoverned local theme assets in `customer-site`). Two additional binding sections were added to satisfy the platform's stated engineering-governance requirements: §8A (No Classic Development — every solution must be evaluated against "can this be sold, updated, and maintained commercially?") and §12 (a pre-task compliance checklist, run before implementation work on any product class, with unresolved answers reported before coding).
+
+**Reason:**
+A permanent product-ecosystem contract is only trustworthy if it entered through the same governance process as every other permanent rule in this workspace, and only useful if its factual claims are verified against both repositories it governs, not just the one it was written from.
+
+**Impact:**
+- `docs/architecture/COMMERCIAL_PRODUCT_ARCHITECTURE_CONTRACT.md` is now a formally adopted, ADR-traceable architecture document — no separate or duplicate constitution file was created.
+- `PROJECT_CONSTITUTION.md` is unchanged; this ADR does not amend it, only adds a subordinate, product-scoped extension beneath it.
+- Two open items require an explicit owner decision before further product-class work relies on them: (§9.8) whether `customer-site` module entitlement is intentionally platform-gated-only or a real local gap; (§9.9) whether `SiteThemeTemplate`/`TenantThemeResolver` presets are an intentional customer-site-local exemption or should graduate into the platform's Theme product pipeline.
+- No application code, business logic, migration, or runtime behavior was changed by this ADR or its referenced document.
