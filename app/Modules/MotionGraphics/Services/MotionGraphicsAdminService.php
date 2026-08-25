@@ -8,6 +8,7 @@ use App\Modules\MotionGraphics\DTO\ActivationPlan;
 use App\Modules\MotionGraphics\DTO\AssetCompatibilityPreview;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\DTO\MotionAdminDashboardSummary;
+use App\Modules\MotionGraphics\DTO\MotionAssetPreview;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Models\TemplateAssetPackage;
@@ -18,8 +19,10 @@ use App\Modules\MotionGraphics\Support\TemplateBuilderCompatibilityValidator;
 use App\Modules\MotionGraphics\DTO\ValidationReport;
 use Illuminate\Support\Collection;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibraryBrowseContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibrarySummaryContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
 
 /**
  * Phase 7 (docs/motion-admin-management/): the first operational admin
@@ -63,8 +66,91 @@ final class MotionGraphicsAdminService extends AbstractMotionAdapter
         private readonly MotionRuntimeInstallationService $runtimeInstallation,
         private readonly TemplateBuilderCompatibilityValidator $compatibilityValidator,
         private readonly MotionAssetReadContract $assets,
+        private readonly MotionRuntimeProjectionReadContract $projections,
+        private readonly MotionAssetLibraryBrowseContract $libraryBrowse,
     ) {
         parent::__construct($tenantContext, $auditEvents);
+    }
+
+    /**
+     * Theme Builder Motion Picker (real visual browse, not type-to-preview):
+     * the published, global-only asset library, paginated and optionally
+     * filtered — backed entirely by MotionAssetLibraryBrowseContract, which
+     * itself never queries anything beyond non-hidden MotionGraphic
+     * columns (see that reader's own docblock). Each row is mapped to the
+     * same MotionAssetPreview shape previewAsset() already returns, so the
+     * picker UI has one consistent card shape whether an item came from
+     * browsing or from a direct id lookup.
+     *
+     * @param array{search?: string, category?: string} $filters
+     * @return array{items: list<MotionAssetPreview>, total: int, page: int, per_page: int}
+     */
+    public function browseLibrary(array $filters, int $page, int $perPage, MotionAdapterContext $context): array
+    {
+        $this->authorizeAdmin($context, self::ABILITY_VIEW_LIBRARY);
+
+        $result = $this->libraryBrowse->browsePublished($filters, $page, $perPage);
+
+        $items = array_map(function ($assetModel) use ($context): MotionAssetPreview {
+            $projection = $this->projections->projectAsset($assetModel->assetId, null);
+
+            return new MotionAssetPreview(
+                assetId: $assetModel->assetId,
+                name: $assetModel->name,
+                category: $assetModel->category,
+                type: $assetModel->type,
+                thumbnailReference: $projection?->optimizedReference,
+            );
+        }, $result['items']);
+
+        return [
+            'items' => $items,
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'per_page' => $result['per_page'],
+        ];
+    }
+
+    /**
+     * Theme Builder Motion Picker (authoring side): resolves one published,
+     * global asset's safe display summary — name, category, type, and a
+     * thumbnail reference reusing the exact same optimized-output URL the
+     * runtime already renders. Deliberately a separate method from
+     * previewCompatibility()/AssetCompatibilityPreview, whose own docblock
+     * requires staying minimal — this one exists only to feed a visual
+     * picker card, not a compatibility decision.
+     *
+     * Global-only by design: passing a null site identifier to the
+     * projection contract is the correct, safe call for authoring-time
+     * preview (a template may only bundle a global asset as its default;
+     * customer-specific/bespoke assets are never template defaults — see
+     * CUSTOMER_CUSTOMIZATION.md). A customer-specific asset simply returns
+     * no thumbnail here (PublishedRuntimeProjectionProvider's own ownership
+     * check), never leaking whose site owns it.
+     */
+    public function previewAsset(string $assetId, MotionAdapterContext $context): ?MotionAssetPreview
+    {
+        $this->authorizeAdmin($context, self::ABILITY_VIEW_LIBRARY);
+
+        $version = $this->assets->resolveActiveVersion($assetId);
+        if ($version === null) {
+            return null;
+        }
+
+        $assetModel = $this->assets->findByCanonicalId($assetId, $version);
+        if ($assetModel === null) {
+            return null;
+        }
+
+        $projection = $this->projections->projectAsset($assetId, null);
+
+        return new MotionAssetPreview(
+            assetId: $assetModel->assetId,
+            name: $assetModel->name,
+            category: $assetModel->category,
+            type: $assetModel->type,
+            thumbnailReference: $projection?->optimizedReference,
+        );
     }
 
     public function dashboardSummary(MotionAdapterContext $context): MotionAdminDashboardSummary

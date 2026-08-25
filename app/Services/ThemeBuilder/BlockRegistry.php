@@ -453,6 +453,26 @@ final class BlockRegistry
                 'defaultProps' => [],
             ],
 
+            // ─── MODULE: موشن گرافیک ─────────────────────────────────────────
+            // Authoring-time only: this entry exists so the Theme Builder
+            // canvas preview shows a proper "موشن گرافیک" label instead of
+            // the raw block type. Actual resolution/rendering only ever
+            // happens on customer-site's ThemeCanvasRenderer, against a
+            // specific site's own authorized Motion assignment — see
+            // docs/theme-builder-motion/TEMPLATE_MOTION_CONTRACT.md.
+            'module:motion' => [
+                'name' => 'موشن گرافیک',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'sparkles',
+                'schema' => [
+                    'motion_asset_id' => ['type' => 'string', 'label' => 'شناسه دارایی موشن (Motion Asset ID)', 'default' => ''],
+                    'placement' => ['type' => 'select', 'label' => 'جایگاه', 'options' => ['hero' => 'هیرو', 'section' => 'بخش', 'cta' => 'فراخوان به اقدام', 'background' => 'پس‌زمینه'], 'default' => 'section'],
+                    'enabled' => ['type' => 'boolean', 'label' => 'فعال', 'default' => true],
+                    'fallback_image' => ['type' => 'string', 'label' => 'تصویر جایگزین', 'default' => ''],
+                ],
+                'defaultProps' => ['motion_asset_id' => '', 'placement' => 'section', 'enabled' => true, 'fallback_image' => ''],
+            ],
+
             // ─── MODULE: وبلاگ ───────────────────────────────────────────────
             'module:blog_posts' => [
                 'name' => 'پست‌های وبلاگ',

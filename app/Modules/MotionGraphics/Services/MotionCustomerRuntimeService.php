@@ -120,6 +120,8 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
                 themeTokens: $projectionDto->themeTokens,
                 placementRules: $projectionDto->placementRules,
                 responsiveRules: [],
+                name: $projectionDto->assetReference->compatibility['name'] ?? null,
+                category: $projectionDto->assetReference->compatibility['category'] ?? null,
             );
         }
 

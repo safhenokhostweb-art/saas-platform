@@ -95,7 +95,7 @@ class ThemeCanvasController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function preview(Theme $theme, string $pageKey)
+    public function preview(Request $request, Theme $theme, string $pageKey)
     {
         $pages = $theme->getPageList();
         $page  = $pages[$pageKey] ?? null;
@@ -104,11 +104,12 @@ class ThemeCanvasController extends Controller
             abort(404, 'صفحه یافت نشد');
         }
 
-        $blocks = $page['blocks'] ?? [];
-        $html   = $this->renderer->renderBlocks($blocks);
-        $css    = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
+        $blocks     = $page['blocks'] ?? [];
+        $html       = $this->renderer->renderBlocks($blocks);
+        $css        = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
+        $hideChrome = $request->boolean('screenshot');
 
-        return view('admin.theme-builder.canvas-preview', compact('theme', 'page', 'html', 'css', 'pageKey'));
+        return view('admin.theme-builder.canvas-preview', compact('theme', 'page', 'html', 'css', 'pageKey', 'hideChrome'));
     }
 
     public function previewAjax(Request $request, Theme $theme)

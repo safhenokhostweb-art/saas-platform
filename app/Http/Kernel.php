@@ -53,5 +53,6 @@ class Kernel extends HttpKernel
         'wizard' => \App\Http\Middleware\EnsureSuperAdminForWizard::class,
         'tenant.api' => \App\Http\Middleware\AuthenticateTenantApi::class,
         'studio.api' => \App\Http\Middleware\AuthenticateStudioApi::class,
+        'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
     ];
 }

@@ -977,6 +977,61 @@ class BlockRenderer
         </div>";
     }
 
+    // Ported from customer-site's app/Services/ThemeBuilder/BlockRenderer.php
+    // (already-proven working implementations) so admin preview/screenshots
+    // stop dumping raw JSON for these block types.
+    protected function renderGallery(array $props, string $inner, string $id): string
+    {
+        $title = $this->escape($props['title'] ?? '');
+        $items = $props['items'] ?? [];
+        $h = $title ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
+        $cells = [];
+        foreach ($items as $item) {
+            $url = $this->escapeAttr(is_array($item) ? ($item['url'] ?? '') : $item);
+            $alt = $this->escape(is_array($item) ? ($item['alt'] ?? '') : '');
+            if ($url === '') {
+                continue;
+            }
+            $cells[] = "<div class=\"tb-gallery-cell\"><img src=\"{$url}\" alt=\"{$alt}\" loading=\"lazy\" class=\"tb-gallery-img\"></div>";
+        }
+        if ($cells === []) {
+            return "<div id=\"tb-{$id}\" class=\"tb-gallery tb-gallery-empty\"><p class=\"tb-text\">تصاویر گالری را در تنظیمات المان اضافه کنید.</p></div>";
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-gallery\">{$h}<div class=\"tb-gallery-grid\">" . implode('', $cells) . '</div></div>';
+    }
+
+    protected function renderPromoBanner(array $props, string $inner, string $id): string
+    {
+        $text = $this->escape($props['text'] ?? '');
+        $link = $this->escapeAttr($props['link'] ?? '#');
+        $variant = $this->escapeAttr($props['style'] ?? 'info');
+        if ($text === '') {
+            return '';
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-promo-banner tb-promo-{$variant}\"><a href=\"{$link}\" class=\"tb-promo-banner__link\">{$text}</a></div>";
+    }
+
+    // No 'team' data source exists anywhere in the platform today (unlike
+    // team_cards, which carries its own members JSON in props) — only a
+    // title/limit. Rendering fabricated member names would misrepresent the
+    // template, so this renders an honest, styled placeholder (reusing the
+    // same section-header classes every other premium block uses) instead of
+    // a raw JSON dump.
+    protected function renderTeam(array $props, string $inner, string $id): string
+    {
+        $title = $this->escape($props['title'] ?? 'تیم ما');
+        $limit = max(0, (int) ($props['limit'] ?? 6));
+
+        return "<div id=\"tb-{$id}\" class=\"tb-section\">
+            <div class=\"tb-container\">
+                <div class=\"tb-features-section-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
+                <p class=\"tb-text\" style=\"text-align:center;color:#6b7280;\">اعضای تیم ({$limit} نفر) پس از افزودن در تنظیمات نمایش داده می‌شوند.</p>
+            </div>
+        </div>";
+    }
+
     // ── END NEXUS PRO PREMIUM BLOCKS ─────────────────────────────────────────
 
     protected function renderFallback(string $type, array $props, string $inner, string $id): string

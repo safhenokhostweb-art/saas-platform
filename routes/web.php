@@ -301,6 +301,19 @@ Route::prefix('site')->name('site.')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Signed theme preview (no session auth — for the headless screenshot
+| worker only). Reuses ThemeCanvasController::preview() verbatim; the
+| `signed` middleware (temporarySignedRoute, short TTL) is the access
+| control instead of auth+admin+wizard.
+|--------------------------------------------------------------------------
+*/
+Route::get('admin/theme-builder/{theme}/canvas/{pageKey}/preview-signed', [ThemeCanvasController::class, 'preview'])
+    ->name('admin.theme-builder.canvas.page-preview-signed')
+    ->middleware('signed')
+    ->where('pageKey', '[a-z0-9_-]+');
+
+/*
+|--------------------------------------------------------------------------
 | پنل مدیریت (Admin Panel)
 |--------------------------------------------------------------------------
 |
@@ -1066,8 +1079,14 @@ Route::prefix('admin')
             Route::get('{site}/dashboard', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'dashboard'])->name('dashboard');
             Route::get('{site}/templates', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'templates'])->name('templates');
             Route::post('{site}/templates/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewCompatibility'])->name('templates.preview');
+            Route::get('{site}/assets/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewAsset'])->name('assets.preview');
+            Route::get('{site}/assets/browse', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'browseAssets'])->name('assets.browse');
             Route::post('{site}/templates/{template}/assign', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'assignPackage'])->name('templates.assign');
             Route::post('{site}/templates/{template}/activate', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'activateSite'])->name('templates.activate');
+            // Theme Builder bridge: same workflow, keyed to a marketplace Theme via ThemeReference.
+            Route::get('{site}/themes', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'themes'])->name('themes');
+            Route::post('{site}/themes/{theme}/assign', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'assignPackageForTheme'])->name('themes.assign');
+            Route::post('{site}/themes/{theme}/activate', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'activateSiteForTheme'])->name('themes.activate');
             Route::get('{site}/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'preview'])->name('preview');
             Route::get('{site}/preview/{sitePackage}', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewProjection'])->name('preview.show');
         });

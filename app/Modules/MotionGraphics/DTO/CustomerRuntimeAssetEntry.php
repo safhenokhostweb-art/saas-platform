@@ -37,6 +37,8 @@ final class CustomerRuntimeAssetEntry
         public readonly array $themeTokens = [],
         public readonly array $placementRules = [],
         public readonly array $responsiveRules = [],
+        public readonly ?string $name = null,
+        public readonly ?string $category = null,
     ) {
         ForbiddenFieldGuard::assertClean($themeTokens, 'theme_tokens');
         ForbiddenFieldGuard::assertClean($placementRules, 'placement_rules');
@@ -44,7 +46,7 @@ final class CustomerRuntimeAssetEntry
     }
 
     /**
-     * @return array{asset_id: string, published_version: int, optimized_reference: ?string, checksum: string, asset_type: string, theme_tokens: array<string,string>, placement_rules: array<string,mixed>, responsive_rules: array<string,mixed>}
+     * @return array{asset_id: string, published_version: int, optimized_reference: ?string, checksum: string, asset_type: string, theme_tokens: array<string,string>, placement_rules: array<string,mixed>, responsive_rules: array<string,mixed>, name: ?string, category: ?string}
      */
     public function toArray(): array
     {
@@ -57,6 +59,10 @@ final class CustomerRuntimeAssetEntry
             'theme_tokens' => $this->themeTokens,
             'placement_rules' => $this->placementRules,
             'responsive_rules' => $this->responsiveRules,
+            // Picker display metadata only (Theme Builder Motion Picker) —
+            // never source/AI/ownership data; see class docblock allowlist.
+            'name' => $this->name,
+            'category' => $this->category,
         ];
     }
 }

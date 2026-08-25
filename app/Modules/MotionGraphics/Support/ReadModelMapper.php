@@ -27,6 +27,12 @@ final class ReadModelMapper
                 'category' => $model->category,
                 'checksum' => $model->checksum,
                 'theme_support' => $model->themeSupport,
+                // Picker display metadata (Theme Builder Motion Picker):
+                // 'name' already existed on MotionGraphic/AssetReadModel but
+                // was never plumbed past this boundary — same trust tier as
+                // 'category' above, added the same way, not a new field on
+                // the module's own models.
+                'name' => $model->name,
             ],
         );
     }

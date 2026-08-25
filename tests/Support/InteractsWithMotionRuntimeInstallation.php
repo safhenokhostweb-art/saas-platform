@@ -10,6 +10,7 @@ use SaaSPlatform\CoreUtils\Contracts\Services\ActivityLoggerInterface;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\AssetReadModel;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\RuntimeProjectionReadModel;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibraryBrowseContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibrarySummaryContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
@@ -91,13 +92,18 @@ trait InteractsWithMotionRuntimeInstallation
         });
     }
 
-    protected function bindPublishedAsset(string $assetId, int $version): void
+    protected function bindPublishedAsset(string $assetId, int $version, ?string $name = null, ?string $category = null): void
     {
-        $this->app->instance(MotionAssetReadContract::class, new class($assetId, $version) implements MotionAssetReadContract {
-            public function __construct(private readonly string $assetId, private readonly int $version) {}
+        $this->app->instance(MotionAssetReadContract::class, new class($assetId, $version, $name, $category) implements MotionAssetReadContract {
+            public function __construct(
+                private readonly string $assetId,
+                private readonly int $version,
+                private readonly ?string $name,
+                private readonly ?string $category,
+            ) {}
             public function findByCanonicalId(string $assetId, ?int $version = null): ?AssetReadModel {
                 return $assetId === $this->assetId
-                    ? new AssetReadModel($assetId, $this->version, 'lottie', null, [], 'checksum', false)
+                    ? new AssetReadModel($assetId, $this->version, 'lottie', $this->category, [], 'checksum', false, $this->name)
                     : null;
             }
             public function resolveActiveVersion(string $assetId): ?int {
@@ -108,19 +114,76 @@ trait InteractsWithMotionRuntimeInstallation
             }
         });
 
-        $this->app->instance(MotionRuntimeProjectionReadContract::class, new class($assetId, $version) implements MotionRuntimeProjectionReadContract {
-            public function __construct(private readonly string $assetId, private readonly int $version) {}
+        $this->app->instance(MotionRuntimeProjectionReadContract::class, new class($assetId, $version, $name, $category) implements MotionRuntimeProjectionReadContract {
+            public function __construct(
+                private readonly string $assetId,
+                private readonly int $version,
+                private readonly ?string $name,
+                private readonly ?string $category,
+            ) {}
             public function projectAsset(string $assetId, ?string $siteIdentifier = null): ?RuntimeProjectionReadModel {
                 if ($assetId !== $this->assetId) {
                     return null;
                 }
                 return new RuntimeProjectionReadModel(
-                    assetReference: new AssetReadModel($assetId, $this->version, 'lottie', null, [], 'checksum', false),
+                    assetReference: new AssetReadModel($assetId, $this->version, 'lottie', $this->category, [], 'checksum', false, $this->name),
                     publishedVersion: $this->version,
                     optimizedReference: '/motion/x/v'.$this->version.'/a.json',
                     themeTokens: ['primary' => '#111111'],
                     placementRules: ['section' => 'hero'],
                 );
+            }
+        });
+    }
+
+    /**
+     * Multi-asset variant of bindPublishedAsset() — needed whenever a flow
+     * (e.g. installing a theme with several module:motion blocks) resolves
+     * more than one distinct asset_id in the same test. bindPublishedAsset()
+     * itself stays single-asset because most existing tests only need one.
+     *
+     * @param list<array{id: string, version: int, name?: ?string, category?: ?string}> $assets
+     */
+    protected function bindPublishedAssets(array $assets): void
+    {
+        $this->app->instance(MotionAssetReadContract::class, new class($assets) implements MotionAssetReadContract {
+            public function __construct(private readonly array $assets) {}
+            private function find(string $assetId): ?array {
+                foreach ($this->assets as $a) {
+                    if ($a['id'] === $assetId) {
+                        return $a;
+                    }
+                }
+                return null;
+            }
+            public function findByCanonicalId(string $assetId, ?int $version = null): ?AssetReadModel {
+                $a = $this->find($assetId);
+                return $a ? new AssetReadModel($assetId, $a['version'], 'lottie', $a['category'] ?? null, [], 'checksum', false, $a['name'] ?? null) : null;
+            }
+            public function resolveActiveVersion(string $assetId): ?int {
+                return $this->find($assetId)['version'] ?? null;
+            }
+            public function verifyLifecycleState(string $assetId, int $version, string $expectedState): bool {
+                $a = $this->find($assetId);
+                return $a !== null && $version === $a['version'] && $expectedState === 'published';
+            }
+        });
+
+        $this->app->instance(MotionRuntimeProjectionReadContract::class, new class($assets) implements MotionRuntimeProjectionReadContract {
+            public function __construct(private readonly array $assets) {}
+            public function projectAsset(string $assetId, ?string $siteIdentifier = null): ?RuntimeProjectionReadModel {
+                foreach ($this->assets as $a) {
+                    if ($a['id'] === $assetId) {
+                        return new RuntimeProjectionReadModel(
+                            assetReference: new AssetReadModel($assetId, $a['version'], 'lottie', $a['category'] ?? null, [], 'checksum', false, $a['name'] ?? null),
+                            publishedVersion: $a['version'],
+                            optimizedReference: '/motion/'.$assetId.'/v'.$a['version'].'/a.json',
+                            themeTokens: ['primary' => '#111111'],
+                            placementRules: ['section' => 'hero'],
+                        );
+                    }
+                }
+                return null;
             }
         });
     }
@@ -138,6 +201,56 @@ trait InteractsWithMotionRuntimeInstallation
         $this->app->instance(MotionAssetLibrarySummaryContract::class, new class($count) implements MotionAssetLibrarySummaryContract {
             public function __construct(private readonly int $count) {}
             public function countPublishedAssets(): int { return $this->count; }
+        });
+    }
+
+    /**
+     * @param list<AssetReadModel> $globalAssets Only global, published
+     *   assets belong here — this fake exists to test
+     *   MotionGraphicsAdminService::browseLibrary() against a controlled
+     *   result set, mirroring exactly what
+     *   DatabaseMotionAssetLibraryBrowseReader's real query guarantees
+     *   (ownership_type=global, whereNotNull(published_version)) without
+     *   requiring the module's own (unmigrated on this host) tables.
+     */
+    protected function bindLibraryBrowse(array $globalAssets, int $total): void
+    {
+        $this->app->instance(MotionAssetLibraryBrowseContract::class, new class($globalAssets, $total) implements MotionAssetLibraryBrowseContract {
+            public function __construct(private readonly array $assets, private readonly int $total) {}
+            public function browsePublished(array $filters, int $page, int $perPage): array {
+                $items = $this->assets;
+                if (!empty($filters['search'])) {
+                    $needle = mb_strtolower($filters['search']);
+                    $items = array_values(array_filter($items, fn ($a) => str_contains(mb_strtolower((string) $a->name), $needle)));
+                }
+                if (!empty($filters['category'])) {
+                    $items = array_values(array_filter($items, fn ($a) => $a->category === $filters['category']));
+                }
+                return ['items' => $items, 'total' => count($items) === count($this->assets) ? $this->total : count($items), 'page' => $page, 'per_page' => $perPage];
+            }
+        });
+
+        // browseLibrary() also resolves a thumbnail per item via the
+        // existing MotionRuntimeProjectionReadContract (same contract
+        // previewAsset() already used) — bind a matching multi-asset fake
+        // so the thumbnail lookup for every asset passed above resolves
+        // without needing the module's own (unmigrated on this host) tables.
+        $this->app->instance(MotionRuntimeProjectionReadContract::class, new class($globalAssets) implements MotionRuntimeProjectionReadContract {
+            public function __construct(private readonly array $assets) {}
+            public function projectAsset(string $assetId, ?string $siteIdentifier = null): ?RuntimeProjectionReadModel {
+                foreach ($this->assets as $asset) {
+                    if ($asset->assetId === $assetId) {
+                        return new RuntimeProjectionReadModel(
+                            assetReference: $asset,
+                            publishedVersion: $asset->version,
+                            optimizedReference: '/motion/'.$assetId.'/v'.$asset->version.'/a.svg',
+                            themeTokens: [],
+                            placementRules: [],
+                        );
+                    }
+                }
+                return null;
+            }
         });
     }
 

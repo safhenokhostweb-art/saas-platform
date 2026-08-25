@@ -21,5 +21,6 @@ final class AssetReadModel
         public readonly array $compatibility,
         public readonly string $checksum,
         public readonly bool $themeSupport,
+        public readonly ?string $name = null,
     ) {}
 }

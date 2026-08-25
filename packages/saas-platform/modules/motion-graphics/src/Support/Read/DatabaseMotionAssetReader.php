@@ -79,6 +79,7 @@ final class DatabaseMotionAssetReader implements MotionAssetReadContract
             ],
             checksum: (string) $record->source_checksum,
             themeSupport: (bool) (($motion->runtime_configuration ?? [])['supports_theme_tokens'] ?? false),
+            name: $motion->name,
         );
     }
 }

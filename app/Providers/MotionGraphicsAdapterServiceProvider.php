@@ -32,6 +32,7 @@ use Illuminate\Support\ServiceProvider;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionAuditLoggerContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\MotionPermissionGatewayContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\PlatformAdminResolverContract;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibraryBrowseContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibrarySummaryContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
@@ -39,6 +40,7 @@ use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionVersionReadContract
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\SiteAssetPackageReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\TemplateAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\SiteResolverContract;
+use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionAssetLibraryBrowseReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionAssetLibrarySummaryReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionAssetReader;
 use SaaSPlatform\Modules\MotionGraphics\Support\Read\DatabaseMotionVersionReader;
@@ -84,6 +86,7 @@ class MotionGraphicsAdapterServiceProvider extends ServiceProvider
         // Phase 2 — provider-neutral read contracts (docs/motion-read-contracts/).
         $this->app->singleton(MotionAssetReadContract::class, DatabaseMotionAssetReader::class);
         $this->app->singleton(MotionAssetLibrarySummaryContract::class, DatabaseMotionAssetLibrarySummaryReader::class);
+        $this->app->singleton(MotionAssetLibraryBrowseContract::class, DatabaseMotionAssetLibraryBrowseReader::class);
         $this->app->singleton(MotionVersionReadContract::class, DatabaseMotionVersionReader::class);
         $this->app->singleton(MotionRuntimeProjectionReadContract::class, PublishedRuntimeProjectionProvider::class);
         $this->app->singleton(TemplateAssetReadContract::class, TemplateAssetReader::class);

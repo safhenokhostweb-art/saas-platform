@@ -19,6 +19,13 @@ class GlobalStyleEngine
     public function getCssVariables(array $globalStyles, ?int $siteId = null): array
     {
         $platform = $this->designSystem->getCssVariables($siteId);
+        // Theme Builder authoring (MarketplaceThemeSeedCommand::styles(), the AI
+        // generator's global_styles schema, and every theme in production today)
+        // stores colors as flat keys (primary_color, secondary_color, ...), not
+        // nested under a "colors" object. Read the flat keys first and fall back
+        // to the nested shape for forward compatibility, so a theme's own colors
+        // are actually applied instead of silently falling back to the platform
+        // default on every theme.
         $colors = $globalStyles['colors'] ?? [];
         $typography = $globalStyles['typography'] ?? [];
         $spacing = $globalStyles['spacing'] ?? [];
@@ -26,15 +33,15 @@ class GlobalStyleEngine
         $shadows = $globalStyles['shadows'] ?? [];
 
         $vars = array_merge($platform, [
-            '--tb-primary' => $colors['primary'] ?? $platform['--ds-primary'] ?? '#4f46e5',
-            '--tb-secondary' => $colors['secondary'] ?? $platform['--ds-secondary'] ?? '#6366f1',
-            '--tb-accent' => $colors['accent'] ?? '#818cf8',
-            '--tb-background' => $colors['background'] ?? '#ffffff',
+            '--tb-primary' => $globalStyles['primary_color'] ?? $colors['primary'] ?? $platform['--ds-primary'] ?? '#4f46e5',
+            '--tb-secondary' => $globalStyles['secondary_color'] ?? $colors['secondary'] ?? $platform['--ds-secondary'] ?? '#6366f1',
+            '--tb-accent' => $globalStyles['accent_color'] ?? $colors['accent'] ?? '#818cf8',
+            '--tb-background' => $globalStyles['background_color'] ?? $colors['background'] ?? '#ffffff',
             '--tb-surface' => $colors['surface'] ?? '#f9fafb',
-            '--tb-text' => $colors['text'] ?? '#111827',
+            '--tb-text' => $globalStyles['text_color'] ?? $colors['text'] ?? '#111827',
             '--tb-text-muted' => $colors['text_muted'] ?? '#6b7280',
-            '--tb-font-heading' => $typography['font_heading'] ?? 'Vazirmatn, Tahoma, sans-serif',
-            '--tb-font-body' => $typography['font_body'] ?? 'Vazirmatn, Tahoma, sans-serif',
+            '--tb-font-heading' => $globalStyles['font_family'] ?? $typography['font_heading'] ?? 'Vazirmatn, Tahoma, sans-serif',
+            '--tb-font-body' => $globalStyles['font_family'] ?? $typography['font_body'] ?? 'Vazirmatn, Tahoma, sans-serif',
             '--tb-scale' => $typography['scale'] ?? '1.25',
             '--tb-radius-sm' => $borderRadius['sm'] ?? '0.25rem',
             '--tb-radius-md' => $borderRadius['md'] ?? '0.5rem',

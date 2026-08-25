@@ -47,7 +47,9 @@
 </head>
 <body>
 
-    {{-- Preview Topbar --}}
+    {{-- Preview Topbar — suppressed when rendering for a marketplace screenshot,
+         so the captured image shows only the theme's real content. --}}
+    @unless($hideChrome ?? false)
     <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1e293b;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;font-family:'Vazirmatn',sans-serif;font-size:13px;direction:rtl;">
         <div style="display:flex;align-items:center;gap:12px;">
             <span style="background:#4f46e5;color:#fff;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;">پیش‌نمایش</span>
@@ -60,9 +62,10 @@
             <button onclick="window.close()" style="color:#94a3b8;background:none;border:1px solid #334155;border-radius:5px;padding:4px 10px;font-size:12px;cursor:pointer;">بستن</button>
         </div>
     </div>
+    @endunless
 
     {{-- Page Content --}}
-    <div style="padding-top: 44px;">
+    <div style="padding-top: {{ ($hideChrome ?? false) ? '0' : '44px' }};">
         {!! $html !!}
 
         @if(empty($page['blocks'] ?? []))

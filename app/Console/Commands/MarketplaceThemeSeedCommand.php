@@ -73,6 +73,13 @@ class MarketplaceThemeSeedCommand extends Command
         $this->seedSingleProduct();
         $this->seedEnterpriseSaaS();
 
+        // ── First commercial production sprint (business/services/medical) ──
+        $this->seedBusinessPro();
+        $this->seedLocalServicesPro();
+        $this->seedMedicalPremium();
+        $this->seedRestaurantPremium();
+        $this->seedRealEstatePremium();
+
         $this->newLine();
         $this->info('✅ ' . count($this->seeded)   . ' قالب ثبت شد.');
         $this->info('   ' . count($this->skipped)  . ' قالب از قبل موجود بود.');
@@ -810,6 +817,241 @@ class MarketplaceThemeSeedCommand extends Command
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    //  FIRST COMMERCIAL PRODUCTION SPRINT — business / services / medical
+    // ══════════════════════════════════════════════════════════════════════
+
+    private function seedBusinessPro(): void
+    {
+        $colors = ['primary' => '#1d4ed8', 'bg' => '#f8fafc'];
+        $homeBlocks = [
+            $this->block('hero', ['title' => 'کسب‌وکار خود را حرفه‌ای معرفی کنید', 'subtitle' => 'وب‌سایت شرکتی مدرن برای استارتاپ‌ها و کسب‌وکارهای در حال رشد', 'background' => 'primary']),
+            $this->block('features_grid', ['title' => 'چرا ما را انتخاب کنید؟', 'columns' => 3]),
+            $this->block('stats_row', ['stats' => [
+                ['label' => 'مشتری فعال',   'value' => '۲,۰۰۰+'],
+                ['label' => 'پروژه موفق',   'value' => '۴۵۰+'],
+                ['label' => 'سال تجربه',    'value' => '۸'],
+                ['label' => 'رضایت مشتری',  'value' => '۹۶٪'],
+            ]]),
+            $this->block('process_steps', ['title' => 'چگونه با ما همکاری می‌کنید؟']),
+            $this->block('module:blog_posts', ['title' => 'آخرین مقالات', 'limit' => 3, 'layout' => 'grid']),
+            $this->block('testimonials_slider', ['title' => 'نظر مشتریان']),
+            $this->block('cta', ['title' => 'آماده شروع همکاری هستید؟', 'button_text' => 'درخواست مشاوره رایگان', 'button_url' => '/contact']),
+        ];
+        $this->create(
+            'بیزینس پرو', 'business-pro', Theme::CATEGORY_BUSINESS, 250000,
+            'قالب شرکتی حرفه‌ای برای کسب‌وکارهای عمومی. مناسب استارتاپ‌ها، شرکت‌های مشاوره، کسب‌وکارهای رو به رشد بدون صنعت خاص.',
+            ['forms', 'blog'],
+            $this->styles($colors['primary'], '#0f172a', $colors['bg'], '#1e293b'),
+            $this->navHeader('#0f172a', '#fff'),
+            $this->richFooter('#0f172a', '#fff'),
+            $this->buildStandardPages($homeBlocks, 'بیزینس پرو', $colors),
+            ['annual_price' => 210000, 'lifetime_price' => 420000,
+             'category_tags' => ['کسب‌وکار', 'شرکتی', 'استارتاپ'],
+             'is_new_release' => true,
+             'screenshots' => $this->screenshots('business-pro', '#1d4ed8'),
+             'requirements' => ['forms' => 'فرم تماس و درخواست مشاوره', 'blog' => 'محتوای تخصصی و اعتمادسازی'],
+             'version_notes' => 'نسخه اول — طراحی حرفه‌ای خنثی، مناسب هر صنعتی؛ اولین قالب دسته business']
+        );
+    }
+
+    private function seedLocalServicesPro(): void
+    {
+        $colors = ['primary' => '#0d9488', 'bg' => '#f0fdfa'];
+        $homeBlocks = [
+            $this->block('hero', ['title' => 'خدمات محلی، کیفیت حرفه‌ای', 'subtitle' => 'سرویس‌دهی سریع و مطمئن در محل شما', 'background' => 'primary']),
+            $this->block('features_grid', ['title' => 'خدمات ما', 'columns' => 3]),
+            $this->block('stats_row', ['stats' => [
+                ['label' => 'مشتری راضی',       'value' => '۸,۰۰۰+'],
+                ['label' => 'زمان پاسخ‌گویی',   'value' => 'زیر ۳۰ دقیقه'],
+                ['label' => 'سال فعالیت',       'value' => '۱۲'],
+                ['label' => 'پروژه انجام‌شده',  'value' => '۵,۰۰۰+'],
+            ]]),
+            $this->block('process_steps', ['title' => 'چطور سفارش بدهم؟']),
+            $this->block('testimonials_slider', ['title' => 'نظر مشتریان محلی']),
+            $this->block('faq', ['title' => 'سوالات متداول']),
+            $this->block('cta', ['title' => 'همین حالا درخواست خدمات بدهید', 'button_text' => 'رزرو آنلاین', 'button_url' => '/contact']),
+        ];
+        $this->create(
+            'خدمات محلی پرو', 'local-services-pro', Theme::CATEGORY_SERVICES, 190000,
+            'قالب خدمات محلی. مناسب لوله‌کشان، برق‌کاران، نظافت منزل، تعمیرکاران، پیمانکاران خرد و سایر کسب‌وکارهای خدماتی محلی.',
+            ['forms', 'blog'],
+            $this->styles($colors['primary'], '#134e4a', $colors['bg'], '#134e4a'),
+            $this->navHeader('#134e4a', '#fff'),
+            $this->richFooter('#134e4a', '#fff'),
+            $this->buildStandardPages($homeBlocks, 'خدمات محلی پرو', $colors),
+            ['annual_price' => 150000, 'lifetime_price' => 290000,
+             'category_tags' => ['خدمات', 'محلی', 'تعمیرات'],
+             'is_new_release' => true,
+             'screenshots' => $this->screenshots('local-services-pro', '#0d9488'),
+             'requirements' => ['forms' => 'فرم درخواست خدمات و رزرو نوبت', 'blog' => 'راهنمای مشتریان و نکات فنی'],
+             'version_notes' => 'نسخه اول — تمرکز بر سرعت تماس و اعتمادسازی محلی؛ اولین قالب دسته services']
+        );
+    }
+
+    private function seedMedicalPremium(): void
+    {
+        $colors = ['primary' => '#0e7490', 'bg' => '#ecfeff'];
+        $homeBlocks = [
+            $this->block('hero', ['title' => 'مراقبت پزشکی درجه یک', 'subtitle' => 'نوبت‌دهی آنلاین، پرونده الکترونیک و پیگیری اختصاصی بیماران', 'background' => 'primary']),
+            // Motion Graphics integration proof (Theme Builder <-> Motion
+            // Graphics, Step 12): three deliberate, distinct placements —
+            // hero, process, cta — matching the block-level contract in
+            // BlockRegistry's module:motion entry (customer-site). Each is
+            // a stable asset_id reference only; the actual asset must be
+            // published + assigned to a site via the Motion admin bridge
+            // (admin/motion-graphics/{site}/themes) before it renders —
+            // otherwise this block safely renders nothing.
+            $this->block('module:motion', ['motion_asset_id' => 'medical-hero-intro', 'placement' => 'hero']),
+            $this->block('features_grid', ['title' => 'خدمات تخصصی', 'columns' => 3]),
+            $this->block('module:motion', ['motion_asset_id' => 'medical-process-flow', 'placement' => 'section']),
+            $this->block('team', ['title' => 'پزشکان و متخصصان ما', 'limit' => 6]),
+            $this->block('stats_row', ['stats' => [
+                ['label' => 'بیمار تحت درمان', 'value' => '۸۰,۰۰۰+'],
+                ['label' => 'متخصص',           'value' => '۶۰+'],
+                ['label' => 'سال تجربه',       'value' => '۲۰'],
+                ['label' => 'رضایت بیماران',   'value' => '۹۹٪'],
+            ]]),
+            $this->block('pricing_cards', ['title' => 'پلان‌های عضویت VIP بیماران']),
+            $this->block('testimonials_slider', ['title' => 'تجربه بیماران']),
+            $this->block('faq', ['title' => 'سوالات پزشکی متداول']),
+            $this->block('module:motion', ['motion_asset_id' => 'medical-cta-pulse', 'placement' => 'cta']),
+            $this->block('cta', ['title' => 'نوبت بگیرید', 'button_text' => 'رزرو آنلاین نوبت', 'button_url' => '/contact']),
+        ];
+        $this->create(
+            'کلینیک پریمیوم', 'clinic-premium', Theme::CATEGORY_MEDICAL, 390000,
+            'قالب پزشکی پریمیوم با پشتیبانی از عضویت VIP بیماران و پیگیری پرونده. مناسب کلینیک‌های تخصصی بزرگ، بیمارستان‌های خصوصی، مجتمع‌های پزشکی.',
+            ['forms', 'tickets', 'subscription'],
+            $this->styles($colors['primary'], '#083344', $colors['bg'], '#164e63'),
+            $this->navHeader('#083344', '#fff'),
+            $this->richFooter('#083344', '#fff'),
+            $this->buildStandardPages($homeBlocks, 'کلینیک پریمیوم', $colors),
+            ['annual_price' => 320000, 'lifetime_price' => 650000,
+             'category_tags' => ['پزشکی', 'کلینیک', 'VIP', 'پریمیوم'],
+             'is_new_release' => true, 'is_featured' => true,
+             'screenshots' => $this->screenshots('clinic-premium', '#0e7490'),
+             'requirements' => ['forms' => 'نوبت‌دهی آنلاین', 'tickets' => 'پیگیری پرونده و درخواست‌های بیمار', 'subscription' => 'عضویت VIP و برنامه‌های مراقبتی'],
+             'version_notes' => 'نسخه دوم — سه بلوک موشن گرافیک (hero/process/cta) اضافه شد؛ نسخه پریمیوم در کنار قالب رایگان کلینیک سلامت؛ تمرکز بر بیمارستان‌ها و مجتمع‌های پزشکی بزرگ'],
+            ['motion' => [
+                'package_reference' => 'theme:clinic-premium',
+                'mode' => 'bundled',
+                'required_assets' => [
+                    ['asset_id' => 'medical-hero-intro'],
+                    ['asset_id' => 'medical-process-flow'],
+                    ['asset_id' => 'medical-cta-pulse'],
+                ],
+            ]]
+        );
+    }
+
+    private function seedRestaurantPremium(): void
+    {
+        $colors = ['primary' => '#92400e', 'bg' => '#fffbeb'];
+        $homeBlocks = [
+            $this->block('hero', ['title' => 'منویی که همه عاشقش می‌شوند', 'subtitle' => 'تجربه غذایی لوکس با مواد اولیه تازه و سرآشپزهای حرفه‌ای', 'background' => 'primary']),
+            // Motion Graphics integration (hero/cta only — deliberate, not
+            // decorative): see docs/theme-builder-motion/TEMPLATE_MOTION_CONTRACT.md.
+            // Stable asset_id references only; render nothing until an admin
+            // assigns the package via admin/motion-graphics/{site}/themes.
+            $this->block('module:motion', ['motion_asset_id' => 'restaurant-hero-sizzle', 'placement' => 'hero']),
+            $this->block('features_grid', ['title' => 'چرا رستوران ما؟', 'columns' => 3]),
+            $this->block('gallery', ['title' => 'فضای رستوران و غذاهای ما']),
+            $this->block('module:shop_product_grid', ['title' => 'منوی پیشنهادی', 'limit' => 8, 'columns' => '4', 'source' => 'featured']),
+            $this->block('promo_banner', ['text' => 'رزرو گروهی بالای ۶ نفر — ۱۵٪ تخفیف ویژه', 'style' => 'info']),
+            $this->block('stats_row', ['stats' => [
+                ['label' => 'آیتم منو',   'value' => '۱۸۰+'],
+                ['label' => 'سرآشپز',    'value' => '۱۲'],
+                ['label' => 'سال تجربه', 'value' => '۱۴'],
+                ['label' => 'مهمان راضی','value' => '۶۰,۰۰۰+'],
+            ]]),
+            $this->block('testimonials_slider', ['title' => 'نظر مهمانان ما']),
+            $this->block('contact_split', [
+                'title' => 'رزرو میز و آدرس ما', 'subtitle' => 'برای رزرو یا سوال، با ما در ارتباط باشید',
+                'address' => 'تهران، خیابان ولیعصر، پلاک ۱۲۰', 'phone' => '۰۲۱-۸۸۷۷۶۶۵۵',
+                'hours' => 'همه‌روزه ۱۲ تا ۲۴', 'show_form' => true,
+            ]),
+            $this->block('module:motion', ['motion_asset_id' => 'restaurant-cta-reserve', 'placement' => 'cta']),
+            $this->block('cta', ['title' => 'میز خود را همین حالا رزرو کنید', 'button_text' => 'رزرو آنلاین', 'button_url' => '/contact']),
+        ];
+        $this->create(
+            'رستوران پریمیوم', 'restaurant-premium', Theme::CATEGORY_RESTAURANT, 290000,
+            'قالب رستورانی پریمیوم با منوی محصول‌محور، گالری فضا و رزرو آنلاین. مناسب رستوران‌های لوکس، فاین‌داینینگ، کافه‌های بزرگ و سرویس کیترینگ.',
+            ['shop', 'forms'],
+            $this->styles($colors['primary'], '#451a03', $colors['bg'], '#451a03'),
+            $this->navHeader('#451a03', '#fff'),
+            $this->richFooter('#451a03', '#fff'),
+            $this->buildStandardPages($homeBlocks, 'رستوران پریمیوم', $colors),
+            ['annual_price' => 240000, 'lifetime_price' => 490000,
+             'category_tags' => ['رستوران', 'کافه', 'فاین‌داینینگ', 'پریمیوم'],
+             'is_new_release' => true,
+             'screenshots' => $this->screenshots('restaurant-premium', '#92400e'),
+             'requirements' => ['shop' => 'نمایش منو به‌صورت محصول‌محور و سفارش آنلاین', 'forms' => 'رزرو میز و درخواست مهمانی خصوصی'],
+             'version_notes' => 'نسخه اول — دو بلوک موشن گرافیک (hero/cta)، گالری فضا، منوی محصول‌محور؛ نسخه پریمیوم در کنار رستوران لوکس رایگان'],
+            ['motion' => [
+                'package_reference' => 'theme:restaurant-premium',
+                'mode' => 'bundled',
+                'required_assets' => [
+                    ['asset_id' => 'restaurant-hero-sizzle'],
+                    ['asset_id' => 'restaurant-cta-reserve'],
+                ],
+            ]]
+        );
+    }
+
+    private function seedRealEstatePremium(): void
+    {
+        $colors = ['primary' => '#0c4a6e', 'bg' => '#f0f9ff'];
+        $homeBlocks = [
+            $this->block('hero', ['title' => 'ملک رویایی خود را کشف کنید', 'subtitle' => 'مشاوره تخصصی خرید، فروش و اجاره املاک لوکس', 'background' => 'primary']),
+            $this->block('module:motion', ['motion_asset_id' => 'realestate-hero-tour', 'placement' => 'hero']),
+            $this->block('search_bar', ['placeholder' => 'جستجوی ملک بر اساس شهر، متراژ یا محدوده قیمت...']),
+            $this->block('features_grid', ['title' => 'چرا آژانس ما؟', 'columns' => 3]),
+            $this->block('module:shop_product_grid', ['title' => 'املاک ویژه', 'limit' => 6, 'columns' => '3', 'source' => 'featured']),
+            $this->block('stats_row', ['stats' => [
+                ['label' => 'ملک فعال',    'value' => '۳,۵۰۰+'],
+                ['label' => 'معامله موفق', 'value' => '۲,۱۰۰+'],
+                ['label' => 'مشاور',       'value' => '۲۵'],
+                ['label' => 'شهر تحت پوشش','value' => '۱۸'],
+            ]]),
+            $this->block('team_cards', ['title' => 'مشاوران املاک ما', 'columns' => '3', 'members' => json_encode([
+                ['name' => 'محمد رستمی', 'role' => 'مشاور ارشد املاک مسکونی', 'image' => '', 'bio' => 'بیش از ۱۲ سال تجربه در معاملات مسکونی منطقه ۱ و ۲'],
+                ['name' => 'سارا کریمی', 'role' => 'مشاور املاک تجاری',       'image' => '', 'bio' => 'متخصص خرید و اجاره واحدهای تجاری و اداری'],
+                ['name' => 'امیر یزدانی','role' => 'مشاور سرمایه‌گذاری ملکی', 'image' => '', 'bio' => 'تحلیل بازار مسکن و مشاوره سرمایه‌گذاری بلندمدت'],
+            ], JSON_UNESCAPED_UNICODE)]),
+            $this->block('testimonials_slider', ['title' => 'نظر مشتریان']),
+            $this->block('module:motion', ['motion_asset_id' => 'realestate-cta-inquire', 'placement' => 'cta']),
+            $this->block('contact_split', [
+                'title' => 'درخواست مشاوره ملک', 'subtitle' => 'فرم زیر را پر کنید تا مشاور ما با شما تماس بگیرد',
+                'address' => 'تهران، بلوار میرداماد، برج آژانس', 'phone' => '۰۲۱-۲۲۳۳۴۴۵۵',
+                'hours' => 'شنبه تا پنجشنبه، ۹ تا ۲۰', 'show_form' => true,
+            ]),
+            $this->block('cta', ['title' => 'به دنبال ملک ایده‌آل خود هستید؟', 'button_text' => 'درخواست مشاوره رایگان', 'button_url' => '/contact']),
+        ];
+        $this->create(
+            'آژانس مسکن پریمیوم', 'real-estate-premium', Theme::CATEGORY_REAL_ESTATE, 390000,
+            'قالب املاک پریمیوم با نمایش ملک محصول‌محور، بخش مشاوران و ساختار آماده جستجو/فیلتر. مناسب آژانس‌های مسکن بزرگ، مشاوران سرمایه‌گذاری ملکی و توسعه‌دهندگان.',
+            ['forms', 'blog'],
+            $this->styles($colors['primary'], '#082f49', $colors['bg'], '#0c4a6e'),
+            $this->navHeader('#082f49', '#fff'),
+            $this->richFooter('#082f49', '#fff'),
+            $this->buildStandardPages($homeBlocks, 'آژانس مسکن پریمیوم', $colors),
+            ['annual_price' => 320000, 'lifetime_price' => 650000,
+             'category_tags' => ['املاک', 'مسکن', 'لوکس', 'پریمیوم'],
+             'is_new_release' => true, 'is_featured' => true,
+             'screenshots' => $this->screenshots('real-estate-premium', '#0c4a6e'),
+             'requirements' => ['forms' => 'فرم درخواست مشاوره و بازدید ملک', 'blog' => 'راهنمای خرید و تحلیل بازار مسکن'],
+             'version_notes' => 'نسخه اول — دو بلوک موشن گرافیک (hero/cta)، بخش مشاوران با team_cards، ساختار آماده جستجو/فیلتر؛ نسخه پریمیوم در کنار آژانس مسکن رایگان'],
+            ['motion' => [
+                'package_reference' => 'theme:real-estate-premium',
+                'mode' => 'bundled',
+                'required_assets' => [
+                    ['asset_id' => 'realestate-hero-tour'],
+                    ['asset_id' => 'realestate-cta-inquire'],
+                ],
+            ]]
+        );
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     //  STANDARD PAGE BUILDER
     // ══════════════════════════════════════════════════════════════════════
 
@@ -917,7 +1159,8 @@ class MarketplaceThemeSeedCommand extends Command
         string $name, string $slug, string $category, int $price,
         string $description, array $modules,
         array $globalStyles, array $headerBlocks, array $footerBlocks, array $pages,
-        array $marketplaceMeta = []
+        array $marketplaceMeta = [],
+        array $settingsExtra = []
     ): void {
         if (Theme::where('slug', $slug)->exists()) {
             $this->line("  ↺  {$name} — موجود، رد شد.");
@@ -949,12 +1192,12 @@ class MarketplaceThemeSeedCommand extends Command
             'header_blocks'     => $headerBlocks,
             'footer_blocks'     => $footerBlocks,
             'pages'             => $pages,
-            'settings'          => [
+            'settings'          => array_merge([
                 'version'           => '1.0.0',
                 'release_date'      => now()->toDateString(),
                 'supported_modules' => $modules,
                 'changelog'         => ['1.0.0' => ['نسخه اولیه ' . $name]],
-            ],
+            ], $settingsExtra),
         ]);
 
         ThemeMarketplace::updateOrCreate(['theme_id' => $theme->id], [

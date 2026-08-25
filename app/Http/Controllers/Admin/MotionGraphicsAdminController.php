@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Site;
+use App\Models\Theme;
 use App\Models\ThemeTemplate;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Services\MotionGraphicsAdminService;
+use App\Modules\MotionGraphics\Support\ThemeReference;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,6 +97,68 @@ class MotionGraphicsAdminController extends Controller
         ]);
     }
 
+    /**
+     * Theme Builder Motion Picker (authoring): AJAX endpoint backing the
+     * live preview card shown as an admin types/pastes an asset id into
+     * the required/optional asset fields — GET .../assets/preview?asset_id=.
+     * Deliberately JSON-only, admin-only (same `contextFor()`/`admin`
+     * middleware as every other action here); returns `{found:false}`
+     * rather than a 404 so the picker UI can show "not found" inline
+     * without a console error.
+     */
+    public function previewAsset(Request $request, Site $site): JsonResponse
+    {
+        $context = $this->contextFor($site);
+        $assetId = trim((string) $request->query('asset_id', ''));
+
+        if ($assetId === '') {
+            return response()->json(['found' => false]);
+        }
+
+        try {
+            $preview = $this->adminService->previewAsset($assetId, $context);
+        } catch (MotionAdapterFailClosedException $e) {
+            return response()->json(['found' => false, 'reason' => $e->failureCode]);
+        }
+
+        if ($preview === null) {
+            return response()->json(['found' => false]);
+        }
+
+        return response()->json(['found' => true, 'asset' => $preview->toArray()]);
+    }
+
+    /**
+     * Theme Builder Motion Picker (real visual browse): AJAX endpoint
+     * backing the "Select Motion" modal — GET .../assets/browse?search=&
+     * category=&page=. Returns only the published, global library via
+     * MotionGraphicsAdminService::browseLibrary(); a customer-specific/
+     * bespoke asset is never returned here, by construction of the
+     * underlying MotionAssetLibraryBrowseContract query.
+     */
+    public function browseAssets(Request $request, Site $site): JsonResponse
+    {
+        $context = $this->contextFor($site);
+        $filters = array_filter([
+            'search' => $request->string('search')->trim()->value() ?: null,
+            'category' => $request->string('category')->trim()->value() ?: null,
+        ], fn ($v) => $v !== null);
+        $page = max(1, (int) $request->query('page', 1));
+
+        try {
+            $result = $this->adminService->browseLibrary($filters, $page, 24, $context);
+        } catch (MotionAdapterFailClosedException $e) {
+            return response()->json(['items' => [], 'total' => 0, 'page' => 1, 'per_page' => 24, 'reason' => $e->failureCode]);
+        }
+
+        return response()->json([
+            'items' => array_map(fn ($p) => $p->toArray(), $result['items']),
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'per_page' => $result['per_page'],
+        ]);
+    }
+
     public function previewCompatibility(Request $request, Site $site): View
     {
         $context = $this->contextFor($site);
@@ -157,6 +222,83 @@ class MotionGraphicsAdminController extends Controller
         } catch (MotionAdapterFailClosedException $e) {
             return redirect()
                 ->route('admin.motion-graphics.templates', $site)
+                ->with('error', 'فعال‌سازی برای سایت انجام نشد: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Theme Builder integration: the same assign/activate workflow as
+     * templates() above, but for a full marketplace Theme instead of a
+     * single ThemeTemplate section — see App\Modules\MotionGraphics\Support\
+     * ThemeReference. Reuses MotionGraphicsAdminService unmodified; only the
+     * reference-derivation and the model being listed differ.
+     */
+    public function themes(Site $site): View
+    {
+        $context = $this->contextFor($site);
+
+        try {
+            $themes = Theme::query()->where('is_marketplace', true)->orderByDesc('id')->limit(200)->get();
+            $error = null;
+        } catch (MotionAdapterFailClosedException $e) {
+            $themes = collect();
+            $error = $e;
+        }
+
+        return view('admin.motion-graphics.themes', [
+            'site' => $site,
+            'themes' => $themes,
+            'error' => $error,
+        ]);
+    }
+
+    public function assignPackageForTheme(Request $request, Site $site, Theme $theme): RedirectResponse
+    {
+        $context = $this->contextFor($site);
+        $data = $this->validateAssignmentRequest($request);
+        $templateReference = ThemeReference::for($theme);
+
+        try {
+            $this->adminService->assignPackageToTemplate(
+                $templateReference, $data['required'], $data['optional'], $data['compatibility_rules'], $context
+            );
+
+            $theme->update(['settings' => array_merge($theme->settings ?? [], [
+                'motion' => [
+                    'package_reference' => $templateReference,
+                    'mode' => 'bundled',
+                    'declared_at' => now()->toIso8601String(),
+                ],
+            ])]);
+
+            return redirect()
+                ->route('admin.motion-graphics.themes', $site)
+                ->with('success', 'بسته موشن به قالب فروشگاهی اختصاص یافت.');
+        } catch (MotionAdapterFailClosedException $e) {
+            return redirect()
+                ->route('admin.motion-graphics.themes', $site)
+                ->with('error', 'اختصاص بسته انجام نشد: '.$e->getMessage());
+        }
+    }
+
+    public function activateSiteForTheme(Request $request, Site $site, Theme $theme): RedirectResponse
+    {
+        $context = $this->contextFor($site);
+        $data = $this->validateAssignmentRequest($request);
+        $templateReference = ThemeReference::for($theme);
+
+        try {
+            $this->adminService->activateForInternalSite(
+                $templateReference, $data['required'], $data['optional'], $data['compatibility_rules'],
+                $request->string('brand_variant')->value() ?: null, $context
+            );
+
+            return redirect()
+                ->route('admin.motion-graphics.preview', $site)
+                ->with('success', 'بسته برای این سایت فعال شد.');
+        } catch (MotionAdapterFailClosedException $e) {
+            return redirect()
+                ->route('admin.motion-graphics.themes', $site)
                 ->with('error', 'فعال‌سازی برای سایت انجام نشد: '.$e->getMessage());
         }
     }

@@ -198,11 +198,11 @@
 
     {{-- Demo Data Manifest (GAP-012) --}}
     <div class="px-8 py-6 border-b border-gray-100" x-data="demoManifest()">
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-3">
-          <h2 class="text-sm font-semibold text-gray-700">داده‌های نمونه (Demo Data)</h2>
+          <h2 class="text-sm font-semibold text-gray-700">نیازمندی‌های محتوای نمونه (Demo Data)</h2>
           @if($meta?->has_demo_data)
-            <span class="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">✓ فعال</span>
+            <span class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">✓ اسکن‌شده</span>
           @else
             <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">شناسایی نشده</span>
           @endif
@@ -213,6 +213,7 @@
           <span x-text="loading ? 'در حال اسکن...' : 'اسکن مجدد'"></span>
         </button>
       </div>
+      <p class="text-xs text-gray-400 mb-4">این ابزار فقط بلوک‌های قالب را برای نوع و تعداد محتوای موردنیاز بررسی می‌کند — محتوای نمونه (محصول، مقاله، دوره و…) به‌صورت خودکار ساخته یا نصب نمی‌شود.</p>
       @if($manifest && count($manifest['detected_content'] ?? []) > 0)
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
           @foreach($manifest['detected_content'] as $item)

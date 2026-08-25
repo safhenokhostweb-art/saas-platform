@@ -37,6 +37,8 @@ class Theme extends Model
     public const CATEGORY_FASHION       = 'fashion';
     public const CATEGORY_ELECTRONICS   = 'electronics';
     public const CATEGORY_SINGLE_PRODUCT= 'single_product';
+    public const CATEGORY_BUSINESS      = 'business';
+    public const CATEGORY_SERVICES      = 'services';
 
     public const LICENSE_FREE     = 'free';
     public const LICENSE_PREMIUM  = 'premium';
@@ -69,6 +71,8 @@ class Theme extends Model
             self::CATEGORY_FASHION        => 'مد و فشن',
             self::CATEGORY_ELECTRONICS    => 'الکترونیک',
             self::CATEGORY_SINGLE_PRODUCT => 'محصول واحد',
+            self::CATEGORY_BUSINESS       => 'کسب‌وکار',
+            self::CATEGORY_SERVICES       => 'خدمات',
         ][$category] ?? $category;
     }
 
