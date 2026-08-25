@@ -2,6 +2,14 @@
 
 **Phase 8.2 — Recovering from Interrupted or Failed Deployments**
 
+**Alignment note (current):** primary recovery is activating the last
+known-good Artifact through Deployment System — see `rollback-runbook.md`.
+The procedures below (locks, tenant maintenance, health, queue workers,
+schema drift) remain valid diagnostic/recovery steps and are unchanged. Only
+the **Escalation Checklist** at the bottom described a pre-Artifact,
+Git-on-production recovery path — it has been updated below; the deprecated
+form is kept for historical reference only.
+
 ---
 
 ## Symptoms of a Failed Deployment
@@ -157,11 +165,28 @@ php artisan deployment:validate-governance
 
 If automated recovery procedures fail:
 
-- [ ] Restore database from pre-deployment backup
-- [ ] `git reset --hard {pre-deployment-commit}`
-- [ ] `composer install --no-dev`
-- [ ] `php artisan migrate:fresh` (DANGER: only on staging)
+- [ ] Restore database from the pre-deployment backup (see Gate 4 of
+      `production-release-checklist.md` for where that backup was recorded)
+- [ ] Ask Deployment System to activate the last known-good artifact (its
+      recorded artifact ID + SHA-256 checksum) — see `rollback-runbook.md`
+- [ ] Verify the reactivated artifact's checksum and release manifest before
+      restoring traffic
+- [ ] `php artisan migrate:fresh` (DANGER: only on an isolated staging
+      environment — never on production, regardless of escalation level)
 - [ ] Contact infrastructure team for DB-level intervention
+
+### Deprecated — pre-Artifact escalation (historical reference only)
+
+Earlier phases of this project escalated by operating on production's local
+Git checkout directly. This must not be done under the current Artifact
+model — production is a runtime target, not a source repository:
+
+```bash
+# DEPRECATED — do not run on production. Recovery is an artifact activation
+# through Deployment System (see rollback-runbook.md), not a manual Git reset.
+git reset --hard {pre-deployment-commit}
+composer install --no-dev
+```
 
 ---
 
