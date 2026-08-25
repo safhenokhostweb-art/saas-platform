@@ -1083,10 +1083,6 @@ Route::prefix('admin')
             Route::get('{site}/assets/browse', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'browseAssets'])->name('assets.browse');
             Route::post('{site}/templates/{template}/assign', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'assignPackage'])->name('templates.assign');
             Route::post('{site}/templates/{template}/activate', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'activateSite'])->name('templates.activate');
-            // Theme Builder bridge: same workflow, keyed to a marketplace Theme via ThemeReference.
-            Route::get('{site}/themes', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'themes'])->name('themes');
-            Route::post('{site}/themes/{theme}/assign', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'assignPackageForTheme'])->name('themes.assign');
-            Route::post('{site}/themes/{theme}/activate', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'activateSiteForTheme'])->name('themes.activate');
             Route::get('{site}/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'preview'])->name('preview');
             Route::get('{site}/preview/{sitePackage}', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewProjection'])->name('preview.show');
         });

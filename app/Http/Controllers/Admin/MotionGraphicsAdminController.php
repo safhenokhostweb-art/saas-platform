@@ -4,13 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Site;
-use App\Models\Theme;
 use App\Models\ThemeTemplate;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Services\MotionGraphicsAdminService;
-use App\Modules\MotionGraphics\Support\ThemeReference;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -222,83 +220,6 @@ class MotionGraphicsAdminController extends Controller
         } catch (MotionAdapterFailClosedException $e) {
             return redirect()
                 ->route('admin.motion-graphics.templates', $site)
-                ->with('error', 'فعال‌سازی برای سایت انجام نشد: '.$e->getMessage());
-        }
-    }
-
-    /**
-     * Theme Builder integration: the same assign/activate workflow as
-     * templates() above, but for a full marketplace Theme instead of a
-     * single ThemeTemplate section — see App\Modules\MotionGraphics\Support\
-     * ThemeReference. Reuses MotionGraphicsAdminService unmodified; only the
-     * reference-derivation and the model being listed differ.
-     */
-    public function themes(Site $site): View
-    {
-        $context = $this->contextFor($site);
-
-        try {
-            $themes = Theme::query()->where('is_marketplace', true)->orderByDesc('id')->limit(200)->get();
-            $error = null;
-        } catch (MotionAdapterFailClosedException $e) {
-            $themes = collect();
-            $error = $e;
-        }
-
-        return view('admin.motion-graphics.themes', [
-            'site' => $site,
-            'themes' => $themes,
-            'error' => $error,
-        ]);
-    }
-
-    public function assignPackageForTheme(Request $request, Site $site, Theme $theme): RedirectResponse
-    {
-        $context = $this->contextFor($site);
-        $data = $this->validateAssignmentRequest($request);
-        $templateReference = ThemeReference::for($theme);
-
-        try {
-            $this->adminService->assignPackageToTemplate(
-                $templateReference, $data['required'], $data['optional'], $data['compatibility_rules'], $context
-            );
-
-            $theme->update(['settings' => array_merge($theme->settings ?? [], [
-                'motion' => [
-                    'package_reference' => $templateReference,
-                    'mode' => 'bundled',
-                    'declared_at' => now()->toIso8601String(),
-                ],
-            ])]);
-
-            return redirect()
-                ->route('admin.motion-graphics.themes', $site)
-                ->with('success', 'بسته موشن به قالب فروشگاهی اختصاص یافت.');
-        } catch (MotionAdapterFailClosedException $e) {
-            return redirect()
-                ->route('admin.motion-graphics.themes', $site)
-                ->with('error', 'اختصاص بسته انجام نشد: '.$e->getMessage());
-        }
-    }
-
-    public function activateSiteForTheme(Request $request, Site $site, Theme $theme): RedirectResponse
-    {
-        $context = $this->contextFor($site);
-        $data = $this->validateAssignmentRequest($request);
-        $templateReference = ThemeReference::for($theme);
-
-        try {
-            $this->adminService->activateForInternalSite(
-                $templateReference, $data['required'], $data['optional'], $data['compatibility_rules'],
-                $request->string('brand_variant')->value() ?: null, $context
-            );
-
-            return redirect()
-                ->route('admin.motion-graphics.preview', $site)
-                ->with('success', 'بسته برای این سایت فعال شد.');
-        } catch (MotionAdapterFailClosedException $e) {
-            return redirect()
-                ->route('admin.motion-graphics.themes', $site)
                 ->with('error', 'فعال‌سازی برای سایت انجام نشد: '.$e->getMessage());
         }
     }

@@ -2,7 +2,6 @@
     <nav class="flex items-center gap-2 text-sm">
         <a href="{{ route('admin.motion-graphics.dashboard', $site) }}" class="btn btn-sm {{ $active === 'dashboard' ? 'btn-primary' : 'btn-secondary' }}">داشبورد</a>
         <a href="{{ route('admin.motion-graphics.templates', $site) }}" class="btn btn-sm {{ $active === 'templates' ? 'btn-primary' : 'btn-secondary' }}">اختصاص قالب</a>
-        <a href="{{ route('admin.motion-graphics.themes', $site) }}" class="btn btn-sm {{ $active === 'themes' ? 'btn-primary' : 'btn-secondary' }}">اختصاص تم فروشگاهی</a>
         <a href="{{ route('admin.motion-graphics.preview', $site) }}" class="btn btn-sm {{ $active === 'preview' ? 'btn-primary' : 'btn-secondary' }}">پیش‌نمایش اجرا</a>
         <a href="{{ route('admin.motion-graphics.bespoke.index', $site) }}" class="btn btn-sm {{ $active === 'bespoke' ? 'btn-primary' : 'btn-secondary' }}">موشن اختصاصی</a>
     </nav>
