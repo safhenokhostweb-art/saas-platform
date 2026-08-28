@@ -6,7 +6,7 @@ $csv = static fn (string $value): array => array_values(array_filter(array_map(
 )));
 
 return [
-    'enabled' => filter_var(env('PAYMENT_CONNECTION_WARNING_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'enabled' => filter_var(env('PAYMENT_CONNECTION_WARNING_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
     'message' => env(
         'PAYMENT_CONNECTION_WARNING_MESSAGE',
         'اتصال شما خارج از ایران تشخیص داده شده است. برای جلوگیری از اختلال در اتصال به درگاه بانکی، پیشنهاد می‌شود فیلترشکن خود را خاموش کنید.'
