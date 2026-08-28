@@ -10,7 +10,7 @@
         <p class="text-gray-500">سبد خرید خالی است.</p>
         <p class="mt-2"><a href="{{ route('store.index') }}" class="btn btn-primary">بازگشت به فروشگاه</a></p>
     @else
-    <form action="{{ route('checkout.process') }}" method="post" class="card p-4">
+    <form action="{{ route('checkout.process') }}" method="post" class="card p-4" data-payment-start>
         @csrf
         <table class="w-full text-sm mb-4">
             <thead><tr class="border-b"><th class="p-2 text-right">محصول</th><th class="p-2 text-right">سایت</th><th class="p-2 text-right">قیمت</th><th></th></tr></thead>

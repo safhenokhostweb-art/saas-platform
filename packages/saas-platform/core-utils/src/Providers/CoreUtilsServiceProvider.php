@@ -382,6 +382,11 @@ class CoreUtilsServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(
+            \SaaSPlatform\CoreUtils\Contracts\PaymentConnectionSettingsResolverContract::class,
+            \SaaSPlatform\CoreUtils\Payment\Connection\ConfigPaymentConnectionSettingsResolver::class,
+        );
+
         // Register SupportSlaService
         $this->app->singleton(SupportSlaService::class);
 
@@ -1072,6 +1077,11 @@ class CoreUtilsServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/module-assets.php',
             'module-assets'
         );
+
+        $this->mergeConfigFrom(
+            __DIR__ . '/../../config/payment-connection-warning.php',
+            'payment-connection-warning'
+        );
     }
 
     /**
@@ -1079,6 +1089,8 @@ class CoreUtilsServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->loadRoutesFrom(__DIR__ . '/../../Routes/payment-connection.php');
+
         // PHASE 7.15 — TASK 4: Register core-ui shared Blade components
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'core-ui');
 

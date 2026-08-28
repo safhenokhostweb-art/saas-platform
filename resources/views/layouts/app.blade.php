@@ -126,6 +126,8 @@
     </div>
 </footer>
 
+<x-core-ui::payment-connection-warning />
+
 @stack('scripts')
 @yield('scripts')
 
