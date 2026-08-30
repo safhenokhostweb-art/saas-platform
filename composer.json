@@ -30,6 +30,10 @@
         },
         {
             "type": "path",
+            "url": "packages/saas-platform/modules/theme-runtime"
+        },
+        {
+            "type": "path",
             "url": "packages/saas-platform/modules/crm"
         }
     ],
@@ -52,6 +56,7 @@
         "saas-platform/modules-education": "@dev",
         "saas-platform/modules-forms": "@dev",
         "saas-platform/modules-seo-advanced": "@dev",
+        "saas-platform/modules-theme-runtime": "@dev",
         "saas-platform/modules-tickets": "@dev"
     },
     "require-dev": {

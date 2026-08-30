@@ -8,6 +8,7 @@ use App\Models\ThemeRevision;
 use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
+use App\Services\ThemeBuilder\QualityGate\ThemeQualityGateFailedException;
 use App\Services\ThemeBuilder\ThemeBuilderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -110,9 +111,50 @@ class ThemeBuilderController extends Controller
         return redirect()->route('admin.theme-builder.index')->with('success', 'تم حذف شد.');
     }
 
+    /**
+     * Phase 2c — Mandatory Commercial Theme Publish Gate. No quality logic
+     * lives here: ThemeBuilderService::publish() already ran the Commercial
+     * Quality Gate before this method regains control, and either succeeded
+     * (a real ThemeRelease now exists) or threw ThemeQualityGateFailedException
+     * (nothing was written). This method only formats that already-decided
+     * outcome for the caller — the structured diagnostics come straight from
+     * the persisted ThemeQualityReport the gate produced.
+     */
     public function publish(Request $request, Theme $theme_builder)
     {
-        $this->themeService->publish($theme_builder);
+        $data = $request->validate([
+            'version' => 'nullable|string|max:32',
+            'changelog' => 'nullable|string|max:2000',
+            'release_notes' => 'nullable|string|max:5000',
+        ]);
+
+        try {
+            $this->themeService->publish(
+                $theme_builder,
+                $data['version'] ?? null,
+                $data['changelog'] ?? null,
+                $data['release_notes'] ?? null,
+                $request->user()?->id
+            );
+        } catch (ThemeQualityGateFailedException $e) {
+            $failures = array_map(
+                fn (array $f) => ['code' => $f['code'], 'category' => $f['category'], 'message' => $f['message']],
+                $e->report->blockingFailures()
+            );
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'قالب منتشر نشد: دروازه کیفیت تجاری رد شد.',
+                    'quality_report_id' => $e->report->id,
+                    'blocking_failures' => $failures,
+                ], 422);
+            }
+
+            return redirect()->route('admin.theme-builder.edit', $theme_builder)
+                ->with('error', 'انتشار انجام نشد — دروازه کیفیت تجاری رد شد: ' . implode('، ', array_column($failures, 'message')));
+        }
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'message' => 'قالب منتشر شد.']);
         }

@@ -230,6 +230,18 @@ class ThemeMarketplaceAdminController extends Controller
             'theme_id' => 'required|exists:themes,id',
         ]);
 
+        $theme = Theme::findOrFail((int) $data['theme_id']);
+
+        // Phase 2d (ADR-025): even an admin manual/comp grant must not
+        // entitle a site to a theme that has no valid current release — the
+        // customer would receive a "license" to a theme with nothing
+        // commercially approved behind it. This is a commercial-entitlement
+        // action regardless of who initiates it, not an authoring/preview
+        // action.
+        if (!$theme->isCommerciallyEligible()) {
+            return back()->with('error', 'این قالب در حال حاضر واجد شرایط تجاری نیست (بدون نسخه انتشار معتبر یا گزارش کیفیت موفق) و نمی‌توان برای آن لایسنس صادر کرد.');
+        }
+
         ThemeLicense::grant((int) $data['site_id'], (int) $data['theme_id']);
 
         return back()->with('success', 'لایسنس دستی اعطا شد.');

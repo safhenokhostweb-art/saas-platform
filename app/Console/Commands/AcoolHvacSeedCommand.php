@@ -10,9 +10,11 @@ use Illuminate\Support\Str;
 /**
  * Acool HVAC — hand-crafted Canvas ThemePack
  * Pixel-perfect replica of elementorkits-1.nextdin.com/acool/
- * Uses new HVAC block types: nav_header, hvac_hero, client_logos,
- * about_section, service_cards, stats_row, trust_badges, project_cards,
- * contact_info, site_footer
+ * Uses canonical registered block types: nav_header, hero_trust,
+ * client_logos, about_section, service_cards, stats_row, trust_badges,
+ * project_cards, contact_info, nav_footer (Phase 2e, ADR-026 — the
+ * industry-specific 'hvac_hero'/'site_footer' names were retired in favor
+ * of the reusable, registered 'hero_trust'/'nav_footer').
  */
 class AcoolHvacSeedCommand extends Command
 {
@@ -55,6 +57,11 @@ class AcoolHvacSeedCommand extends Command
                 'footer_blocks'  => [$this->footerBlock()],
                 'pages'          => $pages,
                 'global_styles'  => $this->globalStyles(),
+                // Phase 2b: was omitted entirely, which the (nullable, no
+                // DEFAULT) settings column silently turned into NULL rather
+                // than an empty array — fixed at the source, not just relied
+                // on the Theme model's new default-array guarantee.
+                'settings'       => [],
                 'published_at'   => now(),
             ]
         );
@@ -109,6 +116,9 @@ class AcoolHvacSeedCommand extends Command
     {
         return [
             'id'   => 'nav-acool',
+            // Phase 2e (ADR-026): canonical field name is nav_links (the
+            // renderer still accepts the legacy `links` key defensively,
+            // but the canonical source itself is fixed here).
             'type' => 'nav_header',
             'props' => [
                 'logo_text' => 'Acool HVAC',
@@ -116,7 +126,7 @@ class AcoolHvacSeedCommand extends Command
                 'cta_text'  => 'Book Service',
                 'cta_url'   => '/contact',
                 'sticky'    => true,
-                'links'     => [
+                'nav_links' => [
                     ['label' => 'Home',     'url' => '/'],
                     ['label' => 'About',    'url' => '/about'],
                     ['label' => 'Services', 'url' => '/services'],
@@ -132,12 +142,15 @@ class AcoolHvacSeedCommand extends Command
     {
         return [
             'id'   => 'footer-acool',
-            'type' => 'site_footer',
+            // Phase 2e (ADR-026): migrated from the obsolete 'site_footer'
+            // type — a data-richer variant of the same footer concept every
+            // other canonical theme authors as nav_footer. See DECISIONS.md.
+            'type' => 'nav_footer',
             'props' => [
                 'logo_text'  => 'Acool HVAC',
                 'tagline'    => 'Professional air conditioning & HVAC repair services you can trust. Available 24/7 for all your heating and cooling needs.',
                 'copyright'  => '© ' . date('Y') . ' Acool HVAC Services. All rights reserved.',
-                'background' => '#0f172a',
+                'bg_color'   => '#0f172a',
                 'links'      => [
                     ['label' => 'Privacy Policy',   'url' => '/privacy'],
                     ['label' => 'Terms of Service', 'url' => '/terms'],
@@ -226,7 +239,10 @@ class AcoolHvacSeedCommand extends Command
         return [
             [
                 'id'   => 'home-hero',
-                'type' => 'hvac_hero',
+                // Phase 2e (ADR-026): renamed from the industry-specific
+                // 'hvac_hero' to the reusable, industry-neutral 'hero_trust'
+                // — same schema, now registered for any theme's use.
+                'type' => 'hero_trust',
                 'props' => [
                     'badge'              => 'Professional HVAC Services',
                     'title'              => 'Expert Air Conditioning & HVAC Repair Services',

@@ -1,0 +1,100 @@
+/* Phase 2h (ADR-029) — the ONE shared Theme runtime CSS contract for
+   canonical structural rendering: layout primitives, the responsive grid
+   contract, and the client_logos marquee. Both saas-platform's Builder
+   preview and customer-site's tenant runtime include this file verbatim
+   rather than maintaining independent copies — this is exactly the class
+   of rule that silently drifted in Phase 2g (a missing breakpoint, a
+   missing marquee clip, an inconsistent muted-text fallback).
+
+   Scope: structural/responsive/accessibility primitives only. Per-block
+   VISUAL styling (product cards, blog cards, pricing cards, hero variants,
+   etc.) remains host-owned for now — see ADR-029 for the explicit list of
+   what remains unmigrated. Do not add host-specific visual rules here. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ─── container / layout primitives ─────────────────────────────────── */
+/* var(--tb-container) is ThemeTokenNormalizer's own emitted token (default
+   80rem/1280px) — customer-site already supported per-theme container
+   width customization here; saas-platform's copy hardcoded 1200px and
+   would have silently regressed that capability if left as-is. */
+.tb-container { max-width: var(--tb-container, 80rem); margin: 0 auto; padding: 0 1.5rem; }
+.tb-section { width: 100%; }
+.tb-section-inner { width: 100%; }
+
+/* ─── padding scale ──────────────────────────────────────────────────── */
+.tb-padding-none { padding-top: 0; padding-bottom: 0; }
+.tb-padding-xs   { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.tb-padding-sm   { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+.tb-padding-md   { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+.tb-padding-lg   { padding-top: 3.5rem; padding-bottom: 3.5rem; }
+.tb-padding-xl   { padding-top: 4.5rem; padding-bottom: 4.5rem; }
+@media (min-width: 768px) {
+    .tb-padding-lg { padding-top: 4rem; padding-bottom: 4rem; }
+    .tb-padding-xl { padding-top: 5.5rem; padding-bottom: 5.5rem; }
+}
+
+/* ─── responsive grid contract ───────────────────────────────────────
+   The one authoritative class pair every multi-column block renderer
+   emits (`class="tb-grid tb-grid-cols-{N}"`) — canonical across both
+   hosts (confirmed identical in both BlockRenderer implementations). */
+.tb-grid { display: grid; gap: 1.5rem; }
+.tb-grid.tb-grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.tb-grid.tb-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tb-grid.tb-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tb-grid.tb-grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tb-grid.tb-grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tb-grid.tb-grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@media (max-width: 767px) {
+    .tb-grid.tb-grid-cols-2,
+    .tb-grid.tb-grid-cols-3,
+    .tb-grid.tb-grid-cols-4,
+    .tb-grid.tb-grid-cols-5,
+    .tb-grid.tb-grid-cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tb-grid.tb-grid-cols-1 { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+    .tb-grid.tb-grid-cols-2,
+    .tb-grid.tb-grid-cols-3,
+    .tb-grid.tb-grid-cols-4 { grid-template-columns: 1fr; }
+}
+
+/* ─── stats row (real Phase 2g drift: no CSS at all in one host) ────── */
+.tb-stats-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
+.tb-stat-item { text-align: center; padding: 1.5rem 2rem; flex: 1 1 160px; }
+.tb-stat-divider { width: 1px; align-self: stretch; background: rgba(0,0,0,0.08); }
+@media (max-width: 600px) {
+    .tb-stat-item { flex: 1 1 130px; padding: 1rem 0.75rem; }
+    .tb-stat-divider { display: none; }
+}
+
+/* ─── client_logos marquee (real Phase 2g drift: entirely missing in
+   one host, causing 98-599px catastrophic horizontal overflow) ──────── */
+.tb-client-logos { overflow: hidden; }
+.tb-logos-marquee-wrap { overflow: hidden; position: relative; }
+.tb-logos-marquee { display: flex; gap: 2rem; width: max-content; animation: tb-marquee 32s linear infinite; align-items: center; padding: 0.5rem 0; }
+.tb-logos-marquee:hover { animation-play-state: paused; }
+/* Muted-text fallback: was #9ca3af (2.54:1 on white, fails WCAG AA) in
+   both hosts — corrected to #6b7280 (~4.83:1), verified via real browser
+   contrast measurement (Phase 2g). */
+.tb-logo-item { font-size: 1rem; font-weight: 700; color: var(--tb-text-muted, #6b7280); white-space: nowrap; padding: 0.5rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: var(--tb-surface, #fff); transition: color 0.2s; }
+.tb-logos-static { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: center; }
+@keyframes tb-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ─── FAQ / accordion / tabs (simple, host-identical structural shells) ─ */
+.tb-faq-item { border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
+.tb-faq-question { padding: 1rem 1.25rem; cursor: pointer; font-weight: 600; background: #f9fafb; margin: 0; }
+.tb-faq-answer { padding: 1rem 1.25rem; border-top: 1px solid #e5e7eb; line-height: 1.7; color: #4b5563; }
+.tb-accordion-item { border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
+.tb-accordion-item summary { padding: 1rem 1.25rem; cursor: pointer; font-weight: 600; background: #f9fafb; }
+.tb-accordion-body { padding: 1rem 1.25rem; border-top: 1px solid #e5e7eb; }
+.tb-tabs { }
+.tb-tab-title { font-size: 1rem; font-weight: 700; padding: 0.75rem 0; border-bottom: 2px solid var(--tb-primary, #4f46e5); margin-bottom: 0.75rem; }
+.tb-tab-content { padding: 0.5rem 0; }
+
+/* ─── image / divider primitives ────────────────────────────────────── */
+.tb-img { max-width: 100%; border-radius: 0.5rem; }
+.tb-img-center { display: block; margin: 0 auto; }
+.tb-img-right { display: block; margin-right: 0; }
+.tb-img-full { width: 100%; }
+.tb-divider { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }

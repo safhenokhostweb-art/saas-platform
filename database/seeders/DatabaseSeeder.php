@@ -15,9 +15,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProfileFieldSeeder::class,
             ModuleSeeder::class,
-            ProfessionalThemesSeeder::class,
             ThemeProfileSeeder::class,
         ]);
+
+        // Theme catalog: use `php artisan theme-catalog:rebuild`, the one
+        // canonical entry point (Phase 2b) — not a seeder in this list.
+        // ProfessionalThemesSeeder was removed here and deleted (Phase 2b):
+        // it stored page content under settings.layouts.*, a shape the
+        // current pages-based rendering/release/quality-gate architecture
+        // never reads, so every theme it produced had zero real pages.
 
         // \App\Models\User::factory(10)->create();
 

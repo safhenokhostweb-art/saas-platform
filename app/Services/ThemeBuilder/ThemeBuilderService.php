@@ -4,10 +4,17 @@ namespace App\Services\ThemeBuilder;
 use App\Models\Theme;
 use App\Models\ThemeRevision;
 use App\Models\Site;
+use App\Services\ThemeBuilder\QualityGate\ThemeCommercialQualityGate;
 use Illuminate\Support\Str;
 
 class ThemeBuilderService
 {
+    public function __construct(
+        protected ThemeReleaseService $releaseService,
+        protected ThemeCommercialQualityGate $qualityGate
+    ) {
+    }
+
     public function createTemplate(array $data): Theme
     {
         $data['site_id'] = null;
@@ -79,13 +86,50 @@ class ThemeBuilderService
         return $theme->fresh();
     }
 
-    public function publish(Theme $theme): Theme
-    {
+    /**
+     * The real, single commercial publish entry point (called by
+     * ThemeBuilderController::publish()). Phase 2c — Mandatory Commercial
+     * Theme Publish Gate: a Theme may become a commercial ThemeRelease only
+     * after ThemeCommercialQualityGate has evaluated it and found no
+     * blocking failure. publishIfCompliant() is the sole caller of
+     * ThemeReleaseService::release() reachable from here — it persists the
+     * evaluation report unconditionally (pass or fail, an audit fact either
+     * way, see ThemeCommercialQualityGate::evaluate()), and only creates the
+     * ThemeRelease — inside its own transaction — if the gate passed. If it
+     * throws ThemeQualityGateFailedException, execution never reaches the
+     * status/published_at update below: no ThemeRelease, no
+     * current_release_id change, and no "published" status can result from a
+     * blocked commercial publish. The caller (ThemeBuilderController)
+     * decides how to present that failure; this service holds no quality
+     * logic of its own, only orchestration.
+     *
+     * Phase 2b: the legacy Theme.version int bump that used to happen here
+     * was removed — ThemeRelease.version is the sole commercial version
+     * authority now (no active-customer compatibility reason remains).
+     */
+    public function publish(
+        Theme $theme,
+        ?string $version = null,
+        ?string $changelog = null,
+        ?string $releaseNotes = null,
+        ?int $publishedBy = null
+    ): Theme {
+        $this->qualityGate->publishIfCompliant(
+            $theme,
+            $this->releaseService,
+            $version ?? $this->releaseService->nextPatchVersion($theme),
+            $changelog ?? 'Published via Theme Builder.',
+            $releaseNotes,
+            null, // compatibility — not populated in this phase
+            null, // dependencies — reserved for the dependency phase, per THEME_PRODUCTIZATION_ARCHITECTURE.md
+            $publishedBy
+        );
+
         $theme->update([
             'status' => Theme::STATUS_PUBLISHED,
             'published_at' => now(),
-            'version' => $theme->version + 1,
         ]);
+
         return $theme->fresh();
     }
 
@@ -96,7 +140,17 @@ class ThemeBuilderService
     }
 
     /**
-     * Resolve active theme for a site: site's assigned theme or first published platform template.
+     * Resolve active theme for a site: site's assigned theme or first
+     * commercially eligible platform template.
+     *
+     * Phase 2d (ADR-025): status=published alone no longer makes a theme
+     * servable — Theme::isCommerciallyEligible() (valid current release,
+     * belonging to this theme, itself published, backed by a passing
+     * Commercial Quality Report) is the sole authority here. A site
+     * explicitly assigned to a theme (site.theme_id) that is not
+     * commercially eligible falls through to the platform-template fallback
+     * below rather than serving an unapproved theme — fail-closed, not a
+     * 500 or a broken render.
      */
     public function resolveForSite(?int $siteId): ?Theme
     {
@@ -104,12 +158,12 @@ class ThemeBuilderService
             $site = Site::find($siteId);
             if ($site && $site->theme_id) {
                 $theme = Theme::find($site->theme_id);
-                if ($theme && $theme->isPublished()) {
+                if ($theme && $theme->isCommerciallyEligible()) {
                     return $theme;
                 }
             }
         }
-        return Theme::templates()->published()->first();
+        return Theme::templates()->get()->first(fn (Theme $t) => $t->isCommerciallyEligible());
     }
 
     /**

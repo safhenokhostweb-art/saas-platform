@@ -944,7 +944,6 @@ class MarketplaceThemeSeedCommand extends Command
             'marketplace_price' => $price,
             'license_type'      => $price > 0 ? Theme::LICENSE_PREMIUM : Theme::LICENSE_FREE,
             'category'          => $category,
-            'version'           => 1,
             'global_styles'     => $globalStyles,
             'header_blocks'     => $headerBlocks,
             'footer_blocks'     => $footerBlocks,
@@ -969,7 +968,10 @@ class MarketplaceThemeSeedCommand extends Command
             'screenshots'   => $marketplaceMeta['screenshots']    ?? [],
             'requirements'  => $marketplaceMeta['requirements']   ?? [],
             'version_notes' => $marketplaceMeta['version_notes']  ?? '',
-            'supported_modules_json' => json_encode($modules),
+            // supported_modules_json retired (Phase 1j) — dead, write-only,
+            // never read anywhere; the same data already lives in
+            // settings.supported_modules and (once released) in
+            // theme_release_dependencies.
             'sales_count'   => 0,
             'has_demo_data' => true,
         ]);

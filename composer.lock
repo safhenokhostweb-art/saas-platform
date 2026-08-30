@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "71f9beba5bd9414bd6efa659cfd6b9b9",
+    "content-hash": "a55ce3f42ef079c563c7d785ab17b867",
     "packages": [
         {
             "name": "anhskohbo/no-captcha",
@@ -5257,7 +5257,7 @@
         },
         {
             "name": "saas-platform/core-utils",
-            "version": "dev-main",
+            "version": "dev-audit/artifact-deployment-readiness",
             "dist": {
                 "type": "path",
                 "url": "packages/saas-platform/core-utils",
@@ -5290,14 +5290,14 @@
         },
         {
             "name": "saas-platform/modules-crm",
-            "version": "dev-main",
+            "version": "dev-audit/artifact-deployment-readiness",
             "dist": {
                 "type": "path",
                 "url": "packages/saas-platform/modules/crm",
-                "reference": "1eb6d6c61b770caac069de8d09bf16eff5e665d0"
+                "reference": "92e9d921e7f3b7078f03495a47028b6c68521287"
             },
             "require": {
-                "laravel/framework": "^10.0|^11.0",
+                "laravel/framework": "^10.0|^11.0|^12.0",
                 "php": "^8.1",
                 "saas-platform/core-utils": "@dev"
             },
@@ -5324,7 +5324,7 @@
         },
         {
             "name": "saas-platform/modules-education",
-            "version": "dev-main",
+            "version": "dev-audit/artifact-deployment-readiness",
             "dist": {
                 "type": "path",
                 "url": "packages/saas-platform/modules/education",
@@ -5358,7 +5358,7 @@
         },
         {
             "name": "saas-platform/modules-forms",
-            "version": "dev-main",
+            "version": "dev-audit/artifact-deployment-readiness",
             "dist": {
                 "type": "path",
                 "url": "packages/saas-platform/modules/forms",
@@ -5392,14 +5392,14 @@
         },
         {
             "name": "saas-platform/modules-seo-advanced",
-            "version": "dev-main",
+            "version": "dev-audit/artifact-deployment-readiness",
             "dist": {
                 "type": "path",
                 "url": "packages/saas-platform/modules/seo-advanced",
-                "reference": "d3c5370916d5e9265d176fa6da69cdd246c1fedd"
+                "reference": "c167137c28b0ac6a5fc43d1919fb187fb1adfe4c"
             },
             "require": {
-                "laravel/framework": "^10.0|^11.0",
+                "laravel/framework": "^10.0|^11.0|^12.0",
                 "php": "^8.1",
                 "saas-platform/core-utils": "@dev"
             },
@@ -5425,8 +5425,41 @@
             }
         },
         {
+            "name": "saas-platform/modules-theme-runtime",
+            "version": "dev-audit/artifact-deployment-readiness",
+            "dist": {
+                "type": "path",
+                "url": "packages/saas-platform/modules/theme-runtime",
+                "reference": "1ae4628ef7215e73451abaed4474b7d10ff05bbb"
+            },
+            "require": {
+                "laravel/framework": "^10.0|^11.0|^12.0",
+                "php": "^8.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "SaaSPlatform\\ThemeRuntime\\Providers\\ThemeRuntimeServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "SaaSPlatform\\ThemeRuntime\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Canonical Theme block rendering/registry/CSS authority shared by the SaaS Builder preview and customer-site tenant runtime",
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "saas-platform/modules-tickets",
-            "version": "dev-main",
+            "version": "dev-audit/artifact-deployment-readiness",
             "dist": {
                 "type": "path",
                 "url": "packages/saas-platform/modules/tickets",
@@ -11574,6 +11607,7 @@
         "saas-platform/modules-education": 20,
         "saas-platform/modules-forms": 20,
         "saas-platform/modules-seo-advanced": 20,
+        "saas-platform/modules-theme-runtime": 20,
         "saas-platform/modules-tickets": 20
     },
     "prefer-stable": true,

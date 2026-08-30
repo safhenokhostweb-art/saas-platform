@@ -4,6 +4,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+/**
+ * Phase 2b final state: `ThemeRelease`/`installed_release_id`/
+ * `isOutdatedByLedger()` are the sole commercial version authority. The
+ * legacy `Theme.version` int / `installed_theme_version` /
+ * ThemeLicense::isOutdated() pair (kept through ADR-021/ADR-022 purely for
+ * API compatibility with potentially-unupgraded customer-site deployments)
+ * was retired in this phase — the business owner confirmed there are no
+ * active customers or production Theme fleet, so that compatibility reason
+ * no longer applies. See DECISIONS.md for the ADR amendment and full
+ * Phase 1a–2b history.
+ */
 class ThemeLicense extends Model
 {
     protected $fillable = [
@@ -13,35 +24,60 @@ class ThemeLicense extends Model
         'license_key',
         'is_permanent',
         'purchased_at',
-        'installed_theme_version',
+        'installed_release_id',
     ];
 
     protected $casts = [
-        'is_permanent'            => 'boolean',
-        'purchased_at'            => 'datetime',
-        'installed_theme_version' => 'integer',
+        'is_permanent' => 'boolean',
+        'purchased_at' => 'datetime',
     ];
 
+    /**
+     * `installed_release_id` is populated from the theme's
+     * `current_release_id` at grant time, if any release exists yet.
+     * Pre-existing licenses granted before this column existed keep
+     * `installed_release_id = null` forever unless explicitly re-granted;
+     * this method never back-guesses one for them.
+     */
     public static function grant(int $siteId, int $themeId, ?int $orderId = null): self
     {
-        $currentVersion = Theme::find($themeId)?->version ?? 1;
+        $theme = Theme::find($themeId);
 
         return self::firstOrCreate(
             ['site_id' => $siteId, 'theme_id' => $themeId],
             [
-                'purchase_order_id'       => $orderId,
-                'license_key'             => Str::upper(Str::random(8)) . '-' . Str::upper(Str::random(8)) . '-' . Str::upper(Str::random(8)),
-                'is_permanent'            => true,
-                'purchased_at'            => now(),
-                'installed_theme_version' => $currentVersion,
+                'purchase_order_id'    => $orderId,
+                'license_key'          => Str::upper(Str::random(8)) . '-' . Str::upper(Str::random(8)) . '-' . Str::upper(Str::random(8)),
+                'is_permanent'         => true,
+                'purchased_at'         => now(),
+                'installed_release_id' => $theme?->current_release_id,
             ]
         );
     }
 
-    public function isOutdated(): bool
+    /**
+     * The sole outdated-state authority. Returns null — never a guessed
+     * true/false — when either side of the comparison isn't known yet (no
+     * installed_release_id recorded on this license, or the theme has no
+     * current release), so a caller cannot mistake "unknown" for "up to
+     * date". A null result must never be presented as "current" or counted
+     * as "outdated" — see Theme::outdatedLicensesCountByLedger().
+     */
+    public function isOutdatedByLedger(): ?bool
     {
-        return $this->installed_theme_version !== null
-            && $this->installed_theme_version < ($this->theme?->version ?? 1);
+        $installedVersion = $this->installedRelease?->version;
+        $currentVersion = $this->theme?->currentRelease?->version;
+
+        if ($installedVersion === null || $currentVersion === null) {
+            return null;
+        }
+
+        return version_compare($installedVersion, $currentVersion, '<');
+    }
+
+    public function installedRelease()
+    {
+        return $this->belongsTo(ThemeRelease::class, 'installed_release_id');
     }
 
     public function theme()
