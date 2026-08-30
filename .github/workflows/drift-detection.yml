@@ -60,7 +60,9 @@ jobs:
         with:
           name: drift-report
           path: saas-platform/storage/logs/drift-report-*.txt
-          retention-days: 30
+          # Temp CI artifact (category F): consumed by drift-report-weekly in
+          # the same workflow run within minutes — 30d was never load-bearing.
+          retention-days: 1
 
       - name: Fail on high-severity violations
         if: steps.drift.outcome == 'failure'

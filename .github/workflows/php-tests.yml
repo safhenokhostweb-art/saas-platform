@@ -128,7 +128,9 @@ jobs:
         with:
           name: test-results-platform
           path: storage/logs/
-          retention-days: 7
+          # Category E (test/debug) default per storage policy. Was 7d;
+          # bump back up if weekend on-call debugging needs a longer window.
+          retention-days: 1
 
   # ──────────────────────────────────────────────────────────────────────────
   # JOB 3 — Education AI Tests  (no DB — mocked HTTP, array cache)
