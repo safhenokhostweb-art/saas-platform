@@ -1,0 +1,80 @@
+name: Storage Maintenance
+
+# Repository-scoped GitHub Actions storage self-maintenance. GITHUB_TOKEN
+# only — it cannot and does not reach across repos, so this same design is
+# deployed unmodified in customer-site too (deployment-system has no GHA
+# workflows/artifacts/caches to maintain — see the audit report).
+#
+# Never touches deployment-system's Release Gate / Artifact database: that
+# system is entirely separate (local build agents + webhooks), does not
+# consume GitHub Actions artifacts, and nothing here can see or affect it.
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — list what would be deleted without deleting anything'
+        type: boolean
+        default: true
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: storage-maintenance
+  cancel-in-progress: false
+
+jobs:
+  # Runs on every workflow_dispatch/schedule trigger as a pre-flight: a
+  # regression in the selection logic must never ship straight into a live
+  # deletion run.
+  self-test:
+    name: Self-test selection logic
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --test .github/scripts/storage-maintenance.test.js
+
+  cleanup-artifacts:
+    name: Prune old artifacts (keep newest 2 per stream)
+    if: github.event_name != 'pull_request'
+    needs: self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        env:
+          # Scheduled runs delete for real. workflow_dispatch defaults to
+          # dry-run so a manual trigger never surprises anyone; pass
+          # dry_run=false explicitly to force a live manual run.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        with:
+          script: |
+            const { runArtifactCleanup } = require('./.github/scripts/storage-maintenance.js');
+            const dryRun = process.env.DRY_RUN === 'true';
+            core.info(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
+            await runArtifactCleanup({ github, context, core, dryRun });
+
+  prune-pr-cache:
+    name: Prune caches for closed PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { runPrCachePrune } = require('./.github/scripts/storage-maintenance.js');
+            await runPrCachePrune({
+              github,
+              context,
+              core,
+              prRef: `refs/pull/${context.payload.pull_request.number}/merge`,
+              dryRun: false,
+            });
