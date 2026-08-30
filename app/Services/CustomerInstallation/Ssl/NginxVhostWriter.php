@@ -25,10 +25,15 @@ class NginxVhostWriter
 {
     private const STAGE_NAME = 'CONFIGURE_WEB_SERVER';
 
+    private readonly NginxVhostTemplate $template;
+
     public function __construct(
         private readonly ArvanCdnDomainDecider $arvanDecider,
         private readonly VpsSslProvisioner     $sslProvisioner,
-    ) {}
+        ?NginxVhostTemplate $template = null,
+    ) {
+        $this->template = $template ?? new NginxVhostTemplate();
+    }
 
     public function write(InstallationContext $ctx): StageResult
     {
@@ -54,53 +59,6 @@ class NginxVhostWriter
         // Hardcoding php8.3-fpm.sock fails on servers with different PHP versions.
         $phpFpmSocket = $this->detectPhpFpmSocket($ctx);
 
-        $arvanCidrs = implode("\n    ", [
-            'set_real_ip_from 185.143.232.0/22;',
-            'set_real_ip_from 185.215.228.0/22;',
-            'set_real_ip_from 93.115.0.0/20;',
-            'set_real_ip_from 94.101.182.0/23;',
-            'set_real_ip_from 92.114.16.0/24;',
-            'set_real_ip_from 37.130.202.0/23;',
-            'set_real_ip_from 103.37.196.0/22;',
-            'set_real_ip_from 5.160.139.0/24;',
-            'set_real_ip_from 46.224.2.0/23;',
-            'set_real_ip_from 2.144.3.0/24;',
-            'set_real_ip_from 217.218.31.0/24;',
-            'set_real_ip_from 188.229.116.0/24;',
-            'set_real_ip_from 188.0.240.0/21;',
-        ]);
-
-        $httpBlock = <<<NGINX
-# Customer tenant: {$domain}
-server {
-    listen 80;
-    server_name {$domain};
-    root {$webRoot}/public;
-    index index.php;
-
-    {$arvanCidrs}
-    real_ip_header Ar-Real-Ip;
-    real_ip_recursive on;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:{$phpFpmSocket};
-        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
-        fastcgi_param HTTPS \$forwarded_https;
-        include fastcgi_params;
-        fastcgi_read_timeout 300;
-    }
-
-    location ~ /\.ht { deny all; }
-    client_max_body_size 50M;
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml;
-}
-NGINX;
-
         // The HTTPS block is only written once a real, domain-appropriate
         // certificate path is known: either the shared platform certificate
         // (architecturally correct only for ArvanCloud-proxied domains — see
@@ -113,53 +71,7 @@ NGINX;
         // customer's own domain.
         $sslPaths = $this->resolveSslCertPaths($ctx, $domain, $req->sslEnabled);
 
-        $httpsBlock = '';
-        if ($sslPaths !== null) {
-            $sslCert = $sslPaths['cert'];
-            $sslKey  = $sslPaths['key'];
-
-            $httpsBlock = <<<NGINX
-
-# HTTPS
-server {
-    listen 443 ssl;
-    server_name {$domain};
-    root {$webRoot}/public;
-    index index.php;
-
-    ssl_certificate     {$sslCert};
-    ssl_certificate_key {$sslKey};
-    ssl_protocols       TLSv1.2 TLSv1.3;
-    ssl_ciphers         HIGH:!aNULL:!MD5;
-
-    {$arvanCidrs}
-    real_ip_header Ar-Real-Ip;
-    real_ip_recursive on;
-
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:{$phpFpmSocket};
-        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
-        fastcgi_param HTTPS \$https;
-        include fastcgi_params;
-        fastcgi_read_timeout 300;
-    }
-
-    location ~ /\.ht { deny all; }
-    client_max_body_size 50M;
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml;
-}
-NGINX;
-        }
-
-        $nginxConfig = $httpBlock . $httpsBlock;
+        $nginxConfig = $this->template->render($domain, $webRoot, $phpFpmSocket, $sslPaths);
         $encoded     = base64_encode($nginxConfig);
 
         // Write nginx config

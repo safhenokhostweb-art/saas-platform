@@ -1943,8 +1943,39 @@ class BlockRenderer
         return $this->escapeAttr($url);
     }
 
+    /**
+     * Phase 3C security fix: strip_tags() only removes DISALLOWED TAGS — it
+     * never touches attributes on tags it keeps, so authored content like
+     * `<a href="javascript:alert(1)" onmouseover="alert(1)">` previously
+     * passed through completely untouched (a real stored-XSS vector: this
+     * output is emitted via unescaped Blade `{!! !!}` on the live customer
+     * site). None of the allowed tags legitimately need any attribute
+     * except <a href> — every attribute is now dropped, and <a>'s href is
+     * rebuilt from scratch through the existing scheme-validating
+     * escapeUrl(), so neither an event handler nor a dangerous URL scheme
+     * can survive.
+     */
     protected function sanitizeHtml(string $s): string
     {
-        return strip_tags($s, '<p><br><a><strong><em><ul><ol><li><h2><h3>');
+        $s = strip_tags($s, '<p><br><a><strong><em><ul><ol><li><h2><h3>');
+
+        return preg_replace_callback(
+            '/<(a|p|br|strong|em|ul|ol|li|h2|h3)\b[^>]*>/i',
+            function (array $m): string {
+                $tag = strtolower($m[1]);
+                if ($tag !== 'a') {
+                    return "<{$tag}>";
+                }
+
+                $href = '';
+                if (preg_match('/\bhref\s*=\s*"([^"]*)"/i', $m[0], $hm)
+                    || preg_match('/\bhref\s*=\s*\'([^\']*)\'/i', $m[0], $hm)) {
+                    $href = html_entity_decode($hm[1], ENT_QUOTES);
+                }
+
+                return '<a href="' . $this->escapeUrl($href) . '">';
+            },
+            $s
+        );
     }
 }

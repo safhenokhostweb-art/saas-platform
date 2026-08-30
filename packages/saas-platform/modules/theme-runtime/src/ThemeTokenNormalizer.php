@@ -258,11 +258,19 @@ class ThemeTokenNormalizer
      * Renders a full `:root { ... }` block (plus optional dark-mode
      * override and authored custom CSS) — the one shared CSS-emission
      * shape both hosts should use, given the same normalize() output.
+     *
+     * This is the single canonical convergence point for every consumer
+     * (Builder preview, customer runtime, SaaS preview) — it is embedded
+     * directly inside a `<style>{!! ... !!}</style>` block with no further
+     * escaping downstream, so it is also the one place that must guarantee
+     * every value it emits is safe there, regardless of how the value
+     * reached global_styles (authored in the Builder, imported from a
+     * file, or carried over from an older ThemeRelease).
      */
     public function renderCssBlock(array $globalStyles, array $platformDefaults = []): string
     {
         $vars = $this->normalize($globalStyles, $platformDefaults);
-        $lines = array_map(fn ($k, $v) => "  {$k}: {$v};", array_keys($vars), $vars);
+        $lines = array_map(fn ($k, $v) => "  {$k}: {$this->sanitizeCssValue($v)};", array_keys($vars), $vars);
         $css = ":root {\n" . implode("\n", $lines) . "\n}\n";
 
         $dark = $globalStyles['dark_mode'] ?? [];
@@ -275,16 +283,51 @@ class ThemeTokenNormalizer
                 '--tb-text' => $dark['text'] ?? '#f9fafb',
             ];
             foreach ($darkVars as $k => $v) {
-                $css .= "  {$k}: {$v};\n";
+                $css .= "  {$k}: {$this->sanitizeCssValue($v)};\n";
             }
             $css .= "}\n";
         }
 
         $custom = $globalStyles['custom_css'] ?? '';
-        if (trim($custom) !== '') {
-            $css .= "\n/* Theme custom CSS */\n" . $custom . "\n";
+        if (trim((string) $custom) !== '') {
+            $css .= "\n/* Theme custom CSS */\n" . $this->sanitizeCustomCss((string) $custom) . "\n";
         }
 
         return $css;
+    }
+
+    /**
+     * A token value (color, font-family, radius, shadow, ...) is meant to
+     * be a short scalar CSS value, never a full declaration or a tag —
+     * strip the characters that would let one break out of its own
+     * `--var: value;` line: `;`/`{`/`}` end or open a new declaration/rule,
+     * `<`/`>` and CR/LF have no legitimate use in such a value and are the
+     * mechanism for breaking out of the surrounding `<style>` tag or
+     * corrupting the block's line structure, `/*`/`*\/` opens/closes a
+     * comment that could swallow or expose surrounding rules.
+     */
+    private function sanitizeCssValue(mixed $value): string
+    {
+        $value = is_scalar($value) ? (string) $value : '';
+
+        return str_replace(
+            ['<', '>', ';', '{', '}', "\r", "\n", '/*', '*/'],
+            '',
+            $value
+        );
+    }
+
+    /**
+     * Author-supplied custom_css is legitimately full CSS syntax (including
+     * a literal `>` for child combinators), so it is not escaped the way a
+     * single token value is — it is only prevented from ending the
+     * surrounding `<style>` tag. A literal `<` has no legitimate use inside
+     * a CSS value/selector, so stripping it closes `</style><script>...`
+     * (and every other tag-open/close sequence) without breaking any real
+     * stylesheet.
+     */
+    private function sanitizeCustomCss(string $css): string
+    {
+        return str_replace('<', '', $css);
     }
 }

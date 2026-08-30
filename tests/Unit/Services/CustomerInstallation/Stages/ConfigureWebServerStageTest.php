@@ -187,4 +187,5 @@ class ConfigureWebServerStageTest extends TestCase
 
         return null;
     }
+
 }

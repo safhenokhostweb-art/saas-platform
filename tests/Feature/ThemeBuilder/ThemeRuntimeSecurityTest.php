@@ -153,6 +153,43 @@ class ThemeRuntimeSecurityTest extends TestCase
         $this->assertStringNotContainsString('onerror', $html);
     }
 
+    /**
+     * Phase 3C — strip_tags() only removes disallowed TAGS; it never
+     * touched attributes on tags it kept, so an event handler or a
+     * dangerous URL scheme on an otherwise-whitelisted <a> passed straight
+     * through to the live customer site. sanitizeHtml() now rebuilds every
+     * kept tag from scratch, dropping every attribute except a
+     * scheme-validated href on <a>.
+     */
+    public function test_rich_text_strips_event_handler_and_javascript_href_from_a_whitelisted_anchor(): void
+    {
+        $html = $this->renderer()->renderBlock(['type' => 'text', 'id' => 't2', 'props' => [
+            'content' => '<a href="javascript:alert(1)" onmouseover="alert(2)">click</a>',
+        ]]);
+        $this->assertStringNotContainsString('javascript:', $html);
+        $this->assertStringNotContainsString('onmouseover', $html);
+        $this->assertStringContainsString('<a href="#">click</a>', $html);
+    }
+
+    public function test_rich_text_preserves_a_genuinely_safe_anchor_href(): void
+    {
+        $html = $this->renderer()->renderBlock(['type' => 'text', 'id' => 't3', 'props' => [
+            'content' => '<p>See <a href="https://example.com/docs" onclick="steal()">docs</a></p>',
+        ]]);
+        $this->assertStringContainsString('<a href="https://example.com/docs">docs</a>', $html);
+        $this->assertStringNotContainsString('onclick', $html);
+    }
+
+    public function test_rich_text_strips_all_attributes_from_non_anchor_whitelisted_tags(): void
+    {
+        $html = $this->renderer()->renderBlock(['type' => 'text', 'id' => 't4', 'props' => [
+            'content' => '<p onclick="alert(1)" style="background:url(x)">ok</p>',
+        ]]);
+        $this->assertStringContainsString('<p>ok</p>', $html);
+        $this->assertStringNotContainsString('onclick', $html);
+        $this->assertStringNotContainsString('style=', $html);
+    }
+
     public function test_malformed_style_object_does_not_throw(): void
     {
         // Style keys as unexpected types (arrays where strings expected) must

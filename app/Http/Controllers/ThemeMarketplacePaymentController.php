@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Theme;
 use App\Models\ThemeLicense;
 use App\Models\ThemeMarketplace;
 use App\Models\ThemePurchaseOrder;
@@ -74,6 +75,21 @@ class ThemeMarketplacePaymentController extends Controller
             'gateway_ref' => $verify['ref'],
             'paid_at'     => now(),
         ]);
+
+        // Phase 2d (ADR-025): the payment itself is a completed financial
+        // fact by this point (status is honestly left PAID above — this is
+        // not a payment failure) but a license may still never be granted
+        // for a theme that is not currently commercially eligible, even one
+        // the customer already paid for. This is the same invariant as
+        // initiatePurchase()'s pre-payment check, re-verified here because
+        // eligibility could have changed in the window between purchase
+        // initiation and payment completion (e.g. an admin rollback).
+        $theme = Theme::find($purchaseOrder->theme_id);
+        if (!$theme || !$theme->isCommerciallyEligible()) {
+            return $this->redirectBack($purchaseOrder, false,
+                'پرداخت با موفقیت ثبت شد اما این قالب در حال حاضر برای صدور لایسنس در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.'
+            );
+        }
 
         // Grant license
         ThemeLicense::grant($purchaseOrder->site_id, $purchaseOrder->theme_id, $purchaseOrder->id);
