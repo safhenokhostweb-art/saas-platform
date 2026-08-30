@@ -226,6 +226,68 @@ class ThemeMarketplaceReleaseCutoverTest extends TestCase
         $this->assertTrue($theme->hasLicenseForSite($site->id));
     }
 
+    /**
+     * Phase 3E-A — this endpoint (install()/update()'s only data source on
+     * the customer-site side) previously omitted structured dependencies
+     * entirely; the reconciliation dependency gate needs them at the exact
+     * moment it matters, not just pre-purchase on the listing page.
+     */
+    public function test_download_transports_the_exact_release_dependency_identity(): void
+    {
+        $theme = $this->makeMarketplaceTheme();
+        $this->gate->publishIfCompliant($theme, $this->releaseService, '1.0.0', 'v1.', dependencies: [
+            ['type' => 'module', 'ref' => 'forms', 'is_required' => true, 'version_constraint' => '>=2.0', 'metadata' => ['description' => 'فرم تماس']],
+        ]);
+        $site = $this->makeCrmTestSite();
+        ThemeLicense::grant($site->id, $theme->id);
+
+        $data = $this->controller->download($this->requestForSite($site), $theme->fresh())->getData(true);
+
+        $this->assertCount(1, $data['dependencies']);
+        $this->assertSame('module', $data['dependencies'][0]['type']);
+        $this->assertSame('forms', $data['dependencies'][0]['identifier']);
+        $this->assertTrue($data['dependencies'][0]['is_required']);
+        $this->assertSame('>=2.0', $data['dependencies'][0]['version_constraint']);
+        $this->assertSame('فرم تماس', $data['dependencies'][0]['metadata']['description']);
+        $this->assertSame('resolved', $data['dependency_status']);
+    }
+
+    /**
+     * §R — the download response's dependency shape carries only the same
+     * 5 safe fields the pre-purchase listing already exposes (formatDependencies()),
+     * never the underlying ThemeReleaseDependency row's own id, its
+     * theme_release_id foreign key, or timestamps.
+     */
+    public function test_download_dependency_entries_expose_no_internal_row_fields(): void
+    {
+        $theme = $this->makeMarketplaceTheme();
+        $this->gate->publishIfCompliant($theme, $this->releaseService, '1.0.0', 'v1.', dependencies: [
+            ['type' => 'module', 'ref' => 'forms', 'is_required' => false],
+        ]);
+        $site = $this->makeCrmTestSite();
+        ThemeLicense::grant($site->id, $theme->id);
+
+        $data = $this->controller->download($this->requestForSite($site), $theme->fresh())->getData(true);
+
+        $this->assertSame(
+            ['type', 'identifier', 'is_required', 'version_constraint', 'metadata'],
+            array_keys($data['dependencies'][0])
+        );
+    }
+
+    public function test_download_reports_unresolved_status_for_zero_dependency_rows_not_dependency_free(): void
+    {
+        $theme = $this->makeMarketplaceTheme();
+        $this->gate->publishIfCompliant($theme, $this->releaseService, '1.0.0', 'v1.'); // no dependencies passed
+        $site = $this->makeCrmTestSite();
+        ThemeLicense::grant($site->id, $theme->id);
+
+        $data = $this->controller->download($this->requestForSite($site), $theme->fresh())->getData(true);
+
+        $this->assertSame([], $data['dependencies']);
+        $this->assertSame('unresolved', $data['dependency_status']);
+    }
+
     public function test_download_stamps_the_ledger_installed_release(): void
     {
         $theme = $this->makeMarketplaceTheme();

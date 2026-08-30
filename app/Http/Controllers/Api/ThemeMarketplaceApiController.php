@@ -200,6 +200,8 @@ class ThemeMarketplaceApiController extends Controller
             return response()->json(['success' => false, 'error' => 'no_license'], 403);
         }
 
+        $theme->loadMissing('currentRelease.structuredDependencies');
+
         // Phase 2d (ADR-025): an already-licensed site is still not entitled
         // to install/redownload a theme that is not currently commercially
         // eligible — e.g. a theme rolled back to an unapproved state after
@@ -240,6 +242,17 @@ class ThemeMarketplaceApiController extends Controller
             // never fabricated from the legacy int.
             'release_version' => $theme->currentRelease?->version,
             'release_id'       => $theme->currentRelease?->id,
+            // Phase 3E-A: this endpoint previously omitted the release's
+            // structured dependencies entirely — the marketplace *listing*
+            // (formatTheme(), used by index()/show()) already exposed them
+            // pre-purchase, but install()/update() (the only caller of this
+            // endpoint) had no way to know what a release actually requires
+            // at the moment it matters most: right before applying it.
+            // Reuses the exact same, already-tested helpers as the listing
+            // — never a second, divergent shape — tied to this exact
+            // release (never customer/import-supplied data).
+            'dependencies'      => $this->formatDependencies($theme->currentRelease),
+            'dependency_status' => $this->dependencyStatus($theme->currentRelease),
         ]);
     }
 
