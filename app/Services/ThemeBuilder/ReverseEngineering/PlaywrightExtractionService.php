@@ -22,6 +22,13 @@ class PlaywrightExtractionService
     private const SCRIPT     = 'scripts/headless/extract.mjs';
     private const SCRIPT_BAT = 'scripts/headless/run.bat';
 
+    // Phase 2g — the Commercial Quality Gate's own script. Deliberately
+    // separate from SCRIPT above (a Visual RE competitor-scraping engine —
+    // framework fingerprinting, component/color extraction for cloning a
+    // third-party site): this one answers "does OUR OWN Theme render
+    // correctly right now", not "what does this other site look like".
+    private const QUALITY_SCRIPT = 'scripts/headless/quality-check.mjs';
+
     // node_modules location for Playwright (in the scripts/headless sub-project)
     private const PLAYWRIGHT_NM = 'scripts/headless/node_modules/playwright';
 
@@ -69,7 +76,62 @@ class PlaywrightExtractionService
      */
     public function extract(string $url, int $timeoutMs = 30000, string $device = 'desktop'): array
     {
-        $scriptPath = base_path(self::SCRIPT);
+        $result = $this->runScript(self::SCRIPT, [$url, (string) $timeoutMs, $device]);
+
+        if (!is_array($result) || empty($result['success'])) {
+            throw new \RuntimeException('Playwright: خروجی JSON نامعتبر.');
+        }
+
+        Log::info('PlaywrightExtractor: success', [
+            'url'       => $url,
+            'html_size' => strlen($result['rendered_html'] ?? ''),
+            'screenshot'=> !empty($result['screenshot_base64']),
+        ]);
+
+        return $result;
+    }
+
+    /**
+     * Phase 2g — Commercial Quality Gate browser verification. Runs
+     * quality-check.mjs (real console/resource-failure/overflow/contrast
+     * evidence for exactly one viewport, one navigation) via the same
+     * process-spawning machinery extract() uses — never a second,
+     * duplicated implementation of the Windows-pipe-handling logic.
+     *
+     * @param  string $url       Target URL (typically a signed internal
+     *                           preview route — see ThemeQualityPreviewUrlFactory)
+     * @param  string $viewport  desktop (default) | tablet | mobile
+     * @param  int    $timeoutMs Navigation timeout in ms
+     * @return array             Structured evidence — see quality-check.mjs's
+     *                           buildResult() shape for every field.
+     * @throws \RuntimeException On Node process failure (caller must treat
+     *                           this as "verification unavailable", never as
+     *                           a silent pass — see ADR-028).
+     */
+    public function runQualityCheck(string $url, string $viewport = 'desktop', int $timeoutMs = 30000): array
+    {
+        $result = $this->runScript(self::QUALITY_SCRIPT, [$url, (string) $timeoutMs, $viewport]);
+
+        if (!is_array($result) || empty($result['success'])) {
+            throw new \RuntimeException('Playwright quality check: خروجی JSON نامعتبر.');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Shared Node-process spawning logic for every script this service
+     * runs. Extracted in Phase 2g when a second script (quality-check.mjs)
+     * needed the exact same Windows-pipe-handling behavior extract() already
+     * had — this must stay the one place that logic lives.
+     *
+     * @param  string   $scriptRelativePath Relative to base_path()
+     * @param  string[] $args               Positional CLI arguments after the script path
+     * @throws \RuntimeException On process launch/timeout/non-zero-exit/invalid-JSON failure
+     */
+    private function runScript(string $scriptRelativePath, array $args): array
+    {
+        $scriptPath = base_path($scriptRelativePath);
         $node       = $this->findNodeBinary();
         $chromePath = $this->findSystemChrome();
 
@@ -103,7 +165,7 @@ class PlaywrightExtractionService
         putenv('PLAYWRIGHT_BROWSERS_PATH=' . base_path('scripts/headless/.playwright-browsers'));
 
         $process = proc_open(
-            [$node, $scriptPath, $url, (string) $timeoutMs, $device],
+            [$node, $scriptPath, ...$args],
             $descriptors,
             $pipes,
             base_path(),
@@ -168,7 +230,8 @@ class PlaywrightExtractionService
         if ($exitCode !== 0) {
             $errMsg = $this->parseStderrJson($stderr) ?: mb_substr($stderr, 0, 500);
             Log::warning('PlaywrightExtractor: Node process exited non-zero', [
-                'url'      => $url,
+                'script'   => $scriptRelativePath,
+                'args'     => $args,
                 'exit'     => $exitCode,
                 'stderr'   => mb_substr($stderr, 0, 500),
             ]);
@@ -176,15 +239,9 @@ class PlaywrightExtractionService
         }
 
         $result = json_decode($stdout, true);
-        if (!is_array($result) || empty($result['success'])) {
+        if (!is_array($result)) {
             throw new \RuntimeException('Playwright: خروجی JSON نامعتبر — ' . mb_substr($stdout, 0, 200));
         }
-
-        Log::info('PlaywrightExtractor: success', [
-            'url'       => $url,
-            'html_size' => strlen($result['rendered_html'] ?? ''),
-            'screenshot'=> !empty($result['screenshot_base64']),
-        ]);
 
         return $result;
     }

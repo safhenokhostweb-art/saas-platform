@@ -746,6 +746,17 @@ class SalesSupportThemeSeeder extends Seeder
             'settings' => [
                 'template'    => 'sales-support',
                 'mobile_first'=> true,
+                // Phase 2l: also declared at the top level — every other
+                // canonical theme's settings.supported_modules lives here
+                // (see NexusSeedCommand/MarketplaceThemeSeedCommand), and
+                // theme-release:backfill-dependencies reads exactly this
+                // path. The nested settings.meta.supported_modules copy
+                // below is left in place (real, pre-existing data other
+                // code may already read from there) rather than removed.
+                'supported_modules' => [
+                    'shop', 'courses', 'subscription', 'tickets', 'blog',
+                    'referral', 'reviews', 'forms', 'social_links', 'gallery',
+                ],
                 'meta' => [
                     'id'                        => $slug,
                     'version'                   => '1.0.0',

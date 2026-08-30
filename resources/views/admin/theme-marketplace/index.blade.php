@@ -143,7 +143,8 @@
                     <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ \App\Models\Theme::categoryLabel($theme->category) }}</span>
                   @endif
                   @if($theme->is_marketplace)
-                    @php $outdated = $theme->outdatedLicensesCount(); @endphp
+                    {{-- Phase 1i: ledger-aware aggregate, legacy fallback only when ledger data is unavailable --}}
+                    @php $outdated = $theme->outdatedLicensesCountByLedger(); @endphp
                     @if($outdated > 0)
                       <span class="bg-rose-100 text-rose-700 text-xs px-2 py-0.5 rounded-full font-medium" title="{{ $outdated }} سایت نسخه قدیمی دارند">⬆ {{ $outdated }} آپدیت</span>
                     @endif

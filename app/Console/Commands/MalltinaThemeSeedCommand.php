@@ -93,7 +93,6 @@ class MalltinaThemeSeedCommand extends Command
             'marketplace_price' => 490000,
             'license_type'      => Theme::LICENSE_PREMIUM,
             'category'          => Theme::CATEGORY_MARKETPLACE,
-            'version'           => 1,
             'global_styles'     => $this->globalStyles(),
             'header_blocks'     => $this->headerBlocks(),
             'footer_blocks'     => $this->footerBlocks(),
@@ -136,7 +135,7 @@ class MalltinaThemeSeedCommand extends Command
                 'blog'         => 'راهنمای خرید و مقالات',
             ],
             'version_notes'  => 'نسخه اول — فیروزه‌ای، مارکت‌پلیس، ۱۲ صفحه، شمارش معکوس، trust signals بین‌المللی',
-            'supported_modules_json' => json_encode(['shop', 'subscription', 'blog', 'forms', 'tickets']),
+            // supported_modules_json retired (Phase 1j) — see MarketplaceThemeSeedCommand.
             'sales_count'    => 0,
             'has_demo_data'  => true,
         ]);

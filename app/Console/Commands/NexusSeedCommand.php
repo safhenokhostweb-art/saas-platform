@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Theme;
+use App\Models\ThemeMarketplace;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -41,7 +42,7 @@ class NexusSeedCommand extends Command
             return;
         }
 
-        Theme::create([
+        $theme = Theme::create([
             'name'             => 'NEXUS PRO — Corporate',
             'slug'             => 'nexus-pro-corporate',
             'description'      => 'قالب شرکتی پریمیوم با طراحی SaaS-grade. الهام‌گرفته از Linear, Stripe, Vercel. مناسب شرکت‌ها، آژانس‌ها، استارتاپ‌ها.',
@@ -51,7 +52,6 @@ class NexusSeedCommand extends Command
             'status'           => Theme::STATUS_PUBLISHED,
             'is_marketplace'   => true,
             'marketplace_price'=> 0,
-            'version'          => 1,
             'global_styles'    => $this->corporateStyles(),
             'header_blocks'    => $this->sharedHeader(),
             'footer_blocks'    => $this->corporateFooter(),
@@ -63,6 +63,24 @@ class NexusSeedCommand extends Command
                 'supported_modules' => ['blog', 'shop', 'courses', 'forms', 'subscription', 'tickets'],
                 'changelog'         => ['1.0.0' => ['نسخه اولیه NEXUS PRO Corporate']],
             ],
+        ]);
+
+        // Phase 2l: was missing a ThemeMarketplace row entirely (Theme.description
+        // reused verbatim — no fabricated marketing copy; sales_count/ratings/
+        // featured flags left at their honest zero/false defaults, matching the
+        // convention established in MarketplaceThemeSeedCommand).
+        ThemeMarketplace::updateOrCreate(['theme_id' => $theme->id], [
+            'marketplace_description' => $theme->description,
+            'category_tags' => ['شرکتی', 'کسب‌وکار', 'SaaS'],
+            'is_featured' => false,
+            'is_new_release' => false,
+            'is_bestseller' => false,
+            'annual_price' => 0,
+            'lifetime_price' => 0,
+            'screenshots' => [],
+            'requirements' => [],
+            'sales_count' => 0,
+            'has_demo_data' => true,
         ]);
 
         $this->info('  ✓ NEXUS PRO Corporate — ثبت شد.');
@@ -77,7 +95,7 @@ class NexusSeedCommand extends Command
             return;
         }
 
-        Theme::create([
+        $theme = Theme::create([
             'name'             => 'NEXUS PRO — Personal',
             'slug'             => 'nexus-pro-personal',
             'description'      => 'قالب شخصی/پورتفولیو پریمیوم. مناسب فریلنسرها، طراحان، توسعه‌دهندگان و متخصصان.',
@@ -87,7 +105,6 @@ class NexusSeedCommand extends Command
             'status'           => Theme::STATUS_PUBLISHED,
             'is_marketplace'   => true,
             'marketplace_price'=> 0,
-            'version'          => 1,
             'global_styles'    => $this->personalStyles(),
             'header_blocks'    => $this->sharedHeader('#1e1b4b', '#fff'),
             'footer_blocks'    => $this->personalFooter(),
@@ -99,6 +116,20 @@ class NexusSeedCommand extends Command
                 'supported_modules' => ['blog', 'forms', 'tickets'],
                 'changelog'         => ['1.0.0' => ['نسخه اولیه NEXUS PRO Personal']],
             ],
+        ]);
+
+        ThemeMarketplace::updateOrCreate(['theme_id' => $theme->id], [
+            'marketplace_description' => $theme->description,
+            'category_tags' => ['شخصی', 'پورتفولیو', 'فریلنسر'],
+            'is_featured' => false,
+            'is_new_release' => false,
+            'is_bestseller' => false,
+            'annual_price' => 0,
+            'lifetime_price' => 0,
+            'screenshots' => [],
+            'requirements' => [],
+            'sales_count' => 0,
+            'has_demo_data' => true,
         ]);
 
         $this->info('  ✓ NEXUS PRO Personal — ثبت شد.');
@@ -113,7 +144,7 @@ class NexusSeedCommand extends Command
             return;
         }
 
-        Theme::create([
+        $theme = Theme::create([
             'name'             => 'NEXUS PRO — Store',
             'slug'             => 'nexus-pro-store',
             'description'      => 'قالب فروشگاهی پریمیوم. مناسب فروشگاه آنلاین، بوتیک، فروش محصولات فیزیکی و دیجیتال.',
@@ -123,7 +154,6 @@ class NexusSeedCommand extends Command
             'status'           => Theme::STATUS_PUBLISHED,
             'is_marketplace'   => true,
             'marketplace_price'=> 0,
-            'version'          => 1,
             'global_styles'    => $this->storeStyles(),
             'header_blocks'    => $this->storeHeader(),
             'footer_blocks'    => $this->storeFooter(),
@@ -135,6 +165,20 @@ class NexusSeedCommand extends Command
                 'supported_modules' => ['shop', 'blog', 'forms', 'subscription', 'tickets'],
                 'changelog'         => ['1.0.0' => ['نسخه اولیه NEXUS PRO Store']],
             ],
+        ]);
+
+        ThemeMarketplace::updateOrCreate(['theme_id' => $theme->id], [
+            'marketplace_description' => $theme->description,
+            'category_tags' => ['فروشگاهی', 'ecommerce', 'فروش آنلاین'],
+            'is_featured' => false,
+            'is_new_release' => false,
+            'is_bestseller' => false,
+            'annual_price' => 0,
+            'lifetime_price' => 0,
+            'screenshots' => [],
+            'requirements' => [],
+            'sales_count' => 0,
+            'has_demo_data' => true,
         ]);
 
         $this->info('  ✓ NEXUS PRO Store — ثبت شد.');
@@ -468,6 +512,13 @@ class NexusSeedCommand extends Command
             'border_radius'    => '1rem',
             'container_width'  => '72rem',
             'shadow_sm'        => '0 1px 3px rgba(0,0,0,0.4)',
+            // Phase 2k: this theme is deliberately dark (background_color/
+            // text_color above) — the shared --tb-text-muted default
+            // (#4b5563, tuned for LIGHT themes) fails WCAG AA against this
+            // theme's own near-black background (real browser-measured
+            // 3.94:1). A muted-text color must suit ITS OWN theme's
+            // brightness direction; slate-400 clears 7.4:1 here.
+            'colors' => ['text_muted' => '#94a3b8'],
         ];
     }
 
@@ -690,14 +741,23 @@ class NexusSeedCommand extends Command
                         'subtitle'    => 'عضو خبرنامه شو و ۱۰٪ تخفیف برای اولین خریدت بگیر',
                         'placeholder' => 'شماره موبایل یا ایمیل',
                         'button_text' => 'دریافت تخفیف ۱۰٪',
-                        'background'  => '#ea580c',
+                        // Phase 2g: #ea580c paired with white text measured
+                        // 3.56:1 via real browser contrast verification —
+                        // below WCAG AA's 4.5:1. #c2410c (same orange family,
+                        // one shade darker) measures ~5.18:1 with white.
+                        'background'  => '#c2410c',
                         'text_color'  => '#ffffff',
                     ]),
                     $this->block('module:support_button', [
                         'label'    => 'پشتیبانی خرید',
                         'style'    => 'floating',
                         'position' => 'bottom-right',
-                        'bg_color' => '#ea580c',
+                        // Phase 2k: the same #ea580c-with-white-text gap
+                        // Phase 2g fixed for this theme's newsletter block
+                        // (3.56:1, below AA) — a separate block instance
+                        // using the identical color, missed at the time.
+                        // Same already-validated fix: #c2410c ~5.18:1.
+                        'bg_color' => '#c2410c',
                     ]),
                 ],
             ],

@@ -93,7 +93,6 @@ class Theme extends Model
         'settings',
         'status',
         'published_at',
-        'version',
         'is_marketplace',
         'marketplace_price',
         'license_type',
@@ -108,10 +107,30 @@ class Theme extends Model
         'global_styles'    => 'array',
         'settings'         => 'array',
         'published_at'     => 'datetime',
-        'version'          => 'integer',
         'is_marketplace'   => 'boolean',
         'marketplace_price'=> 'integer',
         'installs_count'   => 'integer',
+    ];
+
+    /**
+     * Phase 2b root-cause fix: these JSON columns are nullable at the DB
+     * level (no DEFAULT), so any authoring/seed path that simply omits one
+     * of them — as AcoolHvacSeedCommand did for `settings` — silently
+     * produced NULL instead of an empty array, which
+     * ThemeCommercialQualityGate's StructuralIntegrityCheck correctly
+     * treats as invalid shape. Rather than patch each authoring path
+     * defensively, the canonical Theme definition itself now guarantees
+     * every new instance starts with a real (empty) array before any
+     * mass-assignment runs — the defect class is closed here once, for
+     * every current and future creator (seed commands, ThemeBuilderService,
+     * the AI generator, manual admin creation, imports).
+     */
+    protected $attributes = [
+        'header_blocks' => '[]',
+        'footer_blocks' => '[]',
+        'pages' => '[]',
+        'global_styles' => '[]',
+        'settings' => '[]',
     ];
 
     public const TYPE_FULL = 'full';
@@ -130,6 +149,25 @@ class Theme extends Model
     public function revisions()
     {
         return $this->hasMany(ThemeRevision::class)->orderByDesc('version');
+    }
+
+    /**
+     * Append-only commercial release ledger (Phase 1a). Deliberately not
+     * exposed via a `publish()`-style mutator here — see ThemeReleaseService.
+     */
+    public function releases()
+    {
+        return $this->hasMany(ThemeRelease::class)->orderByDesc('id');
+    }
+
+    /**
+     * The current authoritative release, if any. `current_release_id` is
+     * intentionally excluded from $fillable — it must only ever be moved by
+     * ThemeReleaseService, never by generic mass-assignment.
+     */
+    public function currentRelease()
+    {
+        return $this->belongsTo(ThemeRelease::class, 'current_release_id');
     }
 
     public function scopePublished($query)
@@ -152,6 +190,16 @@ class Theme extends Model
         return $query->whereNull('site_id');
     }
 
+    /**
+     * Authoring/workflow state only (Phase 2d, ADR-025) — whether this
+     * Theme's content is in the "published" editing state in the Theme
+     * Builder. Deliberately NOT a commercial-eligibility check: a Theme can
+     * be status=published and still have no valid current release (e.g. a
+     * canonical seed command sets status at creation time, before any
+     * release ever exists). Use isCommerciallyEligible() for every decision
+     * about whether a Theme may be served, purchased, licensed, downloaded,
+     * or assigned to a customer site.
+     */
     public function isPublished(): bool
     {
         return $this->status === self::STATUS_PUBLISHED;
@@ -160,6 +208,69 @@ class Theme extends Model
     public function isDraft(): bool
     {
         return $this->status === self::STATUS_DRAFT;
+    }
+
+    /**
+     * Phase 2d (ADR-025) — the one authoritative commercial-eligibility rule.
+     * Theme.status is never consulted here: it is authoring/workflow
+     * metadata, not a commercial authority (see isPublished() above). A
+     * Theme is commercially eligible only when all of the following hold:
+     *
+     *   1. current_release_id is set (a release has actually been chosen as
+     *      authoritative — not merely that one exists somewhere in history).
+     *   2. The referenced ThemeRelease genuinely belongs to this Theme
+     *      (defends against a corrupted/mismatched pointer — under normal
+     *      application flow current_release_id is only ever set by
+     *      ThemeReleaseService from $theme->releases(), so this can only
+     *      fail on a data-integrity defect, never in ordinary operation).
+     *   3. That release's own status is "published" (not superseded/
+     *      deprecated — rollback() is the only way a non-current release
+     *      becomes current again, and it always flips status back to
+     *      published when it does).
+     *   4. A Commercial Quality Gate evaluation that PASSED is linked to
+     *      that exact release (theme_quality_reports.theme_release_id —
+     *      populated only by ThemeCommercialQualityGate::publishIfCompliant()
+     *      on a passing evaluation, never by a failing one, never by mere
+     *      release creation).
+     *
+     * Every consumer that decides whether a Theme may be resolved for a
+     * site, listed as commercially ready, purchased, newly licensed, or
+     * downloaded/installed must call this method — never re-derive the
+     * condition ad hoc (see ADR-025).
+     */
+    public function isCommerciallyEligible(): bool
+    {
+        return empty($this->commercialIneligibilityReasons());
+    }
+
+    /**
+     * @return string[] Empty when isCommerciallyEligible() is true. Reason
+     *   codes only (no data or user-facing copy) — callers translate these
+     *   into whatever error/log shape they need. Never fabricates a partial
+     *   pass: the first structural failure short-circuits the rest, since
+     *   later checks (e.g. "does a passing report exist") are meaningless
+     *   without a valid release to check it against.
+     */
+    public function commercialIneligibilityReasons(): array
+    {
+        if ($this->current_release_id === null) {
+            return ['no_current_release'];
+        }
+
+        $release = $this->currentRelease;
+        if (!$release || $release->theme_id !== $this->id) {
+            return ['release_theme_mismatch'];
+        }
+
+        if ($release->status !== ThemeRelease::STATUS_PUBLISHED) {
+            return ['release_not_published'];
+        }
+
+        $hasPassingReport = $release->qualityReports()
+            ->where('status', ThemeQualityReport::STATUS_PASSED)
+            ->exists();
+
+        return $hasPassingReport ? [] : ['no_passing_quality_report'];
     }
 
     // ─── Page Management ────────────────────────────────────────────────────
@@ -224,12 +335,29 @@ class Theme extends Model
         return $this->licenses()->where('site_id', $siteId)->exists();
     }
 
-    // GAP-011: count licenses where installed version is behind current
-    public function outdatedLicensesCount(): int
+    /**
+     * Phase 1i — the canonical ledger-aware aggregate. Reuses
+     * ThemeLicense::isOutdatedByLedger()/isOutdated() per license rather
+     * than re-implementing the comparison here, so there is exactly one
+     * place (ThemeLicense) that ever decides what "outdated" means for a
+     * single license — this method only aggregates that decision.
+     *
+     * Phase 2b: the legacy Theme.version fallback this method used to fall
+     * back to (isOutdated()) was removed — ThemeRelease/installed_release_id
+     * is now the sole commercial version authority (no active-customer
+     * compatibility reason remains; see DECISIONS.md ADR amendment). A
+     * license isOutdatedByLedger() can't yet answer for (no
+     * installed_release_id, or the theme has no current release) is never
+     * fabricated as outdated — it is simply not counted, same as before.
+     *
+     * Naturally scoped to this theme only — licenses() is a hasMany keyed on
+     * theme_id, so another theme's licenses can never affect this count.
+     */
+    public function outdatedLicensesCountByLedger(): int
     {
         return $this->licenses()
-            ->whereNotNull('installed_theme_version')
-            ->where('installed_theme_version', '<', $this->version ?? 1)
+            ->get()
+            ->filter(fn (ThemeLicense $license) => $license->isOutdatedByLedger() === true)
             ->count();
     }
 

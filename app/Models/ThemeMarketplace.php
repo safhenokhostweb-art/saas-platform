@@ -30,7 +30,6 @@ class ThemeMarketplace extends Model
         'is_bestseller',
         'preview_url',
         'category_tags',
-        'supported_modules_json',
         'demo_data_config',
         'has_demo_data',
     ];

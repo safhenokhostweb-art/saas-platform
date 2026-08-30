@@ -38,11 +38,24 @@ class ThemeBundle extends Model
             ->exists();
     }
 
-    // Grant licenses for all bundle themes to a site
+    /**
+     * Grant licenses for every commercially eligible theme in the bundle to
+     * a site. Phase 2d (ADR-025): a theme in the bundle that is not
+     * currently commercially eligible (no valid current release backed by a
+     * passing Commercial Quality Report) is skipped, not granted — the
+     * customer already paid for the whole bundle by the time this runs, so
+     * failing the entire grant over one bad theme would be worse than
+     * granting what is actually eligible and honestly reporting a smaller
+     * count; callers already surface the returned count to the customer.
+     */
     public function grantLicensesToSite(int $siteId): int
     {
         $count = 0;
         foreach ($this->theme_ids ?? [] as $themeId) {
+            $theme = Theme::find((int) $themeId);
+            if (!$theme || !$theme->isCommerciallyEligible()) {
+                continue;
+            }
             ThemeLicense::grant($siteId, (int) $themeId);
             $count++;
         }
