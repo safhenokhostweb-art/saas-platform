@@ -188,6 +188,10 @@ jobs:
             sha256sum "$f" >> build/app/outputs/flutter-apk/checksums.sha256
           done
 
+      - name: Guard artifact size before upload
+        working-directory: .
+        run: bash .github/scripts/check-artifact-size.sh "android-apks" 300 mobile/build/app/outputs/flutter-apk
+
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
@@ -196,6 +200,10 @@ jobs:
             mobile/build/app/outputs/flutter-apk/*.apk
             mobile/build/app/outputs/flutter-apk/checksums.sha256
           retention-days: 30
+
+      - name: Guard artifact size before upload
+        working-directory: .
+        run: bash .github/scripts/check-artifact-size.sh "android-aab" 200 mobile/build/app/outputs/bundle/release
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
@@ -238,6 +246,11 @@ jobs:
             -DestinationPath "build\saas-client-windows.zip"
           $hash = (Get-FileHash "build\saas-client-windows.zip" -Algorithm SHA256).Hash.ToLower()
           "$hash  saas-client-windows.zip" | Out-File -FilePath "build\saas-client-windows.zip.sha256" -Encoding utf8
+
+      - name: Guard artifact size before upload
+        working-directory: .
+        shell: bash
+        run: bash .github/scripts/check-artifact-size.sh "windows-exe" 250 mobile/build/saas-client-windows.zip
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -288,6 +301,10 @@ jobs:
           tar -czf ../../../../saas-client-linux.tar.gz bundle/
           cd ../../../..
           sha256sum saas-client-linux.tar.gz > saas-client-linux.tar.gz.sha256
+
+      - name: Guard artifact size before upload
+        working-directory: .
+        run: bash .github/scripts/check-artifact-size.sh "linux-appimage" 250 mobile/saas-client-linux.tar.gz
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -368,6 +385,10 @@ jobs:
           IPA=$(find build/ios/ipa -name "*.ipa" | head -1)
           shasum -a 256 "$IPA" > "${IPA}.sha256"
 
+      - name: Guard artifact size before upload
+        working-directory: .
+        run: bash .github/scripts/check-artifact-size.sh "ios-ipa" 250 mobile/build/ios/ipa
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
@@ -433,6 +454,10 @@ jobs:
           zip -r ../../../../saas-client-macos.zip "saas_platform_client.app"
           cd ../../../..
           sha256sum saas-client-macos.zip > saas-client-macos.zip.sha256
+
+      - name: Guard artifact size before upload
+        working-directory: .
+        run: bash .github/scripts/check-artifact-size.sh "macos-build" 250 mobile/saas-client-macos.zip
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
