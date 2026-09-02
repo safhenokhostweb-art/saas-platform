@@ -17,16 +17,50 @@ class BlockRegistry
 {
     private static ?array $blocks = null;
     private static array $hostTypes = [];
+    private static ?array $canonicalOnly = null;
 
     /**
      * Adds a genuinely host-specific block type definition (e.g. a
      * live-data listing block only one host's runtime can render) without
      * forking this class. Never overrides a canonical type defined below.
+     *
+     * Phase 3E-B (ADR-030): fails closed, not silently. A colliding
+     * registration throws BlockTypeAlreadyRegisteredException and never
+     * mutates registry state — the prior silent "canonical always wins the
+     * merge" behavior left a caller with no way to know its registration
+     * was ignored. Re-registering the SAME type with an identical
+     * definition is a no-op (not an error): idempotent boot-time
+     * registration is a real, legitimate case (e.g. under a persistent
+     * worker where a service provider's boot() runs more than once in the
+     * same process) and must not fail merely because it repeats.
      */
     public static function registerHostType(string $type, array $definition): void
     {
+        self::all(); // ensure the canonical-only snapshot is computed first
+
+        if (array_key_exists($type, self::$canonicalOnly)) {
+            throw BlockTypeAlreadyRegisteredException::canonicalCollision($type);
+        }
+
+        if (array_key_exists($type, self::$hostTypes) && self::$hostTypes[$type] !== $definition) {
+            throw BlockTypeAlreadyRegisteredException::hostCollision($type);
+        }
+
         self::$hostTypes[$type] = $definition;
         self::$blocks = null; // force recomputation on next all()
+    }
+
+    /** True if `$type` is one of the canonical definitions below (never a host/extension registration). */
+    public static function isCanonicalType(string $type): bool
+    {
+        self::all();
+        return array_key_exists($type, self::$canonicalOnly);
+    }
+
+    /** True if `$type` was added via registerHostType() (not a canonical definition). */
+    public static function isHostRegisteredType(string $type): bool
+    {
+        return array_key_exists($type, self::$hostTypes);
     }
 
     /** Test-only: clears host-registered types between test cases. */
@@ -34,6 +68,7 @@ class BlockRegistry
     {
         self::$hostTypes = [];
         self::$blocks = null;
+        self::$canonicalOnly = null;
     }
 
     public const CATEGORY_LAYOUT = 'layout';
@@ -1298,10 +1333,20 @@ class BlockRegistry
             ],
         ];
 
+        // Snapshot the canonical-only set before the host merge below, so
+        // registerHostType()/isCanonicalType() can check collisions against
+        // exactly the canonical definitions — never against a type that
+        // only exists because a host already registered it.
+        self::$canonicalOnly = self::$blocks;
+
         // Host-registered types are additive only — never override a
         // canonical definition above. PHP's `+` keeps the LEFT operand's
         // value for a duplicate key, so the canonical array (self::$blocks
-        // as it stands here) must come first.
+        // as it stands here) must come first. registerHostType() itself
+        // already rejects a colliding registration before it ever reaches
+        // self::$hostTypes (Phase 3E-B/ADR-030), so this merge can no
+        // longer silently hide one — it is now a redundant, harmless second
+        // guarantee of the same already-enforced invariant.
         self::$blocks = self::$blocks + self::$hostTypes;
 
         return self::$blocks;
