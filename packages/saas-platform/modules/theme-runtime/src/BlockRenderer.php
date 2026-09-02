@@ -1898,84 +1898,33 @@ class BlockRenderer
     }
 
     /**
-     * Phase 2j: promoted from customer-site's Element SDK
-     * (App\Builder\Traits\WithSanitization) — neither BlockRenderer had this.
-     * Rejects `javascript:`-scheme and otherwise-malformed URLs so an
-     * escaped-but-still-executable href/src can never reach output.
-     */
-    /**
-     * Phase 2j: the version promoted from the Element SDK used
-     * `FILTER_VALIDATE_URL`, which REJECTS relative URLs ("/services",
-     * "about.html", "?x=1") — a real regression found by
-     * CanonicalBlockRenderersTest the moment escapeUrl() was applied
-     * broadly (renderServiceCards/renderProjectCards etc. commonly link to
-     * relative internal paths, not just absolute URLs). Relative URLs have
-     * no scheme to exploit; only an explicit dangerous scheme is rejected,
-     * and only a known-safe explicit scheme is accepted — anything else
-     * unscoped (no scheme at all) passes through as relative.
+     * Phase 3E-C: delegates to the single shared sanitization authority
+     * (SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer) rather than
+     * maintaining its own copy of this logic — kept as a thin protected
+     * wrapper so every existing internal call site (`$this->isValidUrl()`)
+     * and BlockRenderer's public protected API contract are unchanged.
      */
     protected function isValidUrl(string $url): bool
     {
-        $trimmed = trim($url);
-        if ($trimmed === '') {
-            return true;
-        }
-        if (preg_match('#^[\s\x00-\x1f]*(javascript|data|vbscript):#i', $trimmed)) {
-            return false;
-        }
-        if (!preg_match('#^[a-z][a-z0-9+.\-]*:#i', $trimmed)) {
-            return true; // no scheme at all: relative path, fragment, or query string
-        }
-        return (bool) preg_match('#^(https?|mailto|tel):#i', $trimmed);
+        return \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($url);
     }
 
     /**
-     * Validates then escapes a URL for use in an href/src attribute,
-     * falling back to a safe default when the URL is empty or fails
-     * isValidUrl(). Every canonical URL-bearing prop should be rendered
-     * through this, not bare escapeAttr().
+     * Phase 3E-C: delegates to HtmlSanitizer::escapeUrl() — see isValidUrl().
      */
     protected function escapeUrl(string $url, string $fallback = '#'): string
     {
-        if ($url === '' || !$this->isValidUrl($url)) {
-            return $this->escapeAttr($fallback);
-        }
-        return $this->escapeAttr($url);
+        return \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::escapeUrl($url, $fallback);
     }
 
     /**
-     * Phase 3C security fix: strip_tags() only removes DISALLOWED TAGS — it
-     * never touches attributes on tags it keeps, so authored content like
-     * `<a href="javascript:alert(1)" onmouseover="alert(1)">` previously
-     * passed through completely untouched (a real stored-XSS vector: this
-     * output is emitted via unescaped Blade `{!! !!}` on the live customer
-     * site). None of the allowed tags legitimately need any attribute
-     * except <a href> — every attribute is now dropped, and <a>'s href is
-     * rebuilt from scratch through the existing scheme-validating
-     * escapeUrl(), so neither an event handler nor a dangerous URL scheme
-     * can survive.
+     * Phase 3E-C: delegates to HtmlSanitizer::sanitizeRichHtml() — the
+     * Phase 3C attribute/URL-scheme hardening now lives in exactly one
+     * place, reachable by both this renderer and the Element SDK (which
+     * cannot inherit from this class), instead of being duplicated.
      */
     protected function sanitizeHtml(string $s): string
     {
-        $s = strip_tags($s, '<p><br><a><strong><em><ul><ol><li><h2><h3>');
-
-        return preg_replace_callback(
-            '/<(a|p|br|strong|em|ul|ol|li|h2|h3)\b[^>]*>/i',
-            function (array $m): string {
-                $tag = strtolower($m[1]);
-                if ($tag !== 'a') {
-                    return "<{$tag}>";
-                }
-
-                $href = '';
-                if (preg_match('/\bhref\s*=\s*"([^"]*)"/i', $m[0], $hm)
-                    || preg_match('/\bhref\s*=\s*\'([^\']*)\'/i', $m[0], $hm)) {
-                    $href = html_entity_decode($hm[1], ENT_QUOTES);
-                }
-
-                return '<a href="' . $this->escapeUrl($href) . '">';
-            },
-            $s
-        );
+        return \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::sanitizeRichHtml($s);
     }
 }
