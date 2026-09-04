@@ -1241,3 +1241,63 @@ Container capability had become duplicated across runtime PHP and both Canvas ed
 - real customer Canvas nested-authoring browser verification
 - 3E-H-D browser regression
 - existing reconciliation/runtime regressions
+
+## ADR-044 — Extension SDK Canvas Authoring Bridge
+
+**Date:** 2026-09-04
+**Title:** Extension SDK Canvas Authoring Bridge
+
+**Context:**
+The Extension SDK was authorable only through the Production Builder while the canonical whole-Theme Canvas already owned nested authoring, Theme customization, release/update integration, and reconciliation.
+
+**Decision:**
+1. Extension SDK definitions remain owned by the existing: ThemeBuilderExtensionProviderContract, ThemeBuilderExtensionLoader, ThemeBuilderExtensionRegistrar, ExtensionBlockTypeRegistry, ElementRegistry, ThemeBuilderElementDefinition.
+2. Canvas authoring consumes extension definitions through a stateless CanvasBuilderAdapter read-model.
+3. CanvasBuilderAdapter is NOT a registry and owns no mutable registration state.
+4. ThemeCanvas BlockRegistry and ElementRegistry remain separate domain authorities; they are not merged.
+5. Extension palette/control/default/container metadata is derived from the existing declarative Extension SDK definitions.
+6. Canvas uses its existing nested tree, children serialization, selection, ordering, and drag/drop implementation for extension blocks.
+7. No extension-specific persistence format is introduced.
+8. Persisted identity remains: ext:{vendor-slug}:{block_name}.
+9. Existing renderer inheritance remains authoritative: shared ThemeRuntime → customer BlockRenderer → ThemeCanvasRenderer.
+10. A generic ExtensionBlockReconciler is the canonical save-boundary trust mechanism for preserving existing unavailable extension blocks while rejecting new unregistered ext:* content.
+11. Unknown-new extension types fail closed.
+12. Unavailable persisted extension content is preserved and restored when the provider returns, without migration/rewrite.
+13. Extension assets reuse the established HasAssets collection pipeline; Canvas only emits the collected assets in its existing preview/public surfaces.
+14. Registration does NOT imply entitlement.
+15. This ADR authorizes customer-site Canvas authoring only.
+16. SaaS master Theme authoring of ext:* remains intentionally unsupported because no shared commercial Extension SDK/catalog contract currently exists.
+17. saas-platform must never depend on customer-site application classes to obtain extension definitions.
+18. ThemeRelease extension-dependency authoring therefore remains a future architecture concern, not solved by this ADR.
+19. No Marketplace fulfillment, Motion, PWA, Push, registry merger, new nesting implementation, or persisted-data migration is introduced.
+
+**Reason:**
+Every piece of new logic is either a stateless read-model over an already-existing authority (CanvasBuilderAdapter) or an extraction of logic that already existed and worked (ExtensionBlockReconciler, generalized from its prior PageBuilderController-local form) — the bridge required zero new registries, zero new persistence formats, and zero changes to the shared rendering chain, because rendering and render-time validation for ext:* content already reached Canvas through the existing class-inheritance chain before this phase began.
+
+**Verification:**
+- real Canvas palette authoring
+- built-in container → ext child
+- ext container → built-in child
+- ext container → ext child
+- save/reload/publish/public render
+- assets
+- XSS
+- unavailable/re-enable lifecycle
+- unknown-new ext:* rejection
+- throwing-renderer isolation
+- generic reconciliation tests
+- Production Builder regression
+
+**Known deferred findings (not solved by this ADR):**
+- SaaS master Extension commercial contract absent
+- entitlement gating absent from authoring
+- heading.level Canvas/schema mismatch
+- tablet Canvas header overlap
+- Canvas control-label accessibility gap
+
+**Classification update:** ExtensionBlockReconciler is now CANONICAL. Its previous PageBuilderController-local reconciliation concern is no longer TRANSITIONAL because the mechanism has been extracted and reused by both authoring surfaces (Production Builder and Canvas). No other classification changed.
+
+**Impact:**
+- customer-site only — saas-platform application code untouched by the implementation this ADR records
+- no ThemeCanvas/Production Builder merger, no UI de-exposure, no data migration
+- no Marketplace/Motion/PWA/Push change
