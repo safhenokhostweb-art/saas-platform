@@ -188,8 +188,15 @@ class ExtensionReleaseServiceTest extends TestCase
         $gallery = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
         $this->service->release($gallery, '1.0.0', 1, $this->manifest());
 
+        // A distinct element type from $gallery's — ADR-046 (Phase 3G-B-3
+        // ownership closure) permanently forbids two different Extension
+        // products from ever publishing the same ext:* type, so this
+        // unrelated cross-extension-pointer test must not incidentally
+        // collide on the shared manifest() helper's default element.
         $forms = $this->service->createExtension('acme', 'forms-pro', 'Forms Pro');
-        $formsRelease = $this->service->release($forms->fresh(), '1.0.0', 1, $this->manifest());
+        $formsRelease = $this->service->release($forms->fresh(), '1.0.0', 1, $this->manifest([
+            'elements' => [['type' => 'ext:acme:contact_form', 'label' => 'Contact Form', 'category' => 'forms']],
+        ]));
 
         // Direct property assignment (bypassing $fillable entirely, exactly
         // like ExtensionReleaseService::release() itself does) so this test

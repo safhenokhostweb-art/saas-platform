@@ -34,6 +34,12 @@ class ThemeReleaseDependency extends Model
     public const TYPE_BLOCK_PACK = 'block_pack';
     public const TYPE_DESIGN_SYSTEM = 'design_system';
 
+    // Phase 3G-B-3 (ADR-045 point 13): identifier is the canonical Extension
+    // PRODUCT identity "{vendor-slug}/{package-slug}" (never an ext:* block
+    // type, never a numeric extensions.id) — see
+    // App\Services\ThemeBuilder\Dependency\ThemeExtensionDependencyExtractor.
+    public const TYPE_EXTENSION = 'extension';
+
     protected $fillable = [
         'theme_release_id',
         'dependency_type',
