@@ -28,6 +28,15 @@ class Product extends Model
     public const TYPE_MODULE_ADDON = 'module_addon';
     public const TYPE_SUPPORT_PLAN = 'support_plan';
     public const TYPE_MOTION_ASSET = 'motion_asset';
+    /**
+     * Phase 3G-B-1 (ADR-045): domain vocabulary only. No dedicated FK column
+     * exists on Product for this type, matching TYPE_MOTION_ASSET's own
+     * precedent — the master commercial identity lives on App\Models\
+     * Extension/ExtensionRelease, never on Product. OrderFulfillmentService
+     * deliberately has no case for this type yet; fulfillment remains
+     * unsupported until entitlement authority is settled (a later phase).
+     */
+    public const TYPE_EXTENSION = 'extension';
 
     public function module()
     {
@@ -46,6 +55,7 @@ class Product extends Model
             self::TYPE_MODULE_ADDON => 'ماژول افزودنی',
             self::TYPE_SUPPORT_PLAN => 'پلن پشتیبانی',
             self::TYPE_MOTION_ASSET => 'موشن گرافیک اختصاصی',
+            self::TYPE_EXTENSION => 'افزونه سازنده قالب',
             default => $this->type,
         };
     }
