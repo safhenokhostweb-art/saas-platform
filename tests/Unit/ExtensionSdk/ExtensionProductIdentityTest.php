@@ -1,20 +1,20 @@
 <?php
 
-namespace Tests\Unit\ThemeBuilder\Extension;
+namespace Tests\Unit\ExtensionSdk;
 
-use App\Services\ThemeBuilder\Extension\ExtensionProductIdentity;
+use SaaSPlatform\ExtensionSdk\ExtensionProductIdentity;
+use SaaSPlatform\ExtensionSdk\ExtensionSdkException;
 use Tests\TestCase;
 
 /**
- * Phase 3G-B-1 (ADR-045) — proves this saas-platform-side grammar copy is in
- * exact parity with customer-site's already-proven
- * App\Services\ThemeCanvas\Extension\ExtensionBlockTypeIdentity::
- * isValidVendorSlug() (vendor half, 2-40 chars, `/^[a-z0-9]+(-[a-z0-9]+)*$/`)
- * and App\Services\ThemeCanvas\Extension\ExtensionProductIdentity (package
- * half, 2-60 chars, same pattern) — same accept/reject vectors, never a
- * divergent second grammar. Does NOT import the customer-site classes
- * (saas-platform must never depend on customer-site App\*) — parity is
- * proven by running the same literal test vectors against this copy.
+ * Phase 3G-B-2 (ADR-045 point 5) — the canonical Extension PRODUCT identity
+ * grammar test, superseding the prior "parity" test
+ * (tests/Unit/ThemeBuilder/Extension/ExtensionProductIdentityTest.php, now
+ * deleted) that proved saas-platform's local duplicate copy matched
+ * customer-site's. There is now only ONE grammar authority — this package —
+ * so there is nothing left to prove "in parity"; this test exercises it
+ * directly. Same accept/reject vectors as both prior copies used, so no
+ * behavior silently weakened during the collapse.
  */
 class ExtensionProductIdentityTest extends TestCase
 {
@@ -29,25 +29,16 @@ class ExtensionProductIdentityTest extends TestCase
 
     public function test_vendor_slug_length_bounds_2_to_40(): void
     {
-        $this->assertFalse(ExtensionProductIdentity::isValidVendorSlug('a')); // 1 char, below min
-        $this->assertTrue(ExtensionProductIdentity::isValidVendorSlug(str_repeat('a', 40))); // exactly max
-        $this->assertFalse(ExtensionProductIdentity::isValidVendorSlug(str_repeat('a', 41))); // over max
+        $this->assertFalse(ExtensionProductIdentity::isValidVendorSlug('a'));
+        $this->assertTrue(ExtensionProductIdentity::isValidVendorSlug(str_repeat('a', 40)));
+        $this->assertFalse(ExtensionProductIdentity::isValidVendorSlug(str_repeat('a', 41)));
     }
 
     public function test_invalid_vendor_slugs_are_rejected(): void
     {
         $invalid = [
-            '' ,                 // empty
-            'Acme',               // uppercase
-            'acme_vendor',        // underscore not allowed in vendor grammar
-            ' acme',              // leading whitespace
-            'acme ',              // trailing whitespace
-            'acme/vendor',        // embedded slash
-            '-acme',              // leading hyphen
-            'acme-',              // trailing hyphen
-            'acme--vendor',       // double hyphen (pattern requires single [a-z0-9]+ groups)
-            '../acme',            // path traversal
-            'acme.vendor',        // punctuation not allowed
+            '', 'Acme', 'acme_vendor', ' acme', 'acme ', 'acme/vendor',
+            '-acme', 'acme-', 'acme--vendor', '../acme', 'acme.vendor',
         ];
 
         foreach ($invalid as $vendor) {
@@ -91,8 +82,6 @@ class ExtensionProductIdentityTest extends TestCase
 
     public function test_a_bare_vendor_slug_is_not_a_valid_product_identifier(): void
     {
-        // A vendor may publish several independent products — a bare vendor
-        // slug alone is deliberately too coarse (ADR-037/ADR-045).
         $this->assertFalse(ExtensionProductIdentity::isValidIdentifier('acme'));
     }
 
@@ -120,5 +109,47 @@ class ExtensionProductIdentityTest extends TestCase
     {
         $this->assertFalse(ExtensionProductIdentity::isValidIdentifier('../acme/gallery-pro'));
         $this->assertFalse(ExtensionProductIdentity::isValidIdentifier('acme/../gallery-pro'));
+    }
+
+    // ── instance construction / value semantics (new surface vs. the old
+    //    static-only saas-platform copy — proves the shared authority's
+    //    fuller API used by ExtensionManifest) ──────────────────────────────
+
+    public function test_from_parts_and_from_string_round_trip(): void
+    {
+        $viaParts = ExtensionProductIdentity::fromParts('acme', 'gallery-pro');
+        $viaString = ExtensionProductIdentity::fromString('acme/gallery-pro');
+
+        $this->assertSame('acme', $viaParts->vendorSlug());
+        $this->assertSame('gallery-pro', $viaParts->packageSlug());
+        $this->assertSame('acme/gallery-pro', $viaParts->toString());
+        $this->assertSame((string) $viaParts, $viaParts->toString());
+        $this->assertTrue($viaParts->equals($viaString));
+    }
+
+    public function test_from_parts_throws_on_malformed_vendor(): void
+    {
+        $this->expectException(ExtensionSdkException::class);
+        ExtensionProductIdentity::fromParts('Acme', 'gallery-pro');
+    }
+
+    public function test_from_parts_throws_on_malformed_package(): void
+    {
+        $this->expectException(ExtensionSdkException::class);
+        ExtensionProductIdentity::fromParts('acme', 'Gallery_Pro');
+    }
+
+    public function test_from_string_throws_on_extra_slash(): void
+    {
+        $this->expectException(ExtensionSdkException::class);
+        ExtensionProductIdentity::fromString('acme/gallery/pro');
+    }
+
+    public function test_two_different_products_are_not_equal(): void
+    {
+        $one = ExtensionProductIdentity::fromParts('acme', 'gallery-pro');
+        $two = ExtensionProductIdentity::fromParts('acme', 'forms-pro');
+
+        $this->assertFalse($one->equals($two));
     }
 }

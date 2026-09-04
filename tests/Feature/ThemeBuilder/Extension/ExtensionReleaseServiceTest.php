@@ -302,4 +302,130 @@ class ExtensionReleaseServiceTest extends TestCase
         $this->assertSame(Product::TYPE_EXTENSION, $product->type);
         $this->assertIsString($product->typeLabel());
     }
+
+    // ── Phase 3G-B-2 (ADR-045 points 19-21) — shared ExtensionManifest
+    //    integration: identity/version/sdk-contract consistency and
+    //    canonical persisted-manifest shape ─────────────────────────────────
+
+    public function test_valid_shared_manifest_releases_successfully(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $release = $this->service->release($extension, '1.0.0', 1, $this->manifest());
+
+        $this->assertSame('1.0.0', $release->manifest['package_version']);
+        $this->assertSame('acme/gallery-pro', $release->manifest['product_identity']);
+        $this->assertSame(1, $release->manifest['sdk_contract_version']);
+    }
+
+    public function test_manifest_declaring_a_conflicting_product_identity_is_rejected(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest(['product_identity' => 'other/vendor']));
+    }
+
+    public function test_manifest_declaring_a_conflicting_package_version_is_rejected(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest(['package_version' => '9.9.9']));
+    }
+
+    public function test_manifest_declaring_a_conflicting_sdk_contract_version_is_rejected(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest(['sdk_contract_version' => 2]));
+    }
+
+    public function test_self_describing_manifest_matching_declared_values_still_releases(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $release = $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'product_identity' => 'acme/gallery-pro',
+            'package_version' => '1.0.0',
+            'sdk_contract_version' => 1,
+        ]));
+
+        $this->assertSame('1.0.0', $release->version);
+    }
+
+    public function test_manifest_with_foreign_vendor_block_is_rejected(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'elements' => [['type' => 'ext:notacme:gallery', 'label' => 'Gallery', 'category' => 'media']],
+        ]));
+    }
+
+    public function test_manifest_with_duplicate_element_identity_is_rejected(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'elements' => [
+                ['type' => 'ext:acme:gallery', 'label' => 'Gallery', 'category' => 'media'],
+                ['type' => 'ext:acme:gallery', 'label' => 'Gallery Again', 'category' => 'media'],
+            ],
+        ]));
+    }
+
+    public function test_manifest_with_unsupported_control_type_is_rejected(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'elements' => [[
+                'type' => 'ext:acme:gallery',
+                'label' => 'Gallery',
+                'category' => 'media',
+                'controls' => ['layout' => ['control_type' => 'repeater']],
+            ]],
+        ]));
+    }
+
+    public function test_persisted_manifest_equals_canonical_serialized_shared_manifest(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $release = $this->service->release($extension, '1.0.0', 1, $this->manifest());
+
+        $expected = \SaaSPlatform\ExtensionSdk\ExtensionManifest::fromArray(array_merge($this->manifest(), [
+            'product_identity' => 'acme/gallery-pro',
+            'package_version' => '1.0.0',
+            'sdk_contract_version' => 1,
+        ]))->toArray();
+
+        // assertEquals, not assertSame: the DB's JSON column round-trip does
+        // not guarantee key insertion order is preserved — only that the
+        // canonical shared-manifest content itself is unchanged.
+        $this->assertEquals($expected, $release->fresh()->manifest);
+    }
+
+    public function test_published_release_immutability_still_holds_with_canonical_manifest(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $release = $this->service->release($extension, '1.0.0', 1, $this->manifest());
+
+        $this->expectException(RuntimeException::class);
+        $release->update(['manifest' => ['product_identity' => 'acme/gallery-pro', 'package_version' => '1.0.0', 'sdk_contract_version' => 1, 'elements' => []]]);
+    }
+
+    public function test_historical_release_remains_resolvable_with_canonical_manifest(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $first = $this->service->release($extension, '1.0.0', 1, $this->manifest());
+        $this->service->release($extension->fresh(), '1.1.0', 1, $this->manifest());
+
+        $stillThere = ExtensionRelease::find($first->id);
+        $this->assertSame('acme/gallery-pro', $stillThere->manifest['product_identity']);
+    }
 }

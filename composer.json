@@ -35,6 +35,10 @@
         {
             "type": "path",
             "url": "packages/saas-platform/modules/crm"
+        },
+        {
+            "type": "path",
+            "url": "packages/saas-platform/modules/extension-sdk"
         }
     ],
     "require": {
@@ -54,6 +58,7 @@
         "pusher/pusher-php-server": "^7.2",
         "saas-platform/modules-crm": "@dev",
         "saas-platform/modules-education": "@dev",
+        "saas-platform/modules-extension-sdk": "@dev",
         "saas-platform/modules-forms": "@dev",
         "saas-platform/modules-seo-advanced": "@dev",
         "saas-platform/modules-theme-runtime": "@dev",

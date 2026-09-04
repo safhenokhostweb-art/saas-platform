@@ -1,0 +1,16 @@
+{
+    "name": "saas-platform/modules-extension-sdk",
+    "description": "Canonical Extension product-identity grammar and declarative release-manifest contract shared by saas-platform (commercial Extension/ExtensionRelease authority) and customer-site (Extension SDK runtime registration authority). Pure PHP value objects only — no Laravel, Eloquent, DB, tenant, or entitlement dependency; usable without booting a framework.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "SaaSPlatform\\ExtensionSdk\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
