@@ -57,6 +57,24 @@ class BlockRegistry
         return array_key_exists($type, self::$canonicalOnly);
     }
 
+    /**
+     * Phase 3F-B — the one canonical/shared answer to "does this type accept
+     * child blocks?", for CANONICAL types only (host-registered and
+     * extension types declare this through their own host-side capability
+     * contracts — e.g. customer-site's HasContainerCapability — layered on
+     * top of this by each host, never duplicated here). Declarative: reads
+     * the explicit `is_container` flag on the type's own definition above,
+     * never inferred from schema field types (several canonical types
+     * declare a `type => 'blocks'` schema field — e.g. `slider`'s `slides`
+     * — without being authoring-time containers today; inferring from that
+     * would silently change their behavior, which this method must not do).
+     * Unknown or unregistered types fail closed to false.
+     */
+    public static function isContainerType(string $type): bool
+    {
+        return (bool) (self::all()[$type]['is_container'] ?? false);
+    }
+
     /** True if `$type` was added via registerHostType() (not a canonical definition). */
     public static function isHostRegisteredType(string $type): bool
     {
@@ -137,6 +155,7 @@ class BlockRegistry
                 'name' => 'بخش (Section)',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'layout-section',
+                'is_container' => true,
                 'schema' => [
                     'padding' => ['type' => 'spacing', 'default' => 'md'],
                     'background' => ['type' => 'string', 'default' => 'transparent'],
@@ -150,6 +169,7 @@ class BlockRegistry
                 'name' => 'کانتینر',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'container',
+                'is_container' => true,
                 'schema' => [
                     'maxWidth' => ['type' => 'string', 'default' => '7xl'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
@@ -160,6 +180,7 @@ class BlockRegistry
                 'name' => 'گرید',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'grid',
+                'is_container' => true,
                 'schema' => [
                     'columns' => ['type' => 'number', 'default' => 3],
                     'gap' => ['type' => 'spacing', 'default' => 'md'],
@@ -171,6 +192,7 @@ class BlockRegistry
                 'name' => 'ستون‌ها',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'columns',
+                'is_container' => true,
                 'schema' => [
                     'ratios' => ['type' => 'string', 'default' => '1/2,1/2'],
                     'gap' => ['type' => 'spacing', 'default' => 'md'],
@@ -182,6 +204,7 @@ class BlockRegistry
                 'name'     => 'فلکس کانتینر',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon'     => 'flex-container',
+                'is_container' => true,
                 'schema'   => [
                     'label'          => ['type' => 'string',  'label' => 'نام',               'default' => 'کانتینر'],
                     'direction'      => ['type' => 'select',  'label' => 'جهت',               'default' => 'column',

@@ -1234,7 +1234,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 const THEME_ID   = {{ $theme->id }};
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
 const BLOCK_LABELS  = @json(collect($registry)->mapWithKeys(fn($d,$t)=>[$t=>$d['name']]));
-const BLOCK_SCHEMAS = @json(collect($registry)->mapWithKeys(fn($d,$t)=>[$t=>['schema'=>$d['schema']??[],'defaultProps'=>$d['defaultProps']??[]]]));
+{{-- Phase 3F-B: is_container is declarative capability metadata from the
+     canonical BlockRegistry::isContainerType(), not a client-side hardcoded
+     array — see App\Services\ThemeBuilder\BlockRegistry (this host's thin
+     subclass of the shared canonical authority). --}}
+const BLOCK_SCHEMAS = @json(collect($registry)->mapWithKeys(fn($d,$t)=>[$t=>['schema'=>$d['schema']??[],'defaultProps'=>$d['defaultProps']??[],'is_container'=>\App\Services\ThemeBuilder\BlockRegistry::isContainerType($t)]]));
 const INITIAL_PAGES = @json($pages);
 
 function themeCanvas() {
@@ -1364,7 +1368,10 @@ function themeCanvas() {
         },
 
         isContainerType(type) {
-            return ['section', 'container', 'grid', 'columns', 'flex_container'].includes(type);
+            // Phase 3F-B: declarative metadata from the server (see
+            // BLOCK_SCHEMAS construction above), not a hardcoded array —
+            // the authoritative source is BlockRegistry::isContainerType().
+            return !!(BLOCK_SCHEMAS[type]?.is_container);
         },
 
         getBlockByPath(path, arr) {

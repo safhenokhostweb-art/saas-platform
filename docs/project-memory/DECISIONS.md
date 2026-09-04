@@ -1204,3 +1204,40 @@ Real browser verification requires a real, reusable, honestly-scoped harness —
 - Modified (customer-site): `package.json`/`package-lock.json` (`@playwright/test` devDependency, `test:browser*` scripts), `.gitignore` (browser-artifact ignores), `resources/views/builder/edit.blade.php` (4 semantically-neutral `data-testid` additions — save button, per-block-type palette buttons, per-prop-key field wrapper, widget-count span — no markup restructuring, no behavior change), `routes/web.php` (BOM removal only, per §F–G above).
 - No Extension SDK product behavior changed. No `ThemeCanvas` convergence. No Motion change. No Marketplace change. No PWA/Push change. No deployment. No dynamic-data wiring. No existing 38/55 palette/schema-gate drift touched. No reconciliation architecture change.
 - **Recorded as an explicit upcoming requirement, not performed now**: after the Theme Builder / shared runtime / Extension SDK architecture has been fully browser-verified, a dedicated end-to-end audit of all parallel/duplicate/legacy/transitional/superseded Theme-building paths must classify each as CANONICAL, REQUIRED_VISIBLE, REQUIRED_BACKEND_ONLY, TRANSITIONAL, or OBSOLETE — proving actual call graph, runtime consumers, and persistence/release/compatibility/commercial responsibility before any removal, never removing a component merely for looking old or duplicated, and never leaving two competing Theme-building workflows exposed for the same responsibility in the final commercial product. Out of scope for D0 and for this ADR's own decision; a dedicated future phase.
+
+## ADR-043 — Layered Container Capability Authority
+
+**Date:** 2026-09-04
+**Title:** Layered Container Capability Authority
+
+**Context:**
+Container capability had become duplicated across runtime PHP and both Canvas editors, including divergent hardcoded lists.
+
+**Decision:**
+1. Shared ThemeRuntime BlockRegistry owns declarative container capability for canonical/shared block types.
+2. Canonical container capability is represented explicitly with is_container metadata rather than inferred from schema fields.
+3. Customer host/Extension capability remains additive through ElementRegistry / ThemeBuilderElementDefinition.
+4. Container capability uses a layered semantic authority: shared canonical capability + customer host/extension capability.
+5. Registries remain separate because they have different domain responsibilities; convergence does NOT mean registry merger.
+6. Canvas client-side editors consume server-provided declarative is_container metadata instead of maintaining authoritative hardcoded type arrays.
+7. Unknown types fail closed as non-container unless a registered host/extension definition explicitly declares otherwise.
+8. Existing persisted Theme/Page JSON and block type identities require no migration.
+9. allowed_children enforcement is explicitly NOT introduced by this decision.
+10. Production Builder remains flat; this ADR does not introduce nested authoring there.
+11. This decision prepares Phase 3F-C, where Extension SDK definitions may be bridged into Canvas authoring without adding another container-detection system.
+
+**Impact:**
+- shared renderer authority remains unchanged
+- existing Canvas nested-tree UX remains unchanged
+- Extension SDK identity/collision/registration contracts remain unchanged
+- registration does not imply entitlement
+- no ThemeCanvas/Production Builder merger
+- no UI de-exposure
+- no data migration
+- no Marketplace/Motion/PWA/Push change
+
+**Verification:**
+- dedicated container capability tests in both repos
+- real customer Canvas nested-authoring browser verification
+- 3E-H-D browser regression
+- existing reconciliation/runtime regressions
