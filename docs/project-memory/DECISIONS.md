@@ -1395,3 +1395,48 @@ The alternative — leaving element-type ownership entirely unenforced — would
 - New tests: `tests/Feature/ThemeBuilder/Extension/ExtensionReleaseOwnershipInvariantTest.php`.
 - No DB migration. No new table. No `ext:*` JSON migration. No customer-site file touched. No entitlement/fulfillment/Marketplace/Canvas change. No Theme publish-gate change. No version-constraint behavior change.
 - **Classification**: the ownership invariant enforcement in `ExtensionReleaseService::release()` is CANONICAL. `ExtensionElementOwnershipResolver`'s ambiguity handling remains CANONICAL defense-in-depth (not superseded, not obsolete — legacy/manual data can still violate the invariant this ADR only prevents going forward). Nothing is OBSOLETE.
+
+## ADR-047 — Theme Extension Dependency Version Selection and Exact-Version Authority
+
+**Date:** 2026-09-05
+**Title:** Theme Extension Dependency Version Selection and Exact-Version Authority (Phase 3G-B-4)
+
+**Context:**
+Phase 3G-B-3 (ADR-046) established that an `ext:*` element type's owning Extension PRODUCT can be resolved declaratively from `ExtensionRelease.manifest`, but left `ExtensionDependencyProposal.versionConstraint` permanently `null` — the Theme snapshot recorded only which element *types* were used, never which Extension *release/version* authoring had selected. This phase audited every existing version/compatibility authority (`Theme`, `ThemeRelease`, `ThemeReleaseService`, `ThemeReleaseDependency`, `Extension`, `ExtensionRelease`, `ExtensionReleaseService`, `ExtensionManifest`, the `ThemeReleaseDependencyBackfillCommand` precedent) before writing any code, and found: (1) `Extension.current_release_id` is catalog state only — it has never been linked to any Theme-authoring event and carries no guarantee a given Theme was authored or tested against it; (2) `Theme.settings` (an existing, `array`-cast, `$fillable` JSON column) is already the load-bearing location where authoring records dependency-relevant data — proven by `ThemeReleaseDependencyBackfillCommand`, which reads `settings.supported_modules`/`settings.motion.required_assets` today; that same command's own docblock confirms no version has ever been captured there for any dependency type; (3) `ThemeReleaseService::release()` already copies `'settings' => $theme->settings` verbatim, with no key allowlist, into every `ThemeRelease.snapshot` — so a new `settings` key is frozen into release history automatically, with zero change to that service; (4) no Extension cross-release compatibility policy exists anywhere — `ExtensionSdkContract` is a plain integer contract-version vocabulary, never a semver range declaration.
+
+**Decision:**
+1. Theme Extension dependency version truth comes from an explicit authoring selection, never `Extension.current_release_id`.
+2. Canonical authoring persistence: `Theme.settings['extension_selections']` — an existing JSON column, no migration.
+3. Shape: `{ "{vendor}/{package}": { "version": "X.Y.Z" } }`, keyed by the canonical Extension product identity.
+4. The selection is stored once per Theme/product, never duplicated per `ext:*` block — multiple blocks from the same product share one selection.
+5. Persisted `ext:*` block identity remains unchanged: `ext:{vendor}:{block}`.
+6. Extension product identity remains unchanged: `{vendor}/{package}`, validated via `SaaSPlatform\ExtensionSdk\ExtensionProductIdentity`.
+7. V1 dependency constraint is exact: `=X.Y.Z`.
+8. Exact-version is required because no Extension cross-release compatibility policy currently exists — a `>=`/`^` range would fabricate a guarantee nothing in the architecture backs.
+9. `>=`, `^`, wildcard (`*`), `latest`, `current`, or any other inferred compatibility claim is forbidden unless a future explicit compatibility contract establishes it.
+10. `Extension.current_release_id` is catalog state, not historical Theme authoring truth.
+11. Changing `current_release_id` must never silently alter an existing Theme selection — proven: a recorded selection resolves identically before and after the Extension's current release moves on.
+12. Superseded/deprecated historical `ExtensionRelease` rows remain resolvable for an already-recorded Theme selection — status is never consulted when validating an existing selection (identical reasoning to ADR-046's historical-ownership-evidence policy).
+13. A selected release must belong to the selected product (structurally guaranteed: lookup is always scoped to the `Extension` resolved from the product-identity key itself, never a raw release id) and its validated manifest must contain every `ext:*` element used by that Theme and attributed to that product, or the selection fails closed as invalid.
+14. A used Extension product with no recorded selection is `unresolvedVersionSelections` — never substituted with current/latest/wildcard.
+15. An invalid or nonexistent selection (wrong version, missing element) fails closed into `invalidVersionSelections` — never silently ignored or downgraded to unresolved.
+16. Unused recorded selections (a product selected but not currently used by any block) do not automatically become `ThemeRelease` dependencies — reported diagnostically via `unusedSelections`, never mutated/deleted.
+17. Dependency extraction remains usage-driven — a selection alone, without actual element usage, produces no dependency.
+18. ADR-046's ownership authority remains independent and unchanged: ownership `unresolved`/`ambiguous` diagnostics are never bypassed or resolved by the presence of plausible-looking version-selection metadata.
+19. `ThemeReleaseService` integration (deriving/attaching real `ThemeReleaseDependency` rows from this authority at publish time) is explicitly **not** part of this ADR's implementation — confirmed unmodified.
+20. Commercial Publish Gate integration (enforcing this authority as a blocking check) is deferred to a later phase (3G-B-5).
+21. SaaS Canvas becomes the future writer of `Theme.settings['extension_selections']` and the user-facing selection mechanism in a later phase (3G-B-6) — this ADR defines only the backend read/validate contract that UI will feed.
+22. customer-site runtime registration/entitlement remains entirely separate — untouched, unconsulted.
+23. No entitlement, fulfillment, bundling, Marketplace, or runtime-expiry semantics are defined by this ADR.
+24. No DB migration and no `ext:*` JSON migration were required or performed.
+
+**Reason:**
+`Theme.settings` already carried the exact ownership/lifecycle properties this data needs — mutable during authoring, automatically frozen immutable at release time by code that already exists — so introducing a new key there closes the version-truth gap with zero schema risk and zero change to the already-reviewed, already-tested `ThemeReleaseService`/`ExtensionReleaseService`/ADR-046 machinery. Exact-version was chosen over a range because nothing in the Extension SDK contract or commercial model makes any cross-release compatibility promise today; asserting one would be fabrication, not truth.
+
+**Impact:**
+- Modified: `app/Services/ThemeBuilder/Dependency/ThemeExtensionDependencyExtractionResult.php` (three new diagnostic fields: `unresolvedVersionSelections`, `invalidVersionSelections`, `unusedSelections`), `app/Services/ThemeBuilder/Dependency/ThemeExtensionDependencyExtractor.php` (now also consults version selections; a product only reaches `resolvedDependencies` once both ownership and version are truthfully resolved).
+- New: `app/Services/ThemeBuilder/Dependency/ExtensionVersionSelectionResolver.php`, `app/Services/ThemeBuilder/Dependency/ExtensionVersionSelectionResult.php`.
+- New tests: `tests/Feature/ThemeBuilder/Dependency/ExtensionVersionSelectionResolverTest.php`; `ThemeExtensionDependencyExtractorTest.php` extended with version-truthfulness/immutability coverage.
+- No other production file changed. `ThemeReleaseService`, `ExtensionReleaseService`, `ThemeCommercialQualityGate`/`DependencyIntegrityCheck`, `ThemeMarketplaceApiController`, `ThemeExtensionBlockTypeExtractor`, `ExtensionElementOwnershipResolver`, `ExtensionDependencyProposal`, and the shared `extension-sdk` package are all unchanged.
+- No DB migration. No `ext:*` JSON migration. No customer-site file touched. No entitlement/fulfillment/Marketplace/Canvas change. No Publish Gate change.
+- **Classification**: `ExtensionVersionSelectionResolver` and the evolved `ThemeExtensionDependencyExtractor`/`ThemeExtensionDependencyExtractionResult` are CANONICAL. All are REQUIRED_BACKEND_ONLY — no controller, route, or UI entry point exists yet; SaaS Canvas Extension authoring (3G-B-6) is their intended future consumer. Nothing is OBSOLETE.

@@ -5,6 +5,7 @@ namespace Tests\Feature\ThemeBuilder\Dependency;
 use App\Models\Extension;
 use App\Models\ThemeReleaseDependency;
 use App\Services\ThemeBuilder\Dependency\ExtensionElementOwnershipResolver;
+use App\Services\ThemeBuilder\Dependency\ExtensionVersionSelectionResolver;
 use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
 use App\Services\ThemeBuilder\Dependency\ThemeExtensionDependencyExtractor;
 use App\Services\ThemeBuilder\Extension\ExtensionReleaseService;
@@ -16,9 +17,13 @@ use Tests\TestCase;
 /**
  * Phase 3G-B-3 — end-to-end dependency extraction (block-type scan +
  * ownership resolution → canonical, deduplicated, deterministic Extension
- * dependency proposals). Also proves version-constraint truthfulness: this
- * phase has no source of a real Extension version requirement, so it must
- * never guess one.
+ * dependency proposals).
+ *
+ * Phase 3G-B-4 — additionally proves version-constraint truthfulness: a
+ * product only ever appears in resolvedDependencies once BOTH its ownership
+ * AND its authoring-selected Extension release version are truthfully
+ * resolved; the constraint is always the exact "=X.Y.Z" the author actually
+ * selected, never a guess, never a range, never null-by-default.
  */
 class ThemeExtensionDependencyExtractorTest extends TestCase
 {
@@ -34,6 +39,7 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
         $this->extractor = new ThemeExtensionDependencyExtractor(
             new ThemeExtensionBlockTypeExtractor(),
             new ExtensionElementOwnershipResolver(),
+            new ExtensionVersionSelectionResolver(),
         );
     }
 
@@ -49,6 +55,11 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
         return ['home' => ['blocks' => $blocks]];
     }
 
+    private function selection(string $productIdentity, string $version): array
+    {
+        return [$productIdentity => ['version' => $version]];
+    }
+
     public function test_product_dependencies_are_deduplicated(): void
     {
         $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
@@ -60,7 +71,7 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
             ['type' => 'ext:acme:card', 'id' => 'c'],
         ]);
 
-        $result = $this->extractor->extractFromSnapshot([], [], $pages);
+        $result = $this->extractor->extractFromSnapshot([], [], $pages, $this->selection('acme/gallery-pro', '1.0.0'));
 
         $this->assertCount(1, $result->resolvedDependencies);
         $this->assertSame('acme/gallery-pro', $result->resolvedDependencies[0]->productIdentity);
@@ -84,7 +95,13 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
             ['type' => 'ext:foo:map', 'id' => 'c'],
         ]);
 
-        $result = $this->extractor->extractFromSnapshot([], [], $pages);
+        $selections = array_merge(
+            $this->selection('bar/forms-plus', '1.0.0'),
+            $this->selection('acme/gallery-pro', '1.0.0'),
+            $this->selection('foo/maps', '1.0.0'),
+        );
+
+        $result = $this->extractor->extractFromSnapshot([], [], $pages, $selections);
 
         $identities = array_map(fn ($d) => $d->productIdentity, $result->resolvedDependencies);
         $this->assertSame(['acme/gallery-pro', 'bar/forms-plus', 'foo/maps'], $identities);
@@ -97,7 +114,7 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
 
         $result = $this->extractor->extractFromSnapshot([], [], $this->page([
             ['type' => 'ext:acme:gallery', 'id' => 'a'],
-        ]));
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
 
         $this->assertSame('acme/gallery-pro', $result->resolvedDependencies[0]->productIdentity);
         $this->assertTrue(ExtensionProductIdentity::isValidIdentifier($result->resolvedDependencies[0]->productIdentity));
@@ -110,7 +127,7 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
 
         $result = $this->extractor->extractFromSnapshot([], [], $this->page([
             ['type' => 'ext:acme:gallery', 'id' => 'a'],
-        ]));
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
 
         $exported = $result->resolvedDependencies[0]->toReleaseDependencyArray();
         $this->assertSame(ThemeReleaseDependency::TYPE_EXTENSION, $exported['type']);
@@ -178,7 +195,7 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
 
         $result = $this->extractor->extractFromSnapshot([], [], $this->page([
             ['type' => 'ext:acme:gallery', 'id' => 'a'],
-        ]));
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
 
         $this->assertSame('acme/gallery-pro', $result->resolvedDependencies[0]->productIdentity);
         $this->assertNotSame('acme/gallery', $result->resolvedDependencies[0]->productIdentity);
@@ -202,23 +219,6 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
         $this->assertSame('extension', ThemeReleaseDependency::TYPE_EXTENSION);
     }
 
-    // ── version-constraint truthfulness (section 19-20/36) ──────────────────
-
-    public function test_version_constraint_is_always_null_never_guessed(): void
-    {
-        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
-        $this->publish($extension, '2.5.1', ['ext:acme:gallery']);
-
-        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
-            ['type' => 'ext:acme:gallery', 'id' => 'a'],
-        ]));
-
-        $this->assertNull($result->resolvedDependencies[0]->versionConstraint);
-        $this->assertNotSame('*', $result->resolvedDependencies[0]->versionConstraint);
-        $this->assertNotSame('latest', $result->resolvedDependencies[0]->versionConstraint);
-        $this->assertNotSame('>=2.5.1', $result->resolvedDependencies[0]->versionConstraint);
-    }
-
     public function test_extracted_dependency_is_required_by_v1_default(): void
     {
         $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
@@ -226,7 +226,7 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
 
         $result = $this->extractor->extractFromSnapshot([], [], $this->page([
             ['type' => 'ext:acme:gallery', 'id' => 'a'],
-        ]));
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
 
         $this->assertTrue($result->resolvedDependencies[0]->isRequired);
     }
@@ -239,5 +239,253 @@ class ThemeExtensionDependencyExtractorTest extends TestCase
         $this->assertSame([], $result->unresolvedElementTypes);
         $this->assertSame([], $result->ambiguousElementTypes);
         $this->assertTrue($result->isFullyResolved());
+    }
+
+    // ── version-selection truthfulness (Phase 3G-B-4) ───────────────────────
+
+    public function test_a_used_extension_with_no_selection_is_unresolved_version_not_a_guess(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '2.5.1', ['ext:acme:gallery']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]));
+
+        // No selection given — must NOT appear in resolvedDependencies at all.
+        $this->assertSame([], $result->resolvedDependencies);
+        $this->assertSame(['acme/gallery-pro'], $result->unresolvedVersionSelections);
+        $this->assertSame([], $result->invalidVersionSelections);
+        $this->assertFalse($result->isFullyResolvedWithVersions());
+        // Ownership itself is still fully resolved — only the version is not.
+        $this->assertTrue($result->isFullyResolved());
+    }
+
+    public function test_selected_version_produces_the_exact_version_constraint(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '2.3.0', ['ext:acme:gallery']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '2.3.0'));
+
+        $this->assertCount(1, $result->resolvedDependencies);
+        $this->assertSame('=2.3.0', $result->resolvedDependencies[0]->versionConstraint);
+    }
+
+    public function test_no_broader_constraint_is_ever_produced(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '2.5.1', ['ext:acme:gallery']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '2.5.1'));
+
+        $constraint = $result->resolvedDependencies[0]->versionConstraint;
+        $this->assertSame('=2.5.1', $constraint);
+        $this->assertNotSame('*', $constraint);
+        $this->assertNotSame('latest', $constraint);
+        $this->assertNotSame('current', $constraint);
+        $this->assertNotSame('>=2.5.1', $constraint);
+        $this->assertNotSame('^2.5.1', $constraint);
+    }
+
+    public function test_selection_for_wrong_extension_version_is_invalid_and_fails_closed(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '1.0.0', ['ext:acme:gallery']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '9.9.9'));
+
+        $this->assertSame([], $result->resolvedDependencies);
+        $this->assertArrayHasKey('acme/gallery-pro', $result->invalidVersionSelections);
+        $this->assertSame([], $result->unresolvedVersionSelections);
+    }
+
+    public function test_selected_release_not_containing_the_used_element_is_invalid(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '1.0.0', ['ext:acme:gallery']);
+        $this->publish($extension->fresh(), '2.0.0', ['ext:acme:other']);
+
+        // Theme uses ext:acme:gallery (owned historically by 1.0.0), but
+        // authoring selected 2.0.0 — whose manifest does not provide it.
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '2.0.0'));
+
+        $this->assertSame([], $result->resolvedDependencies);
+        $this->assertArrayHasKey('acme/gallery-pro', $result->invalidVersionSelections);
+    }
+
+    public function test_current_release_id_changing_does_not_alter_an_existing_selection(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '1.0.0', ['ext:acme:gallery']);
+        $extension->refresh();
+        $pinnedVersion = '1.0.0';
+
+        // current_release_id moves on to 2.0.0, which no longer provides the type.
+        $this->publish($extension->fresh(), '2.0.0', ['ext:acme:other']);
+        $extension->refresh();
+        $this->assertNotSame($pinnedVersion, $extension->currentRelease->version);
+
+        // The Theme's OWN recorded selection still pins 1.0.0 — must still resolve truthfully.
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', $pinnedVersion));
+
+        $this->assertCount(1, $result->resolvedDependencies);
+        $this->assertSame('=1.0.0', $result->resolvedDependencies[0]->versionConstraint);
+    }
+
+    public function test_superseded_selected_release_remains_resolvable(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '1.0.0', ['ext:acme:gallery']);
+        $this->publish($extension->fresh(), '2.0.0', ['ext:acme:gallery']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
+
+        $this->assertCount(1, $result->resolvedDependencies);
+        $this->assertSame('=1.0.0', $result->resolvedDependencies[0]->versionConstraint);
+    }
+
+    public function test_deprecated_selected_release_remains_resolvable(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $release = $this->releaseService->release($extension, '1.0.0', 1, [
+            'elements' => [['type' => 'ext:acme:gallery', 'label' => 'L', 'category' => 'general']],
+        ]);
+        $release->update(['status' => \App\Models\ExtensionRelease::STATUS_DEPRECATED]);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
+
+        $this->assertCount(1, $result->resolvedDependencies);
+        $this->assertSame('=1.0.0', $result->resolvedDependencies[0]->versionConstraint);
+    }
+
+    public function test_two_elements_same_product_yields_one_selection_one_dependency(): void
+    {
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '1.0.0', ['ext:acme:card', 'ext:acme:grid']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:card', 'id' => 'a'],
+            ['type' => 'ext:acme:grid', 'id' => 'b'],
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
+
+        $this->assertCount(1, $result->resolvedDependencies);
+        $this->assertSame(['ext:acme:card', 'ext:acme:grid'], $result->resolvedDependencies[0]->elementTypes);
+    }
+
+    public function test_two_extensions_have_independent_selections(): void
+    {
+        $acme = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($acme, '2.3.0', ['ext:acme:gallery']);
+        $foo = $this->releaseService->createExtension('foo', 'maps', 'Maps');
+        $this->publish($foo, '1.4.2', ['ext:foo:map']);
+
+        $selections = array_merge(
+            $this->selection('acme/gallery-pro', '2.3.0'),
+            $this->selection('foo/maps', '1.4.2'),
+        );
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+            ['type' => 'ext:foo:map', 'id' => 'b'],
+        ]), $selections);
+
+        $byProduct = [];
+        foreach ($result->resolvedDependencies as $dependency) {
+            $byProduct[$dependency->productIdentity] = $dependency->versionConstraint;
+        }
+
+        $this->assertSame(['acme/gallery-pro' => '=2.3.0', 'foo/maps' => '=1.4.2'], $byProduct);
+    }
+
+    public function test_unused_selection_does_not_become_a_dependency(): void
+    {
+        $unused = $this->releaseService->createExtension('bar', 'unused-thing', 'Unused Thing');
+        $this->publish($unused, '1.0.0', ['ext:bar:thing']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], [], $this->selection('bar/unused-thing', '1.0.0'));
+
+        $this->assertSame([], $result->resolvedDependencies);
+        $this->assertSame(['bar/unused-thing'], $result->unusedSelections);
+    }
+
+    public function test_ownership_ambiguity_is_independent_of_version_selection(): void
+    {
+        $one = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $two = $this->releaseService->createExtension('acme', 'widgets-plus', 'Widgets Plus');
+
+        foreach ([$one, $two] as $extension) {
+            DB::table('extension_releases')->insert([
+                'extension_id' => $extension->id,
+                'version' => '1.0.0',
+                'sdk_contract_version' => 1,
+                'manifest' => json_encode([
+                    'product_identity' => $extension->identifier(),
+                    'package_version' => '1.0.0',
+                    'sdk_contract_version' => 1,
+                    'elements' => [['type' => 'ext:acme:widget', 'label' => 'Widget', 'category' => 'general']],
+                ]),
+                'status' => 'published',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // A version selection is provided, but ownership is still ambiguous
+        // — must not resolve just because a plausible-looking selection exists.
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:widget', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
+
+        $this->assertSame([], $result->resolvedDependencies);
+        $this->assertTrue($result->hasAmbiguous());
+    }
+
+    public function test_unresolved_ownership_is_independent_of_version_selection(): void
+    {
+        // A selection exists for a product that owns nothing the Theme uses.
+        $extension = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($extension, '1.0.0', ['ext:acme:gallery']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:nobody:owns_this', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
+
+        $this->assertSame(['ext:nobody:owns_this'], $result->unresolvedElementTypes);
+        $this->assertSame([], $result->resolvedDependencies);
+        // The unused (for this Theme) acme/gallery-pro selection is reported, not silently dropped.
+        $this->assertSame(['acme/gallery-pro'], $result->unusedSelections);
+    }
+
+    public function test_two_products_sharing_the_same_version_string_never_cross_attribute(): void
+    {
+        // Both products happen to have a "1.0.0" release — proves the
+        // selection lookup is always scoped to the correct product, never
+        // able to accidentally resolve a different product's release.
+        $acme = $this->releaseService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $this->publish($acme, '1.0.0', ['ext:acme:gallery']);
+        $foo = $this->releaseService->createExtension('foo', 'maps', 'Maps');
+        $this->publish($foo, '1.0.0', ['ext:foo:map']);
+
+        $result = $this->extractor->extractFromSnapshot([], [], $this->page([
+            ['type' => 'ext:acme:gallery', 'id' => 'a'],
+        ]), $this->selection('acme/gallery-pro', '1.0.0'));
+
+        $this->assertCount(1, $result->resolvedDependencies);
+        $this->assertSame('acme/gallery-pro', $result->resolvedDependencies[0]->productIdentity);
     }
 }
