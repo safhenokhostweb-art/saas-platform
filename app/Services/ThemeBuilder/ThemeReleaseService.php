@@ -4,6 +4,10 @@ namespace App\Services\ThemeBuilder;
 use App\Models\Theme;
 use App\Models\ThemeRelease;
 use App\Models\ThemeReleaseDependency;
+use App\Services\ThemeBuilder\Dependency\ExtensionElementOwnershipResolver;
+use App\Services\ThemeBuilder\Dependency\ExtensionVersionSelectionResolver;
+use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
+use App\Services\ThemeBuilder\Dependency\ThemeExtensionDependencyExtractor;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -58,6 +62,9 @@ class ThemeReleaseService
 
         $this->assertValidSemver($version);
         $this->assertValidCompatibility($compatibility);
+
+        $dependencies = $this->deriveDependenciesForRelease($theme, $dependencies);
+
         $this->assertValidDependencies($dependencies);
 
         $latest = $this->latestRelease($theme);
@@ -118,6 +125,138 @@ class ThemeReleaseService
 
             return $release->fresh();
         });
+    }
+
+    /**
+     * Phase 3G-B-5 — the ONE place Extension usage inside a Theme is turned
+     * into commercial dependency declarations, shared by both release() (so
+     * the sole writer always guarantees this regardless of caller) and
+     * ThemeCommercialQualityGate::publishIfCompliant() (so the gate
+     * evaluates the SAME final dependency set that will actually be
+     * persisted, rather than a stale pre-Extension candidate array — the
+     * gate runs BEFORE release() is ever called, so without this shared
+     * call the gate would silently never see Extension dependencies at all).
+     *
+     * Reads header_blocks/footer_blocks/pages/settings.extension_selections
+     * directly off the SAME live $theme instance release() goes on to freeze
+     * into the snapshot — nothing re-fetches Theme state in between, so
+     * there is no TOCTOU window between what this derives and what gets
+     * persisted.
+     *
+     * A Theme with zero ext:* usage returns $manualDependencies completely
+     * unchanged (including a literal null) — existing non-Extension release
+     * behavior is byte-identical to before this phase.
+     *
+     * Fails closed (InvalidArgumentException, before any DB write) on:
+     *   - any unresolved/ambiguous ext:* element ownership
+     *   - any used Extension product with no truthful version selection
+     *   - any invalid version selection (nonexistent release, or a release
+     *     whose manifest doesn't provide a used element)
+     *   - a manually-supplied "extension" dependency that conflicts with a
+     *     derived one (different version_constraint or is_required)
+     *
+     * A manually-supplied "extension" dependency identical to the derived
+     * one is deduplicated safely (kept once, never a duplicate-key error).
+     * Every other existing dependency type passes through completely
+     * untouched — this method only ever adds/merges "extension" entries.
+     *
+     * @param array<int, array{type: string, ref: string, version_constraint?: ?string, is_required: bool, metadata?: ?array}>|null $manualDependencies
+     * @return array<int, array{type: string, ref: string, version_constraint?: ?string, is_required: bool, metadata?: ?array}>|null
+     */
+    public function deriveDependenciesForRelease(Theme $theme, ?array $manualDependencies): ?array
+    {
+        $extractor = new ThemeExtensionDependencyExtractor(
+            new ThemeExtensionBlockTypeExtractor(),
+            new ExtensionElementOwnershipResolver(),
+            new ExtensionVersionSelectionResolver(),
+        );
+
+        $result = $extractor->extractFromSnapshot(
+            $theme->header_blocks ?? [],
+            $theme->footer_blocks ?? [],
+            $theme->pages ?? [],
+            $theme->settings['extension_selections'] ?? [],
+        );
+
+        if ($result->hasUnresolved()) {
+            throw new InvalidArgumentException(
+                'Theme uses Extension element type(s) with no owning Extension product: '
+                . implode(', ', $result->unresolvedElementTypes) . '.'
+            );
+        }
+
+        if ($result->hasAmbiguous()) {
+            $details = [];
+            foreach ($result->ambiguousElementTypes as $type => $candidates) {
+                $details[] = "{$type} (claimed by: " . implode(', ', $candidates) . ')';
+            }
+            throw new InvalidArgumentException(
+                'Theme uses Extension element type(s) with ambiguous ownership: ' . implode('; ', $details) . '.'
+            );
+        }
+
+        if ($result->hasUnresolvedVersionSelections()) {
+            throw new InvalidArgumentException(
+                'Theme uses Extension product(s) with no author-selected release version: '
+                . implode(', ', $result->unresolvedVersionSelections) . '.'
+            );
+        }
+
+        if ($result->hasInvalidVersionSelections()) {
+            $details = [];
+            foreach ($result->invalidVersionSelections as $product => $reason) {
+                $details[] = "{$product}: {$reason}";
+            }
+            throw new InvalidArgumentException(
+                'Theme has invalid Extension version selection(s): ' . implode('; ', $details) . '.'
+            );
+        }
+
+        if ($result->resolvedDependencies === []) {
+            return $manualDependencies;
+        }
+
+        $merged = $manualDependencies ?? [];
+
+        foreach ($result->resolvedDependencies as $proposal) {
+            $merged = $this->mergeExtensionDependency($merged, $proposal->toReleaseDependencyArray());
+        }
+
+        return $merged;
+    }
+
+    /**
+     * @param array<int, array{type: string, ref: string, version_constraint?: ?string, is_required: bool, metadata?: ?array}> $dependencies
+     * @param array{type: string, ref: string, version_constraint: ?string, is_required: bool, metadata: array} $derived
+     * @return array<int, array{type: string, ref: string, version_constraint?: ?string, is_required: bool, metadata?: ?array}>
+     */
+    private function mergeExtensionDependency(array $dependencies, array $derived): array
+    {
+        foreach ($dependencies as $existing) {
+            if (($existing['type'] ?? null) !== $derived['type'] || ($existing['ref'] ?? null) !== $derived['ref']) {
+                continue;
+            }
+
+            $sameConstraint = ($existing['version_constraint'] ?? null) === $derived['version_constraint'];
+            $sameRequired = (bool) ($existing['is_required'] ?? false) === $derived['is_required'];
+
+            if ($sameConstraint && $sameRequired) {
+                // Identical manual entry already declares this — keep the
+                // single existing one, never insert a duplicate.
+                return $dependencies;
+            }
+
+            throw new InvalidArgumentException(
+                "Manually supplied dependency for \"{$derived['ref']}\" conflicts with the Extension usage actually "
+                . "found in this Theme (manual: version_constraint="
+                . ($existing['version_constraint'] ?? 'null') . ', is_required=' . ($existing['is_required'] ? 'true' : 'false')
+                . '; required by usage: version_constraint=' . $derived['version_constraint'] . ', is_required=' . ($derived['is_required'] ? 'true' : 'false') . ').'
+            );
+        }
+
+        $dependencies[] = $derived;
+
+        return $dependencies;
     }
 
     /**

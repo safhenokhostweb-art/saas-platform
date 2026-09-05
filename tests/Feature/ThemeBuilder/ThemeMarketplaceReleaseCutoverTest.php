@@ -136,6 +136,38 @@ class ThemeMarketplaceReleaseCutoverTest extends TestCase
         $this->assertSame('medical-hero-intro', $data['theme']['dependencies'][0]['identifier']);
     }
 
+    public function test_extension_dependencies_derived_from_real_usage_come_through_the_same_generic_serialization(): void
+    {
+        // Phase 3G-B-5 — proves ThemeMarketplaceApiController needed ZERO
+        // extension-specific branching: an Extension dependency, derived
+        // automatically from real ext:* usage (never manually supplied),
+        // flows through the exact same formatDependencies() every other
+        // type already uses.
+        $extensionService = $this->app->make(\App\Services\ThemeBuilder\Extension\ExtensionReleaseService::class);
+        $extension = $extensionService->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+        $extensionService->release($extension, '2.3.0', 1, [
+            'elements' => [['type' => 'ext:acme:gallery', 'label' => 'Gallery', 'category' => 'media']],
+        ]);
+
+        $theme = $this->makeMarketplaceTheme([
+            'pages' => ['home' => ['title' => 'خانه', 'slug' => '', 'blocks' => [
+                ['type' => 'ext:acme:gallery', 'id' => 'g1'],
+            ]]],
+            'settings' => ['extension_selections' => ['acme/gallery-pro' => ['version' => '2.3.0']]],
+        ]);
+        $this->gate->publishIfCompliant($theme, $this->releaseService, '1.0.0', 'v1.');
+        $site = $this->makeCrmTestSite();
+
+        $data = $this->controller->show($this->requestForSite($site), $theme)->getData(true);
+
+        $this->assertCount(1, $data['theme']['dependencies']);
+        $this->assertSame('extension', $data['theme']['dependencies'][0]['type']);
+        $this->assertSame('acme/gallery-pro', $data['theme']['dependencies'][0]['identifier']);
+        $this->assertSame('=2.3.0', $data['theme']['dependencies'][0]['version_constraint']);
+        $this->assertTrue($data['theme']['dependencies'][0]['is_required']);
+        $this->assertSame('resolved', $data['theme']['dependency_status']);
+    }
+
     public function test_a_future_open_dependency_type_does_not_break_rendering(): void
     {
         $theme = $this->makeMarketplaceTheme();

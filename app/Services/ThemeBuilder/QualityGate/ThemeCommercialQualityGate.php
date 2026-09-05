@@ -14,6 +14,7 @@ use App\Services\ThemeBuilder\QualityGate\Checks\ResponsiveReadinessCheck;
 use App\Services\ThemeBuilder\QualityGate\Checks\StructuralIntegrityCheck;
 use App\Services\ThemeBuilder\ThemeReleaseService;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -125,6 +126,39 @@ class ThemeCommercialQualityGate
         ?array $dependencies = null,
         ?int $publishedBy = null
     ): \App\Models\ThemeRelease {
+        // Phase 3G-B-5 — must resolve Extension-derived dependencies BEFORE
+        // evaluating, not just inside release() below: this gate runs
+        // strictly before release() is ever called, so without this the
+        // gate would evaluate a stale candidate array that never contains
+        // the Theme's real Extension usage, and DependencyIntegrityCheck's
+        // extension branch could never actually block a publish. Reads the
+        // same live $theme state release() itself will freeze moments
+        // later — no separate extraction, no drift.
+        //
+        // A derivation failure is still turned into a normal persisted
+        // failing ThemeQualityReport (never a raw uncaught exception) —
+        // the gate's own contract is that every evaluation attempt leaves
+        // an audit trail and every failure surfaces as the same
+        // ThemeQualityGateFailedException, regardless of which stage
+        // detected the problem.
+        try {
+            $dependencies = $releaseService->deriveDependenciesForRelease($theme, $dependencies);
+        } catch (InvalidArgumentException $e) {
+            $report = ThemeQualityReport::create([
+                'theme_id' => $theme->id,
+                'version' => $version,
+                'status' => ThemeQualityReport::STATUS_FAILED,
+                'checks' => [ThemeQualityCheckResult::fail(
+                    'dependency_integrity',
+                    'dependency.extension_extraction_failed',
+                    $e->getMessage()
+                )->toArray()],
+                'evaluated_at' => now(),
+            ]);
+
+            throw new ThemeQualityGateFailedException($report);
+        }
+
         $report = $this->evaluate($theme, $version, $dependencies);
 
         if (!$report->isPassing()) {
