@@ -8,6 +8,7 @@ use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
 use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
 use App\Services\ThemeBuilder\Extension\ExtensionCanvasPaletteAdapter;
+use App\Services\ThemeBuilder\Extension\ExtensionThemeRuntimeAssetProjector;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
 use App\Services\ThemeBuilder\ThemeTemplateService;
 use App\Models\ThemeTemplate;
@@ -310,12 +311,17 @@ class ThemeCanvasController extends Controller
 
         try {
             $themeJson = json_encode([
-                'name'          => $theme->name,
-                'slug'          => $theme->slug,
-                'header_blocks' => $theme->header_blocks ?? [],
-                'footer_blocks' => $theme->footer_blocks ?? [],
-                'pages'         => $theme->pages ?? [],
-                'global_styles' => $theme->global_styles ?? [],
+                'name'             => $theme->name,
+                'slug'             => $theme->slug,
+                'header_blocks'    => $theme->header_blocks ?? [],
+                'footer_blocks'    => $theme->footer_blocks ?? [],
+                'pages'            => $theme->pages ?? [],
+                'global_styles'    => $theme->global_styles ?? [],
+                // Manifest-declared Extension CSS/JS, projected to absolute
+                // saas-platform URLs — see ExtensionThemeRuntimeAssetProjector's
+                // own doc comment for why this is an absolute URL, not a copy.
+                // Absent/empty for every Theme that selects no Extension.
+                'extension_assets' => ExtensionThemeRuntimeAssetProjector::project($theme),
             ], JSON_UNESCAPED_UNICODE);
 
             // upsert تمام ۴ کلید canvas theme در جدول settings سایت مشتری

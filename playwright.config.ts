@@ -3,18 +3,14 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Minimal, canonical Playwright harness for saas-platform.
  *
- * Chromium binary note: `npx playwright install chromium` could not reach
- * cdn.playwright.dev from this environment (network blocked). A Chromium
- * build (revision 1234, Chrome 141ish) was already cached locally at
- * %LOCALAPPDATA%\ms-playwright\chromium-1234 from an unrelated earlier
- * install (scripts/headless). We point Playwright directly at that cached
- * executable via `launchOptions.executablePath` below so tests can run
- * without a fresh download. If that cache ever gets cleared, re-run
- * `npx playwright install chromium` (needs network access) and remove the
- * PLAYWRIGHT_CHROME_PATH override.
+ * Uses Playwright's own standard, machine-portable browser resolution by
+ * default (`npx playwright install chromium`). No committed path may point
+ * at a specific developer's machine. If a machine genuinely needs a
+ * pre-existing Chrome/Chromium binary instead of Playwright's managed
+ * install, set PLAYWRIGHT_CHROME_PATH — its absence uses Playwright's
+ * standard browser, never a hardcoded fallback.
  */
-const CACHED_CHROME_PATH = process.env.PLAYWRIGHT_CHROME_PATH
-  || 'C:\\Users\\Farshad-IT\\AppData\\Local\\ms-playwright\\chromium-1234\\chrome-win64\\chrome.exe';
+const CACHED_CHROME_PATH = process.env.PLAYWRIGHT_CHROME_PATH || undefined;
 
 export default defineConfig({
   testDir: './tests/browser',
@@ -28,9 +24,7 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8000',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    launchOptions: {
-      executablePath: CACHED_CHROME_PATH,
-    },
+    launchOptions: CACHED_CHROME_PATH ? { executablePath: CACHED_CHROME_PATH } : {},
   },
   projects: [
     {

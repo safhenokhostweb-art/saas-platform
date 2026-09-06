@@ -33,6 +33,16 @@ class SeedE2ECanvasFixtures extends Command
 
     public function handle(ExtensionReleaseService $extService): int
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->error(
+                'e2e:seed-canvas-fixtures refuses to run outside local/testing environments — '
+                . 'it creates a real super-admin user with a hardcoded, publicly-known password. '
+                . 'Current environment: ' . app()->environment() . '.'
+            );
+
+            return self::FAILURE;
+        }
+
         $mobile = '09120000091';
 
         // withTrashed(): User uses SoftDeletes, so a prior run's soft-deleted
