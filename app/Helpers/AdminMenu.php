@@ -38,7 +38,7 @@ class AdminMenu
         'theme_templates'   => 'کتابخانه قالب‌ها',
         'theme_packs'       => 'پک‌های تم',
         'zip_import'        => 'ورود قالب از ZIP',
-        'theme_manager'     => 'مدیریت تم (Theme Engine)',
+        'theme_manager'     => 'پروفایل‌های رنگی پلتفرم',
         'app_releases'   => 'دانلود اپلیکیشن',
         'education'      => 'مرکز آموزش',
         'infrastructure'       => 'مدیریت زیرساخت',

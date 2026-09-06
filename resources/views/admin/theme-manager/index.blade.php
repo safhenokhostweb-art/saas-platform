@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'مدیریت تم | Enterprise Theme Engine')
+@section('title', 'پروفایل‌های رنگی پلتفرم')
 
 @push('head')
 <style>
@@ -33,7 +33,7 @@
     {{-- Header --}}
     <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
       <div>
-        <h1 class="text-2xl font-bold" style="color:var(--ui-text-primary);">مدیریت تم پلتفرم</h1>
+        <h1 class="text-2xl font-bold" style="color:var(--ui-text-primary);">پروفایل‌های رنگی پلتفرم</h1>
         <p class="mt-1 text-sm" style="color:var(--ui-text-muted);">تم فعال بر کل داشبورد، نوار کناری، هدر، دکمه‌ها، و کلاینت موبایل تأثیر می‌گذارد.</p>
       </div>
       <div class="flex items-center gap-3">

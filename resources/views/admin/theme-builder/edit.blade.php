@@ -1,10 +1,11 @@
 @extends('layouts.admin')
 
-@section('header', 'هدر، فوتر و استایل‌ها: ' . $theme->name)
+@section('header', 'ویرایش پیشرفته (JSON): ' . $theme->name)
 
 @section('content')
 <div class="flex flex-wrap gap-2 items-center mb-4">
     <a href="{{ route('admin.theme-builder.index') }}" class="btn btn-outline-secondary">← فهرست تم‌ها</a>
+    <a href="{{ route('admin.theme-builder.canvas', $theme) }}" class="btn btn-primary">ورود به قالب‌ساز</a>
     <a href="{{ route('admin.theme-builder.export', $theme) }}" class="btn btn-outline-secondary">خروجی JSON</a>
     <a href="{{ route('admin.theme-builder.clone-form', $theme) }}" class="btn btn-outline-secondary">کپی تم</a>
     @if($theme->isPublished())

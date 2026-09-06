@@ -59,8 +59,8 @@ class ThemeBuilderController extends Controller
         $theme = $data['site_id']
             ? $this->themeService->createForSite(Site::findOrFail($data['site_id']), $data)
             : $this->themeService->createTemplate($data);
-        return redirect()->route('admin.theme-builder.edit', $theme)
-            ->with('success', 'تم ایجاد شد. اکنون می‌توانید هدر، فوتر و استایل‌ها را ویرایش کنید.');
+        return redirect()->route('admin.theme-builder.canvas', $theme)
+            ->with('success', 'تم ایجاد شد. اکنون می‌توانید آن را در قالب‌ساز طراحی کنید.');
     }
 
     public function edit(Theme $theme_builder)
