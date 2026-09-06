@@ -18,12 +18,30 @@ namespace SaaSPlatform\ExtensionSdk;
  * `allowed_children` is carried as declarative metadata only, matching
  * ADR-043's status quo: customer-site does not enforce it today, so this
  * package must not pretend otherwise. `has_assets` is a plain boolean
- * capability flag (an extension has or doesn't have an asset to emit) —
- * never an asset URL, path, or executable collector.
+ * capability flag kept for backward compatibility, strictly validated for
+ * consistency with `assets` below — never an independent authority.
+ *
+ * Phase 3G-B-6A (ADR-048) — `assets` is the ONE declarative, JSON-safe,
+ * non-executable CSS/JS reference list a manifest may carry per element:
+ * `{css: string[], js: string[]}`, each entry a root-relative public path
+ * (starting with exactly one "/", no ".." segments, no scheme, ASCII
+ * letters/digits/"_-./" only, ending in the matching extension) — the exact
+ * value shape customer-site's own `App\Builder\Contracts\HasAssets::
+ * getAssets()` already returns and its Blade views already emit verbatim as
+ * `<link href>` / `<script src>` (see resources/views/themes/default/
+ * page.blade.php). Never a full URL (no scheme/host), never a filesystem
+ * path, never a PHP class/method reference (no `rendererClass` analog
+ * exists or is ever added here) — this package still never carries anything
+ * a consumer would need to EXECUTE to discover assets, only to link to.
  */
 final class ExtensionElementDefinition
 {
-    /** @param array<string, ExtensionControlDefinition> $controls keyed by control key */
+    private const ASSET_PATH_PATTERN = '#^/[A-Za-z0-9_\-./]+$#';
+
+    /**
+     * @param array<string, ExtensionControlDefinition> $controls keyed by control key
+     * @param array{css: string[], js: string[]} $assets
+     */
     private function __construct(
         public readonly string $type,
         public readonly string $label,
@@ -33,10 +51,14 @@ final class ExtensionElementDefinition
         public readonly bool $isContainer,
         public readonly ?array $allowedChildren,
         public readonly bool $hasAssets,
+        public readonly array $assets,
     ) {
     }
 
-    /** @param ExtensionControlDefinition[] $controls */
+    /**
+     * @param ExtensionControlDefinition[] $controls
+     * @param array{css?: string[], js?: string[]} $assets
+     */
     public static function make(
         string $type,
         string $label,
@@ -46,6 +68,7 @@ final class ExtensionElementDefinition
         bool $isContainer = false,
         ?array $allowedChildren = null,
         bool $hasAssets = false,
+        array $assets = [],
     ): self {
         $keyed = [];
         foreach ($controls as $control) {
@@ -66,7 +89,13 @@ final class ExtensionElementDefinition
             }
         }
 
-        return new self($type, $label, $category, $icon, $keyed, $isContainer, $allowedChildren, $hasAssets);
+        $normalizedAssets = self::assertValidAssets($type, $assets);
+
+        if ($hasAssets !== ($normalizedAssets['css'] !== [] || $normalizedAssets['js'] !== [])) {
+            throw ExtensionSdkException::hasAssetsInconsistentWithAssets($type);
+        }
+
+        return new self($type, $label, $category, $icon, $keyed, $isContainer, $allowedChildren, $hasAssets, $normalizedAssets);
     }
 
     public static function fromArray(array $data): self
@@ -84,6 +113,13 @@ final class ExtensionElementDefinition
             throw ExtensionSdkException::invalidAllowedChildrenShape((string) ($data['type'] ?? ''));
         }
 
+        // Absent entirely on a pre-3G-B-6A manifest row — defaults to empty,
+        // never a migration, never a required key (§5).
+        $assets = $data['assets'] ?? [];
+        if (!is_array($assets)) {
+            throw ExtensionSdkException::invalidAssetShape((string) ($data['type'] ?? ''));
+        }
+
         return self::make(
             type: (string) ($data['type'] ?? ''),
             label: (string) ($data['label'] ?? ''),
@@ -93,6 +129,7 @@ final class ExtensionElementDefinition
             isContainer: (bool) ($data['is_container'] ?? false),
             allowedChildren: $allowedChildren,
             hasAssets: (bool) ($data['has_assets'] ?? false),
+            assets: $assets,
         );
     }
 
@@ -107,7 +144,62 @@ final class ExtensionElementDefinition
             'is_container' => $this->isContainer,
             'allowed_children' => $this->allowedChildren,
             'has_assets' => $this->hasAssets,
+            'assets' => $this->assets,
         ];
+    }
+
+    /**
+     * @param array{css?: mixed, js?: mixed} $assets
+     * @return array{css: string[], js: string[]}
+     */
+    private static function assertValidAssets(string $type, array $assets): array
+    {
+        $extra = array_diff(array_keys($assets), ['css', 'js']);
+        if ($extra !== []) {
+            throw ExtensionSdkException::invalidAssetShape($type);
+        }
+
+        $normalized = [];
+        foreach (['css', 'js'] as $family) {
+            $list = $assets[$family] ?? [];
+            if (!is_array($list) || !array_is_list($list)) {
+                throw ExtensionSdkException::invalidAssetShape($type);
+            }
+
+            foreach ($list as $value) {
+                if (!is_string($value) || !self::isValidAssetPath($value, $family)) {
+                    throw ExtensionSdkException::invalidAssetReference($type, $family, is_string($value) ? $value : gettype($value));
+                }
+            }
+
+            $normalized[$family] = array_values($list);
+        }
+
+        return $normalized;
+    }
+
+    /** Root-relative public path only — see this class's own doc comment for the exact contract. */
+    private static function isValidAssetPath(string $path, string $expectedExtension): bool
+    {
+        if ($path === '' || $path[0] !== '/' || (strlen($path) > 1 && $path[1] === '/')) {
+            return false; // must have exactly one leading "/" — rejects "//host/..." protocol-relative and bare relative paths
+        }
+
+        if (!preg_match(self::ASSET_PATH_PATTERN, $path)) {
+            return false; // rejects any scheme ("javascript:", "data:", "https:"), quotes, markup, whitespace, backslashes
+        }
+
+        if (!str_ends_with($path, '.' . $expectedExtension)) {
+            return false;
+        }
+
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                return false; // rejects path traversal
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -109,4 +109,38 @@ final class ExtensionSdkException extends RuntimeException
     {
         return new self("Invalid manifest: {$reason}");
     }
+
+    public static function invalidAssetShape(string $elementType): self
+    {
+        return new self(
+            "Element \"{$elementType}\"'s \"assets\" must be an object with only \"css\" and \"js\" "
+            . 'keys, each a list of strings.'
+        );
+    }
+
+    public static function invalidAssetReference(string $elementType, string $family, string $value): self
+    {
+        return new self(
+            "Element \"{$elementType}\" declares an invalid {$family} asset reference \"{$value}\" — "
+            . 'must be a root-relative public path (starting with exactly one "/", no ".." segments, '
+            . 'no scheme, no query/fragment, ASCII letters/digits/"_-./" only) ending in the correct extension.'
+        );
+    }
+
+    public static function hasAssetsInconsistentWithAssets(string $elementType): self
+    {
+        return new self(
+            "Element \"{$elementType}\"'s \"has_assets\" flag is inconsistent with its \"assets\" — "
+            . 'has_assets=true requires at least one css/js entry, has_assets=false requires both to be empty.'
+        );
+    }
+
+    public static function assetPathNotNamespacedUnderRelease(string $elementType, string $path, string $requiredPrefix): self
+    {
+        return new self(
+            "Element \"{$elementType}\" declares asset \"{$path}\" which is not namespaced under "
+            . "\"{$requiredPrefix}\" — every asset path must live under this exact release's own "
+            . 'product/version prefix (ADR-048), so no two releases can ever declare the same physical path.'
+        );
+    }
 }

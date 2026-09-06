@@ -151,6 +151,67 @@ class ExtensionManifestTest extends TestCase
         }
     }
 
+    // ── asset path namespace (3G-B-6B, ADR-048) ──────────────────────────────
+
+    public function test_asset_path_namespaced_under_this_releases_own_product_and_version_is_accepted(): void
+    {
+        $element = ExtensionElementDefinition::make('ext:acme:gallery', 'Gallery', 'media', [], hasAssets: true, assets: [
+            'css' => ['/vendor/acme/gallery-pro/1.0.0/gallery.css'],
+        ]);
+
+        $manifest = ExtensionManifest::make($this->product(), '1.0.0', ExtensionSdkContract::V1, [$element]);
+
+        $this->assertSame(['/vendor/acme/gallery-pro/1.0.0/gallery.css'], $manifest->elements['ext:acme:gallery']->assets['css']);
+    }
+
+    public function test_asset_path_missing_the_package_segment_is_rejected(): void
+    {
+        $element = ExtensionElementDefinition::make('ext:acme:gallery', 'Gallery', 'media', [], hasAssets: true, assets: [
+            'css' => ['/vendor/acme/gallery.css'], // no /gallery-pro/1.0.0/ segment
+        ]);
+
+        $this->expectException(ExtensionSdkException::class);
+        ExtensionManifest::make($this->product(), '1.0.0', ExtensionSdkContract::V1, [$element]);
+    }
+
+    public function test_asset_path_under_a_different_products_package_segment_is_rejected(): void
+    {
+        $element = ExtensionElementDefinition::make('ext:acme:gallery', 'Gallery', 'media', [], hasAssets: true, assets: [
+            'css' => ['/vendor/acme/widgets-plus/1.0.0/gallery.css'], // different package
+        ]);
+
+        $this->expectException(ExtensionSdkException::class);
+        ExtensionManifest::make($this->product(), '1.0.0', ExtensionSdkContract::V1, [$element]);
+    }
+
+    public function test_asset_path_under_a_different_version_segment_is_rejected(): void
+    {
+        $element = ExtensionElementDefinition::make('ext:acme:gallery', 'Gallery', 'media', [], hasAssets: true, assets: [
+            'css' => ['/vendor/acme/gallery-pro/2.0.0/gallery.css'], // this manifest is 1.0.0
+        ]);
+
+        $this->expectException(ExtensionSdkException::class);
+        ExtensionManifest::make($this->product(), '1.0.0', ExtensionSdkContract::V1, [$element]);
+    }
+
+    public function test_two_different_versions_of_the_same_product_get_distinct_required_prefixes(): void
+    {
+        $elementV1 = ExtensionElementDefinition::make('ext:acme:gallery', 'Gallery', 'media', [], hasAssets: true, assets: [
+            'css' => ['/vendor/acme/gallery-pro/1.0.0/gallery.css'],
+        ]);
+        $manifestV1 = ExtensionManifest::make($this->product(), '1.0.0', ExtensionSdkContract::V1, [$elementV1]);
+
+        $elementV2 = ExtensionElementDefinition::make('ext:acme:gallery', 'Gallery', 'media', [], hasAssets: true, assets: [
+            'css' => ['/vendor/acme/gallery-pro/2.0.0/gallery.css'],
+        ]);
+        $manifestV2 = ExtensionManifest::make($this->product(), '2.0.0', ExtensionSdkContract::V1, [$elementV2]);
+
+        $this->assertNotSame(
+            $manifestV1->elements['ext:acme:gallery']->assets['css'][0],
+            $manifestV2->elements['ext:acme:gallery']->assets['css'][0]
+        );
+    }
+
     // ── controls: all 10 V1 types ────────────────────────────────────────────
 
     public function test_all_ten_v1_controls_are_accepted(): void
@@ -295,6 +356,7 @@ class ExtensionManifestTest extends TestCase
             isContainer: false,
             allowedChildren: null,
             hasAssets: true,
+            assets: ['css' => ['/vendor/acme/gallery-pro/1.0.0/gallery.css'], 'js' => ['/vendor/acme/gallery-pro/1.0.0/gallery.js']],
         );
 
         $manifest = ExtensionManifest::make($this->product(), '1.0.0', ExtensionSdkContract::V1, [$element]);
@@ -307,5 +369,9 @@ class ExtensionManifestTest extends TestCase
         $this->assertSame('1.0.0', $array['package_version']);
         $this->assertSame(1, $array['sdk_contract_version']);
         $this->assertCount(1, $array['elements']);
+        $this->assertSame(
+            ['css' => ['/vendor/acme/gallery-pro/1.0.0/gallery.css'], 'js' => ['/vendor/acme/gallery-pro/1.0.0/gallery.js']],
+            $array['elements'][0]['assets']
+        );
     }
 }

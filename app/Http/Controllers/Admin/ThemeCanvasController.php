@@ -6,6 +6,8 @@ use App\Models\Site;
 use App\Models\Theme;
 use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
+use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
+use App\Services\ThemeBuilder\Extension\ExtensionCanvasPaletteAdapter;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
 use App\Services\ThemeBuilder\ThemeTemplateService;
 use App\Models\ThemeTemplate;
@@ -32,8 +34,35 @@ class ThemeCanvasController extends Controller
         $catLabels  = BlockRegistry::categoryLabels();
         $catIcons   = BlockRegistry::categoryIcons();
 
+        // Phase 3G-B-6: merge the Theme's currently-selected Extension
+        // release manifests into the palette at request time only — never
+        // via BlockRegistry::registerHostType(), which is process-global and
+        // shared with customer-site (see ExtensionCanvasPaletteAdapter's own
+        // doc comment). Extension entries never override a canonical type:
+        // `+` keeps the left (canonical) operand's value on key collision.
+        //
+        // Closure (§5-§6): the INSERTION picker only ever offers ownership-
+        // canonical types (authorablePaletteFor), never the raw, unfiltered
+        // paletteFor() — a legacy/direct-DB ownership collision must not
+        // become newly selectable here, even though it stays fully
+        // resolvable for content already authored against it (see
+        // extContainerTypesFor() below, which intentionally still uses the
+        // unfiltered paletteFor() for rendering that historical content).
+        $extensionPalette = ExtensionCanvasPaletteAdapter::authorablePaletteFor($theme);
+        $registry = $registry + $extensionPalette;
+        foreach ($extensionPalette as $type => $def) {
+            $byCategory[$def['category']][$type] = $def;
+        }
+        $catLabels = $catLabels + [ExtensionCanvasPaletteAdapter::FALLBACK_CATEGORY => 'افزونه‌ها'];
+        $catIcons  = $catIcons + [ExtensionCanvasPaletteAdapter::FALLBACK_CATEGORY => '🧩'];
+
+        $extensionSelections = $theme->settings['extension_selections'] ?? [];
+        $extensionSelectionErrors = ExtensionCanvasPaletteAdapter::resolveSelections($extensionSelections)['errors'];
+        $availableExtensions = ExtensionCanvasPaletteAdapter::selectableProducts();
+
         return view('admin.theme-builder.canvas', compact(
-            'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons'
+            'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons',
+            'extensionSelections', 'extensionSelectionErrors', 'availableExtensions'
         ));
     }
 
@@ -42,6 +71,7 @@ class ThemeCanvasController extends Controller
         $data = $request->validate([
             'page_key' => 'required|string|max:100',
             'blocks'   => 'required|array',
+            'extension_selections' => 'nullable|array',
         ]);
 
         $pages = $theme->pages ?? $theme->getPageList();
@@ -51,8 +81,39 @@ class ThemeCanvasController extends Controller
             return response()->json(['error' => 'صفحه یافت نشد'], 404);
         }
 
+        // Phase 3G-B-6 (§12, §21): the client always sends the full current
+        // extension_selections map alongside the page being saved (never a
+        // partial patch), so merging it into settings never needs to guess
+        // at unrelated keys — only the `extension_selections` key is ever
+        // replaced, every other Theme.settings key is spread through as-is.
+        $selections = array_key_exists('extension_selections', $data)
+            ? $data['extension_selections']
+            : ($theme->settings['extension_selections'] ?? []);
+
+        // Closure (§11-§17): "historical" is INSTANCE-, not type-, scoped —
+        // the Theme's ENTIRE prior snapshot (header/footer/every page,
+        // captured BEFORE $pages[$key]['blocks'] is overwritten below) is
+        // read at the (id, type) level, so a NEW instance of a type that
+        // merely has *some* historical instance elsewhere is still
+        // ownership-gated (one historical ambiguous block must never
+        // blanket-authorize unlimited new ones of the same type).
+        $previousInstances = (new ThemeExtensionBlockTypeExtractor())->extractInstancesFromSnapshot(
+            $theme->header_blocks ?? [],
+            $theme->footer_blocks ?? [],
+            $pages
+        );
+
+        $validation = ExtensionCanvasPaletteAdapter::validateBlocksAgainstSelections($data['blocks'], $selections, $previousInstances);
+        if (!$validation['ok']) {
+            return response()->json(['error' => $validation['error']], 422);
+        }
+
         $pages[$key]['blocks'] = $data['blocks'];
-        $theme->update(['pages' => $pages]);
+
+        $settings = $theme->settings ?? [];
+        $settings['extension_selections'] = $selections;
+
+        $theme->update(['pages' => $pages, 'settings' => $settings]);
 
         return response()->json(['success' => true, 'message' => 'ذخیره شد.']);
     }
@@ -105,11 +166,13 @@ class ThemeCanvasController extends Controller
         }
 
         $blocks     = $page['blocks'] ?? [];
+        $this->renderer->setContext(['ext_container_types' => $this->extContainerTypesFor($theme)]);
         $html       = $this->renderer->renderBlocks($blocks);
         $css        = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
         $hideChrome = $request->boolean('screenshot');
+        $extAssets  = ExtensionCanvasPaletteAdapter::assetsUsedIn($blocks, $theme);
 
-        return view('admin.theme-builder.canvas-preview', compact('theme', 'page', 'html', 'css', 'pageKey', 'hideChrome'));
+        return view('admin.theme-builder.canvas-preview', compact('theme', 'page', 'html', 'css', 'pageKey', 'hideChrome', 'extAssets'));
     }
 
     public function previewAjax(Request $request, Theme $theme)
@@ -119,10 +182,31 @@ class ThemeCanvasController extends Controller
             'blocks'   => 'required|array',
         ]);
 
+        $this->renderer->setContext(['editor_mode' => true, 'ext_container_types' => $this->extContainerTypesFor($theme)]);
         $html = $this->renderer->renderBlocks($data['blocks']);
         $css  = $this->styleEngine->renderCssBlock($theme->global_styles ?? []);
 
         return response()->json(['html' => $html, 'css' => $css]);
+    }
+
+    /**
+     * Phase 3G-B-6 — the set of `ext:*` types this Theme's currently-selected
+     * Extension release manifests declare as containers, keyed by type =>
+     * true. Fed to BlockRenderer::setContext() so its container-detection
+     * (App\Services\ThemeBuilder\BlockRenderer::isStructuralContainer())
+     * can recognize Extension containers declaratively — never a second
+     * hardcoded list.
+     */
+    private function extContainerTypesFor(Theme $theme): array
+    {
+        $containerTypes = [];
+        foreach (ExtensionCanvasPaletteAdapter::paletteFor($theme) as $type => $def) {
+            if (!empty($def['is_container'])) {
+                $containerTypes[$type] = true;
+            }
+        }
+
+        return $containerTypes;
     }
 
     /**
@@ -140,7 +224,7 @@ class ThemeCanvasController extends Controller
         $globalStyles = $theme->global_styles ?? [];
         $css = $this->styleEngine->renderCssBlock($globalStyles, $theme->site_id);
 
-        $this->renderer->setContext(['editor_mode' => true]);
+        $this->renderer->setContext(['editor_mode' => true, 'ext_container_types' => $this->extContainerTypesFor($theme)]);
 
         $renderedBlocks = [];
         foreach ($blocks as $block) {
@@ -150,8 +234,10 @@ class ThemeCanvasController extends Controller
             }
         }
 
+        $extAssets = ExtensionCanvasPaletteAdapter::assetsUsedIn($blocks, $theme);
+
         return response()
-            ->view('admin.theme-builder.canvas-live-preview', compact('theme', 'css', 'blocks', 'renderedBlocks'))
+            ->view('admin.theme-builder.canvas-live-preview', compact('theme', 'css', 'blocks', 'renderedBlocks', 'extAssets'))
             ->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
@@ -174,7 +260,7 @@ class ThemeCanvasController extends Controller
             unset($blockData['data']);
         }
 
-        $this->renderer->setContext(['editor_mode' => true]);
+        $this->renderer->setContext(['editor_mode' => true, 'ext_container_types' => $this->extContainerTypesFor($theme)]);
         $html = $this->renderer->renderBlock($blockData);
 
         return response()->json(['html' => $html]);

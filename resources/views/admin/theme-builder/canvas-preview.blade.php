@@ -43,6 +43,9 @@
         .tb-bg-gray       { background: #f1f5f9; }
         {!! $css !!}
     </style>
+    @foreach(($extAssets['css'] ?? []) as $__extHref)
+    <link rel="stylesheet" href="{{ $__extHref }}">
+    @endforeach
 </head>
 <body>
 
@@ -75,6 +78,10 @@
             </div>
         @endif
     </div>
+
+    @foreach(($extAssets['js'] ?? []) as $__extSrc)
+    <script src="{{ $__extSrc }}" defer></script>
+    @endforeach
 
 </body>
 </html>

@@ -188,6 +188,9 @@ body.tb-drag-active .tb-drop-zone {
 
 {!! $css !!}
 </style>
+@foreach(($extAssets['css'] ?? []) as $__extHref)
+<link rel="stylesheet" href="{{ $__extHref }}">
+@endforeach
 </head>
 <body>
 
@@ -219,6 +222,10 @@ body.tb-drag-active .tb-drop-zone {
 @endforeach
 
 @endif
+
+@foreach(($extAssets['js'] ?? []) as $__extSrc)
+<script src="{{ $__extSrc }}" defer></script>
+@endforeach
 
 <script>
 (function () {

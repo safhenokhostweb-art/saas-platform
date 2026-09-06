@@ -58,8 +58,7 @@ class BlockRenderer
         $children = $block['children'] ?? $block['blocks'] ?? ($props['blocks'] ?? []);
 
         $inner = '';
-        $containerTypes = ['section', 'container', 'grid', 'columns', 'flex_container'];
-        if (in_array($type, $containerTypes, true) && !empty($children)) {
+        if ($this->isStructuralContainer($type) && !empty($children)) {
             $inner = $this->renderBlocks($children);
         }
         if ($type === 'tabs' && !empty($props['tabs'])) {
@@ -101,6 +100,22 @@ class BlockRenderer
             $block['responsive'] ?? [],
             $id
         );
+    }
+
+    /**
+     * True if `$type`'s children should be rendered as a plain nested block
+     * list (the `$inner` this class's canonical container types — section/
+     * container/grid/columns/flex_container — all pass through renderBlocks()
+     * for). A host extending this class (e.g. saas-platform's own
+     * BlockRenderer subclass, for its 3G-B-6 Extension elements) overrides
+     * this to also recognize its own host/extension container types,
+     * exactly the same override seam this class's docblock already
+     * documents for host-specific behavior — never by duplicating this
+     * method's canonical list, only by widening it.
+     */
+    protected function isStructuralContainer(string $type): bool
+    {
+        return in_array($type, ['section', 'container', 'grid', 'columns', 'flex_container'], true);
     }
 
     /**

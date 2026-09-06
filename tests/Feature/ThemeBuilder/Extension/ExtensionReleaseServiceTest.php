@@ -5,8 +5,10 @@ namespace Tests\Feature\ThemeBuilder\Extension;
 use App\Models\Extension;
 use App\Models\ExtensionRelease;
 use App\Models\Product;
+use App\Services\ThemeBuilder\Extension\ExtensionAssetMaterializer;
 use App\Services\ThemeBuilder\Extension\ExtensionReleaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use RuntimeException;
 use Tests\TestCase;
@@ -29,6 +31,20 @@ class ExtensionReleaseServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = $this->app->make(ExtensionReleaseService::class);
+    }
+
+    /**
+     * 3G-B-6B: release() now materializes real files under public_path() —
+     * unlike the DB, RefreshDatabase never resets that, so this suite's own
+     * fixture vendor namespace (acme — never a real product) is removed
+     * after every test to avoid permanently accumulating test artifacts in
+     * the real public/vendor/ directory.
+     */
+    protected function tearDown(): void
+    {
+        File::deleteDirectory(public_path('vendor/acme'));
+        File::deleteDirectory(ExtensionAssetMaterializer::stagingRoot());
+        parent::tearDown();
     }
 
     private function manifest(array $overrides = []): array
@@ -398,6 +414,81 @@ class ExtensionReleaseServiceTest extends TestCase
                 'controls' => ['layout' => ['control_type' => 'repeater']],
             ]],
         ]));
+    }
+
+    // ── declarative asset contract (3G-B-6A, ADR-048) ───────────────────────
+
+    public function test_release_with_valid_declarative_assets_succeeds(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro-' . uniqid(), 'Gallery Pro');
+        $prefix = "/vendor/acme/{$extension->package_slug}/1.0.0/";
+        $cssSource = tempnam(ExtensionAssetMaterializer::stagingRoot(), 'ext-asset-') . '.css';
+        $jsSource = tempnam(ExtensionAssetMaterializer::stagingRoot(), 'ext-asset-') . '.js';
+        file_put_contents($cssSource, 'body{}');
+        file_put_contents($jsSource, ';');
+
+        $release = $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'elements' => [[
+                'type' => 'ext:acme:gallery',
+                'label' => 'Gallery',
+                'category' => 'media',
+                'has_assets' => true,
+                'assets' => ['css' => ["{$prefix}gallery.css"], 'js' => ["{$prefix}gallery.js"]],
+            ]],
+        ]), null, [
+            "{$prefix}gallery.css" => $cssSource,
+            "{$prefix}gallery.js" => $jsSource,
+        ]);
+
+        // assertEquals, not assertSame: manifest key order is not guaranteed
+        // to survive MySQL's own JSON column round-trip (same convention as
+        // ExtensionCanvasPaletteAdapterTest's persisted-manifest assertions).
+        $this->assertEquals(
+            ['css' => ["{$prefix}gallery.css"], 'js' => ["{$prefix}gallery.js"]],
+            $release->manifest['elements'][0]['assets']
+        );
+        $this->assertFileExists(public_path(ltrim("{$prefix}gallery.css", '/')));
+        $this->assertSame('body{}', file_get_contents(public_path(ltrim("{$prefix}gallery.css", '/'))));
+    }
+
+    public function test_release_rejects_malicious_asset_reference(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'elements' => [[
+                'type' => 'ext:acme:gallery',
+                'label' => 'Gallery',
+                'category' => 'media',
+                'assets' => ['css' => ['javascript:alert(1).css']],
+            ]],
+        ]));
+    }
+
+    public function test_release_rejects_has_assets_inconsistent_with_assets(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->service->release($extension, '1.0.0', 1, $this->manifest([
+            'elements' => [[
+                'type' => 'ext:acme:gallery',
+                'label' => 'Gallery',
+                'category' => 'media',
+                'has_assets' => true,
+                'assets' => ['css' => [], 'js' => []],
+            ]],
+        ]));
+    }
+
+    public function test_release_with_no_assets_key_still_succeeds_unchanged(): void
+    {
+        $extension = $this->service->createExtension('acme', 'gallery-pro', 'Gallery Pro');
+
+        $release = $this->service->release($extension, '1.0.0', 1, $this->manifest());
+
+        $this->assertEquals(['css' => [], 'js' => []], $release->manifest['elements'][0]['assets']);
     }
 
     public function test_persisted_manifest_equals_canonical_serialized_shared_manifest(): void

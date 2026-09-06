@@ -97,13 +97,34 @@ class ExtensionReleaseService
      * publication closed, atomically, under a global lock (see
      * OWNERSHIP_LOCK_KEY doc comment) so two concurrent publications for
      * two different products can never both "win" a race on the same type.
+     *
+     * Phase 3G-B-6B (ADR-048) — $assetSources (declared asset path =>
+     * absolute local source file path) is materialized via
+     * ExtensionAssetMaterializer BEFORE the release row is ever created:
+     * every path the manifest declares under `assets.css`/`assets.js` must
+     * have a real, readable source file, or the whole publication is
+     * rejected — no release is ever published while declaring an asset
+     * that cannot be resolved. Materialization happens outside the
+     * ownership lock/transaction (it is a filesystem operation, not a DB
+     * one) but strictly before either, so a materialization failure never
+     * leaves a partially-published ExtensionRelease.
+     *
+     * Phase 3G-B-6C — the reverse direction is now also covered: if
+     * anything AFTER materialization fails (lock timeout, the ownership
+     * conflict re-check, a DB write failure), only the declared paths THIS
+     * call actually newly created (never an idempotent pre-existing match,
+     * never another release's file) are removed via
+     * ExtensionAssetMaterializer::cleanupNewlyMaterialized() — a cleanup
+     * failure is logged, never allowed to mask the original release
+     * failure that is always what propagates to the caller.
      */
     public function release(
         Extension $extension,
         string $version,
         int $sdkContractVersion,
         array $manifest,
-        ?int $publishedBy = null
+        ?int $publishedBy = null,
+        array $assetSources = []
     ): ExtensionRelease {
         $this->assertValidSemver($version);
         $this->assertValidSdkContractVersion($sdkContractVersion);
@@ -111,9 +132,12 @@ class ExtensionReleaseService
         $validatedManifest = $this->buildValidatedManifest($extension, $version, $sdkContractVersion, $manifest);
         $this->assertVersionNotAlreadyReleased($extension, $version);
 
-        $lock = Cache::lock(self::OWNERSHIP_LOCK_KEY, self::OWNERSHIP_LOCK_TTL_SECONDS);
+        $materializer = new ExtensionAssetMaterializer();
+        $newlyMaterialized = $materializer->materialize($validatedManifest, $assetSources);
 
         try {
+            $lock = Cache::lock(self::OWNERSHIP_LOCK_KEY, self::OWNERSHIP_LOCK_TTL_SECONDS);
+
             return $lock->block(
                 self::OWNERSHIP_LOCK_WAIT_SECONDS,
                 function () use ($extension, $version, $sdkContractVersion, $validatedManifest, $publishedBy) {
@@ -149,10 +173,14 @@ class ExtensionReleaseService
                 }
             );
         } catch (LockTimeoutException $e) {
+            $materializer->cleanupNewlyMaterialized($newlyMaterialized);
             throw new RuntimeException(
                 'Could not acquire the Extension release ownership lock in time — another Extension release is publishing concurrently. Please retry.',
                 previous: $e
             );
+        } catch (\Throwable $e) {
+            $materializer->cleanupNewlyMaterialized($newlyMaterialized);
+            throw $e;
         }
     }
 

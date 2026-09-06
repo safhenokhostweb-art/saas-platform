@@ -15,4 +15,23 @@ namespace App\Services\ThemeBuilder;
  */
 class BlockRenderer extends \SaaSPlatform\ThemeRuntime\BlockRenderer
 {
+    /**
+     * Phase 3G-B-6 — widens the canonical container-type list with whichever
+     * `ext:*` types the CURRENT request's selected Extension release
+     * manifests declare `is_container: true` for. The caller (ThemeCanvasController)
+     * populates this via `setContext(['ext_container_types' => [...]])`
+     * before rendering, computed from ExtensionCanvasPaletteAdapter — never
+     * hardcoded here, never a second container-capability system: this is
+     * the exact declarative `is_container` flag the Canvas authoring UI
+     * already reads from the same manifest.
+     */
+    protected function isStructuralContainer(string $type): bool
+    {
+        if (parent::isStructuralContainer($type)) {
+            return true;
+        }
+
+        $extContainerTypes = $this->context['ext_container_types'] ?? [];
+        return is_array($extContainerTypes) && !empty($extContainerTypes[$type]);
+    }
 }

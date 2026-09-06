@@ -102,6 +102,16 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                 قالب‌ها
             </button>
+            {{-- Phase 3G-B-6: Extensions button --}}
+            <button @click="openExtensionsModal()"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs font-medium transition relative"
+                title="افزونه‌های قالب">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1h2a2 2 0 012 2v2h-1a2 2 0 100 4h1v2a2 2 0 01-2 2h-2v-1a2 2 0 10-4 0v1H7a2 2 0 01-2-2v-2h1a2 2 0 100-4H5V7a2 2 0 012-2h2V4z"/></svg>
+                افزونه‌ها
+                <span x-show="Object.keys(extensionSelectionErrors).length > 0"
+                    class="absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-white"
+                    title="یک یا چند انتخاب افزونه نامعتبر است"></span>
+            </button>
             {{-- TB6: Save as Template button (only when block selected) --}}
             <button x-show="selectedBlock" @click="showSaveAsTemplate = true"
                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-medium transition"
@@ -234,7 +244,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
             {{-- Library Blocks (only when blocks tab active) --}}
             <div x-show="leftPanelTab==='blocks'" class="flex-1 overflow-y-auto">
-                @php $orderedCats = ['layout','content','dynamic','ecommerce','marketing','utility','module']; @endphp
+                @php $orderedCats = ['layout','content','dynamic','ecommerce','marketing','utility','module','extension']; @endphp
                 @foreach($orderedCats as $catKey)
                     @if(!isset($byCategory[$catKey])) @continue @endif
                     @php
@@ -249,6 +259,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             'marketing' => 'text-orange-600 bg-orange-50',
                             'utility'   => 'text-slate-600 bg-slate-100',
                             'module'    => 'text-indigo-700 bg-indigo-50',
+                            'extension' => 'text-teal-700 bg-teal-50',
                         ];
                         $badgeClass = $catColors[$catKey] ?? 'text-slate-600 bg-slate-100';
                     @endphp
@@ -817,7 +828,12 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     <div x-show="selectedTab === 'content'" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                         <template x-for="(schemaDef, propKey) in selectedSchema" :key="propKey">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1.5" x-text="schemaDef.label || propKey"></label>
+                                {{-- Phase 3G-B-6 (§30): every control below now carries a real
+                                     programmatic id<->label association (:id / :for keyed by
+                                     propKey) — fixed once, generically, for built-in AND
+                                     Extension controls alike, since both are rendered by this
+                                     exact same loop. --}}
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5" :for="'ctrl-' + propKey" x-text="schemaDef.label || propKey"></label>
 
                                 {{-- image (TB3-07) --}}
                                 <template x-if="schemaDef.type === 'image'">
@@ -828,6 +844,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         </div>
                                         <div class="flex gap-1.5">
                                             <input type="text"
+                                                :id="'ctrl-' + propKey"
                                                 :value="selectedBlock.props[propKey] ?? ''"
                                                 @input="updateProp(propKey, $event.target.value)"
                                                 placeholder="آدرس URL تصویر"
@@ -843,6 +860,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- string --}}
                                 <template x-if="schemaDef.type === 'string'">
                                     <input type="text"
+                                        :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
                                         @input="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
@@ -852,6 +870,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- number --}}
                                 <template x-if="schemaDef.type === 'number'">
                                     <input type="number"
+                                        :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? 0"
                                         @input="updateProp(propKey, Number($event.target.value))"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" :min="0">
@@ -861,7 +880,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <template x-if="schemaDef.type === 'boolean'">
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <div class="relative">
-                                            <input type="checkbox" :checked="selectedBlock.props[propKey] ?? false" @change="updateProp(propKey, $event.target.checked)" class="sr-only peer">
+                                            <input type="checkbox" :id="'ctrl-' + propKey" :checked="selectedBlock.props[propKey] ?? false" @change="updateProp(propKey, $event.target.checked)" class="sr-only peer">
                                             <div class="w-9 h-5 bg-slate-200 peer-checked:bg-indigo-500 rounded-full transition"></div>
                                             <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-full rtl:peer-checked:-translate-x-full transition-transform"></div>
                                         </div>
@@ -871,7 +890,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
                                 {{-- select --}}
                                 <template x-if="schemaDef.type === 'select'">
-                                    <select :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @change="updateProp(propKey, $event.target.value)"
+                                    <select :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @change="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition">
                                         <template x-for="(label, val) in schemaDef.options" :key="val">
                                             <option :value="val" :selected="(selectedBlock.props[propKey] ?? schemaDef.default) == val" x-text="label"></option>
@@ -882,14 +901,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- color --}}
                                 <template x-if="schemaDef.type === 'color'">
                                     <div class="flex items-center gap-2">
-                                        <input type="color" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
+                                        <input type="color" :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
                                         <input type="text" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000">
                                     </div>
                                 </template>
 
                                 {{-- textarea --}}
                                 <template x-if="schemaDef.type === 'textarea'">
-                                    <textarea :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input="updateProp(propKey, $event.target.value)" rows="3"
+                                    <textarea :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input="updateProp(propKey, $event.target.value)" rows="3"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-y"
                                         :placeholder="schemaDef.default ?? ''"></textarea>
                                 </template>
@@ -1197,6 +1216,65 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     </div>
 
     {{-- ═══════════════════════════════════════════════════════
+         EXTENSIONS MODAL (Phase 3G-B-6)
+    ═══════════════════════════════════════════════════════ --}}
+    <div x-show="showExtensionsModal" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
+        <div @click.outside="showExtensionsModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1">افزونه‌های این قالب</h3>
+            <p class="text-xs text-slate-500 mb-4">نسخه هر افزونه به‌صورت صریح انتخاب و در قالب ذخیره می‌شود — تغییر نسخه فعلی افزونه در فروشگاه، این انتخاب را تغییر نمی‌دهد.</p>
+
+            {{-- Currently selected --}}
+            <div class="space-y-2 mb-4 max-h-56 overflow-y-auto">
+                <template x-for="[identifier, sel] in selectedExtensionEntries()" :key="identifier">
+                    <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-slate-800 truncate" x-text="identifier"></div>
+                            <div class="text-[11px] text-slate-500">نسخه: <span x-text="sel.version" class="font-mono"></span></div>
+                            <div x-show="extensionSelectionErrors[identifier]" class="text-[11px] text-red-500 mt-0.5" x-text="extensionSelectionErrors[identifier]"></div>
+                        </div>
+                        <button @click="removeExtensionSelection(identifier)"
+                            class="shrink-0 w-6 h-6 flex items-center justify-center rounded text-red-400 hover:bg-red-50" title="حذف">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </template>
+                <div x-show="selectedExtensionEntries().length === 0" class="text-center py-4 text-slate-400 text-xs">
+                    هنوز افزونه‌ای به این قالب افزوده نشده است
+                </div>
+            </div>
+
+            {{-- Add new --}}
+            <div class="border-t border-slate-200 pt-4" x-show="AVAILABLE_EXTENSIONS.length > 0">
+                <label class="text-xs font-semibold text-slate-600 mb-1.5 block">افزودن افزونه</label>
+                <div class="flex gap-2">
+                    <select x-model="newExtensionProduct" @change="newExtensionVersion = releasesForProduct(newExtensionProduct)[0]?.version ?? ''"
+                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-300">
+                        <template x-for="p in AVAILABLE_EXTENSIONS" :key="p.identifier">
+                            <option :value="p.identifier" x-text="p.name + ' (' + p.identifier + ')'"></option>
+                        </template>
+                    </select>
+                    <select x-model="newExtensionVersion" class="w-28 text-sm px-2 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-300 font-mono">
+                        <template x-for="r in releasesForProduct(newExtensionProduct)" :key="r.version">
+                            <option :value="r.version" x-text="r.version"></option>
+                        </template>
+                    </select>
+                    <button @click="addExtensionSelection()" :disabled="!newExtensionProduct || !newExtensionVersion"
+                        class="px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition disabled:opacity-50">
+                        افزودن
+                    </button>
+                </div>
+            </div>
+            <div x-show="AVAILABLE_EXTENSIONS.length === 0" class="text-center py-3 text-slate-400 text-xs border-t border-slate-200 mt-2 pt-3">
+                هیچ افزونه قابل‌انتخابی (با نسخه منتشرشده) در کاتالوگ وجود ندارد.
+            </div>
+
+            <div class="flex gap-2 mt-5">
+                <button @click="showExtensionsModal = false" class="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
          ADD PAGE MODAL
     ═══════════════════════════════════════════════════════ --}}
     <div x-show="showAddPage" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -1230,16 +1308,49 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 @endsection
 
 @push('scripts')
+@php
+    /*
+     * Phase 3G-B-6 root-cause fix: Blade's @json(...) directive splits its
+     * argument on EVERY literal comma (Illuminate\View\Compilers\Concerns\
+     * CompilesJson::compileJson() does a plain explode(',', ...), with zero
+     * bracket/paren awareness, and silently DISCARDS anything past the 3rd
+     * comma-separated segment). An expression with more than two top-level
+     * -looking commas — like the mapWithKeys() closure below, which has one
+     * for `fn($d,$t)` plus one per array item — silently truncates into
+     * invalid PHP. This existing latent defect was never triggered before
+     * because no prior automated test rendered this view end-to-end; adding
+     * the `is_container` key here is what pushed BLOCK_SCHEMAS over the
+     * 3-segment limit. Fixed at the root by precomputing into a plain
+     * variable first, so @json() below only ever sees a bare variable name
+     * (zero commas) — not by re-golfing the expression to dodge the comma
+     * count.
+     */
+    $blockLabelsForJs = collect($registry)->mapWithKeys(fn($d, $t) => [$t => $d['name']]);
+    /*
+     * is_container is declarative capability metadata read straight off each
+     * merged $registry entry's own `is_container` key (present on canonical
+     * AND Extension entries alike — see ExtensionCanvasPaletteAdapter)
+     * rather than re-derived via the canonical-ONLY
+     * BlockRegistry::isContainerType() static method, which would silently
+     * report every `ext:*` container type as non-container.
+     */
+    $blockSchemasForJs = collect($registry)->mapWithKeys(fn($d, $t) => [$t => [
+        'schema' => $d['schema'] ?? [],
+        'defaultProps' => $d['defaultProps'] ?? [],
+        'is_container' => !empty($d['is_container']),
+    ]]);
+@endphp
 <script>
 const THEME_ID   = {{ $theme->id }};
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
-const BLOCK_LABELS  = @json(collect($registry)->mapWithKeys(fn($d,$t)=>[$t=>$d['name']]));
-{{-- Phase 3F-B: is_container is declarative capability metadata from the
-     canonical BlockRegistry::isContainerType(), not a client-side hardcoded
-     array — see App\Services\ThemeBuilder\BlockRegistry (this host's thin
-     subclass of the shared canonical authority). --}}
-const BLOCK_SCHEMAS = @json(collect($registry)->mapWithKeys(fn($d,$t)=>[$t=>['schema'=>$d['schema']??[],'defaultProps'=>$d['defaultProps']??[],'is_container'=>\App\Services\ThemeBuilder\BlockRegistry::isContainerType($t)]]));
+const BLOCK_LABELS  = @json($blockLabelsForJs);
+const BLOCK_SCHEMAS = @json($blockSchemasForJs);
 const INITIAL_PAGES = @json($pages);
+// Phase 3G-B-6: Extension authoring — commercial catalog data only (no
+// executable provider code ever reaches the browser here).
+const AVAILABLE_EXTENSIONS = @json($availableExtensions);
+const INITIAL_EXTENSION_SELECTIONS = @json($extensionSelections);
+const EXTENSION_SELECTION_ERRORS = @json($extensionSelectionErrors);
 
 function themeCanvas() {
     return {
@@ -1255,7 +1366,7 @@ function themeCanvas() {
         newPageTitle:   '',
         newPageSlug:    '',
         librarySearch:  '',
-        expandedCats:   { layout:true, content:true, module:true, dynamic:false, ecommerce:false, marketing:false, utility:false },
+        expandedCats:   { layout:true, content:true, module:true, dynamic:false, ecommerce:false, marketing:false, utility:false, extension:true },
         toast:          { show: false, msg: '', type: 'success', _timer: null },
         // TB3-02: iframe state
         device:         'desktop',
@@ -1292,6 +1403,13 @@ function themeCanvas() {
         showSaveAsTemplate: false,
         templateLibrary: { loading: false, templates: [], type: '', category: '', search: '' },
         saveTemplateForm: { name: '', type: 'section', category: 'hero', scope: 'block', saving: false },
+        // Phase 3G-B-6: Extension authoring — {product_identity: {version}},
+        // written verbatim into Theme.settings.extension_selections on save.
+        extensionSelections: JSON.parse(JSON.stringify(INITIAL_EXTENSION_SELECTIONS ?? {})),
+        extensionSelectionErrors: EXTENSION_SELECTION_ERRORS ?? {},
+        showExtensionsModal: false,
+        newExtensionProduct: '',
+        newExtensionVersion: '',
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
@@ -1709,6 +1827,54 @@ function themeCanvas() {
             });
         },
 
+        // ── Extensions (3G-B-6) ─────────────────────────────────────
+        // Theme.settings.extension_selections is the ONE truth for which
+        // Extension release version this Theme is authored against — never
+        // silently bound to an Extension's current_release_id. Every
+        // add/remove/change here is an explicit author action, persisted
+        // immediately via the same single Canvas save path used for blocks
+        // (server-validated in ExtensionCanvasPaletteAdapter::validateBlocksAgainstSelections()).
+        releasesForProduct(identifier) {
+            return AVAILABLE_EXTENSIONS.find(p => p.identifier === identifier)?.releases ?? [];
+        },
+        selectedExtensionEntries() {
+            return Object.entries(this.extensionSelections);
+        },
+        openExtensionsModal() {
+            this.newExtensionProduct = AVAILABLE_EXTENSIONS[0]?.identifier ?? '';
+            this.newExtensionVersion = this.releasesForProduct(this.newExtensionProduct)[0]?.version ?? '';
+            this.showExtensionsModal = true;
+        },
+        async addExtensionSelection() {
+            if (!this.newExtensionProduct || !this.newExtensionVersion) return;
+            this.extensionSelections[this.newExtensionProduct] = { version: this.newExtensionVersion };
+            await this.persistExtensionSelections();
+        },
+        async removeExtensionSelection(identifier) {
+            if (!confirm('این افزونه از قالب حذف شود؟ بلوک‌های موجود از این افزونه حفظ می‌شوند اما افزودن بلوک جدید از آن ممکن نخواهد بود.')) return;
+            const next = { ...this.extensionSelections };
+            delete next[identifier];
+            this.extensionSelections = next;
+            await this.persistExtensionSelections();
+        },
+        async persistExtensionSelections() {
+            this.saving = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks, extension_selections: this.extensionSelections })
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.showToast('انتخاب افزونه ذخیره شد ✓', 'success');
+                } else {
+                    this.showToast(d.error ?? 'خطا در ذخیره انتخاب افزونه', 'error');
+                }
+            } catch { this.showToast('خطای شبکه', 'error'); }
+            finally { this.saving = false; }
+        },
+
         // ── Save & Publish ────────────────────────────────────────
         async saveCurrentPage() {
             if (this.saving) return;
@@ -1717,7 +1883,7 @@ function themeCanvas() {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks })
+                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks, extension_selections: this.extensionSelections })
                 });
                 const d = await r.json();
                 if (d.success) { this.isDirty = false; this.showToast('ذخیره شد ✓', 'success'); }
@@ -1734,7 +1900,7 @@ function themeCanvas() {
                 await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks })
+                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks, extension_selections: this.extensionSelections })
                 });
                 this.isDirty = false;
             } catch (_) {}

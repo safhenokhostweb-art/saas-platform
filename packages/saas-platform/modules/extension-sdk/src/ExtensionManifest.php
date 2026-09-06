@@ -26,6 +26,18 @@ namespace SaaSPlatform\ExtensionSdk;
  * ExtensionBlockTypeIdentity — they solve different problems." Whoever
  * changes the block-name grammar in either place must keep this one in
  * parity: `/^[a-z0-9]+(_[a-z0-9]+)*$/`, 1-60 characters.
+ *
+ * Phase 3G-B-6B (ADR-048) — every element's declared `assets` path must be
+ * namespaced under THIS EXACT release's own `/vendor/{vendor}/{package}/
+ * {version}/` prefix (assertAssetsNamespacedUnderRelease() below). This is
+ * the correctness fix for a real collision B-6A's plain `/vendor/{vendor}/
+ * ...` shape left open: two different releases (of the same or a different
+ * product) could otherwise declare the identical literal path with
+ * different physical content, making historical asset resolution
+ * non-deterministic once a later release republished that path. Baking the
+ * release's own product identity AND version into every required path
+ * prefix makes that collision structurally impossible — never merely
+ * avoided by convention.
  */
 final class ExtensionManifest
 {
@@ -75,6 +87,7 @@ final class ExtensionManifest
             }
 
             self::assertJsonSafe($element->defaults(), $element->type);
+            self::assertAssetsNamespacedUnderRelease($element, $productIdentity, $packageVersion);
 
             $keyed[$element->type] = $element;
         }
@@ -165,6 +178,33 @@ final class ExtensionManifest
         }
 
         return $vendorSlug;
+    }
+
+    /**
+     * Phase 3G-B-6B (ADR-048) — see this class's own doc comment. Every
+     * declared css/js path must start with exactly `/vendor/{vendor}/
+     * {package}/{version}/`, built from this manifest's OWN productIdentity
+     * and packageVersion — never the element's own type-embedded vendor
+     * slug alone (that would still allow two different versions of the
+     * SAME product to collide). Generic path safety (charset/traversal/
+     * extension match) is already enforced by
+     * ExtensionElementDefinition::assertValidAssets() — this is layered on
+     * top, structural-namespace only.
+     */
+    private static function assertAssetsNamespacedUnderRelease(
+        ExtensionElementDefinition $element,
+        ExtensionProductIdentity $productIdentity,
+        string $packageVersion
+    ): void {
+        $requiredPrefix = '/vendor/' . $productIdentity->vendorSlug() . '/' . $productIdentity->packageSlug() . '/' . $packageVersion . '/';
+
+        foreach (['css', 'js'] as $family) {
+            foreach ($element->assets[$family] as $path) {
+                if (!str_starts_with($path, $requiredPrefix)) {
+                    throw ExtensionSdkException::assetPathNotNamespacedUnderRelease($element->type, $path, $requiredPrefix);
+                }
+            }
+        }
     }
 
     private static function assertJsonSafe(mixed $value, string $context): void

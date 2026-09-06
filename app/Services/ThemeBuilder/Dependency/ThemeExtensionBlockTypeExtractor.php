@@ -38,13 +38,8 @@ final class ThemeExtensionBlockTypeExtractor
     public function extractFromSnapshot(array $headerBlocks, array $footerBlocks, array $pages): array
     {
         $found = [];
-
-        $this->scanBlockList($headerBlocks, $found);
-        $this->scanBlockList($footerBlocks, $found);
-
-        foreach ($pages as $page) {
-            $blocks = is_array($page) ? ($page['blocks'] ?? []) : [];
-            $this->scanBlockList(is_array($blocks) ? $blocks : [], $found);
+        foreach ($this->collectInstances($headerBlocks, $footerBlocks, $pages) as $instance) {
+            $found[$instance['type']] = true;
         }
 
         $types = array_keys($found);
@@ -63,8 +58,44 @@ final class ThemeExtensionBlockTypeExtractor
         );
     }
 
-    /** @param array<string, true> $found mutated in place, keyed by ext:* type */
-    private function scanBlockList(array $blocks, array &$found): void
+    /**
+     * Phase 3G-B-6A (§13) — the same traversal as extractFromSnapshot(), but
+     * every `ext:*` OCCURRENCE (not deduplicated by type), each carrying its
+     * own authoring `id` (the existing stable per-block identity the Canvas
+     * client already assigns — `blk_<timestamp>_<random>` — and re-generates
+     * on any explicit clone/duplicate; see canvas.blade.php's `_regenIds()`).
+     * A block with no `id` at all (malformed/legacy data) reports `id: null`
+     * — callers must treat that as "cannot be proven historical," never as
+     * a wildcard match.
+     *
+     * @param array $headerBlocks flat block list
+     * @param array $footerBlocks flat block list
+     * @param array $pages associative, keyed by page key => ['blocks' => [...], ...]
+     * @return array<int, array{id: ?string, type: string}>
+     */
+    public function extractInstancesFromSnapshot(array $headerBlocks, array $footerBlocks, array $pages): array
+    {
+        return $this->collectInstances($headerBlocks, $footerBlocks, $pages);
+    }
+
+    /** @return array<int, array{id: ?string, type: string}> */
+    private function collectInstances(array $headerBlocks, array $footerBlocks, array $pages): array
+    {
+        $instances = [];
+
+        $this->scanBlockList($headerBlocks, $instances);
+        $this->scanBlockList($footerBlocks, $instances);
+
+        foreach ($pages as $page) {
+            $blocks = is_array($page) ? ($page['blocks'] ?? []) : [];
+            $this->scanBlockList(is_array($blocks) ? $blocks : [], $instances);
+        }
+
+        return $instances;
+    }
+
+    /** @param array<int, array{id: ?string, type: string}> $instances appended in place */
+    private function scanBlockList(array $blocks, array &$instances): void
     {
         foreach ($blocks as $block) {
             if (!is_array($block)) {
@@ -73,7 +104,8 @@ final class ThemeExtensionBlockTypeExtractor
 
             $type = $block['type'] ?? null;
             if (is_string($type) && str_starts_with($type, self::EXT_PREFIX)) {
-                $found[$type] = true;
+                $id = $block['id'] ?? null;
+                $instances[] = ['id' => is_string($id) && $id !== '' ? $id : null, 'type' => $type];
             }
 
             $props = $block['props'] ?? $block['data'] ?? [];
@@ -81,26 +113,26 @@ final class ThemeExtensionBlockTypeExtractor
 
             $children = $block['children'] ?? $block['blocks'] ?? ($props['blocks'] ?? []);
             if (is_array($children)) {
-                $this->scanBlockList($children, $found);
+                $this->scanBlockList($children, $instances);
             }
 
             if (is_array($props['tabs'] ?? null)) {
                 foreach ($props['tabs'] as $tab) {
                     $tabBlocks = is_array($tab) ? ($tab['blocks'] ?? []) : [];
-                    $this->scanBlockList(is_array($tabBlocks) ? $tabBlocks : [], $found);
+                    $this->scanBlockList(is_array($tabBlocks) ? $tabBlocks : [], $instances);
                 }
             }
 
             if (is_string($type) && $type === 'accordion' && is_array($props['items'] ?? null)) {
                 foreach ($props['items'] as $item) {
                     if (is_array($item) && is_array($item['blocks'] ?? null)) {
-                        $this->scanBlockList($item['blocks'], $found);
+                        $this->scanBlockList($item['blocks'], $instances);
                     }
                 }
             }
 
             if (is_array($props['slides'] ?? null)) {
-                $this->scanBlockList($props['slides'], $found);
+                $this->scanBlockList($props['slides'], $instances);
             }
         }
     }
