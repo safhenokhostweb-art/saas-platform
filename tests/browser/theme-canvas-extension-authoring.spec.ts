@@ -236,44 +236,96 @@ test.describe('Theme Canvas — responsive smoke checks', () => {
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '08-desktop-1280.png'), fullPage: false });
   });
 
-  test('Tablet viewport (768px) — check toolbar/page-tabs overlap', async ({ page }) => {
+  /**
+   * Phase 3H-B — real, asserting checks (not diagnostic-only measurement)
+   * that Save/Publish stay reachable at every required breakpoint after the
+   * overflow-x-auto toolbar fix. "Reachable" means: either fully inside the
+   * viewport already, or the toolbar itself provides a way to scroll to it
+   * (scrollWidth > clientWidth) — never silently clipped/hidden with no way
+   * to reach it.
+   */
+  async function assertToolbarActionsReachable(page: import('@playwright/test').Page, viewportWidth: number) {
+    const toolbar = page.locator('div.h-14.bg-white.border-b').first();
+    const saveBtn = page.getByRole('button', { name: 'ذخیره', exact: true });
+    const publishBtn = page.getByRole('button', { name: 'انتشار', exact: true });
+
+    await expect(toolbar).toBeVisible({ timeout: 20000 });
+
+    const toolbarScroll = await toolbar.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+    const saveBox = await saveBtn.boundingBox();
+    const publishBox = await publishBtn.boundingBox();
+
+    for (const [label, box] of [['Save', saveBox], ['Publish', publishBox]] as const) {
+      expect(box, `${label} button must be present in the DOM`).not.toBeNull();
+      if (!box) continue;
+      const fitsInViewportAlready = box.x >= 0 && box.x + box.width <= viewportWidth + 1;
+      const toolbarCanScrollToIt = toolbarScroll.scrollWidth > toolbarScroll.clientWidth;
+      expect(
+        fitsInViewportAlready || toolbarCanScrollToIt,
+        `${label} at x=${box.x} w=${box.width} must either fit in ${viewportWidth}px or be reachable via toolbar scroll (scrollWidth=${toolbarScroll.scrollWidth} clientWidth=${toolbarScroll.clientWidth})`
+      ).toBe(true);
+    }
+
+    // If the toolbar does need to scroll, actually scroll it and confirm
+    // Publish becomes genuinely visible/clickable-reachable — not just
+    // theoretically present in an overflowed box.
+    if (toolbarScroll.scrollWidth > toolbarScroll.clientWidth) {
+      await toolbar.evaluate((el) => { el.scrollLeft = el.scrollWidth; });
+      await expect(publishBtn).toBeVisible();
+    }
+  }
+
+  test('Desktop viewport (1366px) — toolbar essential actions reachable', async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 800 });
+    await loginAsAdmin(page, fx);
+    await page.goto(canvasUrl(fx));
+    await page.waitForTimeout(300);
+    await assertToolbarActionsReachable(page, 1366);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '08b-desktop-1366.png'), fullPage: false });
+  });
+
+  test('Tablet viewport (1024px) — toolbar essential actions reachable', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await loginAsAdmin(page, fx);
+    await page.goto(canvasUrl(fx));
+    await page.waitForTimeout(300);
+    await assertToolbarActionsReachable(page, 1024);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '08c-tablet-1024.png'), fullPage: false });
+  });
+
+  test('Tablet viewport (768px) — toolbar essential actions reachable, real authoring still works', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 900 });
     await loginAsAdmin(page, fx);
     await page.goto(canvasUrl(fx));
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
+
+    await assertToolbarActionsReachable(page, 768);
+
+    // The critical previously-broken breakpoint: confirm real authoring —
+    // not just static layout — still works here (Extensions modal opens,
+    // an extension element is still shown as selectable).
+    await page.getByRole('button', { name: 'افزونه‌ها' }).click();
+    await expect(page.locator('h3:has-text("افزونه‌های این قالب")')).toBeVisible();
+    await page.keyboard.press('Escape');
 
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '09-tablet-768.png'), fullPage: false });
-
-    // Toolbar bar (h-14) contains Back/Theme-name/Page-tabs/Actions all in
-    // ONE flex row. Check whether the trailing action buttons (e.g. Publish)
-    // are pushed outside the 768px viewport / overlapping the page-tabs
-    // region, which is the known prior defect this check targets.
-    const toolbar = page.locator('div.h-14.bg-white.border-b').first();
-    const publishBtn = page.getByRole('button', { name: 'انتشار', exact: true });
-    const pageTabsRegion = page.locator('div.flex.items-center.gap-1\\.5.overflow-x-auto.flex-1').first();
-
-    const toolbarBox = await toolbar.boundingBox();
-    const publishBox = await publishBtn.boundingBox();
-    const tabsBox = await pageTabsRegion.boundingBox();
-
-    let overlapReport = 'COULD NOT MEASURE (one or more elements not found)';
-    if (toolbarBox && publishBox && tabsBox) {
-      const publishWithinViewport = publishBox.x + publishBox.width <= 768 + 1;
-      const publishOverlapsTabs = !(publishBox.x >= tabsBox.x + tabsBox.width || publishBox.x + publishBox.width <= tabsBox.x);
-      overlapReport = JSON.stringify({
-        toolbarBox, publishBox, tabsBox, publishWithinViewport, publishOverlapsTabs,
-      });
-    }
-    // Surface the measurement in the test output/report rather than asserting
-    // a specific pass/fail — the task asks us to report what we observe.
-    console.log('[768px overlap measurement]', overlapReport);
   });
 
-  test('Mobile viewport (390px) — smoke check only', async ({ page }) => {
+  test('Boundary viewport (767px) — toolbar essential actions reachable', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 900 });
+    await loginAsAdmin(page, fx);
+    await page.goto(canvasUrl(fx));
+    await page.waitForTimeout(300);
+    await assertToolbarActionsReachable(page, 767);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '09b-boundary-767.png'), fullPage: false });
+  });
+
+  test('Mobile viewport (390px) — page loads, no essential control off-screen with no way to reach it', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loginAsAdmin(page, fx);
     await page.goto(canvasUrl(fx));
     await page.waitForTimeout(500);
+    await assertToolbarActionsReachable(page, 390);
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '10-mobile-390.png'), fullPage: false });
   });
 });

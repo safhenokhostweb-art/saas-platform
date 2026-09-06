@@ -7,6 +7,8 @@ use App\Models\Theme;
 use App\Models\ThemeRevision;
 use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
+use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
+use App\Services\ThemeBuilder\Extension\ExtensionCanvasPaletteAdapter;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
 use App\Services\ThemeBuilder\QualityGate\ThemeQualityGateFailedException;
 use App\Services\ThemeBuilder\ThemeBuilderService;
@@ -95,6 +97,39 @@ class ThemeBuilderController extends Controller
                 } else {
                     $data[$key] = $key === 'global_styles' ? $this->themeService->defaultGlobalStyles() : [];
                 }
+            }
+        }
+
+        // Phase 3H-B — this raw editor is the only authoring path for
+        // header_blocks/footer_blocks besides canonical Canvas, so it must
+        // reuse the exact same B-6 save-boundary ownership gate Canvas's
+        // own save() uses (ExtensionCanvasPaletteAdapter::
+        // validateBlocksAgainstSelections()) — never a second validator.
+        // global_styles/settings are not block trees and are deliberately
+        // left out of this gate.
+        if (array_key_exists('header_blocks', $data) || array_key_exists('footer_blocks', $data)) {
+            $headerToValidate = array_key_exists('header_blocks', $data) ? $data['header_blocks'] : ($theme->header_blocks ?? []);
+            $footerToValidate = array_key_exists('footer_blocks', $data) ? $data['footer_blocks'] : ($theme->footer_blocks ?? []);
+
+            $previousInstances = (new ThemeExtensionBlockTypeExtractor())->extractInstancesFromSnapshot(
+                $theme->header_blocks ?? [],
+                $theme->footer_blocks ?? [],
+                $theme->pages ?? $theme->getPageList()
+            );
+
+            $selections = $theme->settings['extension_selections'] ?? [];
+
+            $validation = ExtensionCanvasPaletteAdapter::validateBlocksAgainstSelections(
+                array_merge($headerToValidate, $footerToValidate),
+                $selections,
+                $previousInstances
+            );
+
+            if (!$validation['ok']) {
+                if ($request->wantsJson()) {
+                    return response()->json(['error' => $validation['error']], 422);
+                }
+                return back()->withInput()->with('error', $validation['error']);
             }
         }
 

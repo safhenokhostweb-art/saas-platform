@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('header', 'ویرایش تم: ' . $theme->name)
+@section('header', 'هدر، فوتر و استایل‌ها: ' . $theme->name)
 
 @section('content')
 <div class="flex flex-wrap gap-2 items-center mb-4">

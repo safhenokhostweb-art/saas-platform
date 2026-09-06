@@ -35,6 +35,7 @@ class ExtensionThemeRuntimeAssetProjectorTest extends TestCase
     protected function tearDown(): void
     {
         File::deleteDirectory(public_path('vendor/acme'));
+        File::deleteDirectory(public_path('vendor/other'));
         File::deleteDirectory(ExtensionAssetMaterializer::stagingRoot());
         parent::tearDown();
     }
@@ -134,5 +135,137 @@ class ExtensionThemeRuntimeAssetProjectorTest extends TestCase
         $theme = $this->theme();
 
         $this->assertSame([], ExtensionThemeRuntimeAssetProjector::project($theme));
+    }
+
+    /**
+     * Phase 3H-B — proves the projector reads the Theme's own pinned
+     * selection, never Extension::current_release_id: publishing a NEW
+     * release (which always repoints current_release_id, see
+     * ExtensionReleaseService::release()) must not change what a Theme
+     * still pinned to the older version projects.
+     */
+    public function test_pinned_selection_survives_a_newer_release_becoming_current(): void
+    {
+        $package = $this->uniquePackage('pin-suite');
+        $ext = $this->service->createExtension('acme', $package, 'Pin Suite');
+        $this->service->release($ext, '1.0.0', 1, [
+            'elements' => [[
+                'type' => 'ext:acme:widget',
+                'label' => 'Widget',
+                'category' => 'content',
+                'has_assets' => true,
+                'assets' => [
+                    'css' => ["/vendor/acme/{$package}/1.0.0/widget.css"],
+                    'js' => [],
+                ],
+            ]],
+        ], null, [
+            "/vendor/acme/{$package}/1.0.0/widget.css" => $this->tempAssetFile('body{}', 'css'),
+        ]);
+
+        $theme = $this->theme(['extension_selections' => ["acme/{$package}" => ['version' => '1.0.0']]]);
+
+        // Publish 2.0.0 — this always repoints Extension::current_release_id
+        // (ExtensionReleaseService::release() line ~168), but the Theme
+        // above never changed its own selection.
+        $this->service->release($ext, '2.0.0', 1, [
+            'elements' => [[
+                'type' => 'ext:acme:widget',
+                'label' => 'Widget',
+                'category' => 'content',
+                'has_assets' => true,
+                'assets' => [
+                    'css' => ["/vendor/acme/{$package}/2.0.0/widget.css"],
+                    'js' => [],
+                ],
+            ]],
+        ], null, [
+            "/vendor/acme/{$package}/2.0.0/widget.css" => $this->tempAssetFile('body{}', 'css'),
+        ]);
+
+        $this->assertSame('2.0.0', $ext->fresh()->currentRelease->version);
+
+        $expectedBase = rtrim((string) config('app.url'), '/');
+        $projected = ExtensionThemeRuntimeAssetProjector::project($theme->fresh());
+
+        $this->assertSame(
+            ["{$expectedBase}/vendor/acme/{$package}/1.0.0/widget.css"],
+            $projected['ext:acme:widget']['css']
+        );
+    }
+
+    /** Phase 3H-B — a deliberate selection change to the new version is what actually moves the projected URL. */
+    public function test_changing_the_selection_to_the_new_version_changes_the_projected_url(): void
+    {
+        $package = $this->uniquePackage('pin-suite2');
+        $ext = $this->service->createExtension('acme', $package, 'Pin Suite 2');
+        $this->service->release($ext, '1.0.0', 1, [
+            'elements' => [[
+                'type' => 'ext:acme:widget',
+                'label' => 'Widget',
+                'category' => 'content',
+                'has_assets' => true,
+                'assets' => ['css' => ["/vendor/acme/{$package}/1.0.0/widget.css"], 'js' => []],
+            ]],
+        ], null, ["/vendor/acme/{$package}/1.0.0/widget.css" => $this->tempAssetFile('body{}', 'css')]);
+        $this->service->release($ext, '2.0.0', 1, [
+            'elements' => [[
+                'type' => 'ext:acme:widget',
+                'label' => 'Widget',
+                'category' => 'content',
+                'has_assets' => true,
+                'assets' => ['css' => ["/vendor/acme/{$package}/2.0.0/widget.css"], 'js' => []],
+            ]],
+        ], null, ["/vendor/acme/{$package}/2.0.0/widget.css" => $this->tempAssetFile('body{}', 'css')]);
+
+        $theme = $this->theme(['extension_selections' => ["acme/{$package}" => ['version' => '2.0.0']]]);
+
+        $expectedBase = rtrim((string) config('app.url'), '/');
+        $projected = ExtensionThemeRuntimeAssetProjector::project($theme);
+
+        $this->assertSame(
+            ["{$expectedBase}/vendor/acme/{$package}/2.0.0/widget.css"],
+            $projected['ext:acme:widget']['css']
+        );
+    }
+
+    /** Phase 3H-B — two independently-selected products never mix assets. */
+    public function test_two_products_with_distinct_selections_remain_independent(): void
+    {
+        $packageA = $this->uniquePackage('indep-a');
+        $extA = $this->service->createExtension('acme', $packageA, 'Indep A');
+        $this->service->release($extA, '1.0.0', 1, [
+            'elements' => [[
+                'type' => 'ext:acme:widget_a',
+                'label' => 'A',
+                'category' => 'content',
+                'has_assets' => true,
+                'assets' => ['css' => ["/vendor/acme/{$packageA}/1.0.0/a.css"], 'js' => []],
+            ]],
+        ], null, ["/vendor/acme/{$packageA}/1.0.0/a.css" => $this->tempAssetFile('body{}', 'css')]);
+
+        $packageB = $this->uniquePackage('indep-b');
+        $extB = $this->service->createExtension('other', $packageB, 'Indep B');
+        $this->service->release($extB, '1.0.0', 1, [
+            'elements' => [[
+                'type' => 'ext:other:widget_b',
+                'label' => 'B',
+                'category' => 'content',
+                'has_assets' => true,
+                'assets' => ['css' => ["/vendor/other/{$packageB}/1.0.0/b.css"], 'js' => []],
+            ]],
+        ], null, ["/vendor/other/{$packageB}/1.0.0/b.css" => $this->tempAssetFile('body{}', 'css')]);
+
+        $theme = $this->theme(['extension_selections' => [
+            "acme/{$packageA}" => ['version' => '1.0.0'],
+            "other/{$packageB}" => ['version' => '1.0.0'],
+        ]]);
+
+        $projected = ExtensionThemeRuntimeAssetProjector::project($theme);
+        $expectedBase = rtrim((string) config('app.url'), '/');
+
+        $this->assertSame(["{$expectedBase}/vendor/acme/{$packageA}/1.0.0/a.css"], $projected['ext:acme:widget_a']['css']);
+        $this->assertSame(["{$expectedBase}/vendor/other/{$packageB}/1.0.0/b.css"], $projected['ext:other:widget_b']['css']);
+        $this->assertCount(2, $projected);
     }
 }

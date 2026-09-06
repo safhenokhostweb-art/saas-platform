@@ -110,7 +110,7 @@
                             title="اگر صفحات قالب در سایت مشتری نمایش نمی‌یابد، از این دکمه استفاده کنید">
                             🔄 همگام‌سازی صفحات
                         </button>
-                        <a href="{{ route('admin.theme-builder.edit', $theme) }}" class="text-indigo-600 hover:underline text-xs">ویرایش</a>
+                        <a href="{{ route('admin.theme-builder.edit', $theme) }}" class="text-indigo-600 hover:underline text-xs" title="ویرایش خام JSON هدر، فوتر و استایل‌های سراسری">هدر، فوتر و استایل‌ها</a>
                         <a href="{{ route('admin.theme-builder.export', $theme) }}" class="text-indigo-600 hover:underline text-xs">JSON</a>
                         <a href="{{ route('admin.theme-builder.clone-form', $theme) }}" class="text-indigo-600 hover:underline text-xs">کپی</a>
                         <form action="{{ route('admin.theme-builder.destroy', $theme) }}" method="post" class="inline" onsubmit="return confirm('حذف این تم؟');">

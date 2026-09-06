@@ -24,7 +24,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     {{-- ═══════════════════════════════════════════════════════
          TOOLBAR
     ═══════════════════════════════════════════════════════ --}}
-    <div class="h-14 bg-white border-b border-slate-200 flex items-center px-4 gap-3 shrink-0 shadow-sm z-30">
+    {{-- Phase 3H-B: overflow-x-auto on the toolbar itself is the fix for the
+         ~768px defect — page tabs already shrink via flex-1 min-w-0, but
+         once (back+name)+the shrink-0 actions group alone exceeds the
+         viewport, this lets the WHOLE toolbar scroll horizontally (Save/
+         Publish reachable via scroll) instead of silently overflowing
+         past the edge. Native scrollbar is left visible so the overflow is
+         discoverable, unlike the page-tabs' own always-scrollable strip. --}}
+    <div class="h-14 bg-white border-b border-slate-200 flex items-center px-4 gap-3 shrink-0 shadow-sm z-30 overflow-x-auto">
 
         {{-- Back --}}
         <a href="{{ route('admin.theme-builder.index') }}"
@@ -47,22 +54,32 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
         {{-- Page Tabs --}}
         <div class="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0" style="scrollbar-width:none;">
             <template x-for="(page, key) in pages" :key="key">
-                <button
-                    @click="switchPage(key)"
+                {{-- Phase 3H-B: delete-page control was a plain hover-only
+                     <span> nested inside this switch-page <button> (invalid
+                     HTML — buttons can't nest — and unreachable by keyboard).
+                     Split into two sibling native <button>s inside a
+                     non-interactive wrapper so delete gets real keyboard
+                     semantics (Tab-focusable, Enter/Space via the browser)
+                     without changing switchPage()'s click target or
+                     deletePage()'s existing confirm/logic. --}}
+                <div
                     :class="currentPage === key
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap flex items-center gap-1.5 group relative"
+                    class="rounded-lg text-xs font-medium transition whitespace-nowrap flex items-center group relative"
                 >
-                    <span x-text="page.title"></span>
-                    <span
+                    <button type="button" @click="switchPage(key)" class="px-3 py-1.5">
+                        <span x-text="page.title"></span>
+                    </button>
+                    <button type="button"
                         x-show="key !== 'home'"
-                        @click.stop="deletePage(key)"
-                        :class="currentPage === key ? 'text-indigo-200 hover:text-white' : 'text-slate-400 hover:text-red-500'"
-                        class="text-xs leading-none transition hidden group-hover:inline"
+                        @click="deletePage(key)"
+                        :class="currentPage === key ? 'text-indigo-200 hover:text-white focus-visible:text-white' : 'text-slate-400 hover:text-red-500 focus-visible:text-red-500'"
+                        class="text-xs leading-none transition opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pl-0.5 pr-2.5 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-400 rounded"
+                        :aria-label="'حذف صفحه ' + page.title"
                         title="حذف صفحه"
-                    >×</span>
-                </button>
+                    >×</button>
+                </div>
             </template>
             <button
                 @click="showAddPage = true"
