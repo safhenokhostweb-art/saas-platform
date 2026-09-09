@@ -637,6 +637,7 @@ Route::prefix('admin')
             // ─── Canvas Builder ──────────────────────────────────────────────
             Route::get('theme-builder/{theme}/canvas', [ThemeCanvasController::class, 'show'])->name('theme-builder.canvas');
             Route::put('theme-builder/{theme}/canvas/save', [ThemeCanvasController::class, 'save'])->name('theme-builder.canvas.save');
+            Route::patch('theme-builder/{theme}/canvas/global-styles', [ThemeCanvasController::class, 'saveGlobalStyles'])->name('theme-builder.canvas.global-styles');
             Route::post('theme-builder/{theme}/canvas/preview-ajax', [ThemeCanvasController::class, 'previewAjax'])->name('theme-builder.canvas.preview-ajax');
             Route::post('theme-builder/{theme}/canvas/pages', [ThemeCanvasController::class, 'addPage'])->name('theme-builder.canvas.pages.add');
             Route::delete('theme-builder/{theme}/canvas/pages/{key}', [ThemeCanvasController::class, 'removePage'])->name('theme-builder.canvas.pages.remove')->where('key', '[a-z0-9_-]+');

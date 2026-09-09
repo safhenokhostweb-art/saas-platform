@@ -10,6 +10,7 @@ use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
 use App\Services\ThemeBuilder\Extension\ExtensionCanvasPaletteAdapter;
 use App\Services\ThemeBuilder\Extension\ExtensionThemeRuntimeAssetProjector;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
+use App\Services\ThemeBuilder\ThemeBuilderService;
 use App\Services\ThemeBuilder\ThemeTemplateService;
 use App\Models\ThemeTemplate;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class ThemeCanvasController extends Controller
         protected BlockRenderer $renderer,
         protected GlobalStyleEngine $styleEngine,
         protected ThemeTemplateService $templateSvc,
+        protected ThemeBuilderService $themeBuilder,
     ) {}
 
     public function show(Theme $theme)
@@ -60,11 +62,104 @@ class ThemeCanvasController extends Controller
         $extensionSelections = $theme->settings['extension_selections'] ?? [];
         $extensionSelectionErrors = ExtensionCanvasPaletteAdapter::resolveSelections($extensionSelections)['errors'];
         $availableExtensions = ExtensionCanvasPaletteAdapter::selectableProducts();
+        $visualGlobalStyles = $this->visualGlobalStyles($theme);
 
         return view('admin.theme-builder.canvas', compact(
             'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons',
-            'extensionSelections', 'extensionSelectionErrors', 'availableExtensions'
+            'extensionSelections', 'extensionSelectionErrors', 'availableExtensions',
+            'visualGlobalStyles'
         ));
+    }
+
+    /**
+     * Persist the explicit Theme-level visual Global Styles operation.
+     * This deliberately does not pass through the page/header/footer target
+     * contract because global styles are not a block tree.
+     */
+    public function saveGlobalStyles(Request $request, Theme $theme): JsonResponse
+    {
+        $data = $request->validate([
+            'styles' => 'required|array:primary_color,secondary_color,accent_color,background_color,text_color,surface_color,muted_text_color,font_family,type_scale,spacing_unit,spacing_scale,radius_sm,radius_md,radius_lg,shadow_sm,shadow_md,shadow_lg|min:1',
+            'styles.primary_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.secondary_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.accent_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.background_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.text_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.surface_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.muted_text_color' => ['sometimes', 'required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'styles.font_family' => ['sometimes', 'required', 'string', 'max:200', 'not_regex:/[{};<>]/u'],
+            'styles.type_scale' => ['sometimes', 'required', 'numeric', 'between:0.5,3'],
+            'styles.spacing_unit' => ['sometimes', 'required', 'regex:/^(?:0|\d+(?:\.\d+)?(?:px|rem|em))$/'],
+            'styles.spacing_scale' => ['sometimes', 'required', 'numeric', 'between:0.5,3'],
+            'styles.radius_sm' => ['sometimes', 'required', 'regex:/^(?:0|\d+(?:\.\d+)?(?:px|rem|em))$/'],
+            'styles.radius_md' => ['sometimes', 'required', 'regex:/^(?:0|\d+(?:\.\d+)?(?:px|rem|em))$/'],
+            'styles.radius_lg' => ['sometimes', 'required', 'regex:/^(?:0|\d+(?:\.\d+)?(?:px|rem|em))$/'],
+            'styles.shadow_sm' => ['sometimes', 'required', 'string', 'max:200', 'not_regex:/[{};<>]/u'],
+            'styles.shadow_md' => ['sometimes', 'required', 'string', 'max:200', 'not_regex:/[{};<>]/u'],
+            'styles.shadow_lg' => ['sometimes', 'required', 'string', 'max:200', 'not_regex:/[{};<>]/u'],
+        ]);
+
+        $paths = [
+            'primary_color' => 'primary_color',
+            'secondary_color' => 'secondary_color',
+            'accent_color' => 'accent_color',
+            'background_color' => 'background_color',
+            'text_color' => 'text_color',
+            'surface_color' => 'colors.surface',
+            'muted_text_color' => 'colors.text_muted',
+            'font_family' => 'font_family',
+            'type_scale' => 'typography.scale',
+            'spacing_unit' => 'spacing.unit',
+            'spacing_scale' => 'spacing.scale',
+            'radius_sm' => 'border_radius.sm',
+            'radius_md' => 'border_radius.md',
+            'radius_lg' => 'border_radius.lg',
+            'shadow_sm' => 'shadows.sm',
+            'shadow_md' => 'shadows.md',
+            'shadow_lg' => 'shadows.lg',
+        ];
+
+        $patch = [];
+        foreach ($data['styles'] as $field => $value) {
+            $patch[$paths[$field]] = $value;
+        }
+
+        $theme = $this->themeBuilder->patchGlobalStyles($theme, $patch);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'استایل‌های سراسری ذخیره شد.',
+            'global_styles' => $theme->global_styles,
+            'styles' => $this->visualGlobalStyles($theme),
+            'css_variables' => $this->styleEngine->getCssVariables($theme->global_styles ?? [], $theme->site_id),
+        ]);
+    }
+
+    /** @return array<string, string|float> */
+    private function visualGlobalStyles(Theme $theme): array
+    {
+        $globalStyles = $theme->global_styles ?? [];
+        $vars = $this->styleEngine->getCssVariables($globalStyles, $theme->site_id);
+
+        return [
+            'primary_color' => $vars['--tb-primary'],
+            'secondary_color' => $vars['--tb-secondary'],
+            'accent_color' => $vars['--tb-accent'],
+            'background_color' => $vars['--tb-background'],
+            'text_color' => $vars['--tb-text'],
+            'surface_color' => $vars['--tb-surface'],
+            'muted_text_color' => $vars['--tb-text-muted'],
+            'font_family' => $vars['--tb-font-body'],
+            'type_scale' => (float) $vars['--tb-scale'],
+            'spacing_unit' => $vars['--tb-spacing-unit'] ?? '0.25rem',
+            'spacing_scale' => (float) ($vars['--tb-spacing-scale'] ?? 1),
+            'radius_sm' => $vars['--tb-radius-sm'],
+            'radius_md' => $vars['--tb-radius-md'],
+            'radius_lg' => $vars['--tb-radius-lg'],
+            'shadow_sm' => $vars['--tb-shadow-sm'],
+            'shadow_md' => $vars['--tb-shadow-md'],
+            'shadow_lg' => $vars['--tb-shadow-lg'],
+        ];
     }
 
     public function save(Request $request, Theme $theme)

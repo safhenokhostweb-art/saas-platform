@@ -18,7 +18,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     x-init="init()"
     x-cloak
     class="flex flex-col h-screen bg-slate-100 overflow-hidden select-none"
-    @keydown.ctrl.s.window.prevent="saveCurrentPage()"
+    @keydown.ctrl.s.window.prevent="saveActiveContext()"
 >
 
     {{-- ═══════════════════════════════════════════════════════
@@ -67,6 +67,10 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 :class="activeTarget === 'footer' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                 class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 aria-label="ویرایش فوتر">فوتر</button>
+            <button type="button" @click="openGlobalStylesPanel()"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap bg-violet-50 text-violet-700 hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                aria-label="استایل‌های سراسری"
+                data-testid="global-styles-entry">استایل‌های سراسری</button>
             <div class="h-6 w-px bg-slate-200 shrink-0"></div>
             <template x-for="(page, key) in pages" :key="key">
                 {{-- Phase 3H-B: delete-page control was a plain hover-only
@@ -1311,6 +1315,117 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     {{-- ═══════════════════════════════════════════════════════
          ADD PAGE MODAL
     ═══════════════════════════════════════════════════════ --}}
+    {{-- Global Styles is an explicit Theme-level panel, separate from the
+         page/header/footer block-tree target state. --}}
+    <div x-show="showGlobalStylesPanel" x-transition.opacity
+        @keydown.escape.window="closeGlobalStylesPanel()"
+        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-5"
+        role="dialog" aria-modal="true" aria-labelledby="global-styles-title"
+        data-testid="global-styles-dialog">
+        <div @click.outside="closeGlobalStylesPanel()"
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden"
+            style="max-height:calc(100vh - 24px);">
+            <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-slate-200 shrink-0">
+                <div>
+                    <h2 id="global-styles-title" class="text-base font-bold text-slate-800">استایل‌های سراسری</h2>
+                    <p class="text-xs text-slate-500 mt-1">رنگ، تایپوگرافی و مقیاس‌های مشترک قالب</p>
+                </div>
+                <button type="button" @click="closeGlobalStylesPanel()"
+                    class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                    aria-label="بستن پنل استایل‌های سراسری">×</button>
+            </div>
+
+            <div class="min-h-0 overflow-y-auto p-5 space-y-6" style="min-height:0;" data-testid="global-styles-controls">
+                <fieldset>
+                    <legend class="text-sm font-bold text-slate-700 mb-3">رنگ‌ها</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        @foreach([
+                            'primary_color' => 'رنگ اصلی',
+                            'secondary_color' => 'رنگ ثانویه',
+                            'accent_color' => 'رنگ تأکیدی',
+                            'background_color' => 'پس‌زمینه',
+                            'surface_color' => 'سطح کارت‌ها',
+                            'text_color' => 'متن اصلی',
+                            'muted_text_color' => 'متن کم‌رنگ',
+                        ] as $field => $label)
+                            <label class="block text-xs font-semibold text-slate-600" for="global-style-{{ str_replace('_', '-', $field) }}">
+                                {{ $label }}
+                                <span class="mt-1.5 flex gap-2" dir="ltr">
+                                    <input type="color" x-model="globalStyleDraft.{{ $field }}" @input="globalStylesDirty = true"
+                                        class="w-11 h-10 rounded-lg border border-slate-200 bg-white p-1 cursor-pointer shrink-0"
+                                        aria-label="انتخاب {{ $label }}">
+                                    <input id="global-style-{{ str_replace('_', '-', $field) }}" type="text"
+                                        x-model="globalStyleDraft.{{ $field }}" @input="globalStylesDirty = true"
+                                        pattern="#[0-9a-fA-F]{6}" maxlength="7"
+                                        class="min-w-0 flex-1 text-sm font-mono px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-300">
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <fieldset class="border-t border-slate-100 pt-5">
+                    <legend class="text-sm font-bold text-slate-700 mb-3">تایپوگرافی</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="block text-xs font-semibold text-slate-600" for="global-style-font-family">خانواده فونت
+                            <input id="global-style-font-family" type="text" x-model="globalStyleDraft.font_family" @input="globalStylesDirty = true"
+                                class="mt-1.5 w-full text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-300" dir="ltr">
+                        </label>
+                        <label class="block text-xs font-semibold text-slate-600" for="global-style-type-scale">مقیاس تایپوگرافی
+                            <input id="global-style-type-scale" type="number" min="0.5" max="3" step="0.05" x-model.number="globalStyleDraft.type_scale" @input="globalStylesDirty = true"
+                                class="mt-1.5 w-full text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-300" dir="ltr">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="border-t border-slate-100 pt-5">
+                    <legend class="text-sm font-bold text-slate-700 mb-3">فاصله و گوشه‌ها</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        @foreach([
+                            'spacing_unit' => ['واحد فاصله', 'text', null],
+                            'spacing_scale' => ['مقیاس فاصله', 'number', '0.05'],
+                            'radius_sm' => ['گوشه کوچک', 'text', null],
+                            'radius_md' => ['گوشه متوسط', 'text', null],
+                            'radius_lg' => ['گوشه بزرگ', 'text', null],
+                        ] as $field => [$label, $type, $step])
+                            <label class="block text-xs font-semibold text-slate-600" for="global-style-{{ str_replace('_', '-', $field) }}">{{ $label }}
+                                <input id="global-style-{{ str_replace('_', '-', $field) }}" type="{{ $type }}"
+                                    @if($step) min="0.5" max="3" step="{{ $step }}" @endif
+                                    x-model{{ $type === 'number' ? '.number' : '' }}="globalStyleDraft.{{ $field }}" @input="globalStylesDirty = true"
+                                    class="mt-1.5 w-full text-sm font-mono px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-300" dir="ltr">
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <fieldset class="border-t border-slate-100 pt-5">
+                    <legend class="text-sm font-bold text-slate-700 mb-3">سایه‌ها</legend>
+                    <div class="space-y-3">
+                        @foreach(['shadow_sm' => 'سایه کوچک', 'shadow_md' => 'سایه متوسط', 'shadow_lg' => 'سایه بزرگ'] as $field => $label)
+                            <label class="block text-xs font-semibold text-slate-600" for="global-style-{{ str_replace('_', '-', $field) }}">{{ $label }}
+                                <input id="global-style-{{ str_replace('_', '-', $field) }}" type="text" x-model="globalStyleDraft.{{ $field }}" @input="globalStylesDirty = true"
+                                    class="mt-1.5 w-full text-sm font-mono px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-300" dir="ltr">
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
+                <span x-show="globalStylesDirty" class="text-xs font-medium text-amber-600" data-testid="global-styles-dirty">تغییرات ذخیره نشده</span>
+                <div class="flex gap-2 mr-auto">
+                    <button type="button" @click="closeGlobalStylesPanel()"
+                        class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">بستن</button>
+                    <button type="button" @click="saveGlobalStyles()" :disabled="globalStylesSaving || !globalStylesDirty"
+                        class="px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                        data-testid="global-styles-save">
+                        <span x-text="globalStylesSaving ? 'در حال ذخیره…' : 'ذخیره استایل‌ها'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div x-show="showAddPage" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div @click.outside="showAddPage = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <h3 class="text-base font-bold text-slate-800 mb-4">افزودن صفحه جدید</h3>
@@ -1382,6 +1497,7 @@ const BLOCK_SCHEMAS = @json($blockSchemasForJs);
 const INITIAL_PAGES = @json($pages);
 const INITIAL_HEADER_BLOCKS = @json($theme->header_blocks ?? []);
 const INITIAL_FOOTER_BLOCKS = @json($theme->footer_blocks ?? []);
+const INITIAL_GLOBAL_STYLES = @json($visualGlobalStyles);
 // Phase 3G-B-6: Extension authoring — commercial catalog data only (no
 // executable provider code ever reaches the browser here).
 const AVAILABLE_EXTENSIONS = @json($availableExtensions);
@@ -1396,6 +1512,11 @@ function themeCanvas() {
         activeTarget:   'page',
         headerBlocks:   JSON.parse(JSON.stringify(INITIAL_HEADER_BLOCKS)),
         footerBlocks:   JSON.parse(JSON.stringify(INITIAL_FOOTER_BLOCKS)),
+        globalStyles:   JSON.parse(JSON.stringify(INITIAL_GLOBAL_STYLES)),
+        globalStyleDraft: JSON.parse(JSON.stringify(INITIAL_GLOBAL_STYLES)),
+        showGlobalStylesPanel: false,
+        globalStylesDirty: false,
+        globalStylesSaving: false,
         selectedTab:    'content',
         isDirty:        false,
         saving:         false,
@@ -1846,6 +1967,51 @@ function themeCanvas() {
 
         async switchPage(key) {
             return this.switchTarget('page', key);
+        },
+
+        // Theme-level state, independent from block-tree target switching.
+        // Manual save keeps browser synchronization deterministic.
+        openGlobalStylesPanel() {
+            this.globalStyleDraft = JSON.parse(JSON.stringify(this.globalStyles));
+            this.globalStylesDirty = false;
+            this.showGlobalStylesPanel = true;
+            this.$nextTick(() => document.getElementById('global-style-primary-color')?.focus());
+        },
+
+        closeGlobalStylesPanel() {
+            this.showGlobalStylesPanel = false;
+        },
+
+        async saveGlobalStyles() {
+            if (this.globalStylesSaving || !this.globalStylesDirty) return false;
+            this.globalStylesSaving = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/global-styles`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: JSON.stringify({ styles: this.globalStyleDraft })
+                });
+                const d = await r.json();
+                if (!r.ok || !d.success) {
+                    this.showToast(d.message ?? d.error ?? 'خطا در ذخیره استایل‌ها', 'error');
+                    return false;
+                }
+                this.globalStyles = JSON.parse(JSON.stringify(d.styles));
+                this.globalStyleDraft = JSON.parse(JSON.stringify(d.styles));
+                this.globalStylesDirty = false;
+                this.showToast('استایل‌های سراسری ذخیره شد ✓', 'success');
+                this.reloadIframe();
+                return true;
+            } catch (_) {
+                this.showToast('خطای شبکه', 'error');
+                return false;
+            } finally {
+                this.globalStylesSaving = false;
+            }
+        },
+
+        saveActiveContext() {
+            return this.showGlobalStylesPanel ? this.saveGlobalStyles() : this.saveCurrentPage();
         },
 
         deletePage(key) {

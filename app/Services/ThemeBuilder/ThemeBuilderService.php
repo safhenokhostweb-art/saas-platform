@@ -5,6 +5,7 @@ use App\Models\Theme;
 use App\Models\ThemeRevision;
 use App\Models\Site;
 use App\Services\ThemeBuilder\QualityGate\ThemeCommercialQualityGate;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class ThemeBuilderService
@@ -53,6 +54,28 @@ class ThemeBuilderService
             'global_styles' => $data['global_styles'] ?? $theme->global_styles,
             'settings' => $data['settings'] ?? $theme->settings,
         ], fn ($v) => $v !== null));
+        return $theme->fresh();
+    }
+
+    /**
+     * Patch only Canvas-owned global-style paths into the existing payload.
+     *
+     * Theme.global_styles remains the single persistence contract. Starting
+     * from its current value is intentional: raw-editor, plugin, legacy and
+     * future keys that the visual panel does not own must survive unchanged.
+     *
+     * @param array<string, mixed> $managedPatch Dot-notated managed paths.
+     */
+    public function patchGlobalStyles(Theme $theme, array $managedPatch): Theme
+    {
+        $globalStyles = $theme->global_styles ?? [];
+
+        foreach ($managedPatch as $path => $value) {
+            Arr::set($globalStyles, $path, $value);
+        }
+
+        $theme->update(['global_styles' => $globalStyles]);
+
         return $theme->fresh();
     }
 
