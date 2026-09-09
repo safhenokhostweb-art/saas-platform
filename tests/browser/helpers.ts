@@ -15,6 +15,11 @@ export interface E2EFixtures {
   release_version: string;
   theme_id: number;
   theme_slug: string;
+  theme_release_id: number;
+  theme_release_version: string;
+  theme_quality_report_id: number;
+  theme_quality_report_status: string;
+  theme_commercially_eligible: boolean;
   asset_theme_id: number;
   asset_theme_slug: string;
   asset_extension_identifier: string;

@@ -31,7 +31,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
          Publish reachable via scroll) instead of silently overflowing
          past the edge. Native scrollbar is left visible so the overflow is
          discoverable, unlike the page-tabs' own always-scrollable strip. --}}
-    <div class="h-14 bg-white border-b border-slate-200 flex items-center px-4 gap-3 shrink-0 shadow-sm z-30 overflow-x-auto">
+    <div class="min-h-14 bg-white border-b border-slate-200 flex flex-wrap items-center px-4 py-1 gap-3 shrink-0 shadow-sm z-30 overflow-x-visible">
 
         {{-- Back --}}
         <a href="{{ route('admin.theme-builder.index') }}"
@@ -52,7 +52,22 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
         <div class="h-6 w-px bg-slate-200 shrink-0"></div>
 
         {{-- Page Tabs --}}
-        <div class="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0" style="scrollbar-width:none;">
+        <div class="flex items-center gap-1.5 overflow-x-auto flex-none" style="scrollbar-width:none;">
+            {{-- Header/footer are existing Theme block arrays, selected through
+                 this one Canvas state path rather than represented as pages. --}}
+            <button type="button" @click="switchTarget('page')" :disabled="switchingTarget"
+                :class="activeTarget === 'page' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-label="صفحات">صفحات</button>
+            <button type="button" @click="switchTarget('header')" :disabled="switchingTarget"
+                :class="activeTarget === 'header' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-label="ویرایش هدر">هدر</button>
+            <button type="button" @click="switchTarget('footer')" :disabled="switchingTarget"
+                :class="activeTarget === 'footer' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-label="ویرایش فوتر">فوتر</button>
+            <div class="h-6 w-px bg-slate-200 shrink-0"></div>
             <template x-for="(page, key) in pages" :key="key">
                 {{-- Phase 3H-B: delete-page control was a plain hover-only
                      <span> nested inside this switch-page <button> (invalid
@@ -63,12 +78,12 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                      without changing switchPage()'s click target or
                      deletePage()'s existing confirm/logic. --}}
                 <div
-                    :class="currentPage === key
+                    :class="activeTarget === 'page' && currentPage === key
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                     class="rounded-lg text-xs font-medium transition whitespace-nowrap flex items-center group relative"
                 >
-                    <button type="button" @click="switchPage(key)" class="px-3 py-1.5">
+                    <button type="button" @click="switchPage(key)" class="px-3 py-1.5" :aria-current="activeTarget === 'page' && currentPage === key ? 'page' : null">
                         <span x-text="page.title"></span>
                     </button>
                     <button type="button"
@@ -204,6 +219,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     <template x-for="node in flattenTree()" :key="node.block.id + node.depth">
                         <div
                             @click="selectBlock(node.path)"
+                            :data-block-type="node.block.type"
                             :style="{ paddingRight: (node.depth * 14 + 8) + 'px' }"
                             :class="isSelectedPath(node.path)
                                 ? 'bg-indigo-50 text-indigo-700 font-medium border-r-2 border-indigo-500'
@@ -307,6 +323,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 @foreach($catBlocks as $blockType => $blockDef)
                                     <button
                                         draggable="true"
+                                        data-block-type="{{ $blockType }}"
                                         @click="addBlock('{{ $blockType }}')"
                                         @dragstart="startDragBlock($event, '{{ $blockType }}')"
                                         @dragend="endDragBlock()"
@@ -574,7 +591,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         <input type="number" min="8" max="200"
                                             :value="getCascadedValue('fontSize', '')"
                                             @input="updateStyle('fontSize', $event.target.value === '' ? '' : Number($event.target.value))"
-                                            :placeholder="activeBreakpoint !== 'desktop' ? (selectedBlock.style?.fontSize ?? 'ارث') : 'پیش‌فرض'"
+                                            :placeholder="activeBreakpoint !== 'desktop' ? (selectedBlock?.style?.fontSize ?? 'ارث') : 'پیش‌فرض'"
                                             class="w-full text-xs px-2 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
                                             :class="hasResponsiveOverride('fontSize', activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
                                     </div>
@@ -618,10 +635,10 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div>
                                     <p class="text-[10px] text-slate-500 mb-1">تراز متن</p>
                                     <div class="flex gap-1">
-                                        <template x-for="[val, icon, tip] in [['right','←','راست'],['center','↔','وسط'],['left','→','چپ'],['justify','≡','کامل']]" :key="val">
-                                            <button @click="updateStyle('textAlign', getCascadedValue('textAlign') === val ? '' : val)"
-                                                :class="getCascadedValue('textAlign') === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'"
-                                                class="flex-1 py-1.5 rounded-lg border text-xs font-mono transition" :title="tip" x-text="icon"></button>
+                                        <template x-for="alignment in [['right','←','راست'],['center','↔','وسط'],['left','→','چپ'],['justify','≡','کامل']]" :key="alignment[0]">
+                                            <button @click="updateStyle('textAlign', getCascadedValue('textAlign') === alignment[0] ? '' : alignment[0])"
+                                                :class="getCascadedValue('textAlign') === alignment[0] ? 'bg-indigo-100 border-indigo-400 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'"
+                                                class="flex-1 py-1.5 rounded-lg border text-xs font-mono transition" :title="alignment[2]" x-text="alignment[1]"></button>
                                         </template>
                                     </div>
                                 </div>
@@ -661,17 +678,17 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- Gradient toggle (desktop only) --}}
                                 <div x-show="activeBreakpoint === 'desktop'">
                                     <label class="flex items-center gap-2 cursor-pointer mb-2">
-                                        <input type="checkbox" :checked="!!(selectedBlock.style?.bgGradientFrom)" @change="toggleGradient($event.target.checked)" class="rounded text-indigo-600">
+                                        <input type="checkbox" :checked="!!(selectedBlock?.style?.bgGradientFrom)" @change="toggleGradient($event.target.checked)" class="rounded text-indigo-600">
                                         <span class="text-[10px] text-slate-600 font-semibold">گرادیانت پس‌زمینه</span>
                                     </label>
-                                    <div x-show="selectedBlock.style?.bgGradientFrom || selectedBlock.style?.bgGradientTo" class="space-y-2">
+                                    <div x-show="selectedBlock?.style?.bgGradientFrom || selectedBlock?.style?.bgGradientTo" class="space-y-2">
                                         <div class="flex items-center gap-1.5">
-                                            <input type="color" :value="selectedBlock.style?.bgGradientFrom || '#4f46e5'" @change="updateStyle('bgGradientFrom', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                            <input type="color" :value="selectedBlock?.style?.bgGradientFrom || '#4f46e5'" @change="updateStyle('bgGradientFrom', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
                                             <span class="text-[10px] text-slate-500">شروع</span>
-                                            <input type="color" :value="selectedBlock.style?.bgGradientTo || '#7c3aed'" @change="updateStyle('bgGradientTo', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
+                                            <input type="color" :value="selectedBlock?.style?.bgGradientTo || '#7c3aed'" @change="updateStyle('bgGradientTo', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
                                             <span class="text-[10px] text-slate-500">پایان</span>
                                         </div>
-                                        <select :value="selectedBlock.style?.bgGradientDir || 'to bottom'" @change="updateStyle('bgGradientDir', $event.target.value)" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <select :value="selectedBlock?.style?.bgGradientDir || 'to bottom'" @change="updateStyle('bgGradientDir', $event.target.value)" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                             <option value="to bottom">بالا به پایین</option>
                                             <option value="to top">پایین به بالا</option>
                                             <option value="to right">راست به چپ</option>
@@ -694,14 +711,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <div x-show="styleSection.spacing" class="px-4 pb-4 space-y-3">
                                 <p class="text-[10px] text-slate-500">پدینگ (px)</p>
                                 <div class="grid grid-cols-4 gap-1.5">
-                                    <template x-for="[key, label] in [['paddingTop','بالا'],['paddingRight','راست'],['paddingBottom','پایین'],['paddingLeft','چپ']]" :key="key">
+                                    <template x-for="padding in [['paddingTop','بالا'],['paddingRight','راست'],['paddingBottom','پایین'],['paddingLeft','چپ']]" :key="padding[0]">
                                         <div>
-                                            <p class="text-[9px] text-slate-400 text-center mb-1" x-text="label"></p>
+                                            <p class="text-[9px] text-slate-400 text-center mb-1" x-text="padding[1]"></p>
                                             <input type="number" min="0" max="300"
-                                                :value="getCascadedValue(key, '')"
-                                                @input="updateStyle(key, $event.target.value === '' ? '' : Number($event.target.value))"
+                                                :value="getCascadedValue(padding[0], '')"
+                                                @input="updateStyle(padding[0], $event.target.value === '' ? '' : Number($event.target.value))"
                                                 class="w-full text-xs text-center px-1 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
-                                                :class="hasResponsiveOverride(key, activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
+                                                :class="hasResponsiveOverride(padding[0], activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
                                         </div>
                                     </template>
                                 </div>
@@ -765,10 +782,10 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             </button>
                             <div x-show="styleSection.shadow" class="px-4 pb-4">
                                 <div class="flex flex-wrap gap-1.5 mb-3">
-                                    <template x-for="[val, label] in [['none','هیچ'],['sm','کوچک'],['md','متوسط'],['lg','بزرگ'],['xl','خیلی بزرگ']]" :key="val">
-                                        <button @click="updateStyle('shadow', getCascadedValue('shadow') === val ? '' : val)"
-                                            :class="getCascadedValue('shadow') === val ? 'bg-indigo-100 border-indigo-400 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
-                                            class="px-2.5 py-1 rounded-lg border text-xs transition" x-text="label"></button>
+                                    <template x-for="shadowOption in [['none','هیچ'],['sm','کوچک'],['md','متوسط'],['lg','بزرگ'],['xl','خیلی بزرگ']]" :key="shadowOption[0]">
+                                        <button @click="updateStyle('shadow', getCascadedValue('shadow') === shadowOption[0] ? '' : shadowOption[0])"
+                                            :class="getCascadedValue('shadow') === shadowOption[0] ? 'bg-indigo-100 border-indigo-400 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
+                                            class="px-2.5 py-1 rounded-lg border text-xs transition" x-text="shadowOption[1]"></button>
                                     </template>
                                 </div>
                             </div>
@@ -795,7 +812,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1.5">کلاس CSS سفارشی</label>
                             <input type="text"
-                                :value="selectedBlock.style?.customClass ?? ''"
+                                :value="selectedBlock?.style?.customClass ?? ''"
                                 @input="updateStyle('customClass', $event.target.value)"
                                 placeholder="مثال: my-hero featured-section"
                                 class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono">
@@ -804,22 +821,22 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <label class="block text-xs font-semibold text-slate-600 mb-2">نمایش در دستگاه‌ها</label>
                             <div class="space-y-2">
                                 <label class="flex items-center gap-2.5 cursor-pointer">
-                                    <input type="checkbox" :checked="selectedBlock.style?.hideDesktop" @change="updateStyle('hideDesktop', $event.target.checked || '')" class="rounded text-indigo-600">
+                                    <input type="checkbox" :checked="selectedBlock?.style?.hideDesktop" @change="updateStyle('hideDesktop', $event.target.checked || '')" class="rounded text-indigo-600">
                                     <span class="text-xs text-slate-700">پنهان در دسکتاپ</span>
                                 </label>
                                 <label class="flex items-center gap-2.5 cursor-pointer">
-                                    <input type="checkbox" :checked="selectedBlock.style?.hideTablet" @change="updateStyle('hideTablet', $event.target.checked || '')" class="rounded text-indigo-600">
+                                    <input type="checkbox" :checked="selectedBlock?.style?.hideTablet" @change="updateStyle('hideTablet', $event.target.checked || '')" class="rounded text-indigo-600">
                                     <span class="text-xs text-slate-700">پنهان در تبلت</span>
                                 </label>
                                 <label class="flex items-center gap-2.5 cursor-pointer">
-                                    <input type="checkbox" :checked="selectedBlock.style?.hideMobile" @change="updateStyle('hideMobile', $event.target.checked || '')" class="rounded text-indigo-600">
+                                    <input type="checkbox" :checked="selectedBlock?.style?.hideMobile" @change="updateStyle('hideMobile', $event.target.checked || '')" class="rounded text-indigo-600">
                                     <span class="text-xs text-slate-700">پنهان در موبایل</span>
                                 </label>
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1.5">انیمیشن ورود</label>
-                            <select :value="selectedBlock.style?.animation ?? 'none'"
+                            <select :value="selectedBlock?.style?.animation ?? 'none'"
                                 @change="updateStyle('animation', $event.target.value === 'none' ? '' : $event.target.value)"
                                 class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 mb-2">
                                 <option value="none">بدون انیمیشن</option>
@@ -829,11 +846,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <option value="zoom-in">بزرگ‌شدن (Zoom In)</option>
                                 <option value="bounce-in">جهش (Bounce In)</option>
                             </select>
-                            <template x-if="selectedBlock.style?.animation && selectedBlock.style.animation !== 'none'">
+                            <template x-if="selectedBlock?.style?.animation && selectedBlock.style.animation !== 'none'">
                                 <div>
                                     <label class="block text-[10px] text-slate-500 mb-1">مدت زمان انیمیشن (ms)</label>
                                     <input type="number" min="200" max="3000" step="100"
-                                        :value="selectedBlock.style?.animationDuration ?? 600"
+                                        :value="selectedBlock?.style?.animationDuration ?? 600"
                                         @input="updateStyle('animationDuration', Number($event.target.value))"
                                         class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                 </div>
@@ -1242,14 +1259,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
             {{-- Currently selected --}}
             <div class="space-y-2 mb-4 max-h-56 overflow-y-auto">
-                <template x-for="[identifier, sel] in selectedExtensionEntries()" :key="identifier">
+                <template x-for="extensionEntry in selectedExtensionEntries()" :key="extensionEntry[0]">
                     <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50">
                         <div class="min-w-0">
-                            <div class="text-sm font-medium text-slate-800 truncate" x-text="identifier"></div>
-                            <div class="text-[11px] text-slate-500">نسخه: <span x-text="sel.version" class="font-mono"></span></div>
-                            <div x-show="extensionSelectionErrors[identifier]" class="text-[11px] text-red-500 mt-0.5" x-text="extensionSelectionErrors[identifier]"></div>
+                            <div class="text-sm font-medium text-slate-800 truncate" x-text="extensionEntry[0]"></div>
+                            <div class="text-[11px] text-slate-500">نسخه: <span x-text="extensionEntry[1].version" class="font-mono"></span></div>
+                            <div x-show="extensionSelectionErrors[extensionEntry[0]]" class="text-[11px] text-red-500 mt-0.5" x-text="extensionSelectionErrors[extensionEntry[0]]"></div>
                         </div>
-                        <button @click="removeExtensionSelection(identifier)"
+                        <button @click="removeExtensionSelection(extensionEntry[0])"
                             class="shrink-0 w-6 h-6 flex items-center justify-center rounded text-red-400 hover:bg-red-50" title="حذف">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
@@ -1363,6 +1380,8 @@ const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
 const BLOCK_LABELS  = @json($blockLabelsForJs);
 const BLOCK_SCHEMAS = @json($blockSchemasForJs);
 const INITIAL_PAGES = @json($pages);
+const INITIAL_HEADER_BLOCKS = @json($theme->header_blocks ?? []);
+const INITIAL_FOOTER_BLOCKS = @json($theme->footer_blocks ?? []);
 // Phase 3G-B-6: Extension authoring — commercial catalog data only (no
 // executable provider code ever reaches the browser here).
 const AVAILABLE_EXTENSIONS = @json($availableExtensions);
@@ -1374,9 +1393,13 @@ function themeCanvas() {
         // ── State ───────────────────────────────────────────────
         pages:          JSON.parse(JSON.stringify(INITIAL_PAGES)),
         currentPage:    Object.keys(INITIAL_PAGES)[0] ?? 'home',
+        activeTarget:   'page',
+        headerBlocks:   JSON.parse(JSON.stringify(INITIAL_HEADER_BLOCKS)),
+        footerBlocks:   JSON.parse(JSON.stringify(INITIAL_FOOTER_BLOCKS)),
         selectedTab:    'content',
         isDirty:        false,
         saving:         false,
+        switchingTarget: false,
         quickSaving:    false,
         publishing:     false,
         showAddPage:    false,
@@ -1430,10 +1453,14 @@ function themeCanvas() {
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
+            if (this.activeTarget === 'header') return this.headerBlocks;
+            if (this.activeTarget === 'footer') return this.footerBlocks;
             return this.pages[this.currentPage]?.blocks ?? [];
         },
         set blocks(val) {
-            if (this.pages[this.currentPage]) this.pages[this.currentPage].blocks = val;
+            if (this.activeTarget === 'header') this.headerBlocks = val;
+            else if (this.activeTarget === 'footer') this.footerBlocks = val;
+            else if (this.pages[this.currentPage]) this.pages[this.currentPage].blocks = val;
         },
         // TB4: path-based selection
         get selectedBlock() {
@@ -1583,7 +1610,7 @@ function themeCanvas() {
                 const arr = [...this.blocks];
                 const idx = (atIndex >= 0 && atIndex <= arr.length) ? atIndex : arr.length;
                 arr.splice(idx, 0, block);
-                this.pages[this.currentPage].blocks = arr;
+                this.blocks = arr;
                 this.selectedPath = [idx];
             }
             this.isDirty = true;
@@ -1710,7 +1737,7 @@ function themeCanvas() {
             const arr = [...this.blocks];
             const [item] = arr.splice(from, 1);
             arr.splice(to, 0, item);
-            this.pages[this.currentPage].blocks = arr;
+            this.blocks = arr;
             this.selectedPath = [to];
             this.isDirty = true;
             this.autoSaveAndReload();
@@ -1732,7 +1759,7 @@ function themeCanvas() {
         undo() {
             if (this.historyIndex <= 0) return;
             this.historyIndex--;
-            this.pages[this.currentPage].blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
             this.selectedPath = null;
             this.isDirty = true;
             this.autoSaveAndReload();
@@ -1741,7 +1768,7 @@ function themeCanvas() {
         redo() {
             if (this.historyIndex >= this.history.length - 1) return;
             this.historyIndex++;
-            this.pages[this.currentPage].blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
             this.selectedPath = null;
             this.isDirty = true;
             this.autoSaveAndReload();
@@ -1798,15 +1825,27 @@ function themeCanvas() {
         },
 
         // ── Page Management ───────────────────────────────────────
-        switchPage(key) {
-            if (this.isDirty) this.saveCurrentPage();
-            this.currentPage  = key;
-            this.selectedPath = null;
-            this.selectedTab  = 'content';
-            // Reset history for new page
-            this.history     = [JSON.parse(JSON.stringify(this.pages[key]?.blocks ?? []))];
-            this.historyIndex = 0;
-            this.reloadIframe();
+        async switchTarget(target, pageKey = null) {
+            if (this.switchingTarget || (target === this.activeTarget && (!pageKey || pageKey === this.currentPage))) return;
+            this.switchingTarget = true;
+            try {
+                // Failed saves leave the user on the dirty source zone. The
+                // request body captures this active target before awaiting.
+                if (this.isDirty && !(await this.saveCurrentPage())) return;
+                this.activeTarget = target;
+                if (pageKey) this.currentPage = pageKey;
+                this.selectedPath = null;
+                this.selectedTab = 'content';
+                this.history = [JSON.parse(JSON.stringify(this.blocks))];
+                this.historyIndex = 0;
+                this.reloadIframe();
+            } finally {
+                this.switchingTarget = false;
+            }
+        },
+
+        async switchPage(key) {
+            return this.switchTarget('page', key);
         },
 
         deletePage(key) {
@@ -1880,7 +1919,7 @@ function themeCanvas() {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks, extension_selections: this.extensionSelections })
+                    body: JSON.stringify({ target: this.activeTarget, page_key: this.activeTarget === 'page' ? this.currentPage : undefined, blocks: this.blocks, extension_selections: this.extensionSelections })
                 });
                 const d = await r.json();
                 if (d.success) {
@@ -1900,12 +1939,20 @@ function themeCanvas() {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks, extension_selections: this.extensionSelections })
+                    body: JSON.stringify({ target: this.activeTarget, page_key: this.activeTarget === 'page' ? this.currentPage : undefined, blocks: this.blocks, extension_selections: this.extensionSelections })
                 });
                 const d = await r.json();
-                if (d.success) { this.isDirty = false; this.showToast('ذخیره شد ✓', 'success'); }
-                else this.showToast(d.error ?? 'خطا در ذخیره', 'error');
-            } catch { this.showToast('خطای شبکه', 'error'); }
+                if (d.success) {
+                    this.isDirty = false;
+                    this.showToast('ذخیره شد ✓', 'success');
+                    return true;
+                }
+                this.showToast(d.error ?? 'خطا در ذخیره', 'error');
+                return false;
+            } catch {
+                this.showToast('خطای شبکه', 'error');
+                return false;
+            }
             finally   { this.saving = false; }
         },
 
@@ -1914,13 +1961,22 @@ function themeCanvas() {
             if (this.quickSaving) return;
             this.quickSaving = true;
             try {
-                await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ page_key: this.currentPage, blocks: this.blocks, extension_selections: this.extensionSelections })
+                    body: JSON.stringify({ target: this.activeTarget, page_key: this.activeTarget === 'page' ? this.currentPage : undefined, blocks: this.blocks, extension_selections: this.extensionSelections })
                 });
+                const d = await r.json();
+                if (!r.ok || !d.success) {
+                    this.showToast(d.error ?? 'خطا در ذخیره', 'error');
+                    return false;
+                }
                 this.isDirty = false;
-            } catch (_) {}
+                return true;
+            } catch (_) {
+                this.showToast('خطای شبکه', 'error');
+                return false;
+            }
             finally { this.quickSaving = false; }
         },
 
@@ -1946,12 +2002,12 @@ function themeCanvas() {
         },
 
         openPreview() {
-            window.open(`/admin/theme-builder/${THEME_ID}/canvas/${this.currentPage}/preview`, '_blank');
+            window.open(`/admin/theme-builder/${THEME_ID}/canvas/${this.currentPage}/preview?target=${encodeURIComponent(this.activeTarget)}`, '_blank');
         },
 
         // ── TB3-02: Live Iframe ───────────────────────────────────
         livePreviewUrl() {
-            return `/admin/theme-builder/${THEME_ID}/canvas/live-preview?page=${encodeURIComponent(this.currentPage)}&t=${this.iframeTimestamp}`;
+            return `/admin/theme-builder/${THEME_ID}/canvas/live-preview?target=${encodeURIComponent(this.activeTarget)}&page=${encodeURIComponent(this.currentPage)}&t=${this.iframeTimestamp}`;
         },
 
         reloadIframe() {

@@ -70,15 +70,22 @@ class ThemeCanvasController extends Controller
     public function save(Request $request, Theme $theme)
     {
         $data = $request->validate([
-            'page_key' => 'required|string|max:100',
-            'blocks'   => 'required|array',
+            // An editor-boundary discriminator only: this never creates a
+            // page/model concept or a second persisted representation.
+            'target'   => 'nullable|in:page,header,footer',
+            'page_key' => 'required_if:target,page|required_without:target|string|max:100',
+            // An empty block tree is a valid Canvas state (especially for a
+            // newly selected Header/Footer zone); require the field itself,
+            // not at least one element.
+            'blocks'   => 'present|array',
             'extension_selections' => 'nullable|array',
         ]);
 
         $pages = $theme->pages ?? $theme->getPageList();
-        $key   = $data['page_key'];
+        $target = $data['target'] ?? 'page';
+        $key = $data['page_key'] ?? null;
 
-        if (!isset($pages[$key])) {
+        if ($target === 'page' && !isset($pages[$key])) {
             return response()->json(['error' => 'صفحه یافت نشد'], 404);
         }
 
@@ -109,12 +116,22 @@ class ThemeCanvasController extends Controller
             return response()->json(['error' => $validation['error']], 422);
         }
 
-        $pages[$key]['blocks'] = $data['blocks'];
-
         $settings = $theme->settings ?? [];
         $settings['extension_selections'] = $selections;
 
-        $theme->update(['pages' => $pages, 'settings' => $settings]);
+        // A zone save changes exactly its existing field plus the existing
+        // Extension selection map contract. It cannot overwrite another zone.
+        $updates = ['settings' => $settings];
+        if ($target === 'page') {
+            $pages[$key]['blocks'] = $data['blocks'];
+            $updates['pages'] = $pages;
+        } elseif ($target === 'header') {
+            $updates['header_blocks'] = $data['blocks'];
+        } else {
+            $updates['footer_blocks'] = $data['blocks'];
+        }
+
+        $theme->update($updates);
 
         return response()->json(['success' => true, 'message' => 'ذخیره شد.']);
     }
@@ -160,7 +177,13 @@ class ThemeCanvasController extends Controller
     public function preview(Request $request, Theme $theme, string $pageKey)
     {
         $pages = $theme->getPageList();
-        $page  = $pages[$pageKey] ?? null;
+        $target = $request->input('target', 'page');
+        abort_unless(in_array($target, ['page', 'header', 'footer'], true), 404);
+        $page = match ($target) {
+            'header' => ['title' => 'Header', 'blocks' => $theme->header_blocks ?? []],
+            'footer' => ['title' => 'Footer', 'blocks' => $theme->footer_blocks ?? []],
+            default => $pages[$pageKey] ?? null,
+        };
 
         if (!$page) {
             abort(404, 'صفحه یافت نشد');
@@ -217,10 +240,15 @@ class ThemeCanvasController extends Controller
      */
     public function livePreview(Request $request, Theme $theme)
     {
+        $target = $request->input('target', 'page');
+        abort_unless(in_array($target, ['page', 'header', 'footer'], true), 404);
         $pageKey  = $request->input('page', 'home');
         $pages    = $theme->getPageList();
-        $pageData = $pages[$pageKey] ?? null;
-        $blocks   = $pageData['blocks'] ?? [];
+        $blocks = match ($target) {
+            'header' => $theme->header_blocks ?? [],
+            'footer' => $theme->footer_blocks ?? [],
+            default => ($pages[$pageKey]['blocks'] ?? []),
+        };
 
         $globalStyles = $theme->global_styles ?? [];
         $css = $this->styleEngine->renderCssBlock($globalStyles, $theme->site_id);

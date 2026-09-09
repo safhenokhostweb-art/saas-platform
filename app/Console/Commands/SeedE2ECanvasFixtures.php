@@ -7,9 +7,12 @@ use App\Models\Role;
 use App\Models\Theme;
 use App\Models\User;
 use App\Services\ThemeBuilder\Extension\ExtensionReleaseService;
+use App\Services\ThemeBuilder\QualityGate\ThemeCommercialQualityGate;
+use App\Services\ThemeBuilder\ThemeReleaseService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 
 /**
  * Test-infrastructure-only fixture seeder for the Playwright E2E harness
@@ -31,7 +34,7 @@ class SeedE2ECanvasFixtures extends Command
 
     protected $description = 'Seed admin user + Extension/ExtensionRelease + Theme fixtures for the Playwright Theme Canvas E2E suite (test infra only).';
 
-    public function handle(ExtensionReleaseService $extService): int
+    public function handle(ExtensionReleaseService $extService, ThemeCommercialQualityGate $qualityGate, ThemeReleaseService $themeReleaseService): int
     {
         if (! app()->environment(['local', 'testing'])) {
             $this->error(
@@ -41,6 +44,15 @@ class SeedE2ECanvasFixtures extends Command
             );
 
             return self::FAILURE;
+        }
+
+        // Browser-backed quality checks must reach the same local HTTP
+        // origin as the Playwright harness. Keep production URL generation
+        // untouched; this command is local/testing-only fixture machinery.
+        if ($browserBaseUrl = env('PLAYWRIGHT_BASE_URL')) {
+            $browserBaseUrl = rtrim($browserBaseUrl, '/');
+            config(['app.url' => $browserBaseUrl]);
+            URL::forceRootUrl($browserBaseUrl);
         }
 
         $mobile = '09120000091';
@@ -115,7 +127,17 @@ class SeedE2ECanvasFixtures extends Command
         $themeSlug = 'e2e-test-theme';
         $existingTheme = Theme::where('slug', $themeSlug)->first();
         if ($existingTheme) {
-            $existingTheme->delete();
+            // A fixture that has completed the real Canvas publish proof now
+            // owns immutable ThemeRelease ledger rows, whose FK correctly
+            // prevents deleting the parent Theme. Preserve that evidence and
+            // free only the deterministic fixture slug for the next clean run.
+            if ($existingTheme->releases()->exists()) {
+                $existingTheme->update([
+                    'slug' => "{$themeSlug}-archived-{$existingTheme->id}",
+                ]);
+            } else {
+                $existingTheme->delete();
+            }
         }
 
         $theme = Theme::create([
@@ -123,11 +145,11 @@ class SeedE2ECanvasFixtures extends Command
             'slug' => $themeSlug,
             'type' => Theme::TYPE_FULL,
             'source' => Theme::SOURCE_SEEDER,
-            'status' => Theme::STATUS_DRAFT,
+            'status' => Theme::STATUS_PUBLISHED,
             'category' => Theme::CATEGORY_SAAS,
-            'header_blocks' => [],
-            'footer_blocks' => [],
-            'pages' => ['home' => ['title' => 'خانه', 'slug' => '', 'blocks' => []]],
+            'header_blocks' => [['type' => 'text', 'props' => ['text' => 'E2E initial header']]],
+            'footer_blocks' => [['type' => 'text', 'props' => ['text' => 'E2E initial footer']]],
+            'pages' => ['home' => ['title' => 'خانه', 'slug' => '', 'blocks' => [['type' => 'hero', 'props' => ['title' => 'E2E initial page']]]]],
             'global_styles' => [],
             'settings' => [
                 'extension_selections' => [
@@ -135,6 +157,30 @@ class SeedE2ECanvasFixtures extends Command
                 ],
             ],
         ]);
+
+        $fixtureThemeRelease = $qualityGate->publishIfCompliant(
+            $theme,
+            $themeReleaseService,
+            '1.0.0',
+            'E2E fixture prerequisite',
+            null,
+            null,
+            null,
+            $admin->id
+        );
+        $theme->refresh();
+        $fixtureQualityReport = $fixtureThemeRelease->qualityReports()
+            ->where('status', \App\Models\ThemeQualityReport::STATUS_PASSED)
+            ->latest('id')
+            ->first();
+
+        if (
+            ! $fixtureQualityReport
+            || $theme->current_release_id !== $fixtureThemeRelease->id
+            || ! $theme->isCommerciallyEligible()
+        ) {
+            throw new \RuntimeException('E2E Theme prerequisite release did not establish canonical commercial eligibility.');
+        }
 
         // Phase 3G-B-6B (ADR-048) — a SECOND, independent commercial
         // Extension/Theme pair dedicated to the real-release-backed asset
@@ -260,6 +306,11 @@ class SeedE2ECanvasFixtures extends Command
             'release_version' => $release->version,
             'theme_id' => $theme->id,
             'theme_slug' => $theme->slug,
+            'theme_release_id' => $fixtureThemeRelease->id,
+            'theme_release_version' => $fixtureThemeRelease->version,
+            'theme_quality_report_id' => $fixtureQualityReport->id,
+            'theme_quality_report_status' => $fixtureQualityReport->status,
+            'theme_commercially_eligible' => true,
             'asset_theme_id' => $assetTheme->id,
             'asset_theme_slug' => $assetTheme->slug,
             'asset_extension_identifier' => $assetExt->identifier(),
