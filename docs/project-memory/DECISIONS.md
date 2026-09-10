@@ -1490,3 +1490,20 @@ Point 8 above left `$assetSources` values (absolute local source file paths) unc
 22. No DB migration and no `ext:*`/Theme JSON migration were required for either closure.
 
 **Addendum impact:** Modified `app/Services/ThemeBuilder/Extension/ExtensionAssetMaterializer.php` (confinement + newly-created-path tracking + `cleanupNewlyMaterialized()`), `ExtensionReleaseService.php` (calls cleanup on any post-materialization failure). New tests in `ExtensionAssetDistributionTest.php` covering source confinement (valid/outside-root/traversal/symlink/directory/missing/arbitrary-system-file) and failure cleanup (A-E: new-file removed, pre-existing idempotent file preserved, multiple new files all removed, successful release keeps its files, an older release's files survive a later release's failure). `SeedE2ECanvasFixtures.php` and all affected test fixtures updated to stage their source files inside the trusted root. No customer-site change. No browser rerun — public asset URLs/emission behavior are unchanged; the existing 12/12 Chromium evidence stands.
+
+## ADR-049 — Canonical Customer Media Foundation
+
+**Date:** 2026-09-10
+
+**Decision:**
+
+1. `customer-site` owns customer media through `CustomerMedia` and `CustomerMediaService`; it is neither a platform master-Theme asset authority nor a Motion or support-attachment authority.
+2. `CustomerMedia.site_id` is required and is taken exclusively from `site.platform_site_id`; this is **per-site**, never per customer/account/platform. Every read, mutation, URL lookup, purge, and usage registration is server-side scoped to that site.
+3. A media UUID is the stable authoring identity. Storage keys are opaque service-generated values under `customer-media/{site_id}/...`; controllers and Builder clients do not generate paths.
+4. V1 allows JPEG, PNG, GIF, WebP, MP4, WebM, MP3, OGG, WAV, and PDF within centrally defined size limits. SVG is rejected pending an audited canonical sanitizer.
+5. `CustomerMediaUsage` is the single usage ledger. It records a consumer type/id and a deterministic JSON reference path; its FK is restrictive so usage evidence cannot cascade away. Future Builder data uses `{media_id: UUID}`; legacy URL/path payloads remain read-only transitional data until migrated by a bounded adapter. Forged UUIDs from another site fail closed at the same site-scoped lookup boundary.
+6. Every `ThemeInstanceRevision` registers nested canonical media IDs as immutable usage. Historical revisions therefore block deletion and rollback cannot silently lose a referenced asset.
+7. An unused asset is soft-deleted before physical purge. Used assets are rejected. A physical deletion failure leaves a retryable soft-deleted record rather than a misleading successful deletion.
+8. `ThemeDesignMediaController` is TRANSITIONAL: its endpoints must become compatibility adapters over this service in MEDIA-4. `saas-platform`'s `ThemeMediaController` is KEEP_SEPARATE pending master-authoring review; it must never write customer media.
+
+**Impact:** MEDIA-1/2 only. No Media Library UI, Builder picker conversion, module migration, Theme release mutation, import/export behavior, or platform master-asset migration is authorized by this ADR.
