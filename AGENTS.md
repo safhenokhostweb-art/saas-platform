@@ -19,8 +19,9 @@ For every task, process context in this order:
 6. Load open work from `docs/project-memory/OPEN_TASKS.md`.
 7. Load architecture from `docs/project-memory/ARCHITECTURE.md` and any task-specific architecture document.
 8. Load relevant known issues and audit history from `docs/project-memory/KNOWN_ISSUES.md` and `docs/project-memory/AUDIT_HISTORY.md`.
-9. Apply the capability profile declared by the active agent wrapper. The wrapper is bootstrap metadata and must not be recursively reloaded.
-10. Build an internal task model, then execute the current task under the authority hierarchy below.
+9. For any task that implements, changes, or ships code, load `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md`, classify the task against its Feature Acceptance Matrix, and carry the resulting mandatory gates into the task model.
+10. Apply the capability profile declared by the active agent wrapper. The wrapper is bootstrap metadata and must not be recursively reloaded.
+11. Build an internal task model, then execute the current task under the authority hierarchy below.
 
 Repository evidence takes precedence over chat history. Missing optional context must not be invented.
 
@@ -48,7 +49,7 @@ Current task
 
 - ADR-017 remains the canonical execution-governance decision and must be applied from `docs/project-memory/DECISIONS.md` without restating it here.
 - `docs/AI_GOVERNANCE_POLICY.md` and `docs/AI_DECISION_POLICY.md` are legacy compatibility paths, not independent authorities.
-- Historical governance audits and migration reports are evidence only; they do not override active governance.
+- Historical governance audits and migration reports are evidence only; they do not override active governance. `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` is the one live exception this rule does not cover — it is current, not historical.
 - Conflicts are resolved by the authority hierarchy, then by the newest non-superseded ADR within its valid scope.
 
 ## Task Orchestration
@@ -87,6 +88,7 @@ After implementation:
 | Known issues | `docs/project-memory/KNOWN_ISSUES.md` |
 | Audit findings | `docs/project-memory/AUDIT_HISTORY.md` |
 | Session handover | `docs/project-memory/HANDOVER.md` |
+| Testing and delivery governance (both repositories) | `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` |
 | Agent bootstrap identity | Active wrapper only |
 
 Do not copy content between these authorities. Link to the canonical location.
@@ -154,4 +156,4 @@ When context is reset, restart the Bootstrap Sequence. Project memory is the con
 
 ## Completion Standard
 
-A task is complete when its requested implementation or audit is finished, relevant validation passes, regression impact is reviewed, and canonical documentation is updated without duplication.
+A task is complete when its requested implementation or audit is finished, relevant validation passes, regression impact is reviewed, and canonical documentation is updated without duplication. For any task that implements or changes code, "relevant validation passes" means the gates identified from `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` §2 were executed and reported per its §12 template, and commit/push/deploy actions followed its §9 Authorization Policy.

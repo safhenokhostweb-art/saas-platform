@@ -1507,3 +1507,73 @@ Point 8 above left `$assetSources` values (absolute local source file paths) unc
 8. `ThemeDesignMediaController` is TRANSITIONAL: its endpoints must become compatibility adapters over this service in MEDIA-4. `saas-platform`'s `ThemeMediaController` is KEEP_SEPARATE pending master-authoring review; it must never write customer media.
 
 **Impact:** MEDIA-1/2 only. No Media Library UI, Builder picker conversion, module migration, Theme release mutation, import/export behavior, or platform master-asset migration is authorized by this ADR.
+
+---
+
+## ADR-050 — Testing & Delivery Governance, and Retirement of the Superseded Master Development Directive
+
+**Date:** 2026-09-11
+
+**Context:**
+
+A production diagnosis (Theme Builder / Page Builder edits not reaching the
+public page) repeatedly stalled on undefined questions: what must be tested,
+which environment is authoritative, and what "done" means. Auditing existing
+governance before writing anything new surfaced two problems: (1)
+`customer-site/docs/MASTER-DEVELOPMENT-DIRECTIVE.md` separately claimed to be
+"source of truth for every coding task in both repositories," directly
+conflicting with `PROJECT_CONSTITUTION.md`'s own claim to the same authority,
+even though `customer-site/AGENTS.md` already defers all governance to this
+repository; (2) no canonical document defined mandatory test/browser/delivery
+gates, so this determination was repeatedly re-litigated per task.
+
+**Decision:**
+
+1. `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` is adopted as canonical
+   for both repositories, subordinate to `PROJECT_CONSTITUTION.md`, at the
+   same tier as `ARCHITECTURE.md`/`KNOWN_ISSUES.md` in `AGENTS.md`'s
+   Documentation Ownership table. It defines test layers L0–L7, a Feature
+   Acceptance Matrix, Browser Acceptance Rules, the Builder
+   authoring→save→reload→preview→public-render contract, regression
+   classification, an Authorization Policy for commit/push/deploy, commit/
+   push/deployment gates, a delivery state machine, and a final-report
+   contract. It references existing working mechanisms
+   (`RELEASE_GATE.md`, `KNOWN-TEST-FAILURES.md`, `BUILDER-QA.md`,
+   `tests/browser/`) rather than duplicating them.
+2. `customer-site/docs/MASTER-DEVELOPMENT-DIRECTIVE.md` is marked historical/
+   superseded in place (not rewritten or deleted) per Constitution §12.
+
+**Preservation matrix** (old directive rule → current canonical authority →
+preserved?):
+
+| Old directive rule | Current canonical authority | Preserved? |
+|---|---|---|
+| Backward compatibility mandatory | Constitution §12 | Yes |
+| Every significant change needs unit/feature/regression tests | Governance doc §1–2 (L1/L2/L4) | Yes |
+| Destructive DB operations require explicit authorization | Constitution §5 | Yes (general terms) |
+| Customer entitlements must never be lost / no automatic revocation | Constitution §9 + §12 | Partial — substance present, not restated as crisply |
+| Every important action must be audited | Constitution §7 (security-sensitive ops) | Partial — narrower scope than the original |
+| Update `docs/CHANGELOG.md` / `docs/PROJECT-GUIDE.md` per change | — | Not preserved; left as an open item, not asserted as covered |
+| "Analyze → Analysis Report → wait for explicit approval" before code changes, commits, merges, deployments | Governance doc §9 Authorization Policy (points 2–6) | **Yes — intentionally superseded with an explicit canonical replacement**, modernized to task-scoped explicit authorization in conversation rather than a mandatory separate written report |
+| Never work directly on `main`; dedicated branch per change; `git merge --no-ff`; never delete branches/tags without instruction | Governance doc §9 Authorization Policy (points 1, 7) | **Yes — intentionally superseded with an explicit canonical replacement**: a branch is required only when the task or a repository policy calls for one; force-push/rebase/reset/stash/clean require explicit per-action authorization |
+
+No rule was silently discarded: each row above is either preserved through
+an existing authority or intentionally superseded through the specific,
+named replacement in §9 of the governance document.
+
+**Reason:** A change this project keeps re-deriving under pressure (as in
+the 2026-09-11 incident) belongs in a document that's loaded automatically,
+not re-argued per task. Retiring the conflicting directive removes the
+"two supreme authorities" problem without discarding the safety intent
+behind its rules.
+
+**Impact:** Documentation only. No product/runtime code changed. The two
+"not preserved" rows above (CHANGELOG/PROJECT-GUIDE update convention;
+crisper entitlement/audit-everything wording) remain open — a future task
+that touches those areas should either follow the general Constitution
+coverage or raise a follow-up ADR, not assume silence means the rule no
+longer applies.
+
+**Never violate:** Do not reintroduce a second document that claims
+top-level authority over both repositories without an explicit superseding
+ADR (Constitution §13).
