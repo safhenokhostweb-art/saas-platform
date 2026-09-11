@@ -1577,3 +1577,55 @@ longer applies.
 **Never violate:** Do not reintroduce a second document that claims
 top-level authority over both repositories without an explicit superseding
 ADR (Constitution §13).
+
+---
+
+## ADR-051 — Builder Media Convergence (MEDIA-4)
+
+**Date:** 2026-09-11
+
+**Decision:**
+
+1. The Customer Media Library (`CustomerMedia` / `CustomerMediaService`,
+   [[ADR-049]]) is Core: per-site, always available, and is now the only
+   place customer media is written, listed, or deleted from — including
+   from the Theme Builder.
+2. `CustomerMediaService` is the sole customer media write authority.
+   `ThemeDesignMediaController` is compatibility-only over it: it performs
+   no independent storage, upload, or delete logic and adds no second
+   write path.
+3. The canonical new Builder media identity is `{ media_id: UUID }`.
+   Legacy URL/path values already stored in Builder props are read-only
+   compatibility forms — resolved and rendered unchanged, never rewritten
+   in place.
+4. `CustomerMediaResolver` is the single runtime resolver for customer
+   media refs in Canvas rendering. Every media-capable block prop and
+   repeater field resolves through it, once, before render; individual
+   block renderers never perform their own media lookup. It enforces
+   current-site ownership on every lookup and fails safe: a foreign,
+   deleted, malformed, or missing reference resolves to `''` (rendered as
+   "no image selected"), never an error and never a guess.
+5. The Theme Builder picker and the main Media Library page read and write
+   the same `CustomerMedia` records — media uploaded from either surface
+   is immediately visible and reusable from the other.
+6. Customer media UUIDs must never become master Theme or portable product
+   identity. They are site-scoped authoring data only.
+7. Media usage/deletion safety continues to run through the existing
+   `CustomerMediaUsage` ledger and `ThemeInstanceRevision` integration
+   ([[ADR-049]] points 5–6); MEDIA-4 does not change that mechanism.
+8. An exposed media control must have real runtime effect — persistence of
+   a value alone (e.g. a forged foreign `media_id` reaching a draft) is not
+   sufficient; enforcement happens at resolve/publish time per point 4.
+9. Unsupported pre-existing domains are carried forward unchanged by this
+   ADR: no video renderer, no editable Canvas for `nav_header`/`nav_footer`,
+   no image field on `client_logos`.
+10. No second customer media repository, storage location, or runtime
+    resolution authority may be introduced. Any future consumer of
+    customer media (Builder or otherwise) integrates through
+    `CustomerMediaService` and `CustomerMediaResolver`.
+
+**Impact:** `customer-site` only — `ThemeDesignMediaController`,
+`ElementSchemaRegistry`, `BlockRegistry`, `ThemeCanvasRenderer`,
+`CustomerMediaResolver` (new), `HeroElement`, and the canvas-editor Builder
+UI. Completes the `ThemeDesignMediaController` TRANSITIONAL status recorded
+in [[ADR-049]] point 8.
