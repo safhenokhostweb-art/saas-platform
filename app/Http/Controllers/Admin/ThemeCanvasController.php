@@ -391,8 +391,16 @@ class ThemeCanvasController extends Controller
     }
 
     /**
-     * نصب مستقیم قالب روی دیتابیس سایت مشتری از پنل پلتفرم.
-     * Platform admin can assign any canvas theme to any site directly.
+     * نصب قالب روی سایت مشتری از پنل پلتفرم.
+     *
+     * Single install authority: this calls the customer-site's own
+     * canonical /builder/api/theme/install endpoint, which writes through
+     * ThemeInstanceRevisionService::record() — the exact same write path a
+     * customer's own publish/rollback/import already use. There is no
+     * second, raw-SQL install path any more: install now produces a real
+     * ThemeInstanceRevision with provenance, and is subject to the same
+     * CanvasReservedSlugs page-namespace collision guard as every other
+     * way the active Canvas theme can change (see ADR-052).
      */
     public function installToSite(Request $request, Theme $theme)
     {
@@ -400,98 +408,67 @@ class ThemeCanvasController extends Controller
 
         $site = Site::findOrFail($request->site_id);
 
-        if (!$site->db_host || !$site->db_name) {
+        $domain = $site->getDomain();
+        if (!$domain) {
             return back()->with('error',
-                'اطلاعات دیتابیس سایت "' . $site->title . '" تنظیم نشده است. ' .
-                'از منوی سایت‌ها → ویرایش سایت، فیلدهای db_host، db_name، db_user و db_password را پر کنید.'
+                'دامنه سایت "' . $site->title . '" تنظیم نشده است. از منوی سایت‌ها → ویرایش سایت، فیلد دامنه را پر کنید.'
             );
         }
 
-        $connKey = 'theme_install_' . $site->id;
+        $baseUrl  = str_starts_with($domain, 'http') ? rtrim($domain, '/') : 'https://' . rtrim($domain, '/');
+        $endpoint = $baseUrl . '/builder/api/theme/install';
+        $secret   = config('services.customer_provision_secret', '');
+
+        $currentRelease = $theme->currentRelease;
 
         try {
-            Config::set("database.connections.{$connKey}", [
-                'driver'    => 'mysql',
-                'host'      => $site->db_host,
-                'port'      => '3306',
-                'database'  => $site->db_name,
-                'username'  => $site->db_user,
-                'password'  => $site->getDecryptedDbPassword() ?? '',
-                'charset'   => 'utf8mb4',
-                'collation' => 'utf8mb4_unicode_ci',
-                'prefix'    => '',
-                'strict'    => false,
-            ]);
-            DB::purge($connKey);
-            $conn = DB::connection($connKey);
-            $conn->getPdo(); // force connection — throws if credentials wrong
-        } catch (\Throwable $e) {
-            DB::purge($connKey);
-            return back()->with('error',
-                'اتصال به دیتابیس سایت "' . $site->title . '" ناموفق بود: ' . $e->getMessage()
-            );
-        }
-
-        try {
-            $themeJson = json_encode([
-                'name'             => $theme->name,
-                'slug'             => $theme->slug,
-                'header_blocks'    => $theme->header_blocks ?? [],
-                'footer_blocks'    => $theme->footer_blocks ?? [],
-                'pages'            => $theme->pages ?? [],
-                'global_styles'    => $theme->global_styles ?? [],
+            $response = Http::withHeaders([
+                'X-Provision-Secret' => $secret,
+                'Accept'             => 'application/json',
+            ])->timeout(15)->post($endpoint, [
+                'theme_id'             => $theme->slug,
+                'theme_name'           => $theme->name,
+                'source_theme_id'      => (string) $theme->id,
+                'source_theme_version' => $currentRelease?->version,
+                'source_release_id'    => $currentRelease?->id,
+                'header_blocks'        => $theme->header_blocks ?? [],
+                'footer_blocks'        => $theme->footer_blocks ?? [],
+                'pages'                => $theme->getPageList(),
+                'global_styles'        => $theme->global_styles ?? [],
                 // Manifest-declared Extension CSS/JS, projected to absolute
                 // saas-platform URLs — see ExtensionThemeRuntimeAssetProjector's
                 // own doc comment for why this is an absolute URL, not a copy.
                 // Absent/empty for every Theme that selects no Extension.
-                'extension_assets' => ExtensionThemeRuntimeAssetProjector::project($theme),
-            ], JSON_UNESCAPED_UNICODE);
-
-            // upsert تمام ۴ کلید canvas theme در جدول settings سایت مشتری
-            $themeSettings = [
-                'active_canvas_theme_data' => $themeJson,
-                'active_canvas_theme_name' => $theme->name,
-                'active_canvas_theme_slug' => $theme->slug,
-                'active_canvas_theme_id'   => (string) $theme->id,
-            ];
-
-            foreach ($themeSettings as $key => $value) {
-                $existing = $conn->table('settings')->where('key', $key)->first();
-                if ($existing) {
-                    $conn->table('settings')
-                        ->where('key', $key)
-                        ->update(['value' => $value, 'updated_at' => now()]);
-                } else {
-                    $conn->table('settings')->insert([
-                        'key'        => $key,
-                        'value'      => $value,
-                        'group'      => 'theme',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-
-            // پاکسازی کش قالب (برای driver=database — Redis توسط customer-site در 60 ثانیه expire می‌شود)
-            try {
-                $conn->table('cache')->where('key', 'like', '%canvas_theme%')->delete();
-                $conn->table('cache')->where('key', 'like', '%settings%')->delete();
-            } catch (\Throwable) {}
-
-            // Provision theme pages into customer site's pages table
-            $this->provisionThemePagesIntoDb($conn, $theme);
-
+                'extension_assets'     => ExtensionThemeRuntimeAssetProjector::project($theme),
+            ]);
         } catch (\Throwable $e) {
-            DB::purge($connKey);
-            \Illuminate\Support\Facades\Log::error('ThemeInstall failed', [
+            \Illuminate\Support\Facades\Log::error('ThemeInstall request failed', [
                 'theme_id' => $theme->id,
                 'site_id'  => $site->id,
                 'error'    => $e->getMessage(),
             ]);
-            return back()->with('error', 'خطا در نصب قالب: ' . $e->getMessage());
+            return back()->with('error', 'اتصال به سایت "' . $site->title . '" ناموفق بود: ' . $e->getMessage());
         }
 
-        DB::purge($connKey);
+        if ($response->status() === 409) {
+            $body = $response->json();
+            return back()->with('error',
+                'نصب قالب روی سایت "' . $site->title . '" به دلیل تداخل نام‌گذاری صفحات متوقف شد: '
+                . ($body['message'] ?? 'یکی از صفحه‌های این قالب با صفحه‌ای موجود در سایت تداخل دارد.')
+            );
+        }
+
+        if (!$response->successful()) {
+            \Illuminate\Support\Facades\Log::error('ThemeInstall failed', [
+                'theme_id' => $theme->id,
+                'site_id'  => $site->id,
+                'status'   => $response->status(),
+                'body'     => $response->body(),
+            ]);
+            return back()->with('error',
+                'نصب قالب روی سایت "' . $site->title . '" ناموفق بود (کد ' . $response->status() . ').'
+            );
+        }
 
         return redirect()->route('admin.theme-builder.index')
             ->with('success', 'قالب "' . $theme->name . '" با موفقیت روی سایت "' . $site->title . '" نصب شد.');

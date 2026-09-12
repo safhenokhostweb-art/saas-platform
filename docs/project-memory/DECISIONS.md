@@ -1629,3 +1629,90 @@ ADR (Constitution §13).
 `CustomerMediaResolver` (new), `HeroElement`, and the canvas-editor Builder
 UI. Completes the `ThemeDesignMediaController` TRANSITIONAL status recorded
 in [[ADR-049]] point 8.
+
+---
+
+## ADR-052 — Single Theme Install Authority and Structural Header/Footer Presets
+
+**Date:** 2026-09-12
+
+**Context:** A real, reproduced defect: `ThemeCanvasController::installToSite()`
+wrote `active_canvas_theme_data`/`_name`/`_slug`/`_id` directly into the
+customer's database over a raw cross-server MySQL connection, then
+raw-inserted real `is_protected` `Page` rows for every installed page slug
+(`provisionThemePagesIntoDb()`). Those Page rows never had any rendering
+role — `ThemeCanvasPageController::show()` always resolves a canvas-owned
+page first — but they occupied the same slugs the installed Canvas theme
+owned. Any later operation that goes through customer-site's own
+`ThemeInstanceRevisionService::record()` (self-heal backfill, and any
+normal customer save/publish) calls `CanvasReservedSlugs::collidingWithExistingPages()`
+and fails closed against exactly those rows, so a site installed this way
+was permanently unable to save or publish its own Canvas theme afterward.
+This was two uncoordinated install authorities — raw SQL from
+saas-platform, and the revision service everything else in customer-site
+already uses — disagreeing about the same namespace.
+
+**Decision:**
+
+1. There is exactly one Theme install authority: customer-site's own
+   `ThemeInstanceRevisionService::record()`, the same single write path
+   every other way the active Canvas theme can change (publish, import,
+   rollback, upgrade-reconcile) already uses. `installToSite()` no longer
+   writes to the customer's database directly or over a raw connection —
+   it makes one authenticated HTTP call (`X-Provision-Secret`, mirroring
+   the existing `ThemePurchaseOrderObserver` pattern) to a new canonical
+   customer-site endpoint, `POST /builder/api/theme/install`
+   (`PageBuilderController::installTheme()`), which calls `record()` with
+   `type=install` and real provenance (`source_theme_id`,
+   `source_theme_version`, `source_release_id` resolved from the Theme's
+   `currentRelease`).
+2. Install is therefore subject to the exact same `CanvasReservedSlugs`
+   collision guard as every other lineage-changing write, with no
+   special-casing: a target site with a conflicting `Page` row rejects the
+   install (HTTP 409, surfaced to the platform admin) instead of silently
+   applying a state the customer's own revision system would later refuse.
+3. Canvas-owned pages remain embedded in the installed `active_canvas_theme_data`
+   only. Install never creates `Page` rows for those slugs — the legacy
+   `provisionThemePagesIntoDb()` raw-SQL page insert is no longer called
+   from `installToSite()` (it remains, unchanged in behavior, only for the
+   unrelated `syncPagesForSite()` re-sync action, which is out of this
+   ADR's scope and tracked as follow-up debt). This preserves the existing
+   namespace invariant both directions already relied on:
+   `ACTIVE_CANVAS_PAGE_SLUGS ∩ PAGE_BUILDER_PUBLIC_SLUGS = ∅`.
+4. The Universal Multipurpose Theme (`universal-multipurpose-qa`, seeded by
+   `UniversalMultipurposeQaThemeSeeder`) is a permanent integration and
+   regression surface, not a one-off QA fixture: its install round-trip
+   (install → revision → provenance → 16 pages → public render → a normal
+   post-install save/publish → public render again) is covered by real,
+   permanent tests against real migrated databases —
+   `saas-platform/tests/Feature/Admin/ThemeCanvasInstallToSiteHttpTest.php`
+   (the outbound HTTP contract) and
+   `customer-site/tests/Feature/ThemeCanvas/ThemeInstallRoundTripTest.php`
+   (the real endpoint, service, and public render) — with no fake install
+   adapter and no direct-DB shortcut on either side.
+5. A Header or Footer preset is "structurally distinct" only by its
+   ordered block-TYPE signature (e.g. `[nav_header, cart_icon]` vs.
+   `[social_icons, nav_header]`) — different props on the same single
+   `nav_header`/`nav_footer` block is a reskin, not a structure. The
+   Universal Multipurpose Theme ships 6 Header and 6 Footer presets with 6
+   genuinely unique signatures each (verified by exact ordered type-list
+   comparison in `UniversalMultipurposeQaThemeSeederTest`, not merely a
+   block-count or preset-count check), built entirely from existing
+   canonical block types (`nav_menu`, `cart_icon`, `search_bar`,
+   `social_icons`, `contact_info`, `language_switcher`, `newsletter_form`)
+   — no new block type or parallel builder was introduced to reach this.
+
+**Impact:** `saas-platform` — `ThemeCanvasController::installToSite()`
+(rewritten), `UniversalMultipurposeQaThemeSeeder` (`headerPresets()`/
+`footerPresets()` rewritten for genuine structural distinctness),
+`UniversalMultipurposeQaThemeSeederTest` (strengthened assertion). Local
+`.env` only: `CUSTOMER_PROVISION_SECRET` set to a throwaway local value in
+both repos so the new endpoint is reachable in local dev/testing —
+production deployments must set a real shared secret, unchanged from the
+existing webhook contract. `customer-site` — new
+`PageBuilderController::installTheme()` + `POST /builder/api/theme/install`
+route, reusing the existing `provision.secret` middleware; no change to
+`ThemeInstanceRevisionService`, `CanvasReservedSlugs`, or
+`ThemePageProvisionService` (the unrelated purchase-order page-provisioning
+webhook). `syncPagesForSite()`'s continued use of the raw-SQL page insert
+is known, pre-existing, out-of-scope debt, not touched by this ADR.

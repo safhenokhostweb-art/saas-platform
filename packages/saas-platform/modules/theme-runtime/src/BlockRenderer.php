@@ -369,16 +369,27 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-grid tb-grid-cols-{$cols} tb-gap-{$gap}\">{$inner}</div>";
     }
 
+    /**
+     * Builder integrity audit (2026-09-11): .tb-columns/.tb-col-N carried
+     * ZERO CSS anywhere in the shared contract — children rendered as
+     * plain stacked block divs with no side-by-side layout at all, and
+     * 'gap' (a real, long-declared schema field) had no effect. Fixed
+     * with a scoped inline <style> block (this method only receives
+     * $inner as an already-flattened HTML string, not the raw children
+     * array, so real per-child weighting from 'ratios' would need a
+     * base-class change to how structural containers receive their
+     * children — out of scope here; documented, not hidden). Equal-width
+     * flex distribution with a real, working gap is a strict improvement
+     * over the previous "no layout at all" state, not a regression.
+     */
     protected function renderColumns(array $props, string $inner, string $id): string
     {
         $ratios = $props['ratios'] ?? '1/2,1/2';
-        $parts = array_map('trim', explode(',', $ratios));
-        $classes = [];
-        foreach ($parts as $i => $r) {
-            $classes[] = "tb-col-" . ($i + 1);
-        }
-        $colClass = implode(' ', $classes);
-        return "<div id=\"tb-{$id}\" class=\"tb-columns {$colClass}\">{$inner}</div>";
+        $count = max(1, count(array_map('trim', explode(',', $ratios))));
+        $gap = ['none' => '0', 'xs' => '0.5rem', 'sm' => '0.75rem', 'md' => '1.5rem', 'lg' => '2rem', 'xl' => '3rem'][$props['gap'] ?? 'md'] ?? '1.5rem';
+        $safeId = preg_replace('/[^a-zA-Z0-9_\-]/', '', $id);
+        $style = "<style>#tb-{$safeId}{display:flex;flex-wrap:wrap;gap:{$gap};}#tb-{$safeId}>*{flex:1 1 0;min-width:0;}@media(max-width:768px){#tb-{$safeId}{flex-direction:column;}}</style>";
+        return "{$style}<div id=\"tb-{$id}\" class=\"tb-columns\" data-columns=\"{$count}\">{$inner}</div>";
     }
 
     /**
@@ -430,7 +441,14 @@ class BlockRenderer
         $eaSub   = $this->editableAttr('subtitle', 'text');
         $eaBtn   = $this->editableAttr('button_text', 'text');
         $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\"{$eaBtn}>{$btnText}</a>" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-hero tb-bg-{$bg} tb-align-{$align}\"><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
+        // Builder integrity audit (2026-09-11): background_image is a real,
+        // long-declared schema field this method never consumed — a
+        // background image selected/uploaded through the Builder silently
+        // had zero runtime effect. Same inline-style pattern renderSection()
+        // already uses for the identical field.
+        $bgImg = $this->escapeAttr($props['background_image'] ?? '');
+        $styleAttr = $bgImg ? " style=\"background-image:url({$bgImg});background-size:cover;background-position:center;\"" : '';
+        return "<section id=\"tb-{$id}\" class=\"tb-hero tb-bg-{$bg} tb-align-{$align}\"{$styleAttr}><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
     }
 
     /**
@@ -498,7 +516,14 @@ class BlockRenderer
         if ($url === '') {
             return "<figure id=\"tb-{$id}\" class=\"tb-image tb-image-placeholder\"><span>تصویر انتخاب نشده</span></figure>";
         }
-        $img   = "<img src=\"{$url}\" alt=\"{$alt}\" loading=\"lazy\" class=\"tb-img\">";
+        // Builder integrity audit (2026-09-11): align is a real, long-
+        // declared schema field this method never consumed — the
+        // .tb-img-center/.tb-img-right classes it needs already existed in
+        // the shared CSS contract (theme-runtime-contract.css) with no
+        // renderer ever emitting them.
+        $align = $props['align'] ?? 'center';
+        $alignClass = $align === 'right' ? ' tb-img-right' : ($align === 'left' ? '' : ' tb-img-center');
+        $img   = "<img src=\"{$url}\" alt=\"{$alt}\" loading=\"lazy\" class=\"tb-img{$alignClass}\">";
         $eaCap = $this->editableAttr('caption', 'text');
         $cap   = $caption ? "<figcaption class=\"tb-image-caption\"{$eaCap}>{$caption}</figcaption>" : '';
         return "<figure id=\"tb-{$id}\" class=\"tb-image\">{$img}{$cap}</figure>";
