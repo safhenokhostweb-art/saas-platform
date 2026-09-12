@@ -626,6 +626,7 @@ Route::prefix('admin')
             Route::post('theme-builder/{theme_builder}/publish', [ThemeBuilderController::class, 'publish'])->name('theme-builder.publish');
             Route::post('theme-builder/{theme_builder}/unpublish', [ThemeBuilderController::class, 'unpublish'])->name('theme-builder.unpublish');
             Route::post('theme-builder/{theme_builder}/revision', [ThemeBuilderController::class, 'saveRevision'])->name('theme-builder.revision');
+            Route::get('theme-builder/{theme_builder}/revisions', [ThemeBuilderController::class, 'listRevisions'])->name('theme-builder.revisions');
             Route::get('theme-builder/{theme_builder}/export', [ThemeBuilderController::class, 'export'])->name('theme-builder.export');
             Route::get('theme-builder/{theme_builder}/preview', [ThemeBuilderController::class, 'preview'])->name('theme-builder.preview');
             Route::get('theme-builder/{theme_builder}/clone', function (\App\Models\Theme $theme_builder) {

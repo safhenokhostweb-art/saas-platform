@@ -186,6 +186,49 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
                 <span x-text="publishing ? 'انتشار...' : 'انتشار'"></span>
             </button>
+
+            {{-- UI-C2D/C2E: checkpoint history, unpublish, clone, export,
+                 import — the remaining raw-editor-only operational actions,
+                 absorbed here behind one compact menu rather than five new
+                 toolbar buttons. --}}
+            <div class="relative shrink-0" @click.outside="showMoreMenu = false">
+                <button
+                    type="button"
+                    @click="showMoreMenu = !showMoreMenu"
+                    class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    aria-haspopup="true" :aria-expanded="showMoreMenu ? 'true' : 'false'"
+                    title="عملیات بیشتر"
+                    data-testid="tb-more-actions-toggle"
+                >
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                    بیشتر
+                </button>
+                <div x-show="showMoreMenu" x-cloak x-transition.opacity
+                    class="absolute left-0 top-full mt-1 w-56 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-40 text-sm"
+                    data-testid="tb-more-actions-menu"
+                >
+                    <button type="button" @click="showMoreMenu = false; openCheckpointsModal()"
+                        class="w-full text-right px-3 py-2 hover:bg-slate-50 text-slate-700 transition focus:outline-none focus-visible:bg-slate-50"
+                        data-testid="tb-action-checkpoints">تاریخچه / چک‌پوینت</button>
+                    <button type="button" @click="showMoreMenu = false; openCloneModal()"
+                        class="w-full text-right px-3 py-2 hover:bg-slate-50 text-slate-700 transition focus:outline-none focus-visible:bg-slate-50"
+                        data-testid="tb-action-clone">کپی تم</button>
+                    <a href="{{ route('admin.theme-builder.export', $theme) }}" @click="showMoreMenu = false"
+                        class="block w-full text-right px-3 py-2 hover:bg-slate-50 text-slate-700 transition focus:outline-none focus-visible:bg-slate-50"
+                        data-testid="tb-action-export">خروجی JSON</a>
+                    <button type="button" @click="showMoreMenu = false; $refs.tbImportFileInput.click()"
+                        class="w-full text-right px-3 py-2 hover:bg-slate-50 text-slate-700 transition focus:outline-none focus-visible:bg-slate-50"
+                        data-testid="tb-action-import">درون‌ریزی JSON</button>
+                    <input type="file" x-ref="tbImportFileInput" accept="application/json" class="hidden" @change="importThemeFile($event)">
+                    <div class="h-px bg-slate-100 my-1"></div>
+                    <button type="button" x-show="themeStatus === 'published'" @click="showMoreMenu = false; unpublishTheme()"
+                        :disabled="unpublishing"
+                        class="w-full text-right px-3 py-2 hover:bg-red-50 text-red-600 transition disabled:opacity-60 focus:outline-none focus-visible:bg-red-50"
+                        data-testid="tb-action-unpublish">
+                        <span x-text="unpublishing ? 'در حال خروج از انتشار...' : 'خروج از انتشار'"></span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1313,6 +1356,83 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     </div>
 
     {{-- ═══════════════════════════════════════════════════════
+         UI-C2D: CHECKPOINTS MODAL (create / list / restore)
+    ═══════════════════════════════════════════════════════ --}}
+    <div x-show="showCheckpointsModal" x-cloak x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div @click.outside="showCheckpointsModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" data-testid="tb-checkpoints-modal">
+            <h3 class="text-base font-bold text-slate-800 mb-1">تاریخچه / چک‌پوینت</h3>
+            <p class="text-xs text-slate-500 mb-4">یک چک‌پوینت، وضعیت کامل پیش‌نویس این قالب (صفحات، هدر، فوتر، استایل‌های سراسری و انتخاب افزونه‌ها) را ذخیره می‌کند. بازیابی، فقط این وضعیت را برمی‌گرداند — روی نسخه‌های منتشرشده تجاری اثری ندارد.</p>
+
+            <div class="flex gap-2 mb-4">
+                <input type="text" x-model="newCheckpointLabel" placeholder="برچسب (اختیاری)"
+                    class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    data-testid="tb-checkpoint-label-input">
+                <button @click="createCheckpoint()" :disabled="creatingCheckpoint"
+                    class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition disabled:opacity-50"
+                    data-testid="tb-checkpoint-create">
+                    <span x-text="creatingCheckpoint ? 'در حال ذخیره...' : 'ایجاد چک‌پوینت'"></span>
+                </button>
+            </div>
+
+            <div class="space-y-2 max-h-64 overflow-y-auto" data-testid="tb-checkpoint-list">
+                <template x-for="rev in checkpoints" :key="rev.id">
+                    <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-slate-800 truncate" x-text="rev.label"></div>
+                            <div class="text-[11px] text-slate-500" x-text="'نسخه ' + rev.version + ' — ' + formatCheckpointDate(rev.created_at)"></div>
+                        </div>
+                        <button type="button" @click="restoreCheckpoint(rev)" :disabled="restoringCheckpointId === rev.id"
+                            class="shrink-0 px-2.5 py-1 rounded-lg border border-indigo-200 text-indigo-600 text-xs font-medium hover:bg-indigo-50 transition disabled:opacity-50"
+                            data-testid="tb-checkpoint-restore">
+                            <span x-text="restoringCheckpointId === rev.id ? '...' : 'بازیابی'"></span>
+                        </button>
+                    </div>
+                </template>
+                <div x-show="!loadingCheckpoints && checkpoints.length === 0" class="text-center py-4 text-slate-400 text-xs">
+                    هنوز چک‌پوینتی ثبت نشده است
+                </div>
+                <div x-show="loadingCheckpoints" class="text-center py-4 text-slate-400 text-xs">در حال بارگذاری...</div>
+            </div>
+
+            <div class="flex gap-2 mt-5">
+                <button @click="showCheckpointsModal = false" class="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
+         UI-C2E: CLONE MODAL
+    ═══════════════════════════════════════════════════════ --}}
+    <div x-show="showCloneModal" x-cloak x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div @click.outside="showCloneModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" data-testid="tb-clone-modal">
+            <h3 class="text-base font-bold text-slate-800 mb-1">کپی این تم</h3>
+            <p class="text-xs text-slate-500 mb-4">یک تم جدید با همان صفحات، هدر، فوتر، استایل‌ها و انتخاب افزونه‌ها ساخته می‌شود — با شناسه و آدرس کاملاً جدید.</p>
+
+            <label class="text-xs font-semibold text-slate-600 mb-1.5 block">نام تم جدید</label>
+            <input type="text" x-model="cloneName" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 mb-3"
+                data-testid="tb-clone-name-input">
+
+            <label class="text-xs font-semibold text-slate-600 mb-1.5 block">سایت (اختیاری)</label>
+            <select x-model="cloneSiteId" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 mb-4"
+                data-testid="tb-clone-site-select">
+                <option value="">قالب پلتفرم</option>
+                @foreach($sites as $site)
+                    <option value="{{ $site->id }}">{{ $site->title }}</option>
+                @endforeach
+            </select>
+
+            <div class="flex gap-2">
+                <button @click="showCloneModal = false" class="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">انصراف</button>
+                <button @click="cloneThemeNow()" :disabled="cloning || !cloneName"
+                    class="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition disabled:opacity-50"
+                    data-testid="tb-clone-confirm">
+                    <span x-text="cloning ? 'در حال ایجاد...' : 'ایجاد کپی'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
          ADD PAGE MODAL
     ═══════════════════════════════════════════════════════ --}}
     {{-- Global Styles is an explicit Theme-level panel, separate from the
@@ -1503,6 +1623,10 @@ const INITIAL_GLOBAL_STYLES = @json($visualGlobalStyles);
 const AVAILABLE_EXTENSIONS = @json($availableExtensions);
 const INITIAL_EXTENSION_SELECTIONS = @json($extensionSelections);
 const EXTENSION_SELECTION_ERRORS = @json($extensionSelectionErrors);
+// UI-C2D/C2E: initial publish status, for the canonical Canvas's own
+// unpublish action — updated client-side after a successful unpublish so
+// the menu reacts without a full page reload.
+const INITIAL_THEME_STATUS = @json($theme->status);
 
 function themeCanvas() {
     return {
@@ -1571,6 +1695,21 @@ function themeCanvas() {
         showExtensionsModal: false,
         newExtensionProduct: '',
         newExtensionVersion: '',
+        // UI-C2D/C2E: More-actions menu, checkpoints, clone, unpublish.
+        showMoreMenu: false,
+        themeStatus: INITIAL_THEME_STATUS,
+        unpublishing: false,
+        showCheckpointsModal: false,
+        checkpoints: [],
+        loadingCheckpoints: false,
+        creatingCheckpoint: false,
+        restoringCheckpointId: null,
+        newCheckpointLabel: '',
+        showCloneModal: false,
+        cloneName: '',
+        cloneSiteId: '',
+        cloning: false,
+        importing: false,
 
         // ── Computed ─────────────────────────────────────────────
         get blocks() {
@@ -2161,10 +2300,148 @@ function themeCanvas() {
                     headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
                 });
                 const d = await r.json();
-                if (d.success ?? r.ok) this.showToast('قالب منتشر شد ✓', 'success');
+                if (d.success ?? r.ok) {
+                    this.themeStatus = 'published';
+                    this.showToast('قالب منتشر شد ✓', 'success');
+                }
                 else this.showToast(d.message ?? 'خطا', 'error');
             } catch { this.showToast('خطای شبکه', 'error'); }
             finally   { this.publishing = false; }
+        },
+
+        // ── UI-C2E: Unpublish ──────────────────────────────────────
+        async unpublishTheme() {
+            if (this.unpublishing) return;
+            if (!confirm('این تم از حالت انتشار خارج شود؟ نسخه‌های منتشرشده تجاری (ThemeRelease) دست‌نخورده باقی می‌مانند.')) return;
+            this.unpublishing = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/unpublish`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+                });
+                const d = await r.json();
+                if (d.success ?? r.ok) {
+                    this.themeStatus = 'draft';
+                    this.showToast('از حالت انتشار خارج شد ✓', 'success');
+                } else {
+                    this.showToast(d.message ?? 'خطا', 'error');
+                }
+            } catch { this.showToast('خطای شبکه', 'error'); }
+            finally { this.unpublishing = false; }
+        },
+
+        // ── UI-C2D: Checkpoints (master draft history) ─────────────
+        async openCheckpointsModal() {
+            this.showCheckpointsModal = true;
+            this.newCheckpointLabel = '';
+            await this.fetchCheckpoints();
+        },
+        async fetchCheckpoints() {
+            this.loadingCheckpoints = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/revisions`, {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN }
+                });
+                const d = await r.json();
+                this.checkpoints = d.revisions ?? [];
+            } catch { this.checkpoints = []; }
+            finally { this.loadingCheckpoints = false; }
+        },
+        async createCheckpoint() {
+            if (this.creatingCheckpoint) return;
+            // A checkpoint must capture the CURRENT draft, including whatever
+            // is being edited right now — save first, exactly like publish does.
+            await this.saveCurrentPage();
+            this.creatingCheckpoint = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/revision`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: JSON.stringify({ label: this.newCheckpointLabel || undefined })
+                });
+                const d = await r.json();
+                if (d.success) {
+                    this.newCheckpointLabel = '';
+                    this.showToast('چک‌پوینت ذخیره شد ✓', 'success');
+                    await this.fetchCheckpoints();
+                } else {
+                    this.showToast('خطا در ذخیره چک‌پوینت', 'error');
+                }
+            } catch { this.showToast('خطای شبکه', 'error'); }
+            finally { this.creatingCheckpoint = false; }
+        },
+        async restoreCheckpoint(rev) {
+            if (this.restoringCheckpointId) return;
+            if (!confirm(`وضعیت فعلی با «${rev.label}» جایگزین شود؟ تغییرات ذخیره‌نشده فعلی از بین می‌روند.`)) return;
+            this.restoringCheckpointId = rev.id;
+            try {
+                const r = await fetch(`/admin/theme-revisions/${rev.id}/restore`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+                });
+                const d = await r.json();
+                if (d.success ?? r.ok) {
+                    this.showToast('چک‌پوینت بازیابی شد — در حال بارگذاری مجدد...', 'success');
+                    window.location.reload();
+                } else {
+                    this.showToast(d.message ?? 'خطا در بازیابی', 'error');
+                }
+            } catch { this.showToast('خطای شبکه', 'error'); }
+            finally { this.restoringCheckpointId = null; }
+        },
+        formatCheckpointDate(iso) {
+            try { return new Date(iso).toLocaleString('fa-IR'); } catch { return iso; }
+        },
+
+        // ── UI-C2E: Clone ───────────────────────────────────────────
+        openCloneModal() {
+            this.cloneName = 'کپی ' + {{ \Illuminate\Support\Js::from($theme->name) }};
+            this.cloneSiteId = '';
+            this.showCloneModal = true;
+        },
+        async cloneThemeNow() {
+            if (this.cloning || !this.cloneName) return;
+            this.cloning = true;
+            try {
+                const r = await fetch(`/admin/theme-builder/${THEME_ID}/clone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: JSON.stringify({ name: this.cloneName, site_id: this.cloneSiteId || undefined })
+                });
+                const d = await r.json();
+                if (d.success && d.canvas_url) {
+                    this.showToast('تم کپی شد — در حال انتقال...', 'success');
+                    window.location.href = d.canvas_url;
+                } else {
+                    this.showToast(d.error ?? d.message ?? 'خطا در کپی تم', 'error');
+                }
+            } catch { this.showToast('خطای شبکه', 'error'); }
+            finally { this.cloning = false; }
+        },
+
+        // ── UI-C2E: Import (creates a NEW theme, then navigates to it) ──
+        async importThemeFile(event) {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (!file || this.importing) return;
+            this.importing = true;
+            const fd = new FormData();
+            fd.append('file', file);
+            try {
+                const r = await fetch(`/admin/theme-builder/import`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                    body: fd
+                });
+                const d = await r.json();
+                if (d.success && d.canvas_url) {
+                    this.showToast('تم وارد شد — در حال انتقال...', 'success');
+                    window.location.href = d.canvas_url;
+                } else {
+                    this.showToast(d.error ?? 'خطا در درون‌ریزی فایل', 'error');
+                }
+            } catch { this.showToast('خطای شبکه', 'error'); }
+            finally { this.importing = false; }
         },
 
         openPreview() {

@@ -212,10 +212,24 @@ class ThemeBuilderController extends Controller
         return response()->json(['success' => true, 'revision' => $rev]);
     }
 
-    public function restoreRevision(ThemeRevision $revision)
+    /** UI-C2D — checkpoint list for the canonical Canvas's history panel. */
+    public function listRevisions(Theme $theme_builder)
+    {
+        $revisions = $theme_builder->revisions()
+            ->orderByDesc('version')
+            ->get(['id', 'version', 'label', 'created_at']);
+
+        return response()->json(['success' => true, 'revisions' => $revisions]);
+    }
+
+    public function restoreRevision(Request $request, ThemeRevision $revision)
     {
         $theme = $revision->theme;
         $this->themeService->restoreRevision($revision);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'نسخه بازیابی شد.']);
+        }
         return redirect()->route('admin.theme-builder.edit', $theme)->with('success', 'نسخه بازیابی شد.');
     }
 
@@ -224,6 +238,14 @@ class ThemeBuilderController extends Controller
         $newName = $request->validate(['name' => 'required|string|max:255'])['name'];
         $siteId = $request->integer('site_id') ?: null;
         $newTheme = $this->themeService->cloneTheme($theme_builder, $newName, $siteId ?: null);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'theme' => ['id' => $newTheme->id, 'name' => $newTheme->name, 'slug' => $newTheme->slug],
+                'canvas_url' => route('admin.theme-builder.canvas', $newTheme),
+            ]);
+        }
         return redirect()->route('admin.theme-builder.edit', $newTheme)->with('success', 'تم کپی شد.');
     }
 
@@ -242,10 +264,29 @@ class ThemeBuilderController extends Controller
         $content = file_get_contents($request->file('file')->getRealPath());
         $data = json_decode($content, true);
         if (!is_array($data)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'error' => 'فایل JSON نامعتبر است.'], 422);
+            }
             return redirect()->route('admin.theme-builder.index')->with('error', 'فایل JSON نامعتبر است.');
         }
         $siteId = $request->integer('site_id') ?: null;
-        $theme = $this->themeService->importTheme($data, $siteId);
+
+        try {
+            $theme = $this->themeService->importTheme($data, $siteId);
+        } catch (\InvalidArgumentException $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
+            }
+            return redirect()->route('admin.theme-builder.index')->with('error', $e->getMessage());
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'theme' => ['id' => $theme->id, 'name' => $theme->name, 'slug' => $theme->slug],
+                'canvas_url' => route('admin.theme-builder.canvas', $theme),
+            ]);
+        }
         return redirect()->route('admin.theme-builder.edit', $theme)->with('success', 'تم با موفقیت وارد شد.');
     }
 

@@ -64,10 +64,12 @@ class ThemeCanvasController extends Controller
         $availableExtensions = ExtensionCanvasPaletteAdapter::selectableProducts();
         $visualGlobalStyles = $this->visualGlobalStyles($theme);
 
+        $sites = Site::orderBy('title')->get(['id', 'title']);
+
         return view('admin.theme-builder.canvas', compact(
             'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons',
             'extensionSelections', 'extensionSelectionErrors', 'availableExtensions',
-            'visualGlobalStyles'
+            'visualGlobalStyles', 'sites'
         ));
     }
 

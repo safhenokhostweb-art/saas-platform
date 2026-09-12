@@ -1716,3 +1716,134 @@ route, reusing the existing `provision.secret` middleware; no change to
 `ThemePageProvisionService` (the unrelated purchase-order page-provisioning
 webhook). `syncPagesForSite()`'s continued use of the raw-SQL page insert
 is known, pre-existing, out-of-scope debt, not touched by this ADR.
+
+---
+
+## ADR-053 — Master Draft Checkpoint Completeness and Canonical Canvas Operational Parity (UI-C2D/C2E)
+
+**Date:** 2026-09-12
+
+**Context:** `ThemeRevision` (`ThemeBuilderService::saveRevision()`/
+`restoreRevision()`) is the master-authoring draft checkpoint tool —
+separate from `ThemeRelease` (immutable commercial ledger) and
+customer-site's `ThemeInstanceRevision` (per ADR-021 §2, a boundary this
+ADR does not touch). Audited against the actual live write paths
+(`ThemeCanvasController::save()`/`addPage()`/`removePage()`), its snapshot
+omitted `pages` — the same gap ADR-021 already documented for this exact
+method when it verified `ThemeRelease`'s snapshot was complete by
+comparison. The same omission was found, independently, in `cloneTheme()`,
+`exportTheme()`, and `importTheme()` — all four operations copied
+`header_blocks`/`footer_blocks`/`global_styles`/`settings` but silently
+dropped a Theme's authored pages. `settings` (which already carries
+`extension_selections`, per ADR-047) was already copied whole by all four,
+so Extension selections were never actually missing — only `pages` was.
+Separately, `saveRevision`/`restoreRevision`/`cloneTheme`/`exportTheme`/
+`importTheme`/`unpublish` were reachable only from the legacy raw-JSON
+editor (`edit.blade.php`) and its index-page action links — never from the
+canonical Theme Canvas — leaving the raw editor as the sole surface for
+checkpoint history, clone, export, import, and unpublish.
+
+**Decision:**
+
+1. **The canonical checkpoint snapshot now includes `pages`** in both
+   `saveRevision()` (capture) and `restoreRevision()` (restore) — verified
+   by an exact-restore round-trip test (state A → checkpoint → state B →
+   restore → exact state A across pages/header/footer/global_styles/
+   settings). Restore remains content-only: it never touches Theme
+   identity, never creates or mutates a `ThemeRelease`, and
+   `ThemeInstanceRevision` remains architecturally unreachable from this
+   app (a separate app/database, per ADR-021).
+2. **`cloneTheme()`, `exportTheme()`, and `importTheme()` now also carry
+   `pages`** — the same fix, applied consistently across every operation
+   that reads or reconstructs master-authoring state, not just the
+   revision tool the original audit named.
+3. **`exportTheme()`'s existing `version` key is the one canonical export
+   format/schema authority** — bumped to `2` for this phase; `importTheme()`
+   still accepts a version-1 file (no `pages` key) by defaulting it to
+   `[]`, exactly like it already defaulted `header_blocks`/`footer_blocks`.
+   No second export format was introduced.
+4. **`importTheme()` now validates before writing anything**: a supported
+   version, a well-formed `pages` shape, every block type resolving to
+   either `BlockRegistry::all()` (the one canonical registry — reused, not
+   duplicated) or a real `ext:*` Extension ownership/version selection
+   (validated via the existing `ExtensionCanvasPaletteAdapter::
+   validateBlocksAgainstSelections()` — also reused, not duplicated). Any
+   failure throws before `Theme::create()` runs; a rejected import creates
+   no row, proven by test. Import is wrapped in `DB::transaction()`.
+5. **`cloneTheme()`/`exportTheme()`/`importTheme()` never copy commercial
+   or customer state**: no `current_release_id`, no release provenance, no
+   `site_id` in the export payload, no customer media UUID (structurally
+   impossible — the master `Theme` model has no relation to customer-site's
+   `CustomerMedia` at all), no license/order data. A clone always gets a
+   new slug and resets to `Theme::STATUS_DRAFT`, never inheriting the
+   source's published/release state.
+6. **The canonical Theme Canvas now exposes checkpoint history (create/
+   list/restore with confirmation), clone, export, import, and unpublish**
+   behind one "بیشتر" (More) menu — no raw JSON exposed to accomplish any
+   of it, no second editor. `unpublish()` was already correctly scoped
+   (`Theme.status` only, verified unchanged by this phase) and is now also
+   reachable from the Canvas; a new read-only `GET .../revisions` JSON
+   endpoint backs the checkpoint list. The raw editor's own existing
+   actions are unchanged and gained no new unique responsibility.
+
+**Reason:** The same class of bug (pages silently dropped from a
+Theme-authoring snapshot) existed independently in four places because
+each operation had its own ad hoc field list instead of a single shared
+notion of "master-authoring state." Fixing only the one operation named by
+the prior audit would have left the other three still capable of losing a
+theme's pages on clone/export/import. Exposing the fixed operations from
+the canonical Canvas — reusing the existing routes/controller methods,
+adding only JSON-response branches and one read endpoint — is what makes
+raw-editor de-exposure (UI-C3) a real future possibility instead of a
+permanent architectural dead end.
+
+**Verification:** `ThemeBuilderCheckpointAndActionsTest` (15 tests: exact
+checkpoint restore, extension-selection preservation via `settings`,
+release/customer-state non-mutation, clone equivalence + new identity,
+export/import structural equivalence, legacy version-1 import
+compatibility, import validation rejecting unsupported version/unknown
+block type/invalid Extension selection/malformed `pages`, atomic
+no-partial-row-on-failure, unpublish release-ledger non-mutation);
+`ThemeCanvasActionSurfaceTest` (7 tests, real HTTP through real routes/
+middleware: Canvas view renders the new action surface, revision listing,
+JSON-branch restore/clone/import, unpublish); real browser suite
+`theme-canvas-checkpoint-actions.spec.ts` (8 tests: checkpoint create/
+list/exact-restore, clone, export download, import via real file upload,
+unpublish via real UI with a real prior release, responsive reachability
+at 1366/768/390 — stable across 2 consecutive full runs). Full
+`tests/Feature/ThemeBuilder`/`tests/Unit/ThemeBuilder` regression:
+564 passed, 1 pre-existing environment self-skip, 0 failures.
+
+Two pre-existing, environment-caused browser-suite failures were found and
+are NOT part of this phase's scope: (a) `theme-canvas-extension-
+authoring.spec.ts`'s toolbar-reachability check uses a stale
+`div.h-14.bg-white.border-b` locator — the toolbar has used `min-h-14`
+since before this phase (confirmed against the pre-existing committed
+file); (b) two `theme-canvas-global-styles.spec.ts`/`theme-canvas-
+zones.spec.ts` publish tests fail because `PlaywrightExtractionService`
+(used by `ColorContrastCheck`/`ResponsiveReadinessCheck` in the Commercial
+Quality Gate) spawns its own headless browser from
+`scripts/headless/.playwright-browsers`, which does not exist in this
+environment — reproduced in isolation, unrelated to any file this phase
+touched. A third, `theme-canvas-zones.spec.ts`'s dirty-indicator text
+check, has a pre-existing 2-way locator ambiguity (`getByText('ذخیره
+نشده')` matches both the existing dirty-indicator span and the existing
+Global Styles dirty span) — confirmed to fail identically with this
+phase's own contribution removed. This phase's checkpoint-modal empty-state
+text was renamed to avoid adding a third match to that ambiguity, but the
+underlying pre-existing 2-way collision was left as recorded, out-of-scope
+debt.
+
+**Impact:** `saas-platform` only. `app/Services/ThemeBuilder/
+ThemeBuilderService.php` (`saveRevision`/`restoreRevision`/`cloneTheme`/
+`exportTheme` gained `pages`; `importTheme` rewritten with validation +
+transaction; new `supportedImportVersions()`/`unknownBlockTypes()`).
+`app/Http/Controllers/Admin/ThemeBuilderController.php` (JSON branches on
+`restoreRevision`/`cloneTheme`/`import`; new `listRevisions()`).
+`app/Http/Controllers/Admin/ThemeCanvasController.php` (`show()` now also
+passes `sites`). `routes/web.php` (one new `GET .../revisions` route).
+`resources/views/admin/theme-builder/canvas.blade.php` (new More-actions
+menu, Checkpoints modal, Clone modal; no changes to `edit.blade.php`).
+`ThemeRelease`, `ThemeInstanceRevision`, `CanvasReservedSlugs`, the shared
+`BlockRegistry`/`BlockRenderer`, and `ExtensionCanvasPaletteAdapter` are
+all unchanged — reused, not duplicated. No migration.
