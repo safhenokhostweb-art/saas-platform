@@ -13,13 +13,20 @@ use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
- * تست فاز ۱: ارسال ایمیل لایسنس پس از صدور.
+ * تست فاز ۱: صدور لایسنس پس از پرداخت.
+ *
+ * OrderFulfillmentService::sendLicenseEmail() now starts with an
+ * unconditional `return;` — "Email notifications removed — system uses
+ * SMS/mobile only" (settled well before this baseline pass, commit
+ * 16520770a, 2026-08-11). LicenseIssuedMail is therefore never dispatched
+ * by fulfillment any more; the meaningful assertion is that the license
+ * itself is actually issued.
  */
 class PhaseOneFulfillmentTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_license_email_sent_after_fulfillment(): void
+    public function test_license_issued_after_fulfillment_without_sending_email(): void
     {
         Mail::fake();
 
@@ -60,10 +67,11 @@ class PhaseOneFulfillmentTest extends TestCase
         $service = app(OrderFulfillmentService::class);
         $service->fulfill($invoice);
 
-        Mail::assertSent(LicenseIssuedMail::class, function ($mail) use ($customer) {
-            return $mail->hasTo($customer->email)
-                && str_contains($mail->licenseKey, '-');
-        });
+        $platformLicense = $site->platformLicenses()->latest()->first();
+        $this->assertNotNull($platformLicense, 'Expected fulfillment to issue a PlatformLicense for the site');
+        $this->assertNotEmpty($platformLicense->license_key_prefix);
+        $this->assertNotEmpty($platformLicense->license_key_hash);
+        Mail::assertNotSent(LicenseIssuedMail::class);
     }
 
     public function test_license_email_not_sent_when_customer_has_no_email(): void

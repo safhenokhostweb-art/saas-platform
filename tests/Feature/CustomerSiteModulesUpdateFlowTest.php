@@ -58,7 +58,15 @@ class CustomerSiteModulesUpdateFlowTest extends TestCase
             'is_active' => true,
         ]);
 
-        // ۳) ایجاد سایت برای این مشتری با یک ماژول
+        // ۳) ایجاد سایت برای این مشتری
+        // Phase 17-D Part 5 — module selection at creation time is no
+        // longer processed by store() at all (a brand-new site has no
+        // completed CustomerInstallation yet, so it can never resolve a
+        // remote server to deploy a module to); assignment now happens
+        // exclusively via the dedicated site-modules page
+        // (SiteModuleController), after initial deployment completes — see
+        // SiteController::store()'s own docblock. The 'modules' input
+        // below is therefore inert; kept only to prove it's safely ignored.
         $siteResponse = $this->post(route('admin.sites.store'), [
             'customer_id' => $customer->id,
             'title' => 'سایت تست',
@@ -75,12 +83,14 @@ class CustomerSiteModulesUpdateFlowTest extends TestCase
         if ($siteResponse->status() === 500) {
             echo "\n--- Response 500 body (first 3000 chars) ---\n" . substr($siteResponse->getContent(), 0, 3000) . "\n---\n";
         }
-        $siteResponse->assertRedirect(route('admin.sites.index'));
-
         $site = Site::where('domain', 'test.example.com')->first();
         $this->assertNotNull($site);
+        // GAP-L09 — store() redirects to the edit page (with a "just
+        // created" checklist), not the index, so the admin sees next
+        // steps immediately.
+        $siteResponse->assertRedirect(route('admin.sites.edit', $site));
+
         $this->assertSame($customer->id, $site->customer_id);
-        $this->assertTrue($site->modules()->where('modules.id', $module->id)->exists());
 
         // ۴) ثبت توزیع بروزرسانی برای این سایت
         $updateResponse = $this->post(route('admin.sites.updates.store', $site), [
@@ -99,7 +109,9 @@ class CustomerSiteModulesUpdateFlowTest extends TestCase
         // ۵) بررسی رابطه‌ها
         $customer->load('sites.modules', 'sites.siteUpdates');
         $this->assertCount(1, $customer->sites);
-        $this->assertCount(1, $customer->sites->first()->modules);
+        // Module assignment no longer happens at site creation (see above);
+        // a fresh site has none until assigned via SiteModuleController.
+        $this->assertCount(0, $customer->sites->first()->modules);
         $this->assertCount(1, $customer->sites->first()->siteUpdates);
     }
 
