@@ -1,4 +1,5 @@
 /.phpunit.cache
+.phpunit.cache/
 /node_modules
 node_modules/
 /public/build
@@ -67,6 +68,10 @@ id_ed25519.pub
 # Runtime artifacts
 dump.rdb
 META-INF/
+
+# Personal isolated-cert-DB PHPUnit config (never shared, points at a
+# machine-local dedicated test database) — never tracked.
+phpunit.cert.xml
 
 # Local experimental/test scripts that may contain API keys
 test_gapgpt.py
