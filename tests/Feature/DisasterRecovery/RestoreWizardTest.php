@@ -21,8 +21,22 @@ class RestoreWizardTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        // TEST-HARNESS-DB-01: `role` is not a real `users` column (the app
+        // authorizes admin access via AuthorizationService::canAccessAdmin(),
+        // which checks the boolean `is_admin` column — see AdminMiddleware).
+        // This test predates that and was never updated, so every
+        // User::factory()->create() call here failed with
+        // "Unknown column 'role'".
+        $this->admin = User::factory()->create(['is_admin' => true]);
+        // TEST-HARNESS-DB-01: sites.customer_id is a required (non-nullable)
+        // foreign key (2026_02_07_180002_create_sites_table.php) this
+        // fixture never provided — masked until the `role` fix above
+        // stopped setUp() from failing one line earlier. Same Customer::
+        // create() pattern already used by SiteControllerCredentialTest /
+        // SiteModuleControllerTest / etc.
+        $customer = \App\Models\Customer::create(['name' => 'Restore Wizard Test Customer', 'mobile' => '0912' . random_int(1000000, 9999999)]);
         $this->site  = Site::create([
+            'customer_id'      => $customer->id,
             'title'            => 'Test Site',
             'domain'           => 'test.example.com',
             'is_active'        => true,
@@ -43,7 +57,7 @@ class RestoreWizardTest extends TestCase
 
     public function test_non_admin_cannot_access_restore_wizard(): void
     {
-        $user = User::factory()->create(['role' => 'user']);
+        $user = User::factory()->create(['is_admin' => false]);
         $this->actingAs($user)
              ->get(route('admin.disaster-recovery.index'))
              ->assertForbidden();
