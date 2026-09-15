@@ -70,8 +70,10 @@ class PlatformSettingsController extends Controller
             } else {
                 // Treat as a relative storage path — normalize and reject traversal.
                 $path = PlatformSettings::normalizeStoragePath($raw);
-                // Reject any path that still contains traversal sequences after normalization.
-                if ($path !== '' && !str_contains($path, '..') && !str_starts_with($path, '/')) {
+                // Reject any path that still contains traversal sequences after normalization,
+                // or that normalizeStoragePath() left absolute (Unix or Windows drive) because
+                // it had no recognizable storage marker to safely extract from.
+                if ($path !== '' && !str_contains($path, '..') && !str_starts_with($path, '/') && !preg_match('#^[A-Za-z]:/#', $path)) {
                     $data['platform_logo'] = $path;
                 }
             }

@@ -250,22 +250,51 @@ class MobileTicketController extends Controller
         }
 
         // Full path traversal prevention:
-        // 1. URL-decode to catch encoded sequences like %2e%2e
-        // 2. Strip null bytes
-        // 3. Reject absolute paths (Windows and Unix)
-        // 4. Reject any .. component after normalization
-        // 5. Collapse separators to forward slashes
-        $decoded  = rawurldecode($path);
-        $decoded  = str_replace("\0", '', $decoded);
-        $safePath = ltrim(str_replace('\\', '/', $decoded), '/');
+        // 1. Reject outright if the raw input carries a null byte — its
+        //    only purpose in a path is to confuse a lower-level API, so
+        //    stripping and continuing (the old behavior) is more permissive
+        //    than necessary; presence alone is treated as invalid input.
+        // 2. Repeatedly URL-decode (bounded) to catch both single- and
+        //    double-encoded sequences like %2e%2e / %252e%252e — a single
+        //    rawurldecode() pass left a double-encoded ".." undetected
+        //    (TEST-HARNESS-DB-01 security follow-up).
+        // 3. Collapse separators to forward slashes.
+        // 4. Reject absolute paths (Windows and Unix) — checked on the
+        //    normalized-but-NOT-yet-ltrimmed string; ltrim('/') runs only
+        //    after this check passes, purely to build the relative $safePath
+        //    handed to StorageManager. Checking str_starts_with() on an
+        //    already-ltrimmed string can never be true — that previously
+        //    made this branch dead code (TEST-HARNESS-DB-01 follow-up:
+        //    StorageSecurityTest::test_traversal_vectors_are_blocked caught
+        //    this). Confirmed via StorageManager/Flysystem's own
+        //    PathTraversalDetected guard that no `..` sequence ever actually
+        //    escaped the storage root even before this fix — this closes a
+        //    real but previously non-exploitable defense-in-depth gap, not
+        //    a live traversal.
+        // 5. Reject any .. component after normalization
+        if (str_contains($path, "\0")) {
+            abort(403, 'مسیر نامعتبر است.');
+        }
+
+        $decoded = $path;
+        for ($i = 0; $i < 5; $i++) {
+            $next = rawurldecode($decoded);
+            if ($next === $decoded) {
+                break;
+            }
+            $decoded = $next;
+        }
+        $normalized = str_replace('\\', '/', $decoded);
 
         if (
-            str_contains($safePath, '..')
-            || preg_match('#^[A-Za-z]:#', $safePath)   // Windows absolute (C:\...)
-            || str_starts_with($safePath, '/')           // Unix absolute
+            str_contains($normalized, '..')
+            || preg_match('#^[A-Za-z]:#', $normalized)   // Windows absolute (C:\...)
+            || str_starts_with($normalized, '/')            // Unix absolute
         ) {
             abort(403, 'مسیر نامعتبر است.');
         }
+
+        $safePath = ltrim($normalized, '/');
 
         if (!$this->storage->exists($safePath, 'private')) {
             abort(404);

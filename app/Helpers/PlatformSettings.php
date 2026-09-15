@@ -301,7 +301,33 @@ class PlatformSettings
         return $map[self::adminNotifWidgetPosition()] ?? 'bottom-6 right-6';
     }
 
-    /** مسیر ذخیره‌شده را به مسیر نسبی به دیسک public نرمال می‌کند (مثلاً برای وجود فایل و ساخت URL) */
+    /**
+     * مسیر ذخیره‌شده را به مسیر نسبی به دیسک public نرمال می‌کند (مثلاً برای وجود فایل و ساخت URL).
+     *
+     * TEST-HARNESS-DB-01 security follow-up: the absolute-path branch below
+     * used to run AFTER `ltrim($path, '/')` had already stripped every
+     * leading slash, so `str_starts_with($path, '/')` could never be true —
+     * a genuine absolute Unix path (e.g. a legacy stored
+     * "/var/www/.../storage/app/public/logos/x.png") never got its real
+     * storage/app/public/... suffix extracted, AND (the security-relevant
+     * half) a path with no recognizable storage marker at all — e.g.
+     * "/etc/passwd" — silently had its leading slash stripped and was
+     * returned looking like an ordinary safe relative path. Every caller's
+     * own `!str_starts_with($path, '/')` accept-check therefore could never
+     * catch it either, since it only ever sees the post-ltrim value this
+     * method returns.
+     *
+     * Confirmed via StorageManager/Flysystem's own PathTraversalDetected
+     * guard (which fires independently of this method) that no actual
+     * cross-root file read was reachable through this gap — it was a real
+     * but previously non-exploitable defense-in-depth hole, not a live
+     * traversal. Fixed by checking the absolute-path condition BEFORE
+     * stripping the leading slash, and — when no recognizable storage
+     * marker is found — returning the path UNCHANGED (still absolute), so
+     * every caller's existing `str_starts_with($path, '/')` check now
+     * actually sees and rejects it, exactly as those callers already
+     * intended.
+     */
     public static function normalizeStoragePath(?string $path): string
     {
         if ($path === null || $path === '') {
@@ -313,13 +339,17 @@ class PlatformSettings
                 $path = substr($path, strlen($prefix));
             }
         }
-        $path = ltrim($path, '/');
         if (preg_match('#^[A-Za-z]:/#', $path) || str_starts_with($path, '/')) {
             if (preg_match('#(?:^|/)storage/app/public/(.+)$#', $path, $m) || preg_match('#(?:^|/)public/storage/(.+)$#', $path, $m)) {
-                $path = $m[1];
+                return $m[1];
             }
+            // No recognizable storage marker — genuinely absolute (or a
+            // Windows drive path) with nothing safe to extract. Returned
+            // as-is, not ltrimmed, so it still reads as absolute/dangerous
+            // to every caller's own acceptance check.
+            return $path;
         }
-        return $path;
+        return ltrim($path, '/');
     }
 
     /** حداکثر حجم مجاز آپلود تصویر به کیلوبایت (عدد صحیح) */

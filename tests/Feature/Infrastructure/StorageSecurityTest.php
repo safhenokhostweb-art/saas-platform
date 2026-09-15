@@ -25,12 +25,18 @@ class StorageSecurityTest extends TestCase
 
     public function test_sanitize_strips_path_separator_forward_slash(): void
     {
-        $this->assertSame('etc-passwd', StorageManager::sanitizeFilename('../../etc/passwd'));
+        // sanitizeFilename() takes only the basename (see its own docblock/
+        // implementation) — every directory component is discarded, not
+        // dash-joined, which is the stricter and correct behavior: no
+        // directory-component information survives into the sanitized
+        // name at all. This test previously asserted the pre-basename-only
+        // design ('etc-passwd'); updated to match current behavior.
+        $this->assertSame('passwd', StorageManager::sanitizeFilename('../../etc/passwd'));
     }
 
     public function test_sanitize_strips_path_separator_backslash(): void
     {
-        $this->assertSame('windows-system32-cmd.exe', StorageManager::sanitizeFilename('..\\windows\\system32\\cmd.exe'));
+        $this->assertSame('cmd.exe', StorageManager::sanitizeFilename('..\\windows\\system32\\cmd.exe'));
     }
 
     public function test_sanitize_strips_null_byte(): void
@@ -251,14 +257,30 @@ class StorageSecurityTest extends TestCase
     public function test_traversal_vectors_are_blocked(string $rawPath): void
     {
         // Replicate the exact check logic from MobileTicketController::downloadAttachment()
-        $decoded  = rawurldecode($rawPath);
-        $decoded  = str_replace("\0", '', $decoded);
-        $safePath = ltrim(str_replace('\\', '/', $decoded), '/');
+        // — the absolute-path check runs on the normalized-but-not-yet-ltrimmed
+        // string, exactly as the controller now does (TEST-HARNESS-DB-01
+        // security follow-up: str_starts_with() on an already-ltrimmed
+        // string can never be true, which is what let this test fail before).
+        // A raw null byte is rejected outright; decoding loops (bounded) to
+        // catch double-encoded sequences too.
+        if (str_contains($rawPath, "\0")) {
+            $this->assertTrue(true, "Path should have been blocked: {$rawPath}");
+            return;
+        }
+        $decoded = $rawPath;
+        for ($i = 0; $i < 5; $i++) {
+            $next = rawurldecode($decoded);
+            if ($next === $decoded) {
+                break;
+            }
+            $decoded = $next;
+        }
+        $normalized = str_replace('\\', '/', $decoded);
 
         $blocked = (
-            str_contains($safePath, '..')
-            || preg_match('#^[A-Za-z]:#', $safePath)
-            || str_starts_with($safePath, '/')
+            str_contains($normalized, '..')
+            || preg_match('#^[A-Za-z]:#', $normalized)
+            || str_starts_with($normalized, '/')
         );
 
         $this->assertTrue($blocked, "Path should have been blocked: {$rawPath}");
@@ -282,14 +304,20 @@ class StorageSecurityTest extends TestCase
      */
     public function test_safe_paths_are_not_blocked(string $rawPath): void
     {
-        $decoded  = rawurldecode($rawPath);
-        $decoded  = str_replace("\0", '', $decoded);
-        $safePath = ltrim(str_replace('\\', '/', $decoded), '/');
+        $decoded = $rawPath;
+        for ($i = 0; $i < 5; $i++) {
+            $next = rawurldecode($decoded);
+            if ($next === $decoded) {
+                break;
+            }
+            $decoded = $next;
+        }
+        $normalized = str_replace('\\', '/', $decoded);
 
         $blocked = (
-            str_contains($safePath, '..')
-            || preg_match('#^[A-Za-z]:#', $safePath)
-            || str_starts_with($safePath, '/')
+            str_contains($normalized, '..')
+            || preg_match('#^[A-Za-z]:#', $normalized)
+            || str_starts_with($normalized, '/')
         );
 
         $this->assertFalse($blocked, "Safe path was incorrectly blocked: {$rawPath}");
@@ -318,7 +346,7 @@ class StorageSecurityTest extends TestCase
             $accepted = true;
         } else {
             $path = \App\Helpers\PlatformSettings::normalizeStoragePath($rawPath);
-            if ($path !== '' && !str_contains($path, '..') && !str_starts_with($path, '/')) {
+            if ($path !== '' && !str_contains($path, '..') && !str_starts_with($path, '/') && !preg_match('#^[A-Za-z]:/#', $path)) {
                 $accepted = true;
             }
         }
