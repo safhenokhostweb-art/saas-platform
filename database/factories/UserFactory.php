@@ -24,8 +24,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            // TEST-HARNESS-DB-01: `email` was dropped from `users` by
+            // 2026_05_30_000001_remove_email_from_users_and_password_reset_tokens
+            // (this app authenticates by `mobile`) — the factory was never
+            // updated after that migration, so every User::factory() call
+            // failed with "Unknown column 'email'" against the real schema.
             'mobile' => '09' . fake()->unique()->numerify('#########'),
-            'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'is_admin' => false,

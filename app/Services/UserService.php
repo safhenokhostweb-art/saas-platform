@@ -591,7 +591,7 @@ class UserService
         $group = DB::transaction(function () use ($data) {
             $group = UserGroup::create([
                 'name'        => $data['name'],
-                'slug'        => $data['slug'] ?? str_slug($data['name']),
+                'slug'        => $data['slug'] ?? \Illuminate\Support\Str::slug($data['name']),
                 'description' => $data['description'] ?? '',
                 'is_active'   => $data['is_active'] ?? true,
             ]);
@@ -700,7 +700,7 @@ class UserService
         $tag = DB::transaction(function () use ($data) {
             $tag = Tag::create([
                 'name'        => $data['name'],
-                'slug'        => $data['slug'] ?? str_slug($data['name']),
+                'slug'        => $data['slug'] ?? \Illuminate\Support\Str::slug($data['name']),
                 'color'       => $data['color'] ?? '#3B82F6',
                 'description' => $data['description'] ?? '',
                 'is_active'   => $data['is_active'] ?? true,
