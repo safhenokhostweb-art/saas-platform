@@ -79,12 +79,24 @@ final class MotionGraphicsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Migrations register unconditionally, matching every sibling
+        // module (TicketsServiceProvider, FormsServiceProvider — neither
+        // gates loadMigrationsFrom behind its own feature flag). Schema
+        // presence is harmless; only routes/views/policy/publishing below
+        // stay behind motion-graphics.enabled, which the host app
+        // deliberately keeps false in this phase (see
+        // MotionGraphicsAdapterServiceProvider's docblock). Without this,
+        // the module's own tables (motion_graphics, motion_groups, ...)
+        // never exist anywhere the host app runs, even though
+        // MotionLibraryService — reachable via the real adapter bindings —
+        // depends on them.
+        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
+
         if (! config('motion-graphics.enabled', false)) {
             return;
         }
 
         Gate::policy(MotionGraphic::class, MotionGraphicPolicy::class);
-        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
 
         if (config('motion-graphics.routes_enabled', false)) {
             $this->loadRoutesFrom(__DIR__.'/../../routes/web.php');

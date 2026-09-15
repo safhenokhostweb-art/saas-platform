@@ -176,6 +176,7 @@ return [
         App\Providers\RepositoryServiceProvider::class, // ← Repository DI
         App\Providers\CustomerInstallationServiceProvider::class,
         App\Providers\MotionGraphicsAdapterServiceProvider::class, // Phase 1 — Motion Graphics adapter foundation
+        SaaSPlatform\Modules\MotionGraphics\Providers\MotionGraphicsServiceProvider::class, // Registered AFTER the adapter above, per that provider's own docblock — its bindDefault() calls must see the adapter's real bindings already in place and never overwrite them.
     ])->toArray(),
 
     /*

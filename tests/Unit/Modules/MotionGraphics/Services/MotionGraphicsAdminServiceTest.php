@@ -21,6 +21,7 @@ use Mockery;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\AssetReadModel;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\RuntimeProjectionReadModel;
+use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibraryBrowseContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetLibrarySummaryContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
@@ -95,6 +96,13 @@ class MotionGraphicsAdminServiceTest extends TestCase
         $assets ??= Mockery::mock(MotionAssetReadContract::class);
         $projections ??= Mockery::mock(MotionRuntimeProjectionReadContract::class);
         $assetLibrary ??= Mockery::mock(MotionAssetLibrarySummaryContract::class)->shouldIgnoreMissing(0);
+        // TEST-HARNESS-DB-01: MotionGraphicsAdminService's constructor grew
+        // two params (MotionRuntimeProjectionReadContract, this one) after
+        // this helper was last updated — $projections was already built
+        // above (and threaded into $activation/$installation) but never
+        // actually passed into `new MotionGraphicsAdminService(...)` below,
+        // and this contract had no mock at all yet.
+        $libraryBrowse = Mockery::mock(MotionAssetLibraryBrowseContract::class)->shouldIgnoreMissing(['items' => [], 'total' => 0, 'page' => 1, 'per_page' => 0]);
 
         $templatePackages = new TemplateAssetPackageService($tenantContext, $auditEvents, $authorization, $assets);
         $activation = new SiteAssetPackageActivationService(
@@ -108,7 +116,7 @@ class MotionGraphicsAdminServiceTest extends TestCase
 
         $admin = new MotionGraphicsAdminService(
             $tenantContext, $auditEvents, $authorization, $assetLibrary, $templatePackages, $installation,
-            new TemplateBuilderCompatibilityValidator(), $assets,
+            new TemplateBuilderCompatibilityValidator(), $assets, $projections, $libraryBrowse,
         );
 
         return [$admin, $assets, $projections, $assetLibrary, $authorization];
