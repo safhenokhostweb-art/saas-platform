@@ -18,7 +18,7 @@ class ModuleLabelController extends Controller
     public function index(Request $request)
     {
         $siteId = $request->get('site_id'); // اختیاری؛ برای مشتری
-        $isAdmin = auth()->user()->is_admin ?? false;
+        $isAdmin = app(\App\Services\AuthorizationService::class)->canAccessAdmin(auth()->user());
 
         $keys = $isAdmin ? ModuleLabels::keysForAdmin() : ModuleLabels::keysForCustomer();
         $labelsByKey = ModuleLabel::forSite($siteId)
@@ -49,7 +49,7 @@ class ModuleLabelController extends Controller
     public function update(Request $request)
     {
         $siteId = $request->get('site_id');
-        $isAdmin = auth()->user()->is_admin ?? false;
+        $isAdmin = app(\App\Services\AuthorizationService::class)->canAccessAdmin(auth()->user());
         $keys = $isAdmin ? ModuleLabels::keysForAdmin() : ModuleLabels::keysForCustomer();
 
         $request->validate([

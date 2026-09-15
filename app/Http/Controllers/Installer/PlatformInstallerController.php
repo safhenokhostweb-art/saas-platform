@@ -47,7 +47,7 @@ class PlatformInstallerController extends Controller
     {
         $request->validate(['confirm' => 'required|in:UNLOCK-INSTALLER']);
 
-        if (!auth()->check() || !auth()->user()->is_admin) {
+        if (!auth()->check() || !auth()->user()->isSuperAdmin()) {
             abort(403, 'فقط Super Admin می‌تواند installer را باز کند');
         }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Rules\IranianMobile;
 use App\Services\ActivityLogger;
+use App\Services\AuthorizationService;
 use App\Services\CaptchaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -89,8 +90,11 @@ class LoginController extends Controller
 
             ActivityLogger::login();
 
-            // اگر ادمین باشد
-            if ($user->is_admin ?? false) {
+            // اگر ادمین باشد — همان مرجع متعارف AuthorizationService که
+            // AdminMiddleware استفاده می‌کند؛ کاربری که فقط از طریق نقش
+            // Super Admin/Staff دسترسی دارد (بدون فلگ is_admin) نباید به
+            // داشبورد اشتباه هدایت شود.
+            if (app(AuthorizationService::class)->canAccessAdmin($user)) {
                 return redirect()->route('admin.dashboard');
             }
 

@@ -6,12 +6,14 @@ use Closure;
 use Illuminate\Http\Request;
 use SaaSPlatform\CoreUtils\Services\Maintenance\TenantMaintenanceManager;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
+use App\Services\AuthorizationService;
 
 class CheckTenantMaintenance
 {
     public function __construct(
         private TenantMaintenanceManager $maintenance,
-        private TenantContextContract    $tenantContext
+        private TenantContextContract    $tenantContext,
+        private AuthorizationService     $authorization
     ) {}
 
     public function handle(Request $request, Closure $next): mixed
@@ -37,8 +39,10 @@ class CheckTenantMaintenance
 
         $record = $this->maintenance->getMaintenanceRecord($siteId);
 
-        // Admin bypass
-        if ($record?->allow_admin_bypass && auth()->check() && auth()->user()?->is_admin) {
+        // Admin bypass — canonical authority (AuthorizationService), not the
+        // raw is_admin flag: a role-only Super Admin/Staff user must bypass
+        // maintenance too, same as everywhere else admin access is checked.
+        if ($record?->allow_admin_bypass && auth()->check() && $this->authorization->canAccessAdmin(auth()->user())) {
             return $next($request);
         }
 
