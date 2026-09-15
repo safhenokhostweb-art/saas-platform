@@ -17,7 +17,34 @@ class BlockRegistryContainerCapabilityTest extends TestCase
 {
     public function test_canonical_container_types_are_true(): void
     {
-        foreach (['section', 'container', 'grid', 'columns', 'flex_container'] as $type) {
+        // BLD-08 (Full Product Commercial Audit, TASK 1/3): `modal` moved
+        // here from the "stays false" group below — unlike slider/
+        // accordion, it has no special-case per-item renderer of its own;
+        // its `blocks` need exactly the same flat $inner population every
+        // other container type gets. Its previous non-container status
+        // was not a deliberate design choice, it was the reason `modal`
+        // had no working renderer at all (its nested content had nowhere
+        // to go): confirmed by direct render-output inspection before
+        // fixing, not assumed.
+        //
+        // TASK 2A (tabs container authoring fix): `tabs` moved here too,
+        // for the same reason `modal` was — it no longer has a special-case
+        // per-item renderer of its own. Each tab is now a real `tab_panel`
+        // CHILD block in the canonical tree (registered as its own
+        // container type below, alongside `tabs`), authored with the same
+        // add/remove/reorder/edit-children controls every other container
+        // already has. BlockRenderer::renderTabs() keeps a read-only
+        // compatibility fallback for pre-fix content still shaped as
+        // `props.tabs[].blocks` (never written by the editor once it
+        // migrates a block to real tab_panel children on load — see
+        // BlockRenderer::renderTabs()'s own docblock) — that fallback is
+        // not a second live authoring/render authority, confirmed by
+        // direct render-output inspection of both the tab_panel-children
+        // path and the legacy props.tabs path on both saas-platform's own
+        // BlockRenderer and customer-site's App\Services\ThemeBuilder\
+        // BlockRenderer (which had its own now-fixed leftover special case
+        // that discarded real tab_panel content — see that class).
+        foreach (['section', 'container', 'grid', 'columns', 'flex_container', 'modal', 'tabs', 'tab_panel'] as $type) {
             $this->assertTrue(BlockRegistry::isContainerType($type), "{$type} must be a container");
         }
     }
@@ -31,11 +58,16 @@ class BlockRegistryContainerCapabilityTest extends TestCase
 
     public function test_types_with_a_blocks_typed_schema_field_that_are_not_declared_containers_stay_false(): void
     {
-        // slider/tabs/accordion carry nested block content (slides/tabs
-        // items) but are not, today, generic authoring-time containers —
-        // this must not change as a side effect of the new declarative flag.
-        foreach (['slider', 'tabs', 'accordion', 'modal'] as $type) {
-            $this->assertFalse(BlockRegistry::isContainerType($type), "{$type} must remain non-container (pre-existing behavior)");
+        // slider/accordion carry nested block content (slides/accordion
+        // items) but each has its own special-case per-item renderer
+        // (renderSlider()/renderAccordion()) that wraps each child
+        // individually (a slide, an accordion item) — they must NOT also
+        // get the generic flat-$inner container treatment, which would
+        // double-render or bypass that per-item wrapping. `modal` and
+        // `tabs` are deliberately no longer in this list — see
+        // test_canonical_container_types_are_true() above.
+        foreach (['slider', 'accordion'] as $type) {
+            $this->assertFalse(BlockRegistry::isContainerType($type), "{$type} must remain non-container (has its own special-case per-item renderer)");
         }
     }
 

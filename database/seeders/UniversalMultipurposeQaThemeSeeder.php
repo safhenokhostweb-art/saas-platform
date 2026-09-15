@@ -67,30 +67,39 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         $footerPresets = $this->footerPresets();
         $pages = $this->pagesFor($registry);
 
+        // THEME-03 (Full Product Commercial Audit, TASK 2A): these 6
+        // presets each are a real, structurally distinct Header/Footer
+        // (verified by UniversalMultipurposeQaThemeSeederTest's exact
+        // type-signature comparison) — exactly the raw material
+        // Theme::getHeaderVariants()/getFooterVariants() needs. Previously
+        // stored only as inert `settings['header_presets']` metadata with
+        // zero consumers anywhere in the app (confirmed by grep — no
+        // controller or view ever read it); now populates the real,
+        // wired-up `header_variants`/`footer_variants` columns instead, so
+        // an installed copy of this Theme ships all 6 as genuinely
+        // selectable Page-level variants, not just one baked-in default.
+        $headerVariants = array_map(fn (array $p) => [
+            'key' => $p['key'], 'label' => $p['name'], 'blocks' => $p['blocks'],
+            'is_default' => $p['key'] === $headerPresets[0]['key'],
+        ], $headerPresets);
+        $footerVariants = array_map(fn (array $p) => [
+            'key' => $p['key'], 'label' => $p['name'], 'blocks' => $p['blocks'],
+            'is_default' => $p['key'] === $footerPresets[0]['key'],
+        ], $footerPresets);
+
         $theme->fill([
-            // Preset #1 ("classic") is the active header/footer — the same
-            // real block data every other preset uses, just the default
-            // selection. See §M/N: presets are authored Theme-level
-            // variants (saas-platform's own header/footer canvas zones,
-            // c47c9e9), not a second per-site editing surface.
+            // Preset #1 ("classic") remains the flat header_blocks/
+            // footer_blocks value too — every existing consumer that
+            // reads those directly (unaware of variants) keeps working
+            // unchanged; header_variants/footer_variants are additive.
             'header_blocks' => $headerPresets[0]['blocks'],
             'footer_blocks' => $footerPresets[0]['blocks'],
+            'header_variants' => $headerVariants,
+            'footer_variants' => $footerVariants,
             'pages' => $pages,
             'settings' => [
                 'qa_fixture' => true,
                 'meta' => ['supported_modules' => [], 'qa_structure_only' => false],
-                // 6 structurally distinct Header/Footer presets (Builder
-                // integrity audit, §M/N): each is a real, different block
-                // composition and/or functional surface (block count,
-                // search/cart/CTA present or absent) — not a color reskin
-                // of the same single block. Stored as named alternates on
-                // the Theme itself (the existing header/footer-zone
-                // mechanism); 'active' points at the index currently
-                // applied to header_blocks/footer_blocks above.
-                'header_presets' => $headerPresets,
-                'footer_presets' => $footerPresets,
-                'active_header_preset' => $headerPresets[0]['key'],
-                'active_footer_preset' => $footerPresets[0]['key'],
             ],
         ])->save();
     }

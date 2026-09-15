@@ -218,6 +218,19 @@ class WidgetMapper
         $blockType = $this->resolveBlockType($source, $nodeType);
         $props     = $this->mapProps($source, $nodeType, $blockType, $settings);
 
+        // TASK 2A (tabs container authoring fix): a `tabs` node's real
+        // content is real `tab_panel` CHILD blocks now (canonical container
+        // children — see BlockRegistry::isContainerType('tabs')), never
+        // `props.tabs[].blocks`. This importer never recursed into a source
+        // tabs widget's own per-tab content anyway (each mapped tab always
+        // got an empty `blocks: []`, regardless of source), so synthesizing
+        // real (still content-empty, title-only) tab_panel children here is
+        // behavior-preserving — it only changes which shape carries the
+        // titles, not what gets imported.
+        if ($blockType === 'tabs' && empty($children)) {
+            $children = $this->tabPanelChildren($settings);
+        }
+
         // Inject children into layout blocks' blocks prop
         if (in_array($blockType, ['section', 'container', 'grid', 'columns', 'flex_container'])) {
             $props['blocks'] = $children;
@@ -229,6 +242,31 @@ class WidgetMapper
             'props' => $props,
             'blocks'=> $children,
         ];
+    }
+
+    /**
+     * TASK 2A (tabs container authoring fix): real `tab_panel` children for
+     * an imported `tabs` node, one per source tab — title only (this
+     * importer has never recursed into a source tabs widget's own per-tab
+     * content; each tab's `blocks` was always `[]` under the old
+     * `props.tabs[].blocks` shape too). Tries every field name a mapped
+     * source has used for a tab's title (`tab_title`/`title`/`label`)
+     * rather than keeping the three near-duplicate per-source arms this
+     * replaces.
+     */
+    private function tabPanelChildren(array $settings): array
+    {
+        $tabs = $settings['tabs'] ?? [['title' => 'تب ۱']];
+
+        return array_map(
+            fn ($tab) => [
+                'id'     => Str::random(8),
+                'type'   => 'tab_panel',
+                'props'  => ['title' => $this->text($tab['tab_title'] ?? $tab['title'] ?? $tab['label'] ?? '')],
+                'blocks' => [],
+            ],
+            $tabs,
+        );
     }
 
     /**
@@ -344,12 +382,10 @@ class WidgetMapper
                     $s['tabs'] ?? $s['accordion_items'] ?? [['title' => 'آیتم']]
                 ),
             ],
-            'tabs' => [
-                'tabs' => array_map(
-                    fn($tab) => ['title' => $this->text($tab['tab_title'] ?? $tab['title'] ?? ''), 'blocks' => []],
-                    $s['tabs'] ?? [['title' => 'تب ۱']]
-                ),
-            ],
+            // TASK 2A: `tabs` no longer has a props arm here — mapNode()
+            // builds its real tab_panel children directly from $settings
+            // via tabPanelChildren(), not via mapProps()'s per-blockType
+            // switch. Falls through to `default => []` below.
             'slider' => [
                 'slides'   => [],
                 'autoplay' => true,
@@ -411,12 +447,8 @@ class WidgetMapper
                     $s['items'] ?? [['title' => 'آیتم']]
                 ),
             ],
-            'tabs' => [
-                'tabs' => array_map(
-                    fn($tab) => ['title' => $this->text($tab['title'] ?? $tab['label'] ?? ''), 'blocks' => []],
-                    $s['tabs'] ?? [['title' => 'تب ۱']]
-                ),
-            ],
+            // TASK 2A: see the sibling mapProps() method's identical note —
+            // `tabs` falls through to `default => []` here too.
             'testimonials' => ['title' => 'نظرات مشتریان', 'limit' => 5],
             'pricing_table' => ['title' => 'قیمت‌گذاری'],
             'blog_posts'    => ['title' => 'آخرین مطالب', 'limit' => 6],
@@ -500,7 +532,8 @@ class WidgetMapper
             'section'   => ['padding' => 'lg', 'background' => 'transparent', 'container' => true, 'blocks' => []],
             'grid'      => ['columns' => 3, 'gap' => 'md', 'blocks' => []],
             'slider'    => ['slides' => [], 'autoplay' => true, 'interval' => 5000],
-            'tabs'      => ['tabs' => [['title' => 'تب ۱', 'blocks' => []]]],
+            // TASK 2A: `tabs` falls through to `default => []` — see the
+            // note in mapProps() above.
             default     => [],
         };
     }

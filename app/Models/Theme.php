@@ -88,6 +88,8 @@ class Theme extends Model
         'site_id',
         'header_blocks',
         'footer_blocks',
+        'header_variants',
+        'footer_variants',
         'pages',
         'global_styles',
         'settings',
@@ -103,6 +105,8 @@ class Theme extends Model
     protected $casts = [
         'header_blocks'    => 'array',
         'footer_blocks'    => 'array',
+        'header_variants'  => 'array',
+        'footer_variants'  => 'array',
         'pages'            => 'array',
         'global_styles'    => 'array',
         'settings'         => 'array',
@@ -128,6 +132,8 @@ class Theme extends Model
     protected $attributes = [
         'header_blocks' => '[]',
         'footer_blocks' => '[]',
+        'header_variants' => '[]',
+        'footer_variants' => '[]',
         'pages' => '[]',
         'global_styles' => '[]',
         'settings' => '[]',
@@ -361,6 +367,50 @@ class Theme extends Model
             ->count();
     }
 
+    /**
+     * THEME-03 (Full Product Commercial Audit, TASK 2A): the canonical,
+     * Theme-owned list of selectable Header variants. A Theme authored
+     * before multi-variant support existed (or one that simply never
+     * needed more than one) has no `header_variants` row — this
+     * synthesizes its existing single `header_blocks` into one implicit
+     * "default" variant with a stable key, so every Theme (old or new)
+     * always has at least one real, selectable variant. Never fabricates
+     * content: the synthesized variant's blocks are the Theme's own real,
+     * already-authored header, not placeholder data.
+     *
+     * @return list<array{key:string,label:string,blocks:array,is_default:bool}>
+     */
+    public function getHeaderVariants(): array
+    {
+        $variants = $this->header_variants ?? [];
+        if (!empty($variants)) {
+            return $variants;
+        }
+
+        return [[
+            'key' => 'default',
+            'label' => 'پیش‌فرض',
+            'blocks' => $this->header_blocks ?? [],
+            'is_default' => true,
+        ]];
+    }
+
+    /** @see getHeaderVariants() — identical contract, for footers. */
+    public function getFooterVariants(): array
+    {
+        $variants = $this->footer_variants ?? [];
+        if (!empty($variants)) {
+            return $variants;
+        }
+
+        return [[
+            'key' => 'default',
+            'label' => 'پیش‌فرض',
+            'blocks' => $this->footer_blocks ?? [],
+            'is_default' => true,
+        ]];
+    }
+
     /** Get payload for front-end (header + footer + global_styles + metadata). */
     public function getPayload(): array
     {
@@ -391,6 +441,8 @@ class Theme extends Model
         return [
             'header_blocks' => $this->header_blocks ?? [],
             'footer_blocks' => $this->footer_blocks ?? [],
+            'header_variants' => $this->getHeaderVariants(),
+            'footer_variants' => $this->getFooterVariants(),
             'global_styles' => $this->global_styles ?? [],
             'settings' => $settings,
             'meta' => $meta,

@@ -224,14 +224,45 @@ class BlockRegistry
                     'wrap' => false, 'minHeight' => 0,
                 ],
             ],
+            // TABS (Full Product Commercial Audit, TASK 2A — tabs container
+            // authoring fix): `tabs` used to carry its per-tab content in a
+            // `tabs` prop shaped `[{title, blocks}]` — a second, JSON-only
+            // content tree with no real authoring UI (no repeater/array
+            // control existed for it, and it was never the canonical block
+            // tree). It is now a real structural container (`is_container`,
+            // exactly like section/container/grid above): each tab is a
+            // real `tab_panel` CHILD block in the canonical tree, authored
+            // with the same add/remove/reorder/edit-children controls every
+            // other container already has — one content authority, no JSON.
+            // Legacy `tabs`-prop data is migrated to real `tab_panel`
+            // children client-side on load (canvas-editor.blade.php's
+            // normalizeBlock()) and, for any legacy data never reopened in
+            // the editor, still renders identically via renderTabs()'s own
+            // read-compat fallback below — see BlockRenderer::renderTabs().
             'tabs' => [
                 'name' => 'تب‌ها',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'tabs',
+                'is_container' => true,
                 'schema' => [
-                    'tabs' => ['type' => 'array', 'default' => [['title' => 'تب ۱', 'blocks' => []], ['title' => 'تب ۲', 'blocks' => []]]],
+                    'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
-                'defaultProps' => ['tabs' => [['title' => 'تب ۱', 'blocks' => []], ['title' => 'تب ۲', 'blocks' => []]]],
+                'defaultProps' => ['blocks' => []],
+            ],
+            // One real child block per tab — title is real prop-panel-
+            // authored metadata, content is the tab_panel's own canonical
+            // children (itself a container, so it can hold anything any
+            // other container can).
+            'tab_panel' => [
+                'name' => 'پنل تب',
+                'category' => self::CATEGORY_LAYOUT,
+                'icon' => 'tabs',
+                'is_container' => true,
+                'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان تب', 'default' => 'تب'],
+                    'blocks' => ['type' => 'blocks', 'default' => []],
+                ],
+                'defaultProps' => ['title' => 'تب', 'blocks' => []],
             ],
             'accordion' => [
                 'name' => 'آکوردئون',
@@ -257,6 +288,14 @@ class BlockRegistry
                 'name' => 'مودال',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'modal',
+                // BLD-04..09: `blocks` is real nested dialog content, the
+                // same shape every other container type here has —
+                // `is_container` is what BOTH this host's own dispatch
+                // (BlockRenderer::isStructuralContainer(), via the parent::
+                // call every host override chains through) AND customer-
+                // site's registry-driven BlockRegistry::isContainerType()
+                // read to decide whether to populate $inner automatically.
+                'is_container' => true,
                 'schema' => [
                     'trigger_text' => ['type' => 'string', 'default' => 'باز کردن'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
@@ -744,6 +783,65 @@ class BlockRegistry
                     'label' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'سبد خرید'],
                 ],
                 'defaultProps' => ['style' => 'button', 'label' => 'سبد خرید'],
+            ],
+            // MOD-01 (Full Product Commercial Audit, TASK 2A): real,
+            // already-working backend — ShopWishlistService (session+auth
+            // dual-identity) for wishlist, session('shop_compare') for
+            // compare — had no Builder block. `mode` covers both with one
+            // block family (WooCommerce ships these as separate plugins;
+            // here they're the same "toggle a product into a list, show a
+            // counter+link" shape, so one configurable block is the
+            // stronger, non-duplicated architecture).
+            'module:shop_wishlist_icon' => [
+                'name' => 'علاقه‌مندی‌ها / مقایسه',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'heart',
+                'requires' => 'shop',
+                'schema' => [
+                    'mode' => ['type' => 'select', 'label' => 'حالت', 'options' => ['wishlist' => 'علاقه‌مندی‌ها', 'compare' => 'مقایسه'], 'default' => 'wishlist'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['icon' => 'آیکون', 'full' => 'کامل با متن'], 'default' => 'icon'],
+                    'label' => ['type' => 'string', 'label' => 'متن', 'default' => 'علاقه‌مندی‌ها'],
+                ],
+                'defaultProps' => ['mode' => 'wishlist', 'style' => 'icon', 'label' => 'علاقه‌مندی‌ها'],
+            ],
+            // MOD-03 (Full Product Commercial Audit, TASK 2A-CONTINUATION):
+            // real, already-working backend — MembershipPointsService::
+            // getBalance() (customer-site) — had no Builder block. No
+            // 'requires' key: points/loyalty is a core account feature (no
+            // separate license/module gate in MembershipPointsService
+            // itself), so this defaults to '_core' like every other
+            // always-available block. Guests have no balance by
+            // construction (points are tied to a real user_id, never a
+            // guest session) — the renderer hides the block entirely for
+            // guests rather than showing a fabricated zero.
+            'module:loyalty_points_badge' => [
+                'name' => 'امتیاز باشگاه مشتریان',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'star',
+                'schema' => [
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['icon' => 'آیکون', 'full' => 'کامل با متن'], 'default' => 'icon'],
+                    'label' => ['type' => 'string', 'label' => 'متن', 'default' => 'امتیاز من'],
+                ],
+                'defaultProps' => ['style' => 'icon', 'label' => 'امتیاز من'],
+            ],
+            // MOD-02 (Full Product Commercial Audit, TASK 2A-CONTINUATION):
+            // real, already-working backend — InstallmentService::
+            // eligiblePlans()/InstallmentPlan::calculate() (customer-site)
+            // — had no Builder block. `requires: shop` because eligibility
+            // is always computed from a real Product's price; with no
+            // active plan covering that price (or no product selected), the
+            // renderer shows a real empty state rather than a fabricated
+            // rate or amount.
+            'module:installment_badge' => [
+                'name' => 'خرید اقساطی (BNPL)',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'credit-card',
+                'requires' => 'shop',
+                'schema' => [
+                    'product_id' => ['type' => 'string', 'label' => 'شناسه محصول', 'default' => ''],
+                    'style'      => ['type' => 'select', 'label' => 'استایل', 'options' => ['badge' => 'نشان کوتاه', 'full' => 'فهرست طرح‌ها'], 'default' => 'badge'],
+                ],
+                'defaultProps' => ['product_id' => '', 'style' => 'badge'],
             ],
             'module:shop_countdown' => [
                 'name' => 'شمارش معکوس تخفیف',

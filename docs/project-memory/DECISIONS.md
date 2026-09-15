@@ -1847,3 +1847,121 @@ menu, Checkpoints modal, Clone modal; no changes to `edit.blade.php`).
 `ThemeRelease`, `ThemeInstanceRevision`, `CanvasReservedSlugs`, the shared
 `BlockRegistry`/`BlockRenderer`, and `ExtensionCanvasPaletteAdapter` are
 all unchanged — reused, not duplicated. No migration.
+
+---
+
+## ADR-054 — Raw/JSON Theme Editor De-Exposure (UI-C3, Cross-Repo)
+
+**Date:** 2026-09-12
+
+**Context:** With ADR-053 (UI-C2D/C2E) having brought the canonical
+saas-platform Theme Canvas to full behavioral parity with the raw/JSON
+editor (`ThemeBuilderController::edit()`/`edit.blade.php`) — pages,
+header, footer, global styles, Extension selections, checkpoint, clone,
+export, import, publish, unpublish — this phase audited both repositories
+for every Theme-related authoring surface before removing anything, per
+the workspace's own "prove CANONICAL/REQUIRED/TRANSITIONAL/OBSOLETE before
+deleting" discipline.
+
+**Cross-repo inventory findings:**
+1. **customer-site has no raw/legacy Theme editor at all.** Its canonical
+   Canvas (`ThemeDesignController`, `admin.theme-design.canvas-edit`) is
+   the sole authoring surface; every write (save-blocks, publish, install,
+   rollback, upgrade) already goes through `ThemeInstanceRevisionService`.
+   Import is file-upload based, never a raw-JSON textarea. Customer-site
+   required **zero code changes** for this phase — it was already fully
+   converged.
+2. **saas-platform's only genuine competing raw-JSON *editor* for an
+   existing `Theme`'s content is `ThemeBuilderController::edit()`/
+   `update()`** (`edit.blade.php`). Six other controllers surfaced during
+   the audit (`ThemeJsonImportController`, `ThemeZipImportController`,
+   `ThemeReverseEngineeringController`, `ThemePackController`,
+   `ThemePackStudioAdminController`, `ThemeTemplateController`) are
+   legitimate, non-competing capabilities: the first three are creation
+   *pipelines* that ingest external input (a JSON file, a ZIP, a scraped
+   URL) and redirect into the canonical Canvas once a new `Theme` exists;
+   the latter three operate on entirely different models (`ThemePack`,
+   `ThemeTemplate` — block/section-level snippets, not full-Theme editing)
+   and never touch `Theme.header_blocks`/`.footer_blocks`/`.pages`
+   directly. None were changed.
+3. **`ThemeManagerController`/`ThemeProfile` ("Enterprise Theme Engine")
+   is a color/design-token system** (`--ui-*`/`--ds-*` CSS custom
+   properties), not a Theme-content authoring surface — confirmed
+   unrelated to this phase's scope, and its admin-nav label
+   ("پروفایل‌های رنگی پلتفرم") was already disambiguated from Theme
+   Builder in an earlier phase (UI-C1, `ThemeBuilderCanonicalEntryTest`).
+4. **UI-C1 (an earlier phase) had deliberately kept the raw editor linked
+   from the Theme list**, merely relabelled honestly as advanced/JSON
+   rather than a primary Builder — the correct, safe interim step before
+   Canvas had full parity. This phase supersedes that interim policy now
+   that ADR-053 closed the parity gap; `ThemeBuilderCanonicalEntryTest`'s
+   test D was updated accordingly (was: assert the link stays visible;
+   now: assert it does not).
+
+**Decision:**
+1. **Route policy for `admin.theme-builder.edit` (GET) and
+   `admin.theme-builder.update` (PUT): TEMPORARY_COMPATIBILITY.** Both
+   remain fully functional, still write through the exact same
+   `ThemeBuilderService::updateTheme()` / `ExtensionCanvasPaletteAdapter`
+   validation gate as before (no second persistence authority, no
+   authorization change), but are no longer linked from any normal,
+   discoverable surface. `edit.blade.php` gained an explicit banner
+   pointing to the canonical Canvas, so anyone who does reach it by direct
+   URL is told plainly it is an advanced/compatibility page.
+2. **The Theme list's per-row "ویرایش پیشرفته (JSON)" link is removed.**
+   The Canvas button ("🎨 قالب‌ساز") is the only edit-worded action per
+   row; export/clone/delete remain as secondary, clearly non-editing
+   actions.
+3. **`cloneTheme()` and `import()`'s non-JSON (classic form-submit)
+   success redirects now target the canonical Canvas of the new Theme**,
+   not the raw editor — a normal admin cloning or importing a Theme from
+   the list must never land in the raw editor as a side effect. The raw
+   editor's own internal loop (its own save/publish/unpublish/restore
+   buttons redirecting back to itself) is unchanged — that is the
+   editor's legitimate, self-consistent navigation while someone is
+   deliberately using it directly, not a newly-introduced discoverable
+   path.
+4. **No route was removed or deleted.** Per this workspace's own
+   evidence-first policy: proving zero unique *product* responsibility
+   remains is a de-exposure justification, not a deletion justification —
+   the compatibility route stays reachable for advanced/manual use,
+   scripts, or support diagnostics.
+5. **Page Builder's boundary is unchanged and was not touched.** Both
+   repos already keep Page-owned content (`PageBuilderController`/`Page`)
+   structurally separate from Theme-owned Canvas content; this phase's
+   audit confirmed that separation, did not merge it, and defers any
+   Page Builder discoverability work to a future UI-C4.
+
+**Reason:** The workspace's cross-repo Theme architecture converges on
+exactly two canonical authoring surfaces — saas-platform's master Theme
+Canvas and customer-site's installed-Theme Canvas — each already the
+single write path for its own side. The only asymmetry was saas-platform
+still *offering* its superseded raw editor as an equally-visible choice
+after its replacement reached full parity; removing that offer (without
+removing the underlying, still-valid compatibility route) is the correct,
+minimal close of that asymmetry.
+
+**Verification:** `ThemeBuilderCanonicalEntryTest` (6 tests, updated);
+`ThemeBuilderCheckpointAndActionsTest`/`ThemeCanvasActionSurfaceTest`
+(22 tests, re-run, confirming UI-C2D/C2E parity survived unaffected);
+full `tests/Feature/ThemeBuilder`/`tests/Unit/ThemeBuilder` regression
+(566 passed, 1 pre-existing environment self-skip, 0 failures); new real
+browser suite `theme-list-canonical-entry.spec.ts` (7 tests: one canonical
+primary action per row, Canvas entry preserves all UI-C2D/C2E operational
+actions, back-navigation, raw-editor-route-still-reachable-but-unlinked,
+responsive at 1366/768/390 — stable across 2 consecutive full runs);
+customer-site full regression (141 tests, 0 failures, 0 files changed);
+customer-site `save-to-public-render.spec.js` (3 tests) as the focused
+customer-runtime check; saas-platform `UniversalMultipurposeQaThemeSeederTest`
+as the focused Universal Multipurpose Theme regression check.
+
+**Impact:** `saas-platform` only —
+`app/Http/Controllers/Admin/ThemeBuilderController.php` (two redirect
+targets), `resources/views/admin/theme-builder/index.blade.php` (one link
+removed), `resources/views/admin/theme-builder/clone.blade.php` (one link
+retargeted), `resources/views/admin/theme-builder/edit.blade.php`
+(compatibility banner added), `tests/Feature/ThemeBuilder/
+ThemeBuilderCanonicalEntryTest.php` (test D updated for the new policy),
+new `tests/browser/theme-list-canonical-entry.spec.ts`. `customer-site`:
+no files changed. No migration. No dependency or lockfile change. No
+route deleted; no authorization rule changed.

@@ -246,7 +246,12 @@ class ThemeBuilderController extends Controller
                 'canvas_url' => route('admin.theme-builder.canvas', $newTheme),
             ]);
         }
-        return redirect()->route('admin.theme-builder.edit', $newTheme)->with('success', 'تم کپی شد.');
+        // UI-C3: a clone made from the normal Theme list lands on the
+        // canonical Canvas, not the raw editor — the raw editor's own
+        // internal clone-and-stay-in-raw-editor loop is preserved nowhere
+        // because it never existed; clone-form.blade.php is only linked
+        // from the list, never from edit.blade.php.
+        return redirect()->route('admin.theme-builder.canvas', $newTheme)->with('success', 'تم کپی شد.');
     }
 
     public function export(Theme $theme_builder)
@@ -287,7 +292,9 @@ class ThemeBuilderController extends Controller
                 'canvas_url' => route('admin.theme-builder.canvas', $theme),
             ]);
         }
-        return redirect()->route('admin.theme-builder.edit', $theme)->with('success', 'تم با موفقیت وارد شد.');
+        // UI-C3: same reasoning as cloneTheme() — importing from the list's
+        // own upload form must not land the admin in the raw editor.
+        return redirect()->route('admin.theme-builder.canvas', $theme)->with('success', 'تم با موفقیت وارد شد.');
     }
 
     /** Preview: render header/footer HTML for iframe. */

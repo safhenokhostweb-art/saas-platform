@@ -8,17 +8,13 @@ use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
 use App\Services\ThemeBuilder\Dependency\ThemeExtensionBlockTypeExtractor;
 use App\Services\ThemeBuilder\Extension\ExtensionCanvasPaletteAdapter;
-use App\Services\ThemeBuilder\Extension\ExtensionThemeRuntimeAssetProjector;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
 use App\Services\ThemeBuilder\ThemeBuilderService;
 use App\Services\ThemeBuilder\ThemeTemplateService;
 use App\Models\ThemeTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Http;
 
 class ThemeCanvasController extends Controller
 {
@@ -407,69 +403,11 @@ class ThemeCanvasController extends Controller
     public function installToSite(Request $request, Theme $theme)
     {
         $request->validate(['site_id' => 'required|integer|exists:sites,id']);
-
         $site = Site::findOrFail($request->site_id);
 
-        $domain = $site->getDomain();
-        if (!$domain) {
-            return back()->with('error',
-                'دامنه سایت "' . $site->title . '" تنظیم نشده است. از منوی سایت‌ها → ویرایش سایت، فیلد دامنه را پر کنید.'
-            );
-        }
-
-        $baseUrl  = str_starts_with($domain, 'http') ? rtrim($domain, '/') : 'https://' . rtrim($domain, '/');
-        $endpoint = $baseUrl . '/builder/api/theme/install';
-        $secret   = config('services.customer_provision_secret', '');
-
-        $currentRelease = $theme->currentRelease;
-
-        try {
-            $response = Http::withHeaders([
-                'X-Provision-Secret' => $secret,
-                'Accept'             => 'application/json',
-            ])->timeout(15)->post($endpoint, [
-                'theme_id'             => $theme->slug,
-                'theme_name'           => $theme->name,
-                'source_theme_id'      => (string) $theme->id,
-                'source_theme_version' => $currentRelease?->version,
-                'source_release_id'    => $currentRelease?->id,
-                'header_blocks'        => $theme->header_blocks ?? [],
-                'footer_blocks'        => $theme->footer_blocks ?? [],
-                'pages'                => $theme->getPageList(),
-                'global_styles'        => $theme->global_styles ?? [],
-                // Manifest-declared Extension CSS/JS, projected to absolute
-                // saas-platform URLs — see ExtensionThemeRuntimeAssetProjector's
-                // own doc comment for why this is an absolute URL, not a copy.
-                // Absent/empty for every Theme that selects no Extension.
-                'extension_assets'     => ExtensionThemeRuntimeAssetProjector::project($theme),
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('ThemeInstall request failed', [
-                'theme_id' => $theme->id,
-                'site_id'  => $site->id,
-                'error'    => $e->getMessage(),
-            ]);
-            return back()->with('error', 'اتصال به سایت "' . $site->title . '" ناموفق بود: ' . $e->getMessage());
-        }
-
-        if ($response->status() === 409) {
-            $body = $response->json();
-            return back()->with('error',
-                'نصب قالب روی سایت "' . $site->title . '" به دلیل تداخل نام‌گذاری صفحات متوقف شد: '
-                . ($body['message'] ?? 'یکی از صفحه‌های این قالب با صفحه‌ای موجود در سایت تداخل دارد.')
-            );
-        }
-
-        if (!$response->successful()) {
-            \Illuminate\Support\Facades\Log::error('ThemeInstall failed', [
-                'theme_id' => $theme->id,
-                'site_id'  => $site->id,
-                'status'   => $response->status(),
-                'body'     => $response->body(),
-            ]);
-            return back()->with('error',
-                'نصب قالب روی سایت "' . $site->title . '" ناموفق بود (کد ' . $response->status() . ').'
-            );
+        $result = $this->installThemeToSiteViaCanonicalAuthority($theme, $site);
+        if ($result instanceof \Illuminate\Http\RedirectResponse) {
+            return $result;
         }
 
         return redirect()->route('admin.theme-builder.index')
@@ -477,38 +415,53 @@ class ThemeCanvasController extends Controller
     }
 
     /**
+     * SP-01 (TASK 2-SEC): thin wrapper around the single, shared Theme
+     * install/page-provision authority (App\Services\ThemeBuilder\
+     * ThemeInstallGateway — also used by syncPagesForSite() below AND by
+     * ThemePurchaseOrderObserver's marketplace-purchase fulfillment, per
+     * SP-02), translating its plain result into this controller's
+     * HTTP-context redirect responses.
+     *
+     * @return \Illuminate\Http\RedirectResponse|null null on success (caller
+     *   supplies its own success message); a RedirectResponse to return
+     *   immediately on any failure.
+     */
+    protected function installThemeToSiteViaCanonicalAuthority(Theme $theme, Site $site): ?\Illuminate\Http\RedirectResponse
+    {
+        $result = app(\App\Services\ThemeBuilder\ThemeInstallGateway::class)->install($theme, $site);
+
+        if ($result->success) {
+            return null;
+        }
+
+        return back()->with('error', $result->message);
+    }
+
+    /**
      * همگام‌سازی صفحات قالب برای سایتی که قبلاً قالب رویش نصب شده بود
      * (re-provision without overwriting theme settings).
+     *
+     * SP-01 (TASK 2-SEC) fix: this used to open its own raw cross-server
+     * MySQL connection and insert `pages` rows directly
+     * (provisionThemePagesIntoDb()), completely bypassing
+     * ThemeInstanceRevisionService/CanvasReservedSlugs/revision history —
+     * a second, independent Theme-mutation authority, exactly what
+     * ADR-052 already ruled out for installToSite(). "Sync" now delegates
+     * to the SAME canonical authority: re-running the real install call is
+     * a safe, idempotent way to re-push the Theme's current pages/header/
+     * footer/global-styles state — it records one more real
+     * ThemeInstanceRevision on the target site, never a raw duplicate-page
+     * insert. No independent raw-SQL mutation path remains.
      */
     public function syncPagesForSite(Request $request, Theme $theme)
     {
         $request->validate(['site_id' => 'required|integer|exists:sites,id']);
-
         $site = Site::findOrFail($request->site_id);
 
-        if (!$site->db_host || !$site->db_name) {
-            return back()->with('error', 'اطلاعات دیتابیس سایت "' . $site->title . '" تنظیم نشده است.');
+        $result = $this->installThemeToSiteViaCanonicalAuthority($theme, $site);
+        if ($result instanceof \Illuminate\Http\RedirectResponse) {
+            return $result;
         }
-
-        $connKey = 'theme_sync_' . $site->id . '_' . time();
-        Config::set("database.connections.{$connKey}", [
-            'driver'    => 'mysql',
-            'host'      => $site->db_host,
-            'port'      => '3306',
-            'database'  => $site->db_name,
-            'username'  => $site->db_user,
-            'password'  => $site->getDecryptedDbPassword() ?? '',
-            'charset'   => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
-            'strict'    => false,
-        ]);
-        DB::purge($connKey);
-        $conn = DB::connection($connKey);
-
-        $this->provisionThemePagesIntoDb($conn, $theme);
-
-        DB::purge($connKey);
 
         return redirect()->route('admin.theme-builder.index')
             ->with('success', 'صفحات قالب "' . $theme->name . '" با موفقیت در سایت "' . $site->title . '" همگام‌سازی شدند.');
@@ -554,72 +507,13 @@ class ThemeCanvasController extends Controller
         return response()->json(['success' => true, 'blocks' => $blocks]);
     }
 
-    /**
-     * Directly write theme pages into the customer site's pages table via DB connection.
-     * Pages are marked as is_protected=1, theme_id=slug so they cannot be accidentally deleted.
-     */
-    protected function provisionThemePagesIntoDb($conn, \App\Models\Theme $theme): void
-    {
-        $pages   = $theme->getPageList();
-        $themeId = $theme->slug ?? (string) $theme->id;
-
-        try {
-            // Check if pages table has the is_protected column
-            $hasProtection = \Illuminate\Support\Facades\Schema::connection($conn->getName())->hasColumn('pages', 'is_protected');
-        } catch (\Throwable) {
-            $hasProtection = false;
-        }
-
-        foreach ($pages as $pageKey => $pageDef) {
-            $title  = $pageDef['title'] ?? $pageKey;
-            $slug   = $pageDef['slug'] ?? Str::slug($title) ?: $pageKey;
-            $blocks = json_encode(['blocks' => $pageDef['blocks'] ?? []], JSON_UNESCAPED_UNICODE);
-            $now    = now()->toDateTimeString();
-
-            // Skip if already provisioned for this theme (only safe when columns exist)
-            if ($hasProtection) {
-                try {
-                    $exists = $conn->table('pages')
-                        ->where('theme_page_key', $pageKey)
-                        ->where('theme_id', $themeId)
-                        ->exists();
-                    if ($exists) continue;
-                } catch (\Throwable) {}
-            }
-
-            // Ensure unique slug
-            $baseSlug = $slug;
-            $i = 1;
-            while ($conn->table('pages')->where('slug', $slug)->exists()) {
-                $slug = $baseSlug . '-' . $i++;
-            }
-
-            $row = [
-                'title'              => $title,
-                'slug'               => $slug,
-                'is_published'       => 1,
-                'show_in_menu'       => ($pageKey === 'home') ? 1 : 0,
-                'builder_type'       => 'builder',
-                'builder_content_v2' => $blocks,
-                'order'              => ($conn->table('pages')->max('order') ?? 0) + 1,
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            ];
-
-            if ($hasProtection) {
-                $row['is_protected']    = 1;
-                $row['theme_id']        = $themeId;
-                $row['theme_page_key']  = $pageKey;
-            }
-
-            try {
-                $conn->table('pages')->insert($row);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('ThemeInstall: page insert failed', [
-                    'key'     => $pageKey,
-                    'message' => $e->getMessage(),
-                ]);
-            }
-        }
-    }
+    // provisionThemePagesIntoDb() — REMOVED (SP-01, TASK 2-SEC). It opened a
+    // raw cross-server MySQL connection and inserted `pages` rows directly,
+    // bypassing ThemeInstanceRevisionService/CanvasReservedSlugs/revision
+    // history: a second, independent Theme-install/page-provision authority
+    // (ADR-052 already closed this exact defect for installToSite(); this
+    // was the one remaining caller, via syncPagesForSite(), now also on the
+    // canonical HTTP install authority — see
+    // installThemeToSiteViaCanonicalAuthority() above). Confirmed
+    // unreachable from anywhere else in the codebase before removal.
 }

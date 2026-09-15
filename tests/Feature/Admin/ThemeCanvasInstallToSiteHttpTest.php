@@ -121,6 +121,11 @@ class ThemeCanvasInstallToSiteHttpTest extends TestCase
                 && count($body['pages']) === 16
                 && !empty($body['header_blocks'])
                 && !empty($body['footer_blocks'])
+                // THEME-03: Theme-owned selectable variants — the
+                // Universal Theme ships 6 structurally distinct presets
+                // each, so this is real evidence, not a shape check.
+                && count($body['header_variants']) === 6
+                && count($body['footer_variants']) === 6
                 && array_key_exists('global_styles', $body);
         });
     }

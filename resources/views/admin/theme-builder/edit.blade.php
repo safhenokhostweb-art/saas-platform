@@ -15,6 +15,18 @@
     @endif
 </div>
 
+{{-- UI-C3: this raw/JSON editor is a compatibility/advanced surface, not
+     the normal Theme-authoring workflow. Every field here (pages, header,
+     footer, global styles, checkpoints, clone, export/import, publish/
+     unpublish) has full parity in the canonical Theme Canvas — see
+     ADR-053/ADR-054. This page is intentionally no longer linked from the
+     Theme list; it remains reachable only for advanced/manual use. --}}
+<div class="mb-4 px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+    این صفحه ویرایشگر پیشرفتهٔ JSON است و برای استفادهٔ روزمره در نظر گرفته نشده — همهٔ امکانات آن (صفحات، هدر، فوتر، استایل‌های سراسری، چک‌پوینت، کپی، خروجی/ورودی، انتشار) در
+    <a href="{{ route('admin.theme-builder.canvas', $theme) }}" class="font-semibold underline">قالب‌ساز بصری (Canvas)</a>
+    نیز به‌طور کامل در دسترس است. برای طراحی معمول از قالب‌ساز استفاده کنید.
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
     <div class="lg:col-span-2 space-y-4">
         <div class="card">

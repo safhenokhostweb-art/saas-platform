@@ -405,3 +405,85 @@ Before implementing any substantial task, per the Bootstrap Sequence in
 mandatory gates, execute them before final review, and report against §12.
 This is now wired into `AGENTS.md` directly (see the accompanying edit) so
 it does not depend on a task remembering to ask.
+
+---
+
+## 15. Mature-Reference Product Standard
+
+Adopted 2026-09-13, from the Full Product Commercial Audit (TASK 1/3),
+after a domain-by-domain audit repeatedly needed the same judgment call:
+whether a gap should be closed by inventing something new or by recognizing
+that a mature commercial CMS/builder already solved this exact problem.
+
+**The rule:** for any customer-facing workflow gap — a missing control, a
+missing authoring surface, an unclear UX decision — evaluate how mature
+commercial systems solve the same problem before designing a solution.
+Primary references: **WordPress** (core authoring/admin patterns),
+**WooCommerce** (commerce workflows: cart, licensing/extensions, order
+lifecycle), **Elementor** (visual builder authoring patterns: repeaters,
+widgets, template kits). Other mature commercial CMS/builders may inform a
+specific gap when more directly relevant.
+
+This reference requirement is **mandatory** for any audit or design task
+that identifies a real product-experience gap. It is satisfied by recording,
+per gap: `MATURE_CMS_REFERENCE` (the specific mature pattern),
+`GOOD_PATTERN_TO_ADOPT` (what to actually take from it),
+`KNOWN_CMS_PROBLEM_TO_AVOID` (a specific, real weakness of that mature
+system — not a strawman), and `WHAT_OUR_ARCHITECTURE_CAN_DO_BETTER` (why
+this codebase's existing canonical mechanism — e.g. `CustomerMediaService`'s
+UUID+usage-ledger identity vs. WordPress's implicit attachment-post model —
+already exceeds or can straightforwardly exceed the mature reference,
+without adopting its legacy debt).
+
+**Never copy:**
+- WordPress/WooCommerce/Elementor's **legacy debt** — e.g. WordPress's
+  historical page-vs-template slug ambiguity, or a plugin ecosystem's
+  fragmented parallel data models for the same feature (found in this
+  audit's own AUD-11 commercial-payment comparison).
+- Their **implementation**, only the **pattern**. A goal like "give an
+  author a searchable existing-page picker" is a pattern; WordPress's
+  specific AJAX endpoint and markup are not something this codebase should
+  port.
+- **Duplicate authorities.** A canonical single-write-path/single-renderer
+  discipline (per Constitution §2 "reuse canonical services... do not
+  create parallel implementations") outranks any mature-CMS pattern that
+  achieves the same UX through multiple competing code paths.
+- **Fake or basic exposed features.** A control copied from a mature system
+  "for parity" that has no real behavioral effect here fails the existing
+  AUTHORING → SAVE → RELOAD → PREVIEW → PUBLIC RENDER contract (§4) exactly
+  as much as a homegrown fake control would.
+- **Persistence-only acceptance.** Matching a mature system's UI surface
+  is not itself acceptance criteria — the existing Feature Acceptance
+  Matrix (§2) and Builder Delivery Contract (§4) still govern what "done"
+  means, unchanged by this rule.
+- **Unnecessary backward compatibility.** Do not preserve a mature system's
+  workaround for constraints (old PHP versions, no client framework, a
+  15-year plugin ecosystem) that do not apply here.
+- **User-driven trial-and-error QA.** A mature-CMS-informed design still
+  requires the automated behavioral proof this document already mandates
+  (§3–5) — "it works like WordPress" is not a substitute for a real
+  save→reload→render assertion, and routine manual QA remains explicitly
+  disallowed as the default delivery path (§5).
+- **Their performance debt.** The UX pattern may be adopted; the runtime
+  cost that a hook-heavy plugin architecture, generic postmeta-style
+  storage, or uncontrolled dynamic module discovery imposes must not be —
+  those are exactly the mechanisms a mature-CMS-informed feature must
+  reimplement through this codebase's own typed/canonical mechanisms
+  instead. Concretely: no per-item (e.g. per-tab, per-row) database query
+  introduced by an authoring feature's public render path, no duplicated
+  render pass over the same content, no duplicated persisted content tree
+  for data that already has one canonical authority, and no loading of
+  unrelated modules on every request merely to support one feature. Public
+  rendering complexity must not grow with authoring complexity — it renders
+  from the already-resolved canonical document/tree.
+
+**Pre-customer convergence context:** while `ACTIVE_REAL_CUSTOMERS = 0`
+remains true for this product, any domain found to have more than one
+implementation of the same responsibility should be evaluated for
+convergence now, before real customer data and integrations make
+consolidation costly. Classify each such parallel path CANONICAL /
+REQUIRED_BACKEND_ONLY / TEMPORARILY_REQUIRED / OBSOLETE, per the Full
+Product Commercial Audit's Issue Ledger — a path being merely "the older
+one" or "for compatibility" is not sufficient justification on its own to
+classify it as TEMPORARILY_REQUIRED rather than OBSOLETE; the audit must
+show what still depends on it.

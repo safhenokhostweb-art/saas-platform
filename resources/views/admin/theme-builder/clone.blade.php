@@ -23,7 +23,7 @@
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="btn btn-primary">ایجاد کپی</button>
-                <a href="{{ route('admin.theme-builder.edit', $theme) }}" class="btn btn-outline-secondary">انصراف</a>
+                <a href="{{ route('admin.theme-builder.index') }}" class="btn btn-outline-secondary">انصراف</a>
             </div>
         </div>
     </div>

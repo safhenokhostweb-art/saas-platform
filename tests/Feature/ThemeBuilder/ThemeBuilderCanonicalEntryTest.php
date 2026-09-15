@@ -11,10 +11,13 @@ use Tests\TestCase;
 
 /**
  * Phase UI-C1 — proves the canonical Theme entry path: a newly-created
- * Theme must land in canonical Canvas, never the raw JSON editor. The raw
- * editor remains fully functional and reachable, but is no longer presented
- * as an isolated alternative Theme Builder — it now links into Canvas and
- * is labelled as an advanced/JSON path on the theme list.
+ * Theme must land in canonical Canvas, never the raw JSON editor.
+ *
+ * Updated for Phase UI-C3 (ADR-054): the raw editor remains fully
+ * functional and reachable by direct URL/self-redirect (tests B/C/F), but
+ * — now that ADR-053 proved full Canvas parity and UI-C3 proved zero
+ * unique raw-editor product responsibilities remain — it is no longer
+ * linked from the Theme list at all (test D), not merely relabelled.
  */
 class ThemeBuilderCanonicalEntryTest extends TestCase
 {
@@ -94,16 +97,58 @@ class ThemeBuilderCanonicalEntryTest extends TestCase
         $response->assertSee(route('admin.theme-builder.canvas', $theme), false);
     }
 
-    /** D. Theme list identifies raw editor as advanced/JSON rather than the primary Builder. */
-    public function test_theme_list_labels_raw_editor_as_advanced_json(): void
+    /**
+     * D. UI-C3 supersedes UI-C1 here: UI-C1 kept the raw editor visible on
+     * the list (merely honestly labelled as "advanced/JSON"). Once the
+     * canonical Canvas reached full behavioral parity (UI-C2D/C2E —
+     * ADR-053) and this phase (UI-C3 — ADR-054) proved zero unique raw-editor
+     * product responsibilities remain, the list must not offer it as a
+     * normal, equally-visible editing choice at all — it stays reachable
+     * (see tests B/C/F above) only as an unlinked, advanced/compatibility
+     * route, not a discoverable list action.
+     */
+    public function test_theme_list_no_longer_links_the_raw_editor(): void
     {
         $theme = $this->theme();
 
         $response = $this->actingAs($this->admin())->get(route('admin.theme-builder.index'));
 
         $response->assertOk();
-        $response->assertSee('ویرایش پیشرفته (JSON)');
-        $response->assertDontSee('>هدر، فوتر و استایل‌ها<', false);
+        $response->assertDontSee('ویرایش پیشرفته (JSON)');
+        $response->assertDontSee(route('admin.theme-builder.edit', $theme), false);
+    }
+
+    /** G. UI-C3: cloning from the normal list-driven form lands on canonical Canvas, not the raw editor. */
+    public function test_clone_from_normal_form_redirects_to_canonical_canvas(): void
+    {
+        $theme = $this->theme();
+
+        $response = $this->actingAs($this->admin())->post(route('admin.theme-builder.clone', $theme), [
+            'name' => 'کپی از فرم معمولی',
+        ]);
+
+        $newTheme = Theme::where('name', 'کپی از فرم معمولی')->firstOrFail();
+        $response->assertRedirect(route('admin.theme-builder.canvas', $newTheme));
+    }
+
+    /** H. UI-C3: importing from the normal list-driven upload form lands on canonical Canvas, not the raw editor. */
+    public function test_import_from_normal_form_redirects_to_canonical_canvas(): void
+    {
+        $admin = $this->admin();
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('theme.json', json_encode([
+            'version' => 2,
+            'name' => 'وارد شده از فرم معمولی',
+            'pages' => ['home' => ['title' => 'خانه', 'blocks' => []]],
+            'header_blocks' => [],
+            'footer_blocks' => [],
+            'global_styles' => [],
+            'settings' => [],
+        ]));
+
+        $response = $this->actingAs($admin)->post(route('admin.theme-builder.import'), ['file' => $file]);
+
+        $newTheme = Theme::where('name', 'وارد شده از فرم معمولی')->firstOrFail();
+        $response->assertRedirect(route('admin.theme-builder.canvas', $newTheme));
     }
 
     /** E. ThemeProfile menu still reaches the same route but has the clarified label. */

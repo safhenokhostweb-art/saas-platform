@@ -61,15 +61,40 @@ class BlockRenderer
         if ($this->isStructuralContainer($type) && !empty($children)) {
             $inner = $this->renderBlocks($children);
         }
-        if ($type === 'tabs' && !empty($props['tabs'])) {
-            $inner = $this->renderTabs($props['tabs']);
+        // BLD-01 (Full Product Commercial Audit, TASK 1/3): the generic
+        // dispatch below (`$method = 'render'.Str::studly(...); $this->
+        // {$method}($props, $inner, $id)`) used to ALSO resolve to
+        // `renderAccordion(array $items)` and re-invoke it with 3
+        // positional args — PHP silently discards the extra two against the
+        // single-array signature, rebinding the WHOLE `$props` (not
+        // `$props['items']`) to the method's only parameter and discarding
+        // the correct `$inner` computed here. This special case still
+        // short-circuits straight to the same style/editor-mode wrapping
+        // every other type goes through below, instead of falling into
+        // that re-dispatch.
+        //
+        // `tabs` no longer needs this special case (Full Product
+        // Commercial Audit, TASK 2A — tabs container authoring fix): it is
+        // now a real structural container (see isStructuralContainer()
+        // below), so it falls through to the normal dispatch, where
+        // renderTabs() receives the standard ($props, $inner, $id) — $inner
+        // already holding every real tab_panel child's rendered HTML.
+        if ($type === 'accordion') {
+            $html = !empty($props['items']) ? $this->renderAccordion($props['items']) : '';
+            return $this->applyBlockStyle(
+                $this->wrapEditorMode($html, $id, $type),
+                $block['style'] ?? [],
+                $block['responsive'] ?? [],
+                $id
+            );
         }
-        if ($type === 'accordion' && !empty($props['items'])) {
-            $inner = $this->renderAccordion($props['items']);
-        }
-        if ($type === 'slider' && !empty($props['slides'])) {
-            $inner = $this->renderBlocks($props['slides']);
-        }
+        // Builder integrity fix (2026-09-12): a `slider` slide is plain
+        // {image,title,subtitle,link} data, never a self-describing block
+        // (it has no `type` key) — recursing through renderBlocks() here
+        // fed each slide into schema-aware validation elsewhere and, at
+        // best, produced blank per-slide output nothing downstream used.
+        // renderSlider() below builds each slide directly from its own
+        // fields instead.
 
         // Module blocks: render as styled placeholder (admin preview) or delegate (customer-site)
         if (str_starts_with($type, 'module:')) {
@@ -115,7 +140,16 @@ class BlockRenderer
      */
     protected function isStructuralContainer(string $type): bool
     {
-        return in_array($type, ['section', 'container', 'grid', 'columns', 'flex_container'], true);
+        // BLD-04..09: `modal` added — its `blocks` prop is real nested
+        // content (a dialog body), the same shape every other container
+        // type here already has; it needs the same automatic $inner
+        // population, not a bespoke re-implementation in renderModal().
+        //
+        // TASK 2A (tabs container authoring fix): `tabs`/`tab_panel` added
+        // — each tab is a real tab_panel child block, and each tab_panel's
+        // own content is its own children, so both need the identical
+        // automatic $inner population every other container gets.
+        return in_array($type, ['section', 'container', 'grid', 'columns', 'flex_container', 'modal', 'tabs', 'tab_panel'], true);
     }
 
     /**
@@ -452,6 +486,57 @@ class BlockRenderer
     }
 
     /**
+     * Builder integrity fix (2026-09-12): `slider` had no canonical renderer
+     * at all — `renderBlock()` fell through to `renderFallback()`, which (via
+     * the pre-`$inner` computation just removed above) showed blank/empty
+     * slide boxes in the master-authoring preview. This canonical version
+     * builds each slide directly from its own {image,title,subtitle,link}
+     * fields — never through renderBlock()/schema validation, which slide
+     * records don't satisfy (no `type` key). It is a static, non-interactive
+     * row by design: a host that needs a real interactive carousel overrides
+     * this method with one, exactly the seam this class's docblock already
+     * documents for renderTestimonials()/renderBlogPosts() (see
+     * customer-site's ThemeCanvasRenderer::renderSlider() for that override).
+     */
+    protected function renderSlider(array $props, string $inner, string $id): string
+    {
+        $slides = $props['slides'] ?? [];
+        if (!is_array($slides)) {
+            $slides = [];
+        }
+
+        $cards = [];
+        foreach ($slides as $slide) {
+            if (!is_array($slide)) {
+                continue;
+            }
+            $image    = $this->escapeAttr($slide['image'] ?? '');
+            $title    = $this->escape($slide['title'] ?? '');
+            $subtitle = $this->escape($slide['subtitle'] ?? '');
+            $link     = $this->escapeUrl($slide['link'] ?? '', '');
+
+            $imgHtml = $image !== ''
+                ? "<img src=\"{$image}\" alt=\"{$title}\" style=\"width:100%;height:12rem;object-fit:cover;border-radius:.5rem;display:block;\" loading=\"lazy\">"
+                : '';
+            $textHtml = ($title !== '' || $subtitle !== '')
+                ? '<div style="padding:.75rem .25rem;">'
+                    . ($title !== '' ? "<h3 style=\"margin:0 0 .25rem;font-size:1.1rem;\">{$title}</h3>" : '')
+                    . ($subtitle !== '' ? "<p style=\"margin:0;color:#6b7280;\">{$subtitle}</p>" : '')
+                    . '</div>'
+                : '';
+
+            $card = "<div class=\"tb-slide\" style=\"flex:0 0 16rem;\">{$imgHtml}{$textHtml}</div>";
+            $cards[] = $link !== '' ? "<a href=\"{$link}\" style=\"color:inherit;text-decoration:none;\">{$card}</a>" : $card;
+        }
+
+        if (empty($cards)) {
+            return '';
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-slider\" style=\"display:flex;gap:1rem;overflow-x:auto;padding-bottom:.5rem;\">" . implode('', $cards) . "</div>";
+    }
+
+    /**
      * Phase 2j: absorbed the `_style.typography` (color/textAlign)
      * capability from customer-site's BlockRenderer override / HeadingElement
      * (both identical, both now redundant).
@@ -597,17 +682,132 @@ class BlockRenderer
         return "<section id=\"tb-{$id}\" class=\"tb-cta tb-bg-{$bg}\"><h2 class=\"tb-cta-title\"{$eaTitle}>{$title}</h2><p class=\"tb-cta-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</section>";
     }
 
-    protected function renderTabs(array $tabs): string
+    /**
+     * BLD-04 (Full Product Commercial Audit, TASK 1/3): `icon` (name, size)
+     * was registered with no renderer anywhere — always empty. `name`
+     * follows this codebase's own existing convention for icon-shaped
+     * fields elsewhere (e.g. `features_grid`/`services_cards` item icons,
+     * all authored as a literal emoji character, never an icon-font
+     * class name) — rendering it as literal text content is therefore the
+     * correct match for how every other icon field in this Builder is
+     * already authored, not a shortcut.
+     */
+    protected function renderIcon(array $props, string $inner, string $id): string
     {
-        $out = [];
-        $idx = 0;
-        foreach ($tabs as $i => $tab) {
-            $title = $this->escape($tab['title'] ?? "تب " . (++$idx));
-            $blocks = $tab['blocks'] ?? [];
-            $content = $this->renderBlocks($blocks);
-            $out[] = "<div class=\"tb-tab-panel\" data-tab=\"{$i}\"><h3 class=\"tb-tab-title\">{$title}</h3><div class=\"tb-tab-content\">{$content}</div></div>";
+        $name = trim((string) ($props['name'] ?? ''));
+        if ($name === '') {
+            return '';
         }
-        return "<div class=\"tb-tabs\">" . implode('', $out) . "</div>";
+        $sizeMap = ['small' => '1.25rem', 'medium' => '2rem', 'large' => '3rem'];
+        $rawSize = (string) ($props['size'] ?? 'medium');
+        $size = $sizeMap[$rawSize] ?? (preg_match('/^[\d.]+(px|rem|em)$/', $rawSize) ? $rawSize : $sizeMap['medium']);
+        $safeName = $this->escape($name);
+        $safeSize = $this->escapeAttr($size);
+        return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\" role=\"img\" aria-label=\"{$safeName}\">{$safeName}</span>";
+    }
+
+    /**
+     * BLD-05 (Full Product Commercial Audit, TASK 1/3): `progress_bar`
+     * (value, label) was registered with no renderer anywhere — always
+     * empty. Real, accessible progress bar: value is clamped to 0-100 and
+     * reflected both visually (track width) and via `aria-valuenow` so the
+     * control has genuine behavioral effect, not just a saved number.
+     */
+    protected function renderProgressBar(array $props, string $inner, string $id): string
+    {
+        $value = max(0, min(100, (int) ($props['value'] ?? 0)));
+        $label = $this->escape($props['label'] ?? '');
+        $labelHtml = $label !== '' ? "<div class=\"tb-progress-label\" style=\"display:flex;justify-content:space-between;margin-bottom:0.35rem;font-size:0.85rem;\"><span>{$label}</span><span>{$value}%</span></div>" : '';
+        return "<div id=\"tb-{$id}\" class=\"tb-progress-bar\">
+            {$labelHtml}
+            <div class=\"tb-progress-track\" style=\"background:#e5e7eb;border-radius:999px;height:0.6rem;overflow:hidden;\" role=\"progressbar\" aria-valuenow=\"{$value}\" aria-valuemin=\"0\" aria-valuemax=\"100\"" . ($label !== '' ? " aria-label=\"{$label}\"" : '') . ">
+                <div class=\"tb-progress-fill\" style=\"background:var(--tb-primary,#4f46e5);height:100%;width:{$value}%;transition:width .3s ease;\"></div>
+            </div>
+        </div>";
+    }
+
+    /**
+     * BLD-08 (Full Product Commercial Audit, TASK 1/3): `modal` (trigger_text,
+     * blocks) was registered with a real container schema (`is_container`,
+     * see BlockRegistry) and no renderer anywhere — always empty. `$inner`
+     * (this type's `blocks` rendered through the standard container path,
+     * per isStructuralContainer()) becomes the dialog body. Dependency-free
+     * vanilla JS open/close, matching this file's existing inline-`<script>`
+     * pattern for renderCarousel() rather than introducing a UI library.
+     */
+    protected function renderModal(array $props, string $inner, string $id): string
+    {
+        $triggerText = $this->escape($props['trigger_text'] ?? 'باز کردن');
+        return "<div id=\"tb-{$id}\" class=\"tb-modal-wrap\">
+            <button type=\"button\" class=\"tb-btn tb-btn-primary tb-modal-trigger\" data-modal-trigger=\"tb-{$id}-dialog\" aria-haspopup=\"dialog\">{$triggerText}</button>
+            <div id=\"tb-{$id}-dialog\" class=\"tb-modal-overlay\" style=\"display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;\" role=\"dialog\" aria-modal=\"true\">
+                <div class=\"tb-modal-panel\" style=\"background:#fff;border-radius:0.75rem;max-width:36rem;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;\">
+                    <button type=\"button\" class=\"tb-modal-close\" aria-label=\"بستن\" style=\"position:absolute;top:0.75rem;left:0.75rem;background:none;border:0;font-size:1.25rem;cursor:pointer;line-height:1;\">×</button>
+                    <div class=\"tb-modal-body\">{$inner}</div>
+                </div>
+            </div>
+            <script>(function(){
+                var wrap = document.currentScript.closest('.tb-modal-wrap');
+                if (!wrap || wrap.dataset.tbModalInit) return;
+                wrap.dataset.tbModalInit = '1';
+                var dialog = wrap.querySelector('.tb-modal-overlay');
+                var openBtn = wrap.querySelector('.tb-modal-trigger');
+                var closeBtn = wrap.querySelector('.tb-modal-close');
+                function open(){ dialog.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+                function close(){ dialog.style.display = 'none'; document.body.style.overflow = ''; }
+                if (openBtn) openBtn.addEventListener('click', open);
+                if (closeBtn) closeBtn.addEventListener('click', close);
+                dialog.addEventListener('click', function(e){ if (e.target === dialog) close(); });
+                document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && dialog.style.display === 'flex') close(); });
+            })();</script>
+        </div>";
+    }
+
+    /**
+     * TASK 2A (Full Product Commercial Audit — tabs container authoring
+     * fix): `tabs` is now a real structural container (isStructuralContainer()
+     * above) — each tab is a real `tab_panel` child block, so $inner already
+     * holds every tab's fully-rendered HTML (title + its own children,
+     * built by renderTabPanel() below) by the time this method runs, the
+     * exact same contract every other container renderer here has.
+     *
+     * The `props.tabs` branch is a READ-ONLY compatibility fallback for
+     * content saved before this fix that a customer has never reopened in
+     * the Canvas editor (which migrates it to real tab_panel children on
+     * load — canvas-editor.blade.php's normalizeBlock()). It reproduces
+     * the exact previous markup for that legacy shape; it is never written
+     * by this renderer and is not a second authoring path — once an author
+     * touches the block again, the editor saves real children and this
+     * branch is never consulted again for that block.
+     */
+    protected function renderTabs(array $props, string $inner, string $id): string
+    {
+        if ($inner === '' && !empty($props['tabs']) && is_array($props['tabs'])) {
+            $out = [];
+            $idx = 0;
+            foreach ($props['tabs'] as $tab) {
+                $title = $this->escape(is_array($tab) ? ($tab['title'] ?? "تب " . (++$idx)) : "تب " . (++$idx));
+                $blocks = is_array($tab) ? ($tab['blocks'] ?? []) : [];
+                $content = $this->renderBlocks($blocks);
+                $out[] = "<div class=\"tb-tab-panel\"><h3 class=\"tb-tab-title\">{$title}</h3><div class=\"tb-tab-content\">{$content}</div></div>";
+            }
+            $inner = implode('', $out);
+        }
+        return "<div id=\"tb-{$id}\" class=\"tb-tabs\">{$inner}</div>";
+    }
+
+    /**
+     * One real Canvas child block per tab — `title` is real prop-panel-
+     * authored metadata (a plain `string` field, same as any other block's
+     * text prop); the tab's actual content is this block's own `children`,
+     * rendered into $inner by the exact same generic container mechanism
+     * every other container type uses — never a second, JSON-shaped
+     * content path.
+     */
+    protected function renderTabPanel(array $props, string $inner, string $id): string
+    {
+        $title = $this->escape($props['title'] ?? 'تب');
+        return "<div id=\"tb-{$id}\" class=\"tb-tab-panel\"><h3 class=\"tb-tab-title\">{$title}</h3><div class=\"tb-tab-content\">{$inner}</div></div>";
     }
 
     protected function renderAccordion(array $items): string
@@ -1031,8 +1231,12 @@ class BlockRenderer
             $highlight = (bool) ($p['highlight'] ?? false);
             $ctaText   = $this->escape($p['cta_text'] ?? 'انتخاب');
             $ctaUrl    = $this->escapeAttr($p['cta_url'] ?? '#');
-            $features  = $p['features'] ?? [];
+            $rawFeat   = $p['features'] ?? [];
+            $features  = is_array($rawFeat) ? $rawFeat : (json_decode((string) $rawFeat, true) ?? []);
             $hlClass   = $highlight ? ' highlighted' : '';
+            // Canvas repeater UI now saves each feature as {text: "..."};
+            // a bare string remains supported for already-saved legacy data.
+            $features  = array_map(fn($f) => is_array($f) ? ($f['text'] ?? '') : $f, $features);
 
             $badgeHtml = $badge ? "<span class=\"tb-plan-badge\">{$badge}</span>" : '';
             $featureHtml = implode('', array_map(fn($f) => '<li>' . $this->escape($f) . '</li>', $features));
@@ -1824,19 +2028,68 @@ class BlockRenderer
     }
 
     /**
-     * No fabricated end date — a real countdown needs a real target date
-     * the author hasn't necessarily set yet; renders an honest hint instead
-     * of inventing one. Uses the .tb-countdown* classes customer-site's
-     * layout stylesheet already defines.
+     * Placeholder re-evaluation, `countdown` (Full Product Commercial
+     * Audit, TASK 2A): previously rendered a static hint span and NO
+     * JavaScript anywhere ever read its `data-end` attribute — the "hint"
+     * text showed forever, even once a real `end_date` was authored, and
+     * no actual countdown ever ran. No fabricated end date is invented
+     * here either (a real countdown still needs a real target date the
+     * author sets) — but once one IS set, this now runs an honest, real,
+     * dependency-free ticking countdown, matching this file's existing
+     * inline-`<script>` convention (renderCarousel()/renderModal()).
      */
     protected function renderCountdown(array $props, string $inner, string $id): string
     {
-        $label    = $this->escape($props['label'] ?? '');
-        $end      = $this->escapeAttr($props['end_date'] ?? '');
-        $labelHtml = $label ? "<span class=\"tb-countdown__label\">{$label}</span>" : '';
-        $endHtml   = $end ? "<span class=\"tb-countdown__end\" data-end=\"{$end}\"></span>" : '';
+        $label = $this->escape($props['label'] ?? '');
+        $end = trim((string) ($props['end_date'] ?? ''));
+        $labelHtml = $label !== '' ? "<span class=\"tb-countdown__label\">{$label}</span>" : '';
 
-        return "<div id=\"tb-{$id}\" class=\"tb-countdown\" data-end-date=\"{$end}\">{$labelHtml}{$endHtml}<span class=\"tb-countdown__hint\">تاریخ پایان را در تنظیمات المان وارد کنید تا شمارش معکوس فعال شود.</span></div>";
+        if ($end === '') {
+            return "<div id=\"tb-{$id}\" class=\"tb-countdown\">{$labelHtml}<span class=\"tb-countdown__hint\">تاریخ پایان را در تنظیمات المان وارد کنید تا شمارش معکوس فعال شود.</span></div>";
+        }
+
+        $safeEnd = $this->escapeAttr($end);
+        return "<div id=\"tb-{$id}\" class=\"tb-countdown\" data-end-date=\"{$safeEnd}\">
+            {$labelHtml}
+            <div class=\"tb-countdown__timer\" style=\"display:flex;gap:0.75rem;justify-content:center;margin-top:0.5rem;\">
+                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__d\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">روز</small></div>
+                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__h\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ساعت</small></div>
+                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__m\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">دقیقه</small></div>
+                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__s\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ثانیه</small></div>
+            </div>
+            <p class=\"tb-countdown__expired\" style=\"display:none;\">این پیشنهاد به پایان رسیده است.</p>
+            <script>(function(){
+                var root = document.currentScript.closest('.tb-countdown');
+                if (!root || root.dataset.tbCountdownInit) return;
+                root.dataset.tbCountdownInit = '1';
+                var end = new Date(root.dataset.endDate).getTime();
+                if (isNaN(end)) return;
+                var timerEl = root.querySelector('.tb-countdown__timer');
+                var expiredEl = root.querySelector('.tb-countdown__expired');
+                var dEl = root.querySelector('.tb-countdown__d'), hEl = root.querySelector('.tb-countdown__h');
+                var mEl = root.querySelector('.tb-countdown__m'), sEl = root.querySelector('.tb-countdown__s');
+                function pad(n){ return String(n).padStart(2, '0'); }
+                function tick(){
+                    var diff = end - Date.now();
+                    if (diff <= 0) {
+                        if (timerEl) timerEl.style.display = 'none';
+                        if (expiredEl) expiredEl.style.display = 'block';
+                        clearInterval(interval);
+                        return;
+                    }
+                    var d = Math.floor(diff / 86400000);
+                    var h = Math.floor((diff % 86400000) / 3600000);
+                    var m = Math.floor((diff % 3600000) / 60000);
+                    var s = Math.floor((diff % 60000) / 1000);
+                    if (dEl) dEl.textContent = pad(d);
+                    if (hEl) hEl.textContent = pad(h);
+                    if (mEl) mEl.textContent = pad(m);
+                    if (sEl) sEl.textContent = pad(s);
+                }
+                tick();
+                var interval = setInterval(tick, 1000);
+            })();</script>
+        </div>";
     }
 
     // ── END PHASE 2E CANONICAL BLOCKS ────────────────────────────────────────
