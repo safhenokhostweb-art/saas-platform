@@ -112,7 +112,7 @@ class NotificationCenterService
             'audience_type' => 'platform_admin',
             'channel'       => 'in_app',
             'site_id'       => $siteId,
-            'link'          => '/admin/support-tickets',
+            'link'          => route('tickets.admin.index', absolute: false),
         ]);
     }
 

@@ -709,5 +709,5 @@
     </div>
 
 </div>{{-- end x-data --}}
-@include('admin.support-tickets.guide')
+@include('tickets::admin.tickets.guide')
 @endsection

@@ -14,7 +14,19 @@ class StoreSupportTicketApiRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'license_key' => 'required|string|max:255',
+            // SAAS ZERO-FAILURE PUNCH LIST: AuthenticateTenantApi (Phase
+            // 8.0 security redesign) authenticates via the Authorization:
+            // Bearer header and then deliberately strips license_key from
+            // the request via SecuritySanitizer::scrubRequest() before this
+            // FormRequest ever validates — "so it cannot appear in dumps /
+            // Telescope" (that middleware's own docblock). A `required`
+            // rule here could never be satisfied by any request that
+            // reaches this validation at all — this endpoint was
+            // unconditionally broken. `nullable` (not removed outright)
+            // keeps the field accepted for any client still sending it,
+            // matching the middleware's own stated backward-compatibility
+            // stance for the deprecated body-transport path.
+            'license_key' => 'nullable|string|max:255',
             'domain' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
             'message' => 'required|string|max:5000',

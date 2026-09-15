@@ -32,11 +32,7 @@ class SupportTicketController extends Controller
         $this->auditLegacyAccess($request, 'index');
 
         try {
-            $validated = $request->validated();
-            $tickets = $this->supportPortalService->listTickets(
-                (string) $validated['license_key'],
-                (string) $validated['domain']
-            );
+            $tickets = $this->supportPortalService->listTickets();
 
             return $this->deprecatedResponse([
                 'success' => true,
@@ -91,11 +87,7 @@ class SupportTicketController extends Controller
         $this->auditLegacyAccess($request, 'unread-count');
 
         try {
-            $validated = $request->validated();
-            $count = $this->supportPortalService->unreadCount(
-                (string) $validated['license_key'],
-                (string) $validated['domain']
-            );
+            $count = $this->supportPortalService->unreadCount();
 
             return $this->deprecatedResponse([
                 'success' => true,

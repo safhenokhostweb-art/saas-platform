@@ -183,6 +183,18 @@ class SupportTicketModuleTest extends TestCase
 
     public function test_sla_response_breach(): void
     {
+        // FINAL PRE-MEDIA BASELINE: SupportSlaService::isBusinessHoursEnabled()
+        // defaults to true (config('support.business_hours.enabled', true))
+        // — addBusinessHours() then only counts 09:00-17:00 weekdays, so a
+        // ticket created exactly 48 real-world hours ago may not yet have
+        // accumulated the 24 SLA hours needed to breach, depending on
+        // which weekday/time the suite happens to run. This test's own
+        // intent (per its name/assertions) is the raw threshold-crossing
+        // logic, not business-hours calendar math — disabling it here
+        // makes the fixture's plain 24x7 hour assumption correct again,
+        // same as it always was before business-hours SLA calculation was
+        // added.
+        config(['support.business_hours.enabled' => false]);
         $s = app(SupportSlaService::class);
         $site = $this->makeSite();
         $t = SupportTicket::factory()->create(['site_id' => $site->id, 'created_at' => now()->subHours(48), 'first_response_at' => null, 'support_level' => 'basic']);
@@ -193,6 +205,9 @@ class SupportTicketModuleTest extends TestCase
 
     public function test_sla_resolution_breach(): void
     {
+        // See test_sla_response_breach()'s comment — same business-hours
+        // default.
+        config(['support.business_hours.enabled' => false]);
         $s = app(SupportSlaService::class);
         $site = $this->makeSite();
         $t = SupportTicket::factory()->create(['site_id' => $site->id, 'created_at' => now()->subDays(10), 'status' => SupportTicket::STATUS_OPEN, 'support_level' => 'basic']);
@@ -221,66 +236,42 @@ class SupportTicketModuleTest extends TestCase
     }
 
     // ==================== Admin Controller ====================
-
-    public function test_admin_ticket_index(): void
-    {
-        $admin = $this->admin();
-        $site = $this->makeSite();
-        SupportTicket::factory()->count(3)->create(['site_id' => $site->id]);
-        $this->actingAs($admin)->get(route('admin.support-tickets.index'))->assertStatus(200);
-        $this->actingAs($admin)->get(route('admin.support-tickets.index', ['status' => 'open']))->assertStatus(200);
-    }
-
-    public function test_admin_ticket_create_and_store(): void
-    {
-        $admin = $this->admin();
-        $site = $this->makeSite();
-        $this->actingAs($admin)->get(route('admin.support-tickets.create'))->assertStatus(200);
-        $this->actingAs($admin)->post(route('admin.support-tickets.store'), [
-            'site_id' => $site->id, 'subject' => 'issue', 'message' => 'details',
-            'customer_email' => 'a@b.com', 'priority' => 'high',
-        ])->assertRedirect(route('admin.support-tickets.index'));
-        $this->assertDatabaseHas('support_tickets', ['subject' => 'issue']);
-    }
-
-    public function test_admin_ticket_show_and_status(): void
+    //
+    // FINAL PRE-MEDIA BASELINE: these 5 tests previously exercised
+    // App\Http\Controllers\Admin\SupportTicketController directly, asserting
+    // 200/session-flash responses. That controller was removed from active
+    // routing under PHASE 7.2 (routes/web.php:587-595, present since commit
+    // 2d5017e "Phase EDU", months before this baseline pass) — every
+    // admin.support-tickets.* route is now a permanent 301 redirect to the
+    // canonical SaaSPlatform\Modules\Tickets admin module
+    // (packages/saas-platform/modules/tickets/Routes/admin.php, tickets.admin.*),
+    // which operates on an entirely different Ticket model, not SupportTicket.
+    // The old assertions could never pass — not a regression, a stale
+    // expectation against intentionally decommissioned code. Replaced with a
+    // single test asserting the actual, current, intentional contract: the
+    // legacy routes permanently redirect to their canonical replacements.
+    // Coverage of the canonical admin ticket CRUD flow itself belongs to the
+    // Tickets module's own test suite, not this legacy-model file.
+    public function test_admin_legacy_support_ticket_routes_redirect_to_canonical(): void
     {
         $admin = $this->admin();
         $site = $this->makeSite();
         $t = SupportTicket::factory()->create(['site_id' => $site->id]);
-        $this->actingAs($admin)->get(route('admin.support-tickets.show', $t))->assertStatus(200)->assertSee($t->subject);
-        $this->actingAs($admin)->patch(route('admin.support-tickets.update-status', $t), ['status' => 'closed'])->assertSessionHas('success');
-        $t->refresh();
-        $this->assertNotNull($t->closed_at);
-        $this->actingAs($admin)->patch(route('admin.support-tickets.update-status', $t), ['status' => 'open'])->assertSessionHas('success');
-        $t->refresh();
-        $this->assertNull($t->resolved_at);
-    }
 
-    public function test_admin_ticket_reply(): void
-    {
-        $admin = $this->admin();
-        $site = $this->makeSite();
-        $t = SupportTicket::factory()->create(['site_id' => $site->id, 'status' => SupportTicket::STATUS_OPEN]);
-        $this->actingAs($admin)->post(route('admin.support-tickets.replies.store', $t), ['message' => 'reply'])->assertSessionHas('success');
-        $this->assertDatabaseHas('support_ticket_replies', ['message' => 'reply', 'author_type' => SupportTicketReply::AUTHOR_STAFF]);
-        $t->refresh();
-        $this->assertNotNull($t->first_response_at);
-        $this->assertEquals(SupportTicket::STATUS_IN_PROGRESS, $t->status);
-    }
-
-    public function test_admin_ticket_assign(): void
-    {
-        $admin = $this->admin();
-        $staff = User::factory()->create(['is_admin' => true]);
-        $site = $this->makeSite();
-        $t = SupportTicket::factory()->create(['site_id' => $site->id]);
-        $this->actingAs($admin)->patch(route('admin.support-tickets.assign', $t), ['assigned_to' => $staff->id])->assertSessionHas('success');
-        $t->refresh();
-        $this->assertEquals($staff->id, $t->assigned_to);
-        $this->actingAs($admin)->patch(route('admin.support-tickets.assign', $t), ['assigned_to' => ''])->assertSessionHas('success');
-        $t->refresh();
-        $this->assertNull($t->assigned_to);
+        $this->actingAs($admin)->get(route('admin.support-tickets.index'))
+            ->assertRedirect(route('tickets.admin.index'))->assertStatus(301);
+        $this->actingAs($admin)->get(route('admin.support-tickets.create'))
+            ->assertRedirect(route('tickets.admin.create'))->assertStatus(301);
+        $this->actingAs($admin)->post(route('admin.support-tickets.store'))
+            ->assertRedirect(route('tickets.admin.store'))->assertStatus(301);
+        $this->actingAs($admin)->get(route('admin.support-tickets.show', $t))
+            ->assertRedirect(route('tickets.admin.show', $t->id))->assertStatus(301);
+        $this->actingAs($admin)->patch(route('admin.support-tickets.update-status', $t))
+            ->assertRedirect(route('tickets.admin.status.update', $t->id))->assertStatus(301);
+        $this->actingAs($admin)->post(route('admin.support-tickets.replies.store', $t))
+            ->assertRedirect(route('tickets.admin.replies.store', $t->id))->assertStatus(301);
+        $this->actingAs($admin)->patch(route('admin.support-tickets.assign', $t))
+            ->assertRedirect(route('tickets.admin.assign', $t->id))->assertStatus(301);
     }
 
     public function test_unauthorized_user_blocked(): void
@@ -322,15 +313,33 @@ class SupportTicketModuleTest extends TestCase
         $site->support_starts_at = now()->subDay();
         $site->save();
 
-        $key = 'TEST-KEY';
+        // SAAS ZERO-FAILURE PUNCH LIST: LicenseServerService::findByKey()
+        // requires a real key (>= 12 chars after whitespace-stripping) and
+        // derives license_key_prefix itself — uppercase, non-alnum
+        // stripped, first 8 chars — which 'TEST-KEY'/'T' never matched
+        // (findByKey() always returned null, "invalid_key", regardless of
+        // how the key reached the middleware). All-uppercase-alnum, no
+        // separators, avoids any mismatch between the stored prefix and
+        // the one findByKey() computes from the raw key.
+        $key = 'TESTKEY12345';
         PlatformLicense::create([
-            'site_id' => $site->id, 'license_key_prefix' => 'T', 'license_key_hash' => hash('sha256', $key),
+            'site_id' => $site->id, 'license_key_prefix' => substr($key, 0, 8), 'license_key_hash' => hash('sha256', $key),
             'domain_allowed' => $site->domain, 'issued_at' => now(),
         ]);
 
-        $r = $this->postJson(route('api.support-tickets.store'), [
+        // FINAL PRE-MEDIA BASELINE: real Bearer-header auth
+        // (AuthenticateTenantApi's documented, non-deprecated Priority 1
+        // path) plus `customer_mobile` (StoreSupportTicketApiRequest's real
+        // required field). SupportPortalService now resolves site identity
+        // solely from SiteContextContract (established by this middleware)
+        // instead of re-deriving it from a raw license_key — see that
+        // class's own docblock for the full single-authority-convergence
+        // rationale and caller audit. `license_key` in the body below is
+        // still accepted (nullable, backward-compatible) but no longer
+        // required or consulted for site resolution.
+        $r = $this->withHeaders(['Authorization' => 'Bearer ' . $key])->postJson(route('api.support-tickets.store'), [
             'license_key' => $key, 'domain' => $site->domain,
-            'subject' => 'API', 'message' => 'msg', 'customer_email' => 'a@b.com',
+            'subject' => 'API', 'message' => 'msg', 'customer_mobile' => '09111111111',
         ]);
         $r->assertStatus(200)->assertJson(['success' => true]);
         $this->assertDatabaseHas('support_tickets', ['site_id' => $site->id, 'subject' => 'API']);
@@ -351,15 +360,18 @@ class SupportTicketModuleTest extends TestCase
         $site->support_starts_at = now()->subYear();
         $site->save();
 
-        $key = 'EXP-KEY';
+        $key = 'EXPKEY123456';
         PlatformLicense::create([
-            'site_id' => $site->id, 'license_key_prefix' => 'E', 'license_key_hash' => hash('sha256', $key),
+            'site_id' => $site->id, 'license_key_prefix' => substr($key, 0, 8), 'license_key_hash' => hash('sha256', $key),
             'domain_allowed' => $site->domain, 'issued_at' => now(),
         ]);
 
-        $this->postJson(route('api.support-tickets.store'), [
+        // See test_support_ticket_api_valid_license()'s comment: real
+        // Bearer-header auth (the middleware's non-deprecated Priority 1
+        // path), and customer_mobile (the request's real required field).
+        $this->withHeaders(['Authorization' => 'Bearer ' . $key])->postJson(route('api.support-tickets.store'), [
             'license_key' => $key, 'domain' => $site->domain,
-            'subject' => 't', 'message' => 'm', 'customer_email' => 'a@b.com',
+            'subject' => 't', 'message' => 'm', 'customer_mobile' => '09222222222',
         ])->assertStatus(403)->assertJson(['success' => false, 'error' => 'support_expired']);
     }
 }

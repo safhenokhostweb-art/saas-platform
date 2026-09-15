@@ -14,7 +14,11 @@ class IndexSupportTicketsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'license_key' => 'required|string|max:255',
+            // FINAL PRE-MEDIA BASELINE: see StoreSupportTicketApiRequest's
+            // identical note — AuthenticateTenantApi strips license_key
+            // before this validates; a `required` rule here could never be
+            // satisfied.
+            'license_key' => 'nullable|string|max:255',
             'domain' => 'required|string|max:255',
             'status' => 'nullable|in:open,in_progress,closed',
             'per_page' => 'nullable|integer|min:1|max:100',
