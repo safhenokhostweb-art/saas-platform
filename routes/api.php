@@ -195,7 +195,7 @@ Route::prefix('password-reset')->middleware('throttle:5,1')->group(function () {
 // ======================= Groups ===============================================
 Route::prefix('groups')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::get('/',                   [GroupApiController::class, 'index'])->name('api.groups.index');
-    Route::post('/',                  [GroupApiController::class, 'store'])->name('api.groups.store');
+    Route::post('/',                  [GroupApiController::class, 'store'])->middleware('admin')->name('api.groups.store');
     Route::get('{group}',             [GroupApiController::class, 'show'])->name('api.groups.show');
     Route::put('{group}',             [GroupApiController::class, 'update'])->name('api.groups.update');
     Route::delete('{group}',          [GroupApiController::class, 'destroy'])->name('api.groups.destroy');
@@ -210,6 +210,12 @@ Route::prefix('groups')->middleware(['auth:sanctum', 'throttle:30,1'])->group(fu
 // ======================= Tags =================================================
 Route::prefix('tags')->middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::get('/',                   [TagApiController::class, 'index'])->name('api.tags.index');
+    // SAAS ZERO-FAILURE PUNCH LIST: TagApiController::store() (its own
+    // docblock: "POST /api/tags") was fully implemented but never wired up
+    // here — a genuine route regression, not a stale test. Restored with
+    // the same `admin` middleware the sibling groups.store route (and the
+    // already-working users.unlock route) use for admin-only writes.
+    Route::post('/',                  [TagApiController::class, 'store'])->middleware('admin')->name('api.tags.store');
     Route::get('{tag}',               [TagApiController::class, 'show'])->name('api.tags.show');
     Route::get('{tag}/users',         [TagApiController::class, 'tagUsers'])->name('api.tags.users');
 });
