@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Infrastructure\InfraBackupRun;
+use App\Services\Infrastructure\OperationalAnomalyChecker;
 use App\Services\Infrastructure\SlackAlertService;
 use Illuminate\Console\Command;
 use SaaSPlatform\CoreUtils\Telemetry\Anomaly\RuntimeAnomalyEngine;
@@ -13,13 +13,13 @@ class ScanRuntimeAnomaliesCommand extends Command
 
     protected $description = 'اسکن runtime anomalies (queue stalls, tenant isolation, security, deployment)';
 
-    public function handle(RuntimeAnomalyEngine $engine, SlackAlertService $slack): int
+    public function handle(RuntimeAnomalyEngine $engine, OperationalAnomalyChecker $operationalChecker, SlackAlertService $slack): int
     {
         $anomalies = $engine->scan();
 
         // ── Operational checks (not covered by RuntimeAnomalyEngine) ──────────
 
-        $operationalAnomalies = $this->checkOperational();
+        $operationalAnomalies = $operationalChecker->check();
         $anomalies = array_merge($anomalies, $operationalAnomalies);
 
         foreach ($operationalAnomalies as $a) {
@@ -76,71 +76,5 @@ class ScanRuntimeAnomaliesCommand extends Command
         }
 
         return count($criticalOrHigh) > 0 ? self::FAILURE : self::SUCCESS;
-    }
-
-    private function checkOperational(): array
-    {
-        $anomalies = [];
-
-        // 1. Disk usage
-        try {
-            $storagePath  = storage_path();
-            $freeBytes    = disk_free_space($storagePath);
-            $totalBytes   = disk_total_space($storagePath);
-            if ($totalBytes > 0) {
-                $usedPct = round((1 - $freeBytes / $totalBytes) * 100, 1);
-                if ($usedPct >= 90) {
-                    $anomalies[] = $this->opAnomaly('DISK_CRITICAL', 'critical',
-                        "Disk usage at {$usedPct}% on production VPS — writes may fail soon",
-                        ['used_pct' => $usedPct, 'free_gb' => round($freeBytes / 1024 ** 3, 2)]);
-                } elseif ($usedPct >= 80) {
-                    $anomalies[] = $this->opAnomaly('DISK_WARNING', 'high',
-                        "Disk usage at {$usedPct}% — plan cleanup or expansion",
-                        ['used_pct' => $usedPct, 'free_gb' => round($freeBytes / 1024 ** 3, 2)]);
-                }
-            }
-        } catch (\Throwable) {
-        }
-
-        // 2. Backup overdue (> 26 hours since last successful backup)
-        try {
-            $lastBackup = InfraBackupRun::where('status', 'success')->latest()->first();
-            if (!$lastBackup || $lastBackup->created_at->lt(now()->subHours(26))) {
-                $ago = $lastBackup ? $lastBackup->created_at->diffForHumans() : 'never';
-                $anomalies[] = $this->opAnomaly('BACKUP_OVERDUE', 'critical',
-                    "No successful database backup in the last 26 hours (last: {$ago})",
-                    ['last_backup_at' => $lastBackup?->created_at?->toIso8601String()]);
-            }
-        } catch (\Throwable) {
-        }
-
-        // 3. Scheduler dead — check heartbeat cache key (written every minute by Kernel)
-        try {
-            $heartbeat = cache('scheduler_last_run');
-            if ($heartbeat === null) {
-                // No heartbeat ever written — either first boot or cron not configured
-                // Don't alert until we have positive evidence of a working then broken scheduler
-            } elseif ($heartbeat->lt(now()->subMinutes(3))) {
-                $anomalies[] = $this->opAnomaly('SCHEDULER_DEAD', 'critical',
-                    'Laravel scheduler has not run in the last 3 minutes — cron may be down',
-                    ['last_heartbeat_at' => $heartbeat->toIso8601String()]);
-            }
-        } catch (\Throwable) {
-        }
-
-        return $anomalies;
-    }
-
-    private function opAnomaly(string $code, string $severity, string $message, array $context = []): array
-    {
-        return [
-            'code'         => $code,
-            'severity'     => $severity,
-            'message'      => $message,
-            'context'      => $context,
-            'context_key'  => $code,
-            'detected_at'  => now()->toIso8601String(),
-            '_operational' => true,
-        ];
     }
 }
