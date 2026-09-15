@@ -62,8 +62,18 @@ class CustomerDeploymentControllerDriverEnforcementTest extends TestCase
         ];
     }
 
-    public function test_start_rejects_installation_against_a_cpanel_server(): void
+    public function test_start_rejects_installation_against_a_docker_server(): void
     {
+        // Phase 14-C promoted cPanel to isImplemented()=true (it connects
+        // over SSH transport now — see DriverType::isImplemented() and
+        // CpanelDeploymentDriver's docblock); a cpanel server's
+        // auth_method=api_token incompatibility is rejected later, inside
+        // the driver's own validate()/connect(), not here at dispatch
+        // time. docker remains a genuine architecture stub (isImplemented()
+        // stays false) and, unlike 'sftp', is an actual value in the
+        // customer_remote_servers.type DB enum (see its migration) — so it
+        // still exercises this class's actual subject: start() rejecting a
+        // truly-unimplemented driver type before dispatch.
         Bus::fake();
         $this->actingAs($this->admin());
 
@@ -71,8 +81,8 @@ class CustomerDeploymentControllerDriverEnforcementTest extends TestCase
         // writing directly to the DB, simulating a server that was created
         // before this phase shipped — exactly Installation #44's situation.
         $server = CustomerRemoteServer::create([
-            'label' => 'Legacy cPanel Box', 'type' => 'cpanel',
-            'host' => 'box106.parsvds.com', 'port' => 2083,
+            'label' => 'Legacy Docker Box', 'type' => 'docker',
+            'host' => 'box106.parsvds.com', 'port' => 22,
             'username' => 'customer1', 'auth_method' => 'api_token',
         ]);
 

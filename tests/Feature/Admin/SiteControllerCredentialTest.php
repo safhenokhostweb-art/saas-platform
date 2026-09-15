@@ -271,17 +271,21 @@ class SiteControllerCredentialTest extends TestCase
     }
 
     /**
-     * G) consumer regression — ThemeCanvasController::syncPagesForSite() opens
-     * a real connection using the decrypted password. Like the
-     * SiteLifecycleService case above, this method targets a *customer
-     * site's* `pages` table shape (with an `order` column), which differs
-     * from this platform's own `pages` table — so against our own test DB it
-     * fails with a schema mismatch, not an authentication error. Reaching a
-     * real query on the dynamic `theme_sync_*` connection (instead of an
-     * "Access denied"/"Can't connect" failure at connect time) is exactly
-     * the proof we want: the decrypted password successfully authenticated.
+     * G) consumer regression — SP-01 (TASK 2-SEC) removed
+     * ThemeCanvasController::syncPagesForSite()'s old raw per-site MySQL
+     * connection entirely (provisionThemePagesIntoDb(), which used to
+     * consume db_password_encrypted directly — see that method's removal
+     * note and syncPagesForSite()'s own docblock). It now delegates
+     * exclusively to ThemeInstallGateway::install(), the canonical
+     * install authority, which talks to the target site over HTTP
+     * (POST {site domain}/builder/api/theme/install) — never opens a
+     * database connection to the site at all, so db_password_encrypted is
+     * never touched by this consumer any more. This fixture deliberately
+     * omits `domain`, so install() fails fast on that (ThemeInstallResult::noDomain())
+     * before ever reaching the network call — proving no DB credential
+     * path exists here to regress.
      */
-    public function test_theme_canvas_controller_connects_using_vault_backed_password(): void
+    public function test_theme_canvas_controller_no_longer_uses_a_raw_site_db_connection(): void
     {
         $this->withoutExceptionHandling();
         $this->actingAs($this->superAdmin());
@@ -299,12 +303,9 @@ class SiteControllerCredentialTest extends TestCase
 
         $theme = Theme::create(['name' => 'Sync Test Theme', 'slug' => 'sync-test-theme']);
 
-        try {
-            $this->post(route('admin.theme-builder.sync-pages', $theme), ['site_id' => $site->id]);
-            $this->fail('Expected a QueryException — this platform DB does not share a customer site "pages" table schema');
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->assertStringContainsString('theme_sync_', (string) $e->getConnectionName());
-            $this->assertStringNotContainsString('Access denied', $e->getMessage());
-        }
+        $response = $this->post(route('admin.theme-builder.sync-pages', $theme), ['site_id' => $site->id]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
     }
 }

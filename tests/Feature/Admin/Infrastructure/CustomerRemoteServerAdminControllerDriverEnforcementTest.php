@@ -37,22 +37,29 @@ class CustomerRemoteServerAdminControllerDriverEnforcementTest extends TestCase
         ]);
     }
 
-    public function test_cpanel_server_is_rejected_even_with_valid_credentials(): void
+    public function test_sftp_server_is_rejected(): void
     {
+        // Phase 14-C promoted cPanel to DriverType::isImplemented()=true
+        // (SSH transport — see CpanelDeploymentDriver's docblock), so
+        // store() no longer rejects it here; a cpanel server's
+        // auth_method=api_token incompatibility is now rejected later,
+        // inside the driver's own validate()/connect(). sftp remains a
+        // genuine architecture stub, so it still exercises this class's
+        // actual subject: store() rejecting a truly-unimplemented type.
         $this->actingAs($this->admin());
 
         $response = $this->post(route('admin.infrastructure.customer-deployment.servers.store'), [
-            'label'       => 'Test cPanel Box',
-            'type'        => 'cpanel',
+            'label'       => 'Test SFTP Box',
+            'type'        => 'sftp',
             'host'        => 'box106.parsvds.com',
-            'port'        => 2083,
+            'port'        => 22,
             'username'    => 'customer1',
-            'auth_method' => 'api_token',
-            'api_token'   => 'a-valid-looking-token',
+            'auth_method' => 'password',
+            'password'    => 'a-valid-looking-password',
         ]);
 
         $response->assertSessionHasErrors('type');
-        $this->assertDatabaseMissing('customer_remote_servers', ['type' => 'cpanel']);
+        $this->assertDatabaseMissing('customer_remote_servers', ['type' => 'sftp']);
     }
 
     public function test_directadmin_server_is_rejected(): void
