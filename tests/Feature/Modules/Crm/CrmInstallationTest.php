@@ -109,7 +109,7 @@ class CrmInstallationTest extends TestCase
         $this->actingAs($admin)->post(route('crm.admin.leads.convert', [$site->id, $lead]))
             ->assertRedirect(route('crm.admin.contacts.index', $site->id));
 
-        $this->assertDatabaseHas('crm_contacts', ['site_id' => $site->id, 'first_name' => 'Ali']);
+        $this->assertDatabaseHas('crm_suite_contacts', ['site_id' => $site->id, 'first_name' => 'Ali']);
         $this->assertDatabaseHas('crm_leads', ['id' => $lead->id, 'status' => 'converted']);
     }
 }

@@ -76,7 +76,7 @@ class CrmCrossModuleIntegrationTest extends TestCase
 
         event(new TicketCreated($ticket));
 
-        $this->assertDatabaseHas('crm_activities', [
+        $this->assertDatabaseHas('crm_suite_activities', [
             'subject_type' => CrmContact::class, 'subject_id' => $contact->id, 'type' => 'system',
         ]);
     }
@@ -94,7 +94,7 @@ class CrmCrossModuleIntegrationTest extends TestCase
 
         event(new TicketCreated($ticket));
 
-        $this->assertDatabaseCount('crm_activities', 0);
+        $this->assertDatabaseCount('crm_suite_activities', 0);
     }
 
     public function test_a_high_priority_ticket_with_no_matching_contact_creates_no_activity(): void
@@ -110,6 +110,6 @@ class CrmCrossModuleIntegrationTest extends TestCase
 
         event(new TicketCreated($ticket));
 
-        $this->assertDatabaseCount('crm_activities', 0);
+        $this->assertDatabaseCount('crm_suite_activities', 0);
     }
 }

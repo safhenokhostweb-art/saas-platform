@@ -49,7 +49,7 @@ class CrmKanbanUpdateTest extends TestCase
         $opportunity->refresh();
         $this->assertSame($toStage->id, $opportunity->stage_id);
         $this->assertNotNull($opportunity->stage_changed_at);
-        $this->assertDatabaseHas('crm_activities', [
+        $this->assertDatabaseHas('crm_suite_activities', [
             'subject_id' => $opportunity->id, 'type' => 'system',
         ]);
     }

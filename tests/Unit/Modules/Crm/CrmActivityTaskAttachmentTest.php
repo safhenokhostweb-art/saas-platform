@@ -33,7 +33,7 @@ class CrmActivityTaskAttachmentTest extends TestCase
 
         $contact->activities()->create(['type' => 'note', 'body' => 'Called back tomorrow']);
 
-        $this->assertDatabaseHas('crm_activities', ['subject_id' => $contact->id, 'type' => 'note', 'body' => 'Called back tomorrow']);
+        $this->assertDatabaseHas('crm_suite_activities', ['subject_id' => $contact->id, 'type' => 'note', 'body' => 'Called back tomorrow']);
         $this->assertFalse(Schema::hasTable('crm_notes'));
     }
 

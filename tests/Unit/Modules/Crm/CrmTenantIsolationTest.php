@@ -96,7 +96,7 @@ class CrmTenantIsolationTest extends TestCase
 
         CrmContact::where('site_id', $siteThirty->id)->delete();
 
-        $this->assertDatabaseHas('crm_contacts', ['id' => $other->id]);
+        $this->assertDatabaseHas('crm_suite_contacts', ['id' => $other->id]);
         $this->assertSame(0, CrmContact::where('site_id', $siteThirty->id)->count());
     }
 }

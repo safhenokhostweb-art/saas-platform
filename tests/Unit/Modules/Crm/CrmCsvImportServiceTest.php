@@ -68,7 +68,7 @@ class CrmCsvImportServiceTest extends TestCase
         $this->assertSame(1, $counts['created']);
         $this->assertSame(1, $counts['skipped_duplicate']);
         $this->assertSame(1, $counts['skipped_invalid']);
-        $this->assertDatabaseHas('crm_contacts', ['site_id' => $site->id, 'email' => 'ali@example.com']);
+        $this->assertDatabaseHas('crm_suite_contacts', ['site_id' => $site->id, 'email' => 'ali@example.com']);
         $this->assertDatabaseHas('crm_companies', ['site_id' => $site->id, 'name' => 'Acme']);
     }
 

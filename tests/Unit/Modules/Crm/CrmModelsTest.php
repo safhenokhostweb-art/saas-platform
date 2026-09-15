@@ -29,11 +29,11 @@ class CrmModelsTest extends TestCase
     {
         $this->assertDatabaseCount('crm_companies', 0);
         $this->assertTrue(Schema::hasColumns('crm_companies', ['site_id', 'name', 'lifecycle_stage', 'archived_at']));
-        $this->assertTrue(Schema::hasColumns('crm_contacts', ['site_id', 'company_id', 'lifecycle_stage']));
+        $this->assertTrue(Schema::hasColumns('crm_suite_contacts', ['site_id', 'company_id', 'lifecycle_stage']));
         $this->assertTrue(Schema::hasColumns('crm_leads', ['status', 'converted_contact_id', 'converted_opportunity_id']));
         $this->assertTrue(Schema::hasColumns('crm_opportunities', ['pipeline_id', 'stage_id', 'amount', 'probability', 'lost_reason', 'won_reason']));
         $this->assertTrue(Schema::hasColumns('crm_stages', ['probability', 'type']));
-        $this->assertTrue(Schema::hasColumns('crm_activities', ['subject_type', 'subject_id', 'type']));
+        $this->assertTrue(Schema::hasColumns('crm_suite_activities', ['subject_type', 'subject_id', 'type']));
         $this->assertTrue(Schema::hasColumns('crm_tasks', ['due_at', 'remind_at', 'status']));
         $this->assertTrue(Schema::hasColumns('crm_attachments', ['attachable_type', 'attachable_id', 'disk', 'path']));
         $this->assertTrue(Schema::hasTable('crm_tags'));
