@@ -1,6 +1,8 @@
 <?php
 namespace App\Exceptions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
@@ -47,6 +49,31 @@ class Handler extends ExceptionHandler
             }
             if ($e instanceof ModelNotFoundException) {
                 return response()->json(['message' => 'Resource not found.'], 404);
+            }
+            // TICKET-API-TENANT-01 follow-up: neither AuthorizationException
+            // nor AuthenticationException implements getStatusCode() (they
+            // are not HttpExceptionInterface) — the generic fallback below
+            // was silently reporting every Gate::authorize()/policy denial
+            // on any api/* route as a 500 "server_error" instead of its
+            // real 403/401, regardless of which controller/policy raised
+            // it. The underlying access control was never bypassed (no
+            // data was ever returned), only the HTTP status/response shape
+            // was wrong — still a real defect: a caller (or monitoring)
+            // reading the status code could not distinguish "you're not
+            // allowed" from "the server is broken".
+            if ($e instanceof AuthorizationException) {
+                return response()->json([
+                    'valid' => false,
+                    'error' => 'forbidden',
+                    'message' => $e->getMessage(),
+                ], 403);
+            }
+            if ($e instanceof AuthenticationException) {
+                return response()->json([
+                    'valid' => false,
+                    'error' => 'unauthenticated',
+                    'message' => $e->getMessage(),
+                ], 401);
             }
             $status = 500;
             if (method_exists($e, 'getStatusCode')) {
