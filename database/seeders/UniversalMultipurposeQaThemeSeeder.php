@@ -128,6 +128,14 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             'gallery_4' => [900, 700],
             'portfolio_1' => [1000, 750],
             'portfolio_2' => [1000, 750],
+            // TASK 3/3 Phase 3: real portrait assets for team_cards members
+            // (previously 'image' => '' on every member — an actual content
+            // gap, not a legitimate tenant-data placeholder like product/
+            // course/form content is).
+            'team_1' => [480, 600],
+            'team_2' => [480, 600],
+            'team_3' => [480, 600],
+            'team_4' => [480, 600],
         ];
 
         foreach ($specs as $name => [$w, $h]) {
@@ -376,24 +384,85 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 $this->block('module:blog_posts', ['title' => 'آخرین مطالب', 'limit' => 9, 'layout' => 'grid', 'show_excerpt' => true, 'show_date' => true]),
                 $this->block('module:blog_categories', ['title' => 'دسته‌بندی‌ها']),
             ]],
+            // MOD-01/MOD-02 (Full Product Commercial Audit, TASK 2A/2A-
+            // CONTINUATION): module:shop_wishlist_icon (wishlist + compare
+            // modes share one block type) and module:installment_badge are
+            // real, working backends (ShopWishlistService/session-compare,
+            // InstallmentService) — TASK 3/3 Phase 3 wires them into the
+            // real shop page instead of leaving them only reachable via the
+            // generic builder-coverage regression page. `product_id` stays
+            // empty deliberately: a portable master Theme has no real
+            // tenant Product to reference (same "will show once available"
+            // honest-placeholder rule this file already applies to
+            // module:pricing_table above).
             'shop' => ['title' => 'فروشگاه', 'slug' => 'shop', 'blocks' => [
                 $this->block('module:shop_search_box', ['placeholder' => 'جستجوی محصول...']),
                 $this->block('module:shop_categories', ['title' => 'دسته‌بندی محصولات']),
+                $this->block('module:shop_wishlist_icon', ['mode' => 'wishlist', 'style' => 'full', 'label' => 'علاقه‌مندی‌های من']),
+                $this->block('module:shop_wishlist_icon', ['mode' => 'compare', 'style' => 'full', 'label' => 'مقایسهٔ محصولات']),
                 $this->block('module:shop_product_grid', ['title' => 'همه محصولات', 'limit' => 12, 'columns' => '4']),
+                $this->block('module:installment_badge', ['style' => 'full']),
                 $this->block('trust_badges', $registry['trust_badges']['defaultProps'] ?? []),
             ]],
             'learning' => ['title' => 'آموزش', 'slug' => 'learning', 'blocks' => [
                 $this->block('module:courses_grid', ['title' => 'دوره‌های آموزشی', 'limit' => 9, 'columns' => '3', 'layout' => 'grid', 'show_price' => true]),
                 $this->block('module:course_enroll_cta', []),
             ]],
+            // MOD-03: module:loyalty_points_badge (real MembershipPointsService
+            // integration) belongs on the logged-in customer's own account
+            // surface, not the anonymous shop page.
             'account' => ['title' => 'حساب کاربری', 'slug' => 'account', 'blocks' => [
                 $this->block('login_register', []),
                 $this->block('module:account_quick_links', ['style' => 'buttons', 'show_notifications' => true]),
+                $this->block('module:loyalty_points_badge', ['style' => 'full', 'label' => 'امتیاز باشگاه مشتریان من']),
             ]],
+            // TASK 3/3 Phase 3: tabs/accordion/slider replaced with real
+            // authored content — each was previously an empty container
+            // (or, for accordion, one item literally titled "عنوان" with no
+            // body), which fails the "no placeholder-only certification"
+            // rule. tab_panel children are real nested blocks (the same
+            // generic container mechanism every other container type
+            // here uses — see BlockRenderer::isStructuralContainer()); the
+            // slider carries 4 real slides with real generated images and
+            // deliberately varying text length (one has no subtitle, one
+            // has a long headline) to exercise the renderer under both ends
+            // of realistic content.
             'utilities' => ['title' => 'امکانات', 'slug' => 'utilities', 'blocks' => [
                 $this->block('module:site_search', ['placeholder' => 'جستجو در کل سایت...', 'style' => 'hero']),
-                $this->block('tabs', $registry['tabs']['defaultProps'] ?? []),
-                $this->block('accordion', $registry['accordion']['defaultProps'] ?? []),
+                $this->block('tabs', ['blocks' => [
+                    $this->block('tab_panel', ['title' => 'فروشگاه اینترنتی', 'blocks' => [
+                        $this->block('heading', ['text' => 'همه‌چیز برای فروش آنلاین', 'level' => '3']),
+                        $this->block('text', ['content' => 'مدیریت محصول، دسته‌بندی، سبد خرید و درگاه پرداخت — بدون نیاز به افزونهٔ جداگانه.']),
+                    ]]),
+                    $this->block('tab_panel', ['title' => 'آموزش آنلاین', 'blocks' => [
+                        $this->block('heading', ['text' => 'فروش دوره و مدیریت دانشجو', 'level' => '3']),
+                        $this->block('text', ['content' => 'تعریف دوره، فروش اقساطی یا یک‌جا، و پیگیری پیشرفت دانشجویان در یک داشبورد.']),
+                    ]]),
+                    $this->block('tab_panel', ['title' => 'وبلاگ و محتوا', 'blocks' => [
+                        $this->block('heading', ['text' => 'انتشار محتوای حرفه‌ای', 'level' => '3']),
+                        $this->block('text', ['content' => 'دسته‌بندی، برچسب و سئوی داخلی برای هر مطلب، بدون نیاز به ابزار جانبی.']),
+                    ]]),
+                ]]),
+                $this->block('accordion', ['items' => [
+                    ['title' => 'آیا می‌توانم استایل هر بخش را جداگانه تغییر دهم؟', 'blocks' => [
+                        $this->block('text', ['content' => 'بله، هر بخش رنگ، فاصله‌گذاری، اندازهٔ متن و حاشیهٔ مخصوص به خودش را دارد و مستقل از بقیه قابل تنظیم است.']),
+                    ]],
+                    ['title' => 'خروجی موبایل جداگانه طراحی می‌شود؟', 'blocks' => [
+                        $this->block('text', ['content' => 'خیر، طراحی واکنش‌گراست؛ همان صفحه به‌صورت خودکار برای موبایل و تبلت هم بهینه نمایش داده می‌شود.']),
+                    ]],
+                    ['title' => 'چطور به نسخهٔ قبلی صفحه برمی‌گردم؟', 'blocks' => [
+                        $this->block('text', ['content' => 'از تاریخچهٔ نسخه‌ها در سازنده می‌توانید هر نسخهٔ قبلی صفحه را انتخاب و بازیابی کنید.']),
+                    ]],
+                ]]),
+                $this->block('slider', [
+                    'autoplay' => true, 'interval' => 5000,
+                    'slides' => [
+                        ['image' => $this->img('hero'), 'title' => 'فروش ویژهٔ پاییزه', 'subtitle' => 'تا ۳۰٪ تخفیف روی محصولات منتخب', 'link' => '/shop'],
+                        ['image' => $this->img('about'), 'title' => 'دوره‌های جدید آموزشی', 'subtitle' => 'ثبت‌نام زودهنگام با تخفیف ویژه', 'link' => '/learning'],
+                        ['image' => $this->img('portfolio_1'), 'title' => 'نمونه‌کارهای تازه', 'subtitle' => '', 'link' => '/portfolio'],
+                        ['image' => $this->img('gallery_1'), 'title' => 'راهنمای کامل شروع کسب‌وکار آنلاین برای مبتدیان در سال جدید', 'subtitle' => 'یک راهنمای گام‌به‌گام برای راه‌اندازی اولین فروشگاه یا سایت شما', 'link' => '/blog'],
+                    ],
+                ]),
                 $this->block('countdown', ['end_date' => date('Y-m-d', strtotime('+14 days')), 'label' => 'پایان جشنواره فروش ویژه']),
                 $this->block('promo_banner', $registry['promo_banner']['defaultProps'] ?? []),
                 $this->block('email_capture', $registry['email_capture']['defaultProps'] ?? []),
@@ -495,9 +564,9 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             $this->block('team_cards', [
                 'title' => 'با تیم ما آشنا شوید', 'columns' => '3',
                 'members' => [
-                    ['name' => 'سارا احمدی', 'role' => 'مدیرعامل و بنیان‌گذار', 'image' => '', 'bio' => 'بیش از ۱۰ سال تجربه در توسعهٔ کسب‌وکارهای دیجیتال'],
-                    ['name' => 'رضا کریمی', 'role' => 'مدیر فنی', 'image' => '', 'bio' => 'معمار زیرساخت پلتفرم و تیم مهندسی'],
-                    ['name' => 'نگار حسینی', 'role' => 'مدیر محصول', 'image' => '', 'bio' => 'مسئول تجربهٔ کاربری و طراحی محصول'],
+                    ['name' => 'سارا احمدی', 'role' => 'مدیرعامل و بنیان‌گذار', 'image' => $this->img('team_1'), 'bio' => 'بیش از ۱۰ سال تجربه در توسعهٔ کسب‌وکارهای دیجیتال'],
+                    ['name' => 'رضا کریمی', 'role' => 'مدیر فنی', 'image' => $this->img('team_2'), 'bio' => 'معمار زیرساخت پلتفرم و تیم مهندسی'],
+                    ['name' => 'نگار حسینی', 'role' => 'مدیر محصول', 'image' => $this->img('team_3'), 'bio' => 'مسئول تجربهٔ کاربری و طراحی محصول'],
                 ],
             ]),
             // Testimonials (real carousel — see ThemeCanvasRenderer::renderTestimonialsSlider)
@@ -917,10 +986,10 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             $this->block('team_cards', [
                 'title' => '', 'columns' => '4',
                 'members' => [
-                    ['name' => 'سارا احمدی', 'role' => 'مدیرعامل و بنیان‌گذار', 'image' => '', 'bio' => 'بیش از ۱۰ سال تجربه در توسعهٔ کسب‌وکار دیجیتال'],
-                    ['name' => 'رضا کریمی', 'role' => 'مدیر فنی', 'image' => '', 'bio' => 'معمار زیرساخت پلتفرم'],
-                    ['name' => 'نگار حسینی', 'role' => 'مدیر محصول', 'image' => '', 'bio' => 'مسئول تجربهٔ کاربری'],
-                    ['name' => 'علی محمدی', 'role' => 'مدیر پشتیبانی', 'image' => '', 'bio' => 'سرپرست تیم پشتیبانی مشتریان'],
+                    ['name' => 'سارا احمدی', 'role' => 'مدیرعامل و بنیان‌گذار', 'image' => $this->img('team_1'), 'bio' => 'بیش از ۱۰ سال تجربه در توسعهٔ کسب‌وکار دیجیتال'],
+                    ['name' => 'رضا کریمی', 'role' => 'مدیر فنی', 'image' => $this->img('team_2'), 'bio' => 'معمار زیرساخت پلتفرم'],
+                    ['name' => 'نگار حسینی', 'role' => 'مدیر محصول', 'image' => $this->img('team_3'), 'bio' => 'مسئول تجربهٔ کاربری'],
+                    ['name' => 'علی محمدی', 'role' => 'مدیر پشتیبانی', 'image' => $this->img('team_4'), 'bio' => 'سرپرست تیم پشتیبانی مشتریان'],
                 ],
             ]),
             $this->block('team', ['title' => 'اعضای بیشتر تیم (داده پویا)', 'limit' => 6]),
