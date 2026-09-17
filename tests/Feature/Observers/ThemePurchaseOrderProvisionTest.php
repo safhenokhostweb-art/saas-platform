@@ -78,7 +78,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
 
         Http::fake([
             'purchase-fulfillment-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 11, 'revision_number' => 1, 'pages_installed' => 16,
+                'success' => true, 'revision_id' => 11, 'revision_number' => 1, 'pages_installed' => 21,
             ], 200),
         ]);
 
@@ -107,7 +107,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
             return $request->url() === 'https://purchase-fulfillment-test.local/builder/api/theme/install'
                 && $request->hasHeader('X-Provision-Secret', 'test-secret-value')
                 && $body['theme_id'] === $theme->slug
-                && count($body['pages']) === 16;
+                && count($body['pages']) === 21;
         });
     }
 
@@ -160,7 +160,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
 
         Http::fake([
             'purchase-fulfillment-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 21, 'revision_number' => 1, 'pages_installed' => 16,
+                'success' => true, 'revision_id' => 21, 'revision_number' => 1, 'pages_installed' => 21,
             ], 200),
         ]);
 

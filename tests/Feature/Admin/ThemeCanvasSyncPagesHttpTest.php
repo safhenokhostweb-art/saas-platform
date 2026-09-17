@@ -86,7 +86,7 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
 
         Http::fake([
             'sync-http-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 2, 'revision_number' => 2, 'pages_installed' => 16,
+                'success' => true, 'revision_id' => 2, 'revision_number' => 2, 'pages_installed' => 21,
             ], 200),
         ]);
 
@@ -110,7 +110,7 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
                 && $body['theme_id'] === $theme->slug
                 && $body['source_theme_version'] === '2.0.0'
                 && $body['source_release_id'] === $release->id
-                && count($body['pages']) === 16;
+                && count($body['pages']) === 21;
         });
     }
 
@@ -148,7 +148,7 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
 
         Http::fake([
             'sync-http-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 3, 'revision_number' => 1, 'pages_installed' => 16,
+                'success' => true, 'revision_id' => 3, 'revision_number' => 1, 'pages_installed' => 21,
             ], 200),
         ]);
 

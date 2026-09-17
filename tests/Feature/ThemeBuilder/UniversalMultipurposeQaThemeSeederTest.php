@@ -22,7 +22,9 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         // Builder integrity audit (2026-09-11): grew from 11 structural-only
         // pages to 16 real marketing/utility pages (dedicated pricing,
         // team, testimonials, faq, forms pages added — see §D).
-        self::assertCount(16, $theme->pages);
+        // TASK 3/3 Phase 2: +5 alternate homepage compositions (service,
+        // ecommerce, personal, magazine, education — see §D-2) — 16 -> 21.
+        self::assertCount(21, $theme->pages);
         self::assertNotEmpty($theme->header_blocks);
         self::assertNotEmpty($theme->footer_blocks);
         self::assertNotEmpty($theme->global_styles);
@@ -109,5 +111,22 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         $results = app(StructuralIntegrityCheck::class)->run($theme, '1.0.0', null);
         self::assertCount(1, $results);
         self::assertSame('passed', $results[0]->toArray()['status']);
+
+        // §D-2 (TASK 3/3 Phase 2): the 5 alternate homepage compositions
+        // exist, are all NOT the site's active home, and are structurally
+        // distinct from each other and from the real 'home' page by
+        // block-type signature — proving genuine per-category composition,
+        // not six copies of one homepage with swapped text.
+        $homeSlugs = ['home_service', 'home_ecommerce', 'home_personal', 'home_magazine', 'home_education'];
+        $signatures = [];
+        foreach ($homeSlugs as $key) {
+            self::assertArrayHasKey($key, $theme->pages, "alternate homepage '{$key}' must exist");
+            $page = $theme->pages[$key];
+            self::assertFalse($page['is_home'], "'{$key}' must not be marked as the active homepage");
+            self::assertNotEmpty($page['blocks'], "'{$key}' must have real authored content");
+            $signatures[$key] = implode(',', array_map(fn ($b) => $b['type'], $page['blocks']));
+        }
+        $signatures['home'] = implode(',', array_map(fn ($b) => $b['type'], $theme->pages['home']['blocks']));
+        self::assertCount(6, array_unique($signatures), 'Homepage compositions are not all structurally distinct by block-type signature: ' . implode(' | ', $signatures));
     }
 }

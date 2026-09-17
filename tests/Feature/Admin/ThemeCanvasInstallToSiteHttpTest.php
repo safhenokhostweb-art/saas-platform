@@ -30,7 +30,7 @@ use Tests\TestCase;
  * /builder/api/theme/install endpoint (the same one PageBuilderController
  * exposes, guarded by the existing X-Provision-Secret middleware), passing
  * through real provenance (source_theme_id/version/release_id) and the
- * theme's real 16-page/header/footer/global-styles/extension-assets data.
+ * theme's real 21-page/header/footer/global-styles/extension-assets data.
  * There is no longer a second, raw-SQL install authority.
  *
  * Http::fake() here fakes only the network transport boundary between the
@@ -96,7 +96,7 @@ class ThemeCanvasInstallToSiteHttpTest extends TestCase
 
         Http::fake([
             'install-http-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 1, 'revision_number' => 1, 'pages_installed' => 16,
+                'success' => true, 'revision_id' => 1, 'revision_number' => 1, 'pages_installed' => 21,
             ], 200),
         ]);
 
@@ -118,7 +118,7 @@ class ThemeCanvasInstallToSiteHttpTest extends TestCase
                 && $body['source_theme_id'] === (string) $theme->id
                 && $body['source_theme_version'] === '1.2.3'
                 && $body['source_release_id'] === $release->id
-                && count($body['pages']) === 16
+                && count($body['pages']) === 21
                 && !empty($body['header_blocks'])
                 && !empty($body['footer_blocks'])
                 // THEME-03: Theme-owned selectable variants — the

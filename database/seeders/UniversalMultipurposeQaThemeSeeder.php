@@ -346,6 +346,19 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         $used = [];
         $pages = [
             'home' => ['title' => 'خانه', 'slug' => '', 'is_home' => true, 'blocks' => $this->homeBlocks()],
+            // §D-2 (TASK 3/3, Phase 2): alternate homepage compositions.
+            // is_home stays false on all five — a receiving site keeps one
+            // active homepage (the corporate 'home' above); these prove the
+            // SAME block system produces structurally and editorially
+            // different homepages per business category (hero framing,
+            // section order, CTA strategy, content density), not six
+            // reskins of one layout. Not linked from any nav_menu by
+            // default; reachable at their own slug for review/assignment.
+            'home_service' => ['title' => 'خانه — کسب‌وکار خدماتی', 'slug' => 'home-service', 'is_home' => false, 'blocks' => $this->homeServiceBlocks()],
+            'home_ecommerce' => ['title' => 'خانه — فروشگاه اینترنتی', 'slug' => 'home-ecommerce', 'is_home' => false, 'blocks' => $this->homeEcommerceBlocks()],
+            'home_personal' => ['title' => 'خانه — برند شخصی', 'slug' => 'home-personal', 'is_home' => false, 'blocks' => $this->homePersonalBlocks()],
+            'home_magazine' => ['title' => 'خانه — مجله و رسانه', 'slug' => 'home-magazine', 'is_home' => false, 'blocks' => $this->homeMagazineBlocks()],
+            'home_education' => ['title' => 'خانه — آموزش آنلاین', 'slug' => 'home-education', 'is_home' => false, 'blocks' => $this->homeEducationBlocks()],
             'about' => ['title' => 'درباره ما', 'slug' => 'about', 'blocks' => $this->aboutBlocks()],
             'services' => ['title' => 'خدمات', 'slug' => 'services', 'blocks' => $this->servicesBlocks()],
             'portfolio' => ['title' => 'نمونه‌کارها', 'slug' => 'portfolio', 'blocks' => $this->portfolioBlocks()],
@@ -534,6 +547,250 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 'title' => 'همین امروز کسب‌وکار آنلاین خود را شروع کنید',
                 'subtitle' => 'بدون نیاز به کارت اعتباری — در کمتر از ۵ دقیقه',
                 'button_text' => 'ساخت سایت رایگان', 'button_url' => '/account', 'background' => 'primary',
+            ]),
+        ];
+    }
+
+    // §D-2: alternate homepage compositions (see pagesFor()). Each reuses
+    // only existing canonical block types, with real category-specific
+    // Persian copy — no lorem ipsum, no shared hero/CTA copy with 'home'.
+
+    /** SERVICE BUSINESS — health clinic. Booking-first CTA, trust via stats + process. */
+    private function homeServiceBlocks(): array
+    {
+        return [
+            $this->block('hero', [
+                'title' => 'سلامت شما، اولویت اول ماست',
+                'subtitle' => 'نوبت‌دهی آنلاین، مشاورهٔ تخصصی و پیگیری درمان در یک کلینیک مدرن با ۱۸ سال سابقه.',
+                'button_text' => 'رزرو نوبت آنلاین', 'button_url' => '/contact',
+                'background' => 'secondary', 'background_image' => $this->img('hero'), 'align' => 'center',
+            ]),
+            $this->block('service_cards', [
+                'title' => 'خدمات درمانی و تخصصی کلینیک سلامت',
+                'services' => [
+                    ['icon' => '🩺', 'title' => 'مشاورهٔ عمومی', 'text' => 'ویزیت حضوری و آنلاین با پزشکان عمومی مجرب', 'url' => '/contact'],
+                    ['icon' => '🏃', 'title' => 'فیزیوتراپی', 'text' => 'درمان دردهای اسکلتی-عضلانی با دستگاه‌های روز', 'url' => '/services'],
+                    ['icon' => '🥗', 'title' => 'تغذیه و رژیم درمانی', 'text' => 'برنامهٔ غذایی اختصاصی با پیگیری هفتگی', 'url' => '/services'],
+                    ['icon' => '✨', 'title' => 'مراقبت پوست و زیبایی', 'text' => 'خدمات پوست با متخصصان دارای مجوز', 'url' => '/services'],
+                ],
+            ]),
+            $this->block('stats_row', [
+                'title' => '', 'background' => '#f8fafc', 'dividers' => true,
+                'stats' => [
+                    ['value' => 18, 'suffix' => ' سال', 'label' => 'سابقهٔ درمانی'],
+                    ['value' => 40, 'suffix' => '+', 'label' => 'پزشک متخصص'],
+                    ['value' => 25000, 'suffix' => '+', 'label' => 'بیمار درمان‌شده'],
+                    ['value' => 4.9, 'suffix' => '', 'label' => 'امتیاز رضایت بیماران'],
+                ],
+            ]),
+            $this->block('process_steps', [
+                'title' => 'روند دریافت خدمت', 'subtitle' => 'از نوبت‌دهی تا پیگیری درمان، در سه گام روشن',
+                'steps' => [
+                    ['number' => '۱', 'title' => 'نوبت‌دهی آنلاین', 'text' => 'زمان ویزیت را از سایت یا تلفن انتخاب کنید'],
+                    ['number' => '۲', 'title' => 'ویزیت و مشاورهٔ تخصصی', 'text' => 'معاینه و تشخیص توسط پزشک متخصص'],
+                    ['number' => '۳', 'title' => 'پیگیری و برنامهٔ درمانی', 'text' => 'دریافت برنامهٔ درمان و پیگیری منظم پرونده'],
+                ],
+            ]),
+            $this->block('testimonials_slider', [
+                'title' => 'تجربهٔ بیماران ما', 'columns' => '3', 'autoplay' => true, 'interval' => 6000,
+                'items' => [
+                    ['name' => 'مینا کاظمی', 'role' => 'بیمار فیزیوتراپی', 'text' => 'بعد از سه ماه فیزیوتراپی منظم، کمردردم کاملاً برطرف شد. برخورد پرسنل هم عالی بود.', 'rating' => 5],
+                    ['name' => 'مریم توکلی', 'role' => 'بیمار بخش تغذیه', 'text' => 'برنامهٔ غذایی اختصاصی و پیگیری هفتگی، نتیجه‌ای واقعی و پایدار داد.', 'rating' => 5],
+                    ['name' => 'بهزاد رستگار', 'role' => 'بیمار مشاورهٔ عمومی', 'text' => 'نوبت‌دهی آنلاین وقتم را خیلی نجات داد، دیگر لازم نیست پشت تلفن منتظر بمانم.', 'rating' => 4],
+                ],
+            ]),
+            $this->block('faq', [
+                'title' => 'سوالات متداول',
+                'items' => [
+                    ['question' => 'آیا نوبت‌دهی آنلاین رایگان است؟', 'answer' => 'بله، رزرو نوبت از سایت بدون هیچ هزینه‌ای انجام می‌شود.'],
+                    ['question' => 'آیا بیمه تکمیلی پذیرفته می‌شود؟', 'answer' => 'بله، با اکثر بیمه‌های تکمیلی طرف قرارداد هستیم.'],
+                    ['question' => 'برای اولین ویزیت چه مدارکی لازم است؟', 'answer' => 'کارت ملی و در صورت وجود، سوابق پزشکی قبلی کافی است.'],
+                ],
+            ]),
+            $this->block('cta', [
+                'title' => 'همین حالا نوبت خود را رزرو کنید', 'subtitle' => 'ظرفیت نوبت‌های این هفته محدود است',
+                'button_text' => 'رزرو نوبت', 'button_url' => '/contact', 'background' => 'primary',
+            ]),
+        ];
+    }
+
+    /** ECOMMERCE — apparel store. Shop-now CTA, product-grid heavy, urgency + trust. */
+    private function homeEcommerceBlocks(): array
+    {
+        return [
+            $this->block('hero', [
+                'title' => 'کلکسیون جدید دیجی‌مد رسید',
+                'subtitle' => 'ارسال رایگان برای خریدهای بالای ۵۰۰ هزار تومان — ۲۰٪ تخفیف برای اولین خرید شما.',
+                'button_text' => 'مشاهده و خرید', 'button_url' => '/shop',
+                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+            ]),
+            $this->block('features_grid', [
+                'title' => 'چرا از دیجی‌مد خرید کنید؟', 'subtitle' => '',
+                'columns' => '4', 'style' => 'cards',
+                'features' => [
+                    ['icon' => '🚚', 'title' => 'ارسال سریع', 'text' => 'تحویل به سراسر کشور طی ۲۴ تا ۷۲ ساعت'],
+                    ['icon' => '🔒', 'title' => 'پرداخت امن', 'text' => 'درگاه بانکی معتبر و رمزنگاری کامل'],
+                    ['icon' => '✅', 'title' => 'ضمانت اصالت کالا', 'text' => 'تمام محصولات دارای گارانتی اصالت'],
+                    ['icon' => '↩️', 'title' => '۷ روز مهلت بازگشت', 'text' => 'بازگشت و تعویض آسان و بدون دردسر'],
+                ],
+            ]),
+            $this->block('heading', ['text' => 'پرفروش‌ترین محصولات', 'level' => '2']),
+            $this->block('product_grid', ['columns' => 4, 'limit' => 8]),
+            $this->block('gallery', [
+                'title' => 'لوک‌بوک فصل جدید', 'columns' => '3',
+                'items' => [
+                    ['url' => $this->img('portfolio_1'), 'alt' => 'ست پاییزهٔ دیجی‌مد'],
+                    ['url' => $this->img('portfolio_2'), 'alt' => 'کلکسیون رسمی دیجی‌مد'],
+                    ['url' => $this->img('gallery_1'), 'alt' => 'استایل روزمرهٔ دیجی‌مد'],
+                ],
+            ]),
+            $this->block('testimonials_slider', [
+                'title' => 'نظرات خریداران', 'columns' => '3', 'autoplay' => true, 'interval' => 5000,
+                'items' => [
+                    ['name' => 'سحر ابراهیمی', 'role' => 'خریدار', 'text' => 'کیفیت پارچه فوق‌العاده بود و بسته‌بندی خیلی شیک. حتماً باز خرید می‌کنم.', 'rating' => 5],
+                    ['name' => 'کیانا مرادی', 'role' => 'خریدار', 'text' => 'ارسال دقیقاً همون روزی بود که گفته بودن. سایزبندی هم دقیق بود.', 'rating' => 5],
+                    ['name' => 'پویا صادقی', 'role' => 'خریدار', 'text' => 'پشتیبانی سریع جواب داد و تعویض سایز بدون هیچ هزینه‌ای انجام شد.', 'rating' => 4],
+                ],
+            ]),
+            $this->block('trust_badges', [
+                'badges' => [
+                    ['icon' => '↩️', 'title' => 'بازگشت وجه', 'text' => 'تا ۷ روز بدون قید و شرط'],
+                    ['icon' => '🔒', 'title' => 'پرداخت امن', 'text' => 'درگاه‌های معتبر بانکی'],
+                    ['icon' => '☎️', 'title' => 'پشتیبانی ۲۴/۷', 'text' => 'همیشه در دسترس شما'],
+                ],
+                'background' => '#f8fafc',
+            ]),
+            $this->block('newsletter_form', [
+                'title' => 'از تخفیف‌های ویژه باخبر شوید', 'subtitle' => 'کدهای تخفیف اختصاصی را زودتر از همه دریافت کنید',
+                'placeholder' => 'ایمیل شما', 'button_text' => 'عضویت',
+                'background' => '#111827', 'text_color' => '#ffffff',
+            ]),
+            $this->block('cta', [
+                'title' => 'فرصت محدود! تخفیف ویژه تا پایان هفته', 'subtitle' => 'همین حالا خرید کنید تا از تخفیف جا نمانید',
+                'button_text' => 'ورود به فروشگاه', 'button_url' => '/shop', 'background' => 'primary',
+            ]),
+        ];
+    }
+
+    /** PERSONAL / PROFESSIONAL BRAND — freelance designer. Minimal, low density, single CTA. */
+    private function homePersonalBlocks(): array
+    {
+        return [
+            $this->block('hero', [
+                'title' => 'نگین رضایی هستم، طراح گرافیک و مشاور برند',
+                'subtitle' => 'به کسب‌وکار شما هویت بصری‌ای می‌بخشم که در ذهن مشتری می‌ماند.',
+                'button_text' => 'مشاهدهٔ نمونه‌کارها', 'button_url' => '/portfolio',
+                'background' => 'secondary', 'background_image' => $this->img('about'), 'align' => 'center',
+            ]),
+            $this->block('about_section', [
+                'badge' => 'دربارهٔ من', 'title' => 'بیش از ۸ سال تجربه در طراحی برند',
+                'description' => 'از سال ۱۳۹۵ با کسب‌وکارهای کوچک و برندهای نوپا کار می‌کنم تا هویت بصری‌ای بسازم که واقعاً نمایندهٔ آن‌هاست، نه یک قالب تکراری.',
+                'features' => ['طراحی لوگو و هویت بصری', 'مشاورهٔ برندسازی', 'طراحی رابط کاربری (UI)'],
+                'btn_text' => 'بیشتر بخوانید', 'btn_url' => '/about',
+            ]),
+            $this->block('skills_bars', [
+                'title' => 'مهارت‌ها',
+                'skills' => [
+                    ['name' => 'طراحی گرافیک', 'percent' => 96],
+                    ['name' => 'برندسازی', 'percent' => 90],
+                    ['name' => 'طراحی رابط کاربری (UI)', 'percent' => 85],
+                ],
+            ]),
+            $this->block('gallery', [
+                'title' => 'منتخب پروژه‌ها', 'columns' => '3',
+                'items' => [
+                    ['url' => $this->img('portfolio_1'), 'alt' => 'هویت بصری برند دیجی‌مد'],
+                    ['url' => $this->img('portfolio_2'), 'alt' => 'ریبرندینگ استودیو نقش'],
+                    ['url' => $this->img('gallery_1'), 'alt' => 'طراحی رابط کاربری اپلیکیشن رشد'],
+                ],
+            ]),
+            $this->block('testimonials_slider', [
+                'title' => 'کارفرمایان چه می‌گویند', 'columns' => '1', 'autoplay' => true, 'interval' => 5500,
+                'items' => [
+                    ['name' => 'آرش تهرانی', 'role' => 'مدیر استودیو طراحی نقش', 'text' => 'نگین دقیقاً همان چیزی که در ذهن داشتیم را روی کاغذ آورد، حتی بهتر.', 'rating' => 5],
+                    ['name' => 'سمیرا قاسمی', 'role' => 'بنیان‌گذار آژانس سفر پرواز', 'text' => 'ریبرندینگ ما نتیجهٔ مستقیمش را در افزایش اعتماد مشتری نشان داد.', 'rating' => 5],
+                ],
+            ]),
+            $this->block('cta', [
+                'title' => 'پروژهٔ بعدی خود را با من شروع کنید', 'subtitle' => 'برای مشاورهٔ رایگان تماس بگیرید',
+                'button_text' => 'درخواست همکاری', 'button_url' => '/contact', 'background' => 'secondary',
+            ]),
+        ];
+    }
+
+    /** CONTENT / MAGAZINE — business/tech publication. Content-first, highest density of articles. */
+    private function homeMagazineBlocks(): array
+    {
+        return [
+            $this->block('hero', [
+                'title' => 'کارآفرینی، تکنولوژی و کسب‌وکار — هر روز یک ایدهٔ تازه',
+                'subtitle' => 'جدیدترین تحلیل‌ها، گزارش‌های بازار و مصاحبه‌های اختصاصی مجلهٔ کسب‌وکار امروز را دنبال کنید.',
+                'button_text' => 'مطالعهٔ مطالب', 'button_url' => '/blog',
+                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+            ]),
+            $this->block('module:blog_featured', ['title' => 'مطلب ویژهٔ هفته']),
+            $this->block('blog_posts', ['title' => 'جدیدترین مطالب', 'limit' => 9]),
+            $this->block('module:blog_categories', ['title' => 'مرور بر اساس موضوع']),
+            $this->block('bento_grid', [
+                'title' => 'موضوعات پرطرفدار',
+                'items' => [
+                    ['title' => 'کارآفرینی', 'text' => 'استارتاپ و رشد کسب‌وکار', 'icon' => '🚀', 'size' => 'large', 'bg_color' => '#eef2ff', 'text_color' => '#3730a3'],
+                    ['title' => 'فناوری', 'text' => 'اخبار و تحلیل تکنولوژی', 'icon' => '💡', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d'],
+                    ['title' => 'بازاریابی', 'text' => 'استراتژی و برندسازی', 'icon' => '📣', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12'],
+                ],
+            ]),
+            $this->block('newsletter_form', [
+                'title' => 'خلاصهٔ هفتگی را در ایمیل خود دریافت کنید', 'subtitle' => 'بدون تبلیغات، فقط محتوای ارزشمند',
+                'placeholder' => 'ایمیل شما', 'button_text' => 'عضویت در خبرنامه',
+                'background' => '#111827', 'text_color' => '#ffffff',
+            ]),
+        ];
+    }
+
+    /** EDUCATION / COURSE — online learning platform. Enrollment-first CTA, course-grid heavy. */
+    private function homeEducationBlocks(): array
+    {
+        return [
+            $this->block('hero', [
+                'title' => 'یادگیری آنلاین، مسیر رشد شما',
+                'subtitle' => 'بیش از ۲۰۰ دورهٔ تخصصی با مدرک معتبر و پشتیبانی مستقیم مدرس در آموزشگاه رشد.',
+                'button_text' => 'مشاهدهٔ دوره‌ها', 'button_url' => '/learning',
+                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+            ]),
+            $this->block('stats_row', [
+                'title' => '', 'background' => '#f8fafc', 'dividers' => true,
+                'stats' => [
+                    ['value' => 200, 'suffix' => '+', 'label' => 'دورهٔ آموزشی'],
+                    ['value' => 15000, 'suffix' => '+', 'label' => 'دانشجو'],
+                    ['value' => 60, 'suffix' => '+', 'label' => 'مدرس متخصص'],
+                    ['value' => 94, 'suffix' => '%', 'label' => 'رضایت دانشجویان'],
+                ],
+            ]),
+            $this->block('module:courses_grid', ['title' => 'دوره‌های محبوب', 'limit' => 6, 'columns' => '3', 'layout' => 'grid', 'show_price' => true]),
+            $this->block('process_steps', [
+                'title' => 'چطور یاد می‌گیرید؟', 'subtitle' => 'مسیری ساده از ثبت‌نام تا دریافت مدرک',
+                'steps' => [
+                    ['number' => '۱', 'title' => 'انتخاب دوره', 'text' => 'از میان ۲۰۰+ دوره، مسیر یادگیری خود را انتخاب کنید'],
+                    ['number' => '۲', 'title' => 'یادگیری گام‌به‌گام', 'text' => 'ویدیوهای آموزشی و تمرین‌های عملی هر هفته'],
+                    ['number' => '۳', 'title' => 'دریافت مدرک', 'text' => 'مدرک معتبر و پشتیبانی مدرس پس از پایان دوره'],
+                ],
+            ]),
+            $this->block('testimonials_slider', [
+                'title' => 'دانشجویان ما می‌گویند', 'columns' => '3', 'autoplay' => true, 'interval' => 6000,
+                'items' => [
+                    ['name' => 'پویان کریمی', 'role' => 'دانشجوی دورهٔ برنامه‌نویسی', 'text' => 'با اینکه هیچ پیش‌زمینه‌ای نداشتم، الان دارم به‌صورت فریلنس کار می‌گیرم.', 'rating' => 5],
+                    ['name' => 'الناز فرهادی', 'role' => 'دانشجوی دورهٔ طراحی', 'text' => 'پشتیبانی مدرس در پروژه‌های عملی واقعاً فرق‌ساز بود.', 'rating' => 5],
+                    ['name' => 'امیرحسین نادری', 'role' => 'دانشجوی دورهٔ بازاریابی', 'text' => 'محتوای دوره کاملاً به‌روز و کاربردی بود، نه صرفاً تئوری.', 'rating' => 4],
+                ],
+            ]),
+            $this->block('module:course_enroll_cta', []),
+            $this->block('faq', [
+                'title' => 'سوالات متداول دوره‌ها',
+                'items' => [
+                    ['question' => 'مدرک پایان دوره معتبر است؟', 'answer' => 'بله، مدرک آموزشگاه رشد پس از پایان موفق دوره و آزمون نهایی صادر می‌شود.'],
+                    ['question' => 'دسترسی به دوره چقدر است؟', 'answer' => 'دسترسی به محتوای دوره پس از ثبت‌نام نامحدود و مادام‌العمر است.'],
+                    ['question' => 'امکان بازپرداخت وجود دارد؟', 'answer' => 'بله، تا ۷ روز پس از خرید امکان بازپرداخت کامل وجود دارد.'],
+                ],
             ]),
         ];
     }
