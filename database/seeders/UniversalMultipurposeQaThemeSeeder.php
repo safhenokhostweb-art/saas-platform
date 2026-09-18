@@ -520,12 +520,18 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homeBlocks(): array
     {
         return [
-            // Hero
-            $this->block('hero', [
+            // Hero — TASK 3/3 Phase 6: upgraded from the plain solid-color
+            // 'hero' to 'hero_gradient' (real badge, two-button CTA, brand
+            // gradient — already-proven CSS this theme previously never
+            // used anywhere) for a genuinely premium corporate first
+            // impression, distinct from the other 5 homepages' heroes.
+            $this->block('hero_gradient', [
+                'badge' => 'پلتفرم جامع کسب‌وکار',
                 'title' => 'همه‌چیز برای رشد کسب‌وکار شما، در یک پلتفرم',
                 'subtitle' => 'ساخت سایت، فروشگاه، وبلاگ و دوره‌های آموزشی — بدون نیاز به دانش فنی، با پشتیبانی واقعی فارسی.',
                 'button_text' => 'شروع رایگان', 'button_url' => '/pricing',
-                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+                'button2_text' => 'مشاهدهٔ نمونه‌کارها', 'button2_url' => '/portfolio',
+                'gradient_from' => '#4f46e5', 'gradient_to' => '#7c3aed', 'text_color' => '#ffffff',
             ]),
             // Trust
             $this->block('client_logos', [
@@ -651,11 +657,17 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homeServiceBlocks(): array
     {
         return [
-            $this->block('hero', [
+            // TASK 3/3 Phase 6: 'hero_split' (image + text side-by-side,
+            // two-button CTA) — structurally distinct from the corporate
+            // homepage's gradient hero and the ecommerce/personal homepages'
+            // own hero_split instances (different image_side/background).
+            $this->block('hero_split', [
+                'badge' => 'کلینیک سلامت',
                 'title' => 'سلامت شما، اولویت اول ماست',
                 'subtitle' => 'نوبت‌دهی آنلاین، مشاورهٔ تخصصی و پیگیری درمان در یک کلینیک مدرن با ۱۸ سال سابقه.',
                 'button_text' => 'رزرو نوبت آنلاین', 'button_url' => '/contact',
-                'background' => 'secondary', 'background_image' => $this->img('hero'), 'align' => 'center',
+                'button2_text' => 'مشاهدهٔ خدمات', 'button2_url' => '/services',
+                'image_url' => $this->img('about'), 'image_side' => 'left', 'background' => '#f0fdfa',
             ]),
             $this->block('service_cards', [
                 'title' => 'خدمات درمانی و تخصصی کلینیک سلامت',
@@ -710,11 +722,27 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homeEcommerceBlocks(): array
     {
         return [
-            $this->block('hero', [
+            // TASK 3/3 Phase 6: a real sale announcement strip at the very
+            // top — the "promotional hero/banner... sale/promotion surface"
+            // an ecommerce homepage needs, using promo_banner (previously
+            // registered but rendered with zero CSS anywhere — see the
+            // accompanying customer-site commit) — plus 'hero_split' (real
+            // product imagery beside the pitch) instead of the plain
+            // solid-color hero every other page variant already used.
+            $this->block('promo_banner', [
+                'text' => '🔥 حراج پاییزه — تا ۳۰٪ تخفیف روی محصولات منتخب، فقط تا پایان هفته',
+                'link' => '/shop', 'style' => 'sale',
+            ]),
+            $this->block('hero_split', [
+                'badge' => 'کلکسیون پاییز ۱۴۰۴',
                 'title' => 'کلکسیون جدید دیجی‌مد رسید',
                 'subtitle' => 'ارسال رایگان برای خریدهای بالای ۵۰۰ هزار تومان — ۲۰٪ تخفیف برای اولین خرید شما.',
                 'button_text' => 'مشاهده و خرید', 'button_url' => '/shop',
-                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+                'button2_text' => 'مشاهدهٔ نمونه‌کارها', 'button2_url' => '/portfolio',
+                'image_url' => $this->img('hero'), 'image_side' => 'right', 'background' => '#fff7ed',
+            ]),
+            $this->block('countdown', [
+                'end_date' => date('Y-m-d', strtotime('+5 days')), 'label' => 'پایان حراج پاییزه',
             ]),
             $this->block('features_grid', [
                 'title' => 'چرا از دیجی‌مد خرید کنید؟', 'subtitle' => '',
@@ -768,11 +796,17 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homePersonalBlocks(): array
     {
         return [
-            $this->block('hero', [
+            // TASK 3/3 Phase 6: 'hero_split' with a portrait-side visual —
+            // the identity-driven, profile-forward hero a personal-brand
+            // homepage needs, distinct from every other homepage's hero
+            // (own image_side/background/palette).
+            $this->block('hero_split', [
+                'badge' => 'طراح گرافیک و مشاور برند',
                 'title' => 'نگین رضایی هستم، طراح گرافیک و مشاور برند',
                 'subtitle' => 'به کسب‌وکار شما هویت بصری‌ای می‌بخشم که در ذهن مشتری می‌ماند.',
                 'button_text' => 'مشاهدهٔ نمونه‌کارها', 'button_url' => '/portfolio',
-                'background' => 'secondary', 'background_image' => $this->img('about'), 'align' => 'center',
+                'button2_text' => 'درخواست همکاری', 'button2_url' => '/contact',
+                'image_url' => $this->img('about'), 'image_side' => 'right', 'background' => '#f8fafc',
             ]),
             $this->block('about_section', [
                 'badge' => 'دربارهٔ من', 'title' => 'بیش از ۸ سال تجربه در طراحی برند',
@@ -814,11 +848,16 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homeMagazineBlocks(): array
     {
         return [
-            $this->block('hero', [
+            // TASK 3/3 Phase 6: 'hero_gradient' in a dark editorial slate
+            // tone (not the corporate homepage's brand indigo, not the
+            // education homepage's purple) — a masthead-style lead-in
+            // distinct from every other homepage's hero.
+            $this->block('hero_gradient', [
+                'badge' => 'مجلهٔ کسب‌وکار امروز',
                 'title' => 'کارآفرینی، تکنولوژی و کسب‌وکار — هر روز یک ایدهٔ تازه',
                 'subtitle' => 'جدیدترین تحلیل‌ها، گزارش‌های بازار و مصاحبه‌های اختصاصی مجلهٔ کسب‌وکار امروز را دنبال کنید.',
                 'button_text' => 'مطالعهٔ مطالب', 'button_url' => '/blog',
-                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+                'gradient_from' => '#1e293b', 'gradient_to' => '#334155', 'text_color' => '#f1f5f9',
             ]),
             $this->block('module:blog_featured', ['title' => 'مطلب ویژهٔ هفته']),
             $this->block('blog_posts', ['title' => 'جدیدترین مطالب', 'limit' => 9]),
@@ -843,11 +882,17 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homeEducationBlocks(): array
     {
         return [
-            $this->block('hero', [
+            // TASK 3/3 Phase 6: 'hero_gradient' in an energetic purple tone
+            // — distinct from the corporate homepage's indigo and the
+            // magazine homepage's dark slate — with a real two-button CTA
+            // (browse courses / enroll free).
+            $this->block('hero_gradient', [
+                'badge' => 'بیش از ۲۰۰ دورهٔ تخصصی',
                 'title' => 'یادگیری آنلاین، مسیر رشد شما',
                 'subtitle' => 'بیش از ۲۰۰ دورهٔ تخصصی با مدرک معتبر و پشتیبانی مستقیم مدرس در آموزشگاه رشد.',
                 'button_text' => 'مشاهدهٔ دوره‌ها', 'button_url' => '/learning',
-                'background' => 'primary', 'background_image' => $this->img('hero'), 'align' => 'center',
+                'button2_text' => 'ثبت‌نام رایگان', 'button2_url' => '/account',
+                'gradient_from' => '#7c3aed', 'gradient_to' => '#a855f7', 'text_color' => '#ffffff',
             ]),
             $this->block('stats_row', [
                 'title' => '', 'background' => '#f8fafc', 'dividers' => true,

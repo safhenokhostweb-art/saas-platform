@@ -39,7 +39,15 @@ class CanonicalBlockRenderersTest extends TestCase
         ]);
         $xpath = $this->xpathFor($html);
 
-        $this->assertSame(1, $xpath->query('//header')->length);
+        // TASK 3/3 Phase 6 (BLD-19): a real axe-core scan found this
+        // rendering as a literal <header> — every real consumer already
+        // wraps it in its OWN <header role="banner">, so a second nested
+        // <header> here was two nested banner landmarks, a genuine WCAG
+        // violation (landmark-banner-is-top-level). The single real
+        // banner role now belongs only to the outer page-chrome wrapper;
+        // this block's own root is a plain, classed <div>.
+        $this->assertSame(0, $xpath->query('//header')->length, 'nav_header must not render a second, nested <header> — see BLD-19');
+        $this->assertSame(1, $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " tb-nav-header ")]')->length);
         $this->assertSame(1, $xpath->query('//nav[@aria-label]')->length);
         $this->assertStringContainsString('فروشگاه من', $html);
         $this->assertSame(2, $xpath->query('//nav//a')->length);
@@ -85,7 +93,12 @@ class CanonicalBlockRenderersTest extends TestCase
         ]);
         $xpath = $this->xpathFor($html);
 
-        $this->assertSame(1, $xpath->query('//footer')->length);
+        // TASK 3/3 Phase 6 (BLD-19): same nested-landmark fix as
+        // nav_header above (landmark-contentinfo-is-top-level) — the real
+        // consumer's own <footer role="contentinfo"> already owns that
+        // role; this block's root is a plain, classed <div>.
+        $this->assertSame(0, $xpath->query('//footer')->length, 'nav_footer must not render a second, nested <footer> — see BLD-19');
+        $this->assertSame(1, $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " tb-nav-footer ")]')->length);
         $this->assertStringContainsString('لینک‌ها', $html);
         $this->assertStringContainsString('تمام حقوق محفوظ است.', $html);
         // No social_links array supplied — never fabricated.

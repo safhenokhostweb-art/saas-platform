@@ -1620,13 +1620,37 @@ class BlockRenderer
 
         $stickyStyle = $sticky ? 'position:sticky;top:0;z-index:100;' : '';
 
-        return "<header id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\">
+        // TASK 3/3 Phase 6 (BLD-18): nav_header — the primary header
+        // component every one of the 6 header presets uses in some
+        // combination — had ZERO CSS anywhere in either host's real
+        // rendering layout (confirmed: not one .tb-nav-header* rule
+        // existed), rendering as bare, unstyled <a> tags with no spacing.
+        // Real CSS added to the accompanying customer-site commit. No new
+        // mobile toggle needed here: both hosts' own page chrome already
+        // wraps every header block in a real, working hamburger/mobile-
+        // menu mechanism (customer-site: .tb-header-nav-wrap/.tb-mobile-
+        // menu in layouts/canvas-theme.blade.php) that hides this block's
+        // own inline links below 768px and shows its own real mobile nav
+        // instead — a second toggle nested in here would sit inside that
+        // already-hidden wrapper and never be reachable.
+        //
+        // BLD-19 (real axe-core scan): the root element was a literal
+        // <header>, and every real consumer of this block already wraps it
+        // in its OWN real <header role="banner"> page-chrome element — a
+        // <header> inside a <header> is two nested banner landmarks, a
+        // genuine WCAG/ARIA violation (landmark-banner-is-top-level,
+        // landmark-no-duplicate-banner), not just noise. A plain <div>
+        // carries the same classes/styling with no landmark role of its
+        // own, leaving the single real banner role on the outer wrapper
+        // where it belongs — see renderNavFooter() below for the
+        // contentinfo/<footer> equivalent.
+        return "<div id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\">
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
                 <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\">{$linkItems}</nav>
                 <div class=\"tb-nav-header-actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$ctaHtml}</div>
             </div>
-        </header>";
+        </div>";
     }
 
     /**
@@ -1695,7 +1719,12 @@ class BlockRenderer
                 . "</div>"
             : '';
 
-        return "<footer id=\"tb-{$id}\" class=\"tb-nav-footer\" style=\"background:{$bg};color:{$tc};\">
+        // BLD-19 (real axe-core scan): same nested-landmark issue as
+        // renderNavHeader() above (landmark-contentinfo-is-top-level /
+        // landmark-no-duplicate-contentinfo) — every real consumer already
+        // wraps this in its own <footer role="contentinfo">, so the root
+        // element here is a plain <div>, not a second nested <footer>.
+        return "<div id=\"tb-{$id}\" class=\"tb-nav-footer\" style=\"background:{$bg};color:{$tc};\">
             <div class=\"tb-container\">
                 {$brandHtml}
                 " . ($colHtml ? "<div class=\"tb-nav-footer-cols\">{$colHtml}</div>" : '') . "
@@ -1705,7 +1734,7 @@ class BlockRenderer
                     {$socialHtml}
                 </div>
             </div>
-        </footer>";
+        </div>";
     }
 
     /**
