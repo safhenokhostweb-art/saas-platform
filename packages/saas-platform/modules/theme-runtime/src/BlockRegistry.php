@@ -637,6 +637,15 @@ class BlockRegistry
                 'schema' => [
                     'logo_text'          => ['type' => 'string', 'label' => 'متن لوگو', 'default' => ''],
                     'logo_url'           => ['type' => 'string', 'label' => 'لینک لوگو', 'default' => '/'],
+                    // TASK 3/3 Phase 6.5B — nav_source lets this header use
+                    // the customer's own real, canonical primary Menu
+                    // (/admin/menus, Menu-location "primary") instead of a
+                    // second, disconnected label+url list. Default stays
+                    // 'custom' so every existing theme/instance keeps its
+                    // current nav_links behavior unchanged — this is an
+                    // opt-in convergence, not a breaking default flip. See
+                    // renderNavHeader() below for the render-time branch.
+                    'nav_source'         => ['type' => 'select', 'label' => 'منبع لینک‌های ناوبری', 'options' => ['custom' => 'لینک‌های سفارشی این بلوک', 'menu' => 'منوی اصلی سایت (/admin/menus)'], 'default' => 'custom'],
                     'nav_links'          => ['type' => 'array', 'label' => 'لینک‌های منو', 'default' => []],
                     'sticky'             => ['type' => 'boolean', 'label' => 'چسبان به بالا', 'default' => false],
                     'bg_color'           => ['type' => 'string', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff'],

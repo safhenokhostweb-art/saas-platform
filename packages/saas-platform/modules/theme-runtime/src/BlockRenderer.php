@@ -1593,14 +1593,26 @@ class BlockRenderer
         $showCart    = (bool) ($props['show_cart'] ?? false);
         $showAccount = (bool) ($props['show_account'] ?? false);
 
-        $linkItems = '';
-        foreach ($links as $link) {
-            $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
-            $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
-            if ($label === '') {
-                continue;
+        // TASK 3/3 Phase 6.5B — when nav_source=menu, render the SAME real
+        // Menu tree the canonical nav_menu block uses ($context['menu_html'],
+        // built by the host from the site's real "primary" Menu location),
+        // instead of this block's own nav_links repeater. This is the
+        // header half of the Menu <-> Page convergence: a customer editing
+        // /admin/menus now genuinely controls the visible header nav for
+        // any theme/instance that opts in, rather than maintaining a
+        // second, disconnected label+url list with no Page-rename safety.
+        if (($props['nav_source'] ?? 'custom') === 'menu') {
+            $linkItems = $this->context['menu_html'] ?? '';
+        } else {
+            $linkItems = '';
+            foreach ($links as $link) {
+                $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+                $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
+                if ($label === '') {
+                    continue;
+                }
+                $linkItems .= "<a href=\"{$url}\" class=\"tb-nav-header-link\">{$label}</a>";
             }
-            $linkItems .= "<a href=\"{$url}\" class=\"tb-nav-header-link\">{$label}</a>";
         }
 
         $searchHtml = '';
