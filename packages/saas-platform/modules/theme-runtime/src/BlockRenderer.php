@@ -1628,7 +1628,21 @@ class BlockRenderer
         $cartHtml    = $showCart ? "<a href=\"/cart\" class=\"tb-nav-header-icon-link\" aria-label=\"سبد خرید\">🛒</a>" : '';
         $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">👤</a>" : '';
         $ctaHtml     = $ctaText ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\">{$ctaText}</a>" : '';
-        $logoHtml    = $logoText ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\">{$logoText}</a>" : '';
+        // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
+        // golden-journey browser test) and fixed: nav_header's schema only
+        // ever supported a TEXT logo — a customer's real, canonical
+        // Settings > Logo upload (CustomerMediaService) had no rendering
+        // path into the actual live header at all. Rather than adding a
+        // second, block-level logo-image field the customer would have to
+        // separately author per header preset (a NEW duplicate authority,
+        // exactly what this phase exists to avoid), an un-set logo_text
+        // falls back to the site's real global logo image
+        // ($context['site_logo_html'], the same host-resolved value
+        // <x-site-brand> already renders elsewhere) — zero behavior change
+        // for any existing theme/instance that already authors logo_text.
+        $logoHtml = $logoText
+            ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\">{$logoText}</a>"
+            : ($this->context['site_logo_html'] ?? '');
 
         $stickyStyle = $sticky ? 'position:sticky;top:0;z-index:100;' : '';
 
@@ -1689,27 +1703,48 @@ class BlockRenderer
         $legalLinks = is_array($rawLegal) ? $rawLegal : [];
         $socialLinks = is_array($props['social_links'] ?? null) ? $props['social_links'] : [];
 
-        $colHtml = '';
-        foreach ($columns as $col) {
-            $ctitle = $this->escape(is_array($col) ? ($col['title'] ?? '') : '');
-            $clinks = is_array($col) ? ($col['links'] ?? []) : [];
-            $clinks = is_array($clinks) ? $clinks : [];
+        // TASK 3/3 Phase 6.5C (BLD-26) — footer half of the Menu <-> Header/
+        // Footer convergence (see renderNavHeader()'s nav_source for the
+        // header equivalent). When nav_source=menu, this footer's own
+        // multi-column `columns` repeater is replaced by the real Menu the
+        // host resolved for the 'footer' location ($context['footer_menu_html']),
+        // rendered by the SAME partials/site-menu.blade.php the header
+        // uses (its 'footer' variant — a flat link list, matching this
+        // block's own single .tb-nav-footer-cols column shape for a
+        // Menu-driven footer). Default stays 'custom' — zero behavior
+        // change for every existing theme/instance.
+        if (($props['nav_source'] ?? 'custom') === 'menu') {
+            // partials/site-menu.blade.php's 'footer' variant renders plain
+            // <a> tags (no <li> wrapper — it is meant to sit inside a flex
+            // container, not a list), so this uses a <div>, not the
+            // custom-columns branch's <ul>, to stay valid HTML. Both are
+            // targeted by the exact same .tb-nav-footer-links CSS
+            // (`.tb-nav-footer-links a`, not `li a`).
+            $menuHtml = $this->context['footer_menu_html'] ?? '';
+            $colHtml = $menuHtml !== '' ? "<div class=\"tb-nav-footer-col\"><div class=\"tb-nav-footer-links\">{$menuHtml}</div></div>" : '';
+        } else {
+            $colHtml = '';
+            foreach ($columns as $col) {
+                $ctitle = $this->escape(is_array($col) ? ($col['title'] ?? '') : '');
+                $clinks = is_array($col) ? ($col['links'] ?? []) : [];
+                $clinks = is_array($clinks) ? $clinks : [];
 
-            $linkItems = '';
-            foreach ($clinks as $link) {
-                $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
-                $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
-                if ($label === '') {
+                $linkItems = '';
+                foreach ($clinks as $link) {
+                    $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+                    $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
+                    if ($label === '') {
+                        continue;
+                    }
+                    $linkItems .= "<li><a href=\"{$url}\">{$label}</a></li>";
+                }
+                if ($linkItems === '' && $ctitle === '') {
                     continue;
                 }
-                $linkItems .= "<li><a href=\"{$url}\">{$label}</a></li>";
+                $colHtml .= "<div class=\"tb-nav-footer-col\">"
+                    . ($ctitle ? "<h3 class=\"tb-nav-footer-col-title\">{$ctitle}</h3>" : '')
+                    . "<ul class=\"tb-nav-footer-links\">{$linkItems}</ul></div>";
             }
-            if ($linkItems === '' && $ctitle === '') {
-                continue;
-            }
-            $colHtml .= "<div class=\"tb-nav-footer-col\">"
-                . ($ctitle ? "<h3 class=\"tb-nav-footer-col-title\">{$ctitle}</h3>" : '')
-                . "<ul class=\"tb-nav-footer-links\">{$linkItems}</ul></div>";
         }
 
         $socialHtml = $socialLinks !== [] ? $this->renderSocialIcons(['links' => $socialLinks], '', "{$id}-social") : '';

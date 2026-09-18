@@ -310,7 +310,7 @@ class BlockRegistry
                     'title' => ['type' => 'string', 'default' => ''],
                     'subtitle' => ['type' => 'string', 'default' => ''],
                     'button_text' => ['type' => 'string', 'default' => ''],
-                    'button_url' => ['type' => 'string', 'default' => ''],
+                    'button_url' => ['type' => 'link', 'default' => ''],
                     'background' => ['type' => 'string', 'default' => 'primary'],
                     'background_image' => ['type' => 'string', 'default' => ''],
                     'align' => ['type' => 'string', 'default' => 'center'],
@@ -379,7 +379,13 @@ class BlockRegistry
                 'icon' => 'button',
                 'schema' => [
                     'text' => ['type' => 'string', 'default' => ''],
-                    'url' => ['type' => 'string', 'default' => ''],
+                    // TASK 3/3 Phase 6.5C (BLD-28) — internal-link-capable
+                    // (typed {internal_page, custom_url} target, resolved
+                    // server-side via InternalLinkResolver). See
+                    // BlockRenderer::escapeUrl() callers — unchanged;
+                    // resolution happens before render, same pattern as
+                    // {media_id}.
+                    'url' => ['type' => 'link', 'default' => ''],
                     'style' => ['type' => 'string', 'default' => 'primary'],
                 ],
                 'defaultProps' => ['text' => '', 'url' => '#', 'style' => 'primary'],
@@ -536,7 +542,7 @@ class BlockRegistry
                     'title' => ['type' => 'string', 'default' => ''],
                     'subtitle' => ['type' => 'string', 'default' => ''],
                     'button_text' => ['type' => 'string', 'default' => ''],
-                    'button_url' => ['type' => 'string', 'default' => ''],
+                    'button_url' => ['type' => 'link', 'default' => ''],
                     'background' => ['type' => 'string', 'default' => 'primary'],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'button_text' => '', 'button_url' => '', 'background' => 'primary'],
@@ -669,6 +675,11 @@ class BlockRegistry
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'layout-footer',
                 'schema' => [
+                    // TASK 3/3 Phase 6.5C (BLD-26) — footer counterpart of
+                    // nav_header's nav_source. See renderNavFooter() for
+                    // the render-time branch. Default 'custom' — zero
+                    // behavior change for any existing theme/instance.
+                    'nav_source'   => ['type' => 'select', 'label' => 'منبع لینک‌های فوتر', 'options' => ['custom' => 'ستون‌های سفارشی این بلوک', 'menu' => 'منوی فوتر سایت (/admin/menus)'], 'default' => 'custom'],
                     'columns'      => ['type' => 'array', 'label' => 'ستون‌های لینک', 'default' => []],
                     'links'        => ['type' => 'array', 'label' => 'لینک‌های حقوقی (اختیاری)', 'default' => []],
                     'social_links' => ['type' => 'array', 'label' => 'شبکه‌های اجتماعی (اختیاری)', 'default' => []],
@@ -1205,9 +1216,9 @@ class BlockRegistry
                     'title'          => ['type' => 'string',  'label' => 'عنوان اصلی',         'default' => 'عنوان اصلی شما اینجاست'],
                     'subtitle'       => ['type' => 'textarea','label' => 'زیرعنوان',            'default' => 'توضیح کوتاهی درباره محصول یا خدمات شما'],
                     'button_text'    => ['type' => 'string',  'label' => 'متن دکمه اول',        'default' => 'شروع کنید'],
-                    'button_url'     => ['type' => 'string',  'label' => 'لینک دکمه اول',       'default' => '#'],
+                    'button_url'     => ['type' => 'link',    'label' => 'لینک دکمه اول',       'default' => '#'],
                     'button2_text'   => ['type' => 'string',  'label' => 'متن دکمه دوم',        'default' => 'بیشتر بدانید'],
-                    'button2_url'    => ['type' => 'string',  'label' => 'لینک دکمه دوم',       'default' => '#'],
+                    'button2_url'    => ['type' => 'link',    'label' => 'لینک دکمه دوم',       'default' => '#'],
                     'image_url'      => ['type' => 'image',   'label' => 'تصویر',                'default' => ''],
                     'image_side'     => ['type' => 'select',  'label' => 'موقعیت تصویر',        'options' => ['right' => 'راست', 'left' => 'چپ'], 'default' => 'left'],
                     'background'     => ['type' => 'color',   'label' => 'رنگ پس‌زمینه',        'default' => '#ffffff'],
@@ -1223,9 +1234,9 @@ class BlockRegistry
                     'title'          => ['type' => 'string',  'label' => 'عنوان اصلی',         'default' => 'قدرت آینده در دستان شما'],
                     'subtitle'       => ['type' => 'textarea','label' => 'زیرعنوان',            'default' => 'پلتفرم چندمنظوره‌ای که برای موفقیت کسب‌وکار شما طراحی شده است'],
                     'button_text'    => ['type' => 'string',  'label' => 'متن دکمه اول',        'default' => 'رایگان شروع کنید'],
-                    'button_url'     => ['type' => 'string',  'label' => 'لینک دکمه اول',       'default' => '#'],
+                    'button_url'     => ['type' => 'link',    'label' => 'لینک دکمه اول',       'default' => '#'],
                     'button2_text'   => ['type' => 'string',  'label' => 'متن دکمه دوم',        'default' => 'مشاهده دمو'],
-                    'button2_url'    => ['type' => 'string',  'label' => 'لینک دکمه دوم',       'default' => '#'],
+                    'button2_url'    => ['type' => 'link',    'label' => 'لینک دکمه دوم',       'default' => '#'],
                     'gradient_from'  => ['type' => 'color',   'label' => 'رنگ گرادیان ابتدا',   'default' => '#4f46e5'],
                     'gradient_to'    => ['type' => 'color',   'label' => 'رنگ گرادیان انتها',   'default' => '#7c3aed'],
                     'text_color'     => ['type' => 'color',   'label' => 'رنگ متن',             'default' => '#ffffff'],
@@ -1404,9 +1415,9 @@ class BlockRegistry
                     'rating_label'        => ['type' => 'string', 'label' => 'برچسب امتیاز', 'default' => ''],
                     'phone'               => ['type' => 'string', 'label' => 'شماره تماس (اختیاری)', 'default' => ''],
                     'btn_primary_text'    => ['type' => 'string', 'label' => 'متن دکمه اصلی', 'default' => ''],
-                    'btn_primary_url'     => ['type' => 'string', 'label' => 'لینک دکمه اصلی', 'default' => '#'],
+                    'btn_primary_url'     => ['type' => 'link', 'label' => 'لینک دکمه اصلی', 'default' => '#'],
                     'btn_secondary_text'  => ['type' => 'string', 'label' => 'متن دکمه دوم', 'default' => ''],
-                    'btn_secondary_url'   => ['type' => 'string', 'label' => 'لینک دکمه دوم', 'default' => '#'],
+                    'btn_secondary_url'   => ['type' => 'link', 'label' => 'لینک دکمه دوم', 'default' => '#'],
                 ],
                 'defaultProps' => ['badge' => '', 'title' => '', 'subtitle' => '', 'rating' => '', 'rating_label' => '', 'phone' => '', 'btn_primary_text' => '', 'btn_primary_url' => '#', 'btn_secondary_text' => '', 'btn_secondary_url' => '#'],
             ],
