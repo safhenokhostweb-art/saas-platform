@@ -1965,3 +1965,181 @@ ThemeBuilderCanonicalEntryTest.php` (test D updated for the new policy),
 new `tests/browser/theme-list-canonical-entry.spec.ts`. `customer-site`:
 no files changed. No migration. No dependency or lockfile change. No
 route deleted; no authorization rule changed.
+
+## ADR-055 — Platform Commercial Authority Confirmed; Universal Theme Made a Real Commercial Product; Media Localization Closed
+
+**Date:** 2026-09-18
+
+**Context:** The coordinator asked for a Phase 6.5 audit assuming
+customer-site had accumulated a parallel master-Theme-authoring
+architecture that needed end-to-end removal, plus a root-cause fix for why
+the coordinator could not inspect/acquire the Universal Theme
+(`universal-multipurpose-qa`) through the real platform-admin →
+license/entitlement → customer-site commercial control plane.
+
+**Audit finding — the assumed premise was false, and this is itself the
+finding:** a full read/trace audit of every Theme-related route,
+controller, service, and admin-nav entry in customer-site (routes/web.php,
+`ThemeDesignController`, `ThemeMarketplaceController`, `ThemeBundleController`,
+`PageBuilderController`, `AdminMenu.php`) found **zero** surfaces that
+create, publish, or release a master Theme product. The one prior parallel
+authority (`ThemePageProvisionService::provision()`) was already removed in
+an earlier pass and is now a stub (`unprotect()` only), confirmed by both
+that file's own docblock and the removal comment at routes/web.php's
+`builder.api.theme.*` group ("THEME_INSTALL_MUTATION_AUTHORITIES = 1").
+Every other Theme surface in customer-site is either CANONICAL_CUSTOMER_INSTANCE
+(edits this site's own already-installed Theme instance) or a pure
+saas-platform HTTP pass-through (`PlatformApiService`). No code was deleted
+in customer-site for this reason — there was nothing obsolete left to
+remove. `NoParallelMasterThemeAuthoringTest` (new, 4 tests) codifies this
+conclusion as a permanent fitness check rather than a one-time finding.
+
+**Real root cause of "cannot inspect the Universal Theme through the real
+control plane":** `universal-multipurpose-qa` had only ever existed as a
+`Theme::STATUS_DRAFT`, `is_marketplace=false` row created by
+`UniversalMultipurposeQaThemeSeeder` for test bootstrapping — it had never
+been run through `ThemeCommercialQualityGate::publishIfCompliant()`, so it
+had no `ThemeRelease`, `Theme::isCommerciallyEligible()` was permanently
+false, and `ThemeMarketplaceApiController::index()`'s real catalog query
+(`is_marketplace + status=published + isCommerciallyEligible()`) could
+never surface it. This is a genuinely different defect from the assumed
+"customer-site has a parallel authoring system" premise — the gap was on
+the platform side, in never having actually published the theme.
+
+**Running the real Commercial Quality Gate against it for the first time
+surfaced further real, previously-undiscovered defects** (this environment's
+Redis had been down, so `ResponsiveReadinessCheck`'s real Playwright-backed
+viewport check had been silently self-reporting `unverified` instead of
+actually running — restoring Redis made the gate run for real):
+1. `RenderIntegrityCheck` false positive: it recursed into a `slider`
+   block's `slides` array as if each entry were a nested Block object
+   requiring a `type` — but both hosts' real `renderSlider()`
+   implementations consume `slides` as flat per-slide data
+   (image/title/subtitle/link), never a block tree (unlike `tabs`/
+   `accordion`, which genuinely do contain nested block trees). Fixed by
+   removing that incorrect recursion (`RenderIntegrityCheck.php`).
+2. The seeder's `builder-coverage` regression page mapped every remaining
+   registered block type to its own registry `defaultProps` — correct for
+   almost every type, but `icon`'s own contractual default (`name: ''`) is
+   deliberately empty (no generic icon name makes sense platform-wide),
+   which is right for the Builder's "freshly inserted, nothing authored
+   yet" UX but produced real empty output on this coverage page. Fixed
+   with one minimal, non-marketing override (`name: 'star'`).
+3. **Real catastrophic horizontal overflow** (232px @768, 610px @390) on
+   the theme's own home page, once the browser check could actually run:
+   root-caused to the `gallery` block (`.tb-gallery-img`) and
+   `team_cards`' `.tb-team-avatar` having **zero CSS in either host** —
+   images rendered at raw intrinsic pixel size with no bounding rule.
+   Also found: saas-platform's own Theme Builder preview
+   (`resources/views/admin/theme-builder/canvas-preview.blade.php`) — the
+   same render path both `ThemeCommercialQualityGate` and every Platform
+   Admin's own live preview use — had silently fallen far behind
+   customer-site's per-block visual CSS (ADR-029 makes this host-owned by
+   design, but the copies had drifted to the point of zero parity for
+   `hero_split`/`hero_gradient`/`nav_header`/`nav_footer`/`promo_banner`/
+   `countdown`/wishlist/loyalty/installment-badge, all added to
+   customer-site across Phase 6 without an equivalent saas-platform-side
+   update). Fixed: real gallery/team-avatar CSS added to both hosts;
+   saas-platform's preview brought back to visual parity with
+   customer-site's for every block added since Phase 2.
+
+**Real commercial delivery, proved through canonical boundaries, no
+fixture-only acceptance:** `UniversalThemeCommercialDeliveryTest` (new, 3
+tests) drives the actual authenticated HTTP `admin.theme-builder.publish`
+route (real `ThemeCommercialQualityGate` run, real `ThemeRelease` created),
+confirms real Marketplace catalog visibility, grants a real `ThemeLicense`
+via the same free-acquisition path any free theme uses (not a raw
+`ThemeLicense::create()`), and installs to two independent sites through
+the existing, unmodified `ThemeCanvasController::installToSite()` →
+`ThemeInstallGateway` → customer-site `/builder/api/theme/install` HTTP
+boundary (already covered end-to-end by `ThemeCanvasInstallToSiteHttpTest`
++ customer-site's `ThemeInstallRoundTripTest`) — confirming per-site
+license isolation and that neither install mutates the master Theme or its
+immutable release.
+
+**MASTER_THEME_MEDIA_LOCALIZATION_GAP — closed, not deferred again.**
+Previously master-theme stock imagery stayed hotlinked to saas-platform's
+own storage domain forever after customer install, because
+`CustomerMediaResolver::resolveValue()` correctly treats any plain string
+URL as "legacy, pass through unchanged" (it has no way to distinguish a
+customer's own externally-hosted image from an un-imported master-theme
+asset). Closed in customer-site, at the one point where it is safe to act
+— `PageBuilderController::installTheme()`, strictly before the immutable
+`ThemeInstanceRevision` is created — via new `ThemeMediaLocalizationService`,
+which walks the exact same canonical media-prop inventory
+`CustomerMediaResolver::MEDIA_PROPS`/`MEDIA_REPEATERS` already defines (no
+second, drifting list) and rewrites any URL on a fixed,
+operator-controlled `services.trusted_media_hosts` allowlist into a real
+`CustomerMediaService`-owned `{media_id}` reference. Security posture: only
+https, no userinfo, redirects never followed, bounded timeout/byte size,
+real MIME+dimension validation on the downloaded bytes (never a declared
+Content-Type alone) via the new `CustomerMediaService::importFromRemoteBytes()`
+(the same class's stated "only write authority" invariant is preserved —
+this is a second entry point into it, not a bypass of it), per-site
+deduplication by source URL, and graceful per-image failure (one bad image
+never blocks an install). `ThemeMediaLocalizationTest` (new, 4 tests)
+covers: real localization + revision rewrite, untrusted hosts left
+completely untouched (`Http::assertNothingSent()`), repeater dedup, and
+graceful degradation on fetch failure.
+
+**Decision:**
+1. No customer-site deletion was performed — the audit is the outcome, and
+   `NoParallelMasterThemeAuthoringTest` makes it a permanent regression
+   guard instead of a one-time claim.
+2. `universal-multipurpose-qa` is no longer test-only: seeded with
+   `is_marketplace=true` and a real (already-seeded, non-fabricated)
+   marketing thumbnail; reaching `Theme::isCommerciallyEligible()` still
+   requires a real `ThemeBuilderService::publish()` call — the seeder makes
+   it eligible to be published, it does not bypass the gate.
+3. `RenderIntegrityCheck`'s slider-slide false positive is fixed at the
+   check itself, not worked around in seed data.
+4. `gallery`/`team_cards` avatar CSS and saas-platform preview parity are
+   fixed once, canonically, in both hosts' own per-block CSS files
+   (ADR-029's host-owned-copy model), not per-page.
+5. Media localization is CLOSED for the install path (the one point every
+   real acquisition mode — free grant, purchase, admin assign — already
+   funnels through). Upgrade/reconciliation re-localization is intentionally
+   out of scope for this ADR (existing localized media is never re-fetched
+   thanks to source-URL dedup; a later release adding new hotlinked assets
+   reaching a customer only via the upgrade path, not a fresh install, is a
+   smaller, explicitly tracked follow-up, not a hole in this fix — every
+   real acquisition mode proved in `UniversalThemeCommercialDeliveryTest`
+   is a fresh install).
+
+**Reason:** Evidence-first governance means an assumed defect that a real
+trace disproves is reported as disproven, not silently implemented around;
+the actual, real defect (an unpublished theme, a broken quality check, and
+two hosts' CSS drifting apart) is what a root-cause pass is for, and fixing
+it once at the correct owning layer (the check, the shared-pattern CSS, the
+one install boundary) is what keeps a cross-repo, two-host architecture
+from re-accumulating the same class of gap.
+
+**Verification:** saas-platform `tests/Feature/ThemeBuilder` +
+`tests/Feature/ThemeCanvas` + `tests/Unit/ThemeBuilder` full regression
+(591 passed, 1 pre-existing environment self-skip, 0 failures, 1804
+assertions) plus `ThemeCanvasInstallToSiteHttpTest` (3 tests, run
+separately, all passing); customer-site full `tests/Feature/ThemeCanvas`
+regression (247 tests, 1007 assertions, 1 pre-existing deprecation, 0
+failures). `ThemeCommercialQualityGate::evaluate()` run directly against
+the real seeded Universal Theme: FAILED → PASSED after the three defect
+fixes above, with only non-blocking warnings remaining (unsupported-type
+fallbacks for `product_grid`/`language_switcher`/etc. — pre-existing,
+tracked, non-blocking per ADR-026).
+
+**Impact:** `saas-platform` —
+`packages/saas-platform/modules/theme-runtime/src/BlockRenderer.php`
+(unchanged this phase), `app/Services/ThemeBuilder/QualityGate/Checks/RenderIntegrityCheck.php`
+(slider-slide recursion removed), `database/seeders/UniversalMultipurposeQaThemeSeeder.php`
+(`is_marketplace=true`, thumbnail, `builder-coverage` icon override),
+`resources/views/admin/theme-builder/canvas-preview.blade.php` (CSS parity
+restored), new `tests/Feature/ThemeBuilder/UniversalThemeCommercialDeliveryTest.php`.
+`customer-site` — `resources/views/layouts/canvas-theme.blade.php`
+(gallery/team-avatar CSS), `app/Services/ThemeCanvas/CustomerMediaResolver.php`
+(MEDIA_PROPS/MEDIA_REPEATERS made public), `app/Services/CustomerMediaService.php`
+(`importFromRemoteBytes()`, `findBySourceUrl()`), new
+`app/Services/ThemeCanvas/ThemeMediaLocalizationService.php`,
+`app/Http/Controllers/Front/PageBuilderController.php` (one call site
+added before `record()`), `config/services.php` (`trusted_media_hosts`),
+new `tests/Feature/ThemeCanvas/ThemeMediaLocalizationTest.php` and
+`tests/Feature/ThemeCanvas/NoParallelMasterThemeAuthoringTest.php`. No
+migration. No route deleted. No authorization rule changed.

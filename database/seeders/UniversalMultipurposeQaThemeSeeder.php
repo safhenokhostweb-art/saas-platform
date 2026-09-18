@@ -79,12 +79,31 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     app(ThemeBuilderService::class)->defaultGlobalStyles(),
                     ['primary_color' => '#4f46e5', 'secondary_color' => '#6366f1', 'background_color' => '#f8fafc', 'text_color' => '#111827']
                 ),
-                'is_marketplace' => false,
+                // TASK 3/3 Phase 6.5 (BLD-20): this theme is no longer a
+                // test-only fixture — it is the platform's first real,
+                // free, commercially-published Theme product, discoverable
+                // through the same is_marketplace + Theme::isCommerciallyEligible()
+                // gate every other Marketplace listing goes through
+                // (ThemeMarketplaceApiController::index(), ADR-025). Getting
+                // it there still requires a real ThemeCommercialQualityGate
+                // pass via ThemeBuilderService::publish() — this seeder only
+                // makes it eligible to be published, it does not bypass the
+                // gate. See ThemeCatalogRebuildCommand / the admin Theme
+                // Builder "Publish" action for the real trigger.
+                'is_marketplace' => true,
                 'license_type' => Theme::LICENSE_FREE,
             ]
         );
 
         $this->seedImages($theme);
+
+        // TASK 3/3 Phase 6.5 — closes the ThemeCommercialQualityGate's own
+        // asset.missing_marketing_image warning (AssetIntegrityCheck): a
+        // real, already-seeded theme image, not a fabricated/placeholder
+        // asset, used exactly like any real theme's Marketplace thumbnail.
+        if ($theme->thumbnail === null || $theme->thumbnail === '') {
+            $theme->forceFill(['thumbnail' => $this->img('hero')])->save();
+        }
 
         $headerPresets = $this->headerPresets();
         $footerPresets = $this->footerPresets();
@@ -507,9 +526,22 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         // regression-coverage page, using the registry's own defaults — no
         // second hardcoded inventory, no fabricated marketing copy for
         // types with no natural business-page home.
+        //
+        // TASK 3/3 Phase 6.5: a handful of registry defaultProps are
+        // contractually empty by design (e.g. "icon" defaults `name` to ''
+        // — there is no generic icon name that makes sense platform-wide),
+        // which is correct for the Builder's own "insert with nothing
+        // authored yet" UX but means this coverage page rendered them to
+        // real empty output — a genuine ThemeCommercialQualityGate
+        // render.empty_output failure (EMPTY_POLICY_FLAGGED), not a false
+        // positive. A minimal, real, non-marketing override per type is
+        // enough to make the coverage instance itself valid content.
+        $coverageOverrides = [
+            'icon' => ['name' => 'star'],
+        ];
         $pages['builder-coverage'] = [
             'title' => 'پوشش عناصر سازنده', 'slug' => 'builder-coverage', 'blocks' => array_map(
-                fn (string $type) => $this->block($type, $registry[$type]['defaultProps'] ?? []),
+                fn (string $type) => $this->block($type, array_merge($registry[$type]['defaultProps'] ?? [], $coverageOverrides[$type] ?? [])),
                 array_keys(array_diff_key($registry, $used))
             ),
         ];

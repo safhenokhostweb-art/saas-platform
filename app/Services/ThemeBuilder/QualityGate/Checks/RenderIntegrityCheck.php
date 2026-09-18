@@ -181,9 +181,18 @@ class RenderIntegrityCheck implements ThemeQualityCheck
                     }
                 }
             }
-            if (isset($props['slides']) && is_array($props['slides'])) {
-                $this->checkBlockList($props['slides'], "{$location} > {$type}:slide", $results);
-            }
+            // TASK 3/3 Phase 6.5 — a slider's `slides` entries are NOT nested
+            // Block objects (unlike tabs/accordion panels, which really do
+            // contain full block trees rendered via renderBlocks()). Both
+            // hosts' real renderSlider() implementations (saas-platform's
+            // static-preview fallback and customer-site's real interactive
+            // carousel) consume slides as flat per-slide data
+            // (image/title/subtitle/link) with no `type` field at all — see
+            // BlockRenderer::renderSlider() and
+            // ThemeCanvasRenderer::renderSlider(). Recursing into `slides`
+            // here as if each entry needed a block `type` was a false
+            // positive that blocked every theme using the slider block from
+            // ever reaching commercial eligibility.
         }
     }
 }
