@@ -33,7 +33,20 @@ class TabsAccordionRenderTest extends TestCase
         $this->assertStringContainsString('دو', $html);
         $this->assertStringContainsString('اول', $html);
         $this->assertStringContainsString('دوم', $html);
-        $this->assertSame(2, substr_count($html, 'tb-tab-panel'));
+        // substr_count('tb-tab-panel') would also match the JS selector
+        // string ':scope > .tb-tabs-panels > .tb-tab-panel' below — count
+        // the actual rendered panel DIVs by their exact class attribute.
+        $this->assertSame(2, substr_count($html, 'class="tb-tab-panel"'));
+
+        // TASK 3/3 Phase 5 (BLD-16): real browser certification found tabs
+        // had no switching mechanism at all (every panel always visible,
+        // `.tb-tabs { }` had no CSS, no script rendered). Regression
+        // coverage for the fix: a real nav button per tab, correct
+        // aria-selected default, and the switching script actually present.
+        $this->assertSame(2, substr_count($html, 'class="tb-tab-nav-btn"'));
+        $this->assertStringContainsString('aria-selected="true"', $html);
+        $this->assertStringContainsString('aria-selected="false"', $html);
+        $this->assertStringContainsString('tbTabsInit', $html);
     }
 
     public function test_accordion_renders_real_titles_and_content(): void

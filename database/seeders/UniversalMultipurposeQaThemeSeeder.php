@@ -38,10 +38,33 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     public function run(): void
     {
         $registry = BlockRegistry::all();
-        // customer-site deliberately de-exposes this platform-preview-only
-        // entry because it has no tenant content adapter/model. A portable
-        // master Theme must not advertise a block a receiving site cannot use.
+        // customer-site deliberately de-exposes these platform-preview-only
+        // entries (app/Services/ThemeCanvas/BlockRegistry.php's own unset()
+        // calls) because they have no tenant content adapter/model, or are
+        // a duplicate authority for a responsibility a real, production
+        // renderer already covers. A portable master Theme must not
+        // advertise a block a receiving site cannot use.
+        //
+        // TASK 3/3 Phase 5 (BLD-15): 'products' was missing from this list
+        // — real browser certification through customer-site's ACTUAL
+        // renderer (not saas-platform's own preview renderer, which still
+        // defines it) caught this exact class of defect PHPUnit-only
+        // verification cannot: customer-site's real ElementSchemaRegistry
+        // rejects 'products' as unknown, rendering a visible "[invalid]
+        // products" marker on the installed builder-coverage page.
+        // 'module:portfolio_grid'/'module:services_section' render an
+        // honest empty string on customer-site rather than an error (no
+        // visible defect today), but are excluded too on the same "must
+        // not advertise a block the receiving site cannot use" principle —
+        // they add no diagnostic value to the coverage page either way.
+        // 'team' is deliberately NOT excluded: customer-site keeps a real,
+        // graceful "honest placeholder" fallback for it (used intentionally
+        // on the real 'team' page's own content, see teamBlocks() below),
+        // the same accepted pattern as module:pricing_table/module:form_embed.
         unset($registry['module:gallery_widget']);
+        unset($registry['products']);
+        unset($registry['module:portfolio_grid']);
+        unset($registry['module:services_section']);
 
         $theme = Theme::updateOrCreate(
             ['slug' => self::SLUG, 'site_id' => null],
@@ -1074,11 +1097,26 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         $registry ??= BlockRegistry::all();
         $resolvedType = isset($registry[$type]) ? $type : $type;
 
+        // TASK 3/3 Phase 5 (BLD-17): this used to always set 'children' =>
+        // [] regardless of container type (a dead ternary — both branches
+        // were literally the same empty array). Both the shared and
+        // customer-site renderers extract children via
+        // `$block['children'] ?? $block['blocks'] ?? ($props['blocks'] ?? [])`
+        // — since `??` only falls through on a genuinely MISSING/null key,
+        // not an empty-but-present array, that always-present empty
+        // 'children' key permanently shadowed every container's real
+        // content authored via `props.blocks` (tabs/tab_panel — see
+        // homeServiceBlocks() et al.'s `$this->block('tabs', ['blocks' =>
+        // [...]])` callers). Real browser certification caught this: the
+        // public 'utilities' page's tabs rendered a real, correctly
+        // labeled nav bar over a permanently EMPTY panel area. Omitting
+        // the key entirely (rather than trying to duplicate here which
+        // types are containers) lets the existing, correct `??` fallback
+        // chain do what it was already designed to do.
         return [
             'id' => 'qa_' . str_replace([':', '-'], '_', $resolvedType) . '_' . substr(md5(json_encode($props) . microtime()), 0, 6),
             'type' => $resolvedType,
             'props' => $props,
-            'children' => BlockRegistry::isContainerType($resolvedType) ? [] : [],
         ];
     }
 }

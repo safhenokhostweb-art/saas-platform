@@ -56,6 +56,21 @@ class BlockRenderer
         // TB4: children may be at top-level (block.children), legacy top-level (block.blocks),
         // or inside props (block.props.blocks) — check all three for backward compat.
         $children = $block['children'] ?? $block['blocks'] ?? ($props['blocks'] ?? []);
+        // TASK 3/3 Phase 5 (BLD-16 follow-up): a dispatch method like
+        // renderTabs() below only ever receives $props (never the raw
+        // $block), but needs the real per-child data (e.g. each tab_panel's
+        // own title) to build a nav bar — not just $inner's already-
+        // rendered HTML. Writing the resolved children back into
+        // $props['blocks'] makes that ONE guaranteed channel regardless of
+        // which of the three shapes above the block actually used —
+        // exactly the class of gap real browser certification caught:
+        // canonical Canvas-authored content (top-level `children`) built a
+        // nav bar with no labels because renderTabs() only ever checked
+        // `props.blocks`, the seeder's own (different, also-legitimate)
+        // shape.
+        if (!empty($children)) {
+            $props['blocks'] = $children;
+        }
 
         $inner = '';
         if ($this->isStructuralContainer($type) && !empty($children)) {
@@ -780,20 +795,82 @@ class BlockRenderer
      * touches the block again, the editor saves real children and this
      * branch is never consulted again for that block.
      */
+    /**
+     * TASK 3/3 Phase 5 (BLD-16): before this fix, `.tb-tabs { }` had no CSS
+     * rule and no script anywhere rendered — every tab_panel's own
+     * <h3>+content rendered permanently visible, stacked one after another,
+     * with no click-to-switch mechanism at all. Real browser certification
+     * (not the PHPUnit/render-unit checks that already passed against this
+     * exact markup) caught it: "Tabs" never behaved like tabs on any real
+     * page. Fixed the same way this file already handles `renderModal()`'s
+     * open/close and `renderCarousel()`'s prev/next/dots — a self-
+     * initializing inline `<script>`, vanilla JS, one instance per block
+     * id, no global hook chain, no framework. A real nav-button row is
+     * built here from each panel's own title (still real prop-authored
+     * metadata, unchanged); only the FIRST panel is visible until a nav
+     * button is clicked, matching real tab semantics. Legacy `props.tabs`
+     * fallback (pre-TASK-2A content never reopened in the Canvas editor)
+     * gets the same real nav bar and switching, not just the panels.
+     */
     protected function renderTabs(array $props, string $inner, string $id): string
     {
+        $titles = [];
         if ($inner === '' && !empty($props['tabs']) && is_array($props['tabs'])) {
             $out = [];
             $idx = 0;
             foreach ($props['tabs'] as $tab) {
                 $title = $this->escape(is_array($tab) ? ($tab['title'] ?? "تب " . (++$idx)) : "تب " . (++$idx));
+                $titles[] = $title;
                 $blocks = is_array($tab) ? ($tab['blocks'] ?? []) : [];
                 $content = $this->renderBlocks($blocks);
-                $out[] = "<div class=\"tb-tab-panel\"><h3 class=\"tb-tab-title\">{$title}</h3><div class=\"tb-tab-content\">{$content}</div></div>";
+                $out[] = "<div class=\"tb-tab-panel\"><div class=\"tb-tab-content\">{$content}</div></div>";
             }
             $inner = implode('', $out);
+        } else {
+            foreach (($props['blocks'] ?? []) as $child) {
+                $childProps = $child['props'] ?? $child['data'] ?? [];
+                $titles[] = $this->escape($childProps['title'] ?? 'تب');
+            }
         }
-        return "<div id=\"tb-{$id}\" class=\"tb-tabs\">{$inner}</div>";
+
+        if ($titles === []) {
+            return "<div id=\"tb-{$id}\" class=\"tb-tabs\">{$inner}</div>";
+        }
+
+        $navButtons = [];
+        foreach ($titles as $i => $title) {
+            $selected = $i === 0 ? 'true' : 'false';
+            $navButtons[] = "<button type=\"button\" class=\"tb-tab-nav-btn\" role=\"tab\" aria-selected=\"{$selected}\" data-tab-index=\"{$i}\">{$title}</button>";
+        }
+        $nav = '<div class="tb-tabs-nav" role="tablist">' . implode('', $navButtons) . '</div>';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-tabs\">{$nav}<div class=\"tb-tabs-panels\">{$inner}</div>
+            <script>(function(){
+                function init(root){
+                    if (!root || root.dataset.tbTabsInit) return;
+                    root.dataset.tbTabsInit = '1';
+                    var buttons = Array.prototype.slice.call(root.querySelectorAll(':scope > .tb-tabs-nav > .tb-tab-nav-btn'));
+                    var panels = Array.prototype.slice.call(root.querySelectorAll(':scope > .tb-tabs-panels > .tb-tab-panel'));
+                    function activate(i){
+                        panels.forEach(function(p, j){ p.style.display = (j === i) ? '' : 'none'; });
+                        buttons.forEach(function(b, j){ b.setAttribute('aria-selected', j === i ? 'true' : 'false'); });
+                    }
+                    buttons.forEach(function(b){
+                        b.addEventListener('click', function(){ activate(parseInt(b.dataset.tabIndex, 10) || 0); });
+                        b.addEventListener('keydown', function(e){
+                            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                            e.preventDefault();
+                            var idx = buttons.indexOf(document.activeElement);
+                            var dir = e.key === 'ArrowRight' ? 1 : -1;
+                            var next = buttons[((idx + dir) % buttons.length + buttons.length) % buttons.length];
+                            next.focus(); next.click();
+                        });
+                    });
+                    activate(0);
+                }
+                init(document.getElementById('tb-{$id}'));
+            })();</script>
+        </div>";
     }
 
     /**
@@ -802,12 +879,14 @@ class BlockRenderer
      * text prop); the tab's actual content is this block's own `children`,
      * rendered into $inner by the exact same generic container mechanism
      * every other container type uses — never a second, JSON-shaped
-     * content path.
+     * content path. The nav bar/switching behavior lives in the parent
+     * `renderTabs()` above (it needs every sibling panel's title at once);
+     * this method stays a plain panel body, unaware of its siblings, the
+     * same contract every other container child in this class has.
      */
     protected function renderTabPanel(array $props, string $inner, string $id): string
     {
-        $title = $this->escape($props['title'] ?? 'تب');
-        return "<div id=\"tb-{$id}\" class=\"tb-tab-panel\"><h3 class=\"tb-tab-title\">{$title}</h3><div class=\"tb-tab-content\">{$inner}</div></div>";
+        return "<div id=\"tb-{$id}\" class=\"tb-tab-panel\"><div class=\"tb-tab-content\">{$inner}</div></div>";
     }
 
     protected function renderAccordion(array $items): string

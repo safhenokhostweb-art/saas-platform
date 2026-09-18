@@ -56,13 +56,21 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         // explicit pages and auto-covered by the seeder's own
         // builder-coverage page below, no seeder change needed.
         self::assertCount(101, BlockRegistry::all());
-        // Coverage invariant (§F): every registered type except the one
-        // deliberately-excluded module:gallery_widget (no backend content
-        // model — see the seeder's own docblock) is represented somewhere,
-        // either meaningfully placed or on the explicit 'builder-coverage'
-        // regression page.
-        self::assertSame(['module:gallery_widget'], array_values(array_diff(array_keys(BlockRegistry::all()), array_keys($included))));
-        self::assertCount(count(BlockRegistry::all()) - 1, $included);
+        // Coverage invariant (§F): every registered type except the four
+        // deliberately-excluded types customer-site's own registry unsets
+        // (no backend content model, or a duplicate authority a real
+        // renderer already covers — see the seeder's own docblock; TASK
+        // 3/3 Phase 5 added 'products'/'module:portfolio_grid'/
+        // 'module:services_section' to the pre-existing
+        // 'module:gallery_widget' exclusion after real browser
+        // certification through customer-site's actual renderer caught
+        // 'products' rendering a visible "[invalid]" marker) is
+        // represented somewhere, either meaningfully placed or on the
+        // explicit 'builder-coverage' regression page.
+        $excluded = array_values(array_diff(array_keys(BlockRegistry::all()), array_keys($included)));
+        sort($excluded);
+        self::assertSame(['module:gallery_widget', 'module:portfolio_grid', 'module:services_section', 'products'], $excluded);
+        self::assertCount(count(BlockRegistry::all()) - 4, $included);
 
         // §M/N: 6 structurally distinct Header/Footer presets, each a real
         // different block composition (not a color reskin of one block).
