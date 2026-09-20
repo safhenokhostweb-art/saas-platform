@@ -96,7 +96,7 @@ class ThemeCanvasInstallToSiteHttpTest extends TestCase
 
         Http::fake([
             'install-http-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 1, 'revision_number' => 1, 'pages_installed' => 21,
+                'success' => true, 'revision_id' => 1, 'revision_number' => 1, 'pages_installed' => 24,
             ], 200),
         ]);
 
@@ -118,7 +118,12 @@ class ThemeCanvasInstallToSiteHttpTest extends TestCase
                 && $body['source_theme_id'] === (string) $theme->id
                 && $body['source_theme_version'] === '1.2.3'
                 && $body['source_release_id'] === $release->id
-                && count($body['pages']) === 21
+                // Commercial Productization phase: +2 real pages ('saas',
+                // 'product_categories') — see UniversalMultipurposeQaThemeSeederTest's
+                // own matching page-count update (21 -> 23).
+                // Commercial Productization fase-4: +1 real 'service_detail'
+                // page — 23 -> 24.
+                && count($body['pages']) === 24
                 && !empty($body['header_blocks'])
                 && !empty($body['footer_blocks'])
                 // THEME-03: Theme-owned selectable variants — the

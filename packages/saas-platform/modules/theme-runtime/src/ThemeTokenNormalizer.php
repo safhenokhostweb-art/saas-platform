@@ -39,6 +39,15 @@ class ThemeTokenNormalizer
             '--tb-primary' => $globalStyles['primary_color'] ?? $colors['primary'] ?? $platformDefaults['--ds-primary'] ?? '#4f46e5',
             '--tb-secondary' => $globalStyles['secondary_color'] ?? $colors['secondary'] ?? $platformDefaults['--ds-secondary'] ?? '#6366f1',
             '--tb-accent' => $globalStyles['accent_color'] ?? $colors['accent'] ?? '#818cf8',
+            // Commercial Productization fase-2: semantic status colors were
+            // completely absent from the token set — every "success"/
+            // "warning"/"error" badge or state across both hosts was an
+            // independently hardcoded hex with no theme-level authority.
+            // Same author-configurable + accessibility-derived treatment as
+            // primary/secondary/accent (see the on-*/*-text block below).
+            '--tb-success' => $globalStyles['success_color'] ?? $colors['success'] ?? '#16a34a',
+            '--tb-warning' => $globalStyles['warning_color'] ?? $colors['warning'] ?? '#d97706',
+            '--tb-error' => $globalStyles['error_color'] ?? $colors['error'] ?? '#dc2626',
             '--tb-background' => $globalStyles['background_color'] ?? $colors['background'] ?? '#ffffff',
             '--tb-surface' => $colors['surface'] ?? '#f9fafb',
             '--tb-text' => $globalStyles['text_color'] ?? $colors['text'] ?? '#111827',
@@ -49,6 +58,13 @@ class ThemeTokenNormalizer
             // (6.2:1+) while staying visually "muted"/secondary, not a
             // full-strength body-text color.
             '--tb-text-muted' => $colors['text_muted'] ?? '#4b5563',
+            // Commercial Productization fase-5: a real, confirmed gap —
+            // every card/table/divider border across both hosts was an
+            // independently hardcoded #e5e7eb, with no theme-level
+            // authority and (critically) no dark-mode counterpart, so a
+            // light gray border stayed invisible-thin on a dark surface
+            // even after every other real dark-mode fix this phase made.
+            '--tb-border' => $colors['border'] ?? '#e5e7eb',
             '--tb-font-heading' => $globalStyles['font_family'] ?? $typography['font_heading'] ?? 'Vazirmatn, Tahoma, sans-serif',
             '--tb-font-body' => $globalStyles['font_family'] ?? $typography['font_body'] ?? 'Vazirmatn, Tahoma, sans-serif',
             '--tb-scale' => $typography['scale'] ?? '1.25',
@@ -93,12 +109,10 @@ class ThemeTokenNormalizer
         // guaranteed dark enough to itself pass AA against every brand
         // color. #111827 is a true near-black extreme, maximizing the
         // chance either candidate actually reaches 4.5:1.
-        $vars['--tb-on-primary'] = $this->pickReadableOn($vars['--tb-primary'], '#111827');
-        $vars['--tb-on-secondary'] = $this->pickReadableOn($vars['--tb-secondary'], '#111827');
-        $vars['--tb-on-accent'] = $this->pickReadableOn($vars['--tb-accent'], '#111827');
-        $vars['--tb-primary-text'] = $this->deriveAccessibleForeground($vars['--tb-primary'], $vars['--tb-surface']);
-        $vars['--tb-secondary-text'] = $this->deriveAccessibleForeground($vars['--tb-secondary'], $vars['--tb-surface']);
-        $vars['--tb-accent-text'] = $this->deriveAccessibleForeground($vars['--tb-accent'], $vars['--tb-surface']);
+        foreach (['primary', 'secondary', 'accent', 'success', 'warning', 'error'] as $key) {
+            $vars["--tb-on-{$key}"] = $this->pickReadableOn($vars["--tb-{$key}"], '#111827');
+            $vars["--tb-{$key}-text"] = $this->deriveAccessibleForeground($vars["--tb-{$key}"], $vars['--tb-surface']);
+        }
         // `--tb-text` is tuned for content sitting on `--tb-background` (the
         // page body) — a genuinely dark theme sets --tb-text near-white to
         // suit its dark body, but --tb-surface (elevated cards) defaults to
@@ -276,12 +290,34 @@ class ThemeTokenNormalizer
         $dark = $globalStyles['dark_mode'] ?? [];
         if (!empty($dark['enabled'])) {
             $css .= "\n[data-theme=\"dark\"] {\n";
+            $darkSurface = $dark['surface'] ?? '#1f2937';
             $darkVars = [
                 '--tb-primary' => $dark['primary'] ?? $vars['--tb-primary'],
+                '--tb-secondary' => $dark['secondary'] ?? $vars['--tb-secondary'],
+                '--tb-accent' => $dark['accent'] ?? $vars['--tb-accent'],
+                '--tb-success' => $dark['success'] ?? $vars['--tb-success'],
+                '--tb-warning' => $dark['warning'] ?? $vars['--tb-warning'],
+                '--tb-error' => $dark['error'] ?? $vars['--tb-error'],
                 '--tb-background' => $dark['background'] ?? '#111827',
-                '--tb-surface' => $dark['surface'] ?? '#1f2937',
+                '--tb-surface' => $darkSurface,
                 '--tb-text' => $dark['text'] ?? '#f9fafb',
+                // Phase 2k's WCAG-AA text-on-muted-surface fix used
+                // #4b5563 tuned for a LIGHT surface — a dark theme's own
+                // surface is dark, so that same fixed value would itself
+                // fail contrast. Real measured default for a dark surface.
+                '--tb-text-muted' => $dark['text_muted'] ?? '#9ca3af',
+                '--tb-border' => $dark['border'] ?? '#334155',
             ];
+            // Same accessibility-derivation the light-mode block above
+            // uses, recomputed against the DARK surface — a color that is
+            // readable on a light card is not guaranteed readable on a dark
+            // one (e.g. a light pastel accent), so this must be its own
+            // computation, never copied from the light-mode vars.
+            foreach (['primary', 'secondary', 'accent', 'success', 'warning', 'error'] as $key) {
+                $darkVars["--tb-on-{$key}"] = $this->pickReadableOn($darkVars["--tb-{$key}"], '#111827');
+                $darkVars["--tb-{$key}-text"] = $this->deriveAccessibleForeground($darkVars["--tb-{$key}"], $darkSurface);
+            }
+            $darkVars['--tb-surface-text'] = $this->pickReadableOn($darkSurface, '#111827');
             foreach ($darkVars as $k => $v) {
                 $css .= "  {$k}: {$this->sanitizeCssValue($v)};\n";
             }

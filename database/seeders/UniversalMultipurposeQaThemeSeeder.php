@@ -66,36 +66,81 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         unset($registry['module:portfolio_grid']);
         unset($registry['module:services_section']);
 
-        $theme = Theme::updateOrCreate(
-            ['slug' => self::SLUG, 'site_id' => null],
-            [
-                'name' => 'قالب جامع چندمنظوره',
-                'description' => 'قالب مرجع چندمنظوره برای بررسی یکپارچگی Builder و قابلیت‌های قابل‌نمایش سایت.',
-                'type' => Theme::TYPE_FULL,
-                'category' => Theme::CATEGORY_CORPORATE,
-                'source' => Theme::SOURCE_SEEDER,
-                'status' => Theme::STATUS_DRAFT,
-                'global_styles' => array_merge(
-                    app(ThemeBuilderService::class)->defaultGlobalStyles(),
-                    ['primary_color' => '#4f46e5', 'secondary_color' => '#6366f1', 'background_color' => '#f8fafc', 'text_color' => '#111827']
-                ),
-                // TASK 3/3 Phase 6.5 (BLD-20): this theme is no longer a
-                // test-only fixture — it is the platform's first real,
-                // free, commercially-published Theme product, discoverable
-                // through the same is_marketplace + Theme::isCommerciallyEligible()
-                // gate every other Marketplace listing goes through
-                // (ThemeMarketplaceApiController::index(), ADR-025). Getting
-                // it there still requires a real ThemeCommercialQualityGate
-                // pass via ThemeBuilderService::publish() — this seeder only
-                // makes it eligible to be published, it does not bypass the
-                // gate. See ThemeCatalogRebuildCommand / the admin Theme
-                // Builder "Publish" action for the real trigger.
-                'is_marketplace' => true,
-                'license_type' => Theme::LICENSE_FREE,
-            ]
-        );
+        // Part 4 (7-part local audit task, 2026-09-19): status is
+        // deliberately NOT part of the unconditional updateOrCreate payload
+        // below. A plain updateOrCreate would reset 'status' to draft on
+        // every reseed, even for a theme an admin already published through
+        // the real ThemeBuilderService::publish() path — silently
+        // un-publishing it. firstOrNew + a create-only status assignment
+        // keeps this idempotent (no duplicate row) without corrupting
+        // already-published state on re-run.
+        $theme = Theme::firstOrNew(['slug' => self::SLUG, 'site_id' => null]);
+        $wasNew = !$theme->exists;
+
+        $theme->fill([
+            'name' => 'قالب جامع چندمنظوره',
+            'description' => 'قالب مرجع چندمنظوره برای بررسی یکپارچگی Builder و قابلیت‌های قابل‌نمایش سایت.',
+            'type' => Theme::TYPE_FULL,
+            'category' => Theme::CATEGORY_CORPORATE,
+            'source' => Theme::SOURCE_SEEDER,
+            // Commercial Productization fase-3 (visual identity): the
+            // platform's generic indigo default (#4f46e5) is what every
+            // Theme starts from — leaving it in place is exactly the
+            // "collection of healthy blocks, not a distinct commercial
+            // product" complaint this phase must close. A deep teal/amber
+            // pairing (with a real, distinct dark palette, not just the
+            // platform default's lightened primary) gives this theme its
+            // own identity while every semantic/derived token still goes
+            // through ThemeTokenNormalizer's real WCAG-AA math.
+            'global_styles' => array_merge(
+                app(ThemeBuilderService::class)->defaultGlobalStyles(),
+                [
+                    'primary_color' => '#0f766e',
+                    'secondary_color' => '#0e7490',
+                    'accent_color' => '#f59e0b',
+                    'success_color' => '#16a34a',
+                    'warning_color' => '#d97706',
+                    'error_color' => '#dc2626',
+                    'background_color' => '#fdfdfc',
+                    'text_color' => '#111827',
+                    'dark_mode' => [
+                        'enabled' => true,
+                        'primary' => '#2dd4bf',
+                        'secondary' => '#22d3ee',
+                        'accent' => '#fbbf24',
+                        'success' => '#4ade80',
+                        'warning' => '#fbbf24',
+                        'error' => '#f87171',
+                        'background' => '#0f172a',
+                        'surface' => '#1e293b',
+                        'text' => '#f1f5f9',
+                        'text_muted' => '#94a3b8',
+                    ],
+                ]
+            ),
+            // TASK 3/3 Phase 6.5 (BLD-20): this theme is no longer a
+            // test-only fixture — it is the platform's first real,
+            // free, commercially-published Theme product, discoverable
+            // through the same is_marketplace + Theme::isCommerciallyEligible()
+            // gate every other Marketplace listing goes through
+            // (ThemeMarketplaceApiController::index(), ADR-025). Getting
+            // it there still requires a real ThemeCommercialQualityGate
+            // pass via ThemeBuilderService::publish() — this seeder only
+            // makes it eligible to be published, it does not bypass the
+            // gate. See ThemeCatalogRebuildCommand / the admin Theme
+            // Builder "Publish" action for the real trigger.
+            'is_marketplace' => true,
+            'license_type' => Theme::LICENSE_FREE,
+        ]);
+
+        if ($wasNew) {
+            $theme->status = Theme::STATUS_DRAFT;
+        }
+
+        $theme->save();
 
         $this->seedImages($theme);
+        $this->seedVideo($theme);
 
         // TASK 3/3 Phase 6.5 — closes the ThemeCommercialQualityGate's own
         // asset.missing_marketing_image warning (AssetIntegrityCheck): a
@@ -147,13 +192,21 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     }
 
     // ── Real media ──────────────────────────────────────────────────────────
-    // Section H: real image bytes (GD-generated JPEGs — the same
-    // UploadedFile::fake()->image() convention this codebase's own storage
-    // tests already treat as "real" fixture imagery), stored through the
-    // canonical portable master-Theme media path (ThemeMediaController's own
-    // disk convention: theme-media/{theme->id}/) — never a customer-site
-    // CustomerMedia UUID, which ADR-049 §6/§Y forbids inside master Theme
-    // identity.
+    // Section H (TASK 3/3, Universal Theme professionalization): every image
+    // below is a genuinely rendered GD JPEG — a brand-gradient background
+    // plus a deterministic abstract shape pattern derived from the image's
+    // own name (so repeated seeder runs always produce byte-identical
+    // output, and every image is visually distinct from every other) —
+    // never `UploadedFile::fake()->image()`. That helper is a PHPUnit test
+    // fixture utility: on this environment's GD driver it produces a flat,
+    // near-black single-colour rectangle with no real visual content —
+    // structurally valid (real bytes, real dimensions, passes every
+    // AssetIntegrityCheck/getimagesizefromstring check) but exactly the
+    // "black/empty image block" defect a real customer install exposed.
+    // Stored through the same canonical portable master-Theme media path
+    // (ThemeMediaController's own disk convention: theme-media/{theme->id}/)
+    // — never a customer-site CustomerMedia UUID, which ADR-049 §6/§Y
+    // forbids inside master Theme identity.
 
     private function seedImages(Theme $theme): void
     {
@@ -181,10 +234,97 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         ];
 
         foreach ($specs as $name => [$w, $h]) {
-            $file = UploadedFile::fake()->image("{$name}.jpg", $w, $h);
+            $file = $this->generateBrandedImage($name, $w, $h);
             $path = $storage->storeUploadedFile($file, $dir, $disk, "{$name}.jpg");
             $this->images[$name] = Storage::disk($disk)->url($path);
         }
+    }
+
+    /**
+     * Commercial Productization phase — real, local, deterministic demo
+     * video (Hero/SaaS-intro `video` block). Unlike the GD-generated
+     * images above (regenerated fresh from a PRNG on every run), a real
+     * animated video can't be cheaply regenerated per seed run — spawning
+     * a headless-browser recording process from a PHP artisan command on
+     * every seed would be slow and add a Node/Playwright runtime
+     * dependency the deterministic-image approach doesn't need. Instead
+     * the pre-rendered bytes are embedded as base64 in tracked PHP source
+     * (Database\Seeders\Support\UniversalMultipurposeQaDemoVideo) —
+     * deliberately not a loose binary file under the project tree, so
+     * `git status`/diffing/deployment never has to reason about an
+     * untracked-but-required binary asset. The source is fully
+     * reproducible: a small branded/animated HTML scene rendered once via
+     * scripts/headless's own Playwright/Chromium tooling (the same engine
+     * theme:capture-screenshots uses) — never an external stock-video URL.
+     */
+    private function seedVideo(Theme $theme): void
+    {
+        $storage = app(StorageManager::class);
+        $disk = app(MediaStorage::class)->diskNameFor('public');
+        $dir = "theme-media/{$theme->id}";
+
+        $videoBytes = base64_decode(\Database\Seeders\Support\UniversalMultipurposeQaDemoVideo::videoBase64());
+        $videoTmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'utqa_hero_intro_' . getmypid() . '.webm';
+        file_put_contents($videoTmp, $videoBytes);
+        $videoFile = new UploadedFile($videoTmp, 'hero-intro.webm', 'video/webm', null, true);
+        $path = $storage->storeUploadedFile($videoFile, $dir, $disk, 'hero-intro.webm');
+        $this->images['hero_video'] = Storage::disk($disk)->url($path);
+
+        $posterBytes = base64_decode(\Database\Seeders\Support\UniversalMultipurposeQaDemoVideo::posterBase64());
+        $posterTmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'utqa_hero_intro_poster_' . getmypid() . '.jpg';
+        file_put_contents($posterTmp, $posterBytes);
+        $posterFile = new UploadedFile($posterTmp, 'hero-intro-poster.jpg', 'image/jpeg', null, true);
+        $path = $storage->storeUploadedFile($posterFile, $dir, $disk, 'hero-intro-poster.jpg');
+        $this->images['hero_video_poster'] = Storage::disk($disk)->url($path);
+    }
+
+    /**
+     * A real, deterministic, locally-rendered JPEG — a two-stop brand
+     * gradient (the same #4f46e5 → #7c3aed pair this theme's hero/CTA
+     * blocks already use) plus a handful of translucent circles whose
+     * position/size/opacity are derived from a seeded PRNG keyed on
+     * $name, so every image is visually distinct yet byte-identical
+     * across repeated seeder runs — never network-dependent, never
+     * literally blank. No external URL, no font-file dependency (no text
+     * is drawn — alt text is set separately on every block prop that
+     * uses these images).
+     */
+    private function generateBrandedImage(string $name, int $width, int $height): UploadedFile
+    {
+        $image = imagecreatetruecolor($width, $height);
+
+        $from = [0x4f, 0x46, 0xe5];
+        $to   = [0x7c, 0x3a, 0xed];
+        for ($y = 0; $y < $height; $y++) {
+            $t = $y / max(1, $height - 1);
+            $r = (int) round($from[0] + ($to[0] - $from[0]) * $t);
+            $g = (int) round($from[1] + ($to[1] - $from[1]) * $t);
+            $b = (int) round($from[2] + ($to[2] - $from[2]) * $t);
+            $rowColor = imagecolorallocate($image, $r, $g, $b);
+            imageline($image, 0, $y, $width, $y, $rowColor);
+        }
+
+        // Deterministic PRNG seeded on the image name — same shapes every
+        // run, different shapes per image.
+        mt_srand(crc32($name));
+        imagealphablending($image, true);
+        $shapeCount = 5 + (crc32($name) % 4);
+        for ($i = 0; $i < $shapeCount; $i++) {
+            $cx = mt_rand(0, $width);
+            $cy = mt_rand(0, $height);
+            $radius = (int) (min($width, $height) * (mt_rand(15, 45) / 100));
+            $alpha = mt_rand(90, 115); // 0 (opaque) .. 127 (fully transparent)
+            $shade = mt_rand(0, 1) === 1 ? 255 : 0;
+            $color = imagecolorallocatealpha($image, $shade, $shade, $shade, $alpha);
+            imagefilledellipse($image, $cx, $cy, $radius * 2, $radius * 2, $color);
+        }
+        mt_srand(); // restore non-deterministic seeding for anything else in this process
+
+        $tmpPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'utqa_' . $name . '_' . getmypid() . '.jpg';
+        imagejpeg($image, $tmpPath, 87);
+        imagedestroy($image);
+
+        return new UploadedFile($tmpPath, "{$name}.jpg", 'image/jpeg', null, true);
     }
 
     private function img(string $name): string
@@ -197,11 +337,64 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     /** @return array<int, array{key:string,name:string,description:string,blocks:array}> */
     private function headerPresets(): array
     {
+        // Commercial Productization phase (Porto-inspired mega menu
+        // pattern — every real Porto demo leads with a mega-menu-driven
+        // Shop/Services nav item): 'خدمات' and 'فروشگاه' get a real
+        // multi-column dropdown + promotional banner. The other 4 links
+        // stay plain — proves both shapes coexist correctly in one menu.
         $baseLinks = [
             ['label' => 'خانه', 'url' => '/'],
             ['label' => 'درباره ما', 'url' => '/about'],
-            ['label' => 'خدمات', 'url' => '/services'],
-            ['label' => 'فروشگاه', 'url' => '/shop'],
+            // mega_columns is the real, independent-column visual-editor
+            // shape (App\Services\ThemeCanvas\BlockRegistry's
+            // nav_links.mega_columns — a genuine nested repeater, columns[]
+            // .items[], each column its own array entry, never inferred by
+            // matching duplicate title text). Authored here the same way an
+            // admin would build it in the Canvas UI. The older flat
+            // `mega_items` shape and legacy raw-JSON `mega:{columns:...}`
+            // shape are still accepted by the renderer for backward compat
+            // with previously authored content, but this seeder — like the
+            // editor — only ever emits `mega_columns`.
+            [
+                'label' => 'خدمات', 'url' => '/services',
+                'mega_columns' => [
+                    ['title' => 'خدمات کسب‌وکار', 'items' => [
+                        ['label' => 'طراحی و توسعه سایت', 'url' => '/services#web', 'icon' => '🎨'],
+                        ['label' => 'فروشگاه‌سازی آنلاین', 'url' => '/services#shop', 'icon' => '🛒'],
+                        ['label' => 'مشاورهٔ دیجیتال مارکتینگ', 'url' => '/services#marketing', 'icon' => '📈'],
+                    ]],
+                    ['title' => 'پلتفرم SaaS', 'items' => [
+                        ['label' => 'معرفی پلتفرم', 'url' => '/saas'],
+                        ['label' => 'تعرفه‌ها', 'url' => '/pricing'],
+                        ['label' => 'مستندات و آموزش', 'url' => '/learning'],
+                    ]],
+                ],
+                'mega_banner_image' => $this->img('about'),
+                'mega_banner_url' => '/saas',
+                'mega_banner_text' => 'پلتفرم جامع کسب‌وکار — رایگان شروع کنید',
+                'mega_show_desktop' => true,
+                'mega_mobile_behavior' => 'accordion',
+            ],
+            [
+                'label' => 'فروشگاه', 'url' => '/shop',
+                'mega_columns' => [
+                    ['title' => 'دسته‌بندی‌های محبوب', 'items' => [
+                        ['label' => 'پوشاک', 'url' => '/shop?category=clothing'],
+                        ['label' => 'دیجیتال و لوازم الکترونیکی', 'url' => '/shop?category=digital'],
+                        ['label' => 'خانه و آشپزخانه', 'url' => '/shop?category=home'],
+                    ]],
+                    ['title' => 'میان‌بر', 'items' => [
+                        ['label' => 'محصولات جدید', 'url' => '/shop?source=new', 'icon' => '✨'],
+                        ['label' => 'تخفیف‌های ویژه', 'url' => '/shop?source=sale', 'icon' => '🔥'],
+                        ['label' => 'همهٔ دسته‌بندی‌ها', 'url' => '/product-categories'],
+                    ]],
+                ],
+                'mega_banner_image' => $this->img('portfolio_1'),
+                'mega_banner_url' => '/shop?source=sale',
+                'mega_banner_text' => 'تا ۳۰٪ تخفیف پاییزه',
+                'mega_show_desktop' => true,
+                'mega_mobile_behavior' => 'flat',
+            ],
             ['label' => 'وبلاگ', 'url' => '/blog'],
             ['label' => 'تماس با ما', 'url' => '/contact'],
         ];
@@ -218,6 +411,10 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 'description' => 'یک بلوک nav_header — ساده‌ترین ساختار ممکن، پایه برای مقایسه با بقیه.',
                 'blocks' => [$this->navHeader([
                     'logo_text' => 'برند شما', 'nav_links' => $baseLinks, 'sticky' => false,
+                    // Commercial Productization fase-4: real, usable dark
+                    // mode — this is the active/default header preset, so
+                    // the toggle is genuinely reachable on every page.
+                    'show_dark_toggle' => true,
                 ])],
             ],
             [
@@ -411,12 +608,39 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             'home_education' => ['title' => 'خانه — آموزش آنلاین', 'slug' => 'home-education', 'is_home' => false, 'blocks' => $this->homeEducationBlocks()],
             'about' => ['title' => 'درباره ما', 'slug' => 'about', 'blocks' => $this->aboutBlocks()],
             'services' => ['title' => 'خدمات', 'slug' => 'services', 'blocks' => $this->servicesBlocks()],
+            // Commercial Productization fase-4: "Service Detail" — audited
+            // first (no real Service model exists anywhere in customer-
+            // site, confirmed via a direct search of app/Models). Per the
+            // architecture decision this requires, since there is no
+            // official real data source to bind to, this is built as a
+            // real, standard, extensible Theme-Canvas PAGE (the same
+            // pattern already established for 'saas'/'product_categories'
+            // this session) using only real canonical block types with
+            // realistic Persian content — never a fake dynamic route
+            // pretending to bind to a database record that does not
+            // exist, and no change to any core model. A site owner who
+            // later adds a real Service model can wire real per-record
+            // routing independently without this page needing to change.
+            'service_detail' => ['title' => 'جزئیات خدمت — طراحی سایت اختصاصی', 'slug' => 'service-website-design', 'blocks' => $this->serviceDetailBlocks()],
             'portfolio' => ['title' => 'نمونه‌کارها', 'slug' => 'portfolio', 'blocks' => $this->portfolioBlocks()],
             'pricing' => ['title' => 'تعرفه‌ها', 'slug' => 'pricing', 'blocks' => $this->pricingBlocks()],
             'team' => ['title' => 'تیم ما', 'slug' => 'team', 'blocks' => $this->teamBlocks()],
             'testimonials' => ['title' => 'نظرات مشتریان', 'slug' => 'testimonials', 'blocks' => $this->testimonialsBlocks()],
             'faq' => ['title' => 'سوالات متداول', 'slug' => 'faq', 'blocks' => $this->faqBlocks()],
             'contact' => ['title' => 'تماس با ما', 'slug' => 'contact', 'blocks' => $this->contactBlocks()],
+            // Commercial Productization phase — Porto's own "Digital
+            // Agency"/SaaS-adjacent demos lead with an icon-tabbed
+            // services intro, a process-steps section, and a stats/
+            // integrations strip; adapted here as a dedicated platform-
+            // intro page (previously only implied by home_service/
+            // home_education, never a real standalone page).
+            'saas' => ['title' => 'معرفی پلتفرم SaaS', 'slug' => 'saas', 'blocks' => $this->saasBlocks()],
+            // Real Category Slider/Grid showcase as a standalone page —
+            // the "دسته‌بندی محصولات" page requested in the productization
+            // brief. On customer-site this renders real ProductCategory
+            // data (see ThemeCanvasRenderer::renderCategorySlider());
+            // here it shows the canonical demo fixture.
+            'product_categories' => ['title' => 'دسته‌بندی محصولات', 'slug' => 'product-categories', 'blocks' => $this->productCategoriesBlocks()],
             // Dynamic-content pages (blog/shop/learning): real module blocks
             // — genuine "will show once available" placeholder here (no
             // Post/Product/Course model exists for a portable master Theme),
@@ -437,9 +661,23 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             // tenant Product to reference (same "will show once available"
             // honest-placeholder rule this file already applies to
             // module:pricing_table above).
+            // Commercial Productization phase: real promotional hero
+            // (Porto shop1-inspired: bold discount headline + category
+            // shortcut CTAs) and a Product Slider ("تازه‌ها") added ahead
+            // of the pre-existing, already-functioning module blocks —
+            // those are untouched, this only adds to the top of the page.
             'shop' => ['title' => 'فروشگاه', 'slug' => 'shop', 'blocks' => [
+                $this->block('hero_gradient', [
+                    'badge' => 'حراج پاییزه', 'title' => 'تا ۳۰٪ تخفیف روی محصولات منتخب',
+                    'subtitle' => 'ارسال رایگان برای خریدهای بالای ۵۰۰ هزار تومان',
+                    'button_text' => 'مشاهدهٔ محصولات', 'button_url' => '#products',
+                    'button2_text' => 'دسته‌بندی‌ها', 'button2_url' => '/product-categories',
+                    'gradient_from' => '#ea580c', 'gradient_to' => '#db2777', 'text_color' => '#ffffff',
+                ]),
                 $this->block('module:shop_search_box', ['placeholder' => 'جستجوی محصول...']),
                 $this->block('module:shop_categories', ['title' => 'دسته‌بندی محصولات']),
+                $this->block('heading', ['text' => 'تازه‌ترین محصولات', 'level' => 2]),
+                $this->block('product_slider', ['title' => '', 'columns' => 4, 'source' => 'new', 'autoplay' => true]),
                 $this->block('module:shop_wishlist_icon', ['mode' => 'wishlist', 'style' => 'full', 'label' => 'علاقه‌مندی‌های من']),
                 $this->block('module:shop_wishlist_icon', ['mode' => 'compare', 'style' => 'full', 'label' => 'مقایسهٔ محصولات']),
                 $this->block('module:shop_product_grid', ['title' => 'همه محصولات', 'limit' => 12, 'columns' => '4']),
@@ -498,8 +736,9 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 ]]),
                 $this->block('slider', [
                     'autoplay' => true, 'interval' => 5000,
+                    'aspect_ratio' => '21/9', 'overlay' => true,
                     'slides' => [
-                        ['image' => $this->img('hero'), 'title' => 'فروش ویژهٔ پاییزه', 'subtitle' => 'تا ۳۰٪ تخفیف روی محصولات منتخب', 'link' => '/shop'],
+                        ['image' => $this->img('hero'), 'title' => 'فروش ویژهٔ پاییزه', 'subtitle' => 'تا ۳۰٪ تخفیف روی محصولات منتخب', 'link' => '/shop', 'cta_text' => 'مشاهدهٔ فروشگاه'],
                         ['image' => $this->img('about'), 'title' => 'دوره‌های جدید آموزشی', 'subtitle' => 'ثبت‌نام زودهنگام با تخفیف ویژه', 'link' => '/learning'],
                         ['image' => $this->img('portfolio_1'), 'title' => 'نمونه‌کارهای تازه', 'subtitle' => '', 'link' => '/portfolio'],
                         ['image' => $this->img('gallery_1'), 'title' => 'راهنمای کامل شروع کسب‌وکار آنلاین برای مبتدیان در سال جدید', 'subtitle' => 'یک راهنمای گام‌به‌گام برای راه‌اندازی اولین فروشگاه یا سایت شما', 'link' => '/blog'],
@@ -563,7 +802,16 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 'subtitle' => 'ساخت سایت، فروشگاه، وبلاگ و دوره‌های آموزشی — بدون نیاز به دانش فنی، با پشتیبانی واقعی فارسی.',
                 'button_text' => 'شروع رایگان', 'button_url' => '/pricing',
                 'button2_text' => 'مشاهدهٔ نمونه‌کارها', 'button2_url' => '/portfolio',
-                'gradient_from' => '#4f46e5', 'gradient_to' => '#7c3aed', 'text_color' => '#ffffff',
+                // Commercial Productization fase-3 (visual identity audit):
+                // was hardcoded to the platform's generic indigo/violet
+                // (#4f46e5/#7c3aed) — a real bug that made the flagship
+                // homepage hero ignore this theme's own configured brand
+                // colors entirely. Omitting these now inherits
+                // renderHeroGradient()'s real --tb-primary/--tb-secondary
+                // default (see BlockRenderer.php), so the hero always
+                // reflects this theme's actual palette (teal/cyan), not a
+                // second, independently-drifting hardcoded copy of it.
+                'text_color' => '#ffffff',
             ]),
             // Trust
             $this->block('client_logos', [
@@ -630,13 +878,15 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     ['name' => 'نگار حسینی', 'role' => 'مدیر محصول', 'image' => $this->img('team_3'), 'bio' => 'مسئول تجربهٔ کاربری و طراحی محصول'],
                 ],
             ]),
-            // Testimonials (real carousel — see ThemeCanvasRenderer::renderTestimonialsSlider)
+            // Testimonials (real carousel with real columns support — see
+            // BlockRenderer::renderTestimonialsSlider(); avatar/company are
+            // new, additive fields).
             $this->block('testimonials_slider', [
-                'title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'autoplay' => true, 'interval' => 6000,
+                'title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true, 'interval' => 6000,
                 'items' => [
-                    ['name' => 'امیر رستمی', 'role' => 'صاحب فروشگاه دیجی‌مد', 'text' => 'در کمتر از یک هفته فروشگاهم آماده بود. پشتیبانی فارسی واقعاً فرق می‌کند.', 'rating' => 5],
-                    ['name' => 'مریم صادقی', 'role' => 'موسس آموزشگاه رشد', 'text' => 'بخش دوره‌های آموزشی دقیقاً همان چیزی بود که نیاز داشتم.', 'rating' => 5],
-                    ['name' => 'حسین یزدانی', 'role' => 'مدیر کلینیک سلامت', 'text' => 'سازندهٔ بصری فوق‌العاده ساده است، حتی برای من که فنی نیستم.', 'rating' => 4],
+                    ['name' => 'امیر رستمی', 'role' => 'صاحب فروشگاه', 'company' => 'دیجی‌مد', 'avatar' => $this->img('team_1'), 'text' => 'در کمتر از یک هفته فروشگاهم آماده بود. پشتیبانی فارسی واقعاً فرق می‌کند.', 'rating' => 5],
+                    ['name' => 'مریم صادقی', 'role' => 'موسس', 'company' => 'آموزشگاه رشد', 'avatar' => $this->img('team_2'), 'text' => 'بخش دوره‌های آموزشی دقیقاً همان چیزی بود که نیاز داشتم.', 'rating' => 5],
+                    ['name' => 'حسین یزدانی', 'role' => 'مدیر', 'company' => 'کلینیک سلامت', 'avatar' => $this->img('team_3'), 'text' => 'سازندهٔ بصری فوق‌العاده ساده است، حتی برای من که فنی نیستم.', 'rating' => 4],
                 ],
             ]),
             // Pricing
@@ -786,8 +1036,11 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     ['icon' => '↩️', 'title' => '۷ روز مهلت بازگشت', 'text' => 'بازگشت و تعویض آسان و بدون دردسر'],
                 ],
             ]),
+            $this->block('category_slider', ['title' => 'دسته‌بندی‌های فروشگاه', 'layout' => 'carousel', 'columns' => '4']),
             $this->block('heading', ['text' => 'پرفروش‌ترین محصولات', 'level' => '2']),
             $this->block('product_grid', ['columns' => 4, 'limit' => 8]),
+            $this->block('heading', ['text' => 'تازه‌ترین محصولات', 'level' => '2']),
+            $this->block('product_slider', ['title' => '', 'columns' => 3, 'source' => 'latest', 'autoplay' => true]),
             $this->block('gallery', [
                 'title' => 'لوک‌بوک فصل جدید', 'columns' => '3',
                 'items' => [
@@ -978,12 +1231,15 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 'features' => ['تیم مهندسی داخلی', 'زیرساخت ایرانی و پایدار', 'بروزرسانی مستمر امکانات'],
                 'btn_text' => 'مشاهده خدمات', 'btn_url' => '/services',
             ]),
-            $this->block('process_steps', [
-                'title' => 'چطور کار می‌کنیم', 'subtitle' => 'از ثبت‌نام تا راه‌اندازی، سه گام ساده',
-                'steps' => [
-                    ['number' => '۱', 'title' => 'ثبت‌نام رایگان', 'text' => 'در کمتر از یک دقیقه حساب بسازید'],
-                    ['number' => '۲', 'title' => 'انتخاب قالب', 'text' => 'از میان قالب‌های آماده یکی را انتخاب کنید'],
-                    ['number' => '۳', 'title' => 'شخصی‌سازی و انتشار', 'text' => 'محتوای خود را اضافه کرده و سایت را منتشر کنید'],
+            $this->block('timeline', [
+                'title' => 'مسیر رشد ما', 'subtitle' => 'نگاهی به مهم‌ترین نقاط عطف پلتفرم',
+                'layout' => 'vertical',
+                'items' => [
+                    ['date' => '۱۳۹۸', 'title' => 'تأسیس شرکت', 'text' => 'فعالیت را با یک تیم سه‌نفرهٔ مهندسی و یک هدف ساده آغاز کردیم: ساخت سایت برای کسب‌وکارهای ایرانی را آسان کنیم.', 'icon' => '🚀', 'image' => '', 'link_label' => '', 'link_url' => ''],
+                    ['date' => '۱۳۹۹', 'title' => 'عرضهٔ نسخهٔ اول پلتفرم', 'text' => 'اولین نسخهٔ Builder بصری منتشر شد و نخستین مشتریان واقعی سایت خود را با آن راه‌اندازی کردند.', 'icon' => '📦', 'image' => $this->img('about'), 'link_label' => '', 'link_url' => ''],
+                    ['date' => '۱۴۰۱', 'title' => 'افزودن فروشگاه‌ساز آنلاین', 'text' => 'ماژول فروشگاه، سبد خرید و درگاه پرداخت به پلتفرم اضافه شد و مسیر فروش آنلاین برای مشتریان باز شد.', 'icon' => '🛒', 'image' => '', 'link_label' => '', 'link_url' => '/shop'],
+                    ['date' => '۱۴۰۲', 'title' => 'عبور از هزار کسب‌وکار فعال', 'text' => 'با رشد پایدار، بیش از هزار کسب‌وکار ایرانی برای معرفی و فروش خدمات خود از پلتفرم استفاده کردند.', 'icon' => '📈', 'image' => '', 'link_label' => '', 'link_url' => ''],
+                    ['date' => '۱۴۰۴', 'title' => 'توسعهٔ خدمات سازمانی', 'text' => 'با افزودن امکانات چندفروشگاهی و پشتیبانی اختصاصی، وارد بازار کسب‌وکارهای بزرگ‌تر شدیم.', 'icon' => '🏢', 'image' => '', 'link_label' => 'مشاهدهٔ تعرفه‌ها', 'link_url' => '/pricing'],
                 ],
             ]),
             $this->block('skills_bars', [
@@ -994,10 +1250,18 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     ['name' => 'امنیت داده', 'percent' => 97],
                 ],
             ]),
+            // Real-image logo carousel — new mode/grayscale/image fields;
+            // demonstrates the same block type's other homepage usages
+            // (text-only marquee) still render unchanged.
             $this->block('client_logos', [
                 'title' => 'برندهایی که به ما اعتماد کرده‌اند',
-                'logos' => [['name' => 'دیجی‌مد'], ['name' => 'آموزشگاه رشد'], ['name' => 'کلینیک سلامت'], ['name' => 'استودیو نقش']],
-                'scroll' => true,
+                'mode' => 'carousel', 'grayscale' => true, 'visible_count' => 4,
+                'logos' => [
+                    ['name' => 'دیجی‌مد', 'image' => $this->img('portfolio_1'), 'url' => '#'],
+                    ['name' => 'آموزشگاه رشد', 'image' => $this->img('portfolio_2'), 'url' => '#'],
+                    ['name' => 'کلینیک سلامت'],
+                    ['name' => 'استودیو نقش'],
+                ],
             ]),
         ];
     }
@@ -1008,7 +1272,7 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             $this->block('service_cards', [
                 'title' => 'خدماتی که ارائه می‌دهیم',
                 'services' => [
-                    ['icon' => '🎨', 'title' => 'طراحی سایت اختصاصی', 'text' => 'طراحی سفارشی مطابق هویت برند شما', 'url' => '/contact'],
+                    ['icon' => '🎨', 'title' => 'طراحی سایت اختصاصی', 'text' => 'طراحی سفارشی مطابق هویت برند شما', 'url' => '/service-website-design'],
                     ['icon' => '🛒', 'title' => 'راه‌اندازی فروشگاه آنلاین', 'text' => 'از کاتالوگ محصول تا درگاه پرداخت', 'url' => '/shop'],
                     ['icon' => '🎓', 'title' => 'پلتفرم آموزش آنلاین', 'text' => 'فروش دوره و مدیریت دانشجویان', 'url' => '/learning'],
                     ['icon' => '📈', 'title' => 'بهینه‌سازی و سئو', 'text' => 'افزایش دیده‌شدن سایت شما در گوگل', 'url' => '/contact'],
@@ -1024,6 +1288,68 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
             ]),
             $this->block('cta', [
                 'title' => 'برای مشاورهٔ رایگان تماس بگیرید', 'subtitle' => 'تیم ما آماده پاسخگویی است',
+                'button_text' => 'تماس با ما', 'button_url' => '/contact', 'background' => 'primary',
+            ]),
+        ];
+    }
+
+    private function serviceDetailBlocks(): array
+    {
+        return [
+            $this->block('hero_split', [
+                'badge' => 'خدمات طراحی وب',
+                'title' => 'طراحی و توسعهٔ سایت اختصاصی',
+                'subtitle' => 'سایتی متناسب با هویت برند شما، سریع، امن و آمادهٔ رشد — از طراحی رابط کاربری تا توسعهٔ فنی و تحویل نهایی.',
+                'button_text' => 'دریافت مشاورهٔ رایگان', 'button_url' => '/contact',
+                'button2_text' => 'مشاهدهٔ نمونه‌کارها', 'button2_url' => '/portfolio',
+                'image_url' => $this->img('about'), 'image_side' => 'left',
+            ]),
+            $this->block('features_grid', [
+                'title' => 'این خدمت شامل چه مواردی است؟',
+                'subtitle' => 'یک بستهٔ کامل، بدون نیاز به تأمین‌کنندهٔ جداگانه',
+                'columns' => '3', 'style' => 'cards',
+                'features' => [
+                    ['icon' => '🎨', 'title' => 'طراحی رابط کاربری اختصاصی', 'text' => 'طراحی از صفر، مطابق هویت بصری برند شما — نه یک قالب آماده.'],
+                    ['icon' => '📱', 'title' => 'ریسپانسیو کامل', 'text' => 'نمایش صحیح در موبایل، تبلت و دسکتاپ.'],
+                    ['icon' => '⚡', 'title' => 'سرعت بارگذاری بالا', 'text' => 'بهینه‌سازی تصاویر و کد برای تجربهٔ کاربری سریع.'],
+                    ['icon' => '🔍', 'title' => 'سئوی فنی پایه', 'text' => 'ساختار HTML معنایی و متادیتای صحیح از روز اول.'],
+                    ['icon' => '🔒', 'title' => 'گواهی امنیتی SSL', 'text' => 'اتصال امن HTTPS برای همهٔ صفحات.'],
+                    ['icon' => '🛠️', 'title' => 'پشتیبانی پس از تحویل', 'text' => 'یک ماه پشتیبانی رایگان پس از راه‌اندازی.'],
+                ],
+            ]),
+            $this->block('process_steps', [
+                'title' => 'روند اجرای این خدمت', 'subtitle' => 'از جلسهٔ اول تا تحویل نهایی',
+                'steps' => [
+                    ['number' => '۱', 'title' => 'مشاوره و بررسی نیاز', 'text' => 'جلسهٔ اولیه برای شناخت کسب‌وکار و هدف سایت'],
+                    ['number' => '۲', 'title' => 'طراحی رابط کاربری', 'text' => 'ارائهٔ نمونهٔ طراحی و اعمال بازخورد شما'],
+                    ['number' => '۳', 'title' => 'توسعهٔ فنی', 'text' => 'پیاده‌سازی طراحی به‌صورت واقعی و تست‌شده'],
+                    ['number' => '۴', 'title' => 'تحویل و راه‌اندازی', 'text' => 'انتشار نهایی سایت و آموزش استفاده'],
+                ],
+            ]),
+            $this->block('stats_row', [
+                'stats' => [
+                    ['value' => 150, 'suffix' => '+', 'label' => 'پروژهٔ موفق'],
+                    ['value' => 7, 'suffix' => ' روز', 'label' => 'میانگین زمان تحویل نسخهٔ اول'],
+                    ['value' => 98, 'suffix' => '%', 'label' => 'رضایت مشتریان'],
+                ],
+            ]),
+            $this->block('faq', [
+                'title' => 'سوالات متداول دربارهٔ این خدمت',
+                'items' => [
+                    ['question' => 'هزینهٔ این خدمت چقدر است؟', 'answer' => 'هزینه بسته به پیچیدگی پروژه متفاوت است؛ برای برآورد دقیق در بخش <a href="/pricing">تعرفه‌ها</a> را ببینید یا با ما تماس بگیرید.'],
+                    ['question' => 'چقدر طول می‌کشد؟', 'answer' => 'نسخهٔ اول معمولاً بین ۷ تا ۲۱ روز کاری، بسته به دامنهٔ پروژه.'],
+                    ['question' => 'آیا محتوای سایت را هم آماده می‌کنید؟', 'answer' => 'تولید محتوا خدمتی مجزاست؛ می‌توانید آن را در مشاورهٔ اولیه اضافه کنید.'],
+                ],
+            ]),
+            $this->block('service_cards', [
+                'title' => 'خدمات مرتبط دیگر',
+                'services' => [
+                    ['icon' => '🛒', 'title' => 'راه‌اندازی فروشگاه آنلاین', 'text' => 'از کاتالوگ محصول تا درگاه پرداخت', 'url' => '/shop'],
+                    ['icon' => '📈', 'title' => 'بهینه‌سازی و سئو', 'text' => 'افزایش دیده‌شدن سایت شما در گوگل', 'url' => '/contact'],
+                ],
+            ]),
+            $this->block('cta', [
+                'title' => 'آمادهٔ شروع پروژه هستید؟', 'subtitle' => 'همین امروز با ما تماس بگیرید',
                 'button_text' => 'تماس با ما', 'button_url' => '/contact', 'background' => 'primary',
             ]),
         ];
@@ -1134,6 +1460,103 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     ['question' => 'آیا SSL رایگان است؟', 'answer' => 'بله، گواهی SSL برای همهٔ سایت‌ها به‌صورت خودکار و رایگان فعال می‌شود.'],
                     ['question' => 'محدودیت ترافیک چقدر است؟', 'answer' => 'در پلن‌های حرفه‌ای و سازمانی محدودیت ترافیک وجود ندارد.'],
                 ],
+            ]),
+        ];
+    }
+
+    // TEMPORARY QA fixture — see pagesFor()'s own comment. Remove this
+    // method and its pagesFor() entry together once the visual
+    // verification pass is complete.
+    // Commercial Productization phase — Porto "Digital Agency"-inspired
+    // rhythm: hero → capability grid → oversized stats → process steps →
+    // integrations strip → testimonial → final CTA, alternating light/
+    // dark backgrounds section-to-section rather than a flat repeat.
+    private function saasBlocks(): array
+    {
+        return [
+            $this->block('hero_gradient', [
+                'badge' => 'پلتفرم SaaS',
+                'title' => 'یک پلتفرم، همهٔ ابزارهای رشد کسب‌وکار شما',
+                'subtitle' => 'سایت، فروشگاه، وبلاگ و دوره‌های آموزشی را روی یک زیرساخت واحد بسازید و مدیریت کنید — بدون نیاز به چند سرویس جدا و بدون دانش فنی.',
+                'button_text' => 'شروع رایگان ۱۴ روزه', 'button_url' => '/pricing',
+                'button2_text' => 'مشاهدهٔ امکانات', 'button2_url' => '#capabilities',
+                'gradient_from' => '#4f46e5', 'gradient_to' => '#7c3aed', 'text_color' => '#ffffff',
+            ]),
+            $this->block('heading', ['text' => 'در یک نگاه با پلتفرم آشنا شوید', 'level' => 2]),
+            $this->block('video', [
+                'url' => $this->img('hero_video'), 'poster' => $this->img('hero_video_poster'),
+                'caption' => 'معرفی کوتاه پلتفرم جامع کسب‌وکار در کمتر از یک دقیقه',
+                'autoplay' => false, 'loop' => true, 'controls' => true,
+            ]),
+            $this->block('bento_grid', [
+                'title' => 'همه‌چیز که برای رشد لازم دارید',
+                'items' => [
+                    ['title' => 'سازندهٔ بصری صفحه', 'text' => 'طراحی صفحات با پیش‌نمایش زنده، بدون کدنویسی', 'icon' => '🎨', 'size' => 'large', 'bg_color' => '#eef2ff', 'text_color' => '#3730a3'],
+                    ['title' => 'فروشگاه‌ساز کامل', 'text' => 'مدیریت محصول، سبد خرید و پرداخت آنلاین', 'icon' => '🛒', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d'],
+                    ['title' => 'وبلاگ و مقالات', 'text' => 'انتشار محتوا با سئوی داخلی', 'icon' => '📝', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12'],
+                    ['title' => 'دوره‌های آموزشی', 'text' => 'فروش دوره، مدیریت دانشجو و گواهی پایان دوره', 'icon' => '🎓', 'size' => 'small', 'bg_color' => '#fdf4ff', 'text_color' => '#6b21a8'],
+                    ['title' => 'گزارش و تحلیل', 'text' => 'داشبورد آمار فروش و بازدید در لحظه', 'icon' => '📊', 'size' => 'small', 'bg_color' => '#f0f9ff', 'text_color' => '#0c4a6e'],
+                ],
+            ]),
+            $this->block('stats_row', [
+                'title' => 'اعتماد کسب‌وکارهای ایرانی',
+                'stats' => [
+                    ['value' => 3200, 'suffix' => '+', 'label' => 'کسب‌وکار فعال'],
+                    ['value' => 99, 'suffix' => '%', 'label' => 'آپ‌تایم زیرساخت'],
+                    ['value' => 24, 'suffix' => '/۷', 'label' => 'پشتیبانی فارسی'],
+                    ['value' => 5, 'suffix' => 'سال', 'label' => 'سابقهٔ فعالیت'],
+                ],
+                'background' => '#111827', 'dividers' => true,
+            ]),
+            $this->block('process_steps', [
+                'title' => 'در سه مرحله شروع کنید', 'subtitle' => 'راه‌اندازی کامل، معمولاً کمتر از یک روز',
+                'steps' => [
+                    ['number' => '۱', 'title' => 'ثبت‌نام و انتخاب قالب', 'text' => 'یکی از قالب‌های آماده مثل همین قالب جامع چندمنظوره را انتخاب کنید'],
+                    ['number' => '۲', 'title' => 'شخصی‌سازی محتوا', 'text' => 'متن، تصاویر و رنگ‌بندی را با سازندهٔ بصری متناسب برند خود تغییر دهید'],
+                    ['number' => '۳', 'title' => 'انتشار و رشد', 'text' => 'دامنهٔ خود را متصل کنید و کسب‌وکارتان را آنلاین کنید'],
+                ],
+            ]),
+            $this->block('client_logos', [
+                'title' => 'یکپارچه با ابزارهای مورد اعتماد شما',
+                'mode' => 'carousel', 'grayscale' => true, 'visible_count' => 4,
+                'logos' => [
+                    ['name' => 'درگاه پرداخت زرین‌پال'], ['name' => 'پیامک کاوه‌نگار'],
+                    ['name' => 'پست ایران'], ['name' => 'اسنپ‌باکس'],
+                ],
+            ]),
+            $this->block('testimonials_slider', [
+                'title' => 'صاحبان کسب‌وکار چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true,
+                'items' => [
+                    ['name' => 'فرزاد کریمی', 'role' => 'بنیان‌گذار', 'company' => 'فروشگاه دیجی‌مد', 'avatar' => $this->img('team_1'), 'text' => 'در کمتر از یک روز فروشگاهم را راه‌اندازی کردم؛ پشتیبانی فارسی واقعاً فرق می‌کند.', 'rating' => 5],
+                    ['name' => 'مریم صادقی', 'role' => 'مدیر آموزشگاه', 'company' => 'آموزشگاه رشد', 'avatar' => $this->img('team_2'), 'text' => 'بخش دوره‌های آموزشی دقیقاً همان چیزی بود که برای فروش آنلاین دوره‌ها نیاز داشتم.', 'rating' => 5],
+                    ['name' => 'حسین یزدانی', 'role' => 'مدیرعامل', 'company' => 'کلینیک سلامت', 'avatar' => $this->img('team_3'), 'text' => 'سازندهٔ بصری فوق‌العاده ساده است؛ بدون دانش فنی سایت را خودم به‌روز می‌کنم.', 'rating' => 4],
+                ],
+            ]),
+            $this->block('cta', [
+                'title' => 'همین امروز کسب‌وکار خود را آنلاین کنید',
+                'subtitle' => 'بدون نیاز به کارت اعتباری — ۱۴ روز رایگان امتحان کنید',
+                'button_text' => 'شروع رایگان', 'button_url' => '/pricing', 'background' => 'primary',
+            ]),
+        ];
+    }
+
+    // Commercial Productization phase — dedicated Category Slider/Grid
+    // showcase page ("دسته‌بندی محصولات" in the requested 12-page list).
+    private function productCategoriesBlocks(): array
+    {
+        return [
+            $this->block('heading', ['text' => 'دسته‌بندی محصولات', 'level' => 1]),
+            $this->block('text', ['content' => 'محصولات ما را بر اساس دسته‌بندی مورد نظرتان مرور کنید.']),
+            $this->block('category_slider', [
+                'title' => 'دسته‌بندی‌های محبوب', 'layout' => 'carousel', 'columns' => '4', 'autoplay' => true,
+            ]),
+            $this->block('heading', ['text' => 'همهٔ دسته‌بندی‌ها', 'level' => 2]),
+            $this->block('category_slider', [
+                'title' => '', 'layout' => 'grid', 'columns' => '4',
+            ]),
+            $this->block('cta', [
+                'title' => 'دنبال چیز خاصی می‌گردید؟', 'subtitle' => 'با تیم پشتیبانی ما در تماس باشید',
+                'button_text' => 'تماس با ما', 'button_url' => '/contact', 'background' => 'primary',
             ]),
         ];
     }

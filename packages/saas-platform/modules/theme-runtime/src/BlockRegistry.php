@@ -273,16 +273,29 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['items' => [['title' => 'عنوان', 'blocks' => []]]],
             ],
+            // Universal Multipurpose Slider Overhaul: additive-only schema
+            // growth — 'transition'/'boxed'/'aspect_ratio'/'overlay' are new
+            // and all default to the exact visual behavior the renderer
+            // already shipped before this change (slide transition,
+            // full-width, 16/9, dark overlay on), so existing authored
+            // content (including per-slide image/title/subtitle/link/
+            // cta_text, an existing plain-data shape — see
+            // BlockRenderer::renderSlider()) renders identically unless an
+            // admin explicitly opts into a new setting.
             'slider' => [
-                'name' => 'اسلایدر',
+                'name' => 'اسلایدر تصویری',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'slider',
                 'schema' => [
                     'slides' => ['type' => 'blocks', 'default' => []],
                     'autoplay' => ['type' => 'boolean', 'default' => true],
                     'interval' => ['type' => 'number', 'default' => 5000],
+                    'transition' => ['type' => 'select', 'label' => 'نوع گذار', 'options' => ['slide' => 'اسلاید', 'fade' => 'محو شدن'], 'default' => 'slide'],
+                    'boxed' => ['type' => 'boolean', 'label' => 'حالت جعبه‌ای (Boxed)', 'default' => false],
+                    'aspect_ratio' => ['type' => 'select', 'label' => 'نسبت تصویر', 'options' => ['16/9' => '16:9', '21/9' => '21:9', '4/3' => '4:3', '1/1' => '1:1'], 'default' => '16/9'],
+                    'overlay' => ['type' => 'boolean', 'label' => 'گرادیان روی تصویر', 'default' => true],
                 ],
-                'defaultProps' => ['slides' => [], 'autoplay' => true, 'interval' => 5000],
+                'defaultProps' => ['slides' => [], 'autoplay' => true, 'interval' => 5000, 'transition' => 'slide', 'boxed' => false, 'aspect_ratio' => '16/9', 'overlay' => true],
             ],
             'modal' => [
                 'name' => 'مودال',
@@ -496,14 +509,52 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['columns' => 4, 'limit' => 8],
             ],
+            // Universal Multipurpose Slider Overhaul: 'source'/'category_id'/
+            // 'manual_ids' are consumed only by a host's real-data override
+            // (customer-site's ThemeCanvasRenderer::renderProductSlider());
+            // the canonical shared renderer has no database access and
+            // always shows its demo fixture regardless of these — see that
+            // method's own doc comment. Additive-only: 'limit'/'columns'
+            // default unchanged from before.
             'product_slider' => [
                 'name' => 'اسلایدر محصولات',
                 'category' => self::CATEGORY_ECOMMERCE,
                 'icon' => 'slider',
                 'schema' => [
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'محصولات منتخب'],
                     'limit' => ['type' => 'number', 'default' => 6],
+                    'columns' => ['type' => 'select', 'label' => 'تعداد ستون (دسکتاپ)', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
+                    'source' => ['type' => 'select', 'label' => 'منبع محصولات', 'options' => ['latest' => 'جدیدترین', 'new' => 'دارای برچسب جدید', 'category' => 'یک دسته‌بندی خاص', 'manual' => 'انتخاب دستی'], 'default' => 'latest'],
+                    'category_id' => ['type' => 'number', 'label' => 'شناسه دسته‌بندی (در حالت دسته‌بندی)', 'default' => null],
+                    'manual_ids' => ['type' => 'array', 'label' => 'شناسه محصولات (در حالت انتخاب دستی)', 'default' => []],
+                    'autoplay' => ['type' => 'boolean', 'default' => true],
+                    'interval' => ['type' => 'number', 'default' => 5000],
                 ],
-                'defaultProps' => ['limit' => 6],
+                'defaultProps' => ['title' => 'محصولات منتخب', 'limit' => 6, 'columns' => '3', 'source' => 'latest', 'autoplay' => true, 'interval' => 5000],
+            ],
+            // Universal Multipurpose Slider Overhaul: new type — previously
+            // did not exist at all (confirmed absent from both registry
+            // sources during audit). Demo-fixture-rendered by the shared
+            // package (BlockRenderer::renderCategorySlider()); a host may
+            // override with a real category query (customer-site's
+            // ThemeCanvasRenderer binds to the real ProductCategory model).
+            'category_slider' => [
+                'name' => 'اسلایدر دسته‌بندی',
+                'category' => self::CATEGORY_ECOMMERCE,
+                'icon' => 'grid',
+                'schema' => [
+                    'title'    => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'دسته‌بندی‌ها'],
+                    'layout'   => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['carousel' => 'اسلایدر', 'grid' => 'گرید ثابت'], 'default' => 'carousel'],
+                    'columns'  => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴', '6' => '۶'], 'default' => '4'],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
+                    'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
+                    // Consumed only by a host's real-data override, same
+                    // convention as product_slider's category_id/manual_ids.
+                    'source'   => ['type' => 'select', 'label' => 'منبع', 'options' => ['all' => 'همه دسته‌بندی‌ها', 'manual' => 'انتخاب دستی'], 'default' => 'all'],
+                    'manual_ids' => ['type' => 'array', 'label' => 'شناسه دسته‌بندی‌ها (در حالت انتخاب دستی)', 'default' => []],
+                ],
+                'defaultProps' => ['title' => 'دسته‌بندی‌ها', 'layout' => 'carousel', 'columns' => '4', 'autoplay' => true, 'interval' => 5000, 'source' => 'all'],
+                'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
             ],
             'cart_icon' => [
                 'name' => 'آیکون سبد',
@@ -663,6 +714,16 @@ class BlockRegistry
                     'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...'],
                     'show_cart'          => ['type' => 'boolean', 'label' => 'نمایش سبد خرید', 'default' => false],
                     'show_account'       => ['type' => 'boolean', 'label' => 'نمایش حساب کاربری', 'default' => false],
+                    // Commercial Productization fase-4: a real, usable dark
+                    // mode toggle — opt-in per theme (default false) since
+                    // it is only meaningful for a theme that actually
+                    // configured global_styles.dark_mode; a theme with no
+                    // dark palette would show a toggle that visually does
+                    // nothing. See BlockRenderer::renderNavHeader() for the
+                    // real button + the head-bootstrap script (both hosts'
+                    // layout templates) that prevents a flash of the wrong
+                    // theme on load.
+                    'show_dark_toggle'   => ['type' => 'boolean', 'label' => 'نمایش تغییر حالت روشن/تاریک', 'default' => false],
                 ],
                 'defaultProps' => ['logo_text' => '', 'logo_url' => '/', 'nav_links' => [], 'sticky' => false, 'bg_color' => '#ffffff', 'text_color' => '#111827'],
             ],
@@ -1268,16 +1329,28 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['title' => '', 'stats' => '[{"value":5000,"suffix":"+","label":"کاربر فعال"},{"value":99,"suffix":"%","label":"رضایت مشتری"},{"value":150,"suffix":"+","label":"پروژه موفق"},{"value":7,"suffix":"سال","label":"تجربه"}]', 'background' => '#f8fafc', 'dividers' => true],
             ],
+            // Universal Multipurpose Slider Overhaul: each `logos` item may
+            // now optionally carry {image, url, alt} alongside the
+            // pre-existing {name} — a bare string or {name}-only entry
+            // (all existing authored content) still renders exactly as
+            // before (a text badge). 'mode' defaults from the legacy
+            // `scroll` boolean when absent, so old content's visual
+            // behavior is unchanged; 'grayscale'/'speed'/'visible_count'
+            // are new and only affect image logos.
             'client_logos' => [
-                'name' => 'نوار لوگو مشتریان (Marquee)',
+                'name' => 'اسلایدر لوگوی مشتریان',
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'logos',
                 'schema' => [
                     'title'  => ['type' => 'string',  'label' => 'عنوان',       'default' => 'مورد اعتماد برندهای بزرگ'],
                     'logos'  => ['type' => 'textarea','label' => 'لوگوها (JSON)','default' => '[{"name":"برند اول"},{"name":"برند دوم"},{"name":"برند سوم"},{"name":"برند چهارم"},{"name":"برند پنجم"},{"name":"برند ششم"}]'],
-                    'scroll' => ['type' => 'boolean', 'label' => 'حرکت خودکار', 'default' => true],
+                    'scroll' => ['type' => 'boolean', 'label' => 'حرکت خودکار (مود مرور - قدیمی)', 'default' => true],
+                    'mode'   => ['type' => 'select', 'label' => 'نوع نمایش', 'options' => ['marquee' => 'نوار متحرک', 'carousel' => 'اسلایدر با کنترل', 'static' => 'ثابت (Grid)'], 'default' => 'marquee'],
+                    'grayscale' => ['type' => 'boolean', 'label' => 'سیاه‌وسفید تا هاور', 'default' => true],
+                    'speed' => ['type' => 'number', 'label' => 'سرعت (ثانیه)', 'default' => 25],
+                    'visible_count' => ['type' => 'number', 'label' => 'تعداد نمایش هم‌زمان (حالت اسلایدر)', 'default' => 5],
                 ],
-                'defaultProps' => ['title' => 'مورد اعتماد برندهای بزرگ', 'logos' => '[{"name":"برند اول"},{"name":"برند دوم"},{"name":"برند سوم"},{"name":"برند چهارم"},{"name":"برند پنجم"},{"name":"برند ششم"}]', 'scroll' => true],
+                'defaultProps' => ['title' => 'مورد اعتماد برندهای بزرگ', 'logos' => '[{"name":"برند اول"},{"name":"برند دوم"},{"name":"برند سوم"},{"name":"برند چهارم"},{"name":"برند پنجم"},{"name":"برند ششم"}]', 'scroll' => true, 'mode' => 'marquee', 'grayscale' => true, 'speed' => 25, 'visible_count' => 5],
                 // Phase 2f (ADR-027): 4 canonical themes have a real title
                 // but no logos array — the renderer now shows an honest
                 // placeholder rather than vanishing entirely.
@@ -1293,6 +1366,34 @@ class BlockRegistry
                     'steps'    => ['type' => 'textarea','label' => 'مراحل (JSON)','default' => '[{"number":"۱","title":"ثبت‌نام رایگان","text":"در چند ثانیه حساب کاربری بسازید"},{"number":"۲","title":"تنظیم سایت","text":"قالب دلخواه را انتخاب کنید"},{"number":"۳","title":"راه‌اندازی","text":"سایت خود را به جهان معرفی کنید"}]'],
                 ],
                 'defaultProps' => ['title' => 'چطور شروع کنیم؟', 'subtitle' => '', 'steps' => '[{"number":"۱","title":"ثبت‌نام رایگان","text":"در چند ثانیه حساب کاربری بسازید"},{"number":"۲","title":"تنظیم سایت","text":"قالب دلخواه را انتخاب کنید"},{"number":"۳","title":"راه‌اندازی","text":"سایت خود را به جهان معرفی کنید"}]'],
+            ],
+            // Commercial Productization fase-2: Timeline was completely
+            // absent from both registry and renderer — a real gap found
+            // during the 22-element audit. Follows the exact
+            // schema/JSON-textarea convention already established by
+            // process_steps/team_cards, so shared canonical + customer-site
+            // visual repeater adapter stay in sync the same way.
+            'timeline' => [
+                'name' => 'خط زمانی (Timeline)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'timeline',
+                'schema' => [
+                    'title'    => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'مسیر رشد ما'],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                    'layout'   => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['vertical' => 'عمودی', 'horizontal' => 'افقی'], 'default' => 'vertical'],
+                    'items'    => [
+                        'type' => 'textarea',
+                        'label' => 'رویدادها (JSON)',
+                        'default' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"🚀","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"📦","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"📈","image":"","link_label":"","link_url":""},{"date":"۱۴۰۴","title":"ورود به بازارهای جدید","text":"توسعهٔ خدمات و افزودن امکانات سازمانی.","icon":"🌍","image":"","link_label":"مشاهدهٔ نقشهٔ راه","link_url":"/about"}]',
+                    ],
+                ],
+                'defaultProps' => [
+                    'title' => 'مسیر رشد ما',
+                    'subtitle' => '',
+                    'layout' => 'vertical',
+                    'items' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"🚀","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"📦","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"📈","image":"","link_label":"","link_url":""}]',
+                ],
+                'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
             ],
             'team_cards' => [
                 'name' => 'کارت اعضای تیم',
@@ -1315,6 +1416,13 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['title' => 'مهارت‌های من', 'skills' => '[{"name":"طراحی رابط کاربری","percent":92},{"name":"برنامه‌نویسی فرانت‌اند","percent":88},{"name":"توسعه بک‌اند","percent":80}]'],
             ],
+            // Universal Multipurpose Slider Overhaul: fixes the real
+            // schema/renderer mismatch found in audit — `columns` is now
+            // genuinely honored by both display modes (see
+            // BlockRenderer::renderTestimonialsSlider()). Each item in
+            // `items` may now optionally add `company`/`avatar` — omitted
+            // on existing content, rendering exactly as before (name/role/
+            // text/rating + initials avatar).
             'testimonials_slider' => [
                 'name' => 'اسلایدر نظرات مشتریان',
                 'category' => self::CATEGORY_DYNAMIC,
@@ -1322,9 +1430,12 @@ class BlockRegistry
                 'schema' => [
                     'title'    => ['type' => 'string',  'label' => 'عنوان بخش',  'default' => 'مشتریان ما چه می‌گویند'],
                     'columns'  => ['type' => 'select',  'label' => 'تعداد ستون', 'options' => ['1' => '۱', '2' => '۲', '3' => '۳'], 'default' => '3'],
+                    'mode'     => ['type' => 'select', 'label' => 'نوع نمایش', 'options' => ['carousel' => 'اسلایدر با کنترل', 'static' => 'ثابت (Grid)'], 'default' => 'carousel'],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
+                    'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
                     'items'    => ['type' => 'textarea','label' => 'نظرات (JSON)','default' => '[{"name":"رضا احمدی","role":"مدیر شرکت","text":"این پلتفرم کسب‌وکار ما را متحول کرد. واقعاً عالی است!","rating":5},{"name":"مریم نوری","role":"کارآفرین","text":"طراحی فوق‌العاده و پشتیبانی سریع. پیشنهاد می‌دهم!","rating":5},{"name":"علی حسینی","role":"توسعه‌دهنده","text":"بهترین انتخاب برای ساخت سایت حرفه‌ای بود.","rating":5}]'],
                 ],
-                'defaultProps' => ['title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'items' => '[{"name":"رضا احمدی","role":"مدیر شرکت","text":"این پلتفرم کسب‌وکار ما را متحول کرد!","rating":5},{"name":"مریم نوری","role":"کارآفرین","text":"طراحی فوق‌العاده و پشتیبانی سریع.","rating":5},{"name":"علی حسینی","role":"توسعه‌دهنده","text":"بهترین انتخاب برای سایت حرفه‌ای.","rating":5}]'],
+                'defaultProps' => ['title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true, 'interval' => 5000, 'items' => '[{"name":"رضا احمدی","role":"مدیر شرکت","text":"این پلتفرم کسب‌وکار ما را متحول کرد!","rating":5},{"name":"مریم نوری","role":"کارآفرین","text":"طراحی فوق‌العاده و پشتیبانی سریع.","rating":5},{"name":"علی حسینی","role":"توسعه‌دهنده","text":"بهترین انتخاب برای سایت حرفه‌ای.","rating":5}]'],
             ],
             'trust_badges' => [
                 'name' => 'نشان‌های اعتماد (Trust Badges)',

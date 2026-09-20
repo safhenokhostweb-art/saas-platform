@@ -7,6 +7,7 @@ use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\QualityGate\Checks\StructuralIntegrityCheck;
 use Database\Seeders\UniversalMultipurposeQaThemeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use SaaSPlatform\ThemeRuntime\ThemeTokenNormalizer;
 use Tests\TestCase;
 
 class UniversalMultipurposeQaThemeSeederTest extends TestCase
@@ -24,7 +25,15 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         // team, testimonials, faq, forms pages added — see §D).
         // TASK 3/3 Phase 2: +5 alternate homepage compositions (service,
         // ecommerce, personal, magazine, education — see §D-2) — 16 -> 21.
-        self::assertCount(21, $theme->pages);
+        // Commercial Productization phase: +2 real standalone pages ('saas'
+        // platform intro, 'product_categories' Category Slider/Grid
+        // showcase) — 21 -> 23.
+        // Commercial Productization fase-4: +1 real 'service_detail' page
+        // — the architecture decision this phase required (no real
+        // Service model exists anywhere in customer-site, confirmed by
+        // direct search) resolved to a real, standard, extensible
+        // Theme-Canvas page using only canonical block types — 23 -> 24.
+        self::assertCount(24, $theme->pages);
         self::assertNotEmpty($theme->header_blocks);
         self::assertNotEmpty($theme->footer_blocks);
         self::assertNotEmpty($theme->global_styles);
@@ -55,7 +64,20 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         // no natural business-page home) it is left uncovered by the
         // explicit pages and auto-covered by the seeder's own
         // builder-coverage page below, no seeder change needed.
-        self::assertCount(101, BlockRegistry::all());
+        //
+        // Universal Multipurpose Slider Overhaul: 'category_slider' is a
+        // genuinely new canonical type (previously absent from both
+        // registry sources) — 101 -> 102. Placed for real in the
+        // e-commerce homepage alongside product_slider (see homeBlocks()),
+        // not left to the builder-coverage fallback.
+        //
+        // Commercial Productization fase-2 (22-element audit): 'timeline'
+        // was a confirmed real gap — completely absent from both registry
+        // and renderer — 102 -> 103. Placed for real on the About page
+        // (company-history timeline replacing the generic process_steps
+        // that previously sat there), not left to the builder-coverage
+        // fallback.
+        self::assertCount(103, BlockRegistry::all());
         // Coverage invariant (§F): every registered type except the four
         // deliberately-excluded types customer-site's own registry unsets
         // (no backend content model, or a duplicate authority a real
@@ -136,5 +158,180 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         }
         $signatures['home'] = implode(',', array_map(fn ($b) => $b['type'], $theme->pages['home']['blocks']));
         self::assertCount(6, array_unique($signatures), 'Homepage compositions are not all structurally distinct by block-type signature: ' . implode(' | ', $signatures));
+
+        // Commercial Productization fase-2: 'timeline' must be real,
+        // Persian, Builder-editable demo content on the About page — not
+        // just present in the registry.
+        $aboutBlocks = $theme->pages['about']['blocks'];
+        $timelineBlock = collect($aboutBlocks)->firstWhere('type', 'timeline');
+        self::assertNotNull($timelineBlock, "'about' page must contain a real 'timeline' block");
+        self::assertGreaterThanOrEqual(4, count($timelineBlock['props']['items']), 'the demo timeline must have real, multiple milestones, not a token single item');
+        foreach ($timelineBlock['props']['items'] as $item) {
+            self::assertNotEmpty($item['date']);
+            self::assertNotEmpty($item['title']);
+            self::assertNotEmpty($item['text']);
+        }
+
+        // Commercial Productization fase-2: the header's 'خدمات'/'فروشگاه'
+        // mega menu is authored with the real `mega_columns` shape (not the
+        // legacy flat mega_items grouped-by-title hack) and actually
+        // renders a genuine multi-column dropdown, never a raw JSON dump.
+        $servicesLink = collect($theme->header_blocks[0]['props']['nav_links'] ?? [])->firstWhere('label', 'خدمات');
+        self::assertNotNull($servicesLink, "header must have a 'خدمات' nav link");
+        self::assertArrayHasKey('mega_columns', $servicesLink);
+        self::assertGreaterThanOrEqual(2, count($servicesLink['mega_columns']));
+        $renderer = new \App\Services\ThemeBuilder\BlockRenderer();
+        $headerHtml = $renderer->renderBlock($theme->header_blocks[0]);
+        self::assertStringContainsString('tb-mega-menu-panel', $headerHtml);
+        self::assertStringNotContainsString('mega_columns&quot;', $headerHtml, 'mega menu data must never leak as raw JSON text');
+    }
+
+    // Part 4/7 (7-part local audit task, 2026-09-19): re-running the seeder
+    // must not create a duplicate Theme row — the seeder's own
+    // Theme::firstOrNew(['slug' => ..., 'site_id' => null]) is the
+    // idempotency guarantee; this proves it end to end via the real
+    // artisan-seed entry point, twice in a row.
+    public function test_reseeding_does_not_create_a_duplicate_theme_row(): void
+    {
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+
+        self::assertSame(
+            1,
+            Theme::query()->where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->whereNull('site_id')->count(),
+            'reseeding must update the existing Theme row, never insert a second one'
+        );
+    }
+
+    // Part 4 (7-part local audit task, 2026-09-19): a plain
+    // Theme::updateOrCreate(..., ['status' => STATUS_DRAFT, ...]) would
+    // silently reset an already-published theme back to draft on every
+    // reseed. The seeder now only sets 'status' on first creation
+    // (Theme::firstOrNew() + a $wasNew guard) — this proves a published
+    // theme survives a reseed with its status intact.
+    public function test_reseeding_does_not_reset_an_already_published_theme_back_to_draft(): void
+    {
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+
+        $theme = Theme::query()->where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->whereNull('site_id')->sole();
+        $theme->forceFill(['status' => Theme::STATUS_PUBLISHED])->save();
+
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+
+        $theme->refresh();
+        self::assertSame(Theme::STATUS_PUBLISHED, $theme->status, 'reseeding must not un-publish an already-published theme');
+    }
+
+    // Part 3 (7-part local audit task, 2026-09-19): root-caused fix for
+    // black/empty image blocks — UploadedFile::fake()->image() produced
+    // structurally-valid-but-visually-blank JPEGs. seedImages() now
+    // generates a real GD gradient+shapes image per asset key. This proves
+    // every seeded image is a valid, correctly decodable, non-trivially-
+    // sized JPEG — not the old blank fixture output.
+    public function test_seeded_images_are_real_non_blank_jpegs(): void
+    {
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+
+        $theme = Theme::query()->where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->whereNull('site_id')->sole();
+
+        $expectedKeys = ['hero', 'about', 'gallery_1', 'gallery_2', 'gallery_3', 'gallery_4', 'portfolio_1', 'portfolio_2', 'team_1', 'team_2', 'team_3', 'team_4'];
+        $paths = [];
+
+        $disk = app(\App\Services\Infrastructure\MediaStorage::class)->diskNameFor('public');
+        foreach ($expectedKeys as $key) {
+            $relative = "theme-media/{$theme->id}/{$key}.jpg";
+            self::assertTrue(\Illuminate\Support\Facades\Storage::disk($disk)->exists($relative), "missing generated image file for '{$key}'");
+
+            $fullPath = \Illuminate\Support\Facades\Storage::disk($disk)->path($relative);
+            $info = @getimagesize($fullPath);
+            self::assertNotFalse($info, "'{$key}'.jpg must be a decodable image");
+            self::assertSame('image/jpeg', $info['mime']);
+            // A flat/blank single-color JPEG of these dimensions compresses
+            // to a few hundred bytes; the real branded gradient+shapes
+            // generator produces several KB minimum — a cheap, reliable
+            // proxy for "not blank" without decoding pixels.
+            self::assertGreaterThan(2000, filesize($fullPath), "'{$key}'.jpg is suspiciously small — looks blank, not a real generated image");
+            $paths[$key] = $fullPath;
+        }
+
+        // Distinct content per key, not the same image copy-pasted under
+        // different names.
+        self::assertGreaterThan(1, count(array_unique(array_map('filesize', $paths))), 'seeded images must not all be byte-identical');
+    }
+
+    /**
+     * Commercial Productization phase — real local demo video (Hero/SaaS
+     * intro). Copied idempotently from a pre-built source asset (see
+     * UniversalMultipurposeQaThemeSeeder::seedVideo()'s own doc comment
+     * for why this is a copy, not a fresh Playwright recording, on every
+     * seed run) — never an external/unstable URL, never a black box.
+     */
+    public function test_seeded_demo_video_and_poster_are_real_local_files(): void
+    {
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+
+        $theme = Theme::query()->where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->whereNull('site_id')->sole();
+        $disk = app(\App\Services\Infrastructure\MediaStorage::class)->diskNameFor('public');
+
+        $videoPath = "theme-media/{$theme->id}/hero-intro.webm";
+        self::assertTrue(\Illuminate\Support\Facades\Storage::disk($disk)->exists($videoPath), 'the demo video file must exist locally');
+        self::assertGreaterThan(10000, \Illuminate\Support\Facades\Storage::disk($disk)->size($videoPath), 'the demo video must be a real, non-trivial file, not an empty/stub file');
+
+        $posterPath = "theme-media/{$theme->id}/hero-intro-poster.jpg";
+        self::assertTrue(\Illuminate\Support\Facades\Storage::disk($disk)->exists($posterPath), 'the poster image must exist locally');
+        $posterFull = \Illuminate\Support\Facades\Storage::disk($disk)->path($posterPath);
+        $info = @getimagesize($posterFull);
+        self::assertNotFalse($info, 'the poster must be a real, decodable image');
+        self::assertSame('image/jpeg', $info['mime']);
+
+        // The 'saas' page must actually reference these real local files,
+        // never a bare/absent video block.
+        $saasPage = $theme->pages['saas'] ?? null;
+        self::assertNotNull($saasPage, "the 'saas' page must exist");
+        $videoBlocks = array_values(array_filter($saasPage['blocks'], fn ($b) => $b['type'] === 'video'));
+        self::assertCount(1, $videoBlocks, "the 'saas' page must contain exactly one real video block");
+        self::assertStringContainsString('hero-intro.webm', $videoBlocks[0]['props']['url']);
+        self::assertStringContainsString('hero-intro-poster.jpg', $videoBlocks[0]['props']['poster']);
+    }
+
+    /**
+     * Commercial Productization fase-3 (visual identity): the theme must
+     * have its own distinct palette (not just the platform's generic
+     * indigo default every new Theme starts from) — primary, secondary,
+     * accent, and all three semantic status colors — plus a real, distinct
+     * dark palette, and every one of these must survive
+     * ThemeTokenNormalizer::normalize() into real, WCAG-AA-safe derived
+     * tokens (not just raw hex values sitting unused in global_styles).
+     */
+    public function test_theme_has_a_distinct_complete_color_identity_with_light_and_dark_palettes(): void
+    {
+        $this->seed(UniversalMultipurposeQaThemeSeeder::class);
+        $theme = Theme::query()->where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->whereNull('site_id')->sole();
+
+        $styles = $theme->global_styles;
+        self::assertNotSame('#4f46e5', $styles['primary_color'], 'the theme must not ship with the platform\'s generic default primary color');
+        self::assertSame('#0f766e', $styles['primary_color']);
+        self::assertSame('#0e7490', $styles['secondary_color']);
+        self::assertSame('#f59e0b', $styles['accent_color']);
+        self::assertSame('#16a34a', $styles['success_color']);
+        self::assertSame('#d97706', $styles['warning_color']);
+        self::assertSame('#dc2626', $styles['error_color']);
+
+        self::assertTrue($styles['dark_mode']['enabled'] ?? false);
+        self::assertNotSame($styles['primary_color'], $styles['dark_mode']['primary'], 'dark mode must have its own tuned primary, not just reuse the light one');
+        self::assertSame('#0f172a', $styles['dark_mode']['background']);
+
+        $normalizer = new ThemeTokenNormalizer();
+        $vars = $normalizer->normalize($styles);
+        foreach (['--tb-primary', '--tb-secondary', '--tb-accent', '--tb-success', '--tb-warning', '--tb-error'] as $key) {
+            self::assertArrayHasKey($key, $vars);
+            self::assertArrayHasKey(str_replace('--tb-', '--tb-on-', $key), $vars);
+        }
+
+        $css = $normalizer->renderCssBlock($styles);
+        self::assertStringContainsString(':root {', $css);
+        self::assertStringContainsString('[data-theme="dark"] {', $css);
+        self::assertStringContainsString('--tb-primary: #0f766e;', $css);
+        self::assertStringContainsString('--tb-primary: #2dd4bf;', $css);
     }
 }

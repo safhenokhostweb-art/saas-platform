@@ -43,6 +43,20 @@ class BlockRenderer
         }
         $html = [];
         foreach ($blocks as $block) {
+            // Part 5 (7-part local audit task, 2026-09-19) root-cause fix:
+            // a genuinely legacy/corrupted theme (real repro: Theme ID=56,
+            // an old pre-refactor test theme) can contain a block entry
+            // that is not an array at all (e.g. a bare string) — calling
+            // renderBlock() on it threw an uncaught TypeError
+            // ("Argument #1 ($block) must be of type array, string given"),
+            // taking down the ENTIRE preview/canvas page for one bad
+            // element among otherwise-valid content. Skip only that one
+            // entry, visibly (an HTML comment, never a silent drop), so
+            // the rest of the theme still renders.
+            if (!is_array($block)) {
+                $html[] = '<!-- theme block skipped: expected an object, got ' . gettype($block) . ' -->';
+                continue;
+            }
             $html[] = $this->renderBlock($block);
         }
         return implode("\n", $html);
@@ -53,6 +67,14 @@ class BlockRenderer
         $type = $block['type'] ?? 'text';
         $id = $block['id'] ?? Str::random(8);
         $props = $block['props'] ?? $block['data'] ?? [];
+        if (!is_array($props)) {
+            // Same class of defect as above, one level down: a legacy
+            // block whose props is a scalar (e.g. Theme ID=56's
+            // header_blocks) crashed every render*($props, ...) method
+            // with a TypeError instead of just that block's own markup
+            // failing to render.
+            $props = [];
+        }
         // TB4: children may be at top-level (block.children), legacy top-level (block.blocks),
         // or inside props (block.props.blocks) — check all three for backward compat.
         $children = $block['children'] ?? $block['blocks'] ?? ($props['blocks'] ?? []);
@@ -513,6 +535,239 @@ class BlockRenderer
      * documents for renderTestimonials()/renderBlogPosts() (see
      * customer-site's ThemeCanvasRenderer::renderSlider() for that override).
      */
+    // ── Carousel runtime (canonical, shared) ─────────────────────────────
+    //
+    // Universal Multipurpose Slider Overhaul: this used to exist ONLY as a
+    // customer-site-only override (App\Services\ThemeCanvas\
+    // ThemeCanvasRenderer::renderCarousel()), so saas-platform's own admin
+    // preview never showed real slider behavior for ANY slider-shaped type
+    // — a genuine preview/runtime parity gap. This is now the ONE
+    // canonical carousel engine for every slider-shaped canonical type in
+    // this class (renderSlider, renderTestimonialsSlider, renderClientLogos'
+    // carousel mode) and for any host override that wants real carousel
+    // behavior without reimplementing it (customer-site's real
+    // renderProductSlider()/renderCategorySlider()/renderBlogPosts()
+    // override call $this->renderCarousel(...) — no second implementation
+    // belongs anywhere).
+    //
+    // Direction-aware (reads the resolved `direction` CSS property at
+    // render time rather than hardcoding RTL, even though this platform is
+    // Persian/RTL by default), keyboard-navigable (ArrowLeft/ArrowRight —
+    // bound to the same physical side as the prev/next buttons, which are
+    // laid out RTL-first: prev on the visual right, next on the visual
+    // left, matching this platform's only real deployment direction),
+    // touch/swipe-enabled, pausable on hover/focus, and supports a
+    // responsive "items visible at once" count (desktop/tablet/mobile) via
+    // a CSS custom property so a single mechanism covers both a classic
+    // one-slide-at-a-time slider and an N-columns-visible carousel (e.g.
+    // testimonials_slider's `columns`, previously honored only by the
+    // static-grid render path and silently dropped by the old carousel
+    // override — see renderTestimonialsSlider() below).
+    //
+    // Known simplification: one dot is rendered per underlying slide, not
+    // per distinct scroll "page" when itemsPerView > 1 — clicking a dot
+    // past the last valid stopping position simply clamps to it. This is a
+    // cosmetic simplification, not a functional defect.
+
+    /**
+     * @param string[] $slidesHtml Pre-rendered inner HTML for each individual slide/item — already
+     *   filtered/validated by the caller (e.g. a deleted product silently excluded upstream).
+     * @param array{desktop?:int,tablet?:int,mobile?:int} $itemsPerView How many slides are visible
+     *   at once per breakpoint. Omit (or leave at 1/1/1) for a classic single-item slider.
+     */
+    protected function renderCarousel(
+        array $slidesHtml,
+        string $id,
+        bool $autoplay,
+        int $interval,
+        string $extraClass = '',
+        array $itemsPerView = [],
+        bool $pauseOnHover = true,
+        bool $fade = false
+    ): string {
+        $slidesHtml = array_values(array_filter($slidesHtml, fn ($s) => trim((string) $s) !== ''));
+        if (empty($slidesHtml)) {
+            return '';
+        }
+
+        $desktop = max(1, (int) ($itemsPerView['desktop'] ?? 1));
+        $tablet  = max(1, min($desktop, (int) ($itemsPerView['tablet'] ?? $desktop)));
+        $mobile  = max(1, min($tablet, (int) ($itemsPerView['mobile'] ?? 1)));
+        // Fade mode only makes sense one-slide-at-a-time — a multi-item
+        // crossfade has no well-defined "current page" to fade between.
+        if ($fade) {
+            $desktop = $tablet = $mobile = 1;
+        }
+
+        if (count($slidesHtml) === 1 && $desktop <= 1) {
+            return "<div id=\"tb-{$id}\" class=\"tb-carousel-single {$extraClass}\">{$slidesHtml[0]}</div>";
+        }
+
+        $interval = max(1500, $interval);
+        $slideCount = count($slidesHtml);
+        $slides = [];
+        $dots = [];
+        // CSS Grid stacking (every slide in the same cell) rather than
+        // position:absolute — the grid container auto-sizes to the
+        // tallest slide, so fade mode never collapses to zero height the
+        // way stacked absolutely-positioned children would without extra
+        // JS-measured height.
+        $fadeSlideStyle = $fade ? 'grid-column:1;grid-row:1;opacity:0;transition:opacity .6s ease;' : '';
+        foreach ($slidesHtml as $i => $html) {
+            $num = $i + 1;
+            $slides[] = "<div class=\"tb-carousel-slide\" role=\"group\" aria-roledescription=\"slide\" aria-label=\"اسلاید {$num} از {$slideCount}\" style=\"{$fadeSlideStyle}\">{$html}</div>";
+            $dots[] = "<button type=\"button\" class=\"tb-carousel-dot\" aria-label=\"رفتن به اسلاید {$num}\" style=\"width:.55rem;height:.55rem;padding:0;border-radius:999px;border:0;background:#d1d5db;cursor:pointer;\"></button>";
+        }
+
+        $autoplayAttr = $autoplay ? 'true' : 'false';
+        $pauseAttr = $pauseOnHover ? 'true' : 'false';
+        $fadeAttr = $fade ? 'true' : 'false';
+        $trackStyle = $fade
+            ? 'display:grid;'
+            : 'display:flex;transition:transform .45s ease;';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-carousel {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" tabindex=\"0\"
+            data-autoplay=\"{$autoplayAttr}\" data-interval=\"{$interval}\" data-pause-hover=\"{$pauseAttr}\" data-fade=\"{$fadeAttr}\"
+            style=\"position:relative;outline:none;--tb-items-desktop:{$desktop};--tb-items-tablet:{$tablet};--tb-items-mobile:{$mobile};\">
+            <style>
+                /* Real bug found via a full-page Playwright screenshot pass
+                   (tablet/mobile columns silently stayed at the desktop
+                   count): --tb-items must NOT be set inline on the root —
+                   an inline style declaration always wins over every rule
+                   in this <style> block regardless of media query, so the
+                   two overrides below could never take effect. All three
+                   assignments now live here, at equal (ID-selector)
+                   specificity, so source order + the media queries
+                   actually matching decides the final value. */
+                #tb-{$id}{--tb-items:var(--tb-items-desktop);}
+                #tb-{$id} .tb-carousel-slide{flex:0 0 calc(100% / var(--tb-items,1));min-width:0;}
+                @media (max-width:1024px){ #tb-{$id}{--tb-items:var(--tb-items-tablet);} }
+                @media (max-width:640px){ #tb-{$id}{--tb-items:var(--tb-items-mobile);} }
+            </style>
+            <div class=\"tb-carousel-viewport\" style=\"overflow:hidden;\">
+                <div class=\"tb-carousel-track\" style=\"{$trackStyle}\">" . implode('', $slides) . "</div>
+            </div>
+            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\" style=\"position:absolute;top:50%;right:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">‹</button>
+            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\" style=\"position:absolute;top:50%;left:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">›</button>
+            <div class=\"tb-carousel-dots\" role=\"tablist\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
+            <script>(function(){
+                function init(root){
+                    if (!root || root.dataset.tbCarouselInit) return;
+                    root.dataset.tbCarouselInit = '1';
+                    var isFade = root.dataset.fade === 'true';
+                    var track = root.querySelector('.tb-carousel-track');
+                    var slideEls = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-slide'));
+                    var dots = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-dot'));
+                    var prevBtn = root.querySelector('.tb-carousel-prev');
+                    var nextBtn = root.querySelector('.tb-carousel-next');
+                    var idx = 0, timer = null;
+                    var isRTL = getComputedStyle(root).direction !== 'ltr';
+                    var sign = isRTL ? 1 : -1;
+                    function itemsPerView(){
+                        if (isFade) return 1;
+                        var v = parseFloat(getComputedStyle(root).getPropertyValue('--tb-items'));
+                        return (v && v > 0) ? v : 1;
+                    }
+                    function maxIndex(){ return Math.max(0, slideEls.length - itemsPerView()); }
+                    function paint(){
+                        if (isFade) {
+                            slideEls.forEach(function(s, j){ s.style.opacity = (j === idx) ? '1' : '0'; s.style.zIndex = (j === idx) ? '1' : '0'; });
+                        } else {
+                            var ipv = itemsPerView();
+                            track.style.transform = 'translateX(' + (sign * idx * (100 / ipv)) + '%)';
+                        }
+                        dots.forEach(function(d, j){
+                            var active = j === idx;
+                            d.style.background = active ? 'var(--tb-primary,#4f46e5)' : '#d1d5db';
+                            d.setAttribute('aria-current', active ? 'true' : 'false');
+                        });
+                    }
+                    function go(i){ idx = Math.min(Math.max(0, i), maxIndex()); paint(); }
+                    function stepNext(){ go(idx + 1 > maxIndex() ? 0 : idx + 1); }
+                    function stepPrev(){ go(idx - 1 < 0 ? maxIndex() : idx - 1); }
+                    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+                    function start(){
+                        stop();
+                        if (root.dataset.autoplay === 'true' && slideEls.length > itemsPerView()) {
+                            timer = setInterval(stepNext, parseInt(root.dataset.interval, 10) || 5000);
+                        }
+                    }
+                    if (nextBtn) nextBtn.addEventListener('click', function(){ stepNext(); start(); });
+                    if (prevBtn) prevBtn.addEventListener('click', function(){ stepPrev(); start(); });
+                    dots.forEach(function(d, j){ d.addEventListener('click', function(){ go(j); start(); }); });
+                    root.addEventListener('keydown', function(e){
+                        if (e.key === 'ArrowRight') { stepPrev(); start(); e.preventDefault(); }
+                        else if (e.key === 'ArrowLeft') { stepNext(); start(); e.preventDefault(); }
+                    });
+                    if (root.dataset.pauseHover === 'true') {
+                        root.addEventListener('mouseenter', stop);
+                        root.addEventListener('mouseleave', start);
+                        root.addEventListener('focusin', stop);
+                        root.addEventListener('focusout', start);
+                    }
+                    var touchX = null;
+                    root.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; }, {passive:true});
+                    root.addEventListener('touchend', function(e){
+                        if (touchX === null) return;
+                        var dx = e.changedTouches[0].clientX - touchX;
+                        if (Math.abs(dx) > 40) { (dx > 0 ? stepPrev : stepNext)(); start(); }
+                        touchX = null;
+                    }, {passive:true});
+                    window.addEventListener('resize', function(){ go(Math.min(idx, maxIndex())); });
+                    paint();
+                    start();
+                }
+                init(document.getElementById('tb-{$id}'));
+            })();</script>
+        </div>";
+    }
+
+    /**
+     * A safe, real fallback for a missing or genuinely broken image URL —
+     * never a black block, never a raw broken-image browser icon. Empty
+     * `$url` renders the fallback immediately (server-side); a non-empty
+     * URL that fails to actually load at runtime is caught client-side via
+     * `onerror` (there is no safe, fast way to verify an image URL
+     * resolves from inside a server-side render call).
+     */
+    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = '🖼️'): string
+    {
+        $altAttr = $this->escapeAttr($alt);
+        if ($url === '') {
+            return "<div class=\"tb-img-fallback\" style=\"display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;{$style}\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>";
+        }
+        $urlAttr = $this->escapeAttr($url);
+        return "<div class=\"tb-img-frame\" style=\"position:relative;overflow:hidden;{$style}\">"
+            . "<img src=\"{$urlAttr}\" alt=\"{$altAttr}\" loading=\"lazy\" style=\"width:100%;height:100%;object-fit:cover;display:block;\" onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex';\">"
+            . "<div class=\"tb-img-fallback\" style=\"display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>"
+            . "</div>";
+    }
+
+    /**
+     * Commercial Productization fase-4: the one shared Badge primitive —
+     * previously every "badge"-shaped bit of UI (pricing's "محبوب‌ترین",
+     * product cards' "جدید"/"حراج") was its own independently hardcoded
+     * inline-style span (e.g. a fixed `#ef4444` red regardless of what the
+     * badge actually meant), with no token binding, no size scale, and no
+     * shared contrast guarantee. Every semantic color routes through
+     * ThemeTokenNormalizer's real WCAG-AA `--tb-{variant}-text`/
+     * `--tb-on-{variant}` derivation, the same authority every other
+     * token-bound color in this file already uses — never a second,
+     * independently-drifting color decision.
+     */
+    protected function badgeHtml(string $label, string $variant = 'neutral', string $size = 'md', string $icon = ''): string
+    {
+        $variant = in_array($variant, ['success', 'warning', 'error', 'info', 'neutral', 'primary'], true) ? $variant : 'neutral';
+        $size    = in_array($size, ['sm', 'md', 'lg'], true) ? $size : 'md';
+        $labelEsc = $this->escape($label);
+        if ($labelEsc === '') {
+            return '';
+        }
+        $iconHtml = $icon !== '' ? "<span class=\"tb-badge-icon\" aria-hidden=\"true\">" . $this->escape($icon) . "</span>" : '';
+
+        return "<span class=\"tb-badge tb-badge-{$variant} tb-badge-{$size}\">{$iconHtml}<span class=\"tb-badge-label\">{$labelEsc}</span></span>";
+    }
+
     protected function renderSlider(array $props, string $inner, string $id): string
     {
         $slides = $props['slides'] ?? [];
@@ -520,35 +775,65 @@ class BlockRenderer
             $slides = [];
         }
 
-        $cards = [];
+        $transitionRaw = $props['transition'] ?? 'slide';
+        $transition = in_array($transitionRaw, ['slide', 'fade'], true) ? $transitionRaw : 'slide';
+        $boxed      = (bool) ($props['boxed'] ?? false);
+        $aspect     = $this->escapeAttr($props['aspect_ratio'] ?? '16/9');
+        $overlay    = (bool) ($props['overlay'] ?? true);
+        $gradientCss = $overlay ? 'background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 55%);' : '';
+
+        $slidesHtml = [];
         foreach ($slides as $slide) {
             if (!is_array($slide)) {
                 continue;
             }
-            $image    = $this->escapeAttr($slide['image'] ?? '');
+            $image    = trim((string) ($slide['image'] ?? ''));
             $title    = $this->escape($slide['title'] ?? '');
             $subtitle = $this->escape($slide['subtitle'] ?? '');
             $link     = $this->escapeUrl($slide['link'] ?? '', '');
+            $ctaText  = $this->escape($slide['cta_text'] ?? '');
 
-            $imgHtml = $image !== ''
-                ? "<img src=\"{$image}\" alt=\"{$title}\" style=\"width:100%;height:12rem;object-fit:cover;border-radius:.5rem;display:block;\" loading=\"lazy\">"
+            $imgHtml = $this->imageWithFallback($image, (string) ($slide['title'] ?? ''), "position:absolute;inset:0;width:100%;height:100%;");
+
+            $ctaHtml = ($ctaText !== '' && $link !== '')
+                ? "<a href=\"{$link}\" class=\"tb-btn tb-btn-primary tb-slide-cta\" style=\"position:relative;z-index:1;margin-top:1rem;display:inline-block;\">{$ctaText}</a>"
                 : '';
-            $textHtml = ($title !== '' || $subtitle !== '')
-                ? '<div style="padding:.75rem .25rem;">'
-                    . ($title !== '' ? "<h3 style=\"margin:0 0 .25rem;font-size:1.1rem;\">{$title}</h3>" : '')
-                    . ($subtitle !== '' ? "<p style=\"margin:0;color:#6b7280;\">{$subtitle}</p>" : '')
+
+            $captionHtml = ($title !== '' || $subtitle !== '' || $ctaHtml !== '')
+                ? '<div class="tb-slide-caption" style="position:relative;z-index:1;padding:2.5rem 1.5rem;color:#fff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.55);">'
+                    . ($title !== '' ? "<h2 class=\"tb-slide-title\" style=\"margin:0 0 .5rem;font-size:1.75rem;font-weight:700;\">{$title}</h2>" : '')
+                    . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\" style=\"margin:0;font-size:1.05rem;opacity:.95;\">{$subtitle}</p>" : '')
+                    . $ctaHtml
                     . '</div>'
                 : '';
 
-            $card = "<div class=\"tb-slide\" style=\"flex:0 0 16rem;\">{$imgHtml}{$textHtml}</div>";
-            $cards[] = $link !== '' ? "<a href=\"{$link}\" style=\"color:inherit;text-decoration:none;\">{$card}</a>" : $card;
+            $slideInner = "<div class=\"tb-slide\" style=\"position:relative;aspect-ratio:{$aspect};display:flex;align-items:center;justify-content:center;background:#111827;overflow:hidden;\">"
+                . $imgHtml . "<div style=\"position:absolute;inset:0;{$gradientCss}\"></div>" . $captionHtml . '</div>';
+
+            $slidesHtml[] = ($link !== '' && $ctaHtml === '')
+                ? '<a href="' . $link . '" class="tb-slide-link" style="display:block;color:inherit;text-decoration:none;">' . $slideInner . '</a>'
+                : $slideInner;
         }
 
-        if (empty($cards)) {
+        if (empty($slidesHtml)) {
             return '';
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-slider\" style=\"display:flex;gap:1rem;overflow-x:auto;padding-bottom:.5rem;\">" . implode('', $cards) . "</div>";
+        $wrapClass = 'tb-slider' . ($boxed ? ' tb-slider-boxed' : ' tb-slider-full') . ($transition === 'fade' ? ' tb-slider-fade' : '');
+        $wrapStyle = $boxed ? 'max-width:72rem;margin:0 auto;' : '';
+
+        $carousel = $this->renderCarousel(
+            $slidesHtml,
+            $id,
+            (bool) ($props['autoplay'] ?? true),
+            (int) ($props['interval'] ?? 5000),
+            $wrapClass,
+            [],
+            true,
+            $transition === 'fade'
+        );
+
+        return $wrapStyle !== '' ? "<div style=\"{$wrapStyle}\">{$carousel}</div>" : $carousel;
     }
 
     /**
@@ -987,8 +1272,16 @@ class BlockRenderer
         $btn1u   = $this->escapeUrl($props['button_url'] ?? '', '#');
         $btn2t   = $this->escape($props['button2_text'] ?? '');
         $btn2u   = $this->escapeAttr($props['button2_url'] ?? '#');
-        $gFrom   = $this->escapeAttr($props['gradient_from'] ?? '#4f46e5');
-        $gTo     = $this->escapeAttr($props['gradient_to'] ?? '#7c3aed');
+        // Commercial Productization fase-3 (visual identity audit): a real,
+        // confirmed bug — these defaults were hardcoded generic indigo/
+        // violet hex values, completely independent of the Theme's own
+        // configured --tb-primary/--tb-secondary. Every Theme whose hero
+        // used this block's default colors (i.e. never overrode
+        // gradient_from/gradient_to) rendered the same generic purple
+        // regardless of its actual brand palette — an explicit author
+        // override of course still wins.
+        $gFrom   = $this->escapeAttr($props['gradient_from'] ?? 'var(--tb-primary, #4f46e5)');
+        $gTo     = $this->escapeAttr($props['gradient_to'] ?? 'var(--tb-secondary, #7c3aed)');
         $tColor  = $this->escapeAttr($props['text_color'] ?? '#ffffff');
 
         $badgeHtml = $badge ? "<span class=\"tb-hero-gradient-badge\">{$badge}</span><br>" : '';
@@ -1093,10 +1386,25 @@ class BlockRenderer
      * mirroring renderTeam()'s established precedent for the same
      * situation.
      */
+    /**
+     * Logo/Partner Slider. Backward-compatible: existing content authored
+     * with only {name} entries and the legacy `scroll` boolean keeps
+     * rendering exactly as before (plain text badges in a CSS marquee) —
+     * `image`/`url`/`alt`/`mode`/`grayscale`/`speed`/`visible_count` are
+     * all new, additive, optional fields.
+     */
     protected function renderClientLogos(array $props, string $inner, string $id): string
     {
         $title  = $this->escape($props['title'] ?? 'مشتریان و همکاران');
         $scroll = (bool) ($props['scroll'] ?? true);
+        // 'marquee' (legacy default) | 'carousel' (real slider, arrows/dots/autoplay) | 'static' (grid)
+        $mode = $props['mode'] ?? ($scroll ? 'marquee' : 'static');
+        if (!in_array($mode, ['marquee', 'carousel', 'static'], true)) {
+            $mode = 'marquee';
+        }
+        $grayscale = (bool) ($props['grayscale'] ?? true);
+        $speed = max(10, (int) ($props['speed'] ?? 25)); // marquee: seconds per full loop
+        $visibleDesktop = max(2, (int) ($props['visible_count'] ?? 5));
 
         $rawLogos = $props['logos'] ?? '[]';
         $logos    = is_array($rawLogos) ? $rawLogos : (json_decode($rawLogos, true) ?? []);
@@ -1111,22 +1419,318 @@ class BlockRenderer
         }
 
         $titleHtml = $title ? "<p class=\"tb-client-logos-title\">{$title}</p>" : '';
+        $filterCss = $grayscale ? 'filter:grayscale(1);opacity:.75;transition:filter .2s,opacity .2s;' : '';
+        $filterHoverAttr = $grayscale ? ' onmouseover="this.style.filter=\'none\';this.style.opacity=1;" onmouseout="this.style.filter=\'grayscale(1)\';this.style.opacity=.75;"' : '';
 
-        $logoItems = array_map(fn($l) =>
-            "<span class=\"tb-logo-item\">" . $this->escape($l['name'] ?? $l) . "</span>",
-            $logos
-        );
-        $logoHtml = implode('', $logoItems);
+        $items = [];
+        foreach ($logos as $l) {
+            if (!is_array($l)) {
+                $l = ['name' => (string) $l];
+            }
+            $name  = (string) ($l['name'] ?? '');
+            $image = trim((string) ($l['image'] ?? ''));
+            $url   = $this->escapeUrl($l['url'] ?? '', '');
+            $alt   = $this->escapeAttr($l['alt'] ?? $name);
 
-        if ($scroll) {
-            $doubled = $logoHtml . $logoHtml;
-            $inner   = "<div class=\"tb-logos-marquee-wrap\"><div class=\"tb-logos-marquee\">{$doubled}</div></div>";
+            // A genuinely broken logo URL (unreachable host, deleted media)
+            // swaps itself for the same text-badge fallback an empty
+            // `image` already renders — never a raw broken-image icon.
+            // Real-runtime bug found via a full-page Playwright screenshot
+            // pass (Universal Multipurpose Slider Overhaul): every other
+            // slider's image already had this via imageWithFallback(), but
+            // this inline, non-frame logo `<img>` did not. Same safe
+            // hide-self/reveal-sibling technique as imageWithFallback(),
+            // never string-building HTML inside an onerror attribute.
+            $content = $image !== ''
+                ? "<span style=\"display:inline-flex;align-items:center;\">"
+                    . "<img src=\"" . $this->escapeAttr($image) . "\" alt=\"{$alt}\" loading=\"lazy\" style=\"max-height:2.5rem;max-width:9rem;width:auto;height:auto;object-fit:contain;{$filterCss}\"{$filterHoverAttr} onerror=\"this.style.display='none';this.nextElementSibling.style.display='inline-flex';\">"
+                    . "<span class=\"tb-logo-item\" style=\"display:none;\">" . $this->escape($name) . "</span>"
+                    . "</span>"
+                : "<span class=\"tb-logo-item\">" . $this->escape($name) . "</span>";
+
+            $items[] = $url !== ''
+                ? "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-flex;align-items:center;\" aria-label=\"{$alt}\">{$content}</a>"
+                : "<span style=\"display:inline-flex;align-items:center;\">{$content}</span>";
+        }
+
+        if ($mode === 'carousel') {
+            $inner = $this->renderCarousel(
+                $items,
+                $id . '-track',
+                true,
+                max(1500, $speed * 200),
+                'tb-logos-carousel',
+                ['desktop' => $visibleDesktop, 'tablet' => max(2, (int) round($visibleDesktop / 2)), 'mobile' => 2],
+                true
+            );
+        } elseif ($mode === 'static') {
+            // Reuses the real shared .tb-logos-static rule (theme-runtime-contract.css)
+            // loaded by both hosts — no inline layout duplication needed.
+            $inner = "<div class=\"tb-logos-static\">" . implode('', $items) . "</div>";
         } else {
-            $inner = "<div class=\"tb-logos-static\">{$logoHtml}</div>";
+            // Reuses the real shared .tb-logos-marquee-wrap/.tb-logos-marquee
+            // rules and the tb-marquee keyframe (theme-runtime-contract.css,
+            // already loaded by both hosts) — only animation-duration is
+            // overridden per-instance for the configurable `speed` prop.
+            $logoHtml = implode('', $items);
+            $doubled = $logoHtml . $logoHtml;
+            $inner   = "<div class=\"tb-logos-marquee-wrap\"><div class=\"tb-logos-marquee\" style=\"animation-duration:{$speed}s;\">{$doubled}</div></div>";
         }
 
         return "<div id=\"tb-{$id}\" class=\"tb-client-logos\">
             <div class=\"tb-container\">{$titleHtml}{$inner}</div>
+        </div>";
+    }
+
+    /**
+     * Shared product-card markup — used by BOTH this canonical demo-fixture
+     * renderer and any host's real-data override (customer-site's
+     * ThemeCanvasRenderer::renderProductSlider() calls this too), so the
+     * admin preview and the real customer-site render are pixel-identical
+     * in card structure and only ever differ in which data feeds them —
+     * genuine preview/runtime parity at the markup level, not just "both
+     * happen to use a carousel".
+     */
+    protected function productCardHtml(
+        string $title,
+        string $image,
+        ?float $price,
+        ?float $originalPrice,
+        ?string $badge,
+        ?string $stockLabel,
+        string $url,
+        string $priceFormatted,
+        ?string $originalPriceFormatted = null,
+        string $addToCartHtml = ''
+    ): string {
+        $titleEsc = $this->escape($title);
+        $urlAttr  = $this->escapeUrl($url, '#');
+        $imgHtml  = $this->imageWithFallback($image, $title, 'aspect-ratio:1/1;', '📦');
+
+        $badgeHtml = $badge ? "<span class=\"tb-product-badge-wrap\" style=\"position:absolute;top:.5rem;inset-inline-start:.5rem;z-index:1;\">" . $this->badgeHtml($badge, 'error', 'sm') . "</span>" : '';
+
+        $discountHtml = ($originalPrice !== null && $price !== null && $originalPrice > $price)
+            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:#9ca3af;font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
+            : '';
+
+        $stockHtml = $stockLabel ? "<div class=\"tb-product-stock\" style=\"font-size:.8rem;color:#6b7280;margin-top:.15rem;\">" . $this->escape($stockLabel) . "</div>" : '';
+
+        return "<div class=\"tb-product-card\" style=\"position:relative;max-width:20rem;margin:0 auto;\">
+            {$badgeHtml}
+            <a href=\"{$urlAttr}\" class=\"tb-product-card-img\" style=\"display:block;\">{$imgHtml}</a>
+            <div class=\"tb-product-card-inner\" style=\"padding-top:.65rem;\">
+                <a href=\"{$urlAttr}\" style=\"color:inherit;text-decoration:none;\"><h3 class=\"tb-product-title\">{$titleEsc}</h3></a>
+                <div class=\"tb-product-price\">{$discountHtml}{$priceFormatted}</div>
+                {$stockHtml}
+                {$addToCartHtml}
+            </div>
+        </div>";
+    }
+
+    /**
+     * Canonical (shared) Product Slider. This package has no database
+     * access by design — real product data is always a host concern
+     * (customer-site's ThemeCanvasRenderer::renderProductSlider()
+     * overrides this with a real Product query). Rendering a small,
+     * realistic Persian demo fixture here — rather than an empty div —
+     * closes a real, confirmed defect: the shared package previously had
+     * NO renderer for this type at all, so saas-platform's own admin
+     * preview showed nothing when this block was selected, while
+     * customer-site's real render worked — a genuine preview/runtime
+     * parity gap. `source`/`category_id`/`manual_ids` are accepted here
+     * only for schema/serialization compatibility with the host's real
+     * renderer; this canonical version intentionally ignores them and
+     * always shows the demo fixture, since it has nothing real to filter.
+     */
+    protected function renderProductSlider(array $props, string $inner, string $id): string
+    {
+        $title = $this->escape($props['title'] ?? 'محصولات منتخب');
+
+        $demo = [
+            ['title' => 'کیف چرم دست‌دوز', 'price' => 1250000, 'original' => 1590000, 'badge' => 'تخفیف', 'stock' => 'موجود'],
+            ['title' => 'ساعت هوشمند مدل ایکس', 'price' => 3450000, 'original' => null, 'badge' => 'جدید', 'stock' => 'موجود'],
+            ['title' => 'هدفون بی‌سیم پرومکس', 'price' => 890000, 'original' => 1100000, 'badge' => null, 'stock' => 'تنها ۳ عدد باقی مانده'],
+        ];
+
+        $cards = [];
+        foreach ($demo as $p) {
+            $cards[] = $this->productCardHtml(
+                $p['title'],
+                '',
+                (float) $p['price'],
+                $p['original'] !== null ? (float) $p['original'] : null,
+                $p['badge'],
+                $p['stock'],
+                '#',
+                number_format($p['price']) . ' تومان',
+                $p['original'] !== null ? number_format($p['original']) . ' تومان' : null
+            );
+        }
+
+        $titleHtml = $title ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
+        $carousel = $this->renderCarousel(
+            $cards,
+            $id,
+            (bool) ($props['autoplay'] ?? true),
+            (int) ($props['interval'] ?? 5000),
+            'tb-module-products',
+            ['desktop' => (int) ($props['columns'] ?? 3), 'tablet' => 2, 'mobile' => 1]
+        );
+
+        return "<div id=\"tb-{$id}-wrap\" class=\"tb-module-products tb-section\">
+            <div class=\"tb-container\">{$titleHtml}{$carousel}</div>
+        </div>";
+    }
+
+    /**
+     * Canonical (shared) Product Grid. Real bug found via a full-page
+     * Playwright screenshot pass (Commercial Productization phase):
+     * `product_grid` is a real registered ECOMMERCE type with no canonical
+     * renderer at all — every use of it on saas-platform's own admin
+     * preview fell through to renderFallback(), which dumps
+     * json_encode($props) as raw visible text (exactly the stray
+     * `{"columns":4,"limit":8}`-shaped text found sitting in the middle of
+     * the real rendered home page). customer-site already has a real,
+     * working Product-bound override (App\Services\ThemeBuilder\
+     * BlockRenderer::renderProductGrid()) — this canonical version only
+     * closes the admin-preview gap, same demo-fixture convention as
+     * renderProductSlider()/renderCategorySlider() above.
+     */
+    protected function renderProductGrid(array $props, string $inner, string $id): string
+    {
+        $columns = max(2, min(4, (int) ($props['columns'] ?? 4)));
+
+        $demo = [
+            ['title' => 'کیف چرم دست‌دوز', 'price' => 1250000, 'original' => 1590000, 'badge' => 'تخفیف', 'stock' => 'موجود'],
+            ['title' => 'ساعت هوشمند مدل ایکس', 'price' => 3450000, 'original' => null, 'badge' => 'جدید', 'stock' => 'موجود'],
+            ['title' => 'هدفون بی‌سیم پرومکس', 'price' => 890000, 'original' => 1100000, 'badge' => null, 'stock' => 'تنها ۳ عدد باقی مانده'],
+            ['title' => 'کفش ورزشی طرح رانینگ', 'price' => 1680000, 'original' => null, 'badge' => null, 'stock' => 'موجود'],
+        ];
+
+        $cards = [];
+        foreach ($demo as $p) {
+            $cards[] = $this->productCardHtml(
+                $p['title'], '', (float) $p['price'], $p['original'] !== null ? (float) $p['original'] : null,
+                $p['badge'], $p['stock'], '#',
+                number_format($p['price']) . ' تومان',
+                $p['original'] !== null ? number_format($p['original']) . ' تومان' : null
+            );
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-grid tb-grid-cols-{$columns} tb-gap-md tb-product-grid-wrap\">" . implode('', $cards) . "</div>";
+    }
+
+    /**
+     * Canonical (shared) `video`. Same audit-found class of bug as
+     * renderProductGrid() above (registered type, no canonical renderer,
+     * silent json_encode($props) text dump) — customer-site already has a
+     * real, working override (real <video>, real empty-state message).
+     * Mirrored here exactly (same empty-state copy) rather than fabricated
+     * "demo" video content: this package has no real local video asset,
+     * and inventing one (e.g. relabeling a static image as .mp4) would be
+     * a worse defect than an honest, clearly-labeled empty state — see the
+     * Commercial Productization phase's own report for this explicit
+     * scope decision.
+     */
+    protected function renderVideo(array $props, string $inner, string $id): string
+    {
+        $url = trim((string) ($props['url'] ?? ''));
+        if ($url === '') {
+            return "<div id=\"tb-{$id}\" class=\"tb-video tb-empty-state\"><p class=\"tb-text\">ویدیویی انتخاب نشده است.</p></div>";
+        }
+
+        $poster   = trim((string) ($props['poster'] ?? ''));
+        $caption  = $this->escape($props['caption'] ?? '');
+        $autoplay = (bool) ($props['autoplay'] ?? false);
+        $loop     = (bool) ($props['loop'] ?? false);
+        $controls = $props['controls'] ?? true;
+
+        $attrs = [];
+        if ($controls) $attrs[] = 'controls';
+        if ($autoplay) $attrs[] = 'autoplay muted playsinline';
+        if ($loop) $attrs[] = 'loop';
+        $attrStr = implode(' ', $attrs);
+        $posterAttr = $poster !== '' ? ' poster="' . $this->escapeAttr($poster) . '"' : '';
+        $captionHtml = $caption ? "<figcaption class=\"tb-video-caption\">{$caption}</figcaption>" : '';
+
+        return "<figure id=\"tb-{$id}\" class=\"tb-video\">
+            <video src=\"" . $this->escapeAttr($url) . "\"{$posterAttr} {$attrStr} style=\"width:100%;border-radius:0.5rem;display:block;\"></video>
+            {$captionHtml}
+        </figure>";
+    }
+
+    /** Canonical `cart_icon` — same audit-found gap class as renderVideo() above. */
+    protected function renderCartIcon(array $props, string $inner, string $id): string
+    {
+        $count = (int) ($props['count'] ?? 0);
+        $badge = $count > 0 ? "<span class=\"tb-cart-icon-badge\">" . number_format($count) . "</span>" : '';
+        return "<a href=\"/cart\" id=\"tb-{$id}\" class=\"tb-cart-icon\" aria-label=\"سبد خرید\" style=\"position:relative;display:inline-flex;\">🛒{$badge}</a>";
+    }
+
+    /**
+     * Canonical `add_to_cart`. `product_id` is empty by design here (same
+     * "will show once available" rule the seeder's own docblock already
+     * applies to every dynamic/tenant-data type) — a real add-to-cart POST
+     * needs a real host cart service this shared package cannot have.
+     */
+    protected function renderAddToCart(array $props, string $inner, string $id): string
+    {
+        $text = $this->escape($props['text'] ?? 'افزودن به سبد');
+        $productId = trim((string) ($props['product_id'] ?? ''));
+        $disabledAttr = $productId === '' ? ' disabled aria-disabled="true"' : '';
+        return "<button type=\"button\" id=\"tb-{$id}\" class=\"tb-btn tb-btn-primary tb-add-to-cart\"{$disabledAttr}>{$text}</button>";
+    }
+
+    /**
+     * Canonical `language_switcher`. customer-site overrides this with its
+     * real <x-language-switcher> component (real SetLocale middleware +
+     * lang.switch route) — this package has no such host-specific i18n
+     * system, so the canonical preview shows a plain, honest single-
+     * language label rather than fabricating a working switcher with
+     * nothing behind it.
+     */
+    protected function renderLanguageSwitcher(array $props, string $inner, string $id): string
+    {
+        return "<div id=\"tb-{$id}\" class=\"tb-language-switcher\"><span class=\"tb-language-switcher-current\">فارسی</span></div>";
+    }
+
+    /**
+     * Canonical (shared) Category Slider — new type, was entirely absent
+     * from the registry before this change. Demo-fixture-based for the
+     * same reason as renderProductSlider() above; customer-site overrides
+     * this with a real ProductCategory query (real name + real product
+     * count per category).
+     */
+    protected function renderCategorySlider(array $props, string $inner, string $id): string
+    {
+        $title = $this->escape($props['title'] ?? 'دسته‌بندی‌ها');
+        $layout = ($props['layout'] ?? 'carousel') === 'grid' ? 'grid' : 'carousel';
+        $columns = max(2, min(6, (int) ($props['columns'] ?? 4)));
+
+        $demo = [
+            ['name' => 'پوشاک', 'count' => 128, 'icon' => '👕'],
+            ['name' => 'دیجیتال و لوازم الکترونیکی', 'count' => 76, 'icon' => '📱'],
+            ['name' => 'خانه و آشپزخانه', 'count' => 54, 'icon' => '🏠'],
+            ['name' => 'زیبایی و سلامت', 'count' => 39, 'icon' => '💄'],
+        ];
+
+        $cards = [];
+        foreach ($demo as $c) {
+            $cards[] = "<a href=\"#\" class=\"tb-category-card\" style=\"display:block;text-align:center;padding:1.5rem 1rem;border:1px solid #e5e7eb;border-radius:.75rem;text-decoration:none;color:inherit;\">
+                <div style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->escape($c['icon']) . "</div>
+                <div class=\"tb-category-name\" style=\"font-weight:700;\">" . $this->escape($c['name']) . "</div>
+                <div class=\"tb-category-count\" style=\"font-size:.8rem;color:#6b7280;margin-top:.2rem;\">" . number_format($c['count']) . " محصول</div>
+            </a>";
+        }
+
+        $titleHtml = $title ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
+
+        $body = $layout === 'grid'
+            ? "<div class=\"tb-grid tb-grid-cols-{$columns} tb-gap-md\">" . implode('', $cards) . "</div>"
+            : $this->renderCarousel($cards, $id . '-track', (bool) ($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-category-slider', ['desktop' => $columns, 'tablet' => max(2, (int) round($columns / 2)), 'mobile' => 1]);
+
+        return "<div id=\"tb-{$id}\" class=\"tb-section\">
+            <div class=\"tb-container\">{$titleHtml}{$body}</div>
         </div>";
     }
 
@@ -1160,6 +1764,72 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-process-steps tb-section\">
             <div class=\"tb-container\">{$headerHtml}
                 <div class=\"tb-grid tb-grid-cols-{$cols} tb-gap-md tb-steps-grid\">" . implode('', $stepItems) . "</div>
+            </div>
+        </div>";
+    }
+
+    /**
+     * Commercial Productization fase-2: Timeline was a real, confirmed gap
+     * (no registry entry, no renderer at all) found during the 22-element
+     * Builder audit. Supports vertical (default) and horizontal layout,
+     * per-item icon OR image (never both empty-broken — falls back to the
+     * step index), an optional CTA link per item, and an honest empty
+     * placeholder when no items are configured (never a blank section).
+     */
+    protected function renderTimeline(array $props, string $inner, string $id): string
+    {
+        $title    = $this->escape($props['title'] ?? '');
+        $subtitle = $this->escape($props['subtitle'] ?? '');
+        $layout   = ($props['layout'] ?? 'vertical') === 'horizontal' ? 'horizontal' : 'vertical';
+
+        $rawItems = $props['items'] ?? '[]';
+        $items    = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
+
+        $headerHtml = ($title || $subtitle) ? "<div class=\"tb-features-section-header\">
+            " . ($title ? "<h2 class=\"tb-features-section-title\">{$title}</h2>" : '') . "
+            " . ($subtitle ? "<p class=\"tb-features-section-sub\">{$subtitle}</p>" : '') . "
+        </div>" : '';
+
+        if (empty($items)) {
+            return "<div id=\"tb-{$id}\" class=\"tb-timeline tb-timeline-{$layout} tb-section\">
+                <div class=\"tb-container\">{$headerHtml}
+                    <div class=\"tb-timeline-empty\">هنوز رویدادی برای این خط زمانی ثبت نشده است.</div>
+                </div>
+            </div>";
+        }
+
+        $nodes = [];
+        foreach ($items as $index => $it) {
+            $date  = $this->escape($it['date'] ?? '');
+            $itemTitle = $this->escape($it['title'] ?? '');
+            $text  = $this->escape($it['text'] ?? '');
+            $icon  = $this->escape($it['icon'] ?? '');
+            $image = (string) ($it['image'] ?? '');
+            $linkLabel = $this->escape($it['link_label'] ?? '');
+            $linkUrl   = $this->escapeAttr($it['link_url'] ?? '');
+
+            $mediaHtml = $image !== ''
+                ? $this->imageWithFallback($image, $itemTitle, 'width:64px;height:64px;border-radius:50%;', $icon !== '' ? $icon : '🖼️')
+                : "<div class=\"tb-timeline-marker\">" . ($icon !== '' ? $icon : ($index + 1)) . "</div>";
+
+            $ctaHtml = ($linkLabel !== '' && $linkUrl !== '')
+                ? "<a href=\"{$linkUrl}\" class=\"tb-timeline-cta\">{$linkLabel}</a>"
+                : '';
+
+            $nodes[] = "<div class=\"tb-timeline-item\">
+                <div class=\"tb-timeline-marker-wrap\">{$mediaHtml}</div>
+                <div class=\"tb-timeline-content\">
+                    " . ($date ? "<span class=\"tb-timeline-date\">{$date}</span>" : '') . "
+                    <h3 class=\"tb-timeline-title\">{$itemTitle}</h3>
+                    " . ($text ? "<p class=\"tb-timeline-text\">{$text}</p>" : '') . "
+                    {$ctaHtml}
+                </div>
+            </div>";
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-timeline tb-timeline-{$layout} tb-section\">
+            <div class=\"tb-container\">{$headerHtml}
+                <div class=\"tb-timeline-track\">" . implode('', $nodes) . "</div>
             </div>
         </div>";
     }
@@ -1225,36 +1895,75 @@ class BlockRenderer
         </div>";
     }
 
+    /**
+     * Universal Multipurpose Slider Overhaul: fixes a real schema/renderer
+     * mismatch found during audit — this canonical (static-grid) renderer
+     * DID honor `columns`, but the customer-site host override that made
+     * it a real carousel silently dropped `columns` entirely (always one
+     * card per slide). Both `mode: 'static'` and `mode: 'carousel'` now
+     * honor `columns` identically via renderCarousel()'s itemsPerView, so
+     * there is exactly one place columns-per-breakpoint logic lives.
+     * Backward-compatible: no `mode` prop → 'carousel' (matches the
+     * previously-shipped host behavior everyone already sees live),
+     * existing `columns`/`items` content renders unchanged either way.
+     */
     protected function renderTestimonialsSlider(array $props, string $inner, string $id): string
     {
         $title   = $this->escape($props['title'] ?? 'نظرات مشتریان');
         $columns = max(1, min(3, (int) ($props['columns'] ?? 3)));
+        $mode    = in_array($props['mode'] ?? 'carousel', ['static', 'carousel'], true) ? ($props['mode'] ?? 'carousel') : 'carousel';
 
         $rawItems = $props['items'] ?? '[]';
         $items    = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
 
         $cards = [];
         foreach ($items as $t) {
-            $name   = $this->escape($t['name'] ?? '');
-            $role   = $this->escape($t['role'] ?? '');
-            $text   = $this->escape($t['text'] ?? '');
-            $rating = max(1, min(5, (int) ($t['rating'] ?? 5)));
-            $stars  = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
-            $initials = mb_substr($name, 0, 1, 'UTF-8');
+            if (!is_array($t)) {
+                continue;
+            }
+            $name    = $this->escape($t['name'] ?? '');
+            $role    = $this->escape($t['role'] ?? '');
+            $company = $this->escape($t['company'] ?? '');
+            $text    = $this->escape($t['text'] ?? '');
+            $rating  = max(0, min(5, (int) ($t['rating'] ?? 5)));
+            $stars   = $rating > 0 ? str_repeat('★', $rating) . str_repeat('☆', 5 - $rating) : '';
+            $avatar  = trim((string) ($t['avatar'] ?? $t['image'] ?? ''));
+
+            $avatarHtml = $avatar !== ''
+                ? "<img src=\"" . $this->escapeAttr($avatar) . "\" alt=\"" . $this->escapeAttr($t['name'] ?? '') . "\" loading=\"lazy\" class=\"tb-testimonial-avatar\" style=\"width:2.75rem;height:2.75rem;border-radius:999px;object-fit:cover;\" onerror=\"this.outerHTML='<div class=&quot;tb-testimonial-avatar&quot;>" . $this->escapeAttr(mb_substr((string) ($t['name'] ?? ''), 0, 1, 'UTF-8')) . "</div>';\">"
+                : "<div class=\"tb-testimonial-avatar\">" . mb_substr((string) ($t['name'] ?? ''), 0, 1, 'UTF-8') . "</div>";
+
+            $roleLine = trim(implode(' · ', array_filter([$role, $company])));
+
             $cards[] = "<div class=\"tb-testimonial-card\">
-                <div class=\"tb-testimonial-stars\">{$stars}</div>
+                " . ($stars !== '' ? "<div class=\"tb-testimonial-stars\">{$stars}</div>" : '') . "
                 <p class=\"tb-testimonial-text\">«{$text}»</p>
                 <div class=\"tb-testimonial-author\">
-                    <div class=\"tb-testimonial-avatar\">{$initials}</div>
-                    <div><div class=\"tb-testimonial-name\">{$name}</div><div class=\"tb-testimonial-role\">{$role}</div></div>
+                    {$avatarHtml}
+                    <div><div class=\"tb-testimonial-name\">{$name}</div><div class=\"tb-testimonial-role\">" . $this->escape($roleLine) . "</div></div>
                 </div>
             </div>";
         }
 
+        if (empty($cards)) {
+            return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\"><div class=\"tb-container\"><h2 class=\"tb-features-section-title\">{$title}</h2></div></div>";
+        }
+
+        $body = $mode === 'static'
+            ? "<div class=\"tb-testimonials-grid cols-{$columns}\">" . implode('', $cards) . "</div>"
+            : $this->renderCarousel(
+                $cards,
+                $id . '-track',
+                (bool) ($props['autoplay'] ?? true),
+                (int) ($props['interval'] ?? 5000),
+                'tb-testimonials-slider',
+                ['desktop' => $columns, 'tablet' => max(1, min(2, $columns)), 'mobile' => 1]
+            );
+
         return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\">
             <div class=\"tb-container\">
                 <div class=\"tb-testimonials-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
-                <div class=\"tb-testimonials-grid cols-{$columns}\">" . implode('', $cards) . "</div>
+                {$body}
             </div>
         </div>";
     }
@@ -1317,7 +2026,7 @@ class BlockRenderer
             // a bare string remains supported for already-saved legacy data.
             $features  = array_map(fn($f) => is_array($f) ? ($f['text'] ?? '') : $f, $features);
 
-            $badgeHtml = $badge ? "<span class=\"tb-plan-badge\">{$badge}</span>" : '';
+            $badgeHtml = $badge ? "<div class=\"tb-plan-badge-wrap\">" . $this->badgeHtml($badge, 'primary', 'md') . "</div>" : '';
             $featureHtml = implode('', array_map(fn($f) => '<li>' . $this->escape($f) . '</li>', $features));
 
             $cards[] = "<div class=\"tb-pricing-card{$hlClass}\">
@@ -1343,7 +2052,10 @@ class BlockRenderer
         $subtitle   = $this->escape($props['subtitle'] ?? '');
         $placeholder = $this->escapeAttr($props['placeholder'] ?? 'ایمیل یا شماره موبایل');
         $btnText    = $this->escape($props['button_text'] ?? 'عضویت');
-        $bg         = $this->escapeAttr($props['background'] ?? '#4f46e5');
+        // Commercial Productization fase-3: same class of bug as
+        // renderHeroGradient() — a hardcoded generic-indigo default
+        // independent of the Theme's own --tb-primary.
+        $bg         = $this->escapeAttr($props['background'] ?? 'var(--tb-primary, #4f46e5)');
         $tc         = $this->escapeAttr($props['text_color'] ?? '#ffffff');
 
         return "<div id=\"tb-{$id}\" class=\"tb-newsletter\" style=\"background:{$bg};color:{$tc};\">
@@ -1574,6 +2286,183 @@ class BlockRenderer
      * needed still renders a real, functional (if data-less) search field,
      * since search UI chrome is not "content" that could be fabricated.
      */
+    /**
+     * One Mega Menu dropdown item — real multi-column layout, an optional
+     * promotional banner, hover/focus reveal on desktop (pure CSS, no JS
+     * needed there) and a tap-to-toggle fallback on touch devices (the
+     * inline script below, scoped to this exact item via a unique id, safe
+     * to include once per item since each carries its own idempotency
+     * guard matching this file's renderCarousel() convention).
+     */
+    /**
+     * @return array{columns: array<int, array{title: string, links: array<int, array{url: string, label: string}>}>, banner_image?: string, banner_url?: string, banner_text?: string}|null
+     */
+    private function normalizeMegaMenuData(array $link): ?array
+    {
+        $common = [
+            'banner_image' => (string) ($link['mega_banner_image'] ?? ''),
+            'banner_url' => (string) ($link['mega_banner_url'] ?? ''),
+            'banner_text' => (string) ($link['mega_banner_text'] ?? ''),
+            'show_desktop' => array_key_exists('mega_show_desktop', $link) ? (bool) $link['mega_show_desktop'] : true,
+            'mobile_behavior' => in_array($link['mega_mobile_behavior'] ?? '', ['accordion', 'flat', 'hidden'], true) ? $link['mega_mobile_behavior'] : 'accordion',
+        ];
+
+        // Commercial Productization fase-2 (real column/group structure):
+        // `mega_columns` is a genuine nested repeater — [{title, items:[
+        // {label,url,icon,image}]}] — each column an independently authored
+        // group, never inferred by matching duplicate text. This is now the
+        // primary, preferred shape the Canvas editor writes.
+        $columnsRaw = $link['mega_columns'] ?? null;
+        if (is_string($columnsRaw) && trim($columnsRaw) !== '') {
+            $columnsRaw = json_decode($columnsRaw, true);
+        }
+        if (is_array($columnsRaw) && !empty($columnsRaw)) {
+            $columns = [];
+            foreach ($columnsRaw as $col) {
+                if (!is_array($col)) {
+                    continue;
+                }
+                $links = [];
+                foreach ((array) ($col['items'] ?? []) as $it) {
+                    if (!is_array($it)) {
+                        continue;
+                    }
+                    $itLabel = (string) ($it['label'] ?? '');
+                    if ($itLabel === '') {
+                        continue;
+                    }
+                    $links[] = [
+                        'url' => (string) ($it['url'] ?? '#'),
+                        'label' => $itLabel,
+                        'icon' => (string) ($it['icon'] ?? ''),
+                        'image' => (string) ($it['image'] ?? ''),
+                    ];
+                }
+                if (empty($links) && trim((string) ($col['title'] ?? '')) === '') {
+                    continue;
+                }
+                $columns[] = ['title' => (string) ($col['title'] ?? ''), 'links' => $links];
+            }
+            if (!empty($columns)) {
+                return $common + ['columns' => $columns];
+            }
+        }
+
+        // Older flat-repeater shape (grouped by duplicate column_title) —
+        // kept as a fallback for previously authored content only; the
+        // editor no longer writes this shape.
+        $flatItems = $link['mega_items'] ?? null;
+        if (is_string($flatItems) && trim($flatItems) !== '') {
+            $flatItems = json_decode($flatItems, true);
+        }
+        if (is_array($flatItems) && !empty($flatItems)) {
+            $columns = [];
+            foreach ($flatItems as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $colTitle = (string) ($row['column_title'] ?? '');
+                $linkLabel = (string) ($row['link_label'] ?? '');
+                if ($linkLabel === '') {
+                    continue;
+                }
+                if (!isset($columns[$colTitle])) {
+                    $columns[$colTitle] = ['title' => $colTitle, 'links' => []];
+                }
+                $columns[$colTitle]['links'][] = ['url' => (string) ($row['link_url'] ?? '#'), 'label' => $linkLabel];
+            }
+            if (!empty($columns)) {
+                return $common + ['columns' => array_values($columns)];
+            }
+        }
+
+        // Legacy raw-JSON shape (programmatic/seeder authoring).
+        $mega = $link['mega'] ?? null;
+        if (is_string($mega) && trim($mega) !== '') {
+            $mega = json_decode($mega, true);
+        }
+        if (is_array($mega) && !empty($mega['columns'])) {
+            return $mega + $common;
+        }
+
+        return null;
+    }
+
+    private function renderMegaMenuItem(string $parentId, string $url, string $label, array $mega): string
+    {
+        static $counter = 0;
+        $itemId = "tb-mega-{$parentId}-" . (++$counter);
+
+        $columnsHtml = '';
+        foreach ((array) ($mega['columns'] ?? []) as $col) {
+            $colTitle = $this->escape(is_array($col) ? ($col['title'] ?? '') : '');
+            $colLinks = is_array($col) ? ($col['links'] ?? []) : [];
+            $linksHtml = '';
+            foreach ((array) $colLinks as $l) {
+                $lUrl = $this->escapeUrl(is_array($l) ? ($l['url'] ?? '') : '', '#');
+                $lLabel = $this->escape(is_array($l) ? ($l['label'] ?? '') : (string) $l);
+                if ($lLabel === '') {
+                    continue;
+                }
+                $lIcon = $this->escape(is_array($l) ? ($l['icon'] ?? '') : '');
+                $lImage = trim((string) (is_array($l) ? ($l['image'] ?? '') : ''));
+                $mediaHtml = '';
+                if ($lImage !== '') {
+                    $mediaHtml = $this->imageWithFallback($lImage, $lLabel, 'width:1.75rem;height:1.75rem;border-radius:0.375rem;flex-shrink:0;');
+                } elseif ($lIcon !== '') {
+                    $mediaHtml = "<span class=\"tb-mega-menu-link-icon\">{$lIcon}</span>";
+                }
+                $linksHtml .= "<a href=\"{$lUrl}\" class=\"tb-mega-menu-link\">{$mediaHtml}<span>{$lLabel}</span></a>";
+            }
+            if ($colTitle === '' && $linksHtml === '') {
+                continue;
+            }
+            $columnsHtml .= "<div class=\"tb-mega-menu-col\">"
+                . ($colTitle !== '' ? "<div class=\"tb-mega-menu-col-title\">{$colTitle}</div>" : '')
+                . "<div class=\"tb-mega-menu-col-links\">{$linksHtml}</div>"
+                . "</div>";
+        }
+
+        $bannerImage = trim((string) ($mega['banner_image'] ?? ''));
+        $bannerHtml = '';
+        if ($bannerImage !== '') {
+            $bannerUrl = $this->escapeUrl($mega['banner_url'] ?? '', '#');
+            $bannerText = $this->escape($mega['banner_text'] ?? '');
+            $bannerImgHtml = $this->imageWithFallback($bannerImage, (string) ($mega['banner_text'] ?? $label), 'width:100%;height:100%;');
+            $bannerHtml = "<a href=\"{$bannerUrl}\" class=\"tb-mega-menu-banner\">"
+                . "<div class=\"tb-mega-menu-banner-img\">{$bannerImgHtml}</div>"
+                . ($bannerText !== '' ? "<div class=\"tb-mega-menu-banner-text\">{$bannerText}</div>" : '')
+                . "</a>";
+        }
+
+        $showDesktop = ($mega['show_desktop'] ?? true) !== false;
+        $mobileBehavior = in_array($mega['mobile_behavior'] ?? 'accordion', ['accordion', 'flat', 'hidden'], true) ? $mega['mobile_behavior'] : 'accordion';
+        $itemClasses = 'tb-mega-menu-item tb-mega-mobile-' . $mobileBehavior . ($showDesktop ? '' : ' tb-mega-desktop-hidden');
+
+        return "<div class=\"{$itemClasses}\" id=\"{$itemId}\">
+            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\">{$label}</a>
+            <div class=\"tb-mega-menu-panel\" role=\"menu\">
+                <div class=\"tb-mega-menu-cols\">{$columnsHtml}</div>
+                {$bannerHtml}
+            </div>
+            <script>(function(){
+                var root = document.getElementById('{$itemId}');
+                if (!root || root.dataset.tbMegaInit) return;
+                root.dataset.tbMegaInit = '1';
+                var trigger = root.querySelector('.tb-mega-menu-trigger');
+                trigger.addEventListener('click', function(e){
+                    if (window.matchMedia('(hover: hover)').matches) return;
+                    e.preventDefault();
+                    var open = root.classList.toggle('tb-mega-open');
+                    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+                document.addEventListener('click', function(e){
+                    if (!root.contains(e.target)) { root.classList.remove('tb-mega-open'); trigger.setAttribute('aria-expanded', 'false'); }
+                });
+            })();</script>
+        </div>";
+    }
+
     protected function renderNavHeader(array $props, string $inner, string $id): string
     {
         $logoText = $this->escape($props['logo_text'] ?? '');
@@ -1611,7 +2500,29 @@ class BlockRenderer
                 if ($label === '') {
                     continue;
                 }
-                $linkItems .= "<a href=\"{$url}\" class=\"tb-nav-header-link\">{$label}</a>";
+                // Universal Multipurpose Slider Overhaul (Commercial
+                // Productization): Mega Menu — a genuinely new,
+                // additive-only capability (a plain {url,label} item, the
+                // only shape every existing theme/instance has ever
+                // authored, renders identically to before). Two authoring
+                // shapes are accepted, normalized to the same internal
+                // {columns:[{title,links}], banner_*} structure:
+                //  - flat `mega_items` (a real visual, non-JSON editor —
+                //    the Canvas repeater UI supports exactly one level of
+                //    nested repeater, so each row is {column_title,
+                //    link_label, link_url} and consecutive rows sharing
+                //    the same column_title are grouped into one column at
+                //    render time) plus sibling `mega_banner_image/_url/_text`
+                //    fields on the same link item — this is what the
+                //    editor (App\Services\ThemeCanvas\BlockRegistry) authors.
+                //  - legacy raw-JSON `mega: {columns:[...], banner_*}` —
+                //    still accepted for programmatic/seeder authoring.
+                $mega = $this->normalizeMegaMenuData(is_array($link) ? $link : []);
+                if ($mega !== null) {
+                    $linkItems .= $this->renderMegaMenuItem($id, $url, $label, $mega);
+                } else {
+                    $linkItems .= "<a href=\"{$url}\" class=\"tb-nav-header-link\">{$label}</a>";
+                }
             }
         }
 
@@ -1628,6 +2539,7 @@ class BlockRenderer
         $cartHtml    = $showCart ? "<a href=\"/cart\" class=\"tb-nav-header-icon-link\" aria-label=\"سبد خرید\">🛒</a>" : '';
         $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">👤</a>" : '';
         $ctaHtml     = $ctaText ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\">{$ctaText}</a>" : '';
+        $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
         // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
         // golden-journey browser test) and fixed: nav_header's schema only
         // ever supported a TEXT logo — a customer's real, canonical
@@ -1674,9 +2586,53 @@ class BlockRenderer
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
                 <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\">{$linkItems}</nav>
-                <div class=\"tb-nav-header-actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$ctaHtml}</div>
+                <div class=\"tb-nav-header-actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$ctaHtml}</div>
             </div>
         </div>";
+    }
+
+    /**
+     * Commercial Productization fase-4: a real, usable dark-mode toggle —
+     * not just backend token capability. Wires up to the `window.__tbTheme`
+     * API the host page's own head-bootstrap script defines (see
+     * layouts/canvas-theme.blade.php on customer-site and canvas-preview.
+     * blade.php / canvas-live-preview.blade.php on saas-platform) — that
+     * script runs synchronously before first paint to prevent a flash of
+     * the wrong theme, and is the single source of truth for the current
+     * light/dark/system preference so every toggle instance on the page
+     * (this block can appear more than once, e.g. header + a duplicate in
+     * a footer) stays in sync via the `tb-theme-change` event.
+     */
+    private function renderDarkModeToggle(string $parentId): string
+    {
+        $toggleId = "tb-{$parentId}-theme-toggle";
+
+        return "<button type=\"button\" id=\"{$toggleId}\" class=\"tb-theme-toggle\" aria-label=\"تغییر حالت رنگی\">
+            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">🌓</span>
+        </button>
+        <script>(function(){
+            var btn = document.getElementById('{$toggleId}');
+            if (!btn || btn.dataset.tbInit) return;
+            btn.dataset.tbInit = '1';
+            var ICONS = {light:'☀️', dark:'🌙', system:'💻'};
+            var LABELS = {
+                light: 'حالت رنگی: روشن — برای تغییر به تاریک کلیک کنید',
+                dark: 'حالت رنگی: تاریک — برای تغییر به خودکار (سیستم) کلیک کنید',
+                system: 'حالت رنگی: هماهنگ با سیستم — برای تغییر به روشن کلیک کنید'
+            };
+            function render() {
+                var p = (window.__tbTheme && window.__tbTheme.get) ? window.__tbTheme.get() : 'system';
+                var icon = btn.querySelector('.tb-theme-toggle-icon');
+                if (icon) icon.textContent = ICONS[p] || ICONS.system;
+                btn.setAttribute('aria-label', LABELS[p] || LABELS.system);
+            }
+            btn.addEventListener('click', function () {
+                if (window.__tbTheme && window.__tbTheme.cycle) window.__tbTheme.cycle();
+                render();
+            });
+            document.addEventListener('tb-theme-change', render);
+            render();
+        })();</script>";
     }
 
     /**

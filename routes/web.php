@@ -114,6 +114,19 @@ Route::get('storage/{path}', function (string $path) {
         'gif' => 'image/gif',
         'webp' => 'image/webp',
         'ico' => 'image/x-icon',
+        // Commercial Productization fase-4 — a real bug found via an
+        // actual local end-to-end theme install (not a fake/mocked HTTP
+        // test): this map predates the theme's real local demo video
+        // (hero-intro.webm) and had no video/audio extensions at all, so
+        // every such file fell through to 'application/octet-stream'.
+        // customer-site's ThemeMediaLocalizationService correctly rejects
+        // that as an untrusted content type — the real fix belongs here,
+        // at the actual source of the wrong Content-Type, not by loosening
+        // that validation on the receiving end.
+        'webm' => 'video/webm',
+        'mp4' => 'video/mp4',
+        'ogg' => 'video/ogg',
+        'mov' => 'video/quicktime',
         default => 'application/octet-stream',
     };
     return response()->file($fullPath, ['Content-Type' => $mime]);

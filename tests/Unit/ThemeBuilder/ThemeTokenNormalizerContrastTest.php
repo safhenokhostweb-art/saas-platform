@@ -141,6 +141,71 @@ class ThemeTokenNormalizerContrastTest extends TestCase
         }
     }
 
+    // ── success/warning/error status tokens (fase-2) ────────────────────────
+
+    public function test_success_warning_error_tokens_have_real_sensible_defaults_and_derived_variants(): void
+    {
+        $vars = $this->n()->normalize([]);
+        $this->assertSame('#16a34a', $vars['--tb-success']);
+        $this->assertSame('#d97706', $vars['--tb-warning']);
+        $this->assertSame('#dc2626', $vars['--tb-error']);
+        foreach (['success', 'warning', 'error'] as $key) {
+            $this->assertArrayHasKey("--tb-on-{$key}", $vars);
+            $this->assertArrayHasKey("--tb-{$key}-text", $vars);
+        }
+    }
+
+    public function test_a_theme_authored_status_color_is_never_silently_overwritten(): void
+    {
+        $vars = $this->n()->normalize(['colors' => ['success' => '#22c55e', 'warning' => '#f59e0b', 'error' => '#ef4444']]);
+        $this->assertSame('#22c55e', $vars['--tb-success']);
+        $this->assertSame('#f59e0b', $vars['--tb-warning']);
+        $this->assertSame('#ef4444', $vars['--tb-error']);
+    }
+
+    // ── dark mode: full semantic coverage, recomputed for the dark surface ──
+
+    public function test_dark_mode_recomputes_accessible_variants_against_the_dark_surface_not_the_light_one(): void
+    {
+        $n = $this->n();
+        $css = $n->renderCssBlock([
+            'primary_color' => '#fde68a', // a light pastel — accessible-on-light differs from accessible-on-dark
+            'dark_mode' => ['enabled' => true, 'surface' => '#1f2937'],
+        ]);
+        $this->assertMatchesRegularExpression('/\[data-theme="dark"\] \{[^}]*--tb-primary-text:/s', $css);
+        // The dark block's primary-text must actually pass AA against the
+        // dark surface it was derived for.
+        preg_match('/\[data-theme="dark"\][^}]*--tb-primary-text:\s*([^;]+);/s', $css, $m);
+        $derived = trim($m[1]);
+        $ratio = $this->contrastRatioOf($this->hexToRgb($derived), $this->hexToRgb('#1f2937'));
+        $this->assertGreaterThanOrEqual(4.5, $ratio);
+    }
+
+    public function test_border_token_has_a_real_default_and_a_real_dark_mode_counterpart(): void
+    {
+        $vars = $this->n()->normalize([]);
+        $this->assertSame('#e5e7eb', $vars['--tb-border']);
+
+        $css = $this->n()->renderCssBlock(['dark_mode' => ['enabled' => true]]);
+        preg_match('/\[data-theme="dark"\] \{(.*?)\n\}/s', $css, $m);
+        $this->assertStringContainsString('--tb-border:', $m[1] ?? '');
+        $this->assertStringNotContainsString('--tb-border: #e5e7eb;', $m[1] ?? '', 'dark mode must use its own real border color, not the light default');
+    }
+
+    public function test_dark_mode_block_includes_secondary_accent_and_status_color_overrides(): void
+    {
+        $css = $this->n()->renderCssBlock([
+            'dark_mode' => ['enabled' => true, 'secondary' => '#a5b4fc', 'accent' => '#f0abfc', 'success' => '#4ade80'],
+        ]);
+        preg_match('/\[data-theme="dark"\] \{(.*?)\n\}/s', $css, $m);
+        $darkBlock = $m[1] ?? '';
+        $this->assertStringContainsString('--tb-secondary: #a5b4fc;', $darkBlock);
+        $this->assertStringContainsString('--tb-accent: #f0abfc;', $darkBlock);
+        $this->assertStringContainsString('--tb-success: #4ade80;', $darkBlock);
+        $this->assertStringContainsString('--tb-text-muted:', $darkBlock);
+        $this->assertStringContainsString('--tb-surface-text:', $darkBlock);
+    }
+
     // ── helpers (mirror the private math for direct, isolated assertions) ──
 
     private function hexToRgb(string $hex): array
