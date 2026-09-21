@@ -1509,8 +1509,16 @@ class BlockRenderer
 
         $badgeHtml = $badge ? "<span class=\"tb-product-badge-wrap\" style=\"position:absolute;top:.5rem;inset-inline-start:.5rem;z-index:1;\">" . $this->badgeHtml($badge, 'error', 'sm') . "</span>" : '';
 
+        // Real, proven contrast failure (khab-shimana-tablet certification,
+        // 2026-09-21): a real browser-measured WCAG check found #9ca3af
+        // (gray-400) on this card's near-white background (#f9fafb) at
+        // 2.43:1 — well under the 4.5:1 AA minimum for normal text — on
+        // every discounted product, in both the admin demo-fixture preview
+        // above and every real customer-site product card (this method is
+        // shared by both). #6b7280 (gray-500) keeps the same muted
+        // "de-emphasized old price" visual role at a real ~4.6:1.
         $discountHtml = ($originalPrice !== null && $price !== null && $originalPrice > $price)
-            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:#9ca3af;font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
+            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:#6b7280;font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
             : '';
 
         $stockHtml = $stockLabel ? "<div class=\"tb-product-stock\" style=\"font-size:.8rem;color:#6b7280;margin-top:.15rem;\">" . $this->escape($stockLabel) . "</div>" : '';
