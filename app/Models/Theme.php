@@ -176,6 +176,11 @@ class Theme extends Model
         return $this->belongsTo(ThemeRelease::class, 'current_release_id');
     }
 
+    public function assignments()
+    {
+        return $this->hasMany(ThemeAssignment::class);
+    }
+
     public function scopePublished($query)
     {
         return $query->where('status', self::STATUS_PUBLISHED);

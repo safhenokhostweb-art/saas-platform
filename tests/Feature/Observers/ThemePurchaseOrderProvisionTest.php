@@ -69,7 +69,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
         return $theme->fresh();
     }
 
-    public function test_successful_purchase_grants_entitlement_and_installs_theme_through_canonical_authority(): void
+    public function test_successful_purchase_grants_entitlement_without_installing_before_customer_confirmation(): void
     {
         config(['services.customer_provision_secret' => 'test-secret-value']);
 
@@ -100,18 +100,10 @@ class ThemePurchaseOrderProvisionTest extends TestCase
             'theme_id' => $theme->id,
         ]);
 
-        Http::assertSentCount(1);
-        Http::assertSent(function ($request) use ($theme) {
-            $body = $request->data();
-
-            return $request->url() === 'https://purchase-fulfillment-test.local/builder/api/theme/install'
-                && $request->hasHeader('X-Provision-Secret', 'test-secret-value')
-                && $body['theme_id'] === $theme->slug
-                && count($body['pages']) === 21;
-        });
+        Http::assertNothingSent();
     }
 
-    public function test_reserved_slug_conflict_on_purchase_fulfillment_is_handled_by_the_canonical_authority_not_a_private_check(): void
+    public function test_payment_never_pushes_an_install_to_the_customer_site(): void
     {
         config(['services.customer_provision_secret' => 'test-secret-value']);
 
@@ -140,7 +132,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
         // ThemeInstallGateway gives every other caller, not a bespoke one.
         $order->update(['status' => ThemePurchaseOrder::STATUS_PAID, 'paid_at' => now()]);
 
-        Http::assertSentCount(1);
+        Http::assertNothingSent();
         // Entitlement remains granted even though provisioning hit a
         // collision — payment/licensing is not rolled back by a page-layer
         // conflict, matching the "payment success -> entitlement -> install"
@@ -151,7 +143,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
         ]);
     }
 
-    public function test_duplicate_fulfillment_of_the_same_order_is_idempotent_and_does_not_double_install(): void
+    public function test_duplicate_fulfillment_is_idempotent_and_never_auto_installs(): void
     {
         config(['services.customer_provision_secret' => 'test-secret-value']);
 
@@ -173,7 +165,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
         ThemeLicense::grant($site->id, $theme->id, $order->id);
         $order->update(['status' => ThemePurchaseOrder::STATUS_PAID, 'paid_at' => now()]);
 
-        Http::assertSentCount(1);
+        Http::assertNothingSent();
 
         // A second save of an ALREADY-paid order (e.g. a retried webhook
         // hitting the same status transition) must not re-trigger
@@ -182,7 +174,7 @@ class ThemePurchaseOrderProvisionTest extends TestCase
         // ThemeLicense row, no second HTTP install call.
         $order->update(['gateway_ref' => 'retry-attempt-ref']);
 
-        Http::assertSentCount(1);
+        Http::assertNothingSent();
         $this->assertSame(
             1,
             \App\Models\ThemeLicense::where('site_id', $site->id)->where('theme_id', $theme->id)->count(),

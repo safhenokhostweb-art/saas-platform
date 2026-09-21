@@ -8,6 +8,8 @@ use App\Models\ThemeLicense;
 use App\Models\ThemePurchaseOrder;
 use App\Models\ThemeRelease;
 use App\Services\Payment\PaymentGatewayResolver;
+use App\Services\PublishedThemeAssignmentService;
+use App\Models\ThemeAssignment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,7 +31,8 @@ use Illuminate\Http\Request;
 class ThemeMarketplaceApiController extends Controller
 {
     public function __construct(
-        protected PaymentGatewayResolver $gatewayResolver
+        protected PaymentGatewayResolver $gatewayResolver,
+        protected PublishedThemeAssignmentService $assignments,
     ) {}
 
     // GET /api/theme-marketplace
@@ -133,11 +136,17 @@ class ThemeMarketplaceApiController extends Controller
         ]);
 
         if ($theme->marketplace_price === 0) {
-            $lic = ThemeLicense::grant($site->id, $theme->id);
+            $assignment = $this->assignments->assign(
+                $site,
+                $theme,
+                ThemeAssignment::SOURCE_MARKETPLACE,
+                selectForSite: false,
+            );
             return response()->json([
                 'success'     => true,
                 'free'        => true,
-                'license_key' => $lic->license_key,
+                'license_key' => $assignment->themeLicense->license_key,
+                'release_id'  => $assignment->release->id,
             ]);
         }
 

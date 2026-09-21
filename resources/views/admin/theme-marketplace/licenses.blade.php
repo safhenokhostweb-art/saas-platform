@@ -35,6 +35,8 @@
             <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">قالب</th>
             <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">سایت</th>
             <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">کلید لایسنس</th>
+            <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">Release / Assignment</th>
+            <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">PlatformLicense</th>
             <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">تاریخ خرید</th>
             <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500">عملیات</th>
           </tr>
@@ -45,6 +47,17 @@
               <td class="px-6 py-3 font-medium text-gray-800">{{ $lic->theme?->name ?? '—' }}</td>
               <td class="px-6 py-3 text-gray-600">{{ $lic->site?->title ?? '—' }} <span class="text-xs text-gray-400">#{{ $lic->site_id }}</span></td>
               <td class="px-6 py-3 font-mono text-xs text-gray-500 select-all">{{ $lic->license_key }}</td>
+              <td class="px-6 py-3 text-xs text-gray-600">
+                <div>{{ $lic->licensedRelease?->version ?? '—' }}</div>
+                <div class="text-gray-400">{{ $lic->assignment?->status ?? 'بدون Assignment' }}</div>
+              </td>
+              <td class="px-6 py-3 text-xs">
+                @if($lic->assignment?->platformLicense)
+                  <span class="text-green-700">فعال #{{ $lic->assignment->platform_license_id }}</span>
+                @else
+                  <span class="text-red-600">ناموجود</span>
+                @endif
+              </td>
               <td class="px-6 py-3 text-gray-500 text-xs">{{ \App\Helpers\Jalali::formatFa($lic->purchased_at, 'Y/m/d') }}</td>
               <td class="px-6 py-3">
                 <form method="POST" action="{{ route('admin.theme-marketplace.revoke-license', $lic) }}"
@@ -56,7 +69,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">لایسنسی ثبت نشده</td></tr>
+            <tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">لایسنسی ثبت نشده</td></tr>
           @endforelse
         </tbody>
       </table>

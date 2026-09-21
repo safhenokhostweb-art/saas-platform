@@ -25,6 +25,7 @@ class ThemeLicense extends Model
         'is_permanent',
         'purchased_at',
         'installed_release_id',
+        'licensed_release_id',
     ];
 
     protected $casts = [
@@ -43,7 +44,7 @@ class ThemeLicense extends Model
     {
         $theme = Theme::find($themeId);
 
-        return self::firstOrCreate(
+        $license = self::firstOrCreate(
             ['site_id' => $siteId, 'theme_id' => $themeId],
             [
                 'purchase_order_id'    => $orderId,
@@ -51,8 +52,19 @@ class ThemeLicense extends Model
                 'is_permanent'         => true,
                 'purchased_at'         => now(),
                 'installed_release_id' => $theme?->current_release_id,
+                'licensed_release_id'  => $theme?->current_release_id,
             ]
         );
+
+        // Backward-compatible low-level callers still receive idempotent
+        // release scoping. The canonical assignment workflow performs the
+        // eligibility and PlatformLicense checks before reaching this row.
+        if ($theme?->current_release_id && (int) $license->licensed_release_id !== (int) $theme->current_release_id) {
+            $license->licensed_release_id = $theme->current_release_id;
+            $license->save();
+        }
+
+        return $license;
     }
 
     /**
@@ -78,6 +90,23 @@ class ThemeLicense extends Model
     public function installedRelease()
     {
         return $this->belongsTo(ThemeRelease::class, 'installed_release_id');
+    }
+
+    public function licensedRelease()
+    {
+        return $this->belongsTo(ThemeRelease::class, 'licensed_release_id');
+    }
+
+    public function assignment()
+    {
+        return $this->hasOne(ThemeAssignment::class, 'theme_license_id')
+            ->where('status', ThemeAssignment::STATUS_ASSIGNED)
+            ->latestOfMany();
+    }
+
+    public function assignments()
+    {
+        return $this->hasMany(ThemeAssignment::class, 'theme_license_id');
     }
 
     public function theme()

@@ -7,6 +7,9 @@ use App\Models\ThemeMarketplace;
 use App\Models\ThemePurchaseOrder;
 use App\Services\Payment\PaymentGatewayFactory;
 use App\Services\Payment\PaymentGatewayResolver;
+use App\Services\PublishedThemeAssignmentService;
+use App\Models\Site;
+use App\Models\ThemeAssignment;
 use Illuminate\Http\Request;
 
 /**
@@ -16,7 +19,8 @@ class ThemeMarketplacePaymentController extends Controller
 {
     public function __construct(
         protected PaymentGatewayResolver $gatewayResolver,
-        protected PaymentGatewayFactory  $gatewayFactory
+        protected PaymentGatewayFactory  $gatewayFactory,
+        protected PublishedThemeAssignmentService $assignments,
     ) {}
 
     public function callback(Request $request, int $order): \Illuminate\Http\RedirectResponse
@@ -92,7 +96,13 @@ class ThemeMarketplacePaymentController extends Controller
         }
 
         // Grant license
-        ThemeLicense::grant($purchaseOrder->site_id, $purchaseOrder->theme_id, $purchaseOrder->id);
+        $this->assignments->assign(
+            Site::findOrFail($purchaseOrder->site_id),
+            $theme,
+            ThemeAssignment::SOURCE_MARKETPLACE,
+            $purchaseOrder->id,
+            selectForSite: false,
+        );
 
         // Increment sales count
         ThemeMarketplace::where('theme_id', $purchaseOrder->theme_id)

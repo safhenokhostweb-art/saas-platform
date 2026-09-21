@@ -6,16 +6,21 @@ use App\Models\Theme;
 use App\Models\ThemeLicense;
 use App\Models\ThemeMarketplace;
 use App\Models\ThemePurchaseOrder;
+use App\Models\Site;
+use App\Models\ThemeAssignment;
+use App\Services\PublishedThemeAssignmentService;
 use App\Services\ThemeBuilder\ThemeDemoDataService;
 use App\Services\ThemeBuilder\ThemeMarketplaceQualityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use DomainException;
 
 class ThemeMarketplaceAdminController extends Controller
 {
     public function __construct(
         private ThemeMarketplaceQualityService $quality,
         private ThemeDemoDataService $demoData,
+        private PublishedThemeAssignmentService $assignments,
     ) {}
 
     public function index(Request $request)
@@ -203,7 +208,7 @@ class ThemeMarketplaceAdminController extends Controller
 
     public function licenses()
     {
-        $licenses = ThemeLicense::with(['theme', 'site'])
+        $licenses = ThemeLicense::with(['theme', 'site', 'licensedRelease', 'assignment.platformLicense'])
             ->orderByDesc('purchased_at')
             ->paginate(30);
 
@@ -218,7 +223,7 @@ class ThemeMarketplaceAdminController extends Controller
 
     public function revokeLicense(ThemeLicense $license)
     {
-        $license->delete();
+        $this->assignments->revoke($license);
 
         return back()->with('success', 'لایسنس لغو شد.');
     }
@@ -242,8 +247,23 @@ class ThemeMarketplaceAdminController extends Controller
             return back()->with('error', 'این قالب در حال حاضر واجد شرایط تجاری نیست (بدون نسخه انتشار معتبر یا گزارش کیفیت موفق) و نمی‌توان برای آن لایسنس صادر کرد.');
         }
 
-        ThemeLicense::grant((int) $data['site_id'], (int) $data['theme_id']);
+        try {
+            $result = $this->assignments->assign(
+                Site::findOrFail((int) $data['site_id']),
+                $theme,
+                ThemeAssignment::SOURCE_ADMIN,
+                assignedBy: $request->user()?->id,
+            );
+        } catch (DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
-        return back()->with('success', 'لایسنس دستی اعطا شد.');
+        return back()->with('success', sprintf(
+            'اختصاص انجام شد: Assignment #%d، PlatformLicense #%d، ThemeLicense #%d، Release #%d.',
+            $result->assignment->id,
+            $result->platformLicense->id,
+            $result->themeLicense->id,
+            $result->release->id,
+        ));
     }
 }

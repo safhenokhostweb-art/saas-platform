@@ -102,30 +102,35 @@ return [
             'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
             'connection' => 'cache_users',
             'lock_connection' => 'default',
+            'path' => storage_path('framework/cache/data/users'),
         ],
 
         'customers' => [
             'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
             'connection' => 'cache_customers',
             'lock_connection' => 'default',
+            'path' => storage_path('framework/cache/data/customers'),
         ],
 
         'themes' => [
             'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
             'connection' => 'cache_themes',
             'lock_connection' => 'default',
+            'path' => storage_path('framework/cache/data/themes'),
         ],
 
         'tickets' => [
             'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
             'connection' => 'cache_tickets',
             'lock_connection' => 'default',
+            'path' => storage_path('framework/cache/data/tickets'),
         ],
 
         'modules' => [
             'driver' => env('CACHE_STORE', 'redis') === 'redis' ? 'redis' : env('CACHE_STORE', 'array'),
             'connection' => 'cache_modules',
             'lock_connection' => 'default',
+            'path' => storage_path('framework/cache/data/modules'),
         ],
 
         'rate_limit' => [

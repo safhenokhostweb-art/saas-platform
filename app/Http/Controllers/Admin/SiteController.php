@@ -19,6 +19,10 @@ use App\Helpers\PlatformSettings;
 use App\Models\PlatformSiteNotification;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\ModuleAssignmentService;
+use App\Services\PublishedThemeAssignmentService;
+use App\Models\Theme;
+use App\Models\ThemeAssignment;
+use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
@@ -27,6 +31,7 @@ class SiteController extends Controller
     public function __construct(
         private readonly CredentialVault $credentialVault,
         private readonly ModuleAssignmentService $moduleAssignmentService,
+        private readonly PublishedThemeAssignmentService $themeAssignments,
     ) {}
 
     /**
@@ -199,7 +204,8 @@ class SiteController extends Controller
         $customerMenuKeys = Schema::hasColumn('sites', 'customer_menu_keys') ? ($site->customer_menu_keys ?? array_keys(CustomerMenu::MENU_KEYS)) : array_keys(CustomerMenu::MENU_KEYS);
         $siteDesign = Schema::hasTable('site_settings') ? \App\Models\SiteSetting::allForSite($site->id) : [];
         $themes = Schema::hasTable('themes') && Schema::hasColumn('sites', 'theme_id')
-            ? \App\Models\Theme::published()->orderBy('name')->get(['id', 'name', 'slug'])
+            ? Theme::published()->with('currentRelease.qualityReports')->orderBy('name')->get()
+                ->filter(fn (Theme $theme) => $theme->isCommerciallyEligible())
             : collect();
         return view('admin.sites.edit', compact('site', 'customers', 'modules', 'paymentGateways', 'customerMenuKeys', 'siteDesign', 'themes'));
     }
@@ -247,9 +253,10 @@ class SiteController extends Controller
         if (Schema::hasColumn('sites', 'payment_gateway_id')) {
             $data['payment_gateway_id'] = $request->filled('payment_gateway_id') ? $request->payment_gateway_id : null;
         }
-        if (Schema::hasColumn('sites', 'theme_id')) {
-            $data['theme_id'] = $request->filled('theme_id') ? $request->theme_id : null;
-        }
+        $requestedThemeId = Schema::hasColumn('sites', 'theme_id') && $request->filled('theme_id')
+            ? (int) $request->theme_id
+            : null;
+        $previousThemeId = $site->theme_id ? (int) $site->theme_id : null;
         if (Schema::hasColumn('sites', 'customer_menu_keys')) {
             $data['customer_menu_keys'] = $request->input('customer_menu_keys', []);
         }
@@ -261,7 +268,24 @@ class SiteController extends Controller
             $data['db_password_encrypted'] = $this->credentialVault->encrypt($dbPasswordInput);
         }
 
-        $site->update($data);
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($site, $data, $requestedThemeId, $previousThemeId, $request) {
+                $site->update($data);
+
+                if ($requestedThemeId !== null) {
+                    $this->themeAssignments->assign(
+                        $site,
+                        Theme::findOrFail($requestedThemeId),
+                        ThemeAssignment::SOURCE_ADMIN,
+                        assignedBy: $request->user()?->id,
+                    );
+                } elseif ($previousThemeId !== null && ($previous = Theme::find($previousThemeId))) {
+                    $this->themeAssignments->unassign($site, $previous);
+                }
+            });
+        } catch (DomainException $exception) {
+            return back()->withInput()->withErrors(['theme_id' => $exception->getMessage()]);
+        }
 
         // sync expiry notifications after renewal
         $this->syncExpiryNotifications($site);

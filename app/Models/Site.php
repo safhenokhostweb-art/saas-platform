@@ -87,6 +87,11 @@ class Site extends Model implements SiteModelInterface
         return $this->belongsTo(\App\Models\Customer::class);
     }
 
+    public function themeAssignments()
+    {
+        return $this->hasMany(\App\Models\ThemeAssignment::class);
+    }
+
     /**
      * Phase 13-O12a — central read path for the site's remote database
      * password, encrypted via CredentialVault in db_password_encrypted.
