@@ -94,6 +94,11 @@ class BlockRegistry
     public const CATEGORY_DYNAMIC = 'dynamic';
     public const CATEGORY_ECOMMERCE = 'ecommerce';
     public const CATEGORY_MARKETING = 'marketing';
+    /** Phase 3C/M3 — named constant for the existing 'forms' category slug
+     *  (already whitelisted in WidgetDefinition::CATEGORIES and used by the
+     *  interactive_form host widget); previously only referenced as a bare
+     *  string. */
+    public const CATEGORY_FORMS = 'forms';
     public const CATEGORY_UTILITY = 'utility';
     public const CATEGORY_MODULE = 'module';
 
@@ -334,6 +339,95 @@ class BlockRegistry
                 ],
             ],
 
+            // ─── Phase 3B — professional Persian hero family ────────────
+            // Additive, non-duplicating (rationale per the spacer/divider
+            // pattern): the flat `hero` above is preserved VERBATIM for all
+            // existing authored content and the release ledger; this
+            // container family provides the granular, fully
+            // Inspector-editable composition the flat type cannot, without
+            // replacing it. Leaves stay composed from existing primitives
+            // (badge/heading/text/button) — no second title/button type, no
+            // parallel vocabulary. All consume the 2B Inspector contract
+            // and 2C structural pipeline unchanged.
+            'hero_section' => [
+                'name' => 'بخش قهرمان حرفه‌ای (Hero Section)',
+                'category' => self::CATEGORY_LAYOUT,
+                'icon' => 'hero',
+                'is_container' => true,
+                'schema' => [
+                    'background_type'  => ['type' => 'select', 'label' => 'نوع پس‌زمینه',
+                        'options' => ['color' => 'رنگ ساده', 'gradient' => 'گرادیان', 'image' => 'تصویر'],
+                        'default' => 'gradient'],
+                    'bg_color'         => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#4f46e5'],
+                    'gradient_from'    => ['type' => 'color', 'label' => 'گرادیان — ابتدا', 'default' => '#4f46e5'],
+                    'gradient_to'      => ['type' => 'color', 'label' => 'گرادیان — انتها', 'default' => '#7c3aed'],
+                    'bg_image'         => ['type' => 'image', 'label' => 'تصویر پس‌زمینه', 'default' => ''],
+                    'overlay_opacity'  => ['type' => 'number', 'label' => 'شفافیت پوشش تصویر (٪)', 'min' => 0, 'max' => 90, 'default' => 40],
+                    'min_height'       => ['type' => 'number', 'label' => 'حداقل ارتفاع (px)', 'min' => 280, 'max' => 1200, 'default' => 520],
+                    'padding_v'        => ['type' => 'number', 'label' => 'پدینگ عمودی (px)', 'min' => 0, 'max' => 240, 'default' => 96],
+                    // Inspector UI renders select/number/string/color/boolean/link
+                    // controls (canvas.blade.php loop); alignment/range have no
+                    // control template yet. Logical start/center/end values are
+                    // kept — the SELECT offers only logical choices, and
+                    // direction resolution stays in CSS (never stored physical).
+                    'text_align'       => ['type' => 'select', 'label' => 'چینش متن',
+                        'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها'], 'default' => 'start'],
+                    'v_align'          => ['type' => 'select', 'label' => 'تراز عمودی محتوا',
+                        'options' => ['start' => 'بالا', 'center' => 'وسط', 'end' => 'پایین'], 'default' => 'center'],
+                    'content_width'    => ['type' => 'select', 'label' => 'عرض محتوا',
+                        'options' => ['narrow' => 'باریک', 'normal' => 'معمولی', 'wide' => 'پهن', 'full' => 'تمام‌عرض'], 'default' => 'normal'],
+                ],
+                'defaultProps' => [
+                    'background_type' => 'gradient', 'bg_color' => '#4f46e5',
+                    'gradient_from' => '#4f46e5', 'gradient_to' => '#7c3aed',
+                    'bg_image' => '', 'overlay_opacity' => 40, 'min_height' => 520,
+                    'padding_v' => 96, 'text_align' => 'start', 'v_align' => 'center', 'content_width' => 'normal',
+                ],
+            ],
+            'hero_container' => [
+                'name' => 'قهرمان — کانتینر',
+                'category' => self::CATEGORY_LAYOUT,
+                'icon' => 'container',
+                'is_container' => true,
+                'schema' => [
+                    'max_width' => ['type' => 'number', 'label' => 'حداکثر عرض (px، ۰ = تمام‌عرض)', 'min' => 0, 'max' => 1600, 'default' => 1200],
+                    'gap'       => ['type' => 'number', 'label' => 'فاصله ستون‌ها (px)', 'min' => 0, 'max' => 96, 'default' => 32],
+                ],
+                'defaultProps' => ['max_width' => 1200, 'gap' => 32],
+            ],
+            'hero_content_wrapper' => [
+                'name' => 'قهرمان — محتوا',
+                'category' => self::CATEGORY_LAYOUT,
+                'icon' => 'text',
+                'is_container' => true,
+                'schema' => [
+                    'gap'         => ['type' => 'number', 'label' => 'فاصله عناصر (px)', 'min' => 0, 'max' => 64, 'default' => 20],
+                    'max_width'   => ['type' => 'number', 'label' => 'حداکثر عرض متن (px)', 'min' => 0, 'max' => 900, 'default' => 640],
+                    'title_size'  => ['type' => 'number', 'label' => 'اندازه عنوان (rem)', 'min' => 1.5, 'max' => 6, 'step' => 0.25, 'default' => 3.25],
+                    'title_color' => ['type' => 'color', 'label' => 'رنگ عنوان', 'default' => '#ffffff'],
+                ],
+                'defaultProps' => ['gap' => 20, 'max_width' => 640, 'title_size' => 3.25, 'title_color' => '#ffffff'],
+            ],
+            // The only genuinely new leaf-adjacent type: a CTA row owning
+            // button spacing/radius as Inspector props (no existing
+            // container does). Children constrained to the canonical
+            // `button` primitive — structural validation stays with the 2C
+            // pipeline, never re-implemented here.
+            'hero_actions' => [
+                'name' => 'قهرمان — دکمه‌های اقدام',
+                'category' => self::CATEGORY_LAYOUT,
+                'icon' => 'button',
+                'is_container' => true,
+                'allowedChildren' => ['button'],
+                'schema' => [
+                    'gap'    => ['type' => 'number', 'label' => 'فاصله دکمه‌ها (px)', 'min' => 0, 'max' => 48, 'default' => 16],
+                    'radius' => ['type' => 'number', 'label' => 'گردی گوشه‌ها (px)', 'min' => 0, 'max' => 32, 'default' => 12],
+                    'align'  => ['type' => 'select', 'label' => 'چینش ردیف',
+                        'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها'], 'default' => 'start'],
+                ],
+                'defaultProps' => ['gap' => 16, 'radius' => 12, 'align' => 'start'],
+            ],
+
             // ─── CONTENT ─────────────────────────────────────────────────────
             'heading' => [
                 'name' => 'عنوان',
@@ -409,6 +503,82 @@ class BlockRegistry
                 'icon' => 'divider',
                 'schema' => [],
                 'defaultProps' => [],
+            ],
+            // ─── Phase 3A basic commercial foundation set ────────────────
+            // Additive, non-duplicating types (Step 4): `spacer` fills the
+            // rhythm/whitespace gap (divider draws a rule; spacer is pure
+            // logical spacing); `rich_text` is the sanitized rich variant
+            // of `text` (shared allowlist sanitizer); `icon_box`/
+            // `image_box` are the canonical card primitives every section
+            // library composes from; `badge`/`list` round out the basic
+            // vocabulary. All consume the 2B Inspector contract and the
+            // 2C structural pipeline unchanged.
+            'spacer' => [
+                'name' => 'فاصله‌گذار (Spacer)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'spacer',
+                'schema' => [
+                    'height' => ['type' => 'number', 'label' => 'ارتفاع (px)', 'default' => 48],
+                ],
+                'defaultProps' => ['height' => 48],
+            ],
+            'rich_text' => [
+                'name' => 'متن غنی (Rich Text)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'rich-text',
+                'schema' => [
+                    'content' => ['type' => 'rich_text', 'label' => 'محتوا', 'default' => ''],
+                ],
+                'defaultProps' => ['content' => ''],
+            ],
+            'icon_box' => [
+                'name' => 'جعبه آیکون (Icon Box)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'icon-box',
+                'schema' => [
+                    'icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '★'],
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
+                    'text' => ['type' => 'text', 'label' => 'متن', 'default' => ''],
+                    'link' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
+                    'align' => ['type' => 'select', 'label' => 'تراز', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها'], 'default' => 'start'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['plain' => 'ساده', 'card' => 'کارت', 'outline' => 'خط‌دار', 'solid' => 'پررنگ'], 'default' => 'card'],
+                ],
+                'defaultProps' => ['icon' => '★', 'title' => '', 'text' => '', 'link' => '', 'align' => 'start', 'style' => 'card'],
+            ],
+            'image_box' => [
+                'name' => 'جعبه تصویر (Image Box)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'image-box',
+                'schema' => [
+                    'url' => ['type' => 'image', 'label' => 'تصویر', 'default' => ''],
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'عنوان تصویر'],
+                    'text' => ['type' => 'text', 'label' => 'متن', 'default' => ''],
+                    'link' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
+                    'ratio' => ['type' => 'select', 'label' => 'نسبت تصویر', 'options' => ['16/9' => '16:9', '4/3' => '4:3', '1/1' => '1:1'], 'default' => '4/3'],
+                    'align' => ['type' => 'select', 'label' => 'تراز متن', 'options' => ['start' => 'ابتدا', 'center' => 'وسط'], 'default' => 'start'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['plain' => 'ساده', 'card' => 'کارت'], 'default' => 'card'],
+                ],
+                'defaultProps' => ['url' => '', 'title' => 'عنوان تصویر', 'text' => '', 'link' => '', 'ratio' => '4/3', 'align' => 'start', 'style' => 'card'],
+            ],
+            'badge' => [
+                'name' => 'نشان (Badge)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'badge',
+                'schema' => [
+                    'text' => ['type' => 'string', 'label' => 'متن نشان', 'default' => 'جدید'],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['primary' => 'اصلی', 'secondary' => 'ثانویه', 'accent' => 'تأکیدی', 'outline' => 'خط‌دار'], 'default' => 'primary'],
+                ],
+                'defaultProps' => ['text' => 'جدید', 'style' => 'primary'],
+            ],
+            'list' => [
+                'name' => 'لیست (List)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'list',
+                'schema' => [
+                    'items' => ['type' => 'repeater', 'label' => 'آیتم‌ها', 'default' => []],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['disc' => 'نقطه‌ای', 'ordered' => 'شماره‌ای', 'check' => 'تیک‌دار', 'plain' => 'ساده'], 'default' => 'disc'],
+                ],
+                'defaultProps' => ['items' => [['text' => '']]],
             ],
             'icon' => [
                 'name' => 'آیکون',
@@ -1308,6 +1478,12 @@ class BlockRegistry
                 'name' => 'گرید ویژگی‌ها (Features)',
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'features',
+                // Phase 3C: canonical compositional mode. The legacy
+                // `features` JSON prop remains supported for already-authored
+                // themes; new sections use independently editable icon_box
+                // children through the ordinary Canvas tree contract.
+                'is_container' => true,
+                'allowedChildren' => ['icon_box'],
                 'schema' => [
                     'title'    => ['type' => 'string',  'label' => 'عنوان بخش',    'default' => 'چرا ما را انتخاب کنید؟'],
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',      'default' => 'ما بهترین راه‌حل را برای شما آماده کرده‌ایم'],
@@ -1321,13 +1497,71 @@ class BlockRegistry
                 'name' => 'آمار و شمارنده (Stats Row)',
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'stats',
+                // Phase 3C additive child mode; `stats` remains the legacy
+                // fallback so existing documents render without migration.
+                'is_container' => true,
+                'allowedChildren' => ['stat_item'],
                 'schema' => [
                     'title'      => ['type' => 'string',  'label' => 'عنوان (اختیاری)',  'default' => ''],
                     'stats'      => ['type' => 'textarea','label' => 'آمارها (JSON)',     'default' => '[{"value":5000,"suffix":"+","label":"کاربر فعال"},{"value":99,"suffix":"%","label":"رضایت مشتری"},{"value":150,"suffix":"+","label":"پروژه موفق"},{"value":7,"suffix":"سال","label":"تجربه"}]'],
                     'background' => ['type' => 'color',   'label' => 'رنگ پس‌زمینه',    'default' => '#f8fafc'],
+                    'background_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه', 'default' => ''],
                     'dividers'   => ['type' => 'boolean', 'label' => 'خط جداکننده',     'default' => true],
                 ],
-                'defaultProps' => ['title' => '', 'stats' => '[{"value":5000,"suffix":"+","label":"کاربر فعال"},{"value":99,"suffix":"%","label":"رضایت مشتری"},{"value":150,"suffix":"+","label":"پروژه موفق"},{"value":7,"suffix":"سال","label":"تجربه"}]', 'background' => '#f8fafc', 'dividers' => true],
+                'defaultProps' => ['title' => '', 'stats' => '[{"value":5000,"suffix":"+","label":"کاربر فعال"},{"value":99,"suffix":"%","label":"رضایت مشتری"},{"value":150,"suffix":"+","label":"پروژه موفق"},{"value":7,"suffix":"سال","label":"تجربه"}]', 'background' => '#f8fafc', 'background_image' => '', 'dividers' => true],
+            ],
+            'stat_item' => [
+                'name' => 'آیتم آمار (Stat Item)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'stat-item',
+                'schema' => [
+                    'value' => ['type' => 'string', 'label' => 'مقدار', 'default' => '100'],
+                    'suffix' => ['type' => 'string', 'label' => 'پسوند', 'default' => '+'],
+                    'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'مشتری راضی'],
+                    'emphasis' => ['type' => 'boolean', 'label' => 'تأکید', 'default' => false],
+                ],
+                'defaultProps' => ['value' => '100', 'suffix' => '+', 'label' => 'مشتری راضی', 'emphasis' => false],
+            ],
+            'cta_band' => [
+                'name' => 'نوار اقدام (CTA Band)',
+                'category' => self::CATEGORY_MARKETING,
+                'icon' => 'cta',
+                'is_container' => true,
+                'allowedChildren' => ['heading', 'text', 'button'],
+                'schema' => [
+                    'background' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#4f46e5'],
+                    'text_color' => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#ffffff'],
+                    'align' => ['type' => 'select', 'label' => 'چینش', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها'], 'default' => 'center'],
+                    'padding' => ['type' => 'number', 'label' => 'فاصله عمودی (px)', 'min' => 16, 'max' => 160, 'default' => 48],
+                    'radius' => ['type' => 'number', 'label' => 'گردی گوشه (px)', 'min' => 0, 'max' => 48, 'default' => 16],
+                ],
+                'defaultProps' => ['background' => '#4f46e5', 'text_color' => '#ffffff', 'align' => 'center', 'padding' => 48, 'radius' => 16],
+            ],
+            'trust_badges_row' => [
+                'name' => 'ردیف نشان‌های اعتماد (Trust Badges)',
+                'category' => self::CATEGORY_MARKETING,
+                'icon' => 'trust',
+                'is_container' => true,
+                'allowedChildren' => ['trust_item'],
+                'schema' => [
+                    'columns' => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '4'],
+                    'gap' => ['type' => 'number', 'label' => 'فاصله (px)', 'min' => 0, 'max' => 64, 'default' => 20],
+                    'background' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff'],
+                ],
+                'defaultProps' => ['columns' => '4', 'gap' => 20, 'background' => '#ffffff'],
+            ],
+            'trust_item' => [
+                'name' => 'نشان اعتماد (Trust Item)',
+                'category' => self::CATEGORY_CONTENT,
+                'icon' => 'trust-item',
+                'schema' => [
+                    'icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '✓'],
+                    'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'خرید مطمئن'],
+                    'description' => ['type' => 'textarea', 'label' => 'توضیح', 'default' => 'تضمین کیفیت و اصالت'],
+                    'url' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
+                    'style' => ['type' => 'select', 'label' => 'سبک', 'options' => ['plain' => 'ساده', 'card' => 'کارت', 'outline' => 'خط‌دار'], 'default' => 'plain'],
+                ],
+                'defaultProps' => ['icon' => '✓', 'label' => 'خرید مطمئن', 'description' => 'تضمین کیفیت و اصالت', 'url' => '', 'style' => 'plain'],
             ],
             // Universal Multipurpose Slider Overhaul: each `logos` item may
             // now optionally carry {image, url, alt} alongside the
@@ -1639,6 +1873,7 @@ class BlockRegistry
             self::CATEGORY_DYNAMIC   => 'محتوای پویا',
             self::CATEGORY_ECOMMERCE => 'فروشگاه',
             self::CATEGORY_MARKETING => 'بازاریابی',
+            self::CATEGORY_FORMS     => 'فرم‌ها',
             self::CATEGORY_UTILITY   => 'ابزار',
             self::CATEGORY_MODULE    => 'ماژول‌ها',
         ];
@@ -1653,6 +1888,7 @@ class BlockRegistry
             self::CATEGORY_DYNAMIC   => '🔄',
             self::CATEGORY_ECOMMERCE => '🛒',
             self::CATEGORY_MARKETING => '📣',
+            self::CATEGORY_FORMS     => '📋',
             self::CATEGORY_UTILITY   => '🔧',
             self::CATEGORY_MODULE    => '🧩',
         ];

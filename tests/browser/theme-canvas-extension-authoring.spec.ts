@@ -96,7 +96,7 @@ test.describe('Theme Canvas — commercial Extension authoring', () => {
 
     // Explicit save via the toolbar Save button.
     await page.getByRole('button', { name: 'ذخیره', exact: true }).click();
-    await expect(page.getByText('ذخیره شد', { exact: false })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('ذخیره شد', { exact: false })).toBeVisible({ timeout: 30_000 });
 
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03-authored-leaf-block.png'), fullPage: true });
 
@@ -135,7 +135,7 @@ test.describe('Theme Canvas — commercial Extension authoring', () => {
 
     // Save and reload.
     await page.getByRole('button', { name: 'ذخیره', exact: true }).click();
-    await expect(page.getByText('ذخیره شد', { exact: false })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('ذخیره شد', { exact: false })).toBeVisible({ timeout: 30_000 });
 
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '04-nested-tree-before-reload.png'), fullPage: true });
 
@@ -167,7 +167,7 @@ test.describe('Theme Canvas — commercial Extension authoring', () => {
     const payload = '<script>alert(1)</script>';
     await page.locator('#ctrl-title').fill(payload);
     await page.getByRole('button', { name: 'ذخیره', exact: true }).click();
-    await expect(page.getByText('ذخیره شد', { exact: false })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('ذخیره شد', { exact: false })).toBeVisible({ timeout: 30_000 });
 
     await page.reload();
 
@@ -218,7 +218,7 @@ test.describe('Theme Canvas — commercial Extension authoring', () => {
     // necessarily contain the literal word "خطا"), so match on that instead
     // of guessing the wording, and log the actual text for the report.
     const errorToast = page.locator('div.fixed.bottom-6.bg-red-600');
-    await expect(errorToast).toBeVisible({ timeout: 10_000 });
+    await expect(errorToast).toBeVisible({ timeout: 30_000 });
     console.log('[failure-UX toast text]', await errorToast.innerText());
 
     // Page must still be alive/interactive, not crashed.
@@ -245,7 +245,10 @@ test.describe('Theme Canvas — responsive smoke checks', () => {
    * to reach it.
    */
   async function assertToolbarActionsReachable(page: import('@playwright/test').Page, viewportWidth: number) {
-    const toolbar = page.locator('div.h-14.bg-white.border-b').first();
+    // Toolbar class drift fix (Phase 2B-R): the Canvas toolbar became
+    // min-h-14 (flex-wrap) before this phase; the selector still assumed the
+    // old fixed h-14. Same element, updated selector.
+    const toolbar = page.locator('div.min-h-14.bg-white.border-b').first();
     const saveBtn = page.getByRole('button', { name: 'ذخیره', exact: true });
     const publishBtn = page.getByRole('button', { name: 'انتشار', exact: true });
 

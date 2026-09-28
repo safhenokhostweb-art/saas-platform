@@ -23,6 +23,8 @@ use App\Services\SupportTicketService;
 use App\Services\Payment\PaymentGatewayInterface;
 use App\Services\CoreSiteNotificationDispatcher;
 use App\Services\Sms\SmsGatewayResolver;
+use App\Services\Seo\NullSeoOverrideProvider;
+use SaaSPlatform\CoreUtils\Contracts\Services\SeoOverrideProviderInterface;
 use SaaSPlatform\CoreUtils\Contracts\Services\SiteNotificationDispatcherInterface;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,6 +39,20 @@ class AppServiceProvider extends ServiceProvider
         // Phase 20 — Part 6/7: generic extension point so independent modules
         // (e.g. CRM) can notify a site admin without touching App\Models\*.
         $this->app->bind(SiteNotificationDispatcherInterface::class, fn () => new CoreSiteNotificationDispatcher(SmsGatewayResolver::resolve()));
+
+        // SEO Override Provider — default Null Object, replaced by an installed
+        // module's own adapter (e.g. seo-advanced).
+        //
+        // bindIf, NOT bind: Laravel splices package-discovered providers
+        // (bootstrap/cache/packages.php) at index 1 of the provider list,
+        // i.e. BEFORE the app's own providers. A plain bind() here therefore
+        // ran last and silently overwrote the module adapter every time,
+        // so SEO Advanced was installed, discovered, merged its config and
+        // registered its adapter — and its overrides never reached a single
+        // rendered page. bindIf keeps the Null Object as the default for a
+        // runtime that has no SEO module at all, and leaves an already-bound
+        // module adapter alone.
+        $this->app->bindIf(SeoOverrideProviderInterface::class, NullSeoOverrideProvider::class);
 
         // PHASE M3.2 — DOMAIN B: Platform Messaging Runtime
         $this->app->singleton(\App\Services\PlatformMessaging\PlatformParticipantService::class);

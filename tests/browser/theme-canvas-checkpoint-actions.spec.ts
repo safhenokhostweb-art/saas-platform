@@ -81,7 +81,11 @@ test.describe.serial('Theme Canvas — UI-C2D/C2E action surface (checkpoint, cl
   });
 
   test('checkpoint: create, list, and exact restore through the canonical Canvas', async ({ page }) => {
-    test.setTimeout(60_000);
+    // login + canvas load + checkpoint modal + two saves + restore reload:
+    // the single-worker canvas page load alone costs 15-25s on the dev
+    // machine, so the default 60s budget cannot hold the whole flow (the
+    // sibling canvas specs budget 180-480s for the same reason).
+    test.setTimeout(240_000);
     page.on('dialog', (dialog) => dialog.accept());
 
     await loginAsAdmin(page, fx);

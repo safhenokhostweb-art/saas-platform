@@ -25,6 +25,10 @@ use Illuminate\Support\Str;
  */
 class BlockRenderer
 {
+    use FoodMartBlockRendererTrait;
+    use SleepShimanBlockRendererTrait;
+    use DynamicBlockRendererTrait;
+
     protected array $context = [];
 
     public function setContext(array $context): self
@@ -186,7 +190,7 @@ class BlockRenderer
         // — each tab is a real tab_panel child block, and each tab_panel's
         // own content is its own children, so both need the identical
         // automatic $inner population every other container gets.
-        return in_array($type, ['section', 'container', 'grid', 'columns', 'flex_container', 'modal', 'tabs', 'tab_panel'], true);
+        return BlockRegistry::isContainerType($type);
     }
 
     /**
@@ -373,10 +377,12 @@ class BlockRenderer
         }
         $esc   = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $idEsc = htmlspecialchars($id,   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        // TB4: container blocks get data-tb-container so the iframe can show nested drop zones
-        $containerAttr = in_array($type, ['section', 'container', 'grid', 'columns', 'flex_container'], true)
+        // TB4: use the same capability seam as recursive rendering so every
+        // registered or host-declared container exposes a nested drop zone.
+        $containerAttr = $this->isStructuralContainer($type)
             ? ' data-tb-container="1"' : '';
         return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}>"
+            . "<button type=\"button\" class=\"tb-drag-handle\" aria-label=\"Move {$esc}\" title=\"Drag to move\">⋮⋮</button>"
             . "<div class=\"tb-block-badge\">{$esc}</div>"
             . $html
             . "</div>";
@@ -583,7 +589,9 @@ class BlockRenderer
         string $extraClass = '',
         array $itemsPerView = [],
         bool $pauseOnHover = true,
-        bool $fade = false
+        bool $fade = false,
+        bool $showProgress = false,
+        array $thumbnailUrls = []
     ): string {
         $slidesHtml = array_values(array_filter($slidesHtml, fn ($s) => trim((string) $s) !== ''));
         if (empty($slidesHtml)) {
@@ -626,7 +634,22 @@ class BlockRenderer
             ? 'display:grid;'
             : 'display:flex;transition:transform .45s ease;';
 
-        return "<div id=\"tb-{$id}\" class=\"tb-carousel {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" tabindex=\"0\"
+        $statusHtml = $showProgress
+            ? '<div class="tb-carousel-status"><div class="tb-carousel-progress" aria-hidden="true"><span class="tb-carousel-progress-fill"></span></div><button type="button" class="tb-carousel-pause" aria-pressed="false" aria-label="توقف پخش خودکار">Ⅱ</button></div>'
+            : '';
+        $thumbnailHtml = '';
+        if (!empty($thumbnailUrls)) {
+            $buttons = [];
+            foreach (array_values($thumbnailUrls) as $i => $url) {
+                $num = $i + 1;
+                $buttons[] = '<button type="button" class="tb-carousel-thumb" aria-label="نمایش اسلاید ' . $num . '"><img src="' . $this->escapeAttr((string) $url) . '" alt="" loading="lazy"></button>';
+            }
+            $thumbnailHtml = '<div class="tb-carousel-thumbs">' . implode('', $buttons) . '</div>';
+        }
+
+        $carouselLabel = $this->escapeAttr('اسلایدر ' . $id);
+
+        return "<div id=\"tb-{$id}\" class=\"tb-carousel {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" aria-label=\"{$carouselLabel}\" tabindex=\"0\"
             data-autoplay=\"{$autoplayAttr}\" data-interval=\"{$interval}\" data-pause-hover=\"{$pauseAttr}\" data-fade=\"{$fadeAttr}\"
             style=\"position:relative;outline:none;--tb-items-desktop:{$desktop};--tb-items-tablet:{$tablet};--tb-items-mobile:{$mobile};\">
             <style>
@@ -647,9 +670,11 @@ class BlockRenderer
             <div class=\"tb-carousel-viewport\" style=\"overflow:hidden;\">
                 <div class=\"tb-carousel-track\" style=\"{$trackStyle}\">" . implode('', $slides) . "</div>
             </div>
+            {$statusHtml}
             <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\" style=\"position:absolute;top:50%;right:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">‹</button>
             <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\" style=\"position:absolute;top:50%;left:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">›</button>
-            <div class=\"tb-carousel-dots\" role=\"tablist\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
+            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
+            {$thumbnailHtml}
             <script>(function(){
                 function init(root){
                     if (!root || root.dataset.tbCarouselInit) return;
@@ -660,7 +685,11 @@ class BlockRenderer
                     var dots = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-dot'));
                     var prevBtn = root.querySelector('.tb-carousel-prev');
                     var nextBtn = root.querySelector('.tb-carousel-next');
+                    var pauseBtn = root.querySelector('.tb-carousel-pause');
+                    var progressFill = root.querySelector('.tb-carousel-progress-fill');
+                    var thumbs = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-thumb'));
                     var idx = 0, timer = null;
+                    var manuallyPaused = false;
                     var isRTL = getComputedStyle(root).direction !== 'ltr';
                     var sign = isRTL ? 1 : -1;
                     function itemsPerView(){
@@ -681,20 +710,45 @@ class BlockRenderer
                             d.style.background = active ? 'var(--tb-primary,#4f46e5)' : '#d1d5db';
                             d.setAttribute('aria-current', active ? 'true' : 'false');
                         });
+                        thumbs.forEach(function(t, j){
+                            var active = j === idx;
+                            t.classList.toggle('is-active', active);
+                            t.setAttribute('aria-current', active ? 'true' : 'false');
+                        });
                     }
                     function go(i){ idx = Math.min(Math.max(0, i), maxIndex()); paint(); }
                     function stepNext(){ go(idx + 1 > maxIndex() ? 0 : idx + 1); }
                     function stepPrev(){ go(idx - 1 < 0 ? maxIndex() : idx - 1); }
                     function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+                    function resetProgress(){
+                        if (!progressFill) return;
+                        progressFill.style.transition = 'none';
+                        progressFill.style.width = '0';
+                        void progressFill.offsetWidth;
+                        if (!manuallyPaused && root.dataset.autoplay === 'true') {
+                            progressFill.style.transition = 'width ' + (parseInt(root.dataset.interval, 10) || 5000) + 'ms linear';
+                            progressFill.style.width = '100%';
+                        }
+                    }
                     function start(){
                         stop();
-                        if (root.dataset.autoplay === 'true' && slideEls.length > itemsPerView()) {
+                        if (!manuallyPaused && root.dataset.autoplay === 'true' && slideEls.length > itemsPerView()) {
                             timer = setInterval(stepNext, parseInt(root.dataset.interval, 10) || 5000);
                         }
+                        resetProgress();
                     }
                     if (nextBtn) nextBtn.addEventListener('click', function(){ stepNext(); start(); });
                     if (prevBtn) prevBtn.addEventListener('click', function(){ stepPrev(); start(); });
                     dots.forEach(function(d, j){ d.addEventListener('click', function(){ go(j); start(); }); });
+                    thumbs.forEach(function(t, j){ t.addEventListener('click', function(){ go(j); start(); }); });
+                    if (pauseBtn) pauseBtn.addEventListener('click', function(){
+                        manuallyPaused = !manuallyPaused;
+                        pauseBtn.setAttribute('aria-pressed', manuallyPaused ? 'true' : 'false');
+                        pauseBtn.setAttribute('aria-label', manuallyPaused ? 'ادامه پخش خودکار' : 'توقف پخش خودکار');
+                        pauseBtn.textContent = manuallyPaused ? '▶' : 'Ⅱ';
+                        if (manuallyPaused) { stop(); if (progressFill) progressFill.style.transition = 'none'; }
+                        else start();
+                    });
                     root.addEventListener('keydown', function(e){
                         if (e.key === 'ArrowRight') { stepPrev(); start(); e.preventDefault(); }
                         else if (e.key === 'ArrowLeft') { stepNext(); start(); e.preventDefault(); }
@@ -783,6 +837,7 @@ class BlockRenderer
         $gradientCss = $overlay ? 'background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 55%);' : '';
 
         $slidesHtml = [];
+        $thumbnailUrls = [];
         foreach ($slides as $slide) {
             if (!is_array($slide)) {
                 continue;
@@ -793,7 +848,10 @@ class BlockRenderer
             $link     = $this->escapeUrl($slide['link'] ?? '', '');
             $ctaText  = $this->escape($slide['cta_text'] ?? '');
 
-            $imgHtml = $this->imageWithFallback($image, (string) ($slide['title'] ?? ''), "position:absolute;inset:0;width:100%;height:100%;");
+            // The visible slide heading already names the same content;
+            // treating the background image as decorative avoids announcing
+            // that title twice to screen-reader users.
+            $imgHtml = $this->imageWithFallback($image, '', "position:absolute;inset:0;width:100%;height:100%;");
 
             $ctaHtml = ($ctaText !== '' && $link !== '')
                 ? "<a href=\"{$link}\" class=\"tb-btn tb-btn-primary tb-slide-cta\" style=\"position:relative;z-index:1;margin-top:1rem;display:inline-block;\">{$ctaText}</a>"
@@ -813,6 +871,9 @@ class BlockRenderer
             $slidesHtml[] = ($link !== '' && $ctaHtml === '')
                 ? '<a href="' . $link . '" class="tb-slide-link" style="display:block;color:inherit;text-decoration:none;">' . $slideInner . '</a>'
                 : $slideInner;
+            if ($image !== '') {
+                $thumbnailUrls[] = $image;
+            }
         }
 
         if (empty($slidesHtml)) {
@@ -830,7 +891,9 @@ class BlockRenderer
             $wrapClass,
             [],
             true,
-            $transition === 'fade'
+            $transition === 'fade',
+            true,
+            $thumbnailUrls
         );
 
         return $wrapStyle !== '' ? "<div style=\"{$wrapStyle}\">{$carousel}</div>" : $carousel;
@@ -891,6 +954,194 @@ class BlockRenderer
         }
         $innerAttr = ' style="' . implode(';', $innerStyles) . '"';
         return "<div id=\"tb-{$id}\" class=\"tb-text prose\"{$wrapperAttr}><div{$innerAttr}{$ea}>{$content}</div></div>";
+    }
+
+    // ─── Phase 3A basic commercial foundation renderers ────────────────
+    // Conventions match the canonical set: tb-* contract classes, escape/
+    // escapeAttr/escapeUrl/sanitizeHtml, editableAttr() inline edit hook,
+    // logical (start/end) alignment that the contract CSS resolves per
+    // document direction — no physical left/right persisted.
+
+    protected function renderSpacer(array $props, string $inner, string $id): string
+    {
+        $h = max(0, min(600, (int) ($props['height'] ?? 48)));
+        return "<div id=\"tb-{$id}\" class=\"tb-spacer\" style=\"height:{$h}px\" aria-hidden=\"true\"></div>";
+    }
+
+    protected function renderRichText(array $props, string $inner, string $id): string
+    {
+        $content = $this->sanitizeHtml($props['content'] ?? '');
+        $ea = $this->editableAttr('content', 'html');
+        return "<div id=\"tb-{$id}\" class=\"tb-rich-text prose\"{$ea}>{$content}</div>";
+    }
+
+    protected function renderIconBox(array $props, string $inner, string $id): string
+    {
+        $icon = $this->escape($props['icon'] ?? '');
+        $title = $this->escape($props['title'] ?? '');
+        $text = $this->escape($props['text'] ?? '');
+        $url = $this->escapeUrl($props['link'] ?? '', '');
+        $alignMap = ['start' => 'tb-align-start', 'center' => 'tb-align-center', 'end' => 'tb-align-end'];
+        $align = $alignMap[$props['align'] ?? 'start'] ?? 'tb-align-start';
+        $styleMap = ['plain' => 'tb-icon-box-plain', 'card' => 'tb-icon-box-card', 'outline' => 'tb-icon-box-outline', 'solid' => 'tb-icon-box-solid'];
+        $style = $styleMap[$props['style'] ?? 'card'] ?? 'tb-icon-box-card';
+        $titleHtml = $title !== '' ? "<h3 class=\"tb-icon-box-title\">{$title}</h3>" : '';
+        $textHtml = $text !== '' ? "<p class=\"tb-icon-box-text\">{$text}</p>" : '';
+        $iconHtml = $icon !== '' ? "<span class=\"tb-icon-box-icon\" aria-hidden=\"true\">{$icon}</span>" : '';
+        $body = "{$iconHtml}{$titleHtml}{$textHtml}";
+        if ($url !== '') {
+            return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"tb-icon-box {$align} {$style}\">{$body}</a>";
+        }
+        return "<div id=\"tb-{$id}\" class=\"tb-icon-box {$align} {$style}\">{$body}</div>";
+    }
+
+    protected function renderImageBox(array $props, string $inner, string $id): string
+    {
+        $url = $this->escapeUrl($props['url'] ?? '', '');
+        $title = $this->escape($props['title'] ?? '');
+        $text = $this->escape($props['text'] ?? '');
+        $link = $this->escapeUrl($props['link'] ?? '', '');
+        $ratioMap = ['16/9' => 'tb-ratio-16-9', '4/3' => 'tb-ratio-4-3', '1/1' => 'tb-ratio-1-1'];
+        $ratio = $ratioMap[$props['ratio'] ?? '4/3'] ?? 'tb-ratio-4-3';
+        $align = ($props['align'] ?? 'start') === 'center' ? 'tb-align-center' : 'tb-align-start';
+        $style = ($props['style'] ?? 'card') === 'plain' ? 'tb-image-box-plain' : 'tb-image-box-card';
+        $img = $url !== ''
+            ? "<img src=\"{$url}\" alt=\"{$this->escapeAttr($title)}\" loading=\"lazy\" class=\"tb-img\">"
+            : '<span class="tb-image-box-placeholder">تصویر انتخاب نشده</span>';
+        $imgHtml = "<div class=\"tb-image-box-media {$ratio}\">{$img}</div>";
+        $titleHtml = $title !== '' ? "<h3 class=\"tb-image-box-title\">{$title}</h3>" : '';
+        $textHtml = $text !== '' ? "<p class=\"tb-image-box-text\">{$text}</p>" : '';
+        $body = "{$imgHtml}<div class=\"tb-image-box-body\">{$titleHtml}{$textHtml}</div>";
+        if ($link !== '') {
+            return "<a id=\"tb-{$id}\" href=\"{$link}\" class=\"tb-image-box {$align} {$style}\">{$body}</a>";
+        }
+        return "<div id=\"tb-{$id}\" class=\"tb-image-box {$align} {$style}\">{$body}</div>";
+    }
+
+    protected function renderBadge(array $props, string $inner, string $id): string
+    {
+        $text = $this->escape($props['text'] ?? '');
+        $rawStyle = $props['style'] ?? 'primary';
+        $style = in_array($rawStyle, ['primary', 'secondary', 'accent', 'outline'], true) ? $rawStyle : 'primary';
+        return "<span id=\"tb-{$id}\" class=\"tb-badge tb-badge-{$style}\">{$text}</span>";
+    }
+
+    // ─── Phase 3B — professional Persian hero family renderers ──────────
+    // Additive only: containers receive $inner automatically through
+    // isStructuralContainer() → BlockRegistry::isContainerType() — zero
+    // changes to renderBlock() dispatch. Every enum value is allowlisted
+    // BEFORE interpolation (defense in depth alongside escapeAttr — same
+    // discipline as renderButton()'s style fix). All geometry is logical
+    // (block/inline; text-align start/end resolves per document direction
+    // natively) — no dir attribute, no RTL/LTR branching here; direction
+    // projection stays with DirectionProjector + live-preview (3A fix).
+
+    protected function renderHeroSection(array $props, string $inner, string $id): string
+    {
+        $bgType = in_array($props['background_type'] ?? '', ['color', 'gradient', 'image'], true)
+            ? $props['background_type'] : 'gradient';
+        // Logical alignment (start/center/end) — direction-resolved by CSS.
+        $align = in_array($props['text_align'] ?? '', ['start', 'center', 'end'], true)
+            ? $props['text_align'] : 'start';
+        $vAlignMap = ['start' => 'tb-hero-vstart', 'center' => 'tb-hero-vcenter', 'end' => 'tb-hero-vend'];
+        $vAlign = $vAlignMap[$props['v_align'] ?? 'center'] ?? 'tb-hero-vcenter';
+        $widthMap = ['narrow' => 'tb-hero-w-narrow', 'normal' => 'tb-hero-w-normal', 'wide' => 'tb-hero-w-wide', 'full' => 'tb-hero-w-full'];
+        $width = $widthMap[$props['content_width'] ?? 'normal'] ?? 'tb-hero-w-normal';
+
+        $style = sprintf(
+            'min-height:%dpx;padding-block:%dpx;',
+            max(0, min(1200, (int) ($props['min_height'] ?? 520))),
+            max(0, min(240, (int) ($props['padding_v'] ?? 96)))
+        );
+        if ($bgType === 'color') {
+            $style .= 'background-color:' . $this->escapeAttr($props['bg_color'] ?? '#4f46e5') . ';';
+        } elseif ($bgType === 'gradient') {
+            $style .= sprintf(
+                'background-image:linear-gradient(115deg,%s,%s);',
+                $this->escapeAttr($props['gradient_from'] ?? '#4f46e5'),
+                $this->escapeAttr($props['gradient_to'] ?? '#7c3aed')
+            );
+        } elseif ($bgType === 'image' && (string) ($props['bg_image'] ?? '') !== '') {
+            // Same inline background pattern renderSection()/renderHero()
+            // already use for background_image.
+            $style .= 'background-image:url(' . $this->escapeAttr($props['bg_image']) . ');background-size:cover;background-position:center;';
+        }
+        // Image scrim: fixed dark color, author controls ONLY the opacity —
+        // contrast can never be broken by a bad color choice.
+        $overlay = '';
+        if ($bgType === 'image') {
+            $opacity = max(0, min(90, (int) ($props['overlay_opacity'] ?? 40))) / 100;
+            $overlay = '<div class="tb-hero-overlay" style="opacity:' . $opacity . '" aria-hidden="true"></div>';
+        }
+
+        return "<section id=\"tb-{$id}\" class=\"tb-hero-section tb-hero-align-{$align} {$vAlign} {$width}\" style=\"{$style}\">"
+            . $overlay
+            . '<div class="tb-hero-frame">' . $inner . '</div>'
+            . '</section>';
+    }
+
+    protected function renderHeroContainer(array $props, string $inner, string $id): string
+    {
+        $maxWidth = max(0, min(1600, (int) ($props['max_width'] ?? 1200)));
+        $gap = max(0, min(96, (int) ($props['gap'] ?? 32)));
+        $style = ($maxWidth > 0 ? "max-width:{$maxWidth}px;" : 'max-width:none;')
+            . "padding-inline:24px;gap:{$gap}px;";
+        return "<div id=\"tb-{$id}\" class=\"tb-hero-container\" style=\"{$style}\">{$inner}</div>";
+    }
+
+    protected function renderHeroContentWrapper(array $props, string $inner, string $id): string
+    {
+        $gap = max(0, min(64, (int) ($props['gap'] ?? 20)));
+        $maxWidth = max(0, min(900, (int) ($props['max_width'] ?? 640)));
+        $titleSize = max(1.5, min(6, (float) ($props['title_size'] ?? 3.25)));
+        // Title size/color ride CSS custom properties scoped to this
+        // subtree — heading/text children remain untouched primitives.
+        $style = "gap:{$gap}px;max-width:{$maxWidth}px;"
+            . '--tb-hero-title-size:' . $titleSize . 'rem;'
+            . '--tb-hero-title-color:' . $this->escapeAttr($props['title_color'] ?? '#ffffff') . ';';
+        return "<div id=\"tb-{$id}\" class=\"tb-hero-content\" style=\"{$style}\">{$inner}</div>";
+    }
+
+    protected function renderHeroActions(array $props, string $inner, string $id): string
+    {
+        $gap = max(0, min(48, (int) ($props['gap'] ?? 16)));
+        $radius = max(0, min(32, (int) ($props['radius'] ?? 12)));
+        $align = in_array($props['align'] ?? '', ['start', 'center', 'end'], true)
+            ? $props['align'] : 'start';
+        // Radius is scoped via --tb-hero-btn-radius; the canonical .tb-btn
+        // primitive is untouched outside this subtree.
+        $style = "gap:{$gap}px;--tb-hero-btn-radius:{$radius}px;";
+        return "<div id=\"tb-{$id}\" class=\"tb-hero-actions tb-hero-actions-{$align}\" style=\"{$style}\">{$inner}</div>";
+    }
+
+    protected function renderList(array $props, string $inner, string $id): string
+    {
+        $items = $props['items'] ?? [];
+        if (!is_array($items)) {
+            $items = [];
+        }
+        $rawStyle = $props['style'] ?? 'disc';
+        $style = in_array($rawStyle, ['disc', 'ordered', 'check', 'plain'], true) ? $rawStyle : 'disc';
+        $lis = '';
+        $i = 0;
+        foreach ($items as $item) {
+            $text = is_array($item) ? ($item['text'] ?? '') : (string) $item;
+            $text = $this->escape($text);
+            if (trim($text) === '') {
+                continue;
+            }
+            $ea = $this->editableAttr("items.{$i}.text", 'text');
+            $lis .= "<li{$ea}>{$text}</li>";
+            $i++;
+        }
+        if ($lis === '') {
+            $lis = '<li></li>';
+        }
+        if ($style === 'ordered') {
+            return "<ol id=\"tb-{$id}\" class=\"tb-list tb-list-ordered\">{$lis}</ol>";
+        }
+        $cls = $style === 'check' ? ' tb-list-check' : ($style === 'plain' ? ' tb-list-plain' : '');
+        return "<ul id=\"tb-{$id}\" class=\"tb-list{$cls}\">{$lis}</ul>";
     }
 
     protected function renderImage(array $props, string $inner, string $id): string
@@ -1314,6 +1565,17 @@ class BlockRenderer
             " . ($subtitle ? "<p class=\"tb-features-section-sub\">{$subtitle}</p>" : '') . "
         </div>" : '';
 
+        // Phase 3C: prefer the canonical child tree whenever children are
+        // present. The JSON path below is intentionally retained verbatim as
+        // the migration-free fallback for existing themes.
+        if ($inner !== '') {
+            return "<section id=\"tb-{$id}\" class=\"tb-commercial-features-grid tb-commercial-features-{$style}\">
+                <div class=\"tb-container\">{$headerHtml}
+                    <div class=\"tb-commercial-grid tb-commercial-grid-cols-{$columns}\">{$inner}</div>
+                </div>
+            </section>";
+        }
+
         $cards = [];
         foreach ($features as $f) {
             $icon  = $this->escape($f['icon'] ?? '✨');
@@ -1337,6 +1599,7 @@ class BlockRenderer
     {
         $title    = $this->escape($props['title'] ?? '');
         $bg       = $this->escapeAttr($props['background'] ?? '#f8fafc');
+        $backgroundImage = $this->escapeUrl($props['background_image'] ?? '', '');
         $dividers = (bool) ($props['dividers'] ?? true);
         // Phase 2k: applied as an INLINE style on every text-bearing child
         // element directly, not just the wrapper — .tb-stat-value/
@@ -1368,11 +1631,207 @@ class BlockRenderer
             </div>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-stats-row\" style=\"background:{$bg};\">
+        $backgroundStyle = $backgroundImage !== ''
+            ? "background-color:{$bg};background-image:linear-gradient(90deg,rgba(5,28,43,.94),rgba(5,28,43,.68)),url('{$backgroundImage}');background-size:cover;background-position:center;"
+            : "background:{$bg};";
+
+        // Phase 3C compositional path. Existing JSON-authored stats continue
+        // through the unchanged fallback below when no children exist.
+        if ($inner !== '') {
+            $dividerClass = $dividers ? ' tb-commercial-stats-divided' : '';
+            return "<section id=\"tb-{$id}\" class=\"tb-commercial-stats-row{$dividerClass}\" style=\"{$backgroundStyle}\">
+                <div class=\"tb-container\">{$titleHtml}
+                    <div class=\"tb-commercial-stats-grid\">{$inner}</div>
+                </div>
+            </section>";
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-stats-row\" style=\"{$backgroundStyle}\">
             <div class=\"tb-container\">{$titleHtml}
                 <div class=\"tb-stats-grid\">" . implode('', $items) . "</div>
             </div>
         </div>";
+    }
+
+    protected function renderStatItem(array $props, string $inner, string $id): string
+    {
+        $value = $this->escape((string) ($props['value'] ?? '100'));
+        $suffix = $this->escape((string) ($props['suffix'] ?? '+'));
+        $label = $this->escape((string) ($props['label'] ?? ''));
+        $emphasis = (bool) ($props['emphasis'] ?? false) ? ' tb-stat-item-emphasis' : '';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-stat-item{$emphasis}\">"
+            . "<span class=\"tb-stat-value\" data-count=\"{$value}\">{$value}<span class=\"tb-stat-suffix\">{$suffix}</span></span>"
+            . "<span class=\"tb-stat-label\">{$label}</span>"
+            . '</div>';
+    }
+
+    protected function renderCtaBand(array $props, string $inner, string $id): string
+    {
+        $align = in_array($props['align'] ?? '', ['start', 'center', 'end'], true)
+            ? $props['align'] : 'center';
+        $padding = max(16, min(160, (int) ($props['padding'] ?? 48)));
+        $radius = max(0, min(48, (int) ($props['radius'] ?? 16)));
+        $background = $this->escapeAttr($props['background'] ?? '#4f46e5');
+        $textColor = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $style = "--tb-cta-band-bg:{$background};--tb-cta-band-text:{$textColor};"
+            . "--tb-cta-band-padding:{$padding}px;--tb-cta-band-radius:{$radius}px;";
+
+        return "<section id=\"tb-{$id}\" class=\"tb-cta-band tb-cta-band-align-{$align}\" style=\"{$style}\">"
+            . '<div class="tb-cta-band-inner">' . $inner . '</div>'
+            . '</section>';
+    }
+
+    protected function renderTrustBadgesRow(array $props, string $inner, string $id): string
+    {
+        $columns = max(2, min(4, (int) ($props['columns'] ?? 4)));
+        $gap = max(0, min(64, (int) ($props['gap'] ?? 20)));
+        $background = $this->escapeAttr($props['background'] ?? '#ffffff');
+        $style = "--tb-trust-gap:{$gap}px;--tb-trust-bg:{$background};";
+
+        return "<section id=\"tb-{$id}\" class=\"tb-trust-badges-row tb-commercial-grid-cols-{$columns}\" style=\"{$style}\">"
+            . $inner
+            . '</section>';
+    }
+
+    protected function renderTrustItem(array $props, string $inner, string $id): string
+    {
+        $icon = $this->escape((string) ($props['icon'] ?? '✓'));
+        $label = $this->escape((string) ($props['label'] ?? ''));
+        $description = $this->escape((string) ($props['description'] ?? ''));
+        $style = in_array($props['style'] ?? '', ['plain', 'card', 'outline'], true)
+            ? $props['style'] : 'plain';
+        $content = '<span class="tb-trust-item-icon" aria-hidden="true">' . $icon . '</span>'
+            . '<span class="tb-trust-item-content">'
+            . '<strong class="tb-trust-item-label">' . $label . '</strong>'
+            . ($description !== '' ? '<span class="tb-trust-item-description">' . $description . '</span>' : '')
+            . '</span>';
+        $url = (string) ($props['url'] ?? '');
+
+        if ($url !== '') {
+            $content = '<a class="tb-trust-item-link" href="' . $this->escapeUrl($url, '#') . '">' . $content . '</a>';
+        } else {
+            $content = '<span class="tb-trust-item-body">' . $content . '</span>';
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-trust-item tb-trust-item-{$style}\">{$content}</div>";
+    }
+
+    // ─── Phase 3C / Milestone 3 — Interaction widgets ──────────────────────
+    // Additive: these are host-registered types (not canonical) and render
+    // purely as sanitized intention emitters — zero business logic in the
+    // output. All targets are revalidated server-side by InteractionPolicy
+    // before any side effect executes.
+
+    protected function renderInteractiveForm(array $props, string $inner, string $id): string
+    {
+        $title = $this->escape($props['title'] ?? '');
+        $submitLabel = $this->escape($props['submit_label'] ?? '');
+        $endpoint = $this->escapeUrl($props['endpoint_url'] ?? '', '');
+        $successMessage = $this->escape($props['success_message'] ?? '');
+        $errorMessage = $this->escape($props['error_message'] ?? '');
+
+        $policy = $this->context['interaction_policy'] ?? null;
+        $interactionConfig = $props['interaction_config'] ?? [];
+
+        $allowed = true;
+        if ($policy instanceof \SaaSPlatform\ThemeRuntime\Interaction\InteractionPolicy) {
+            $event = \SaaSPlatform\ThemeRuntime\Interaction\InteractionEvent::fromArray([
+                'event_type' => 'submit',
+                'target_id' => $id,
+                'payload' => ['target' => $endpoint],
+                'action_trigger' => 'call_api',
+            ]);
+            $allowed = $policy->allows($event);
+        }
+
+        $interactionData = [
+            'event_type' => 'submit',
+            'target_id' => $id,
+            'payload' => ['target' => $endpoint],
+            'action_trigger' => 'call_api',
+        ];
+        $interactionJson = htmlspecialchars(json_encode($interactionData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
+
+        $blockedAttr = $allowed ? '' : ' data-tb-interaction-blocked="1"';
+        $interactionAttr = $allowed ? " data-tb-interaction=\"{$interactionJson}\"" : '';
+
+        $titleHtml = $title ? "<h3 class=\"tb-form-title\">{$title}</h3>" : '';
+        $successHtml = $successMessage ? "<div class=\"tb-form-success\" hidden>{$successMessage}</div>" : '';
+        $errorHtml = $errorMessage ? "<div class=\"tb-form-error\" hidden>{$errorMessage}</div>" : '';
+
+        $formFields = $inner ?: '
+            <div class="tb-form-field">
+                <label for="tb-' . $id . '-email" class="tb-form-label">ایمیل</label>
+                <input type="email" id="tb-' . $id . '-email" name="email" class="tb-form-input" required>
+            </div>
+            <div class="tb-form-field">
+                <label for="tb-' . $id . '-message" class="tb-form-label">پیام</label>
+                <textarea id="tb-' . $id . '-message" name="message" class="tb-form-input" rows="4"></textarea>
+            </div>';
+
+        return "<form id=\"tb-{$id}\" class=\"tb-interactive-form\"{$interactionAttr}{$blockedAttr} novalidate>"
+            . $titleHtml
+            . $formFields
+            . $successHtml
+            . $errorHtml
+            . "<button type=\"submit\" class=\"tb-btn tb-btn-primary\">{$submitLabel}</button>"
+            . '</form>';
+    }
+
+    protected function renderActionButton(array $props, string $inner, string $id): string
+    {
+        $label = $this->escape($props['label'] ?? '');
+        $actionType = $props['action_type'] ?? 'link';
+        $targetValue = $props['target_value'] ?? '#';
+        $style = in_array($props['style'] ?? '', ['primary', 'secondary', 'outline', 'ghost'], true)
+            ? $props['style'] : 'primary';
+        $icon = $this->escape($props['icon'] ?? '');
+
+        $policy = $this->context['interaction_policy'] ?? null;
+
+        $actionTriggerMap = [
+            'link' => 'navigate',
+            'api_call' => 'call_api',
+            'scroll_to' => 'scroll_to',
+        ];
+        $actionTrigger = $actionTriggerMap[$actionType] ?? 'navigate';
+
+        $allowed = true;
+        if ($policy instanceof \SaaSPlatform\ThemeRuntime\Interaction\InteractionPolicy) {
+            $event = \SaaSPlatform\ThemeRuntime\Interaction\InteractionEvent::fromArray([
+                'event_type' => 'click',
+                'target_id' => $id,
+                'payload' => ['target' => $targetValue],
+                'action_trigger' => $actionTrigger,
+            ]);
+            $allowed = $policy->allows($event);
+        }
+
+        $interactionData = [
+            'event_type' => 'click',
+            'target_id' => $id,
+            'payload' => ['target' => $targetValue],
+            'action_trigger' => $actionTrigger,
+        ];
+        $interactionJson = htmlspecialchars(json_encode($interactionData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
+
+        $blockedAttr = $allowed ? '' : ' data-tb-interaction-blocked="1"';
+        $interactionAttr = $allowed ? " data-tb-interaction=\"{$interactionJson}\"" : '';
+
+        $iconHtml = $icon ? "<span class=\"tb-btn-icon\" aria-hidden=\"true\">{$icon}</span>" : '';
+
+        $styleClass = match ($style) {
+            'secondary' => 'tb-btn-secondary',
+            'outline' => 'tb-btn-outline',
+            'ghost' => 'tb-btn-ghost',
+            default => 'tb-btn-primary',
+        };
+
+        return "<button id=\"tb-{$id}\" type=\"button\" class=\"tb-btn {$styleClass} tb-action-button\"{$interactionAttr}{$blockedAttr}>"
+            . $iconHtml
+            . "<span class=\"tb-btn-label\">{$label}</span>"
+            . '</button>';
     }
 
     /**
@@ -2093,13 +2552,23 @@ class BlockRenderer
             $ititle = $this->escape($item['title'] ?? '');
             $itext  = $this->escape($item['text'] ?? '');
             $icon   = $this->escape($item['icon'] ?? '');
+            $image  = $this->escapeUrl($item['image'] ?? '', '');
+            $linkUrl = $this->escapeUrl($item['link_url'] ?? '', '');
+            $linkLabel = $this->escape($item['link_label'] ?? 'مشاهده');
             $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small']) ? $item['size'] : 'small';
             $bgc    = $this->escapeAttr($item['bg_color'] ?? '#f8fafc');
             $tc     = $this->escapeAttr($item['text_color'] ?? '#0f172a');
-            $cells[] = "<div class=\"tb-bento-item {$size}\" style=\"background:{$bgc};color:{$tc};\">
+            $mediaHtml = $image !== '' ? $this->imageWithFallback($image, (string) ($item['title'] ?? ''), '', 'تصویر') : '';
+            $linkHtml = ($linkUrl !== '' && $linkLabel !== '') ? "<a class=\"tb-bento-item-link\" href=\"{$linkUrl}\">{$linkLabel}<span aria-hidden=\"true\"> ←</span></a>" : '';
+            $mediaClass = $image !== '' ? ' has-media' : '';
+            $cells[] = "<div class=\"tb-bento-item {$size}{$mediaClass}\" style=\"background:{$bgc};color:{$tc};\">
+                {$mediaHtml}
+                <div class=\"tb-bento-item-content\">
                 " . ($icon ? "<div class=\"tb-bento-item-icon\">{$icon}</div>" : '') . "
                 <h3 class=\"tb-bento-item-title\">{$ititle}</h3>
                 <p class=\"tb-bento-item-text\">{$itext}</p>
+                {$linkHtml}
+                </div>
             </div>";
         }
 

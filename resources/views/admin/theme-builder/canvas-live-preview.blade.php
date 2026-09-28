@@ -1,5 +1,13 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+@php
+    $seoService = app(\App\Services\Seo\SeoService::class);
+    $metaData = $seoService->resolveForPreview();
+    $metaArray = $metaData->toArray();
+@endphp
+{{-- Phase 3A: direction from the canonical projection (settings envelope →
+    legacy global_styles → locale → host default), resolved in
+    ThemeCanvasController::livePreview() — no longer hardcoded rtl. --}}
+<html lang="{{ $metaArray['language'] }}" dir="{{ $metaArray['direction'] }}">
 <head>
 <meta charset="UTF-8">
 <script>(function(){
@@ -33,241 +41,26 @@
     };
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Preview</title>
+<x-seo-meta :meta-data="$metaData" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body {
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    direction: rtl;
-    background: #ffffff;
-    color: #1f2937;
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-}
-/* Base TB styles */
-.tb-container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-.tb-section { width: 100%; }
-.tb-section-inner { width: 100%; }
-.tb-padding-none  { padding-top: 0; padding-bottom: 0; }
-.tb-padding-sm    { padding-top: 2rem; padding-bottom: 2rem; }
-.tb-padding-md    { padding-top: 4rem; padding-bottom: 4rem; }
-.tb-padding-lg    { padding-top: 6rem; padding-bottom: 6rem; }
-.tb-padding-xl    { padding-top: 8rem; padding-bottom: 8rem; }
-.tb-grid          { display: grid; gap: 1.5rem; }
-.tb-cols-2        { grid-template-columns: repeat(2, 1fr); }
-.tb-cols-3        { grid-template-columns: repeat(3, 1fr); }
-.tb-cols-4        { grid-template-columns: repeat(4, 1fr); }
-{{-- Commercial Productization fase-3: real, confirmed bug — every block
-     renderer actually emits `tb-grid tb-grid-cols-{N}` (see
-     BlockRenderer.php), never the `tb-cols-N` this file defined; every
-     multi-column block (product_grid, category_slider grid layout,
-     team_cards, ...) rendered as an unstyled single column here. Additive
-     fix: keep tb-cols-N (used elsewhere in this file) and add the classes
-     the renderers actually emit. --}}
-.tb-grid.tb-grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-.tb-grid.tb-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.tb-grid.tb-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.tb-grid.tb-grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.tb-grid.tb-grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.tb-grid.tb-grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-@media (max-width: 767px) {
-    .tb-grid.tb-grid-cols-2, .tb-grid.tb-grid-cols-3, .tb-grid.tb-grid-cols-4,
-    .tb-grid.tb-grid-cols-5, .tb-grid.tb-grid-cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .tb-grid.tb-grid-cols-1 { grid-template-columns: 1fr; }
-}
-@media (max-width: 480px) {
-    .tb-grid.tb-grid-cols-2, .tb-grid.tb-grid-cols-3, .tb-grid.tb-grid-cols-4 { grid-template-columns: 1fr; }
-}
-.tb-hero          { min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 5rem 1.5rem; }
-.tb-hero h1       { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.3; }
-.tb-hero p        { font-size: 1.1rem; opacity: 0.85; margin-bottom: 1.5rem; }
-.tb-hero .tb-btn  { display: inline-flex; align-items: center; padding: 0.75rem 2rem; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.6); color: #fff; border-radius: 0.5rem; font-size: 1rem; font-weight: 600; text-decoration: none; }
-.tb-cta           { padding: 4rem 1.5rem; text-align: center; }
-.tb-heading       { line-height: 1.4; margin: 0 0 1rem; font-weight: 700; }
-.tb-text          { line-height: 1.85; color: #374151; margin: 0 0 1rem; }
-.tb-img           { max-width: 100%; border-radius: 0.5rem; }
-.tb-button        { display: inline-flex; align-items: center; padding: 0.6rem 1.5rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
-{{-- Commercial Productization fase-3: same real .tb-btn/.tb-btn-secondary
-     gap as canvas-preview.blade.php — see the matching comment there. --}}
-.tb-btn           { display: inline-block; padding: 0.75rem 1.5rem; border-radius: var(--tb-radius, 0.75rem); text-decoration: none; font-weight: 600; font-size: 1rem; transition: opacity 0.2s; }
-.tb-btn:hover     { opacity: 0.95; }
-.tb-btn-primary   { background: var(--tb-primary, #4f46e5); color: #fff; }
-.tb-btn-secondary { background: transparent; color: var(--tb-primary, #4f46e5); border: 2px solid currentColor; }
-.tb-divider       { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
-.tb-bg-primary    { background: var(--tb-primary, #4f46e5); color: #fff; }
-.tb-bg-dark       { background: #1e293b; color: #fff; }
-.tb-bg-light      { background: #f8fafc; }
-.tb-bg-gray       { background: #f1f5f9; }
-
-{{-- Commercial Productization fase-3: the 7 canonical block types from
-     ADR-026 plus stats_row had ZERO CSS in this live-preview either — see
-     the matching comment/values in canvas-preview.blade.php. --}}
-.tb-features-section-header { text-align: center; margin-bottom: 2.5rem; }
-.tb-features-section-title { font-size: clamp(1.375rem, 2.5vw, 1.875rem); font-weight: 800; color: var(--tb-text, #111827); margin: 0 0 0.5rem; }
-.tb-features-section-sub { color: var(--tb-text-muted, #6b7280); font-size: 1rem; margin: 0; }
-.tb-stats-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
-.tb-stat-item { flex: 1 1 8rem; text-align: center; }
-.tb-stat-value { display: block; font-size: 1.875rem; font-weight: 800; color: var(--tb-primary-text, #4f46e5); }
-.tb-stat-suffix { font-size: 1.25rem; }
-.tb-stat-label { display: block; font-size: 0.875rem; color: var(--tb-text-muted, #6b7280); margin-top: 0.25rem; }
-.tb-service-card { display: block; background: var(--tb-surface, #fff); border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; text-decoration: none; color: inherit; transition: box-shadow 0.2s; }
-.tb-service-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-.tb-service-icon { font-size: 1.75rem; margin-bottom: 0.75rem; }
-.tb-service-title { font-size: 1rem; font-weight: 700; color: var(--tb-text, #111827); margin: 0 0 0.4rem; }
-.tb-service-text { font-size: 0.875rem; color: var(--tb-text-muted, #6b7280); line-height: 1.6; margin: 0; }
-.tb-project-card { display: block; background: var(--tb-surface, #fff); border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; text-decoration: none; color: inherit; }
-.tb-project-card-category { display: inline-block; background: var(--tb-background, #eff6ff); color: var(--tb-primary, #4f46e5); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; }
-.tb-project-card-title { font-size: 1.0625rem; font-weight: 700; color: var(--tb-text, #111827); margin: 0 0 0.4rem; }
-.tb-project-card-text { font-size: 0.875rem; color: var(--tb-text-muted, #6b7280); line-height: 1.5; margin: 0; }
-.tb-contact-info-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; }
-.tb-contact-info-item { display: flex; align-items: flex-start; gap: 0.65rem; }
-.tb-contact-info-icon { font-size: 1.25rem; }
-.tb-contact-info-label { font-size: 0.75rem; font-weight: 700; color: var(--tb-text-muted, #6b7280); text-transform: uppercase; letter-spacing: 0.04em; margin: 0; }
-.tb-contact-info-value { font-size: 0.9375rem; font-weight: 600; color: var(--tb-text, #111827); margin: 0.15rem 0 0; }
-.tb-about-section { max-width: 48rem; margin: 0 auto; text-align: center; }
-.tb-about-features { list-style: none; padding: 0; margin: 1rem 0; text-align: start; display: inline-block; }
-.tb-about-feature { padding: 0.3rem 0; }
-.tb-about-stats { justify-content: center; margin-top: 1.5rem; }
-.tb-hero-trust-inner { max-width: 42rem; margin: 0 auto; text-align: center; }
-.tb-hero-trust-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.25rem; margin-top: 1.25rem; font-size: 0.9rem; color: var(--tb-text-muted, #6b7280); }
-.tb-hero-trust-rating, .tb-hero-trust-phone { display: inline-flex; align-items: center; gap: 0.4rem; }
-
-/* Commercial Productization fase-3 (round 2): same comprehensive parity
-   port as canvas-preview.blade.php — see its matching comment for why. */
-.tb-features-section-header { text-align: center; margin-bottom: 2.5rem; }
-.tb-feature-card { padding: 1.75rem; border-radius: var(--tb-radius, 0.75rem); transition: transform 0.2s, box-shadow 0.2s; }
-.tb-feature-card-cards { border: 1px solid #e5e7eb; background: var(--tb-surface, #fff); box-shadow: var(--tb-shadow-sm); }
-.tb-feature-card-bordered { border: 2px solid #e5e7eb; background: transparent; }
-.tb-feature-card-minimal { border: none; background: transparent; }
-.tb-feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
-.tb-feature-icon { font-size: 2.5rem; margin-bottom: 1rem; line-height: 1; }
-.tb-feature-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--tb-text, #0f172a); }
-.tb-feature-text { color: var(--tb-text-muted, #4b5563); font-size: 0.875rem; line-height: 1.7; margin: 0; }
-.tb-stat-divider { width: 1px; height: 80px; background: rgba(0,0,0,0.1); align-self: center; flex-shrink: 0; }
-.tb-client-logos-title { text-align: center; font-size: 0.8rem; color: var(--tb-text-muted, #6b7280); margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
-.tb-steps-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; }
-.tb-step-item { flex: 1 1 200px; text-align: center; padding: 1.5rem 1.25rem; max-width: 240px; }
-.tb-step-number { width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--tb-primary, #6366f1); color: #fff; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
-.tb-step-title { font-size: 1rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--tb-text, #0f172a); }
-.tb-step-text { font-size: 0.875rem; color: var(--tb-text-muted, #4b5563); line-height: 1.65; margin: 0; }
-@media(max-width:600px) { .tb-step-item{flex:1 1 140px;max-width:none;} }
-.tb-team-member { background: var(--tb-surface, #fff); border-radius: var(--tb-radius, 0.75rem); border: 1px solid #e5e7eb; overflow: hidden; text-align: center; box-shadow: var(--tb-shadow-sm); transition: transform 0.2s, box-shadow 0.2s; padding-bottom: 1.5rem; }
-.tb-team-member:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
-.tb-team-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; margin: 1.75rem auto 1rem; border: 3px solid var(--tb-primary, #6366f1); display: block; }
-.tb-team-avatar-placeholder { width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, var(--tb-primary, #6366f1), var(--tb-secondary, #0ea5e9)); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: #fff; margin: 1.75rem auto 1rem; }
-.tb-team-name { font-size: 1rem; font-weight: 700; margin: 0 0 0.25rem; color: var(--tb-text, #0f172a); }
-.tb-team-role { font-size: 0.85rem; color: var(--tb-primary-text, #6366f1); font-weight: 600; margin: 0 0 0.75rem; }
-.tb-team-bio { font-size: 0.85rem; color: var(--tb-text-muted, #4b5563); line-height: 1.55; margin: 0 1.25rem; }
-.tb-skills-list { max-width: 640px; }
-.tb-skill-item { margin-bottom: 1.5rem; }
-.tb-skill-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--tb-text, #1f2937); }
-.tb-skill-bar-track { background: #e5e7eb; border-radius: 999px; height: 10px; overflow: hidden; }
-.tb-skill-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(to left, var(--tb-secondary, #0ea5e9), var(--tb-primary, #6366f1)); width: 0; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
-.tb-testimonials-header { text-align: center; margin-bottom: 2rem; }
-.tb-testimonials-grid { display: grid; gap: 1.5rem; }
-.tb-testimonials-grid.cols-1 { grid-template-columns: 1fr; max-width: 640px; margin: 0 auto; }
-.tb-testimonials-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
-.tb-testimonials-grid.cols-3 { grid-template-columns: repeat(3,1fr); }
-.tb-testimonial-card { background: var(--tb-surface, #fff); border-radius: var(--tb-radius, 0.75rem); border: 1px solid #e5e7eb; padding: 1.75rem; box-shadow: var(--tb-shadow-sm); display: flex; flex-direction: column; }
-.tb-testimonial-stars { color: #f59e0b; font-size: 0.95rem; margin-bottom: 0.75rem; letter-spacing: 2px; }
-.tb-testimonial-text { font-size: 0.95rem; line-height: 1.75; color: var(--tb-surface-text, #1f2937); margin: 0 0 1.25rem; font-style: italic; flex: 1; }
-.tb-testimonial-author { display: flex; align-items: center; gap: 0.75rem; }
-.tb-testimonial-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--tb-primary, #6366f1), var(--tb-secondary, #0ea5e9)); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
-.tb-testimonial-name { font-weight: 700; font-size: 0.9rem; color: var(--tb-text, #0f172a); }
-.tb-testimonial-role { font-size: 0.8rem; color: var(--tb-text-muted, #6b7280); margin-top: 0.1rem; }
-@media(max-width:767px) { .tb-testimonials-grid.cols-2,.tb-testimonials-grid.cols-3{grid-template-columns:1fr;} }
-.tb-trust-grid { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
-.tb-trust-badge { display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.5rem; border: 1px solid #e5e7eb; border-radius: var(--tb-radius, 0.75rem); background: var(--tb-surface, #fff); box-shadow: var(--tb-shadow-sm); flex: 1 1 210px; }
-.tb-trust-icon { font-size: 1.875rem; flex-shrink: 0; }
-.tb-trust-info-title { font-weight: 700; font-size: 0.9rem; margin: 0 0 0.15rem; color: var(--tb-text, #0f172a); }
-.tb-trust-info-text { font-size: 0.8rem; color: var(--tb-text-muted, #6b7280); margin: 0; }
-@media(max-width:500px) { .tb-trust-badge{flex:1 1 150px;padding:0.75rem 1rem;} }
-.tb-pricing-header { text-align: center; margin-bottom: 2.5rem; }
-.tb-pricing-grid { display: grid; gap: 1.5rem; align-items: start; }
-.tb-pricing-grid.cols-1 { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
-.tb-pricing-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
-.tb-pricing-grid.cols-3 { grid-template-columns: repeat(3,1fr); }
-.tb-pricing-grid.cols-4 { grid-template-columns: repeat(4,1fr); }
-.tb-pricing-card { border-radius: var(--tb-radius, 0.75rem); border: 1px solid #e5e7eb; padding: 2rem; background: var(--tb-surface, #fff); box-shadow: var(--tb-shadow-sm); display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
-.tb-pricing-card.highlighted { border-color: var(--tb-primary, #6366f1); border-width: 2px; box-shadow: 0 4px 32px rgba(99,102,241,0.18); transform: translateY(-6px); }
-.tb-plan-badge { display: inline-block; background: var(--tb-primary, #6366f1); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.85rem; border-radius: 999px; margin-bottom: 1rem; }
-.tb-plan-name { font-size: 0.85rem; font-weight: 700; color: var(--tb-text-muted, #6b7280); margin: 0 0 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.tb-plan-price { font-size: 2.75rem; font-weight: 800; color: var(--tb-text, #0f172a); line-height: 1; }
-.tb-plan-period { font-size: 0.85rem; color: var(--tb-text-muted, #6b7280); margin: 0.25rem 0 1.5rem; }
-.tb-plan-features { list-style: none; padding: 0; margin: 0 0 2rem; flex: 1; }
-.tb-plan-features li { padding: 0.55rem 0; font-size: 0.9rem; color: var(--tb-text, #374151); border-bottom: 1px solid #f3f4f6; display: flex; align-items: flex-start; gap: 0.5rem; }
-.tb-plan-features li::before { content: '✓'; color: var(--tb-primary-text, #6366f1); font-weight: 800; flex-shrink: 0; }
-.tb-plan-features li:last-child { border-bottom: none; }
-@media(max-width:767px) { .tb-pricing-grid.cols-2,.tb-pricing-grid.cols-3,.tb-pricing-grid.cols-4{grid-template-columns:1fr;} .tb-pricing-card.highlighted{transform:none;} }
-.tb-newsletter { padding: 3.5rem 2rem; border-radius: 1rem; text-align: center; }
-.tb-newsletter-title { font-size: clamp(1.5rem,3vw,2.25rem); font-weight: 800; margin: 0 0 0.75rem; letter-spacing: -0.01em; }
-.tb-newsletter-sub { font-size: 1rem; margin: 0 0 1.75rem; opacity: 0.88; max-width: 50ch; margin-left: auto; margin-right: auto; }
-.tb-newsletter-form { display: flex; gap: 0.75rem; max-width: 500px; margin: 0 auto; flex-wrap: wrap; }
-.tb-newsletter-input { flex: 1 1 240px; padding: 0.8rem 1.1rem; border-radius: var(--tb-radius, 0.75rem); border: 2px solid rgba(255,255,255,0.2); font-family: inherit; font-size: 1rem; background: rgba(255,255,255,0.95); color: #0f172a; }
-.tb-newsletter-input:focus { outline: none; border-color: rgba(255,255,255,0.6); }
-.tb-newsletter-btn { padding: 0.8rem 1.5rem; border-radius: var(--tb-radius, 0.75rem); border: none; font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
-.tb-newsletter-btn:hover { opacity: 0.9; }
-@media(max-width:480px) { .tb-newsletter-form{flex-direction:column;} .tb-newsletter-input,.tb-newsletter-btn{width:100%;} }
-.tb-bento-header { text-align: center; margin-bottom: 2rem; }
-.tb-bento-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; grid-auto-rows: minmax(160px,auto); }
-.tb-bento-item { border-radius: 1rem; padding: 1.75rem; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(0,0,0,0.06); min-height: 160px; }
-.tb-bento-item:hover { transform: scale(1.02); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
-.tb-bento-item.large { grid-column: span 2; }
-.tb-bento-item.tall { grid-row: span 2; }
-.tb-bento-item.featured { grid-column: span 2; grid-row: span 2; min-height: 320px; }
-.tb-bento-item-icon { font-size: 2.25rem; margin-bottom: 0.75rem; line-height: 1; }
-.tb-bento-item-title { font-size: 1rem; font-weight: 700; margin: 0 0 0.3rem; }
-.tb-bento-item-text { font-size: 0.85rem; line-height: 1.55; margin: 0; opacity: 0.8; }
-@media(max-width:767px) { .tb-bento-grid{grid-template-columns:repeat(2,1fr);} .tb-bento-item.large,.tb-bento-item.featured{grid-column:span 2;} .tb-bento-item.tall{grid-row:span 1;} }
-@media(max-width:480px) { .tb-bento-grid{grid-template-columns:1fr;} .tb-bento-item.large,.tb-bento-item.featured,.tb-bento-item.tall{grid-column:span 1;grid-row:span 1;} }
-.tb-service-card.style-bordered { border: 1px solid #e5e7eb; background: var(--tb-surface, #fff); box-shadow: var(--tb-shadow-sm); }
-.tb-service-card.style-filled { background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(14,165,233,0.06)); border: 1px solid rgba(99,102,241,0.15); }
-.tb-service-card.style-minimal { border: none; background: transparent; padding-right: 0; padding-left: 0; }
-.tb-service-link { font-size: 0.875rem; font-weight: 700; color: var(--tb-primary-text, #6366f1); text-decoration: none; }
-.tb-service-link:hover { text-decoration: underline; }
-.tb-contact-split { display: flex; gap: 3rem; align-items: flex-start; flex-wrap: wrap; }
-.tb-contact-info { flex: 1 1 260px; }
-.tb-contact-form-wrap { flex: 1 1 320px; }
-.tb-contact-form-simple { background: var(--tb-surface, #fff); border-radius: var(--tb-radius, 0.75rem); padding: 2rem; border: 1px solid #e5e7eb; box-shadow: var(--tb-shadow-sm); }
-.tb-contact-form-simple input, .tb-contact-form-simple textarea { width: 100%; padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-family: inherit; font-size: 0.95rem; color: var(--tb-text, #1f2937); background: #fff; box-sizing: border-box; transition: border-color 0.15s; }
-.tb-contact-form-simple input:focus, .tb-contact-form-simple textarea:focus { outline: none; border-color: var(--tb-primary, #6366f1); }
-@media(max-width:767px) { .tb-contact-split{flex-direction:column;gap:1.5rem;} }
-.tb-row { display: flex; flex-wrap: wrap; gap: 1rem; }
-.tb-column { min-width: 0; }
-.tb-col-full { flex: 1 1 100%; }
-.tb-col-1-2 { flex: 1 1 calc(50% - 0.5rem); }
-.tb-col-1-3 { flex: 1 1 calc(33.333% - 0.67rem); }
-.tb-col-2-3 { flex: 1 1 calc(66.666% - 0.67rem); }
-.tb-col-1-4 { flex: 1 1 calc(25% - 0.75rem); }
-.tb-col-3-4 { flex: 1 1 calc(75% - 0.75rem); }
-@media (max-width: 767px) { .tb-col-1-2, .tb-col-1-3, .tb-col-2-3, .tb-col-1-4, .tb-col-3-4 { flex: 1 1 100%; } }
-.tb-bg-secondary { background-color: var(--tb-secondary, #7c3aed) !important; color: var(--tb-on-secondary, #fff) !important; }
-.tb-bg-surface { background-color: var(--tb-surface, #fff) !important; }
-.tb-bg-background { background-color: var(--tb-background, #f9fafb) !important; }
-.tb-bg-text { background-color: var(--tb-text, #111827) !important; color: #fff !important; }
-.tb-product-card { background: var(--tb-surface, #fff); border-radius: var(--tb-radius, 0.75rem); border: 1px solid #e5e7eb; padding: 0; overflow: hidden; box-shadow: var(--tb-shadow-sm); text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: box-shadow 0.2s, transform 0.15s; }
-.tb-product-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
-.tb-product-card-img { aspect-ratio: 1; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.tb-product-card-img img { width: 100%; height: 100%; object-fit: cover; }
-.tb-product-card-noimg { font-size: 2.5rem; color: #9ca3af; }
-.tb-product-card-inner { padding: 1rem; flex: 1; }
-.tb-product-title { font-weight: 700; font-size: 1rem; margin: 0 0 0.4rem; color: var(--tb-text, #111827); }
-.tb-product-price { font-weight: 700; color: var(--tb-primary-text, #4f46e5); font-size: 0.95rem; }
-.tb-product-grid-empty { padding: 2rem; text-align: center; background: #f9fafb; border-radius: 0.75rem; border: 1px dashed #d1d5db; }
-.tb-product-grid-empty p { margin-bottom: 1rem; color: #6b7280; }
-.tb-blog-card { display: flex; flex-direction: column; background: var(--tb-surface, #fff); border-radius: var(--tb-radius, 0.75rem); overflow: hidden; border: 1px solid #e5e7eb; text-decoration: none; color: inherit; box-shadow: var(--tb-shadow-sm); transition: box-shadow 0.2s, transform 0.15s; }
-.tb-blog-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
-.tb-blog-card-img { aspect-ratio: 16/10; background: #f3f4f6; overflow: hidden; }
-.tb-blog-card-img img { width: 100%; height: 100%; object-fit: cover; }
-.tb-blog-card-noimg { display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #9ca3af; min-height: 120px; }
-.tb-blog-card-body { padding: 1.25rem; flex: 1; }
-.tb-blog-card-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.4rem; line-height: 1.4; }
-.tb-blog-card-meta { font-size: 0.8rem; color: var(--tb-text-muted, #4b5563); margin: 0 0 0.4rem; }
-.tb-blog-card-excerpt { font-size: 0.88rem; color: #6b7280; margin: 0; line-height: 1.6; }
+{{-- Canvas fidelity fix (2026-09-20): this iframe is what the Canvas
+     editor's WYSIWYG surface actually shows — it used to carry its own
+     independently hand-maintained, materially incomplete CSS subset (no
+     theme-runtime::css.contract at all; zero rules for nav_header/
+     nav_footer, hero_split/hero_gradient, gallery, promo_banner/countdown,
+     wishlist/loyalty/installment) that had silently drifted from
+     canvas-preview.blade.php's parity-audited copy. Root cause of the
+     "navigation renders as raw unstyled links" / "hero renders as a
+     placeholder" symptoms: the real block markup was always correct, it
+     simply had no CSS to render with in this specific view. Now shares the
+     exact same partial (which itself pulls in theme-runtime::css.contract)
+     as canvas-preview.blade.php — a single, un-driftable source for both.
+     Do not re-add any of these rules locally; edit the partial. --}}
+@include('admin.theme-builder.partials.canvas-css-contract')
 
 /* ── Editor canvas overlay styles ── */
 .tb-canvas-block {
@@ -306,6 +99,21 @@ body {
 .tb-canvas-block.tb-selected .tb-block-badge {
     display: block;
 }
+.tb-drag-handle {
+    display: none; position: absolute; inset-block-start: 4px; inset-inline-start: 4px;
+    z-index: 240; width: 28px; height: 28px; border: 0; border-radius: 6px;
+    background: #4338ca; color: #fff; cursor: grab; touch-action: none;
+    align-items: center; justify-content: center; font-weight: 800; letter-spacing: -3px;
+    box-shadow: 0 2px 8px rgba(15,23,42,.24);
+}
+.tb-canvas-block:hover > .tb-drag-handle,
+.tb-canvas-block.tb-selected > .tb-drag-handle { display: flex; }
+.tb-drag-handle:focus-visible { display: flex; outline: 3px solid #f59e0b; outline-offset: 2px; }
+body.tb-pointer-dragging { cursor: grabbing; user-select: none; }
+.tb-canvas-block.tb-drop-before { box-shadow: inset 0 4px 0 #4f46e5 !important; }
+.tb-canvas-block.tb-drop-after { box-shadow: inset 0 -4px 0 #4f46e5 !important; }
+.tb-canvas-block.tb-drop-inside { outline: 3px dashed #4f46e5 !important; outline-offset: -5px; }
+.tb-canvas-block.tb-drop-invalid { outline: 3px dashed #dc2626 !important; cursor: not-allowed; }
 
 /* ── Drop zones (TB3-03) ── */
 .tb-drop-zone {
@@ -449,6 +257,19 @@ body.tb-drag-active .tb-drop-zone {
 <script src="{{ $__extSrc }}" defer></script>
 @endforeach
 
+@include('theme-runtime::canvas.runtime')
+{{-- Phase 6.1-A: the structural services partial hard-requires the shared
+     CanvasIdentity contract (it throws 'CanvasIdentity contract is required'
+     without it). The canonical canvas.blade.php includes identity before the
+     structural services; the live preview must do the same. --}}
+@include('theme-runtime::canvas.identity')
+{{-- Phase 3C / M3: the interaction widgets (interactive_form / action_button) render
+     as sanitized intention emitters (data-tb-interaction) — this shared runtime is the
+     listener that turns those intentions into theme:interaction CustomEvents and the
+     policy-checked side effects (navigate / call_api / scroll_to / toggle_element /
+     open_modal). Without it the attributes are inert markup on the page. --}}
+@include('theme-runtime::interaction.runtime')
+@include('admin.theme-builder.partials.canvas-structural-services')
 <script>
 (function () {
     'use strict';
@@ -459,7 +280,7 @@ body.tb-drag-active .tb-drop-zone {
     };
 
     function notifyParent(msg) {
-        try { parent.postMessage(msg, '*'); } catch (_) {}
+        try { ThemeCanvasRuntime.post(parent, msg.action, Object.fromEntries(Object.entries(msg).filter(([key]) => key !== 'action'))); } catch (_) {}
     }
 
     /* ── TB3-04: Inline editing ──────────────────────────────────── */
@@ -582,12 +403,7 @@ body.tb-drag-active .tb-drop-zone {
     /* ── Block HTML update (live prop edit) ───────────────────── */
     function updateBlockHtml(blockId, html) {
         disableInlineEditing();
-        var el = document.querySelector('[data-tb-block-id="' + blockId + '"]');
-        if (!el) return;
-        var badge = el.querySelector('.tb-block-badge');
-        el.innerHTML = html;
-        if (badge) el.insertBefore(badge, el.firstChild);
-        if (state.selectedBlockId === blockId) el.classList.add('tb-selected');
+        ThemeCanvasRuntime.replaceNode(blockId, html);
     }
 
     /* ── Drop zone helpers (TB3-03 + TB4) ────────────────────── */
@@ -609,6 +425,91 @@ body.tb-drag-active .tb-drop-zone {
             if (el) { el.classList.add('tb-container-drag-over'); currentContainerTarget = el; }
         }
     }
+
+    // Phase 2C pointer drag uses rendered iframe geometry as the sole drop
+    // projection authority. Canonical parent/index validation still happens
+    // in the editor service and again on the server.
+    var pointerDrag = null;
+    var structuralDropEl = null;
+    function clearStructuralDrop() {
+        if (structuralDropEl) structuralDropEl.classList.remove('tb-drop-before', 'tb-drop-after', 'tb-drop-inside', 'tb-drop-invalid');
+        structuralDropEl = null;
+    }
+    function nearestCanonicalParent(el) {
+        var parent = el.parentElement;
+        while (parent) {
+            if (parent.matches?.('[data-tb-block-id]')) return parent;
+            parent = parent.parentElement;
+        }
+        return null;
+    }
+    function canonicalSiblings(parentEl) {
+        return Array.from(document.querySelectorAll('[data-tb-block-id]')).filter(function (candidate) {
+            return nearestCanonicalParent(candidate) === parentEl;
+        });
+    }
+    function structuralCandidate(x, y) {
+        var hit = document.elementFromPoint(x, y)?.closest?.('[data-tb-block-id]');
+        if (!hit || !pointerDrag) return null;
+        var dragged = document.querySelector('[data-tb-block-id="' + CSS.escape(pointerDrag.nodeId) + '"]');
+        var rect = hit.getBoundingClientRect();
+        var parentEl = nearestCanonicalParent(hit);
+        var parentStyle = parentEl ? getComputedStyle(parentEl) : getComputedStyle(document.body);
+        var horizontal = parentStyle.display.includes('flex') && parentStyle.flexDirection.startsWith('row');
+        var position = CanvasDragDrop.resolve(rect, x, y, document.documentElement.dir || 'rtl', hit.dataset.tbContainer === '1', horizontal);
+        var invalid = hit === dragged || !!dragged?.contains(hit);
+        var targetParentId;
+        var targetIndex;
+        if (position === 'inside') {
+            targetParentId = hit.dataset.tbBlockId;
+            targetIndex = canonicalSiblings(hit).length;
+        } else {
+            targetParentId = parentEl?.dataset.tbBlockId || 'page';
+            var siblings = canonicalSiblings(parentEl);
+            targetIndex = Math.max(0, siblings.indexOf(hit)) + (position === 'after' ? 1 : 0);
+        }
+        return { hit, invalid, nodeId: pointerDrag.nodeId, targetParentId, targetIndex, position };
+    }
+    document.addEventListener('pointerdown', function (event) {
+        var handle = event.target.closest('.tb-drag-handle');
+        if (!handle || event.button !== 0) return;
+        var block = handle.closest('[data-tb-block-id]');
+        if (!block) return;
+        event.preventDefault();
+        handle.setPointerCapture?.(event.pointerId);
+        pointerDrag = { pointerId: event.pointerId, nodeId: block.dataset.tbBlockId, candidate: null };
+        document.body.classList.add('tb-pointer-dragging');
+        notifyParent({ action: 'dragStart', nodeId: pointerDrag.nodeId });
+    }, true);
+    document.addEventListener('pointermove', function (event) {
+        if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+        event.preventDefault();
+        if (event.clientY < 48) window.scrollBy({ top: -18, behavior: 'auto' });
+        else if (event.clientY > window.innerHeight - 48) window.scrollBy({ top: 18, behavior: 'auto' });
+        var candidate = structuralCandidate(event.clientX, event.clientY);
+        clearStructuralDrop();
+        pointerDrag.candidate = candidate;
+        if (!candidate) return;
+        structuralDropEl = candidate.hit;
+        structuralDropEl.classList.add(candidate.invalid ? 'tb-drop-invalid' : 'tb-drop-' + candidate.position);
+        notifyParent({ action: 'dragOver', nodeId: candidate.nodeId, targetParentId: candidate.targetParentId, targetIndex: candidate.targetIndex, position: candidate.position });
+    }, true);
+    function finishPointerDrag(event, cancelled) {
+        if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+        var active = pointerDrag;
+        pointerDrag = null;
+        document.body.classList.remove('tb-pointer-dragging');
+        clearStructuralDrop();
+        if (!cancelled && active.candidate && !active.candidate.invalid) notifyParent({
+            action: 'dropNode', nodeId: active.candidate.nodeId,
+            targetParentId: active.candidate.targetParentId,
+            targetIndex: active.candidate.targetIndex,
+            position: active.candidate.position
+        });
+        else notifyParent({ action: 'dragCancel', nodeId: active.nodeId });
+    }
+    document.addEventListener('pointerup', function (event) { finishPointerDrag(event, false); }, true);
+    document.addEventListener('pointercancel', function (event) { finishPointerDrag(event, true); }, true);
 
     // TB4: only searches top-level blocks (direct children of body)
     function getTopLevelBlocks() {
@@ -645,8 +546,9 @@ body.tb-drag-active .tb-drop-zone {
 
     /* ── postMessage bridge (parent → iframe) ─────────────────── */
     window.addEventListener('message', function (e) {
+        if (!ThemeCanvasRuntime.sameOrigin(e.origin) || e.source !== parent) return;
         var d = e.data;
-        if (!d || !d.action) return;
+        if (!ThemeCanvasRuntime.valid(d, 'to-preview')) return;
 
         switch (d.action) {
             case 'select':
@@ -666,6 +568,12 @@ body.tb-drag-active .tb-drop-zone {
             // TB4: highlight container for drag-into
             case 'setContainerTarget':
                 setContainerTarget(d.containerId || null);
+                break;
+            case 'setStructuralDrop':
+                if (structuralDropEl && !d.valid) {
+                    structuralDropEl.classList.remove('tb-drop-before', 'tb-drop-after', 'tb-drop-inside');
+                    structuralDropEl.classList.add('tb-drop-invalid');
+                }
                 break;
             case 'getDropIndex':
                 var clientY = d.clientY || 0;

@@ -19,6 +19,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     x-cloak
     class="flex flex-col h-screen bg-slate-100 overflow-hidden select-none"
     @keydown.ctrl.s.window.prevent="saveActiveContext()"
+    @keydown.ctrl.z.window.prevent="onUndoShortcut($event)"
+    @keydown.ctrl.shift.z.window.prevent="onRedoShortcut($event)"
+    @keydown.ctrl.y.window.prevent="onRedoShortcut($event)"
+    {{-- Phase 2C: undo/redo keyboard shortcuts; handlers exclude keys typed
+         into form controls so Inspector editing never triggers undo. --}}
 >
 
     {{-- ═══════════════════════════════════════════════════════
@@ -113,16 +118,36 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
         {{-- Actions --}}
         <div class="flex items-center gap-2 shrink-0">
             {{-- Undo / Redo --}}
-            <button @click="undo()" :disabled="historyIndex <= 0"
+            <button @click="undo()" :disabled="!canUndo"
                 title="واگرد (Ctrl+Z)"
                 class="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 disabled:opacity-30 transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6"/></svg>
             </button>
-            <button @click="redo()" :disabled="historyIndex >= history.length - 1"
+            <button @click="redo()" :disabled="!canRedo"
                 title="از نو (Ctrl+Y)"
                 class="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 disabled:opacity-30 transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a8 8 0 00-8 8v2M21 10l-6 6M21 10l-6-6"/></svg>
             </button>
+            {{-- Phase 2C: history trail — the last 5 entries, newest first;
+                 hover reveals the operation type and target. --}}
+            <div class="relative" x-data="{ historyOpen: false }">
+                <button @click="historyOpen = !historyOpen"
+                    class="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 disabled:opacity-30 transition"
+                    :disabled="recentHistory.length === 0" title="تاریخچه عملیات">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+                <div x-show="historyOpen" @click.outside="historyOpen = false" x-transition
+                    class="absolute right-0 top-9 z-50 w-56 rounded-xl border border-slate-200 bg-white shadow-xl p-2 text-xs">
+                    <p class="px-2 py-1 font-semibold text-slate-500">تاریخچه (آخرین به اول)</p>
+                    <template x-for="(item, i) in recentHistory.slice(0, 5)" :key="historyVersion + '-' + i">
+                        <div class="px-2 py-1 rounded-md flex items-center justify-between"
+                            :class="i === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'">
+                            <span x-text="item.type === 'move' ? 'جابه‌جایی' : item.type === 'insert' ? 'افزودن' : item.type === 'delete' ? 'حذف' : item.type === 'duplicate' ? 'تکثیر' : 'ویرایش مقدار'"></span>
+                            <span class="text-slate-400 font-mono" x-text="item.targetId ?? ''"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
             <div class="h-6 w-px bg-slate-200 shrink-0"></div>
 
             {{-- Dirty indicator --}}
@@ -137,6 +162,13 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 title="کتابخانه قالب‌ها">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                 قالب‌ها
+            </button>
+            {{-- Phase 3A — Section Library (sections / header / footer) --}}
+            <button @click="openSectionLibrary(sectionLibraryZone())"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-medium transition"
+                title="کتابخانه بخش‌ها و ترکیب‌ها">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                بخش‌ها
             </button>
             {{-- Phase 3G-B-6: Extensions button --}}
             <button @click="openExtensionsModal()"
@@ -266,6 +298,12 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     <template x-for="node in flattenTree()" :key="node.block.id + node.depth">
                         <div
                             @click="selectBlock(node.path)"
+                            @keydown.enter.prevent="selectBlock(node.path)"
+                            @keydown.space.prevent="selectBlock(node.path)"
+                            tabindex="0"
+                            role="treeitem"
+                            :aria-selected="isSelectedPath(node.path) ? 'true' : 'false'"
+                            :aria-label="navigatorLabel(node.block)"
                             :data-block-type="node.block.type"
                             :style="{ paddingRight: (node.depth * 14 + 8) + 'px' }"
                             :class="isSelectedPath(node.path)
@@ -292,7 +330,8 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <span :class="blockCategoryColor(node.block.type)" class="w-1.5 h-1.5 rounded-full shrink-0"></span>
 
                             {{-- Block name + optional custom label --}}
-                            <span class="truncate flex-1" x-text="node.block.props?.label ? (blockLabel(node.block.type) + ': ' + node.block.props.label) : blockLabel(node.block.type)"></span>
+                            <span class="truncate flex-1" x-text="navigatorLabel(node.block)"></span>
+                            <span x-show="nodeLocked(node.block)" class="text-[10px] text-amber-600 shrink-0" title="ساختار قفل است" aria-label="ساختار قفل است">🔒</span>
                             {{-- TB5: hide-on-device badges --}}
                             <span x-show="node.block.style?.hideDesktop" class="text-[9px] bg-slate-200 text-slate-500 px-1 rounded shrink-0">D</span>
                             <span x-show="node.block.style?.hideTablet"  class="text-[9px] bg-slate-200 text-slate-500 px-1 rounded shrink-0">T</span>
@@ -324,7 +363,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
             {{-- Library Blocks (only when blocks tab active) --}}
             <div x-show="leftPanelTab==='blocks'" class="flex-1 overflow-y-auto">
-                @php $orderedCats = ['layout','content','dynamic','ecommerce','marketing','utility','module','extension']; @endphp
+                {{-- Phase 3C/M3: 'forms' added so the interactive_form widget
+                     (and future form-category types) is actually selectable in the
+                     palette — the category existed in the registry but was silently
+                     dropped from the UI list. --}}
+                @php $orderedCats = ['layout','content','dynamic','ecommerce','marketing','forms','utility','module','extension']; @endphp
                 @foreach($orderedCats as $catKey)
                     @if(!isset($byCategory[$catKey])) @continue @endif
                     @php
@@ -337,6 +380,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             'dynamic'   => 'text-purple-600 bg-purple-50',
                             'ecommerce' => 'text-emerald-700 bg-emerald-50',
                             'marketing' => 'text-orange-600 bg-orange-50',
+                            'forms'     => 'text-cyan-700 bg-cyan-50',
                             'utility'   => 'text-slate-600 bg-slate-100',
                             'module'    => 'text-indigo-700 bg-indigo-50',
                             'extension' => 'text-teal-700 bg-teal-50',
@@ -371,7 +415,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <button
                                         draggable="true"
                                         data-block-type="{{ $blockType }}"
-                                        @click="addBlock('{{ $blockType }}')"
+                                        @click="if (!suppressPaletteClick) addBlock('{{ $blockType }}')"
+                                        @pointerdown="startPointerLibraryDrag($event, '{{ $blockType }}')"
+                                        @pointermove.window="movePointerLibraryDrag($event)"
+                                        @pointerup.window="finishPointerLibraryDrag($event)"
+                                        @pointercancel.window="cancelPointerLibraryDrag($event)"
                                         @dragstart="startDragBlock($event, '{{ $blockType }}')"
                                         @dragend="endDragBlock()"
                                         x-show="isBlockVisible('{{ $blockType }}', '{{ $blockDef['name'] }}')"
@@ -541,29 +589,29 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div :class="blockCategoryColor(selectedBlock.type)" class="w-2 h-2 rounded-full"></div>
                                 <span class="text-sm font-bold text-slate-800" x-text="blockLabel(selectedBlock.type)"></span>
                             </div>
-                            <button @click="selectedPath = null; sendToIframe({action:'select', blockId:null})" class="text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
+                            <button @click="selectBlockById(null); sendToIframe({action:'select', blockId:null})" class="text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
                         </div>
                         <p class="text-[11px] text-slate-400 mt-0.5 font-mono" x-text="selectedBlock.type"></p>
                     </div>
 
                     {{-- Block Actions (Move / Duplicate / Delete) — TB4: path-aware --}}
                     <div class="flex items-center gap-1.5 px-3 py-2 border-b border-slate-100 shrink-0">
-                        <button @click="moveSelectedUp()" :disabled="!canMoveUp()"
+                        <button @click="moveSelectedUp()" :disabled="selectedEditorCapabilities.lockedStructure || !canMoveUp()"
                             title="بالاتر"
                             class="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
                         </button>
-                        <button @click="moveSelectedDown()" :disabled="!canMoveDown()"
+                        <button @click="moveSelectedDown()" :disabled="selectedEditorCapabilities.lockedStructure || !canMoveDown()"
                             title="پایین‌تر"
                             class="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <button @click="duplicateSelected()"
+                        <button @click="duplicateSelected()" :disabled="selectedEditorCapabilities.lockedStructure"
                             title="کپی بلوک"
                             class="flex-1 flex items-center justify-center py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                         </button>
-                        <button @click="removeSelected()"
+                        <button @click="removeSelected()" :disabled="selectedEditorCapabilities.lockedStructure"
                             title="حذف بلوک"
                             class="flex-1 flex items-center justify-center py-1.5 rounded-lg border border-red-200 text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-400 transition">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -993,6 +1041,30 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-y"
                                         :placeholder="schemaDef.default ?? ''"></textarea>
                                 </template>
+
+                                {{-- Phase 2B-R: canonical link control. The value stays a legacy
+                                     plain URL string (registry legacy-string compatibility) unless it
+                                     was authored structured, in which case url/target edits preserve
+                                     the object shape. Raw URL strings are scheme-gated server-side by
+                                     HtmlSanitizer::isValidUrl at render time. --}}
+                                <template x-if="schemaDef.type === 'link' || schemaDef.control === 'link'">
+                                    <div class="space-y-1.5">
+                                        <input type="text"
+                                            :id="'ctrl-' + propKey"
+                                            :value="typeof (selectedBlock.props[propKey]) === 'string' ? selectedBlock.props[propKey] : (selectedBlock.props[propKey]?.url ?? '')"
+                                            @input="updateLinkProp(propKey, $event.target.value)"
+                                            class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
+                                            placeholder="https:// …">
+                                        <template x-if="selectedBlock.props[propKey] && typeof selectedBlock.props[propKey] === 'object'">
+                                            <select :value="selectedBlock.props[propKey]?.target ?? '_self'"
+                                                @change="updateLinkTarget(propKey, $event.target.value)"
+                                                class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 bg-white">
+                                                <option value="_self">همان صفحه</option>
+                                                <option value="_blank">تب جدید</option>
+                                            </select>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
                         </template>
 
@@ -1235,6 +1307,48 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
     {{-- ═══════════════════════════════════════════════════════
          TB6: SAVE AS TEMPLATE MODAL
     ═══════════════════════════════════════════════════════ --}}
+    {{-- Phase 3A — Section Library modal: the Persian-first composition
+        library (sections + header/footer compositions). Insertion goes
+        through the canonical tree operations via CanvasSectionLibrary —
+        ONE undoable operation, every child independently editable. --}}
+    <div x-show="showSectionLibrary" x-transition.opacity class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
+        <div @click.outside="showSectionLibrary = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:88vh">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    <span x-text="sectionLibrary.kind === 'header' ? 'کتابخانه هدر' : sectionLibrary.kind === 'footer' ? 'کتابخانه فوتر' : 'کتابخانه بخش‌ها'"></span>
+                </h3>
+                <button @click="showSectionLibrary = false" class="text-slate-400 hover:text-slate-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="px-5 py-3 border-b border-slate-100 shrink-0 bg-slate-50 flex items-center gap-3">
+                <input type="text" x-model="sectionLibrary.search" placeholder="جستجو…"
+                    class="flex-1 text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            </div>
+            <div class="flex-1 overflow-y-auto p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <template x-for="item in sectionLibraryItems()" :key="item.key">
+                        <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-indigo-300 transition cursor-pointer flex flex-col"
+                            @click="insertSection(item.key)">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700" x-text="item.categoryLabel"></span>
+                                <span class="text-[10px] text-slate-400" x-text="item.widgets + ' ویجت'"></span>
+                            </div>
+                            <p class="text-sm font-semibold text-slate-800" x-text="item.name"></p>
+                            <p class="text-xs text-slate-500 mt-1 flex-1" x-text="item.description"></p>
+                            <span class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                درج
+                            </span>
+                        </div>
+                    </template>
+                </div>
+                <p x-show="sectionLibraryItems().length === 0" class="text-center py-12 text-slate-400 text-sm">موردی یافت نشد</p>
+            </div>
+        </div>
+    </div>
+
     <div x-show="showSaveAsTemplate" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
         <div @click.outside="showSaveAsTemplate = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <h3 class="text-base font-bold text-slate-800 mb-4">ذخیره به‌عنوان قالب</h3>
@@ -1603,12 +1717,20 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
      * BlockRegistry::isContainerType() static method, which would silently
      * report every `ext:*` container type as non-container.
      */
-    $blockSchemasForJs = collect($registry)->mapWithKeys(fn($d, $t) => [$t => [
-        'schema' => $d['schema'] ?? [],
-        'defaultProps' => $d['defaultProps'] ?? [],
-        'is_container' => !empty($d['is_container']),
-    ]]);
+    $blockSchemasForJs = collect($registry)->mapWithKeys(function ($d, $t) {
+        $definition = \SaaSPlatform\ThemeRuntime\Inspector\InspectorFieldRegistry::normalizeDefinition($d);
+        return [$t => [
+            'schema' => $definition['schema'],
+            'defaultProps' => $definition['defaultProps'] ?? [],
+            'editor' => $definition['editor'],
+            'is_container' => !empty($definition['is_container']),
+        ]];
+    });
 @endphp
+@include('theme-runtime::canvas.runtime')
+@include('theme-runtime::canvas.identity')
+@include('admin.theme-builder.partials.canvas-structural-services')
+@include('admin.theme-builder.partials.canvas-section-library')
 <script>
 const THEME_ID   = {{ $theme->id }};
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
@@ -1627,6 +1749,14 @@ const EXTENSION_SELECTION_ERRORS = @json($extensionSelectionErrors);
 // unpublish action — updated client-side after a successful unpublish so
 // the menu reacts without a full page reload.
 const INITIAL_THEME_STATUS = @json($theme->status);
+// Phase 2A — canonical layout document contract adoption (narrowest
+// boundary: a read-only version/direction/locale constant, no editor
+// rewrite). The editor was built against this envelope version; the
+// server fail-closes on any version it does not know.
+const CANVAS_LAYOUT_VERSION = @json($layoutEnvelope['layout_version']);
+const CANVAS_LAYOUT_ATTRIBUTES = @json($layoutAttributes);
+window.CANVAS_LAYOUT_VERSION = CANVAS_LAYOUT_VERSION;
+window.CANVAS_LAYOUT_ATTRIBUTES = CANVAS_LAYOUT_ATTRIBUTES;
 
 function themeCanvas() {
     return {
@@ -1666,10 +1796,15 @@ function themeCanvas() {
         dropTargetIndex:     -1,
         dropTargetBeforeId:  null,
         dragTargetContainerId: null,  // TB4: container drag target
-        // TB3-S2: undo/redo history
-        history:        [],
-        historyIndex:   -1,
-        maxHistory:     25,
+        structuralDrag: null,
+        palettePointerDrag: null,
+        suppressPaletteClick: false,
+        // Phase 2C: operation history and canonical structural services.
+        documentState:  null,
+        treeOperations: null,
+        historyEngine:  null,
+        navigator:      null,
+        historyVersion: 0,
         // TB3-05: style panel sections (open/closed)
         styleSection: { typography: true, colors: true, spacing: false, border: false, shadow: false },
         // TB3-04: inline edit auto-save
@@ -1677,7 +1812,6 @@ function themeCanvas() {
         // TB3-07: media manager
         mediaModal: { show: false, tab: 'library', loading: false, images: [], uploading: false, uploadDone: false, targetPropKey: null },
         // TB4: nested containers
-        selectedPath:    null,          // null | [0] | [0, 1] | ...
         leftPanelTab:    'blocks',      // 'blocks' | 'tree'
         treeExpanded:    {},            // blockId → bool (default: expanded)
         showAddChildModal: false,
@@ -1688,6 +1822,9 @@ function themeCanvas() {
         showSaveAsTemplate: false,
         templateLibrary: { loading: false, templates: [], type: '', category: '', search: '' },
         saveTemplateForm: { name: '', type: 'section', category: 'hero', scope: 'block', saving: false },
+        // Phase 3A — Section Library state (Persian-first composition library).
+        showSectionLibrary: false,
+        sectionLibrary: { kind: 'section', search: '' },
         // Phase 3G-B-6: Extension authoring — {product_identity: {version}},
         // written verbatim into Theme.settings.extension_selections on save.
         extensionSelections: JSON.parse(JSON.stringify(INITIAL_EXTENSION_SELECTIONS ?? {})),
@@ -1722,10 +1859,13 @@ function themeCanvas() {
             else if (this.activeTarget === 'footer') this.footerBlocks = val;
             else if (this.pages[this.currentPage]) this.pages[this.currentPage].blocks = val;
         },
-        // TB4: path-based selection
+        // Stable node id is authoritative; positional paths are derived for
+        // legacy rendering and public path-based editor methods.
+        get selectedPath() {
+            return this.documentState?.path(this.blocks) ?? null;
+        },
         get selectedBlock() {
-            if (!this.selectedPath || this.selectedPath.length === 0) return null;
-            return this.getBlockByPath(this.selectedPath);
+            return this.documentState?.selectedNode(this.blocks) ?? null;
         },
         // backward compat — top-level index of selected block
         get selectedIndex() {
@@ -1735,6 +1875,14 @@ function themeCanvas() {
             if (!this.selectedBlock) return {};
             return BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
         },
+        get selectedEditorCapabilities() {
+            return this.selectedBlock
+                ? (BLOCK_SCHEMAS[this.selectedBlock.type]?.editor ?? { allowCustomCss: true, lockedStructure: false, uiDirection: null })
+                : { allowCustomCss: true, lockedStructure: false, uiDirection: null };
+        },
+        get canUndo() { this.historyVersion; return !!this.historyEngine?.canUndo; },
+        get canRedo() { this.historyVersion; return !!this.historyEngine?.canRedo; },
+        get recentHistory() { this.historyVersion; return this.historyEngine?.recent(10) ?? []; },
         // TB5: reactive style object for the active breakpoint
         get currentBpStyle() {
             if (!this.selectedBlock) return {};
@@ -1797,14 +1945,7 @@ function themeCanvas() {
         },
 
         getBlockByPath(path, arr) {
-            arr = arr ?? this.blocks;
-            if (!path || path.length === 0) return null;
-            let block = arr[path[0]];
-            for (let i = 1; i < path.length; i++) {
-                if (!block) return null;
-                block = (block.children ?? [])[path[i]];
-            }
-            return block ?? null;
+            return CanvasIdentity.nodeAtPath(arr ?? this.blocks, path);
         },
 
         getSiblingArray(path) {
@@ -1819,30 +1960,16 @@ function themeCanvas() {
         findBlockPath(blockId, arr, prefix) {
             arr = arr ?? this.blocks;
             prefix = prefix ?? [];
-            for (let i = 0; i < arr.length; i++) {
-                if (arr[i].id === blockId) return [...prefix, i];
-                if (arr[i].children?.length) {
-                    const found = this.findBlockPath(blockId, arr[i].children, [...prefix, i]);
-                    if (found) return found;
-                }
-            }
-            return null;
+            const path = CanvasIdentity.pathForId(arr, blockId);
+            return path ? [...prefix, ...path] : null;
         },
 
         flattenTree(arr, depth, prefix) {
-            arr    = arr    ?? this.blocks;
-            depth  = depth  ?? 0;
-            prefix = prefix ?? [];
-            const result = [];
-            for (let i = 0; i < arr.length; i++) {
-                const block = arr[i];
-                const path  = [...prefix, i];
-                result.push({ block, depth, path });
-                if (this.isContainerType(block.type) && block.children?.length && this.treeExpanded[block.id] !== false) {
-                    result.push(...this.flattenTree(block.children, depth + 1, path));
-                }
-            }
-            return result;
+            const tree = arr ?? this.blocks;
+            const baseDepth = depth ?? 0;
+            const basePath = prefix ?? [];
+            return (this.navigator?.flatten(tree, this.treeExpanded, baseDepth) ?? [])
+                .map(entry => ({ ...entry, path: [...basePath, ...entry.path] }));
         },
 
         isSelectedPath(path) {
@@ -1854,27 +1981,26 @@ function themeCanvas() {
         toggleTreeNode(blockId) {
             this.treeExpanded[blockId] = this.treeExpanded[blockId] !== false ? false : true;
         },
+        navigatorLabel(block) {
+            return this.navigator?.label(block, BLOCK_LABELS)
+                ?? (BLOCK_LABELS[block?.type] ?? block?.type ?? '');
+        },
+        nodeLocked(block) {
+            return !!this.treeOperations?.capabilities(block).lockedStructure;
+        },
 
         // ── Canvas Actions ────────────────────────────────────────
         addBlock(type, atIndex = -1, parentPath = null) {
-            this.pushHistory();
             const block = this.makeBlock(type);
-            if (parentPath !== null) {
-                // Add as child of container at parentPath
-                const container = this.getBlockByPath(parentPath);
-                if (!container) return;
-                if (!container.children) container.children = [];
-                container.children.push(block);
-                this.selectedPath = [...parentPath, container.children.length - 1];
-            } else {
-                const arr = [...this.blocks];
-                const idx = (atIndex >= 0 && atIndex <= arr.length) ? atIndex : arr.length;
-                arr.splice(idx, 0, block);
-                this.blocks = arr;
-                this.selectedPath = [idx];
-            }
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            const parent = parentPath ? this.getBlockByPath(parentPath) : null;
+            const parentId = parent?.id ?? 'page';
+            const children = parent ? (parent.children ?? []) : this.blocks;
+            const index = atIndex >= 0 ? Math.min(atIndex, children.length) : children.length;
+            try {
+                const operation = this.treeOperations.insertNode(this.blocks, block, parentId, index);
+                this.recordStructuralHistory('insert', operation, null, block, this.documentState.selectedNodeId, block.id);
+                this.afterStructuralChange(operation, block.id);
+            } catch (error) { this.structuralError(error); }
         },
 
         addChildBlock(type) {
@@ -1884,31 +2010,23 @@ function themeCanvas() {
 
         // Remove block at selectedPath
         removeSelected() {
-            if (!this.selectedPath) return;
-            this.pushHistory();
-            const siblings = this.getSiblingArray(this.selectedPath);
-            if (!siblings) return;
-            const idx = this.selectedPath[this.selectedPath.length - 1];
-            siblings.splice(idx, 1);
-            this.selectedPath = null;
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            if (!this.selectedPath || this.selectedEditorCapabilities.lockedStructure) return;
+            const nodeId = this.selectedBlock.id;
+            try {
+                const operation = this.treeOperations.deleteNode(this.blocks, nodeId);
+                const fallback = operation.before.parentId === 'page' ? null : operation.before.parentId;
+                this.recordStructuralHistory('delete', operation, operation.before.node, null, nodeId, fallback);
+                this.afterStructuralChange(operation, fallback);
+            } catch (error) { this.structuralError(error); }
         },
 
         duplicateSelected() {
-            if (!this.selectedPath) return;
-            this.pushHistory();
-            const siblings = this.getSiblingArray(this.selectedPath);
-            if (!siblings) return;
-            const idx = this.selectedPath[this.selectedPath.length - 1];
-            const clone = JSON.parse(JSON.stringify(siblings[idx]));
-            clone.id = 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-            // Regen child IDs recursively
-            this._regenIds(clone);
-            siblings.splice(idx + 1, 0, clone);
-            this.selectedPath = [...this.selectedPath.slice(0, -1), idx + 1];
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            if (!this.selectedPath || this.selectedEditorCapabilities.lockedStructure) return;
+            try {
+                const operation = this.treeOperations.duplicateNode(this.blocks, this.selectedBlock.id);
+                this.recordStructuralHistory('duplicate', operation, null, operation.node, this.selectedBlock.id, operation.duplicate_id);
+                this.afterStructuralChange(operation, operation.duplicate_id);
+            } catch (error) { this.structuralError(error); }
         },
 
         _regenIds(block) {
@@ -1919,7 +2037,8 @@ function themeCanvas() {
         selectBlock(pathOrIndex) {
             // Accept path array or legacy integer index
             const path = Array.isArray(pathOrIndex) ? pathOrIndex : (pathOrIndex >= 0 ? [pathOrIndex] : null);
-            this.selectedPath = path;
+            const selected = CanvasIdentity.nodeAtPath(this.blocks, path);
+            this.documentState?.select(selected?.id ?? null, this.blocks);
             this.selectedTab = 'content';
             if (this.selectedBlock) {
                 this.sendToIframe({ action: 'select', blockId: this.selectedBlock.id });
@@ -1928,27 +2047,17 @@ function themeCanvas() {
 
         // Move selected block within its sibling array
         moveSelectedUp() {
-            if (!this.selectedPath) return;
-            const siblings = this.getSiblingArray(this.selectedPath);
-            const idx = this.selectedPath[this.selectedPath.length - 1];
-            if (!siblings || idx <= 0) return;
-            this.pushHistory();
-            [siblings[idx - 1], siblings[idx]] = [siblings[idx], siblings[idx - 1]];
-            this.selectedPath = [...this.selectedPath.slice(0, -1), idx - 1];
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            if (!this.selectedPath || this.selectedEditorCapabilities.lockedStructure) return;
+            const found = this.treeOperations.find(this.blocks, this.selectedBlock.id);
+            if (!found || found.index <= 0) return;
+            this.performMove(this.selectedBlock.id, found.parentId, found.index - 1);
         },
 
         moveSelectedDown() {
-            if (!this.selectedPath) return;
-            const siblings = this.getSiblingArray(this.selectedPath);
-            const idx = this.selectedPath[this.selectedPath.length - 1];
-            if (!siblings || idx >= siblings.length - 1) return;
-            this.pushHistory();
-            [siblings[idx], siblings[idx + 1]] = [siblings[idx + 1], siblings[idx]];
-            this.selectedPath = [...this.selectedPath.slice(0, -1), idx + 1];
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            if (!this.selectedPath || this.selectedEditorCapabilities.lockedStructure) return;
+            const found = this.treeOperations.find(this.blocks, this.selectedBlock.id);
+            if (!found || found.index >= found.siblings.length - 1) return;
+            this.performMove(this.selectedBlock.id, found.parentId, found.index + 2);
         },
 
         canMoveUp() {
@@ -1966,86 +2075,208 @@ function themeCanvas() {
         // Container child operations (called from children list in props panel)
         moveChildUp(ci) {
             if (!this.selectedBlock?.children || ci <= 0) return;
-            this.pushHistory();
-            const ch = this.selectedBlock.children;
-            [ch[ci - 1], ch[ci]] = [ch[ci], ch[ci - 1]];
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            this.performMove(this.selectedBlock.children[ci].id, this.selectedBlock.id, ci - 1);
         },
 
         moveChildDown(ci) {
             const ch = this.selectedBlock?.children ?? [];
             if (ci >= ch.length - 1) return;
-            this.pushHistory();
-            [ch[ci], ch[ci + 1]] = [ch[ci + 1], ch[ci]];
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            this.performMove(ch[ci].id, this.selectedBlock.id, ci + 2);
         },
 
         removeChild(ci) {
             if (!this.selectedBlock?.children) return;
-            this.pushHistory();
-            this.selectedBlock.children.splice(ci, 1);
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            const childId = this.selectedBlock.children[ci]?.id;
+            if (!childId) return;
+            const selectedId = this.selectedBlock.id;
+            try {
+                const operation = this.treeOperations.deleteNode(this.blocks, childId);
+                this.recordStructuralHistory('delete', operation, operation.before.node, null, childId, selectedId);
+                this.afterStructuralChange(operation, selectedId);
+            } catch (error) { this.structuralError(error); }
         },
 
         // Legacy: kept for undo/redo top-level swap
         moveBlock(from, to) {
             if (to < 0 || to >= this.blocks.length) return;
-            this.pushHistory();
-            const arr = [...this.blocks];
-            const [item] = arr.splice(from, 1);
-            arr.splice(to, 0, item);
-            this.blocks = arr;
-            this.selectedPath = [to];
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            const node = this.blocks[from];
+            if (node) this.performMove(node.id, 'page', to > from ? to + 1 : to);
         },
 
         // ── TB3-S2: Undo / Redo ──────────────────────────────────
-        pushHistory() {
-            if (this.historyIndex < this.history.length - 1) {
-                this.history = this.history.slice(0, this.historyIndex + 1);
-            }
-            this.history.push(JSON.parse(JSON.stringify(this.blocks)));
-            if (this.history.length > this.maxHistory) {
-                this.history.shift();
-            } else {
-                this.historyIndex++;
-            }
+        performMove(nodeId, targetParentId, targetIndex) {
+            try {
+                const operation = this.treeOperations.moveNode(this.blocks, nodeId, targetParentId, targetIndex);
+                this.recordStructuralHistory('move', operation, operation.before, { parentId: operation.target_parent_id, index: operation.final_index }, nodeId, nodeId);
+                this.afterStructuralChange(operation, nodeId);
+            } catch (error) { this.structuralError(error); }
+        },
+
+        recordStructuralHistory(type, operation, before, after, selectionBefore, selectionAfter) {
+            this.historyEngine.record({ type, targetId: operation.node_id, operation, before, after, selectionBefore, selectionAfter });
+            this.historyVersion++;
+        },
+
+        afterStructuralChange(operation, selectedId) {
+            this.documentState.queue(operation);
+            this.selectBlockById(selectedId);
+            this.isDirty = true;
+            this.autoSaveAndReload();
+        },
+
+        selectBlockById(nodeId) {
+            this.documentState?.select(nodeId || null, this.blocks);
+        },
+
+        structuralError(error) {
+            const labels = { cycle: 'انتقال چرخه‌ای مجاز نیست.', 'locked-structure': 'ساختار این بخش قفل است.', 'invalid-parent-capability': 'این مقصد فرزند نمی‌پذیرد.', 'invalid-child-capability': 'نوع بلوک با مقصد سازگار نیست.', 'max-children': 'ظرفیت مقصد تکمیل است.', 'max-depth': 'عمق تو در تو بیش از حد مجاز است.' };
+            this.showToast(labels[error?.message] || 'جابجایی ساختاری معتبر نیست.', 'error');
+        },
+
+        applyHistoryEntry(entry, side) {
+            const value = side === 'before' ? entry.before : entry.after;
+            try {
+                let operation = null;
+                if (entry.type === 'move') {
+                    const source = this.treeOperations.find(this.blocks, entry.targetId);
+                    const requested = source?.parentId === value.parentId && source.index < value.index ? value.index + 1 : value.index;
+                    operation = this.treeOperations.moveNode(this.blocks, entry.targetId, value.parentId, requested);
+                } else if (entry.type === 'insert' || entry.type === 'duplicate') {
+                    if (side === 'before') {
+                        const result = this.treeOperations.deleteNode(this.blocks, entry.operation.node?.id || entry.operation.duplicate_id);
+                        operation = { operation: 'delete', node_id: entry.operation.node?.id || entry.operation.duplicate_id };
+                    } else {
+                        operation = this.treeOperations.insertNode(this.blocks, JSON.parse(JSON.stringify(entry.after)), entry.operation.target_parent_id, entry.operation.target_index);
+                    }
+                } else if (entry.type === 'delete') {
+                    if (side === 'before') {
+                        operation = this.treeOperations.insertNode(this.blocks, JSON.parse(JSON.stringify(entry.before)), entry.operation.before.parentId, entry.operation.before.index);
+                    } else {
+                        this.treeOperations.deleteNode(this.blocks, entry.targetId);
+                        operation = { operation: 'delete', node_id: entry.targetId };
+                    }
+                } else                if (entry.type === 'value') {
+                    const found = this.treeOperations.find(this.blocks, entry.targetId);
+                    if (!found) return;
+                    let bag = found.node;
+                    for (let i = 0; i < entry.path.length - 1; i++) bag = bag[entry.path[i]] || (bag[entry.path[i]] = {});
+                    const key = entry.path[entry.path.length - 1];
+                    if (value === undefined) delete bag[key]; else bag[key] = JSON.parse(JSON.stringify(value));
+                    this.schedulePropUpdate();
+                }
+                // Phase 3A root-cause fix (replay-mismatch defect class): a
+                // history REPLAY re-derives tree state from full snapshots,
+                // so the previously queued incremental log no longer
+                // describes how the stored tree reaches the submitted
+                // document (replaying old + derived ops diverged mid-storm,
+                // producing "result does not match" and transient duplicate-
+                // id rejections). The pending log is therefore reset here:
+                // the resulting save goes through the server's IMPLICIT
+                // reconciler, which still enforces every structural guard
+                // (placement, locked structure, cycles, duplicate ids,
+                // depth/count bounds) on the full document. Security is NOT
+                // weakened — the anti-forgery replay remains the authority
+                // for forward (non-replay) structural edits.
+                if (this.documentState) this.documentState.pendingOperations = [];
+                this.selectBlockById(side === 'before' ? entry.selectionBefore : entry.selectionAfter);
+                this.isDirty = true;
+            } catch (error) { this.structuralError(error); }
+        },
+
+        // Phase 2C: keyboard shortcuts. Keys typed into form controls are
+        // excluded so Inspector editing never triggers a structural/value undo.
+        onUndoShortcut($event) {
+            const t = $event.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+            this.undo();
+        },
+
+        onRedoShortcut($event) {
+            const t = $event.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+            this.redo();
         },
 
         undo() {
-            if (this.historyIndex <= 0) return;
-            this.historyIndex--;
-            this.blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
-            this.selectedPath = null;
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            const entry = this.historyEngine?.undo();
+            if (!entry) return;
+            this.historyVersion++;
+            if (entry.type !== 'value') this.autoSaveAndReload();
         },
 
         redo() {
-            if (this.historyIndex >= this.history.length - 1) return;
-            this.historyIndex++;
-            this.blocks = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
-            this.selectedPath = null;
-            this.isDirty = true;
-            this.autoSaveAndReload();
+            const entry = this.historyEngine?.redo();
+            if (!entry) return;
+            this.historyVersion++;
+            if (entry.type !== 'value') this.autoSaveAndReload();
         },
 
         // Update a single prop and schedule live iframe update
         updateProp(propKey, value) {
             if (!this.selectedBlock) return;
+            const targetId = this.selectedBlock.id;
+            const before = this.selectedBlock.props?.[propKey];
+            // Phase 2B-R acceptance fix: seeded/legacy blocks may carry
+            // `props: []` (empty PHP array → JSON array). Writing named
+            // properties onto an array is silently dropped by
+            // JSON.stringify, which made every edit to such blocks a no-op
+            // in BOTH the live update (render-block payload) and the save
+            // payload. Normalize to a plain object before the first write;
+            // storage is only rewritten through an explicit save.
+            if (!this.selectedBlock.props || typeof this.selectedBlock.props !== 'object' || Array.isArray(this.selectedBlock.props)) {
+                this.selectedBlock.props = {};
+            }
             this.selectedBlock.props[propKey] = value;
+            this.historyEngine?.record({
+                type: 'value', targetId, path: ['props', propKey], before, after: value,
+                selectionBefore: targetId, selectionAfter: targetId,
+                coalesceKey: `prop:${targetId}:${propKey}`,
+            });
+            this.historyVersion++;
             this.isDirty = true;
             this.schedulePropUpdate();
+        },
+
+        // Phase 2B-R: link-typed fields. Preserves a structured link object
+        // ({url,target,nofollow,sponsored,ariaLabel}) when one exists;
+        // plain legacy URL strings stay plain strings.
+        updateLinkProp(propKey, url) {
+            if (!this.selectedBlock) return;
+            const cur = this.selectedBlock.props?.[propKey];
+            if (cur && typeof cur === 'object' && !Array.isArray(cur)) {
+                this.updateProp(propKey, { ...cur, url });
+            } else {
+                this.updateProp(propKey, url);
+            }
+        },
+
+        updateLinkTarget(propKey, target) {
+            if (!this.selectedBlock) return;
+            const cur = this.selectedBlock.props?.[propKey];
+            if (cur && typeof cur === 'object' && !Array.isArray(cur)) {
+                this.updateProp(propKey, { ...cur, target });
+            }
         },
 
         // ── TB3-S2: Per-block style overrides (TB5: breakpoint-aware) ─
         updateStyle(styleKey, value) {
             if (!this.selectedBlock) return;
+            const targetId = this.selectedBlock.id;
             const bp = this.activeBreakpoint;
+            const path = bp === 'desktop' ? ['style', styleKey] : ['responsive', bp, styleKey];
+            const before = bp === 'desktop'
+                ? this.selectedBlock.style?.[styleKey]
+                : this.selectedBlock.responsive?.[bp]?.[styleKey];
+            // Same legacy-shape guard as updateProp: an array-typed `style`
+            // or `responsive` bag would silently drop named keys on JSON
+            // serialization (Phase 2C: the responsive bag was previously not
+            // normalized — seeded blocks lost breakpoint overrides on save).
+            if (!this.selectedBlock.style || typeof this.selectedBlock.style !== 'object' || Array.isArray(this.selectedBlock.style)) {
+                this.selectedBlock.style = {};
+            }
+            if (!this.selectedBlock.responsive || typeof this.selectedBlock.responsive !== 'object' || Array.isArray(this.selectedBlock.responsive)) {
+                this.selectedBlock.responsive = {};
+            }
             if (bp === 'desktop') {
                 if (!this.selectedBlock.style) this.selectedBlock.style = {};
                 if (value === '' || value === null) {
@@ -2065,6 +2296,15 @@ function themeCanvas() {
                     this.selectedBlock.responsive[bp][styleKey] = value;
                 }
             }
+            const after = bp === 'desktop'
+                ? this.selectedBlock.style?.[styleKey]
+                : this.selectedBlock.responsive?.[bp]?.[styleKey];
+            this.historyEngine?.record({
+                type: 'value', targetId, path, before, after,
+                selectionBefore: targetId, selectionAfter: targetId,
+                coalesceKey: `style:${targetId}:${bp}:${styleKey}`,
+            });
+            this.historyVersion++;
             this.isDirty = true;
             this.schedulePropUpdate();
         },
@@ -2085,6 +2325,35 @@ function themeCanvas() {
         },
 
         // ── Page Management ───────────────────────────────────────
+        // Phase 3A — Section Library boundary (Step 19): the insertion
+        // flow lives in the section-library partial; the editor only
+        // opens the modal and hands the library the canonical op call.
+        openSectionLibrary(kind = 'section') {
+            this.sectionLibrary.kind = kind;
+            this.sectionLibrary.search = '';
+            this.showSectionLibrary = true;
+        },
+        // The library offers compositions for the ACTIVE zone: header
+        // compositions while editing the header zone, footer while editing
+        // the footer, sections on pages.
+        sectionLibraryZone() {
+            return this.activeTarget === 'header' ? 'header'
+                : this.activeTarget === 'footer' ? 'footer' : 'section';
+        },
+        sectionLibraryItems() {
+            return window.CANVAS_SECTION_LIBRARY
+                ? window.CANVAS_SECTION_LIBRARY.list(this.sectionLibrary.kind, this.sectionLibrary.search)
+                : [];
+        },
+        insertSection(key) {
+            try {
+                window.CANVAS_SECTION_LIBRARY.insert(this, key); // canonical insertNode inside
+                this.showSectionLibrary = false;
+            } catch (e) {
+                this.showToast(e?.message ?? 'خطا در درج بخش', 'error');
+            }
+        },
+
         async switchTarget(target, pageKey = null) {
             if (this.switchingTarget || (target === this.activeTarget && (!pageKey || pageKey === this.currentPage))) return;
             this.switchingTarget = true;
@@ -2094,10 +2363,11 @@ function themeCanvas() {
                 if (this.isDirty && !(await this.saveCurrentPage())) return;
                 this.activeTarget = target;
                 if (pageKey) this.currentPage = pageKey;
-                this.selectedPath = null;
+                this.selectBlockById(null);
                 this.selectedTab = 'content';
-                this.history = [JSON.parse(JSON.stringify(this.blocks))];
-                this.historyIndex = 0;
+                this.documentState = new CanvasDocumentState(this.blocks);
+                this.historyEngine.clear();
+                this.historyVersion++;
                 this.reloadIframe();
             } finally {
                 this.switchingTarget = false;
@@ -2201,6 +2471,15 @@ function themeCanvas() {
         selectedExtensionEntries() {
             return Object.entries(this.extensionSelections);
         },
+        canvasSavePayload(withOperations = true) {
+            return {
+                target: this.activeTarget,
+                page_key: this.activeTarget === 'page' ? this.currentPage : undefined,
+                blocks: this.blocks,
+                extension_selections: this.extensionSelections,
+                structural_operations: withOperations ? (this.documentState?.pendingOperations ?? []) : undefined,
+            };
+        },
         openExtensionsModal() {
             this.newExtensionProduct = AVAILABLE_EXTENSIONS[0]?.identifier ?? '';
             this.newExtensionVersion = this.releasesForProduct(this.newExtensionProduct)[0]?.version ?? '';
@@ -2224,10 +2503,11 @@ function themeCanvas() {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ target: this.activeTarget, page_key: this.activeTarget === 'page' ? this.currentPage : undefined, blocks: this.blocks, extension_selections: this.extensionSelections })
+                    body: JSON.stringify(this.canvasSavePayload())
                 });
                 const d = await r.json();
                 if (d.success) {
+                    this.documentState?.markSaved(this.blocks);
                     this.showToast('انتخاب افزونه ذخیره شد ✓', 'success');
                 } else {
                     this.showToast(d.error ?? 'خطا در ذخیره انتخاب افزونه', 'error');
@@ -2244,10 +2524,23 @@ function themeCanvas() {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ target: this.activeTarget, page_key: this.activeTarget === 'page' ? this.currentPage : undefined, blocks: this.blocks, extension_selections: this.extensionSelections })
+                    body: JSON.stringify(this.canvasSavePayload())
                 });
-                const d = await r.json();
+                let d = await r.json();
+                // Phase 2C hardening (same as autoSave): a replay-mismatched
+                // operation log falls back ONCE to an operations-free save;
+                // the server's implicit reconciler still enforces every guard.
+                if (!d.success && d.structure_errors && this.documentState) {
+                    this.documentState.pendingOperations = [];
+                    const retry = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                        body: JSON.stringify(this.canvasSavePayload(false))
+                    });
+                    d = await retry.json();
+                }
                 if (d.success) {
+                    this.documentState?.markSaved(this.blocks);
                     this.isDirty = false;
                     this.showToast('ذخیره شد ✓', 'success');
                     return true;
@@ -2269,14 +2562,30 @@ function themeCanvas() {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify({ target: this.activeTarget, page_key: this.activeTarget === 'page' ? this.currentPage : undefined, blocks: this.blocks, extension_selections: this.extensionSelections })
+                    body: JSON.stringify(this.canvasSavePayload())
                 });
-                const d = await r.json();
+                let d = await r.json();
+                // Phase 2C hardening: a replay-mismatched operation log falls
+                // back ONCE to an operations-free save. The server still runs
+                // its full implicit reconciler (every placement/locked guard)
+                // — this only forgives an incomplete local operation log, it
+                // never weakens server-side validation.
+                if (!r.ok && d.structure_errors && this.documentState) {
+                    this.documentState.pendingOperations = [];
+                    const retry = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
+                        body: JSON.stringify(this.canvasSavePayload(false))
+                    });
+                    d = await retry.json();
+                    if (retry.ok && d.success) { this.isDirty = false; this.documentState?.markSaved(this.blocks); return true; }
+                }
                 if (!r.ok || !d.success) {
                     this.showToast(d.error ?? 'خطا در ذخیره', 'error');
                     return false;
                 }
                 this.isDirty = false;
+                this.documentState?.markSaved(this.blocks);
                 return true;
             } catch (_) {
                 this.showToast('خطای شبکه', 'error');
@@ -2466,7 +2775,7 @@ function themeCanvas() {
         sendToIframe(msg) {
             const iframe = this.getIframe();
             if (iframe && iframe.contentWindow) {
-                try { iframe.contentWindow.postMessage(msg, '*'); } catch (_) {}
+                try { ThemeCanvasRuntime.post(iframe.contentWindow, msg.action, Object.fromEntries(Object.entries(msg).filter(([key]) => key !== 'action'))); } catch (_) {}
             }
         },
 
@@ -2482,7 +2791,12 @@ function themeCanvas() {
         },
 
         async pushPropUpdate() {
-            if (!this.selectedBlock || !this.iframeReady) return;
+            if (!this.selectedBlock) return;
+            // Phase 2B-R acceptance fix: never silently drop an early edit.
+            // If the iframe bridge has not completed its ready handshake yet,
+            // remember the pending update and flush it when 'ready' arrives;
+            // a bail-and-forget here made first-second edits vanish.
+            if (!this.iframeReady) { this.pendingPropUpdate = true; return; }
             try {
                 const blockPayload = JSON.parse(JSON.stringify(this.selectedBlock)); // includes .style if set
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/render-block`, {
@@ -2499,13 +2813,15 @@ function themeCanvas() {
 
         // Handle messages from iframe
         handleIframeMessage(e) {
+            if (!ThemeCanvasRuntime.sameOrigin(e.origin) || e.source !== this.getIframe()?.contentWindow) return;
             const d = e.data;
-            if (!d || !d.action) return;
+            if (!ThemeCanvasRuntime.valid(d, 'to-editor')) return;
 
             switch (d.action) {
                 case 'ready':
                     this.iframeReady   = true;
                     this.iframeLoading = false;
+                    if (this.pendingPropUpdate) { this.pendingPropUpdate = false; this.pushPropUpdate(); }
                     if (this.selectedBlock) {
                         this.sendToIframe({ action: 'select', blockId: this.selectedBlock.id });
                     }
@@ -2518,9 +2834,10 @@ function themeCanvas() {
                 }
 
                 case 'blockSelected': {
-                    // TB4: search entire tree, get path array
-                    const path = this.findBlockPath(d.blockId);
-                    if (path) { this.selectedPath = path; this.selectedTab = 'content'; }
+                    if (CanvasIdentity.findById(this.blocks, d.blockId)) {
+                        this.selectBlockById(d.blockId);
+                        this.selectedTab = 'content';
+                    }
                     break;
                 }
 
@@ -2532,6 +2849,37 @@ function themeCanvas() {
                     if (this.dragTargetContainerId) {
                         this.sendToIframe({ action: 'setContainerTarget', containerId: this.dragTargetContainerId });
                     }
+                    break;
+
+                case 'dragStart':
+                    this.structuralDrag = { nodeId: d.nodeId, valid: false };
+                    this.selectBlockById(d.nodeId);
+                    break;
+
+                case 'dragOver': {
+                    let valid = false;
+                    try {
+                        const preview = JSON.parse(JSON.stringify(this.blocks));
+                        const validator = new CanvasTreeOperations(BLOCK_SCHEMAS, { maxDepth: 12, maxNodes: 5000 });
+                        validator.moveNode(preview, d.nodeId, d.targetParentId, d.targetIndex);
+                        valid = true;
+                    } catch (_) {}
+                    this.structuralDrag = { nodeId: d.nodeId, targetParentId: d.targetParentId, targetIndex: d.targetIndex, position: d.position, valid };
+                    this.sendToIframe({ action: 'setStructuralDrop', targetId: d.targetParentId, position: d.position, valid });
+                    break;
+                }
+
+                case 'dropNode':
+                    if (this.structuralDrag?.valid && this.structuralDrag.nodeId === d.nodeId) {
+                        this.performMove(d.nodeId, d.targetParentId, d.targetIndex);
+                    } else {
+                        this.structuralError(new Error('invalid-parent-capability'));
+                    }
+                    this.structuralDrag = null;
+                    break;
+
+                case 'dragCancel':
+                    this.structuralDrag = null;
                     break;
 
                 // TB3-04: inline edit prop change from iframe
@@ -2639,6 +2987,47 @@ function themeCanvas() {
             event.dataTransfer.effectAllowed = 'copy';
             event.dataTransfer.setData('text/plain', blockType);
             this.sendToIframe({ action: 'showDropZones', visible: true });
+        },
+
+        startPointerLibraryDrag(event, blockType) {
+            if (event.button !== 0 || event.pointerType === 'mouse' && !event.isPrimary) return;
+            this.palettePointerDrag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, moved: false };
+            this.draggedBlockType = blockType;
+            this.draggedBlockLabel = BLOCK_LABELS[blockType] ?? blockType;
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+        },
+
+        movePointerLibraryDrag(event) {
+            if (!this.palettePointerDrag || event.pointerId !== this.palettePointerDrag.id) return;
+            const distance = Math.hypot(event.clientX - this.palettePointerDrag.startX, event.clientY - this.palettePointerDrag.startY);
+            if (!this.palettePointerDrag.moved && distance < 6) return;
+            if (!this.palettePointerDrag.moved) {
+                this.palettePointerDrag.moved = true;
+                this.isDraggingBlock = true;
+                this.sendToIframe({ action: 'showDropZones', visible: true });
+            }
+            this.onDragOverCanvas(event);
+        },
+
+        finishPointerLibraryDrag(event) {
+            if (!this.palettePointerDrag || event.pointerId !== this.palettePointerDrag.id) return;
+            const moved = this.palettePointerDrag.moved;
+            this.palettePointerDrag = null;
+            if (moved) {
+                event.preventDefault();
+                this.suppressPaletteClick = true;
+                this.onDropToCanvas(event);
+                setTimeout(() => { this.suppressPaletteClick = false; }, 0);
+            } else {
+                this.draggedBlockType = null;
+                this.draggedBlockLabel = null;
+            }
+        },
+
+        cancelPointerLibraryDrag(event) {
+            if (!this.palettePointerDrag || event.pointerId !== this.palettePointerDrag.id) return;
+            this.palettePointerDrag = null;
+            this.endDragBlock();
         },
 
         endDragBlock() {
@@ -2777,8 +3166,12 @@ function themeCanvas() {
                 });
                 const json = await res.json();
                 if (json.success && json.blocks) {
-                    this.blocks = [...this.blocks, ...json.blocks];
-                    this.pushHistory();
+                    for (const raw of json.blocks) {
+                        const block = this.normalizeBlock(JSON.parse(JSON.stringify(raw)));
+                        const operation = this.treeOperations.insertNode(this.blocks, block, 'page', this.blocks.length);
+                        this.documentState.queue(operation);
+                        this.recordStructuralHistory('insert', operation, null, block, this.documentState.selectedNodeId, block.id);
+                    }
                     this.isDirty = true;
                     this.showTemplateLibrary = false;
                     this.showToast('قالب درج شد', 'success');
@@ -2826,10 +3219,15 @@ function themeCanvas() {
         init() {
             // TB3-01: Normalize all loaded blocks to use props
             this.normalizePages(this.pages);
+            this.headerBlocks = this.headerBlocks.map(block => this.normalizeBlock(block));
+            this.footerBlocks = this.footerBlocks.map(block => this.normalizeBlock(block));
 
-            // TB3-S2: Initialize undo history with current state
-            this.history = [JSON.parse(JSON.stringify(this.blocks))];
-            this.historyIndex = 0;
+            // Phase 2C services keep composition, history, and selection
+            // independent from this Blade/Alpine presentation surface.
+            this.documentState = new CanvasDocumentState(this.blocks);
+            this.treeOperations = new CanvasTreeOperations(BLOCK_SCHEMAS, { maxDepth: 12, maxNodes: 5000 });
+            this.navigator = new CanvasNavigator();
+            this.historyEngine = new CanvasHistory((entry, side) => this.applyHistoryEntry(entry, side), 100);
 
             // TB3-02: Listen for postMessage from live preview iframe
             window.addEventListener('message', (e) => this.handleIframeMessage(e));

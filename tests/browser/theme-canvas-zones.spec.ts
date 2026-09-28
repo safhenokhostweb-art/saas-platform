@@ -160,7 +160,10 @@ test.describe('Theme Canvas — header and footer zones', () => {
     await page.locator(PALETTE_PANEL).getByText('عنوان', { exact: true }).click();
     await rejectedSave;
     await expect(page.locator('div.fixed.bottom-6.bg-red-600')).toBeVisible();
-    await expect(page.getByText('ذخیره نشده', { exact: false })).toBeVisible();
+    // exact: the canvas dirty chip's text is exactly 'ذخیره نشده'; substring
+    // matching would also hit the Global Styles panel's 'تغییرات ذخیره نشده'
+    // dirty indicator (data-testid=global-styles-dirty) and trip strict mode.
+    await expect(page.getByText('ذخیره نشده', { exact: true })).toBeVisible();
 
     await page.unroute('**/canvas/save');
     const recovery = page.waitForResponse((response) =>

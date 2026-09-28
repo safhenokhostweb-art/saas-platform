@@ -4,6 +4,10 @@ namespace SaaSPlatform\ThemeRuntime\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use SaaSPlatform\ThemeRuntime\Browser\PlaywrightExtractionService;
+use SaaSPlatform\ThemeRuntime\DynamicBlockTypes;
+use SaaSPlatform\ThemeRuntime\FoodMartBlockTypes;
+use SaaSPlatform\ThemeRuntime\InteractionBlockTypes;
+use SaaSPlatform\ThemeRuntime\SleepShimanBlockTypes;
 
 /**
  * Phase 2h — ADR-029: this package is the one shared authority for canonical
@@ -27,6 +31,11 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/css/theme-runtime-contract.css';
     }
 
+    public static function canvasIdentityContractPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-identity.js';
+    }
+
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/theme-runtime.php', 'theme-runtime');
@@ -45,5 +54,23 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../config/theme-runtime.php' => config_path('theme-runtime.php'),
         ], 'theme-runtime-config');
+
+        // Phase 3 — register the canonical foodmart_* host block types once,
+        // here in the shared package, so BOTH hosts (saas-platform Builder
+        // preview and customer-site tenant runtime) can dispatch/render them
+        // through the same generic registerHostType() seam. The block type
+        // itself is the dispatch identity: no host's generic code needs (or
+        // has) any FoodMart-specific detection. Registration is idempotent;
+        // canonical definitions are never overridden.
+        FoodMartBlockTypes::register();
+        SleepShimanBlockTypes::register();
+        DynamicBlockTypes::register();
+
+        // Phase 3C / Milestone 3 — the interactive_form/action_button widgets
+        // are shipped in this same shared package and follow the identical
+        // "register once, in boot(), through registerHostType()" seam. Without
+        // this call they exist only behind the explicit register() that the
+        // contract test performs, i.e. dead code in every real runtime.
+        InteractionBlockTypes::register();
     }
 }
