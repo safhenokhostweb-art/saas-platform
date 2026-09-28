@@ -29,12 +29,68 @@ class BlockRenderer
     use SleepShimanBlockRendererTrait;
     use DynamicBlockRendererTrait;
 
+    /**
+     * Smart Public Rendering — canonical dual-mode contract, mirroring
+     * ThemeRuntimeDocument (app/Services/ThemeCanvas) on the saas-platform
+     * host. MODE_EDITOR (the historical default) renders the full editor
+     * bridge surface; MODE_PUBLIC renders a public, indexable page.
+     */
+    public const MODE_EDITOR = 'editor';
+    public const MODE_PUBLIC = 'public';
+
     protected array $context = [];
+
+    /**
+     * Smart Public Rendering — the document mode. NULL means "not forced":
+     * rendering then behaves exactly as before (context['editor_mode'] is
+     * the single editor-output authority), so every existing caller — and
+     * the shared package's own unit tests, which construct the renderer
+     * with no context — is untouched.
+     */
+    protected ?string $mode = null;
 
     public function setContext(array $context): self
     {
         $this->context = $context;
+        // A forced mode and an editor_mode context flag are two descriptions
+        // of the same thing; letting them disagree would make public-mode
+        // guarantees depend on call order. The mode always wins, and the
+        // flag is re-derived from it at the single point where it is read.
+        if (isset($this->context['mode'])) {
+            $this->setMode(is_string($this->context['mode']) ? $this->context['mode'] : '');
+        }
         return $this;
+    }
+
+    /**
+     * Force the document mode. MODE_PUBLIC fail-closes every editor-output
+     * gate in this class regardless of any editor_mode context flag.
+     * Unknown values are rejected — mode is explicit, never fuzzy.
+     */
+    public function setMode(?string $mode): self
+    {
+        if ($mode !== null && !in_array($mode, [self::MODE_EDITOR, self::MODE_PUBLIC], true)) {
+            throw new \InvalidArgumentException(
+                "Unknown BlockRenderer mode \"{$mode}\" (expected 'editor', 'public' or null)"
+            );
+        }
+        $this->mode = $mode;
+        return $this;
+    }
+
+    /**
+     * The authoritative editor-output gate. TRUE only when no mode is forced
+     * AND the host opted into editor rendering via its existing context flag.
+     * In MODE_PUBLIC this is FALSE unconditionally — the mode is the harder
+     * gate, and an editor_mode flag leaking in through setContext() can never
+     * re-enable editor output on a public surface.
+     */
+    protected function isEditorRendering(): bool
+    {
+        if ($this->mode === self::MODE_PUBLIC) {
+            return false;
+        }
+        return (bool) ($this->context['editor_mode'] ?? false);
     }
 
     /**
@@ -122,11 +178,12 @@ class BlockRenderer
         // already holding every real tab_panel child's rendered HTML.
         if ($type === 'accordion') {
             $html = !empty($props['items']) ? $this->renderAccordion($props['items']) : '';
-            return $this->applyBlockStyle(
+            return $this->finalizeBlock(
                 $this->wrapEditorMode($html, $id, $type),
                 $block['style'] ?? [],
                 $block['responsive'] ?? [],
-                $id
+                $id,
+                $type
             );
         }
         // Builder integrity fix (2026-09-12): a `slider` slide is plain
@@ -145,11 +202,12 @@ class BlockRenderer
             } else {
                 $html = $this->renderModulePlaceholder($type, $props, $id);
             }
-            return $this->applyBlockStyle(
+            return $this->finalizeBlock(
                 $this->wrapEditorMode($html, $id, $type),
                 $block['style'] ?? [],
                 $block['responsive'] ?? [],
-                $id
+                $id,
+                $type
             );
         }
 
@@ -160,12 +218,88 @@ class BlockRenderer
             $html = $this->renderFallback($type, $props, $inner, $id);
         }
 
-        return $this->applyBlockStyle(
+        return $this->finalizeBlock(
             $this->wrapEditorMode($html, $id, $type),
             $block['style'] ?? [],
             $block['responsive'] ?? [],
-            $id
+            $id,
+            $type
         );
+    }
+
+    /**
+     * Smart Public Rendering — the ONE shared finalization seam every
+     * renderBlock() return passes through.
+     *
+     * MODE_PUBLIC (task spec): the output MUST retain the structural
+     * attributes the JS runtime addresses (data-tb-block-id,
+     * data-tb-block-type, data-tb-container) — wrapEditorMode() is a no-op
+     * there, so this wrapper IS their only carrier — while every editor-only
+     * attribute is stripped (sanitizeEditorOutput()). In editor/default
+     * rendering this is exactly the historical
+     * applyBlockStyle(wrapEditorMode(html)) composition, byte-identical.
+     */
+    protected function finalizeBlock(string $html, array $style, array $responsive, string $id, string $type): string
+    {
+        $styled = $this->applyBlockStyle($html, $style, $responsive, $id);
+        if ($this->mode === self::MODE_PUBLIC) {
+            return $this->sanitizeEditorOutput($styled, $id, $type);
+        }
+        return $styled;
+    }
+
+    /**
+     * Smart Public Rendering — public structural wrapper.
+     *
+     * Emits the runtime-facing structural attributes ONLY (never the editor
+     * selection overlay, drag handle, or block badge), so ThemeCanvasRuntime
+     * (replaceNode) and CanvasIdentity can address every block on a public
+     * page while no editor chrome is present.
+     */
+    protected function wrapPublicStructural(string $html, string $id, string $type): string
+    {
+        $esc   = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $idEsc = htmlspecialchars($id,   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $containerAttr = $this->isStructuralContainer($type)
+            ? ' data-tb-container="1"' : '';
+        return "<div class=\"tb-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}>{$html}</div>";
+    }
+
+    /**
+     * Smart Public Rendering — defense-in-depth editor-attribute stripper,
+     * run over the FINAL block HTML in MODE_PUBLIC (after all renderers and
+     * wrappers have run, so nothing can smuggle an editor attribute past the
+     * per-renderer gates).
+     *
+     * Strips exactly the editor-only family: every `data-tb-edit*` attribute
+     * (data-tb-editable, data-tb-inline-type, and any future data-tb-edit-*
+     * authoring attribute — the task's data-tb-edit-action names no real
+     * attribute in this codebase, but the family prefix covers it), plus the
+     * editor selection overlay's drag handle and block badge, which are
+     * editor chrome by definition. Runtime attributes are deliberately NOT
+     * touched: data-tb-interaction (the interaction dispatcher's hook) and
+     * the structural data-tb-block-* family are required on public pages.
+     */
+    protected function sanitizeEditorOutput(string $html, string $id, string $type): string
+    {
+        if ($html === '') {
+            return $html;
+        }
+
+        // data-tb-edit* (data-tb-editable, data-tb-edit-action, any future
+        // edit-* authoring attribute) plus data-tb-inline-type, which carries
+        // no edit prefix but is editor-only by contract. Quoted values
+        // (single or double) and bare boolean forms both match; [^>]* is
+        // bounded by the tag close, so a value containing '>' cannot
+        // over-match.
+        $html = preg_replace('/\s(?:data-tb-edit[^=>\\s]*|data-tb-inline-type[^=>\\s]*)(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\\s>]+))?/i', '', $html) ?? $html;
+
+        // Editor selection-overlay chrome: the drag handle button and the
+        // type badge (only ever emitted by wrapEditorMode()).
+        $html = preg_replace('/<button[^>]*\\bclass=["\'][^"\']*\\btb-drag-handle\\b[^"\']*["\'][^>]*>.*?<\\/button>/is', '', $html) ?? $html;
+        $html = preg_replace('/<div[^>]*\\bclass=["\'][^"\']*\\btb-block-badge\\b[^"\']*["\'][^>]*>.*?<\\/div>/is', '', $html) ?? $html;
+
+        return $html;
     }
 
     /**
@@ -360,19 +494,33 @@ class BlockRenderer
         return $wrapped;
     }
 
+    /**
+     * Smart Public Rendering — the ONE editor-output authority for the
+     * inline-editing hook (data-tb-editable / data-tb-inline-type). Routes
+     * through isEditorRendering() so MODE_PUBLIC fail-closes here too: even
+     * with an editor_mode flag present in context, a forced public mode can
+     * never emit an editor attribute.
+     */
     protected function editableAttr(string $propKey, string $inlineType = 'text'): string
     {
-        if (!($this->context['editor_mode'] ?? false)) return '';
+        if (!$this->isEditorRendering()) return '';
         return " data-tb-editable=\"{$propKey}\" data-tb-inline-type=\"{$inlineType}\"";
     }
 
     /**
      * In editor_mode, wraps block HTML with canvas selection overlay.
-     * No-op in production rendering (editor_mode not set).
+     * No-op in public/production rendering: in MODE_PUBLIC the structural
+     * attributes (data-tb-block-id/-type/-container) are emitted instead by
+     * wrapPublicStructural() — same runtime-addressable data, zero editor
+     * chrome. Gated through isEditorRendering(), so a leaked editor_mode
+     * flag can never re-enable the overlay on a public surface.
      */
     protected function wrapEditorMode(string $html, string $id, string $type): string
     {
-        if (!($this->context['editor_mode'] ?? false)) {
+        if (!$this->isEditorRendering()) {
+            if ($this->mode === self::MODE_PUBLIC) {
+                return $this->wrapPublicStructural($html, $id, $type);
+            }
             return $html;
         }
         $esc   = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -481,7 +629,12 @@ class BlockRenderer
     protected function renderFlexContainer(array $props, string $inner, string $id): string
     {
         $allowDir = ['column', 'row', 'column-reverse', 'row-reverse'];
-        $direction = in_array($props['direction'] ?? 'column', $allowDir, true) ? $props['direction'] : 'column';
+        // Smart Public Rendering (incidental pre-existing fix): the true
+        // branch used to re-read $props['direction'] without a fallback —
+        // an "Undefined array key" warning (ErrorException under strict
+        // hosts/tests) for every direction-less flex_container. Bind once.
+        $requestedDirection = (string) ($props['direction'] ?? 'column');
+        $direction = in_array($requestedDirection, $allowDir, true) ? $requestedDirection : 'column';
 
         $gapMap = ['none' => '0', 'xs' => '4px', 'sm' => '8px', 'md' => '16px', 'lg' => '24px', 'xl' => '40px'];
         $gap = $gapMap[$props['gap'] ?? 'md'] ?? '16px';
@@ -489,16 +642,20 @@ class BlockRenderer
         $wrap = ($props['wrap'] ?? false) ? 'wrap' : 'nowrap';
 
         $allowAlign = ['stretch', 'flex-start', 'center', 'flex-end', 'baseline'];
-        $align = in_array($props['alignItems'] ?? 'stretch', $allowAlign, true) ? $props['alignItems'] : 'stretch';
+        $align = in_array($requestedAlign = $props['alignItems'] ?? 'stretch', $allowAlign, true)
+            ? $requestedAlign : 'stretch';
 
         $allowJustify = ['flex-start', 'center', 'flex-end', 'space-between', 'space-around', 'space-evenly'];
-        $justify = in_array($props['justifyContent'] ?? 'flex-start', $allowJustify, true) ? $props['justifyContent'] : 'flex-start';
+        $justify = in_array($requestedJustify = $props['justifyContent'] ?? 'flex-start', $allowJustify, true)
+            ? $requestedJustify : 'flex-start';
 
         $minH = max(0, (int)($props['minHeight'] ?? 0));
         $minHStyle = $minH > 0 ? "min-height:{$minH}px;" : '';
 
         $emptyPlaceholder = '';
-        if (empty(trim($inner)) && ($this->context['editor_mode'] ?? false)) {
+        // Smart Public Rendering: editor-only authoring hint — gated through
+        // the mode-aware authority (a forced public mode can never show it).
+        if (empty(trim($inner)) && $this->isEditorRendering()) {
             $emptyPlaceholder = '<div class="tb-fc-empty"><span>کانتینر خالی — بلوک اضافه کنید</span></div>';
         }
 
@@ -1106,8 +1263,8 @@ class BlockRenderer
     {
         $gap = max(0, min(48, (int) ($props['gap'] ?? 16)));
         $radius = max(0, min(32, (int) ($props['radius'] ?? 12)));
-        $align = in_array($props['align'] ?? '', ['start', 'center', 'end'], true)
-            ? $props['align'] : 'start';
+        $align = in_array($requestedAlign = $props['align'] ?? '', ['start', 'center', 'end'], true)
+            ? $requestedAlign : 'start';
         // Radius is scoped via --tb-hero-btn-radius; the canonical .tb-btn
         // primitive is untouched outside this subtree.
         $style = "gap:{$gap}px;--tb-hero-btn-radius:{$radius}px;";
@@ -1668,8 +1825,8 @@ class BlockRenderer
 
     protected function renderCtaBand(array $props, string $inner, string $id): string
     {
-        $align = in_array($props['align'] ?? '', ['start', 'center', 'end'], true)
-            ? $props['align'] : 'center';
+        $align = in_array($requestedAlign = $props['align'] ?? '', ['start', 'center', 'end'], true)
+            ? $requestedAlign : 'center';
         $padding = max(16, min(160, (int) ($props['padding'] ?? 48)));
         $radius = max(0, min(48, (int) ($props['radius'] ?? 16)));
         $background = $this->escapeAttr($props['background'] ?? '#4f46e5');
@@ -1699,8 +1856,8 @@ class BlockRenderer
         $icon = $this->escape((string) ($props['icon'] ?? '✓'));
         $label = $this->escape((string) ($props['label'] ?? ''));
         $description = $this->escape((string) ($props['description'] ?? ''));
-        $style = in_array($props['style'] ?? '', ['plain', 'card', 'outline'], true)
-            ? $props['style'] : 'plain';
+        $style = in_array($requestedStyle = $props['style'] ?? '', ['plain', 'card', 'outline'], true)
+            ? $requestedStyle : 'plain';
         $content = '<span class="tb-trust-item-icon" aria-hidden="true">' . $icon . '</span>'
             . '<span class="tb-trust-item-content">'
             . '<strong class="tb-trust-item-label">' . $label . '</strong>'
@@ -1784,8 +1941,8 @@ class BlockRenderer
         $label = $this->escape($props['label'] ?? '');
         $actionType = $props['action_type'] ?? 'link';
         $targetValue = $props['target_value'] ?? '#';
-        $style = in_array($props['style'] ?? '', ['primary', 'secondary', 'outline', 'ghost'], true)
-            ? $props['style'] : 'primary';
+        $style = in_array($requestedStyle = $props['style'] ?? '', ['primary', 'secondary', 'outline', 'ghost'], true)
+            ? $requestedStyle : 'primary';
         $icon = $this->escape($props['icon'] ?? '');
 
         $policy = $this->context['interaction_policy'] ?? null;
