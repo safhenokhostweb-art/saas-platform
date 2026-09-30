@@ -89,6 +89,21 @@ mobile/android/build/
 mobile/android/app/build/
 mobile/android/.gradle/
 
+# Upstream vendor theme sources, downloaded locally ONLY as a visual-diff
+# reference during FoodMart / SleepShiman implementation. ~70 MB of
+# third-party code that must never enter this repository's history.
+_reference-themes/
+
+# Machine-local tool scratch state (project identity for an external
+# assistant tool). Nothing reproducible lives here.
+.freebuff/
+
+# Transient session reports. These are regenerated per verification run and
+# are NOT canonical project documentation; project state belongs in
+# docs/project-memory/ per AGENTS.md documentation ownership.
+VALIDATION_REPORT.md
+DEPLOYMENT_ARTIFACT_REPORT.md
+
 # Temporary/local development files
 cline_rules_backup/
 memory-bank/
@@ -97,3 +112,6 @@ debug.txt
 composer_error.txt
 composer_output.txt
 .vite/
+
+# Stray empty file produced by a shell/tool mishap
+/Continue
