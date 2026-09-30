@@ -28,7 +28,8 @@ class CaptureThemeScreenshotsCommand extends Command
 {
     protected $signature = 'theme:capture-screenshots
         {--theme= : Only capture a single theme by slug}
-        {--pages=home,about,contact : Comma-separated page keys to capture}';
+        {--pages=home,about,contact : Comma-separated page keys to capture}
+        {--device=desktop : Viewport device passed to PlaywrightExtractionService (desktop|tablet|mobile) — filenames get a -{device} suffix for any non-desktop device, so desktop output paths are unchanged}';
 
     protected $description = "Capture real Playwright screenshots of marketplace themes' actual rendered pages";
 
@@ -41,6 +42,8 @@ class CaptureThemeScreenshotsCommand extends Command
         }
 
         $pageKeys = array_filter(array_map('trim', explode(',', (string) $this->option('pages'))));
+        $device = in_array($this->option('device'), ['desktop', 'tablet', 'mobile'], true) ? $this->option('device') : 'desktop';
+        $suffix = $device === 'desktop' ? '' : "-{$device}";
 
         $query = Theme::query()->where('is_marketplace', true);
         if ($slug = $this->option('theme')) {
@@ -69,7 +72,7 @@ class CaptureThemeScreenshotsCommand extends Command
                 );
 
                 try {
-                    $result = $playwright->extract($signedUrl, 30000, 'desktop');
+                    $result = $playwright->extract($signedUrl, 30000, $device);
                 } catch (\Throwable $e) {
                     $this->warn("  ✘ {$theme->slug} [{$pageKey}]: {$e->getMessage()}");
                     $failed++;
@@ -82,7 +85,7 @@ class CaptureThemeScreenshotsCommand extends Command
                     continue;
                 }
 
-                $path = "theme-screenshots/{$theme->slug}-{$pageKey}.png";
+                $path = "theme-screenshots/{$theme->slug}-{$pageKey}{$suffix}.png";
                 Storage::disk('public')->put($path, base64_decode($result['screenshot_base64']));
                 $urls[$pageKey] = Storage::disk('public')->url($path);
                 $captured++;
