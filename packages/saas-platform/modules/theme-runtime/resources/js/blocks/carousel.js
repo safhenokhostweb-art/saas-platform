@@ -191,15 +191,36 @@
             touchX = null;
         }, { passive: true });
 
-        root.addEventListener('resize', function () { go(Math.min(idx, maxIndex())); });
+        // Registered on `window`, not on rootEl, so it is the ONE listener
+        // here that outlives the element. It must therefore be unregistered
+        // in destroy(): its closure holds rootEl and everything this
+        // controller captured, so a carousel element that is replaced (the
+        // SDK's onUpdate path) would otherwise pin its whole detached subtree
+        // to the page for the page's lifetime.
+        var onResize = function () { go(Math.min(idx, maxIndex())); };
+        root.addEventListener('resize', onResize);
 
         paint();
         start();
 
         return {
-            destroy: function () { stop(); },
+            /**
+             * Leave nothing behind. Element-scoped listeners die with the
+             * node and need no teardown, but the window listener and the
+             * autoplay timer are ours to clean up.
+             */
+            destroy: function () {
+                stop();
+                root.removeEventListener('resize', onResize);
+            },
         };
     }
+
+    // Exposed the same way the SDK exposes itself (root.ThemeBlockSDK), so
+    // another block — or a test — can drive a carousel without going through
+    // a whole canvas. Not a supported authoring API for theme developers;
+    // the CarouselBlock below is.
+    root.ThemeCarousel = { initCarousel: initCarousel };
 
     // ───────────────────────────────────────────────────── carrier 1: SDK
 
