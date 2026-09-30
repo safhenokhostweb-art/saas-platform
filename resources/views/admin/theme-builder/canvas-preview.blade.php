@@ -107,6 +107,13 @@
         @endif
     </div>
 
+    {{-- Phase 9 / Step 1: this static preview RENDERS the same blocks the
+         editor does, so it needs the same runtime bridge and the same Block
+         SDK (identity is not required here — this surface never authors).
+         Kept in this exact order: runtime first, SDK second. --}}
+    @include('theme-runtime::canvas.runtime')
+    @include('theme-runtime::canvas.block-sdk')
+
     @foreach(($extAssets['js'] ?? []) as $__extSrc)
     <script src="{{ $__extSrc }}" defer></script>
     @endforeach

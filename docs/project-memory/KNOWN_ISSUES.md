@@ -69,6 +69,34 @@
 
 ## ACTIVE BUGS
 
+### TYPESCALE-001 — LOW | OPEN (pre-existing, unrelated to Phase 9)
+**Title:** `TypographyScaleWiringTest` asserts derived `--tb-*-size` token references that neither host layout actually contains
+**Module:** Typography scale wiring
+**Detail:** `test_customer_site_runtime_headings_and_titles_reference_the_derived_tokens_not_a_second_hardcoded_copy` and `test_saas_preview_headings_and_titles_reference_the_same_derived_tokens` fail because `customer-site/resources/views/layouts/canvas-theme.blade.php` and `resources/views/admin/theme-builder/canvas-preview.blade.php` hardcode their heading/hero/section/button sizes instead of referencing `var(--tb-h1-size)` and friends. The contract CSS itself defines the full derived scale correctly, so the wiring gap is in the two host layouts, not in `theme-runtime-contract.css`. Re-confirmed 2026-09-29 with the Phase 9 / Step 1 changes stashed — identical failures, so it is not a regression from that work. Previously noted in `VALIDATION_REPORT.md` for the same reason.
+**Impact:** A theme author's `typography_scale` choice does not visibly affect headings/titles on real pages. Cosmetic-only; no functional or data impact.
+**Action:** Replace the hardcoded heading/hero/section/card-title/big-number/button sizes in both host layouts with the derived `var(--tb-*)` tokens.
+
+### WIDGETREG-001 — LOW | OPEN (pre-existing, unrelated to Phase 9)
+**Title:** `Phase3AContractsTest::test_new_basic_widgets_are_registerable_and_renderable` finds no widget definition
+**Module:** Extension widget config
+**Detail:** The test fails with "Failed asserting that null is not null" — the widget definition it looks up is not registered. Re-confirmed 2026-09-29 with the Phase 9 / Step 1 changes stashed — identical failure, so it is not a regression from that work.
+**Impact:** Blocks the Extension SDK widget smoke test; no effect on shipped theme rendering.
+**Action:** Determine whether the widget type was renamed, moved, or deliberately retired, then update the test's expectation or restore the registration.
+
+### REGISTRYCOUNT-001 — LOW | OPEN (pre-existing, unrelated to Phase 9)
+**Title:** `UniversalMultipurposeQaThemeSeederTest` pins `BlockRegistry::all()` to 103 but the registry now holds 161 types
+**Module:** Canonical block registry
+**Detail:** The registry cardinality has grown through phases 3G and 8 without the seeder test's pin and its per-phase explanatory comments being updated. Re-confirmed 2026-09-29: the count is 161 both with and without the Phase 9 / Step 1 `BlockRenderer` changes, and the Phase 9 reference block is deliberately excluded from the registry so it does not contribute to the count. The associated coverage assertion (`excluded === ['module:gallery_widget','module:portfolio_grid','module:services_section','products']`) will likely need the same review.
+**Impact:** The seeder completeness test cannot pass until the pin is reconciled with the real registry. Rendering itself is unaffected — the rest of the seeder test suite passes.
+**Action:** Reconcile the pinned count and the coverage-exclusion list with the current canonical registry, updating the test's phase-by-phase comments alongside it.
+
+### CANVAS-SYNC-001 — LOW | OPEN (pre-existing, unrelated to Phase 9)
+**Title:** `ThemeCanvasSyncPagesHttpTest::test_sync_pages_for_site_calls_the_same_canonical_install_endpoint_as_install_to_site` fails
+**Module:** Canvas install-to-site / sync-pages HTTP flow
+**Detail:** The first of the three tests in `ThemeCanvasSyncPagesHttpTest` fails with "Failed asserting that false is true". The other two in the same file (namespace-collision surfacing, and never opening a second database connection) pass. Re-confirmed 2026-09-29 with the Phase 9 / Step 1 `BlockRenderer` changes stashed — identical failure, so it is not a regression from that work. The neighbouring `ThemeCanvasInstallToSiteHttpTest` (3 tests) passes fully.
+**Impact:** The endpoint-equivalence assertion between "sync pages" and "install to site" cannot be verified. Sibling safety assertions in the same file pass, so the sync path itself is not obviously broken.
+**Action:** Determine whether the sync path legitimately diverges from the install endpoint (assertion is stale) or whether it drifted; reconcile the assertion with the intended contract.
+
 ### RESTORE-001 — MEDIUM | OPEN
 **Title:** After platform database restore, `php artisan migrate --force` required  
 **Module:** Disaster Recovery — Restore Wizard  

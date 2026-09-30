@@ -2143,3 +2143,182 @@ added before `record()`), `config/services.php` (`trusted_media_hosts`),
 new `tests/Feature/ThemeCanvas/ThemeMediaLocalizationTest.php` and
 `tests/Feature/ThemeCanvas/NoParallelMasterThemeAuthoringTest.php`. No
 migration. No route deleted. No authorization rule changed.
+
+---
+
+## ADR-036
+
+**Title:** Standardized Block SDK (`ThemeBlockSDK`) Over the Unchanged ThemeCanvasRuntime Protocol
+
+**Status:** Accepted (Phase 9, Step 1)
+
+**Context:**
+
+A repository audit of the theme-canvas block system found the runtime bridge
+(`packages/saas-platform/modules/theme-runtime/resources/views/canvas/runtime.blade.php`)
+exposed three capabilities that **no code in either repository ever used**:
+
+- `registerBlock(type, lifecycle)` / `initBlock(el)` — grep for `registerBlock`
+  matched only its own definition and export.
+- `trackScript(src)` — defined and exported, zero call sites.
+- `ctx.props` — built by `initBlock` from `data-tb-block-props`, but that
+  attribute is read by the runtime and **emitted by no renderer anywhere**,
+  so `ctx.props` was permanently `{}` for every block on every page.
+
+The one block script that does exist (the carousel, `BlockRenderer.php`)
+ignores the runtime entirely: it self-guards with `dataset.tbCarouselInit`,
+queries its own DOM, and duplicates listener/`setInterval` bookkeeping. There
+was no base class, factory, or abstract block concept anywhere
+(`BaseBlock`/`defineBlock`/`createBlock`/`block-sdk`: zero matches). A new
+developer had to learn the internal message protocol, the element-addressing
+attributes, and the lifecycle fan-out before writing one line of block code.
+
+Phase 9 exists to turn "raw lifecycle implementation" into a developer-facing
+ecosystem. Step 1 is the SDK that every later ecosystem piece rests on.
+
+**Decision:**
+
+1. **The SDK is a consumer layer, never a second bridge.**
+   `ThemeCanvasRuntime.version` stays `1`. The SDK registers against the
+   surfaces the runtime already exposes and re-implements none of it —
+   not `replaceNode`, not `lifecycle()`, not the event bus. Deleting
+   `block-sdk.js` reverts the ecosystem to raw runtime access with no other
+   change. Any future need that cannot be expressed this way is a signal to
+   change the runtime deliberately, not to grow a parallel one.
+
+2. **One distributable file, one include seam, fail-fast.**
+   `resources/js/block-sdk.js` follows the established `canvas-identity.js`
+   pattern exactly: a plain distributable asset with a CommonJS export,
+   resolved by `ThemeRuntimeServiceProvider::blockSdkContractPath()` and
+   inlined verbatim by `resources/views/canvas/block-sdk.blade.php`. Node
+   tests and Blade hosts therefore consume one source and cannot drift.
+   `create()` throws when the runtime contract is missing or is not version
+   1, matching the editor bootstrap's fail-fast gate policy.
+
+3. **Bootstrap position 2.**
+   ```
+   1. runtime    ThemeCanvasRuntime  version 1
+   2. block-sdk  ThemeBlockSDK       version 1   (NEW)
+   3. identity   CanvasIdentity      version 1
+   4. host structural services partial
+   5. interaction runtime
+   ```
+   The SDK hard-depends on the runtime and nothing below it depends on the
+   SDK, so it inserts without disturbing the existing runtime/identity pair.
+   `canvas-preview.blade.php` (static preview, render-only) includes
+   `runtime` + `block-sdk` without `identity`; that surface never authors.
+
+4. **Both authoring forms.** `defineBlock({ ... })` for a declarative
+   object and `defineBlock(class extends ThemeBlockSDK.BaseBlock)` for a
+   block that owns real per-instance state. The class form is the one the
+   reference block uses, because per-instance state without closure
+   bookkeeping is the actual ergonomic win.
+
+5. **One lifecycle vocabulary, two runtime idioms bridged.**
+   The runtime has two registration shapes: `registerBlock(type, {init})`
+   (per element) and `register(id, {mount, update, refresh, destroy})`
+   (document phases). The SDK calls both and filters the document phases by
+   block type and `data-tb-block-id`, so a developer writes only
+   `init` / `onUpdate` / `onRefresh` / `onDestroy`. Phase-to-handler
+   resolution is an explicit map, never string concatenation.
+
+6. **The runtime's WeakMap cleanup is the teardown mechanism.** The runtime
+   releases every `ctx.on()` subscription (`cleanupElement` /
+   `elementSubscriptions`) *before* destroy handlers run. The SDK
+   deliberately holds no second subscription registry, and `onDestroy` is
+   documented as unable to rely on `ctx.on`. A block test asserts the
+   teardown ordering directly.
+
+7. **`data-tb-block-props` is emitted by PHP (the missing props channel).**
+   `BlockRenderer::blockPropsAttr()` writes it on the SAME wrapper that
+   already carries `data-tb-block-id`/`-type`, in both editor and public
+   mode, so the two wrappers stay a pair. Two constraints, both tested: the
+   nested `blocks` child tree is excluded (it is already rendered into
+   `$inner`; re-serialising it would duplicate whole subtrees into a DOM
+   attribute), and empty props emit nothing, so every block that has no props
+   of its own renders byte-identically to before.
+
+8. **`ctx.setProp` is local by contract.** It updates the instance prop map,
+   re-publishes the frozen `ctx.props` view, re-serialises
+   `data-tb-block-props` on the live element, and emits `state:update`. It
+   never round-trips through the editor's `inlinePropChange` action and never
+   persists to a theme. Documented on the surface so a developer does not
+   infer persistence.
+
+9. **Standard event schema.** `ThemeBlockSDK.EVENTS` is a frozen,
+   published table. Pattern `/^[a-z0-9_]+(:[a-z0-9_]+)+$/`: block-local
+   `block:<type>:<verb>`, cross-block `state:update|hydrate|reset`,
+   SDK-reserved `block:ready|update|refresh|destroy|error`, and the
+   runtime-owned `theme:content-updated` / `theme:canvas-lifecycle` /
+   `theme:interaction` documented as not-to-be-redefined. `ctx.emit`
+   validates the name, warns once per offending name, and always stamps
+   `{ blockId, type }` onto the payload.
+
+10. **Dependencies.** `deps.js` resolves through the runtime's own
+    `trackScript()` (the first real consumer of it); `deps.css` injects one
+    deduped `<link>` because the runtime has no stylesheet loader. A
+    dependency that fails to load *resolves* rather than rejects — an
+    optional asset must not take a block down — and `block:error` carries the
+    failure. Editor-side asset distribution stays with the existing
+    `ExtensionCanvasPaletteAdapter` / `ExtensionElementDefinition` pipeline;
+    Step 1 does not change it.
+
+11. **Error containment.** A throwing or rejecting `init` marks the element
+    `data-tb-block-error="1"`, leaves it un-`tb-block-ready`, emits
+    `block:error`, and never affects a sibling block. Every lifecycle
+    handler is individually contained for the same reason.
+
+12. **The reference block is documentation, not product.** `reference_counter`
+    ships as a renderer + a packaged client asset, is self-guarding against
+    double registration, and is **deliberately not in `BlockRegistry`**:
+    registering it would change the registry cardinality that
+    `UniversalMultipurposeQaThemeSeederTest` pins and would place a demo
+    block in the editor palette. Dispatch is unaffected — `renderBlock()`
+    resolves `render{Studly}()` by method existence. A test asserts the
+    absence so the decision cannot be undone by accident.
+
+**Alternatives rejected:**
+
+- *Change the runtime instead of wrapping it.* Rejected: the runtime is
+  version-pinned protocol shared with customer-site, and a protocol bump to
+  absorb conveniences would put a third-party-breaking change ahead of any
+  ecosystem benefit.
+- *A second `data-tb-block-assets` attribute for dependencies.* Rejected: the
+  declarative asset authority already exists server-side
+  (`ExtensionElementDefinition.assets` ? `ExtensionCanvasPaletteAdapter`);
+  a parallel attribute would create a second, competing declaration path.
+- *Client-only props (write `data-tb-block-props` from JS).* Rejected: it
+  would ship a permanently-empty props channel and misrepresent server-side
+  block configuration that already exists.
+- *`ctx.setProp` persisting through `inlinePropChange`.* Rejected for this
+  step: it would require the SDK to own editor write-back, a separate
+  authority from the canvas editor's own prop pipeline.
+
+**Verification:** `tests/js/block-sdk.test.mjs` (27 tests) exercises the SDK
+against the **real** `runtime.blade.php` source with only its two `@json()`
+protocol arrays substituted — a stub would let the two drift, which is exactly
+the failure this ADR exists to close. `tests/js/canvas-editor-bootstrap.test.mjs`
+(5 tests) pins both packaged contract paths, the include order, and the
+three-way fail-fast gate. `tests/Unit/ThemeBuilder/BlockSdkPropsChannelTest.php`
+(11 tests) pins the props channel in both modes, the child-tree exclusion, the
+byte-identical empty case, escaping, and the reference block. Full JS suite:
+46/46. `tests/Unit/ThemeBuilder` + `tests/Unit/Architecture` +
+`tests/Feature/ThemeBuilder`: 3 pre-existing failures only
+(`TypographyScaleWiringTest` ×2 and `Phase3AContractsTest` ×1), each verified
+identical with this phase's changes stashed — see KNOWN_ISSUES.
+
+**Impact:** `packages/saas-platform/modules/theme-runtime` —
+`resources/js/block-sdk.js` (new), `resources/js/blocks/reference-counter.js`
+(new), `resources/views/canvas/block-sdk.blade.php` (new),
+`resources/views/canvas/editor-bootstrap.blade.php` (include order + third
+gate), `src/Providers/ThemeRuntimeServiceProvider.php`
+(`blockSdkContractPath()`, `referenceBlockScriptPath()`),
+`src/BlockRenderer.php` (`blockPropsAttr()`, `wrapEditorMode()` /
+`wrapPublicStructural()` optional `$props`, `renderReferenceCounter()`).
+`saas-platform` — `resources/views/admin/theme-builder/canvas-preview.blade.php`
+(runtime + SDK includes). Tests: `tests/js/block-sdk.test.mjs` (new),
+`tests/js/canvas-editor-bootstrap.test.mjs` (extended),
+`tests/Unit/ThemeBuilder/BlockSdkPropsChannelTest.php` (new). No migration.
+No route change. No protocol change. No customer-site change required to adopt
+the SDK (it is additive), though customer-site should include it when it starts
+authoring blocks through the SDK.

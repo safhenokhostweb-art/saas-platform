@@ -221,6 +221,9 @@ TB3 Sprint 1 کامل شد. Canvas editor هر دو ریپو (platform + custome
 
 ---
 
+### Ecosystem (Phase 9, Step 1+)
+- **Phase 9 / Step 1** — Standardized Block SDK & DX — `ThemeBlockSDK` (`BaseBlock` + `defineBlock`), both authoring forms, unified `init`/`onUpdate`/`onRefresh`/`onDestroy` bridging, `data-tb-block-props` channel closed, published event schema, `reference_counter` worked example. See ADR-036.
+
 ## In Progress Work
 
 None active. Last completed: RESTORE_WIZARD_OPERATIONAL (2026-06-26).

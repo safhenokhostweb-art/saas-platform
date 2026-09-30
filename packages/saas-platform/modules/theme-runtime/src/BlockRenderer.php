@@ -2,6 +2,7 @@
 namespace SaaSPlatform\ThemeRuntime;
 
 use Illuminate\Support\Str;
+use SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider;
 
 /**
  * Phase 2h (ADR-029) — the ONE canonical structural Theme block renderer
@@ -48,6 +49,21 @@ class BlockRenderer
      * with no context — is untouched.
      */
     protected ?string $mode = null;
+
+    /**
+     * Phase 9 / Step 1 — the reference block's client script is emitted at
+     * most once per PHP process (see renderReferenceCounter()). Static
+     * because a single page can render many reference blocks through
+     * several short-lived renderer instances, and each instance would
+     * otherwise re-emit the identical script text.
+     */
+    private static bool $referenceBlockScriptEmitted = false;
+
+    /** Test-only: lets a test re-assert the once-per-document emission. */
+    public static function resetReferenceBlockScriptEmission(): void
+    {
+        self::$referenceBlockScriptEmitted = false;
+    }
 
     public function setContext(array $context): self
     {
@@ -179,7 +195,7 @@ class BlockRenderer
         if ($type === 'accordion') {
             $html = !empty($props['items']) ? $this->renderAccordion($props['items']) : '';
             return $this->finalizeBlock(
-                $this->wrapEditorMode($html, $id, $type),
+                $this->wrapEditorMode($html, $id, $type, $props),
                 $block['style'] ?? [],
                 $block['responsive'] ?? [],
                 $id,
@@ -203,7 +219,7 @@ class BlockRenderer
                 $html = $this->renderModulePlaceholder($type, $props, $id);
             }
             return $this->finalizeBlock(
-                $this->wrapEditorMode($html, $id, $type),
+                $this->wrapEditorMode($html, $id, $type, $props),
                 $block['style'] ?? [],
                 $block['responsive'] ?? [],
                 $id,
@@ -219,7 +235,7 @@ class BlockRenderer
         }
 
         return $this->finalizeBlock(
-            $this->wrapEditorMode($html, $id, $type),
+            $this->wrapEditorMode($html, $id, $type, $props),
             $block['style'] ?? [],
             $block['responsive'] ?? [],
             $id,
@@ -249,6 +265,43 @@ class BlockRenderer
     }
 
     /**
+     * Phase 9 / Step 1 — the ONE props carrier for the client runtime.
+     *
+     * ThemeCanvasRuntime.initBlock() has always read `data-tb-block-props`
+     * (canvas/runtime.blade.php) to build `ctx.props`, but no renderer ever
+     * emitted the attribute, so ctx.props was permanently `{}`. This is the
+     * additive fix: the attribute is emitted on the SAME wrapper that already
+     * carries data-tb-block-id/-type, in both editor and public mode, so the
+     * two wrappers stay a pair.
+     *
+     * The payload is the resolved block props MINUS the nested `blocks` child
+     * tree, which renderBlocks() copies into $props before dispatch. That
+     * tree is already rendered into $inner; re-serialising it would duplicate
+     * the whole subtree into a DOM attribute on every block.
+     *
+     * Empty props emit nothing: an empty attribute would still be re-parsed on
+     * every block on every page for no benefit, and omitting it keeps the
+     * rendered output byte-identical for every existing block that has no
+     * props of its own.
+     */
+    protected function blockPropsAttr(array $props): string
+    {
+        $clientProps = $props;
+        unset($clientProps['blocks']);
+
+        if (empty($clientProps)) {
+            return '';
+        }
+
+        $json = json_encode($clientProps, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($json) || $json === '') {
+            return '';
+        }
+
+        return ' data-tb-block-props="' . htmlspecialchars($json, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
+    }
+
+    /**
      * Smart Public Rendering — public structural wrapper.
      *
      * Emits the runtime-facing structural attributes ONLY (never the editor
@@ -256,13 +309,15 @@ class BlockRenderer
      * (replaceNode) and CanvasIdentity can address every block on a public
      * page while no editor chrome is present.
      */
-    protected function wrapPublicStructural(string $html, string $id, string $type): string
+    protected function wrapPublicStructural(string $html, string $id, string $type, array $props = []): string
     {
         $esc   = htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $idEsc = htmlspecialchars($id,   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $containerAttr = $this->isStructuralContainer($type)
             ? ' data-tb-container="1"' : '';
-        return "<div class=\"tb-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}>{$html}</div>";
+        return "<div class=\"tb-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}"
+            . $this->blockPropsAttr($props)
+            . ">{$html}</div>";
     }
 
     /**
@@ -515,11 +570,11 @@ class BlockRenderer
      * chrome. Gated through isEditorRendering(), so a leaked editor_mode
      * flag can never re-enable the overlay on a public surface.
      */
-    protected function wrapEditorMode(string $html, string $id, string $type): string
+    protected function wrapEditorMode(string $html, string $id, string $type, array $props = []): string
     {
         if (!$this->isEditorRendering()) {
             if ($this->mode === self::MODE_PUBLIC) {
-                return $this->wrapPublicStructural($html, $id, $type);
+                return $this->wrapPublicStructural($html, $id, $type, $props);
             }
             return $html;
         }
@@ -529,7 +584,9 @@ class BlockRenderer
         // registered or host-declared container exposes a nested drop zone.
         $containerAttr = $this->isStructuralContainer($type)
             ? ' data-tb-container="1"' : '';
-        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}>"
+        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}"
+            . $this->blockPropsAttr($props)
+            . ">"
             . "<button type=\"button\" class=\"tb-drag-handle\" aria-label=\"Move {$esc}\" title=\"Drag to move\">⋮⋮</button>"
             . "<div class=\"tb-block-badge\">{$esc}</div>"
             . $html
@@ -931,6 +988,61 @@ class BlockRenderer
                 init(document.getElementById('tb-{$id}'));
             })();</script>
         </div>";
+    }
+
+    /**
+     * Phase 9 / Step 1 — the reference block for the ThemeBlockSDK.
+     *
+     * This type is deliberately NOT in BlockRegistry: it is a documentation
+     * artifact, not a product block. Registering it would change
+     * BlockRegistry::all()'s cardinality and therefore the canonical
+     * registry-count and registry-coverage invariants that
+     * UniversalMultipurposeQaThemeSeederTest owns, and it would put a demo
+     * block in the editor palette. Dispatch is unaffected — renderBlock()
+     * resolves render{Studly}() by method existence, so any type with a
+     * renderer method renders regardless of registry membership.
+     *
+     * The markup is server-rendered and complete on its own (the block is
+     * usable with JS disabled, as every canonical block is); the SDK script
+     * only layers interactivity on top.
+     *
+     * The client script is inlined from the packaged asset via the same
+     * provider-path seam as the block SDK itself, so the file a developer
+     * copies and the file this renderer emits can never drift. It is emitted
+     * ONCE per document: the asset is self-guarding
+     * (__tbReferenceCounterRegistered), but re-inlining identical script
+     * text once per block instance would be pure page weight.
+     */
+    protected function renderReferenceCounter(array $props, string $inner, string $id): string
+    {
+        $step  = (int) ($props['step'] ?? 1);
+        $min   = (int) ($props['min'] ?? 0);
+        $max   = (int) ($props['max'] ?? 99);
+        $value = (int) ($props['value'] ?? $min);
+        $value = max($min, min($max, $value));
+        $step  = $step === 0 ? 1 : $step;
+
+        $label = $this->escapeAttr($props['label'] ?? 'Block SDK reference counter');
+        $stepAttr = $this->escapeAttr((string) $step);
+        $valAttr  = $this->escapeAttr((string) $value);
+
+        $script = '';
+        if (!self::$referenceBlockScriptEmitted) {
+            self::$referenceBlockScriptEmitted = true;
+            $source = @file_get_contents(ThemeRuntimeServiceProvider::referenceBlockScriptPath());
+            if (is_string($source) && $source !== '') {
+                $script = "<script>{$source}</script>";
+            }
+        }
+
+        return "<div class=\"tb-ref-counter\" data-step=\"{$stepAttr}\" data-value=\"{$valAttr}\" role=\"group\" aria-label=\"{$label}\""
+            . " style=\"display:inline-flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:.5rem;background:#fff;\">"
+            . "<button type=\"button\" class=\"tb-ref-counter__decrease\" aria-label=\"کاهش\" style=\"min-width:2rem;height:2rem;border:1px solid #d1d5db;border-radius:.375rem;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;\">−</button>"
+            . "<span class=\"tb-ref-counter__value\" aria-live=\"polite\" style=\"min-width:2.5rem;text-align:center;font-weight:600;font-variant-numeric:tabular-nums;\">{$valAttr}</span>"
+            . "<button type=\"button\" class=\"tb-ref-counter__increase\" aria-label=\"افزایش\" style=\"min-width:2rem;height:2rem;border:1px solid #d1d5db;border-radius:.375rem;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;\">+</button>"
+            . "<button type=\"button\" class=\"tb-ref-counter__reset\" style=\"border:1px solid #d1d5db;border-radius:.375rem;background:#fff;cursor:pointer;font-size:.75rem;padding:.25rem .5rem;\">بازنشانی</button>"
+            . $script
+            . "</div>";
     }
 
     /**

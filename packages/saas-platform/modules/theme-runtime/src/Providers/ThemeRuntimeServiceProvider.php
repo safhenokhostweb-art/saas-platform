@@ -36,6 +36,26 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/canvas-identity.js';
     }
 
+    /**
+     * Phase 9 / Step 1 — the standardized Block SDK, same distributable-JS
+     * seam as the identity contract above, so the Node tests and the Blade
+     * include consume one source and can never drift apart.
+     */
+    public static function blockSdkContractPath(): string
+    {
+        return __DIR__ . '/../../resources/js/block-sdk.js';
+    }
+
+    /**
+     * Phase 9 / Step 1 — the SDK's worked example block, inlined by
+     * BlockRenderer::renderReferenceCounter() so the file a developer copies
+     * and the file a rendered page ships are literally the same bytes.
+     */
+    public static function referenceBlockScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/reference-counter.js';
+    }
+
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/theme-runtime.php', 'theme-runtime');

@@ -1,6 +1,63 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-07-03
+> Last Updated: 2026-09-29
+
+---
+
+## COMPLETE: PHASE 9 / STEP 1 — STANDARDIZED BLOCK SDK & DX — 2026-09-29
+
+**Delivered** — `ThemeBlockSDK`, the standardized developer layer over the
+unchanged `ThemeCanvasRuntime` (protocol version 1):
+
+- `resources/js/block-sdk.js` — `BaseBlock` + `defineBlock`, both authoring
+  forms; `init`/`onUpdate`/`onRefresh`/`onDestroy` bridged onto the runtime's
+  two registration idioms; scoped `ctx` (`element`, `type`, `blockId`,
+  `props`, `on`/`off`/`emit`, plus `# OPEN TASKS
+> Current epics, features, tasks, status, dependencies, and acceptance criteria.
+> Last Updated: 2026-09-29
+
+---
+
+, `ready`, `setProp`, `block`, `state`);
+  `deps` resolved through the runtime's own `trackScript()` (its first real
+  consumer) and a deduped `<link>` for css; per-block error containment
+  (`data-tb-block-error`, `block:error`); a frozen published `EVENTS` schema
+  with name validation and automatic `{ blockId, type }` stamping.
+- `canvas/block-sdk.blade.php` + `ThemeRuntimeServiceProvider::blockSdkContractPath()`
+  — the same distributable-JS seam as the identity contract, so Node tests and
+  Blade hosts cannot drift.
+- Bootstrap order position 2 (after `runtime`, before `identity`) plus a third
+  fail-fast version gate; `canvas-preview.blade.php` includes `runtime` +
+  `block-sdk` (render-only, no identity).
+- `data-tb-block-props` is now emitted by `BlockRenderer` in both editor and
+  public mode — the attribute the runtime always read but nothing ever wrote,
+  which is why `ctx.props` was permanently empty. Child tree excluded; empty
+  props emit nothing, so blocks without props render byte-identically.
+- `reference_counter` — the worked example (class form, declared deps, all four
+  lifecycle phases, `ctx.# OPEN TASKS
+> Current epics, features, tasks, status, dependencies, and acceptance criteria.
+> Last Updated: 2026-09-29
+
+---
+
+, `ctx.setProp` + `state:update`, block-local
+  events). Intentionally **not** in `BlockRegistry`.
+
+**Verification** — `tests/js/block-sdk.test.mjs` 27 tests against the real
+`runtime.blade.php` source (not a stub); `canvas-editor-bootstrap.test.mjs`
+5 tests; `BlockSdkPropsChannelTest` 11 tests; full JS suite 46/46. PHP
+regression: 3 pre-existing failures only, each confirmed identical with this
+phase's changes stashed (see KNOWN_ISSUES). No migration, no route change, no
+protocol change.
+
+**Not in this step (deliberately)** — editor-side asset distribution still
+rides `ExtensionCanvasPaletteAdapter`/`ExtensionElementDefinition`; and
+`ctx.setProp` is local client state, not an editor write-back path.
+
+**Next** — Phase 9 / Step 2: migrate an existing block (the carousel, which
+today self-guards with `dataset.tbCarouselInit` and duplicates listener
+bookkeeping) onto the SDK as the second worked example, then decide whether
+customer-site should include the SDK in its canvas bootstrap.
 
 ---
 

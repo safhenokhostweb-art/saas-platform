@@ -222,6 +222,51 @@ EducationAnalyticsService ──► GET /api/v1/education/analytics
 
 ---
 
+### Block SDK (Phase 9, Step 1)
+
+`ThemeBlockSDK` is the standardized developer layer over the theme-canvas
+runtime bridge. It is a **consumer**, never a second bridge:
+`ThemeCanvasRuntime.version` stays `1` and owns the editor protocol,
+`replaceNode`, the `lifecycle()` phase fan-out, and the event bus. The SDK
+registers against the surfaces the runtime already exposes (`registerBlock`,
+`initBlock`, `trackScript`, `events.*`) and re-implements none of them, so
+removing it reverts the ecosystem to raw runtime access with no other change.
+
+It ships as one distributable asset
+(`packages/saas-platform/modules/theme-runtime/resources/js/block-sdk.js`)
+behind the same provider-path + Blade-include seam as the identity contract
+(`ThemeRuntimeServiceProvider::blockSdkContractPath()` →
+`canvas/block-sdk.blade.php`), so Node tests and Blade hosts consume one
+source. The editor bootstrap loads it at position 2 — after the runtime it
+wraps, before the identity contract — and its fail-fast gate is the third
+counterpart to the identity and runtime gates:
+
+```
+1. runtime    ThemeCanvasRuntime  version 1
+2. block-sdk  ThemeBlockSDK       version 1
+3. identity   CanvasIdentity      version 1
+4. host structural services partial
+5. interaction runtime
+```
+
+`canvas-preview.blade.php` includes `runtime` + `block-sdk` without
+`identity`: it renders blocks but never authors them.
+
+Blocks are defined with `defineBlock({...})` or by subclassing
+`ThemeBlockSDK.BaseBlock`; both are bridged onto the runtime's two
+registration idioms so a developer writes only `init` / `onUpdate` /
+`onRefresh` / `onDestroy`. The runtime's WeakMap-backed `ctx.on` cleanup is
+the teardown mechanism — the SDK keeps no second subscription registry, and
+`onDestroy` cannot rely on `ctx.on`. Props travel one way only:
+`BlockRenderer` emits `data-tb-block-props` on the same wrapper that carries
+`data-tb-block-id`/`-type` (both modes, child tree excluded, empty props
+omitted so existing output is unchanged), and `ctx.setProp` is local client
+state that emits `state:update` and never round-trips through the editor.
+`ThemeBlockSDK.EVENTS` is the published event schema. `reference_counter` is
+the worked example; it is intentionally not in `BlockRegistry`.
+
+See ADR-036 for the full decision record and rejected alternatives.
+
 ## Queue & Cache Architecture
 
 - Queue driver: configurable (Redis recommended for production)

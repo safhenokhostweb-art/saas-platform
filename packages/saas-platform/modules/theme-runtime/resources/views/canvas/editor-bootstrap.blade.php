@@ -2,9 +2,10 @@
      Hosts previously had to remember a fragile include ORDER:
 
          theme-runtime::canvas.runtime        (protocol bridge, required first)
-         theme-runtime::canvas.identity       (identity contract, required second)
-         <host's own structural services>     (hard-requires the identity contract)
-         <host's own interaction runtime>     (before the structural services on
+         theme-runtime::canvas.block-sdk       (block SDK, required second)
+         theme-runtime::canvas.identity        (identity contract, required third)
+         <host's own structural services>      (hard-requires the identity contract)
+         <host's own interaction runtime>      (before the structural services on
                                                the platform's live preview)
 
      canvas-live-preview.blade.php shipped without the identity include once
@@ -14,13 +15,20 @@
      too (before the structural services) so the whole bridge is one line;
      @includeIf keeps hosts without interaction widgets working unchanged.
 
+     Phase 9 / Step 1 added the block SDK at position 2: it is the standardized
+     developer layer over the runtime bridge, it hard-depends on the runtime,
+     and nothing below it depends on the SDK, so it can be inserted without
+     disturbing any existing pair.
+
      Contract (do not reorder without bumping both):
-       1. runtime  — version-gated ThemeCanvasRuntime protocol bridge.
-       2. identity — version-gated CanvasIdentity contract; nothing below
-                     it may run without window.CanvasIdentity.version === 1.
-       3. host structural services partial (structural services hard-depend
+       1. runtime   — version-gated ThemeCanvasRuntime protocol bridge.
+       2. block-sdk — version-gated ThemeBlockSDK (requires 1; defines no
+                      blocks on its own, so pure preview surfaces are safe).
+       3. identity  — version-gated CanvasIdentity contract; nothing below
+                      it may run without window.CanvasIdentity.version === 1.
+       4. host structural services partial (structural services hard-depend
           on the identity contract — fail-fast instead of a null deref).
-       4. interaction runtime (interaction widgets render as sanitized
+       5. interaction runtime (interaction widgets render as sanitized
           data-tb-interaction intention attributes; this is the listener).
 
      $canvasStructuralServices: Blade view of the host's structural-services
@@ -32,6 +40,7 @@
 --}}
 
 @include('theme-runtime::canvas.runtime')
+@include('theme-runtime::canvas.block-sdk')
 @include('theme-runtime::canvas.identity')
 
 <script>
@@ -49,6 +58,9 @@
     }
     if (!window.ThemeCanvasRuntime || window.ThemeCanvasRuntime.version !== 1) {
         throw 'ThemeCanvasRuntime contract is required before structural services';
+    }
+    if (!window.ThemeBlockSDK || window.ThemeBlockSDK.version !== 1) {
+        throw 'ThemeBlockSDK contract is required before structural services';
     }
 })();
 </script>
