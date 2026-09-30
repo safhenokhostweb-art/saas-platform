@@ -77,10 +77,28 @@ class BlockRenderer
      */
     private static array $carouselScriptEmitted = [];
 
+    /**
+     * Phase 9.3 — once-per-document gate for the countdown adapter.
+     *
+     * A plain boolean, NOT keyed by mode like $carouselScriptEmitted. The
+     * carousel needed per-mode keys because its script only carries one mode
+     * of behaviour. The countdown adapter ships BOTH carriers (an SDK block
+     * for canvas surfaces, a DOM scan for public pages), so every mode is
+     * served by the same bytes and there is nothing for a second render to
+     * starve.
+     */
+    private static bool $countdownAdapterEmitted = false;
+
     /** Test-only: lets a test re-assert the once-per-document emission. */
     public static function resetReferenceBlockScriptEmission(): void
     {
         self::$referenceBlockScriptEmitted = false;
+    }
+
+    /** Test-only: lets a test re-assert the once-per-document emission. */
+    public static function resetCountdownAdapterEmission(): void
+    {
+        self::$countdownAdapterEmitted = false;
     }
 
     /** Test-only: lets a test re-assert the once-per-document emission. */
@@ -958,6 +976,55 @@ class BlockRenderer
         }
 
         return "<script>{$source}</script>";
+    }
+
+    /**
+     * The client-script carrier for the countdown block.
+     *
+     * Phase 9.3: the ticking logic used to be written inline into every
+     * countdown by renderCountdown(). It now lives in the packaged adapter
+     * (countdown_adapter.js) and is inlined from there, once per document,
+     * through the same provider-path seam as the carousel carrier.
+     *
+     * The rendered MARKUP is unchanged — renderCountdown() still emits a
+     * <script> element in the same position with the same surrounding
+     * whitespace, it just carries the asset instead of an inline copy. What
+     * changes is what those bytes can do:
+     *
+     *   - the interval handle is finally reachable, so onDestroy() can clear
+     *     it. The inline copy could only clear its own timer when the
+     *     countdown expired, never when the block was replaced;
+     *   - the self-guard is no longer poisoned by an unparseable date;
+     *   - the same file registers an SDK block on canvas surfaces and
+     *     self-initialises on public pages, so the countdown is no longer a
+     *     public-only behaviour with no editor lifecycle at all.
+     *
+     * A missing file throws rather than falling back to a scriptless block:
+     * a countdown that silently ships markup with no ticker is exactly the
+     * failure this refactor exists to surface. A packaging fault must be
+     * loud.
+     */
+    private function countdownAdapterScript(): string
+    {
+        if (self::$countdownAdapterEmitted) {
+            // '' and NOT a bare body: returning only the asset would leave the
+            // second countdown in a document wrapping an empty string in its
+            // own <script> element. The caller interpolates the complete tag,
+            // so 'already emitted' means this instance contributes no script
+            // at all.
+            return '';
+        }
+        self::$countdownAdapterEmitted = true;
+
+        $adapter = @file_get_contents(ThemeRuntimeServiceProvider::countdownAdapterScriptPath());
+        if (!is_string($adapter) || $adapter === '') {
+            throw new \RuntimeException(
+                'Theme runtime packaging fault: the countdown adapter is missing at '
+                . ThemeRuntimeServiceProvider::countdownAdapterScriptPath()
+            );
+        }
+
+        return "<script>{$adapter}</script>";
     }
 
     /**
@@ -3981,8 +4048,14 @@ class BlockRenderer
      * no actual countdown ever ran. No fabricated end date is invented
      * here either (a real countdown still needs a real target date the
      * author sets) — but once one IS set, this now runs an honest, real,
-     * dependency-free ticking countdown, matching this file's existing
-     * inline-`<script>` convention (renderCarousel()/renderModal()).
+     * dependency-free ticking countdown.
+     *
+     * Phase 9.3: the ticker itself was moved out of this string into the
+     * packaged adapter (resources/js/blocks/countdown_adapter.js) and is
+     * carried in by countdownAdapterScript(). The markup below — including
+     * the <script> element's position and the surrounding whitespace — is
+     * deliberately unchanged, so the render snapshots pinned for both the
+     * with-date and without-date shapes still hold.
      */
     protected function renderCountdown(array $props, string $inner, string $id): string
     {
@@ -4004,37 +4077,7 @@ class BlockRenderer
                 <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__s\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ثانیه</small></div>
             </div>
             <p class=\"tb-countdown__expired\" style=\"display:none;\">این پیشنهاد به پایان رسیده است.</p>
-            <script>(function(){
-                var root = document.currentScript.closest('.tb-countdown');
-                if (!root || root.dataset.tbCountdownInit) return;
-                root.dataset.tbCountdownInit = '1';
-                var end = new Date(root.dataset.endDate).getTime();
-                if (isNaN(end)) return;
-                var timerEl = root.querySelector('.tb-countdown__timer');
-                var expiredEl = root.querySelector('.tb-countdown__expired');
-                var dEl = root.querySelector('.tb-countdown__d'), hEl = root.querySelector('.tb-countdown__h');
-                var mEl = root.querySelector('.tb-countdown__m'), sEl = root.querySelector('.tb-countdown__s');
-                function pad(n){ return String(n).padStart(2, '0'); }
-                function tick(){
-                    var diff = end - Date.now();
-                    if (diff <= 0) {
-                        if (timerEl) timerEl.style.display = 'none';
-                        if (expiredEl) expiredEl.style.display = 'block';
-                        clearInterval(interval);
-                        return;
-                    }
-                    var d = Math.floor(diff / 86400000);
-                    var h = Math.floor((diff % 86400000) / 3600000);
-                    var m = Math.floor((diff % 3600000) / 60000);
-                    var s = Math.floor((diff % 60000) / 1000);
-                    if (dEl) dEl.textContent = pad(d);
-                    if (hEl) hEl.textContent = pad(h);
-                    if (mEl) mEl.textContent = pad(m);
-                    if (sEl) sEl.textContent = pad(s);
-                }
-                tick();
-                var interval = setInterval(tick, 1000);
-            })();</script>
+            {$this->countdownAdapterScript()}
         </div>";
     }
 

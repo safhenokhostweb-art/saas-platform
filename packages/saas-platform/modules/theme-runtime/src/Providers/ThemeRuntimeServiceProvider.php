@@ -70,6 +70,19 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/blocks/carousel.js';
     }
 
+    /**
+     * Phase 9.3 — the countdown adapter, inlined once per document by
+     * BlockRenderer::renderCountdown().
+     *
+     * Same provider-path seam as referenceBlockScriptPath() and
+     * carouselBlockScriptPath(), so the file a developer reads and the bytes
+     * a rendered page ships cannot drift.
+     */
+    public static function countdownAdapterScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/countdown_adapter.js';
+    }
+
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/theme-runtime.php', 'theme-runtime');
