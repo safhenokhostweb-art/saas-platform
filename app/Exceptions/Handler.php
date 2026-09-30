@@ -6,6 +6,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -39,6 +40,21 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $e): Response
     {
         if ($request->is('api/*')) {
+            // Part 2 (7-part local audit task, 2026-09-19) follow-up finding:
+            // TokenMismatchException does not implement getStatusCode() (it
+            // is a plain Exception, not an HttpExceptionInterface — Laravel
+            // only converts it to a 419 HttpException later, inside
+            // parent::prepareException(), which this api/* branch never
+            // reaches). Without this explicit check it fell through to the
+            // generic "$status = 500" fallback below, misreporting a CSRF
+            // token mismatch as a server error on api/* routes.
+            if ($e instanceof TokenMismatchException) {
+                return response()->json([
+                    'valid' => false,
+                    'error' => 'token_mismatch',
+                    'message' => 'نشست شما منقضی شده است (خطای امنیتی CSRF). لطفاً دوباره تلاش کنید.',
+                ], 419);
+            }
             if ($e instanceof ValidationException) {
                 return response()->json([
                     'valid' => false,
@@ -91,6 +107,28 @@ class Handler extends ExceptionHandler
                 'message' => $message,
             ], $status);
         }
+
+        // Part 2 (7-part local audit task, 2026-09-19): root cause of the
+        // isolated 419 on admin/theme-builder/{theme}/sync-pages (and any
+        // other long-lived admin form) is a stale CSRF token — the modal's
+        // hidden _token input is baked in at initial page render
+        // (resources/views/admin/theme-builder/index.blade.php's static
+        // @csrf), and if the session/file-driver session has since expired
+        // (SESSION_LIFETIME=120min, config/session.php) or been
+        // regenerated, the submitted token no longer matches. This is
+        // inherent, correct CSRF behavior — never bypassed here — but
+        // Laravel's bare default 419 page left the admin with no
+        // explanation and no way back to their in-progress work. Redirect
+        // back with the form input preserved (minus the stale token/secret
+        // fields) and a clear, visible Persian flash message: the 419
+        // status is still what caused this, it is just no longer a
+        // silent/confusing dead end.
+        if ($e instanceof TokenMismatchException && !$request->expectsJson()) {
+            return redirect()->back()
+                ->withInput($request->except(['_token', 'password', 'password_confirmation']))
+                ->with('error', 'نشست شما منقضی شده است (خطای امنیتی CSRF). لطفاً صفحه را تازه‌سازی کرده و دوباره تلاش کنید.');
+        }
+
         return parent::render($request, $e);
     }
 }
