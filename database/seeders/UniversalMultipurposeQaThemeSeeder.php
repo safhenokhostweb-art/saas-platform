@@ -193,16 +193,10 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
 
     // ── Real media ──────────────────────────────────────────────────────────
     // Section H (TASK 3/3, Universal Theme professionalization): every image
-    // below is a genuinely rendered GD JPEG — a brand-gradient background
-    // plus a deterministic abstract shape pattern derived from the image's
-    // own name (so repeated seeder runs always produce byte-identical
-    // output, and every image is visually distinct from every other) —
-    // never `UploadedFile::fake()->image()`. That helper is a PHPUnit test
-    // fixture utility: on this environment's GD driver it produces a flat,
-    // near-black single-colour rectangle with no real visual content —
-    // structurally valid (real bytes, real dimensions, passes every
-    // AssetIntegrityCheck/getimagesizefromstring check) but exactly the
-    // "black/empty image block" defect a real customer install exposed.
+    // below is produced from a committed, presentation-grade photographic
+    // source asset. The old deterministic GD gradient/circle generator was
+    // technically decodable but visually still a placeholder, and caused
+    // the exact empty/black-looking commercial defect this theme must avoid.
     // Stored through the same canonical portable master-Theme media path
     // (ThemeMediaController's own disk convention: theme-media/{theme->id}/)
     // — never a customer-site CustomerMedia UUID, which ADR-049 §6/§Y
@@ -278,47 +272,61 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
         $this->images['hero_video_poster'] = Storage::disk($disk)->url($path);
     }
 
-    /**
-     * A real, deterministic, locally-rendered JPEG — a two-stop brand
-     * gradient (the same #4f46e5 → #7c3aed pair this theme's hero/CTA
-     * blocks already use) plus a handful of translucent circles whose
-     * position/size/opacity are derived from a seeded PRNG keyed on
-     * $name, so every image is visually distinct yet byte-identical
-     * across repeated seeder runs — never network-dependent, never
-     * literally blank. No external URL, no font-file dependency (no text
-     * is drawn — alt text is set separately on every block prop that
-     * uses these images).
-     */
+    /** Build a deterministic cover-cropped JPEG from a committed source. */
     private function generateBrandedImage(string $name, int $width, int $height): UploadedFile
     {
+        $sources = [
+            'hero' => ['hero-business.jpg', null],
+            'about' => ['business-team.jpg', null],
+            'gallery_1' => ['mobile-commerce.jpg', null],
+            'gallery_2' => ['business-team.jpg', null],
+            'gallery_3' => ['technology-products.jpg', null],
+            'gallery_4' => ['mountain-trust.jpg', null],
+            'portfolio_1' => ['mobile-commerce.jpg', null],
+            'portfolio_2' => ['technology-products.jpg', null],
+            'team_1' => ['team-contact-sheet.jpg', [0, 0]],
+            'team_2' => ['team-contact-sheet.jpg', [1, 0]],
+            'team_3' => ['team-contact-sheet.jpg', [0, 1]],
+            'team_4' => ['team-contact-sheet.jpg', [1, 1]],
+        ];
+
+        if (!isset($sources[$name])) {
+            throw new \RuntimeException("No commercial source image is mapped for [{$name}].");
+        }
+
+        [$filename, $quadrant] = $sources[$name];
+        $sourcePath = database_path('seeders/assets/universal-multipurpose-qa/' . $filename);
+        $source = @imagecreatefromjpeg($sourcePath);
+        if ($source === false) {
+            throw new \RuntimeException("Commercial source image is missing or invalid: {$sourcePath}");
+        }
+
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+        if (is_array($quadrant)) {
+            $sourceWidth = intdiv($sourceWidth, 2);
+            $sourceHeight = intdiv($sourceHeight, 2);
+            $sourceX = $quadrant[0] * $sourceWidth;
+            $sourceY = $quadrant[1] * $sourceHeight;
+        } else {
+            $targetRatio = $width / $height;
+            $sourceRatio = $sourceWidth / $sourceHeight;
+            if ($sourceRatio > $targetRatio) {
+                $cropWidth = (int) round($sourceHeight * $targetRatio);
+                $sourceX = intdiv($sourceWidth - $cropWidth, 2);
+                $sourceWidth = $cropWidth;
+                $sourceY = 0;
+            } else {
+                $cropHeight = (int) round($sourceWidth / $targetRatio);
+                $sourceY = intdiv($sourceHeight - $cropHeight, 2);
+                $sourceHeight = $cropHeight;
+                $sourceX = 0;
+            }
+        }
+
         $image = imagecreatetruecolor($width, $height);
-
-        $from = [0x4f, 0x46, 0xe5];
-        $to   = [0x7c, 0x3a, 0xed];
-        for ($y = 0; $y < $height; $y++) {
-            $t = $y / max(1, $height - 1);
-            $r = (int) round($from[0] + ($to[0] - $from[0]) * $t);
-            $g = (int) round($from[1] + ($to[1] - $from[1]) * $t);
-            $b = (int) round($from[2] + ($to[2] - $from[2]) * $t);
-            $rowColor = imagecolorallocate($image, $r, $g, $b);
-            imageline($image, 0, $y, $width, $y, $rowColor);
-        }
-
-        // Deterministic PRNG seeded on the image name — same shapes every
-        // run, different shapes per image.
-        mt_srand(crc32($name));
-        imagealphablending($image, true);
-        $shapeCount = 5 + (crc32($name) % 4);
-        for ($i = 0; $i < $shapeCount; $i++) {
-            $cx = mt_rand(0, $width);
-            $cy = mt_rand(0, $height);
-            $radius = (int) (min($width, $height) * (mt_rand(15, 45) / 100));
-            $alpha = mt_rand(90, 115); // 0 (opaque) .. 127 (fully transparent)
-            $shade = mt_rand(0, 1) === 1 ? 255 : 0;
-            $color = imagecolorallocatealpha($image, $shade, $shade, $shade, $alpha);
-            imagefilledellipse($image, $cx, $cy, $radius * 2, $radius * 2, $color);
-        }
-        mt_srand(); // restore non-deterministic seeding for anything else in this process
+        imagecopyresampled($image, $source, 0, 0, $sourceX, $sourceY, $width, $height, $sourceWidth, $sourceHeight);
+        imagedestroy($source);
 
         $tmpPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'utqa_' . $name . '_' . getmypid() . '.jpg';
         imagejpeg($image, $tmpPath, 87);
@@ -411,6 +419,9 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 'description' => 'یک بلوک nav_header — ساده‌ترین ساختار ممکن، پایه برای مقایسه با بقیه.',
                 'blocks' => [$this->navHeader([
                     'logo_text' => 'برند شما', 'nav_links' => $baseLinks, 'sticky' => false,
+                    'bg_color' => '#082638', 'text_color' => '#f8fafc',
+                    'cta_text' => 'شروع رایگان', 'cta_url' => '/pricing',
+                    'show_search' => true, 'show_cart' => true, 'show_account' => true,
                     // Commercial Productization fase-4: real, usable dark
                     // mode — this is the active/default header preset, so
                     // the toggle is genuinely reachable on every page.
@@ -672,7 +683,7 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     'subtitle' => 'ارسال رایگان برای خریدهای بالای ۵۰۰ هزار تومان',
                     'button_text' => 'مشاهدهٔ محصولات', 'button_url' => '#products',
                     'button2_text' => 'دسته‌بندی‌ها', 'button2_url' => '/product-categories',
-                    'gradient_from' => '#ea580c', 'gradient_to' => '#db2777', 'text_color' => '#ffffff',
+                    'gradient_from' => '#c2410c', 'gradient_to' => '#db2777', 'text_color' => '#ffffff',
                 ]),
                 $this->block('module:shop_search_box', ['placeholder' => 'جستجوی محصول...']),
                 $this->block('module:shop_categories', ['title' => 'دسته‌بندی محصولات']),
@@ -711,15 +722,15 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                 $this->block('module:site_search', ['placeholder' => 'جستجو در کل سایت...', 'style' => 'hero']),
                 $this->block('tabs', ['blocks' => [
                     $this->block('tab_panel', ['title' => 'فروشگاه اینترنتی', 'blocks' => [
-                        $this->block('heading', ['text' => 'همه‌چیز برای فروش آنلاین', 'level' => '3']),
+                        $this->block('heading', ['text' => 'همه‌چیز برای فروش آنلاین', 'level' => '2']),
                         $this->block('text', ['content' => 'مدیریت محصول، دسته‌بندی، سبد خرید و درگاه پرداخت — بدون نیاز به افزونهٔ جداگانه.']),
                     ]]),
                     $this->block('tab_panel', ['title' => 'آموزش آنلاین', 'blocks' => [
-                        $this->block('heading', ['text' => 'فروش دوره و مدیریت دانشجو', 'level' => '3']),
+                        $this->block('heading', ['text' => 'فروش دوره و مدیریت دانشجو', 'level' => '2']),
                         $this->block('text', ['content' => 'تعریف دوره، فروش اقساطی یا یک‌جا، و پیگیری پیشرفت دانشجویان در یک داشبورد.']),
                     ]]),
                     $this->block('tab_panel', ['title' => 'وبلاگ و محتوا', 'blocks' => [
-                        $this->block('heading', ['text' => 'انتشار محتوای حرفه‌ای', 'level' => '3']),
+                        $this->block('heading', ['text' => 'انتشار محتوای حرفه‌ای', 'level' => '2']),
                         $this->block('text', ['content' => 'دسته‌بندی، برچسب و سئوی داخلی برای هر مطلب، بدون نیاز به ابزار جانبی.']),
                     ]]),
                 ]]),
@@ -791,54 +802,33 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
     private function homeBlocks(): array
     {
         return [
-            // Hero — TASK 3/3 Phase 6: upgraded from the plain solid-color
-            // 'hero' to 'hero_gradient' (real badge, two-button CTA, brand
-            // gradient — already-proven CSS this theme previously never
-            // used anywhere) for a genuinely premium corporate first
-            // impression, distinct from the other 5 homepages' heroes.
-            $this->block('hero_gradient', [
-                'badge' => 'پلتفرم جامع کسب‌وکار',
-                'title' => 'همه‌چیز برای رشد کسب‌وکار شما، در یک پلتفرم',
-                'subtitle' => 'ساخت سایت، فروشگاه، وبلاگ و دوره‌های آموزشی — بدون نیاز به دانش فنی، با پشتیبانی واقعی فارسی.',
-                'button_text' => 'شروع رایگان', 'button_url' => '/pricing',
-                'button2_text' => 'مشاهدهٔ نمونه‌کارها', 'button2_url' => '/portfolio',
-                // Commercial Productization fase-3 (visual identity audit):
-                // was hardcoded to the platform's generic indigo/violet
-                // (#4f46e5/#7c3aed) — a real bug that made the flagship
-                // homepage hero ignore this theme's own configured brand
-                // colors entirely. Omitting these now inherits
-                // renderHeroGradient()'s real --tb-primary/--tb-secondary
-                // default (see BlockRenderer.php), so the hero always
-                // reflects this theme's actual palette (teal/cyan), not a
-                // second, independently-drifting hardcoded copy of it.
-                'text_color' => '#ffffff',
-            ]),
-            // Trust
-            $this->block('client_logos', [
-                'title' => 'مورد اعتماد کسب‌وکارهای موفق ایرانی',
-                'logos' => [
-                    ['name' => 'فروشگاه دیجی‌مد'], ['name' => 'آموزشگاه رشد'], ['name' => 'کلینیک سلامت'],
-                    ['name' => 'استودیو طراحی نقش'], ['name' => 'آژانس سفر پرواز'], ['name' => 'رستوران زیتون'],
+            // Flagship commercial hero: a genuine multi-slide media story,
+            // not a solid-colour banner pretending to be a slider.
+            $this->block('slider', [
+                'slides' => [
+                    ['image' => $this->img('hero'), 'title' => 'راهکارهای مدرن برای کسب‌وکارهای ایرانی', 'subtitle' => 'سایت، فروشگاه و مدیریت مشتریان در یک تجربهٔ یکپارچه', 'link' => '/pricing', 'cta_text' => 'رایگان شروع کنید'],
+                    ['image' => $this->img('gallery_1'), 'title' => 'فروش روی موبایل؛ سریع، ساده و حرفه‌ای', 'subtitle' => 'تجربهٔ خریدی که در هر اندازهٔ صفحه کامل می‌ماند', 'link' => '/shop', 'cta_text' => 'مشاهده فروشگاه'],
+                    ['image' => $this->img('gallery_2'), 'title' => 'ابزارهای سازمانی برای تیم‌های رو‌به‌رشد', 'subtitle' => 'از همکاری روزانه تا گزارش‌های تصمیم‌ساز', 'link' => '/services', 'cta_text' => 'راهکارها را ببینید'],
                 ],
-                'scroll' => true,
+                'autoplay' => true, 'interval' => 6500, 'transition' => 'fade',
+                'boxed' => false, 'aspect_ratio' => '21/9', 'overlay' => true,
             ]),
-            // Services
-            $this->block('features_grid', [
-                'title' => 'چرا صاحبان کسب‌وکار ما را انتخاب می‌کنند؟',
-                'subtitle' => 'ابزارهایی که واقعاً به آن‌ها نیاز دارید، بدون پیچیدگی اضافه',
-                'columns' => '3', 'style' => 'cards',
-                'features' => [
-                    ['icon' => '🎨', 'title' => 'سازندهٔ بصری صفحه', 'text' => 'طراحی صفحات بدون کدنویسی با پیش‌نمایش زنده'],
-                    ['icon' => '🛒', 'title' => 'فروشگاه آنلاین کامل', 'text' => 'مدیریت محصول، سبد خرید و پرداخت یکپارچه'],
-                    ['icon' => '🎓', 'title' => 'پلتفرم آموزش آنلاین', 'text' => 'فروش دوره و مدیریت دانشجویان'],
-                    ['icon' => '📱', 'title' => 'واکنش‌گرا در همهٔ دستگاه‌ها', 'text' => 'تجربهٔ یکسان روی موبایل، تبلت و دسکتاپ'],
-                    ['icon' => '🔒', 'title' => 'امنیت و پشتیبان‌گیری خودکار', 'text' => 'اطلاعات شما همیشه محافظت‌شده است'],
-                    ['icon' => '💬', 'title' => 'پشتیبانی فارسی واقعی', 'text' => 'تیم پشتیبانی همیشه در دسترس شماست'],
+            // Image-led bento immediately follows the hero, matching the
+            // reference's dense commercial rhythm instead of six generic
+            // feature cards with emoji artwork.
+            $this->block('bento_grid', [
+                'title' => '',
+                'items' => [
+                    ['title' => 'فروشگاه آنلاین با امکانات کامل', 'text' => 'محصول، پرداخت، ارسال و باشگاه مشتریان', 'image' => $this->img('gallery_3'), 'link_url' => '/shop', 'link_label' => 'ورود به فروشگاه', 'size' => 'small', 'bg_color' => '#eef6f5', 'text_color' => '#0f172a'],
+                    ['title' => 'اپلیکیشن همراه همیشه در دسترس', 'text' => 'تجربهٔ سریع و یکپارچه روی موبایل', 'image' => $this->img('gallery_1'), 'link_url' => '/services', 'link_label' => 'دریافت اپ', 'size' => 'small', 'bg_color' => '#0b2335', 'text_color' => '#ffffff'],
+                    ['title' => 'راهکارهای سازمانی', 'text' => 'برای تیم‌ها و کسب‌وکارهای در حال رشد', 'image' => $this->img('gallery_2'), 'link_url' => '/services', 'link_label' => 'مشاهده راهکارها', 'size' => 'small', 'bg_color' => '#f4f0ff', 'text_color' => '#312e81'],
+                    ['title' => 'پشتیبانی حرفه‌ای', 'text' => 'همیشه در کنار شما', 'icon' => '۲۴/۷', 'size' => 'small', 'bg_color' => '#ecfeff', 'text_color' => '#155e75'],
+                    ['title' => 'آموزش و مشاوره', 'text' => 'رشد کسب‌وکار شما', 'icon' => '۱:۱', 'size' => 'small', 'bg_color' => '#f5f3ff', 'text_color' => '#5b21b6'],
                 ],
             ]),
             // Stats
             $this->block('stats_row', [
-                'title' => '', 'background' => '#f8fafc', 'dividers' => true,
+                'title' => 'اعتماد شما سرمایهٔ ماست', 'background' => '#0b2a3c', 'text_color' => '#ffffff', 'background_image' => $this->img('gallery_4'), 'dividers' => true,
                 'stats' => [
                     ['value' => 3200, 'suffix' => '+', 'label' => 'کسب‌وکار فعال'],
                     ['value' => 98, 'suffix' => '%', 'label' => 'رضایت مشتری'],
@@ -846,37 +836,25 @@ class UniversalMultipurposeQaThemeSeeder extends Seeder
                     ['value' => 5, 'suffix' => ' سال', 'label' => 'سابقهٔ فعالیت'],
                 ],
             ]),
-            // About
-            $this->block('about_section', [
-                'badge' => 'دربارهٔ ما', 'title' => 'ساخته‌شده برای کسب‌وکارهای ایرانی',
-                'description' => 'ما از سال ۱۳۹۸ در حال ساخت ابزارهایی هستیم که به کسب‌وکارهای کوچک و متوسط کمک می‌کند بدون نیاز به تیم فنی، حضور آنلاین حرفه‌ای داشته باشند.',
-                'features' => ['بدون نیاز به کدنویسی', 'میزبانی و دامنهٔ رایگان', 'پشتیبانی فارسی ۲۴ ساعته'],
-                'btn_text' => 'بیشتر بدانید', 'btn_url' => '/about',
-            ]),
-            // Portfolio (real generated images)
-            $this->block('gallery', [
-                'title' => 'نمونه‌کارهای ساخته‌شده روی پلتفرم ما',
-                'columns' => '3',
-                'items' => [
-                    ['url' => $this->img('portfolio_1'), 'alt' => 'نمونه‌کار فروشگاه آنلاین'],
-                    ['url' => $this->img('portfolio_2'), 'alt' => 'نمونه‌کار سایت شرکتی'],
-                    ['url' => $this->img('gallery_1'), 'alt' => 'نمونه‌کار وبلاگ'],
+            $this->block('product_slider', ['title' => 'محصولات ویژه', 'limit' => 6, 'columns' => '4', 'source' => 'latest', 'autoplay' => true, 'interval' => 5200]),
+            $this->block('category_slider', ['title' => 'دسته‌بندی‌های محبوب', 'layout' => 'carousel', 'columns' => '6', 'autoplay' => true, 'interval' => 5800]),
+            $this->block('process_steps', [
+                'title' => 'مسیر ساده تا موفقیت', 'subtitle' => 'در چهار قدم، کسب‌وکار آنلاین خود را راه‌اندازی کنید',
+                'steps' => [
+                    ['number' => '۱', 'title' => 'ثبت‌نام', 'text' => 'در چند دقیقه'],
+                    ['number' => '۲', 'title' => 'انتخاب بسته', 'text' => 'متناسب با نیاز شما'],
+                    ['number' => '۳', 'title' => 'راه‌اندازی', 'text' => 'با پشتیبانی تیم ما'],
+                    ['number' => '۴', 'title' => 'رشد و موفقیت', 'text' => 'با ابزارهای هوشمند'],
                 ],
             ]),
-            // Products
-            $this->block('product_grid', ['columns' => 4, 'limit' => 8]),
-            // Courses
-            $this->block('module:courses_grid', ['title' => 'دوره‌های آموزشی محبوب', 'limit' => 3, 'columns' => '3', 'layout' => 'grid', 'show_price' => true]),
-            // News/blog
-            $this->block('blog_posts', ['title' => 'جدیدترین مطالب وبلاگ', 'limit' => 3]),
-            // Team
-            $this->block('team_cards', [
-                'title' => 'با تیم ما آشنا شوید', 'columns' => '3',
-                'members' => [
-                    ['name' => 'سارا احمدی', 'role' => 'مدیرعامل و بنیان‌گذار', 'image' => $this->img('team_1'), 'bio' => 'بیش از ۱۰ سال تجربه در توسعهٔ کسب‌وکارهای دیجیتال'],
-                    ['name' => 'رضا کریمی', 'role' => 'مدیر فنی', 'image' => $this->img('team_2'), 'bio' => 'معمار زیرساخت پلتفرم و تیم مهندسی'],
-                    ['name' => 'نگار حسینی', 'role' => 'مدیر محصول', 'image' => $this->img('team_3'), 'bio' => 'مسئول تجربهٔ کاربری و طراحی محصول'],
+            $this->block('blog_posts', ['title' => 'آخرین مقالات', 'limit' => 5, 'layout' => 'slider']),
+            $this->block('client_logos', [
+                'title' => 'برندهای همراه ما',
+                'logos' => [
+                    ['name' => 'آینده‌ساز'], ['name' => 'راهکار نوین'], ['name' => 'بازار هوشمند'],
+                    ['name' => 'خانه دیجیتال'], ['name' => 'رشد ایرانی'], ['name' => 'همراه تجارت'],
                 ],
+                'scroll' => true, 'mode' => 'carousel', 'visible_count' => 6,
             ]),
             // Testimonials (real carousel with real columns support — see
             // BlockRenderer::renderTestimonialsSlider(); avatar/company are
