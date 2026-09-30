@@ -4,11 +4,11 @@
 
 ---
 
-## OPEN: SDK-002 — a block's controller handle is gone by the time the SDK releases it
+## RESOLVED: SDK-002 — a block's controller handle was gone by the time the SDK released it
 
-**Status:** Open. Reproduced, characterised, NOT fixed. Regression test exists
-as `test.todo` in `tests/js/block-sdk-lifecycle.test.mjs` so it stays visible
-without reddening CI.
+**Status:** RESOLVED (Phase 9.2). The `test.todo` in
+`tests/js/block-sdk-lifecycle.test.mjs` is now a real regression test and
+passes. Decision recorded as ADR-056 in `DECISIONS.md`.
 
 **Found by:** the Phase 9.2 SDK-to-runtime integration test, which boots the
 real `runtime.blade.php` + the real `block-sdk.js` + the real `carousel.js` in
@@ -34,6 +34,34 @@ pinning its detached carousel.
 **So the handle is already null when `onDestroy` runs**, despite `init`
 having assigned it. The cause is in the SDK's instance/handle lifetime
 around `replaceNode`, not in the carousel block.
+
+**Root cause (found by per-phase trace, correcting the characterisation
+above):** not a premature release at all — the destroy path always ran and
+`onDestroy` was always entered. The handle was nulled by a **race between
+the block's async init and the SDK's update phase**. `replaceNode()` runs
+destroy and update synchronously back-to-back; the SDK's update hook calls
+`runtime.initBlock(root)` and immediately fans out `onUpdate` to the fresh
+instance. A block whose init returns a promise (the carousel awaits
+`ctx.ready()`) completes its body one microtask LATER — after `onUpdate`
+had already bound the controller — and then re-ran `initCarousel()`, hit
+the element's `data-tb-carousel-init` guard, received `null`, and
+**overwrote the live `state.handle` with it**. The first replacement
+destroyed cleanly precisely because nothing raced its init (no update
+phase precedes the initial mount); every subsequent destroy found
+`handle === null` and leaked one window listener + one timer.
+
+**Fix (structural, in the SDK's orchestration):** the SDK now serialises
+lifecycle phases per instance (`gateHandler`/`gateInit` in
+`block-sdk.js`). While a block's async init is pending: update/refresh
+phases are dropped (the pending continuation already produces the post-init
+state), and destroy phases are HELD until the continuation settles, then
+delivered — so `releaseInstance()` is now ordered strictly AFTER
+`onDestroy` completes and can never orphan a block's teardown. The carousel
+gained an idempotence guard in its init continuation as defence in depth.
+See ADR-056 for the full decision, the rejected alternatives, and the
+`onUpdate` reachability ruling (the "unreachable on the replace path"
+claim was an artefact of testing update phases against already-released
+instances; it is reachable for the NEW instance).
 
 **Two related findings from the same investigation**, both fixed in Phase 9.2:
 - `releaseInstance()` deletes the instance from the live set, and

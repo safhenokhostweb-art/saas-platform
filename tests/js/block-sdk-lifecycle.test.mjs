@@ -43,6 +43,14 @@ const RUNTIME_SOURCE = fs
 const SDK_SOURCE = fs.readFileSync(path.join(pkgDir, 'resources/js/block-sdk.js'), 'utf8');
 const CAROUSEL_SOURCE = fs.readFileSync(path.join(pkgDir, 'resources/js/blocks/carousel.js'), 'utf8');
 
+// The legacy carousel adapter (Phase 9.2): the SAME shared controller, driven
+// by the SDK, for the four types that used to carry legacyCarouselScript()
+// inline. That PHP carrier is deleted — this adapter is their only carrier.
+const LEGACY_CAROUSEL_SOURCE = fs.readFileSync(
+    path.join(pkgDir, 'resources/js/blocks/legacy_carousel.js'),
+    'utf8',
+);
+
 // ------------------------------------------------------------------ harness
 
 class FakeClassList {
@@ -168,7 +176,7 @@ class FakeDocument {
  * Boot runtime -> block-sdk -> carousel, in the exact order
  * theme-runtime::canvas.editor-bootstrap includes them.
  */
-function boot({ items = 3 } = {}) {
+function boot({ items = 3, withLegacyAdapter = false } = {}) {
     const doc = new FakeDocument();
 
     const warnings = [];
@@ -244,6 +252,9 @@ function boot({ items = 3 } = {}) {
     vm.runInContext(RUNTIME_SOURCE, context, { filename: 'runtime.blade.js' });
     vm.runInContext(SDK_SOURCE, context, { filename: 'block-sdk.js' });
     vm.runInContext(CAROUSEL_SOURCE, context, { filename: 'carousel.js' });
+    if (withLegacyAdapter) {
+        vm.runInContext(LEGACY_CAROUSEL_SOURCE, context, { filename: 'legacy_carousel.js' });
+    }
 
     return { win, doc, runtime: win.ThemeCanvasRuntime, sdk: win.ThemeBlockSDK, warnings, errors, context };
 }
@@ -256,15 +267,15 @@ function listenerCount(win, type) {
  * A block wrapper exactly as BlockRenderer emits it in MODE_PUBLIC, holding
  * one product_slider carousel.
  */
-function buildProductSliderBlock(doc, { blockId = 'b1', columns = 3, autoplay = true } = {}) {
+function buildProductSliderBlock(doc, { blockId = 'b1', columns = 3, autoplay = true, type = 'product_slider', carouselClass = 'tb-carousel tb-module-products' } = {}) {
     const wrap = new FakeElement('div', doc);
     wrap.setAttribute('class', 'tb-block');
     wrap.setAttribute('data-tb-block-id', blockId);
-    wrap.setAttribute('data-tb-block-type', 'product_slider');
+    wrap.setAttribute('data-tb-block-type', type);
     wrap.setAttribute('data-tb-block-props', JSON.stringify({ columns, autoplay, interval: 1000 }));
 
     const carousel = new FakeElement('div', doc);
-    carousel.setAttribute('class', 'tb-carousel tb-module-products');
+    carousel.setAttribute('class', carouselClass);
     carousel.setAttribute('data-autoplay', String(autoplay));
     carousel.setAttribute('data-interval', '1000');
     carousel.setAttribute('data-pause-hover', 'true');
@@ -304,14 +315,14 @@ function connect(doc, wrap) {
  * swap in a new element carrying the same block id, then bring the new
  * element up through initBlock.
  */
-async function replaceBlock(win, doc, runtime, oldWrap, { blockId = 'b1', times = 1, trace = null } = {}) {
+async function replaceBlock(win, doc, runtime, oldWrap, { blockId = 'b1', times = 1, trace = null, builderOpts = {} } = {}) {
     for (let i = 0; i < times; i++) {
         if (trace) trace.push(`iter${i} start: listeners=${listenerCount(win, 'resize')} timers=${liveTimers(win)}`);
 
         runtime.lifecycle('destroy', oldWrap, { blockId });
         if (trace) trace.push(`iter${i} afterDestroy: listeners=${listenerCount(win, 'resize')} timers=${liveTimers(win)}`);
 
-        const { wrap, carousel } = buildProductSliderBlock(doc, { blockId });
+        const { wrap, carousel } = buildProductSliderBlock(doc, { blockId, ...builderOpts });
         oldWrap.replaceWith(wrap);
         runtime.lifecycle('update', wrap, { blockId });
         runtime.initBlock(wrap);
@@ -379,25 +390,21 @@ test('step B/C — replacing a block stops the old controller and drives the new
 });
 
 /**
- * KNOWN FAILING — tracked as SDK-002 in docs/project-memory/OPEN_TASKS.md.
+ * REGRESSION — SDK-002 (docs/project-memory/OPEN_TASKS.md), fixed in the SDK.
  *
  * The contract here is the one the block claims to honour: a replacement's
- * controller must release the previous one's window listener. It does not,
- * and the cause is upstream of this block.
+ * controller must release the previous one's window listener. Before the
+ * SDK serialised phases per instance, an async init's continuation landed
+ * AFTER the update phase's sync fan-out and overwrote `state.handle` with
+ * null (the element guard refused the double init) — so every destroy from
+ * the second replacement on found nothing to stop and one window listener
+ * plus one autoplay timer leaked per edit.
  *
- * Observed against the real runtime + real SDK: over 4 replacements the
- * controller is initialised 5 times but torn down only once, and the window
- * 'resize' listener count grows once per replacement. The block's onDestroy
- * IS entered every time — the released instance is provably the same object
- * the SDK created for that element (verified by identity) — but its
- * `state.handle` is already null, so there is nothing left to destroy.
- *
- * Asserted as todo rather than deleted or flipped to a passing expectation:
- * a green test that asserts "the listener count grows without bound" would
- * be worse than a red one. Fixing it is Phase 9.3 work — it needs the SDK's
- * instance/handle lifetime understood, not a change in this block.
+ * Asserted against the real runtime + real SDK + real block: over 10
+ * replacements the controller must be torn down every time — exactly one
+ * live window 'resize' listener and one timer at the end.
  */
-test.todo('step C — the window listener does not survive a block replacement', async () => {
+test('step C — the window listener does not survive a block replacement', async () => {
     const { win, doc, runtime, errors } = boot();
     const { wrap } = buildProductSliderBlock(doc);
     connect(doc, wrap);
@@ -474,6 +481,91 @@ test('a block whose carousel is missing does not throw', async () => {
     await new Promise((r) => setTimeout(r, 0));
 
     assert.equal(errors.length, 0, 'a block with no carousel must fail soft, not throw: ' + errors.join(' | '));
+});
+
+// ------------------------------------------------------------ legacy adapter
+
+test('the legacy adapter registers the four non-migrated carousel types as SDK blocks', () => {
+    const { sdk, errors } = boot({ withLegacyAdapter: true });
+
+    assert.equal(errors.length, 0, 'booting with the legacy adapter must not error: ' + errors.join(' | '));
+    for (const type of ['slider', 'category_slider', 'testimonials_slider', 'client_logos']) {
+        const def = sdk.getBlockType(type);
+        assert.ok(def, type + ' must be registered');
+        assert.equal(def.version, 1);
+    }
+});
+
+test('a legacy-type block binds the controller and owns exactly one window listener and timer', async () => {
+    const { win, doc, runtime, errors } = boot({ withLegacyAdapter: true });
+    const { wrap } = buildProductSliderBlock(doc, {
+        type: 'slider',
+        carouselClass: 'tb-carousel tb-slider',
+    });
+    connect(doc, wrap);
+
+    assert.ok(runtime.initBlock(wrap), 'the runtime must claim the legacy type through the adapter');
+    await new Promise((r) => setTimeout(r, 0));
+
+    assert.equal(errors.length, 0, errors.join(' | '));
+    assert.equal(listenerCount(win, 'resize'), 1, 'exactly one window resize listener');
+    assert.equal(liveTimers(win), 1, 'exactly one autoplay timer');
+});
+
+/**
+ * The SDK-002 contract, now extended to the legacy carousel types: N
+ * replacements must leave exactly one window listener and one timer. Before
+ * this adapter, legacyCarouselScript() had no destroy at all — one of each
+ * leaked per replacement, each pinning its detached subtree.
+ */
+test('SDK-002 for the legacy types — ten replacements leave one listener and one timer', async () => {
+    const { win, doc, runtime, errors } = boot({ withLegacyAdapter: true });
+    const { wrap } = buildProductSliderBlock(doc, {
+        type: 'slider',
+        carouselClass: 'tb-carousel tb-slider',
+    });
+    connect(doc, wrap);
+
+    runtime.initBlock(wrap);
+    await new Promise((r) => setTimeout(r, 0));
+    assert.equal(listenerCount(win, 'resize'), 1);
+
+    const current = await replaceBlock(win, doc, runtime, wrap, {
+        times: 10,
+        builderOpts: { type: 'slider', carouselClass: 'tb-carousel tb-slider' },
+    });
+
+    assert.equal(errors.length, 0, errors.join(' | '));
+    assert.ok(current, 'the final replacement is still live');
+    assert.equal(
+        listenerCount(win, 'resize'),
+        1,
+        '10 replacements of a legacy type must leave exactly one window listener — the adapter provides the destroy the inline script never had',
+    );
+    assert.equal(liveTimers(win), 1, 'and exactly one live autoplay timer');
+});
+
+test('the adapter interops with the inline guard: an element owned by the legacy script is adopted, not double-bound', async () => {
+    // A page can transition from inline-carrier markup to the SDK adapter.
+    // The element guard is the interop seam: whoever reaches the element
+    // first owns it; the adapter must not fight it and must not double-bind.
+    const { win, doc, runtime, errors } = boot({ withLegacyAdapter: true });
+    const { wrap, carousel } = buildProductSliderBlock(doc, {
+        type: 'category_slider',
+        carouselClass: 'tb-carousel tb-category-slider',
+    });
+    connect(doc, wrap);
+
+    // Simulate the legacy inline script having reached the element first:
+    // it sets the SAME guard attribute the shared controller uses.
+    carousel.setAttribute('data-tb-carousel-init', '1');
+
+    assert.ok(runtime.initBlock(wrap), 'the runtime still claims the block');
+    await new Promise((r) => setTimeout(r, 0));
+
+    assert.equal(errors.length, 0, errors.join(' | '));
+    assert.equal(listenerCount(win, 'resize'), 0, 'the owned element must not gain a second controller');
+    assert.equal(liveTimers(win), 0, 'and no second autoplay timer');
 });
 
 test('with no SDK present the same file still self-initialises the carousel', async () => {

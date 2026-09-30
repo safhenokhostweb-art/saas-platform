@@ -2322,3 +2322,124 @@ gate), `src/Providers/ThemeRuntimeServiceProvider.php`
 No route change. No protocol change. No customer-site change required to adopt
 the SDK (it is additive), though customer-site should include it when it starts
 authoring blocks through the SDK.
+
+---
+
+## ADR-056
+
+**Title:** Per-Instance Lifecycle Serialization in the Block SDK (SDK-002); `onUpdate` Reachability Ruled On
+
+**Status:** Accepted (Phase 9.2)
+
+**Context:**
+
+SDK-002 was filed as "the SDK releases the instance before the block's
+cleanup can run": N block replacements through `replaceNode()` left N+1
+carousel initialisations, one teardown, and one stranded `window` `resize`
+listener per replacement. The reproduction in
+`tests/js/block-sdk-lifecycle.test.mjs` (per-phase trace) pinned the
+timeline precisely:
+
+- the FIRST replacement destroys cleanly (listeners go to 0);
+- every destroy from the SECOND replacement on is a no-op, because the
+  instance's `state.handle` is already null.
+
+The handle was not nulled by any release path. It was nulled by a **race the
+SDK itself created between a block's async init and the update phase**. The
+runtime's `replaceNode()` runs `lifecycle('destroy')` and
+`lifecycle('update')` synchronously back-to-back, and the SDK's own update
+hook calls `runtime.initBlock(root)` and then fans out `onUpdate`
+immediately. A block whose `init()` returns a promise (the carousel resolves
+`ctx.ready()`) finishes its body one microtask LATER — after `onUpdate` has
+already bound the controller. The deferred init continuation then re-ran,
+hit the element's `data-tb-carousel-init` guard, got `null` back from
+`initCarousel()`, and **overwrote the live handle with `null`**. From then
+on every `destroy` found nothing to stop: the window listener and the
+autoplay timer leaked, each pinning its detached DOM subtree.
+
+The SDK's fan-out had no ordering concept at all: phases were delivered in
+arrival order, whatever an in-flight init might collide with.
+
+**Decision:**
+
+1. **The SDK serialises lifecycle phases per instance**
+   (`gateHandler`/`gateInit` in `block-sdk.js`). `initBlock()` opens a
+   per-instance gate when init returns a promise; the gate closes when the
+   init continuation settles (success OR failure). While it is open:
+   - an `update`/`refresh` phase is **dropped, not queued** — the pending
+     continuation already represents the post-init state that phase was
+     about to produce, and blocks' own guard attributes keep re-runs
+     idempotent;
+   - a `destroy` phase is **held** until the continuation settles, then
+     delivered — a block must never be released with its init body
+     unexecuted.
+
+2. **`releaseInstance()` is ordered strictly AFTER `onDestroy` completes.**
+   The destroy fan-out now routes through the gate and releases the
+   instance inside the delivery callback. This is the structural invariant
+   the lifecycle previously left to chance: the SDK cannot lose its
+   reference to a block instance before the block's teardown has finished.
+   No try/catch bandage, no block-side workaround — the guarantee lives in
+   the orchestration layer.
+
+3. **Blocks may keep writing plain `this.state.x = ...`.** The carousel
+   gained only (a) an idempotence guard in its init continuation
+   (`state.element === el && state.handle` → return), so a re-entered
+   continuation can never overwrite a live handle with a guard-refused
+   `null`, and (b) `onUpdate` still tears a superseded controller down
+   before rebinding (destroy-before-null ordering). Neither change is
+   required for correctness under the SDK gate; both are defence in depth
+   that costs nothing.
+
+4. **`onUpdate` reachability, ruled on:** on the real replace path
+   (`replaceNode()` → destroy → replace → update), the update phase fans
+   out to the NEW element's fresh instance, whose init has just been kicked
+   off — so `onUpdate` IS reached on replacements, delivered (or dropped)
+   through the gate. The old claim that "nothing is left to call" described
+   only the instance of the OLD element, correctly released during destroy.
+   Blocks that need replacement-driven re-init still work either way: init
+   runs for the new element, and `onUpdate` additionally fires for any
+   plain `update` phase that is not tied to a replacement. The hook stays
+   documented and callable; its old "unreachable on the replace path"
+   caveat in the carousel comment was stale and has been corrected.
+
+**Alternatives rejected:**
+
+- *Make the runtime deliver update asynchronously (queue a microtask).*
+  Rejected: the runtime is the version-pinned protocol layer (ADR-036);
+  changing its delivery semantics to fix an SDK bug inverts the authority
+  relationship and would make every consumer's phase ordering
+  timing-dependent.
+- *Drop `onUpdate` from the SDK contract since "it is unreachable".*
+  Rejected on the evidence above — it is reachable; the unreachability
+  claim was an artefact of testing update phases against already-released
+  instances.
+- *Have the carousel null-check and re-create its controller in
+  `onDestroy`.* Rejected: the handle is already null by the time destroy
+  runs — that patch would have papered over the race while leaving the SDK
+  free to interleave any future phase with any in-flight init.
+- *Queue out-of-order update/refresh phases behind the gate.* Rejected:
+  queuing converts one stale delivery into two (continuation + queued
+  phase) and forces blocks to be re-entrant; dropping matches what the
+  continuation already did and keeps the handler count one.
+
+**Verification:** `tests/js/block-sdk-lifecycle.test.mjs` — the SDK-002
+`test.todo` is now a real assertion: 10 replacements through the real
+runtime + real SDK + real carousel leave exactly one `window` `resize`
+listener and one live autoplay timer, with every destroy dropping the count
+to zero. `tests/js/block-sdk.test.mjs` adds the gate contract test: an
+update during a pending init is dropped, a destroy during a pending init is
+held, `onDestroy` runs strictly after the init continuation, and only then
+is the instance released (`instanceCount` → 0). The pre-existing
+`replaceNode` ordering test (destroy → init → update for sync blocks) and
+the full JS suite (61/61) stay green.
+
+**Impact:** `packages/saas-platform/modules/theme-runtime` —
+`resources/js/block-sdk.js` (per-instance phase gate: `gateHandler`,
+`gateInit`, gated destroy fan-out), `resources/js/blocks/carousel.js`
+(init idempotence guard, corrected lifecycle comments).
+`tests/js/block-sdk.test.mjs` (new gate contract test),
+`tests/js/block-sdk-lifecycle.test.mjs` (SDK-002 todo promoted to a real
+regression test). No runtime change. No protocol change. No renderer change.
+No blade view change (the SDK ships as one distributable source consumed by
+the view).

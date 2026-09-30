@@ -15,8 +15,10 @@
  *   1. SDK present (canvas editor + live preview, which load
  *      theme-runtime::canvas.runtime and ...block-sdk). Then it registers
  *      CarouselBlock, a real BaseBlock subclass, for the `product_slider`
- *      type. The SDK owns lifecycle; ctx.$ scopes every query to the block
- *      root, so a carousel can never reach into a neighbour's DOM.
+ *      type. The SDK owns lifecycle (and serialises phases per instance,
+ *      so a replacement's destroy -> init -> update ordering is
+ *      guaranteed); ctx.$ scopes every query to the block root, so a
+ *      carousel can never reach into a neighbour's DOM.
  *
  *   2. SDK absent (every PUBLIC customer page — no public layout loads the
  *      canvas runtime, see canvas-preview/canvas/canvas-live-preview for the
@@ -28,14 +30,15 @@
  *   initialised twice no matter which carrier reaches it first, so migrating
  *   one type can never double-bind the types that are not migrated yet.
  *
- * MIGRATION STATUS — read before editing
- *   `product_slider` is the ONLY migrated caller. `slider`,
- *   `category_slider`, `testimonials_slider` and the remaining renderCarousel()
- *   call sites still carry the pre-migration inline copy verbatim. Those
- *   copies are the same logic and the same guard, so a page mixing both
- *   carriers behaves correctly — but if you fix a bug in the controller
- *   below, those inline copies still have it. Migrating a type means
- *   deleting its inline copy, not editing it.
+ * MIGRATION STATUS — Phase 9.2, COMPLETE
+ *   Every renderCarousel() caller now ships this file plus
+ *   legacy_carousel.js; the pre-migration inline copy is deleted from
+ *   BlockRenderer. This file registers `product_slider`; the adapter
+ *   registers `slider`, `category_slider`, `testimonials_slider` and
+ *   `client_logos`, so all types go through the SDK and all of them have
+ *   the destroy() the inline copies never had. Both carriers run the same
+ *   controller behind the same guard, so a bug fixed here reaches every
+ *   type.
  */
 (function (root) {
     'use strict';
@@ -285,10 +288,26 @@
         }
 
         CarouselBlock.prototype.init = function (ctx) {
+            // init may be async (deps via ctx.ready()). The SDK holds every
+            // later phase on this instance back until the continuation below
+            // has run, so state written here is always the state the next
+            // phase sees.
             var self = this;
             return ctx.ready().then(function () {
                 var el = carouselRoot(ctx);
                 if (!el) return;
+
+                // A block-local guard against a re-entered init continuation
+                // (a double init on the same instance). Without it, a second
+                // continuation would re-call initCarousel(), hit the
+                // element's own data-tb-carousel-init guard, and overwrite
+                // the live handle with null — orphaning the real controller
+                // and leaking its window listener/timer. (This is the
+                // concrete mechanism behind SDK-002; the SDK-side fix makes
+                // the interleaving unreachable, the guard makes the block
+                // safe even if a future caller breaks that invariant.)
+                if (self.state.element === el && self.state.handle) return;
+
                 self.state.element = el;
                 self.state.handle = initCarousel(el, optionsFrom(ctx));
                 ctx.emit('block:product_slider:ready', { blockId: ctx.blockId });
@@ -296,18 +315,29 @@
         };
 
         CarouselBlock.prototype.onUpdate = function (ctx) {
-            // NOTE: on the editor's real replace path this handler is NOT
-            // reached. runtime.replaceNode() emits 'destroy' and then
-            // 'update', and the SDK's releaseInstance() drops the instance
-            // from the live set during 'destroy', so by the time 'update'
-            // fans out there is no instance left to call.
+            // On the editor's real replace path the SDK routes this to the
+            // NEW element's fresh instance (runtime.replaceNode() emits
+            // 'destroy' then 'update', and the new element goes up through
+            // initBlock on update). The SDK serialises phases per instance,
+            // so when THIS instance gets onUpdate its own init has fully
+            // completed.
             //
-            // So this only runs if a caller emits 'update' WITHOUT replacing
-            // the element. Re-init is correct then only if the carousel
-            // element is genuinely new: re-running the controller against the
-            // one we already own would be refused by the
-            // data-tb-carousel-init guard, and nulling the handle first would
-            // leave the block with no controller at all.
+            // A plain `update` emitted WITHOUT replacing the element reaches
+            // the original instance too. The two branches:
+            //   - same element, handle alive  -> nothing to do (re-running
+            //     initCarousel is refused by the data-tb-carousel-init
+            //     guard, and nulling the handle first would leave the block
+            //     with no controller at all);
+            //   - the rare interleaving where a controller was already
+            //     bound to this element but its handle did not reach state
+            //     (see the async-init guard note in init) -> tear the
+            //     orphaned controller down explicitly so its window
+            //     listener and autoplay timer cannot leak, then re-bind.
+            //     initCarousel() returns null when the element already
+            //     carries the init guard, so a null return after destroy()
+            //     means the element is owned and the guard alone keeps it
+            //     consistent — never null out the previous handle BEFORE
+            //     destroy() has run, or its cleanup becomes unreachable.
             var el = carouselRoot(ctx);
             if (!el) return;
             if (this.state.handle && this.state.element === el) return;

@@ -561,6 +561,61 @@ test('replaceNode destroys the old element, inits the new one and calls onUpdate
     assert.equal(sdk.getBlockType('swapped').instanceCount, 1, 'the old instance is released');
 });
 
+test('a destroy landing during a pending async init is delivered AFTER the init continuation, then the instance is released (SDK-002 gate)', async () => {
+    // replaceNode() drives destroy and update back-to-back, synchronously
+    // after initBlock() returns — but an init that returns a promise has not
+    // finished its body yet. The SDK must serialise phases per instance:
+    // the update is dropped (init's continuation is the post-init run) and
+    // the destroy is HELD until the continuation has completed, so
+    // releaseInstance() can never overtake onDestroy and orphan the block's
+    // own teardown. This is the ordering whose absence leaked one window
+    // listener per block replacement.
+    const { sdk, runtime, doc, errors } = boot();
+    const log = [];
+    let resolveInit = null;
+
+    sdk.defineBlock({
+        type: 'gated',
+        init(ctx) {
+            log.push(['init', ctx.blockId]);
+            return new Promise((resolve) => {
+                resolveInit = () => {
+                    log.push(['init:continuation', ctx.blockId]);
+                    resolve();
+                };
+            });
+        },
+        onUpdate(ctx) { log.push(['update', ctx.blockId]); },
+        onDestroy(ctx) { log.push(['destroy', ctx.blockId]); },
+    });
+
+    const el = blockElement(doc, { type: 'gated', id: 'g1' });
+    runtime.initBlock(el);
+    await tick();
+    assert.deepEqual(log, [['init', 'g1']], 'init is running but its continuation has not run yet');
+
+    // An update landing while init is pending is DROPPED, not queued: the
+    // pending continuation is the authoritative post-init run.
+    runtime.lifecycle('update', el, { blockId: 'g1' });
+    assert.deepEqual(log, [['init', 'g1']], 'an update during a pending init is dropped');
+
+    // A destroy landing while init is pending is HELD until it settles.
+    runtime.lifecycle('destroy', el, { blockId: 'g1' });
+    assert.deepEqual(log, [['init', 'g1']], 'onDestroy must not run before the init continuation');
+    assert.equal(sdk.getBlockType('gated').instanceCount, 1, 'the instance is not released while its init is pending');
+
+    resolveInit();
+    await tick();
+
+    assert.deepEqual(log, [
+        ['init', 'g1'],
+        ['init:continuation', 'g1'],
+        ['destroy', 'g1'],
+    ], 'onDestroy runs only after the init continuation has completed');
+    assert.equal(sdk.getBlockType('gated').instanceCount, 0, 'the instance is released after onDestroy completed');
+    assert.equal(errors.length, 0, errors.join(' | '));
+});
+
 test('the runtime WeakMap subscription cleanup is what tears down ctx.on handlers', () => {
     // This is the destroy contract: the runtime releases every ctx.on()
     // subscription BEFORE destroy handlers run, so a block never has to keep

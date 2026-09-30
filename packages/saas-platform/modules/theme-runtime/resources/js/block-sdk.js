@@ -50,7 +50,11 @@
  *
  * LIFECYCLE
  *   init(ctx)        on the element, once per element (guarded).
- *   onUpdate(ctx, d) after a runtime `update` phase (element replaced).
+ *   onUpdate(ctx, d) after a runtime `update` phase (element replaced). On
+ *                    the real replace path the update phase fans out to the
+ *                    NEW instance; with async init the SDK serialises phases
+ *                    per instance (see gateHandler) so init's continuation
+ *                    always completes before the next phase is delivered.
  *   onRefresh(ctx,d) after a runtime `refresh` phase (document-wide).
  *   onDestroy(ctx,d) during a runtime `destroy` phase. NOTE: the runtime
  *                    releases every ctx.on() subscription BEFORE destroy
@@ -58,6 +62,10 @@
  *                    is called first), so onDestroy may not rely on ctx.on.
  *                    That WeakMap cleanup is the teardown mechanism; the SDK
  *                    holds no second subscription registry of its own.
+ *                    A destroy that lands while an async init is still
+ *                    pending is held back and delivered after init's
+ *                    continuation — releaseInstance() can never overtake
+ *                    onDestroy.
  *
  * EVENT SCHEMA
  *   Pattern: /^([a-z0-9_]+:)+[a-z0-9_]+$/ — at least one namespace segment.
@@ -376,6 +384,89 @@
             }
         }
 
+        /**
+         * Serialise a block's lifecycle phases per instance (SDK-002).
+         *
+         * WHY THIS EXISTS
+         *   init() is allowed to be async — it may return a promise (deps
+         *   loading, an element probe) and finish later. But the phases that
+         *   follow it are synchronous fan-outs from the runtime: the update
+         *   phase runs IMMEDIATELY after initBlock() returns, i.e. before an
+         *   async init's continuation has executed. Without ordering, the
+         *   block receives onUpdate BEFORE init's own continuation, and
+         *   whatever init assigns last silently wins — for the carousel that
+         *   was its `state.handle`: init's deferred second initCarousel()
+         *   hit the data-tb-carousel-init guard, returned null and OVERWROTE
+         *   the good handle onUpdate had just assigned. The block then had no
+         *   controller to destroy, so every replacement after the first
+         *   leaked its window resize listener and autoplay timer (10
+         *   replacements → 10 stranded listeners; see
+         *   block-sdk-lifecycle.test.mjs).
+         *
+         * THE RULE
+         *   A handler is dropped (not queued) when it arrives out of order:
+         *     - an update/refresh that lands while an init is still pending
+         *       is dropped — init's own continuation already represents the
+         *       post-init state this update was about to produce, and the
+         *       block's guard attributes make a re-run idempotent anyway;
+         *     - a destroy that lands while init is pending is held until
+         *       init's continuation has run, then delivered — a block must
+         *       NEVER be released with its init body unexecuted, and
+         *       releaseInstance() must stay ordered AFTER onDestroy
+         *       completes (the structural invariant this file used to
+         *       violate under this exact race).
+         *
+         *   This is a lifecycle-orchestration fix inside the SDK, not a
+         *   block-level workaround: blocks keep writing plain
+         *   `this.state.x = ...` in init and onUpdate.
+ */
+        function gateHandler(instance, methodName, deliver, detail) {
+            var pending = instance.__pendingInit || null;
+
+            if (methodName === 'onDestroy') {
+                if (pending) {
+                    // Hold destroy until init finishes, then release. The
+                    // continuation callback flips the gate itself.
+                    pending.destroyAfter = { deliver: deliver, detail: detail };
+                    return;
+                }
+                deliver();
+                return;
+            }
+
+            if (pending) {
+                // Init still in flight: this phase describes state that does
+                // not exist yet. Drop it — the init continuation is the
+                // authoritative post-init run.
+                return;
+            }
+            deliver();
+        }
+
+        /**
+         * Wrap an init's returned promise (or a resolved one) so the per-
+         * instance gate knows when init's continuation has really finished.
+         * `onSettled` runs regardless of success or failure, AFTER the
+         * block's own init continuation, and then delivers any destroy that
+         * was held back by gateHandler.
+         */
+        function gateInit(instance, run, onSettled) {
+            var pending = instance.__pendingInit || (instance.__pendingInit = {});
+            return Promise.resolve(run).then(
+                function () { onSettled(); finishPendingInit(instance); },
+                function (e) { onSettled(); finishPendingInit(instance); throw e; }
+            );
+            function finishPendingInit(inst) {
+                var p = inst.__pendingInit;
+                inst.__pendingInit = null;
+                if (p && p.destroyAfter) {
+                    var held = p.destroyAfter;
+                    p.destroyAfter = null;
+                    held.deliver(held.detail);
+                }
+            }
+        }
+
         function releaseInstance(instance, definition, detail) {
             if (instance.released) return;
             callHandler(instance, definition, 'onDestroy', detail);
@@ -398,6 +489,13 @@
             destroy: 'onDestroy',
         };
 
+        /**
+         * Fan one runtime phase out to every live instance of every
+         * registered definition. Deliveries are serialised per instance
+         * through gateHandler so an async init can never interleave with a
+         * later phase on the same instance.
+         */
+
         function fanOut(phase, root, detail) {
             var handlerName = HANDLER_FOR_PHASE[phase];
             if (!handlerName) return;
@@ -409,8 +507,20 @@
                 // phase would reach no block at all.
                 Array.from(set).forEach(function (instance) {
                     if (!matches(instance, root, detail, phase)) return;
-                    if (phase === 'destroy') releaseInstance(instance, definition, detail);
-                    else callHandler(instance, definition, handlerName, detail);
+                    if (phase === 'destroy') {
+                        // gateHandler holds this call while the instance's
+                        // init is still pending and delivers it afterwards;
+                        // ONLY THEN is the instance released — onDestroy
+                        // always completes before the SDK loses its
+                        // reference (releaseInstance).
+                        gateHandler(instance, 'onDestroy', function () {
+                            releaseInstance(instance, definition, detail);
+                        }, detail);
+                        return;
+                    }
+                    gateHandler(instance, handlerName, function () {
+                        callHandler(instance, definition, handlerName, detail);
+                    }, detail);
                 });
             });
         }
@@ -455,7 +565,11 @@
             }
 
             if (run && typeof run.then === 'function') {
-                return Promise.resolve(run).then(function () {
+                // SDK-002: open the per-instance phase gate. gateInit runs
+                // the init continuation to completion (or failure) BEFORE
+                // any update/refresh/destroy phase this element receives is
+                // delivered — the ordering that used to be left to chance.
+                return gateInit(instance, run, function () {
                     if (instance.released) return;
                     if (instance.el && instance.el.classList) {
                         instance.el.classList.add(READY_CLASS);

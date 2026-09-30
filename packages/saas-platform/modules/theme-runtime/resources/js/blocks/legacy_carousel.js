@@ -1,8 +1,9 @@
 /*!
  * Legacy carousel adapter — Phase 9.2 (SDK-002 aftermath)
  * ========================================================
- * The four carousel types that still ship the pre-Phase-9.2 inline
- * controller (`legacyCarouselScript()` in src/BlockRenderer.php):
+ * The four carousel types that used to ship the pre-Phase-9.2 inline
+ * controller (`legacyCarouselScript()` in src/BlockRenderer.php, deleted
+ * in this phase):
  *
  *   slider, category_slider, testimonials_slider, client_logos
  *
@@ -37,14 +38,16 @@
  *   block's markup and includes this file instead of the inline copy
  *   cannot tell the difference, except that replacement now tears down.
  *
- * MIGRATION STATUS — read before editing
- *   Registering these types here does NOT migrate them by itself: the
- *   PHP side still emits legacyCarouselScript() for every renderCarousel()
- *   caller that has not opted into the shared carrier, and the inline
- *   copy must be deleted when a caller flips (migration means deleting
- *   the inline copy, not adding a second one). The PHP switch is the
- *   last step, and each type should flip with a test pinning the new
- *   emission.
+ * MIGRATION STATUS — Phase 9.2, COMPLETE
+ *   Registering these types here did not migrate them by itself; the PHP
+ *   switch that completed it was deleting legacyCarouselScript() from
+ *   BlockRenderer, so renderCarousel() no longer emits a per-instance
+ *   inline copy at all. Every caller now ships this adapter alongside
+ *   the shared controller, and each type has a test pinning that
+ *   emission (tests/Unit/ThemeBuilder/ProductSliderRenderSnapshotTest.php).
+ *
+ *   If a caller ever needs its own carrier again, remember what migration
+ *   means: delete the old carrier, never add a second one.
  */
 (function (root) {
     'use strict';
