@@ -56,6 +56,20 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/blocks/reference-counter.js';
     }
 
+    /**
+     * Phase 9 / Step 2 — the shared carousel controller, inlined once per
+     * document by BlockRenderer::renderCarousel() for any caller that opts
+     * into the shared-asset carrier.
+     *
+     * Same seam as referenceBlockScriptPath() and for the same reason: the
+     * file a developer reads and the bytes a rendered page ships must be the
+     * same, or the two carriers silently diverge.
+     */
+    public static function carouselBlockScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/carousel.js';
+    }
+
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/theme-runtime.php', 'theme-runtime');

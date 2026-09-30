@@ -59,10 +59,34 @@ class BlockRenderer
      */
     private static bool $referenceBlockScriptEmitted = false;
 
+    /**
+     * Phase 9 / Step 2 — same once-per-document rule for the shared
+     * carousel asset, and for the same reason: several short-lived renderer
+     * instances render the several carousels of one page, and each would
+     * otherwise re-inline the identical ~11 KB controller.
+     *
+     * Keyed BY MODE, not a single flag. A single boolean would let one
+     * render starve the next within the same PHP process, and unlike the
+     * reference counter a carousel is meaningless without its script: a
+     * document that lost the carrier would render its arrows and dots and
+     * then do nothing when they were clicked. Anything that renders both
+     * modes in one process (a test, a preview inside a canvas response) now
+     * gets a carrier for each.
+     *
+     * @var array<string, bool>
+     */
+    private static array $carouselScriptEmitted = [];
+
     /** Test-only: lets a test re-assert the once-per-document emission. */
     public static function resetReferenceBlockScriptEmission(): void
     {
         self::$referenceBlockScriptEmitted = false;
+    }
+
+    /** Test-only: lets a test re-assert the once-per-document emission. */
+    public static function resetCarouselScriptEmission(): void
+    {
+        self::$carouselScriptEmitted = [];
     }
 
     public function setContext(array $context): self
@@ -794,6 +818,16 @@ class BlockRenderer
      *   filtered/validated by the caller (e.g. a deleted product silently excluded upstream).
      * @param array{desktop?:int,tablet?:int,mobile?:int} $itemsPerView How many slides are visible
      *   at once per breakpoint. Omit (or leave at 1/1/1) for a classic single-item slider.
+     * @param array{script?:string} $options 'script' selects the client-script carrier.
+     *   'inline' (default) emits the per-instance inline script this method has
+     *   always emitted. 'shared' emits the packaged shared-asset carrier
+     *   (resources/js/blocks/carousel.js) ONCE per document instead.
+     *
+     *   'shared' is the Phase 9 / Step 2 migration target and is opt-in per
+     *   caller so the not-yet-migrated carousel types keep byte-identical
+     *   output. Both carriers run the SAME controller and share the same
+     *   data-tb-carousel-init guard, so a page mixing both behaves correctly
+     *   and no carousel can be initialised twice.
      */
     protected function renderCarousel(
         array $slidesHtml,
@@ -805,7 +839,8 @@ class BlockRenderer
         bool $pauseOnHover = true,
         bool $fade = false,
         bool $showProgress = false,
-        array $thumbnailUrls = []
+        array $thumbnailUrls = [],
+        array $options = []
     ): string {
         $slidesHtml = array_values(array_filter($slidesHtml, fn ($s) => trim((string) $s) !== ''));
         if (empty($slidesHtml)) {
@@ -889,6 +924,51 @@ class BlockRenderer
             <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\" style=\"position:absolute;top:50%;left:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">›</button>
             <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
             {$thumbnailHtml}
+            {$this->carouselScript($id, $options)}
+        </div>";
+    }
+
+    /**
+     * The client-script carrier for one carousel.
+     *
+     * 'shared' inlines the packaged controller once per document and reuses
+     * it for every later carousel, so a page with N carousellers pays the
+     * cost once instead of N times. It is emitted at all when the file is
+     * missing, rather than silently emitting nothing: a page that silently
+     * loses its only interactivity is the failure mode this whole refactor
+     * exists to prevent.
+     */
+    private function carouselScript(string $id, array $options): string
+    {
+        if (($options['script'] ?? 'inline') !== 'shared') {
+            return $this->legacyCarouselScript($id);
+        }
+
+        $emissionKey = $this->mode ?? 'neutral';
+        if (self::$carouselScriptEmitted[$emissionKey] ?? false) {
+            return '';
+        }
+        self::$carouselScriptEmitted[$emissionKey] = true;
+
+        $source = @file_get_contents(ThemeRuntimeServiceProvider::carouselBlockScriptPath());
+        if (!is_string($source) || $source === '') {
+            // Packaging fault: fall back to the inline carrier rather than
+            // shipping a dead carousel.
+            return $this->legacyCarouselScript($id);
+        }
+
+        return "<script>{$source}</script>";
+    }
+
+    /**
+     * The pre-Phase-9.2 inline controller, kept byte-identical for every
+     * carousel type that has not been migrated yet. Deleting a caller's copy
+     * is what migrating it means; editing this one would silently fork the
+     * controller away from the shared asset.
+     */
+    private function legacyCarouselScript(string $id): string
+    {
+        return <<<HTML
             <script>(function(){
                 function init(root){
                     if (!root || root.dataset.tbCarouselInit) return;
@@ -987,7 +1067,7 @@ class BlockRenderer
                 }
                 init(document.getElementById('tb-{$id}'));
             })();</script>
-        </div>";
+        HTML;
     }
 
     /**
@@ -2310,7 +2390,16 @@ class BlockRenderer
             (bool) ($props['autoplay'] ?? true),
             (int) ($props['interval'] ?? 5000),
             'tb-module-products',
-            ['desktop' => (int) ($props['columns'] ?? 3), 'tablet' => 2, 'mobile' => 1]
+            ['desktop' => (int) ($props['columns'] ?? 3), 'tablet' => 2, 'mobile' => 1],
+            true,
+            false,
+            false,
+            [],
+            // Phase 9 / Step 2 — the canonical proof of the carousel
+            // migration. This is the ONLY renderCarousel() caller opted into
+            // the shared asset; the others keep their inline copy byte for
+            // byte until they are migrated one at a time.
+            ['script' => 'shared']
         );
 
         return "<div id=\"tb-{$id}-wrap\" class=\"tb-module-products tb-section\">

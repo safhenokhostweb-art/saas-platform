@@ -1,6 +1,73 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-09-29
+> Last Updated: 2026-09-30
+
+---
+
+## OPEN: DEV-REFERENCETHEMES-01 — FoodMart golden test depends on a gitignored directory
+
+**Status:** Open. Tracked deliberately — NOT skipped, NOT fixed here.
+
+**What broke it:** commit `040f0ab` (`chore(gitignore): ignore tool scratch,
+reference themes, and transient reports`) added
+`_reference-themes/` to `.gitignore`. That directory is ~70 MB of
+third-party vendor theme source, which is the right call for repository
+size, but it is also the INPUT side of a real contract test.
+
+**The dependency:** `Phase3CContractsTest::foodmart_golden_manifest_and_every_referenced_file_keep_their_sha256()`
+reads its 70 golden files from
+`_reference-themes/FoodMart-main/FoodMart-main/`, and hashes them against
+`storage/app/theme-baselines/foodmart/integrity-manifest.tsv`.
+
+**Current behaviour:** GREEN on any machine where the directory was
+downloaded (including this one). RED on a fresh clone and in CI with
+`FoodMart golden file missing: <path>`.
+
+**Why it was not fixed immediately:** the fix is a policy decision, not a
+code fix, and it must not be conflated with unrelated carousel work. The
+two candidate resolutions are mutually exclusive and have opposite costs:
+
+  (a) Un-ignore `_reference-themes/`. Restores the test everywhere, costs
+      ~70 MB in git history forever.
+  (b) Make the test skip when the directory is absent. Keeps the repo
+      small, but a skip that is silent can hide genuine golden drift —
+      the failure mode is a *falsely green* integrity gate.
+
+**Acceptance criteria:** the FoodMart integrity gate is either green on a
+fresh clone by construction, or explicitly skip-guarded with the skip
+condition logged — never silently green. Whichever is chosen, the decision
+belongs in `DECISIONS.md`, not only here.
+
+**Related:** introduced while cleaning the working tree for Phase 9.2. It
+is a regression I introduced, distinct from the six pre-existing suite
+failures (see the PHASE 9.1 entry below).
+
+---
+
+## IN PROGRESS: PHASE 9 / STEP 2 — CAROUSEL MIGRATION TO THE BLOCK SDK
+
+**Goal:** move `renderCarousel()`'s client logic onto the shared-asset /
+BaseBlock carrier, one block type at a time. `product_slider` is the
+canonical proof; the other carousel call sites keep their inline copy
+byte-for-byte until migrated individually.
+
+**Decisions (2026-09-30):**
+- **Shared asset, two carriers.** The controller lives once in
+  `resources/js/blocks/carousel.js`. On canvas surfaces it registers as a
+  real `BaseBlock` subclass; on PUBLIC pages — where no layout loads the
+  canvas runtime, and which are therefore the only place a customer ever
+  sees this — it self-initialises by scanning for `.tb-carousel`. Both
+  carriers run the same controller and share the `data-tb-carousel-init`
+  guard, so a page mixing both cannot double-bind a carousel.
+- **Render snapshot is the gate.** `ProductSliderRenderSnapshotTest` pins a
+  structural sha256 of the rendered markup in both the neutral and
+  MODE_PUBLIC renders, captured BEFORE the migration and re-verified after.
+
+**Why the "two carriers" shape was forced:** the original plan was to make
+the SDK the sole carrier. That would have shipped a dead carousel on every
+live tenant site, because the block SDK is included on exactly three admin
+views and on no public layout. The failure would have been invisible in the
+admin preview, which is the one surface where the SDK *is* loaded.
 
 ---
 
