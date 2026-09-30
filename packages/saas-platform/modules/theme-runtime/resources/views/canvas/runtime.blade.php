@@ -43,6 +43,9 @@
     }
     function lifecycle(phase, root, detail) {
         if (!['mount', 'update', 'refresh', 'destroy'].includes(phase)) throw new TypeError('Unknown lifecycle phase');
+        if (phase === 'destroy' && root && typeof root.getAttribute === 'function') {
+            cleanupElement(root);
+        }
         handlers.forEach(function (handler) {
             if (typeof handler[phase] === 'function') handler[phase](root, detail || {});
         });
@@ -51,6 +54,110 @@
         }
         document.dispatchEvent(new CustomEvent('theme:canvas-lifecycle', { detail: Object.assign({ phase, root }, detail || {}) }));
     }
+    const blockHandlers = new Map();
+    const scriptLoaded = new Map();
+    const scriptPromises = new Map();
+    const eventListeners = new Map();
+    const elementSubscriptions = new WeakMap();
+
+    function eventBus() { return eventListeners; }
+
+    function onEvent(eventName, handler) {
+        if (typeof eventName !== 'string' || eventName === '') throw new TypeError('eventName must be a non-empty string');
+        if (typeof handler !== 'function') throw new TypeError('handler must be a function');
+        if (!eventListeners.has(eventName)) eventListeners.set(eventName, new Set());
+        var set = eventListeners.get(eventName);
+        set.add(handler);
+        return function () { set.delete(handler); };
+    }
+
+    function offEvent(eventName, handler) {
+        if (!eventListeners.has(eventName)) return;
+        if (handler === undefined) { eventListeners.delete(eventName); return; }
+        eventListeners.get(eventName).delete(handler);
+        if (eventListeners.get(eventName).size === 0) eventListeners.delete(eventName);
+    }
+
+    function emitEvent(eventName, payload) {
+        if (!eventListeners.has(eventName)) return;
+        var set = eventListeners.get(eventName);
+        set.forEach(function (handler) {
+            try { handler(payload); } catch (e) {
+                console.error('EventBus handler error [' + eventName + ']:', e);
+            }
+        });
+    }
+
+    function subscribeElement(el, eventName, handler) {
+        var off = onEvent(eventName, handler);
+        var subs = elementSubscriptions.get(el) || new Set();
+        subs.add({ eventName: eventName, handler: handler, off: off });
+        elementSubscriptions.set(el, subs);
+        return off;
+    }
+
+    function cleanupElement(el) {
+        var subs = elementSubscriptions.get(el);
+        if (!subs) return;
+        subs.forEach(function (sub) { sub.off(); });
+        elementSubscriptions.delete(el);
+    }
+
+    function trackScript(src) {
+        if (scriptPromises.has(src)) return scriptPromises.get(src);
+        var promise = new Promise(function (resolve) {
+            var s = document.querySelector('script[src="' + CSS.escape(src) + '"]');
+            if (s && (s.complete || s.readyState === 'loaded')) { resolve(); scriptLoaded.set(src, true); }
+            else {
+                s = document.createElement('script');
+                s.src = src;
+                s.onload = function () { resolve(); scriptLoaded.set(src, true); };
+                s.onerror = function () { resolve(); };
+                s.async = true;
+                document.body.appendChild(s);
+            }
+        });
+        scriptPromises.set(src, promise);
+        return promise;
+    }
+
+    function registerBlock(type, lifecycle) {
+        if (typeof type !== 'string' || !type || !lifecycle || typeof lifecycle !== 'object') throw new TypeError('Invalid block lifecycle registration');
+        blockHandlers.set(type, lifecycle);
+        return function () { blockHandlers.delete(type); };
+    }
+
+    function initBlock(el) {
+        var type = el.getAttribute('data-tb-block-type');
+        if (!type) return false;
+        var handler = blockHandlers.get(type);
+        if (!handler || typeof handler.init !== 'function') return false;
+        var propsAttr = el.getAttribute('data-tb-block-props');
+        var props = {};
+        if (propsAttr) { try { props = JSON.parse(propsAttr); } catch (e) { props = {}; } }
+        var ctx = {
+            element: el,
+            type: type,
+            blockId: el.getAttribute('data-tb-block-id'),
+            props: props,
+            on: function (eventName, handler) { return subscribeElement(el, eventName, handler); },
+            off: function (eventName, handler) { if (handler !== undefined) { offEvent(eventName, handler); } },
+            emit: emitEvent
+        };
+        try {
+            var result = handler.init(ctx);
+            if (result && typeof result.then === 'function') {
+                result.then(function () { el.classList.add('tb-block-ready'); })
+                    .catch(function (e) { console.error('Block init error [' + type + ']:', e); });
+            } else {
+                el.classList.add('tb-block-ready');
+            }
+        } catch (e) {
+            console.error('Block init error [' + type + ']:', e);
+        }
+        return true;
+    }
+
     function replaceNode(blockId, html) {
         if (typeof blockId !== 'string' || typeof html !== 'string') return null;
         const current = document.querySelector('[data-tb-block-id="' + CSS.escape(blockId) + '"]');
@@ -75,8 +182,16 @@
         message,
         valid,
         register,
+        registerBlock,
+        initBlock,
+        trackScript,
         lifecycle,
         replaceNode,
+        events: {
+            on: onEvent,
+            off: offEvent,
+            emit: emitEvent
+        },
         post(target, action, payload) {
             if (target && typeof target.postMessage === 'function') target.postMessage(message(action, payload), window.location.origin);
         }

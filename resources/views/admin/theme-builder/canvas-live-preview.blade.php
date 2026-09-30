@@ -257,19 +257,7 @@ body.tb-drag-active .tb-drop-zone {
 <script src="{{ $__extSrc }}" defer></script>
 @endforeach
 
-@include('theme-runtime::canvas.runtime')
-{{-- Phase 6.1-A: the structural services partial hard-requires the shared
-     CanvasIdentity contract (it throws 'CanvasIdentity contract is required'
-     without it). The canonical canvas.blade.php includes identity before the
-     structural services; the live preview must do the same. --}}
-@include('theme-runtime::canvas.identity')
-{{-- Phase 3C / M3: the interaction widgets (interactive_form / action_button) render
-     as sanitized intention emitters (data-tb-interaction) — this shared runtime is the
-     listener that turns those intentions into theme:interaction CustomEvents and the
-     policy-checked side effects (navigate / call_api / scroll_to / toggle_element /
-     open_modal). Without it the attributes are inert markup on the page. --}}
-@include('theme-runtime::interaction.runtime')
-@include('admin.theme-builder.partials.canvas-structural-services')
+@include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 <script>
 (function () {
     'use strict';

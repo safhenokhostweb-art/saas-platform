@@ -1727,9 +1727,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
         ]];
     });
 @endphp
-@include('theme-runtime::canvas.runtime')
-@include('theme-runtime::canvas.identity')
-@include('admin.theme-builder.partials.canvas-structural-services')
+@include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 @include('admin.theme-builder.partials.canvas-section-library')
 <script>
 const THEME_ID   = {{ $theme->id }};
