@@ -51,13 +51,24 @@ class ThemeBundle extends Model
     public function grantLicensesToSite(int $siteId): int
     {
         $count = 0;
+        $site = Site::findOrFail($siteId);
         foreach ($this->theme_ids ?? [] as $themeId) {
             $theme = Theme::find((int) $themeId);
-            if (!$theme || !$theme->isCommerciallyEligible()) {
+            if (!$theme) {
                 continue;
             }
-            ThemeLicense::grant($siteId, (int) $themeId);
-            $count++;
+            try {
+                app(\App\Services\PublishedThemeAssignmentService::class)->assign(
+                    $site,
+                    $theme,
+                    ThemeAssignment::SOURCE_BUNDLE,
+                    selectForSite: false,
+                );
+                $count++;
+            } catch (\DomainException) {
+                // Preserve the existing bundle behavior: one unavailable
+                // Theme does not roll back grants for the other valid items.
+            }
         }
         return $count;
     }

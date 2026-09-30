@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Site;
 use App\Models\Theme;
+use App\Models\ThemeLicense;
+use App\Models\ThemeRelease;
 use App\Models\ThemeRevision;
 use App\Services\ThemeBuilder\BlockRegistry;
 use App\Services\ThemeBuilder\BlockRenderer;
@@ -12,7 +14,10 @@ use App\Services\ThemeBuilder\Extension\ExtensionCanvasPaletteAdapter;
 use App\Services\ThemeBuilder\GlobalStyleEngine;
 use App\Services\ThemeBuilder\QualityGate\ThemeQualityGateFailedException;
 use App\Services\ThemeBuilder\ThemeBuilderService;
+use App\Services\PublishedThemeAssignmentService;
+use DomainException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ThemeBuilderController extends Controller
@@ -20,7 +25,8 @@ class ThemeBuilderController extends Controller
     public function __construct(
         protected ThemeBuilderService $themeService,
         protected BlockRenderer $renderer,
-        protected GlobalStyleEngine $styleEngine
+        protected GlobalStyleEngine $styleEngine,
+        protected PublishedThemeAssignmentService $assignments,
     ) {}
 
     public function index(Request $request)
@@ -140,9 +146,66 @@ class ThemeBuilderController extends Controller
         return redirect()->route('admin.theme-builder.edit', $theme)->with('success', 'تم ذخیره شد.');
     }
 
+    /**
+     * Part 6 (7-part local audit task, 2026-09-19) root-cause fix: this
+     * used to call $theme_builder->delete() with zero guard/cascade
+     * logic. Real local reproduction confirmed that deleting a Theme with
+     * a current release throws an uncaught Illuminate\Database\
+     * QueryException (SQLSTATE 23000 / MySQL 1451) — theme_releases.
+     * theme_id is a RESTRICT foreign key (database/migrations/
+     * 2026_08_25_090000_create_theme_releases_table.php) — which
+     * surfaced as a bare 500 locally (production reported 503; the
+     * app-level defect is the same uncaught exception either way, the
+     * exact 500-vs-503 distinction is a deployment/proxy-layer detail
+     * outside this local checkout). Deletion is now explicit and
+     * predictable instead of "attempt and see what the database says":
+     *
+     *   - sites.theme_id and theme_licenses.theme_id are NOT RESTRICT
+     *     (nullOnDelete / cascadeOnDelete respectively) — the database
+     *     would have silently unassigned a live site's theme, or
+     *     silently destroyed real customer license grants, with no error
+     *     at all. Both are checked explicitly here instead of relying on
+     *     the database to catch them.
+     *   - theme_revisions.theme_id and theme_marketplace/theme_
+     *     purchase_orders/theme_quality_reports are genuine CASCADE
+     *     relations — safe to let the database remove them once every
+     *     blocking condition below is clear.
+     *   - theme_releases.theme_id is RESTRICT even for a superseded,
+     *     no-longer-current release, so a theme that is otherwise safe
+     *     to delete (no current release, no site, no license) but still
+     *     has old release history is cleared explicitly, inside the same
+     *     transaction, rather than left to a raw FK failure.
+     */
     public function destroy(Theme $theme_builder)
     {
-        $theme_builder->delete();
+        $blockingReasons = [];
+
+        if ($theme_builder->current_release_id !== null) {
+            $blockingReasons[] = 'این تم دارای نسخه منتشرشده (Release) فعال است.';
+        }
+        if (Site::where('theme_id', $theme_builder->id)->exists()) {
+            $blockingReasons[] = 'این تم به یک یا چند سایت اختصاص داده شده است.';
+        }
+        if (ThemeLicense::where('theme_id', $theme_builder->id)->exists()) {
+            $blockingReasons[] = 'برای این تم مجوز (License) فعال صادر شده است.';
+        }
+        if ($theme_builder->is_marketplace && $theme_builder->isPublished()) {
+            $blockingReasons[] = 'این تم در Marketplace منتشر شده است.';
+        }
+
+        if ($blockingReasons !== []) {
+            $message = 'حذف این تم امکان‌پذیر نیست: ' . implode(' ', $blockingReasons);
+            if (request()->wantsJson()) {
+                return response()->json(['error' => 'theme_in_use', 'message' => $message, 'reasons' => $blockingReasons], 409);
+            }
+            return redirect()->route('admin.theme-builder.index')->with('error', $message);
+        }
+
+        DB::transaction(function () use ($theme_builder) {
+            ThemeRelease::where('theme_id', $theme_builder->id)->delete();
+            $theme_builder->delete();
+        });
+
         return redirect()->route('admin.theme-builder.index')->with('success', 'تم حذف شد.');
     }
 
@@ -266,7 +329,15 @@ class ThemeBuilderController extends Controller
     public function import(Request $request)
     {
         $request->validate(['file' => 'required|file|mimes:json|max:10240']);
-        $content = file_get_contents($request->file('file')->getRealPath());
+        // Phase 2B-R: UploadedFile::getRealPath() can legitimately return an
+        // empty string on some local stacks (Laragon php.ini: upload_tmp_dir
+        // set to a nonexistent directory — realpath('') === ''). getPathname()
+        // returns the temp filename Laravel/PHP actually assigned, so reading
+        // through it keeps the import endpoint working on such stacks without
+        // changing behavior on healthy ones.
+        $content = file_get_contents(
+            $request->file('file')->getRealPath() ?: $request->file('file')->getPathname()
+        );
         $data = json_decode($content, true);
         if (!is_array($data)) {
             if ($request->expectsJson()) {
@@ -332,7 +403,30 @@ class ThemeBuilderController extends Controller
             'theme_id' => 'nullable|exists:themes,id',
         ]);
         $site = Site::findOrFail($data['site_id']);
-        $site->update(['theme_id' => $data['theme_id'] ?: null]);
-        return redirect()->back()->with('success', 'تم برای سایت انتخاب شد.');
+
+        try {
+            if (empty($data['theme_id'])) {
+                if ($site->theme_id && ($current = Theme::find($site->theme_id))) {
+                    $this->assignments->unassign($site, $current);
+                }
+
+                return redirect()->back()->with('success', 'اختصاص قالب از سایت برداشته شد؛ مجوزهای قبلی حفظ شدند.');
+            }
+
+            $result = $this->assignments->assign(
+                $site,
+                Theme::findOrFail((int) $data['theme_id']),
+                assignedBy: $request->user()?->id,
+            );
+        } catch (DomainException $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->back()->with('success', sprintf(
+            'قالب اختصاص یافت؛ Release #%d، PlatformLicense #%d و ThemeLicense #%d فعال هستند.',
+            $result->release->id,
+            $result->platformLicense->id,
+            $result->themeLicense->id,
+        ));
     }
 }
