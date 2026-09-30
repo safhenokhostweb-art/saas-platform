@@ -77,6 +77,18 @@ phpunit.cert.xml
 test_gapgpt.py
 test_*_local.py
 
+# Machine-local agent settings (per-developer tool permissions/allowlists).
+# Never shared: committing it exports one engineer's local policy to the team.
+.claude/settings.local.json
+
+# Gradle/AGP build output. problems-report.html in particular is a GENERATED
+# diagnostic, not a synchronized asset — it changes on every build, so
+# tracking it produces meaningless diffs and hides real regressions behind
+# tool noise.
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/.gradle/
+
 # Temporary/local development files
 cline_rules_backup/
 memory-bank/
