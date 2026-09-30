@@ -1,10 +1,18 @@
 <!doctype html>
+@php
+    // AUTH_INSTALLED context: an installation/auth surface is never indexable.
+    $metaData = $metaData ?? app(\App\Services\Seo\SeoService::class)->resolve(
+        \SaaSPlatform\CoreUtils\SEO\MetaContext::AUTH_INSTALLED,
+        null,
+        ['title' => 'ورود / ثبت نام']
+    );
+@endphp
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <title>ورود / ثبت نام</title>
+
+    <x-seo-meta :meta-data="$metaData" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
 
     <style>

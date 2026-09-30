@@ -1,21 +1,29 @@
 @extends('layouts.app')
 
-@section('title', $page->title . ' | ' . \App\Helpers\PlatformSettings::platformName())
-@section('head')
-    @php
-        $metaDesc = $page->meta_description ? e($page->meta_description) : e(\Illuminate\Support\Str::limit($page->title, 160));
-    @endphp
-    <meta name="description" content="{{ $metaDesc }}">
-    <link rel="canonical" href="{{ url()->current() }}">
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="{{ e($page->title) }}">
-    <meta property="og:description" content="{{ $metaDesc }}">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:locale" content="fa_IR">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="{{ e($page->title) }}">
-    <meta name="twitter:description" content="{{ $metaDesc }}">
-@endsection
+@php
+    /*
+     * `page/{slug}` (routes/web.php) is a genuinely public, indexable tenant
+     * surface, so it resolves its metadata as TENANT_PUBLIC — not with the
+     * layout's PLATFORM_ADMIN default. Everything this page owns (title,
+     * description, canonical, og:type) is resolved here, once, through the
+     * same MetaEngine the layout uses, and handed to the layout as $metaData;
+     * the layout is the only place these tags are written out.
+     *
+     * It used to publish its own <meta name="description"> and
+     * <link rel="canonical"> into a `@section('head')` that the layout never
+     * yielded, so the page's own values were silently discarded while the
+     * layout rendered its platform-admin fallback for the same tags — and a
+     * public route shipped `noindex, nofollow`.
+     *
+     * Only `og_type` is passed as an override: title, description, canonical
+     * and robots are all read off $page by MetaEngine itself, and the
+     * robots directive comes from the context (indexable) unless the page
+     * carries an explicit one.
+     */
+    $metaData = $metaData ?? app(\App\Services\Seo\SeoService::class)->resolveForTenantPublic($page, [
+        'og_type' => 'article',
+    ]);
+@endphp
 
 @section('content')
 <article class="card p-6 md:p-8 max-w-4xl mx-auto">

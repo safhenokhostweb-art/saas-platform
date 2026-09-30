@@ -1,11 +1,30 @@
 <!doctype html>
+@php
+    /*
+     * Head metadata for the platform administration surface is resolved by
+     * MetaEngine through SeoService as PLATFORM_ADMIN, which is
+     * `noindex, nofollow` — an admin screen must never be indexable, and
+     * must never be able to become indexable by forgetting a parameter.
+     *
+     * This layout used to hand-write only a title and a robots tag, so it
+     * shipped no description and no canonical at all, and the robots value
+     * was a literal rather than a resolved one. A child view may pass its own
+     * resolved $metaData to change the context; the `title` section is kept
+     * as the title override so every existing screen's heading — and the
+     * layout's own previous default — survives.
+     */
+    $metaData = $metaData ?? app(\App\Services\Seo\SeoService::class)->resolveForPlatformAdmin(
+        null,
+        ['title' => trim($__env->yieldContent('title')) ?: 'پنل مدیریت']
+    );
+@endphp
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'پنل مدیریت')</title>
+
+    <x-seo-meta :meta-data="$metaData" />
     @if(file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else

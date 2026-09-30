@@ -1,22 +1,15 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+@php
+    $seoService = app(\App\Services\Seo\SeoService::class);
+    $metaData = $seoService->resolveForTenantPublic();
+    $metaArray = $metaData->toArray();
+@endphp
+<html lang="{{ $metaArray['language'] }}" dir="{{ $metaArray['direction'] }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name'))</title>
-
-    {{-- SEO meta tags --}}
-    @yield('meta')
-    @hasSection('meta_description')
-        <meta name="description" content="@yield('meta_description')">
-    @endif
-    @hasSection('canonical')
-        <link rel="canonical" href="@yield('canonical')">
-    @endif
-    @hasSection('meta_robots')
-        <meta name="robots" content="@yield('meta_robots')">
-    @endif
+    <x-seo-meta :meta-data="$metaData" />
 
     {{-- Vite or fallback Tailwind --}}
     @if(file_exists(public_path('build/manifest.json')))

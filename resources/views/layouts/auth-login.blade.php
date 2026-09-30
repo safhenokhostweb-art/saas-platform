@@ -1,11 +1,21 @@
 <!doctype html>
+@php
+    // AUTH_INSTALLED context: an installation/auth surface is never indexable.
+    // The composed title (page section + platform name) is preserved as a
+    // MetaEngine title override instead of being hand-written into <title>.
+    $metaData = $metaData ?? app(\App\Services\Seo\SeoService::class)->resolve(
+        \SaaSPlatform\CoreUtils\SEO\MetaContext::AUTH_INSTALLED,
+        null,
+        ['title' => trim(($__env->yieldContent('title') ?: 'ورود') . ' — ' . \App\Helpers\ResellerBranding::platformName())]
+    );
+@endphp
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'ورود') — {{ \App\Helpers\ResellerBranding::platformName() }}</title>
+
+    <x-seo-meta :meta-data="$metaData" />
     <style>@include('partials.vazirmatn-font-faces-inline')</style>
     @if(file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css'])

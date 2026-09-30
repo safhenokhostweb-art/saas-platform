@@ -1,11 +1,37 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+@php
+    /*
+     * The single source of head metadata for every surface that renders this
+     * layout.
+     *
+     * A child view that owns a different MetaContext (e.g. the public
+     * `page/{slug}` route, which is TENANT_PUBLIC and indexable) resolves its
+     * own MetaData through the same SeoService/MetaEngine and puts it in
+     * `$metaData` before it extends this layout — Blade forwards the child
+     * view's variables into the layout. Every other surface simply does not,
+     * and keeps this layout's default: PLATFORM_ADMIN, which is
+     * `noindex, nofollow`, so an admin screen can never be de-indexed by
+     * omission.
+     *
+     * Note: this comment deliberately spells the tag names out. It is the
+     * ONLY place in the file they may appear — writing any of them as markup
+     * next to <x-seo-meta> is a second renderer of the same metadata.
+     */
+    $seoService = app(\App\Services\Seo\SeoService::class);
+    $metaData = $metaData ?? $seoService->resolveForPlatformAdmin(
+        null,
+        ['title' => trim($__env->yieldContent('title')) ?: \App\Helpers\ResellerBranding::platformName()]
+    );
+    $metaArray = $metaData->toArray();
+@endphp
+<html lang="{{ $metaArray['language'] }}" dir="{{ $metaArray['direction'] }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', \App\Helpers\ResellerBranding::platformName())</title>
+
+    <x-seo-meta :meta-data="$metaData" />
+
     @if(file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
@@ -47,6 +73,9 @@
         </style>
     @endif
     @include('partials.platform-styles')
+    {{-- Non-metadata head additions only (stylesheets, inline styles). The SEO
+         tags are already rendered above by <x-seo-meta>; a child that puts a
+         title/description/canonical/robots tag in here would duplicate them. --}}
     @yield('head')
     @stack('head')
 </head>
