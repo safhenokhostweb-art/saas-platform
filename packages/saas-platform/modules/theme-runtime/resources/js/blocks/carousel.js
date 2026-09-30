@@ -225,7 +225,13 @@
     // ───────────────────────────────────────────────────── carrier 1: SDK
 
     if (root.ThemeBlockSDK && root.ThemeCanvasRuntime) {
-        var sdk = root.ThemeBlockSDK.create(root.ThemeCanvasRuntime);
+        // root.ThemeBlockSDK is ALREADY the created instance: block-sdk.js
+        // assigns `root.ThemeBlockSDK = mod.create(root.ThemeCanvasRuntime,
+        // ...)` at load time, and that instance exposes defineBlock /
+        // BaseBlock / EVENTS. Calling .create() on it is undefined and throws
+        // — and because both carriers live in this one file, that throw also
+        // takes the public self-initialise fallback down with it.
+        var sdk = root.ThemeBlockSDK;
         var BaseBlock = root.ThemeBlockSDK.BaseBlock;
         var EVENTS = root.ThemeBlockSDK.EVENTS;
 
@@ -283,19 +289,35 @@
             return ctx.ready().then(function () {
                 var el = carouselRoot(ctx);
                 if (!el) return;
+                self.state.element = el;
                 self.state.handle = initCarousel(el, optionsFrom(ctx));
                 ctx.emit('block:product_slider:ready', { blockId: ctx.blockId });
             });
         };
 
         CarouselBlock.prototype.onUpdate = function (ctx) {
-            // The element was REPLACED, so its listeners died with the old
-            // node. Teardown first, then re-init against the new element.
+            // NOTE: on the editor's real replace path this handler is NOT
+            // reached. runtime.replaceNode() emits 'destroy' and then
+            // 'update', and the SDK's releaseInstance() drops the instance
+            // from the live set during 'destroy', so by the time 'update'
+            // fans out there is no instance left to call.
+            //
+            // So this only runs if a caller emits 'update' WITHOUT replacing
+            // the element. Re-init is correct then only if the carousel
+            // element is genuinely new: re-running the controller against the
+            // one we already own would be refused by the
+            // data-tb-carousel-init guard, and nulling the handle first would
+            // leave the block with no controller at all.
+            var el = carouselRoot(ctx);
+            if (!el) return;
+            if (this.state.handle && this.state.element === el) return;
+
             if (this.state.handle) {
                 this.state.handle.destroy();
                 this.state.handle = null;
             }
-            this.init(ctx);
+            this.state.element = el;
+            this.state.handle = initCarousel(el, optionsFrom(ctx));
         };
 
         CarouselBlock.prototype.onRefresh = function (ctx) {

@@ -4,6 +4,56 @@
 
 ---
 
+## OPEN: SDK-002 — a block's controller handle is gone by the time the SDK releases it
+
+**Status:** Open. Reproduced, characterised, NOT fixed. Regression test exists
+as `test.todo` in `tests/js/block-sdk-lifecycle.test.mjs` so it stays visible
+without reddening CI.
+
+**Found by:** the Phase 9.2 SDK-to-runtime integration test, which boots the
+real `runtime.blade.php` + the real `block-sdk.js` + the real `carousel.js` in
+one `vm` context and drives a real block replacement through them.
+
+**Symptom:** drive N block replacements through
+`lifecycle('destroy')` → replace element → `initBlock(new)`. The carousel
+controller is **initialised N+1 times but torn down once**. The
+`window` `resize` listener count grows by one per replacement, so a long
+editor session accumulates one stranded listener per block edit, each
+pinning its detached carousel.
+
+**Ruled out along the way** (each was checked, not assumed):
+- The block's `onDestroy` IS entered on every replacement.
+- The instance released is provably the same object the SDK created for that
+  element — verified by object identity, not inferred.
+- `BaseBlock.state` is assigned exactly once per instance
+  (`block-sdk.js:165`), and `this.state` is identical in `init` and
+  `onDestroy` (`stateIsSame=true`, `ctxStateSame=true`).
+- `destroy()` on the controller does unregister the listener — proven
+  directly by `carousel-lifecycle.test.mjs`, which is green.
+
+**So the handle is already null when `onDestroy` runs**, despite `init`
+having assigned it. The cause is in the SDK's instance/handle lifetime
+around `replaceNode`, not in the carousel block.
+
+**Two related findings from the same investigation**, both fixed in Phase 9.2:
+- `releaseInstance()` deletes the instance from the live set, and
+  `replaceNode()` emits `destroy` BEFORE `update`. So the SDK's own
+  `onUpdate` hook is **unreachable on the real replace path** — nothing is
+  left to call. A block that put its only re-init logic there would silently
+  never re-initialise. Asserted in
+  `block-sdk-lifecycle.test.mjs` so the property stays visible.
+- `ThemeBlockSDK` is already the *created* instance, so calling
+  `.create()` on it throws. That throw also aborted the shared file's public
+  self-initialise fallback, because both carriers live in one file.
+
+**Acceptance criteria:** a block replacement leaves exactly one live
+controller handle and one `window` listener, and the
+`test.todo` above passes. The `onUpdate` unreachability question needs a
+decision recorded in `DECISIONS.md` — whether `onUpdate` should be reachable
+at all, given the current destroy-then-update ordering.
+
+---
+
 ## OPEN: DEV-REFERENCETHEMES-01 — FoodMart golden test depends on a gitignored directory
 
 **Status:** Open. Tracked deliberately — NOT skipped, NOT fixed here.

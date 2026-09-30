@@ -90,7 +90,7 @@ class ProductSliderRenderSnapshotTest extends TestCase
         $html = $this->render();
 
         self::assertStringContainsString(
-            'ThemeBlockSDK.create',
+            '__tbCarouselController',
             $html,
             'the shared asset must be the carrier, not the per-instance inline script'
         );
@@ -108,8 +108,11 @@ class ProductSliderRenderSnapshotTest extends TestCase
         $first  = (new BlockRenderer())->renderBlock(['type' => 'product_slider', 'id' => 'a', 'props' => []]);
         $second = (new BlockRenderer())->renderBlock(['type' => 'product_slider', 'id' => 'b', 'props' => []]);
 
-        self::assertSame(1, substr_count($first, 'ThemeBlockSDK.create'), 'first carousel carries the asset');
-        self::assertSame(0, substr_count($second, 'ThemeBlockSDK.create'), 'the second carousel must reuse the first emission, not re-inline 11 KB');
+        // Counted with >0 / ==0 rather than ==1: the marker legitimately
+        // appears more than once inside the asset itself, so pinning an exact
+        // count would break on a harmless edit to the controller.
+        self::assertGreaterThan(0, substr_count($first, '__tbCarouselController'), 'first carousel carries the asset');
+        self::assertSame(0, substr_count($second, '__tbCarouselController'), 'the second carousel must reuse the first emission, not re-inline 11 KB');
     }
 
     /**
@@ -128,9 +131,9 @@ class ProductSliderRenderSnapshotTest extends TestCase
         $public->setMode('public');
         $publicHtml = $public->renderBlock(['type' => 'product_slider', 'id' => 'b1', 'props' => []]);
 
-        self::assertStringContainsString('ThemeBlockSDK.create', $neutral);
+        self::assertStringContainsString('__tbCarouselController', $neutral);
         self::assertStringContainsString(
-            'ThemeBlockSDK.create',
+            '__tbCarouselController',
             $publicHtml,
             'the public document must not be left without the carousel controller'
         );
@@ -188,7 +191,7 @@ class ProductSliderRenderSnapshotTest extends TestCase
                 $html,
                 "{$type} has not been migrated yet and must keep its inline controller"
             );
-            self::assertStringNotContainsString('ThemeBlockSDK.create', $html, "{$type} must not silently adopt the shared carrier");
+            self::assertStringNotContainsString('__tbCarouselController', $html, "{$type} must not silently adopt the shared carrier");
         }
     }
 }
