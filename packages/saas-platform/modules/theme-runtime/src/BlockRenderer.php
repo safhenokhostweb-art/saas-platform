@@ -837,15 +837,17 @@ class BlockRenderer
      * @param array{desktop?:int,tablet?:int,mobile?:int} $itemsPerView How many slides are visible
      *   at once per breakpoint. Omit (or leave at 1/1/1) for a classic single-item slider.
      * @param array{script?:string} $options 'script' selects the client-script carrier.
-     *   'inline' (default) emits the per-instance inline script this method has
-     *   always emitted. 'shared' emits the packaged shared-asset carrier
-     *   (resources/js/blocks/carousel.js) ONCE per document instead.
+     *   Both values now emit the SAME carrier: the packaged shared assets
+     *   (resources/js/blocks/carousel.js — the controller — plus
+     *   resources/js/blocks/legacy_carousel.js — the adapter registering the
+     *   formerly inline-carried types against the SDK) ONCE per document.
+     *   The parameter survives for call-site compatibility; 'inline' is
+     *   accepted and treated as 'shared' (the per-instance inline controller
+     *   was deleted in this phase, following its introduction in Phase 9.2).
      *
-     *   'shared' is the Phase 9 / Step 2 migration target and is opt-in per
-     *   caller so the not-yet-migrated carousel types keep byte-identical
-     *   output. Both carriers run the SAME controller and share the same
-     *   data-tb-carousel-init guard, so a page mixing both behaves correctly
-     *   and no carousel can be initialised twice.
+     *   Both carriers run the SAME controller and share the same
+     *   data-tb-carousel-init guard, so a page mixing carriers behaves
+     *   correctly and no carousel can be initialised twice.
      */
     protected function renderCarousel(
         array $slidesHtml,
@@ -947,35 +949,46 @@ class BlockRenderer
     }
 
     /**
-     * The client-script carrier for one carousel.
+     * The client-script carrier for every carousel.
      *
-     * 'shared' inlines the packaged controller once per document and reuses
-     * it for every later carousel, so a page with N carousellers pays the
-     * cost once instead of N times. It is emitted at all when the file is
-     * missing, rather than silently emitting nothing: a page that silently
-     * loses its only interactivity is the failure mode this whole refactor
-     * exists to prevent.
+     * In this phase the packaged shared assets became the ONLY carrier: the
+     * controller (carousel.js) plus the legacy adapter (legacy_carousel.js,
+     * which registers the formerly inline-carried types against the SDK and
+     * gives them the destroy() the inline copy never had) are inlined once
+     * per document, then reused for every later carousel, so a page with N
+     * carousels pays the cost once instead of N times.
+     *
+     * A missing file throws rather than falling back: the inline carrier is
+     * gone BY DESIGN (it was the SDK-002 leak class — an anonymous window
+     * listener nothing could ever remove), and a page that silently loses
+     * its only interactivity is the failure mode this whole refactor exists
+     * to prevent. A packaging fault must be loud.
      */
     private function carouselScript(string $id, array $options): string
     {
-        if (($options['script'] ?? 'inline') !== 'shared') {
-            return $this->legacyCarouselScript($id);
-        }
-
         $emissionKey = $this->mode ?? 'neutral';
         if (self::$carouselScriptEmitted[$emissionKey] ?? false) {
             return '';
         }
         self::$carouselScriptEmitted[$emissionKey] = true;
 
-        $source = @file_get_contents(ThemeRuntimeServiceProvider::carouselBlockScriptPath());
-        if (!is_string($source) || $source === '') {
-            // Packaging fault: fall back to the inline carrier rather than
-            // shipping a dead carousel.
-            return $this->legacyCarouselScript($id);
+        $controller = @file_get_contents(ThemeRuntimeServiceProvider::carouselBlockScriptPath());
+        if (!is_string($controller) || $controller === '') {
+            throw new \RuntimeException(
+                'Theme runtime packaging fault: the shared carousel controller is missing at '
+                . ThemeRuntimeServiceProvider::carouselBlockScriptPath()
+            );
         }
 
-        return "<script>{$source}</script>";
+        $adapter = @file_get_contents(ThemeRuntimeServiceProvider::legacyCarouselScriptPath());
+        if (!is_string($adapter) || $adapter === '') {
+            throw new \RuntimeException(
+                'Theme runtime packaging fault: the legacy carousel adapter is missing at '
+                . ThemeRuntimeServiceProvider::legacyCarouselScriptPath()
+            );
+        }
+
+        return "<script>{$controller}</script>\n<script>{$adapter}</script>";
     }
 
     /**
@@ -1025,116 +1038,6 @@ class BlockRenderer
         }
 
         return "<script>{$adapter}</script>";
-    }
-
-    /**
-     * The pre-Phase-9.2 inline controller, kept byte-identical for every
-     * carousel type that has not been migrated yet. Deleting a caller's copy
-     * is what migrating it means; editing this one would silently fork the
-     * controller away from the shared asset.
-     */
-    private function legacyCarouselScript(string $id): string
-    {
-        return <<<HTML
-            <script>(function(){
-                function init(root){
-                    if (!root || root.dataset.tbCarouselInit) return;
-                    root.dataset.tbCarouselInit = '1';
-                    var isFade = root.dataset.fade === 'true';
-                    var track = root.querySelector('.tb-carousel-track');
-                    var slideEls = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-slide'));
-                    var dots = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-dot'));
-                    var prevBtn = root.querySelector('.tb-carousel-prev');
-                    var nextBtn = root.querySelector('.tb-carousel-next');
-                    var pauseBtn = root.querySelector('.tb-carousel-pause');
-                    var progressFill = root.querySelector('.tb-carousel-progress-fill');
-                    var thumbs = Array.prototype.slice.call(root.querySelectorAll('.tb-carousel-thumb'));
-                    var idx = 0, timer = null;
-                    var manuallyPaused = false;
-                    var isRTL = getComputedStyle(root).direction !== 'ltr';
-                    var sign = isRTL ? 1 : -1;
-                    function itemsPerView(){
-                        if (isFade) return 1;
-                        var v = parseFloat(getComputedStyle(root).getPropertyValue('--tb-items'));
-                        return (v && v > 0) ? v : 1;
-                    }
-                    function maxIndex(){ return Math.max(0, slideEls.length - itemsPerView()); }
-                    function paint(){
-                        if (isFade) {
-                            slideEls.forEach(function(s, j){ s.style.opacity = (j === idx) ? '1' : '0'; s.style.zIndex = (j === idx) ? '1' : '0'; });
-                        } else {
-                            var ipv = itemsPerView();
-                            track.style.transform = 'translateX(' + (sign * idx * (100 / ipv)) + '%)';
-                        }
-                        dots.forEach(function(d, j){
-                            var active = j === idx;
-                            d.style.background = active ? 'var(--tb-primary,#4f46e5)' : '#d1d5db';
-                            d.setAttribute('aria-current', active ? 'true' : 'false');
-                        });
-                        thumbs.forEach(function(t, j){
-                            var active = j === idx;
-                            t.classList.toggle('is-active', active);
-                            t.setAttribute('aria-current', active ? 'true' : 'false');
-                        });
-                    }
-                    function go(i){ idx = Math.min(Math.max(0, i), maxIndex()); paint(); }
-                    function stepNext(){ go(idx + 1 > maxIndex() ? 0 : idx + 1); }
-                    function stepPrev(){ go(idx - 1 < 0 ? maxIndex() : idx - 1); }
-                    function stop(){ if (timer) { clearInterval(timer); timer = null; } }
-                    function resetProgress(){
-                        if (!progressFill) return;
-                        progressFill.style.transition = 'none';
-                        progressFill.style.width = '0';
-                        void progressFill.offsetWidth;
-                        if (!manuallyPaused && root.dataset.autoplay === 'true') {
-                            progressFill.style.transition = 'width ' + (parseInt(root.dataset.interval, 10) || 5000) + 'ms linear';
-                            progressFill.style.width = '100%';
-                        }
-                    }
-                    function start(){
-                        stop();
-                        if (!manuallyPaused && root.dataset.autoplay === 'true' && slideEls.length > itemsPerView()) {
-                            timer = setInterval(stepNext, parseInt(root.dataset.interval, 10) || 5000);
-                        }
-                        resetProgress();
-                    }
-                    if (nextBtn) nextBtn.addEventListener('click', function(){ stepNext(); start(); });
-                    if (prevBtn) prevBtn.addEventListener('click', function(){ stepPrev(); start(); });
-                    dots.forEach(function(d, j){ d.addEventListener('click', function(){ go(j); start(); }); });
-                    thumbs.forEach(function(t, j){ t.addEventListener('click', function(){ go(j); start(); }); });
-                    if (pauseBtn) pauseBtn.addEventListener('click', function(){
-                        manuallyPaused = !manuallyPaused;
-                        pauseBtn.setAttribute('aria-pressed', manuallyPaused ? 'true' : 'false');
-                        pauseBtn.setAttribute('aria-label', manuallyPaused ? 'ادامه پخش خودکار' : 'توقف پخش خودکار');
-                        pauseBtn.textContent = manuallyPaused ? '▶' : 'Ⅱ';
-                        if (manuallyPaused) { stop(); if (progressFill) progressFill.style.transition = 'none'; }
-                        else start();
-                    });
-                    root.addEventListener('keydown', function(e){
-                        if (e.key === 'ArrowRight') { stepPrev(); start(); e.preventDefault(); }
-                        else if (e.key === 'ArrowLeft') { stepNext(); start(); e.preventDefault(); }
-                    });
-                    if (root.dataset.pauseHover === 'true') {
-                        root.addEventListener('mouseenter', stop);
-                        root.addEventListener('mouseleave', start);
-                        root.addEventListener('focusin', stop);
-                        root.addEventListener('focusout', start);
-                    }
-                    var touchX = null;
-                    root.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; }, {passive:true});
-                    root.addEventListener('touchend', function(e){
-                        if (touchX === null) return;
-                        var dx = e.changedTouches[0].clientX - touchX;
-                        if (Math.abs(dx) > 40) { (dx > 0 ? stepPrev : stepNext)(); start(); }
-                        touchX = null;
-                    }, {passive:true});
-                    window.addEventListener('resize', function(){ go(Math.min(idx, maxIndex())); });
-                    paint();
-                    start();
-                }
-                init(document.getElementById('tb-{$id}'));
-            })();</script>
-        HTML;
     }
 
     /**
@@ -2462,10 +2365,10 @@ class BlockRenderer
             false,
             false,
             [],
-            // Phase 9 / Step 2 — the canonical proof of the carousel
-            // migration. This is the ONLY renderCarousel() caller opted into
-            // the shared asset; the others keep their inline copy byte for
-            // byte until they are migrated one at a time.
+// Phase 9 / Step 2 opted this caller into the shared asset;
+             // every caller has emitted it since this phase deleted the
+             // per-instance inline controller, so the opt-in is now a
+             // no-op kept for call-site compatibility.
             ['script' => 'shared']
         );
 

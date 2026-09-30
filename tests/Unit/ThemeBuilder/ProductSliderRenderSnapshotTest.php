@@ -29,17 +29,25 @@ use Tests\TestCase;
  *   the neutral snapshot green and every live site broken.
  *
  * THE PINNED VALUES
- *   Captured from the renderer BEFORE the migration, then re-verified after
- *   it. They are the same numbers either way, which is the actual claim:
- *   this refactor changed no markup at all.
+ *   Originally captured from the renderer BEFORE the Phase 9 / Step 2
+ *   migration and re-verified after it — the same numbers, because that
+ *   refactor changed no markup at all.
+ *
+ *   Phase 6.1-B RE-PINNED them, and this is the why: the once-per-document
+ *   emission now ships TWO script tags (the controller AND the legacy
+ *   adapter that registers the formerly inline-carried types against the
+ *   SDK), and the structural hash keeps the <script> TAGS while normalizing
+ *   only their bodies — so a second tag is a real, intended structural
+ *   change. No other markup moved: carousel structure, attributes, classes
+ *   and text are unchanged.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '4d638c2999efe680b170628c22df0798c8249c337f0fa1fb0ee6e75645d7f95a';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '3a1c8d14f71c226f448fe2b57d7785ac0f5cc1572da819ed264c35e3318a0625';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '154b0565a7aed917a998d34dea997670c1da834cf54481b8d77c78d8181935db';
+    private const PUBLIC_STRUCTURAL_SHA256 = 'd421a99425b7043c6e90c96e05567d2b78ab57b1caf5613af91c6470d17dbcdb';
 
     private function render(string $mode = 'neutral'): string
     {
@@ -168,30 +176,64 @@ class ProductSliderRenderSnapshotTest extends TestCase
         self::assertStringContainsString('{&quot;columns&quot;:4}', $html);
     }
 
-    // ── The un-migrated types must be untouched ──────────────────────────
+    // ── Every carousel type ships the shared carrier (Phase 6.1-B) ───────
 
     /**
-     * The whole point of the opt-in is that the other carousel types keep
-     * byte-identical output. This fails if anyone "helpfully" points them at
-     * the shared carrier, or edits the inline copy, without migrating them.
+     * Phase 6.1-B completed the carousel migration: the per-instance inline
+     * controller is DELETED, and every type — the four that used to keep it
+     * byte-identical included — emits the shared assets. Each type must
+     * carry the controller AND the adapter (which registers it against the
+     * SDK and gives it the destroy() the inline copy never had), and the
+     * inline controller must be gone for good. This test replaces
+     * test_unmigrated_carousel_types_still_use_the_inline_controller(),
+     * whose job was to BLOCK this exact flip until it happened deliberately.
      */
-    public function test_unmigrated_carousel_types_still_use_the_inline_controller(): void
+    public function test_every_carousel_type_ships_the_shared_carrier_and_the_adapter(): void
     {
-        foreach ([['slider', ['slides' => [['title' => 'یک'], ['title' => 'دو']]]],
-                  ['category_slider', []],
-                  ['testimonials_slider', ['mode' => 'carousel', 'items' => [['name' => 'الف', 'text' => 'متن']]]]] as [$type, $props]) {
+        $types = [
+            ['slider', ['slides' => [['title' => 'یک'], ['title' => 'دو']]]],
+            ['category_slider', []],
+            ['testimonials_slider', ['mode' => 'carousel', 'items' => [['name' => 'الف', 'text' => 'متن']]]],
+            ['client_logos', ['mode' => 'carousel', 'logos' => [['name' => 'برند', 'image' => 'https://example.test/l.png']]]],
+        ];
+
+        foreach ($types as [$type, $props]) {
+            BlockRenderer::resetCarouselScriptEmission();
+
             $html = (new BlockRenderer())->renderBlock(['type' => $type, 'id' => 'b1', 'props' => $props]);
 
-            // The inline copy's own init guard, matched rather than the id:
-            // each caller names its carousel element differently
-            // (category_slider appends '-track'), so the id is not a stable
-            // marker to assert on.
             self::assertStringContainsString(
+                '__tbCarouselController',
+                $html,
+                "{$type} must ship the shared controller"
+            );
+            self::assertStringContainsString(
+                '__tbLegacyCarouselAdapter',
+                $html,
+                "{$type} must ship the adapter that registers it against the SDK"
+            );
+            self::assertStringNotContainsString(
                 'root.dataset.tbCarouselInit',
                 $html,
-                "{$type} has not been migrated yet and must keep its inline controller"
+                "{$type} must no longer inline the per-instance controller (Phase 6.1-B deleted it)"
             );
-            self::assertStringNotContainsString('__tbCarouselController', $html, "{$type} must not silently adopt the shared carrier");
         }
+    }
+
+    /**
+     * Attribute integrity: the adapter reads the same data-* contract the
+     * inline controller did. A flip that dropped any of these would render
+     * a carousel that looks right and behaves wrong.
+     */
+    public function test_legacy_carousel_markup_keeps_the_data_attribute_contract(): void
+    {
+        BlockRenderer::resetCarouselScriptEmission();
+
+        $html = (new BlockRenderer())->renderBlock(['type' => 'category_slider', 'id' => 'b1', 'props' => ['interval' => 2500]]);
+
+        self::assertStringContainsString('data-autoplay=', $html);
+        self::assertStringContainsString('data-interval="2500"', $html);
+        self::assertStringContainsString('data-pause-hover=', $html);
+        self::assertStringContainsString('data-fade=', $html);
     }
 }

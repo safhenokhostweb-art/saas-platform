@@ -58,8 +58,7 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
 
     /**
      * Phase 9 / Step 2 — the shared carousel controller, inlined once per
-     * document by BlockRenderer::renderCarousel() for any caller that opts
-     * into the shared-asset carrier.
+     * document by BlockRenderer::renderCarousel().
      *
      * Same seam as referenceBlockScriptPath() and for the same reason: the
      * file a developer reads and the bytes a rendered page ships must be the
@@ -68,6 +67,18 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
     public static function carouselBlockScriptPath(): string
     {
         return __DIR__ . '/../../resources/js/blocks/carousel.js';
+    }
+
+    /**
+     * Phase 9.2 — the legacy carousel adapter, emitted as part of the SAME
+     * once-per-document carousel emission. It registers the four formerly
+     * inline-carried types (slider, category_slider, testimonials_slider,
+     * client_logos) against the SDK, giving them the destroy() the inline
+     * controller never had; see resources/js/blocks/legacy_carousel.js.
+     */
+    public static function legacyCarouselScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/legacy_carousel.js';
     }
 
     /**
