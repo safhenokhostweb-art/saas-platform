@@ -77,7 +77,18 @@ class UniversalMultipurposeQaThemeSeederTest extends TestCase
         // (company-history timeline replacing the generic process_steps
         // that previously sat there), not left to the builder-coverage
         // fallback.
-        self::assertCount(103, BlockRegistry::all());
+        //
+        // Phase 3A -> 3D widget families: the canonical registry gained the
+        // 3A basic primitives (spacer, rich_text, icon_box, image_box, badge,
+        // list), the 3B hero family, the 3C commercial/dynamic/interaction
+        // widgets and the section-library compositions built from them —
+        // 103 -> 162. All of them are auto-covered by the seeder's own
+        // builder-coverage page, so no seeder change is needed; the
+        // coverage invariant asserted immediately below (every registered
+        // type except the four documented exclusions is actually
+        // represented) is what proves that, and it is the assertion to
+        // trust when this tripwire number needs its next bump.
+        self::assertCount(162, BlockRegistry::all());
         // Coverage invariant (§F): every registered type except the four
         // deliberately-excluded types customer-site's own registry unsets
         // (no backend content model, or a duplicate authority a real

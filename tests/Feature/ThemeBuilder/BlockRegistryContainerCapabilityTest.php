@@ -3,6 +3,7 @@
 namespace Tests\Feature\ThemeBuilder;
 
 use App\Services\ThemeBuilder\BlockRegistry;
+use App\Services\ThemeBuilder\BlockRenderer;
 use Tests\TestCase;
 
 /**
@@ -75,5 +76,63 @@ class BlockRegistryContainerCapabilityTest extends TestCase
     {
         $this->assertFalse(BlockRegistry::isContainerType('definitely_not_a_real_type'));
         $this->assertFalse(BlockRegistry::isContainerType('ext:acme:demo_container')); // extension types are a host-layer concern, not this shared layer
+    }
+
+    public function test_every_registry_container_is_exposed_as_an_editor_drop_target(): void
+    {
+        $renderer = (new BlockRenderer())->setContext(['editor_mode' => true]);
+
+        foreach (['section', 'container', 'grid', 'columns', 'flex_container', 'modal', 'tabs', 'tab_panel'] as $type) {
+            $html = $renderer->renderBlock([
+                'id' => 'container-'.$type,
+                'type' => $type,
+                'props' => BlockRegistry::all()[$type]['defaultProps'] ?? [],
+                'children' => [],
+            ]);
+
+            $this->assertStringContainsString('data-tb-container="1"', $html, "{$type} must be a Canvas drop target");
+        }
+    }
+
+    public function test_extension_container_uses_the_same_overridable_drop_target_seam(): void
+    {
+        $renderer = (new BlockRenderer())->setContext([
+            'editor_mode' => true,
+            'ext_container_types' => ['ext:acme:demo_container' => true],
+        ]);
+
+        $html = $renderer->renderBlock([
+            'id' => 'extension-container',
+            'type' => 'ext:acme:demo_container',
+            'props' => [],
+            'children' => [],
+        ]);
+
+        $this->assertStringContainsString('data-tb-container="1"', $html);
+    }
+
+    public function test_registry_containers_render_children_recursively_from_the_canonical_children_key(): void
+    {
+        $renderer = new BlockRenderer();
+        $html = $renderer->renderBlock([
+            'id' => 'outer',
+            'type' => 'container',
+            'props' => [],
+            'children' => [[
+                'id' => 'inner',
+                'type' => 'modal',
+                'props' => [],
+                'children' => [[
+                    'id' => 'leaf',
+                    'type' => 'text',
+                    'props' => ['content' => 'recursive-child-marker'],
+                ]],
+            ]],
+        ]);
+
+        $this->assertStringContainsString('id="tb-outer"', $html);
+        $this->assertStringContainsString('id="tb-inner"', $html);
+        $this->assertStringContainsString('id="tb-leaf"', $html);
+        $this->assertStringContainsString('recursive-child-marker', $html);
     }
 }

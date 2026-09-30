@@ -50,7 +50,9 @@ class SliderRenderersTest extends TestCase
         $this->assertSame(1, $xpath->query('//*[contains(@class,"tb-carousel-prev")]')->length);
         $this->assertSame(1, $xpath->query('//*[contains(@class,"tb-carousel-next")]')->length);
         $this->assertSame(2, $xpath->query('//button[contains(@class,"tb-carousel-dot")]')->length);
-        $this->assertSame(1, $xpath->query('//*[@role="region" and @aria-roledescription="carousel"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@role="region" and @aria-roledescription="carousel" and @aria-label]')->length);
+        $this->assertSame(1, $xpath->query('//*[contains(@class,"tb-carousel-dots") and @role="group"]')->length);
+        $this->assertSame(0, $xpath->query('//*[contains(@class,"tb-carousel-dots") and @role="tablist"]')->length);
         $this->assertStringContainsString('tabindex="0"', $html, 'carousel root must be keyboard-focusable for arrow-key navigation');
     }
 

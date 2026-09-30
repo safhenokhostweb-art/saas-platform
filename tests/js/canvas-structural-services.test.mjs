@@ -120,6 +120,11 @@ test('structural services are DOM-free and every host page includes the identity
   // theme-runtime::canvas.identity before it. canvas-live-preview.blade.php
   // shipped without the include and threw 'CanvasIdentity contract is
   // required' at runtime; this pins the include-order dependency.
+  //
+  // Phase 6.1-B: hosts may instead include the package's own
+  // canvas.editor-bootstrap, which loads runtime -> identity -> host
+  // structural services in the contract-mandated order, so either marker
+  // before the services include satisfies the dependency.
   const viewsDir = fileURLToPath(new URL('../../resources/views/admin/theme-builder/', import.meta.url));
   const stack = [viewsDir];
   const offending = [];
@@ -132,7 +137,9 @@ test('structural services are DOM-free and every host page includes the identity
       const content = fs.readFileSync(full, 'utf8');
       if (!content.includes('canvas-structural-services')) continue;
       const identityPos = content.indexOf('theme-runtime::canvas.identity');
+      const bootstrapPos = content.indexOf('theme-runtime::canvas.editor-bootstrap');
       const servicesPos = content.indexOf('canvas-structural-services');
+      if (bootstrapPos !== -1 && bootstrapPos < servicesPos) continue;
       if (identityPos === -1 || identityPos > servicesPos) offending.push(full);
     }
   }
