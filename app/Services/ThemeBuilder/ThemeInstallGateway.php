@@ -75,6 +75,13 @@ class ThemeInstallGateway
                 // own doc comment for why this is an absolute URL, not a copy.
                 // Absent/empty for every Theme that selects no Extension.
                 'extension_assets'     => ExtensionThemeRuntimeAssetProjector::project($theme),
+                // Phase 3 — structured theme-global asset manifest (Phase 2D
+                // contract, unchanged): ordered css/js/file entries with pinned
+                // sha256, authored by the Theme itself. Source of truth is
+                // Theme.settings['theme_assets_manifest']; absent/empty for
+                // every Theme that declares no global assets, so existing
+                // themes are unaffected.
+                'theme_assets'         => $theme->settings['theme_assets_manifest'] ?? [],
             ]);
         } catch (\Throwable $e) {
             Log::error('ThemeInstall request failed', [
