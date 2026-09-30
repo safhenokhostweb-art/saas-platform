@@ -40,7 +40,14 @@ class ThemeTemplateService
      * Return all templates as a lightweight collection for the canvas picker
      * (no pagination, returns only metadata — no blocks).
      */
-    public function listForCanvas(?int $siteId = null, ?string $type = null): Collection
+    /**
+     * Phase 3A — extended to accept the canvas picker's full filter set.
+     * The controller was shipped calling this with named arguments
+     * (type/category/term/siteId) the signature never had — every canvas
+     * template-list request failed with a PHP Error before this fix. New
+     * optional params keep existing positional callers working.
+     */
+    public function listForCanvas(?int $siteId = null, ?string $type = null, ?string $category = null, ?string $term = null): Collection
     {
         $q = ThemeTemplate::query()
             ->active()
@@ -54,6 +61,13 @@ class ThemeTemplateService
         }
 
         if ($type) $q->byType($type);
+        if ($category) $q->where('category', $category);
+        if ($term) {
+            $q->where(function ($qq) use ($term) {
+                $qq->where('name', 'like', "%{$term}%")
+                   ->orWhere('description', 'like', "%{$term}%");
+            });
+        }
 
         return $q->orderByDesc('usage_count')->orderByDesc('created_at')->get();
     }
