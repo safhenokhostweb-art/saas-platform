@@ -15,9 +15,23 @@ use App\Models\ThemeTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use SaaSPlatform\ThemeRuntime\Canvas\CanvasTreeOperations;
+use SaaSPlatform\ThemeRuntime\Layout\DirectionProjector;
+use SaaSPlatform\ThemeRuntime\Layout\DirectionCompatibilityAdapter;
+use SaaSPlatform\ThemeRuntime\Layout\DocumentEnvelope;
+use SaaSPlatform\ThemeRuntime\Layout\DocumentValidator;
+use SaaSPlatform\ThemeRuntime\Layout\LockedStructureGuard;
+use SaaSPlatform\ThemeRuntime\Layout\LayoutContract;
 
 class ThemeCanvasController extends Controller
 {
+    /**
+     * Phase 2A — the editor speaks the canonical layout document envelope
+     * version. Consumed by canvas.blade.php (window.CANVAS_LAYOUT_VERSION)
+     * so the editor can declare/stamp the envelope version it was built
+     * against; the server never accepts a version it does not know.
+     */
+    public const LAYOUT_VERSION = DocumentEnvelope::SCHEMA_VERSION;
     public function __construct(
         protected BlockRenderer $renderer,
         protected GlobalStyleEngine $styleEngine,
@@ -62,10 +76,29 @@ class ThemeCanvasController extends Controller
 
         $sites = Site::orderBy('title')->get(['id', 'title']);
 
+        // Phase 2A — document adoption at show(): the theme's pages JSON is
+        // wrapped in the canonical envelope AT THE BOUNDARY (no persistence
+        // change, no migration). Direction: an envelope stored on the theme
+        // wins, else the stored locale derives it, else the projector
+        // declines (null) and the host keeps its current behavior — legacy
+        // themes are never blind-flipped.
+        $directionProjection = DirectionCompatibilityAdapter::resolve([
+            'direction' => $theme->settings['layout_direction'] ?? null,
+            'locale' => $theme->settings['layout_locale'] ?? null,
+        ], is_array($theme->global_styles) ? $theme->global_styles : []);
+        $layoutEnvelope = DocumentEnvelope::make(
+            ['id' => 'page', 'kind' => 'page', 'children' => []],
+            array_filter([
+                'direction' => $directionProjection['direction'],
+                'locale' => $directionProjection['locale'],
+            ], fn ($v) => is_string($v) && $v !== '')
+        );
+        $layoutAttributes = DirectionProjector::attributes($layoutEnvelope);
+
         return view('admin.theme-builder.canvas', compact(
             'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons',
             'extensionSelections', 'extensionSelectionErrors', 'availableExtensions',
-            'visualGlobalStyles', 'sites'
+            'visualGlobalStyles', 'sites', 'layoutEnvelope', 'layoutAttributes'
         ));
     }
 
@@ -172,6 +205,8 @@ class ThemeCanvasController extends Controller
             // not at least one element.
             'blocks'   => 'present|array',
             'extension_selections' => 'nullable|array',
+            'structural_operations' => 'sometimes|array|max:100',
+            'structural_operations.*' => 'array',
         ]);
 
         $pages = $theme->pages ?? $theme->getPageList();
@@ -207,6 +242,70 @@ class ThemeCanvasController extends Controller
         $validation = ExtensionCanvasPaletteAdapter::validateBlocksAgainstSelections($data['blocks'], $selections, $previousInstances);
         if (!$validation['ok']) {
             return response()->json(['error' => $validation['error']], 422);
+        }
+
+        // Phase 2A — fail-closed canonical layout validation at the save
+        // boundary. The block tree is adapted to the canonical node model
+        // (boundary conversion only — nothing is rewritten in storage) and
+        // must pass the document validator: bounded depth/count, unique
+        // valid ids, known kinds, no cycles/self-parents, no executable-like
+        // keys, logical alignment vocabulary. A tree that cannot be proven
+        // safe is rejected (422) — never silently repaired or stored.
+        //
+        // Phase 2B-R legacy identity compatibility: pre-canonical themes may
+        // carry blocks with no `id` (the platform's own seeded fixtures are
+        // one such source). The fail-closed validator rejects missing ids, so
+        // deterministic legacy ids are derived at this editor boundary for
+        // BOTH trees — validation and structural guarding then compare like
+        // with like, while storage keeps the author's verbatim shape (a save
+        // does not retroactively rewrite ids into legacy documents).
+        $outgoingBlocks = LayoutContract::withDerivedLegacyIds($data['blocks']);
+        $document = DocumentEnvelope::fromLegacyBlocks($outgoingBlocks);
+        $layoutValidation = DocumentValidator::validateEnvelope($document);
+        if (!$layoutValidation['ok']) {
+            return response()->json([
+                'error' => 'ساختار سند قابل قبول نیست (اعتبارسنجی چیدمان ناموفق بود).',
+                'layout_errors' => $layoutValidation['errors'],
+            ], 422);
+        }
+
+        $beforeBlocks = match ($target) {
+            'header' => $theme->header_blocks ?? [],
+            'footer' => $theme->footer_blocks ?? [],
+            default => $pages[$key]['blocks'] ?? [],
+        };
+        $structure = LockedStructureGuard::validate(
+            LayoutContract::withDerivedLegacyIds($beforeBlocks),
+            $outgoingBlocks,
+            static fn (string $type): array => BlockRegistry::all()[$type]['editor'] ?? []
+        );
+        if (!$structure['ok']) {
+            return response()->json([
+                'error' => 'ساختار محافظت‌شده قابل حذف، جابه‌جایی یا تکثیر نیست.',
+                'structure_errors' => $structure['errors'],
+            ], 422);
+        }
+
+        // Phase 2C: replay every structural command against the trusted
+        // stored tree. The browser's parent/index/capability claims are only
+        // requests; registry metadata and canonical placement rules are
+        // resolved again here. A changed topology without a matching command
+        // log is rejected, as is a forged command whose result differs from
+        // the submitted document.
+        $treeOperations = new CanvasTreeOperations(static function (array $node): array {
+            $type = $node['type'] ?? null;
+            return is_string($type) ? (BlockRegistry::all()[$type]['editor'] ?? []) : [];
+        });
+        $transition = $treeOperations->validateTransition(
+            LayoutContract::fromLegacyBlocks(LayoutContract::withDerivedLegacyIds($beforeBlocks)),
+            LayoutContract::fromLegacyBlocks($outgoingBlocks),
+            $data['structural_operations'] ?? []
+        );
+        if (!$transition['ok']) {
+            return response()->json([
+                'error' => 'درخواست تغییر ساختار معتبر نیست.',
+                'structure_errors' => $transition['errors'],
+            ], 422);
         }
 
         $settings = $theme->settings ?? [];
@@ -358,8 +457,24 @@ class ThemeCanvasController extends Controller
 
         $extAssets = ExtensionCanvasPaletteAdapter::assetsUsedIn($blocks, $theme);
 
+        // Phase 3A — the live preview must follow the CANONICAL direction
+        // authority (DocumentEnvelope / DirectionCompatibilityAdapter), not
+        // a hardcoded dir="rtl": the same resolution show() performs. The
+        // editor chrome stays in the ADMIN's locale (fa) while the PREVIEW
+        // document direction follows the theme's stored envelope — editor
+        // and preview directions are independent concepts (2B decision 2).
+        // Legacy themes without direction metadata keep the previous
+        // fa/rtl default via the adapter's host_default source.
+        $directionProjection = DirectionCompatibilityAdapter::resolve([
+            'direction' => $theme->settings['layout_direction'] ?? null,
+            'locale' => $theme->settings['layout_locale'] ?? null,
+        ], is_array($theme->global_styles) ? $theme->global_styles : []);
+
         return response()
-            ->view('admin.theme-builder.canvas-live-preview', compact('theme', 'css', 'blocks', 'renderedBlocks', 'extAssets'))
+            ->view('admin.theme-builder.canvas-live-preview', compact(
+                'theme', 'css', 'blocks', 'renderedBlocks', 'extAssets',
+                'directionProjection'
+            ))
             ->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
@@ -374,6 +489,15 @@ class ThemeCanvasController extends Controller
 
         if (!is_array($blockData) || empty($blockData['type'])) {
             return response()->json(['html' => '']);
+        }
+
+        // Phase 2A — the live per-block preview renders the CANONICAL node
+        // only. Fail closed: an invalid node renders nothing instead of
+        // reaching the renderer with an unvalidated shape.
+        $canonical = DocumentEnvelope::fromLegacyBlocks([$blockData]);
+        $validation = DocumentValidator::validateEnvelope($canonical);
+        if (!$validation['ok'] || ($canonical['page']['children'][0] ?? null) === null) {
+            return response()->json(['html' => '', 'layout_errors' => $validation['errors']]);
         }
 
         // Normalize block.data → block.props (TB3-01 compat)
@@ -478,7 +602,6 @@ class ThemeCanvasController extends Controller
 
         return response()->json(['templates' => $templates]);
     }
-
     public function canvasSaveAsTemplate(Request $request, Theme $theme): JsonResponse
     {
         $data = $request->validate([
@@ -491,7 +614,17 @@ class ThemeCanvasController extends Controller
             'is_public'  => 'nullable|boolean',
         ]);
 
-        $template = $this->templateSvc->saveFromCanvas($data, null);
+        // Phase 3A — the call was shipped passing the whole validated
+        // payload ($data) as $blocks and null as $meta, so every save-as-
+        // template request stored the request envelope instead of block
+        // trees and died on ThemeTemplate::create's name requirement.
+        // saveFromCanvas regenerates ids itself; blocks stay verbatim.
+        $template = $this->templateSvc->saveFromCanvas(
+            $data['blocks'],
+            ['name' => $data['name'], 'type' => $data['type'], 'category' => $data['category']],
+            null,
+            $request->user()?->id
+        );
 
         return response()->json(['success' => true, 'template' => ['id' => $template->id, 'name' => $template->name]]);
     }
@@ -502,7 +635,47 @@ class ThemeCanvasController extends Controller
             'template_id' => 'required|integer|exists:theme_templates,id',
         ]);
 
-        $blocks = $this->templateSvc->insertIntoPage((int) $data['template_id'], null);
+        // Phase 3A — the call was shipped as insertIntoPage((int)$id, null),
+        // a PHP Error against the (ThemeTemplate, array, ?int) signature.
+        // Returns the template's blocks with freshly generated ids; the
+        // EDITOR performs the canonical insertNode (one undoable operation,
+        // full structural validation at save) — the server never mutates
+        // the stored document from this endpoint.
+        //
+        // Step 25 fail-closed gate: every block type in the template must
+        // be known to the registry (or this theme's extension palette) —
+        // a template referencing an unavailable/uninstalled widget type is
+        // rejected here rather than surfacing as a broken node in the
+        // editor. Unknown types never reach the client.
+        $template = ThemeTemplate::findOrFail((int) $data['template_id']);
+        $available = array_keys(BlockRegistry::all())
+            + array_keys(ExtensionCanvasPaletteAdapter::authorablePaletteFor($theme));
+        $unknown = [];
+        $walk = function (array $blocks) use (&$walk, &$unknown, $available): void {
+            foreach ($blocks as $block) {
+                if (!is_array($block)) {
+                    continue;
+                }
+                $type = $block['type'] ?? null;
+                if (is_string($type) && !in_array($type, $available, true)) {
+                    $unknown[$type] = true;
+                }
+                foreach (['children', 'blocks'] as $childrenKey) {
+                    if (is_array($block[$childrenKey] ?? null)) {
+                        $walk($block[$childrenKey]);
+                    }
+                }
+            }
+        };
+        $walk($template->blocks ?? []);
+        if ($unknown !== []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'قالب شامل ویجت‌های در دسترس نیست: ' . implode(', ', array_keys($unknown)),
+            ], 422);
+        }
+
+        $blocks = $this->templateSvc->regenIds($template->blocks ?? []);
 
         return response()->json(['success' => true, 'blocks' => $blocks]);
     }
