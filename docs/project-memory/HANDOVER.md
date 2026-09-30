@@ -1,7 +1,25 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-07-03
+> Last Updated: 2026-09-26
+
+---
+
+## CURRENT TASK (2026-09-26 — PHASE 3C MILESTONE 2 READY FOR FINAL REVIEW LOCAL)
+
+Dynamic data binding is implemented through additive shared-runtime seams. `DynamicBlockTypes` host-registers `dynamic_product_grid` and `dynamic_feed_slider`; `DynamicBlockRendererTrait` supplies rendering without changing generic dispatch. `WidgetConfig` validates optional `data_source` metadata, while `DataSourceConfig`, `DataFetcher`, and `DataFetchResult` provide sanitized per-widget configuration, per-renderer memoization, injected host adapters, and loading/empty/error/success results. Customer-site adapts the existing tenant-scoped `ThemeDataBindingRegistry` for product `category_id`/`collection_slug` queries and has an opt-in exact-host HTTPS feed adapter configured by `THEME_RUNTIME_DYNAMIC_API_HOSTS` (empty/fail-closed by default). Validation: Phase contracts 55/55, FoodMart 20/20, structural JS 7/7, customer binding 11/11, browser 1/1. No commit, push, deployment, or production validation was authorized.
+
+---
+
+## CURRENT TASK (2026-09-26 — PHASE 3C MILESTONE 1 READY FOR FINAL REVIEW LOCAL)
+
+The first compositional Commercial Widget Library milestone is implemented locally in the shared theme-runtime package. Six canonical types are available: `features_grid`, `stats_row`, `stat_item`, `cta_band`, `trust_badges_row`, and `trust_item`. The two pre-existing JSON-driven types (`features_grid`, `stats_row`) retain their legacy prop/render fallback and now additionally accept canonical child trees; no migration is required. Runtime CSS is token-scoped and uses logical geometry. The Section Library adds `features_showcase_persian` and `stats_trust_persian`. Phase 3C contracts, Phase 3A/3B regressions, structural JS, three real-browser Canvas/preview journeys, and all 20 FoodMart tests pass; all 70 golden files retain their expected SHA-256. The FoodMart Phase 2C cleanup helper now tolerates a Windows-locked root only after proving it contains no stale artifacts. No commit, push, deployment, production validation, dependency change, or authoritative database mutation occurred.
+
+---
+
+## CURRENT TASK (2026-09-24 — SLEEPSHIMAN HOME BLUE READY FOR FINAL REVIEW LOCAL)
+
+SleepShiman Home blue is implemented as a draft-only shared-runtime preset with 22 editable blocks and versioned local assets. Manual mode is complete; Products, Product Categories, Blog Posts, and approved Reviews use the existing allowlisted customer data-binding boundary. The Canvas/public renderer, revision lifecycle, media localization, and module presentation registry are reused. Focused PHP, responsive visual, and isolated Canvas edit/save/reload/publish-fixture/public tests pass. No production action or git delivery action occurred. Figma file access is blocked by the Starter MCP call limit, so candidate frame `2014:755` is not confirmed and no pixel-perfect claim is valid. Resume from `docs/theme-builder/SLEEPSHIMAN_HOME_BLUE_IMPLEMENTATION.md`; when Figma quota is available, verify the frame and run exact geometry/typography comparison before final commercial sign-off.
 
 ---
 
@@ -1547,6 +1565,26 @@ GET|POST /api/v1/education/sync/{siteId}/... — customer site sync (EDU-12)
 ---
 
 ## RECENT DECISIONS
+
+## 2026-09-23 — FoodMart Phase 4B handover
+
+- Phase 4A remains accepted; do not recreate its shared public/Canvas document runtime.
+- Phase 4B added `customer-site/app/Services/ThemeCanvas/DataBinding/` with an explicit registry and Product/Product Category sources. It added no migration or API.
+- Five shared FoodMart types declare a permitted source. Bound output uses existing Product, ProductCategory, ProductImage, ProductVariant, orders/order_items, routes, image storage, currency rules, cart, and wishlist paths.
+- Product Categories have no image column; the current adapter uses the first published product image. Brands have no domain model. “Trending” has no authoritative metric and was not invented.
+- Controlled PHPUnit fixtures use `Storage::fake('uploads')`; browser fixtures use the isolated `customer_site_browser` database and generated files under `public/uploads/foodmart-binding-fixtures`, removed by teardown.
+- Evidence is under `customer-site/tests/browser/.runtime/foodmart-phase4b/`.
+- No git or production operations were performed because the task explicitly prohibited them.
+
+## 2026-09-23 — FoodMart Canvas completion handover
+
+- The three manual defects are closed locally: logical Hero item selection reaches the matching repeater item, Hero structural operations retain canonical Swiper structure and reinitialize through declared lifecycle behavior, and `/canvas-preview` no longer has an independent Tailwind document.
+- Products and Product Categories are the only Canvas module capabilities currently exposed. `ThemePresentationCapabilityRegistry` maps them to active FoodMart presentations and the existing palette performs before/after insertion with the existing binding inspector.
+- All 19 FoodMart types were audited. Structural infrastructure and domains awaiting bindings carry an explicit `schemaAuditReason`; Blog binding was not started.
+- Browser evidence is under `customer-site/tests/browser/.runtime/foodmart-canvas-completion/` (10 screenshots). Isolated fixture cleanup leaves Products, Product Categories, and the FoodMart browser license at zero and removes fixture media.
+- No migration, authoritative local DB write, git staging/commit/push, or production operation was performed.
+
+---
 
 1. **AI generators return DTOs only** — no DB writes inside generators (ADR-001)
 2. **Persistence = command responsibility** — commands call `EducationDraftPersistenceService::persist()` (ADR-001)

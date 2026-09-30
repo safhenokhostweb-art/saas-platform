@@ -1,7 +1,65 @@
 # AUDIT HISTORY
 > All findings recorded permanently. Resolved findings marked Fixed — never deleted.
 > Format: Finding ID | Severity | Status | Evidence | Resolution
-> Last Updated: 2026-07-03
+> Last Updated: 2026-09-26
+
+---
+
+## PHASE 3C MILESTONE 2 LOCAL ACCEPTANCE — 2026-09-26
+
+| Area | Result |
+|---|---|
+| Architecture | Additive host registration and renderer trait; canonical registry table and generic dispatch unchanged |
+| Data | Existing tenant registry reused for Products; category ID and collection slug are allowlisted and bounded |
+| API security | HTTPS, credential-free URL, exact configured host, redirects disabled, bounded timeout/payload/items; fail-closed default |
+| Output security | Invalid configuration becomes controlled error state; adapter exceptions are not leaked; text/links are escaped |
+| Direction | Token-scoped logical CSS; browser verified RTL and LTR runtime geometry |
+| Regression | Phase contracts 55/55; FoodMart 20/20; JS 7/7; customer binding 11/11; browser 1/1 |
+| Operations | No commit, push, deployment, or production validation authorized |
+
+---
+
+## SLEEPSHIMAN HOME BLUE LOCAL ACCEPTANCE — 2026-09-24
+
+| Area | Result |
+|---|---|
+| Architecture | Existing shared runtime, revision service, localization, Canvas and public renderer reused; no duplicate path |
+| Authoring | 22 non-empty schemas; logical repeater selection; Manual is complete default |
+| Data | Allowlisted tenant-scoped Products, Product Categories, Blog Posts and approved Reviews; empty-manual fallback |
+| Security | Escaped text, validated links, local/hash-pinned assets, real CSRF/cart identity only for bound products |
+| Interaction | Scoped product/review carousel controls; responsive desktop/tablet/mobile; no horizontal overflow |
+| Browser | Isolated edit/live/save/reload/publish-fixture/public-render journey passes |
+| Limitation | Figma MCP Starter call limit prevents frame confirmation and exact pixel-diff claim |
+| Operations | No production publish/assignment, migration, deployment, commit, or push |
+
+---
+
+## FOODMART CANVAS COMPLETION AUDIT — 2026-09-23
+
+| Area | Result |
+|---|---|
+| Element editing | Logical Hero slide clicks focus schema repeater items; all 19 types have controls or a documented non-editable reason |
+| Hero safety | Complete item defaults, canonical wrappers/classes, add/edit/remove/reorder/save/reload, and Swiper reinitialization verified in browser |
+| Full Preview | Independent CDN/Tailwind document removed; canonical draft runtime, localized asset order, responsive widths, Swipers, offcanvas Search/Cart, and quantity behavior verified |
+| Module insertion | Theme-neutral capability registry; Products/Categories only; FoodMart owns markup; unsupported capabilities absent |
+| Security | Binding allowlists, escaped values, safe URLs/media, tenant DB boundary, and no raw HTML/class/JS controls retained |
+| Regression | ThemeCanvas 377 tests/1,844 assertions; focused customer 43/563; platform 38/1,051; three FoodMart browser journeys pass |
+| Operations | No migration, authoritative DB write, git operation, or production action |
+
+---
+
+## FOODMART PHASE 4B BINDING AUDIT — 2026-09-23
+
+| Area | Result |
+|---|---|
+| Duplicate-path audit | Reused the Phase 4A shared renderer/document; no second page or Canvas renderer |
+| Contract security | Unknown sources/keys/sorts, undeclared source-to-block pairs, connection selectors, invalid IDs, and limits over 24 reject and hide |
+| Tenant isolation | Product data is read only from the active customer database; a separate foreign test connection cannot be selected |
+| Visibility | Product resolver always applies `status=published`; the draft fixture is absent everywhere |
+| Query budget | Product/category resolution bounded at 12 queries or fewer after removing image and currency-state N+1 reads |
+| Interaction | Existing detail, category filter, cart, wishlist, variant-choice, and Swiper paths retained |
+| Compatibility | Unbound FoodMart output byte-identical; ThemeCanvas 364 tests and shared-runtime/FoodMart 45 tests pass |
+| Data hygiene | No authoritative DB writes; generated browser media is removed in teardown |
 
 ---
 

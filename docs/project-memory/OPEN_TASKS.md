@@ -12,13 +12,7 @@ unchanged `ThemeCanvasRuntime` (protocol version 1):
 - `resources/js/block-sdk.js` — `BaseBlock` + `defineBlock`, both authoring
   forms; `init`/`onUpdate`/`onRefresh`/`onDestroy` bridged onto the runtime's
   two registration idioms; scoped `ctx` (`element`, `type`, `blockId`,
-  `props`, `on`/`off`/`emit`, plus `# OPEN TASKS
-> Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-09-29
-
----
-
-, `ready`, `setProp`, `block`, `state`);
+  `props`, `on`/`off`/`emit`, plus `$`, `ready`, `setProp`, `block`, `state`);
   `deps` resolved through the runtime's own `trackScript()` (its first real
   consumer) and a deduped `<link>` for css; per-block error containment
   (`data-tb-block-error`, `block:error`); a frozen published `EVENTS` schema
@@ -34,13 +28,7 @@ unchanged `ThemeCanvasRuntime` (protocol version 1):
   which is why `ctx.props` was permanently empty. Child tree excluded; empty
   props emit nothing, so blocks without props render byte-identically.
 - `reference_counter` — the worked example (class form, declared deps, all four
-  lifecycle phases, `ctx.# OPEN TASKS
-> Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-09-29
-
----
-
-, `ctx.setProp` + `state:update`, block-local
+  lifecycle phases, `ctx.$`, `ctx.setProp` + `state:update`, block-local
   events). Intentionally **not** in `BlockRegistry`.
 
 **Verification** — `tests/js/block-sdk.test.mjs` 27 tests against the real
@@ -58,6 +46,79 @@ rides `ExtensionCanvasPaletteAdapter`/`ExtensionElementDefinition`; and
 today self-guards with `dataset.tbCarouselInit` and duplicates listener
 bookkeeping) onto the SDK as the second worked example, then decide whether
 customer-site should include the SDK in its canvas bootstrap.
+
+---
+
+## READY FOR FINAL REVIEW: PHASE 3C MILESTONE 2 — 2026-09-26
+
+| Deliverable | Status |
+|---|---|
+| `dynamic_product_grid` and `dynamic_feed_slider` | DONE LOCAL |
+| Per-renderer fetch lifecycle and explicit states | PASS — loading/empty/error/success |
+| Data-source sanitization and escaping | PASS — HTTPS + exact host allowlist; internal source allowlist; bounded JSON-lite |
+| Product `category_id` / `collection_slug` binding | PASS — existing tenant registry reused |
+| Primitive Inspector controls and RTL/LTR CSS | PASS |
+| Phase 3A/3B/3C, JS, browser, FoodMart regression | PASS |
+| Production/commit/push/deploy | NOT AUTHORIZED / NOT RUN |
+
+---
+
+## READY FOR FINAL REVIEW: PHASE 3C MILESTONE 1 — 2026-09-26
+
+| Deliverable | Status |
+|---|---|
+| Six commercial widget definitions and renderers | DONE LOCAL |
+| Legacy `features_grid` / `stats_row` compatibility | PASS — child mode is additive; JSON fallback retained |
+| Token-scoped logical RTL/LTR runtime CSS | PASS |
+| Persian feature and stats/trust Section Library entries | DONE LOCAL |
+| Phase 3C TDD contracts | 9 PASS |
+| Phase 3A/3B, JS, browser, FoodMart golden regression | PASS — FoodMart 20/20; all 70 golden SHA-256 values intact |
+| Production/commit/push/deploy | NOT AUTHORIZED / NOT RUN |
+
+---
+
+## READY FOR FINAL REVIEW: SLEEPSHIMAN HOME BLUE — 2026-09-24
+
+| Deliverable | Status |
+|---|---|
+| 22 editable shared-runtime blocks | DONE LOCAL |
+| Manual-first page without optional modules | DONE LOCAL |
+| Products, categories, blog, approved reviews | DONE LOCAL |
+| Localized/hash-pinned assets and responsive RTL | DONE LOCAL |
+| Canvas save/reload/publish-fixture/public journey | PASS |
+| Exact Figma frame verification | BLOCKED — Starter MCP call limit; `2014:755` remains unverified |
+| Production/commit/push/deploy | NOT AUTHORIZED / NOT RUN |
+
+---
+
+## COMPLETE: FOODMART CANVAS COMPLETION GATE — 2026-09-23
+
+| Deliverable | Status |
+|---|---|
+| Meaningful logical-element editing | DONE — schema-driven block/repeater item selection; no arbitrary DOM editing |
+| Hero add/edit/remove/reorder safety | DONE — complete defaults plus declarative full-document lifecycle refresh |
+| Full draft Preview | DONE — canonical runtime document/layout/assets; no independent Tailwind preview |
+| Module presentation capability contract | DONE — active-theme declarations only |
+| Products and Product Categories insertion | DONE — FoodMart presentations, real binding, before/after selected block |
+| Unsupported modules | DONE — unavailable until domain binding and theme presentation both exist |
+
+Next candidates, not started: Blog/Blog Categories binding and FoodMart presentation; then Menu, Forms, Cart, Search, Settings, and Social capability slices. Do not expose any as insertable until both binding and theme presentation are truthful.
+
+---
+
+## COMPLETE: FOODMART PHASE 4B — REAL DATA BINDING FOUNDATION — 2026-09-23
+
+| Deliverable | Status |
+|---|---|
+| Generic allowlisted binding registry | DONE — `products`, `product_categories` only |
+| FoodMart Products/Categories semantic adapters | DONE |
+| Canvas binding controls | DONE — declared source; sort/filter/manual IDs/limit/empty policy |
+| Published/tenant-safe resolution | DONE — customer database boundary, no connection/model selectors |
+| FoodMart-native dynamic DOM and existing interactions | DONE |
+| Static reference mode | DONE — byte-identical without a binding |
+| Controlled fixtures, generated images, screenshots, cleanup | DONE |
+
+Next candidates, not started: Blog/Blog Categories through this registry; an explicit checkpoint for a Brand model or category image migration; and an approved definition of “trending.” Phase 4B does not invent those concepts.
 
 ---
 

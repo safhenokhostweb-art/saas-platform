@@ -1,6 +1,32 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-07-03
+> Last Updated: 2026-09-26
+
+---
+
+## Theme Builder Phase 3C — Dynamic Data Binding Milestone 2
+
+**READY_FOR_FINAL_REVIEW_LOCAL (2026-09-26).** Two host-registered shared-runtime widgets (`dynamic_product_grid`, `dynamic_feed_slider`) now use a per-renderer `DataFetcher` and immutable, fail-closed `DataSourceConfig`. Static, allowlisted internal-query, and exact-host-allowlisted HTTPS API modes expose explicit loading/empty/error/success states. Customer-site reuses its tenant-scoped `ThemeDataBindingRegistry`; products support bounded `category_id` and `collection_slug` filters. The canonical `BlockRegistry` table and generic `BlockRenderer::renderBlock()` dispatch are unchanged; registration and rendering use the existing host/trait seams. Validation passes: Phase 3A/3B/3C 55/55 (1,027 assertions), FoodMart 20/20 (1,009 assertions and 70 golden hashes), structural JS 7/7, customer dynamic/FoodMart binding 11/11 (72 assertions), and Chrome browser acceptance 1/1. Commit, push, deployment, and production validation were not authorized and were not run.
+
+---
+
+## Theme Builder Phase 3C — Commercial Widget Library Milestone 1
+
+**READY_FOR_FINAL_REVIEW_LOCAL (2026-09-26).** The shared runtime now exposes compositional feature, stats, CTA-band, and trust-badge building blocks without changing Canvas/Inspector core logic. Legacy `features_grid`/`stats_row` JSON documents retain their original fallback renderer; child-based documents use canonical `$inner` dispatch. Two Persian Section Library packages exercise the new hierarchy. Focused contracts, Phase 3A/3B compatibility, all 70 FoodMart golden hashes, structural JS, and real-browser insert/edit/save/reload/preview responsive acceptance pass. Commit, push, deployment, and production validation are not authorized and were not run.
+
+---
+
+## SleepShiman Home blue
+
+**READY_FOR_FINAL_REVIEW_LOCAL (2026-09-24).** A draft-only 22-block RTL theme preset, versioned local assets, shared platform/customer renderer, Manual-first schemas, optional Products/Product Categories/Blog/Reviews bindings, real cart identity, asset localization inventory, scoped sliders, and responsive visual/browser acceptance are implemented. The isolated Canvas journey passes edit → live preview → save → reload → publish fixture → public render. No production publish, assignment, migration, deploy, commit, or push occurred. Exact Figma comparison remains pending because the configured Starter account exhausted its MCP call allowance; frame `2014:755` is therefore explicitly unverified. See `docs/theme-builder/SLEEPSHIMAN_HOME_BLUE_IMPLEMENTATION.md`.
+
+---
+
+## FoodMart Theme Continuation
+
+**FOODMART_CANVAS_COMPLETION_GATE_COMPLETE_LOCAL (2026-09-23).** Manual-acceptance defects were reproduced and fixed: schema-driven logical item selection now focuses the clicked Hero slide; Hero structural repeater changes use complete defaults and a declarative document-level lifecycle refresh; `/canvas-preview` now builds the same `ThemeRuntimeDocument` and `layouts.canvas-theme` document as Public/Canvas with draft data and no editor bridge; and the existing palette now exposes a theme-presentation capability bridge for Products and Product Categories with deterministic before/after insertion. All 19 FoodMart types were schema-audited; empty schemas carry explicit infrastructure/domain-binding reasons. No migration, authoritative local DB write, git operation, or production operation occurred. Validation: ThemeCanvas 377/377 (1,844 assertions; two PHPUnit deprecations), focused customer 43/43 (563 assertions), focused platform 38/38 (1,051 assertions), and three isolated real-browser FoodMart journeys PASS.
+
+**PHASE-4B_REAL_DATA_BINDING_COMPLETE_LOCAL (2026-09-23).** The accepted Phase 4A shared public/Canvas document runtime is unchanged. A narrow, generic, allowlisted binding layer now resolves existing customer-site Products and Product Categories into semantic data keyed by block ID; the shared FoodMart renderer retains presentation ownership. Five FoodMart sections can opt in, while unbound blocks retain byte-exact static reference output. No migration, new domain module, external API, authoritative database write, production operation, commit, push, or deployment occurred. Validation: customer-site ThemeCanvas 364/364 (1,710 assertions; two PHPUnit deprecations), focused Phase 4B 8/8 (58 assertions), saas-platform FoodMart/shared-runtime 45/45 (1,061 assertions), browser acceptance 1/1 with desktop/mobile/Canvas screenshots.
 
 ---
 
@@ -187,6 +213,9 @@ TB3 Sprint 1 کامل شد. Canvas editor هر دو ریپو (platform + custome
 - **Phase 8.5** — Distributed scalability — tenant resource isolation, noisy-neighbor protection, queue sharding
 - **Phase 8.6** — Plugin sandbox runtime & capability governance
 
+### Ecosystem (Phase 9, Step 1+)
+- **Phase 9 / Step 1** — Standardized Block SDK & DX — `ThemeBlockSDK` (`BaseBlock` + `defineBlock`), both authoring forms, unified `init`/`onUpdate`/`onRefresh`/`onDestroy` bridging, `data-tb-block-props` channel closed, published event schema, `reference_counter` worked example. See ADR-036.
+
 ### Frontend System (Phases 10.x)
 - **Phase 10.0** — Canonical design-tokens.css, 13 x-core-ui:: components
 - **Phase 10.1** — Enterprise Frontend Authority (100/100) — 28 canonical components, governance commands
@@ -220,9 +249,6 @@ TB3 Sprint 1 کامل شد. Canvas editor هر دو ریپو (platform + custome
 - **EDU-16** — Human Review Workflow: approve/reject endpoints, admin review dashboard, simplified state machine (draft→published|archived), 30 new tests, pending_review removed
 
 ---
-
-### Ecosystem (Phase 9, Step 1+)
-- **Phase 9 / Step 1** — Standardized Block SDK & DX — `ThemeBlockSDK` (`BaseBlock` + `defineBlock`), both authoring forms, unified `init`/`onUpdate`/`onRefresh`/`onDestroy` bridging, `data-tb-block-props` channel closed, published event schema, `reference_counter` worked example. See ADR-036.
 
 ## In Progress Work
 

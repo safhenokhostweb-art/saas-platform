@@ -1,6 +1,12 @@
 # ARCHITECTURE
 > Record of module structure, service boundaries, interfaces, and dependency flow.
-> Last Updated: 2026-06-05
+> Last Updated: 2026-09-24
+
+---
+
+## SleepShiman Home blue theme boundary (2026-09-24)
+
+SleepShiman Home blue adds 22 host-registered types to the existing shared `modules/theme-runtime` package. The same definitions and renderer serve platform preview and customer Canvas/public output. Customer-side allowlisted adapters resolve Products, Product Categories, Blog Posts, and approved Reviews; manual content remains the complete default. Existing revision, asset-localization, logical-repeater selection, and module-presentation seams are reused. No parallel builder, persistence model, or tenant boundary was introduced. Canonical implementation detail: `docs/theme-builder/SLEEPSHIMAN_HOME_BLUE_IMPLEMENTATION.md`.
 
 ---
 
@@ -222,6 +228,14 @@ EducationAnalyticsService ──► GET /api/v1/education/analytics
 
 ---
 
+### Theme runtime data-binding boundary (FoodMart Phase 4B)
+
+The shared theme package owns canonical block definitions and FoodMart DOM. `customer-site` owns data access through `ThemeDataBindingRegistry` and allowlisted `ThemeDataSource` implementations. A block may carry a top-level `binding` object containing only `source`, `query`, and `empty`; each query is restricted to source-specific allowlisted sorts plus bounded IDs/filter/limit fields. Resolved semantic records are injected into renderer context as `theme_bindings[block_id]`. Invalid, undeclared, or cross-connection requests fail closed. The customer-site deployment is database-per-customer, so Product isolation is the selected database itself; binding input cannot select a connection, model, service, or tenant. Unbound FoodMart blocks remain deterministic static-reference mode.
+
+### Canvas runtime and module-presentation boundary (FoodMart completion gate)
+
+Public, live Canvas, and full draft Preview all build through `ThemeRuntimeDocument` and `layouts.canvas-theme`; their only differences are published versus draft state and whether the live-editor bridge is attached. `ThemePresentationCapabilityRegistry` reads presentation declarations from active-theme block definitions and maps a domain capability to one or more renderer-owned block types. Canvas inserts the chosen block through its existing block tree and attaches only the definition's allowlisted binding. It never supplies a generic domain card. Structural repeater operations may declare `liveStructureUpdate=document`; Canvas then saves the draft structural mutation and reloads the canonical iframe document so already-installed theme scripts reinitialize safely. Incremental replacements also emit the theme-neutral `theme:content-updated` lifecycle event.
+
 ### Block SDK (Phase 9, Step 1)
 
 `ThemeBlockSDK` is the standardized developer layer over the theme-canvas
@@ -266,6 +280,18 @@ state that emits `state:update` and never round-trips through the editor.
 the worked example; it is intentionally not in `BlockRegistry`.
 
 See ADR-036 for the full decision record and rejected alternatives.
+
+### Commercial compositional widgets (Phase 3C Milestone 1)
+
+Commercial sections remain ordinary canonical block trees in the shared theme-runtime package. `features_grid`, `stats_row`, `cta_band`, and `trust_badges_row` are structural containers; `stat_item` and `trust_item` are leaves, while features continue to compose the existing `icon_box` primitive. `features_grid` and `stats_row` preserve their pre-existing JSON-prop render path when no child tree is present, providing migration-free compatibility. New schemas use only existing Inspector controls, and direction-sensitive layout is expressed through logical CSS properties and scoped `--tb-*` variables. Section Library entries are document templates inserted through the existing Canvas tree/history pipeline, not a second rendering or persistence engine.
+
+### Phase 3C Milestone 2 dynamic binding
+
+Dynamic widgets remain host-registered shared-runtime definitions rather than additions to the canonical registry table. `WidgetConfig` layers optional `data_source` metadata validation over `WidgetDefinition`; Inspector persistence remains three primitives (`source_type`, `endpoint_url`, `query_params`). Each renderer owns or receives one `DataFetcher`, which normalizes through immutable `DataSourceConfig`, memoizes within that renderer lifecycle, delegates I/O only to injected host adapters, catches adapter failures, and returns an explicit `DataFetchResult`. The shared package performs no tenant database access and no arbitrary HTTP request.
+
+Customer-site supplies both controlled boundaries. Internal product queries reuse `ThemeDataBindingRegistry` and `ProductDataSource`, including bounded `category_id` and `collection_slug`; the selected customer database remains the tenant boundary. External feeds use credential-free HTTPS URLs whose host must exactly match `theme-runtime.dynamic_api_hosts`; redirects are disabled, timeouts and item counts are bounded, and the allowlist is empty by default. Renderer output reads only semantic item fields, escapes text and attributes, validates URLs, never emits endpoint/query configuration, and uses logical CSS geometry for RTL/LTR.
+
+---
 
 ## Queue & Cache Architecture
 
