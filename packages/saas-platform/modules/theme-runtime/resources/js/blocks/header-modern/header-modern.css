@@ -1,0 +1,230 @@
+.tb-header-modern {
+    --tb-header-bg: #fff;
+    --tb-header-text: #172033;
+    --tb-header-cta: #4f46e5;
+    --tb-header-cta-text: #fff;
+    --tb-header-border: color-mix(in srgb, var(--tb-header-text) 12%, transparent);
+    direction: rtl;
+    position: relative;
+    z-index: 30;
+    width: 100%;
+    color: var(--tb-header-text);
+    background: var(--tb-header-bg);
+    border-block-end: 1px solid var(--tb-header-border);
+    font-family: Vazirmatn, IRANSans, Tahoma, Arial, sans-serif;
+}
+
+.tb-header-modern *,
+.tb-header-modern *::before,
+.tb-header-modern *::after {
+    box-sizing: border-box;
+}
+
+.tb-header-modern__inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    width: min(100% - 2rem, 76rem);
+    min-height: 4.75rem;
+    margin-inline: auto;
+}
+
+.tb-header-modern__brand {
+    display: inline-flex;
+    align-items: center;
+    min-width: 2.75rem;
+    color: inherit;
+    text-decoration: none;
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+
+.tb-header-modern__logo {
+    display: block;
+    width: auto;
+    max-width: 10rem;
+    height: 2.5rem;
+    object-fit: contain;
+}
+
+.tb-header-modern__menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(.75rem, 2vw, 1.5rem);
+    min-width: 0;
+}
+
+.tb-header-modern__link {
+    position: relative;
+    padding-block: .75rem;
+    color: inherit;
+    text-decoration: none;
+    font-size: .925rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: .82;
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.tb-header-modern__link::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: .45rem;
+    height: 2px;
+    background: var(--tb-header-cta);
+    border-radius: 999px;
+    transform: scaleX(0);
+    transition: transform 160ms ease;
+}
+
+.tb-header-modern__link:hover,
+.tb-header-modern__link:focus-visible {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.tb-header-modern__link:hover::after,
+.tb-header-modern__link:focus-visible::after {
+    transform: scaleX(1);
+}
+
+.tb-header-modern__actions {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+}
+
+.tb-header-modern__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding-inline: 1.125rem;
+    color: var(--tb-header-cta-text);
+    background: var(--tb-header-cta);
+    border-radius: .8rem;
+    box-shadow: 0 .5rem 1.25rem color-mix(in srgb, var(--tb-header-cta) 25%, transparent);
+    text-decoration: none;
+    font-size: .875rem;
+    font-weight: 750;
+    transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.tb-header-modern__cta:hover,
+.tb-header-modern__cta:focus-visible {
+    filter: brightness(.94);
+    transform: translateY(-1px);
+    box-shadow: 0 .7rem 1.5rem color-mix(in srgb, var(--tb-header-cta) 32%, transparent);
+}
+
+.tb-header-modern__toggle {
+    display: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--tb-header-border);
+    border-radius: .75rem;
+    cursor: pointer;
+}
+
+.tb-header-modern__toggle-lines,
+.tb-header-modern__toggle-lines::before,
+.tb-header-modern__toggle-lines::after {
+    display: block;
+    width: 1.2rem;
+    height: 2px;
+    background: currentColor;
+    border-radius: 999px;
+    transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.tb-header-modern__toggle-lines {
+    position: relative;
+}
+
+.tb-header-modern__toggle-lines::before,
+.tb-header-modern__toggle-lines::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+}
+
+.tb-header-modern__toggle-lines::before { transform: translateY(-.38rem); }
+.tb-header-modern__toggle-lines::after { transform: translateY(.38rem); }
+.tb-header-modern__toggle[aria-expanded='true'] .tb-header-modern__toggle-lines { background: transparent; }
+.tb-header-modern__toggle[aria-expanded='true'] .tb-header-modern__toggle-lines::before { transform: rotate(45deg); }
+.tb-header-modern__toggle[aria-expanded='true'] .tb-header-modern__toggle-lines::after { transform: rotate(-45deg); }
+
+.tb-header-modern :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--tb-header-cta) 42%, transparent);
+    outline-offset: 3px;
+}
+
+@media (max-width: 47.99rem) {
+    .tb-header-modern__inner {
+        grid-template-columns: minmax(0, 1fr) auto;
+        min-height: 4.25rem;
+    }
+
+    .tb-header-modern__toggle { display: grid; }
+
+    .tb-header-modern__actions { margin-inline-start: auto; }
+
+    .tb-header-modern__menu {
+        position: absolute;
+        inset-inline: 1rem;
+        inset-block-start: calc(100% + .5rem);
+        display: grid;
+        justify-content: stretch;
+        gap: .125rem;
+        padding: .75rem;
+        background: var(--tb-header-bg);
+        border: 1px solid var(--tb-header-border);
+        border-radius: 1rem;
+        box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, .14);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-.5rem);
+        transition: opacity 180ms ease, visibility 180ms ease, transform 180ms ease;
+    }
+
+    .tb-header-modern__menu.is-open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .tb-header-modern__link {
+        padding: .75rem .875rem;
+        border-radius: .65rem;
+    }
+
+    .tb-header-modern__link:hover,
+    .tb-header-modern__link:focus-visible {
+        background: color-mix(in srgb, var(--tb-header-text) 7%, transparent);
+        transform: none;
+    }
+
+    .tb-header-modern__link::after { display: none; }
+}
+
+@media (max-width: 27rem) {
+    .tb-header-modern__inner { width: min(100% - 1rem, 76rem); }
+    .tb-header-modern__cta { padding-inline: .8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tb-header-modern *,
+    .tb-header-modern *::before,
+    .tb-header-modern *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}

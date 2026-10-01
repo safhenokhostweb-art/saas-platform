@@ -897,6 +897,38 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['logo_text' => '', 'logo_url' => '/', 'nav_links' => [], 'sticky' => false, 'bg_color' => '#ffffff', 'text_color' => '#111827'],
             ],
+            'header_modern_v1' => [
+                'name' => 'هدر مدرن RTL',
+                'category' => self::CATEGORY_UTILITY,
+                'icon' => 'menu',
+                'schema' => [
+                    'bgColor'    => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff'],
+                    'textColor'  => ['type' => 'color', 'label' => 'رنگ متن و منو', 'default' => '#172033'],
+                    'ctaColor'   => ['type' => 'color', 'label' => 'رنگ دکمه اصلی', 'default' => '#4f46e5'],
+                    'logoUrl'    => ['type' => 'string', 'label' => 'نشانی تصویر لوگو', 'default' => ''],
+                    'menuItems'  => ['type' => 'array', 'label' => 'آیتم‌های منو', 'default' => []],
+                    'brandName'  => ['type' => 'string', 'label' => 'نام برند', 'default' => 'برند شما'],
+                    'homeUrl'    => ['type' => 'string', 'label' => 'لینک صفحه اصلی', 'default' => '/'],
+                    'ctaText'    => ['type' => 'string', 'label' => 'متن دکمه اصلی', 'default' => 'شروع کنید'],
+                    'ctaUrl'     => ['type' => 'string', 'label' => 'لینک دکمه اصلی', 'default' => '#'],
+                ],
+                'defaultProps' => [
+                    'bgColor' => '#ffffff',
+                    'textColor' => '#172033',
+                    'ctaColor' => '#4f46e5',
+                    'logoUrl' => '',
+                    'menuItems' => [
+                        ['label' => 'خانه', 'url' => '/'],
+                        ['label' => 'امکانات', 'url' => '#features'],
+                        ['label' => 'تعرفه‌ها', 'url' => '#pricing'],
+                        ['label' => 'تماس با ما', 'url' => '#contact'],
+                    ],
+                    'brandName' => 'برند شما',
+                    'homeUrl' => '/',
+                    'ctaText' => 'شروع کنید',
+                    'ctaUrl' => '#',
+                ],
+            ],
             // Phase 2e (ADR-026): the site footer, the self-contained
             // counterpart to nav_header. Superset schema — a theme with no
             // social_links/tagline/legal-links data simply omits those

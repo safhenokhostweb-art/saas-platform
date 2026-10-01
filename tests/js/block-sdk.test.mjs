@@ -152,7 +152,7 @@ const RUNTIME_SOURCE = fs
     .replace(/^\s*<script>\s*/, '')
     .replace(/\s*<\/script>\s*$/, '')
     .replace(/const TO_PREVIEW = new Set\(@json\([^)]*\)\);/,
-        "const TO_PREVIEW = new Set(['select','updateBlock','showDropZones','setDropTarget','setContainerTarget','getDropIndex','setStructuralDrop']);")
+        "const TO_PREVIEW = new Set(['select','updateBlock','setProp','showDropZones','setDropTarget','setContainerTarget','getDropIndex','setStructuralDrop']);")
     .replace(/const TO_EDITOR = new Set\(@json\([^)]*\)\);/,
         "const TO_EDITOR = new Set(['ready','iframeHeight','blockSelected','dropIndexResult','inlinePropChange','dragStart','dragOver','dropNode','dragCancel']);");
 
@@ -445,6 +445,68 @@ test('setProp is local: it updates props, re-serialises the attribute and emits 
     assert.equal(states[0].blockId, 'b1');
     assert.equal(states[0].type, 'setter');
     assert.equal(states[0].props.value, 9);
+});
+
+test('sdk.setProp addresses a live instance by data-tb-block-id and delegates to ctx.setProp', () => {
+    const { sdk, runtime, doc } = boot();
+    const states = [];
+
+    runtime.events.on('state:update', (payload) => states.push(payload));
+    sdk.defineBlock({ type: 'external_setter' });
+
+    const first = blockElement(doc, { type: 'external_setter', id: 'block-a', props: { value: 1 } });
+    const second = blockElement(doc, { type: 'external_setter', id: 'block-b', props: { value: 2 } });
+    runtime.initBlock(first);
+    runtime.initBlock(second);
+
+    assert.equal(sdk.instances, undefined, 'the private instance registry must not leak');
+    assert.equal(sdk.setProp('block-b', 'value', 27), true);
+    assert.equal(JSON.parse(first.getAttribute('data-tb-block-props')).value, 1);
+    assert.equal(JSON.parse(second.getAttribute('data-tb-block-props')).value, 27);
+    assert.equal(states.length, 1);
+    assert.equal(states[0].blockId, 'block-b');
+    assert.equal(states[0].type, 'external_setter');
+    assert.equal(states[0].props.value, 27);
+});
+
+test('sdk.setProp warns and returns false when no live block has the requested id', () => {
+    const { sdk, warnings } = boot();
+
+    assert.doesNotThrow(() => {
+        assert.equal(sdk.setProp('missing-block', 'value', 9), false);
+        assert.equal(sdk.setProp(null, 'value', 9), false);
+    });
+    assert.equal(warnings.length, 2);
+    assert.match(warnings[0], /setProp could not find a live block instance for id "missing-block"/);
+    assert.match(warnings[1], /setProp requires a non-empty data-tb-block-id/);
+});
+
+test('the preview protocol validates setProp payloads before routing the command to the SDK', () => {
+    const { sdk, runtime, doc } = boot();
+    const states = [];
+    runtime.events.on('state:update', (payload) => states.push(payload));
+    sdk.defineBlock({ type: 'protocol_setter' });
+
+    const el = blockElement(doc, { type: 'protocol_setter', id: 'message-target', props: { title: 'Before' } });
+    runtime.initBlock(el);
+
+    const message = {
+        protocolVersion: 1,
+        action: 'setProp',
+        blockId: 'message-target',
+        propKey: 'title',
+        value: 'After',
+    };
+
+    assert.equal(runtime.valid(message, 'to-preview'), true);
+    assert.equal(runtime.valid({ ...message, protocolVersion: 2 }, 'to-preview'), false);
+    assert.equal(runtime.valid({ ...message, blockId: '' }, 'to-preview'), false);
+    assert.equal(runtime.valid({ ...message, propKey: 4 }, 'to-preview'), false);
+
+    sdk.setProp(message.blockId, message.propKey, message.value);
+    assert.equal(JSON.parse(el.getAttribute('data-tb-block-props')).title, 'After');
+    assert.equal(states.length, 1);
+    assert.equal(states[0].blockId, 'message-target');
 });
 
 test('a throwing init marks the block failed and never takes down a sibling', async () => {
@@ -774,6 +836,18 @@ test('the reference block registers itself and drives the real DOM', async () =>
     assert.equal(el.classList.contains('tb-block-ready'), true);
     assert.equal(valueEl.textContent, '4');
 
+    sdk.setProp('rc1', 'value', 7);
+    assert.equal(valueEl.textContent, '7', 'the state:update subscriber paints an external fast-path value');
+
+    sdk.setProp('rc1', 'max', 5);
+    assert.equal(valueEl.textContent, '5', 'the subscriber re-clamps and paints when a bound limit changes');
+
+    el.querySelector('.tb-ref-counter__increase').dispatchEvent(new FakeCustomEvent('click'));
+    assert.equal(valueEl.textContent, '5', 'a counter already at its new maximum stays clamped');
+    assert.deepEqual(changes, [], 'a clamped step emits nothing');
+
+    sdk.setProp('rc1', 'max', 10);
+    sdk.setProp('rc1', 'value', 4);
     el.querySelector('.tb-ref-counter__increase').dispatchEvent(new FakeCustomEvent('click'));
     assert.equal(valueEl.textContent, '6', 'a +2 step on a 4 must land on 6');
     assert.deepEqual(changes.map((c) => c.value), [6]);

@@ -546,6 +546,20 @@ body.tb-drag-active .tb-drop-zone {
                 updateBlockHtml(d.blockId, d.html || '');
                 sendHeight();
                 break;
+            case 'setProp':
+                try {
+                    if (typeof d.blockId !== 'string' || d.blockId === ''
+                        || typeof d.propKey !== 'string' || d.propKey === '') {
+                        throw new TypeError('setProp requires non-empty blockId and propKey strings');
+                    }
+                    if (!window.ThemeBlockSDK || typeof window.ThemeBlockSDK.setProp !== 'function') {
+                        throw new TypeError('ThemeBlockSDK.setProp is unavailable');
+                    }
+                    window.ThemeBlockSDK.setProp(d.blockId, d.propKey, d.value);
+                } catch (error) {
+                    console.error('[CanvasPreview] setProp failed:', error);
+                }
+                break;
             case 'showDropZones':
                 document.body.classList.toggle('tb-drag-active', !!d.visible);
                 if (!d.visible) { setDropTarget(null); setContainerTarget(null); }

@@ -5,7 +5,7 @@ namespace SaaSPlatform\ThemeRuntime\Canvas;
 final class PreviewProtocol
 {
     public const VERSION = 1;
-    public const TO_PREVIEW = ['select', 'updateBlock', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop'];
+    public const TO_PREVIEW = ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop'];
     public const TO_EDITOR = [
         'ready', 'iframeHeight', 'blockSelected', 'dropIndexResult', 'inlinePropChange',
         'dragStart', 'dragOver', 'dropNode', 'dragCancel',
@@ -19,6 +19,8 @@ final class PreviewProtocol
         return match ($message['action']) {
             'select' => !isset($message['blockId']) || is_string($message['blockId']),
             'updateBlock' => is_string($message['blockId'] ?? null) && is_string($message['html'] ?? null),
+            'setProp' => is_string($message['blockId'] ?? null) && $message['blockId'] !== ''
+                && is_string($message['propKey'] ?? null) && $message['propKey'] !== '',
             'blockSelected' => is_string($message['blockId'] ?? null),
             'showDropZones' => is_bool($message['visible'] ?? null),
             'getDropIndex' => is_numeric($message['clientY'] ?? null) && is_numeric($message['clientX'] ?? null),

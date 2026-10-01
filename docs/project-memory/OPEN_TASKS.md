@@ -1,6 +1,41 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-09-30
+> Last Updated: 2026-10-01
+
+---
+
+## OPEN: PHASE 10 FOLLOW-UP — SCALE FAST-PATH TO ALL STANDARD BLOCKS
+
+**Status:** In progress. The `reference_counter` pilot is complete and
+`header_modern_v1` is the first standard opt-in: only `bgColor`, `textColor`,
+and `ctaColor` use the fast-path. Slow-path rendering remains the default
+until each candidate and property proves it can repaint correctly from
+`state:update` without server HTML replacement.
+
+**Goal:** extend the two-tier Canvas interaction model to standard blocks
+whose high-frequency Inspector edits are property-only, while preserving the
+canonical `canvas/render-block` POST for structural, server-resolved,
+asset-dependent, or lifecycle-sensitive changes.
+
+**Sub-tasks:**
+
+- Review and opt in high-frequency blocks (for example text, color, and
+  counters) to the fast-path.
+- For every candidate, classify each editable property as fast-path-safe or
+  slow-path-required; do not opt in a whole type when only some properties can
+  repaint locally.
+- Add a block-owned `ThemeBlockSDK.EVENTS.STATE_UPDATE` subscriber with
+  stamped block-ID/type filtering and a deterministic `paint()` operation.
+- Extend browser coverage to prove immediate effective-DOM changes, zero
+  `canvas/render-block` requests for fast-path properties, unchanged POST
+  behavior for slow-path properties, and save/reload/preview/public parity.
+- Keep `countdown` on the slow-path unless a later ADR deliberately replaces
+  ADR-058's rendered `data-end-date` configuration authority.
+
+**Acceptance criteria:** every new allowlist entry has property-level safety
+evidence, focused SDK/runtime coverage, and real-browser proof. Unlisted and
+unsupported properties continue through the existing slow-path with no
+behavior change.
 
 ---
 
@@ -8,7 +43,8 @@
 
 **Status:** RESOLVED (Phase 9.2). The `test.todo` in
 `tests/js/block-sdk-lifecycle.test.mjs` is now a real regression test and
-passes. Decision recorded as ADR-056 in `DECISIONS.md`.
+passes. Decision recorded as ADR-056 (the phase gate itself) and ADR-058
+(the adapter-based block lifecycle it serves) in `DECISIONS.md`.
 
 **Found by:** the Phase 9.2 SDK-to-runtime integration test, which boots the
 real `runtime.blade.php` + the real `block-sdk.js` + the real `carousel.js` in
@@ -122,12 +158,15 @@ failures (see the PHASE 9.1 entry below).
 
 ---
 
-## IN PROGRESS: PHASE 9 / STEP 2 — CAROUSEL MIGRATION TO THE BLOCK SDK
+## COMPLETE: PHASE 9.2 — CAROUSEL MIGRATION TO THE BLOCK SDK — 2026-09-30
+
+**Status:** COMPLETE. All `renderCarousel()` callers migrated; the
+per-instance inline controller (`legacyCarouselScript()`) is deleted.
+Decision recorded as ADR-058 in `DECISIONS.md`.
 
 **Goal:** move `renderCarousel()`'s client logic onto the shared-asset /
-BaseBlock carrier, one block type at a time. `product_slider` is the
-canonical proof; the other carousel call sites keep their inline copy
-byte-for-byte until migrated individually.
+BaseBlock carrier, one block type at a time. `product_slider` was the
+canonical proof; the other carousel call sites followed.
 
 **Decisions (2026-09-30):**
 - **Shared asset, two carriers.** The controller lives once in
@@ -140,12 +179,45 @@ byte-for-byte until migrated individually.
 - **Render snapshot is the gate.** `ProductSliderRenderSnapshotTest` pins a
   structural sha256 of the rendered markup in both the neutral and
   MODE_PUBLIC renders, captured BEFORE the migration and re-verified after.
+  The hashes were re-pinned once for the intended two-`<script>` emission
+  (controller + adapter); no other markup moved.
+- **The four remaining types are migrated, not carried.** `slider`,
+  `category_slider`, `testimonials_slider` and `client_logos` are registered
+  against the SDK by `resources/js/blocks/legacy_carousel.js`, which reuses
+  the shared controller and gives them the `destroy()` their inline script
+  never had. Migration meant deleting the old carrier, not adding a second
+  one, so `legacyCarouselScript()` is gone.
 
 **Why the "two carriers" shape was forced:** the original plan was to make
 the SDK the sole carrier. That would have shipped a dead carousel on every
 live tenant site, because the block SDK is included on exactly three admin
 views and on no public layout. The failure would have been invisible in the
 admin preview, which is the one surface where the SDK *is* loaded.
+
+---
+
+## COMPLETE: PHASE 9.3 — COUNTDOWN MIGRATION TO THE BLOCK SDK — 2026-09-30
+
+**Status:** COMPLETE. The inline ticker is out of `renderCountdown()`; the
+packaged adapter `resources/js/blocks/countdown_adapter.js` carries it.
+Decision recorded as ADR-058 in `DECISIONS.md`.
+
+**What it fixed (2026-09-30):** the pre-migration inline copy had two defects
+that moving the logic out fixed for free —
+1. it never kept the interval handle, so an editor replacement of the block
+   kept ticking against a detached node until the countdown ran out;
+2. it set its init guard *before* validating the date, so an unparseable
+   `end_date` bricked the block permanently even if the value were corrected
+   live.
+
+The adapter validates before guarding, exposes a handle whose `destroy()`
+clears the interval, and runs the same controller under both carriers with
+the same `data-tb-countdown-init` guard. Configuration stays in
+`data-end-date` on the block root — the props channel (`ctx.props`) can only
+disagree with the markup that actually shipped.
+
+**Verification:** `tests/js/countdown-lifecycle.test.mjs` (9 tests),
+`tests/Unit/ThemeBuilder/CountdownRenderTest.php`.
 
 ---
 
@@ -187,10 +259,10 @@ protocol change.
 rides `ExtensionCanvasPaletteAdapter`/`ExtensionElementDefinition`; and
 `ctx.setProp` is local client state, not an editor write-back path.
 
-**Next** — Phase 9 / Step 2: migrate an existing block (the carousel, which
-today self-guards with `dataset.tbCarouselInit` and duplicates listener
-bookkeeping) onto the SDK as the second worked example, then decide whether
-customer-site should include the SDK in its canvas bootstrap.
+**Next** — DONE. Phase 9.2 migrated the carousel and Phase 9.3 the countdown
+onto the SDK as the worked examples; see the PHASE 9.2 and PHASE 9.3 entries
+above and ADR-058. The open question this step deferred — whether
+customer-site should include the SDK in its canvas bootstrap — remains open.
 
 ---
 

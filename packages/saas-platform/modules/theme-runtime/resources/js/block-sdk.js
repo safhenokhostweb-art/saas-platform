@@ -38,6 +38,9 @@
  *   re-serialises data-tb-block-props on the live element so a later re-init
  *   sees them, and emits `state:update`. It never round-trips through the
  *   editor's `inlinePropChange` action and never persists to a theme.
+ *   sdk.setProp(blockId, key, value) is the controlled external command for
+ *   that same local write path. blockId is the `data-tb-block-id` value the
+ *   runtime publishes as ctx.blockId; SDK instances remain private.
  *
  * DEPENDENCIES
  *   deps.js  -> resolved through the runtime's own `trackScript(src)`
@@ -362,6 +365,41 @@
         function instancesOf(type) {
             if (!instances.has(type)) instances.set(type, new Set());
             return instances.get(type);
+        }
+
+        /**
+         * Apply a local prop update to the live instance addressed by the
+         * DOM/runtime identity contract (`data-tb-block-id` -> ctx.blockId).
+         * The instance registry stays closure-private: callers can issue the
+         * command, but cannot inspect or mutate an instance or its context.
+         */
+        function setProp(blockId, propKey, value) {
+            var found = null;
+
+            // ctx.blockId comes from getAttribute(), so the external command
+            // accepts that same non-empty string identity and never targets
+            // an unaddressable instance whose runtime context has no DOM id.
+            if (typeof blockId !== 'string' || blockId === '') {
+                warn('setProp requires a non-empty data-tb-block-id');
+                return false;
+            }
+
+            instances.forEach(function (set) {
+                if (found) return;
+                set.forEach(function (instance) {
+                    if (!found && !instance.released && instance.blockId === blockId) {
+                        found = instance;
+                    }
+                });
+            });
+
+            if (!found) {
+                warn('setProp could not find a live block instance for id "' + String(blockId) + '"');
+                return false;
+            }
+
+            found.ctx.setProp(propKey, value);
+            return true;
         }
 
         function matches(instance, root, detail, phase) {
@@ -754,6 +792,7 @@
             defineBlock: defineBlock,
             getBlockType: getBlockType,
             assetsFor: assetsFor,
+            setProp: setProp,
             scan: scan,
             trackStyle: trackStyle,
             unregisterAll: function () {

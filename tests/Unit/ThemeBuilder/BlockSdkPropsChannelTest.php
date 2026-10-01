@@ -187,11 +187,31 @@ class BlockSdkPropsChannelTest extends TestCase
         $this->assertArrayNotHasKey('reference_counter', $registry);
     }
 
+    public function test_fast_path_allowlist_keeps_countdown_slow_and_limits_modern_header_to_colors(): void
+    {
+        $editor = file_get_contents(resource_path('views/admin/theme-builder/canvas.blade.php'));
+        $counter = file_get_contents(ThemeRuntimeServiceProvider::referenceBlockScriptPath());
+
+        $this->assertIsString($editor);
+        $this->assertIsString($counter);
+        $this->assertStringContainsString("const FAST_PATH_BLOCK_TYPES = new Set(['reference_counter', 'header_modern_v1']);", $editor);
+        $this->assertStringContainsString("['header_modern_v1', new Set(['bgColor', 'textColor', 'ctaColor'])]", $editor);
+        $this->assertStringContainsString('(!fastPathKeys || fastPathKeys.has(propKey))', $editor);
+        $this->assertStringContainsString('this.pushFastPropUpdate(targetId, propKey, value);', $editor);
+        $this->assertStringContainsString('/canvas/render-block', $editor);
+        $this->assertStringNotContainsString("new Set(['countdown'])", $editor);
+        $this->assertStringContainsString('ctx.on(EVENTS.STATE_UPDATE', $counter);
+        $this->assertStringContainsString('self.paint();', $counter);
+    }
+
     public function test_packaged_block_assets_exist_where_the_provider_says_they_do(): void
     {
         foreach ([
             ThemeRuntimeServiceProvider::blockSdkContractPath(),
             ThemeRuntimeServiceProvider::referenceBlockScriptPath(),
+            ThemeRuntimeServiceProvider::headerModernScriptPath(),
+            ThemeRuntimeServiceProvider::headerModernStylePath(),
+            ThemeRuntimeServiceProvider::headerModernDefinitionPath(),
         ] as $path) {
             $this->assertFileExists($path);
         }

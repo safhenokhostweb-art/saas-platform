@@ -1,7 +1,21 @@
 ﻿# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-09-26
+> Last Updated: 2026-10-01
+
+---
+
+## CURRENT TASK (2026-10-01 — PHASE 11 MODERN RTL HEADER READY FOR FINAL REVIEW LOCAL)
+
+The canonical shared runtime now contains `header_modern_v1`: portable JSON
+metadata, a registered Canvas schema/renderer, sanitized semantic navigation,
+responsive RTL CSS, an accessible SDK-owned hamburger, and property-level
+fast-path repainting for `bgColor`, `textColor`, and `ctaColor`. `logoUrl` and
+`menuItems` deliberately retain server-rendered slow-path updates. The
+customer public runtime includes the Block SDK after the lifecycle runtime.
+Focused PHP 96/96, Node 48/48, Chromium 2/2, and the customer public-runtime
+contract 1/1 pass. No commit, push, deployment, production validation,
+dependency change, or authoritative database mutation was authorized.
 
 ---
 

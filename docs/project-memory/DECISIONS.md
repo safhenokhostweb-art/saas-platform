@@ -2158,10 +2158,10 @@ A repository audit of the theme-canvas block system found the runtime bridge
 (`packages/saas-platform/modules/theme-runtime/resources/views/canvas/runtime.blade.php`)
 exposed three capabilities that **no code in either repository ever used**:
 
-- `registerBlock(type, lifecycle)` / `initBlock(el)` — grep for `registerBlock`
+- `registerBlock(type, lifecycle)` / `initBlock(el)` â€” grep for `registerBlock`
   matched only its own definition and export.
-- `trackScript(src)` — defined and exported, zero call sites.
-- `ctx.props` — built by `initBlock` from `data-tb-block-props`, but that
+- `trackScript(src)` â€” defined and exported, zero call sites.
+- `ctx.props` â€” built by `initBlock` from `data-tb-block-props`, but that
   attribute is read by the runtime and **emitted by no renderer anywhere**,
   so `ctx.props` was permanently `{}` for every block on every page.
 
@@ -2180,7 +2180,7 @@ ecosystem. Step 1 is the SDK that every later ecosystem piece rests on.
 
 1. **The SDK is a consumer layer, never a second bridge.**
    `ThemeCanvasRuntime.version` stays `1`. The SDK registers against the
-   surfaces the runtime already exposes and re-implements none of it —
+   surfaces the runtime already exposes and re-implements none of it â€”
    not `replaceNode`, not `lifecycle()`, not the event bus. Deleting
    `block-sdk.js` reverts the ecosystem to raw runtime access with no other
    change. Any future need that cannot be expressed this way is a signal to
@@ -2257,8 +2257,8 @@ ecosystem. Step 1 is the SDK that every later ecosystem piece rests on.
 10. **Dependencies.** `deps.js` resolves through the runtime's own
     `trackScript()` (the first real consumer of it); `deps.css` injects one
     deduped `<link>` because the runtime has no stylesheet loader. A
-    dependency that fails to load *resolves* rather than rejects — an
-    optional asset must not take a block down — and `block:error` carries the
+    dependency that fails to load *resolves* rather than rejects â€” an
+    optional asset must not take a block down â€” and `block:error` carries the
     failure. Editor-side asset distribution stays with the existing
     `ExtensionCanvasPaletteAdapter` / `ExtensionElementDefinition` pipeline;
     Step 1 does not change it.
@@ -2273,7 +2273,7 @@ ecosystem. Step 1 is the SDK that every later ecosystem piece rests on.
     double registration, and is **deliberately not in `BlockRegistry`**:
     registering it would change the registry cardinality that
     `UniversalMultipurposeQaThemeSeederTest` pins and would place a demo
-    block in the editor palette. Dispatch is unaffected — `renderBlock()`
+    block in the editor palette. Dispatch is unaffected â€” `renderBlock()`
     resolves `render{Studly}()` by method existence. A test asserts the
     absence so the decision cannot be undone by accident.
 
@@ -2296,7 +2296,7 @@ ecosystem. Step 1 is the SDK that every later ecosystem piece rests on.
 
 **Verification:** `tests/js/block-sdk.test.mjs` (27 tests) exercises the SDK
 against the **real** `runtime.blade.php` source with only its two `@json()`
-protocol arrays substituted — a stub would let the two drift, which is exactly
+protocol arrays substituted â€” a stub would let the two drift, which is exactly
 the failure this ADR exists to close. `tests/js/canvas-editor-bootstrap.test.mjs`
 (5 tests) pins both packaged contract paths, the include order, and the
 three-way fail-fast gate. `tests/Unit/ThemeBuilder/BlockSdkPropsChannelTest.php`
@@ -2304,10 +2304,10 @@ three-way fail-fast gate. `tests/Unit/ThemeBuilder/BlockSdkPropsChannelTest.php`
 byte-identical empty case, escaping, and the reference block. Full JS suite:
 46/46. `tests/Unit/ThemeBuilder` + `tests/Unit/Architecture` +
 `tests/Feature/ThemeBuilder`: 3 pre-existing failures only
-(`TypographyScaleWiringTest` ×2 and `Phase3AContractsTest` ×1), each verified
-identical with this phase's changes stashed — see KNOWN_ISSUES.
+(`TypographyScaleWiringTest` Ã—2 and `Phase3AContractsTest` Ã—1), each verified
+identical with this phase's changes stashed â€” see KNOWN_ISSUES.
 
-**Impact:** `packages/saas-platform/modules/theme-runtime` —
+**Impact:** `packages/saas-platform/modules/theme-runtime` â€”
 `resources/js/block-sdk.js` (new), `resources/js/blocks/reference-counter.js`
 (new), `resources/views/canvas/block-sdk.blade.php` (new),
 `resources/views/canvas/editor-bootstrap.blade.php` (include order + third
@@ -2315,7 +2315,7 @@ gate), `src/Providers/ThemeRuntimeServiceProvider.php`
 (`blockSdkContractPath()`, `referenceBlockScriptPath()`),
 `src/BlockRenderer.php` (`blockPropsAttr()`, `wrapEditorMode()` /
 `wrapPublicStructural()` optional `$props`, `renderReferenceCounter()`).
-`saas-platform` — `resources/views/admin/theme-builder/canvas-preview.blade.php`
+`saas-platform` â€” `resources/views/admin/theme-builder/canvas-preview.blade.php`
 (runtime + SDK includes). Tests: `tests/js/block-sdk.test.mjs` (new),
 `tests/js/canvas-editor-bootstrap.test.mjs` (extended),
 `tests/Unit/ThemeBuilder/BlockSdkPropsChannelTest.php` (new). No migration.
@@ -2443,3 +2443,260 @@ the full JS suite (61/61) stay green.
 regression test). No runtime change. No protocol change. No renderer change.
 No blade view change (the SDK ships as one distributable source consumed by
 the view).
+
+---
+
+## ADR-058
+
+**Title:** Adapter-Based Block Lifecycle: Carousel, Countdown, and the Per-Instance Phase Gate (Phase 9.2 and Phase 9.3)
+
+**Status:** Accepted (Implemented)
+
+**Date:** 2026-09-30
+
+**Context:**
+
+`BlockRenderer` render methods used to inline a byte-identical client script
+per rendered block. Two defects followed from that shape, both observed in
+production code rather than theorised:
+
+1. **Unreachable teardown.** Each inline copy registered its own anonymous
+   `window` listener and autoplay `setInterval` and returned no handle. On the
+   editor's `replaceNode()` path every replacement stranded one listener and
+   one timer against a detached DOM subtree. This is the SDK-002 leak class.
+   The countdown's inline copy had the same defect in a smaller form: it
+   assigned its interval to a variable it only ever *read* inside `tick()` to
+   clear it on expiry, so nothing could cancel it on teardown.
+2. **Per-instance duplication.** A page with N carousels shipped N copies of
+   the same controller, and a bug fix in one copy did not reach the others.
+
+Two failure modes were structural, not incidental. The runtime's
+`replaceNode()` drives `destroy` and `update` synchronously back-to-back, so a
+block whose `init()` returns a promise (the carousel awaits `ctx.ready()`)
+finished its body one microtask *after* `onUpdate` had already bound the
+controller, and the deferred continuation then overwrote the live handle with
+`null`. And the SDK's fan-out had no ordering concept at all: phases were
+delivered in arrival order, whatever an in-flight init might collide with.
+
+**Decision:**
+
+Blocks are migrated to an adapter shape: the client logic lives ONCE in a
+packaged asset under `resources/js/blocks/`, and the renderer only emits
+markup plus configuration.
+
+1. **One asset, inlined once per document.** A block's script is no longer
+   per-instance. `renderCarousel()` and `renderCountdown()` delegate to
+   `carouselScript()` and `countdownAdapterScript()`, which emit the packaged
+   asset on the first block of that type in a document and nothing thereafter.
+   A page with N carousels now pays the controller cost once. A **missing
+   asset throws** rather than falling back: a page that silently loses its
+   only interactivity is the exact failure this refactor exists to surface.
+
+2. **Configuration stays where the markup is.** The countdown reads
+   `data-end-date` from its own root; the carousel reads its `data-*`
+   contract. Neither moves config into the `ctx.props` channel, which is built
+   from `data-tb-block-props` and can only *disagree* with the markup that
+   actually shipped. Render snapshots are pinned in both the neutral and
+   `MODE_PUBLIC` renders to keep this true.
+
+3. **Two carriers, one controller, per block.** Each migrated asset behaves
+   identically whether or not the SDK is present: on canvas surfaces it
+   registers a real `BaseBlock` subclass; on public customer pages, where no
+   layout loads the canvas runtime and which are therefore the only place a
+   customer ever sees this, it self-initialises by scanning the document.
+   Both run the same controller behind the same init guard
+   (`data-tb-carousel-init`, `data-tb-countdown-init`), so a page mixing
+   carriers cannot double-bind. **This is deliberate, not a fallback:**
+   making the SDK the sole carrier would have shipped dead carousels on every
+   live tenant, and the failure would have been invisible in the admin
+   preview, which is the one surface where the SDK *is* loaded.
+
+4. **An element guard, validated before it is set.** The countdown's
+   pre-migration inline copy set its init guard and *then* returned on an
+   unparseable date, permanently bricking the block even if the value were
+   later corrected. Every adapter now validates before guarding: a bad date
+   means "not a live countdown", and a corrected attribute can still
+   initialise.
+
+5. **Every adapter implements a real `destroy()`.** This is the whole point.
+   The carousel adapter (`legacy_carousel.js`) exists for exactly the four
+   types that used to ship the inline copy (`slider`, `category_slider`,
+   `testimonials_slider`, `client_logos`) and gives them the `destroy()`
+   their inline script never had. The countdown's `destroy()` clears its
+   interval.
+
+6. **The SDK serialises lifecycle phases per instance** (`gateHandler` /
+   `gateInit` in `block-sdk.js`), decided and justified in ADR-056, which this
+   ADR depends on and does not restate. While an init is pending: an
+   `update`/`refresh` is **dropped** (the pending continuation already is the
+   post-init state); a `destroy` is **held** until the continuation settles.
+   `releaseInstance()` is ordered strictly AFTER `onDestroy` completes. Blocks
+   keep writing plain `this.state.x = ...`; the guarantee lives in the
+   orchestration layer, not in a block-side workaround.
+
+**Alternatives rejected:**
+
+- *One adapter file per block type.* Rejected: the four legacy carousel types
+  and `product_slider` run byte-identical controller logic. The controller
+  stays in `carousel.js` and is exposed as `ThemeCarousel.initCarousel`; the
+  adapters add only BaseBlock plumbing, the type list, and the `destroy()`.
+- *Queue out-of-order phases behind the gate instead of dropping them.*
+  Rejected (ADR-056): queueing converts one stale delivery into two and forces
+  blocks to be re-entrant.
+- *Make the runtime deliver phases asynchronously.* Rejected: the runtime is
+  the version-pinned protocol layer (ADR-036); changing its delivery semantics
+  to fix an SDK bug inverts the authority relationship and makes every
+  consumer's phase ordering timing-dependent.
+- *Move block config into `data-tb-block-props` / `ctx.props`.* Rejected: see
+  decision 2.
+
+**Consequences:**
+
+- **Pros:** predictable lifecycle; teardown is reachable, so timers and
+  listeners cannot outlive their block; the controller ships once per
+  document rather than once per instance; a bug fix in the shared asset
+  reaches every block type at once; a missing asset fails loudly instead of
+  shipping a dead block.
+- **Cons:** a new block must follow the adapter contract (config in markup,
+  handle in `this.state`, a real `destroy()`) or it reintroduces the leak
+  class. Init may be async, and a block that assigns state in a deferred
+  continuation depends on the SDK gate for ordering. The public no-SDK carrier
+  must be kept working for every asset, which is a second code path to
+  maintain per block.
+- **Not changed:** `ThemeCanvasRuntime.version` stays `1`. The SDK remains a
+  consumer layer, never a second bridge (ADR-036). The editor's palette,
+  include order, and block registry cardinality are untouched: a migrated
+  adapter must not add itself to `BlockRegistry`.
+
+**Verification:** `tests/Unit/ThemeBuilder/ProductSliderRenderSnapshotTest.php`
+(8 tests: structural hashes re-pinned for the two-`<script>` emission, all
+four legacy types asserted to ship controller plus adapter, inline controller
+asserted gone); `tests/Unit/ThemeBuilder/CountdownRenderTest.php`;
+`tests/js/countdown-lifecycle.test.mjs` (9 tests);
+`tests/js/block-sdk-lifecycle.test.mjs` (SDK-002 regression over 10
+replacements, plus four legacy-adapter tests); `tests/js/block-sdk.test.mjs`
+(gate contract). JS suite 74/74.
+
+**Impact:** `packages/saas-platform/modules/theme-runtime`:
+`src/BlockRenderer.php` (`renderCarousel()`, `carouselScript()`,
+`legacyCarouselScript()` deleted, `renderCountdown()`,
+`countdownAdapterScript()`), `src/Providers/ThemeRuntimeServiceProvider.php`
+(`carouselBlockScriptPath()`, `legacyCarouselScriptPath()`,
+`countdownAdapterScriptPath()`), `resources/js/block-sdk.js`,
+`resources/js/blocks/carousel.js`, `resources/js/blocks/legacy_carousel.js`
+(new), `resources/js/blocks/countdown_adapter.js` (new). Tests as listed
+above. No migration. No route change. No protocol change. No `customer-site`
+change required: the public no-SDK carrier keeps customer pages working.
+
+---
+
+## ADR-059
+
+**Title:** Fast-path Canvas Interaction
+
+**Status:** Accepted (Reference Counter Pilot Implemented)
+
+**Date:** 2026-10-01
+
+**Context:**
+
+The Canvas Inspector historically handled every property edit by debouncing
+for 350 ms, POSTing the complete block to `canvas/render-block`, receiving
+replacement HTML, and replacing the addressed iframe node. That server render
+remains necessary when a property changes markup structure, server-resolved
+data, assets, or controller configuration. It imposes avoidable network,
+rendering, and DOM-replacement latency for simple property-only changes such
+as text, color, and numeric values when a block can repaint its existing DOM
+safely.
+
+ADR-036 already established `ctx.setProp` as a local client-state operation,
+but the SDK's instance registry was closure-private and the parent editor had
+no controlled way to address an instance. Exposing the raw registry would
+break SDK encapsulation. Making every block use local prop updates would be
+equally unsafe: blocks such as `countdown` intentionally read configuration
+from rendered `data-*` attributes under ADR-058 and require replacement HTML.
+
+**Decision:**
+
+Canvas property updates use a two-tier system:
+
+1. **Tier 1 â€” Slow-path (default).** The editor keeps the existing debounced
+   `canvas/render-block` POST, receives canonical server-rendered HTML, and
+   sends `updateBlock` to the preview. Every block remains on this path unless
+   it is explicitly approved for fast-path behavior.
+2. **Tier 2 â€” Fast-path (explicit opt-in).** For a type listed in the
+   editor's `FAST_PATH_BLOCK_TYPES`, `updateProp()` sends a versioned
+   `setProp` message directly to the iframe. No `render-block` request or DOM
+   replacement occurs. If the iframe handshake is not complete, edits are
+   coalesced by block ID and prop key and flushed after `ready`.
+
+The fast-path command crosses the existing boundaries as follows:
+
+- **SDK command:** the browser SDK global is `window.ThemeBlockSDK`.
+  `ThemeBlockSDK.setProp(blockId, key, value)` finds the live private instance
+  whose `instance.blockId` came from the wrapper's `data-tb-block-id`, then
+  delegates to that instance's existing `ctx.setProp`. The `instances` map,
+  instance object, and context remain private. A missing instance produces a
+  controlled warning and does not break the event loop.
+- **Protocol:** `setProp` is an additive, version-1 action in
+  `PreviewProtocol::TO_PREVIEW`. PHP and browser validators require non-empty
+  string `blockId` and `propKey` values. The editor sends it through
+  `ThemeCanvasRuntime.post`; the iframe retains the existing same-origin,
+  parent-source, direction, and protocol-version checks before dispatch.
+- **Iframe dispatch:** `canvas-live-preview.blade.php` calls
+  `window.ThemeBlockSDK.setProp(blockId, propKey, value)` inside a contained
+  `try`/`catch`. Other message handlers are unchanged.
+- **Block subscription:** an opted-in block subscribes through
+  `ctx.on(ThemeBlockSDK.EVENTS.STATE_UPDATE, handler)`, filters the stamped
+  `{blockId, type}` identity, synchronizes its client state, and calls its own
+  `paint()` method. Runtime WeakMap cleanup continues to own subscription
+  teardown.
+
+`ctx.setProp` remains local by contract: it updates the instance prop view,
+re-serializes `data-tb-block-props`, and emits `state:update`; it does not
+persist a theme. The editor mutates its canonical in-memory document before
+choosing either tier, and the existing save/publish paths remain the only
+persistence authority.
+
+**Pilot and opt-in constraint:**
+
+`reference_counter` is the sole initial member of `FAST_PATH_BLOCK_TYPES`.
+Its packaged adapter promotes `paint()` to an instance method and repaints on
+its own `state:update` event. `countdown` is deliberately not opted in: under
+ADR-058 its controller reads the rendered `data-end-date` contract, so it
+continues through the slow-path. Future blocks may be added only after proving
+that every opted-in property can update the existing DOM without server
+rendering, structural replacement, asset re-resolution, or lifecycle
+reinitialization.
+
+**Consequences:**
+
+- Simple opted-in edits repaint immediately without network latency or losing
+  focus through node replacement.
+- The canonical server renderer remains the safe default and fallback; this
+  ADR does not generalize client rendering across the block catalog.
+- Each new opt-in carries a block-owned subscriber and behavioral tests. An
+  allowlist entry without a matching subscriber is incomplete and must not
+  ship.
+- `ThemeCanvasRuntime.version` remains `1`; the new command is an additive
+  allowlisted action and does not restructure lifecycle delivery from
+  ADR-036/ADR-056.
+
+**Verification:** `tests/js/block-sdk.test.mjs` proves controlled lookup,
+private registry encapsulation, `state:update`, protocol validation, and the
+`reference_counter` repaint/re-clamp behavior. The focused Chromium test
+`tests/browser/reference-counter-fast-path.spec.js` executes the production
+Inspector `updateProp()` and `pushFastPropUpdate()` methods, crosses the real
+iframe message handler and SDK, observes the counter repaint, and records zero
+`/canvas/render-block` requests. `BlockSdkPropsChannelTest` pins the sole
+pilot allowlist and subscriber; countdown (9/9) and SDK lifecycle (12/12)
+regressions remain green.
+
+**Impact:** shared theme runtime â€” `resources/js/block-sdk.js`,
+`resources/views/canvas/runtime.blade.php`,
+`resources/js/blocks/reference-counter.js`, and
+`src/Canvas/PreviewProtocol.php`; platform Canvas â€”
+`resources/views/admin/theme-builder/canvas-live-preview.blade.php` and
+`resources/views/admin/theme-builder/canvas.blade.php`. No migration, route,
+dependency, persistence, `BaseBlock`, `defineBlock`, or countdown behavior
+change.

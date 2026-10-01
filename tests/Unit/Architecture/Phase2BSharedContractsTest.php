@@ -189,7 +189,7 @@ final class Phase2BSharedContractsTest extends TestCase
     {
         $this->assertSame(1, PreviewProtocol::VERSION);
         $this->assertSame(
-            ['select', 'updateBlock', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop'],
+            ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop'],
             PreviewProtocol::TO_PREVIEW
         );
         $this->assertSame(
@@ -201,13 +201,27 @@ final class Phase2BSharedContractsTest extends TestCase
     public function test_protocol_payload_validation(): void
     {
         $this->assertTrue(PreviewProtocol::validate(['action' => 'updateBlock', 'blockId' => 'b1', 'html' => '<p>x</p>'], 'to-preview'));
+        $this->assertTrue(PreviewProtocol::validate(['action' => 'setProp', 'blockId' => 'b1', 'propKey' => 'title', 'value' => 'New title'], 'to-preview'));
         $this->assertTrue(PreviewProtocol::validate(['action' => 'ready'], 'to-editor'));
         $this->assertTrue(PreviewProtocol::validate(['action' => 'getDropIndex', 'clientX' => 1, 'clientY' => 2], 'to-preview'));
         // Wrong direction, bad payload, unsupported version → rejected.
         $this->assertFalse(PreviewProtocol::validate(['action' => 'ready'], 'to-preview'));
         $this->assertFalse(PreviewProtocol::validate(['action' => 'select'], 'to-editor'));
         $this->assertFalse(PreviewProtocol::validate(['action' => 'updateBlock', 'blockId' => 4, 'html' => '<p>x</p>'], 'to-preview'));
+        $this->assertFalse(PreviewProtocol::validate(['action' => 'setProp', 'blockId' => '', 'propKey' => 'title'], 'to-preview'));
+        $this->assertFalse(PreviewProtocol::validate(['action' => 'setProp', 'blockId' => 'b1', 'propKey' => 4], 'to-preview'));
         $this->assertFalse(PreviewProtocol::validate(['protocolVersion' => 2, 'action' => 'ready'], 'to-editor'));
+    }
+
+    public function test_live_preview_routes_set_prop_messages_to_the_block_sdk(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 3) . '/resources/views/admin/theme-builder/canvas-live-preview.blade.php');
+
+        $this->assertIsString($source);
+        $this->assertStringContainsString("case 'setProp':", $source);
+        $this->assertStringContainsString('window.ThemeBlockSDK.setProp(d.blockId, d.propKey, d.value);', $source);
+        $this->assertStringContainsString("console.error('[CanvasPreview] setProp failed:', error);", $source);
+        $this->assertStringNotContainsString('window.blockSDK.setProp(', $source);
     }
 
     // ── DirectionCompatibilityAdapter ───────────────────────────────────

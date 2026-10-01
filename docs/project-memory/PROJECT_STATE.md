@@ -1,6 +1,22 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-09-26
+> Last Updated: 2026-10-01
+
+---
+
+## Theme Builder Phase 11 — Modern RTL Header Step 1
+
+**READY_FOR_FINAL_REVIEW_LOCAL (2026-10-01).** The first production UI block,
+`header_modern_v1`, is registered in the canonical shared `theme-runtime`
+registry with portable JSON metadata, server-side sanitized markup, packaged
+RTL/responsive CSS, and a Block SDK subscriber. `bgColor`, `textColor`, and
+`ctaColor` use the ADR-059 fast-path; structural `logoUrl` and `menuItems`
+edits remain on the canonical POST slow-path. The public customer runtime now
+loads the SDK after its lifecycle runtime so the accessible hamburger works
+outside Canvas as well. Focused PHP (96 tests / 473 assertions), Node (48/48),
+Chromium fast-path/responsive (2/2), and customer public-runtime contract
+(1 test / 3 assertions) pass. No dependency, authoritative database,
+commit, push, deployment, or production action occurred.
 
 ---
 

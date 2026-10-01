@@ -56,6 +56,21 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/blocks/reference-counter.js';
     }
 
+    public static function headerModernScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/header-modern/header-modern.js';
+    }
+
+    public static function headerModernStylePath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/header-modern/header-modern.css';
+    }
+
+    public static function headerModernDefinitionPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/header-modern/header-modern.json';
+    }
+
     /**
      * Phase 9 / Step 2 — the shared carousel controller, inlined once per
      * document by BlockRenderer::renderCarousel().

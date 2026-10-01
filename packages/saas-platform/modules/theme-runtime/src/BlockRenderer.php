@@ -59,6 +59,9 @@ class BlockRenderer
      */
     private static bool $referenceBlockScriptEmitted = false;
 
+    /** Phase 11: one JS/CSS carrier for every rendered modern-header document. */
+    private bool $headerModernAssetsEmitted = false;
+
     /**
      * Phase 9 / Step 2 — same once-per-document rule for the shared
      * carousel asset, and for the same reason: several short-lived renderer
@@ -1012,10 +1015,9 @@ class BlockRenderer
      *     self-initialises on public pages, so the countdown is no longer a
      *     public-only behaviour with no editor lifecycle at all.
      *
-     * A missing file throws rather than falling back to a scriptless block:
-     * a countdown that silently ships markup with no ticker is exactly the
-     * failure this refactor exists to surface. A packaging fault must be
-     * loud.
+     * A missing file throws, for the same reason carouselScript() throws: a
+     * countdown that silently ships markup with no ticker is exactly the
+     * failure this refactor exists to surface. A packaging fault must be loud.
      */
     private function countdownAdapterScript(): string
     {
@@ -1024,7 +1026,7 @@ class BlockRenderer
             // second countdown in a document wrapping an empty string in its
             // own <script> element. The caller interpolates the complete tag,
             // so 'already emitted' means this instance contributes no script
-            // at all.
+            // at all. Same contract as carouselScript().
             return '';
         }
         self::$countdownAdapterEmitted = true;
@@ -3266,6 +3268,84 @@ class BlockRenderer
                 });
             })();</script>
         </div>";
+    }
+
+    protected function renderHeaderModernV1(array $props, string $inner, string $id): string
+    {
+        $bgColor = $this->headerModernColor($props['bgColor'] ?? null, '#ffffff');
+        $textColor = $this->headerModernColor($props['textColor'] ?? null, '#172033');
+        $ctaColor = $this->headerModernColor($props['ctaColor'] ?? null, '#4f46e5');
+        $ctaTextColor = $this->readableTextColorOn($ctaColor) ?? '#ffffff';
+
+        $brandName = trim($this->stringify($props['brandName'] ?? 'برند شما'));
+        $brandName = $this->escape($brandName !== '' ? $brandName : 'برند شما');
+        $homeUrl = $this->escapeUrl($this->stringify($props['homeUrl'] ?? '/'), '/');
+        $logoUrl = trim($this->stringify($props['logoUrl'] ?? ''));
+        $logoSrc = $logoUrl !== '' ? $this->escapeUrl($logoUrl, '') : '';
+        $logo = $logoSrc !== ''
+            ? '<img class="tb-header-modern__logo" src="' . $logoSrc . '" alt="' . $brandName . '">'
+            : '<span>' . $brandName . '</span>';
+
+        $menuHtml = '';
+        $menuItems = $props['menuItems'] ?? [];
+        foreach (is_array($menuItems) ? $menuItems : [] as $item) {
+            $label = trim($this->stringify(is_array($item) ? ($item['label'] ?? '') : ''));
+            if ($label === '') {
+                continue;
+            }
+            $url = $this->escapeUrl($this->stringify(is_array($item) ? ($item['url'] ?? '#') : '#'), '#');
+            $menuHtml .= '<a class="tb-header-modern__link" href="' . $url . '">' . $this->escape($label) . '</a>';
+        }
+
+        $ctaText = trim($this->stringify($props['ctaText'] ?? 'شروع کنید'));
+        $ctaUrl = $this->escapeUrl($this->stringify($props['ctaUrl'] ?? '#'), '#');
+        $ctaHtml = $ctaText !== ''
+            ? '<a class="tb-header-modern__cta" href="' . $ctaUrl . '">' . $this->escape($ctaText) . '</a>'
+            : '';
+
+        $safeId = $this->escapeAttr($id);
+        $menuId = 'tb-header-modern-menu-' . $safeId;
+        $style = '--tb-header-bg:' . $bgColor
+            . ';--tb-header-text:' . $textColor
+            . ';--tb-header-cta:' . $ctaColor
+            . ';--tb-header-cta-text:' . $ctaTextColor . ';';
+
+        $assets = $this->headerModernAssets();
+
+        return '<div id="tb-' . $safeId . '" class="tb-header-modern" style="' . $style . '">'
+            . '<div class="tb-header-modern__inner">'
+            . '<a class="tb-header-modern__brand" href="' . $homeUrl . '" aria-label="' . $brandName . '">' . $logo . '</a>'
+            . '<nav id="' . $menuId . '" class="tb-header-modern__menu" aria-label="منوی اصلی">' . $menuHtml . '</nav>'
+            . '<div class="tb-header-modern__actions">' . $ctaHtml
+            . '<button type="button" class="tb-header-modern__toggle" aria-expanded="false" aria-controls="' . $menuId . '" aria-label="باز کردن منو">'
+            . '<span class="tb-header-modern__toggle-lines" aria-hidden="true"></span></button></div>'
+            . '</div></div>' . $assets;
+    }
+
+    private function headerModernColor(mixed $value, string $fallback): string
+    {
+        $color = trim($this->stringify($value));
+        if (preg_match('/^#[0-9a-f]{3}$/i', $color)) {
+            return '#' . strtolower($color[1] . $color[1] . $color[2] . $color[2] . $color[3] . $color[3]);
+        }
+        return preg_match('/^#[0-9a-f]{6}$/i', $color) ? strtolower($color) : $fallback;
+    }
+
+    private function headerModernAssets(): string
+    {
+        if ($this->headerModernAssetsEmitted) {
+            return '';
+        }
+        $this->headerModernAssetsEmitted = true;
+
+        $css = @file_get_contents(ThemeRuntimeServiceProvider::headerModernStylePath());
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::headerModernScriptPath());
+        if (!is_string($css) || $css === '' || !is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: header_modern_v1 assets are missing.');
+        }
+
+        return '<style data-tb-block-asset="header_modern_v1">' . $css . '</style>'
+            . '<script data-tb-block-asset="header_modern_v1">' . $js . '</script>';
     }
 
     protected function renderNavHeader(array $props, string $inner, string $id): string

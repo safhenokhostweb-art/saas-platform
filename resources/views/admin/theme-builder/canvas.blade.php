@@ -1734,6 +1734,10 @@ const THEME_ID   = {{ $theme->id }};
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
 const BLOCK_LABELS  = @json($blockLabelsForJs);
 const BLOCK_SCHEMAS = @json($blockSchemasForJs);
+const FAST_PATH_BLOCK_TYPES = new Set(['reference_counter', 'header_modern_v1']);
+const FAST_PATH_PROP_KEYS = new Map([
+    ['header_modern_v1', new Set(['bgColor', 'textColor', 'ctaColor'])],
+]);
 const INITIAL_PAGES = @json($pages);
 const INITIAL_HEADER_BLOCKS = @json($theme->header_blocks ?? []);
 const INITIAL_FOOTER_BLOCKS = @json($theme->footer_blocks ?? []);
@@ -1787,6 +1791,7 @@ function themeCanvas() {
         iframeLoading:  true,
         iframeReady:    false,
         propUpdateTimer: null,
+        pendingFastPropUpdates: [],
         // TB3-03: drag state
         isDraggingBlock:     false,
         draggedBlockType:    null,
@@ -2232,7 +2237,13 @@ function themeCanvas() {
             });
             this.historyVersion++;
             this.isDirty = true;
-            this.schedulePropUpdate();
+            const fastPathKeys = FAST_PATH_PROP_KEYS.get(this.selectedBlock.type);
+            if (FAST_PATH_BLOCK_TYPES.has(this.selectedBlock.type)
+                && (!fastPathKeys || fastPathKeys.has(propKey))) {
+                this.pushFastPropUpdate(targetId, propKey, value);
+            } else {
+                this.schedulePropUpdate();
+            }
         },
 
         // Phase 2B-R: link-typed fields. Preserves a structured link object
@@ -2777,6 +2788,24 @@ function themeCanvas() {
             }
         },
 
+        pushFastPropUpdate(blockId, propKey, value) {
+            const message = { action: 'setProp', blockId, propKey, value };
+            if (!this.iframeReady) {
+                const pending = this.pendingFastPropUpdates.findIndex(
+                    update => update.blockId === blockId && update.propKey === propKey
+                );
+                if (pending === -1) this.pendingFastPropUpdates.push(message);
+                else this.pendingFastPropUpdates[pending] = message;
+                return;
+            }
+            this.sendToIframe(message);
+        },
+
+        flushFastPropUpdates() {
+            const pending = this.pendingFastPropUpdates.splice(0);
+            pending.forEach(message => this.sendToIframe(message));
+        },
+
         onIframeLoad() {
             // Give bridge script ~100ms to attach
             setTimeout(() => { this.iframeLoading = false; }, 150);
@@ -2819,6 +2848,7 @@ function themeCanvas() {
                 case 'ready':
                     this.iframeReady   = true;
                     this.iframeLoading = false;
+                    this.flushFastPropUpdates();
                     if (this.pendingPropUpdate) { this.pendingPropUpdate = false; this.pushPropUpdate(); }
                     if (this.selectedBlock) {
                         this.sendToIframe({ action: 'select', blockId: this.selectedBlock.id });

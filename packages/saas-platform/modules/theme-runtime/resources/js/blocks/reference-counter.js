@@ -66,6 +66,12 @@
         return isFinite(n) ? n : fallback;
     }
 
+    ReferenceCounter.prototype.paint = function () {
+        if (this.state.valueEl) {
+            this.state.valueEl.textContent = String(this.state.value);
+        }
+    };
+
     ReferenceCounter.prototype.init = function (ctx) {
         var self = this;
 
@@ -81,14 +87,10 @@
             self.state.value = Math.min(self.state.max,
                 Math.max(self.state.min, toInt(ctx.props.value, self.state.min)));
 
-            var valueEl = ctx.$('.tb-ref-counter__value')[0];
+            self.state.valueEl = ctx.$('.tb-ref-counter__value')[0];
             var decrease = ctx.$('.tb-ref-counter__decrease')[0];
             var increase = ctx.$('.tb-ref-counter__increase')[0];
             var reset = ctx.$('.tb-ref-counter__reset')[0];
-
-            function paint() {
-                if (valueEl) valueEl.textContent = String(self.state.value);
-            }
 
             function clamp(value) {
                 return Math.min(self.state.max, Math.max(self.state.min, value));
@@ -98,7 +100,6 @@
                 var next = clamp(self.state.value + delta * self.state.step);
                 if (next === self.state.value) return;
                 self.state.value = next;
-                paint();
                 // Local state only: never round-trips through the editor.
                 ctx.setProp('value', next);
                 ctx.emit('block:reference_counter:change', { value: next, delta: delta });
@@ -108,12 +109,22 @@
             if (increase) increase.addEventListener('click', function () { stepBy(1); });
             if (reset) reset.addEventListener('click', function () {
                 self.state.value = self.state.min;
-                paint();
                 ctx.setProp('value', self.state.value);
                 ctx.emit('block:reference_counter:reset', { value: self.state.value });
             });
 
-            paint();
+            ctx.on(EVENTS.STATE_UPDATE, function (payload) {
+                if (!payload || payload.blockId !== ctx.blockId || payload.type !== ReferenceCounter.type) return;
+                var props = payload.props || ctx.props;
+                self.state.min = toInt(props.min, 0);
+                self.state.max = toInt(props.max, 99);
+                self.state.step = toInt(props.step, 1) || 1;
+                self.state.value = Math.min(self.state.max,
+                    Math.max(self.state.min, toInt(props.value, self.state.value)));
+                self.paint();
+            });
+
+            self.paint();
             ctx.emit('block:reference_counter:ready', { value: self.state.value });
         });
     };

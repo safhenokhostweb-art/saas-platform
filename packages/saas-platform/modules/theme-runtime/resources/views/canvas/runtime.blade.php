@@ -15,6 +15,8 @@
         switch (data.action) {
             case 'select': return data.blockId == null || typeof data.blockId === 'string';
             case 'updateBlock': return typeof data.blockId === 'string' && typeof data.html === 'string';
+            case 'setProp': return typeof data.blockId === 'string' && data.blockId !== ''
+                && typeof data.propKey === 'string' && data.propKey !== '';
             case 'blockSelected': return typeof data.blockId === 'string';
             case 'showDropZones': return typeof data.visible === 'boolean';
             case 'setDropTarget': return data.beforeId == null || typeof data.beforeId === 'string';
