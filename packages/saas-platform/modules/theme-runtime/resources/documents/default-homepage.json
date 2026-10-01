@@ -1,0 +1,46 @@
+{
+    "global_styles": {"chrome_owner": "theme", "locale": "fa", "direction": "rtl", "presentation_css_owner": "platform"},
+    "header_blocks": [{
+        "id": "default_header", "type": "header_modern_v1", "layout_slot": "header", "children": [],
+        "props": {
+            "brandName": "کسب‌وکار شما", "logoUrl": "", "homeUrl": "/",
+            "bgColor": "#ffffff", "textColor": "#172033", "ctaColor": "#4f46e5",
+            "ctaText": "مشاوره رایگان", "ctaUrl": "/contact",
+            "menuItems": [
+                {"label": "خانه", "url": "/"}, {"label": "فروشگاه", "url": "/shop"},
+                {"label": "خدمات", "url": "#tb-default_services"},
+                {"label": "درباره ما", "url": "#tb-default_footer"}, {"label": "تماس با ما", "url": "/contact"}
+            ]
+        }
+    }],
+    "pages": {"home": {"title": "صفحه اصلی", "slug": "", "blocks": [
+        {"id": "default_hero", "type": "hero", "children": [], "props": {
+            "title": "کسب‌وکار شما، آماده رشد در دنیای دیجیتال",
+            "subtitle": "محصولات و خدمات خود را با تجربه‌ای حرفه‌ای و فارسی معرفی کنید؛ از اولین آشنایی تا خرید و پشتیبانی، همراه مشتریان شما هستیم.",
+            "button_text": "مشاهده فروشگاه", "button_url": "/shop", "background": "primary", "align": "center"
+        }},
+        {"id": "default_services", "type": "features_grid", "children": [], "props": {
+            "title": "خدماتی برای رشد کسب‌وکارهای ایرانی", "subtitle": "تجربه‌ای ساده، قابل اعتماد و متناسب با نیاز مشتریان شما", "columns": 4, "style": "cards",
+            "features": [
+                {"icon": "🛍️", "title": "فروش آنلاین", "text": "معرفی حرفه‌ای محصولات و دسترسی آسان به فروشگاه"},
+                {"icon": "📱", "title": "تجربه فارسی و همراه", "text": "نمایش راست‌به‌چپ و سازگار با موبایل و تبلت"},
+                {"icon": "🤝", "title": "مشاوره تخصصی", "text": "بررسی نیازهای کسب‌وکار و پیشنهاد خدمات مناسب"},
+                {"icon": "💬", "title": "پشتیبانی مشتریان", "text": "پاسخ‌گویی روشن و همراهی در انتخاب محصولات و خدمات"}
+            ]
+        }},
+        {"id": "default_products", "type": "dynamic_product_grid", "children": [], "props": {
+            "title": "محصولات منتخب", "columns": "4", "source_type": "static", "endpoint_url": "", "query_params": "{}", "static_items": "[]",
+            "loading_text": "در حال دریافت محصولات…", "empty_text": "محصولات جدید به‌زودی در فروشگاه قرار می‌گیرند.", "error_text": "دریافت محصولات ممکن نشد؛ لطفاً دوباره تلاش کنید."
+        }}
+    ]}},
+    "footer_blocks": [{"id": "default_footer", "type": "nav_footer", "layout_slot": "footer", "children": [], "props": {
+        "logo_text": "کسب‌وکار شما", "tagline": "همراه کسب‌وکارهای ایرانی در مسیر رشد؛ برای آشنایی با محصولات و خدمات با ما در ارتباط باشید.",
+        "nav_source": "custom", "bg_color": "#111827", "text_color": "#e5e7eb",
+        "copyright": "© تمامی حقوق این وب‌سایت برای کسب‌وکار شما محفوظ است.",
+        "columns": [
+            {"title": "دسترسی سریع", "links": [{"label": "خانه", "url": "/"}, {"label": "فروشگاه", "url": "/shop"}, {"label": "خدمات", "url": "#tb-default_services"}]},
+            {"title": "درباره کسب‌وکار", "links": [{"label": "درباره ما", "url": "#tb-default_footer"}, {"label": "تماس با ما", "url": "/contact"}]},
+            {"title": "راهنمای مشتریان", "links": [{"label": "مشاهده محصولات", "url": "/shop"}, {"label": "مشاوره و پشتیبانی", "url": "/contact"}]}
+        ], "links": [], "social_links": []
+    }}]
+}

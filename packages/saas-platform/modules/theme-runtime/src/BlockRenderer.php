@@ -279,13 +279,37 @@ class BlockRenderer
             $html = $this->renderFallback($type, $props, $inner, $id);
         }
 
-        return $this->finalizeBlock(
+        $output = $this->finalizeBlock(
             $this->wrapEditorMode($html, $id, $type, $props),
             $block['style'] ?? [],
             $block['responsive'] ?? [],
             $id,
             $type
         );
+        return $this->annotateLayoutSlot($output, $block, $id, $type);
+    }
+
+    /** Shared by host dispatchers after their normal root/identity decoration. */
+    protected function annotateLayoutSlot(string $output, array $block, string $id, string $type): string
+    {
+        $slot = $block['layout_slot'] ?? null;
+        if (in_array($slot, ['header', 'footer'], true) && str_contains($type, $slot)) {
+            // Annotate the existing root carrying this block's identity;
+            // never add wrappers or alter the child tree.
+            // Non-editable chrome in the live iframe has its DOM id but
+            // deliberately omits editor identity metadata.
+            $safeId = preg_quote($this->escapeAttr($id), '/');
+            $pattern = '/<([a-z][a-z0-9-]*)\b(?![^>]*\bdata-layout-slot\s*=)([^>]*(?:\bdata-tb-block-id="'.$safeId.'"|(?<![\w-])id="tb-'.$safeId.'")[^>]*)>/i';
+            $output = preg_replace_callback($pattern, static function (array $match) use ($slot): string {
+                $role = strtolower($match[1]) === 'div' && !preg_match('/\brole\s*=/i', $match[2])
+                    ? ' role="'.($slot === 'header' ? 'banner' : 'contentinfo').'"'
+                    : '';
+
+                return '<'.$match[1].$match[2].' data-layout-slot="'.$slot.'"'.$role.'>';
+            }, $output, 1) ?? $output;
+        }
+
+        return $output;
     }
 
     /**

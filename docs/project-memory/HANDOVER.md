@@ -7,6 +7,16 @@
 
 ## CURRENT TASK (2026-10-01 — PHASE 11 MODERN RTL HEADER READY FOR FINAL REVIEW LOCAL)
 
+**Homepage follow-up (2026-10-01):** A portable complete default homepage is
+registered for new full themes. Explicit slot markers now survive renderer
+and live-iframe paths, and legacy partial bindings are repaired independently.
+The isolated browser journey verifies edit/save/reload/preview/public parity
+and responsive widths. Task branches: `fix/canvas-default-homepage` in both
+repositories; commit is authorized, while push and deployment require separate
+task authorization under Testing & Delivery Governance §9. See the default
+homepage acceptance entry in `AUDIT_HISTORY.md` for exact gates and regression
+classifications. Existing customer-site WIP and active-site data are preserved.
+
 The canonical shared runtime now contains `header_modern_v1`: portable JSON
 metadata, a registered Canvas schema/renderer, sanitized semantic navigation,
 responsive RTL CSS, an accessible SDK-owned hamburger, and property-level

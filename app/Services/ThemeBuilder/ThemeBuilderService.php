@@ -20,6 +20,7 @@ class ThemeBuilderService
 
     public function createTemplate(array $data): Theme
     {
+        $data = \SaaSPlatform\ThemeRuntime\DefaultHomepage::withDefaults($data, $this->defaultGlobalStyles());
         $data['site_id'] = null;
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
         $data['type'] = $data['type'] ?? Theme::TYPE_FULL;
@@ -33,6 +34,7 @@ class ThemeBuilderService
 
     public function createForSite(Site $site, array $data): Theme
     {
+        $data = \SaaSPlatform\ThemeRuntime\DefaultHomepage::withDefaults($data, $this->defaultGlobalStyles());
         $data['site_id'] = $site->id;
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']) . '-' . $site->id;
         $data['type'] = $data['type'] ?? Theme::TYPE_FULL;

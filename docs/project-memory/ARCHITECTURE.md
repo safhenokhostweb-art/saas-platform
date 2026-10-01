@@ -12,6 +12,20 @@ SleepShiman Home blue adds 22 host-registered types to the existing shared `modu
 
 ## Platform Overview
 
+### Default Canvas homepage (2026-10-01)
+
+`SaaSPlatform\ThemeRuntime\DefaultHomepage` loads the portable
+`packages/saas-platform/modules/theme-runtime/resources/documents/default-homepage.json`.
+New full themes without an explicit `pages` document receive this starter
+through `ThemeBuilderService`; existing or explicitly empty documents retain
+their content. Header/footer remain in their canonical block lists, with
+hero, services, and a registered dynamic product grid in `pages.home.blocks`.
+The document declares theme-owned chrome and Persian RTL presentation.
+Explicit `layout_slot` metadata annotates existing renderer roots in both
+hosts, including non-editable iframe chrome; legacy response annotation is
+independently idempotent for each slot. No alternate renderer, persistence
+authority, migration, or active-site rewrite is introduced.
+
 **Type:** Multi-tenant SaaS platform  
 **Model:** Single Laravel install serving multiple customer sites via domain resolution  
 **Isolation unit:** `site_id` — every tenant row is scoped by `site_id`  

@@ -1,7 +1,76 @@
 # AUDIT HISTORY
 > All findings recorded permanently. Resolved findings marked Fixed — never deleted.
 > Format: Finding ID | Severity | Status | Evidence | Resolution
-> Last Updated: 2026-09-26
+> Last Updated: 2026-10-01
+
+---
+
+## DEFAULT HOMEPAGE AND CANVAS SLOT ACCEPTANCE — 2026-10-01
+
+- Scope: shared Persian starter homepage, new full-theme registration,
+  root slot markers, legacy partial-binding repair, and isolated browser QA.
+- Files changed: shared `DefaultHomepage.php`, `default-homepage.json`, and
+  `BlockRenderer.php`; platform `ThemeBuilderService.php`, unit/persistence
+  tests, and architecture/handover/audit memory; customer `BlockRenderer.php`,
+  `LayoutSlotBindingService.php`, `DecorateCanvasLayoutSlots.php`, focused
+  tests, homepage browser spec/seed script, and the browser platform URL/stub.
+- Architecture decisions: existing canonical header/footer/page lists,
+  registry types, renderer, and revision service remain the authorities.
+  Default chrome is theme-owned; explicit `layout_slot` metadata annotates
+  existing roots, including non-editable iframe chrome, with semantic roles
+  for div roots. Explicit documents, including blank ones, are preserved.
+- Focused tests (L1/L2): customer 17 passed / 0 failed / 0 skipped,
+  100 assertions; platform default/header contracts 5 passed / 0 failed /
+  0 skipped, 43 assertions; platform DB persistence 2 passed / 0 failed /
+  0 skipped, 9 assertions.
+- Browser tests (L3): 1/1 Chromium PASS. Real login, edit, live repaint,
+  save, reload, publish in the isolated fixture, tokenized preview and public
+  render; identical slot/headings/link/feature projections across surfaces;
+  correct block order, empty products, and 1366 / 768 / 390 PASS. Console,
+  page-error, and failed-request checks pass. The support notification uses
+  the existing local fake platform rather than the development host.
+- Regression review (L4): customer `tests/Feature/ThemeCanvas/` ran 451 tests,
+  2,359 assertions: 449 passed / 2 failed / 0 errors / 0 skipped. Subsequent
+  focused tests cover two additional slot cases added during review.
+  Platform ThemeBuilder + Phase3C contracts ran 199 tests, 945 assertions:
+  197 passed / 2 failed / 0 errors / 0 skipped. Customer runner reports two
+  PHPUnit deprecations. L0 diff integrity, PHP lint, and JS syntax checks pass.
+- Regression classification: all four remaining failures are
+  `UNRELATED_FAILURE`, established by code-path evidence rather than an
+  unverified baseline claim. Customer `HeaderMenuIntegrationTest` fails its
+  two menu-mode `assertDontSee` checks at lines 83 and 168 because the old
+  custom labels remain in the existing public `data-tb-block-props` attribute;
+  the actual menu is rendered. That props carrier is unchanged by this task.
+  Those fixtures have no `layout_slot`, so the new renderer annotation returns
+  their bytes unchanged, and legacy chrome annotation does not change props.
+  Platform `TypographyScaleWiringTest` fails two source-only checks for
+  derived token strings in the customer layout and platform preview view.
+  Neither view nor the test was changed by this task; these checks never
+  execute the modified renderer or default-registration service.
+- Environment failure: the first sandboxed customer sweep had six media
+  storage errors and seventeen dependent/menu failures. Re-running with
+  local test-storage permissions cleared all six errors and fifteen dependent
+  failures; only the two menu assertions above remain.
+- Known baseline failures: customer canonical registry remains
+  `customer-site/docs/KNOWN-TEST-FAILURES.md`; no new baseline claim is made.
+- New regressions: none identified. Existing user WIP is excluded from staging.
+- DB mutation: isolated `saas_platform_test`, `customer_site_test`, and
+  `customer_site_browser` fixtures only; no authoritative or production write.
+- Dependency/lockfile changes: none. The local customer vendor mirror was
+  refreshed from shared source for verification; it is not committed.
+- Commit: explicitly authorized with message
+  `fix(canvas): reconstruct complete default homepage structure and fix slot bindings`;
+  task branch `fix/canvas-default-homepage` in each repository. See Git history
+  for resulting commit IDs.
+- Push: not authorized by the current task; pending separate authorization.
+- Deploy / L6 / L7: not authorized and not performed; pending separately under
+  Testing & Delivery Governance §9. Production health is not claimed.
+- Remaining debt: four classified regression-suite assertions above.
+- Delivery state at acceptance report: `READY_TO_COMMIT`; subsequent delivery
+  is recorded by Git history. Not `CLOSED` until authorized synchronization
+  and applicable production gates are completed.
+- Final verdict: local implementation and browser acceptance pass; eligible
+  for the authorized commit, with the documented regression limitations.
 
 ---
 
