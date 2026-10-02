@@ -48,10 +48,13 @@ class TypographyScaleWiringTest extends TestCase
 
     public function test_customer_site_runtime_headings_and_titles_reference_the_derived_tokens_not_a_second_hardcoded_copy(): void
     {
-        $css = file_get_contents(base_path('..' . DIRECTORY_SEPARATOR . 'customer-site' . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'canvas-theme.blade.php'));
-        if ($css === false) {
+        $customer = base_path('../customer-site/resources/views');
+        if (! is_dir($customer)) {
             $this->markTestSkipped('customer-site checkout not present alongside this one — cross-repo assertion skipped.');
         }
+        $layout = file_get_contents($customer.'/layouts/canvas-theme.blade.php');
+        $this->assertStringContainsString("@include('partials.theme-canvas-style-contract'", $layout);
+        $css = file_get_contents($customer.'/partials/theme-canvas-style-contract.blade.php');
         foreach (['var(--tb-h1-size', 'var(--tb-hero-title-size', 'var(--tb-section-title-size', 'var(--tb-card-title-size', 'var(--tb-big-number-size', 'var(--tb-body-size', 'var(--tb-button-size', 'var(--tb-caption-size', 'var(--tb-label-size'] as $ref) {
             $this->assertStringContainsString($ref, $css);
         }
@@ -59,7 +62,9 @@ class TypographyScaleWiringTest extends TestCase
 
     public function test_saas_preview_headings_and_titles_reference_the_same_derived_tokens(): void
     {
-        $css = file_get_contents(base_path('resources/views/admin/theme-builder/canvas-preview.blade.php'));
+        $preview = file_get_contents(base_path('resources/views/admin/theme-builder/canvas-preview.blade.php'));
+        $this->assertStringContainsString("@include('admin.theme-builder.partials.canvas-css-contract')", $preview);
+        $css = file_get_contents(base_path('resources/views/admin/theme-builder/partials/canvas-css-contract.blade.php'));
         foreach (['var(--tb-h1-size', 'var(--tb-hero-title-size', 'var(--tb-section-title-size', 'var(--tb-big-number-size', 'var(--tb-button-size'] as $ref) {
             $this->assertStringContainsString($ref, $css);
         }

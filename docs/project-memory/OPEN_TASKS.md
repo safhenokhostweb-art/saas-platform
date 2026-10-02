@@ -1,8 +1,22 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-10-01
+> Last Updated: 2026-10-02
 
 ---
+
+## OPEN: COMMITTED CANVAS EDITOR/PREVIEW BASELINE GAPS
+
+The clean customer source still has four inherited editor/preview failures
+covered by the explicitly authorized, expiring canvas-homepage release registry.
+Exact cases, owners and source fingerprints are canonical in
+[the customer registry](../../../customer-site/.deployment/known-issues.canvas-homepage.json),
+referenced from its `docs/KNOWN-TEST-FAILURES.md`.
+
+Finish the standalone-to-shared-runtime migration separately, including sender
+identity guards, document locale/direction and fallback-chrome parity. Preserve
+the unrelated authoring WIP. Remove the corresponding group annotations and
+registry exemptions once the normal full suite passes; approval expires on
+2026-10-16 and fails closed if version or baseline source changes earlier.
 
 ## OPEN: PHASE 10 FOLLOW-UP — SCALE FAST-PATH TO ALL STANDARD BLOCKS
 

@@ -1,9 +1,56 @@
 # AUDIT HISTORY
 > All findings recorded permanently. Resolved findings marked Fixed — never deleted.
 > Format: Finding ID | Severity | Status | Evidence | Resolution
-> Last Updated: 2026-10-01
+> Last Updated: 2026-10-02
 
 ---
+
+## HOMEPAGE RELEASE METADATA AND GATE REPAIR — 2026-10-02
+
+- Scope: versioned project release policies/descriptors, four stale test
+  expectations, and an explicitly authorized release-specific baseline registry.
+  Runtime behavior, migrations and dependency versions are unchanged.
+- Corrected expectations: `TypographyScaleWiringTest` verifies the actual
+  included host CSS partials and their derived-token consumers;
+  `HeaderMenuIntegrationTest` inspects block text/anchor destinations rather
+  than treating persisted editor attributes as visible navigation.
+- L1 focused: typography 4/4 PASS (37 assertions); navigation integration
+  9/9 PASS (35 assertions). Canonical deployment-system release-preparer
+  ownership/failure tests: 10/10 PASS.
+- Project gate: `deployment/release-prepare.php check` runs in isolated
+  production-main worktrees. Platform ThemeBuilder/Phase3C and homepage
+  persistence checks PASS (208 regression tests and 2 persistence tests). Customer
+  ThemeCanvas PASS: 373 tests, 1837 assertions, zero errors/failures; four
+  registered baseline methods excluded. Release validator checks PASS. A clean committed-source customer run surfaced
+  four additional inherited editor/preview cases hidden by unrelated WIP.
+  Their identities and evidence are canonical in the customer registry linked
+  from `docs/KNOWN-TEST-FAILURES.md`; they are not the four corrected originals.
+  Guard validation: 15 unit and 4 actual CLI group-rejection tests PASS.
+  Only exact method groups are permitted, bound to this version/source hashes
+  and a maximum 14-day approval; every other failure remains blocking.
+- Fixture recovery: the first isolated platform sweep failed because the
+  ignored FoodMart reference manifest/tree had not been copied. Supplying
+  the existing fixtures made the unchanged digest checks pass; the test still
+  verifies the fixed manifest and all 70 golden-file hashes.
+- Remote gate: the initial activation attempt preceded the authoritative
+  build-agent completion callback. The normal job-bound evidence workflow
+  subsequently made releases 121/122 READY TO DEPLOY. Metadata enrichment
+  added version, full hashes, author, timestamp and verification identity
+  while preserving the existing evidence/test results/readiness criteria.
+  No rejected metadata submission was applied. The later user instruction
+  explicitly authorizes version-specific known-issue registration; no blanket
+  failure flag or manual readiness override is used.
+- L6: customer canonical artifact validator PASS, all 11 checks, explicitly
+  bound to `24a4cd418b2b67fc9914780f580bccefaecda79d`.
+- Delivery/L7: production deployments 242/243 succeeded for `6d9f0c6` and
+  `24a4cd4`; Artifact SHA = Deployment SHA = Production SHA for each.
+  Nginx active; customer `/` and platform `/health/ready` HTTP 200; exactly
+  one header slot and one footer slot. `CANVAS_SLOT_BINDING_ENABLED=true`.
+  A transient Hub SQLite environment-lock error was resolved by the normal
+  agent retry; it was not a customer asset/controller exception.
+- Source acceptance: runtime browser behavior was unchanged by this release
+  follow-up; the preceding homepage browser evidence remains in the entry below.
+  Unrelated customer-site WIP remains isolated from these changes.
 
 ## DEFAULT HOMEPAGE AND CANVAS SLOT ACCEPTANCE — 2026-10-01
 

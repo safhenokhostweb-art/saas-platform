@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "production_branch": "main",
+  "remote": "origin",
+  "allowed_release_paths": [
+    ".deployment/**",
+    "docs/**",
+    "tests/**",
+    "app/**",
+    "packages/**",
+    "resources/**",
+    "routes/**",
+    "database/**",
+    "scripts/**",
+    ".gitignore",
+    "composer.json",
+    "composer.lock",
+    "package.json",
+    "package-lock.json",
+    "phpunit.xml"
+  ],
+  "excluded_runtime_paths": [
+    ".env",
+    ".env.*",
+    "storage/**",
+    "bootstrap/cache/**",
+    "vendor/**",
+    "node_modules/**",
+    "public/build/**",
+    "**/*.log",
+    ".phpunit.result.cache"
+  ],
+  "required_clean_state": {
+    "no_unresolved_merge": true,
+    "no_pre_staged_changes": true,
+    "tracked_excluded_paths_must_be_clean": true,
+    "unknown_untracked_files": "block"
+  },
+  "migration_policy": {
+    "paths": [
+      "database/migrations/**"
+    ],
+    "review_required_patterns": [
+      "dropColumn\\s*\\(",
+      "dropIfExists\\s*\\(",
+      "Schema::drop\\s*\\(",
+      "->change\\s*\\(",
+      "DB::statement\\s*\\("
+    ]
+  },
+  "dependency_rules": [
+    {
+      "when": "composer.json",
+      "requires": "composer.lock"
+    },
+    {
+      "when": "package.json",
+      "requires": "package-lock.json"
+    }
+  ],
+  "build": {
+    "required": true,
+    "artifact": "server-managed-exact-commit"
+  },
+  "health": {
+    "required": true,
+    "endpoint_source": "deployment-system project http_health_check"
+  },
+  "metadata": {
+    "local_directory": ".git/deployment/releases"
+  },
+  "project_key": "saas-platform",
+  "checks": [
+    {
+      "name": "theme-builder-regression",
+      "type": "test",
+      "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result"
+    },
+    {
+      "name": "homepage-persistence",
+      "type": "test",
+      "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
-﻿# HANDOVER DOCUMENT
+# HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-10-01
+> Last Updated: 2026-10-02
 
 ---
 
@@ -11,11 +11,18 @@
 registered for new full themes. Explicit slot markers now survive renderer
 and live-iframe paths, and legacy partial bindings are repaired independently.
 The isolated browser journey verifies edit/save/reload/preview/public parity
-and responsive widths. Task branches: `fix/canvas-default-homepage` in both
-repositories; commit is authorized, while push and deployment require separate
-task authorization under Testing & Delivery Governance §9. See the default
-homepage acceptance entry in `AUDIT_HISTORY.md` for exact gates and regression
-classifications. Existing customer-site WIP and active-site data are preserved.
+and responsive widths. The user subsequently authorized push and deployment:
+`6d9f0c6` (platform) and `24a4cd4` (customer) were deployed through canonical
+deployments 242 and 243. Artifact, deployment and production SHA identities
+match; both health endpoints return HTTP 200 and the customer DOM has one
+header slot and one footer slot. Both releases pass the Hub readiness gate.
+Version, full source hashes, author, timestamp and verification identity were
+completed without modifying agent evidence or readiness criteria. The four
+stale test expectations are corrected rather than exempted. Versioned project
+policies and descriptors live in each repository's `.deployment/` directory;
+see `AUDIT_HISTORY.md` for validation. Four additional inherited editor/preview
+cases from clean committed source are registered only for this release, with
+source fingerprints and expiry on 2026-10-16; 373 remaining cases pass. Existing customer-site WIP is preserved.
 
 The canonical shared runtime now contains `header_modern_v1`: portable JSON
 metadata, a registered Canvas schema/renderer, sanitized semantic navigation,
