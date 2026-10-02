@@ -56,6 +56,18 @@ class SecurityHeaders
     {
         $appUrl = rtrim(config('app.url', ''), '/');
 
+        // 'unsafe-eval' is retained deliberately and is NOT removable while
+        // Alpine.js drives the UI: Alpine compiles x-* attribute expressions
+        // with new Function(), which no browser can do without it. Removing it
+        // would break every interactive screen, so the trade-off is accepted
+        // and documented rather than silently inherited.
+        //
+        // No third-party CDN origin is allowed here. Scripts must be same-origin
+        // (bundled by Vite) or the platform's own {$appUrl}. The Canvas editor
+        // used to pull SortableJS from cdn.jsdelivr.net, which this policy
+        // correctly blocked; that dependency is already bundled by Vite
+        // (resources/js/app.js exposes window.Sortable), so the CDN tag was
+        // removed rather than this policy being widened.
         return implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$appUrl}",

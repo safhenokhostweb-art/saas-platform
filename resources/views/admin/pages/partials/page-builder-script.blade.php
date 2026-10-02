@@ -1,4 +1,8 @@
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{{-- SortableJS is supplied by the Vite bundle (resources/js/app.js exposes
+     window.Sortable) loaded by layouts/admin.blade.php. The previous
+     cdn.jsdelivr.net tag was blocked by the Content-Security-Policy and only
+     added a CSP violation; the usage below is already guarded by
+     `typeof Sortable !== 'undefined'`. --}}
 <script>
 (function() {
     var blockLabels = {

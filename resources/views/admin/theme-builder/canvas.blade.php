@@ -2,9 +2,20 @@
 
 @section('title', 'قالب‌ساز — ' . $theme->name)
 
-@push('head')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-@endpush
+{{-- No SortableJS here, deliberately.
+     This page used to pull SortableJS from cdn.jsdelivr.net, but the Canvas
+     editor never referenced it: dragging blocks is implemented with native
+     HTML5 drag events (draggable / @dragstart / @dragover) plus the
+     pointerdown handling in canvas-live-preview.blade.php. The script tag was
+     therefore dead weight, and because
+     app/Http/Middleware/SecurityHeaders.php does not allow that origin in
+     script-src, the browser blocked it on every Canvas load and logged a CSP
+     violation.
+
+     Removing the tag is the correct resolution rather than widening script-src:
+     no third-party origin is needed for a dependency this page does not use,
+     and sortablejs stays available through resources/js/app.js (window.Sortable)
+     for the admin pages that actually rely on it. --}}
 
 @section('content')
 @php

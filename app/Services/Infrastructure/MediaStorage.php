@@ -91,6 +91,14 @@ class MediaStorage
      * "uploads/avatars/42/abc.jpg"). Strips that prefix before resolving so
      * existing rows keep working unchanged while the disk itself becomes
      * configurable via diskNameFor('uploads').
+     *
+     * A stored path is only a claim that a file was once written there. When the
+     * file is genuinely gone (deleted by hand, lost with a media migration, or
+     * written by a deployment whose uploads disk never synced) the database
+     * still points at it, and emitting the URL anyway produces a 404 on every
+     * page load. Resolving null instead lets the caller fall back to its
+     * initials avatar, which is both correct and free — no failed request is
+     * made at all.
      */
     public function avatarUrl(?string $storedPath, ?Site $site = null): ?string
     {
@@ -100,6 +108,15 @@ class MediaStorage
 
         try {
             $relative = str_starts_with($storedPath, 'uploads/') ? substr($storedPath, 8) : $storedPath;
+
+            if (! $this->exists($relative, 'uploads', $site)) {
+                \Illuminate\Support\Facades\Log::warning('avatarUrl: stored avatar is missing on disk', [
+                    'stored_path' => $storedPath,
+                    'disk'        => $this->diskNameFor('uploads', $site),
+                ]);
+
+                return null;
+            }
 
             return $this->url($relative, 'uploads', $site);
         } catch (\Throwable $e) {

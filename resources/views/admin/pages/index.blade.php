@@ -86,7 +86,12 @@
 @include('admin.pages.partials.pages-index-guide')
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{{-- SortableJS comes from the Vite bundle (resources/js/app.js exposes
+     window.Sortable), which layouts/admin.blade.php already loads. The old
+     cdn.jsdelivr.net tag here was a duplicate that the Content-Security-Policy
+     blocked in production, producing a CSP violation on every page load. The
+     usage below is already guarded by `typeof Sortable !== 'undefined'`, so
+     the bundled copy is sufficient and no CDN origin is needed. --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var tbody = document.getElementById('pages-sortable-tbody');
