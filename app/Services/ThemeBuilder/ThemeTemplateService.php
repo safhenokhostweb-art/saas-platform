@@ -117,6 +117,8 @@ class ThemeTemplateService
     /**
      * Insert template blocks into a page at a given position.
      * Returns the merged blocks array.
+     *
+     * @deprecated  Use the canonical CanvasTreeOperations::insertNode() operation through the Canvas editor structural-operation path. This method is retained temporarily for backward compatibility and must not be used for new code.
      */
     public function insertIntoPage(ThemeTemplate $template, array $currentBlocks, int $position = -1): array
     {

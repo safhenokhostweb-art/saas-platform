@@ -1738,6 +1738,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
         ]];
     });
 @endphp
+{{-- Phase 3 (canvas limits contract alignment): the structural tree
+     limits are the canonical PHP DocumentValidator constants, safely
+     JSON-serialized server-side. The structural services partial reads
+     them from window.CANVAS_TREE_LIMITS instead of duplicating the
+     values as independent browser-side literals. --}}
+<script>
+window.CANVAS_TREE_LIMITS = @json($canvasTreeLimits);
+</script>
 @include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 @include('admin.theme-builder.partials.canvas-section-library')
 <script>
@@ -2899,7 +2907,7 @@ function themeCanvas() {
                     let valid = false;
                     try {
                         const preview = JSON.parse(JSON.stringify(this.blocks));
-                        const validator = new CanvasTreeOperations(BLOCK_SCHEMAS, { maxDepth: 12, maxNodes: 5000 });
+                        const validator = new CanvasTreeOperations(BLOCK_SCHEMAS);
                         validator.moveNode(preview, d.nodeId, d.targetParentId, d.targetIndex);
                         valid = true;
                     } catch (_) {}
@@ -3264,7 +3272,7 @@ function themeCanvas() {
             // Phase 2C services keep composition, history, and selection
             // independent from this Blade/Alpine presentation surface.
             this.documentState = new CanvasDocumentState(this.blocks);
-            this.treeOperations = new CanvasTreeOperations(BLOCK_SCHEMAS, { maxDepth: 12, maxNodes: 5000 });
+            this.treeOperations = new CanvasTreeOperations(BLOCK_SCHEMAS);
             this.navigator = new CanvasNavigator();
             this.historyEngine = new CanvasHistory((entry, side) => this.applyHistoryEntry(entry, side), 100);
 

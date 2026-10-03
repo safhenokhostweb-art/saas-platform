@@ -8,6 +8,13 @@
 
     const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
     const structuralKinds = new Set(['section', 'container', 'row', 'column']);
+    // Normalize a structural limit to a positive integer; anything else
+    // (missing, malformed, non-integer, <= 0) returns null so the
+    // CanvasTreeOperations constructor falls through to the next source.
+    const positiveInt = (value) => {
+        const n = Number(value);
+        return Number.isInteger(n) && n > 0 ? n : null;
+    };
 
     class CanvasDocumentState {
         constructor(blocks) {
@@ -39,8 +46,15 @@
     class CanvasTreeOperations {
         constructor(schema, options = {}) {
             this.schema = schema || {};
-            this.maxDepth = options.maxDepth || 12;
-            this.maxNodes = options.maxNodes || 5000;
+            // Priority: explicit caller options, then the server-rendered
+            // canonical limits (window.CANVAS_TREE_LIMITS — the PHP
+            // DocumentValidator constants), then the fail-safe literals.
+            // The literals exist only for malformed/missing runtime
+            // configuration; they are never the primary contract source.
+            const limits = (window.CANVAS_TREE_LIMITS && typeof window.CANVAS_TREE_LIMITS === 'object')
+                ? window.CANVAS_TREE_LIMITS : {};
+            this.maxDepth = positiveInt(options.maxDepth) ?? positiveInt(limits.maxDepth) ?? 12;
+            this.maxNodes = positiveInt(options.maxNodes) ?? positiveInt(limits.maxNodes) ?? 5000;
         }
         kind(node) {
             const explicit = ['section', 'container', 'row', 'column'].includes(node?.type) ? node.type : null;

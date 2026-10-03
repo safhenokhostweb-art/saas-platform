@@ -95,10 +95,20 @@ class ThemeCanvasController extends Controller
         );
         $layoutAttributes = DirectionProjector::attributes($layoutEnvelope);
 
+        // Phase 3 (canvas limits contract alignment) — the editor's
+        // structural tree limits are the canonical DocumentValidator
+        // constants, exposed to the view so the browser reads one
+        // authoritative source instead of duplicating literals.
+        $canvasTreeLimits = [
+            'maxDepth' => DocumentValidator::MAX_DEPTH,
+            'maxNodes' => DocumentValidator::MAX_NODES,
+        ];
+
         return view('admin.theme-builder.canvas', compact(
             'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons',
             'extensionSelections', 'extensionSelectionErrors', 'availableExtensions',
-            'visualGlobalStyles', 'sites', 'layoutEnvelope', 'layoutAttributes'
+            'visualGlobalStyles', 'sites', 'layoutEnvelope', 'layoutAttributes',
+            'canvasTreeLimits'
         ));
     }
 
