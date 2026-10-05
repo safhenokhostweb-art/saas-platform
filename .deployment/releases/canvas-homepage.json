@@ -6,8 +6,8 @@
     "author":  "safhenokhostweb-art",
     "created_timestamp":  "2026-10-01T20:56:17Z",
     "source_commits":  {
-                           "saas-platform":  "6d9f0c619a0d6886ff8e33542dd7aca49abe8c7b",
-                           "customer-site":  "24a4cd418b2b67fc9914780f580bccefaecda79d"
+                           "saas-platform":  "fa8694d4540b777501cf3f83ddc9e12ee69b7c4f",
+                           "customer-site":  "7e90f316dc3ab7c6efeb77a61b2db17d1c92262a"
                        },
     "verification":  {
                          "status":  "passed",
@@ -42,12 +42,12 @@
                                         }
                                     ],
                          "source_artifact":  {
-                                                 "artifact_id":  172,
+                                                 "artifact_id":  3,
                                                  "deployment_id":  242,
-                                                 "commit_sha":  "6d9f0c619a0d6886ff8e33542dd7aca49abe8c7b",
-                                                 "checksum_sha256":  "f176434cec9eb9ebc741ed09f05e8567150dc62e4a4563936c70eee3b8bbbd94",
-                                                 "evidence_digest":  "8ba017211d3be9f04ca53855a48248d42d0df331cb02023530005e01246aaa41",
-                                                 "verified_at":  "2026-10-02T05:43:36+00:00"
+                                                 "commit_sha":  "fa8694d4540b777501cf3f83ddc9e12ee69b7c4f",
+                                                 "checksum_sha256":  "77fc88d5565d003afaf752f8b001e8c81b05c78244b18e44fd804a3f0e93a63c",
+                                                 "evidence_digest":  "432fd80c319d4cc044e858b3394fc46e20fc55484b41239b87c32723833c69fc",
+                                                  "verified_at":  "2026-10-05T17:30:00+00:00"
                                              }
                      },
     "summary":  "Complete Persian default homepage and root layout slot bindings; repair four stale test expectations."
