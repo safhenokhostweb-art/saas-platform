@@ -20,8 +20,9 @@ For every task, process context in this order:
 7. Load architecture from `docs/project-memory/ARCHITECTURE.md` and any task-specific architecture document.
 8. Load relevant known issues and audit history from `docs/project-memory/KNOWN_ISSUES.md` and `docs/project-memory/AUDIT_HISTORY.md`.
 9. For any task that implements, changes, or ships code, load `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md`, classify the task against its Feature Acceptance Matrix, and carry the resulting mandatory gates into the task model.
-10. Apply the capability profile declared by the active agent wrapper. The wrapper is bootstrap metadata and must not be recursively reloaded.
-11. Build an internal task model, then execute the current task under the authority hierarchy below.
+10. For any task that ships, releases, or delivers a work unit, load `docs/quality/WORK_UNIT_DELIVERY_WORKFLOW.md` and carry its mandatory delivery cycle (validate → commit → push → artifact → deliver → confirm receipt → report) into the task model alongside those gates.
+11. Apply the capability profile declared by the active agent wrapper. The wrapper is bootstrap metadata and must not be recursively reloaded.
+12. Build an internal task model, then execute the current task under the authority hierarchy below.
 
 Repository evidence takes precedence over chat history. Missing optional context must not be invented.
 
@@ -89,6 +90,7 @@ After implementation:
 | Audit findings | `docs/project-memory/AUDIT_HISTORY.md` |
 | Session handover | `docs/project-memory/HANDOVER.md` |
 | Testing and delivery governance (both repositories) | `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` |
+| Standard work-unit delivery cycle and artifact handoff to deployment-system | `docs/quality/WORK_UNIT_DELIVERY_WORKFLOW.md` |
 | Agent bootstrap identity | Active wrapper only |
 
 Do not copy content between these authorities. Link to the canonical location.
@@ -156,4 +158,4 @@ When context is reset, restart the Bootstrap Sequence. Project memory is the con
 
 ## Completion Standard
 
-A task is complete when its requested implementation or audit is finished, relevant validation passes, regression impact is reviewed, and canonical documentation is updated without duplication. For any task that implements or changes code, "relevant validation passes" means the gates identified from `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` §2 were executed and reported per its §12 template, and commit/push/deploy actions followed its §9 Authorization Policy.
+A task is complete when its requested implementation or audit is finished, relevant validation passes, regression impact is reviewed, and canonical documentation is updated without duplication. For any task that implements or changes code, "relevant validation passes" means the gates identified from `docs/quality/TESTING_AND_DELIVERY_GOVERNANCE.md` §2 were executed and reported per its §12 template, and commit/push/deploy actions followed its §9 Authorization Policy. For a task that delivers a work unit, completion additionally means the cycle in `docs/quality/WORK_UNIT_DELIVERY_WORKFLOW.md` ran through receipt confirmation and its report was produced; owner review and any deployment decision remain outside the agent's completion.
