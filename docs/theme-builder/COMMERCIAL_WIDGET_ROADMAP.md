@@ -281,3 +281,79 @@ now exist canonically with the same `fields`/`storage` contract.
   - `pricing.plans[].highlight` is a string, and `(bool)'false'` is true;
   - several URL fields are typed `string`, not `link`.
   - Fix them in both hosts together.
+
+## 8. Phase 0.2b delivery: nested list editor, link fields, strict booleans (2026-10-26)
+
+**Done (ADR-061):**
+
+- **Nested lists in the platform Canvas.**
+  - One recursive template (`partials/canvas-repeater.blade.php`) renders every
+    list depth up to the registry cap (depths 0, 1 and 2).
+  - Newly editable:
+    - pricing `plans[].features` (compact inline rows);
+    - footer `columns[].links`;
+    - the mega menu `nav_links[].mega_columns[].items`;
+    - FoodMart footer links;
+    - SleepShiman filter options and footer links.
+  - Add, duplicate, move, remove and collapse work at every depth.
+  - Lists are addressed by path (`CanvasListPath`, DOM-free and unit-tested).
+    Only the ancestors on the path are copied, so sibling items keep their
+    identity.
+  - Each structural edit is its own undo step; field edits coalesce per item
+    field.
+- **Legacy scalar items** (`features: ["a", "b"]`) adopt `{text}` on first
+  edit, in both editors. Previously, copying an item spread the string into
+  `{0: "a", …}`.
+- **`link` fields.**
+  - All 21 navigational URL fields are `type: 'link'` on both hosts.
+  - Renderers read them through `linkValue()` / `linkHref()`, which accepts a
+    URL string or a structured `{url}` link and always passes through
+    `escapeUrl()`.
+  - The platform link input warns, inline, about a URL the renderer will
+    refuse.
+- **`highlight`** is a real boolean switch. `BlockRenderer::flag()` reads
+  legacy `"false"`, `"0"` and `""` as false.
+- **Security gaps closed** (these rendered `javascript:` URLs):
+  - shared renderer: timeline CTA, about button, header logo and CTA,
+    `services_cards`, promo banner;
+  - customer-site: both social-icon renderers, plus the service-card and
+    project-card overrides.
+- **customer-site:**
+  - its editor gains link and switch controls at every nested level;
+  - `InternalLinkResolver` resolves a picked page in any top-level prop;
+  - `ElementSchemaRegistry` gains a `link` validation type.
+
+**Evidence:**
+
+- **saas-platform:**
+  - `Phase02bNestedListContractTest` 4/4;
+  - JS 92/92 (4 new `CanvasListPath` tests);
+  - theme suites 885 tests, the same 10 pre-existing failures.
+- **customer-site:**
+  - `CanonicalListSchemaParityTest` 8/8;
+  - `BuilderInternalLinkingTest` 5/5;
+  - theme suites 790 tests, the same 3 pre-existing failures.
+- **Browser:** `phase02b-nested-lists.spec.ts` covers:
+  - adding, reordering, duplicating and removing a feature in plan 2, with
+    undo/redo of each structural step;
+  - the highlight switch;
+  - footer column collapse and the unsafe-URL warning;
+  - a two-level mega menu;
+  - save, reload, and the stored shapes;
+  - preview at 1366, 768 and 390.
+
+  The phase01, P1, phase02, phase3c-commercial and header-modern-fast-path
+  specs stay green. The fast-path spec extracts `updateProp` by its signature,
+  which now reads `updateProp(propKey, value, options)`.
+
+**Remaining (next):**
+
+- **0.2c:** non-list drift on the other shadowed types, then retire host
+  overrides that become identical.
+- **Admin-entered URLs in customer-site module blocks** still use bare
+  `escapeAttr()`: the notifications-bar link and the advertisement link in
+  `ThemeCanvasRenderer`. These are not Canvas fields; track them separately.
+- **Older top-level button and hero URL entries** in
+  `config/builder-element-schemas.php` are still validated as `string`, so a
+  structured `{url}` link there is rejected (page-picker values are resolved
+  first and unaffected).

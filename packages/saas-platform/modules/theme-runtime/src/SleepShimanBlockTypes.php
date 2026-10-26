@@ -15,9 +15,9 @@ final class SleepShimanBlockTypes
         $text = fn (string $label, string $default = '') => ['type' => 'string', 'label' => $label, 'default' => $default];
         $link = fn (string $label, string $default = '#') => ['type' => 'link', 'label' => $label, 'default' => $default];
         $image = fn (string $label, string $default = '') => ['type' => 'image', 'label' => $label, 'default' => $default];
-        $repeater = fn (string $label, array $fields, array $default = []) => [
+        $repeater = fn (string $label, array $fields, array $default = [], ?string $itemLabel = null) => [
             'type' => 'repeater', 'label' => $label, 'storage' => 'array', 'fields' => $fields, 'default' => $default,
-        ];
+        ] + ($itemLabel === null ? [] : ['item_label' => $itemLabel]);
 
         $productFields = [
             'image' => $image('تصویر محصول', 'images/mattress-room.webp'),
@@ -180,7 +180,7 @@ final class SleepShimanBlockTypes
             ],
             'sleepshiman_product_filters' => [
                 'schema' => ['title' => $text('عنوان'), 'subtitle' => $text('زیرعنوان'), 'groups' => $repeater('گروه‌های انتخاب', [
-                    'title' => $text('عنوان گروه'), 'options' => $repeater('گزینه‌ها', ['label' => $text('عنوان'), 'url' => $link('پیوند')]),
+                    'title' => $text('عنوان گروه'), 'options' => $repeater('گزینه‌ها', ['label' => $text('عنوان'), 'url' => $link('پیوند')], [], 'گزینه'),
                 ], self::filterDefaults())],
                 'defaultProps' => ['title' => 'انتخاب تشک مناسب', 'subtitle' => 'بر اساس نیاز شما', 'groups' => self::filterDefaults()], 'liveStructureUpdate' => 'document',
             ],
@@ -194,7 +194,7 @@ final class SleepShimanBlockTypes
                     'address' => $text('نشانی'), 'phone' => $text('تلفن'), 'phone_url' => $link('پیوند تلفن', 'tel:03132224510'),
                     'columns' => $repeater('ستون‌های فوتر', [
                         'heading' => $text('عنوان ستون'),
-                        'links' => $repeater('پیوندها', ['label' => $text('عنوان'), 'url' => $link('پیوند')]),
+                        'links' => $repeater('پیوندها', ['label' => $text('عنوان'), 'url' => $link('پیوند')], [], 'پیوند'),
                     ], self::footerDefaults()['columns']),
                     'newsletter_heading' => $text('عنوان خبرنامه'), 'newsletter_placeholder' => $text('توضیح خبرنامه'), 'newsletter_button' => $text('متن دکمه'), 'newsletter_url' => $link('پیوند فرم خبرنامه', '/contact'),
                     'trust_marks' => $repeater('نشان‌های اعتماد', [

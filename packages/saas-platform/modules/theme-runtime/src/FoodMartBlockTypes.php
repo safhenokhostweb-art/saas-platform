@@ -68,7 +68,7 @@ final class FoodMartBlockTypes
                     'title'       => ['type' => 'string', 'label' => 'عنوان اسلاید', 'default' => 'New FoodMart slide'],
                     'description' => ['type' => 'string', 'label' => 'توضیح کوتاه', 'default' => 'Add your promotion details here.'],
                     'cta_label'   => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'Shop now'],
-                    'cta_url'     => ['type' => 'string', 'label' => 'لینک دکمه', 'default' => '#'],
+                    'cta_url'     => ['type' => 'link',   'label' => 'لینک دکمه', 'default' => '#'],
                     'image'       => ['type' => 'image',  'label' => 'تصویر اسلاید', 'default' => 'images/product-thumb-1.png'],
                     'image_alt'   => ['type' => 'string', 'label' => 'متن جایگزین تصویر', 'default' => 'FoodMart promotion'],
                 ],
@@ -78,7 +78,7 @@ final class FoodMartBlockTypes
                 'fields' => [
                     'badge'   => ['type' => 'string', 'label' => 'برچسب تخفیف', 'default' => ''],
                     'title'   => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
-                    'cta_url' => ['type' => 'string', 'label' => 'لینک', 'default' => ''],
+                    'cta_url' => ['type' => 'link',   'label' => 'لینک', 'default' => ''],
                 ],
             ],
         ], 'defaultProps' => [], 'liveStructureUpdate' => 'document', 'editor' => ['allowCustomCss' => false, 'lockedStructure' => true]],
@@ -183,7 +183,7 @@ final class FoodMartBlockTypes
             'logo_alt' => ['type' => 'string', 'label' => 'متن جایگزین لوگو', 'default' => ''],
             'columns' => ['type' => 'repeater', 'label' => 'ستون‌های فوتر', 'storage' => 'json', 'default' => [], 'fields' => [
                 'heading' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => 'New column'],
-                'links' => ['type' => 'repeater', 'label' => 'لینک‌ها', 'storage' => 'array', 'default' => [], 'fields' => [
+                'links' => ['type' => 'repeater', 'label' => 'لینک‌ها', 'item_label' => 'لینک', 'storage' => 'array', 'default' => [], 'fields' => [
                     'label' => ['type' => 'string', 'label' => 'عنوان لینک', 'default' => 'New link'],
                     'url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#'],
                 ]],

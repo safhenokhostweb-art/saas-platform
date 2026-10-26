@@ -249,6 +249,73 @@
         }
     }
 
+    // Phase 0.2b: pure addressing for nested repeater values. A list path is
+    // [index, fieldKey, index, fieldKey, …] below a prop's root list, read
+    // against the prop's own schema definition. Nothing is mutated: every
+    // write returns a new root list in which only the ancestors on the path
+    // are copied, so sibling items, unknown keys and other branches keep
+    // their identity. Legacy scalar items (["a", "b"]) are presented as
+    // {firstField: value} — the shape renderers already accept for them.
+    class CanvasListPath {
+        static parse(raw) {
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw !== 'string' || raw.trim() === '') return [];
+            try {
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                return [];
+            }
+        }
+        static adopt(items, def) {
+            const key = Object.keys(def?.fields ?? {})[0];
+            if (!key) return items;
+            return items.map(it => (typeof it === 'string' || typeof it === 'number') ? { [key]: it } : it);
+        }
+        static isItem(value) {
+            return value !== null && typeof value === 'object' && !Array.isArray(value);
+        }
+        static defAt(rootDef, path) {
+            let def = rootDef;
+            for (let i = 1; i < path.length; i += 2) def = def?.fields?.[path[i]];
+            return def ?? null;
+        }
+        static itemsAt(rootValue, rootDef, path) {
+            let items = CanvasListPath.adopt(CanvasListPath.parse(rootValue), rootDef);
+            let def = rootDef;
+            for (let i = 0; i < path.length; i += 2) {
+                const item = items[path[i]];
+                if (!CanvasListPath.isItem(item)) return [];
+                def = def?.fields?.[path[i + 1]];
+                items = CanvasListPath.adopt(CanvasListPath.parse(item[path[i + 1]]), def);
+            }
+            return items;
+        }
+        // The new root list with the list at `path` replaced by `items`, or
+        // null when the path no longer addresses an item (a stale index).
+        static replaceAt(rootValue, rootDef, path, items) {
+            if (path.length === 0) return items;
+            const root = CanvasListPath.itemsAt(rootValue, rootDef, []).slice();
+            const [index, key, ...rest] = path;
+            if (!CanvasListPath.isItem(root[index])) return null;
+            const childDef = rootDef?.fields?.[key];
+            const child = CanvasListPath.replaceAt(root[index][key], childDef, rest, items);
+            if (child === null) return null;
+            root[index] = { ...root[index], [key]: childDef?.storage === 'json' ? JSON.stringify(child) : child };
+            return root;
+        }
+        // Deep copy in which every item that carries an `_id` gets a fresh
+        // one, so a duplicated parent never shares nested identities.
+        static cloneWithFreshIds(value, newId) {
+            if (Array.isArray(value)) return value.map(v => CanvasListPath.cloneWithFreshIds(v, newId));
+            if (!CanvasListPath.isItem(value)) return value;
+            const copy = {};
+            for (const [k, v] of Object.entries(value)) copy[k] = CanvasListPath.cloneWithFreshIds(v, newId);
+            if (typeof copy._id === 'string') copy._id = newId();
+            return copy;
+        }
+    }
+
     class CanvasNavigator {
         flatten(blocks, expanded = {}, depth = 0, result = []) {
             const flat = identity.flatten(blocks);
@@ -294,6 +361,7 @@
     window.CanvasTreeOperations = CanvasTreeOperations;
     window.CanvasHistory = CanvasHistory;
     window.CanvasSaveQueue = CanvasSaveQueue;
+    window.CanvasListPath = CanvasListPath;
     window.CanvasNavigator = CanvasNavigator;
     window.CanvasDragDrop = CanvasDragDrop;
 }(window));

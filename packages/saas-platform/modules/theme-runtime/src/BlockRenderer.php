@@ -1190,7 +1190,7 @@ class BlockRenderer
             $image    = trim((string) ($slide['image'] ?? ''));
             $title    = $this->escape($slide['title'] ?? '');
             $subtitle = $this->escape($slide['subtitle'] ?? '');
-            $link     = $this->escapeUrl($slide['link'] ?? '', '');
+            $link     = $this->linkHref($slide['link'] ?? '', '');
             $ctaText  = $this->escape($slide['cta_text'] ?? '');
 
             // The visible slide heading already names the same content;
@@ -1557,7 +1557,7 @@ class BlockRenderer
         }
         $items = [];
         foreach ($links as $link) {
-            $url = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : (string) $link, '#');
+            $url = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : $link, '#');
             $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : '');
             $items[] = "<a href=\"{$url}\" class=\"tb-social-link\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"{$label}\">{$label}</a>";
         }
@@ -2233,7 +2233,7 @@ class BlockRenderer
             }
             $name  = (string) ($l['name'] ?? '');
             $image = trim((string) ($l['image'] ?? ''));
-            $url   = $this->escapeUrl($l['url'] ?? '', '');
+            $url   = $this->linkHref($l['url'] ?? '', '');
             $alt   = $this->escapeAttr($l['alt'] ?? $name);
 
             // A genuinely broken logo URL (unreachable host, deleted media)
@@ -2627,7 +2627,7 @@ class BlockRenderer
             $icon  = $this->escape($it['icon'] ?? '');
             $image = (string) ($it['image'] ?? '');
             $linkLabel = $this->escape($it['link_label'] ?? '');
-            $linkUrl   = $this->escapeAttr($it['link_url'] ?? '');
+            $linkUrl   = $this->linkHref($it['link_url'] ?? '', '');
 
             $mediaHtml = $image !== ''
                 ? $this->imageWithFallback($image, $itemTitle, 'width:64px;height:64px;border-radius:50%;', $icon !== '' ? $icon : '🖼️')
@@ -2837,9 +2837,9 @@ class BlockRenderer
             $price     = $this->escape($p['price'] ?? '');
             $period    = $this->escape($p['period'] ?? '');
             $badge     = $this->escape($p['badge'] ?? '');
-            $highlight = (bool) ($p['highlight'] ?? false);
+            $highlight = $this->flag($p['highlight'] ?? false);
             $ctaText   = $this->escape($p['cta_text'] ?? 'انتخاب');
-            $ctaUrl    = $this->escapeUrl(is_string($p['cta_url'] ?? null) ? $p['cta_url'] : '#', '#');
+            $ctaUrl    = $this->linkHref($p['cta_url'] ?? '#', '#');
             $rawFeat   = $p['features'] ?? [];
             $features  = is_array($rawFeat) ? $rawFeat : (json_decode((string) $rawFeat, true) ?? []);
             $hlClass   = $highlight ? ' highlighted' : '';
@@ -3090,7 +3090,7 @@ class BlockRenderer
             $icon     = $this->escape($svc['icon'] ?? '');
             $stitle   = $this->escape($svc['title'] ?? '');
             $stext    = $this->escape($svc['text'] ?? '');
-            $link     = $this->escapeAttr($svc['link'] ?? '#');
+            $link     = $this->linkHref($svc['link'] ?? '#', '');
             $linkText = $this->escape($svc['link_text'] ?? 'بیشتر بدانید');
             $linkHtml = $link && $linkText ? "<a href=\"{$link}\" class=\"tb-service-link\">{$linkText} ←</a>" : '';
             $cards[] = "<div class=\"tb-service-card style-{$style}\">
@@ -3208,7 +3208,7 @@ class BlockRenderer
     protected function renderPromoBanner(array $props, string $inner, string $id): string
     {
         $text = $this->escape($props['text'] ?? '');
-        $link = $this->escapeAttr($props['link'] ?? '#');
+        $link = $this->linkHref($props['link'] ?? '#', '');
         $variant = $this->escapeAttr($props['style'] ?? 'info');
         if ($text === '') {
             return '';
@@ -3269,9 +3269,9 @@ class BlockRenderer
     {
         $common = [
             'banner_image' => (string) ($link['mega_banner_image'] ?? ''),
-            'banner_url' => (string) ($link['mega_banner_url'] ?? ''),
+            'banner_url' => $this->linkValue($link['mega_banner_url'] ?? ''),
             'banner_text' => (string) ($link['mega_banner_text'] ?? ''),
-            'show_desktop' => array_key_exists('mega_show_desktop', $link) ? (bool) $link['mega_show_desktop'] : true,
+            'show_desktop' => array_key_exists('mega_show_desktop', $link) ? $this->flag($link['mega_show_desktop']) : true,
             'mobile_behavior' => in_array($link['mega_mobile_behavior'] ?? '', ['accordion', 'flat', 'hidden'], true) ? $link['mega_mobile_behavior'] : 'accordion',
         ];
 
@@ -3300,7 +3300,7 @@ class BlockRenderer
                         continue;
                     }
                     $links[] = [
-                        'url' => (string) ($it['url'] ?? '#'),
+                        'url' => $this->linkValue($it['url'] ?? '#'),
                         'label' => $itLabel,
                         'icon' => (string) ($it['icon'] ?? ''),
                         'image' => (string) ($it['image'] ?? ''),
@@ -3367,7 +3367,7 @@ class BlockRenderer
             $colLinks = is_array($col) ? ($col['links'] ?? []) : [];
             $linksHtml = '';
             foreach ((array) $colLinks as $l) {
-                $lUrl = $this->escapeUrl(is_array($l) ? ($l['url'] ?? '') : '', '#');
+                $lUrl = $this->linkHref(is_array($l) ? ($l['url'] ?? '') : '', '#');
                 $lLabel = $this->escape(is_array($l) ? ($l['label'] ?? '') : (string) $l);
                 if ($lLabel === '') {
                     continue;
@@ -3394,7 +3394,7 @@ class BlockRenderer
         $bannerImage = trim((string) ($mega['banner_image'] ?? ''));
         $bannerHtml = '';
         if ($bannerImage !== '') {
-            $bannerUrl = $this->escapeUrl($mega['banner_url'] ?? '', '#');
+            $bannerUrl = $this->linkHref($mega['banner_url'] ?? '', '#');
             $bannerText = $this->escape($mega['banner_text'] ?? '');
             $bannerImgHtml = $this->imageWithFallback($bannerImage, (string) ($mega['banner_text'] ?? $label), 'width:100%;height:100%;');
             $bannerHtml = "<a href=\"{$bannerUrl}\" class=\"tb-mega-menu-banner\">"
@@ -3440,7 +3440,7 @@ class BlockRenderer
 
         $brandName = trim($this->stringify($props['brandName'] ?? 'برند شما'));
         $brandName = $this->escape($brandName !== '' ? $brandName : 'برند شما');
-        $homeUrl = $this->escapeUrl($this->stringify($props['homeUrl'] ?? '/'), '/');
+        $homeUrl = $this->linkHref($props['homeUrl'] ?? '/', '/');
         $logoUrl = trim($this->stringify($props['logoUrl'] ?? ''));
         $logoSrc = $logoUrl !== '' ? $this->escapeUrl($logoUrl, '') : '';
         $logo = $logoSrc !== ''
@@ -3459,7 +3459,7 @@ class BlockRenderer
         }
 
         $ctaText = trim($this->stringify($props['ctaText'] ?? 'شروع کنید'));
-        $ctaUrl = $this->escapeUrl($this->stringify($props['ctaUrl'] ?? '#'), '#');
+        $ctaUrl = $this->linkHref($props['ctaUrl'] ?? '#', '#');
         $ctaHtml = $ctaText !== ''
             ? '<a class="tb-header-modern__cta" href="' . $ctaUrl . '">' . $this->escape($ctaText) . '</a>'
             : '';
@@ -3512,7 +3512,7 @@ class BlockRenderer
     protected function renderNavHeader(array $props, string $inner, string $id): string
     {
         $logoText = $this->escape($props['logo_text'] ?? '');
-        $logoUrl  = $this->escapeAttr($props['logo_url'] ?? '/');
+        $logoUrl  = $this->linkHref($props['logo_url'] ?? '/', '/');
         $bg       = $this->escapeAttr($props['bg_color'] ?? '#ffffff');
         $tc       = $this->escapeAttr($props['text_color'] ?? '#111827');
         $sticky   = (bool) ($props['sticky'] ?? false);
@@ -3522,7 +3522,7 @@ class BlockRenderer
 
         $phone       = $this->escape($props['phone'] ?? '');
         $ctaText     = $this->escape($props['cta_text'] ?? '');
-        $ctaUrl      = $this->escapeAttr($props['cta_url'] ?? '#');
+        $ctaUrl      = $this->linkHref($props['cta_url'] ?? '#', '#');
         $showSearch  = (bool) ($props['show_search'] ?? false);
         $searchPh    = $props['search_placeholder'] ?? 'جستجو...';
         $showCart    = (bool) ($props['show_cart'] ?? false);
@@ -3541,7 +3541,7 @@ class BlockRenderer
         } else {
             $linkItems = '';
             foreach ($links as $link) {
-                $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+                $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
                 $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
                 if ($label === '') {
                     continue;
@@ -3733,7 +3733,7 @@ class BlockRenderer
 
                 $linkItems = '';
                 foreach ($clinks as $link) {
-                    $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+                    $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
                     $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
                     if ($label === '') {
                         continue;
@@ -3753,7 +3753,7 @@ class BlockRenderer
 
         $legalHtml = '';
         foreach ($legalLinks as $link) {
-            $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+            $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
             $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
             if ($label === '') {
                 continue;
@@ -3847,7 +3847,7 @@ class BlockRenderer
         $title    = $this->escape($props['title'] ?? '');
         $description = $this->sanitizeHtml($props['description'] ?? '');
         $btnText  = $this->escape($props['btn_text'] ?? '');
-        $btnUrl   = $this->escapeAttr($props['btn_url'] ?? '#');
+        $btnUrl   = $this->linkHref($props['btn_url'] ?? '#', '#');
         $features = is_array($props['features'] ?? null) ? $props['features'] : [];
         $stats    = is_array($props['stats'] ?? null) ? $props['stats'] : [];
 
@@ -3913,7 +3913,7 @@ class BlockRenderer
             $icon   = $this->escape(is_array($card) ? ($card['icon'] ?? '') : '');
             $ctitle = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
             $desc   = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
-            $url    = $this->escapeUrl(is_array($card) ? ($card['url'] ?? '') : '', '');
+            $url    = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
             if ($ctitle === '' && $desc === '') {
                 continue;
             }
@@ -3954,7 +3954,7 @@ class BlockRenderer
             $cat    = $this->escape(is_array($card) ? ($card['category'] ?? '') : '');
             $ctitle = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
             $desc   = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
-            $url    = $this->escapeUrl(is_array($card) ? ($card['url'] ?? '') : '', '');
+            $url    = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
             if ($ctitle === '' && $desc === '') {
                 continue;
             }
@@ -4321,6 +4321,36 @@ class BlockRenderer
             return (string) $s;
         }
         return ''; // array/object/resource: never guess a string representation
+    }
+
+    /**
+     * Phase 0.2b (ADR-061): the one reader for a `link` field. A link is
+     * authored either as a plain URL string or as a structured {url, …}
+     * object (Canvas keeps whichever shape the value already has); any
+     * other shape is no link at all.
+     */
+    protected function linkValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            $value = $value['url'] ?? '';
+        }
+        return is_string($value) ? $value : '';
+    }
+
+    /** A `link` field as a validated, attribute-safe href (see escapeUrl()). */
+    protected function linkHref(mixed $value, string $fallback = '#'): string
+    {
+        return $this->escapeUrl($this->linkValue($value), $fallback);
+    }
+
+    /**
+     * A `boolean` field value. Older authoring stored these as free text,
+     * so "false", "0" and "" must read as false — a bare (bool) cast reads
+     * every non-empty string, "false" included, as true.
+     */
+    protected function flag(mixed $value): bool
+    {
+        return is_bool($value) ? $value : filter_var($value, FILTER_VALIDATE_BOOL);
     }
 
     /**

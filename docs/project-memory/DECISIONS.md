@@ -2765,3 +2765,86 @@ Constitution §1 requires an explicit decision for any amendment.
 platform Canvas (`resources/views/admin/theme-builder/canvas.blade.php`),
 `PROJECT_CONSTITUTION.md`. No migration, route, dependency, or persistence-format
 break.
+
+## ADR-061
+
+**Title:** Nested Repeater Editing, `link`-Typed URL Fields and Strict Booleans
+
+**Status:** Accepted
+
+**Date:** 2026-10-26
+
+**Context:**
+
+Phase 0.2 (ADR-060 follow-up) put customer-site's list definitions into the
+canonical registry, including lists nested inside list items: pricing
+`plans[].features`, footer `columns[].links`, and the two-level mega menu
+`nav_links[].mega_columns[].items`. The platform Canvas showed "unsupported" for
+every nested field. Those fields were promoted verbatim, so two weak types came
+with them:
+
+- `pricing.plans[].highlight` was free text, and `(bool) 'false'` is true;
+- navigational URL fields were `string`, so editors showed plain text inputs.
+
+Six of those fields (`timeline` CTA, `about_section` button, header logo/CTA,
+`services_cards`, `promo_banner`) were rendered through `escapeAttr()`, which
+let a `javascript:` URL into an `href`. customer-site's own social-icon and
+service/project-card overrides had the same gap.
+
+**Decision:**
+
+1. A repeater list is addressed by a path below its root prop:
+   `[propKey, index, fieldKey, …]` (`CanvasListPath`, DOM-free). Every write
+   replaces the root prop through one `updateProp()`, copying only the
+   ancestors on the path. Structural edits (add, duplicate, move, remove) are
+   undo steps of their own; field edits coalesce per item field.
+2. The platform Canvas renders every list depth from one recursive template
+   (`partials/canvas-repeater.blade.php`), up to the registry depth cap
+   (`InspectorFieldRegistry` `maxDepth` ≤ 3: depths 0, 1, 2). A list whose
+   items are a single text field edits as compact inline rows.
+3. Legacy scalar list items (`["a", "b"]`) are presented and written back as
+   `{firstField: value}`, the shape renderers already accept. Copying a string
+   item never spreads it into characters.
+4. Every navigational URL field is `type: 'link'` on both hosts. A link value is
+   a URL string or a structured `{url, …}` object. Renderers read it through
+   `BlockRenderer::linkValue()` / `linkHref()`, which always validates with
+   `escapeUrl()`. Media sources (`video.url`, `header_modern_v1.logoUrl`) and
+   data endpoints (`dynamic_*.endpoint_url`) are not links.
+5. `pricing.plans[].highlight` is `type: 'boolean'`, default `false`. Boolean
+   props are read with `BlockRenderer::flag()`, so legacy `"false"`, `"0"` and
+   `""` are false.
+6. customer-site resolves an `{type: internal_page}` reference in any top-level
+   prop, not only the original allowlist, because its editor offers the page
+   picker on every top-level `link` field. Its schema validator gains a `link`
+   type that accepts a string, a `{url}` object, or a page reference.
+
+**Consequences:**
+
+- Pricing features, footer column links, the mega menu, FoodMart footer links,
+  and SleepShiman filter options and footer links are editable in the platform
+  Canvas. Every nested list declares an `item_label`.
+- Edited legacy scalar features persist as `{text}` objects. Unedited content is
+  untouched.
+- `Phase02bNestedListContractTest` fails:
+  - a list nested deeper than depth 2;
+  - a nested list without `fields` or `item_label`;
+  - any URL-named text field outside the non-navigational allowlist;
+  - a link field that drops a structured link or lets an unsafe scheme through;
+  - any non-strict highlight read.
+- customer-site's `CanonicalListSchemaParityTest` pins the same contract from the
+  host side.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRegistry`, `BlockRenderer`, the FoodMart and
+  SleepShiman types.
+- **Platform Canvas:** `canvas.blade.php`, the new `canvas-repeater` partial, and
+  `canvas-structural-services` (`CanvasListPath`).
+- **customer-site:**
+  - `BlockRegistry`;
+  - the Canvas editor, `InternalLinkResolver`, `ThemeCanvasRenderer` and
+    `ThemeBuilder\BlockRenderer`;
+  - `ElementSchemaRegistry` and `config/builder-element-schemas.php`.
+
+There is no migration, route, dependency, or persistence-format break: strings
+stay strings, and `highlight` text values still read correctly.

@@ -38,7 +38,7 @@ const editorSource = fs.readFileSync(path.join(root, 'resources/views/admin/them
 const listenerStart = previewSource.indexOf("window.addEventListener('message', function (e) {");
 const listenerEnd = previewSource.indexOf("notifyParent({ action: 'ready' });", listenerStart);
 const listenerSource = previewSource.slice(listenerStart, listenerEnd);
-const updatePropSource = objectMethod(editorSource, 'updateProp(propKey, value)');
+const updatePropSource = objectMethod(editorSource, 'updateProp(propKey, value, options)');
 const pushFastPropUpdateSource = objectMethod(editorSource, 'pushFastPropUpdate(blockId, propKey, value)');
 
 test('modern RTL header repaints colors without render I/O and exposes a working mobile menu', async ({ page }) => {

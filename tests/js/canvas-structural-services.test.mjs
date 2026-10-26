@@ -11,7 +11,7 @@ const source = fs.readFileSync(new URL('../../resources/views/admin/theme-builde
 const context = vm.createContext({ window: {}, globalThis: {}, module: { exports: {} }, console, JSON, Date, Math, Set, Object, Array, Error });
 vm.runInContext(identitySource, context);
 vm.runInContext(source, context);
-const { CanvasDocumentState, CanvasTreeOperations, CanvasHistory, CanvasNavigator, CanvasDragDrop, CanvasSaveQueue } = context.window;
+const { CanvasDocumentState, CanvasTreeOperations, CanvasHistory, CanvasNavigator, CanvasDragDrop, CanvasSaveQueue, CanvasListPath } = context.window;
 
 const schemas = {
   section: { is_container: true, editor: {} },
@@ -337,4 +337,55 @@ test('a save acknowledges only the snapshot and operations it sent', () => {
   assert.equal(state.pendingOperations.length, 1);
   assert.equal(state.pendingOperations[0].node_id, 'y', 'the mid-flight operation stays pending');
   assert.deepEqual(state.saved[0].children[1].children.map(n => n.id), ['x'], 'saved base is what was sent, not the live tree');
+});
+
+// ── Phase 0.2b: nested repeater addressing ─────────────────────────────
+// Values built inside the vm realm carry its prototypes; compare plain data.
+const plain = (v) => JSON.parse(JSON.stringify(v));
+const plansDef = { type: 'repeater', storage: 'array', fields: {
+  name: { type: 'string' },
+  features: { type: 'repeater', fields: { text: { type: 'string' } } },
+  legacy: { type: 'repeater', storage: 'json', fields: { label: { type: 'string' } } },
+} };
+const megaDef = { type: 'repeater', fields: {
+  label: { type: 'string' },
+  mega_columns: { type: 'repeater', fields: { title: { type: 'string' }, items: { type: 'repeater', fields: { label: { type: 'string' }, url: { type: 'link' } } } } },
+} };
+
+test('list path reads nested lists, legacy JSON strings and scalar items', () => {
+  const plans = JSON.stringify([{ name: 'A', features: ['one', 'two'] }, { name: 'B', features: [{ _id: 'f1', text: 'x' }], legacy: '[{"label":"L"}]' }]);
+  assert.deepEqual(plain(CanvasListPath.itemsAt(plans, plansDef, []).map(p => p.name)), ['A', 'B']);
+  assert.deepEqual(plain(CanvasListPath.itemsAt(plans, plansDef, [0, 'features'])), [{ text: 'one' }, { text: 'two' }], 'scalars are presented as {firstField}');
+  assert.deepEqual(plain(CanvasListPath.itemsAt(plans, plansDef, [1, 'legacy'])), [{ label: 'L' }]);
+  assert.deepEqual(plain(CanvasListPath.itemsAt(plans, plansDef, [9, 'features'])), [], 'a stale index reads as empty');
+  assert.equal(CanvasListPath.defAt(megaDef, [0, 'mega_columns', 2, 'items']).fields.url.type, 'link');
+});
+
+test('list path writes copy only the ancestors and keep every sibling untouched', () => {
+  const columns = [{ _id: 'c1', title: 'Shop', items: [{ _id: 'i1', label: 'Tea', url: '/tea' }], extra: { keep: true } }, { _id: 'c2', title: 'Help', items: [] }];
+  const root = [{ _id: 'n1', label: 'Menu', mega_columns: columns, unknown: 'kept' }, { _id: 'n2', label: 'Other' }];
+  const next = CanvasListPath.replaceAt(root, megaDef, [0, 'mega_columns', 0, 'items'], [{ _id: 'i1', label: 'Tea', url: '/tea' }, { _id: 'i2', label: 'Coffee', url: '/coffee' }]);
+  assert.notEqual(next, root);
+  assert.equal(next[1], root[1], 'a sibling branch keeps its identity');
+  assert.equal(next[0].mega_columns[1], columns[1], 'a sibling column keeps its identity');
+  assert.equal(next[0].unknown, 'kept');
+  assert.deepEqual(plain(next[0].mega_columns[0].extra), { keep: true });
+  assert.deepEqual(plain(next[0].mega_columns[0].items.map(i => i.label)), ['Tea', 'Coffee']);
+  assert.equal(root[0].mega_columns[0].items.length, 1, 'the input is never mutated');
+  assert.equal(CanvasListPath.replaceAt(root, megaDef, [5, 'mega_columns'], []), null, 'a stale path is refused, not guessed');
+});
+
+test('list path keeps a nested json-storage list a JSON string', () => {
+  const root = [{ name: 'B', legacy: '[{"label":"L"}]' }];
+  const next = CanvasListPath.replaceAt(root, plansDef, [0, 'legacy'], [{ label: 'L' }, { label: 'M' }]);
+  assert.equal(typeof next[0].legacy, 'string');
+  assert.deepEqual(JSON.parse(next[0].legacy).map(x => x.label), ['L', 'M']);
+});
+
+test('duplicating an item regenerates every nested identity', () => {
+  let n = 0;
+  const copy = CanvasListPath.cloneWithFreshIds({ _id: 'p', features: [{ _id: 'a', text: 'x' }, { text: 'legacy' }], link: { url: '/x' } }, () => `new${++n}`);
+  assert.equal(copy._id, 'new2');
+  assert.deepEqual(plain(copy.features), [{ _id: 'new1', text: 'x' }, { text: 'legacy' }], 'legacy items are not given ids');
+  assert.deepEqual(plain(copy.link), { url: '/x' });
 });
