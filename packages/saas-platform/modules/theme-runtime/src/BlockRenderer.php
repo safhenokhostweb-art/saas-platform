@@ -2839,7 +2839,7 @@ class BlockRenderer
             $badge     = $this->escape($p['badge'] ?? '');
             $highlight = (bool) ($p['highlight'] ?? false);
             $ctaText   = $this->escape($p['cta_text'] ?? 'انتخاب');
-            $ctaUrl    = $this->escapeAttr($p['cta_url'] ?? '#');
+            $ctaUrl    = $this->escapeUrl(is_string($p['cta_url'] ?? null) ? $p['cta_url'] : '#', '#');
             $rawFeat   = $p['features'] ?? [];
             $features  = is_array($rawFeat) ? $rawFeat : (json_decode((string) $rawFeat, true) ?? []);
             $hlClass   = $highlight ? ' highlighted' : '';
@@ -2909,13 +2909,101 @@ class BlockRenderer
             $image  = $this->escapeUrl($item['image'] ?? '', '');
             $linkUrl = $this->escapeUrl($item['link_url'] ?? '', '');
             $linkLabel = $this->escape($item['link_label'] ?? 'مشاهده');
-            $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small']) ? $item['size'] : 'small';
-            $bgc    = $this->escapeAttr($item['bg_color'] ?? '#f8fafc');
-            $tc     = $this->escapeAttr($item['text_color'] ?? '#0f172a');
+            // Strict allowlist — the only classes the CSS contract defines.
+            // Anything else (incl. the legacy 'normal') renders as small.
+            $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small'], true) ? $item['size'] : 'small';
+            // Same colour allowlist as the gradient stops: an escaped but
+            // unvalidated value could still inject extra CSS declarations.
+            $bgc    = $this->escapeAttr($this->bentoColorToken($item['bg_color'] ?? '', '#f8fafc') ?: '#f8fafc');
+            $tc     = $this->escapeAttr($this->bentoColorToken($item['text_color'] ?? '', '#0f172a') ?: '#0f172a');
+
+            // ── Card background: image + dual-stop gradient overlay ──────
+            // Every value is sanitized before it reaches the inline style:
+            // the URL must be a renderable asset reference and each colour
+            // must be a legal CSS colour token, so a corrupted/malicious
+            // authored value degrades to "no image / no gradient" instead of
+            // breaking out of the style attribute.
+            $bgImage = trim((string) ($item['bg_image'] ?? ''));
+            if ($bgImage !== '' && (!$this->isValidUrl($bgImage) || preg_match('/[\'\"()<>\\\\]/', $bgImage) === 1)) {
+                $bgImage = '';
+            }
+            $fromColor = $this->bentoColorToken($item['bg_color_from'] ?? '');
+            $toColor   = $this->bentoColorToken($item['bg_color_to'] ?? '');
+
+            // The gradient is an overlay for a background image (it exists to
+            // keep text readable over a photo). On a plain colour card it would
+            // only muddy the authored bg_color/text_color pair — e.g. darken a
+            // light card under dark text — so it never applies without an image.
+            if ($bgImage === '') {
+                $fromColor = $toColor = '';
+            }
+
+            $gradientOverlay = '';
+            if ($fromColor !== '' && $toColor !== '') {
+                $gradientOverlay = "linear-gradient(to bottom, {$fromColor}, {$toColor})";
+            } elseif ($fromColor !== '') {
+                $gradientOverlay = "linear-gradient(to bottom, {$fromColor}, transparent)";
+            } elseif ($toColor !== '') {
+                $gradientOverlay = "linear-gradient(to bottom, transparent, {$toColor})";
+            }
+
+            if ($bgImage !== '' && $gradientOverlay !== '') {
+                // The gradient is the top layer, the image sits beneath it.
+                $backgroundStyle = "background: {$gradientOverlay}, url('{$bgImage}') center/cover no-repeat;";
+            } elseif ($bgImage !== '') {
+                $backgroundStyle = "background: url('{$bgImage}') center/cover no-repeat;";
+            } elseif ($gradientOverlay !== '') {
+                // No image: the overlay composites over the card's own colour
+                // instead of replacing it (bg_color stays authored, visible).
+                $backgroundStyle = "background: {$gradientOverlay}, {$bgc};";
+            } else {
+                $backgroundStyle = "background: {$bgc};";
+            }
+
+            // ── Pulse border glow: tolerant boolean + bounded speed ──────
+            // Persisted values arrive as real booleans, 1/0 or '1'/'0'
+            // (JSON round-trips, legacy string props) — all are accepted;
+            // anything else stays off. Speed must be a positive number.
+            $glowVal = $item['glow_enabled'] ?? false;
+            $isGlow = filter_var($glowVal, FILTER_VALIDATE_BOOLEAN) || $glowVal === 1 || $glowVal === '1';
+
+            $glowColor = $this->escapeAttr($this->bentoColorToken($item['glow_color'] ?? '') ?: '#6366f1');
+            $glowSpeed = floatval($item['glow_speed'] ?? 2);
+            if ($glowSpeed <= 0) { $glowSpeed = 2; }
+
+            $glowClass = $isGlow ? ' tb-bento-pulse-card' : '';
+            $glowStyle = $isGlow ? "--tb-glow-color:{$glowColor};--tb-glow-speed:{$glowSpeed}s;" : '';
+
             $mediaHtml = $image !== '' ? $this->imageWithFallback($image, (string) ($item['title'] ?? ''), '', 'تصویر') : '';
-            $linkHtml = ($linkUrl !== '' && $linkLabel !== '') ? "<a class=\"tb-bento-item-link\" href=\"{$linkUrl}\">{$linkLabel}<span aria-hidden=\"true\"> ←</span></a>" : '';
             $mediaClass = $image !== '' ? ' has-media' : '';
-            $cells[] = "<div class=\"tb-bento-item {$size}{$mediaClass}\" style=\"background:{$bgc};color:{$tc};\">
+
+            // Whole-card link: `link` (Canvas field, plain URL or structured
+            // {url,…} link object), falling back to the legacy `link_url`.
+            // Scheme-validated through escapeUrl() — '' fallback means an
+            // unsafe or empty URL simply yields a non-link card.
+            $rawLink = $item['link'] ?? '';
+            if (is_array($rawLink)) {
+                $rawLink = $rawLink['url'] ?? '';
+            }
+            $rawLink = trim(is_string($rawLink) ? $rawLink : '');
+            if ($rawLink === '') {
+                $rawLink = trim((string) ($item['link_url'] ?? ''));
+            }
+            $cardHref = $rawLink !== '' ? $this->escapeUrl($rawLink, '') : '';
+            $hasLink = $cardHref !== '';
+
+            // The label reads as a link affordance; the card itself is the one
+            // anchor, so no <a> is ever nested inside another <a>.
+            $linkHtml = ($hasLink && $linkLabel !== '' && $linkUrl !== '')
+                ? "<span class=\"tb-bento-item-link\">{$linkLabel}<span aria-hidden=\"true\"> ←</span></span>"
+                : '';
+
+            $tag = $hasLink ? 'a' : 'div';
+            $hrefAttr = $hasLink ? " href=\"{$cardHref}\"" : '';
+            $cursorStyle = $hasLink ? 'cursor:pointer;text-decoration:none;' : '';
+            $pointerClass = $hasLink ? ' cursor-pointer group' : '';
+
+            $cells[] = "<{$tag}{$hrefAttr} class=\"tb-bento-item {$size}{$mediaClass}{$pointerClass}{$glowClass}\" style=\"{$backgroundStyle}color:{$tc};{$cursorStyle}{$glowStyle}\">
                 {$mediaHtml}
                 <div class=\"tb-bento-item-content\">
                 " . ($icon ? "<div class=\"tb-bento-item-icon\">{$icon}</div>" : '') . "
@@ -2923,14 +3011,63 @@ class BlockRenderer
                 <p class=\"tb-bento-item-text\">{$itext}</p>
                 {$linkHtml}
                 </div>
-            </div>";
+            </{$tag}>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-bento tb-section\">
+        // Scoped to this block's own markup: the pulse keyframes travel with
+        // the block so the live Canvas preview and the published tenant page
+        // animate identically, with the card's own colour/speed custom
+        // properties (--tb-glow-color / --tb-glow-speed) driving each card.
+        $styleTag = "<style data-tb-block-asset=\"bento_grid\">
+@keyframes tb-bento-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); border-color: rgba(226, 232, 240, 0.8); }
+    50% { box-shadow: 0 0 16px 2px var(--tb-glow-color, rgba(99, 102, 241, 0.5)); border-color: var(--tb-glow-color, rgba(99, 102, 241, 0.9)); }
+}
+.tb-bento-pulse-card {
+    position: relative;
+    border: 2px solid transparent !important;
+    animation: tb-bento-pulse var(--tb-glow-speed, 2s) infinite ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    .tb-bento-pulse-card { animation: none; }
+}
+</style>";
+
+        return $styleTag . "<div id=\"tb-{$id}\" class=\"tb-bento tb-section\">
             <div class=\"tb-container\">{$titleHtml}
                 <div class=\"tb-bento-grid\">" . implode('', $cells) . "</div>
             </div>
         </div>";
+    }
+
+    /**
+     * Sanitize a persisted Bento card colour into a token that is safe to
+     * interpolate into an inline style attribute: hex, a bare keyword
+     * (transparent/currentColor/…), an rgb()/hsl()-family function or a
+     * var(--token[, fallback]) reference. Anything else — quotes,
+     * semicolons, `url(...)`, `expression(...)` — returns `$fallback`
+     * ('' meaning "treat as not authored"), so a corrupted or malicious
+     * authored value degrades to a missing gradient instead of breaking out
+     * of the style attribute. Mirrors InspectorFieldRegistry::normalizeColor
+     * at render time for values that were saved before that boundary existed.
+     */
+    protected function bentoColorToken(mixed $value, string $fallback = ''): string
+    {
+        if (!is_scalar($value)) {
+            return $fallback;
+        }
+
+        $token = trim((string) $value);
+        if ($token === '') {
+            return '';
+        }
+
+        $numberish = '[0-9a-zA-Z%,.\s/*+-]+';
+        $pattern = '~^(?:#[0-9a-f]{3,8}|transparent|currentcolor|inherit|initial|unset|'
+            . '(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\(\s*' . $numberish . '\)|'
+            . 'var\(\s*--[A-Za-z0-9_-]+(?:\s*,\s*' . $numberish . ')?\s*\))$~i';
+
+        return preg_match($pattern, $token) === 1 ? $token : $fallback;
     }
 
     protected function renderServicesCards(array $props, string $inner, string $id): string
@@ -3977,8 +4114,8 @@ class BlockRenderer
     {
         $loginText    = $this->escape($props['login_text'] ?? 'ورود');
         $registerText = $this->escape($props['register_text'] ?? 'ثبت‌نام');
-        $loginUrl     = $this->escapeAttr($props['login_url'] ?? '/login');
-        $registerUrl  = $this->escapeAttr($props['register_url'] ?? '/register');
+        $loginUrl     = $this->escapeUrl(is_string($props['login_url'] ?? null) ? $props['login_url'] : '/login', '/login');
+        $registerUrl  = $this->escapeUrl(is_string($props['register_url'] ?? null) ? $props['register_url'] : '/register', '/register');
 
         return "<div id=\"tb-{$id}\" class=\"tb-login-register\">
             <a href=\"{$loginUrl}\" class=\"tb-nav-header-icon-link\">{$loginText}</a>
@@ -4092,7 +4229,7 @@ class BlockRenderer
 
     protected function renderFallback(string $type, array $props, string $inner, string $id): string
     {
-        $content = $inner ?: $this->escape(json_encode($props, JSON_UNESCAPED_UNICODE));
+        $content = $inner ?: '';
         return "<div id=\"tb-{$id}\" class=\"tb-block tb-block-{$type}\" data-type=\"{$type}\">{$content}</div>";
     }
 

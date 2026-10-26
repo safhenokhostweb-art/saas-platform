@@ -2700,3 +2700,68 @@ regressions remain green.
 `resources/views/admin/theme-builder/canvas.blade.php`. No migration, route,
 dependency, persistence, `BaseBlock`, `defineBlock`, or countdown behavior
 change.
+
+---
+
+## ADR-060
+
+**Title:** Commercial Iranian UI/UX Standard (Constitution §16) and Schema-Driven Repeater Contract
+
+**Status:** Accepted
+
+**Date:** 2026-10-25
+
+**Context:**
+
+The owner set a permanent quality bar for every user-facing interface:
+premium, RTL-first, Persian-typographic, mobile-first, conversion-focused
+commercial experiences. Generic or fragile output is not acceptable. The
+2026-10-25 widget-engine audit (`docs/theme-builder/COMMERCIAL_WIDGET_ROADMAP.md`)
+found concrete violations of that bar:
+
+- The platform Canvas repeater was hard-wired to Bento Grid (`propKey === 'items'`),
+  so every other `items` prop was edited, and corrupted, through Bento card fields.
+- Repeater child fields were declared under `item_schema`, which
+  `InspectorFieldRegistry` does not read, so they normalized to nothing.
+- Select options were declared as `{label,value}` objects, which rendered as
+  `[object Object]`.
+- Author URLs were rendered through `escapeAttr()` instead of the
+  scheme-validating `escapeUrl()`.
+
+Constitution §1 requires an explicit decision for any amendment.
+
+**Decision:**
+
+1. `PROJECT_CONSTITUTION.md` gains §16, *Commercial Iranian UI/UX Standard*, with
+   enforceable minimum requirements (RTL/typography, tokens, mobile and motion,
+   schema-generated authoring controls, honest interactions, safe output).
+2. The canonical repeater contract is the one `InspectorFieldRegistry` already
+   normalizes: `type: 'repeater'`, child controls under `fields`, persisted shape
+   in `storage` (`array` by default, `json` for legacy JSON-string props), and an
+   optional `item_label`. A child field may declare `show_if: '<sibling key>'`.
+   `item_schema` is not part of the contract.
+3. Select options are a `value => label` map, which is the shape
+   `normalizeSelect()` allowlists. A select may request a dedicated editor control
+   through `ui` (first use: `ui: 'column_picker'` on `columns.ratios`). A field
+   renders exactly one control.
+4. The platform Canvas renders every repeater from its `fields` alone, with add,
+   duplicate, reorder, remove, collapse, undo/redo, and live preview through
+   `updateProp()`. Schema-less `type: 'array'` props get a guarded JSON editor that
+   never writes an invalid draft.
+
+**Consequences:**
+
+- `bento_grid`, `faq`, `testimonials_slider`, and `list` now declare canonical
+  repeater fields. Legacy JSON-string values still load and render. The next edit
+  persists the array shape.
+- customer-site's schema-driven Canvas already reads `fields`/`storage`, so the two
+  hosts now agree on these types.
+- Promoting customer-site's remaining local repeater schemas into the canonical
+  registry is tracked as roadmap Phase 0.2.
+- `Phase01RepeaterContractTest` fails any canonical repeater without `fields` or
+  any select with object-list options.
+
+**Impact:** shared theme runtime (`src/BlockRegistry.php`, `src/BlockRenderer.php`),
+platform Canvas (`resources/views/admin/theme-builder/canvas.blade.php`),
+`PROJECT_CONSTITUTION.md`. No migration, route, dependency, or persistence-format
+break.

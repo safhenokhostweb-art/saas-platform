@@ -1013,7 +1013,8 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? 0"
                                         @input="updateProp(propKey, Number($event.target.value))"
-                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" :min="0">
+                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
+                                        :min="schemaDef.min ?? 0" :max="schemaDef.max ?? null" :step="schemaDef.step ?? 'any'">
                                 </template>
 
                                 {{-- boolean --}}
@@ -1028,20 +1029,226 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </label>
                                 </template>
 
-                                {{-- select --}}
-                                <template x-if="schemaDef.type === 'select'">
+                                {{-- select (plain dropdown unless the schema asks for a dedicated `ui`) --}}
+                                <template x-if="schemaDef.type === 'select' && !schemaDef.ui">
                                     <select :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @change="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition">
-                                        <template x-for="(label, val) in schemaDef.options" :key="val">
-                                            <option :value="val" :selected="(selectedBlock.props[propKey] ?? schemaDef.default) == val" x-text="label"></option>
+                                        <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
+                                            <option :value="opt.value" :selected="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value" x-text="opt.label"></option>
                                         </template>
                                     </select>
+                                </template>
+
+                                {{-- Visual column picker — a select whose schema declares
+                                     ui: 'column_picker'. Buttons are generated from the
+                                     schema's own options, so the picker and the allowlist
+                                     can never disagree. --}}
+                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'column_picker'">
+                                    <div class="grid grid-cols-2 gap-2 mt-1" role="radiogroup" :aria-label="schemaDef.label || propKey" :data-testid="'tb-column-picker-' + propKey">
+                                        <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
+                                            <button type="button" role="radio"
+                                                :aria-checked="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value"
+                                                @click="updateProp(propKey, opt.value)"
+                                                :title="opt.label" :aria-label="opt.label"
+                                                :class="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                                                class="px-2.5 py-2 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition">
+                                                <span class="flex items-center gap-0.5" aria-hidden="true">
+                                                    <template x-for="n in opt.value.split(',').length" :key="n">
+                                                        <span class="h-2.5 rounded-sm bg-current opacity-70" :class="opt.value.split(',').length > 2 ? 'w-1' : 'w-1.5'"></span>
+                                                    </template>
+                                                </span>
+                                                <span x-text="faDigits(opt.value.split(',').length) + ' ستون'"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                {{-- Schema-driven repeater (Phase 0.1). Every child control is
+                                     generated from the field's own normalized `fields` contract
+                                     (InspectorFieldRegistry); nothing here knows which block it
+                                     is editing. `storage: 'json'` keeps the legacy JSON-string
+                                     shape, otherwise items persist as a real array. Legacy
+                                     JSON-string values are parsed on read either way. --}}
+                                <template x-if="schemaDef.type === 'repeater'">
+                                    <div class="space-y-2 mt-1" :data-testid="'tb-repeater-' + propKey">
+                                        <template x-for="(item, itemIndex) in repeaterItems(propKey)" :key="repeaterItemKey(item, itemIndex)">
+                                            <div class="rounded-xl border bg-slate-50 transition"
+                                                :class="isRepeaterItemOpen(propKey, item, itemIndex) ? 'border-indigo-200 shadow-sm' : 'border-slate-200'"
+                                                :data-testid="`tb-repeater-item-${propKey}-${itemIndex}`">
+                                                <div class="flex items-center gap-1 px-2 py-1.5">
+                                                    <button type="button" @click="toggleRepeaterItem(propKey, item, itemIndex)"
+                                                        :aria-expanded="isRepeaterItemOpen(propKey, item, itemIndex) ? 'true' : 'false'"
+                                                        class="flex-1 min-w-0 flex items-center gap-1.5 text-start py-1 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">
+                                                        <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform" :class="isRepeaterItemOpen(propKey, item, itemIndex) ? '-rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                                        <span class="text-xs font-semibold text-slate-700 truncate" x-text="repeaterItemTitle(schemaDef, item, itemIndex)"></span>
+                                                    </button>
+                                                    <button type="button" @click="moveRepeaterItem(propKey, schemaDef, itemIndex, -1)" :disabled="itemIndex === 0"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none"
+                                                        :aria-label="'انتقال ' + repeaterItemTitle(schemaDef, item, itemIndex) + ' به بالا'" title="انتقال به بالا" :data-testid="`tb-repeater-up-${propKey}-${itemIndex}`">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                                                    </button>
+                                                    <button type="button" @click="moveRepeaterItem(propKey, schemaDef, itemIndex, 1)" :disabled="itemIndex >= repeaterItems(propKey).length - 1"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none"
+                                                        :aria-label="'انتقال ' + repeaterItemTitle(schemaDef, item, itemIndex) + ' به پایین'" title="انتقال به پایین" :data-testid="`tb-repeater-down-${propKey}-${itemIndex}`">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                                    </button>
+                                                    <button type="button" @click="duplicateRepeaterItem(propKey, schemaDef, itemIndex)"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md text-slate-500 hover:bg-white hover:text-indigo-600"
+                                                        :aria-label="'تکثیر ' + repeaterItemTitle(schemaDef, item, itemIndex)" title="تکثیر" :data-testid="`tb-repeater-duplicate-${propKey}-${itemIndex}`">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                                    </button>
+                                                    <button type="button" @click="removeRepeaterItem(propKey, schemaDef, itemIndex)"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                                                        :aria-label="'حذف ' + repeaterItemTitle(schemaDef, item, itemIndex)" title="حذف (با Ctrl+Z برمی‌گردد)" :data-testid="`tb-repeater-remove-${propKey}-${itemIndex}`">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    </button>
+                                                </div>
+
+                                                <div x-show="isRepeaterItemOpen(propKey, item, itemIndex)" class="px-3 pb-3 pt-2 space-y-2.5 border-t border-slate-200">
+                                                    <template x-for="(fieldDef, fieldKey) in (schemaDef.fields || {})" :key="fieldKey">
+                                                        <div x-show="repeaterFieldVisible(fieldDef, item)">
+                                                            <label class="block text-[11px] font-medium text-slate-500 mb-1"
+                                                                :for="`rf-${propKey}-${itemIndex}-${fieldKey}`" x-text="fieldDef.label || fieldKey"></label>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'text' || fieldControl(fieldDef) === 'icon'">
+                                                                <input type="text" :id="`rf-${propKey}-${itemIndex}-${fieldKey}`"
+                                                                    :value="item[fieldKey] ?? ''"
+                                                                    @input="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.value)"
+                                                                    class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'textarea' || fieldControl(fieldDef) === 'rich_text'">
+                                                                <textarea :id="`rf-${propKey}-${itemIndex}-${fieldKey}`" rows="2"
+                                                                    :value="item[fieldKey] ?? ''"
+                                                                    @input="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.value)"
+                                                                    class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'number' || fieldControl(fieldDef) === 'range'">
+                                                                <input type="number" :id="`rf-${propKey}-${itemIndex}-${fieldKey}`" dir="ltr"
+                                                                    :value="item[fieldKey] ?? fieldDef.default ?? ''"
+                                                                    :min="fieldDef.min ?? null" :max="fieldDef.max ?? null" :step="fieldDef.step ?? 'any'"
+                                                                    @input="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, clampNumber($event.target.value, fieldDef))"
+                                                                    class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'toggle'">
+                                                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                                                    <span class="relative">
+                                                                        <input type="checkbox" class="sr-only peer" :id="`rf-${propKey}-${itemIndex}-${fieldKey}`"
+                                                                            :checked="isTruthy(item[fieldKey])"
+                                                                            @change="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.checked)">
+                                                                        <span class="block w-9 h-5 bg-slate-200 peer-checked:bg-indigo-500 rounded-full transition"></span>
+                                                                        <span class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:-translate-x-4 transition-transform"></span>
+                                                                    </span>
+                                                                    <span class="text-xs text-slate-600" x-text="isTruthy(item[fieldKey]) ? 'فعال' : 'غیرفعال'"></span>
+                                                                </label>
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'select'">
+                                                                <select :id="`rf-${propKey}-${itemIndex}-${fieldKey}`"
+                                                                    @change="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.value)"
+                                                                    class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                                                    <template x-for="opt in selectOptions(fieldDef)" :key="opt.value">
+                                                                        <option :value="opt.value" :selected="String(item[fieldKey] ?? fieldDef.default ?? '') === opt.value" x-text="opt.label"></option>
+                                                                    </template>
+                                                                </select>
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'color'">
+                                                                <div class="flex items-center gap-1.5">
+                                                                    <input type="color" :value="colorInputValue(item[fieldKey], fieldDef.default)"
+                                                                        @input="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.value)"
+                                                                        class="w-8 h-8 shrink-0 rounded-lg border border-slate-200 p-0.5 cursor-pointer bg-white"
+                                                                        :aria-label="(fieldDef.label || fieldKey) + ' — انتخابگر رنگ'">
+                                                                    <input type="text" dir="ltr" :id="`rf-${propKey}-${itemIndex}-${fieldKey}`"
+                                                                        :value="item[fieldKey] ?? ''" placeholder="#000000 / rgba() / خالی"
+                                                                        @input="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.value.trim())"
+                                                                        class="flex-1 min-w-0 text-[11px] px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                                                    <button type="button" x-show="(item[fieldKey] ?? '') !== ''"
+                                                                        @click="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, '')"
+                                                                        class="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-rose-600"
+                                                                        :aria-label="'پاک کردن ' + (fieldDef.label || fieldKey)" title="پاک کردن">×</button>
+                                                                </div>
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'link'">
+                                                                <input type="text" dir="ltr" :id="`rf-${propKey}-${itemIndex}-${fieldKey}`"
+                                                                    :value="typeof item[fieldKey] === 'string' ? item[fieldKey] : (item[fieldKey]?.url ?? '')"
+                                                                    @input="updateRepeaterLink(propKey, schemaDef, itemIndex, fieldKey, $event.target.value)"
+                                                                    placeholder="/products یا https://…"
+                                                                    class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                                            </template>
+
+                                                            <template x-if="fieldControl(fieldDef) === 'media'">
+                                                                <div class="space-y-1.5">
+                                                                    <template x-if="typeof item[fieldKey] === 'string' && item[fieldKey] !== ''">
+                                                                        <div class="relative h-20 rounded-lg overflow-hidden border border-slate-200 bg-white">
+                                                                            <img :src="item[fieldKey]" alt="" class="w-full h-full object-cover">
+                                                                        </div>
+                                                                    </template>
+                                                                    <div class="flex items-center gap-1.5">
+                                                                        <input type="text" dir="ltr" :id="`rf-${propKey}-${itemIndex}-${fieldKey}`"
+                                                                            :value="typeof item[fieldKey] === 'string' ? item[fieldKey] : ''"
+                                                                            @input="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, $event.target.value)"
+                                                                            placeholder="آدرس تصویر"
+                                                                            class="flex-1 min-w-0 text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                                                        <button type="button" @click="pickRepeaterMedia(propKey, schemaDef, itemIndex, fieldKey)"
+                                                                            class="px-2.5 py-1.5 shrink-0 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-medium transition"
+                                                                            :data-testid="`tb-repeater-media-${propKey}-${itemIndex}-${fieldKey}`">کتابخانه</button>
+                                                                        <button type="button" x-show="(item[fieldKey] ?? '') !== ''"
+                                                                            @click="updateRepeaterField(propKey, schemaDef, itemIndex, fieldKey, '')"
+                                                                            class="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg border border-rose-200 bg-white text-rose-500 hover:bg-rose-50"
+                                                                            :aria-label="'حذف ' + (fieldDef.label || fieldKey)" title="حذف تصویر">×</button>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+
+                                                            <template x-if="!isSupportedRepeaterControl(fieldDef)">
+                                                                <p class="text-[10px] text-amber-600">این نوع فیلد در ویرایشگر لیست پشتیبانی نمی‌شود.</p>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <p x-show="repeaterItems(propKey).length === 0" class="text-center text-[11px] text-slate-400 py-3 border border-dashed border-slate-200 rounded-xl">هنوز موردی اضافه نشده است.</p>
+
+                                        <button type="button" @click="addRepeaterItem(propKey, schemaDef)" :data-testid="'tb-repeater-add-' + propKey"
+                                            class="w-full py-2 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-semibold hover:bg-indigo-100 flex items-center justify-center gap-1.5 transition">
+                                            <span aria-hidden="true">+</span>
+                                            <span x-text="'افزودن ' + (schemaDef.item_label || 'مورد')"></span>
+                                        </button>
+                                    </div>
+                                </template>
+
+                                {{-- Schema-less list props (type: array, no `fields`): guarded raw
+                                     JSON editor. An invalid draft is never written to the block. --}}
+                                <template x-if="schemaDef.type === 'array'">
+                                    <div x-data="{ jsonDraft: null, jsonDraftFor: null, jsonError: '' }">
+                                        <textarea :id="'ctrl-' + propKey" dir="ltr" rows="5" spellcheck="false"
+                                            :value="(jsonDraftFor === selectedBlock.id && jsonDraft !== null) ? jsonDraft : JSON.stringify(selectedBlock.props[propKey] ?? schemaDef.default ?? [], null, 2)"
+                                            @input="
+                                                jsonDraft = $event.target.value; jsonDraftFor = selectedBlock.id;
+                                                try {
+                                                    const parsed = JSON.parse(jsonDraft);
+                                                    if (!Array.isArray(parsed)) throw new Error('not a list');
+                                                    jsonError = '';
+                                                    updateProp(propKey, parsed);
+                                                } catch (_) { jsonError = 'JSON نامعتبر است؛ تا اصلاح نشود ذخیره نمی‌شود.'; }
+                                            "
+                                            @blur="if (!jsonError) { jsonDraft = null; jsonDraftFor = null; }"
+                                            class="w-full text-[11px] leading-5 px-2.5 py-2 rounded-lg border bg-white font-mono resize-y focus:outline-none focus:ring-2"
+                                            :class="jsonError ? 'border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:ring-indigo-300'"></textarea>
+                                        <p class="text-[10px] mt-1" :class="jsonError ? 'text-rose-600' : 'text-slate-400'" x-text="jsonError || 'ویرایش پیشرفته (فهرست JSON)'"></p>
+                                    </div>
                                 </template>
 
                                 {{-- color --}}
                                 <template x-if="schemaDef.type === 'color'">
                                     <div class="flex items-center gap-2">
-                                        <input type="color" :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
+                                        <input type="color" :id="'ctrl-' + propKey" :value="colorInputValue(selectedBlock.props[propKey], schemaDef.default ?? '#4f46e5')" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
                                         <input type="text" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000">
                                     </div>
                                 </template>
@@ -1832,7 +2039,9 @@ function themeCanvas() {
         // TB3-04: inline edit auto-save
         inlineAutoSaveTimer: null,
         // TB3-07: media manager
-        mediaModal: { show: false, tab: 'library', loading: false, images: [], uploading: false, uploadDone: false, targetPropKey: null },
+        mediaModal: { show: false, tab: 'library', loading: false, images: [], uploading: false, uploadDone: false, targetPropKey: null, onSelect: null },
+        // Phase 0.1: per-item collapse state of schema-driven repeaters (UI only, never saved).
+        repeaterOpen: {},
         // TB4: nested containers
         leftPanelTab:    'blocks',      // 'blocks' | 'tree'
         treeExpanded:    {},            // blockId → bool (default: expanded)
@@ -2284,6 +2493,163 @@ function themeCanvas() {
             if (cur && typeof cur === 'object' && !Array.isArray(cur)) {
                 this.updateProp(propKey, { ...cur, target });
             }
+        },
+
+        // ── Phase 0.1: schema-driven repeater ───────────────────────────
+        // Driven only by the normalized `fields` contract each repeater
+        // declares (InspectorFieldRegistry). Every write goes through
+        // updateProp(), so undo/redo, dirty state and live preview behave
+        // exactly like any scalar prop. Items are copied, never mutated in
+        // place, and unknown keys on an item are preserved.
+        repeaterItems(propKey) {
+            const raw = this.selectedBlock?.props?.[propKey];
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw !== 'string' || raw.trim() === '') return [];
+            try {
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                return [];
+            }
+        },
+        persistRepeaterItems(propKey, schemaDef, items) {
+            this.updateProp(propKey, schemaDef?.storage === 'json' ? JSON.stringify(items) : items);
+        },
+        // Stable `_id` when the item has one (every item created here does);
+        // legacy items keep a positional key and are never rewritten just to
+        // gain an id — same rule as InspectorFieldRegistry::compatibilityItemId.
+        repeaterItemKey(item, index) {
+            return (typeof item?._id === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(item._id)) ? item._id : `legacy-${index}`;
+        },
+        newRepeaterItem(fields) {
+            const id = 'item_' + (globalThis.crypto?.randomUUID?.().replaceAll('-', '') ?? (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+            const item = { _id: id };
+            for (const [key, def] of Object.entries(fields ?? {})) {
+                item[key] = def?.default ?? ({ toggle: false, number: 0, range: 0, repeater: [], array: [] }[this.fieldControl(def)] ?? '');
+            }
+            return item;
+        },
+        addRepeaterItem(propKey, schemaDef) {
+            const items = this.repeaterItems(propKey).map(it => ({ ...it }));
+            const item = this.newRepeaterItem(schemaDef?.fields);
+            items.push(item);
+            this.persistRepeaterItems(propKey, schemaDef, items);
+            this.setRepeaterItemOpen(propKey, item, items.length - 1, true);
+        },
+        duplicateRepeaterItem(propKey, schemaDef, index) {
+            const items = this.repeaterItems(propKey).map(it => ({ ...it }));
+            if (!items[index]) return;
+            const copy = JSON.parse(JSON.stringify(items[index]));
+            copy._id = this.newRepeaterItem({})._id;
+            items.splice(index + 1, 0, copy);
+            this.persistRepeaterItems(propKey, schemaDef, items);
+            this.setRepeaterItemOpen(propKey, copy, index + 1, true);
+        },
+        removeRepeaterItem(propKey, schemaDef, index) {
+            const items = this.repeaterItems(propKey).map(it => ({ ...it }));
+            if (!items[index]) return;
+            items.splice(index, 1);
+            this.persistRepeaterItems(propKey, schemaDef, items);
+        },
+        moveRepeaterItem(propKey, schemaDef, index, direction) {
+            const items = this.repeaterItems(propKey).map(it => ({ ...it }));
+            const target = index + direction;
+            if (!items[index] || target < 0 || target >= items.length) return;
+            const wasOpen = this.isRepeaterItemOpen(propKey, items[index], index);
+            [items[index], items[target]] = [items[target], items[index]];
+            this.persistRepeaterItems(propKey, schemaDef, items);
+            this.setRepeaterItemOpen(propKey, items[target], target, wasOpen);
+        },
+        updateRepeaterField(propKey, schemaDef, index, fieldKey, value) {
+            const items = this.repeaterItems(propKey).map(it => ({ ...it }));
+            if (!items[index] || typeof items[index] !== 'object') return;
+            items[index][fieldKey] = value;
+            this.persistRepeaterItems(propKey, schemaDef, items);
+        },
+        // Same object-preserving rule as updateLinkProp().
+        updateRepeaterLink(propKey, schemaDef, index, fieldKey, url) {
+            const cur = this.repeaterItems(propKey)[index]?.[fieldKey];
+            const value = (cur && typeof cur === 'object' && !Array.isArray(cur)) ? { ...cur, url } : url;
+            this.updateRepeaterField(propKey, schemaDef, index, fieldKey, value);
+        },
+        // The chosen URL is delivered only if the same block is still
+        // selected when the library returns.
+        pickRepeaterMedia(propKey, schemaDef, index, fieldKey) {
+            const blockId = this.selectedBlock?.id;
+            this.openMediaModal((url) => {
+                if (!this.selectedBlock || this.selectedBlock.id !== blockId) return;
+                this.updateRepeaterField(propKey, schemaDef, index, fieldKey, url);
+            });
+        },
+        // Collapse state is editor-only UI and never persisted. The first
+        // item of a repeater starts open so its fields are discoverable.
+        repeaterOpenKey(propKey, item, index) {
+            return `${this.selectedBlock?.id}:${propKey}:${this.repeaterItemKey(item, index)}`;
+        },
+        isRepeaterItemOpen(propKey, item, index) {
+            const state = this.repeaterOpen[this.repeaterOpenKey(propKey, item, index)];
+            return state === undefined ? index === 0 : state;
+        },
+        setRepeaterItemOpen(propKey, item, index, open) {
+            this.repeaterOpen = { ...this.repeaterOpen, [this.repeaterOpenKey(propKey, item, index)]: open };
+        },
+        toggleRepeaterItem(propKey, item, index) {
+            this.setRepeaterItemOpen(propKey, item, index, !this.isRepeaterItemOpen(propKey, item, index));
+        },
+        repeaterItemTitle(schemaDef, item, index) {
+            for (const [key, def] of Object.entries(schemaDef?.fields ?? {})) {
+                if (this.fieldControl(def) !== 'text') continue;
+                const v = item?.[key];
+                if (typeof v === 'string' && v.trim() !== '') return v.trim().length > 40 ? v.trim().slice(0, 40) + '…' : v.trim();
+            }
+            return `${schemaDef?.item_label || 'مورد'} ${this.faDigits(index + 1)}`;
+        },
+        repeaterFieldVisible(fieldDef, item) {
+            return !fieldDef?.show_if || this.isTruthy(item?.[fieldDef.show_if]);
+        },
+        fieldControl(def) {
+            const raw = def?.control ?? def?.type ?? 'text';
+            return ({ string: 'text', boolean: 'toggle', image: 'media' })[raw] ?? raw;
+        },
+        isSupportedRepeaterControl(def) {
+            return ['text', 'icon', 'textarea', 'rich_text', 'number', 'range', 'toggle', 'select', 'color', 'link', 'media'].includes(this.fieldControl(def));
+        },
+        // Accepts every options shape the registry uses: a value=>label map,
+        // a plain list of values, or a list of {value,label} objects.
+        selectOptions(def) {
+            const o = def?.options;
+            if (Array.isArray(o)) {
+                return o.map(x => (x && typeof x === 'object')
+                    ? { value: String(x.value ?? ''), label: String(x.label ?? x.value ?? '') }
+                    : { value: String(x), label: String(x) });
+            }
+            if (o && typeof o === 'object') return Object.entries(o).map(([value, label]) => ({ value: String(value), label: String(label) }));
+            return [];
+        },
+        // <input type=color> only understands #rrggbb; rgba()/var()/''
+        // stay editable through the paired text input.
+        colorInputValue(value, fallback) {
+            for (const v of [value, fallback]) {
+                if (typeof v !== 'string') continue;
+                const t = v.trim();
+                if (/^#[0-9a-f]{6}$/i.test(t)) return t;
+                if (/^#[0-9a-f]{3}$/i.test(t)) return '#' + [...t.slice(1)].map(c => c + c).join('');
+            }
+            return '#000000';
+        },
+        clampNumber(raw, def) {
+            if (raw === '' || raw === null || raw === undefined) return '';
+            let n = Number(raw);
+            if (!Number.isFinite(n)) return '';
+            if (def?.min !== undefined && def?.min !== null) n = Math.max(Number(def.min), n);
+            if (def?.max !== undefined && def?.max !== null) n = Math.min(Number(def.max), n);
+            return n;
+        },
+        isTruthy(v) {
+            return v === true || v === 1 || v === '1' || v === 'true';
+        },
+        faDigits(v) {
+            return String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
         },
 
         // ── TB3-S2: Per-block style overrides (TB5: breakpoint-aware) ─
@@ -2961,6 +3327,20 @@ function themeCanvas() {
         // TB3-07: Media Manager
         openMediaPicker(propKey) {
             this.mediaModal.targetPropKey = propKey;
+            this.mediaModal.onSelect = null;
+            this.mediaModal.show  = true;
+            this.mediaModal.tab   = 'library';
+            this.mediaModal.uploadDone = false;
+            this.fetchMedia();
+        },
+
+        // Nested repeater media fields: opens the same media library but
+        // delivers the chosen URL to a callback instead of a top-level prop
+        // key, so the caller decides which item receives it (see
+        // pickRepeaterMedia()).
+        openMediaModal(onSelect) {
+            this.mediaModal.targetPropKey = null;
+            this.mediaModal.onSelect = typeof onSelect === 'function' ? onSelect : null;
             this.mediaModal.show  = true;
             this.mediaModal.tab   = 'library';
             this.mediaModal.uploadDone = false;
@@ -2980,6 +3360,13 @@ function themeCanvas() {
         },
 
         selectMedia(url) {
+            if (typeof this.mediaModal.onSelect === 'function') {
+                const deliver = this.mediaModal.onSelect;
+                this.mediaModal.onSelect = null;
+                this.mediaModal.show = false;
+                deliver(url);
+                return;
+            }
             if (this.mediaModal.targetPropKey && this.selectedBlock) {
                 this.updateProp(this.mediaModal.targetPropKey, url);
             }

@@ -127,3 +127,16 @@ Lower layers may add context and execution detail but may not contradict higher 
 ## 15. Non-Negotiable Compliance
 
 Every change must preserve tenant isolation, package independence, data integrity, security boundaries, recoverability, licensing enforcement, backward compatibility, and ADR traceability. A change that cannot satisfy these principles requires explicit architectural resolution before implementation.
+
+## 16. Commercial Iranian UI/UX Standard
+
+Adopted 2026-10-25 by owner directive (ADR-060). Every user-facing interface — tenant sites, theme widgets, headers, footers, sections, and the builders that author them — must be an elite, enterprise-grade, visually refined, and highly intuitive commercial experience for modern Iranian businesses: RTL-first, clean Persian typography, purposeful micro-interactions, mobile-first, and conversion-focused. Mediocre, classic, generic, or fragile code and design are not acceptable; every widget must feel like a premium SaaS product with a frictionless experience.
+
+This standard is enforced through these minimum requirements:
+
+- **RTL and typography:** layouts use logical (inline/block) properties. Persian text uses locally served Vazirmatn (never a third-party font CDN). Persian digits and currency (toman) are produced by one shared formatter, not ad-hoc string handling.
+- **Design tokens:** colors, radii, and spacing come from theme tokens (`--tb-*`), not hardcoded hex defaults. Default states meet WCAG 2.1 AA contrast.
+- **Mobile-first and motion:** every interface is verified at desktop, tablet, and mobile widths. Touch interaction works, and `prefers-reduced-motion` is respected.
+- **Authoring experience:** every author-facing property has a real visual control, generated from its declared schema. Raw JSON editing is a fallback for schema-less legacy data only, never the intended path for new work.
+- **Honest interactions:** forms, search, and calls-to-action perform their real function or are explicitly marked as preview-only in the editor. No control may appear to succeed without doing anything.
+- **Safe output:** author-supplied URLs are scheme-validated before rendering, and author-supplied colors and styles are allowlisted, never trusted verbatim.

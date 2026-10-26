@@ -199,8 +199,23 @@ class BlockRegistry
                 'icon' => 'columns',
                 'is_container' => true,
                 'schema' => [
-                    'ratios' => ['type' => 'string', 'default' => '1/2,1/2'],
-                    'gap' => ['type' => 'spacing', 'default' => 'md'],
+                    // value => label map, the same options shape as every other
+                    // select here (InspectorFieldRegistry::normalizeSelect allowlists
+                    // by key). `ui` asks the Canvas to render the visual column
+                    // picker instead of a plain dropdown — one control, never both.
+                    'ratios' => [
+                        'type' => 'select',
+                        'ui' => 'column_picker',
+                        'label' => 'چیدمان ستون‌ها',
+                        'options' => [
+                            '1' => '۱ ستون کامل (تمام‌عرض)',
+                            '1/2,1/2' => '۲ ستون مساوی (۵۰ / ۵۰)',
+                            '1/3,1/3,1/3' => '۳ ستون مساوی (۳۳ / ۳۳ / ۳۳)',
+                            '1/4,1/4,1/4,1/4' => '۴ ستون مساوی (۲۵ / ۲۵ / ۲۵ / ۲۵)',
+                        ],
+                        'default' => '1/2,1/2',
+                    ],
+                    'gap' => ['type' => 'spacing', 'label' => 'فاصله ستون‌ها', 'default' => 'md'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
                 'defaultProps' => ['ratios' => '1/2,1/2', 'gap' => 'md', 'blocks' => []],
@@ -575,7 +590,9 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'list',
                 'schema' => [
-                    'items' => ['type' => 'repeater', 'label' => 'آیتم‌ها', 'default' => []],
+                    'items' => ['type' => 'repeater', 'label' => 'آیتم‌ها', 'item_label' => 'آیتم', 'storage' => 'array', 'default' => [], 'fields' => [
+                        'text' => ['type' => 'string', 'label' => 'متن', 'default' => ''],
+                    ]],
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['disc' => 'نقطه‌ای', 'ordered' => 'شماره‌ای', 'check' => 'تیک‌دار', 'plain' => 'ساده'], 'default' => 'disc'],
                 ],
                 'defaultProps' => ['items' => [['text' => '']]],
@@ -651,8 +668,20 @@ class BlockRegistry
                 'category' => self::CATEGORY_DYNAMIC,
                 'icon' => 'faq',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => 'سوالات متداول'],
-                    'items' => ['type' => 'array', 'default' => []],
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'سوالات متداول'],
+                    // Same item shape renderFaq() and customer-site's FAQPage
+                    // JSON-LD (CanvasStructuredData) already read.
+                    'items' => [
+                        'type' => 'repeater',
+                        'label' => 'پرسش‌ها',
+                        'item_label' => 'پرسش',
+                        'storage' => 'array',
+                        'default' => [],
+                        'fields' => [
+                            'question' => ['type' => 'string',   'label' => 'پرسش', 'default' => 'پرسش جدید'],
+                            'answer'   => ['type' => 'textarea', 'label' => 'پاسخ', 'default' => ''],
+                        ],
+                    ],
                 ],
                 'defaultProps' => ['title' => 'سوالات متداول', 'items' => []],
             ],
@@ -1699,9 +1728,34 @@ class BlockRegistry
                     'mode'     => ['type' => 'select', 'label' => 'نوع نمایش', 'options' => ['carousel' => 'اسلایدر با کنترل', 'static' => 'ثابت (Grid)'], 'default' => 'carousel'],
                     'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
                     'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
-                    'items'    => ['type' => 'textarea','label' => 'نظرات (JSON)','default' => '[{"name":"رضا احمدی","role":"مدیر شرکت","text":"این پلتفرم کسب‌وکار ما را متحول کرد. واقعاً عالی است!","rating":5},{"name":"مریم نوری","role":"کارآفرین","text":"طراحی فوق‌العاده و پشتیبانی سریع. پیشنهاد می‌دهم!","rating":5},{"name":"علی حسینی","role":"توسعه‌دهنده","text":"بهترین انتخاب برای ساخت سایت حرفه‌ای بود.","rating":5}]'],
+                    // Was a JSON textarea. Legacy JSON-string values still load:
+                    // the Canvas repeater parses them and the renderer accepts
+                    // both shapes; the next edit persists the array shape.
+                    'items'    => [
+                        'type' => 'repeater',
+                        'label' => 'نظرات',
+                        'item_label' => 'نظر',
+                        'storage' => 'array',
+                        'fields' => [
+                            'name'    => ['type' => 'string',   'label' => 'نام', 'default' => 'نام مشتری'],
+                            'role'    => ['type' => 'string',   'label' => 'سمت', 'default' => ''],
+                            'company' => ['type' => 'string',   'label' => 'شرکت (اختیاری)', 'default' => ''],
+                            'avatar'  => ['type' => 'image',    'label' => 'تصویر (اختیاری)', 'default' => ''],
+                            'text'    => ['type' => 'textarea', 'label' => 'متن نظر', 'default' => ''],
+                            'rating'  => ['type' => 'number',   'label' => 'امتیاز (۰ تا ۵)', 'default' => 5, 'min' => 0, 'max' => 5, 'step' => 1],
+                        ],
+                        'default' => [
+                            ['name' => 'رضا احمدی', 'role' => 'مدیر شرکت', 'text' => 'این پلتفرم کسب‌وکار ما را متحول کرد. واقعاً عالی است!', 'rating' => 5],
+                            ['name' => 'مریم نوری', 'role' => 'کارآفرین', 'text' => 'طراحی فوق‌العاده و پشتیبانی سریع. پیشنهاد می‌دهم!', 'rating' => 5],
+                            ['name' => 'علی حسینی', 'role' => 'توسعه‌دهنده', 'text' => 'بهترین انتخاب برای ساخت سایت حرفه‌ای بود.', 'rating' => 5],
+                        ],
+                    ],
                 ],
-                'defaultProps' => ['title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true, 'interval' => 5000, 'items' => '[{"name":"رضا احمدی","role":"مدیر شرکت","text":"این پلتفرم کسب‌وکار ما را متحول کرد!","rating":5},{"name":"مریم نوری","role":"کارآفرین","text":"طراحی فوق‌العاده و پشتیبانی سریع.","rating":5},{"name":"علی حسینی","role":"توسعه‌دهنده","text":"بهترین انتخاب برای سایت حرفه‌ای.","rating":5}]'],
+                'defaultProps' => ['title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true, 'interval' => 5000, 'items' => [
+                    ['name' => 'رضا احمدی', 'role' => 'مدیر شرکت', 'text' => 'این پلتفرم کسب‌وکار ما را متحول کرد!', 'rating' => 5],
+                    ['name' => 'مریم نوری', 'role' => 'کارآفرین', 'text' => 'طراحی فوق‌العاده و پشتیبانی سریع.', 'rating' => 5],
+                    ['name' => 'علی حسینی', 'role' => 'توسعه‌دهنده', 'text' => 'بهترین انتخاب برای سایت حرفه‌ای.', 'rating' => 5],
+                ]],
             ],
             'trust_badges' => [
                 'name' => 'نشان‌های اعتماد (Trust Badges)',
@@ -1743,10 +1797,53 @@ class BlockRegistry
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'bento',
                 'schema' => [
-                    'title' => ['type' => 'string',  'label' => 'عنوان بخش',   'default' => 'همه چیز در یک پلتفرم'],
-                    'items' => ['type' => 'textarea','label' => 'آیتم‌ها (JSON)','default' => '[{"title":"مدیریت هوشمند","text":"داشبورد جامع با تحلیل داده","icon":"📊","size":"large","bg_color":"#4f46e5","text_color":"#ffffff"},{"title":"امنیت پیشرفته","text":"رمزنگاری end-to-end","icon":"🔒","size":"small","bg_color":"#f0fdf4","text_color":"#14532d"},{"title":"سرعت بالا","text":"CDN جهانی","icon":"⚡","size":"small","bg_color":"#fef9c3","text_color":"#713f12"},{"title":"ادغام آسان","text":"بیش از ۵۰ ادغام","icon":"🔗","size":"small","bg_color":"#f0f9ff","text_color":"#0c4a6e"},{"title":"پشتیبانی ۲۴ ساعته","text":"تیم متخصص همیشه آماده","icon":"💬","size":"small","bg_color":"#fdf4ff","text_color":"#6b21a8"}]'],
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'همه چیز در یک پلتفرم'],
+                    // Canonical repeater contract (InspectorFieldRegistry): child
+                    // controls live under `fields`, `storage` names the persisted
+                    // shape. `size` values are exactly the renderer's allowlist
+                    // (renderBentoGrid) — legacy 'normal' still renders as small.
+                    // The gradient is an image overlay only: empty by default, and
+                    // ignored by the renderer on cards without a bg_image.
+                    'items' => [
+                        'type' => 'repeater',
+                        'label' => 'کارت‌های بنتو',
+                        'item_label' => 'کارت',
+                        'storage' => 'array',
+                        'fields' => [
+                            'title'         => ['type' => 'string',   'label' => 'عنوان کارت', 'default' => 'کارت جدید'],
+                            'text'          => ['type' => 'textarea', 'label' => 'توضیحات کارت', 'default' => ''],
+                            'icon'          => ['type' => 'string',   'label' => 'آیکون / ایموجی', 'default' => '⚡'],
+                            'size'          => ['type' => 'select',   'label' => 'اندازه کارت', 'options' => [
+                                'small'    => 'استاندارد (۱×۱)',
+                                'large'    => 'عریض (۲×۱)',
+                                'tall'     => 'بلند (۱×۲)',
+                                'featured' => 'ویژه (۲×۲)',
+                            ], 'default' => 'small'],
+                            'bg_color'      => ['type' => 'color',   'label' => 'رنگ پس‌زمینه', 'default' => '#f8fafc'],
+                            'text_color'    => ['type' => 'color',   'label' => 'رنگ متن', 'default' => '#0f172a'],
+                            'link'          => ['type' => 'link',    'label' => 'لینک کارت (اختیاری)', 'default' => ''],
+                            'bg_image'      => ['type' => 'image',   'label' => 'تصویر پس‌زمینه (اختیاری)', 'default' => ''],
+                            'bg_color_from' => ['type' => 'color',   'label' => 'رنگ بالای پوشش تصویر', 'default' => ''],
+                            'bg_color_to'   => ['type' => 'color',   'label' => 'رنگ پایین پوشش تصویر', 'default' => ''],
+                            'glow_enabled'  => ['type' => 'boolean', 'label' => 'افکت درخشش حاشیه', 'default' => false],
+                            'glow_color'    => ['type' => 'color',   'label' => 'رنگ درخشش', 'default' => '#6366f1', 'show_if' => 'glow_enabled'],
+                            'glow_speed'    => ['type' => 'number',  'label' => 'سرعت درخشش (ثانیه)', 'default' => 2, 'min' => 0.5, 'max' => 4, 'step' => 0.25, 'show_if' => 'glow_enabled'],
+                        ],
+                        'default' => [
+                            ['title' => 'مدیریت هوشمند', 'text' => 'داشبورد جامع', 'icon' => '📊', 'size' => 'large', 'bg_color' => '#4f46e5', 'text_color' => '#ffffff', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                            ['title' => 'امنیت پیشرفته', 'text' => 'رمزنگاری داده‌ها', 'icon' => '🔒', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                            ['title' => 'سرعت بالا', 'text' => 'CDN جهانی', 'icon' => '⚡', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                        ],
+                    ],
                 ],
-                'defaultProps' => ['title' => 'همه چیز در یک پلتفرم', 'items' => '[{"title":"مدیریت هوشمند","text":"داشبورد جامع","icon":"📊","size":"large","bg_color":"#4f46e5","text_color":"#ffffff"},{"title":"امنیت پیشرفته","text":"رمزنگاری","icon":"🔒","size":"small","bg_color":"#f0fdf4","text_color":"#14532d"},{"title":"سرعت بالا","text":"CDN جهانی","icon":"⚡","size":"small","bg_color":"#fef9c3","text_color":"#713f12"}]'],
+                'defaultProps' => [
+                    'title' => 'همه چیز در یک پلتفرم',
+                    'items' => [
+                        ['title' => 'مدیریت هوشمند', 'text' => 'داشبورد جامع', 'icon' => '📊', 'size' => 'large', 'bg_color' => '#4f46e5', 'text_color' => '#ffffff', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                        ['title' => 'امنیت پیشرفته', 'text' => 'رمزنگاری داده‌ها', 'icon' => '🔒', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                        ['title' => 'سرعت بالا', 'text' => 'CDN جهانی', 'icon' => '⚡', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                    ],
+                ],
             ],
             'services_cards' => [
                 'name' => 'کارت‌های خدمات (Services)',
