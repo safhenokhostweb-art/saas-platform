@@ -24,7 +24,17 @@
             this.tree = blocks || [];
         }
         queue(operation) { this.pendingOperations.push(clone(operation)); }
-        markSaved(blocks) { this.saved = clone(blocks || []); this.pendingOperations = []; this.reconcile(blocks); }
+        // A save acknowledges exactly what it SENT: `savedBlocks` is the
+        // request's own snapshot and `sentOperations` the operation objects
+        // it carried. Operations queued while the request was in flight stay
+        // pending (they describe snapshot → live tree) instead of being
+        // discarded as if they had been saved.
+        markSavedSnapshot(savedBlocks, sentOperations, liveBlocks) {
+            this.saved = clone(savedBlocks || []);
+            const sent = new Set(sentOperations || []);
+            this.pendingOperations = this.pendingOperations.filter(op => !sent.has(op));
+            this.reconcile(liveBlocks);
+        }
         select(nodeId, blocks = this.tree) {
             this.tree = blocks || [];
             this.selectedNodeId = identity.reconcileSelection(this.tree, nodeId);
@@ -209,6 +219,36 @@
         clear() { this.undoStack = []; this.redoStack = []; }
     }
 
+    // Single serial save lane for one Canvas editor: at most one save request
+    // is on the wire; a request made while one is in flight is satisfied by
+    // exactly one follow-up run that starts after it and captures the state
+    // at THAT moment — so every caller's edits are covered, no two requests
+    // ever replay the same operation log, and bursts coalesce into one save.
+    // `run` performs one save and resolves to its result; a rejected run does
+    // not stall the lane.
+    class CanvasSaveQueue {
+        constructor(run) { this.run = run; this.active = null; this.next = null; }
+        get busy() { return this.active !== null || this.next !== null; }
+        get waiting() { return this.next !== null; }
+        request() {
+            if (this.next) return this.next;
+            if (!this.active) return this.start();
+            const settled = () => {};
+            this.next = this.active.then(settled, settled).then(() => {
+                this.next = null;
+                return this.start();
+            });
+            return this.next;
+        }
+        start() {
+            const run = Promise.resolve().then(() => this.run());
+            this.active = run;
+            const clear = () => { if (this.active === run) this.active = null; };
+            run.then(clear, clear);
+            return run;
+        }
+    }
+
     class CanvasNavigator {
         flatten(blocks, expanded = {}, depth = 0, result = []) {
             const flat = identity.flatten(blocks);
@@ -253,6 +293,7 @@
     window.CanvasDocumentState = CanvasDocumentState;
     window.CanvasTreeOperations = CanvasTreeOperations;
     window.CanvasHistory = CanvasHistory;
+    window.CanvasSaveQueue = CanvasSaveQueue;
     window.CanvasNavigator = CanvasNavigator;
     window.CanvasDragDrop = CanvasDragDrop;
 }(window));

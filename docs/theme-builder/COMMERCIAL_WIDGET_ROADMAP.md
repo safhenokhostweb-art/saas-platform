@@ -169,3 +169,44 @@ repeater with no fields). Constitution §16 and ADR-060 adopted.
   - Target: Phase 2/3.
 - **FAQ:** uses the native `details` marker with no designed open state.
   Target: Phase 3.
+
+---
+
+## 6. P1 delivery: single serial save lane (2026-10-26)
+
+**Fixed:** every Canvas save goes through one `CanvasSaveQueue`. This covers
+toolbar, Ctrl+S, zone switch, extension change, structural autosave, and
+inline-edit autosave.
+
+- **One save at a time:** at most one request is on the wire. A request made
+  during a save joins a single follow-up run, which captures state when it
+  starts.
+- **Correct acknowledgement:** a run acknowledges only the snapshot and the
+  operation objects it sent (`markSavedSnapshot`). `isDirty` is recomputed
+  against the live tree, so a mid-flight edit stays visibly unsaved and is
+  never silently dropped.
+- **Retry keeps mid-flight work:** the structure-error retry no longer wipes
+  operations queued mid-flight.
+- **Publish:** publish aborts when the save before it fails.
+- **Leaving mid-save:** a `beforeunload` guard applies only while a save is
+  on the wire or queued.
+- **UI:** the Save button shows `در صف ذخیره…` or `در حال ذخیره...` with
+  `aria-busy`, plus a polite live status. Editing is never locked.
+- **Cleanup:** removed the dead `canvasSavePayload()` and
+  `CanvasDocumentState::markSaved()`.
+
+**Evidence:**
+- JS: 88/88, including 3 new queue/snapshot tests.
+- `tests/browser/p1-save-queue.spec.ts`: holds every save response for 800 ms;
+  passes on P1 and fails on the pre-P1 code.
+- PHP suites: 881 tests, the same 10 pre-existing failures.
+- Full browser suite on pre-P1 and P1, with identical failures:
+  - `zones:382` and `extension-authoring` (extension output);
+  - `phase3c-dynamic-widgets`;
+  - `global-styles` (publish hits a 30 s PHP limit in `PlaywrightExtractionService`);
+  - `reference-counter-fast-path.spec.js` (its config ignores
+    `PLAYWRIGHT_CHROME_PATH`).
+- PHP-shelling specs need `php` on PATH. With it, checkpoint (8/8 ×2), hero,
+  theme-list, and 9/10 zones tests pass.
+- Intermittent in multi-spec runs only, and each passes when re-run:
+  `zones:288` (1 of 5 runs) and checkpoint export (1 of 4).

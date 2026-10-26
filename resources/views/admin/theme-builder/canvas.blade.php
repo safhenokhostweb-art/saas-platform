@@ -210,15 +210,23 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
             </button>
 
             {{-- Save --}}
+            {{-- P1: disabled only while this user's save is outstanding (a second
+                 click would join the same queued save anyway). Editing stays
+                 fully available; "در صف" means it waits behind a save already
+                 on the wire and will include every edit made until it starts. --}}
             <button
                 @click="saveCurrentPage()"
                 :disabled="saving"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium transition disabled:opacity-60"
+                :aria-busy="saving ? 'true' : 'false'"
+                data-testid="canvas-save-button"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium transition disabled:opacity-60 disabled:cursor-progress"
             >
-                <svg x-show="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                <svg x-show="saving" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                <span x-text="saving ? 'در حال ذخیره...' : 'ذخیره'"></span>
+                <svg x-show="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <svg x-show="saving" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                <span x-text="saveWaiting ? 'در صف ذخیره…' : (saving ? 'در حال ذخیره...' : 'ذخیره')"></span>
             </button>
+            <span class="sr-only" role="status" aria-live="polite"
+                x-text="saveWaiting ? 'ذخیره در صف است' : (saving || quickSaving ? 'در حال ذخیره' : '')"></span>
 
             {{-- Publish --}}
             <button
@@ -2001,9 +2009,14 @@ function themeCanvas() {
         globalStylesSaving: false,
         selectedTab:    'content',
         isDirty:        false,
-        saving:         false,
+        // P1: every Canvas save goes through one serial lane (CanvasSaveQueue,
+        // created in init()). `saving` / `quickSaving` are derived from the
+        // outstanding requests below — never set directly.
+        saveQueue:      null,
+        manualSaveRequests: 0,
+        backgroundSaveRequests: 0,
+        saveInFlight:   false,
         switchingTarget: false,
-        quickSaving:    false,
         publishing:     false,
         showAddPage:    false,
         newPageTitle:   '',
@@ -2111,6 +2124,12 @@ function themeCanvas() {
                 ? (BLOCK_SCHEMAS[this.selectedBlock.type]?.editor ?? { allowCustomCss: true, lockedStructure: false, uiDirection: null })
                 : { allowCustomCss: true, lockedStructure: false, uiDirection: null };
         },
+        // A user-requested save (toolbar, Ctrl+S, zone switch, extension change) is outstanding.
+        get saving() { return this.manualSaveRequests > 0; },
+        // A background save (structural autosave, inline-edit autosave) is outstanding.
+        get quickSaving() { return this.backgroundSaveRequests > 0; },
+        // The user's save is waiting behind a request already on the wire.
+        get saveWaiting() { return this.saving && !!this.saveQueue?.waiting; },
         get canUndo() { this.historyVersion; return !!this.historyEngine?.canUndo; },
         get canRedo() { this.historyVersion; return !!this.historyEngine?.canRedo; },
         get recentHistory() { this.historyVersion; return this.historyEngine?.recent(10) ?? []; },
@@ -2865,15 +2884,6 @@ function themeCanvas() {
         selectedExtensionEntries() {
             return Object.entries(this.extensionSelections);
         },
-        canvasSavePayload(withOperations = true) {
-            return {
-                target: this.activeTarget,
-                page_key: this.activeTarget === 'page' ? this.currentPage : undefined,
-                blocks: this.blocks,
-                extension_selections: this.extensionSelections,
-                structural_operations: withOperations ? (this.documentState?.pendingOperations ?? []) : undefined,
-            };
-        },
         openExtensionsModal() {
             this.newExtensionProduct = AVAILABLE_EXTENSIONS[0]?.identifier ?? '';
             this.newExtensionVersion = this.releasesForProduct(this.newExtensionProduct)[0]?.version ?? '';
@@ -2892,100 +2902,100 @@ function themeCanvas() {
             await this.persistExtensionSelections();
         },
         async persistExtensionSelections() {
-            this.saving = true;
-            try {
-                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.canvasSavePayload())
-                });
-                const d = await r.json();
-                if (d.success) {
-                    this.documentState?.markSaved(this.blocks);
-                    this.showToast('انتخاب افزونه ذخیره شد ✓', 'success');
-                } else {
-                    this.showToast(d.error ?? 'خطا در ذخیره انتخاب افزونه', 'error');
-                }
-            } catch { this.showToast('خطای شبکه', 'error'); }
-            finally { this.saving = false; }
+            const result = await this.requestCanvasSave('manual');
+            if (result.ok) this.showToast('انتخاب افزونه ذخیره شد ✓', 'success');
+            else this.showToast(result.error ?? (result.network ? 'خطای شبکه' : 'خطا در ذخیره انتخاب افزونه'), 'error');
         },
 
         // ── Save & Publish ────────────────────────────────────────
-        async saveCurrentPage() {
-            if (this.saving) return;
-            this.saving = true;
-            try {
+        // P1: the ONLY code that talks to /canvas/save. Runs strictly one at a
+        // time (CanvasSaveQueue). Everything it sends — target, page, blocks,
+        // extension selections, operation log — is captured synchronously
+        // when the run starts, so edits made while the request is in flight
+        // are never confused with what was saved:
+        //   - only the operations this request carried are acknowledged;
+        //     operations queued mid-flight stay pending;
+        //   - `isDirty` is recomputed against the live tree, so a mid-flight
+        //     edit stays visibly unsaved instead of being marked saved;
+        //   - a document switched away from mid-flight is never touched.
+        async runCanvasSave() {
+            const docState = this.documentState;
+            const target = this.activeTarget;
+            const sentOperations = [...(docState?.pendingOperations ?? [])];
+            const blocksJson = JSON.stringify(this.blocks);
+            const snapshot = {
+                target,
+                page_key: target === 'page' ? this.currentPage : undefined,
+                blocks: JSON.parse(blocksJson),
+                extension_selections: JSON.parse(JSON.stringify(this.extensionSelections ?? {})),
+            };
+            const send = async (operations) => {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.canvasSavePayload())
+                    body: JSON.stringify({ ...snapshot, structural_operations: operations }),
                 });
-                let d = await r.json();
-                // Phase 2C hardening (same as autoSave): a replay-mismatched
-                // operation log falls back ONCE to an operations-free save;
-                // the server's implicit reconciler still enforces every guard.
-                if (!d.success && d.structure_errors && this.documentState) {
-                    this.documentState.pendingOperations = [];
-                    const retry = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                        body: JSON.stringify(this.canvasSavePayload(false))
-                    });
-                    d = await retry.json();
-                }
-                if (d.success) {
-                    this.documentState?.markSaved(this.blocks);
-                    this.isDirty = false;
-                    this.showToast('ذخیره شد ✓', 'success');
-                    return true;
-                }
-                this.showToast(d.error ?? 'خطا در ذخیره', 'error');
-                return false;
-            } catch {
-                this.showToast('خطای شبکه', 'error');
-                return false;
-            }
-            finally   { this.saving = false; }
-        },
+                return { r, d: await r.json().catch(() => ({})) };
+            };
 
-        // Silent auto-save (no toast) used before iframe reload
-        async autoSave() {
-            if (this.quickSaving) return;
-            this.quickSaving = true;
+            this.saveInFlight = true;
             try {
-                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.canvasSavePayload())
-                });
-                let d = await r.json();
+                let { r, d } = await send(sentOperations);
                 // Phase 2C hardening: a replay-mismatched operation log falls
                 // back ONCE to an operations-free save. The server still runs
                 // its full implicit reconciler (every placement/locked guard)
                 // — this only forgives an incomplete local operation log, it
-                // never weakens server-side validation.
-                if (!r.ok && d.structure_errors && this.documentState) {
-                    this.documentState.pendingOperations = [];
-                    const retry = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                        body: JSON.stringify(this.canvasSavePayload(false))
-                    });
-                    d = await retry.json();
-                    if (retry.ok && d.success) { this.isDirty = false; this.documentState?.markSaved(this.blocks); return true; }
+                // never weakens server-side validation. The rejected log is
+                // dropped either way; operations queued mid-flight are kept.
+                if ((!r.ok || !d.success) && d.structure_errors && docState) {
+                    const sent = new Set(sentOperations);
+                    docState.pendingOperations = docState.pendingOperations.filter(op => !sent.has(op));
+                    ({ r, d } = await send(undefined));
                 }
-                if (!r.ok || !d.success) {
-                    this.showToast(d.error ?? 'خطا در ذخیره', 'error');
-                    return false;
+                if (!r.ok || !d.success) return { ok: false, error: d.error ?? null };
+
+                const stillCurrent = this.documentState === docState;
+                docState?.markSavedSnapshot(snapshot.blocks, sentOperations, stillCurrent ? this.blocks : docState.tree);
+                if (stillCurrent) {
+                    this.isDirty = JSON.stringify(this.blocks) !== blocksJson
+                        || (docState?.pendingOperations.length ?? 0) > 0;
                 }
-                this.isDirty = false;
-                this.documentState?.markSaved(this.blocks);
-                return true;
+                return { ok: true };
             } catch (_) {
-                this.showToast('خطای شبکه', 'error');
-                return false;
+                return { ok: false, error: null, network: true };
+            } finally {
+                this.saveInFlight = false;
             }
-            finally { this.quickSaving = false; }
+        },
+
+        // `kind` only decides which indicator the request shows ('manual' →
+        // Save button, 'background' → toolbar spinner). Editing is never
+        // blocked: requests made during a save are queued and coalesced.
+        async requestCanvasSave(kind) {
+            const counter = kind === 'manual' ? 'manualSaveRequests' : 'backgroundSaveRequests';
+            this[counter]++;
+            try {
+                return await this.saveQueue.request();
+            } finally {
+                this[counter]--;
+            }
+        },
+
+        async saveCurrentPage() {
+            const result = await this.requestCanvasSave('manual');
+            if (result.ok) {
+                this.showToast('ذخیره شد ✓', 'success');
+                return true;
+            }
+            this.showToast(result.error ?? (result.network ? 'خطای شبکه' : 'خطا در ذخیره'), 'error');
+            return false;
+        },
+
+        // Silent auto-save (no success toast) used before iframe reload
+        async autoSave() {
+            const result = await this.requestCanvasSave('background');
+            if (!result.ok) this.showToast(result.error ?? (result.network ? 'خطای شبکه' : 'خطا در ذخیره'), 'error');
+            return result.ok;
         },
 
         async autoSaveAndReload() {
@@ -2995,7 +3005,8 @@ function themeCanvas() {
 
         async publishTheme() {
             if (this.publishing) return;
-            await this.saveCurrentPage();
+            // Never publish while the latest edits failed to save.
+            if (!(await this.saveCurrentPage())) return;
             this.publishing = true;
             try {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/publish`, {
@@ -3662,6 +3673,15 @@ function themeCanvas() {
             this.treeOperations = new CanvasTreeOperations(BLOCK_SCHEMAS);
             this.navigator = new CanvasNavigator();
             this.historyEngine = new CanvasHistory((entry, side) => this.applyHistoryEntry(entry, side), 100);
+            this.saveQueue = new CanvasSaveQueue(() => this.runCanvasSave());
+
+            // P1: leaving while a save is on the wire or queued would drop it.
+            // (Ordinary unsaved edits keep their existing visible "ذخیره نشده" cue.)
+            window.addEventListener('beforeunload', (e) => {
+                if (!this.saveQueue?.busy) return;
+                e.preventDefault();
+                e.returnValue = '';
+            });
 
             // TB3-02: Listen for postMessage from live preview iframe
             window.addEventListener('message', (e) => this.handleIframeMessage(e));

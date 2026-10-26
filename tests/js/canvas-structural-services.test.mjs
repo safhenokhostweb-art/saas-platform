@@ -11,7 +11,7 @@ const source = fs.readFileSync(new URL('../../resources/views/admin/theme-builde
 const context = vm.createContext({ window: {}, globalThis: {}, module: { exports: {} }, console, JSON, Date, Math, Set, Object, Array, Error });
 vm.runInContext(identitySource, context);
 vm.runInContext(source, context);
-const { CanvasDocumentState, CanvasTreeOperations, CanvasHistory, CanvasNavigator, CanvasDragDrop } = context.window;
+const { CanvasDocumentState, CanvasTreeOperations, CanvasHistory, CanvasNavigator, CanvasDragDrop, CanvasSaveQueue } = context.window;
 
 const schemas = {
   section: { is_container: true, editor: {} },
@@ -259,4 +259,82 @@ test('tree limits: resolved limits are enforced by assertPlacement (existing beh
     ops.insertNode(flat, { id: 'e', type: 'section' }, 'page', null);
     // five nodes; one more would be 6 > 5 -> max-nodes
     assert.throws(() => ops.insertNode(flat, { id: 'too-many', type: 'section' }, 'page', null), /max-nodes/);
+});
+
+// ── P1: single serial save lane ─────────────────────────────────────────
+
+const deferred = () => {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
+};
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+test('save queue keeps one request on the wire and coalesces requests made during it', async () => {
+  const runs = [];
+  let live = 'v1';
+  const queue = new CanvasSaveQueue(() => {
+    const d = deferred();
+    runs.push({ captured: live, d });
+    return d.promise;
+  });
+
+  const first = queue.request();
+  await tick();
+  assert.equal(runs.length, 1);
+  assert.equal(queue.busy, true);
+  assert.equal(queue.waiting, false);
+
+  live = 'v2';                       // edit made while the first save is in flight
+  const second = queue.request();
+  live = 'v3';                       // another edit before the follow-up starts
+  const third = queue.request();
+  assert.equal(second, third, 'requests made during a save share one follow-up');
+  assert.equal(queue.waiting, true);
+  await tick();
+  assert.equal(runs.length, 1, 'the follow-up never overlaps the in-flight save');
+
+  runs[0].d.resolve({ ok: true, n: 1 });
+  assert.deepEqual(await first, { ok: true, n: 1 });
+  await tick();
+  assert.equal(runs.length, 2);
+  assert.equal(runs[1].captured, 'v3', 'the follow-up captures every edit made before it started');
+
+  runs[1].d.resolve({ ok: true, n: 2 });
+  assert.deepEqual(await second, { ok: true, n: 2 });
+  await tick();
+  assert.equal(queue.busy, false);
+  assert.equal(runs.length, 2);
+});
+
+test('a failed save never stalls the queue', async () => {
+  const runs = [];
+  const queue = new CanvasSaveQueue(() => { const d = deferred(); runs.push(d); return d.promise; });
+
+  const first = queue.request();
+  await tick();
+  const second = queue.request();
+  runs[0].reject(new Error('network'));
+  await assert.rejects(first, /network/);
+  await tick();
+  assert.equal(runs.length, 2);
+  runs[1].resolve({ ok: true });
+  assert.deepEqual(await second, { ok: true });
+  assert.equal(queue.busy, false);
+});
+
+test('a save acknowledges only the snapshot and operations it sent', () => {
+  const blocks = fixture();
+  const state = new CanvasDocumentState(blocks);
+  const ops = new CanvasTreeOperations(schemas);
+  state.queue(ops.insertNode(blocks, { id: 'x', type: 'heading' }, 'c2', 0));
+  const sent = [...state.pendingOperations];
+  const snapshot = JSON.parse(JSON.stringify(blocks));
+
+  state.queue(ops.insertNode(blocks, { id: 'y', type: 'heading' }, 'c2', 1)); // mid-flight edit
+  state.markSavedSnapshot(snapshot, sent, blocks);
+
+  assert.equal(state.pendingOperations.length, 1);
+  assert.equal(state.pendingOperations[0].node_id, 'y', 'the mid-flight operation stays pending');
+  assert.deepEqual(state.saved[0].children[1].children.map(n => n.id), ['x'], 'saved base is what was sent, not the live tree');
 });
