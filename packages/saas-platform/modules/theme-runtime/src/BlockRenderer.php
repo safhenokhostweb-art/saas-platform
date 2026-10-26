@@ -1536,7 +1536,9 @@ class BlockRenderer
     // fix (caught by the new Builder↔Registry↔Renderer contract test).
     protected function renderNavMenu(array $props, string $inner, string $id): string
     {
-        $location = $props['location'] ?? 'header';
+        // Phase 0.2c: allowlisted — the raw value was interpolated into
+        // the class attribute unescaped.
+        $location = ($props['location'] ?? 'header') === 'footer' ? 'footer' : 'header';
         $menuHtml = $this->context['menu_html'] ?? '';
         return "<nav id=\"tb-{$id}\" class=\"tb-nav tb-nav-{$location}\" aria-label=\"منوی اصلی\">{$menuHtml}</nav>";
     }
@@ -1555,6 +1557,9 @@ class BlockRenderer
         if (empty($links) && !empty($this->context['social_links'])) {
             $links = $this->context['social_links'];
         }
+        if (isset($props['style'])) {
+            return $this->renderStyledSocialIcons(is_array($links) ? $links : [], (string) $props['style'], $id);
+        }
         $items = [];
         foreach ($links as $link) {
             $url = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : $link, '#');
@@ -1564,18 +1569,61 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-social-icons\">" . implode('', $items) . "</div>";
     }
 
+    /**
+     * Phase 0.2c: the `style` variants promoted from customer-site, with
+     * its markup unchanged — `icons` shows each label's first letter,
+     * `buttons` renders secondary buttons, `text` full labels. Unauthored
+     * `style` keeps the original markup above.
+     */
+    protected function renderStyledSocialIcons(array $links, string $style, string $id): string
+    {
+        $style = in_array($style, ['buttons', 'text'], true) ? $style : 'icons';
+        $items = [];
+        foreach ($links as $link) {
+            if (!is_array($link)) {
+                continue;
+            }
+            $url   = $this->linkHref($link['url'] ?? '#', '#');
+            $label = $this->escape($link['label'] ?? '');
+            $shown = $style === 'icons' ? mb_substr($label, 0, 1) : $label;
+            $cls = $style === 'buttons' ? 'tb-btn tb-btn-secondary' : 'tb-social-link';
+            $items[] = "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"{$cls}\" aria-label=\"{$label}\">{$shown}</a>";
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-social-icons tb-social-icons-{$style}\" style=\"display:flex;gap:0.5rem;flex-wrap:wrap;\">" . implode('', $items) . "</div>";
+    }
+
+    /** Theme colour tokens with a `.tb-bg-*` rule in the shared CSS contracts. */
+    private const CTA_BACKGROUND_TOKENS = ['primary', 'secondary', 'surface', 'background', 'text', 'dark', 'light', 'gray'];
+
     protected function renderCta(array $props, string $inner, string $id): string
     {
         $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
         $btnText  = $this->escape($props['button_text'] ?? '');
         $btnUrl   = $this->escapeUrl($props['button_url'] ?? '', '#');
-        $bg       = $props['background'] ?? 'primary';
+        // Phase 0.2c: `background` was interpolated into the class
+        // attribute unescaped, and a CSS colour (what customer-site's colour
+        // control stores) became a class with no rule, so the chosen colour
+        // never showed. A theme token keeps its class; a valid CSS colour
+        // is applied inline with a readable text colour; anything else
+        // falls back to the primary token.
+        $bg       = trim($this->stringify($props['background'] ?? 'primary'));
+        $styleAttr = '';
+        if (in_array($bg, self::CTA_BACKGROUND_TOKENS, true)) {
+            $bgClass = "tb-bg-{$bg}";
+        } elseif (($color = $this->bentoColorToken($bg)) !== '') {
+            $bgClass = 'tb-bg-custom';
+            $text = $this->readableTextColorOn($color);
+            $styleAttr = ' style="background:' . $this->escapeAttr($color) . ($text ? ';color:' . $text : '') . '"';
+        } else {
+            $bgClass = 'tb-bg-primary';
+        }
         $eaTitle  = $this->editableAttr('title', 'text');
         $eaSub    = $this->editableAttr('subtitle', 'text');
         $eaBtn    = $this->editableAttr('button_text', 'text');
         $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\"{$eaBtn}>{$btnText}</a>" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-cta tb-bg-{$bg}\"><h2 class=\"tb-cta-title\"{$eaTitle}>{$title}</h2><p class=\"tb-cta-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</section>";
+        return "<section id=\"tb-{$id}\" class=\"tb-cta {$bgClass}\"{$styleAttr}><h2 class=\"tb-cta-title\"{$eaTitle}>{$title}</h2><p class=\"tb-cta-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</section>";
     }
 
     /**
@@ -2455,27 +2503,32 @@ class BlockRenderer
      */
     protected function renderVideo(array $props, string $inner, string $id): string
     {
-        $url = trim((string) ($props['url'] ?? ''));
+        // Phase 0.2c: src/poster go through escapeUrl() (a javascript: or
+        // data: URL is refused), a non-string value (an unresolved
+        // {media_id}) counts as absent instead of raising an array-to-
+        // string error, and the switches read through flag() so a legacy
+        // "false" string is false.
+        $url = $this->escapeUrl(trim($this->stringify($props['url'] ?? '')), '');
         if ($url === '') {
             return "<div id=\"tb-{$id}\" class=\"tb-video tb-empty-state\"><p class=\"tb-text\">ویدیویی انتخاب نشده است.</p></div>";
         }
 
-        $poster   = trim((string) ($props['poster'] ?? ''));
+        $poster   = $this->escapeUrl(trim($this->stringify($props['poster'] ?? '')), '');
         $caption  = $this->escape($props['caption'] ?? '');
-        $autoplay = (bool) ($props['autoplay'] ?? false);
-        $loop     = (bool) ($props['loop'] ?? false);
-        $controls = $props['controls'] ?? true;
+        $autoplay = $this->flag($props['autoplay'] ?? false);
+        $loop     = $this->flag($props['loop'] ?? false);
+        $controls = $this->flag($props['controls'] ?? true);
 
         $attrs = [];
         if ($controls) $attrs[] = 'controls';
         if ($autoplay) $attrs[] = 'autoplay muted playsinline';
         if ($loop) $attrs[] = 'loop';
         $attrStr = implode(' ', $attrs);
-        $posterAttr = $poster !== '' ? ' poster="' . $this->escapeAttr($poster) . '"' : '';
+        $posterAttr = $poster !== '' ? ' poster="' . $poster . '"' : '';
         $captionHtml = $caption ? "<figcaption class=\"tb-video-caption\">{$caption}</figcaption>" : '';
 
         return "<figure id=\"tb-{$id}\" class=\"tb-video\">
-            <video src=\"" . $this->escapeAttr($url) . "\"{$posterAttr} {$attrStr} style=\"width:100%;border-radius:0.5rem;display:block;\"></video>
+            <video src=\"" . $url . "\"{$posterAttr} {$attrStr} style=\"width:100%;border-radius:0.5rem;display:block;\"></video>
             {$captionHtml}
         </figure>";
     }

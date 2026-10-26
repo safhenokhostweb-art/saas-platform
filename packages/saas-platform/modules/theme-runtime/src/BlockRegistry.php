@@ -137,6 +137,22 @@ class BlockRegistry
     public const EMPTY_POLICY_OPTIONAL = 'optional';
 
     /**
+     * Phase 0.2c (ADR-062): the spacing-scale tokens BlockRenderer::
+     * spacingClass() accepts, as select options. section.padding and
+     * grid/columns.gap store one of these tokens; they were typed
+     * `spacing`, which the Inspector contract reserves for a structured
+     * four-side value, so neither editor rendered any control for them.
+     */
+    public const SPACING_OPTIONS = [
+        'none' => 'بدون فاصله',
+        'xs'   => 'خیلی کم',
+        'sm'   => 'کم',
+        'md'   => 'متوسط',
+        'lg'   => 'زیاد',
+        'xl'   => 'خیلی زیاد',
+    ];
+
+    /**
      * @return string One of the EMPTY_POLICY_* constants — EMPTY_POLICY_FLAGGED
      *   when the type is unregistered or declares no explicit policy.
      */
@@ -162,10 +178,10 @@ class BlockRegistry
                 'icon' => 'layout-section',
                 'is_container' => true,
                 'schema' => [
-                    'padding' => ['type' => 'spacing', 'default' => 'md'],
-                    'background' => ['type' => 'string', 'default' => 'transparent'],
-                    'background_image' => ['type' => 'string', 'default' => ''],
-                    'container' => ['type' => 'boolean', 'default' => true],
+                    'padding' => ['type' => 'select', 'label' => 'فاصله داخلی', 'options' => self::SPACING_OPTIONS, 'default' => 'md'],
+                    'background' => ['type' => 'string', 'label' => 'رنگ پس‌زمینه', 'default' => 'transparent'],
+                    'background_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه', 'default' => ''],
+                    'container' => ['type' => 'boolean', 'label' => 'محتوا در عرض استاندارد', 'default' => true],
                     'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
                 'defaultProps' => ['padding' => 'md', 'background' => 'transparent', 'container' => true, 'blocks' => []],
@@ -187,8 +203,8 @@ class BlockRegistry
                 'icon' => 'grid',
                 'is_container' => true,
                 'schema' => [
-                    'columns' => ['type' => 'number', 'default' => 3],
-                    'gap' => ['type' => 'spacing', 'default' => 'md'],
+                    'columns' => ['type' => 'number', 'label' => 'تعداد ستون', 'default' => 3],
+                    'gap' => ['type' => 'select', 'label' => 'فاصله', 'options' => self::SPACING_OPTIONS, 'default' => 'md'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
                 'defaultProps' => ['columns' => 3, 'gap' => 'md', 'blocks' => []],
@@ -215,7 +231,7 @@ class BlockRegistry
                         ],
                         'default' => '1/2,1/2',
                     ],
-                    'gap' => ['type' => 'spacing', 'label' => 'فاصله ستون‌ها', 'default' => 'md'],
+                    'gap' => ['type' => 'select', 'label' => 'فاصله ستون‌ها', 'options' => self::SPACING_OPTIONS, 'default' => 'md'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
                 'defaultProps' => ['ratios' => '1/2,1/2', 'gap' => 'md', 'blocks' => []],
@@ -289,7 +305,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'accordion',
                 'schema' => [
-                    'items' => ['type' => 'array', 'default' => [['title' => 'عنوان', 'blocks' => []]]],
+                    'items' => ['type' => 'array', 'label' => 'موارد آکاردئون', 'default' => [['title' => 'عنوان', 'blocks' => []]]],
                 ],
                 'defaultProps' => ['items' => [['title' => 'عنوان', 'blocks' => []]]],
             ],
@@ -316,14 +332,23 @@ class BlockRegistry
                         'link'     => ['type' => 'link', 'label' => 'لینک (اختیاری)', 'default' => ''],
                         'cta_text' => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => ''],
                     ]],
-                    'autoplay' => ['type' => 'boolean', 'default' => true],
-                    'interval' => ['type' => 'number', 'default' => 5000],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
+                    'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
                     'transition' => ['type' => 'select', 'label' => 'نوع گذار', 'options' => ['slide' => 'اسلاید', 'fade' => 'محو شدن'], 'default' => 'slide'],
                     'boxed' => ['type' => 'boolean', 'label' => 'حالت جعبه‌ای (Boxed)', 'default' => false],
                     'aspect_ratio' => ['type' => 'select', 'label' => 'نسبت تصویر', 'options' => ['16/9' => '16:9', '21/9' => '21:9', '4/3' => '4:3', '1/1' => '1:1'], 'default' => '16/9'],
                     'overlay' => ['type' => 'boolean', 'label' => 'گرادیان روی تصویر', 'default' => true],
                 ],
-                'defaultProps' => ['slides' => [], 'autoplay' => true, 'interval' => 5000, 'transition' => 'slide', 'boxed' => false, 'aspect_ratio' => '16/9', 'overlay' => true],
+                // Phase 0.2c: two starter slides (customer-site's tested
+                // default) — renderSlider() outputs nothing for zero
+                // slides, so a freshly inserted slider was invisible.
+                'defaultProps' => [
+                    'slides' => [
+                        ['image' => '', 'title' => 'عنوان اسلاید ۱', 'subtitle' => '', 'link' => '', 'cta_text' => ''],
+                        ['image' => '', 'title' => 'عنوان اسلاید ۲', 'subtitle' => '', 'link' => '', 'cta_text' => ''],
+                    ],
+                    'autoplay' => true, 'interval' => 5000, 'transition' => 'slide', 'boxed' => false, 'aspect_ratio' => '16/9', 'overlay' => true,
+                ],
             ],
             'modal' => [
                 'name' => 'مودال',
@@ -348,13 +373,13 @@ class BlockRegistry
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'hero',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => ''],
-                    'subtitle' => ['type' => 'string', 'default' => ''],
-                    'button_text' => ['type' => 'string', 'default' => ''],
-                    'button_url' => ['type' => 'link', 'default' => ''],
-                    'background' => ['type' => 'string', 'default' => 'primary'],
-                    'background_image' => ['type' => 'string', 'default' => ''],
-                    'align' => ['type' => 'string', 'default' => 'center'],
+                    'title' => ['type' => 'string', 'label' => 'عنوان اصلی', 'default' => ''],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                    'button_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => ''],
+                    'button_url' => ['type' => 'link', 'label' => 'لینک دکمه', 'default' => ''],
+                    'background' => ['type' => 'string', 'label' => 'پس‌زمینه', 'default' => 'primary'],
+                    'background_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه', 'default' => ''],
+                    'align' => ['type' => 'string', 'label' => 'تراز', 'default' => 'center'],
                 ],
                 'defaultProps' => [
                     'title' => '', 'subtitle' => '', 'button_text' => '', 'button_url' => '',
@@ -457,8 +482,12 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'heading',
                 'schema' => [
-                    'level' => ['type' => 'number', 'default' => 2],
-                    'text' => ['type' => 'string', 'default' => ''],
+                    'text' => ['type' => 'string', 'label' => 'متن عنوان', 'default' => ''],
+                    // renderHeading() clamps to h1–h6; stored values are ints
+                    // (or numeric strings from older select controls).
+                    'level' => ['type' => 'select', 'label' => 'سطح عنوان', 'options' => [
+                        1 => 'H1 — عنوان اصلی صفحه', 2 => 'H2 — عنوان بخش', 3 => 'H3', 4 => 'H4', 5 => 'H5', 6 => 'H6',
+                    ], 'default' => 2],
                 ],
                 'defaultProps' => ['level' => 2, 'text' => ''],
             ],
@@ -467,7 +496,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'text',
                 'schema' => [
-                    'content' => ['type' => 'string', 'default' => ''],
+                    'content' => ['type' => 'textarea', 'label' => 'محتوا', 'default' => ''],
                 ],
                 'defaultProps' => ['content' => ''],
             ],
@@ -479,7 +508,7 @@ class BlockRegistry
                     'url'     => ['type' => 'image',  'label' => 'تصویر',   'default' => ''],
                     'alt'     => ['type' => 'string', 'label' => 'متن جایگزین', 'default' => ''],
                     'caption' => ['type' => 'string', 'label' => 'کپشن',    'default' => ''],
-                    'align'   => ['type' => 'string', 'label' => 'تراز',    'default' => 'center'],
+                    'align'   => ['type' => 'select', 'label' => 'تراز',    'options' => ['right' => 'راست', 'center' => 'وسط', 'left' => 'چپ'], 'default' => 'center'],
                 ],
                 'defaultProps' => ['url' => '', 'alt' => '', 'caption' => '', 'align' => 'center'],
             ],
@@ -488,7 +517,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'gallery',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => ''],
+                    'title' => ['type' => 'string', 'label' => 'عنوان گالری', 'default' => ''],
                     // Phase 0.2: promoted from customer-site (renderGallery reads {url, alt}).
                     'items' => ['type' => 'repeater', 'label' => 'تصاویر گالری', 'item_label' => 'تصویر', 'storage' => 'array', 'default' => [], 'fields' => [
                         'url' => ['type' => 'image', 'label' => 'تصویر', 'default' => ''],
@@ -501,26 +530,37 @@ class BlockRegistry
                 'name' => 'ویدیو',
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'video',
+                // Phase 0.2c: poster/autoplay/loop/controls promoted from
+                // customer-site — renderVideo() already honored all four.
+                // `url` is a media field (the media library stores
+                // {media_id}); media_kind tells editors not to preview it
+                // as an <img>.
                 'schema' => [
-                    'url' => ['type' => 'string', 'default' => ''],
-                    'caption' => ['type' => 'string', 'default' => ''],
+                    'url' => ['type' => 'image', 'media_kind' => 'video', 'label' => 'فایل ویدیو', 'default' => ''],
+                    'poster' => ['type' => 'image', 'label' => 'تصویر پیش‌نمایش', 'default' => ''],
+                    'caption' => ['type' => 'string', 'label' => 'کپشن', 'default' => ''],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار (بی‌صدا)', 'default' => false],
+                    'loop' => ['type' => 'boolean', 'label' => 'تکرار', 'default' => false],
+                    'controls' => ['type' => 'boolean', 'label' => 'نمایش کنترل‌ها', 'default' => true],
                 ],
-                'defaultProps' => ['url' => '', 'caption' => ''],
+                'defaultProps' => ['url' => '', 'poster' => '', 'caption' => '', 'autoplay' => false, 'loop' => false, 'controls' => true],
             ],
             'button' => [
                 'name' => 'دکمه',
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'button',
                 'schema' => [
-                    'text' => ['type' => 'string', 'default' => ''],
+                    'text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => ''],
                     // TASK 3/3 Phase 6.5C (BLD-28) — internal-link-capable
                     // (typed {internal_page, custom_url} target, resolved
                     // server-side via InternalLinkResolver). See
                     // BlockRenderer::escapeUrl() callers — unchanged;
                     // resolution happens before render, same pattern as
                     // {media_id}.
-                    'url' => ['type' => 'link', 'default' => ''],
-                    'style' => ['type' => 'string', 'default' => 'primary'],
+                    'url' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
+                    // Only the variants renderButton() allowlists; customer-
+                    // site's former `outline` option rendered as primary.
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['primary' => 'اصلی', 'secondary' => 'ثانویه'], 'default' => 'primary'],
                 ],
                 'defaultProps' => ['text' => '', 'url' => '#', 'style' => 'primary'],
             ],
@@ -624,9 +664,9 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'counter',
                 'schema' => [
-                    'value' => ['type' => 'number', 'default' => 0],
-                    'suffix' => ['type' => 'string', 'default' => ''],
-                    'label' => ['type' => 'string', 'default' => ''],
+                    'value' => ['type' => 'number', 'label' => 'عدد', 'default' => 0],
+                    'suffix' => ['type' => 'string', 'label' => 'پسوند', 'default' => ''],
+                    'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => ''],
                 ],
                 'defaultProps' => ['value' => 0, 'suffix' => '', 'label' => ''],
             ],
@@ -646,11 +686,22 @@ class BlockRegistry
                 'name' => 'پست‌های وبلاگ',
                 'category' => self::CATEGORY_DYNAMIC,
                 'icon' => 'blog',
+                // Phase 0.2c: layout/source/category_id/manual_ids/autoplay/
+                // interval promoted from customer-site, whose tenant-data
+                // renderer reads them. The shared renderer has no post data
+                // and keeps its honest placeholder — same convention as
+                // product_slider's source fields below.
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => 'آخرین مطالب'],
-                    'limit' => ['type' => 'number', 'default' => 6],
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'آخرین مطالب'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد نوشته', 'default' => 6],
+                    'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['grid' => 'گرید', 'list' => 'لیست', 'slider' => 'اسلایدر'], 'default' => 'grid'],
+                    'source' => ['type' => 'select', 'label' => 'منبع', 'options' => ['latest' => 'جدیدترین', 'category' => 'یک دسته‌بندی خاص', 'manual' => 'انتخاب دستی'], 'default' => 'latest'],
+                    'category_id' => ['type' => 'number', 'label' => 'شناسه دسته‌بندی (در حالت دسته‌بندی)', 'default' => null],
+                    'manual_ids' => ['type' => 'array', 'label' => 'شناسه مقالات (در حالت انتخاب دستی)', 'default' => []],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار (در حالت اسلایدر)', 'default' => true],
+                    'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
                 ],
-                'defaultProps' => ['title' => 'آخرین مطالب', 'limit' => 6],
+                'defaultProps' => ['title' => 'آخرین مطالب', 'limit' => 6, 'layout' => 'grid', 'source' => 'latest', 'autoplay' => true, 'interval' => 5000],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
             ],
             'products' => [
@@ -669,8 +720,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_DYNAMIC,
                 'icon' => 'quote',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => 'نظرات'],
-                    'limit' => ['type' => 'number', 'default' => 5],
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'نظرات'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد نمایش', 'default' => 5],
                 ],
                 'defaultProps' => ['title' => 'نظرات', 'limit' => 5],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
@@ -715,8 +766,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_ECOMMERCE,
                 'icon' => 'grid',
                 'schema' => [
-                    'columns' => ['type' => 'number', 'default' => 4],
-                    'limit' => ['type' => 'number', 'default' => 8],
+                    'columns' => ['type' => 'number', 'label' => 'تعداد ستون', 'default' => 4],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد نمایش', 'default' => 8],
                 ],
                 'defaultProps' => ['columns' => 4, 'limit' => 8],
             ],
@@ -733,13 +784,13 @@ class BlockRegistry
                 'icon' => 'slider',
                 'schema' => [
                     'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'محصولات منتخب'],
-                    'limit' => ['type' => 'number', 'default' => 6],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد نمایش', 'default' => 6],
                     'columns' => ['type' => 'select', 'label' => 'تعداد ستون (دسکتاپ)', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
                     'source' => ['type' => 'select', 'label' => 'منبع محصولات', 'options' => ['latest' => 'جدیدترین', 'new' => 'دارای برچسب جدید', 'category' => 'یک دسته‌بندی خاص', 'manual' => 'انتخاب دستی'], 'default' => 'latest'],
                     'category_id' => ['type' => 'number', 'label' => 'شناسه دسته‌بندی (در حالت دسته‌بندی)', 'default' => null],
                     'manual_ids' => ['type' => 'array', 'label' => 'شناسه محصولات (در حالت انتخاب دستی)', 'default' => []],
-                    'autoplay' => ['type' => 'boolean', 'default' => true],
-                    'interval' => ['type' => 'number', 'default' => 5000],
+                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
+                    'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
                 ],
                 'defaultProps' => ['title' => 'محصولات منتخب', 'limit' => 6, 'columns' => '3', 'source' => 'latest', 'autoplay' => true, 'interval' => 5000],
             ],
@@ -801,11 +852,13 @@ class BlockRegistry
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'cta',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => ''],
-                    'subtitle' => ['type' => 'string', 'default' => ''],
-                    'button_text' => ['type' => 'string', 'default' => ''],
-                    'button_url' => ['type' => 'link', 'default' => ''],
-                    'background' => ['type' => 'string', 'default' => 'primary'],
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                    'button_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => ''],
+                    'button_url' => ['type' => 'link', 'label' => 'لینک دکمه', 'default' => ''],
+                    // A theme token (primary/secondary/…) or a CSS colour —
+                    // renderCta() handles both (Phase 0.2c).
+                    'background' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => 'primary'],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'button_text' => '', 'button_url' => '', 'background' => 'primary'],
             ],
@@ -814,8 +867,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'clock',
                 'schema' => [
-                    'end_date' => ['type' => 'string', 'default' => ''],
-                    'label' => ['type' => 'string', 'default' => 'پایان پیشنهاد'],
+                    'end_date' => ['type' => 'string', 'label' => 'تاریخ پایان (Y-m-d)', 'default' => ''],
+                    'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => 'پایان پیشنهاد'],
                 ],
                 'defaultProps' => ['end_date' => '', 'label' => 'پایان پیشنهاد'],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
@@ -835,9 +888,11 @@ class BlockRegistry
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'megaphone',
                 'schema' => [
-                    'text' => ['type' => 'string', 'default' => ''],
-                    'link' => ['type' => 'link', 'default' => ''],
-                    'style' => ['type' => 'string', 'default' => 'info'],
+                    'text' => ['type' => 'string', 'label' => 'متن', 'default' => ''],
+                    'link' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
+                    // The variants the shared CSS contract styles
+                    // (.tb-promo-info/-sale/-urgent).
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['info' => 'اطلاع‌رسانی', 'sale' => 'فروش ویژه', 'urgent' => 'فوری'], 'default' => 'info'],
                 ],
                 'defaultProps' => ['text' => '', 'link' => '', 'style' => 'info'],
                 // Phase 2f (ADR-027): a deliberately optional accent — see
@@ -858,7 +913,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'search',
                 'schema' => [
-                    'placeholder' => ['type' => 'string', 'default' => 'جستجو...'],
+                    'placeholder' => ['type' => 'string', 'label' => 'متن راهنمای جستجو', 'default' => 'جستجو...'],
                 ],
                 'defaultProps' => ['placeholder' => 'جستجو...'],
             ],
@@ -867,18 +922,25 @@ class BlockRegistry
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'menu',
                 'schema' => [
-                    'location' => ['type' => 'string', 'default' => 'header'],
+                    'location' => ['type' => 'select', 'label' => 'موقعیت منو', 'options' => ['header' => 'سربرگ (هدر)', 'footer' => 'پابرگ (فوتر)'], 'default' => 'header'],
                 ],
                 'defaultProps' => ['location' => 'header'],
             ],
+            // Phase 0.2c: `links` is a real list editor (was a schema-less
+            // array) and `style` is promoted from customer-site. With no
+            // links, a host may fall back to its site-wide social links.
             'social_icons' => [
                 'name' => 'شبکه‌های اجتماعی',
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'share',
                 'schema' => [
-                    'links' => ['type' => 'array', 'default' => []],
+                    'links' => ['type' => 'repeater', 'label' => 'لینک‌ها', 'item_label' => 'لینک', 'storage' => 'array', 'default' => [], 'fields' => [
+                        'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
+                        'url'   => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
+                    ]],
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['icons' => 'آیکون', 'buttons' => 'دکمه', 'text' => 'متن'], 'default' => 'icons'],
                 ],
-                'defaultProps' => ['links' => []],
+                'defaultProps' => ['links' => [], 'style' => 'icons'],
             ],
             'language_switcher' => [
                 'name' => 'تعویض زبان',
@@ -1008,10 +1070,12 @@ class BlockRegistry
                 'category' => self::CATEGORY_MODULE,
                 'icon' => 'sparkles',
                 'schema' => [
-                    'motion_asset_id' => ['type' => 'string', 'label' => 'شناسه دارایی موشن (Motion Asset ID)', 'default' => ''],
+                    // `motion`: customer-site's picker over the site's own
+                    // permitted assets; the platform Canvas shows the id.
+                    'motion_asset_id' => ['type' => 'motion', 'label' => 'موشن انتخاب‌شده', 'default' => ''],
                     'placement' => ['type' => 'select', 'label' => 'جایگاه', 'options' => ['hero' => 'هیرو', 'section' => 'بخش', 'cta' => 'فراخوان به اقدام', 'background' => 'پس‌زمینه'], 'default' => 'section'],
                     'enabled' => ['type' => 'boolean', 'label' => 'فعال', 'default' => true],
-                    'fallback_image' => ['type' => 'string', 'label' => 'تصویر جایگزین', 'default' => ''],
+                    'fallback_image' => ['type' => 'image', 'label' => 'تصویر جایگزین (در صورت نبود موشن)', 'default' => ''],
                 ],
                 'defaultProps' => ['motion_asset_id' => '', 'placement' => 'section', 'enabled' => true, 'fallback_image' => ''],
             ],
@@ -1203,9 +1267,10 @@ class BlockRegistry
                     'columns' => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
                     'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['grid' => 'گرید', 'list' => 'لیست'], 'default' => 'grid'],
                     'show_price' => ['type' => 'boolean', 'label' => 'نمایش قیمت', 'default' => true],
-                    'show_instructor' => ['type' => 'boolean', 'label' => 'نمایش مدرس', 'default' => true],
+                    // Phase 0.2c: `show_instructor` removed — no renderer
+                    // read it and Course has no instructor field.
                 ],
-                'defaultProps' => ['title' => 'دوره‌های آموزشی', 'limit' => 6, 'columns' => '3', 'layout' => 'grid', 'show_price' => true, 'show_instructor' => true],
+                'defaultProps' => ['title' => 'دوره‌های آموزشی', 'limit' => 6, 'columns' => '3', 'layout' => 'grid', 'show_price' => true],
             ],
             'module:course_enroll_cta' => [
                 'name' => 'دعوت به ثبت‌نام دوره',
@@ -1269,10 +1334,12 @@ class BlockRegistry
                 'schema' => [
                     'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'پلن‌های اشتراک'],
                     'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => 'پلنی که مناسب شماست را انتخاب کنید'],
-                    'highlight_plan' => ['type' => 'string', 'label' => 'پلن برجسته (slug)', 'default' => ''],
-                    'show_annual_toggle' => ['type' => 'boolean', 'label' => 'کلید ماهانه/سالانه', 'default' => false],
+                    // Phase 0.2c: `highlight_plan` and `show_annual_toggle`
+                    // removed — no renderer read them. A plan's own
+                    // `highlighted` flag (subscription admin) is the one
+                    // highlighting authority.
                 ],
-                'defaultProps' => ['title' => 'پلن‌های اشتراک', 'subtitle' => 'پلنی که مناسب شماست را انتخاب کنید', 'highlight_plan' => '', 'show_annual_toggle' => false],
+                'defaultProps' => ['title' => 'پلن‌های اشتراک', 'subtitle' => 'پلنی که مناسب شماست را انتخاب کنید'],
             ],
             'module:plan_cta' => [
                 'name' => 'دعوت به اشتراک',
@@ -1334,7 +1401,9 @@ class BlockRegistry
                 'schema' => [
                     'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'نظرات مشتریان'],
                     'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 6],
-                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'minimal' => 'مینیمال', 'carousel' => 'چرخشی'], 'default' => 'cards'],
+                    // `carousel` removed (Phase 0.2c): the reviews renderer
+                    // only implements cards and minimal.
+                    'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'minimal' => 'مینیمال'], 'default' => 'cards'],
                     'show_avatar' => ['type' => 'boolean', 'label' => 'نمایش آواتار', 'default' => true],
                 ],
                 'defaultProps' => ['title' => 'نظرات مشتریان', 'limit' => 6, 'style' => 'cards', 'show_avatar' => true],

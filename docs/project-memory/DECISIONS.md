@@ -2848,3 +2848,104 @@ service/project-card overrides had the same gap.
 
 There is no migration, route, dependency, or persistence-format break: strings
 stay strings, and `highlight` text values still read correctly.
+
+## ADR-062
+
+**Title:** One Block Definition Authority: customer-site Overrides Retired
+
+**Status:** Accepted
+
+**Date:** 2026-10-26
+
+**Context:**
+
+customer-site's `ThemeCanvas\BlockRegistry` kept local copies of 65 canonical
+block types and merged them over the canonical registry, with the host copy
+winning. Phase 0.2 aligned their list fields. An audit of the rest found that
+all 65 still differed:
+
+- 47 canonical fields had no label, so an editor showed the raw prop key.
+- `section.padding` and `grid`/`columns.gap` were typed `spacing`. The
+  Inspector contract reserves that type for a structured four-side value, so
+  neither editor rendered any control. Container `blocks` fields showed a label
+  with no control.
+- Host option lists offered values no renderer implements: `button` `outline`,
+  `promo_banner` `success`/`warning`/`danger`, `nav_menu` `sidebar`.
+  Canonical had the same problem with `module:reviews_grid` `carousel`.
+- Some fields were read by no renderer on either host: host `gallery.columns`,
+  `product_grid.title` and `accordion.title`; canonical
+  `module:courses_grid.show_instructor` and `module:pricing_table`
+  `highlight_plan`/`show_annual_toggle`.
+- Host-only fields that customer-site's renderers do read were missing
+  canonically: `video` poster/autoplay/loop/controls, `blog_posts`
+  layout/source/category/manual ids/autoplay/interval, and `social_icons.style`.
+- `renderCta()` and `renderNavMenu()` put `background` and `location` into a
+  class attribute unescaped. A CSS colour, which customer-site's colour control
+  stores, became a class with no rule, so the chosen colour never showed.
+
+**Decision:**
+
+1. The canonical registry is the only block-definition authority. customer-site
+   assembles its registry as canonical plus `HOST_PATCHES`, a list of
+   field-level replacements. Each patch states why the host cannot use the
+   canonical field. There is one patch today: `module:shop_product_grid.source`
+   without `bestselling`, because the host renderer has no sales-backed query.
+2. Harmonization rules:
+   - **Labels:** a canonical label wins; a host label fills a missing one.
+   - **Controls:** keep the richer authoring control (media picker over text,
+     select over free text, textarea over a single line) when it keeps every
+     stored value valid.
+   - **Option lists:** a select offers only what the renderer honours, checked
+     against the CSS contracts and a survey of stored theme data.
+   - **Dead fields:** a field no renderer reads on either host is removed, not
+     promoted.
+3. A spacing token is a `select` over `BlockRegistry::SPACING_OPTIONS`, the
+   scale `spacingClass()` accepts.
+4. `video.url` is an `image` media field with `media_kind: 'video'`. The media
+   library stores `{media_id}` for it, and editors do not preview it as an
+   `<img>`.
+5. `renderCta()` keeps a class for theme tokens. It applies a valid CSS colour
+   inline, with a readable text colour, and falls back to `primary` for
+   anything else. `renderNavMenu()` allowlists `header`/`footer`.
+   `renderVideo()` validates `src`/`poster` with `escapeUrl()` and reads its
+   switches with `flag()`.
+6. The social-icon style variants live in the shared
+   `renderStyledSocialIcons()`, with the host markup unchanged.
+   customer-site's override only adds its site-wide `SocialLink` fallback.
+   Its `renderVideo()` copy is deleted.
+7. Both editors give every field type a control. `blocks` fields are hidden
+   from the content tab. `array` fields get the guarded JSON editor, and
+   `text`/`rich_text` get a textarea.
+
+**Consequences:**
+
+- customer-site's registry shrinks from 1,413 to 213 lines. A canonical change
+  now reaches customer-site's editor and validator directly.
+- customer-site's `CanonicalBlockDefinitionParityTest` fails when:
+  - an offered type differs from canonical outside a declared patch;
+  - a patch is stale or matches canonical;
+  - a field has no editor control;
+  - a type's defaults fail the live render validator.
+- `Phase02cCanonicalHarmonizationTest` pins the canonical side: every field has
+  a control, the shadowed types are fully labelled, option lists match
+  renderers, and the renderer fixes hold.
+- Effective validation contract on customer-site, before and after: unchanged
+  except `section`/`grid`/`columns.blocks` (now `mixed`) and
+  `stats_row.background_image` (now `media`). Neither rejects any stored value
+  found in the survey.
+- Rendering changes for stored content:
+  - CTAs whose `background` is a CSS colour now show that colour (4 blocks in
+    customer-site fixture data);
+  - unknown CTA tokens and `nav_menu` locations fall back to the default class;
+  - `javascript:`/`data:` video URLs render the empty state.
+  Everything else renders byte-identically.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRegistry`, `BlockRenderer`.
+- **Platform Canvas:** `canvas.blade.php`.
+- **customer-site:** `ThemeCanvas\BlockRegistry`, `ThemeCanvasRenderer`, the
+  Canvas editor.
+
+There is no migration, route, dependency, or stored-data change. Values of
+removed fields stay in documents and are ignored, as they already were.

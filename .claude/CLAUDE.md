@@ -13,7 +13,7 @@ acceptance gates on every widget, header, footer, section, and builder change.
 
 - Canonical registry/renderer: `packages/saas-platform/modules/theme-runtime/src/{BlockRegistry,BlockRenderer}.php`
 - Repeater contract: `type: 'repeater'` + `fields` + `storage` (ADR-060). `item_schema` is not read by anything canonical.
-- customer-site overlay registry (host wins, drifted): `customer-site/app/Services/ThemeCanvas/BlockRegistry.php`
+- customer-site registry = canonical + `HOST_PATCHES` (ADR-062, no local copies): `customer-site/app/Services/ThemeCanvas/BlockRegistry.php`
 - Platform editor: `resources/views/admin/theme-builder/canvas.blade.php`
 - Duplicated block CSS (drifted): platform `admin/theme-builder/partials/canvas-css-contract.blade.php` and customer `partials/theme-canvas-style-contract.blade.php`. The latter is mirrored byte-exact into `tests/Support/FoodMart/FoodMartPhase2bStyleContract.php`.
 - Audit, defect list, and phased roadmap: `docs/theme-builder/COMMERCIAL_WIDGET_ROADMAP.md`

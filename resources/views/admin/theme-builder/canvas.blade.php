@@ -986,7 +986,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- image (TB3-07) --}}
                                 <template x-if="schemaDef.type === 'image'">
                                     <div>
-                                        <div x-show="selectedBlock.props[propKey]" class="mb-2 relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50" style="height:80px;">
+                                        <div x-show="selectedBlock.props[propKey] && schemaDef.media_kind !== 'video'" class="mb-2 relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50" style="height:80px;">
                                             <img :src="selectedBlock.props[propKey]" class="w-full h-full object-cover">
                                             <button @click="updateProp(propKey, '')" class="absolute top-1 left-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600">×</button>
                                         </div>
@@ -995,7 +995,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                                 :id="'ctrl-' + propKey"
                                                 :value="selectedBlock.props[propKey] ?? ''"
                                                 @input="updateProp(propKey, $event.target.value)"
-                                                placeholder="آدرس URL تصویر"
+                                                :placeholder="schemaDef.media_kind === 'video' ? 'آدرس URL ویدیو' : 'آدرس URL تصویر'"
                                                 class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                             <button @click="openMediaPicker(propKey)"
                                                 class="flex items-center justify-center w-8 h-8 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition shrink-0" title="انتخاب از کتابخانه">
@@ -1005,8 +1005,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </div>
                                 </template>
 
-                                {{-- string --}}
-                                <template x-if="schemaDef.type === 'string'">
+                                {{-- string; `motion` is an asset id here — the visual motion
+                                     picker needs a tenant's own permitted assets (customer-site). --}}
+                                <template x-if="schemaDef.type === 'string' || schemaDef.type === 'motion'">
                                     <input type="text"
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
@@ -1109,8 +1110,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </div>
                                 </template>
 
-                                {{-- textarea --}}
-                                <template x-if="schemaDef.type === 'textarea'">
+                                {{-- textarea; also multi-line `text` and `rich_text` (sanitized
+                                     at render time), which had no control at all --}}
+                                <template x-if="schemaDef.type === 'textarea' || schemaDef.type === 'text' || schemaDef.type === 'rich_text'">
                                     <textarea :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input="updateProp(propKey, $event.target.value)" rows="3"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-y"
                                         :placeholder="schemaDef.default ?? ''"></textarea>
@@ -1965,7 +1967,10 @@ function themeCanvas() {
         },
         get selectedSchema() {
             if (!this.selectedBlock) return {};
-            return BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
+            // A `blocks` field is the container's child list, authored in
+            // the children panel — it has no content-tab control.
+            const schema = BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
+            return Object.fromEntries(Object.entries(schema).filter(([, def]) => def?.type !== 'blocks'));
         },
         get selectedEditorCapabilities() {
             return this.selectedBlock

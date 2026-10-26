@@ -357,3 +357,103 @@ now exist canonically with the same `fields`/`storage` contract.
   `config/builder-element-schemas.php` are still validated as `string`, so a
   structured `{url}` link there is rejected (page-picker values are resolved
   first and unaffected).
+
+## 9. Phase 0.2c delivery: one block-definition authority (2026-10-26)
+
+**Done (ADR-062):**
+
+- **Security patch first (customer-site).** The notifications bar and the
+  advertisement zone render admin-entered links through `escapeUrl()`.
+  - A refused notification link renders the message as plain text.
+  - A refused ad link becomes `#`.
+  - `ModuleAdminLinkSafetyTest` covers 11 cases. On the pre-patch renderer,
+    all 8 unsafe cases fail (`javascript:`, mixed case, `data:`, `vbscript:`).
+- **Audit.** All 65 customer-site local copies of canonical types differed
+  from canonical. Beyond labels, the audit found:
+  - controls neither editor rendered (`spacing`-typed tokens, `blocks`);
+  - options no renderer honours;
+  - fields no renderer reads;
+  - host-only fields the host renderers do read.
+
+  Option lists were checked against both CSS contracts and a survey of stored
+  values across 3,773 theme JSON files and both dev databases.
+- **Harmonized into canonical** (rules in ADR-062):
+  - 47 missing labels added;
+  - `section.padding` and `grid`/`columns.gap` became spacing-scale selects;
+  - `heading.level` became an H1–H6 select; `text.content` a textarea;
+  - `image.align`, `button.style`, `promo_banner.style` and
+    `nav_menu.location` became selects offering only honoured values;
+  - `video` gains poster/autoplay/loop/controls, and `url` is a media field
+    (`media_kind: video`);
+  - `blog_posts` gains the host's layout and source fields;
+  - `social_icons` gains a real `links` list and `style`;
+  - `cta.background` became a colour control; the `module:motion` controls
+    were aligned;
+  - `slider` defaults to two starter slides (an inserted slider was empty).
+- **Removed because no renderer reads them:**
+  - host: `gallery.columns`, `product_grid.title`, `accordion.title`;
+  - canonical: `courses_grid.show_instructor`, `pricing_table`
+    `highlight_plan`/`show_annual_toggle`, `reviews_grid` `carousel`.
+- **Renderer fixes (shared):**
+  - `renderCta()` and `renderNavMenu()` no longer interpolate raw values into
+    a class attribute;
+  - a CTA's CSS colour is now actually applied;
+  - `renderVideo()` validates `src`/`poster` and reads switches strictly.
+- **Pruned.** customer-site's registry is canonical plus `HOST_PATCHES`
+  (1,413 → 213 lines). The one patch is `module:shop_product_grid.source`
+  without `bestselling`, since the host has no sales-backed query.
+  - The host `renderVideo()` copy is deleted.
+  - The social-icon override keeps only its `SocialLink` fallback.
+- **Editors:**
+  - both hide `blocks` fields and give `text`/`rich_text` a textarea;
+  - the platform shows `motion` ids;
+  - customer-site gains the guarded JSON `array` editor and media-kind
+    previews;
+  - customer-site's selects now show the stored value after a reload; they
+    used to show the first option.
+
+**Evidence:**
+
+- **Effective customer-site validation contract**, snapshotted before and
+  after: unchanged except `section`/`grid`/`columns.blocks` (now `mixed`) and
+  `stats_row.background_image` (now `media`). Neither rejects any surveyed
+  value.
+- **Host vs canonical:** strictly identical (`===`, field order included) for
+  all 158 offered types except the declared patch.
+- **saas-platform:**
+  - `Phase02cCanonicalHarmonizationTest` 9/9;
+  - JS 92/92;
+  - theme suites 894 tests, the same 10 pre-existing failures. All 10 also
+    fail with this phase's package files reverted.
+- **customer-site:**
+  - `CanonicalBlockDefinitionParityTest` 6/6;
+  - `ModuleAdminLinkSafetyTest` 11/11;
+  - theme suites 807 tests, the same 3 pre-existing failures.
+  - One regression found and fixed: an inserted slider rendered empty.
+- **Browser:**
+  - `phase02c-harmonized-controls.spec.ts` (platform) and
+    `phase02c-host-controls.spec.js` (customer-site) cover author → save →
+    reload → preview/public render at three widths, then clean up;
+  - phase01, P1, phase02, phase02b, header-modern-fast-path and
+    phase3c-commercial stay green;
+  - customer-site's heading-level, container and save-to-public-render specs
+    stay green.
+
+**Rendering changes for stored content:**
+
+- 4 customer-site CTAs with a hex `background` now show that colour.
+- Unknown CTA tokens and `nav_menu` locations fall back to the default class.
+- Unsafe video URLs render the empty state.
+
+Everything else renders byte-identically.
+
+**Remaining (next):**
+
+- **Wire `bestselling`** in `renderModuleProductGrid()` to
+  `ProductDataSource`'s `best_selling_30d`, then drop the host patch.
+- **`gallery.columns`:** honouring it reflows live galleries (39 stored blocks
+  hold `'3'`; today they use auto-fit). Ship it as a deliberate visual change.
+- **Pricing annual toggle and highlighted plan** (Phase 3) need real renderer
+  support before their fields return.
+- **Host nested `number`/`color`/`select` fields** below depth 1 still edit as
+  text inputs.
