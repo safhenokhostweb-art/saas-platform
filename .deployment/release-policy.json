@@ -46,6 +46,15 @@
       "Schema::drop\\s*\\(",
       "->change\\s*\\(",
       "DB::statement\\s*\\("
+    ],
+    "reviewed": [
+      {
+        "path": "database/migrations/2026_10_20_100000_create_ai_providers_table.php",
+        "sha256": "dda18b495e81e0385ce76189e018ec107440f68062c2bc490f704b6f088b2fb9",
+        "reviewed_by": "safhenokhostweb-art",
+        "reviewed_at": "2026-10-26",
+        "reason": "Create-only migration: up() creates ai_providers; down() drops only that table (rollback of its own creation). No existing data is altered."
+      }
     ]
   },
   "dependency_rules": [

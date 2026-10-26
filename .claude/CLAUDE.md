@@ -43,6 +43,9 @@ Coordination rules:
 - Agents talk only through Task contracts and bus topics registered in
   `../agents/agents.json`, never by calling each other. New agents follow
   the README's "Adding an agent" section.
+- Both repos have the `pre-push` readiness gate (`../agents/bin/install-hooks`).
+  It refuses pushes on blockers. Never bypass it with `--no-verify` without
+  owner approval; fix the finding instead.
 - Agents are read-only toward the projects. Granting any agent the ability to
   write project files, commit, push, or deploy is an owner decision, never a
   registry edit.
