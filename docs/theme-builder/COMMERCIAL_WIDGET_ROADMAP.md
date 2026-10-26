@@ -210,3 +210,74 @@ inline-edit autosave.
   theme-list, and 9/10 zones tests pass.
 - Intermittent in multi-spec runs only, and each passes when re-run:
   `zones:288` (1 of 5 runs) and checkpoint export (1 of 4).
+
+---
+
+## 7. Phase 0.2 delivery: list definitions promoted to canonical (2026-10-26)
+
+**Done:** all 23 customer-site list (repeater) definitions on canonical types
+now exist canonically with the same `fields`/`storage` contract.
+
+- **Promoted fields:**
+  - `slider.slides` (was `type: blocks`) and `gallery.items`;
+  - `module:faq_dynamic.items`;
+  - features / stats / logos / steps;
+  - `timeline.items` and `team_cards.members` (both `storage: json`);
+  - skills / badges / plans / services;
+  - `nav_header.nav_links`;
+  - `nav_footer.columns` / `links` / `social_links`;
+  - `about_section.features` / `stats`;
+  - `service_cards.cards`, `project_cards.cards`, `contact_info.items`.
+- **Defaults untouched:** every existing canonical `default` is byte-identical,
+  so theme snapshots and golden fixtures are unaffected.
+- **Retired:** customer-site's stale local `bento_grid` override (size and
+  colours as plain text, no link/media/glow). The canonical definition is now
+  the authority on both hosts.
+- **Host harmonized:** `testimonials_slider.items.rating` → `number`.
+
+**Parity mechanism:** `customer-site/tests/Feature/ThemeCanvas/CanonicalListSchemaParityTest.php`.
+- Every host repeater on a canonical type must match canonical storage and
+  every child control, recursively. Canonical may add fields.
+- The 23 promoted fields are pinned.
+- Each authored list must change the public render.
+- The 11 historically-JSON fields must render byte-identically from array
+  and JSON-string storage.
+
+**Evidence:**
+- Parity test: 4/4 (106 assertions).
+- customer-site theme suites: 785 tests, 3 failures, identical on the true
+  baseline (pre-0.1 package plus unmodified host registry):
+  - `spacer` / `setMode` host-override checks;
+  - an order-dependent `nexus-pro-corporate/testimonials_slider` structural
+    diff that passes in isolation.
+- saas-platform suites: 881 tests, the same 10 pre-existing failures.
+- Browser: `phase02-promoted-lists.spec.ts` passes. It proves `storage: array`
+  becomes an array on edit and `storage: json` stays a JSON string, through
+  save → reload → preview. phase01, P1, and phase3c-commercial specs stay green.
+
+**Operational notes:**
+- `customer-site/vendor/saas-platform/modules-theme-runtime` is a Composer
+  mirror (`symlink: false`). Package changes reach customer-site only after
+  `composer reinstall saas-platform/modules-theme-runtime`. This leaves
+  `composer.lock` unchanged.
+- Phases 0.1, P1, and 0.2 are therefore live in customer-site only after its
+  release process re-mirrors the package. Confirm that step in the
+  customer-site release pipeline.
+- Test isolation: run customer-site and saas-platform PHPUnit suites one at a
+  time per database. A concurrent `RefreshDatabase` run corrupts the other run
+  (seen as 86 spurious "Unknown column" errors).
+
+**Remaining (next):**
+- **0.2b — nested repeaters in the platform Canvas:**
+  - pricing `plans[].features`;
+  - footer `columns[].links`;
+  - header `nav_links[].mega_columns[].items` (2 levels deep).
+  - The schema is promoted, but the editor shows "unsupported" for these
+    nested fields.
+- **0.2c — non-list drift on the 64 other shadowed types:**
+  - `heading.level`, `section.padding`, `video.*`, `button.style`, and others;
+  - then retire host overrides that become identical.
+- **Host string-typed controls promoted verbatim for parity:**
+  - `pricing.plans[].highlight` is a string, and `(bool)'false'` is true;
+  - several URL fields are typed `string`, not `link`.
+  - Fix them in both hosts together.

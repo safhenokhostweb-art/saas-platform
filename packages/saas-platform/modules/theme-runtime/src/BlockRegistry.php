@@ -307,7 +307,15 @@ class BlockRegistry
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'slider',
                 'schema' => [
-                    'slides' => ['type' => 'blocks', 'default' => []],
+                    // Phase 0.2: promoted from customer-site's tested definition
+                    // (was `type: blocks`, which no editor could author).
+                    'slides' => ['type' => 'repeater', 'label' => 'اسلایدها', 'item_label' => 'اسلاید', 'storage' => 'array', 'default' => [], 'fields' => [
+                        'image'    => ['type' => 'image', 'label' => 'تصویر اسلاید', 'default' => ''],
+                        'title'    => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
+                        'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                        'link'     => ['type' => 'string', 'label' => 'لینک (اختیاری)', 'default' => ''],
+                        'cta_text' => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => ''],
+                    ]],
                     'autoplay' => ['type' => 'boolean', 'default' => true],
                     'interval' => ['type' => 'number', 'default' => 5000],
                     'transition' => ['type' => 'select', 'label' => 'نوع گذار', 'options' => ['slide' => 'اسلاید', 'fade' => 'محو شدن'], 'default' => 'slide'],
@@ -481,7 +489,11 @@ class BlockRegistry
                 'icon' => 'gallery',
                 'schema' => [
                     'title' => ['type' => 'string', 'default' => ''],
-                    'items' => ['type' => 'array', 'default' => []],
+                    // Phase 0.2: promoted from customer-site (renderGallery reads {url, alt}).
+                    'items' => ['type' => 'repeater', 'label' => 'تصاویر گالری', 'item_label' => 'تصویر', 'storage' => 'array', 'default' => [], 'fields' => [
+                        'url' => ['type' => 'image', 'label' => 'تصویر', 'default' => ''],
+                        'alt' => ['type' => 'string', 'label' => 'متن جایگزین', 'default' => ''],
+                    ]],
                 ],
                 'defaultProps' => ['title' => '', 'items' => []],
             ],
@@ -902,7 +914,7 @@ class BlockRegistry
                     // opt-in convergence, not a breaking default flip. See
                     // renderNavHeader() below for the render-time branch.
                     'nav_source'         => ['type' => 'select', 'label' => 'منبع لینک‌های ناوبری', 'options' => ['custom' => 'لینک‌های سفارشی این بلوک', 'menu' => 'منوی اصلی سایت (/admin/menus)'], 'default' => 'custom'],
-                    'nav_links'          => ['type' => 'array', 'label' => 'لینک‌های منو', 'default' => []],
+                    'nav_links'          => ['type' => 'repeater', 'label' => 'لینک‌های منو', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'آدرس لینک', 'default' => '#'], 'mega_columns' => ['type' => 'repeater', 'label' => 'ستون‌های Mega Menu (اختیاری — برای منوی چندستونی)', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'items' => ['type' => 'repeater', 'label' => 'آیتم‌های این ستون', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'string', 'label' => 'آیکون (اموجی، اختیاری)', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر آیتم (اختیاری، جای آیکون را می‌گیرد)', 'default' => '']]]]], 'mega_banner_image' => ['type' => 'image', 'label' => 'تصویر بنر Mega Menu (اختیاری)', 'default' => ''], 'mega_banner_url' => ['type' => 'string', 'label' => 'لینک بنر', 'default' => '#'], 'mega_banner_text' => ['type' => 'string', 'label' => 'متن روی بنر', 'default' => ''], 'mega_show_desktop' => ['type' => 'boolean', 'label' => 'نمایش Mega Menu در دسکتاپ', 'default' => true], 'mega_mobile_behavior' => ['type' => 'select', 'label' => 'رفتار در موبایل', 'options' => ['accordion' => 'آکاردئونی (پیش‌فرض)', 'flat' => 'فهرست تخت بدون ستون‌بندی', 'hidden' => 'مخفی در موبایل'], 'default' => 'accordion']], 'default' => []],
                     'sticky'             => ['type' => 'boolean', 'label' => 'چسبان به بالا', 'default' => false],
                     'bg_color'           => ['type' => 'string', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff'],
                     'text_color'         => ['type' => 'string', 'label' => 'رنگ متن', 'default' => '#111827'],
@@ -972,9 +984,9 @@ class BlockRegistry
                     // the render-time branch. Default 'custom' — zero
                     // behavior change for any existing theme/instance.
                     'nav_source'   => ['type' => 'select', 'label' => 'منبع لینک‌های فوتر', 'options' => ['custom' => 'ستون‌های سفارشی این بلوک', 'menu' => 'منوی فوتر سایت (/admin/menus)'], 'default' => 'custom'],
-                    'columns'      => ['type' => 'array', 'label' => 'ستون‌های لینک', 'default' => []],
-                    'links'        => ['type' => 'array', 'label' => 'لینک‌های حقوقی (اختیاری)', 'default' => []],
-                    'social_links' => ['type' => 'array', 'label' => 'شبکه‌های اجتماعی (اختیاری)', 'default' => []],
+                    'columns'      => ['type' => 'repeater', 'label' => 'ستون‌های لینک', 'item_label' => 'ستون', 'storage' => 'array', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'links' => ['type' => 'repeater', 'label' => 'لینک‌های ستون', 'storage' => 'array', 'default' => [], 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'آدرس لینک', 'default' => '#']]]], 'default' => []],
+                    'links'        => ['type' => 'repeater', 'label' => 'لینک‌های حقوقی (اختیاری)', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'آدرس لینک', 'default' => '#']], 'default' => []],
+                    'social_links' => ['type' => 'repeater', 'label' => 'شبکه‌های اجتماعی (اختیاری)', 'item_label' => 'شبکه', 'storage' => 'array', 'fields' => ['url' => ['type' => 'string', 'label' => 'آدرس', 'default' => '#'], 'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => '']], 'default' => []],
                     'logo_text'    => ['type' => 'string', 'label' => 'متن لوگو', 'default' => ''],
                     'tagline'      => ['type' => 'string', 'label' => 'شعار برند (اختیاری)', 'default' => ''],
                     'copyright'    => ['type' => 'string', 'label' => 'متن کپی‌رایت', 'default' => ''],
@@ -1413,6 +1425,11 @@ class BlockRegistry
                     'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'سوالات متداول'],
                     'limit' => ['type' => 'number', 'label' => 'تعداد', 'default' => 10],
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['accordion' => 'آکوردئون', 'list' => 'لیست'], 'default' => 'accordion'],
+                    // Phase 0.2: promoted from customer-site (static Q/A authored alongside the module source).
+                    'items' => ['type' => 'repeater', 'label' => 'سوالات', 'item_label' => 'سوال', 'storage' => 'array', 'default' => [], 'fields' => [
+                        'question' => ['type' => 'string', 'label' => 'سوال', 'default' => ''],
+                        'answer'   => ['type' => 'textarea', 'label' => 'پاسخ', 'default' => ''],
+                    ]],
                 ],
                 'defaultProps' => ['title' => 'سوالات متداول', 'limit' => 10, 'style' => 'accordion'],
             ],
@@ -1550,7 +1567,7 @@ class BlockRegistry
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',      'default' => 'ما بهترین راه‌حل را برای شما آماده کرده‌ایم'],
                     'columns'  => ['type' => 'select',  'label' => 'تعداد ستون',   'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
                     'style'    => ['type' => 'select',  'label' => 'استایل کارت',  'options' => ['cards' => 'کارت سایه‌دار', 'bordered' => 'کارت خطی', 'minimal' => 'مینیمال'], 'default' => 'cards'],
-                    'features' => ['type' => 'textarea','label' => 'ویژگی‌ها (JSON)', 'default' => '[{"icon":"⚡","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"🔒","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"🎯","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"},{"icon":"🚀","title":"مقیاس‌پذیر","text":"از یک کاربر تا میلیون‌ها کاربر"},{"icon":"💡","title":"نوآورانه","text":"جدیدترین فناوری‌ها در خدمت شما"},{"icon":"🌐","title":"چندزبانه","text":"پشتیبانی از فارسی و زبان‌های بین‌المللی"}]'],
+                    'features' => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'item_label' => 'ویژگی', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '✨'], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => '']], 'default' => '[{"icon":"⚡","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"🔒","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"🎯","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"},{"icon":"🚀","title":"مقیاس‌پذیر","text":"از یک کاربر تا میلیون‌ها کاربر"},{"icon":"💡","title":"نوآورانه","text":"جدیدترین فناوری‌ها در خدمت شما"},{"icon":"🌐","title":"چندزبانه","text":"پشتیبانی از فارسی و زبان‌های بین‌المللی"}]'],
                 ],
                 'defaultProps' => ['title' => 'چرا ما را انتخاب کنید؟', 'subtitle' => 'ما بهترین راه‌حل را برای شما آماده کرده‌ایم', 'columns' => '3', 'style' => 'cards', 'features' => '[{"icon":"⚡","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"🔒","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"🎯","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"}]'],
             ],
@@ -1564,7 +1581,7 @@ class BlockRegistry
                 'allowedChildren' => ['stat_item'],
                 'schema' => [
                     'title'      => ['type' => 'string',  'label' => 'عنوان (اختیاری)',  'default' => ''],
-                    'stats'      => ['type' => 'textarea','label' => 'آمارها (JSON)',     'default' => '[{"value":5000,"suffix":"+","label":"کاربر فعال"},{"value":99,"suffix":"%","label":"رضایت مشتری"},{"value":150,"suffix":"+","label":"پروژه موفق"},{"value":7,"suffix":"سال","label":"تجربه"}]'],
+                    'stats'      => ['type' => 'repeater', 'label' => 'آمارها', 'item_label' => 'آمار', 'storage' => 'array', 'fields' => ['value' => ['type' => 'string', 'label' => 'عدد', 'default' => '0'], 'suffix' => ['type' => 'string', 'label' => 'پسوند (مثلا + یا %)', 'default' => ''], 'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => '']], 'default' => '[{"value":5000,"suffix":"+","label":"کاربر فعال"},{"value":99,"suffix":"%","label":"رضایت مشتری"},{"value":150,"suffix":"+","label":"پروژه موفق"},{"value":7,"suffix":"سال","label":"تجربه"}]'],
                     'background' => ['type' => 'color',   'label' => 'رنگ پس‌زمینه',    'default' => '#f8fafc'],
                     'background_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه', 'default' => ''],
                     'dividers'   => ['type' => 'boolean', 'label' => 'خط جداکننده',     'default' => true],
@@ -1638,7 +1655,7 @@ class BlockRegistry
                 'icon' => 'logos',
                 'schema' => [
                     'title'  => ['type' => 'string',  'label' => 'عنوان',       'default' => 'مورد اعتماد برندهای بزرگ'],
-                    'logos'  => ['type' => 'textarea','label' => 'لوگوها (JSON)','default' => '[{"name":"برند اول"},{"name":"برند دوم"},{"name":"برند سوم"},{"name":"برند چهارم"},{"name":"برند پنجم"},{"name":"برند ششم"}]'],
+                    'logos'  => ['type' => 'repeater', 'label' => 'لوگوها', 'item_label' => 'لوگو', 'storage' => 'array', 'fields' => ['name' => ['type' => 'string', 'label' => 'نام برند', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر لوگو (اختیاری)', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'لینک (اختیاری)', 'default' => ''], 'alt' => ['type' => 'string', 'label' => 'متن جایگزین تصویر (اختیاری)', 'default' => '']], 'default' => '[{"name":"برند اول"},{"name":"برند دوم"},{"name":"برند سوم"},{"name":"برند چهارم"},{"name":"برند پنجم"},{"name":"برند ششم"}]'],
                     'scroll' => ['type' => 'boolean', 'label' => 'حرکت خودکار (مود مرور - قدیمی)', 'default' => true],
                     'mode'   => ['type' => 'select', 'label' => 'نوع نمایش', 'options' => ['marquee' => 'نوار متحرک', 'carousel' => 'اسلایدر با کنترل', 'static' => 'ثابت (Grid)'], 'default' => 'marquee'],
                     'grayscale' => ['type' => 'boolean', 'label' => 'سیاه‌وسفید تا هاور', 'default' => true],
@@ -1658,7 +1675,7 @@ class BlockRegistry
                 'schema' => [
                     'title'    => ['type' => 'string',  'label' => 'عنوان بخش', 'default' => 'چطور شروع کنیم؟'],
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',  'default' => ''],
-                    'steps'    => ['type' => 'textarea','label' => 'مراحل (JSON)','default' => '[{"number":"۱","title":"ثبت‌نام رایگان","text":"در چند ثانیه حساب کاربری بسازید"},{"number":"۲","title":"تنظیم سایت","text":"قالب دلخواه را انتخاب کنید"},{"number":"۳","title":"راه‌اندازی","text":"سایت خود را به جهان معرفی کنید"}]'],
+                    'steps'    => ['type' => 'repeater', 'label' => 'مراحل', 'item_label' => 'مرحله', 'storage' => 'array', 'fields' => ['number' => ['type' => 'string', 'label' => 'شماره', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => '']], 'default' => '[{"number":"۱","title":"ثبت‌نام رایگان","text":"در چند ثانیه حساب کاربری بسازید"},{"number":"۲","title":"تنظیم سایت","text":"قالب دلخواه را انتخاب کنید"},{"number":"۳","title":"راه‌اندازی","text":"سایت خود را به جهان معرفی کنید"}]'],
                 ],
                 'defaultProps' => ['title' => 'چطور شروع کنیم؟', 'subtitle' => '', 'steps' => '[{"number":"۱","title":"ثبت‌نام رایگان","text":"در چند ثانیه حساب کاربری بسازید"},{"number":"۲","title":"تنظیم سایت","text":"قالب دلخواه را انتخاب کنید"},{"number":"۳","title":"راه‌اندازی","text":"سایت خود را به جهان معرفی کنید"}]'],
             ],
@@ -1677,8 +1694,21 @@ class BlockRegistry
                     'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
                     'layout'   => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['vertical' => 'عمودی', 'horizontal' => 'افقی'], 'default' => 'vertical'],
                     'items'    => [
-                        'type' => 'textarea',
-                        'label' => 'رویدادها (JSON)',
+                        // Phase 0.2: promoted from customer-site; `json` storage
+                        // keeps the JSON-string shape this field always had.
+                        'type' => 'repeater',
+                        'label' => 'رویدادها',
+                        'item_label' => 'رویداد',
+                        'storage' => 'json',
+                        'fields' => [
+                            'date'       => ['type' => 'string', 'label' => 'تاریخ / مرحله', 'default' => ''],
+                            'title'      => ['type' => 'string', 'label' => 'عنوان رویداد', 'default' => ''],
+                            'text'       => ['type' => 'textarea', 'label' => 'توضیح', 'default' => ''],
+                            'icon'       => ['type' => 'string', 'label' => 'آیکون (اموجی، اختیاری)', 'default' => ''],
+                            'image'      => ['type' => 'image', 'label' => 'تصویر (اختیاری، جای آیکون را می‌گیرد)', 'default' => ''],
+                            'link_label' => ['type' => 'string', 'label' => 'متن دکمه (اختیاری)', 'default' => ''],
+                            'link_url'   => ['type' => 'string', 'label' => 'لینک دکمه (اختیاری)', 'default' => ''],
+                        ],
                         'default' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"🚀","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"📦","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"📈","image":"","link_label":"","link_url":""},{"date":"۱۴۰۴","title":"ورود به بازارهای جدید","text":"توسعهٔ خدمات و افزودن امکانات سازمانی.","icon":"🌍","image":"","link_label":"مشاهدهٔ نقشهٔ راه","link_url":"/about"}]',
                     ],
                 ],
@@ -1697,7 +1727,7 @@ class BlockRegistry
                 'schema' => [
                     'title'   => ['type' => 'string',  'label' => 'عنوان بخش',   'default' => 'تیم ما'],
                     'columns' => ['type' => 'select',  'label' => 'تعداد ستون',  'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
-                    'members' => ['type' => 'textarea','label' => 'اعضا (JSON)',  'default' => '[{"name":"نام کامل","role":"مدیرعامل","image":"","bio":"توضیح کوتاه"},{"name":"نام کامل","role":"مدیر فنی","image":"","bio":"توضیح کوتاه"},{"name":"نام کامل","role":"طراح ارشد","image":"","bio":"توضیح کوتاه"}]'],
+                    'members' => ['type' => 'repeater', 'label' => 'اعضای تیم', 'item_label' => 'عضو', 'storage' => 'json', 'fields' => ['name' => ['type' => 'string', 'label' => 'نام', 'default' => ''], 'role' => ['type' => 'string', 'label' => 'سمت', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر عضو', 'default' => ''], 'bio' => ['type' => 'textarea', 'label' => 'توضیح', 'default' => '']], 'default' => '[{"name":"نام کامل","role":"مدیرعامل","image":"","bio":"توضیح کوتاه"},{"name":"نام کامل","role":"مدیر فنی","image":"","bio":"توضیح کوتاه"},{"name":"نام کامل","role":"طراح ارشد","image":"","bio":"توضیح کوتاه"}]'],
                 ],
                 'defaultProps' => ['title' => 'تیم ما', 'columns' => '3', 'members' => '[{"name":"نام کامل","role":"مدیرعامل","image":"","bio":"توضیح کوتاه"},{"name":"نام کامل","role":"مدیر فنی","image":"","bio":"توضیح کوتاه"},{"name":"نام کامل","role":"طراح ارشد","image":"","bio":"توضیح کوتاه"}]'],
             ],
@@ -1707,7 +1737,7 @@ class BlockRegistry
                 'icon' => 'skills',
                 'schema' => [
                     'title'  => ['type' => 'string',  'label' => 'عنوان',       'default' => 'مهارت‌های من'],
-                    'skills' => ['type' => 'textarea','label' => 'مهارت‌ها (JSON)','default' => '[{"name":"طراحی رابط کاربری","percent":92},{"name":"برنامه‌نویسی فرانت‌اند","percent":88},{"name":"توسعه بک‌اند","percent":80},{"name":"مدیریت پروژه","percent":75}]'],
+                    'skills' => ['type' => 'repeater', 'label' => 'مهارت‌ها', 'item_label' => 'مهارت', 'storage' => 'array', 'fields' => ['name' => ['type' => 'string', 'label' => 'نام مهارت', 'default' => ''], 'percent' => ['type' => 'string', 'label' => 'درصد (۰ تا ۱۰۰)', 'default' => '0']], 'default' => '[{"name":"طراحی رابط کاربری","percent":92},{"name":"برنامه‌نویسی فرانت‌اند","percent":88},{"name":"توسعه بک‌اند","percent":80},{"name":"مدیریت پروژه","percent":75}]'],
                 ],
                 'defaultProps' => ['title' => 'مهارت‌های من', 'skills' => '[{"name":"طراحی رابط کاربری","percent":92},{"name":"برنامه‌نویسی فرانت‌اند","percent":88},{"name":"توسعه بک‌اند","percent":80}]'],
             ],
@@ -1762,7 +1792,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'trust',
                 'schema' => [
-                    'badges'     => ['type' => 'textarea','label' => 'نشان‌ها (JSON)', 'default' => '[{"icon":"🚚","title":"ارسال رایگان","text":"برای سفارش‌های بالای ۲۰۰ هزار تومان"},{"icon":"🔒","title":"پرداخت امن","text":"درگاه‌های پرداخت معتبر ایران"},{"icon":"↩️","title":"بازگشت آسان","text":"ضمانت بازگشت تا ۷ روز"},{"icon":"☎️","title":"پشتیبانی ۲۴/۷","text":"همیشه در کنار شما هستیم"}]'],
+                    'badges'     => ['type' => 'repeater', 'label' => 'نشان‌ها', 'item_label' => 'نشان', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '✓'], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'string', 'label' => 'متن', 'default' => '']], 'default' => '[{"icon":"🚚","title":"ارسال رایگان","text":"برای سفارش‌های بالای ۲۰۰ هزار تومان"},{"icon":"🔒","title":"پرداخت امن","text":"درگاه‌های پرداخت معتبر ایران"},{"icon":"↩️","title":"بازگشت آسان","text":"ضمانت بازگشت تا ۷ روز"},{"icon":"☎️","title":"پشتیبانی ۲۴/۷","text":"همیشه در کنار شما هستیم"}]'],
                     'background' => ['type' => 'color',   'label' => 'رنگ پس‌زمینه','default' => '#f8fafc'],
                 ],
                 'defaultProps' => ['badges' => '[{"icon":"🚚","title":"ارسال رایگان","text":"بالای ۲۰۰ هزار تومان"},{"icon":"🔒","title":"پرداخت امن","text":"درگاه‌های معتبر"},{"icon":"↩️","title":"بازگشت آسان","text":"تا ۷ روز"},{"icon":"☎️","title":"پشتیبانی ۲۴/۷","text":"همیشه در دسترس"}]', 'background' => '#f8fafc'],
@@ -1774,7 +1804,7 @@ class BlockRegistry
                 'schema' => [
                     'title'    => ['type' => 'string',  'label' => 'عنوان بخش',  'default' => 'پلن‌های ما'],
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',    'default' => 'مناسب‌ترین پلن را انتخاب کنید'],
-                    'plans'    => ['type' => 'textarea','label' => 'پلن‌ها (JSON)','default' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم","ویژگی سوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه اول","ویژگی اضافه دوم","پشتیبانی اولویت‌دار"],"cta_text":"انتخاب این پلن","cta_url":"#"},{"name":"سازمانی","price":"۳۵۰ هزار","period":"/ ماه","badge":"","highlight":false,"features":["همه ویژگی‌های حرفه‌ای","حساب نامحدود","API اختصاصی","مدیر حساب"],"cta_text":"تماس بگیرید","cta_url":"#"}]'],
+                    'plans'    => ['type' => 'repeater', 'label' => 'پلن‌ها', 'item_label' => 'پلن', 'storage' => 'array', 'fields' => ['name' => ['type' => 'string', 'label' => 'نام پلن', 'default' => ''], 'price' => ['type' => 'string', 'label' => 'قیمت', 'default' => ''], 'period' => ['type' => 'string', 'label' => 'دوره (مثلا / ماه)', 'default' => ''], 'badge' => ['type' => 'string', 'label' => 'برچسب (اختیاری)', 'default' => ''], 'highlight' => ['type' => 'string', 'label' => 'پلن ویژه؟ (true یا خالی)', 'default' => ''], 'features' => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'storage' => 'array', 'default' => [], 'fields' => ['text' => ['type' => 'string', 'label' => 'متن ویژگی', 'default' => '']]], 'cta_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => ''], 'cta_url' => ['type' => 'string', 'label' => 'لینک دکمه', 'default' => '#']], 'default' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم","ویژگی سوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه اول","ویژگی اضافه دوم","پشتیبانی اولویت‌دار"],"cta_text":"انتخاب این پلن","cta_url":"#"},{"name":"سازمانی","price":"۳۵۰ هزار","period":"/ ماه","badge":"","highlight":false,"features":["همه ویژگی‌های حرفه‌ای","حساب نامحدود","API اختصاصی","مدیر حساب"],"cta_text":"تماس بگیرید","cta_url":"#"}]'],
                 ],
                 'defaultProps' => ['title' => 'پلن‌های ما', 'subtitle' => 'مناسب‌ترین پلن را انتخاب کنید', 'plans' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه"],"cta_text":"انتخاب این پلن","cta_url":"#"}]'],
             ],
@@ -1854,7 +1884,7 @@ class BlockRegistry
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',      'default' => ''],
                     'columns'  => ['type' => 'select',  'label' => 'تعداد ستون',   'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
                     'style'    => ['type' => 'select',  'label' => 'استایل',        'options' => ['bordered' => 'خطی', 'filled' => 'پر', 'minimal' => 'مینیمال'], 'default' => 'bordered'],
-                    'services' => ['type' => 'textarea','label' => 'خدمات (JSON)',  'default' => '[{"icon":"🎨","title":"طراحی رابط کاربری","text":"طراحی تجربه کاربری زیبا و کاربردی","link":"#","link_text":"بیشتر بدانید"},{"icon":"⚙️","title":"توسعه فنی","text":"پیاده‌سازی با جدیدترین فناوری‌ها","link":"#","link_text":"بیشتر بدانید"},{"icon":"📈","title":"بازاریابی دیجیتال","text":"افزایش حضور آنلاین کسب‌وکار شما","link":"#","link_text":"بیشتر بدانید"}]'],
+                    'services' => ['type' => 'repeater', 'label' => 'خدمات', 'item_label' => 'خدمت', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => ''], 'link' => ['type' => 'string', 'label' => 'لینک', 'default' => '#'], 'link_text' => ['type' => 'string', 'label' => 'متن لینک', 'default' => 'بیشتر بدانید']], 'default' => '[{"icon":"🎨","title":"طراحی رابط کاربری","text":"طراحی تجربه کاربری زیبا و کاربردی","link":"#","link_text":"بیشتر بدانید"},{"icon":"⚙️","title":"توسعه فنی","text":"پیاده‌سازی با جدیدترین فناوری‌ها","link":"#","link_text":"بیشتر بدانید"},{"icon":"📈","title":"بازاریابی دیجیتال","text":"افزایش حضور آنلاین کسب‌وکار شما","link":"#","link_text":"بیشتر بدانید"}]'],
                 ],
                 'defaultProps' => ['title' => 'خدمات ما', 'subtitle' => '', 'columns' => '3', 'style' => 'bordered', 'services' => '[{"icon":"🎨","title":"طراحی","text":"رابط کاربری زیبا","link":"#","link_text":"بیشتر"},{"icon":"⚙️","title":"توسعه","text":"فناوری‌های جدید","link":"#","link_text":"بیشتر"},{"icon":"📈","title":"بازاریابی","text":"حضور آنلاین","link":"#","link_text":"بیشتر"}]'],
             ],
@@ -1903,8 +1933,8 @@ class BlockRegistry
                     'badge'       => ['type' => 'string',  'label' => 'نشان', 'default' => ''],
                     'title'       => ['type' => 'string',  'label' => 'عنوان', 'default' => ''],
                     'description' => ['type' => 'textarea','label' => 'توضیحات', 'default' => ''],
-                    'features'    => ['type' => 'array',   'label' => 'ویژگی‌ها', 'default' => []],
-                    'stats'       => ['type' => 'array',   'label' => 'آمار (اختیاری)', 'default' => []],
+                    'features'    => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'item_label' => 'ویژگی', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن ویژگی', 'default' => '']], 'default' => []],
+                    'stats'       => ['type' => 'repeater', 'label' => 'آمار (اختیاری)', 'item_label' => 'آمار', 'storage' => 'array', 'fields' => ['value' => ['type' => 'string', 'label' => 'عدد', 'default' => ''], 'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => '']], 'default' => []],
                     'btn_text'    => ['type' => 'string',  'label' => 'متن دکمه', 'default' => ''],
                     'btn_url'     => ['type' => 'string',  'label' => 'لینک دکمه', 'default' => '#'],
                 ],
@@ -1918,7 +1948,7 @@ class BlockRegistry
                     'title'    => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => ''],
                     'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
                     'columns'  => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
-                    'cards'    => ['type' => 'array',  'label' => 'کارت‌ها (icon, title, description, url)', 'default' => []],
+                    'cards'    => ['type' => 'repeater', 'label' => 'کارت‌ها', 'item_label' => 'کارت', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'description' => ['type' => 'textarea', 'label' => 'توضیحات', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'لینک (اختیاری)', 'default' => '']], 'default' => []],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'columns' => '3', 'cards' => []],
             ],
@@ -1930,7 +1960,7 @@ class BlockRegistry
                     'title'    => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => ''],
                     'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
                     'columns'  => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '2'],
-                    'cards'    => ['type' => 'array',  'label' => 'کارت‌ها (category, title, description, url)', 'default' => []],
+                    'cards'    => ['type' => 'repeater', 'label' => 'کارت‌ها', 'item_label' => 'کارت', 'storage' => 'array', 'fields' => ['category' => ['type' => 'string', 'label' => 'دسته‌بندی', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'description' => ['type' => 'textarea', 'label' => 'توضیحات', 'default' => ''], 'url' => ['type' => 'string', 'label' => 'لینک (اختیاری)', 'default' => '']], 'default' => []],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'columns' => '2', 'cards' => []],
             ],
@@ -1942,7 +1972,7 @@ class BlockRegistry
                     'title'      => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
                     'subtitle'   => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
                     'background' => ['type' => 'string', 'label' => 'رنگ پس‌زمینه (اختیاری)', 'default' => ''],
-                    'items'      => ['type' => 'array',  'label' => 'موارد (icon, label, value)', 'default' => []],
+                    'items'      => ['type' => 'repeater', 'label' => 'موارد', 'item_label' => 'مورد', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => ''], 'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => ''], 'value' => ['type' => 'string', 'label' => 'مقدار', 'default' => '']], 'default' => []],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'background' => '', 'items' => []],
             ],
