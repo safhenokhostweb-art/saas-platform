@@ -61,6 +61,18 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/blocks/site-forms.js';
     }
 
+    /** Phase 1 (ADR-067) — header scroll behaviour + delegated mega menu. */
+    public static function siteHeaderScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/site-header.js';
+    }
+
+    /** Phase 1/2 (ADR-067) — mini-cart drawer and instant add-to-cart. */
+    public static function cartScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/cart.js';
+    }
+
     public static function canvasIdentityContractPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-identity.js';

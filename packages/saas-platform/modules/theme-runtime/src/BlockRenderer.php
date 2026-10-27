@@ -67,6 +67,11 @@ class BlockRenderer
     /** Phase 0.7 (ADR-066): blocks/site-forms.js is inlined once per render. */
     private bool $siteFormsAssetsEmitted = false;
 
+    /** Phase 1/2 (ADR-067): site-header.js and cart.js, each once per render. */
+    private bool $siteHeaderAssetsEmitted = false;
+    private bool $cartAssetsEmitted = false;
+    private bool $headerNeedsScript = false;
+
     /**
      * Phase 9 / Step 2 — same once-per-document rule for the shared
      * carousel asset, and for the same reason: several short-lived renderer
@@ -962,6 +967,9 @@ class BlockRenderer
             $thumbnailHtml = '<div class="tb-carousel-thumbs">' . implode('', $buttons) . '</div>';
         }
 
+        // Phase 2 (ADR-067): arrows on logical sides (previous at the reading
+        // start, next at the end) pointing outward, styled by the shared sheet;
+        // the LTR mirror flips the glyphs.
         $carouselLabel = $this->escapeAttr('اسلایدر ' . $id);
 
         return "<div id=\"tb-{$id}\" class=\"tb-carousel {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" aria-label=\"{$carouselLabel}\" tabindex=\"0\"
@@ -986,8 +994,8 @@ class BlockRenderer
                 <div class=\"tb-carousel-track\" style=\"{$trackStyle}\">" . implode('', $slides) . "</div>
             </div>
             {$statusHtml}
-            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\" style=\"position:absolute;top:50%;right:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">‹</button>
-            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\" style=\"position:absolute;top:50%;left:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">›</button>
+            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>
+            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>
             <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
             {$thumbnailHtml}
             {$this->carouselScript($id, $options)}
@@ -2992,10 +3000,13 @@ class BlockRenderer
      * blocks/site-forms.js sends it with fetch). Without one — the Builder
      * preview — it stays the inert form it always was.
      */
-    private function newsletterFormHtml(array $props, string $id, string $placeholder, string $btnText, string $bg): string
+    private function newsletterFormHtml(array $props, string $id, string $placeholder, string $btnText, string $bg, ?string $buttonStyle = 'block'): string
     {
         $label = $this->visuallyHiddenLabel("tb-{$id}-newsletter-email", $props['placeholder'] ?? 'ایمیل یا شماره موبایل');
-        $button = "<button type=\"submit\" class=\"tb-newsletter-btn tb-btn\" style=\"background:var(--tb-on-primary, #fff);color:{$bg};\">{$btnText}</button>";
+        // The block's button is white on its coloured band; other placements
+        // (the footer, $buttonStyle null) style it from the stylesheet.
+        $style = $buttonStyle === 'block' ? " style=\"background:var(--tb-on-primary, #fff);color:{$bg};\"" : '';
+        $button = "<button type=\"submit\" class=\"tb-newsletter-btn tb-btn\"{$style}>{$btnText}</button>";
         $endpoints = $this->siteEndpoints();
         $endpoint = is_string($endpoints['newsletter'] ?? null) ? trim($endpoints['newsletter']) : '';
         $action = $endpoint !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($endpoint) ? $this->escapeAttr($endpoint) : '';
@@ -3530,6 +3541,7 @@ class BlockRenderer
             'banner_image' => (string) ($link['mega_banner_image'] ?? ''),
             'banner_url' => $this->linkValue($link['mega_banner_url'] ?? ''),
             'banner_text' => (string) ($link['mega_banner_text'] ?? ''),
+            'banner_cta' => (string) ($link['mega_banner_cta'] ?? ''),
             'show_desktop' => array_key_exists('mega_show_desktop', $link) ? $this->flag($link['mega_show_desktop']) : true,
             'mobile_behavior' => in_array($link['mega_mobile_behavior'] ?? '', ['accordion', 'flat', 'hidden'], true) ? $link['mega_mobile_behavior'] : 'accordion',
         ];
@@ -3650,43 +3662,36 @@ class BlockRenderer
                 . "</div>";
         }
 
+        // Phase 1 (ADR-067): the promo slot — image, title and an optional
+        // call to action, all from the nested repeater item.
         $bannerImage = trim((string) ($mega['banner_image'] ?? ''));
         $bannerHtml = '';
         if ($bannerImage !== '') {
             $bannerUrl = $this->linkHref($mega['banner_url'] ?? '', '#');
             $bannerText = $this->escape($mega['banner_text'] ?? '');
+            $bannerCta = $this->escape($mega['banner_cta'] ?? '');
             $bannerImgHtml = $this->imageWithFallback($bannerImage, (string) ($mega['banner_text'] ?? $label), 'width:100%;height:100%;');
             $bannerHtml = "<a href=\"{$bannerUrl}\" class=\"tb-mega-menu-banner\">"
                 . "<div class=\"tb-mega-menu-banner-img\">{$bannerImgHtml}</div>"
                 . ($bannerText !== '' ? "<div class=\"tb-mega-menu-banner-text\">{$bannerText}</div>" : '')
+                . ($bannerCta !== '' ? "<span class=\"tb-mega-menu-banner-cta\">{$bannerCta} " . $this->iconHtml('arrow-left') . '</span>' : '')
                 . "</a>";
         }
 
         $showDesktop = ($mega['show_desktop'] ?? true) !== false;
         $mobileBehavior = in_array($mega['mobile_behavior'] ?? 'accordion', ['accordion', 'flat', 'hidden'], true) ? $mega['mobile_behavior'] : 'accordion';
         $itemClasses = 'tb-mega-menu-item tb-mega-mobile-' . $mobileBehavior . ($showDesktop ? '' : ' tb-mega-desktop-hidden');
+        $this->headerNeedsScript = true;
 
+        // Toggling (touch, keyboard, Esc, outside click) is delegated in
+        // blocks/site-header.js, so a cloned copy (the host's mobile menu)
+        // works too — no per-item inline script.
         return "<div class=\"{$itemClasses}\" id=\"{$itemId}\">
-            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\">{$label}</a>
-            <div class=\"tb-mega-menu-panel\" role=\"menu\">
+            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\" aria-controls=\"{$itemId}-panel\">{$label}<span class=\"tb-mega-menu-caret\" aria-hidden=\"true\">" . $this->iconHtml('chevron-down') . "</span></a>
+            <div class=\"tb-mega-menu-panel\" id=\"{$itemId}-panel\">
                 <div class=\"tb-mega-menu-cols\">{$columnsHtml}</div>
                 {$bannerHtml}
             </div>
-            <script>(function(){
-                var root = document.getElementById('{$itemId}');
-                if (!root || root.dataset.tbMegaInit) return;
-                root.dataset.tbMegaInit = '1';
-                var trigger = root.querySelector('.tb-mega-menu-trigger');
-                trigger.addEventListener('click', function(e){
-                    if (window.matchMedia('(hover: hover)').matches) return;
-                    e.preventDefault();
-                    var open = root.classList.toggle('tb-mega-open');
-                    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-                });
-                document.addEventListener('click', function(e){
-                    if (!root.contains(e.target)) { root.classList.remove('tb-mega-open'); trigger.setAttribute('aria-expanded', 'false'); }
-                });
-            })();</script>
         </div>";
     }
 
@@ -3849,7 +3854,9 @@ class BlockRenderer
         }
 
         $phoneHtml   = $phone ? "<a href=\"tel:" . $this->escapeAttr(preg_replace('/[^+0-9]/', '', $props['phone'])) . "\" class=\"tb-nav-header-phone\">{$phone}</a>" : '';
-        $cartHtml    = $showCart ? "<a href=\"/cart\" class=\"tb-nav-header-icon-link\" aria-label=\"سبد خرید\">" . $this->iconHtml('shopping-cart') . "</a>" : '';
+        // Phase 1 (ADR-067): with host cart endpoints the icon opens the
+        // mini-cart drawer (blocks/cart.js); without, the old link.
+        $cartHtml    = $showCart ? $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart')) : '';
         $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">" . $this->iconHtml('user') . "</a>" : '';
         $ctaHtml     = $ctaText ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\">{$ctaText}</a>" : '';
         $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
@@ -3895,13 +3902,101 @@ class BlockRenderer
         // own, leaving the single real banner role on the outer wrapper
         // where it belongs — see renderNavFooter() below for the
         // contentinfo/<footer> equivalent.
-        return "<div id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\">
+        // Phase 1 (ADR-067): scroll behaviour lives on the page's banner
+        // element (the host wraps this block in its own <header>), applied by
+        // blocks/site-header.js from these flags. Without the script the
+        // block keeps its plain inline sticky position.
+        $flags = array_keys(array_filter([
+            'sticky' => $sticky,
+            'smart' => $sticky && $this->flag($props['sticky_hide_on_scroll'] ?? false),
+            'overlay' => $this->flag($props['transparent_over_hero'] ?? false),
+        ]));
+        $headerAttrs = '';
+        if ($flags !== []) {
+            $this->headerNeedsScript = true;
+            // '' = auto: site-header.js picks light or dark text from the hero.
+            $rawOverlay = trim($this->stringify($props['transparent_text_color'] ?? ''));
+            $overlayText = $rawOverlay === '' ? 'auto' : $this->cssColor($rawOverlay, 'auto');
+            $headerAttrs = ' data-tb-header="' . implode(' ', $flags) . '"'
+                . (in_array('overlay', $flags, true) ? ' data-tb-overlay-text="' . $this->escapeAttr($overlayText) . '"' : '');
+        }
+        $assets = $this->headerNeedsScript ? $this->siteHeaderAssets() : '';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
                 <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\">{$linkItems}</nav>
                 <div class=\"tb-nav-header-actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$ctaHtml}</div>
             </div>
-        </div>";
+        </div>{$assets}";
+    }
+
+    /** Phase 1 (ADR-067): blocks/site-header.js, inlined once per render. */
+    private function siteHeaderAssets(): string
+    {
+        if ($this->siteHeaderAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::siteHeaderScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: site-header.js is missing.');
+        }
+        $this->siteHeaderAssetsEmitted = true;
+        return '<script data-tb-block-asset="site_header">' . $js . '</script>';
+    }
+
+    /**
+     * Phase 1 (ADR-067): a cart icon. With the host's cart endpoints
+     * (siteEndpoints()['cart']) it links to the cart page and opens the
+     * mini-cart drawer, with a live count badge; without them (the Builder
+     * preview) it is the plain `/cart` link it always was.
+     */
+    protected function cartTriggerHtml(string $class, string $inner, string $extraAttrs = ''): string
+    {
+        $cart = $this->cartEndpoints();
+        if ($cart === null) {
+            return "<a href=\"/cart\" class=\"{$class}\"{$extraAttrs} aria-label=\"سبد خرید\">{$inner}</a>";
+        }
+        $count = $cart['count'];
+        $badge = '<span class="tb-cart-badge" data-tb-cart-count' . ($count > 0 ? '' : ' hidden') . '>' . $this->displayNumber($count) . '</span>';
+
+        return '<a href="' . $this->escapeAttr($cart['page']) . "\" class=\"{$class} tb-cart-trigger\"{$extraAttrs} data-tb-cart-open"
+            . ' data-tb-cart="' . $this->escapeAttr(json_encode(array_diff_key($cart, ['count' => 1]), JSON_UNESCAPED_SLASHES)) . '"'
+            . ' aria-haspopup="dialog" aria-label="سبد خرید">' . $inner . $badge . '</a>'
+            . $this->cartAssets();
+    }
+
+    /** @return array{page:string,mini:string,add:string,remove:string,count:int}|null */
+    protected function cartEndpoints(): ?array
+    {
+        $cart = $this->siteEndpoints()['cart'] ?? null;
+        if (!is_array($cart)) {
+            return null;
+        }
+        $out = [];
+        foreach (['page', 'mini', 'add', 'remove'] as $key) {
+            $url = is_string($cart[$key] ?? null) ? trim($cart[$key]) : '';
+            if ($url === '' || !\SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($url)) {
+                return null;
+            }
+            $out[$key] = $url;
+        }
+        $out['count'] = max(0, (int) ($cart['count'] ?? 0));
+        return $out;
+    }
+
+    /** Phase 1/2 (ADR-067): blocks/cart.js — drawer + add-to-cart — once per render. */
+    protected function cartAssets(): string
+    {
+        if ($this->cartAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::cartScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: cart.js is missing.');
+        }
+        $this->cartAssetsEmitted = true;
+        return '<script data-tb-block-asset="cart">' . $js . '</script>';
     }
 
     /**
@@ -3920,14 +4015,17 @@ class BlockRenderer
     {
         $toggleId = "tb-{$parentId}-theme-toggle";
 
+        // Phase 1 (ADR-067): catalog SVG icons instead of ☀️ 🌙 💻.
+        $icons = json_encode(['light' => IconLibrary::svg('sun'), 'dark' => IconLibrary::svg('moon'), 'system' => IconLibrary::svg('monitor')], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
+
         return "<button type=\"button\" id=\"{$toggleId}\" class=\"tb-theme-toggle\" aria-label=\"تغییر حالت رنگی\">
-            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">🌓</span>
+            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">" . IconLibrary::svg('monitor') . "</span>
         </button>
         <script>(function(){
             var btn = document.getElementById('{$toggleId}');
             if (!btn || btn.dataset.tbInit) return;
             btn.dataset.tbInit = '1';
-            var ICONS = {light:'☀️', dark:'🌙', system:'💻'};
+            var ICONS = {$icons};
             var LABELS = {
                 light: 'حالت رنگی: روشن — برای تغییر به تاریک کلیک کنید',
                 dark: 'حالت رنگی: تاریک — برای تغییر به خودکار (سیستم) کلیک کنید',
@@ -3936,7 +4034,7 @@ class BlockRenderer
             function render() {
                 var p = (window.__tbTheme && window.__tbTheme.get) ? window.__tbTheme.get() : 'system';
                 var icon = btn.querySelector('.tb-theme-toggle-icon');
-                if (icon) icon.textContent = ICONS[p] || ICONS.system;
+                if (icon) icon.innerHTML = ICONS[p] || ICONS.system;
                 btn.setAttribute('aria-label', LABELS[p] || LABELS.system);
             }
             btn.addEventListener('click', function () {
@@ -4016,7 +4114,10 @@ class BlockRenderer
             }
         }
 
-        $socialHtml = $socialLinks !== [] ? $this->renderSocialIcons(['links' => $socialLinks], '', "{$id}-social") : '';
+        // Phase 1 (ADR-067): social links as catalog icons (network chosen or
+        // recognised from the URL; an unknown one keeps its text label).
+        $socialHtml = $socialLinks !== [] ? $this->socialIconsHtml($socialLinks, "{$id}-social") : '';
+        $extrasHtml = $this->footerExtrasHtml($props, $id);
 
         $legalHtml = '';
         foreach ($legalLinks as $link) {
@@ -4044,6 +4145,7 @@ class BlockRenderer
             <div class=\"tb-container\">
                 {$brandHtml}
                 " . ($colHtml ? "<div class=\"tb-nav-footer-cols\">{$colHtml}</div>" : '') . "
+                {$extrasHtml}
                 <div class=\"tb-nav-footer-bottom\">
                     " . ($copyright ? "<p class=\"tb-nav-footer-copyright\">{$copyright}</p>" : '') . "
                     {$legalHtml}
@@ -4051,6 +4153,165 @@ class BlockRenderer
                 </div>
             </div>
         </div>";
+    }
+
+    /** network => [catalog icon, Persian name, URL pattern] */
+    private const SOCIAL_NETWORKS = [
+        'instagram' => ['instagram', 'اینستاگرام', '~(//|\.)(instagram\.com|instagr\.am)/~i'],
+        'telegram' => ['send', 'تلگرام', '~(//|\.)(t\.me|telegram\.me|telegram\.org)/~i'],
+        'whatsapp' => ['message-circle', 'واتساپ', '~(//|\.)(wa\.me|whatsapp\.com)/~i'],
+        'linkedin' => ['linkedin', 'لینکدین', '~(//|\.)linkedin\.com/~i'],
+        'x' => ['twitter', 'ایکس (توییتر)', '~(//|\.)(twitter|x)\.com/~i'],
+        'youtube' => ['youtube', 'یوتیوب', '~(//|\.)(youtube\.com|youtu\.be)/~i'],
+        'aparat' => ['circle-play', 'آپارات', '~(//|\.)aparat\.com/~i'],
+        'eitaa' => ['message-circle-more', 'ایتا', '~(//|\.)eitaa\.com/~i'],
+        'bale' => ['message-circle-more', 'بله', '~(//|\.)ble\.ir/~i'],
+        'rubika' => ['message-circle-more', 'روبیکا', '~(//|\.)rubika\.ir/~i'],
+        'facebook' => ['facebook', 'فیسبوک', '~(//|\.)(facebook\.com|fb\.com)/~i'],
+        'github' => ['github', 'گیت‌هاب', '~(//|\.)github\.com/~i'],
+        'email' => ['mail', 'ایمیل', '~^mailto:~i'],
+        'phone' => ['phone', 'تلفن', '~^tel:~i'],
+    ];
+
+    /** The network a social link points at: its `network`, else recognised from the URL. */
+    protected function socialNetwork(array $link): ?string
+    {
+        $chosen = (string) ($link['network'] ?? '');
+        if (isset(self::SOCIAL_NETWORKS[$chosen])) {
+            return $chosen;
+        }
+        $url = $link['url'] ?? '';
+        $url = trim(is_array($url) ? (string) ($url['url'] ?? '') : $this->stringify($url));
+        foreach (self::SOCIAL_NETWORKS as $network => [, , $pattern]) {
+            if ($url !== '' && preg_match($pattern, $url)) {
+                return $network;
+            }
+        }
+        return null;
+    }
+
+    private function socialIconsHtml(array $links, string $id): string
+    {
+        $items = '';
+        foreach ($links as $link) {
+            if (!is_array($link)) {
+                continue;
+            }
+            $url = $this->linkHref($link['url'] ?? '', '');
+            if ($url === '') {
+                continue;
+            }
+            $network = $this->socialNetwork($link);
+            $label = trim($this->stringify($link['label'] ?? ''));
+            $name = $label !== '' ? $label : ($network !== null ? self::SOCIAL_NETWORKS[$network][1] : '');
+            if ($network === null && $name === '') {
+                continue;
+            }
+            $inner = $network !== null ? IconLibrary::svg(self::SOCIAL_NETWORKS[$network][0]) : $this->escape($name);
+            $external = in_array($network, ['email', 'phone'], true) ? '' : ' target="_blank" rel="noopener noreferrer"';
+            $items .= "<a href=\"{$url}\" class=\"tb-social-icon" . ($network === null ? ' tb-social-icon--text' : " tb-social-icon--{$network}") . "\"{$external} aria-label=\"" . $this->escapeAttr($name) . "\" title=\"" . $this->escapeAttr($name) . "\">{$inner}</a>";
+        }
+        return $items === '' ? '' : "<div id=\"tb-{$id}\" class=\"tb-social-icons tb-social-icons--svg\">{$items}</div>";
+    }
+
+    /** store => [catalog icon, prefix, store name] */
+    private const APP_STORES = [
+        'google_play' => ['play', 'دریافت از', 'گوگل‌پلی'],
+        'app_store' => ['smartphone', 'دانلود از', 'اپ‌استور'],
+        'bazaar' => ['shopping-bag', 'دریافت از', 'کافه‌بازار'],
+        'myket' => ['store', 'دریافت از', 'مایکت'],
+        'direct' => ['download', 'دانلود', 'مستقیم اپلیکیشن'],
+    ];
+
+    /**
+     * Phase 1 (ADR-067): the footer's conversion row — newsletter (the
+     * Phase 0.7 endpoint), app badges and trust seals. '' when the footer
+     * uses none of them, so existing footers render unchanged.
+     */
+    private function footerExtrasHtml(array $props, string $id): string
+    {
+        $newsletter = '';
+        if ($this->flag($props['newsletter_enabled'] ?? false)) {
+            $title = $this->escape($props['newsletter_title'] ?? 'عضویت در خبرنامه');
+            $text = $this->escape($props['newsletter_text'] ?? '');
+            $newsletter = '<div class="tb-nav-footer-newsletter">'
+                . ($title !== '' ? "<p class=\"tb-nav-footer-newsletter-title\">{$title}</p>" : '')
+                . ($text !== '' ? "<p class=\"tb-nav-footer-newsletter-text\">{$text}</p>" : '')
+                . $this->newsletterFormHtml(
+                    ['placeholder' => $props['newsletter_placeholder'] ?? 'ایمیل یا شماره موبایل'],
+                    "{$id}-footer",
+                    $this->escapeAttr($props['newsletter_placeholder'] ?? 'ایمیل یا شماره موبایل'),
+                    $this->escape($props['newsletter_button'] ?? 'عضویت'),
+                    '',
+                    null,
+                )
+                . '</div>';
+        }
+
+        $apps = '';
+        foreach ((array) ($props['app_links'] ?? []) as $app) {
+            $store = is_array($app) ? (string) ($app['store'] ?? '') : '';
+            $url = is_array($app) ? $this->linkHref($app['url'] ?? '', '') : '';
+            if (!isset(self::APP_STORES[$store]) || $url === '' || $url === '#') {
+                continue;
+            }
+            [$icon, $prefix, $name] = self::APP_STORES[$store];
+            $apps .= "<a href=\"{$url}\" class=\"tb-app-badge tb-app-badge--{$store}\" target=\"_blank\" rel=\"noopener noreferrer\">"
+                . '<span class="tb-app-badge__icon">' . IconLibrary::svg($icon) . '</span>'
+                . "<span class=\"tb-app-badge__text\"><small>{$prefix}</small><strong>{$name}</strong></span></a>";
+        }
+        $apps = $apps !== '' ? "<div class=\"tb-nav-footer-apps\" aria-label=\"دریافت اپلیکیشن\">{$apps}</div>" : '';
+        $seals = $this->trustSealsHtml($props);
+
+        if ($newsletter === '' && $apps === '' && $seals === '') {
+            return '';
+        }
+        return "<div class=\"tb-nav-footer-extras\">{$newsletter}"
+            . ($apps !== '' || $seals !== '' ? "<div class=\"tb-nav-footer-badges\">{$apps}{$seals}</div>" : '')
+            . '</div>';
+    }
+
+    /**
+     * Phase 1 (ADR-067): Enamad / Samandehi seals. Only the numeric id and
+     * the alphanumeric code are taken from the author (or parsed out of a
+     * pasted official snippet); the markup and the two official hosts are
+     * ours, so a pasted snippet can never inject script. The seals verify
+     * the page's Referer, hence referrerpolicy="origin" and no iframe.
+     */
+    protected function trustSealsHtml(array $props): string
+    {
+        $html = '';
+        $enamad = $this->sealIds($props['enamad_id'] ?? '', $props['enamad_code'] ?? '', 'Code');
+        if ($enamad !== null) {
+            [$sid, $code] = $enamad;
+            $q = "id={$sid}&amp;Code={$code}";
+            $html .= "<a class=\"tb-trust-seal\" href=\"https://trustseal.enamad.ir/?{$q}\" target=\"_blank\" rel=\"noopener\" referrerpolicy=\"origin\">"
+                . "<img src=\"https://trustseal.enamad.ir/logo.aspx?{$q}\" alt=\"نماد اعتماد الکترونیکی\" referrerpolicy=\"origin\" loading=\"lazy\" width=\"86\" height=\"94\"></a>";
+        }
+        $samandehi = $this->sealIds($props['samandehi_id'] ?? '', $props['samandehi_code'] ?? '', 'p');
+        if ($samandehi !== null) {
+            [$sid, $code] = $samandehi;
+            $q = "id={$sid}&amp;p={$code}";
+            $html .= "<a class=\"tb-trust-seal\" href=\"https://logo.samandehi.ir/Verify.aspx?{$q}\" target=\"_blank\" rel=\"noopener\" referrerpolicy=\"origin\">"
+                . "<img src=\"https://logo.samandehi.ir/logo.aspx?{$q}\" alt=\"نشان ملی ثبت رسانه‌های دیجیتال\" referrerpolicy=\"origin\" loading=\"lazy\" width=\"86\" height=\"94\"></a>";
+        }
+        return $html !== '' ? "<div class=\"tb-trust-seals\" aria-label=\"نمادهای اعتماد\">{$html}</div>" : '';
+    }
+
+    /** [id, code] from plain fields or a pasted official snippet; null when either is missing. */
+    private function sealIds(mixed $idField, mixed $codeField, string $codeParam): ?array
+    {
+        $raw = html_entity_decode($this->stringify($idField), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $code = trim($this->stringify($codeField));
+        if (preg_match('~[?&]id=(\d{1,20})~i', $raw, $m)) {
+            $id = $m[1];
+            if (preg_match('~[?&]' . $codeParam . '=([A-Za-z0-9]{1,64})~i', $raw, $c)) {
+                $code = $c[1];
+            }
+        } else {
+            $id = trim(\SaaSPlatform\ThemeRuntime\Support\PersianNumber::latinDigits($raw));
+        }
+        return preg_match('/^\d{1,20}$/', $id) && preg_match('/^[A-Za-z0-9]{1,64}$/', $code) ? [$id, $code] : null;
     }
 
     /**
