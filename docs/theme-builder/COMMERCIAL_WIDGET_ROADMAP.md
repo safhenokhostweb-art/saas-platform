@@ -542,3 +542,96 @@ Everything else renders byte-identically.
     `.tb-newsletter-title` (−0.01em);
   - `header-modern.css` brand (−0.025em).
 - **0.5 tokens over hex** can now be done once, in the shared sheet.
+
+## 11. Phase 0.5 delivery: tokens over hex, colour control, Persian numbers (2026-10-27)
+
+**Done (ADR-064):**
+
+- **CSS parity harness committed** in `tests/Support/CssParity/`:
+  - `corpus.php` (now fails on any renderer warning instead of hiding it);
+  - `css.php` (token modes `default`, `none` and a palette file);
+  - `compare.cjs` (before/after corpora, colour normalisation);
+  - `summarize.php` and a README.
+- **Tokens over hex.** Shared stylesheets and renderers read
+  `var(--tb-<token>, <old literal>)`:
+  - borders, surfaces and muted text;
+  - text on brand fills (`--tb-on-primary`);
+  - urgent states (`--tb-error`);
+  - indigo tints as `color-mix()` of `--tb-primary`.
+- **Brand registry defaults** are tokens with fallbacks.
+  `header_modern.ctaColor` stays hex, because it drives contrast maths.
+- **One colour grammar**, `HtmlSanitizer::isCssColor()`, used by:
+  - `BlockRenderer::cssColor()` (every colour prop, both hosts);
+  - the Inspector's `normalizeColor()`.
+- **Hardening:**
+  - colour props can no longer break out of `style`;
+  - `renderHero()` gets the CTA background contract and an allowlisted
+    `align`;
+  - `renderSection()` applies `var()` and `rgba()` inline instead of
+    producing a broken class.
+- **Colour control in both editors** (shared `canvas-color.js`):
+  - eight theme swatches;
+  - an opacity slider (`color-mix()` for a swatch, `rgba()` for a fixed
+    colour);
+  - «بی‌رنگ» (transparent);
+  - a checkerboard preview resolved against the theme.
+
+  Nested list colours get the swatches as well.
+- **Persian numbers in shared renderers:**
+  - demo prices «۱٬۲۵۰٬۰۰۰ تومان»;
+  - counters, stat values and suffixes;
+  - badges, cart and category counts, plan prices.
+
+  These run through `PersianNumber::localize()`. Years and leading-zero
+  numbers are not grouped, and `data-count` stays Latin. A host can opt out
+  with the context key `digits => 'latin'`.
+- **Negative tracking** is LTR-only on the four remaining Persian headings.
+
+**Evidence:**
+
+- **Parity harness, customer-site live render** (229 documents, 16,381
+  elements per width, 1366/768/390):
+  - **No tokens (legacy fallback path):** 148 distinct diffs, none of them a
+    colour. All come from the four tracking fixes and from Persian digits
+    changing stat-value widths.
+  - **Default tokens (a theme with no palette):** diffs are exactly the
+    intended alignment:
+    - indigo tints follow `--tb-primary` (`#4f46e5` instead of `#6366f1`);
+    - muted empty-state text uses the WCAG-AA token;
+    - two fallback backgrounds move one RGB step;
+    - newly inserted hero gradients end in `--tb-secondary`.
+  - **Custom palette** (rose/teal): 45 element kinds now take their colour
+    from the theme, and no colour change lands outside the palette.
+  - **Text-on-primary defaults:** a separate run on every block type at its
+    defaults found 0 diffs in both modes.
+- **Preview vs live, same markup:** 48 distinct diffs across 230 platform documents, all on `div.tb-skill-bar-fill` from the host-only animation rule (unchanged since Phase 0.3).
+- **Stored colours:** 118 distinct values across 19 colour fields, from both
+  repos' theme JSON and both databases. `cssColor()` rejects none of them.
+- **Tests:**
+  - `Phase05TokensAndNumbersTest`;
+  - `PersianNumberTest` (45);
+  - `canvas-color.test.mjs` (6);
+  - JS 98/98;
+  - saas-platform theme + architecture suites 1,106 tests with the 10 known failures plus one pre-existing Architecture failure (`features_grid` Inspector type, fails identically with this phase reverted); customer-site 807 tests, the 3 known failures.
+- **A bug the suites caught:** `renderHero()` read an undefined `align` key,
+  which broke the quality-gate, publish and marketplace tests. It is fixed,
+  with a regression test. The harness had hidden it, so it now reports
+  renderer warnings.
+- **Re-pinned snapshots, each proven before re-pinning:**
+  - product-slider structural hashes: a HEAD-vs-new line diff shows only
+    the Persian price strings and the muted-text token;
+  - the Phase 3B registry golden hash: mapping the three token defaults
+    back reproduces the old pin;
+  - the universal-theme palette count, 98 → 116: re-derived from
+    `byCategory()` for the seven palette categories.
+- **Browser:** new `phase05-color-tokens` specs on both hosts (swatch, opacity, transparent, native picker; stored values; save → reload; preview/public colours; Persian prices and counters; three widths); phase03, phase02c, phase02b, phase01, P1, header-modern-fast-path, customer-site heading-level and the universal-theme editor spec stay green.
+
+**Remaining (next):**
+
+- **customer-site live prices** (`CurrencyHelper`) still use `,` separators.
+  Moving them to «٬» is a site-wide change outside the shared renderers.
+- **Not yet tokenized:**
+  - `header_modern`'s colour pipeline (hex-based contrast maths);
+  - the bento demo card palette;
+  - the module-placeholder palette (preview only).
+- **Nested colour fields** have swatches but no opacity slider yet.

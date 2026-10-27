@@ -43,6 +43,24 @@ final class HtmlSanitizer
     }
 
     /**
+     * Phase 0.5 (ADR-064) — the one grammar for an author colour value, as
+     * the Canvas colour control stores it: a hex value, an rgb()/rgba()/
+     * hsl()-family function, a theme token `var(--tb-…)` (optionally with
+     * a colour fallback), a token with alpha
+     * `color-mix(in srgb, <colour> N%, transparent)`, `transparent`, or a
+     * named colour. No quotes, `;`, braces or url(), so a value matching it
+     * cannot break out of a style attribute or declaration.
+     */
+    public static function isCssColor(string $value): bool
+    {
+        $func = '(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\(\s*[0-9a-zA-Z%,.\s\/*+-]+\)';
+        $plain = '(?:#[0-9a-f]{3,8}|[a-z]{3,24}|' . $func . ')';
+        $var = 'var\(\s*--[a-z0-9_-]+(?:\s*,\s*' . $plain . ')?\s*\)';
+        $mix = 'color-mix\(\s*in\s+srgb\s*,\s*(?:' . $plain . '|' . $var . ')\s+\d{1,3}%\s*,\s*transparent\s*\)';
+        return preg_match('~^(?:' . $plain . '|' . $var . '|' . $mix . ')$~i', trim($value)) === 1;
+    }
+
+    /**
      * Validates then escapes a URL for use in an href/src attribute,
      * falling back to a safe default when the URL is empty or fails
      * isValidUrl(). Every URL-bearing prop should be rendered through

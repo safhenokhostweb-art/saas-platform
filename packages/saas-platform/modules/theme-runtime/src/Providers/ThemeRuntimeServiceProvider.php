@@ -43,6 +43,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/css/vazirmatn-font-faces.css';
     }
 
+    /** Phase 0.5 (ADR-064) — the Canvas colour control's shared value model. */
+    public static function canvasColorPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-color.js';
+    }
+
     public static function canvasIdentityContractPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-identity.js';

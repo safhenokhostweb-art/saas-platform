@@ -147,7 +147,7 @@
 /* Muted-text fallback: was #9ca3af (2.54:1 on white, fails WCAG AA) in
    both hosts — corrected to #6b7280 (~4.83:1), verified via real browser
    contrast measurement (Phase 2g). */
-.tb-logo-item { font-size: 1rem; font-weight: 700; color: var(--tb-text-muted, #6b7280); white-space: nowrap; padding: 0.5rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: var(--tb-surface, #fff); transition: color 0.2s; }
+.tb-logo-item { font-size: 1rem; font-weight: 700; color: var(--tb-text-muted, #6b7280); white-space: nowrap; padding: 0.5rem 1.25rem; border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.5rem; background: var(--tb-surface, #fff); transition: color 0.2s; }
 .tb-logos-static { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: center; }
 @keyframes tb-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
@@ -205,19 +205,19 @@
 .tb-carousel-next:focus-visible,
 .tb-carousel-dot:focus-visible { outline: 2px solid var(--tb-primary, #4f46e5); outline-offset: 2px; }
 .tb-carousel-prev:hover,
-.tb-carousel-next:hover { background: var(--tb-primary, #4f46e5); color: #fff; border-color: var(--tb-primary, #4f46e5); }
+.tb-carousel-next:hover { background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); border-color: var(--tb-primary, #4f46e5); }
 .tb-carousel-dot:hover { background: var(--tb-primary, #4f46e5) !important; opacity: .7; }
 
 /* ─── FAQ / accordion / tabs (simple, host-identical structural shells) ─ */
-.tb-faq-item { border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
-.tb-faq-question { padding: 1rem 1.25rem; cursor: pointer; font-weight: 600; background: #f9fafb; margin: 0; }
-.tb-faq-answer { padding: 1rem 1.25rem; border-top: 1px solid #e5e7eb; line-height: 1.7; color: #4b5563; }
-.tb-accordion-item { border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
-.tb-accordion-item summary { padding: 1rem 1.25rem; cursor: pointer; font-weight: 600; background: #f9fafb; }
-.tb-accordion-body { padding: 1rem 1.25rem; border-top: 1px solid #e5e7eb; }
+.tb-faq-item { border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
+.tb-faq-question { padding: 1rem 1.25rem; cursor: pointer; font-weight: 600; background: var(--tb-surface, #f9fafb); margin: 0; }
+.tb-faq-answer { padding: 1rem 1.25rem; border-top: 1px solid var(--tb-border, #e5e7eb); line-height: 1.7; color: var(--tb-text-muted, #4b5563); }
+.tb-accordion-item { border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
+.tb-accordion-item summary { padding: 1rem 1.25rem; cursor: pointer; font-weight: 600; background: var(--tb-surface, #f9fafb); }
+.tb-accordion-body { padding: 1rem 1.25rem; border-top: 1px solid var(--tb-border, #e5e7eb); }
 /* TASK 3/3 Phase 5 (BLD-16): real tab nav/switching — see BlockRenderer::renderTabs(). */
-.tb-tabs-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; }
-.tb-tab-nav-btn { appearance: none; background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 0.75rem 1rem; font: inherit; font-weight: 600; color: #6b7280; cursor: pointer; }
+.tb-tabs-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid var(--tb-border, #e5e7eb); margin-bottom: 1rem; }
+.tb-tab-nav-btn { appearance: none; background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 0.75rem 1rem; font: inherit; font-weight: 600; color: var(--tb-text-muted, #6b7280); cursor: pointer; }
 .tb-tab-nav-btn[aria-selected="true"] { color: var(--tb-primary, #4f46e5); border-bottom-color: var(--tb-primary, #4f46e5); }
 .tb-tab-nav-btn:focus-visible { outline: 2px solid var(--tb-primary, #4f46e5); outline-offset: 2px; }
 .tb-tab-content { padding: 0.5rem 0; }
@@ -227,13 +227,13 @@
 .tb-img-center { display: block; margin: 0 auto; }
 .tb-img-right { display: block; margin-right: 0; }
 .tb-img-full { width: 100%; }
-.tb-divider { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
+.tb-divider { border: none; border-top: 1px solid var(--tb-border, #e5e7eb); margin: 1.5rem 0; }
 
 /* ─── Timeline (BlockRenderer::renderTimeline()) ────────────────────────
    `inset-inline-*`/`margin-inline-*` logical properties so the vertical
    spine and marker offsets mirror correctly under RTL automatically —
    no separate [dir="rtl"] override needed. */
-.tb-timeline-empty { padding: 2rem; text-align: center; color: #9ca3af; background: #f9fafb; border-radius: 0.75rem; }
+.tb-timeline-empty { padding: 2rem; text-align: center; color: var(--tb-text-muted, #9ca3af); background: var(--tb-surface, #f9fafb); border-radius: 0.75rem; }
 .tb-timeline-vertical .tb-timeline-track { position: relative; display: flex; flex-direction: column; gap: 2rem; }
 .tb-timeline-vertical .tb-timeline-track::before {
   content: ""; position: absolute; inset-inline-start: 1.5rem; top: 0; bottom: 0; width: 2px;
@@ -243,12 +243,12 @@
 .tb-timeline-marker-wrap { position: relative; z-index: 1; flex: 0 0 3rem; }
 .tb-timeline-marker {
   width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: var(--tb-primary, #4f46e5); color: #fff; font-weight: 700; font-size: 1.1rem;
+  background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); font-weight: 700; font-size: 1.1rem;
 }
-.tb-timeline-content { flex: 1; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.25rem 1.5rem; }
+.tb-timeline-content { flex: 1; background: var(--tb-background, #fff); border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.75rem; padding: 1.25rem 1.5rem; }
 .tb-timeline-date { display: inline-block; font-size: 0.8rem; font-weight: 700; color: var(--tb-primary, #4f46e5); margin-bottom: 0.35rem; }
 .tb-timeline-title { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 700; }
-.tb-timeline-text { margin: 0; color: #4b5563; line-height: 1.8; }
+.tb-timeline-text { margin: 0; color: var(--tb-text-muted, #4b5563); line-height: 1.8; }
 .tb-timeline-cta { display: inline-block; margin-top: 0.75rem; font-weight: 600; color: var(--tb-primary, #4f46e5); text-decoration: none; }
 .tb-timeline-cta:hover { text-decoration: underline; }
 

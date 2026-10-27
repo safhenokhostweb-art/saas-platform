@@ -3,6 +3,7 @@ namespace SaaSPlatform\ThemeRuntime;
 
 use Illuminate\Support\Str;
 use SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider;
+use SaaSPlatform\ThemeRuntime\Support\PersianNumber;
 
 /**
  * Phase 2h (ADR-029) — the ONE canonical structural Theme block renderer
@@ -672,12 +673,22 @@ class BlockRenderer
     {
         $padding = $this->spacingClass($props['padding'] ?? 'md');
         $bg = $this->escapeAttr($props['background'] ?? 'transparent');
+        // Phase 0.5: a token reference or rgba() from the colour control is a
+        // colour, not a class name (it used to become `tb-bg-var(--…)`).
+        $bgColor = (!str_starts_with($bg, '#') && !preg_match('/^[a-z][a-z0-9-]*$/', $bg))
+            ? $this->cssColor($props['background'] ?? null, '') : '';
+        if ($bgColor !== '') {
+            $bg = 'transparent';
+        }
         $bgImg = $this->escapeAttr($props['background_image'] ?? '');
         $useContainer = ($props['container'] ?? true);
         $inlineStyles = [];
         if ($bgImg) {
             $inlineStyles[] = "background-image: url({$bgImg})";
             $inlineStyles[] = "background-size: cover";
+        }
+        if ($bgColor !== '') {
+            $inlineStyles[] = 'background-color:' . $this->escapeAttr($bgColor);
         }
         $customBg = $props['_style']['background']['color'] ?? null;
         if ($customBg) {
@@ -795,8 +806,11 @@ class BlockRenderer
         $subtitle = $this->escape($props['subtitle'] ?? '');
         $btnText  = $this->escape($props['button_text'] ?? '');
         $btnUrl   = $this->escapeUrl($props['button_url'] ?? '', '#');
-        $bg    = $props['background'] ?? 'primary';
+        // Phase 0.5: both were interpolated into the class attribute
+        // unescaped. Same background contract as renderCta().
+        [$bgClass, $bgStyle] = $this->themeBackground($props['background'] ?? 'primary');
         $align = $props['align'] ?? 'center';
+        $align = in_array($align, ['left', 'center', 'right'], true) ? $align : 'center';
         $eaTitle = $this->editableAttr('title', 'text');
         $eaSub   = $this->editableAttr('subtitle', 'text');
         $eaBtn   = $this->editableAttr('button_text', 'text');
@@ -807,8 +821,9 @@ class BlockRenderer
         // had zero runtime effect. Same inline-style pattern renderSection()
         // already uses for the identical field.
         $bgImg = $this->escapeAttr($props['background_image'] ?? '');
-        $styleAttr = $bgImg ? " style=\"background-image:url({$bgImg});background-size:cover;background-position:center;\"" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-hero tb-bg-{$bg} tb-align-{$align}\"{$styleAttr}><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
+        $styles = array_filter([$bgStyle, $bgImg ? "background-image:url({$bgImg});background-size:cover;background-position:center;" : '']);
+        $styleAttr = $styles ? ' style="' . implode(';', $styles) . '"' : '';
+        return "<section id=\"tb-{$id}\" class=\"tb-hero {$bgClass} tb-align-{$align}\"{$styleAttr}><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
     }
 
     /**
@@ -1158,7 +1173,7 @@ class BlockRenderer
     {
         $variant = in_array($variant, ['success', 'warning', 'error', 'info', 'neutral', 'primary'], true) ? $variant : 'neutral';
         $size    = in_array($size, ['sm', 'md', 'lg'], true) ? $size : 'md';
-        $labelEsc = $this->escape($label);
+        $labelEsc = $this->escape($this->displayNumber($label));
         if ($labelEsc === '') {
             return '';
         }
@@ -1399,12 +1414,12 @@ class BlockRenderer
             max(0, min(240, (int) ($props['padding_v'] ?? 96)))
         );
         if ($bgType === 'color') {
-            $style .= 'background-color:' . $this->escapeAttr($props['bg_color'] ?? '#4f46e5') . ';';
+            $style .= 'background-color:' . $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, 'var(--tb-primary, #4f46e5)')) . ';';
         } elseif ($bgType === 'gradient') {
             $style .= sprintf(
                 'background-image:linear-gradient(115deg,%s,%s);',
-                $this->escapeAttr($props['gradient_from'] ?? '#4f46e5'),
-                $this->escapeAttr($props['gradient_to'] ?? '#7c3aed')
+                $this->escapeAttr($this->cssColor($props['gradient_from'] ?? null, 'var(--tb-primary, #4f46e5)')),
+                $this->escapeAttr($this->cssColor($props['gradient_to'] ?? null, 'var(--tb-secondary, #7c3aed)'))
             );
         } elseif ($bgType === 'image' && (string) ($props['bg_image'] ?? '') !== '') {
             // Same inline background pattern renderSection()/renderHero()
@@ -1443,7 +1458,7 @@ class BlockRenderer
         // subtree — heading/text children remain untouched primitives.
         $style = "gap:{$gap}px;max-width:{$maxWidth}px;"
             . '--tb-hero-title-size:' . $titleSize . 'rem;'
-            . '--tb-hero-title-color:' . $this->escapeAttr($props['title_color'] ?? '#ffffff') . ';';
+            . '--tb-hero-title-color:' . $this->escapeAttr($this->cssColor($props['title_color'] ?? null, 'var(--tb-on-primary, #ffffff)')) . ';';
         return "<div id=\"tb-{$id}\" class=\"tb-hero-content\" style=\"{$style}\">{$inner}</div>";
     }
 
@@ -1596,6 +1611,29 @@ class BlockRenderer
     /** Theme colour tokens with a `.tb-bg-*` rule in the shared CSS contracts. */
     private const CTA_BACKGROUND_TOKENS = ['primary', 'secondary', 'surface', 'background', 'text', 'dark', 'light', 'gray'];
 
+    /**
+     * The background contract shared by renderCta() and renderHero()
+     * (Phase 0.2c, extended in 0.5): a theme token keeps its `tb-bg-*`
+     * class; a valid CSS colour — hex, rgba(), or a var(--tb-…) the colour
+     * control stores — is applied inline with a readable text colour when
+     * one can be computed; anything else falls back to the primary token.
+     *
+     * @return array{0: string, 1: string} [class, inline style ('' for none)]
+     */
+    protected function themeBackground(mixed $value): array
+    {
+        $bg = trim($this->stringify($value));
+        if (in_array($bg, self::CTA_BACKGROUND_TOKENS, true)) {
+            return ["tb-bg-{$bg}", ''];
+        }
+        $color = $this->cssColor($bg, '');
+        if ($color === '') {
+            return ['tb-bg-primary', ''];
+        }
+        $text = $this->readableTextColorOn($color);
+        return ['tb-bg-custom', 'background:' . $this->escapeAttr($color) . ($text ? ';color:' . $text : '')];
+    }
+
     protected function renderCta(array $props, string $inner, string $id): string
     {
         $title    = $this->escape($props['title'] ?? '');
@@ -1605,20 +1643,9 @@ class BlockRenderer
         // Phase 0.2c: `background` was interpolated into the class
         // attribute unescaped, and a CSS colour (what customer-site's colour
         // control stores) became a class with no rule, so the chosen colour
-        // never showed. A theme token keeps its class; a valid CSS colour
-        // is applied inline with a readable text colour; anything else
-        // falls back to the primary token.
-        $bg       = trim($this->stringify($props['background'] ?? 'primary'));
-        $styleAttr = '';
-        if (in_array($bg, self::CTA_BACKGROUND_TOKENS, true)) {
-            $bgClass = "tb-bg-{$bg}";
-        } elseif (($color = $this->bentoColorToken($bg)) !== '') {
-            $bgClass = 'tb-bg-custom';
-            $text = $this->readableTextColorOn($color);
-            $styleAttr = ' style="background:' . $this->escapeAttr($color) . ($text ? ';color:' . $text : '') . '"';
-        } else {
-            $bgClass = 'tb-bg-primary';
-        }
+        // never showed. See themeBackground().
+        [$bgClass, $bgStyle] = $this->themeBackground($props['background'] ?? 'primary');
+        $styleAttr = $bgStyle !== '' ? ' style="' . $bgStyle . '"' : '';
         $eaTitle  = $this->editableAttr('title', 'text');
         $eaSub    = $this->editableAttr('subtitle', 'text');
         $eaBtn    = $this->editableAttr('button_text', 'text');
@@ -1664,7 +1691,7 @@ class BlockRenderer
         $labelHtml = $label !== '' ? "<div class=\"tb-progress-label\" style=\"display:flex;justify-content:space-between;margin-bottom:0.35rem;font-size:0.85rem;\"><span>{$label}</span><span>{$value}%</span></div>" : '';
         return "<div id=\"tb-{$id}\" class=\"tb-progress-bar\">
             {$labelHtml}
-            <div class=\"tb-progress-track\" style=\"background:#e5e7eb;border-radius:999px;height:0.6rem;overflow:hidden;\" role=\"progressbar\" aria-valuenow=\"{$value}\" aria-valuemin=\"0\" aria-valuemax=\"100\"" . ($label !== '' ? " aria-label=\"{$label}\"" : '') . ">
+            <div class=\"tb-progress-track\" style=\"background:var(--tb-border, #e5e7eb);border-radius:999px;height:0.6rem;overflow:hidden;\" role=\"progressbar\" aria-valuenow=\"{$value}\" aria-valuemin=\"0\" aria-valuemax=\"100\"" . ($label !== '' ? " aria-label=\"{$label}\"" : '') . ">
                 <div class=\"tb-progress-fill\" style=\"background:var(--tb-primary,#4f46e5);height:100%;width:{$value}%;transition:width .3s ease;\"></div>
             </div>
         </div>";
@@ -1685,7 +1712,7 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-modal-wrap\">
             <button type=\"button\" class=\"tb-btn tb-btn-primary tb-modal-trigger\" data-modal-trigger=\"tb-{$id}-dialog\" aria-haspopup=\"dialog\">{$triggerText}</button>
             <div id=\"tb-{$id}-dialog\" class=\"tb-modal-overlay\" style=\"display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;\" role=\"dialog\" aria-modal=\"true\">
-                <div class=\"tb-modal-panel\" style=\"background:#fff;border-radius:0.75rem;max-width:36rem;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;\">
+                <div class=\"tb-modal-panel\" style=\"background:var(--tb-background, #fff);border-radius:0.75rem;max-width:36rem;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;\">
                     <button type=\"button\" class=\"tb-modal-close\" aria-label=\"بستن\" style=\"position:absolute;top:0.75rem;left:0.75rem;background:none;border:0;font-size:1.25rem;cursor:pointer;line-height:1;\">×</button>
                     <div class=\"tb-modal-body\">{$inner}</div>
                 </div>
@@ -1886,7 +1913,7 @@ class BlockRenderer
         $btn2u   = $this->escapeAttr($props['button2_url'] ?? '#');
         $imgUrl  = $this->escapeAttr($props['image_url'] ?? '');
         $imgSide = $props['image_side'] ?? 'left';
-        $bg      = $this->escapeAttr($props['background'] ?? '#ffffff');
+        $bg      = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-background, #ffffff)'));
 
         $badgeHtml = $badge ? "<span class=\"tb-hero-split-badge\">{$badge}</span>" : '';
         $btn1Html  = $btn1t ? "<a href=\"{$btn1u}\" class=\"tb-btn tb-btn-primary\">{$btn1t}</a>" : '';
@@ -1924,12 +1951,12 @@ class BlockRenderer
         // gradient_from/gradient_to) rendered the same generic purple
         // regardless of its actual brand palette — an explicit author
         // override of course still wins.
-        $gFrom   = $this->escapeAttr($props['gradient_from'] ?? 'var(--tb-primary, #4f46e5)');
-        $gTo     = $this->escapeAttr($props['gradient_to'] ?? 'var(--tb-secondary, #7c3aed)');
-        $tColor  = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $gFrom   = $this->escapeAttr($this->cssColor($props['gradient_from'] ?? null, 'var(--tb-primary, #4f46e5)'));
+        $gTo     = $this->escapeAttr($this->cssColor($props['gradient_to'] ?? null, 'var(--tb-secondary, #7c3aed)'));
+        $tColor  = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
 
         $badgeHtml = $badge ? "<span class=\"tb-hero-gradient-badge\">{$badge}</span><br>" : '';
-        $btn1Html  = $btn1t ? "<a href=\"{$btn1u}\" class=\"tb-btn\" style=\"background:#fff;color:{$gFrom};font-weight:700;\">{$btn1t}</a>" : '';
+        $btn1Html  = $btn1t ? "<a href=\"{$btn1u}\" class=\"tb-btn\" style=\"background:var(--tb-on-primary, #fff);color:{$gFrom};font-weight:700;\">{$btn1t}</a>" : '';
         $btn2Html  = $btn2t ? "<a href=\"{$btn2u}\" class=\"tb-btn\" style=\"background:rgba(255,255,255,0.15);color:{$tColor};border:2px solid rgba(255,255,255,0.4);\">{$btn2t}</a>" : '';
         $actions   = ($btn1Html || $btn2Html) ? "<div class=\"tb-hero-split-actions\" style=\"justify-content:center;margin-top:2rem;\">{$btn1Html}{$btn2Html}</div>" : '';
 
@@ -1991,7 +2018,7 @@ class BlockRenderer
     protected function renderStatsRow(array $props, string $inner, string $id): string
     {
         $title    = $this->escape($props['title'] ?? '');
-        $bg       = $this->escapeAttr($props['background'] ?? '#f8fafc');
+        $bg       = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-surface, #f8fafc)'));
         $backgroundImage = $this->escapeUrl($props['background_image'] ?? '', '');
         $dividers = (bool) ($props['dividers'] ?? true);
         // Phase 2k: applied as an INLINE style on every text-bearing child
@@ -2013,13 +2040,14 @@ class BlockRenderer
         $items = [];
         foreach ($stats as $i => $s) {
             $val    = $this->escape((string) ($s['value'] ?? '0'));
-            $suffix = $this->escape($s['suffix'] ?? '');
+            $shown  = $this->escape($this->displayNumber($s['value'] ?? '0'));
+            $suffix = $this->escape($this->displayNumber($s['suffix'] ?? ''));
             $label  = $this->escape($s['label'] ?? '');
             if ($dividers && $i > 0) {
                 $items[] = '<div class="tb-stat-divider" aria-hidden="true"></div>';
             }
             $items[] = "<div class=\"tb-stat-item\">
-                <span class=\"tb-stat-value\"{$textColorAttr} data-count=\"{$val}\">{$val}<span class=\"tb-stat-suffix\"{$textColorAttr}>{$suffix}</span></span>
+                <span class=\"tb-stat-value\"{$textColorAttr} data-count=\"{$val}\">{$shown}<span class=\"tb-stat-suffix\"{$textColorAttr}>{$suffix}</span></span>
                 <span class=\"tb-stat-label\"{$textColorAttr}>{$label}</span>
             </div>";
         }
@@ -2049,12 +2077,13 @@ class BlockRenderer
     protected function renderStatItem(array $props, string $inner, string $id): string
     {
         $value = $this->escape((string) ($props['value'] ?? '100'));
-        $suffix = $this->escape((string) ($props['suffix'] ?? '+'));
+        $shown = $this->escape($this->displayNumber($props['value'] ?? '100'));
+        $suffix = $this->escape($this->displayNumber($props['suffix'] ?? '+'));
         $label = $this->escape((string) ($props['label'] ?? ''));
         $emphasis = (bool) ($props['emphasis'] ?? false) ? ' tb-stat-item-emphasis' : '';
 
         return "<div id=\"tb-{$id}\" class=\"tb-stat-item{$emphasis}\">"
-            . "<span class=\"tb-stat-value\" data-count=\"{$value}\">{$value}<span class=\"tb-stat-suffix\">{$suffix}</span></span>"
+            . "<span class=\"tb-stat-value\" data-count=\"{$value}\">{$shown}<span class=\"tb-stat-suffix\">{$suffix}</span></span>"
             . "<span class=\"tb-stat-label\">{$label}</span>"
             . '</div>';
     }
@@ -2065,8 +2094,8 @@ class BlockRenderer
             ? $requestedAlign : 'center';
         $padding = max(16, min(160, (int) ($props['padding'] ?? 48)));
         $radius = max(0, min(48, (int) ($props['radius'] ?? 16)));
-        $background = $this->escapeAttr($props['background'] ?? '#4f46e5');
-        $textColor = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $background = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-primary, #4f46e5)'));
+        $textColor = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
         $style = "--tb-cta-band-bg:{$background};--tb-cta-band-text:{$textColor};"
             . "--tb-cta-band-padding:{$padding}px;--tb-cta-band-radius:{$radius}px;";
 
@@ -2079,7 +2108,7 @@ class BlockRenderer
     {
         $columns = max(2, min(4, (int) ($props['columns'] ?? 4)));
         $gap = max(0, min(64, (int) ($props['gap'] ?? 20)));
-        $background = $this->escapeAttr($props['background'] ?? '#ffffff');
+        $background = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-background, #ffffff)'));
         $style = "--tb-trust-gap:{$gap}px;--tb-trust-bg:{$background};";
 
         return "<section id=\"tb-{$id}\" class=\"tb-trust-badges-row tb-commercial-grid-cols-{$columns}\" style=\"{$style}\">"
@@ -2370,10 +2399,10 @@ class BlockRenderer
         // shared by both). #6b7280 (gray-500) keeps the same muted
         // "de-emphasized old price" visual role at a real ~4.6:1.
         $discountHtml = ($originalPrice !== null && $price !== null && $originalPrice > $price)
-            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:#6b7280;font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
+            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:var(--tb-text-muted, #6b7280);font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
             : '';
 
-        $stockHtml = $stockLabel ? "<div class=\"tb-product-stock\" style=\"font-size:.8rem;color:#6b7280;margin-top:.15rem;\">" . $this->escape($stockLabel) . "</div>" : '';
+        $stockHtml = $stockLabel ? "<div class=\"tb-product-stock\" style=\"font-size:.8rem;color:var(--tb-text-muted, #6b7280);margin-top:.15rem;\">" . $this->escape($stockLabel) . "</div>" : '';
 
         return "<div class=\"tb-product-card\" style=\"position:relative;max-width:20rem;margin:0 auto;\">
             {$badgeHtml}
@@ -2422,8 +2451,8 @@ class BlockRenderer
                 $p['badge'],
                 $p['stock'],
                 '#',
-                number_format($p['price']) . ' تومان',
-                $p['original'] !== null ? number_format($p['original']) . ' تومان' : null
+                $this->displayToman($p['price']),
+                $p['original'] !== null ? $this->displayToman($p['original']) : null
             );
         }
 
@@ -2481,8 +2510,8 @@ class BlockRenderer
             $cards[] = $this->productCardHtml(
                 $p['title'], '', (float) $p['price'], $p['original'] !== null ? (float) $p['original'] : null,
                 $p['badge'], $p['stock'], '#',
-                number_format($p['price']) . ' تومان',
-                $p['original'] !== null ? number_format($p['original']) . ' تومان' : null
+                $this->displayToman($p['price']),
+                $p['original'] !== null ? $this->displayToman($p['original']) : null
             );
         }
 
@@ -2537,7 +2566,7 @@ class BlockRenderer
     protected function renderCartIcon(array $props, string $inner, string $id): string
     {
         $count = (int) ($props['count'] ?? 0);
-        $badge = $count > 0 ? "<span class=\"tb-cart-icon-badge\">" . number_format($count) . "</span>" : '';
+        $badge = $count > 0 ? "<span class=\"tb-cart-icon-badge\">" . $this->displayNumber($count) . "</span>" : '';
         return "<a href=\"/cart\" id=\"tb-{$id}\" class=\"tb-cart-icon\" aria-label=\"سبد خرید\" style=\"position:relative;display:inline-flex;\">🛒{$badge}</a>";
     }
 
@@ -2593,7 +2622,7 @@ class BlockRenderer
             $cards[] = "<a href=\"#\" class=\"tb-category-card\" style=\"display:block;text-align:center;padding:1.5rem 1rem;border:1px solid #e5e7eb;border-radius:.75rem;text-decoration:none;color:inherit;\">
                 <div style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->escape($c['icon']) . "</div>
                 <div class=\"tb-category-name\" style=\"font-weight:700;\">" . $this->escape($c['name']) . "</div>
-                <div class=\"tb-category-count\" style=\"font-size:.8rem;color:#6b7280;margin-top:.2rem;\">" . number_format($c['count']) . " محصول</div>
+                <div class=\"tb-category-count\" style=\"font-size:.8rem;color:var(--tb-text-muted, #6b7280);margin-top:.2rem;\">" . $this->displayNumber($c['count']) . " محصول</div>
             </a>";
         }
 
@@ -2844,7 +2873,7 @@ class BlockRenderer
 
     protected function renderTrustBadges(array $props, string $inner, string $id): string
     {
-        $bg = $this->escapeAttr($props['background'] ?? '#f8fafc');
+        $bg = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-surface, #f8fafc)'));
 
         $rawBadges = $props['badges'] ?? '[]';
         $badges    = is_array($rawBadges) ? $rawBadges : (json_decode($rawBadges, true) ?? []);
@@ -2887,7 +2916,7 @@ class BlockRenderer
         $cards = [];
         foreach ($plans as $p) {
             $name      = $this->escape($p['name'] ?? '');
-            $price     = $this->escape($p['price'] ?? '');
+            $price     = $this->escape($this->displayNumber($p['price'] ?? ''));
             $period    = $this->escape($p['period'] ?? '');
             $badge     = $this->escape($p['badge'] ?? '');
             $highlight = $this->flag($p['highlight'] ?? false);
@@ -2929,8 +2958,8 @@ class BlockRenderer
         // Commercial Productization fase-3: same class of bug as
         // renderHeroGradient() — a hardcoded generic-indigo default
         // independent of the Theme's own --tb-primary.
-        $bg         = $this->escapeAttr($props['background'] ?? 'var(--tb-primary, #4f46e5)');
-        $tc         = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $bg         = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-primary, #4f46e5)'));
+        $tc         = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
 
         return "<div id=\"tb-{$id}\" class=\"tb-newsletter\" style=\"background:{$bg};color:{$tc};\">
             <div class=\"tb-container\">
@@ -2939,7 +2968,7 @@ class BlockRenderer
                 <form class=\"tb-newsletter-form\" onsubmit=\"event.preventDefault();this.reset();\" novalidate>
                     " . $this->visuallyHiddenLabel("tb-{$id}-newsletter-email", $props['placeholder'] ?? 'ایمیل یا شماره موبایل') . "
                     <input id=\"tb-{$id}-newsletter-email\" type=\"text\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" autocomplete=\"off\">
-                    <button type=\"submit\" class=\"tb-newsletter-btn tb-btn\" style=\"background:#fff;color:{$bg};\">{$btnText}</button>
+                    <button type=\"submit\" class=\"tb-newsletter-btn tb-btn\" style=\"background:var(--tb-on-primary, #fff);color:{$bg};\">{$btnText}</button>
                 </form>
             </div>
         </div>";
@@ -3121,6 +3150,44 @@ class BlockRenderer
             . 'var\(\s*--[A-Za-z0-9_-]+(?:\s*,\s*' . $numberish . ')?\s*\))$~i';
 
         return preg_match($pattern, $token) === 1 ? $token : $fallback;
+    }
+
+    /**
+     * Phase 0.5 (ADR-064) — the one reader for an author colour prop. It
+     * accepts what the Canvas colour control stores: a hex value, an
+     * rgb()/rgba()/hsl()-family function, a theme token reference
+     * `var(--tb-…)` (optionally with a colour fallback), `transparent`, or a
+     * named colour. Anything else (quotes, `;`, `url(…)`, arrays) returns
+     * $fallback, so an authored value can never break out of a style
+     * attribute. $fallback is trusted renderer code, e.g.
+     * 'var(--tb-primary, #4f46e5)'.
+     */
+    protected function cssColor(mixed $value, string $fallback): string
+    {
+        if (!is_string($value)) {
+            return $fallback;
+        }
+        $color = trim($value);
+        return $color !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isCssColor($color) ? $color : $fallback;
+    }
+
+    /**
+     * Phase 0.5 (ADR-064): a counter, badge or count as Persian pages read
+     * it (Support\PersianNumber::localize — Persian digits, ٬/٫, ٪). A host
+     * rendering a Latin-digit site sets the context key `digits` => 'latin'.
+     */
+    protected function displayNumber(mixed $value): string
+    {
+        $text = $this->stringify($value);
+        return ($this->context['digits'] ?? null) === 'latin' ? $text : PersianNumber::localize($text);
+    }
+
+    /** A price in Toman: «۱٬۲۵۰٬۰۰۰ تومان» (or Latin digits, see displayNumber()). */
+    protected function displayToman(int|float $amount): string
+    {
+        return ($this->context['digits'] ?? null) === 'latin'
+            ? number_format($amount) . ' ' . PersianNumber::TOMAN
+            : PersianNumber::toman($amount);
     }
 
     protected function renderServicesCards(array $props, string $inner, string $id): string
@@ -3566,8 +3633,8 @@ class BlockRenderer
     {
         $logoText = $this->escape($props['logo_text'] ?? '');
         $logoUrl  = $this->linkHref($props['logo_url'] ?? '/', '/');
-        $bg       = $this->escapeAttr($props['bg_color'] ?? '#ffffff');
-        $tc       = $this->escapeAttr($props['text_color'] ?? '#111827');
+        $bg       = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, 'var(--tb-background, #ffffff)'));
+        $tc       = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-text, #111827)'));
         $sticky   = (bool) ($props['sticky'] ?? false);
 
         $rawLinks = $props['nav_links'] ?? $props['links'] ?? [];
@@ -3746,8 +3813,8 @@ class BlockRenderer
      */
     protected function renderNavFooter(array $props, string $inner, string $id): string
     {
-        $bg        = $this->escapeAttr($props['bg_color'] ?? '#111827');
-        $tc        = $this->escapeAttr($props['text_color'] ?? '#e5e7eb');
+        $bg        = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, '#111827'));
+        $tc        = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, '#e5e7eb'));
         $copyright = $this->escape($props['copyright'] ?? '');
         $tagline   = $this->escape($props['tagline'] ?? '');
         $logoText  = $this->escape($props['logo_text'] ?? '');
@@ -3917,7 +3984,7 @@ class BlockRenderer
 
         $statsHtml = '';
         foreach ($stats as $s) {
-            $val   = $this->escape((string) (is_array($s) ? ($s['value'] ?? '') : ''));
+            $val   = $this->escape($this->displayNumber(is_array($s) ? ($s['value'] ?? '') : ''));
             $label = $this->escape(is_array($s) ? ($s['label'] ?? '') : '');
             if ($val === '' && $label === '') {
                 continue;
@@ -4035,7 +4102,7 @@ class BlockRenderer
     {
         $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
-        $bg       = $this->escapeAttr($props['background'] ?? '');
+        $bg       = $this->escapeAttr($this->cssColor($props['background'] ?? null, ''));
         $rawItems = $props['items'] ?? [];
         $items    = is_array($rawItems) ? $rawItems : [];
 
@@ -4154,11 +4221,12 @@ class BlockRenderer
     protected function renderCounter(array $props, string $inner, string $id): string
     {
         $value  = $this->escape((string) ($props['value'] ?? ''));
-        $suffix = $this->escape($props['suffix'] ?? '');
+        $shown  = $this->escape($this->displayNumber($props['value'] ?? ''));
+        $suffix = $this->escape($this->displayNumber($props['suffix'] ?? ''));
         $label  = $this->escape($props['label'] ?? '');
 
         return "<div id=\"tb-{$id}\" class=\"tb-stat-item\">
-            <span class=\"tb-stat-value\" data-count=\"{$value}\">{$value}<span class=\"tb-stat-suffix\">{$suffix}</span></span>
+            <span class=\"tb-stat-value\" data-count=\"{$value}\">{$shown}<span class=\"tb-stat-suffix\">{$suffix}</span></span>
             <span class=\"tb-stat-label\">{$label}</span>
         </div>";
     }

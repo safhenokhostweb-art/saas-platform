@@ -1103,10 +1103,35 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 </template>
 
                                 {{-- color --}}
+                                {{-- Phase 0.5 (ADR-064): theme swatches (stored as var(--tb-…)
+                                     so the block follows the theme), opacity (rgba() or a
+                                     color-mix() of the swatch) and explicit transparent. The value
+                                     model is the shared theme-runtime CanvasColor. --}}
                                 <template x-if="schemaDef.type === 'color'">
-                                    <div class="flex items-center gap-2">
-                                        <input type="color" :id="'ctrl-' + propKey" :value="colorInputValue(selectedBlock.props[propKey], schemaDef.default ?? '#4f46e5')" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
-                                        <input type="text" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000">
+                                    <div class="space-y-2" :data-testid="'tb-color-' + propKey" x-data="{ get cv() { return selectedBlock.props[propKey] ?? schemaDef.default ?? ''; } }">
+                                        <div class="flex items-center gap-2">
+                                            <span class="relative w-10 h-10 rounded-lg border border-slate-200 overflow-hidden shrink-0" style="background-image:conic-gradient(#e2e8f0 25%,#fff 0 50%,#e2e8f0 0 75%,#fff 0);background-size:10px 10px;" aria-hidden="true">
+                                                <span class="absolute inset-0" :style="'background:' + colorPreview(cv)" :data-testid="'tb-color-preview-' + propKey"></span>
+                                            </span>
+                                            <input type="color" :id="'ctrl-' + propKey" :value="colorInputHex(cv)" @input="setColorBase(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5" aria-label="انتخاب رنگ دلخواه">
+                                            <input type="text" dir="ltr" :value="cv" @input="updateProp(propKey, $event.target.value)" class="flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000" aria-label="مقدار رنگ" :data-testid="'tb-color-value-' + propKey">
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="رنگ‌های قالب">
+                                            <template x-for="t in colorPalette()" :key="t.token">
+                                                <button type="button" @click="setColorSwatch(propKey, t.token)" :title="t.label" :aria-label="t.label" :aria-pressed="colorParse(cv).token === t.token ? 'true' : 'false'"
+                                                    :class="colorParse(cv).token === t.token ? 'ring-2 ring-indigo-500 ring-offset-1' : 'ring-1 ring-slate-200'"
+                                                    class="w-6 h-6 rounded-full border-2 border-white shadow hover:scale-110 transition" :style="'background:' + t.value" :data-testid="'tb-color-swatch-' + propKey + '-' + t.token"></button>
+                                            </template>
+                                            <button type="button" @click="updateProp(propKey, 'transparent')" :aria-pressed="colorParse(cv).kind === 'transparent' ? 'true' : 'false'"
+                                                :class="colorParse(cv).kind === 'transparent' ? 'ring-2 ring-indigo-500' : 'ring-1 ring-slate-200'"
+                                                class="px-2 h-6 rounded-full text-[11px] text-slate-600 bg-white" :data-testid="'tb-color-transparent-' + propKey">بی‌رنگ</button>
+                                        </div>
+                                        <label class="flex items-center gap-2 text-[11px] text-slate-600">
+                                            <span class="shrink-0">شفافیت</span>
+                                            <input type="range" min="0" max="100" step="5" class="flex-1 accent-indigo-600" :value="colorParse(cv).alpha" @input="setColorAlpha(propKey, Number($event.target.value))"
+                                                :disabled="!['token', 'hex', 'rgba'].includes(colorParse(cv).kind)" :data-testid="'tb-color-alpha-' + propKey" aria-label="میزان شفافیت رنگ">
+                                            <span class="w-9 text-left tabular-nums" x-text="(colorParse(cv).kind === 'transparent' ? 0 : colorParse(cv).alpha) + '٪'"></span>
+                                        </label>
                                     </div>
                                 </template>
 
@@ -1811,6 +1836,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 <script>
 window.CANVAS_TREE_LIMITS = @json($canvasTreeLimits);
 </script>
+@include('theme-runtime::canvas.color')
 @include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 @include('admin.theme-builder.partials.canvas-section-library')
 <script>
@@ -2544,13 +2570,30 @@ function themeCanvas() {
         // <input type=color> only understands #rrggbb; rgba()/var()/''
         // stay editable through the paired text input.
         colorInputValue(value, fallback) {
-            for (const v of [value, fallback]) {
-                if (typeof v !== 'string') continue;
-                const t = v.trim();
-                if (/^#[0-9a-f]{6}$/i.test(t)) return t;
-                if (/^#[0-9a-f]{3}$/i.test(t)) return '#' + [...t.slice(1)].map(c => c + c).join('');
-            }
-            return '#000000';
+            // A swatch or rgba() value shows its base colour in the native picker.
+            const palette = this.colorPalette();
+            return window.CanvasColor.parse(value, palette).hex
+                || window.CanvasColor.parse(fallback, palette).hex
+                || '#000000';
+        },
+        // Phase 0.5 (ADR-064): colour control — the value model is the
+        // shared window.CanvasColor (theme-runtime/resources/js/canvas-color.js).
+        colorPalette() { return window.CanvasColor.palette(this.globalStyles); },
+        colorParse(value) { return window.CanvasColor.parse(value, this.colorPalette()); },
+        colorPreview(value) { return window.CanvasColor.previewCss(value, this.colorPalette()); },
+        colorInputHex(value) { return window.CanvasColor.inputHex(value, this.colorPalette()); },
+        setColorSwatch(propKey, token) {
+            const current = this.colorParse(this.selectedBlock?.props?.[propKey] ?? '');
+            const alpha = ['token', 'hex', 'rgba'].includes(current.kind) ? current.alpha : 100;
+            this.updateProp(propKey, window.CanvasColor.swatch(token, alpha));
+        },
+        setColorBase(propKey, hex) {
+            const current = this.colorParse(this.selectedBlock?.props?.[propKey] ?? '');
+            const alpha = ['token', 'hex', 'rgba'].includes(current.kind) ? current.alpha : 100;
+            this.updateProp(propKey, window.CanvasColor.fixed(hex, alpha));
+        },
+        setColorAlpha(propKey, alpha) {
+            this.updateProp(propKey, window.CanvasColor.withAlpha(this.selectedBlock?.props?.[propKey] ?? '', alpha, this.colorPalette()));
         },
         clampNumber(raw, def) {
             if (raw === '' || raw === null || raw === undefined) return '';

@@ -40,14 +40,22 @@ use Tests\TestCase;
  *   only their bodies — so a second tag is a real, intended structural
  *   change. No other markup moved: carousel structure, attributes, classes
  *   and text are unchanged.
+ *
+ *   Phase 0.5 (ADR-064) RE-PINNED them again, and this is the why: the demo
+ *   prices print through PersianNumber («۱٬۲۵۰٬۰۰۰ تومان», was
+ *   «1,250,000 تومان») and the old-price / stock text colour reads
+ *   var(--tb-text-muted, #6b7280) instead of the bare hex. Verified by a
+ *   line diff of the HEAD and new renders: only those price strings and
+ *   colour declarations differ — structure, classes and every other
+ *   attribute are unchanged.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '3a1c8d14f71c226f448fe2b57d7785ac0f5cc1572da819ed264c35e3318a0625';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '3ebf0df7782b504f17817204211f89646007029e0b65a8e9930d42c673b82f69';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = 'd421a99425b7043c6e90c96e05567d2b78ab57b1caf5613af91c6470d17dbcdb';
+    private const PUBLIC_STRUCTURAL_SHA256 = '847ab52d7bab75944a4b4ebc3137a0b9c99cc13d969458b27bca103d82e9fa50';
 
     private function render(string $mode = 'neutral'): string
     {

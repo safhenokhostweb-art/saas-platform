@@ -60,6 +60,35 @@ class PersianNumberTest extends TestCase
         $this->assertSame('', PersianNumber::format(NAN));
     }
 
+    /** @return array<string, array{0: string, 1: string}> real counter and badge values from the theme corpus */
+    public static function localized(): array
+    {
+        return [
+            'authored grouping' => ['5,000+', '۵٬۰۰۰+'],
+            'persian authored grouping' => ['۱,۰۰۰+', '۱٬۰۰۰+'],
+            'bare integer grouped' => ['5000', '۵٬۰۰۰'],
+            'bare integer with suffix' => ['1200+', '۱٬۲۰۰+'],
+            'below a thousand' => ['150', '۱۵۰'],
+            'decimal' => ['4.9/5', '۴٫۹/۵'],
+            'persian decimal' => ['۴.۹/۵', '۴٫۹/۵'],
+            'percent' => ['100%', '۱۰۰٪'],
+            'spaced percent' => ['-20 %', '-۲۰٪'],
+            'slash' => ['24/7', '۲۴/۷'],
+            'jalali year untouched' => ['۱۳۹۸', '۱۳۹۸'],
+            'gregorian year untouched' => ['since 2019', 'since ۲۰۱۹'],
+            'leading zero untouched' => ['09121234567', '۰۹۱۲۱۲۳۴۵۶۷'],
+            'units kept' => ['۱۰ PB+', '۱۰ PB+'],
+            'words kept' => ['Zero', 'Zero'],
+            'already persian' => ['۲۵,۰۰۰+', '۲۵٬۰۰۰+'],
+        ];
+    }
+
+    #[DataProvider('localized')]
+    public function test_localize(string $text, string $expected): void
+    {
+        $this->assertSame($expected, PersianNumber::localize($text));
+    }
+
     public function test_rial_to_toman(): void
     {
         $this->assertSame(125000, PersianNumber::rialToToman(1250000));

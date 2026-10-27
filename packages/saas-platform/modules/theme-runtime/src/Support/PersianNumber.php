@@ -67,6 +67,32 @@ final class PersianNumber
         return $sign . self::digits($formatted);
     }
 
+    /**
+     * Numbers inside authored text, e.g. a counter «5,000+» or «4.9/5»:
+     * Persian digits; `,` between digits becomes ٬ and `.` becomes ٫; `%`
+     * after a digit becomes ٪; a bare integer of four or more digits is
+     * grouped («۵٬۰۰۰») unless it is probably a year (1300–1499, 1900–2099)
+     * or starts with 0 (a phone or code). Everything else is kept as written.
+     */
+    public static function localize(string $text): string
+    {
+        $latin = self::latinDigits($text);
+        $latin = preg_replace_callback('/\d+(?:[.,]\d+)*/', static function (array $m): string {
+            $n = $m[0];
+            if (!ctype_digit($n)) {
+                return strtr($n, [',' => self::THOUSANDS_SEPARATOR, '.' => self::DECIMAL_SEPARATOR]);
+            }
+            $value = (int) $n;
+            $year = strlen($n) === 4 && (($value >= 1300 && $value <= 1499) || ($value >= 1900 && $value <= 2099));
+            if (strlen($n) < 4 || $year || $n[0] === '0' || strlen($n) > 15) {
+                return $n;
+            }
+            return number_format($value, 0, '.', self::THOUSANDS_SEPARATOR);
+        }, $latin) ?? $latin;
+        $latin = preg_replace('/(\d)\s?%/', '$1٪', $latin) ?? $latin;
+        return self::digits($latin);
+    }
+
     /** One Toman is ten Rials. Whole results stay integers. */
     public static function rialToToman(int|float $rial): int|float
     {

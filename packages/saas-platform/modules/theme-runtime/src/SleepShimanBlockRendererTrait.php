@@ -117,7 +117,7 @@ trait SleepShimanBlockRendererTrait
         $alt = $bound ? $title : ($item['image_alt'] ?? $title);
         $url = $this->ssUrl($item['url'] ?? '#');
         $badge = $bound ? ($item['discount_percent'] ?? null) : ($item['badge'] ?? '');
-        $badge = is_numeric($badge) ? '٪'.(int) $badge.' تخفیف' : (string) $badge;
+        $badge = is_numeric($badge) ? '٪'.\SaaSPlatform\ThemeRuntime\Support\PersianNumber::digits((int) $badge).' تخفیف' : (string) $badge;
         $brand = $bound ? ($item['category'] ?? '') : ($item['brand'] ?? '');
         $price = $bound ? ($item['price_html'] ?? '') : ($item['price_text'] ?? '');
         $old = $bound ? ($item['regular_price_html'] ?? '') : ($item['old_price_text'] ?? '');

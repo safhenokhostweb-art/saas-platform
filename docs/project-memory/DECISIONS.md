@@ -3059,3 +3059,126 @@ The package had no digit or currency formatter it could use:
 
 There is no migration, route, dependency or data change. The formatter is
 not yet wired into any renderer; prices keep their current output.
+
+## ADR-064
+
+**Title:** Theme Tokens Over Hex; One Colour Grammar; Persian Numbers in Shared Renderers
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+The shared stylesheets and renderers still hard-coded colours that should
+follow the theme:
+
+- borders (`#e5e7eb` ×27), surfaces and muted text;
+- indigo tints such as `rgba(99,102,241,…)`;
+- white text on brand fills;
+- brand-colour prop fallbacks and registry defaults (`#4f46e5`, `#7c3aed`).
+
+A theme with its own palette therefore kept indigo accents.
+
+Colour props reached `style` attributes through bare `escapeAttr()`, which
+does not block a `;` break-out. `renderSection()` turned any non-hex value,
+including `var(--tb-…)` and `rgba()`, into a class name. `renderHero()`
+interpolated `background` and `align` raw into its class attribute.
+
+The Canvas colour control could not express theme swatches with alpha,
+`rgba()` or `transparent`. The two editors kept separate palette logic.
+
+Shared renderers printed prices with `number_format()` (Latin digits) and
+counters as typed. Four Persian headings besides the hero titles had
+negative letter-spacing.
+
+**Decision:**
+
+1. **Tokens with the old literal as fallback.** Every themable colour in
+   `theme-runtime-blocks.css`, `theme-runtime-contract.css` and the
+   renderers reads `var(--tb-<token>, <previous literal>)`:
+   - borders → `--tb-border`;
+   - surfaces → `--tb-surface` or `--tb-background`;
+   - muted text → `--tb-text-muted`;
+   - text on a brand fill → `--tb-on-primary` / `--tb-on-error`;
+   - urgent → `--tb-error`;
+   - brand tints → `color-mix(in srgb, var(--tb-primary, #6366f1) N%, transparent)`.
+   Gold review stars, the named `.tb-bg-light/dark/gray` classes, the
+   installment badge greens, shadows, overlays on media, editor-only
+   placeholders and the dark `nav_footer` default stay literal.
+2. **Registry defaults.** Brand defaults are tokens with fallbacks:
+   - backgrounds and gradients → `var(--tb-primary, #4f46e5)` and
+     `var(--tb-secondary, #7c3aed)`;
+   - text on primary → `var(--tb-on-primary, #ffffff)`.
+   `header_modern_v1.ctaColor` stays hex: its renderer computes contrast from
+   it. Stored documents are not rewritten.
+3. **One colour grammar,** `HtmlSanitizer::isCssColor()`. It accepts:
+   - hex, `rgb()`/`hsl()`-family functions and named colours;
+   - `var(--token[, colour])`;
+   - `color-mix(in srgb, <colour> N%, transparent)`;
+   - `transparent`.
+   `BlockRenderer::cssColor()` (every colour prop, both hosts' renderers) and
+   `InspectorFieldRegistry::normalizeColor()` both use it.
+   `themeBackground()` gives `renderHero()` the 0.2c CTA contract.
+   `renderSection()` applies a `var()`/`rgba()` value inline.
+4. **One colour control model,** `theme-runtime/resources/js/canvas-color.js`
+   (`window.CanvasColor`, included via `theme-runtime::canvas.color`), shared
+   by both editors:
+   - eight theme swatches stored as `var(--tb-…, fallback)`;
+   - an opacity slider: a swatch becomes `color-mix()`, a fixed colour
+     `rgba()`;
+   - «بی‌رنگ» stores `transparent`;
+   - the preview resolves swatches against the theme's own global styles.
+   Nested list colours get the swatches and transparent.
+5. **Persian numbers:**
+   - `BlockRenderer::displayToman()` prints demo prices as «۱٬۲۵۰٬۰۰۰ تومان».
+   - `displayNumber()` → `PersianNumber::localize()` prints counters, stat
+     values and suffixes, badges, cart and category counts, and plan prices.
+     It converts digits, `,`→٬ and `.`→٫ between digits, and `%`→٪, and
+     groups 4+-digit integers except likely years and leading-zero numbers.
+   - `data-count` stays machine-readable.
+   - A host can opt out with the context key `digits => 'latin'`.
+   - FoodMart (an English LTR theme) is unchanged.
+6. **Negative tracking.** `.tb-nav-header-logo`, `.tb-features-section-title`,
+   `.tb-newsletter-title` and `.tb-header-modern__brand` keep it under
+   `[dir="ltr"]` only.
+
+**Consequences:**
+
+- `tests/Support/CssParity/` holds the computed-style harness
+  (`corpus.php`, `css.php`, `compare.cjs`, `summarize.php`, README):
+  - token modes `default`, `none` and a palette file;
+  - before/after corpora;
+  - colour normalisation.
+- `Phase05TokensAndNumbersTest` fails on:
+  - a bare brand tint or border literal;
+  - negative tracking outside `[dir="ltr"]`;
+  - a literal brand default outside the allowlist;
+  - colour-prop injection;
+  - Latin prices or counters.
+- `canvas-color.test.mjs` pins the value model.
+- Parity harness, customer-site live render (229 documents, 3 widths):
+  - no tokens: 148 diffs, none a colour (tracking and digit widths only);
+  - default tokens: only the intended alignment (tints follow
+    `--tb-primary`, WCAG-AA muted text, one-step surface fallbacks);
+  - custom palette: 45 element kinds now take the theme colour, and none
+    lands outside the palette.
+
+  Preview vs live on the same markup: 48 diffs, all from the host-only
+  skill-bar rule. Stored colours: 118 values across both repos and both
+  databases, 0 rejected.
+
+**Impact:**
+
+- **Shared theme runtime:**
+  - `BlockRenderer`, `BlockRegistry`, the SleepShiman trait;
+  - `Security\HtmlSanitizer`, `Inspector\InspectorFieldRegistry`,
+    `Support\PersianNumber`;
+  - both stylesheets and `header-modern.css`;
+  - new `canvas-color.js` and the `canvas/color` view.
+- **Platform:** `canvas.blade.php` and `partials/canvas-repeater`.
+- **customer-site:** `ThemeCanvasRenderer` (module colours) and the Canvas
+  editor.
+
+There is no migration, route or dependency change. Stored hex values keep
+rendering exactly as before.

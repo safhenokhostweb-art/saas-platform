@@ -201,8 +201,14 @@ class Phase3CContractsTest extends TestCase
             $definitions[$type] = $all[$type];
         }
 
+        // Phase 0.5 (ADR-064) re-pin: the only change is that the hero
+        // family's colour defaults became theme tokens with the previous
+        // literals as fallbacks (var(--tb-primary, #4f46e5),
+        // var(--tb-secondary, #7c3aed), var(--tb-on-primary, #ffffff)).
+        // Mapping exactly those three back reproduces the previous pin
+        // 2fbb713a33173877b7c21cf11b540e04c2cff2dc757b36c50267fae7a0702152.
         $this->assertSame(
-            '2fbb713a33173877b7c21cf11b540e04c2cff2dc757b36c50267fae7a0702152',
+            '947961869a831a136e2a0f12fba1ab3a00bda589a9a3c9ae2fac2399f0be0bbd',
             hash('sha256', json_encode($definitions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))
         );
     }

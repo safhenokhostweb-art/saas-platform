@@ -138,6 +138,20 @@
                                     :aria-label="'پاک کردن ' + ({!! $fd !!}.label || {!! $fk !!})" title="پاک کردن">×</button>
                             </div>
                         </template>
+                        {{-- Phase 0.5 (ADR-064): the same theme swatches and transparent as
+                             the top-level colour control (opacity: type an rgba() value). --}}
+                        <template x-if="fieldControl({!! $fd !!}) === 'color'">
+                            <div class="flex flex-wrap items-center gap-1 mt-1" role="group" :aria-label="({!! $fd !!}.label || {!! $fk !!}) + ' — رنگ‌های قالب'">
+                                <template x-for="t in colorPalette()" :key="t.token">
+                                    <button type="button" @click="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, t.css)" :title="t.label" :aria-label="t.label"
+                                        :aria-pressed="colorParse({!! $item !!}[{!! $fk !!}] ?? '').token === t.token ? 'true' : 'false'"
+                                        :class="colorParse({!! $item !!}[{!! $fk !!}] ?? '').token === t.token ? 'ring-2 ring-indigo-500' : 'ring-1 ring-slate-200'"
+                                        class="w-5 h-5 rounded-full border-2 border-white" :style="'background:' + t.value"></button>
+                                </template>
+                                <button type="button" @click="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, 'transparent')"
+                                    class="px-1.5 h-5 rounded-full text-[10px] text-slate-600 bg-white ring-1 ring-slate-200">بی‌رنگ</button>
+                            </div>
+                        </template>
 
                         <template x-if="fieldControl({!! $fd !!}) === 'link'">
                             <div>
