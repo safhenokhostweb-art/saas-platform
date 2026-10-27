@@ -57,7 +57,10 @@ test('P1: one save on the wire, queued manual save, mid-flight edits never lost'
   page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('requestfailed', (r) => {
-    const superseded = r.failure()?.errorText === 'net::ERR_ABORTED' && r.url().includes('/canvas/live-preview');
+    // Also the local font files a superseded preview document had started
+    // loading (Phase 0.4: same-origin now, formerly Google Fonts).
+    const superseded = r.failure()?.errorText === 'net::ERR_ABORTED'
+      && (r.url().includes('/canvas/live-preview') || r.url().includes('/assets/fonts/vazirmatn/'));
     if (!superseded) problems.push(`requestfailed: ${r.method()} ${r.url()} ${r.failure()?.errorText}`);
   });
   page.on('response', async (r) => {

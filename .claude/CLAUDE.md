@@ -15,7 +15,7 @@ acceptance gates on every widget, header, footer, section, and builder change.
 - Repeater contract: `type: 'repeater'` + `fields` + `storage` (ADR-060). `item_schema` is not read by anything canonical.
 - customer-site registry = canonical + `HOST_PATCHES` (ADR-062, no local copies): `customer-site/app/Services/ThemeCanvas/BlockRegistry.php`
 - Platform editor: `resources/views/admin/theme-builder/canvas.blade.php`
-- Duplicated block CSS (drifted): platform `admin/theme-builder/partials/canvas-css-contract.blade.php` and customer `partials/theme-canvas-style-contract.blade.php`. The latter is mirrored byte-exact into `tests/Support/FoodMart/FoodMartPhase2bStyleContract.php`.
+- Block CSS: one shared sheet, `packages/.../theme-runtime/resources/css/theme-runtime-blocks.css` (ADR-063), included by both host partials (platform `admin/theme-builder/partials/canvas-css-contract.blade.php`, customer `partials/theme-canvas-style-contract.blade.php`), which keep only host chrome. The customer partial is mirrored into `tests/Support/FoodMart/FoodMartPhase2bStyleContract.php` (three markers).
 - Audit, defect list, and phased roadmap: `docs/theme-builder/COMMERCIAL_WIDGET_ROADMAP.md`
 
 ## Workspace runtime agents (added 2026-10-26)

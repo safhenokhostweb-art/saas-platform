@@ -457,3 +457,88 @@ Everything else renders byte-identically.
   support before their fields return.
 - **Host nested `number`/`color`/`select` fields** below depth 1 still edit as
   text inputs.
+
+## 10. Phases 0.3 and 0.4 delivery: one block stylesheet, local fonts, Persian numbers (2026-10-27)
+
+**Done (ADR-063):**
+
+- **One block stylesheet.**
+  - `theme-runtime/resources/css/theme-runtime-blocks.css` (357 rules) now
+    holds every block's CSS.
+  - The platform preview partial shrinks from 348 to 26 lines and keeps only
+    `body`. customer-site's partial shrinks from 514 to 93 lines and keeps only
+    its own chrome.
+  - Consolidated from the live customer-site rules:
+    - the 37 conflicting selectors take the live values;
+    - six stale preview-only rules that out-ranked live ones are dropped
+      (`.tb-hero h1|p|.tb-btn`, `.tb-cta h2|p|a`).
+  - The preview `body` matches the live one: tokens, and no forced RTL.
+- **Fixes:**
+  - bento `auto-rows` becomes `grid-auto-rows`;
+  - `hero_split` and `hero_gradient` titles have normal letter-spacing in
+    RTL; the negative tracking is kept for LTR.
+- **Local Vazirmatn everywhere.** The package owns the five faces
+  (`theme-runtime::css.fonts`).
+  - No Google Fonts in the platform Canvas preview, live iframe or editor
+    layout.
+  - No Google Fonts in customer-site's Canvas editor, legacy builder, pay,
+    restore-pay or suspended pages. Those last three never actually loaded
+    Vazirmatn: their `@import` came after other rules.
+- **`Support\PersianNumber`:**
+  - Persian digits both ways;
+  - ٬ ٫ separators;
+  - Rial→Toman, `toman()`;
+  - `compact()` («۱٫۲ میلیون»);
+  - an RTL-safe minus.
+
+**Evidence:**
+
+- **Parity harness.** Real Chromium; full computed style of every element
+  and pseudo-element; 1366/768/390. It was validated by a zero-diff
+  self-test.
+- **customer-site live render** (229 documents: every block type plus the 29
+  canonical theme snapshots):
+  - the only diffs are the requested fixes, plus four blocks that were
+    unstyled on live Canvas pages now getting the styling the preview always
+    showed: project cards, about section, hero trust, contact-info grid;
+  - the four blocks occur only in `acool-hvac-service`; the other 28 themes
+    are identical.
+- **Preview vs live on the same markup:**
+  - before: 38,540 distinct computed-style differences across 576 element
+    kinds (excluding the `--platform-primary` variable);
+  - after: 48, all on `div.tb-skill-bar-fill`, from the host-only
+    skill-bar rule.
+- **saas-platform:**
+  - `Phase03SharedStylesheetContractTest` 5/5;
+  - `PersianNumberTest` 29/29;
+  - theme suites 929 tests, the same 10 pre-existing failures;
+  - one directory-lock flake under load passed in isolation.
+- **customer-site:** theme suites 807 tests, the same 3 pre-existing
+  failures. A first run collided with another session's test run on
+  `customer_site_test`; the clean re-run is the figure above.
+- **Browser:**
+  - `phase03-shared-css-fonts` on both hosts checks:
+    - no font-CDN request;
+    - the five local faces, with 400/700 loaded;
+    - the shared sheet on the live page and in the editor iframe;
+    - normal RTL hero tracking and `grid-auto-rows`;
+    - no overflow at three widths.
+  - phase01, P1, phase02, phase02b, phase02c, header-modern-fast-path and
+    phase3c stay green.
+  - customer-site's phase02c, heading-level and save-to-public-render specs
+    stay green.
+  - phase01 and P1 now treat aborted local font fetches from a superseded
+    preview document like the aborted document itself.
+
+**Remaining (next):**
+
+- **Wire `PersianNumber`** into the canonical demo prices (they still use
+  `number_format()` with Latin digits).
+  - Decide whether live prices move from «۱,۲۵۰,۰۰۰» to the Persian «۱٬۲۵۰٬۰۰۰»
+    separators.
+  - Add `tabular-nums` for prices and counters.
+- **Negative tracking on Persian text** outside the hero titles:
+  - `.tb-nav-header-logo`, `.tb-features-section-title` and
+    `.tb-newsletter-title` (−0.01em);
+  - `header-modern.css` brand (−0.025em).
+- **0.5 tokens over hex** can now be done once, in the shared sheet.

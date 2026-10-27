@@ -98,9 +98,14 @@ final class FoodMartRealShellHarness
             'C:/laragon/www/saas-platform/packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-contract.css'
         );
 
+        // Phase 0.3 (ADR-063): the block rules the partial used to inline.
+        $runtimeBlocksCss = file_get_contents(
+            'C:/laragon/www/saas-platform/packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'
+        );
+
         $styleContract = str_replace(
-            ['/*__THEME_TOKEN_CSS__*/', '/*__THEME_RUNTIME_CONTRACT_CSS__*/'],
-            [$tokenCss, $runtimeContractCss],
+            ['/*__THEME_TOKEN_CSS__*/', '/*__THEME_RUNTIME_CONTRACT_CSS__*/', '/*__THEME_RUNTIME_BLOCKS_CSS__*/'],
+            [$tokenCss, $runtimeContractCss, $runtimeBlocksCss],
             FoodMartPhase2bStyleContract::CSS
         );
 

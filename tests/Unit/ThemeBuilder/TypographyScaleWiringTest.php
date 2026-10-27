@@ -46,7 +46,20 @@ class TypographyScaleWiringTest extends TestCase
         }
     }
 
-    public function test_customer_site_runtime_headings_and_titles_reference_the_derived_tokens_not_a_second_hardcoded_copy(): void
+    /**
+     * Phase 0.3 (ADR-063): both hosts' block rules are the shared package
+     * stylesheet, so the derived tokens are asserted there once, and each
+     * host is asserted to include it.
+     */
+    public function test_shared_block_stylesheet_headings_and_titles_reference_the_derived_tokens(): void
+    {
+        $css = file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
+        foreach (['var(--tb-h1-size', 'var(--tb-hero-title-size', 'var(--tb-section-title-size', 'var(--tb-card-title-size', 'var(--tb-big-number-size', 'var(--tb-button-size', 'var(--tb-caption-size', 'var(--tb-label-size'] as $ref) {
+            $this->assertStringContainsString($ref, $css);
+        }
+    }
+
+    public function test_customer_site_runtime_includes_the_shared_block_stylesheet(): void
     {
         $customer = base_path('../customer-site/resources/views');
         if (! is_dir($customer)) {
@@ -54,19 +67,16 @@ class TypographyScaleWiringTest extends TestCase
         }
         $layout = file_get_contents($customer.'/layouts/canvas-theme.blade.php');
         $this->assertStringContainsString("@include('partials.theme-canvas-style-contract'", $layout);
-        $css = file_get_contents($customer.'/partials/theme-canvas-style-contract.blade.php');
-        foreach (['var(--tb-h1-size', 'var(--tb-hero-title-size', 'var(--tb-section-title-size', 'var(--tb-card-title-size', 'var(--tb-big-number-size', 'var(--tb-body-size', 'var(--tb-button-size', 'var(--tb-caption-size', 'var(--tb-label-size'] as $ref) {
-            $this->assertStringContainsString($ref, $css);
-        }
+        $partial = file_get_contents($customer.'/partials/theme-canvas-style-contract.blade.php');
+        $this->assertStringContainsString("@include('theme-runtime::css.blocks')", $partial);
+        $this->assertStringContainsString('var(--tb-body-size', $partial);
     }
 
-    public function test_saas_preview_headings_and_titles_reference_the_same_derived_tokens(): void
+    public function test_saas_preview_includes_the_same_shared_block_stylesheet(): void
     {
         $preview = file_get_contents(base_path('resources/views/admin/theme-builder/canvas-preview.blade.php'));
         $this->assertStringContainsString("@include('admin.theme-builder.partials.canvas-css-contract')", $preview);
-        $css = file_get_contents(base_path('resources/views/admin/theme-builder/partials/canvas-css-contract.blade.php'));
-        foreach (['var(--tb-h1-size', 'var(--tb-hero-title-size', 'var(--tb-section-title-size', 'var(--tb-big-number-size', 'var(--tb-button-size'] as $ref) {
-            $this->assertStringContainsString($ref, $css);
-        }
+        $partial = file_get_contents(base_path('resources/views/admin/theme-builder/partials/canvas-css-contract.blade.php'));
+        $this->assertStringContainsString("@include('theme-runtime::css.blocks')", $partial);
     }
 }

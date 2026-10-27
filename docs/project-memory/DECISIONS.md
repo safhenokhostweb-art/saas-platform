@@ -2949,3 +2949,113 @@ all 65 still differed:
 
 There is no migration, route, dependency, or stored-data change. Values of
 removed fields stay in documents and are ignored, as they already were.
+
+## ADR-063
+
+**Title:** One Shared Block Stylesheet; Local Vazirmatn; Package Persian Number Formatter
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+Each host carried its own copy of every block's CSS:
+
+- the platform preview's `admin/theme-builder/partials/canvas-css-contract`
+  (348 lines);
+- customer-site's live `partials/theme-canvas-style-contract` (514 lines).
+
+They had drifted: 37 shared selectors had different values, 23 rules existed
+only in the preview, and customer-site's bento grid declared `auto-rows`, a
+property that does not exist. The preview therefore showed many blocks
+(hero, CTA, stats, buttons, cards) differently from the live page.
+
+The platform Canvas preview, its live iframe and the editor layout loaded
+Vazirmatn from Google Fonts, which is unreliable from Iran. Five customer-site
+views did too; on three of them the `@import` came after other rules, so
+browsers ignored it and the page fell back to Tahoma. RTL hero titles used
+negative `letter-spacing`, which crowds Persian letters into each other.
+
+The package had no digit or currency formatter it could use:
+`App\Services\PersianFormatter` is host code.
+
+**Decision:**
+
+1. `theme-runtime/resources/css/theme-runtime-blocks.css` is the only source
+   of block CSS. Both host partials include it via `theme-runtime::css.blocks`,
+   right after their own chrome, and keep only rules that their own markup or
+   script needs:
+   - the platform keeps `body`;
+   - customer-site keeps `body`, `canvas-site-*`, the skip link,
+     `*:focus-visible`, `.visually-hidden`, the notifications bar, and the
+     skill-bar `width:0` pair that its IntersectionObserver script animates.
+2. The sheet was consolidated from customer-site's rules, since those are what
+   live pages ship, verbatim and in order. Preview-only rules were added only
+   where they style markup the live partial left unstyled. Six preview-only
+   rules (`.tb-hero h1|p|.tb-btn`, `.tb-cta h2|p|a`) out-ranked live rules by
+   specificity and were dropped, so the preview takes the live values.
+3. The platform preview's `body` uses the live rule (`--tb-*` tokens, with
+   fallbacks). The hard-coded `direction: rtl` is gone, so `<html dir>`
+   governs and LTR themes preview as LTR.
+4. Fixes:
+   - `.tb-bento-grid` gets `grid-auto-rows`;
+   - `.tb-hero-split-title` and `.tb-hero-gradient-title` lose their negative
+     tracking, which is kept under `[dir="ltr"]` only.
+5. The five local Vazirmatn faces (400–800) live in
+   `resources/css/vazirmatn-font-faces.css` and are included via
+   `theme-runtime::css.fonts`. customer-site's
+   `partials/vazirmatn-font-faces-inline` includes it unchanged. No platform
+   preview, editor layout, or customer-site view references a font CDN.
+6. `SaaSPlatform\ThemeRuntime\Support\PersianNumber` is a dependency-free
+   formatter:
+   - `digits()`, `latinDigits()`;
+   - `format()` with ٬ and ٫ separators;
+   - `rialToToman()`, `toman()`;
+   - `compact()` (`۱٫۲ میلیون`, rolling up a unit at a thousand);
+   - a directional minus that stays left of the number in RTL text.
+
+**Consequences:**
+
+- **Computed-style parity harness** (real Chromium; every element and
+  pseudo-element, full computed style; 1366/768/390):
+  - **customer-site live render:** 229 documents (every block type plus all
+    29 canonical theme snapshots), 16,381 elements per width.
+  - **Pure refactor:** the only diffs are the four previously unstyled blocks
+    (project cards, about section, hero trust, contact-info grid) gaining the
+    styling the preview already showed. All are in `acool-hvac-service`; the
+    other 28 themes are identical.
+  - **Fixes:** add only the hero-title tracking, the resulting width of the
+    hero-split text column, and `grid-auto-rows`. No bento item changes size.
+- **Preview vs live, same markup** (230 platform-rendered documents, 19,017
+  elements per width; excluding the `--platform-primary` variable):
+  - before: 38,540 distinct computed-style differences on 576 element kinds;
+  - after: 48, all on `div.tb-skill-bar-fill`, from the host-only skill-bar
+    rule.
+- **Phase03SharedStylesheetContractTest** fails when:
+  - either host partial regains block rules;
+  - the dropped rules return;
+  - `auto-rows` returns;
+  - RTL hero tracking turns negative again;
+  - any covered view references a font CDN.
+- `PersianNumberTest` pins the formatter.
+- `FoodMartPhase2bStyleContract` gains a third marker for the shared sheet.
+
+**Impact:**
+
+- **Shared theme runtime:**
+  - new `resources/css/theme-runtime-blocks.css` and
+    `vazirmatn-font-faces.css`;
+  - `css/blocks` and `css/fonts` views;
+  - two `ThemeRuntimeServiceProvider` paths;
+  - `Support\PersianNumber`.
+- **Platform:**
+  - the Canvas preview partial;
+  - `canvas-preview`, `canvas-live-preview` and `layouts/canvas`.
+- **customer-site:**
+  - the style partial and the font partial;
+  - `layouts/canvas-editor`, `builder/edit`, `front/lifecycle/pay`,
+    `restore-pay` and `front/suspended`.
+
+There is no migration, route, dependency or data change. The formatter is
+not yet wired into any renderer; prices keep their current output.

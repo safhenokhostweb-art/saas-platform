@@ -31,6 +31,18 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/css/theme-runtime-contract.css';
     }
 
+    /** Phase 0.3 (ADR-063) — the shared block stylesheet, same seam as cssContractPath(). */
+    public static function cssBlocksPath(): string
+    {
+        return __DIR__ . '/../../resources/css/theme-runtime-blocks.css';
+    }
+
+    /** Phase 0.4 (ADR-063) — the local Vazirmatn @font-face rules, same seam. */
+    public static function fontFacesPath(): string
+    {
+        return __DIR__ . '/../../resources/css/vazirmatn-font-faces.css';
+    }
+
     public static function canvasIdentityContractPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-identity.js';

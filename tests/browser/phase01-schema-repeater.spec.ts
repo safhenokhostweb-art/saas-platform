@@ -102,8 +102,11 @@ test('Phase 0.1 schema-driven repeater: author → save → reload → preview a
   const sameOrigin = (url: string) => new URL(url).host === new URL(page.url() || 'http://127.0.0.1:8000').host;
   page.on('requestfailed', (req) => {
     // A live-preview iframe navigation superseded by a newer reload is
-    // cancelled by the browser (ERR_ABORTED) — not a failure.
-    const superseded = req.failure()?.errorText === 'net::ERR_ABORTED' && req.url().includes('/canvas/live-preview');
+    // cancelled by the browser (ERR_ABORTED) — not a failure. So are the
+    // local font files that superseded document had started loading
+    // (Phase 0.4: same-origin now, they used to come from Google Fonts).
+    const superseded = req.failure()?.errorText === 'net::ERR_ABORTED'
+      && (req.url().includes('/canvas/live-preview') || req.url().includes('/assets/fonts/vazirmatn/'));
     if (sameOrigin(req.url()) && !superseded) {
       problems.push(`requestfailed: ${req.method()} ${req.url()} ${req.failure()?.errorText}`);
     }
