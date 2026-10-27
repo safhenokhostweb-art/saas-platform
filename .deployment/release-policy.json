@@ -12,6 +12,7 @@
     "routes/**",
     "database/**",
     "scripts/**",
+    "AGENTS.md",
     ".gitignore",
     "composer.json",
     "composer.lock",
