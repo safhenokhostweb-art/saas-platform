@@ -167,7 +167,7 @@ test('Phase 0.1 schema-driven repeater: author → save → reload → preview a
   await panel.locator('#rf-items-0-question').fill('ارسال سفارش چقدر طول می‌کشد؟');
   await panel.locator('#rf-items-0-answer').fill('سفارش‌ها در تهران ۲۴ ساعته و در شهرستان‌ها ۲ تا ۴ روز کاری ارسال می‌شوند.');
   // Newly added items open automatically, so the second item's fields are reachable.
-  await expect(panel.locator('[data-testid="tb-repeater-item-items-1"] button[aria-expanded]')).toHaveAttribute('aria-expanded', 'true');
+  await expect(panel.getByTestId('tb-repeater-toggle-items-1')).toHaveAttribute('aria-expanded', 'true');
   await panel.locator('#rf-items-1-question').fill('امکان مرجوعی کالا وجود دارد؟');
   await panel.locator('#rf-items-1-answer').fill('بله، تا ۷ روز پس از تحویل.');
 
@@ -202,7 +202,7 @@ test('Phase 0.1 schema-driven repeater: author → save → reload → preview a
 
   // The reloaded Inspector shows the persisted values through the same controls.
   await selectBlock(page, bentoId);
-  await page.locator('[data-testid="tb-repeater-item-items-2"] button[aria-expanded]').click();
+  await page.getByTestId('tb-repeater-toggle-items-2').click();
   await expect(panel.locator('#rf-items-2-title')).toHaveValue('کارت تست فاز ۰٫۱');
   await expect(panel.locator('#rf-items-2-size')).toHaveValue('featured');
 

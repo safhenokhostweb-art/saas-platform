@@ -48,14 +48,19 @@ use Tests\TestCase;
  *   line diff of the HEAD and new renders: only those price strings and
  *   colour declarations differ — structure, classes and every other
  *   attribute are unchanged.
+ *
+ *   Phase 0.6 (ADR-065) RE-PINNED them again: the placeholder of a card
+ *   without a photo is the catalog SVG (IconLibrary `image` / `package`)
+ *   instead of the 🖼️ / 📦 emoji. Verified by mapping those SVGs back to
+ *   the emoji: the result hashes to exactly the previous pins.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '3ebf0df7782b504f17817204211f89646007029e0b65a8e9930d42c673b82f69';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '2aa1c31cc0a0a9db820457b07936dab22716423fa8032388500886d6d05c4c40';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '847ab52d7bab75944a4b4ebc3137a0b9c99cc13d969458b27bca103d82e9fa50';
+    private const PUBLIC_STRUCTURAL_SHA256 = '8843cb16d196ab41dfc53a8490589b17b36dab9f838a54a408268c5a40bc1b57';
 
     private function render(string $mode = 'neutral'): string
     {

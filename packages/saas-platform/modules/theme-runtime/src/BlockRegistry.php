@@ -603,14 +603,14 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'icon-box',
                 'schema' => [
-                    'icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '★'],
+                    'icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => 'star'],
                     'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
                     'text' => ['type' => 'text', 'label' => 'متن', 'default' => ''],
                     'link' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
                     'align' => ['type' => 'select', 'label' => 'تراز', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها'], 'default' => 'start'],
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['plain' => 'ساده', 'card' => 'کارت', 'outline' => 'خط‌دار', 'solid' => 'پررنگ'], 'default' => 'card'],
                 ],
-                'defaultProps' => ['icon' => '★', 'title' => '', 'text' => '', 'link' => '', 'align' => 'start', 'style' => 'card'],
+                'defaultProps' => ['icon' => 'star', 'title' => '', 'text' => '', 'link' => '', 'align' => 'start', 'style' => 'card'],
             ],
             'image_box' => [
                 'name' => 'جعبه تصویر (Image Box)',
@@ -654,7 +654,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'icon',
                 'schema' => [
-                    'name' => ['type' => 'string', 'default' => ''],
+                    'name' => ['type' => 'icon', 'label' => 'آیکون', 'default' => ''],
                     'size' => ['type' => 'string', 'default' => 'md'],
                 ],
                 'defaultProps' => ['name' => '', 'size' => 'md'],
@@ -914,8 +914,10 @@ class BlockRegistry
                 'icon' => 'search',
                 'schema' => [
                     'placeholder' => ['type' => 'string', 'label' => 'متن راهنمای جستجو', 'default' => 'جستجو...'],
+                    // Phase 0.7 (ADR-066): which results the search opens.
+                    'scope' => ['type' => 'select', 'label' => 'محدودهٔ جستجو', 'options' => ['all' => 'همه (محصولات و مطالب)', 'products' => 'فقط محصولات', 'posts' => 'فقط مطالب'], 'default' => 'all'],
                 ],
-                'defaultProps' => ['placeholder' => 'جستجو...'],
+                'defaultProps' => ['placeholder' => 'جستجو...', 'scope' => 'all'],
             ],
             'nav_menu' => [
                 'name' => 'منوی ناوبری',
@@ -976,7 +978,7 @@ class BlockRegistry
                     // opt-in convergence, not a breaking default flip. See
                     // renderNavHeader() below for the render-time branch.
                     'nav_source'         => ['type' => 'select', 'label' => 'منبع لینک‌های ناوبری', 'options' => ['custom' => 'لینک‌های سفارشی این بلوک', 'menu' => 'منوی اصلی سایت (/admin/menus)'], 'default' => 'custom'],
-                    'nav_links'          => ['type' => 'repeater', 'label' => 'لینک‌های منو', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'mega_columns' => ['type' => 'repeater', 'label' => 'ستون‌های Mega Menu (اختیاری — برای منوی چندستونی)', 'item_label' => 'ستون', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'items' => ['type' => 'repeater', 'label' => 'آیتم‌های این ستون', 'item_label' => 'آیتم', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'string', 'label' => 'آیکون (اموجی، اختیاری)', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر آیتم (اختیاری، جای آیکون را می‌گیرد)', 'default' => '']]]]], 'mega_banner_image' => ['type' => 'image', 'label' => 'تصویر بنر Mega Menu (اختیاری)', 'default' => ''], 'mega_banner_url' => ['type' => 'link', 'label' => 'لینک بنر', 'default' => '#'], 'mega_banner_text' => ['type' => 'string', 'label' => 'متن روی بنر', 'default' => ''], 'mega_show_desktop' => ['type' => 'boolean', 'label' => 'نمایش Mega Menu در دسکتاپ', 'default' => true], 'mega_mobile_behavior' => ['type' => 'select', 'label' => 'رفتار در موبایل', 'options' => ['accordion' => 'آکاردئونی (پیش‌فرض)', 'flat' => 'فهرست تخت بدون ستون‌بندی', 'hidden' => 'مخفی در موبایل'], 'default' => 'accordion']], 'default' => []],
+                    'nav_links'          => ['type' => 'repeater', 'label' => 'لینک‌های منو', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'mega_columns' => ['type' => 'repeater', 'label' => 'ستون‌های Mega Menu (اختیاری — برای منوی چندستونی)', 'item_label' => 'ستون', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'items' => ['type' => 'repeater', 'label' => 'آیتم‌های این ستون', 'item_label' => 'آیتم', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر آیتم (اختیاری، جای آیکون را می‌گیرد)', 'default' => '']]]]], 'mega_banner_image' => ['type' => 'image', 'label' => 'تصویر بنر Mega Menu (اختیاری)', 'default' => ''], 'mega_banner_url' => ['type' => 'link', 'label' => 'لینک بنر', 'default' => '#'], 'mega_banner_text' => ['type' => 'string', 'label' => 'متن روی بنر', 'default' => ''], 'mega_show_desktop' => ['type' => 'boolean', 'label' => 'نمایش Mega Menu در دسکتاپ', 'default' => true], 'mega_mobile_behavior' => ['type' => 'select', 'label' => 'رفتار در موبایل', 'options' => ['accordion' => 'آکاردئونی (پیش‌فرض)', 'flat' => 'فهرست تخت بدون ستون‌بندی', 'hidden' => 'مخفی در موبایل'], 'default' => 'accordion']], 'default' => []],
                     'sticky'             => ['type' => 'boolean', 'label' => 'چسبان به بالا', 'default' => false],
                     'bg_color'           => ['type' => 'string', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff'],
                     'text_color'         => ['type' => 'string', 'label' => 'رنگ متن', 'default' => '#111827'],
@@ -985,6 +987,7 @@ class BlockRegistry
                     'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه CTA', 'default' => '#'],
                     'show_search'        => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false],
                     'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...'],
+                    'search_scope'       => ['type' => 'select', 'label' => 'محدودهٔ جستجو', 'options' => ['all' => 'همه (محصولات و مطالب)', 'products' => 'فقط محصولات', 'posts' => 'فقط مطالب'], 'default' => 'all'],
                     'show_cart'          => ['type' => 'boolean', 'label' => 'نمایش سبد خرید', 'default' => false],
                     'show_account'       => ['type' => 'boolean', 'label' => 'نمایش حساب کاربری', 'default' => false],
                     // Commercial Productization fase-4: a real, usable dark
@@ -1636,9 +1639,9 @@ class BlockRegistry
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',      'default' => 'ما بهترین راه‌حل را برای شما آماده کرده‌ایم'],
                     'columns'  => ['type' => 'select',  'label' => 'تعداد ستون',   'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
                     'style'    => ['type' => 'select',  'label' => 'استایل کارت',  'options' => ['cards' => 'کارت سایه‌دار', 'bordered' => 'کارت خطی', 'minimal' => 'مینیمال'], 'default' => 'cards'],
-                    'features' => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'item_label' => 'ویژگی', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '✨'], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => '']], 'default' => '[{"icon":"⚡","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"🔒","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"🎯","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"},{"icon":"🚀","title":"مقیاس‌پذیر","text":"از یک کاربر تا میلیون‌ها کاربر"},{"icon":"💡","title":"نوآورانه","text":"جدیدترین فناوری‌ها در خدمت شما"},{"icon":"🌐","title":"چندزبانه","text":"پشتیبانی از فارسی و زبان‌های بین‌المللی"}]'],
+                    'features' => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'item_label' => 'ویژگی', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => 'sparkles'], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => '']], 'default' => '[{"icon":"zap","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"lock","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"target","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"},{"icon":"rocket","title":"مقیاس‌پذیر","text":"از یک کاربر تا میلیون‌ها کاربر"},{"icon":"lightbulb","title":"نوآورانه","text":"جدیدترین فناوری‌ها در خدمت شما"},{"icon":"globe","title":"چندزبانه","text":"پشتیبانی از فارسی و زبان‌های بین‌المللی"}]'],
                 ],
-                'defaultProps' => ['title' => 'چرا ما را انتخاب کنید؟', 'subtitle' => 'ما بهترین راه‌حل را برای شما آماده کرده‌ایم', 'columns' => '3', 'style' => 'cards', 'features' => '[{"icon":"⚡","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"🔒","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"🎯","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"}]'],
+                'defaultProps' => ['title' => 'چرا ما را انتخاب کنید؟', 'subtitle' => 'ما بهترین راه‌حل را برای شما آماده کرده‌ایم', 'columns' => '3', 'style' => 'cards', 'features' => '[{"icon":"zap","title":"سریع و قدرتمند","text":"بهینه‌سازی شده برای بالاترین کارایی"},{"icon":"lock","title":"امن و مطمئن","text":"رمزنگاری پیشرفته برای حفاظت داده‌ها"},{"icon":"target","title":"دقیق و هوشمند","text":"هوش مصنوعی برای تصمیم‌های بهتر"}]'],
             ],
             'stats_row' => [
                 'name' => 'آمار و شمارنده (Stats Row)',
@@ -1702,13 +1705,13 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'trust-item',
                 'schema' => [
-                    'icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '✓'],
+                    'icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => 'badge-check'],
                     'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'خرید مطمئن'],
                     'description' => ['type' => 'textarea', 'label' => 'توضیح', 'default' => 'تضمین کیفیت و اصالت'],
                     'url' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
                     'style' => ['type' => 'select', 'label' => 'سبک', 'options' => ['plain' => 'ساده', 'card' => 'کارت', 'outline' => 'خط‌دار'], 'default' => 'plain'],
                 ],
-                'defaultProps' => ['icon' => '✓', 'label' => 'خرید مطمئن', 'description' => 'تضمین کیفیت و اصالت', 'url' => '', 'style' => 'plain'],
+                'defaultProps' => ['icon' => 'badge-check', 'label' => 'خرید مطمئن', 'description' => 'تضمین کیفیت و اصالت', 'url' => '', 'style' => 'plain'],
             ],
             // Universal Multipurpose Slider Overhaul: each `logos` item may
             // now optionally carry {image, url, alt} alongside the
@@ -1773,19 +1776,19 @@ class BlockRegistry
                             'date'       => ['type' => 'string', 'label' => 'تاریخ / مرحله', 'default' => ''],
                             'title'      => ['type' => 'string', 'label' => 'عنوان رویداد', 'default' => ''],
                             'text'       => ['type' => 'textarea', 'label' => 'توضیح', 'default' => ''],
-                            'icon'       => ['type' => 'string', 'label' => 'آیکون (اموجی، اختیاری)', 'default' => ''],
+                            'icon'       => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => ''],
                             'image'      => ['type' => 'image', 'label' => 'تصویر (اختیاری، جای آیکون را می‌گیرد)', 'default' => ''],
                             'link_label' => ['type' => 'string', 'label' => 'متن دکمه (اختیاری)', 'default' => ''],
                             'link_url'   => ['type' => 'link', 'label' => 'لینک دکمه (اختیاری)', 'default' => ''],
                         ],
-                        'default' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"🚀","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"📦","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"📈","image":"","link_label":"","link_url":""},{"date":"۱۴۰۴","title":"ورود به بازارهای جدید","text":"توسعهٔ خدمات و افزودن امکانات سازمانی.","icon":"🌍","image":"","link_label":"مشاهدهٔ نقشهٔ راه","link_url":"/about"}]',
+                        'default' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"rocket","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"package","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"trending-up","image":"","link_label":"","link_url":""},{"date":"۱۴۰۴","title":"ورود به بازارهای جدید","text":"توسعهٔ خدمات و افزودن امکانات سازمانی.","icon":"globe","image":"","link_label":"مشاهدهٔ نقشهٔ راه","link_url":"/about"}]',
                     ],
                 ],
                 'defaultProps' => [
                     'title' => 'مسیر رشد ما',
                     'subtitle' => '',
                     'layout' => 'vertical',
-                    'items' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"🚀","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"📦","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"📈","image":"","link_label":"","link_url":""}]',
+                    'items' => '[{"date":"۱۳۹۸","title":"تأسیس شرکت","text":"شروع فعالیت با یک تیم کوچک و ایدهٔ بزرگ.","icon":"rocket","image":"","link_label":"","link_url":""},{"date":"۱۴۰۰","title":"عرضهٔ نسخهٔ اول پلتفرم","text":"اولین نسخهٔ پلتفرم برای مشتریان منتشر شد.","icon":"package","image":"","link_label":"","link_url":""},{"date":"۱۴۰۲","title":"عبور از هزار مشتری فعال","text":"رشد پایدار و اعتماد کسب‌وکارهای بیشتر.","icon":"trending-up","image":"","link_label":"","link_url":""}]',
                 ],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
             ],
@@ -1861,10 +1864,10 @@ class BlockRegistry
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'trust',
                 'schema' => [
-                    'badges'     => ['type' => 'repeater', 'label' => 'نشان‌ها', 'item_label' => 'نشان', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => '✓'], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'string', 'label' => 'متن', 'default' => '']], 'default' => '[{"icon":"🚚","title":"ارسال رایگان","text":"برای سفارش‌های بالای ۲۰۰ هزار تومان"},{"icon":"🔒","title":"پرداخت امن","text":"درگاه‌های پرداخت معتبر ایران"},{"icon":"↩️","title":"بازگشت آسان","text":"ضمانت بازگشت تا ۷ روز"},{"icon":"☎️","title":"پشتیبانی ۲۴/۷","text":"همیشه در کنار شما هستیم"}]'],
+                    'badges'     => ['type' => 'repeater', 'label' => 'نشان‌ها', 'item_label' => 'نشان', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => 'badge-check'], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'string', 'label' => 'متن', 'default' => '']], 'default' => '[{"icon":"truck","title":"ارسال رایگان","text":"برای سفارش‌های بالای ۲۰۰ هزار تومان"},{"icon":"shield-check","title":"پرداخت امن","text":"درگاه‌های پرداخت معتبر ایران"},{"icon":"undo-2","title":"بازگشت آسان","text":"ضمانت بازگشت تا ۷ روز"},{"icon":"headset","title":"پشتیبانی ۲۴/۷","text":"همیشه در کنار شما هستیم"}]'],
                     'background' => ['type' => 'color',   'label' => 'رنگ پس‌زمینه','default' => '#f8fafc'],
                 ],
-                'defaultProps' => ['badges' => '[{"icon":"🚚","title":"ارسال رایگان","text":"بالای ۲۰۰ هزار تومان"},{"icon":"🔒","title":"پرداخت امن","text":"درگاه‌های معتبر"},{"icon":"↩️","title":"بازگشت آسان","text":"تا ۷ روز"},{"icon":"☎️","title":"پشتیبانی ۲۴/۷","text":"همیشه در دسترس"}]', 'background' => '#f8fafc'],
+                'defaultProps' => ['badges' => '[{"icon":"truck","title":"ارسال رایگان","text":"بالای ۲۰۰ هزار تومان"},{"icon":"shield-check","title":"پرداخت امن","text":"درگاه‌های معتبر"},{"icon":"undo-2","title":"بازگشت آسان","text":"تا ۷ روز"},{"icon":"headset","title":"پشتیبانی ۲۴/۷","text":"همیشه در دسترس"}]', 'background' => '#f8fafc'],
             ],
             'pricing_cards' => [
                 'name' => 'کارت‌های تعرفه (Pricing Cards)',
@@ -1911,7 +1914,7 @@ class BlockRegistry
                         'fields' => [
                             'title'         => ['type' => 'string',   'label' => 'عنوان کارت', 'default' => 'کارت جدید'],
                             'text'          => ['type' => 'textarea', 'label' => 'توضیحات کارت', 'default' => ''],
-                            'icon'          => ['type' => 'string',   'label' => 'آیکون / ایموجی', 'default' => '⚡'],
+                            'icon'          => ['type' => 'icon',     'label' => 'آیکون', 'default' => 'zap'],
                             'size'          => ['type' => 'select',   'label' => 'اندازه کارت', 'options' => [
                                 'small'    => 'استاندارد (۱×۱)',
                                 'large'    => 'عریض (۲×۱)',
@@ -1929,18 +1932,18 @@ class BlockRegistry
                             'glow_speed'    => ['type' => 'number',  'label' => 'سرعت درخشش (ثانیه)', 'default' => 2, 'min' => 0.5, 'max' => 4, 'step' => 0.25, 'show_if' => 'glow_enabled'],
                         ],
                         'default' => [
-                            ['title' => 'مدیریت هوشمند', 'text' => 'داشبورد جامع', 'icon' => '📊', 'size' => 'large', 'bg_color' => '#4f46e5', 'text_color' => '#ffffff', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
-                            ['title' => 'امنیت پیشرفته', 'text' => 'رمزنگاری داده‌ها', 'icon' => '🔒', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
-                            ['title' => 'سرعت بالا', 'text' => 'CDN جهانی', 'icon' => '⚡', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                            ['title' => 'مدیریت هوشمند', 'text' => 'داشبورد جامع', 'icon' => 'chart-column', 'size' => 'large', 'bg_color' => '#4f46e5', 'text_color' => '#ffffff', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                            ['title' => 'امنیت پیشرفته', 'text' => 'رمزنگاری داده‌ها', 'icon' => 'lock', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                            ['title' => 'سرعت بالا', 'text' => 'CDN جهانی', 'icon' => 'zap', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
                         ],
                     ],
                 ],
                 'defaultProps' => [
                     'title' => 'همه چیز در یک پلتفرم',
                     'items' => [
-                        ['title' => 'مدیریت هوشمند', 'text' => 'داشبورد جامع', 'icon' => '📊', 'size' => 'large', 'bg_color' => '#4f46e5', 'text_color' => '#ffffff', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
-                        ['title' => 'امنیت پیشرفته', 'text' => 'رمزنگاری داده‌ها', 'icon' => '🔒', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
-                        ['title' => 'سرعت بالا', 'text' => 'CDN جهانی', 'icon' => '⚡', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                        ['title' => 'مدیریت هوشمند', 'text' => 'داشبورد جامع', 'icon' => 'chart-column', 'size' => 'large', 'bg_color' => '#4f46e5', 'text_color' => '#ffffff', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                        ['title' => 'امنیت پیشرفته', 'text' => 'رمزنگاری داده‌ها', 'icon' => 'lock', 'size' => 'small', 'bg_color' => '#f0fdf4', 'text_color' => '#14532d', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
+                        ['title' => 'سرعت بالا', 'text' => 'CDN جهانی', 'icon' => 'zap', 'size' => 'small', 'bg_color' => '#fef9c3', 'text_color' => '#713f12', 'link' => '', 'bg_image' => '', 'bg_color_from' => '', 'bg_color_to' => '', 'glow_enabled' => false, 'glow_color' => '#6366f1', 'glow_speed' => 2],
                     ],
                 ],
             ],
@@ -1953,9 +1956,9 @@ class BlockRegistry
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',      'default' => ''],
                     'columns'  => ['type' => 'select',  'label' => 'تعداد ستون',   'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
                     'style'    => ['type' => 'select',  'label' => 'استایل',        'options' => ['bordered' => 'خطی', 'filled' => 'پر', 'minimal' => 'مینیمال'], 'default' => 'bordered'],
-                    'services' => ['type' => 'repeater', 'label' => 'خدمات', 'item_label' => 'خدمت', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => ''], 'link' => ['type' => 'link', 'label' => 'لینک', 'default' => '#'], 'link_text' => ['type' => 'string', 'label' => 'متن لینک', 'default' => 'بیشتر بدانید']], 'default' => '[{"icon":"🎨","title":"طراحی رابط کاربری","text":"طراحی تجربه کاربری زیبا و کاربردی","link":"#","link_text":"بیشتر بدانید"},{"icon":"⚙️","title":"توسعه فنی","text":"پیاده‌سازی با جدیدترین فناوری‌ها","link":"#","link_text":"بیشتر بدانید"},{"icon":"📈","title":"بازاریابی دیجیتال","text":"افزایش حضور آنلاین کسب‌وکار شما","link":"#","link_text":"بیشتر بدانید"}]'],
+                    'services' => ['type' => 'repeater', 'label' => 'خدمات', 'item_label' => 'خدمت', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'text' => ['type' => 'textarea', 'label' => 'متن', 'default' => ''], 'link' => ['type' => 'link', 'label' => 'لینک', 'default' => '#'], 'link_text' => ['type' => 'string', 'label' => 'متن لینک', 'default' => 'بیشتر بدانید']], 'default' => '[{"icon":"palette","title":"طراحی رابط کاربری","text":"طراحی تجربه کاربری زیبا و کاربردی","link":"#","link_text":"بیشتر بدانید"},{"icon":"settings","title":"توسعه فنی","text":"پیاده‌سازی با جدیدترین فناوری‌ها","link":"#","link_text":"بیشتر بدانید"},{"icon":"trending-up","title":"بازاریابی دیجیتال","text":"افزایش حضور آنلاین کسب‌وکار شما","link":"#","link_text":"بیشتر بدانید"}]'],
                 ],
-                'defaultProps' => ['title' => 'خدمات ما', 'subtitle' => '', 'columns' => '3', 'style' => 'bordered', 'services' => '[{"icon":"🎨","title":"طراحی","text":"رابط کاربری زیبا","link":"#","link_text":"بیشتر"},{"icon":"⚙️","title":"توسعه","text":"فناوری‌های جدید","link":"#","link_text":"بیشتر"},{"icon":"📈","title":"بازاریابی","text":"حضور آنلاین","link":"#","link_text":"بیشتر"}]'],
+                'defaultProps' => ['title' => 'خدمات ما', 'subtitle' => '', 'columns' => '3', 'style' => 'bordered', 'services' => '[{"icon":"palette","title":"طراحی","text":"رابط کاربری زیبا","link":"#","link_text":"بیشتر"},{"icon":"settings","title":"توسعه","text":"فناوری‌های جدید","link":"#","link_text":"بیشتر"},{"icon":"trending-up","title":"بازاریابی","text":"حضور آنلاین","link":"#","link_text":"بیشتر"}]'],
             ],
             'contact_split' => [
                 'name' => 'تماس دو ستونه (Contact Split)',
@@ -2017,7 +2020,7 @@ class BlockRegistry
                     'title'    => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => ''],
                     'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
                     'columns'  => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '3'],
-                    'cards'    => ['type' => 'repeater', 'label' => 'کارت‌ها', 'item_label' => 'کارت', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'description' => ['type' => 'textarea', 'label' => 'توضیحات', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'لینک (اختیاری)', 'default' => '']], 'default' => []],
+                    'cards'    => ['type' => 'repeater', 'label' => 'کارت‌ها', 'item_label' => 'کارت', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'description' => ['type' => 'textarea', 'label' => 'توضیحات', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'لینک (اختیاری)', 'default' => '']], 'default' => []],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'columns' => '3', 'cards' => []],
             ],
@@ -2041,7 +2044,7 @@ class BlockRegistry
                     'title'      => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
                     'subtitle'   => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
                     'background' => ['type' => 'string', 'label' => 'رنگ پس‌زمینه (اختیاری)', 'default' => ''],
-                    'items'      => ['type' => 'repeater', 'label' => 'موارد', 'item_label' => 'مورد', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'string', 'label' => 'آیکون', 'default' => ''], 'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => ''], 'value' => ['type' => 'string', 'label' => 'مقدار', 'default' => '']], 'default' => []],
+                    'items'      => ['type' => 'repeater', 'label' => 'موارد', 'item_label' => 'مورد', 'storage' => 'array', 'fields' => ['icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => ''], 'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => ''], 'value' => ['type' => 'string', 'label' => 'مقدار', 'default' => '']], 'default' => []],
                 ],
                 'defaultProps' => ['title' => '', 'subtitle' => '', 'background' => '', 'items' => []],
             ],

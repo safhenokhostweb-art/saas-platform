@@ -61,6 +61,7 @@ class Phase3CInteractionContractsTest extends TestCase
             foreach ($schema as $field) {
                 $this->assertContains($field['type'], [
                     'string', 'number', 'boolean', 'select', 'color', 'textarea', 'link',
+                    'icon', // Phase 0.6 (ADR-065): the shared icon picker
                 ]);
             }
         }

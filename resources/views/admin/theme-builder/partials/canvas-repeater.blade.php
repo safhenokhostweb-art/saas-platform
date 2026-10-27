@@ -76,11 +76,21 @@
                                 :for="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`" x-text="{!! $fd !!}.label || {!! $fk !!}"></label>
                         </template>
 
-                        <template x-if="fieldControl({!! $fd !!}) === 'text' || fieldControl({!! $fd !!}) === 'icon'">
+                        <template x-if="fieldControl({!! $fd !!}) === 'text'">
                             <input type="text" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`"
                                 :value="{!! $item !!}[{!! $fk !!}] ?? ''"
                                 @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
                                 class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        </template>
+
+                        {{-- Phase 0.6 (ADR-065): the shared SVG icon picker. --}}
+                        <template x-if="fieldControl({!! $fd !!}) === 'icon'">
+                            @include('theme-runtime::canvas.icon-picker', [
+                                'value' => "{$item}[{$fk}] ?? ''",
+                                'set' => "updateRepeaterField({$list}, schemaDef, {$idx}, {$fk}, __icon)",
+                                'id' => '`${ ' . $lid . ' }-${ ' . $idx . ' }-${ ' . $fk . ' }`',
+                                'label' => "{$fd}.label || {$fk}",
+                            ])
                         </template>
 
                         <template x-if="fieldControl({!! $fd !!}) === 'textarea' || fieldControl({!! $fd !!}) === 'rich_text'">

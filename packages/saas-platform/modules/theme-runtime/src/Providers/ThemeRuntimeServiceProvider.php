@@ -49,6 +49,18 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/canvas-color.js';
     }
 
+    /** Phase 0.6 (ADR-065) — the Canvas icon picker's shared model. */
+    public static function canvasIconsPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-icons.js';
+    }
+
+    /** Phase 0.7 (ADR-066) — live newsletter + search-dialog behaviour. */
+    public static function siteFormsScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/site-forms.js';
+    }
+
     public static function canvasIdentityContractPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-identity.js';

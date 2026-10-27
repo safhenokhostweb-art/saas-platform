@@ -1016,6 +1016,17 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         :placeholder="schemaDef.default ?? ''">
                                 </template>
 
+                                {{-- icon (Phase 0.6, ADR-065): the shared searchable SVG icon
+                                     picker; a legacy emoji/text value keeps rendering as-is. --}}
+                                <template x-if="schemaDef.type === 'icon'">
+                                    @include('theme-runtime::canvas.icon-picker', [
+                                        'value' => "selectedBlock.props[propKey] ?? schemaDef.default ?? ''",
+                                        'set' => 'updateProp(propKey, __icon)',
+                                        'id' => 'propKey',
+                                        'label' => 'schemaDef.label || propKey',
+                                    ])
+                                </template>
+
                                 {{-- number --}}
                                 <template x-if="schemaDef.type === 'number'">
                                     <input type="number"
@@ -1837,6 +1848,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 window.CANVAS_TREE_LIMITS = @json($canvasTreeLimits);
 </script>
 @include('theme-runtime::canvas.color')
+@include('theme-runtime::canvas.icons')
 @include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 @include('admin.theme-builder.partials.canvas-section-library')
 <script>
@@ -2529,7 +2541,8 @@ function themeCanvas() {
         // edits inline, one row per item, instead of as collapsible cards.
         repeaterCompactField(schemaDef) {
             const entries = Object.entries(schemaDef?.fields ?? {});
-            return entries.length === 1 && ['text', 'icon'].includes(this.fieldControl(entries[0][1])) ? entries[0][0] : null;
+            // An icon field always gets the icon picker (Phase 0.6).
+            return entries.length === 1 && this.fieldControl(entries[0][1]) === 'text' ? entries[0][0] : null;
         },
         repeaterFieldVisible(fieldDef, item) {
             return !fieldDef?.show_if || this.isTruthy(item?.[fieldDef.show_if]);

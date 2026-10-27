@@ -635,3 +635,124 @@ Everything else renders byte-identically.
   - the bento demo card palette;
   - the module-placeholder palette (preview only).
 - **Nested colour fields** have swatches but no opacity slider yet.
+
+## 12. Phases 0.6 and 0.7 delivery: SVG icons and picker, real newsletter and search (2026-10-27)
+
+**Done (ADR-065, ADR-066):**
+
+- **Open decisions settled:**
+  - customer-site `CurrencyHelper` formats through `PersianNumber::format()`,
+    so storefront prices use «٬» like the runtime blocks
+    («۱٬۲۵۰٬۰۰۰ تومان»);
+  - `header_modern` keeps its hex contrast pipeline.
+- **SVG icon system (0.6):**
+  - 155 Lucide icons (ISC) are vendored in
+    `theme-runtime/resources/icons/catalog.json`, with Persian labels and
+    keywords, in five categories (commerce, navigation, communication,
+    tech, ui). The bodies are allowlisted geometry.
+  - `Support\IconLibrary` and `BlockRenderer::iconHtml()` draw a catalog name
+    as inline SVG (`currentColor`, 1em). Any other value, such as a stored
+    emoji, renders exactly as before.
+  - All 11 icon fields are `type: 'icon'` with catalog defaults, and registry
+    demo data uses icon names.
+  - Hard-coded 🖼️ 📦 🛒 👤 📞 ✉️ 📍 🕐 🎓 ⭐ placeholders are SVG in both
+    hosts' renderers.
+  - One picker (`canvas-icons.js` model, `canvas/icon-picker` markup with
+    its own scoped CSS) is used at every depth of both editors. It offers:
+    - Persian or English search (Arabic ی/ک folded);
+    - category chips;
+    - RTL arrow-key navigation;
+    - Esc, which returns focus to the trigger;
+    - a clear button;
+    - a legacy emoji/text field.
+  - Feature and service icons sit on a brand-tinted tile. Slot colours touch
+    only the SVG.
+- **Newsletter (0.7):**
+  - customer-site `POST /newsletter/subscribe` (web/CSRF, `throttle:6,1`)
+    accepts an email or an Iranian mobile in any digit script, normalised.
+  - Contacts are unique, a repeat is reported, and a honeypot catches bots.
+    Answers are Persian JSON for the script, with a redirect for a plain
+    post.
+  - The shared block posts there only when the host provides the endpoint
+    (`siteEndpoints()`). The script (`blocks/site-forms.js`) adds:
+    - client validation;
+    - one request per submit;
+    - debounced re-validation;
+    - Persian toasts and an `aria-live` status line.
+- **Search (0.7):**
+  - `search_bar` (new `scope` prop) and the `nav_header` search
+    (`search_scope`) are real GET forms against the host's routes:
+    - `search.index` with `type=products|posts`, plus `search.suggest`,
+      when `advanced_search` is on;
+    - otherwise the shop and blog `?q=` listings.
+  - On live pages they open one dialog: a centred modal on desktop, full
+    screen at ≤640 px. It has:
+    - a focus trap and Esc;
+    - debounced suggestions with Persian prices;
+    - scope buttons;
+    - «مشاهدهٔ همهٔ نتایج».
+
+    The header field folds into an icon on phones.
+  - customer-site's `renderSearchBar()` copy is deleted. The Builder preview
+    and the customer editor stay inert.
+- **Layout fixes found on the way:**
+  - the nav header had no side gutter below 80rem;
+  - the newsletter field was 240 px tall on phones;
+  - `search_bar` had no styles at all.
+
+**Evidence:**
+
+- **Parity harness, customer-site live render** (229 documents, 16,381
+  elements per width, 1366/768/390):
+  - **Old markup under new vs old CSS:** 13 element kinds change in both
+    token modes, all intended: search-bar styling, the restored 16 px header
+    gutter, the phone-only newsletter field, and the header search folding
+    into its icon at ≤640 px. No icon slot changes, so stored emoji look
+    exactly as before.
+  - **Markup, old vs new corpus:** 103 documents change, all in expected
+    places:
+    - newsletter (38), search bar (23) and nav-header search (12) forms;
+    - the replaced placeholder glyphs and the registry-default icons.
+
+    Across the 221 theme documents no stored icon value changed.
+- **Preview vs live, same markup:** 48 distinct diffs across 230 platform
+  documents, all on `div.tb-skill-bar-fill` (the host-only rule, unchanged),
+  besides the host-chrome `--platform-primary` variable.
+- **Tests:**
+  - `Phase06IconSystemTest`, `Phase07SiteFormsTest` (platform);
+  - `NewsletterSubscriptionTest` (customer-site, 11);
+  - `canvas-icons.test.mjs` and `site-forms.test.mjs`; JS 111/111;
+  - saas-platform suites 1,123 tests with only the 10 known failures plus
+    the pre-existing Architecture one;
+  - customer-site suites 818 tests with only the 3 known failures
+    (`CanonicalStructuralParityTest`'s order-dependent nexus testimonials
+    diff, `ElementSdkCanonicalBoundaryTest`, `ThemeRuntimeCanonicalParityTest`).
+- **Re-pinned or updated, each proven:**
+  - product-slider hashes: mapping the two placeholder SVGs back to 🖼️/📦
+    reproduces both old pins;
+  - Inspector type lists gain `icon` (the editors render it);
+  - `CanonicalStructuralParityTest` hands canonical the host's endpoints;
+  - two old selectors (`button[aria-expanded]`, the Phase 0.5 token
+    selector in the universal-theme spec) were made exact;
+  - the install acceptance test now checks `class="tb-search-bar-wrap"`
+    (the element), since the class name also appears in the shared
+    stylesheet.
+- **Browser** (three widths each):
+  - new `phase06-icon-picker` and `phase07-site-forms` (platform);
+  - new `phase06-07-icons-forms` (customer-site: real newsletter route,
+    live search dialog);
+  - phase01, 02, 02b, 02c, 03, 05, P1, header-modern, smoke, default
+    homepage, save-to-public and the universal theme stay green.
+
+**Remaining (next):**
+
+- **Owner action:** record a `migration_policy.reviewed` entry for
+  `2026_10_27_120000_create_newsletter_subscribers_table.php` in
+  customer-site's release policy. Its `down()` drops only its own table, but
+  the policy requires an owner review.
+- **Stored theme content** still holds emoji icons. They render as before; an
+  opt-in emoji → icon-name mapping command could upgrade them.
+- **Newsletter management:** there is no admin list or export of subscribers
+  yet, and no unsubscribe link.
+- **Header-modern and theme-specific headers** (FoodMart, Sleep Shiman) have
+  their own search chrome, not yet on the shared dialog.

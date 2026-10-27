@@ -3182,3 +3182,229 @@ negative letter-spacing.
 
 There is no migration, route or dependency change. Stored hex values keep
 rendering exactly as before.
+
+## ADR-065
+
+**Title:** One Vendored SVG Icon Catalog and a Shared Icon Picker; Legacy Emoji Keep Rendering
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+Every icon in the shared blocks was a raw emoji or a typed character:
+
+- features, bento, services and service cards, contact info, trust badges
+  and trust items, timeline, icon box, the icon block, mega-menu links;
+- registry defaults such as ⚡ 🔒 🚚 ☎️ and the demo data;
+- hard-coded placeholders: 🖼️ 📦 for a missing photo, 🛒 👤 in the header,
+  📞 ✉️ 📍 🕐 in contact sections.
+
+Emoji render differently on every OS, ignore the theme colour, and cannot
+be sized or weighted consistently. Both editors offered a plain text input,
+and a top-level `icon` field had no control at all. `type: 'icon'` existed
+in `InspectorFieldRegistry::TYPES` but nothing used it.
+
+**Decision:**
+
+1. **One catalog, vendored.** `theme-runtime/resources/icons/catalog.json`
+   holds 155 Lucide icons (`lucide-static@0.468.0`, ISC; licence in
+   `LICENSE-lucide.txt`). Each icon has a name, a category, a Persian label,
+   Persian and English keywords, and an SVG body. Only these icons ship, so
+   the set is tree-shaken by construction: no package dependency, no font,
+   no network request. The five categories are:
+   - فروشگاه (commerce);
+   - ناوبری و مکان (navigation);
+   - ارتباطات (communication);
+   - فناوری (tech);
+   - عمومی و رابط کاربری (ui).
+
+   The build allowlists every element (`path`, `circle`, `ellipse`, `rect`,
+   `line`, `polyline`, `polygon`) and attribute, so a body is inert geometry.
+   `Phase06IconSystemTest` re-checks that.
+2. **`Support\IconLibrary`.** It provides `has()`, `label()`, `svg()` and
+   `html()`. The SVG is a 1em square drawn with `currentColor`, decorative
+   (`aria-hidden`) unless it gets a label.
+3. **Renderer.** `BlockRenderer::iconHtml()` draws a catalog name as SVG and
+   escapes anything else exactly as before. Stored emoji therefore render
+   unchanged, with no migration. The icon block labels its SVG in Persian
+   (`role="img"`). Placeholders and header and contact glyphs use catalog
+   icons in both hosts' renderers.
+4. **Schema.** Every icon field is `type: 'icon'`, with a catalog default:
+   - top level: `icon_box.icon`, `icon.name`, `trust_item.icon`,
+     `action_button.icon`;
+   - lists: features, timeline, trust badges, bento, services, service
+     cards, contact info, mega-menu items.
+
+   Registry demo data uses icon names. The editors also stop using an icon
+   as a list item's title. Sleep Shiman's own blocks keep that theme's glyph
+   ids. customer-site's validator maps `icon` to `string`, as before.
+5. **One picker.** `resources/js/canvas-icons.js` (`window.CanvasIcons`) is
+   the DOM-free model: catalog, categories, ranked search, `kind()`, `svg()`.
+   Search normalises Arabic ي/ك to Persian ی/ک and folds digits, ZWNJ and
+   diacritics. `canvas/icons.blade.php` loads it with the catalog and the
+   picker's own scoped styles (`.tbip-*`, independent of either host's
+   Tailwind build). `canvas/icon-picker.blade.php` is the single markup
+   both editors include at every depth: the platform top level and
+   repeater partial, and the customer top level and its structured,
+   nested and deep lists.
+
+   The picker offers:
+   - a searchable grid (Persian or English); typing searches every category;
+   - category chips;
+   - arrow-key navigation (RTL-aware);
+   - Esc, which returns focus to the trigger;
+   - a clear button;
+   - a field for a custom emoji or text, so legacy values stay editable.
+6. **Styles.** `.tb-icon-svg` sizes from the slot's existing font-size.
+   Feature and service icons sit on a brand-tinted tile
+   (`color-mix(--tb-primary 10%)`). Slot colours target the SVG only, so a
+   legacy ✓ or emoji keeps its look.
+
+**Consequences:**
+
+- `Phase06IconSystemTest` checks:
+  - catalog licence, categories and Persian labels;
+  - the inert-body allowlist;
+  - that every icon field is an icon control with a catalog default;
+  - that no emoji default remains;
+  - SVG and legacy rendering in eight block types;
+  - the picker include.
+- `canvas-icons.test.mjs` pins search, ranking and legacy handling.
+- `ProductSliderRenderSnapshotTest` was re-pinned. Mapping the two
+  placeholder SVGs back to 🖼️/📦 reproduces both previous pins exactly.
+- **Browser** (three widths, save → reload → preview):
+  - platform `phase06-icon-picker.spec.ts`;
+  - customer-site `phase06-07-icons-forms.spec.js`.
+- **Parity harness:**
+  - old markup under new CSS: no icon slot changes, so stored emoji look
+    as before;
+  - across 221 theme documents no stored icon value changed;
+  - preview equals live apart from the known skill-bar rule.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry`,
+  `InteractionBlockTypes`, the provider, the new `Support\IconLibrary`,
+  `resources/icons/`, `canvas-icons.js`, the `canvas/icons` and
+  `canvas/icon-picker` views, and `theme-runtime-blocks.css`.
+- **Platform:** `canvas.blade.php`, `partials/canvas-repeater` and
+  `ThemePlaceholderService` (catalog names).
+- **customer-site:** its BlockRenderer placeholders, `ElementSchemaRegistry`
+  and the Canvas editor.
+
+There is no migration or Composer change.
+
+## ADR-066
+
+**Title:** Real Newsletter and Search Behind the Shared Blocks; Hosts Supply the Endpoints
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+- `newsletter_form` (and `email_capture`, which delegates to it) reset
+  itself on submit and stored nothing. customer-site had no newsletter
+  model, route or controller.
+- `search_bar` and the `nav_header` search posted to `#`.
+- customer-site overrode `renderSearchBar()` to GET its shop listing. There
+  were no suggestions, no blog scope and no mobile treatment.
+- `search_bar` had no styles at all.
+
+**Decision:**
+
+1. **Hosts own endpoints; the renderer stays host-neutral.**
+   `BlockRenderer::siteEndpoints()` reads the context key `site_endpoints`:
+   - `newsletter` — POST URL;
+   - `csrf` — token for the script-less fallback;
+   - `search` — routes per scope (`all`, `products`, `posts`), each
+     `{action, params, param}`;
+   - `suggest` — a JSON suggestions URL.
+
+   Every URL passes `HtmlSanitizer::isValidUrl()`. Without endpoints (the
+   Builder preview, the customer editor) the forms render exactly as
+   before: inert, no script.
+2. **customer-site** overrides `siteEndpoints()` with a documented
+   `#[HostOwnedOverride]`:
+   - `newsletter.subscribe`;
+   - with the `advanced_search` module: `search.index` with
+     `type=products|posts`, plus `search.suggest`;
+   - otherwise: the shop and blog `?q=` listings the site actually has.
+
+   Its own `renderSearchBar()` copy is deleted.
+3. **Newsletter backend (customer-site).** `POST /newsletter/subscribe`:
+   - **Protection:** inside the web group (CSRF), throttled at 6 requests
+     per minute.
+   - **Accepts:** an email (lower-cased) or an Iranian mobile in any digit
+     script or format (`+98`, `0098`, Persian or Arabic digits), normalised
+     to `09xxxxxxxxx`.
+   - **Repeats:** a unique contact; a repeat answers «قبلاً ثبت شده» and is
+     never stored twice. A race on the unique index is handled.
+   - **Bots:** a honeypot field gets a normal answer and nothing is stored.
+   - **Responses:** JSON for the script; redirect-back for a plain post.
+     Every message is Persian.
+   - **Data:** `newsletter_subscribers` stores contact, channel, source,
+     IP HMAC and `unsubscribed_at`. The migration is create-only.
+4. **One live script,** `resources/js/blocks/site-forms.js`, inlined once
+   per render and only with endpoints. It uses document event delegation.
+   - **Newsletter:**
+     - the same contact rules as the server;
+     - one request per submit (busy flag and a 1 s repeat guard);
+     - debounced re-validation after an error;
+     - a CSRF header from the page meta (no token in cached markup);
+     - Persian toasts and an `aria-live` status line covering success,
+       duplicate, 422, 419, 429 and network errors.
+   - **Search:** a page field, or the header's phone icon, opens one dialog:
+     - a centred modal on desktop, full screen at ≤640 px;
+     - `aria-modal`, a focus trap, Esc, and focus returned to the opener;
+     - debounced (250 ms) suggestions with an `AbortController`;
+     - scope buttons (همه / محصولات / مطالب);
+     - Persian prices («۱۲٬۵۰۰٬۰۰۰ تومان»);
+     - arrow-key results and «مشاهدهٔ همهٔ نتایج برای «…»».
+
+     Without JavaScript the form is a plain GET with its scope parameters.
+5. **Styles.** The search bar is a real field (icon, rounded, focus ring on
+   `--tb-primary`). The header search folds into an icon at ≤640 px.
+   Toasts darken the theme's success/error colours for contrast. Two
+   existing layout bugs are fixed:
+   - the newsletter field was 240 px tall on phones (flex-basis in a column);
+   - the header lost its side gutter below 80rem
+     (`padding: 0.5rem 0` overrode `.tb-container`).
+6. **Open decisions recorded:**
+   - customer-site `CurrencyHelper` prints prices through
+     `PersianNumber::format()`, so the storefront and the runtime blocks
+     share the Persian separator ٬ (U+066C).
+   - `header_modern` keeps hex colours for its contrast maths (ADR-064).
+
+**Consequences:**
+
+- **platform** `Phase07SiteFormsTest`: inert without endpoints, the form
+  contract with endpoints, unsafe URL fallback, scope fallback, the script
+  once per render, and catalog parity of the script's icons.
+- **customer-site** `NewsletterSubscriptionTest`: normalisation, duplicates,
+  422 messages, honeypot, re-subscribe, plain-post redirect, the
+  web/throttle route contract, the real endpoint wiring with and without
+  `advanced_search`, and the inert editor.
+- `site-forms.test.mjs` covers the pure helpers.
+- **Browser:** `phase07-site-forms.spec.ts` (platform; stub origin, three
+  widths) and `phase06-07-icons-forms.spec.js` (customer-site; real route).
+- `CanonicalStructuralParityTest` gives the canonical renderer the host's
+  endpoints (same input, same output).
+- **Release gate:** the new migration's `down()` drops its own table, which
+  the customer-site release policy flags for owner review
+  (`migration_policy.reviewed`).
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry` (`scope`,
+  `search_scope`), the provider, `blocks/site-forms.js` and
+  `theme-runtime-blocks.css`.
+- **customer-site:** `NewsletterController`, `NewsletterSubscriber`, the
+  migration, the route, its BlockRenderer (`siteEndpoints()`, with
+  `renderSearchBar()` removed), `CurrencyHelper` and
+  `account/points/index`.
+
+There is no Composer change.

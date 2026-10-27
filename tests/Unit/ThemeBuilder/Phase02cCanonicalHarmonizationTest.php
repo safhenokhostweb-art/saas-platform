@@ -19,6 +19,7 @@ class Phase02cCanonicalHarmonizationTest extends TestCase
     private const EDITABLE_TYPES = [
         'string', 'text', 'textarea', 'rich_text', 'link', 'image', 'repeater', 'array',
         'number', 'motion', 'boolean', 'select', 'color',
+        'icon', // Phase 0.6 (ADR-065): the shared icon picker
     ];
 
     private function render(string $type, array $props): string

@@ -401,8 +401,9 @@ SVG;
     private function featureIcon(int $i): string
     {
         $icons = [
-            'zap', 'shield', 'bar-chart', 'users', 'headphones',
-            'link', 'layout', 'trending-up', 'cpu', 'globe',
+            // Support\IconLibrary catalog names (Phase 0.6, ADR-065).
+            'zap', 'shield', 'chart-column', 'users', 'headphones',
+            'link', 'layout-grid', 'trending-up', 'cpu', 'globe',
         ];
         return $icons[$i % count($icons)];
     }

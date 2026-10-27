@@ -3,6 +3,7 @@ namespace SaaSPlatform\ThemeRuntime;
 
 use Illuminate\Support\Str;
 use SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider;
+use SaaSPlatform\ThemeRuntime\Support\IconLibrary;
 use SaaSPlatform\ThemeRuntime\Support\PersianNumber;
 
 /**
@@ -62,6 +63,9 @@ class BlockRenderer
 
     /** Phase 11: one JS/CSS carrier for every rendered modern-header document. */
     private bool $headerModernAssetsEmitted = false;
+
+    /** Phase 0.7 (ADR-066): blocks/site-forms.js is inlined once per render. */
+    private bool $siteFormsAssetsEmitted = false;
 
     /**
      * Phase 9 / Step 2 — same once-per-document rule for the shared
@@ -1144,8 +1148,12 @@ class BlockRenderer
      * `onerror` (there is no safe, fast way to verify an image URL
      * resolves from inside a server-side render call).
      */
-    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = '🖼️'): string
+    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = ''): string
     {
+        // Phase 0.6 (ADR-065): $icon is ready HTML; '' = the SVG image icon.
+        if ($icon === '') {
+            $icon = $this->iconHtml('image');
+        }
         $altAttr = $this->escapeAttr($alt);
         if ($url === '') {
             return "<div class=\"tb-img-fallback\" style=\"display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;{$style}\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>";
@@ -1337,7 +1345,7 @@ class BlockRenderer
 
     protected function renderIconBox(array $props, string $inner, string $id): string
     {
-        $icon = $this->escape($props['icon'] ?? '');
+        $icon = $this->iconHtml($props['icon'] ?? '');
         $title = $this->escape($props['title'] ?? '');
         $text = $this->escape($props['text'] ?? '');
         $url = $this->escapeUrl($props['link'] ?? '', '');
@@ -1674,6 +1682,12 @@ class BlockRenderer
         $size = $sizeMap[$rawSize] ?? (preg_match('/^[\d.]+(px|rem|em)$/', $rawSize) ? $rawSize : $sizeMap['medium']);
         $safeName = $this->escape($name);
         $safeSize = $this->escapeAttr($size);
+        // Phase 0.6 (ADR-065): a catalog name is an SVG labelled in Persian;
+        // a legacy emoji/text keeps its original markup.
+        if (IconLibrary::has($name)) {
+            $svg = IconLibrary::svg($name, IconLibrary::label($name));
+            return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\">{$svg}</span>";
+        }
         return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\" role=\"img\" aria-label=\"{$safeName}\">{$safeName}</span>";
     }
 
@@ -1920,7 +1934,7 @@ class BlockRenderer
         $btn2Html  = $btn2t ? "<a href=\"{$btn2u}\" class=\"tb-btn tb-btn-secondary\">{$btn2t}</a>" : '';
         $imgHtml   = $imgUrl
             ? "<img src=\"{$imgUrl}\" alt=\"{$title}\" class=\"tb-hero-split-img\" loading=\"eager\">"
-            : "<div class=\"tb-hero-split-img-placeholder\">🖼️</div>";
+            : "<div class=\"tb-hero-split-img-placeholder\">" . $this->iconHtml('image') . "</div>";
 
         $textCol = "<div class=\"tb-hero-split-text\">{$badgeHtml}<h1 class=\"tb-hero-split-title\">{$title}</h1><p class=\"tb-hero-split-sub\">{$sub}</p><div class=\"tb-hero-split-actions\">{$btn1Html}{$btn2Html}</div></div>";
         $imgCol  = "<div class=\"tb-hero-split-visual\">{$imgHtml}</div>";
@@ -1998,7 +2012,7 @@ class BlockRenderer
 
         $cards = [];
         foreach ($features as $f) {
-            $icon  = $this->escape($f['icon'] ?? '✨');
+            $icon  = $this->iconHtml($f['icon'] ?? 'sparkles');
             $ftitle = $this->escape($f['title'] ?? '');
             $ftext  = $this->escape($f['text'] ?? '');
             $cards[] = "<div class=\"tb-feature-card tb-feature-card-{$style}\">
@@ -2118,7 +2132,7 @@ class BlockRenderer
 
     protected function renderTrustItem(array $props, string $inner, string $id): string
     {
-        $icon = $this->escape((string) ($props['icon'] ?? '✓'));
+        $icon = $this->iconHtml($props['icon'] ?? 'badge-check');
         $label = $this->escape((string) ($props['label'] ?? ''));
         $description = $this->escape((string) ($props['description'] ?? ''));
         $style = in_array($requestedStyle = $props['style'] ?? '', ['plain', 'card', 'outline'], true)
@@ -2208,7 +2222,7 @@ class BlockRenderer
         $targetValue = $props['target_value'] ?? '#';
         $style = in_array($requestedStyle = $props['style'] ?? '', ['primary', 'secondary', 'outline', 'ghost'], true)
             ? $requestedStyle : 'primary';
-        $icon = $this->escape($props['icon'] ?? '');
+        $icon = $this->iconHtml($props['icon'] ?? '');
 
         $policy = $this->context['interaction_policy'] ?? null;
 
@@ -2386,7 +2400,7 @@ class BlockRenderer
     ): string {
         $titleEsc = $this->escape($title);
         $urlAttr  = $this->escapeUrl($url, '#');
-        $imgHtml  = $this->imageWithFallback($image, $title, 'aspect-ratio:1/1;', '📦');
+        $imgHtml  = $this->imageWithFallback($image, $title, 'aspect-ratio:1/1;', $this->iconHtml('package'));
 
         $badgeHtml = $badge ? "<span class=\"tb-product-badge-wrap\" style=\"position:absolute;top:.5rem;inset-inline-start:.5rem;z-index:1;\">" . $this->badgeHtml($badge, 'error', 'sm') . "</span>" : '';
 
@@ -2567,7 +2581,7 @@ class BlockRenderer
     {
         $count = (int) ($props['count'] ?? 0);
         $badge = $count > 0 ? "<span class=\"tb-cart-icon-badge\">" . $this->displayNumber($count) . "</span>" : '';
-        return "<a href=\"/cart\" id=\"tb-{$id}\" class=\"tb-cart-icon\" aria-label=\"سبد خرید\" style=\"position:relative;display:inline-flex;\">🛒{$badge}</a>";
+        return "<a href=\"/cart\" id=\"tb-{$id}\" class=\"tb-cart-icon\" aria-label=\"سبد خرید\" style=\"position:relative;display:inline-flex;\">" . $this->iconHtml('shopping-cart') . "{$badge}</a>";
     }
 
     /**
@@ -2611,16 +2625,16 @@ class BlockRenderer
         $columns = max(2, min(6, (int) ($props['columns'] ?? 4)));
 
         $demo = [
-            ['name' => 'پوشاک', 'count' => 128, 'icon' => '👕'],
-            ['name' => 'دیجیتال و لوازم الکترونیکی', 'count' => 76, 'icon' => '📱'],
-            ['name' => 'خانه و آشپزخانه', 'count' => 54, 'icon' => '🏠'],
-            ['name' => 'زیبایی و سلامت', 'count' => 39, 'icon' => '💄'],
+            ['name' => 'پوشاک', 'count' => 128, 'icon' => 'shirt'],
+            ['name' => 'دیجیتال و لوازم الکترونیکی', 'count' => 76, 'icon' => 'smartphone'],
+            ['name' => 'خانه و آشپزخانه', 'count' => 54, 'icon' => 'house'],
+            ['name' => 'زیبایی و سلامت', 'count' => 39, 'icon' => 'sparkles'],
         ];
 
         $cards = [];
         foreach ($demo as $c) {
             $cards[] = "<a href=\"#\" class=\"tb-category-card\" style=\"display:block;text-align:center;padding:1.5rem 1rem;border:1px solid #e5e7eb;border-radius:.75rem;text-decoration:none;color:inherit;\">
-                <div style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->escape($c['icon']) . "</div>
+                <div class=\"tb-category-card-icon\" style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->iconHtml($c['icon']) . "</div>
                 <div class=\"tb-category-name\" style=\"font-weight:700;\">" . $this->escape($c['name']) . "</div>
                 <div class=\"tb-category-count\" style=\"font-size:.8rem;color:var(--tb-text-muted, #6b7280);margin-top:.2rem;\">" . $this->displayNumber($c['count']) . " محصول</div>
             </a>";
@@ -2706,13 +2720,13 @@ class BlockRenderer
             $date  = $this->escape($it['date'] ?? '');
             $itemTitle = $this->escape($it['title'] ?? '');
             $text  = $this->escape($it['text'] ?? '');
-            $icon  = $this->escape($it['icon'] ?? '');
+            $icon  = $this->iconHtml($it['icon'] ?? '');
             $image = (string) ($it['image'] ?? '');
             $linkLabel = $this->escape($it['link_label'] ?? '');
             $linkUrl   = $this->linkHref($it['link_url'] ?? '', '');
 
             $mediaHtml = $image !== ''
-                ? $this->imageWithFallback($image, $itemTitle, 'width:64px;height:64px;border-radius:50%;', $icon !== '' ? $icon : '🖼️')
+                ? $this->imageWithFallback($image, $itemTitle, 'width:64px;height:64px;border-radius:50%;', $icon !== '' ? $icon : '')
                 : "<div class=\"tb-timeline-marker\">" . ($icon !== '' ? $icon : ($index + 1)) . "</div>";
 
             $ctaHtml = ($linkLabel !== '' && $linkUrl !== '')
@@ -2880,7 +2894,7 @@ class BlockRenderer
 
         $items = [];
         foreach ($badges as $b) {
-            $icon  = $this->escape($b['icon'] ?? '✓');
+            $icon  = $this->iconHtml($b['icon'] ?? 'badge-check');
             $btitle = $this->escape($b['title'] ?? '');
             $btext  = $this->escape($b['text'] ?? '');
             $items[] = "<div class=\"tb-trust-badge\">
@@ -2961,17 +2975,131 @@ class BlockRenderer
         $bg         = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-primary, #4f46e5)'));
         $tc         = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
 
+        $form = $this->newsletterFormHtml($props, $id, $placeholder, $btnText, $bg);
+
         return "<div id=\"tb-{$id}\" class=\"tb-newsletter\" style=\"background:{$bg};color:{$tc};\">
             <div class=\"tb-container\">
                 <h2 class=\"tb-newsletter-title\">{$title}</h2>
                 " . ($subtitle ? "<p class=\"tb-newsletter-sub\">{$subtitle}</p>" : '') . "
-                <form class=\"tb-newsletter-form\" onsubmit=\"event.preventDefault();this.reset();\" novalidate>
-                    " . $this->visuallyHiddenLabel("tb-{$id}-newsletter-email", $props['placeholder'] ?? 'ایمیل یا شماره موبایل') . "
-                    <input id=\"tb-{$id}-newsletter-email\" type=\"text\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" autocomplete=\"off\">
-                    <button type=\"submit\" class=\"tb-newsletter-btn tb-btn\" style=\"background:var(--tb-on-primary, #fff);color:{$bg};\">{$btnText}</button>
-                </form>
+                {$form}
             </div>
         </div>";
+    }
+
+    /**
+     * Phase 0.7 (ADR-066): the newsletter form. With a host endpoint it is a
+     * real POST (CSRF via the page token, a honeypot, a live status line;
+     * blocks/site-forms.js sends it with fetch). Without one — the Builder
+     * preview — it stays the inert form it always was.
+     */
+    private function newsletterFormHtml(array $props, string $id, string $placeholder, string $btnText, string $bg): string
+    {
+        $label = $this->visuallyHiddenLabel("tb-{$id}-newsletter-email", $props['placeholder'] ?? 'ایمیل یا شماره موبایل');
+        $button = "<button type=\"submit\" class=\"tb-newsletter-btn tb-btn\" style=\"background:var(--tb-on-primary, #fff);color:{$bg};\">{$btnText}</button>";
+        $endpoints = $this->siteEndpoints();
+        $endpoint = is_string($endpoints['newsletter'] ?? null) ? trim($endpoints['newsletter']) : '';
+        $action = $endpoint !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($endpoint) ? $this->escapeAttr($endpoint) : '';
+        if ($action === '') {
+            return "<form class=\"tb-newsletter-form\" onsubmit=\"event.preventDefault();this.reset();\" novalidate>
+                    {$label}
+                    <input id=\"tb-{$id}-newsletter-email\" type=\"text\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" autocomplete=\"off\">
+                    {$button}
+                </form>";
+        }
+        $token = is_string($endpoints['csrf'] ?? null) && $endpoints['csrf'] !== ''
+            ? '<input type="hidden" name="_token" value="' . $this->escapeAttr($endpoints['csrf']) . '">' : '';
+        $status = "tb-{$id}-newsletter-status";
+
+        return "<form class=\"tb-newsletter-form\" method=\"post\" action=\"{$action}\" data-tb-newsletter novalidate>"
+            . $token
+            . '<input type="hidden" name="source" value="' . $this->escapeAttr($id) . '">'
+            . $label
+            . "<input id=\"tb-{$id}-newsletter-email\" type=\"text\" name=\"contact\" inputmode=\"email\" autocomplete=\"email\" maxlength=\"190\" required dir=\"auto\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" aria-describedby=\"{$status}\">"
+            . '<span class="tb-hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></span>'
+            . $button
+            . "<p id=\"{$status}\" class=\"tb-newsletter-status\" role=\"status\" aria-live=\"polite\"></p>"
+            . '</form>'
+            . $this->siteFormsAssets();
+    }
+
+    /**
+     * Phase 0.7 (ADR-066): where this site's forms go. Hosts pass
+     * context['site_endpoints'] (customer-site overrides this with its real
+     * routes); none — the Builder preview — keeps every form inert.
+     *
+     *   newsletter: POST URL        csrf: token for the no-JS fallback
+     *   search:     ['all'|'products'|'posts' => ['action' => URL, 'params' => [...], 'param' => 'q']]
+     *   suggest:    GET URL answering {items: [{type, title, url, image, price}]}
+     *
+     * @return array<string, mixed>
+     */
+    protected function siteEndpoints(): array
+    {
+        $endpoints = $this->context['site_endpoints'] ?? null;
+        return is_array($endpoints) ? $endpoints : [];
+    }
+
+    /** The search routes per scope, each URL checked; [] when the site has no search. */
+    private function searchRoutes(): array
+    {
+        $routes = [];
+        $search = $this->siteEndpoints()['search'] ?? null;
+        foreach (['all', 'products', 'posts'] as $scope) {
+            $route = is_array($search) ? ($search[$scope] ?? null) : null;
+            $action = is_array($route) ? (string) ($route['action'] ?? '') : '';
+            if ($action === '' || !\SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($action)) {
+                continue;
+            }
+            $params = [];
+            foreach ((array) ($route['params'] ?? []) as $k => $v) {
+                if (is_string($k) && preg_match('/^[a-z_]{1,32}$/', $k) && is_scalar($v)) {
+                    $params[$k] = (string) $v;
+                }
+            }
+            $param = preg_match('/^[a-z_]{1,32}$/', (string) ($route['param'] ?? 'q')) ? (string) ($route['param'] ?? 'q') : 'q';
+            $routes[$scope] = ['action' => $action, 'params' => $params, 'param' => $param];
+        }
+        return $routes;
+    }
+
+    /**
+     * The attributes, hidden inputs and assets a search form needs. With
+     * host routes it is a real GET form that blocks/site-forms.js upgrades
+     * to the search dialog; without, the inert preview form.
+     *
+     * @return array{0: string, 1: string, 2: string, 3: string} attrs, hidden inputs, assets, field name
+     */
+    private function searchForm(string $scope): array
+    {
+        $routes = $this->searchRoutes();
+        if ($routes === []) {
+            return [' action="#" onsubmit="event.preventDefault();"', '', '', 'q'];
+        }
+        $scope = isset($routes[$scope]) ? $scope : (isset($routes['all']) ? 'all' : (string) array_key_first($routes));
+        $primary = $routes[$scope];
+        $suggest = (string) ($this->siteEndpoints()['suggest'] ?? '');
+        $attrs = ' method="get" action="' . $this->escapeAttr($primary['action']) . '"'
+            . ' data-tb-search="' . $this->escapeAttr(json_encode($routes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '"'
+            . ' data-tb-scope="' . $this->escapeAttr($scope) . '"'
+            . ($suggest !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($suggest) ? ' data-tb-suggest="' . $this->escapeAttr($suggest) . '"' : '');
+        $hidden = '';
+        foreach ($primary['params'] as $k => $v) {
+            $hidden .= '<input type="hidden" name="' . $this->escapeAttr($k) . '" value="' . $this->escapeAttr($v) . '">';
+        }
+        return [$attrs, $hidden, $this->siteFormsAssets(), $primary['param']];
+    }
+
+    private function siteFormsAssets(): string
+    {
+        if ($this->siteFormsAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::siteFormsScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: site-forms.js is missing.');
+        }
+        $this->siteFormsAssetsEmitted = true;
+        return '<script data-tb-block-asset="site_forms">' . $js . '</script>';
     }
 
     protected function renderBentoGrid(array $props, string $inner, string $id): string
@@ -2987,7 +3115,7 @@ class BlockRenderer
         foreach ($items as $item) {
             $ititle = $this->escape($item['title'] ?? '');
             $itext  = $this->escape($item['text'] ?? '');
-            $icon   = $this->escape($item['icon'] ?? '');
+            $icon   = $this->iconHtml($item['icon'] ?? '');
             $image  = $this->escapeUrl($item['image'] ?? '', '');
             $linkUrl = $this->escapeUrl($item['link_url'] ?? '', '');
             $linkLabel = $this->escape($item['link_label'] ?? 'مشاهده');
@@ -3190,6 +3318,17 @@ class BlockRenderer
             : PersianNumber::toman($amount);
     }
 
+    /**
+     * Phase 0.6 (ADR-065): an icon prop. A Support\IconLibrary name renders
+     * as inline SVG (stroke = currentColor); anything else — a legacy emoji
+     * or text — is escaped exactly as before, so stored content is
+     * unchanged. '' stays '' (callers test it for "no icon").
+     */
+    protected function iconHtml(mixed $value): string
+    {
+        return IconLibrary::has($value) ? IconLibrary::svg((string) $value) : $this->escape($value);
+    }
+
     protected function renderServicesCards(array $props, string $inner, string $id): string
     {
         $title    = $this->escape($props['title'] ?? 'خدمات ما');
@@ -3207,7 +3346,7 @@ class BlockRenderer
 
         $cards = [];
         foreach ($services as $svc) {
-            $icon     = $this->escape($svc['icon'] ?? '');
+            $icon     = $this->iconHtml($svc['icon'] ?? '');
             $stitle   = $this->escape($svc['title'] ?? '');
             $stext    = $this->escape($svc['text'] ?? '');
             $link     = $this->linkHref($svc['link'] ?? '#', '');
@@ -3240,16 +3379,16 @@ class BlockRenderer
 
         $infoItems = [];
         if ($phone) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">📞</span><div><p class=\"tb-contact-info-label\">تلفن</p><p class=\"tb-contact-info-value\">{$phone}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('phone') . "</span><div><p class=\"tb-contact-info-label\">تلفن</p><p class=\"tb-contact-info-value\">{$phone}</p></div></div>";
         }
         if ($email) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">✉️</span><div><p class=\"tb-contact-info-label\">ایمیل</p><p class=\"tb-contact-info-value\">{$email}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('mail') . "</span><div><p class=\"tb-contact-info-label\">ایمیل</p><p class=\"tb-contact-info-value\">{$email}</p></div></div>";
         }
         if ($address) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">📍</span><div><p class=\"tb-contact-info-label\">آدرس</p><p class=\"tb-contact-info-value\">{$address}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('map-pin') . "</span><div><p class=\"tb-contact-info-label\">آدرس</p><p class=\"tb-contact-info-value\">{$address}</p></div></div>";
         }
         if ($hours) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">🕐</span><div><p class=\"tb-contact-info-label\">ساعات کاری</p><p class=\"tb-contact-info-value\">{$hours}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('clock') . "</span><div><p class=\"tb-contact-info-label\">ساعات کاری</p><p class=\"tb-contact-info-value\">{$hours}</p></div></div>";
         }
 
         // Stable, block-scoped field ids ("tb-{$id}-...") — $id is already
@@ -3492,7 +3631,7 @@ class BlockRenderer
                 if ($lLabel === '') {
                     continue;
                 }
-                $lIcon = $this->escape(is_array($l) ? ($l['icon'] ?? '') : '');
+                $lIcon = $this->iconHtml(is_array($l) ? ($l['icon'] ?? '') : '');
                 $lImage = trim((string) (is_array($l) ? ($l['image'] ?? '') : ''));
                 $mediaHtml = '';
                 if ($lImage !== '') {
@@ -3695,15 +3834,23 @@ class BlockRenderer
         $searchHtml = '';
         if ($showSearch) {
             $searchFieldId = "tb-{$id}-search";
-            $searchHtml = "<form class=\"tb-nav-header-search\" role=\"search\" action=\"#\" onsubmit=\"event.preventDefault();\">"
+            // Phase 0.7 (ADR-066): the same real search as search_bar; on
+            // phones the field folds into an icon that opens the dialog.
+            $scope = $props['search_scope'] ?? 'all';
+            $scope = in_array($scope, ['all', 'products', 'posts'], true) ? $scope : 'all';
+            [$attrs, $hidden, $assets, $param] = $this->searchForm($scope);
+            $searchHtml = "<form id=\"{$searchFieldId}-form\" class=\"tb-nav-header-search\" role=\"search\"{$attrs}>"
                 . $this->visuallyHiddenLabel($searchFieldId, $searchPh)
-                . "<input id=\"{$searchFieldId}\" type=\"search\" placeholder=\"" . $this->escapeAttr($searchPh) . "\" class=\"tb-nav-header-search-input\">"
-                . "</form>";
+                . "<input id=\"{$searchFieldId}\" type=\"search\" name=\"" . $this->escapeAttr($param) . "\" placeholder=\"" . $this->escapeAttr($searchPh) . "\" class=\"tb-nav-header-search-input\" autocomplete=\"off\" enterkeyhint=\"search\">"
+                . $hidden
+                . "</form>"
+                . "<button type=\"button\" class=\"tb-nav-header-icon-link tb-nav-header-search-toggle\" data-tb-search-open=\"{$searchFieldId}-form\" aria-label=\"جستجو\">" . $this->iconHtml('search') . '</button>'
+                . $assets;
         }
 
         $phoneHtml   = $phone ? "<a href=\"tel:" . $this->escapeAttr(preg_replace('/[^+0-9]/', '', $props['phone'])) . "\" class=\"tb-nav-header-phone\">{$phone}</a>" : '';
-        $cartHtml    = $showCart ? "<a href=\"/cart\" class=\"tb-nav-header-icon-link\" aria-label=\"سبد خرید\">🛒</a>" : '';
-        $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">👤</a>" : '';
+        $cartHtml    = $showCart ? "<a href=\"/cart\" class=\"tb-nav-header-icon-link\" aria-label=\"سبد خرید\">" . $this->iconHtml('shopping-cart') . "</a>" : '';
+        $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">" . $this->iconHtml('user') . "</a>" : '';
         $ctaHtml     = $ctaText ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\">{$ctaText}</a>" : '';
         $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
         // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
@@ -3979,7 +4126,7 @@ class BlockRenderer
             if ($label === '') {
                 continue;
             }
-            $featuresHtml .= "<li class=\"tb-about-feature\"><span aria-hidden=\"true\">✓</span> {$label}</li>";
+            $featuresHtml .= "<li class=\"tb-about-feature\"><span aria-hidden=\"true\">" . $this->iconHtml('check') . "</span> {$label}</li>";
         }
 
         $statsHtml = '';
@@ -4030,7 +4177,7 @@ class BlockRenderer
 
         $items = '';
         foreach ($cards as $card) {
-            $icon   = $this->escape(is_array($card) ? ($card['icon'] ?? '') : '');
+            $icon   = $this->iconHtml(is_array($card) ? ($card['icon'] ?? '') : '');
             $ctitle = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
             $desc   = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
             $url    = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
@@ -4112,7 +4259,7 @@ class BlockRenderer
 
         $itemsHtml = '';
         foreach ($items as $item) {
-            $icon  = $this->escape(is_array($item) ? ($item['icon'] ?? '') : '');
+            $icon  = $this->iconHtml(is_array($item) ? ($item['icon'] ?? '') : '');
             $label = $this->escape(is_array($item) ? ($item['label'] ?? '') : '');
             $value = $this->escape(is_array($item) ? ($item['value'] ?? '') : '');
             if ($label === '' && $value === '') {
@@ -4196,10 +4343,18 @@ class BlockRenderer
     {
         $placeholder = $props['placeholder'] ?? 'جستجو...';
         $fieldId = "tb-{$id}-search";
-        return "<form id=\"tb-{$id}\" class=\"tb-search-bar-wrap\" role=\"search\" action=\"#\" onsubmit=\"event.preventDefault();\">"
+        // Phase 0.7 (ADR-066): a real GET search (host routes, scope →
+        // products/posts) upgraded to the search dialog on live pages.
+        $scope = $props['scope'] ?? 'all';
+        $scope = in_array($scope, ['all', 'products', 'posts'], true) ? $scope : 'all';
+        [$attrs, $hidden, $assets, $param] = $this->searchForm($scope);
+        return "<form id=\"tb-{$id}\" class=\"tb-search-bar-wrap\" role=\"search\"{$attrs}>"
             . $this->visuallyHiddenLabel($fieldId, $placeholder)
-            . "<input id=\"{$fieldId}\" type=\"search\" placeholder=\"" . $this->escapeAttr($placeholder) . "\">"
-            . "</form>";
+            . '<span class="tb-search-bar-icon" aria-hidden="true">' . $this->iconHtml('search') . '</span>'
+            . "<input id=\"{$fieldId}\" type=\"search\" name=\"" . $this->escapeAttr($param) . "\" class=\"tb-search-bar-input\" placeholder=\"" . $this->escapeAttr($placeholder) . "\" autocomplete=\"off\" enterkeyhint=\"search\">"
+            . $hidden
+            . '<button type="submit" class="tb-search-bar-btn">جستجو</button>'
+            . "</form>" . $assets;
     }
 
     /**

@@ -33,6 +33,8 @@ class Phase3CContractsTest extends TestCase
 
     private const INSPECTOR_TYPES = [
         'string', 'number', 'boolean', 'select', 'color', 'textarea', 'link',
+        // Phase 0.6 (ADR-065): the SVG icon picker control.
+        'icon',
     ];
 
     /** @test */
