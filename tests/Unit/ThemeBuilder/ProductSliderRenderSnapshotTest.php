@@ -61,14 +61,20 @@ use Tests\TestCase;
  *   package and this one with each slide's content and the two arrow
  *   buttons replaced by tokens: both modes hash identically, so nothing
  *   outside the cards and arrows moved.
+ *
+ * Re-pinned again in Phase 3 (ADR-068): the demo cards gained derived
+ * badge overlays — «پرامتیاز» on the two cards rated 4.6/128 and 4.8/412,
+ * and «جدید» moved from the free-text `primary` badge to `info`. Verified
+ * by diffing the HEAD-package render with this one: those three badge
+ * spans are the only change.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = 'c1a5f57bfd096840637a187751a456284b0674748a22603023c2b31aaa8187b9';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '419619285d3cf2ba1d5211971561681c689d55bb0c9a0bc4c4992f3447899c8c';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '57586bd53f1897f2abfa45130d27fe2cefb718d4b566f8d4639f4b2d8e08e4b8';
+    private const PUBLIC_STRUCTURAL_SHA256 = '587e1281de610f117751d83393c789ec6f7ccf018ba7d5cc1bf715afbbe36949';
 
     private function render(string $mode = 'neutral'): string
     {

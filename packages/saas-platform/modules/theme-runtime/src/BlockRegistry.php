@@ -745,8 +745,11 @@ class BlockRegistry
                             'answer'   => ['type' => 'textarea', 'label' => 'پاسخ', 'default' => ''],
                         ],
                     ],
+                    // Phase 3 (ADR-068) — see BlockRenderer::renderFaq().
+                    'exclusive' => ['type' => 'boolean', 'label' => 'فقط یک پاسخ باز باشد', 'default' => false],
+                    'open_first' => ['type' => 'boolean', 'label' => 'باز بودن پرسش اول', 'default' => false],
                 ],
-                'defaultProps' => ['title' => 'سوالات متداول', 'items' => []],
+                'defaultProps' => ['title' => 'سوالات متداول', 'items' => [], 'exclusive' => false, 'open_first' => false],
             ],
             'team' => [
                 'name' => 'اعضای تیم',
@@ -866,11 +869,17 @@ class BlockRegistry
                 'name' => 'شمارش معکوس',
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'clock',
+                // Phase 3 (ADR-068): Jalali end dates in Tehran time — see
+                // BlockRenderer::renderCountdown().
                 'schema' => [
-                    'end_date' => ['type' => 'string', 'label' => 'تاریخ پایان (Y-m-d)', 'default' => ''],
+                    'end_date' => ['type' => 'string', 'label' => 'تاریخ پایان (شمسی، مثل ۱۴۰۵/۰۸/۱۵)', 'default' => ''],
+                    'end_time' => ['type' => 'string', 'label' => 'ساعت پایان (مثل ۲۳:۵۹، به وقت تهران)', 'default' => ''],
                     'label' => ['type' => 'string', 'label' => 'برچسب', 'default' => 'پایان پیشنهاد'],
+                    'expired_text' => ['type' => 'string', 'label' => 'متن پس از پایان', 'default' => 'این پیشنهاد به پایان رسیده است.'],
+                    'style' => ['type' => 'select', 'label' => 'نمایش', 'options' => ['card' => 'کارت', 'banner' => 'نوار تبلیغاتی'], 'default' => 'card'],
+                    'show_end_date' => ['type' => 'boolean', 'label' => 'نمایش تاریخ پایان', 'default' => true],
                 ],
-                'defaultProps' => ['end_date' => '', 'label' => 'پایان پیشنهاد'],
+                'defaultProps' => ['end_date' => '', 'end_time' => '', 'label' => 'پایان پیشنهاد', 'expired_text' => 'این پیشنهاد به پایان رسیده است.', 'style' => 'card', 'show_end_date' => true],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
             ],
             'email_capture' => [

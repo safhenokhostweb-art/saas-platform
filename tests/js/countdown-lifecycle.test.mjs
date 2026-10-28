@@ -218,10 +218,11 @@ test('the countdown renders its own values without touching other blocks', () =>
     controller.initCountdown(root);
 
     const span = (u) => root.querySelector('.tb-countdown__' + u).textContent;
-    assert.deepEqual([span('d'), span('h'), span('m'), span('s')], ['00', '02', '03', '04']);
+    // Phase 3 (ADR-068): two Persian digits per unit.
+    assert.deepEqual([span('d'), span('h'), span('m'), span('s')], ['۰۰', '۰۲', '۰۳', '۰۴']);
 
     advance(1000);
-    assert.deepEqual([span('d'), span('h'), span('m'), span('s')], ['00', '02', '03', '03']);
+    assert.deepEqual([span('d'), span('h'), span('m'), span('s')], ['۰۰', '۰۲', '۰۳', '۰۳']);
     assert.equal(timer.style.display, '', 'a running countdown must keep its timer visible');
 });
 

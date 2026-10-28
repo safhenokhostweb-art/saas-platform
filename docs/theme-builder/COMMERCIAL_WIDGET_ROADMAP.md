@@ -865,3 +865,80 @@ Everything else renders byte-identically.
 - There is no quantity stepper in the drawer yet (remove only), and no
   wishlist on the card.
 - Stored themes keep their emoji icons (see §12).
+
+## 14. Phase 3 (first part) delivery: drawer stepper, product badges, bestselling, Jalali countdown, FAQ (2026-10-28)
+
+**Done (ADR-068):**
+
+- **Mini-cart drawer:**
+  - a «+ / −» quantity stepper per line. The line total, subtotal and
+    header badge change at once, in the host's own Toman format, and the
+    host's answer replaces the estimate after 350 ms;
+  - one request per pause with the last quantity, and every cart write in
+    one serial queue;
+  - a refused step (e.g. stock) shows the host's message and restores its
+    cart;
+  - removing asks inline («… از سبد حذف شود؟», «حذف» / «انصراف»). Esc
+    cancels and returns focus.
+
+  customer-site's `shop.cart.update` now answers JSON.
+- **Product badges:** derived overlays on the card image — real discount,
+  «پرامتیاز» (average ≥ ۴٫۵ over ≥ ۵ approved reviews) and «جدید» — then
+  the free-text badge, at most three.
+- **Bestselling:** `module:shop_product_grid` source «پرفروش» reads the
+  shared 30-day sales ordering (`Product::scopeBestSelling`, also behind
+  data binding `best_selling_30d`). The last `HOST_PATCHES` entry is gone.
+  The module grid and slider use the shared product card.
+- **Countdown:**
+  - Jalali end dates («۱۴۰۵/۰۸/۱۵», any digits) and an optional end time,
+    in Tehran time (+03:30), shipped as one ISO instant;
+  - Persian digits, a «پایان: …» line, a custom expiry text, and a card or
+    promo-banner style;
+  - stored Gregorian dates keep their instant.
+- **FAQ:**
+  - one canonical accordion (customer-site's override merged): exclusive
+    mode, first answer open, chevrons, line breaks kept, rich answers
+    sanitized, and an empty-state hint;
+  - `module:faq_dynamic` uses it, and its visible items now join the page's
+    one FAQPage JSON-LD.
+- **Newsletter migration:** `down()` drops its table again. The content
+  matches the existing owner review.
+
+**Evidence:**
+
+- **Parity harness** (customer-site live render, 229 documents, three
+  widths; before is `82194f5d` + customer-site `852949e`):
+  - **Markup:** 34 documents change, all FAQ (24 with items, 10 empty).
+    Countdowns in the corpus carry no date, and the corpus's product cards
+    gain no overlay.
+  - **Old markup under new vs old CSS:** four element kinds, all the
+    FAQ restyle (`summary.tb-faq-question`, `div.tb-faq-answer`,
+    `details.tb-faq-item`, `div.tb-faq`). No other block changes.
+  - **Preview vs live:** 48 distinct diffs across 230 platform documents,
+    all on `div.tb-skill-bar-fill` (the known host-only rule).
+- **Re-pinned on purpose:** the countdown with-date snapshot and the
+  product-slider snapshot. For the slider, a HEAD-vs-new render diff shows
+  only the three badge spans.
+- **Tests:**
+  - `Phase3CommerceWidgetsTest` (platform) and `ThemePhase3CommerceTest`
+    (customer-site);
+  - countdown PHP and JS tests extended; JS 116/116;
+  - saas-platform suites with only the known failures (10);
+  - customer-site suites with only the known failures (3).
+- **Browser** (three widths):
+  - `phase3-commerce-widgets` (platform, stub origin): stepper, debounce,
+    422 rollback, inline confirm and Esc, badges on the image, ticking
+    Jalali countdown, expired state, exclusive FAQ, no horizontal overflow;
+  - `phase1-2-cart-drawer-cards` (customer-site, real routes): now steps
+    and confirms removal unconditionally. It used to skip removal when the
+    fixture header had no cart trigger.
+
+**Remaining (next):**
+
+- Bento v2 (layout presets, spotlight, media cards, entrance animation),
+  social proof (testimonial marquee, aggregate rating, logo wall), and
+  pricing (monthly/annual toggle, comparison table).
+- FAQ categories and search.
+- No wishlist on the card yet.
+- `header_modern_v1` and the theme-specific headers keep their own chrome.
+- Stored themes keep their emoji icons (see §12).

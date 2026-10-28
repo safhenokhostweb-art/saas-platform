@@ -4,6 +4,7 @@ namespace SaaSPlatform\ThemeRuntime;
 use Illuminate\Support\Str;
 use SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider;
 use SaaSPlatform\ThemeRuntime\Support\IconLibrary;
+use SaaSPlatform\ThemeRuntime\Support\JalaliDate;
 use SaaSPlatform\ThemeRuntime\Support\PersianNumber;
 
 /**
@@ -40,6 +41,10 @@ class BlockRenderer
      */
     public const MODE_EDITOR = 'editor';
     public const MODE_PUBLIC = 'public';
+
+    /** Phase 3 (ADR-068): the «پرامتیاز» product badge — see productCard(). */
+    public const TOP_RATED_MIN_RATING = 4.5;
+    public const TOP_RATED_MIN_REVIEWS = 5;
 
     protected array $context = [];
 
@@ -2423,11 +2428,15 @@ class BlockRenderer
      * the Builder preview, real products on customer-site.
      *
      * Keys: title, image, url, price, original, price_html (Toman, ready
-     * HTML), original_html, badge (e.g. «جدید»), stock (in|low|out),
-     * stock_label, rating (0–5), reviews, product_id, needs_options (bool),
-     * action_html (overrides the button).
+     * HTML), original_html, badge (free text), is_new (bool), stock
+     * (in|low|out), stock_label, rating (0–5), reviews, product_id,
+     * needs_options (bool), action_html (overrides the button).
      *
-     *  - the discount ribbon shows the real percentage («۲۱٪ تخفیف»);
+     *  - the image carries derived badge overlays (Phase 3, ADR-068), in this
+     *    order: the real discount percentage («۲۱٪ تخفیف»), «پرامتیاز» for an
+     *    approved-review average of TOP_RATED_MIN_RATING over at least
+     *    TOP_RATED_MIN_REVIEWS reviews, «جدید» for is_new, then the free-text
+     *    badge — never more than three;
      *  - stock is a coloured pill; out of stock disables the action;
      *  - with host cart endpoints the action is an instant add-to-cart form
      *    (blocks/cart.js posts it with fetch and opens the mini-cart; without
@@ -2443,16 +2452,26 @@ class BlockRenderer
         $price = isset($p['price']) ? (float) $p['price'] : null;
         $original = isset($p['original']) ? (float) $p['original'] : null;
 
-        $ribbons = '';
         $percent = ($original !== null && $price !== null && $original > $price && $original > 0) ? (int) round(($original - $price) / $original * 100) : 0;
+        $rating = isset($p['rating']) ? max(0.0, min(5.0, (float) $p['rating'])) : 0.0;
+        $reviews = max(0, (int) ($p['reviews'] ?? 0));
+
+        // The shared Badge primitive (badgeHtml()), never a second badge style.
+        $ribbons = [];
         if ($percent > 0) {
-            // The shared Badge primitive (badgeHtml()), never a second badge style.
-            $ribbons .= $this->badgeHtml($this->displayNumber($percent . '%') . ' تخفیف', 'error', 'sm');
+            $ribbons['تخفیف'] = $this->badgeHtml($this->displayNumber($percent . '%') . ' تخفیف', 'error', 'sm');
+        }
+        if ($rating >= self::TOP_RATED_MIN_RATING && $reviews >= self::TOP_RATED_MIN_REVIEWS) {
+            $ribbons['پرامتیاز'] = $this->badgeHtml('پرامتیاز', 'warning', 'sm');
+        }
+        if (!empty($p['is_new'])) {
+            $ribbons['جدید'] = $this->badgeHtml('جدید', 'info', 'sm');
         }
         $badge = trim((string) ($p['badge'] ?? ''));
-        if ($badge !== '' && !($percent > 0 && $badge === 'تخفیف')) {
-            $ribbons .= $this->badgeHtml($badge, 'primary', 'sm');
+        if ($badge !== '' && !isset($ribbons[$badge])) {
+            $ribbons[$badge] = $this->badgeHtml($badge, 'primary', 'sm');
         }
+        $ribbons = implode('', array_slice($ribbons, 0, 3));
         $ribbonsHtml = $ribbons !== '' ? "<div class=\"tb-product-ribbons\">{$ribbons}</div>" : '';
 
         $oldHtml = ($percent > 0 && !empty($p['original_html']))
@@ -2468,7 +2487,6 @@ class BlockRenderer
             : '';
 
         $ratingHtml = '';
-        $rating = isset($p['rating']) ? max(0.0, min(5.0, (float) $p['rating'])) : 0.0;
         if ($rating > 0) {
             $stars = '';
             for ($i = 1; $i <= 5; $i++) {
@@ -2476,7 +2494,7 @@ class BlockRenderer
                 $stars .= IconLibrary::svg($state === 'is-half' ? 'star-half' : 'star', null, "tb-star {$state}");
             }
             $value = $this->displayNumber(number_format($rating, 1));
-            $count = max(0, (int) ($p['reviews'] ?? 0));
+            $count = $reviews;
             $label = "امتیاز {$value} از ۵" . ($count > 0 ? ' از ' . $this->displayNumber($count) . ' نظر' : '');
             $ratingHtml = '<div class="tb-product-rating" role="img" aria-label="' . $this->escapeAttr($label) . '">'
                 . '<span class="tb-product-stars" aria-hidden="true">' . $stars . '</span>'
@@ -2651,7 +2669,8 @@ class BlockRenderer
             'price' => (float) $p['price'], 'original' => $p['original'] !== null ? (float) $p['original'] : null,
             'price_html' => $this->displayToman($p['price']),
             'original_html' => $p['original'] !== null ? $this->displayToman($p['original']) : null,
-            'badge' => $p['badge'] === 'تخفیف' ? null : $p['badge'],
+            'badge' => in_array($p['badge'], ['تخفیف', 'جدید'], true) ? null : $p['badge'],
+            'is_new' => $p['badge'] === 'جدید',
             'stock' => str_contains((string) $p['stock'], 'باقی') ? 'low' : 'in', 'stock_label' => $p['stock'],
             'rating' => $ratings[$i % 4][0], 'reviews' => $ratings[$i % 4][1],
         ];
@@ -4131,6 +4150,11 @@ class BlockRenderer
             }
             $out[$key] = $url;
         }
+        // Phase 3 (ADR-068): optional — without it the drawer has no stepper.
+        $update = is_string($cart['update'] ?? null) ? trim($cart['update']) : '';
+        if ($update !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($update)) {
+            $out['update'] = $update;
+        }
         $out['count'] = max(0, (int) ($cart['count'] ?? 0));
         return $out;
     }
@@ -4725,29 +4749,68 @@ class BlockRenderer
      * native <details>/<summary> disclosure widget for a real accessible
      * expand/collapse with zero JavaScript, matching renderAccordion()'s
      * own approach.
+     *
+     * Phase 3 (ADR-068): the commercial accordion, and the one FAQ renderer
+     * on both hosts (customer-site's override is merged here):
+     *  - `exclusive` names every <details> alike, so opening one closes the
+     *    rest (native exclusive accordion; older browsers simply allow
+     *    several open); `open_first` opens the first answer;
+     *  - answers keep their line breaks; an answer with markup goes through
+     *    the shared rich-HTML sanitizer;
+     *  - `title`/`content` are read as aliases of `question`/`answer`;
+     *  - no questions → the editing hint, not an empty box.
+     * FAQPage JSON-LD is page-level and host-owned (customer-site
+     * CanvasStructuredData reads these same items), so a page with several
+     * FAQ blocks still publishes exactly one FAQPage.
      */
     protected function renderFaq(array $props, string $inner, string $id): string
     {
         $title = $this->escape($props['title'] ?? '');
+        $titleHtml = $title !== '' ? "<h2 class=\"tb-features-section-title\">{$title}</h2>" : '';
         $rawItems = $props['items'] ?? [];
-        $items = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
+        $items = is_array($rawItems) ? $rawItems : (json_decode((string) $rawItems, true) ?? []);
+        $items = is_array($items) ? $items : [];
+        $exclusive = $this->flag($props['exclusive'] ?? false);
+        $openFirst = $this->flag($props['open_first'] ?? false);
 
         $itemsHtml = '';
         foreach ($items as $item) {
-            $q = $this->escape(is_array($item) ? ($item['question'] ?? '') : '');
-            $a = $this->escape(is_array($item) ? ($item['answer'] ?? '') : '');
+            if (!is_array($item)) {
+                continue;
+            }
+            $q = $this->escape($item['question'] ?? $item['title'] ?? '');
             if ($q === '') {
                 continue;
             }
-            $itemsHtml .= "<details class=\"tb-faq-item\"><summary class=\"tb-faq-question\">{$q}</summary><div class=\"tb-faq-answer\">{$a}</div></details>";
+            $a = $this->faqAnswerHtml($this->stringify($item['answer'] ?? $item['content'] ?? ''));
+            $attrs = ($exclusive ? " name=\"tb-faq-{$id}\"" : '') . ($openFirst && $itemsHtml === '' ? ' open' : '');
+            $itemsHtml .= "<details class=\"tb-faq-item\"{$attrs}><summary class=\"tb-faq-question\"><span class=\"tb-faq-question-text\">{$q}</span>"
+                . '<span class="tb-faq-chevron" aria-hidden="true">' . $this->iconHtml('chevron-down') . '</span></summary>'
+                . "<div class=\"tb-faq-answer\">{$a}</div></details>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-section\">
+        $body = $itemsHtml !== ''
+            ? "<div class=\"tb-faq-list\">{$itemsHtml}</div>"
+            : '<p class="tb-text tb-faq-empty">سوالات متداول از پنل مدیریت قابل ویرایش است.</p>';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-section tb-faq\">
             <div class=\"tb-container\">
-                " . ($title ? "<h2 class=\"tb-features-section-title\">{$title}</h2>" : '') . "
-                <div class=\"tb-faq-list\">{$itemsHtml}</div>
+                {$titleHtml}
+                {$body}
             </div>
         </div>";
+    }
+
+    /** An FAQ answer: plain text keeps its line breaks; markup is sanitized. */
+    private function faqAnswerHtml(string $answer): string
+    {
+        $answer = trim($answer);
+        if ($answer === '') {
+            return '';
+        }
+        return preg_match('/<[a-z][^>]*>/i', $answer) === 1
+            ? $this->sanitizeHtml($answer)
+            : nl2br($this->escape($answer), false);
     }
 
     protected function renderSearchBar(array $props, string $inner, string $id): string
@@ -4890,29 +4953,98 @@ class BlockRenderer
      * the <script> element's position and the surrounding whitespace — is
      * deliberately unchanged, so the render snapshots pinned for both the
      * with-date and without-date shapes still hold.
+     *
+     * Phase 3 (ADR-068): a campaign countdown.
+     *  - `end_date` may be Jalali («۱۴۰۵/۰۸/۱۵», any digit script, - / or .
+     *    separators). It ends at `end_time` (HH:MM) or, without one, at the
+     *    end of that day, Tehran time (+03:30). The target ships as an ISO
+     *    8601 instant with that offset, so every visitor's clock agrees.
+     *  - A Gregorian value without `end_time` is emitted exactly as stored,
+     *    as before this phase, so existing countdowns keep their instant.
+     *  - Digits are Persian, the target is shown as «پایان: ۱۵ آبان ۱۴۰۵»,
+     *    `expired_text` replaces the expiry line, and `style` is a card or a
+     *    promo banner. The markup moved from inline styles to the shared
+     *    sheet, so the structural snapshots were re-pinned on purpose.
      */
     protected function renderCountdown(array $props, string $inner, string $id): string
     {
         $label = $this->escape($props['label'] ?? '');
-        $end = trim((string) ($props['end_date'] ?? ''));
+        $end = trim($this->stringify($props['end_date'] ?? ''));
         $labelHtml = $label !== '' ? "<span class=\"tb-countdown__label\">{$label}</span>" : '';
+        $style = $props['style'] ?? 'card';
+        $class = 'tb-countdown' . ($style === 'banner' ? ' tb-countdown--banner' : '');
 
-        if ($end === '') {
-            return "<div id=\"tb-{$id}\" class=\"tb-countdown\">{$labelHtml}<span class=\"tb-countdown__hint\">تاریخ پایان را در تنظیمات المان وارد کنید تا شمارش معکوس فعال شود.</span></div>";
+        $target = $end !== '' ? $this->countdownTarget($end, trim($this->stringify($props['end_time'] ?? ''))) : null;
+        if ($target === null) {
+            $hint = $end === ''
+                ? 'تاریخ پایان را در تنظیمات المان وارد کنید تا شمارش معکوس فعال شود.'
+                : 'تاریخ پایان معتبر نیست؛ آن را به شکل ۱۴۰۵/۰۸/۱۵ وارد کنید.';
+            return "<div id=\"tb-{$id}\" class=\"{$class}\">{$labelHtml}<span class=\"tb-countdown__hint\">{$hint}</span></div>";
         }
 
-        $safeEnd = $this->escapeAttr($end);
-        return "<div id=\"tb-{$id}\" class=\"tb-countdown\" data-end-date=\"{$safeEnd}\">
+        $units = '';
+        foreach (['d' => 'روز', 'h' => 'ساعت', 'm' => 'دقیقه', 's' => 'ثانیه'] as $key => $word) {
+            $units .= "<div class=\"tb-countdown__unit\"><span class=\"tb-countdown__num tb-countdown__{$key}\">--</span><small class=\"tb-countdown__word\">{$word}</small></div>";
+        }
+        $endHtml = ($target['display'] !== null && $this->flag($props['show_end_date'] ?? true))
+            ? '<p class="tb-countdown__end">پایان: <time datetime="' . $this->escapeAttr($target['iso']) . '">' . $target['display'] . '</time></p>'
+            : '';
+        $expired = trim($this->stringify($props['expired_text'] ?? ''));
+        $expiredHtml = $this->escape($expired !== '' ? $expired : 'این پیشنهاد به پایان رسیده است.');
+
+        $safeEnd = $this->escapeAttr($target['iso']);
+        return "<div id=\"tb-{$id}\" class=\"{$class}\" data-end-date=\"{$safeEnd}\">
             {$labelHtml}
-            <div class=\"tb-countdown__timer\" style=\"display:flex;gap:0.75rem;justify-content:center;margin-top:0.5rem;\">
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__d\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">روز</small></div>
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__h\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ساعت</small></div>
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__m\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">دقیقه</small></div>
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__s\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ثانیه</small></div>
-            </div>
-            <p class=\"tb-countdown__expired\" style=\"display:none;\">این پیشنهاد به پایان رسیده است.</p>
+            <div class=\"tb-countdown__timer\" role=\"timer\" aria-label=\"زمان باقی‌مانده\">{$units}</div>
+            {$endHtml}
+            <p class=\"tb-countdown__expired\" hidden>{$expiredHtml}</p>
             {$this->countdownAdapterScript()}
         </div>";
+    }
+
+    /**
+     * The countdown's target — see renderCountdown().
+     *
+     * @return array{iso:string, display:?string}|null null when the date is
+     *   recognisably a date but not a real one (e.g. ۱۴۰۵/۱۳/۰۱).
+     */
+    private function countdownTarget(string $end, string $time): ?array
+    {
+        $clockOf = static fn (string $h, string $m): ?array => ((int) $h < 24 && (int) $m < 60) ? [(int) $h, (int) $m, 0] : null;
+        $timeClock = preg_match('/^(\d{1,2}):(\d{2})$/', PersianNumber::latinDigits($time), $t) === 1 ? $clockOf($t[1], $t[2]) : null;
+        if (preg_match('#^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?$#', PersianNumber::latinDigits($end), $m) !== 1) {
+            return ['iso' => $end, 'display' => null]; // full ISO and other legacy strings: as stored
+        }
+        [$y, $mo, $d] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+
+        if ($y >= 1700) {
+            if (!checkdate($mo, $d, $y)) {
+                return null;
+            }
+            // Gregorian: only an explicit end_time opts into Tehran time.
+            if ($timeClock === null) {
+                return ['iso' => $end, 'display' => null];
+            }
+            $clock = $timeClock;
+            [$gy, $gm, $gd] = [$y, $mo, $d];
+            [$jy, $jm, $jd] = JalaliDate::fromGregorian($y, $mo, $d);
+        } else {
+            if (!JalaliDate::isValid($y, $mo, $d)) {
+                return null;
+            }
+            $clock = $timeClock ?? (isset($m[4]) ? $clockOf($m[4], $m[5]) : null);
+            [$jy, $jm, $jd] = [$y, $mo, $d];
+            [$gy, $gm, $gd] = JalaliDate::toGregorian($y, $mo, $d);
+        }
+
+        $display = JalaliDate::format($jy, $jm, $jd);
+        if ($clock !== null) {
+            $display .= '، ساعت ' . PersianNumber::digits(sprintf('%02d:%02d', $clock[0], $clock[1]));
+        }
+        $clock ??= [23, 59, 59];
+        $iso = sprintf('%04d-%02d-%02dT%02d:%02d:%02d', $gy, $gm, $gd, ...$clock) . JalaliDate::TEHRAN_OFFSET;
+
+        return ['iso' => $iso, 'display' => $display];
     }
 
     // ── END PHASE 2E CANONICAL BLOCKS ────────────────────────────────────────

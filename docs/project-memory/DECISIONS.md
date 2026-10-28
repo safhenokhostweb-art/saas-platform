@@ -3566,3 +3566,154 @@ There is no Composer change.
   menu and SVG theme toggle).
 
 There is no migration or Composer change.
+
+## ADR-068
+
+**Title:** Drawer Quantity Stepper, Derived Product Badges, One Bestselling Query, Jalali Countdown and the Commercial FAQ
+
+**Status:** Accepted
+
+**Date:** 2026-10-28
+
+**Context:**
+
+- **Drawer.** The Phase 1/2 mini-cart could only remove a line, at once
+  and without asking. Changing a quantity meant leaving for the cart page.
+  customer-site's `updateCart` only redirected back, and the package's
+  `cartEndpoints()` kept only page, mini, add and remove.
+- **Badges.** The product card showed the real discount and one
+  free-text badge. Rating was shown but never earned a badge, and «جدید»
+  arrived as free text.
+- **Bestselling.** customer-site's registry kept one `HOST_PATCHES` entry
+  that hid `module:shop_product_grid`'s «پرفروش» source, because the module
+  renderer had no sales query. That renderer also drew its own plain card
+  instead of the shared one. The data binding had a 30-day sales query
+  (`best_selling_30d`) inline in `ProductDataSource`.
+- **Countdown.** `end_date` was a Gregorian string handed to `new Date()`
+  in the visitor's browser, so its instant depended on the visitor's time
+  zone. There was no Jalali input, the digits were Latin and every style was
+  inline.
+- **FAQ.** The canonical `renderFaq()` escaped answers (line breaks lost)
+  and rendered an empty box with no items. customer-site overrode it with
+  an empty-state hint, aliases and sanitized rich answers, flagged as an
+  unmerged capability. The accordion had no styling beyond the contract
+  sheet. FAQPage JSON-LD already existed page-level on customer-site
+  (`CanvasStructuredData`), but only for `faq`, not `module:faq_dynamic`.
+
+**Decision:**
+
+1. **Stepper in the drawer** (`blocks/cart.js`, version 2).
+   - `cartEndpoints()` accepts an optional, URL-validated `update`.
+     Without it the drawer shows a quantity line and no stepper.
+   - Each line has «+», the quantity and «−». At one, «−» becomes a trash
+     button.
+   - A step repaints the line total, subtotal and header badge at once
+     from `unit_amount`, with `faNumber()` producing exactly
+     `PersianNumber::format()`'s digits and ٬ separator, plus the host's
+     `money_suffix_html` and unit. After 350 ms of quiet, the last quantity
+     per line is posted, and the host's mini-cart replaces the estimate. A
+     refusal (422) shows the host's message and reloads the host's cart.
+   - All cart writes (add, update, remove) go through one serial queue:
+     the session cart is not locked, and overlapping writes would drop one.
+     Leaving for the cart page or closing the drawer flushes pending steps
+     first.
+   - Removing (trash, or «−» at one) asks inline: «… از سبد حذف شود؟»
+     with «حذف» and «انصراف». Focus goes to «انصراف»; Esc cancels and
+     returns focus. Confirming removes the line at once and drops its
+     unsent step.
+   - customer-site: `updateCart` answers JSON through
+     `cartDone()`/`cartFail()` (plain posts still redirect). `miniCart()`
+     adds `unit_amount`, `money_suffix_html` and `unit`, from the new
+     `CurrencyHelper::displayValueWithContext()`/`fadedZerosHtml()` (which
+     `formatPriceWithContext()` now uses itself). `siteEndpoints()['cart']`
+     gains `update`.
+2. **Derived badges** in `productCard()`. Overlays sit on the image in this
+   order, three at most:
+   - the real discount;
+   - «پرامتیاز» (`warning`) for an approved-review average of at least
+     `TOP_RATED_MIN_RATING` (4.5) over at least `TOP_RATED_MIN_REVIEWS` (5)
+     reviews;
+   - «جدید» (`info`) from the new `is_new` key;
+   - the free-text badge, unless it repeats one of the above.
+
+   customer-site's `productCardData()` passes `is_new`. The Builder demo
+   cards do too.
+3. **One bestselling query,** `Product::scopeBestSelling($days = 30)`:
+   completed orders in the window, highest revenue first (the semantics
+   `best_selling_30d` already had), then by id. `ProductDataSource` and
+   the module renderer both call it. `module:shop_product_grid` and
+   `module:shop_product_slider` now render the shared `productCard()` with
+   ratings, badges and add-to-cart. A bestselling grid with no sales says
+   «در ۳۰ روز گذشته هنوز فروشی ثبت نشده است.» The `HOST_PATCHES` entry is
+   gone; the host registry is now the canonical registry exactly.
+4. **Countdown with Jalali end dates.**
+   - `Support\JalaliDate`: dependency-free Jalali ↔ Gregorian conversion
+     (the jalaali-js arithmetic), leap years and month names.
+   - `end_date` accepts a Jalali date (`۱۴۰۵/۰۸/۱۵`, any digit script,
+     `-`, `/` or `.`), ending at `end_time` (HH:MM) or at 23:59:59 on that
+     day. Times are Tehran time: +03:30, since Iran has no daylight saving
+     time from 2022. The target ships as an ISO 8601 instant with that
+     offset, so every visitor counts to the same moment.
+   - A Gregorian value without `end_time` is emitted exactly as stored, so
+     existing countdowns keep their instant. An impossible date (for
+     example ۱۴۰۴/۱۲/۳۰) shows a format hint and no script.
+   - New props: `end_time`, `expired_text`, `style` (card or promo banner)
+     and `show_end_date` («پایان: ۱۵ آبان ۱۴۰۵، ساعت ۲۰:۰۰»).
+   - The adapter prints Persian digits and marks `.is-expired`. The timer
+     has `role="timer"`. The styles moved from inline attributes to the
+     shared sheet.
+5. **Commercial FAQ,** with one renderer on both hosts.
+   - The canonical `renderFaq()` takes over customer-site's override: the
+     empty-state hint, `title`/`content` aliases and sanitized rich
+     answers. Plain answers keep their line breaks.
+   - New props: `exclusive` (every `<details>` shares a `name`, so opening
+     one closes the others) and `open_first`.
+   - A chevron in each summary, styled cards and an open state are added
+     in the shared sheet.
+   - `module:faq_dynamic`'s accordion style delegates to `renderFaq()`.
+   - FAQPage JSON-LD stays page-level and host-owned, so a page with several
+     FAQ blocks still publishes one FAQPage. `CanvasStructuredData` now
+     reads `module:faq_dynamic` too, sliced to its `limit`: structured data
+     matches what is visible. The aliases are read as well.
+6. **Migration rollback.** customer-site `d5c5e74` emptied
+   `create_newsletter_subscribers_table::down()`. Rolling back then
+   deleted the migration row and left the table in place, untracked.
+   `up()`'s `hasTable` guard would then hide any later schema change on
+   re-run. `down()` again drops only its own table. The file is restored
+   byte for byte to the content of the existing owner review in
+   `release-policy.json` (`c2eb08f8…`), so that review covers it with no new
+   entry.
+
+**Consequences:**
+
+- **Re-pinned on purpose:**
+  - the countdown with-date structural snapshot (inline styles to the
+    sheet, `role="timer"`, `hidden` expiry line); the no-date shape is
+    unchanged;
+  - the product-slider snapshot: three badge spans differ from the HEAD
+    render, and nothing else;
+  - the countdown JS test now expects Persian digits.
+- **Tests:**
+  - `Phase3CommerceWidgetsTest` (platform);
+  - `ThemePhase3CommerceTest` (customer-site);
+  - browser `phase3-commerce-widgets.spec.ts` (stub origin, three widths);
+  - customer-site `phase1-2-cart-drawer-cards.spec.js` now exercises the
+    stepper and the confirmed removal on real routes, unconditionally.
+- **Parity harness** (before is `82194f5d` + customer-site `852949e`):
+  - live markup changes in 34 of 229 documents, all FAQ;
+  - old markup under the new CSS changes four element kinds, all the FAQ
+    restyle (summary, answer, item, wrapper); no other block moves;
+  - preview equals live apart from the known skill-bar rule.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry`
+  (countdown, faq), the new `Support\JalaliDate`, `cart.js`,
+  `countdown_adapter.js` and `theme-runtime-blocks.css`.
+- **customer-site:** `ShopController`, `CurrencyHelper`, `Product`,
+  `ProductDataSource`, its BlockRenderer (renderFaq override removed,
+  `update` endpoint, `is_new`), `ThemeCanvasRenderer` (module product grid
+  and slider, faq_dynamic), `CanvasStructuredData`, `BlockRegistry`
+  (no patches) and the newsletter migration's `down()`.
+
+There is no new migration or Composer change.
