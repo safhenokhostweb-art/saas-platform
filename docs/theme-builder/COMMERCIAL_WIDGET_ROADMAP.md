@@ -756,3 +756,112 @@ Everything else renders byte-identically.
   yet, and no unsubscribe link.
 - **Header-modern and theme-specific headers** (FoodMart, Sleep Shiman) have
   their own search chrome, not yet on the shared dialog.
+
+## 13. Phases 1 and 2 delivery: commercial header and footer, RTL carousels, product and blog cards (2026-10-28)
+
+**Done (ADR-067):**
+
+- **Header (`nav_header`):**
+  - smart sticky with a scroll-shrink;
+  - hide on a down-scroll, back on an up-scroll;
+  - transparent over a first-section hero, with automatic light or dark
+    text from the hero (or a fixed colour). The hero is padded by the
+    header's height.
+
+  Everything runs on the page's banner element, so it works inside
+  customer-site's `<header>` chrome, where the old inline sticky could not
+  stick.
+- **Mega menu:**
+  - a full-width panel with a hover bridge on desktop;
+  - an accordion on touch devices and phones;
+  - delegated toggling (Esc, outside click, a truthful `aria-expanded`);
+  - a promo CTA slot.
+
+  The phone menu now shows the block's own links and mega menus instead
+  of a fixed generic list, and keeps the cart and search icons visible.
+- **Mini-cart drawer:**
+  - the cart icon links to the real cart page (`/shop/cart`, previously a
+    404 at `/cart`) with a live Persian badge;
+  - it opens a drawer that slides in from the reading end, with lines,
+    Toman totals, remove, Esc and a focus trap;
+  - customer-site gains `GET /shop/cart/mini` and JSON answers from add and
+    remove.
+- **Footer (`nav_footer`):**
+  - newsletter on the Phase 0.7 endpoint;
+  - social links as icons (network chosen, or recognised from the URL;
+    unknown ones keep their label);
+  - Google Play, App Store, Bazaar, Myket and direct-download badges;
+  - Enamad and Samandehi seals rebuilt from their ids only (a pasted
+    official snippet is parsed; nothing else survives).
+- **Carousel (one engine):**
+  - logical-side outward arrows;
+  - the arrow key on the next slide's side;
+  - pointer drag for touch and mouse that follows the finger;
+  - a swipe towards the reading end advances.
+
+  The old touch handler was reversed in RTL.
+- **Product card (one primitive):**
+  - the real discount percentage («۲۱٪ تخفیف») and other badges via
+    `badgeHtml()`;
+  - a Toman price with the old price struck through;
+  - a stock pill;
+  - the approved-review star rating;
+  - instant «افزودن به سبد خرید», which opens the drawer. Products with
+    options link to their page, and out-of-stock products are disabled.
+- **Blog card (one primitive):** a category pill, author avatar or
+  initial, Persian date («۵ آبان ۱۴۰۵»), reading time, and grid, list or
+  slider layout. The Builder preview shows labelled sample posts.
+
+**Evidence:**
+
+- **Parity harness** (customer-site live render, 229 documents, three
+  widths; before is `83a4cdbb`):
+  - **Old markup under new vs old CSS:** 24 element kinds in both token
+    modes, all from this phase:
+    - the mega menu anchors to the header (links `position: static`);
+    - the restyled arrows;
+    - the carousel grab cursor.
+
+    No other block changes.
+  - **Markup:** 206 documents change.
+    - 200 sticky headers gain their `data-tb-header` flag; the other 25
+      headers are identical.
+    - 12 footers' social links become icons or text pills; the other 189
+      footers are identical apart from whitespace.
+    - Carousels change only in the arrows.
+  - **Preview vs live:** 48 distinct diffs across 230 platform documents,
+    all on `div.tb-skill-bar-fill` (the host-only rule, unchanged since
+    Phase 0.3).
+- **Tests:**
+  - `Phase1HeaderFooterCarouselTest`, `ThemeCartDrawerAndCardsTest` and
+    `site-header-cart.test.mjs`; JS 116/116;
+  - saas-platform suites with only the known failures;
+  - customer-site suites with only the known failures.
+- **Browser** (three widths):
+  - `phase1-2-header-footer-carousel` (platform, stub origin):
+    - header transparency, shrink, hide and reveal, and hero clearance;
+    - the mega menu;
+    - the drawer;
+    - add-to-cart;
+    - RTL arrows, keys and drag;
+    - the footer.
+  - `phase1-2-cart-drawer-cards` (customer-site, real routes).
+
+  The earlier specs stay green; three platform specs flaked under suite
+  load and pass on an idle rerun.
+- **Bugs the checks caught:**
+  - an undefined `layout` key in `blogCardsLayout()`, which broke the
+    publish quality gate;
+  - an inline `@php(...)` that did not compile, which broke every
+    customer-site public page.
+
+  Both are fixed with regression assertions.
+
+**Remaining (next):**
+
+- `header_modern_v1` and the theme-specific headers (FoodMart, Sleep
+  Shiman) keep their own chrome. FoodMart's Swiper carousels are LTR-only
+  by design.
+- There is no quantity stepper in the drawer yet (remove only), and no
+  wishlist on the card.
+- Stored themes keep their emoji icons (see §12).

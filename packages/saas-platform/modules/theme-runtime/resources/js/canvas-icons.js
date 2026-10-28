@@ -86,11 +86,13 @@
         const terms = [n, icon.label].concat(icon.keywords || []).map(normalize);
         for (const w of words) {
           let best = 9;
+          // whole term < one of its words < prefix < substring.
           terms.forEach((t, i) => {
             const own = i < 2 ? 0 : 1;
-            if (t === w || t.split(' ').includes(w)) best = Math.min(best, own);
-            else if (t.startsWith(w) || t.split(' ').some((p) => p.startsWith(w))) best = Math.min(best, 2 + own);
-            else if (t.includes(w)) best = Math.min(best, 4);
+            if (t === w) best = Math.min(best, own);
+            else if (t.split(' ').includes(w)) best = Math.min(best, 2 + own);
+            else if (t.startsWith(w) || t.split(' ').some((p) => p.startsWith(w))) best = Math.min(best, 4 + own);
+            else if (t.includes(w)) best = Math.min(best, 6);
           });
           if (best === 9) return;
           score += best;

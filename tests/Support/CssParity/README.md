@@ -68,6 +68,13 @@ editing the harness.
 - Another session running PHPUnit on the same database corrupts that run, not
   this harness. Still, run the harness on a quiet machine: under load the dev
   server and Chromium both slow down.
+- **Preview vs live is slow** when the platform CSS lacks the customer
+  partial's `:root { --platform-primary: var(--tb-primary); }`. That one
+  variable then differs on every element, so every document gets a full
+  detail pass (hours). Append that rule to the platform CSS file before
+  comparing; the remaining diffs are the real ones.
+- A run whose log stops advancing has stalled: stop the node process tree
+  and rerun.
 - Colours are normalised (`rgb()`, `color(srgb …)` and `color-mix()` results
   compare as rgba). Sizes are not, so a font or digit change shows up as
   derived width and height changes. `summarize.php` folds those.

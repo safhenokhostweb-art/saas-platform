@@ -119,6 +119,11 @@
       const text = wanted === 'auto' ? overlayTextFor(heroBackground(hero), heroHasImage(hero)) : wanted;
       host.style.setProperty('--tb-hdr-overlay-text', text);
       host.classList.add('tb-hdr-overlay');
+      // The hero now sits under the header: pad its content by the header's height.
+      const setHeight = () => { if (!host.classList.contains('is-scrolled')) hero.style.setProperty('--tb-hdr-h', host.offsetHeight + 'px'); }; // the unscrolled height only, so the shrink never shifts the page
+      hero.classList.add('tb-under-overlay');
+      setHeight();
+      if (typeof root.ResizeObserver === 'function') new root.ResizeObserver(setHeight).observe(host);
     }
     if (!sticky && !hero) return;
 

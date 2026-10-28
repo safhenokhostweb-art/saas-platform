@@ -53,14 +53,22 @@ use Tests\TestCase;
  *   without a photo is the catalog SVG (IconLibrary `image` / `package`)
  *   instead of the 🖼️ / 📦 emoji. Verified by mapping those SVGs back to
  *   the emoji: the result hashes to exactly the previous pins.
+ *
+ *   Phase 2 (ADR-067) RE-PINNED them again: the product card is the new
+ *   commercial productCard() (discount badge with percentage, rating,
+ *   stock pill, add-to-cart action) and the arrows are logical-side SVG
+ *   chevrons styled by the shared sheet. Verified by rendering the HEAD
+ *   package and this one with each slide's content and the two arrow
+ *   buttons replaced by tokens: both modes hash identically, so nothing
+ *   outside the cards and arrows moved.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '2aa1c31cc0a0a9db820457b07936dab22716423fa8032388500886d6d05c4c40';
+    private const NEUTRAL_STRUCTURAL_SHA256 = 'c1a5f57bfd096840637a187751a456284b0674748a22603023c2b31aaa8187b9';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '8843cb16d196ab41dfc53a8490589b17b36dab9f838a54a408268c5a40bc1b57';
+    private const PUBLIC_STRUCTURAL_SHA256 = '57586bd53f1897f2abfa45130d27fe2cefb718d4b566f8d4639f4b2d8e08e4b8';
 
     private function render(string $mode = 'neutral'): string
     {

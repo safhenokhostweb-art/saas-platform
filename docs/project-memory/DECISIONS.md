@@ -3408,3 +3408,161 @@ There is no migration or Composer change.
   `account/points/index`.
 
 There is no Composer change.
+
+## ADR-067
+
+**Title:** Commercial Header and Footer, RTL-Correct Carousel, One Product Card and One Blog Card
+
+**Status:** Accepted
+
+**Date:** 2026-10-28
+
+**Context:**
+
+- **Header.** customer-site wraps every header block in its own
+  `<header class="tb-site-header">` chrome. `nav_header`'s inline
+  `position: sticky` could only stick inside that wrapper, so "sticky" did
+  nothing on live pages. There was no scroll-shrink, hide-on-scroll or
+  transparent mode.
+- **Phone menu.** Below 768 px the chrome hid the block entirely and
+  showed a fixed list of generic links. The block's own links, mega menus,
+  cart and search were unreachable on phones.
+- **Mega menu.** The panel was anchored to its own item and could run off
+  screen in RTL. Each item shipped its own inline script, and the promo
+  slot had no call to action.
+- **Cart.** The header cart linked to `/cart`, a 404 on customer-site
+  (`/shop/cart`). customer-site had no mini-cart and no JSON cart API:
+  add and remove only redirected back.
+- **Footer.** Social links printed text or a first letter. There was no
+  newsletter, no app badges and no trust-seal slot.
+- **Carousel.**
+  - The touch handler was reversed in RTL: swiping right went back, though
+    the next slide sits to the left.
+  - The arrow keys were hard-coded for RTL.
+  - There was no mouse drag.
+  - The arrows used physical `left`/`right` with glyphs pointing inward.
+- **Cards.** The product card had a generic badge, a plain stock text
+  line, no rating and no action. Blog cards were a single `<a>` holding
+  date and excerpt only, without author, category or reading time.
+
+**Decision:**
+
+1. **Header behaviour lives on the banner element.** `nav_header` gains
+   three props:
+   - `sticky_hide_on_scroll` (smart);
+   - `transparent_over_hero`;
+   - `transparent_text_color` (`''` = automatic contrast).
+
+   It emits `data-tb-header` flags. `blocks/site-header.js`, inlined once
+   per render, applies them to `closest('header, [role=banner]')`:
+   - `.tb-hdr-sticky` with `.is-scrolled`, which shrinks the header past
+     8 px;
+   - `.tb-hdr-smart.is-hidden`, set on a down-scroll and cleared on an
+     up-scroll or on focus;
+   - `.tb-hdr-overlay`, transparent only when the first block below is a
+     hero, slider or carousel. Automatic text colour comes from the hero's
+     background luminance, or is light for photo heroes. The hero is padded
+     by the header's unscrolled height.
+
+   Without the script the block keeps its old inline sticky.
+2. **Mega menu.**
+   - A full-width panel under the header on desktop, with a hover bridge.
+   - An accordion on touch devices and narrow screens.
+   - Toggling is delegated (click, Esc, outside click, a truthful
+     `aria-expanded`), so the per-item inline scripts are gone.
+   - The promo slot gains `mega_banner_cta`.
+   - customer-site's phone menu copies the block's own links, mega menus
+     included, and keeps the block's action icons visible inside its
+     chrome.
+3. **Mini-cart.**
+   - `siteEndpoints()['cart']` carries page, mini, add, remove and count.
+     `cartTriggerHtml()` renders the cart page link with a live badge and
+     `data-tb-cart-open`. The Builder preview keeps the old link.
+   - customer-site adds `GET /shop/cart/mini`. `addToCart` and
+     `removeFromCart` answer JSON with the fresh mini-cart when asked;
+     variant-required products answer 422 with the product URL.
+   - `blocks/cart.js` provides the drawer: it slides in from the reading
+     end, with a focus trap, Esc and focus restore. Money HTML is
+     allowlisted and titles are text only.
+4. **Footer.**
+   - `newsletter_*` props reuse the Phase 0.7 form and endpoint.
+   - `social_links` gains a `network` select. URLs are also recognised
+     (instagram, t.me, wa.me, x/twitter, youtube, aparat, eitaa, bale,
+     rubika, linkedin, facebook, github, mailto, tel); host matching is
+     anchored, so netflix.com is not x.com. Icons come from 14 Lucide brand
+     and communication glyphs added to the catalog. An unknown network
+     keeps its text.
+   - `app_links`: Google Play, App Store, Bazaar, Myket, direct download.
+   - Trust seals: `enamad_id`/`enamad_code` and
+     `samandehi_id`/`samandehi_code`. Only a numeric id and an
+     alphanumeric code are kept; a pasted official snippet is parsed for
+     them. Our own `<a><img referrerpolicy="origin">` points at the two
+     official hosts. There is no iframe, because the seals verify the
+     Referer.
+
+   An existing footer without these props renders as before; its social
+   links now show icons.
+5. **Carousel.** One engine (`carousel.js`), direction-aware:
+   - previous at the reading start and next at the end, as outward SVG
+     chevrons (mirrored in LTR);
+   - the arrow key on the next slide's side;
+   - pointer drag (touch, pen, mouse) that follows the finger, damps at
+     the edges and suppresses the click after a drag;
+   - a swipe towards the reading end advances.
+
+   FoodMart, an LTR theme with its own Swiper markup, is out of scope.
+6. **One product card,** `productCard(array)`. `productCardHtml()` stays
+   as a positional adapter. It shows:
+   - a discount badge with the real percentage («۲۱٪ تخفیف») and other
+     badges, both through `badgeHtml()`;
+   - the Toman price with the old price struck through;
+   - a stock pill (in, low, out);
+   - a star rating with an accessible label.
+
+   Its action depends on context:
+   - with cart endpoints: an instant add-to-cart `<form>` posted by
+     `cart.js` (a plain POST without JavaScript), which opens the drawer;
+   - «انتخاب گزینه‌ها» for products with variants;
+   - «ناموجود» when out of stock;
+   - a link in the preview.
+
+   customer-site's `productCardData()` feeds it real products: the
+   approved-review average and count, and stock against the low-stock
+   threshold.
+7. **One blog card,** `blogCardHtml()` plus `blogCardsLayout()` (grid, list
+   or slider). It shows a category pill, the title, the excerpt, the author
+   avatar or initial, a `<time>` with a Persian date («۵ آبان ۱۴۰۵») and
+   the reading time. customer-site feeds real posts (Verta `j F Y`,
+   `estimatedReadingMinutes()`). The Builder preview shows three clearly
+   labelled sample posts in the chosen layout instead of one line of text.
+
+**Consequences:**
+
+- **Tests:**
+  - `Phase1HeaderFooterCarouselTest` (platform);
+  - `ThemeCartDrawerAndCardsTest` (customer-site);
+  - `site-header-cart.test.mjs`;
+  - browser `phase1-2-header-footer-carousel.spec.ts` (stub origin,
+    three widths) and customer-site `phase1-2-cart-drawer-cards.spec.js`
+    (real routes).
+- **Re-pinned:** the product-slider snapshot. Rendering the HEAD package
+  and this one with each slide's content and both arrows tokenised hashes
+  identically in both modes.
+- **Icon search ranking:** a whole-term match now beats a match on one
+  word of a longer name, so «star» finds star before star-half.
+- **Parity harness** (before is `83a4cdbb`):
+  - old markup under the new CSS changes only the mega-menu anchoring,
+    the arrows and the carousel grab cursor;
+  - preview equals live apart from the known skill-bar rule.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry`, the
+  provider, `carousel.js`, the new `site-header.js` and `cart.js`,
+  `catalog.json` (169 icons) and `theme-runtime-blocks.css`.
+- **customer-site:** `ShopController` (`mini()` plus JSON branches), the
+  route, its BlockRenderer (cart endpoints, `cart_icon`, product and blog
+  card data), `ThemeCanvasRenderer` and the canvas-theme layout (phone
+  menu and SVG theme toggle).
+
+There is no migration or Composer change.

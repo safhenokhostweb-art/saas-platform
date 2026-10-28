@@ -558,6 +558,8 @@ html.tb-search-open { overflow: hidden; }
 .tb-hdr-overlay:not(.is-scrolled) .tb-header-brand a, .tb-hdr-overlay:not(.is-scrolled) .tb-menu-btn, .tb-hdr-overlay:not(.is-scrolled) .tb-nav-header-logo { color: var(--tb-hdr-overlay-text, #fff); }
 .tb-hdr-overlay:not(.is-scrolled) .tb-nav-header-icon-link, .tb-hdr-overlay:not(.is-scrolled) .tb-nav-header-search-input { background: color-mix(in srgb, var(--tb-hdr-overlay-text, #fff) 14%, transparent); border-color: color-mix(in srgb, var(--tb-hdr-overlay-text, #fff) 28%, transparent); color: inherit; }
 .tb-hdr-overlay.is-scrolled { background: var(--tb-surface, #fff); }
+/* The hero under a transparent header keeps its content clear of it. */
+.tb-under-overlay { padding-top: calc(var(--tb-hdr-h, 4.5rem) + 1.5rem) !important; }
 /* The block's own actions stay reachable inside the host chrome on phones. */
 @media (max-width: 767px) {
     .tb-header-nav-wrap:has(.tb-nav-header) { display: flex; flex: 0 1 auto; }
@@ -574,6 +576,7 @@ html.tb-search-open { overflow: hidden; }
 .tb-mega-menu-caret { display: inline-flex; margin-inline-start: 0.25rem; font-size: 0.85em; opacity: 0.7; transition: transform 0.2s; }
 .tb-mega-menu-item.tb-mega-open .tb-mega-menu-caret, .tb-mega-menu-item:hover .tb-mega-menu-caret { transform: rotate(180deg); }
 .tb-mega-menu-trigger { display: inline-flex; align-items: center; }
+.tb-mega-menu-panel { color: var(--tb-text, #111827); }
 .tb-mega-menu-banner-cta { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.4rem; font-size: 0.8rem; font-weight: 700; color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); }
 .tb-mega-menu-link .tb-icon-svg { color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); }
 @media (min-width: 1025px) and (hover: hover) {
@@ -648,3 +651,69 @@ html.tb-cart-open { overflow: hidden; }
 .tb-trust-seal img { display: block; width: 86px; height: 94px; object-fit: contain; }
 .tb-theme-toggle-icon .tb-icon-svg { width: 1.1rem; height: 1.1rem; }
 @media (max-width: 640px) { .tb-nav-footer-extras { padding: 1.1rem; } .tb-app-badge { min-width: 0; flex: 1 1 9rem; } }
+
+/* ─── Phase 2 (ADR-067): carousels, product and blog cards ─────────────
+ * Arrows sit on logical sides — previous at the reading start (right in
+ * RTL), next at the end — and point outward; LTR mirrors the glyphs. */
+.tb-carousel-prev, .tb-carousel-next { position: absolute; top: 50%; z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--tb-border, #e5e7eb); border-radius: 999px; background: var(--tb-surface, #fff); color: var(--tb-text, #111827); font-size: 1.1rem; line-height: 1; cursor: pointer; transform: translateY(-50%); box-shadow: 0 6px 16px -8px rgba(15, 23, 42, 0.35); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.tb-carousel-prev { inset-inline-start: 0.25rem; }
+.tb-carousel-next { inset-inline-end: 0.25rem; }
+[dir="ltr"] .tb-carousel-prev .tb-icon-svg, [dir="ltr"] .tb-carousel-next .tb-icon-svg { transform: scaleX(-1); }
+.tb-carousel-viewport { cursor: grab; }
+.tb-carousel-viewport:active { cursor: grabbing; }
+.tb-carousel-viewport img { -webkit-user-drag: none; user-select: none; }
+@media (max-width: 640px) { .tb-carousel-prev, .tb-carousel-next { width: 2.1rem; height: 2.1rem; } }
+
+/* Product card */
+.tb-product-card { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 20rem; margin: 0 auto; height: 100%; transition: box-shadow 0.2s, transform 0.2s; }
+.tb-carousel .tb-product-card { margin-inline: 0.5rem; }
+.tb-product-card-img { position: relative; display: block; }
+.tb-product-card-img img { transition: transform 0.35s ease; }
+.tb-product-card:hover .tb-product-card-img img { transform: scale(1.04); }
+.tb-product-card.is-out .tb-product-card-img img { filter: grayscale(0.6); opacity: 0.75; }
+.tb-product-ribbons { position: absolute; top: 0.6rem; inset-inline-start: 0.6rem; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+.tb-product-ribbons .tb-badge { box-shadow: 0 4px 10px -6px rgba(15, 23, 42, 0.5); }
+.tb-product-card-inner { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.9rem 1rem 1rem; }
+.tb-product-card-link { color: inherit; text-decoration: none; }
+.tb-product-card-link:hover .tb-product-title { color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); }
+.tb-product-title { margin: 0; font-size: 0.95rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tb-product-rating { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--tb-text-muted, #6b7280); }
+.tb-product-stars { display: inline-flex; gap: 0.05rem; color: #f59e0b; font-size: 0.9rem; }
+.tb-product-stars .tb-star.is-on, .tb-product-stars .tb-star.is-half { fill: currentColor; }
+.tb-product-stars .tb-star.is-off { color: #d1d5db; }
+[dir="rtl"] .tb-product-stars .tb-star.is-half, :root:not([dir="ltr"]) .tb-product-stars .tb-star.is-half { transform: scaleX(-1); }
+.tb-product-rating-value { font-weight: 700; color: var(--tb-text, #111827); }
+.tb-product-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.5rem; margin-top: auto; }
+.tb-product-price-now { font-size: 1.05rem; font-weight: 800; color: var(--tb-text, #111827); }
+.tb-product-price-old { color: var(--tb-text-muted, #6b7280); font-size: 0.82rem; font-weight: 500; text-decoration: line-through; }
+.tb-product-stock { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: #15803d; }
+.tb-product-stock::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 999px; background: currentColor; }
+.tb-product-stock--low { color: #b45309; }
+.tb-product-stock--out { color: var(--tb-text-muted, #6b7280); }
+.tb-product-add-form { margin: 0; }
+.tb-product-add { border: 0; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.45rem; width: 100%; margin-top: 0.35rem; padding: 0.6rem 1rem; font-size: 0.88rem; text-align: center; }
+.tb-product-add.is-disabled { background: var(--tb-surface, #f3f4f6); color: var(--tb-text-muted, #6b7280); border: 1px solid var(--tb-border, #e5e7eb); cursor: not-allowed; }
+.tb-product-add.is-busy { opacity: 0.7; cursor: progress; }
+.tb-product-add.is-added { background: #15803d; }
+
+/* Blog card */
+.tb-blog-card { height: 100%; }
+.tb-carousel .tb-blog-card { margin-inline: 0.5rem; }
+.tb-blog-card-media { display: block; overflow: hidden; }
+.tb-blog-card-media img { transition: transform 0.35s ease; }
+.tb-blog-card:hover .tb-blog-card-media img { transform: scale(1.04); }
+.tb-blog-card-body { display: flex; flex-direction: column; gap: 0.55rem; }
+.tb-blog-card-cats { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.tb-blog-card-cat { padding: 0.15rem 0.65rem; border-radius: 999px; background: color-mix(in srgb, var(--tb-primary, #4f46e5) 10%, transparent); color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); font-size: 0.72rem; font-weight: 700; text-decoration: none; }
+.tb-blog-card-title { margin: 0; }
+.tb-blog-card-title a { color: inherit; text-decoration: none; }
+.tb-blog-card-title a:hover { color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); }
+.tb-blog-card-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin: auto 0 0; padding-top: 0.75rem; border-top: 1px solid var(--tb-border, #e5e7eb); }
+.tb-blog-card-author { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 600; color: var(--tb-text, #111827); }
+.tb-blog-card-avatar { width: 2rem; height: 2rem; border-radius: 999px; object-fit: cover; flex: none; }
+.tb-blog-card-avatar--initial { display: inline-flex; align-items: center; justify-content: center; background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); font-size: 0.85rem; font-weight: 700; }
+.tb-blog-card-info { display: inline-flex; align-items: center; gap: 0.4rem; }
+.tb-blog-card-read { display: inline-flex; align-items: center; gap: 0.25rem; }
+.tb-blog-list .tb-blog-card { flex-direction: row; max-width: none; }
+.tb-blog-list .tb-blog-card-media { flex: 0 0 min(40%, 18rem); }
+@media (max-width: 640px) { .tb-blog-list .tb-blog-card { flex-direction: column; } .tb-blog-list .tb-blog-card-media { flex-basis: auto; } }

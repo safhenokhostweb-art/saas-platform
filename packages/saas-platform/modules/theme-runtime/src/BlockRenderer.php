@@ -2406,36 +2406,186 @@ class BlockRenderer
         ?string $originalPriceFormatted = null,
         string $addToCartHtml = ''
     ): string {
+        // Phase 2 (ADR-067): every product card is productCard(); this
+        // positional signature stays for existing callers.
+        $stockState = $stockLabel === null ? null : (str_contains($stockLabel, 'ناموجود') ? 'out' : (str_contains($stockLabel, 'باقی') ? 'low' : 'in'));
+        return $this->productCard([
+            'title' => $title, 'image' => $image, 'url' => $url,
+            'price' => $price, 'original' => $originalPrice,
+            'price_html' => $priceFormatted, 'original_html' => $originalPriceFormatted,
+            'badge' => $badge, 'stock' => $stockState, 'stock_label' => $stockLabel,
+            'action_html' => $addToCartHtml !== '' ? $addToCartHtml : null,
+        ]);
+    }
+
+    /**
+     * Phase 2 (ADR-067): the one commercial product card — demo fixtures in
+     * the Builder preview, real products on customer-site.
+     *
+     * Keys: title, image, url, price, original, price_html (Toman, ready
+     * HTML), original_html, badge (e.g. «جدید»), stock (in|low|out),
+     * stock_label, rating (0–5), reviews, product_id, needs_options (bool),
+     * action_html (overrides the button).
+     *
+     *  - the discount ribbon shows the real percentage («۲۱٪ تخفیف»);
+     *  - stock is a coloured pill; out of stock disables the action;
+     *  - with host cart endpoints the action is an instant add-to-cart form
+     *    (blocks/cart.js posts it with fetch and opens the mini-cart; without
+     *    JavaScript it is a plain POST); a product with options links to its
+     *    page; the Builder preview shows the same button as a link.
+     */
+    protected function productCard(array $p): string
+    {
+        $title = (string) ($p['title'] ?? '');
         $titleEsc = $this->escape($title);
-        $urlAttr  = $this->escapeUrl($url, '#');
-        $imgHtml  = $this->imageWithFallback($image, $title, 'aspect-ratio:1/1;', $this->iconHtml('package'));
+        $urlAttr = $this->escapeUrl((string) ($p['url'] ?? '#'), '#');
+        $imgHtml = $this->imageWithFallback((string) ($p['image'] ?? ''), $title, 'aspect-ratio:1/1;', $this->iconHtml('package'));
+        $price = isset($p['price']) ? (float) $p['price'] : null;
+        $original = isset($p['original']) ? (float) $p['original'] : null;
 
-        $badgeHtml = $badge ? "<span class=\"tb-product-badge-wrap\" style=\"position:absolute;top:.5rem;inset-inline-start:.5rem;z-index:1;\">" . $this->badgeHtml($badge, 'error', 'sm') . "</span>" : '';
+        $ribbons = '';
+        $percent = ($original !== null && $price !== null && $original > $price && $original > 0) ? (int) round(($original - $price) / $original * 100) : 0;
+        if ($percent > 0) {
+            // The shared Badge primitive (badgeHtml()), never a second badge style.
+            $ribbons .= $this->badgeHtml($this->displayNumber($percent . '%') . ' تخفیف', 'error', 'sm');
+        }
+        $badge = trim((string) ($p['badge'] ?? ''));
+        if ($badge !== '' && !($percent > 0 && $badge === 'تخفیف')) {
+            $ribbons .= $this->badgeHtml($badge, 'primary', 'sm');
+        }
+        $ribbonsHtml = $ribbons !== '' ? "<div class=\"tb-product-ribbons\">{$ribbons}</div>" : '';
 
-        // Real, proven contrast failure (khab-shimana-tablet certification,
-        // 2026-09-21): a real browser-measured WCAG check found #9ca3af
-        // (gray-400) on this card's near-white background (#f9fafb) at
-        // 2.43:1 — well under the 4.5:1 AA minimum for normal text — on
-        // every discounted product, in both the admin demo-fixture preview
-        // above and every real customer-site product card (this method is
-        // shared by both). #6b7280 (gray-500) keeps the same muted
-        // "de-emphasized old price" visual role at a real ~4.6:1.
-        $discountHtml = ($originalPrice !== null && $price !== null && $originalPrice > $price)
-            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:var(--tb-text-muted, #6b7280);font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
+        $oldHtml = ($percent > 0 && !empty($p['original_html']))
+            ? '<span class="tb-product-price-old">' . $p['original_html'] . '</span>' : '';
+
+        $stock = in_array($p['stock'] ?? null, ['in', 'low', 'out'], true) ? $p['stock'] : null;
+        $stockLabel = trim((string) ($p['stock_label'] ?? ''));
+        if ($stock !== null && $stockLabel === '') {
+            $stockLabel = ['in' => 'موجود', 'low' => 'موجودی محدود', 'out' => 'ناموجود'][$stock];
+        }
+        $stockHtml = $stockLabel !== ''
+            ? '<span class="tb-product-stock tb-product-stock--' . ($stock ?? 'in') . '">' . $this->escape($this->displayNumber($stockLabel)) . '</span>'
             : '';
 
-        $stockHtml = $stockLabel ? "<div class=\"tb-product-stock\" style=\"font-size:.8rem;color:var(--tb-text-muted, #6b7280);margin-top:.15rem;\">" . $this->escape($stockLabel) . "</div>" : '';
+        $ratingHtml = '';
+        $rating = isset($p['rating']) ? max(0.0, min(5.0, (float) $p['rating'])) : 0.0;
+        if ($rating > 0) {
+            $stars = '';
+            for ($i = 1; $i <= 5; $i++) {
+                $state = $rating >= $i - 0.25 ? 'is-on' : ($rating >= $i - 0.75 ? 'is-half' : 'is-off');
+                $stars .= IconLibrary::svg($state === 'is-half' ? 'star-half' : 'star', null, "tb-star {$state}");
+            }
+            $value = $this->displayNumber(number_format($rating, 1));
+            $count = max(0, (int) ($p['reviews'] ?? 0));
+            $label = "امتیاز {$value} از ۵" . ($count > 0 ? ' از ' . $this->displayNumber($count) . ' نظر' : '');
+            $ratingHtml = '<div class="tb-product-rating" role="img" aria-label="' . $this->escapeAttr($label) . '">'
+                . '<span class="tb-product-stars" aria-hidden="true">' . $stars . '</span>'
+                . '<span class="tb-product-rating-value" aria-hidden="true">' . $value . '</span>'
+                . ($count > 0 ? '<span class="tb-product-rating-count" aria-hidden="true">(' . $this->displayNumber($count) . ')</span>' : '')
+                . '</div>';
+        }
 
-        return "<div class=\"tb-product-card\" style=\"position:relative;max-width:20rem;margin:0 auto;\">
-            {$badgeHtml}
-            <a href=\"{$urlAttr}\" class=\"tb-product-card-img\" style=\"display:block;\">{$imgHtml}</a>
-            <div class=\"tb-product-card-inner\" style=\"padding-top:.65rem;\">
-                <a href=\"{$urlAttr}\" style=\"color:inherit;text-decoration:none;\"><h3 class=\"tb-product-title\">{$titleEsc}</h3></a>
-                <div class=\"tb-product-price\">{$discountHtml}{$priceFormatted}</div>
+        $action = array_key_exists('action_html', $p) && $p['action_html'] !== null
+            ? (string) $p['action_html']
+            : $this->productActionHtml($p, $stock, $urlAttr, $title);
+
+        return "<div class=\"tb-product-card" . ($stock === 'out' ? ' is-out' : '') . "\">
+            {$ribbonsHtml}
+            <a href=\"{$urlAttr}\" class=\"tb-product-card-img\" tabindex=\"-1\" aria-hidden=\"true\">{$imgHtml}</a>
+            <div class=\"tb-product-card-inner\">
+                <a href=\"{$urlAttr}\" class=\"tb-product-card-link\"><h3 class=\"tb-product-title\">{$titleEsc}</h3></a>
+                {$ratingHtml}
+                <div class=\"tb-product-price\">{$oldHtml}<span class=\"tb-product-price-now\">" . ($p['price_html'] ?? '') . "</span></div>
                 {$stockHtml}
-                {$addToCartHtml}
+                {$action}
             </div>
         </div>";
+    }
+
+    /** The card's call to action — see productCard(). */
+    private function productActionHtml(array $p, ?string $stock, string $urlAttr, string $title): string
+    {
+        $cartIcon = $this->iconHtml('shopping-cart');
+        if ($stock === 'out') {
+            return '<span class="tb-btn tb-product-add is-disabled" aria-disabled="true">ناموجود</span>';
+        }
+        if (!empty($p['needs_options'])) {
+            return "<a href=\"{$urlAttr}\" class=\"tb-btn tb-btn-secondary tb-product-add\">انتخاب گزینه‌ها</a>";
+        }
+        $cart = $this->cartEndpoints();
+        $productId = trim($this->stringify($p['product_id'] ?? ''));
+        if ($cart === null || !preg_match('/^\d{1,20}$/', $productId)) {
+            return "<a href=\"{$urlAttr}\" class=\"tb-btn tb-btn-primary tb-product-add\">{$cartIcon}<span>افزودن به سبد خرید</span></a>";
+        }
+        $csrf = $this->siteEndpoints()['csrf'] ?? null;
+        $config = $this->escapeAttr(json_encode(array_diff_key($cart, ['count' => 1]), JSON_UNESCAPED_SLASHES));
+        return '<form class="tb-product-add-form" method="post" action="' . $this->escapeAttr($cart['add']) . '" data-tb-cart="' . $config . '">'
+            . (is_string($csrf) && $csrf !== '' ? '<input type="hidden" name="_token" value="' . $this->escapeAttr($csrf) . '">' : '')
+            . '<input type="hidden" name="product_id" value="' . $productId . '"><input type="hidden" name="quantity" value="1">'
+            . '<button type="submit" class="tb-btn tb-btn-primary tb-product-add" data-tb-add-to-cart data-open-cart data-product-id="' . $productId . '" aria-label="' . $this->escapeAttr('افزودن «' . $title . '» به سبد خرید') . '">'
+            . $cartIcon . '<span>افزودن به سبد خرید</span></button></form>'
+            . $this->cartAssets();
+    }
+
+    /**
+     * Phase 2 (ADR-067): the one blog card — category pill, title, excerpt,
+     * author avatar (or initial), Persian date and reading time.
+     *
+     * Keys: title, url, image, excerpt, date (display text), date_iso,
+     * reading_minutes, category, category_url, author, author_avatar.
+     */
+    protected function blogCardHtml(array $p): string
+    {
+        $title = (string) ($p['title'] ?? '');
+        $url = $this->escapeUrl((string) ($p['url'] ?? '#'), '#');
+        $img = $this->imageWithFallback((string) ($p['image'] ?? ''), $title, 'aspect-ratio:16/10;', $this->iconHtml('file-text'));
+        $category = trim((string) ($p['category'] ?? ''));
+        $catHtml = $category !== ''
+            ? '<a class="tb-blog-card-cat" href="' . $this->escapeUrl((string) ($p['category_url'] ?? '#'), '#') . '">' . $this->escape($category) . '</a>'
+            : '';
+        $excerpt = trim((string) ($p['excerpt'] ?? ''));
+        $author = trim((string) ($p['author'] ?? ''));
+        $avatar = trim((string) ($p['author_avatar'] ?? ''));
+        $avatarHtml = $avatar !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($avatar)
+            ? '<img class="tb-blog-card-avatar" src="' . $this->escapeAttr($avatar) . '" alt="" loading="lazy" width="32" height="32">'
+            : ($author !== '' ? '<span class="tb-blog-card-avatar tb-blog-card-avatar--initial" aria-hidden="true">' . $this->escape(mb_substr($author, 0, 1)) . '</span>' : '');
+        $minutes = max(0, (int) ($p['reading_minutes'] ?? 0));
+        $date = trim((string) ($p['date'] ?? ''));
+        $info = [];
+        if ($date !== '') {
+            $iso = trim((string) ($p['date_iso'] ?? ''));
+            $info[] = '<time' . ($iso !== '' ? ' datetime="' . $this->escapeAttr($iso) . '"' : '') . '>' . $this->escape($this->displayNumber($date)) . '</time>';
+        }
+        if ($minutes > 0) {
+            $info[] = '<span class="tb-blog-card-read">' . $this->iconHtml('clock') . ' ' . $this->displayNumber($minutes) . ' دقیقه مطالعه</span>';
+        }
+
+        return '<article class="tb-blog-card">'
+            . "<a href=\"{$url}\" class=\"tb-blog-card-media\" tabindex=\"-1\" aria-hidden=\"true\">{$img}</a>"
+            . '<div class="tb-blog-card-body">'
+            . ($catHtml !== '' ? "<div class=\"tb-blog-card-cats\">{$catHtml}</div>" : '')
+            . "<h3 class=\"tb-blog-card-title\"><a href=\"{$url}\">" . $this->escape($title) . '</a></h3>'
+            . ($excerpt !== '' ? '<p class="tb-blog-card-excerpt">' . $this->escape($excerpt) . '</p>' : '')
+            . (($author !== '' || $info !== []) ? '<div class="tb-blog-card-meta">'
+                . ($author !== '' ? '<span class="tb-blog-card-author">' . $avatarHtml . '<span>' . $this->escape($author) . '</span></span>' : '')
+                . ($info !== [] ? '<span class="tb-blog-card-info">' . implode('<span aria-hidden="true">·</span>', $info) . '</span>' : '')
+                . '</div>' : '')
+            . '</div></article>';
+    }
+
+    /** Renders a block's blog cards as grid, list or carousel. */
+    protected function blogCardsLayout(array $cards, array $props, string $id, string $title): string
+    {
+        $layout = $props['layout'] ?? 'grid';
+        $layout = in_array($layout, ['grid', 'list', 'slider'], true) ? $layout : 'grid';
+        $titleHtml = $title !== '' ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
+        if ($layout === 'slider') {
+            $body = $this->renderCarousel($cards, $id . '-track', $this->flag($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-blog-slider', ['desktop' => 3, 'tablet' => 2, 'mobile' => 1]);
+        } else {
+            $body = '<div class="tb-grid ' . ($layout === 'list' ? 'tb-grid-cols-1 tb-blog-list' : 'tb-grid-cols-3') . ' tb-gap-lg tb-blog-grid">' . implode('', $cards) . '</div>';
+        }
+        return "<div id=\"tb-{$id}\" class=\"tb-blog-posts\">{$titleHtml}{$body}</div>";
+
     }
 
     /**
@@ -2464,18 +2614,8 @@ class BlockRenderer
         ];
 
         $cards = [];
-        foreach ($demo as $p) {
-            $cards[] = $this->productCardHtml(
-                $p['title'],
-                '',
-                (float) $p['price'],
-                $p['original'] !== null ? (float) $p['original'] : null,
-                $p['badge'],
-                $p['stock'],
-                '#',
-                $this->displayToman($p['price']),
-                $p['original'] !== null ? $this->displayToman($p['original']) : null
-            );
+        foreach ($demo as $i => $p) {
+            $cards[] = $this->productCard($this->demoProductCard($p, $i));
         }
 
         $titleHtml = $title ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
@@ -2502,9 +2642,23 @@ class BlockRenderer
         </div>";
     }
 
+    /** Phase 2 (ADR-067): a Builder-preview demo product as productCard() data. */
+    private function demoProductCard(array $p, int $i): array
+    {
+        $ratings = [[4.6, 128], [4.2, 37], [4.8, 412], [3.9, 18]];
+        return [
+            'title' => $p['title'], 'image' => '', 'url' => '#',
+            'price' => (float) $p['price'], 'original' => $p['original'] !== null ? (float) $p['original'] : null,
+            'price_html' => $this->displayToman($p['price']),
+            'original_html' => $p['original'] !== null ? $this->displayToman($p['original']) : null,
+            'badge' => $p['badge'] === 'تخفیف' ? null : $p['badge'],
+            'stock' => str_contains((string) $p['stock'], 'باقی') ? 'low' : 'in', 'stock_label' => $p['stock'],
+            'rating' => $ratings[$i % 4][0], 'reviews' => $ratings[$i % 4][1],
+        ];
+    }
+
     /**
-     * Canonical (shared) Product Grid. Real bug found via a full-page
-     * Playwright screenshot pass (Commercial Productization phase):
+     * Canonical (shared) Product Grid. Real bug found via a full-page     * Playwright screenshot pass (Commercial Productization phase):
      * `product_grid` is a real registered ECOMMERCE type with no canonical
      * renderer at all — every use of it on saas-platform's own admin
      * preview fell through to renderFallback(), which dumps
@@ -2528,13 +2682,8 @@ class BlockRenderer
         ];
 
         $cards = [];
-        foreach ($demo as $p) {
-            $cards[] = $this->productCardHtml(
-                $p['title'], '', (float) $p['price'], $p['original'] !== null ? (float) $p['original'] : null,
-                $p['badge'], $p['stock'], '#',
-                $this->displayToman($p['price']),
-                $p['original'] !== null ? $this->displayToman($p['original']) : null
-            );
+        foreach ($demo as $i => $p) {
+            $cards[] = $this->productCard($this->demoProductCard($p, $i));
         }
 
         return "<div id=\"tb-{$id}\" class=\"tb-grid tb-grid-cols-{$columns} tb-gap-md tb-product-grid-wrap\">" . implode('', $cards) . "</div>";
@@ -3679,7 +3828,8 @@ class BlockRenderer
         }
 
         $showDesktop = ($mega['show_desktop'] ?? true) !== false;
-        $mobileBehavior = in_array($mega['mobile_behavior'] ?? 'accordion', ['accordion', 'flat', 'hidden'], true) ? $mega['mobile_behavior'] : 'accordion';
+        $mobileBehavior = $mega['mobile_behavior'] ?? 'accordion';
+        $mobileBehavior = in_array($mobileBehavior, ['accordion', 'flat', 'hidden'], true) ? $mobileBehavior : 'accordion';
         $itemClasses = 'tb-mega-menu-item tb-mega-mobile-' . $mobileBehavior . ($showDesktop ? '' : ' tb-mega-desktop-hidden');
         $this->headerNeedsScript = true;
 
@@ -4670,15 +4820,18 @@ class BlockRenderer
      */
     protected function renderBlogPosts(array $props, string $inner, string $id): string
     {
+        // Phase 2 (ADR-067): the Builder preview shows the real card and
+        // layout with clearly-labelled sample posts, so grid/list/slider can
+        // be judged before any post exists; the host renders real posts
+        // through the same blogCardHtml()/blogCardsLayout().
         $title = $this->escape($props['title'] ?? 'وبلاگ');
-        $limit = max(0, (int) ($props['limit'] ?? 3));
-
-        return "<div id=\"tb-{$id}\" class=\"tb-section\">
-            <div class=\"tb-container\">
-                <div class=\"tb-features-section-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
-                <p class=\"tb-text\" style=\"text-align:center;color:var(--tb-text-muted,#4b5563);\">{$limit} نوشته اخیر پس از انتشار محتوا در این‌جا نمایش داده می‌شود.</p>
-            </div>
-        </div>";
+        $samples = [
+            ['title' => 'راهنمای انتخاب بهترین محصول برای خانه', 'category' => 'راهنمای خرید', 'author' => 'تیم تحریریه', 'date' => '۵ آبان ۱۴۰۵', 'reading_minutes' => 6],
+            ['title' => 'ده نکته برای خریدی مطمئن‌تر از فروشگاه‌های اینترنتی', 'category' => 'آموزش', 'author' => 'سارا محمدی', 'date' => '۲۸ مهر ۱۴۰۵', 'reading_minutes' => 4],
+            ['title' => 'تازه‌های فصل: محصولاتی که نباید از دست بدهید', 'category' => 'اخبار', 'author' => 'علی رضایی', 'date' => '۲۰ مهر ۱۴۰۵', 'reading_minutes' => 3],
+        ];
+        $cards = array_map(fn ($s) => $this->blogCardHtml($s + ['url' => '#', 'excerpt' => 'متن نمونه؛ پس از انتشار مطالب، نوشته‌های واقعی سایت در این بخش نمایش داده می‌شوند.']), $samples);
+        return $this->blogCardsLayout($cards, $props, $id, $title);
     }
 
     /**
