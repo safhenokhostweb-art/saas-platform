@@ -35,6 +35,9 @@ class Phase3CContractsTest extends TestCase
         'string', 'number', 'boolean', 'select', 'color', 'textarea', 'link',
         // Phase 0.6 (ADR-065): the SVG icon picker control.
         'icon',
+        // Phase 0.2: list definitions promoted to canonical use the
+        // schema-driven repeater (InspectorFieldRegistry::TYPES).
+        'repeater',
     ];
 
     /** @test */
@@ -90,9 +93,15 @@ class Phase3CContractsTest extends TestCase
 
             foreach ($definition['defaultProps'] as $key => $value) {
                 $this->assertArrayHasKey($key, $definition['schema'], "{$type}.{$key} needs a schema field.");
+                // A repeater's legacy JSON-string default loads as its list
+                // (InspectorFieldRegistry::normalizeList); the next edit
+                // persists the array shape.
+                $expected = $definition['schema'][$key]['type'] === 'repeater' && is_string($value)
+                    ? json_decode($value, true)
+                    : $value;
                 foreach (['rtl', 'ltr'] as $direction) {
                     $this->assertEquals(
-                        $value,
+                        $expected,
                         InspectorFieldRegistry::normalizeValue(
                             $definition['schema'][$key],
                             $value,

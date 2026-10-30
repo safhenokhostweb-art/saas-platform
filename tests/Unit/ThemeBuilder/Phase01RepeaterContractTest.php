@@ -16,7 +16,8 @@ use Tests\TestCase;
  */
 class Phase01RepeaterContractTest extends TestCase
 {
-    private const BENTO_SIZES = ['small', 'large', 'tall', 'featured'];
+    // Phase 3b (ADR-069): spans on a 12-column grid.
+    private const BENTO_SIZES = ['small', 'half', 'large', 'full', 'tall', 'featured'];
 
     private function render(string $type, array $props, string $id = 'b1'): string
     {
@@ -120,7 +121,7 @@ class Phase01RepeaterContractTest extends TestCase
 
         $testimonials = $this->normalizedSchema('testimonials_slider')['items'];
         $this->assertSame('repeater', $testimonials['control']);
-        $this->assertSame(['name', 'role', 'company', 'avatar', 'text', 'rating'], array_keys($testimonials['fields']));
+        $this->assertSame(['name', 'role', 'company', 'avatar', 'text', 'rating', 'verified', 'date'], array_keys($testimonials['fields']));
         $this->assertSame(0, $testimonials['fields']['rating']['min']);
         $this->assertSame(5, $testimonials['fields']['rating']['max']);
         $this->assertIsArray(BlockRegistry::defaultProps('testimonials_slider')['items']);
@@ -245,7 +246,9 @@ class Phase01RepeaterContractTest extends TestCase
         foreach ([$items, json_encode($items, JSON_UNESCAPED_UNICODE)] as $value) {
             $html = $this->render('testimonials_slider', ['mode' => 'static', 'items' => $value]);
             $this->assertStringContainsString('سارا', $html);
-            $this->assertStringContainsString('★★★★☆', $html);
+            // Phase 3b (ADR-069): SVG stars with a spoken rating.
+            $this->assertStringContainsString('aria-label="امتیاز ۴ از ۵"', $html);
+            $this->assertSame(4, substr_count($html, 'tb-star is-on'));
         }
     }
 
