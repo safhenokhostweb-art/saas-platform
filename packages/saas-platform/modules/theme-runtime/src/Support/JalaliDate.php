@@ -53,6 +53,27 @@ final class JalaliDate
         return self::isLeap($jy) ? 30 : 29;
     }
 
+    /**
+     * Phase 3b (ADR-069): an authored or stored date in either calendar —
+     * Jalali when the year is below 1700 («۱۴۰۵/۰۸/۰۲», any digit script,
+     * - / or . separators), otherwise Gregorian (a trailing time is ignored).
+     *
+     * @return array{jalali: array{0:int,1:int,2:int}, gregorian: array{0:int,1:int,2:int}}|null
+     *   null when it is not a real date.
+     */
+    public static function parse(string $value): ?array
+    {
+        $latin = PersianNumber::latinDigits(trim($value));
+        if (preg_match('#^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T].*)?$#', $latin, $m) !== 1) {
+            return null;
+        }
+        [$y, $mo, $d] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+        if ($y < 1700) {
+            return self::isValid($y, $mo, $d) ? ['jalali' => [$y, $mo, $d], 'gregorian' => self::toGregorian($y, $mo, $d)] : null;
+        }
+        return checkdate($mo, $d, $y) ? ['jalali' => self::fromGregorian($y, $mo, $d), 'gregorian' => [$y, $mo, $d]] : null;
+    }
+
     /** «۱۵ آبان ۱۴۰۵». */
     public static function format(int $jy, int $jm, int $jd): string
     {

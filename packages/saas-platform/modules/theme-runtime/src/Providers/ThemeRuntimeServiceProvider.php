@@ -73,6 +73,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/blocks/cart.js';
     }
 
+    /** Phase 3b (ADR-069) — pricing billing toggle and feature tooltips. */
+    public static function pricingScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/pricing.js';
+    }
+
     public static function canvasIdentityContractPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-identity.js';

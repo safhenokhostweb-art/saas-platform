@@ -1436,8 +1436,13 @@ class BlockRegistry
                     // only implements cards and minimal.
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['cards' => 'کارت', 'minimal' => 'مینیمال'], 'default' => 'cards'],
                     'show_avatar' => ['type' => 'boolean', 'label' => 'نمایش آواتار', 'default' => true],
+                    // Phase 3b (ADR-069): one product's reviews (with its
+                    // AggregateRating) or the latest of all; the summary is
+                    // the Persian star breakdown.
+                    'product_id' => ['type' => 'number', 'label' => 'شناسه محصول (۰ = همه)', 'default' => 0, 'min' => 0],
+                    'show_summary' => ['type' => 'boolean', 'label' => 'نمایش خلاصهٔ امتیازها', 'default' => true],
                 ],
-                'defaultProps' => ['title' => 'نظرات مشتریان', 'limit' => 6, 'style' => 'cards', 'show_avatar' => true],
+                'defaultProps' => ['title' => 'نظرات مشتریان', 'limit' => 6, 'style' => 'cards', 'show_avatar' => true, 'product_id' => 0, 'show_summary' => true],
             ],
             'module:referral_widget' => [
                 'name' => 'ویجت معرفی به دوستان',
@@ -1858,6 +1863,7 @@ class BlockRegistry
                     'mode'     => ['type' => 'select', 'label' => 'نوع نمایش', 'options' => ['carousel' => 'اسلایدر با کنترل', 'static' => 'ثابت (Grid)'], 'default' => 'carousel'],
                     'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
                     'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
+                    'show_summary' => ['type' => 'boolean', 'label' => 'نمایش خلاصهٔ امتیازها', 'default' => false],
                     // Was a JSON textarea. Legacy JSON-string values still load:
                     // the Canvas repeater parses them and the renderer accepts
                     // both shapes; the next edit persists the array shape.
@@ -1873,6 +1879,9 @@ class BlockRegistry
                             'avatar'  => ['type' => 'image',    'label' => 'تصویر (اختیاری)', 'default' => ''],
                             'text'    => ['type' => 'textarea', 'label' => 'متن نظر', 'default' => ''],
                             'rating'  => ['type' => 'number',   'label' => 'امتیاز (۰ تا ۵)', 'default' => 5, 'min' => 0, 'max' => 5, 'step' => 1],
+                            // Phase 3b (ADR-069) — see reviewCardHtml().
+                            'verified' => ['type' => 'boolean', 'label' => 'خریدار تاییدشده', 'default' => false],
+                            'date'     => ['type' => 'string',  'label' => 'تاریخ (شمسی، مثل ۱۴۰۵/۰۸/۰۲)', 'default' => ''],
                         ],
                         'default' => [
                             ['name' => 'رضا احمدی', 'role' => 'مدیر شرکت', 'text' => 'این پلتفرم کسب‌وکار ما را متحول کرد. واقعاً عالی است!', 'rating' => 5],
@@ -1881,7 +1890,7 @@ class BlockRegistry
                         ],
                     ],
                 ],
-                'defaultProps' => ['title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true, 'interval' => 5000, 'items' => [
+                'defaultProps' => ['title' => 'مشتریان ما چه می‌گویند', 'columns' => '3', 'mode' => 'carousel', 'autoplay' => true, 'interval' => 5000, 'show_summary' => false, 'items' => [
                     ['name' => 'رضا احمدی', 'role' => 'مدیر شرکت', 'text' => 'این پلتفرم کسب‌وکار ما را متحول کرد!', 'rating' => 5],
                     ['name' => 'مریم نوری', 'role' => 'کارآفرین', 'text' => 'طراحی فوق‌العاده و پشتیبانی سریع.', 'rating' => 5],
                     ['name' => 'علی حسینی', 'role' => 'توسعه‌دهنده', 'text' => 'بهترین انتخاب برای سایت حرفه‌ای.', 'rating' => 5],
@@ -1904,9 +1913,12 @@ class BlockRegistry
                 'schema' => [
                     'title'    => ['type' => 'string',  'label' => 'عنوان بخش',  'default' => 'پلن‌های ما'],
                     'subtitle' => ['type' => 'string',  'label' => 'زیرعنوان',    'default' => 'مناسب‌ترین پلن را انتخاب کنید'],
-                    'plans'    => ['type' => 'repeater', 'label' => 'پلن‌ها', 'item_label' => 'پلن', 'storage' => 'array', 'fields' => ['name' => ['type' => 'string', 'label' => 'نام پلن', 'default' => ''], 'price' => ['type' => 'string', 'label' => 'قیمت', 'default' => ''], 'period' => ['type' => 'string', 'label' => 'دوره (مثلا / ماه)', 'default' => ''], 'badge' => ['type' => 'string', 'label' => 'برچسب (اختیاری)', 'default' => ''], 'highlight' => ['type' => 'boolean', 'label' => 'پلن ویژه (برجسته)', 'default' => false], 'features' => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'item_label' => 'ویژگی', 'storage' => 'array', 'default' => [], 'fields' => ['text' => ['type' => 'string', 'label' => 'متن ویژگی', 'default' => '']]], 'cta_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => ''], 'cta_url' => ['type' => 'link', 'label' => 'لینک دکمه', 'default' => '#']], 'default' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم","ویژگی سوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه اول","ویژگی اضافه دوم","پشتیبانی اولویت‌دار"],"cta_text":"انتخاب این پلن","cta_url":"#"},{"name":"سازمانی","price":"۳۵۰ هزار","period":"/ ماه","badge":"","highlight":false,"features":["همه ویژگی‌های حرفه‌ای","حساب نامحدود","API اختصاصی","مدیر حساب"],"cta_text":"تماس بگیرید","cta_url":"#"}]'],
+                    // Phase 3b (ADR-069): monthly / yearly switch — see renderPricingCards().
+                    'billing_toggle' => ['type' => 'boolean', 'label' => 'دکمهٔ ماهانه / سالانه', 'default' => true],
+                    'yearly_discount_label' => ['type' => 'string', 'label' => 'برچسب تخفیف سالانه', 'default' => '۲۰٪ تخفیف'],
+                    'plans'    => ['type' => 'repeater', 'label' => 'پلن‌ها', 'item_label' => 'پلن', 'storage' => 'array', 'fields' => ['name' => ['type' => 'string', 'label' => 'نام پلن', 'default' => ''], 'price' => ['type' => 'string', 'label' => 'قیمت ماهانه', 'default' => ''], 'period' => ['type' => 'string', 'label' => 'دوره (مثلا / ماه)', 'default' => ''], 'price_yearly' => ['type' => 'string', 'label' => 'قیمت سالانه (برای دکمهٔ سالانه)', 'default' => ''], 'period_yearly' => ['type' => 'string', 'label' => 'دورهٔ سالانه', 'default' => '/ سال'], 'badge' => ['type' => 'string', 'label' => 'برچسب (اختیاری)', 'default' => ''], 'highlight' => ['type' => 'boolean', 'label' => 'پلن ویژه (روبان محبوب)', 'default' => false], 'features' => ['type' => 'repeater', 'label' => 'ویژگی‌ها', 'item_label' => 'ویژگی', 'storage' => 'array', 'default' => [], 'fields' => ['text' => ['type' => 'string', 'label' => 'متن ویژگی', 'default' => ''], 'included' => ['type' => 'boolean', 'label' => 'در این پلن هست', 'default' => true], 'tooltip' => ['type' => 'string', 'label' => 'توضیح (راهنمای کوچک)', 'default' => '']]], 'cta_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => ''], 'cta_url' => ['type' => 'link', 'label' => 'لینک دکمه', 'default' => '#']], 'default' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم","ویژگی سوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","price_yearly":"۱٬۴۴۰ هزار","period_yearly":"/ سال","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه اول","ویژگی اضافه دوم","پشتیبانی اولویت‌دار"],"cta_text":"انتخاب این پلن","cta_url":"#"},{"name":"سازمانی","price":"۳۵۰ هزار","period":"/ ماه","price_yearly":"۳٬۳۶۰ هزار","period_yearly":"/ سال","badge":"","highlight":false,"features":["همه ویژگی‌های حرفه‌ای","حساب نامحدود","API اختصاصی","مدیر حساب"],"cta_text":"تماس بگیرید","cta_url":"#"}]'],
                 ],
-                'defaultProps' => ['title' => 'پلن‌های ما', 'subtitle' => 'مناسب‌ترین پلن را انتخاب کنید', 'plans' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه"],"cta_text":"انتخاب این پلن","cta_url":"#"}]'],
+                'defaultProps' => ['title' => 'پلن‌های ما', 'subtitle' => 'مناسب‌ترین پلن را انتخاب کنید', 'billing_toggle' => true, 'yearly_discount_label' => '۲۰٪ تخفیف', 'plans' => '[{"name":"رایگان","price":"رایگان","period":"","badge":"","highlight":false,"features":["ویژگی اول","ویژگی دوم"],"cta_text":"شروع رایگان","cta_url":"#"},{"name":"حرفه‌ای","price":"۱۵۰ هزار","period":"/ ماه","price_yearly":"۱٬۴۴۰ هزار","period_yearly":"/ سال","badge":"محبوب‌ترین","highlight":true,"features":["همه ویژگی‌های رایگان","ویژگی اضافه"],"cta_text":"انتخاب این پلن","cta_url":"#"}]'],
             ],
             'newsletter_form' => [
                 'name' => 'فرم خبرنامه (Newsletter)',
@@ -1939,16 +1951,32 @@ class BlockRegistry
                         'label' => 'کارت‌های بنتو',
                         'item_label' => 'کارت',
                         'storage' => 'array',
+                        // Phase 3b (ADR-069): `kind` turns a cell into a live
+                        // product card, a Jalali countdown teaser or an icon
+                        // metric; sizes span a 12-column grid (2 on tablets,
+                        // 1 on phones) — see renderBentoGrid().
                         'fields' => [
+                            'kind'          => ['type' => 'select',   'label' => 'نوع کارت', 'options' => [
+                                'content'   => 'محتوا (متن و تصویر)',
+                                'product'   => 'محصول زنده',
+                                'countdown' => 'شمارش معکوس',
+                                'metric'    => 'آمار با آیکون',
+                            ], 'default' => 'content'],
                             'title'         => ['type' => 'string',   'label' => 'عنوان کارت', 'default' => 'کارت جدید'],
                             'text'          => ['type' => 'textarea', 'label' => 'توضیحات کارت', 'default' => ''],
                             'icon'          => ['type' => 'icon',     'label' => 'آیکون', 'default' => 'zap'],
                             'size'          => ['type' => 'select',   'label' => 'اندازه کارت', 'options' => [
-                                'small'    => 'استاندارد (۱×۱)',
-                                'large'    => 'عریض (۲×۱)',
-                                'tall'     => 'بلند (۱×۲)',
-                                'featured' => 'ویژه (۲×۲)',
+                                'small'    => 'یک‌سوم (۴ از ۱۲)',
+                                'half'     => 'نیمه (۶ از ۱۲)',
+                                'large'    => 'دوسوم (۸ از ۱۲)',
+                                'full'     => 'تمام‌عرض (۱۲ از ۱۲)',
+                                'tall'     => 'بلند (۴ از ۱۲، دو ردیف)',
+                                'featured' => 'ویژه (۸ از ۱۲، دو ردیف)',
                             ], 'default' => 'small'],
+                            'product_id'    => ['type' => 'number',   'label' => 'شناسه محصول (۰ = جدیدترین)', 'default' => 0, 'min' => 0, 'show_if' => 'kind=product'],
+                            'end_date'      => ['type' => 'string',   'label' => 'تاریخ پایان (شمسی، مثل ۱۴۰۵/۰۸/۱۵)', 'default' => '', 'show_if' => 'kind=countdown'],
+                            'end_time'      => ['type' => 'string',   'label' => 'ساعت پایان (۲۳:۵۹)', 'default' => '', 'show_if' => 'kind=countdown'],
+                            'metric_value'  => ['type' => 'string',   'label' => 'عدد آمار (مثل ۹۸٪ یا 12000+)', 'default' => '', 'show_if' => 'kind=metric'],
                             'bg_color'      => ['type' => 'color',   'label' => 'رنگ پس‌زمینه', 'default' => '#f8fafc'],
                             'text_color'    => ['type' => 'color',   'label' => 'رنگ متن', 'default' => '#0f172a'],
                             'link'          => ['type' => 'link',    'label' => 'لینک کارت (اختیاری)', 'default' => ''],

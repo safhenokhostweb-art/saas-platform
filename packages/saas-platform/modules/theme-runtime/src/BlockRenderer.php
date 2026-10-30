@@ -77,6 +77,9 @@ class BlockRenderer
     private bool $cartAssetsEmitted = false;
     private bool $headerNeedsScript = false;
 
+    /** Phase 3b (ADR-069): blocks/pricing.js, once per render. */
+    private bool $pricingAssetsEmitted = false;
+
     /**
      * Phase 9 / Step 2 — same once-per-document rule for the shared
      * carousel asset, and for the same reason: several short-lived renderer
@@ -2488,11 +2491,7 @@ class BlockRenderer
 
         $ratingHtml = '';
         if ($rating > 0) {
-            $stars = '';
-            for ($i = 1; $i <= 5; $i++) {
-                $state = $rating >= $i - 0.25 ? 'is-on' : ($rating >= $i - 0.75 ? 'is-half' : 'is-off');
-                $stars .= IconLibrary::svg($state === 'is-half' ? 'star-half' : 'star', null, "tb-star {$state}");
-            }
+            $stars = $this->starsHtml($rating);
             $value = $this->displayNumber(number_format($rating, 1));
             $count = $reviews;
             $label = "امتیاز {$value} از ۵" . ($count > 0 ? ' از ' . $this->displayNumber($count) . ' نظر' : '');
@@ -2518,6 +2517,134 @@ class BlockRenderer
                 {$action}
             </div>
         </div>";
+    }
+
+    /** Five SVG stars for a 0–5 rating, in half steps — product and review cards. */
+    protected function starsHtml(float $rating): string
+    {
+        $stars = '';
+        for ($i = 1; $i <= 5; $i++) {
+            $state = $rating >= $i - 0.25 ? 'is-on' : ($rating >= $i - 0.75 ? 'is-half' : 'is-off');
+            $stars .= IconLibrary::svg($state === 'is-half' ? 'star-half' : 'star', null, "tb-star {$state}");
+        }
+        return $stars;
+    }
+
+    /**
+     * Phase 3b (ADR-069): the one review card — testimonials and customer
+     * reviews.
+     *
+     * Keys: name, avatar (URL), show_avatar (bool, default true), role,
+     * text, rating (0–5), verified (bool),
+     * date (Jalali or Gregorian, shown as «۲ آبان ۱۴۰۵»), title, and
+     * `schema`: null (no microdata — authored testimonials are not reviews of
+     * an item), 'nested' (a schema.org Review inside the caller's Product,
+     * itemprop="review") or 'standalone' with `item` = [name, url] as its
+     * itemReviewed Product.
+     */
+    protected function reviewCardHtml(array $r): string
+    {
+        $name = trim($this->stringify($r['name'] ?? '')) ?: 'کاربر';
+        $rating = max(0.0, min(5.0, (float) ($r['rating'] ?? 0)));
+        $schema = in_array($r['schema'] ?? null, ['nested', 'standalone'], true) ? $r['schema'] : null;
+        $item = is_array($r['item'] ?? null) ? $r['item'] : [];
+        if ($schema === 'standalone' && trim($this->stringify($item['name'] ?? '')) === '') {
+            $schema = null;
+        }
+        $prop = static fn (string $p): string => $schema !== null ? " itemprop=\"{$p}\"" : '';
+
+        $avatar = trim($this->stringify($r['avatar'] ?? ''));
+        $avatarHtml = !$this->flag($r['show_avatar'] ?? true) ? '' : ($avatar !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($avatar)
+            ? '<img class="tb-testimonial-avatar tb-review-avatar" src="' . $this->escapeAttr($avatar) . '" alt="" loading="lazy" width="44" height="44">'
+            : '<span class="tb-testimonial-avatar tb-review-avatar" aria-hidden="true">' . $this->escape(mb_substr($name, 0, 1, 'UTF-8')) . '</span>');
+
+        $starsHtml = '';
+        if ($rating > 0) {
+            $shown = $this->displayNumber(rtrim(rtrim(number_format($rating, 1), '0'), '.'));
+            $starsHtml = '<div class="tb-testimonial-stars tb-review-stars" role="img" aria-label="' . $this->escapeAttr("امتیاز {$shown} از ۵") . '">'
+                . $this->starsHtml($rating) . '</div>'
+                . ($schema !== null ? '<span itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating"><meta itemprop="ratingValue" content="' . $this->escapeAttr((string) $rating) . '"><meta itemprop="bestRating" content="5"><meta itemprop="worstRating" content="1"></span>' : '');
+        }
+
+        $date = JalaliDate::parse($this->stringify($r['date'] ?? ''));
+        $dateHtml = $date !== null
+            ? '<time class="tb-review-date" datetime="' . sprintf('%04d-%02d-%02d', ...$date['gregorian']) . '"' . $prop('datePublished') . '>' . JalaliDate::format(...$date['jalali']) . '</time>'
+            : '';
+        $verifiedHtml = $this->flag($r['verified'] ?? false)
+            ? '<span class="tb-review-verified">' . IconLibrary::svg('badge-check') . 'خریدار تاییدشده</span>'
+            : '';
+        $role = trim($this->stringify($r['role'] ?? ''));
+        $title = trim($this->stringify($r['title'] ?? ''));
+        $text = trim($this->stringify($r['text'] ?? ''));
+
+        $itemReviewed = '';
+        if ($schema === 'standalone') {
+            $url = $this->escapeUrl($this->stringify($item['url'] ?? ''), '');
+            $itemReviewed = '<span itemprop="itemReviewed" itemscope itemtype="https://schema.org/Product"><meta itemprop="name" content="' . $this->escapeAttr($item['name']) . '">'
+                . ($url !== '' ? '<link itemprop="url" href="' . $url . '">' : '') . '</span>';
+        }
+        $product = trim($this->stringify($item['name'] ?? ''));
+        $productUrl = $this->escapeUrl($this->stringify($item['url'] ?? ''), '');
+        $productHtml = $product !== '' && $schema !== 'nested'
+            ? '<p class="tb-review-product">' . ($productUrl !== '' ? '<a href="' . $productUrl . '">' . $this->escape($product) . '</a>' : $this->escape($product)) . '</p>'
+            : '';
+
+        $scope = $schema !== null ? ($schema === 'nested' ? ' itemprop="review"' : '') . ' itemscope itemtype="https://schema.org/Review"' : '';
+        return "<article class=\"tb-testimonial-card tb-review-card\"{$scope}>"
+            . $itemReviewed
+            . '<div class="tb-review-head">' . $starsHtml . $dateHtml . '</div>'
+            . ($title !== '' ? '<h3 class="tb-review-title"' . $prop('name') . '>' . $this->escape($title) . '</h3>' : '')
+            . ($text !== '' ? '<p class="tb-testimonial-text"' . $prop('reviewBody') . '>' . $this->escape($text) . '</p>' : '')
+            . $productHtml
+            . '<div class="tb-testimonial-author">' . $avatarHtml
+            . '<div class="tb-review-who"><div class="tb-testimonial-name"' . ($schema !== null ? ' itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name">' . $this->escape($name) . '</span>' : '>' . $this->escape($name)) . '</div>'
+            . ($role !== '' ? '<div class="tb-testimonial-role">' . $this->escape($role) . '</div>' : '')
+            . $verifiedHtml . '</div></div>'
+            . '</article>';
+    }
+
+    /**
+     * Phase 3b (ADR-069): the average, star count and a Persian bar per
+     * star level («۵ ستاره ۶۰٪»). $counts maps 1–5 to review counts. With
+     * $aggregate the figures carry schema.org AggregateRating microdata as
+     * itemprop="aggregateRating" — only inside a caller's Product scope.
+     * No reviews → ''.
+     *
+     * @param array<int,int> $counts
+     */
+    protected function ratingSummaryHtml(array $counts, bool $aggregate = false): string
+    {
+        $total = 0;
+        $sum = 0;
+        for ($star = 1; $star <= 5; $star++) {
+            $n = max(0, (int) ($counts[$star] ?? 0));
+            $total += $n;
+            $sum += $n * $star;
+        }
+        if ($total === 0) {
+            return '';
+        }
+        $avg = round($sum / $total, 1);
+        $avgText = $this->displayNumber(number_format($avg, 1));
+        $rows = '';
+        for ($star = 5; $star >= 1; $star--) {
+            $n = max(0, (int) ($counts[$star] ?? 0));
+            $pct = (int) round($n / $total * 100);
+            $rows .= '<li class="tb-rating-row">'
+                . '<span class="tb-rating-row-label">' . $this->displayNumber($star) . ' ستاره</span>'
+                . '<span class="tb-rating-bar" aria-hidden="true"><span style="width:' . $pct . '%"></span></span>'
+                . '<span class="tb-rating-row-pct">' . $this->displayNumber($pct . '%') . '<span class="tb-visually-hidden"> (' . $this->displayNumber($n) . ' نظر)</span></span>'
+                . '</li>';
+        }
+        $micro = $aggregate
+            ? '<span itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating"><meta itemprop="ratingValue" content="' . $avg . '"><meta itemprop="reviewCount" content="' . $total . '"><meta itemprop="bestRating" content="5"><meta itemprop="worstRating" content="1"></span>'
+            : '';
+        return '<div class="tb-rating-summary">' . $micro
+            . '<div class="tb-rating-score"><span class="tb-rating-average">' . $avgText . '</span>'
+            . '<div class="tb-review-stars" role="img" aria-label="' . $this->escapeAttr("میانگین {$avgText} از ۵") . '">' . $this->starsHtml($avg) . '</div>'
+            . '<span class="tb-rating-total">از ' . $this->displayNumber($total) . ' نظر</span></div>'
+            . '<ul class="tb-rating-rows" aria-label="توزیع امتیازها">' . $rows . '</ul>'
+            . '</div>';
     }
 
     /** The card's call to action — see productCard(). */
@@ -3009,34 +3136,31 @@ class BlockRenderer
         $rawItems = $props['items'] ?? '[]';
         $items    = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
 
+        // Phase 3b (ADR-069): every card is reviewCardHtml() — SVG stars,
+        // verified-buyer badge, Jalali date, avatar or initial. Authored
+        // testimonials carry no Review microdata: they review no item, and
+        // reviews of the site's own business are not eligible.
         $cards = [];
+        $counts = [];
         foreach ($items as $t) {
             if (!is_array($t)) {
                 continue;
             }
-            $name    = $this->escape($t['name'] ?? '');
-            $role    = $this->escape($t['role'] ?? '');
-            $company = $this->escape($t['company'] ?? '');
-            $text    = $this->escape($t['text'] ?? '');
-            $rating  = max(0, min(5, (int) ($t['rating'] ?? 5)));
-            $stars   = $rating > 0 ? str_repeat('★', $rating) . str_repeat('☆', 5 - $rating) : '';
-            $avatar  = trim((string) ($t['avatar'] ?? $t['image'] ?? ''));
-
-            $avatarHtml = $avatar !== ''
-                ? "<img src=\"" . $this->escapeAttr($avatar) . "\" alt=\"" . $this->escapeAttr($t['name'] ?? '') . "\" loading=\"lazy\" class=\"tb-testimonial-avatar\" style=\"width:2.75rem;height:2.75rem;border-radius:999px;object-fit:cover;\" onerror=\"this.outerHTML='<div class=&quot;tb-testimonial-avatar&quot;>" . $this->escapeAttr(mb_substr((string) ($t['name'] ?? ''), 0, 1, 'UTF-8')) . "</div>';\">"
-                : "<div class=\"tb-testimonial-avatar\">" . mb_substr((string) ($t['name'] ?? ''), 0, 1, 'UTF-8') . "</div>";
-
-            $roleLine = trim(implode(' · ', array_filter([$role, $company])));
-
-            $cards[] = "<div class=\"tb-testimonial-card\">
-                " . ($stars !== '' ? "<div class=\"tb-testimonial-stars\">{$stars}</div>" : '') . "
-                <p class=\"tb-testimonial-text\">«{$text}»</p>
-                <div class=\"tb-testimonial-author\">
-                    {$avatarHtml}
-                    <div><div class=\"tb-testimonial-name\">{$name}</div><div class=\"tb-testimonial-role\">" . $this->escape($roleLine) . "</div></div>
-                </div>
-            </div>";
+            $rating = max(0, min(5, (int) ($t['rating'] ?? 5)));
+            if ($rating > 0) {
+                $counts[$rating] = ($counts[$rating] ?? 0) + 1;
+            }
+            $cards[] = $this->reviewCardHtml([
+                'name' => $t['name'] ?? '',
+                'avatar' => $t['avatar'] ?? $t['image'] ?? '',
+                'role' => implode(' · ', array_filter([trim($this->stringify($t['role'] ?? '')), trim($this->stringify($t['company'] ?? ''))])),
+                'text' => $t['text'] ?? '',
+                'rating' => $rating,
+                'verified' => $t['verified'] ?? false,
+                'date' => $t['date'] ?? '',
+            ]);
         }
+        $summary = $this->flag($props['show_summary'] ?? false) ? $this->ratingSummaryHtml($counts) : '';
 
         if (empty($cards)) {
             return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\"><div class=\"tb-container\"><h2 class=\"tb-features-section-title\">{$title}</h2></div></div>";
@@ -3056,6 +3180,7 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\">
             <div class=\"tb-container\">
                 <div class=\"tb-testimonials-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
+                {$summary}
                 {$body}
             </div>
         </div>";
@@ -3103,40 +3228,107 @@ class BlockRenderer
             " . ($subtitle ? "<p class=\"tb-features-section-sub\">{$subtitle}</p>" : '') . "
         </div>";
 
-        $cards = [];
+        // Phase 3b (ADR-069): the monthly / yearly switch shows only when it
+        // is on and some plan has a yearly price; plans without one keep
+        // their monthly price in both modes. Both prices are in the markup
+        // (yearly `hidden`), so without JavaScript the monthly ones show.
+        $plans = array_values(array_filter($plans, 'is_array'));
+        $hasYearly = false;
         foreach ($plans as $p) {
+            $hasYearly = $hasYearly || trim($this->stringify($p['price_yearly'] ?? '')) !== '';
+        }
+        $toggle = $hasYearly && $this->flag($props['billing_toggle'] ?? true);
+        $toggleHtml = '';
+        if ($toggle) {
+            $pill = trim($this->stringify($props['yearly_discount_label'] ?? ''));
+            $toggleHtml = '<div class="tb-billing-toggle" role="group" aria-label="دورهٔ پرداخت">'
+                . '<button type="button" class="tb-billing-option is-active" data-tb-billing="monthly" aria-pressed="true">ماهانه</button>'
+                . '<button type="button" class="tb-billing-option" data-tb-billing="yearly" aria-pressed="false">سالانه'
+                . ($pill !== '' ? '<span class="tb-billing-pill">' . $this->escape($this->displayNumber($pill)) . '</span>' : '')
+                . '</button></div>';
+        }
+
+        $cards = [];
+        foreach ($plans as $pi => $p) {
             $name      = $this->escape($p['name'] ?? '');
             $price     = $this->escape($this->displayNumber($p['price'] ?? ''));
             $period    = $this->escape($p['period'] ?? '');
-            $badge     = $this->escape($p['badge'] ?? '');
+            $badge     = trim($this->stringify($p['badge'] ?? ''));
             $highlight = $this->flag($p['highlight'] ?? false);
             $ctaText   = $this->escape($p['cta_text'] ?? 'انتخاب');
             $ctaUrl    = $this->linkHref($p['cta_url'] ?? '#', '#');
             $rawFeat   = $p['features'] ?? [];
             $features  = is_array($rawFeat) ? $rawFeat : (json_decode((string) $rawFeat, true) ?? []);
             $hlClass   = $highlight ? ' highlighted' : '';
-            // Canvas repeater UI now saves each feature as {text: "..."};
-            // a bare string remains supported for already-saved legacy data.
-            $features  = array_map(fn($f) => is_array($f) ? ($f['text'] ?? '') : $f, $features);
 
-            $badgeHtml = $badge ? "<div class=\"tb-plan-badge-wrap\">" . $this->badgeHtml($badge, 'primary', 'md') . "</div>" : '';
-            $featureHtml = implode('', array_map(fn($f) => '<li>' . $this->escape($f) . '</li>', $features));
+            // The popular plan wears a ribbon on the card edge; any other
+            // badge stays the shared Badge primitive.
+            $badgeHtml = $highlight
+                ? '<div class="tb-plan-ribbon">' . $this->escape($this->displayNumber($badge !== '' ? $badge : 'محبوب‌ترین')) . '</div>'
+                : ($badge !== '' ? "<div class=\"tb-plan-badge-wrap\">" . $this->badgeHtml($badge, 'primary', 'md') . "</div>" : '');
+
+            $yearly = trim($this->stringify($p['price_yearly'] ?? ''));
+            if ($toggle && $yearly !== '') {
+                $yearlyPeriod = $this->escape(trim($this->stringify($p['period_yearly'] ?? '')) ?: '/ سال');
+                $priceHtml = "<div class=\"tb-plan-price\" data-tb-cycle=\"monthly\">{$price}</div><p class=\"tb-plan-period\" data-tb-cycle=\"monthly\">{$period}</p>"
+                    . '<div class="tb-plan-price" data-tb-cycle="yearly" hidden>' . $this->escape($this->displayNumber($yearly)) . '</div>'
+                    . "<p class=\"tb-plan-period\" data-tb-cycle=\"yearly\" hidden>{$yearlyPeriod}</p>";
+            } else {
+                $priceHtml = "<div class=\"tb-plan-price\">{$price}</div><p class=\"tb-plan-period\">{$period}</p>";
+            }
+
+            $featureHtml = '';
+            foreach ($features as $fi => $f) {
+                // Canvas saves {text, included, tooltip}; a bare string is
+                // legacy data and counts as included.
+                $f = is_array($f) ? $f : ['text' => $f];
+                $text = trim($this->stringify($f['text'] ?? ''));
+                if ($text === '') {
+                    continue;
+                }
+                $included = $this->flag($f['included'] ?? true);
+                $tip = trim($this->stringify($f['tooltip'] ?? ''));
+                $tipId = "tb-{$id}-tip-{$pi}-{$fi}";
+                $tipHtml = $tip !== ''
+                    ? '<span class="tb-tip"><button type="button" class="tb-tip-trigger" aria-label="' . $this->escapeAttr('توضیح «' . $text . '»') . '" aria-describedby="' . $tipId . '">' . IconLibrary::svg('info') . '</button>'
+                        . '<span class="tb-tip-bubble" role="tooltip" id="' . $tipId . '">' . $this->escape($this->displayNumber($tip)) . '</span></span>'
+                    : '';
+                $featureHtml .= '<li class="tb-plan-feature ' . ($included ? 'is-included' : 'is-excluded') . '">'
+                    . '<span class="tb-plan-feature-icon">' . IconLibrary::svg($included ? 'check' : 'x') . '</span>'
+                    . '<span class="tb-plan-feature-text">' . $this->escape($this->displayNumber($text))
+                    . ($included ? '' : '<span class="tb-visually-hidden"> (در این پلن نیست)</span>') . '</span>'
+                    . $tipHtml . '</li>';
+            }
 
             $cards[] = "<div class=\"tb-pricing-card{$hlClass}\">
                 {$badgeHtml}
                 <p class=\"tb-plan-name\">{$name}</p>
-                <div class=\"tb-plan-price\">{$price}</div>
-                <p class=\"tb-plan-period\">{$period}</p>
+                {$priceHtml}
                 <ul class=\"tb-plan-features\">{$featureHtml}</ul>
                 <a href=\"{$ctaUrl}\" class=\"tb-btn " . ($highlight ? 'tb-btn-primary' : 'tb-btn-secondary') . "\" style=\"width:100%;text-align:center;\">{$ctaText}</a>
             </div>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-pricing-cards tb-section\">
-            <div class=\"tb-container\">{$headerHtml}
+        $tips = str_contains(implode('', $cards), 'tb-tip-trigger');
+        return "<div id=\"tb-{$id}\" class=\"tb-pricing-cards tb-section\"" . ($toggle || $tips ? ' data-tb-pricing' : '') . ">
+            <div class=\"tb-container\">{$headerHtml}{$toggleHtml}
                 <div class=\"tb-pricing-grid cols-{$colCount}\">" . implode('', $cards) . "</div>
             </div>
-        </div>";
+        </div>" . ($toggle || $tips ? $this->pricingAssets() : '');
+    }
+
+    /** Phase 3b (ADR-069): blocks/pricing.js — once per render. */
+    private function pricingAssets(): string
+    {
+        if ($this->pricingAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::pricingScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: pricing.js is missing.');
+        }
+        $this->pricingAssetsEmitted = true;
+        return '<script data-tb-block-asset="pricing">' . $js . '</script>';
     }
 
     protected function renderNewsletterForm(array $props, string $inner, string $id): string
@@ -3300,7 +3492,7 @@ class BlockRenderer
             $linkLabel = $this->escape($item['link_label'] ?? 'مشاهده');
             // Strict allowlist — the only classes the CSS contract defines.
             // Anything else (incl. the legacy 'normal') renders as small.
-            $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small'], true) ? $item['size'] : 'small';
+            $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small', 'half', 'full'], true) ? $item['size'] : 'small';
             // Same colour allowlist as the gradient stops: an escaped but
             // unvalidated value could still inject extra CSS declarations.
             $bgc    = $this->escapeAttr($this->bentoColorToken($item['bg_color'] ?? '', '#f8fafc') ?: '#f8fafc');
@@ -3387,17 +3579,40 @@ class BlockRenderer
                 ? "<span class=\"tb-bento-item-link\">{$linkLabel}<span aria-hidden=\"true\"> ←</span></span>"
                 : '';
 
+            // Phase 3b (ADR-069): dynamic cells. A product cell holds its own
+            // links and add-to-cart form, so it is never itself a link.
+            $kind = $item['kind'] ?? 'content';
+            $kind = in_array($kind, ['content', 'product', 'countdown', 'metric'], true) ? $kind : 'content';
+            if ($kind === 'product') {
+                $hasLink = false;
+                $linkHtml = '';
+            }
+
             $tag = $hasLink ? 'a' : 'div';
             $hrefAttr = $hasLink ? " href=\"{$cardHref}\"" : '';
             $cursorStyle = $hasLink ? 'cursor:pointer;text-decoration:none;' : '';
             $pointerClass = $hasLink ? ' cursor-pointer group' : '';
+            $iconBlock = $icon ? "<div class=\"tb-bento-item-icon\">{$icon}</div>" : '';
+            $textHtml = $itext !== '' ? "<p class=\"tb-bento-item-text\">{$itext}</p>" : '';
 
-            $cells[] = "<{$tag}{$hrefAttr} class=\"tb-bento-item {$size}{$mediaClass}{$pointerClass}{$glowClass}\" style=\"{$backgroundStyle}color:{$tc};{$cursorStyle}{$glowStyle}\">
+            $body = match ($kind) {
+                'product' => ($ititle !== '' ? "<p class=\"tb-bento-eyebrow\">{$ititle}</p>" : '') . $this->bentoProductHtml($item),
+                'countdown' => "{$iconBlock}<h3 class=\"tb-bento-item-title\">{$ititle}</h3>{$textHtml}"
+                    . $this->renderCountdown(['end_date' => $item['end_date'] ?? '', 'end_time' => $item['end_time'] ?? '', 'show_end_date' => true], '', "{$id}-cd" . count($cells)),
+                'metric' => $iconBlock
+                    . '<p class="tb-bento-metric-value">' . $this->escape($this->displayNumber($item['metric_value'] ?? '')) . '</p>'
+                    . "<h3 class=\"tb-bento-item-title\">{$ititle}</h3>{$textHtml}",
+                // Byte-identical to the pre-3b content cell.
+                default => "{$iconBlock}
+                <h3 class=\"tb-bento-item-title\">{$ititle}</h3>
+                <p class=\"tb-bento-item-text\">{$itext}</p>",
+            };
+            $kindClass = $kind !== 'content' ? " kind-{$kind}" : '';
+
+            $cells[] = "<{$tag}{$hrefAttr} class=\"tb-bento-item {$size}{$kindClass}{$mediaClass}{$pointerClass}{$glowClass}\" style=\"{$backgroundStyle}color:{$tc};{$cursorStyle}{$glowStyle}\">
                 {$mediaHtml}
                 <div class=\"tb-bento-item-content\">
-                " . ($icon ? "<div class=\"tb-bento-item-icon\">{$icon}</div>" : '') . "
-                <h3 class=\"tb-bento-item-title\">{$ititle}</h3>
-                <p class=\"tb-bento-item-text\">{$itext}</p>
+                {$body}
                 {$linkHtml}
                 </div>
             </{$tag}>";
@@ -3427,6 +3642,18 @@ class BlockRenderer
                 <div class=\"tb-bento-grid\">" . implode('', $cells) . "</div>
             </div>
         </div>";
+    }
+
+    /**
+     * Phase 3b (ADR-069): a bento cell's live product. This package has no
+     * products, so the Builder preview shows a labelled sample card;
+     * customer-site overrides this with the real product (`product_id`, or
+     * the newest when 0).
+     */
+    protected function bentoProductHtml(array $item): string
+    {
+        $card = $this->productCard($this->demoProductCard(['title' => 'محصول نمونه', 'price' => 1250000, 'original' => 1590000, 'badge' => null, 'stock' => 'موجود'], 2));
+        return $card . '<p class="tb-bento-note">نمونه؛ در سایت، محصول انتخاب‌شده نمایش داده می‌شود.</p>';
     }
 
     /**
