@@ -29,7 +29,10 @@ final class HtmlSanitizer
      */
     public static function isValidUrl(string $url): bool
     {
-        $trimmed = trim($url);
+        // Browsers drop every ASCII tab and newline from a URL before
+        // parsing it (WHATWG URL), so `java<TAB>script:` runs as
+        // `javascript:`. Judge the scheme the browser will see.
+        $trimmed = trim(str_replace(["\t", "\n", "\r"], '', $url));
         if ($trimmed === '') {
             return true;
         }
