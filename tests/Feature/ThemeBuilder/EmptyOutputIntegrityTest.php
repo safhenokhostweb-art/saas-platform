@@ -241,7 +241,8 @@ class EmptyOutputIntegrityTest extends TestCase
         }
     }
 
-    // ── 11. 28/28 real catalog passes the full gate ────────────────────────
+    // ── 11. 29/29 real catalog passes the full gate ────────────────────────
+    // 29 since ariana-multiplus joined the canonical catalog (9010288c).
 
     public function test_all_canonical_themes_pass_the_full_quality_gate(): void
     {
@@ -250,7 +251,7 @@ class EmptyOutputIntegrityTest extends TestCase
         $this->artisan('theme:quality-gate')->assertExitCode(0);
 
         $themes = Theme::whereNull('site_id')->get();
-        $this->assertSame(28, $themes->count());
+        $this->assertSame(29, $themes->count());
         foreach ($themes as $theme) {
             $report = ThemeQualityReport::where('theme_id', $theme->id)->latest('evaluated_at')->first();
             $this->assertNotNull($report, "{$theme->slug} has no quality report");

@@ -44,7 +44,9 @@ class FoodMartPhase2cRealShellRenderTest extends TestCase
         self::assertStringNotContainsString('class="canvas-site-header tb-site-header"', $html);
         self::assertStringNotContainsString('class="canvas-site-footer tb-site-footer"', $html);
         self::assertStringNotContainsString('id="tb-mobile-menu-btn"', $html);
-        self::assertStringContainsString("<header>\r\n", $html);
+        // LF: the foodmart markup moved into the theme-runtime package's
+        // FoodMartBlockRendererTrait with newline normalization only.
+        self::assertStringContainsString("<header>\n", $html);
         self::assertStringContainsString('<footer class="py-5">', $html);
         self::assertStringContainsString('<main id="canvas-main" class="canvas-main" tabindex="-1">', $html);
 
