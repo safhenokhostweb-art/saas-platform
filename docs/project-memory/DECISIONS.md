@@ -3717,3 +3717,157 @@ There is no migration or Composer change.
   (no patches) and the newsletter migration's `down()`.
 
 There is no new migration or Composer change.
+
+## ADR-069
+
+**Title:** Bento v2 Dynamic Cells on a 12-Column Grid, One Review Card with Rating Breakdown and Microdata, Pricing Billing Switch and Feature Checklist; Bestselling Counts Paid Orders
+
+**Status:** Accepted
+
+**Date:** 2026-10-30
+
+**Context:**
+
+- **Bento.** `bento_grid` was a three-column grid of static text and
+  image cards (two columns below 767 px, one below 480 px). A cell could
+  not show a product, a campaign countdown or a figure.
+- **Reviews.** `testimonials_slider` printed ★/☆ text stars, with no date
+  and no verified-buyer mark. customer-site's `module:reviews_grid` had
+  the same text stars, no breakdown and no structured data.
+- **Pricing.** `pricing_cards` had one price per plan, a generic badge for
+  the popular plan, and features as `✓` text with no way to mark a feature
+  as missing or explain it.
+- **Bestselling.** `Product::scopeBestSelling` counted completed orders
+  only, so an order dropped out while paid, processing or shipped. Owner
+  decision 2026-10-30: count paid orders.
+- **Editor.** The platform repeater's `show_if` understood only a boolean
+  field, so kind-specific fields could not follow a select.
+
+**Decision:**
+
+1. **Bento v2.**
+   - The grid has 12 columns. Sizes span `small` 4, `half` 6, `large` 8,
+     `full` 12, `tall` 4 × 2 rows and `featured` 8 × 2 rows; the old sizes
+     keep their desktop widths. At ≤ 1023 px it has 2 columns (`large`,
+     `full` and `featured` span both; `featured` drops to one row). At
+     ≤ 639 px it has 1 column. Tracks are `minmax(0, 1fr)`, so live content
+     cannot widen a column.
+   - An item `kind` makes a cell dynamic:
+     - `product`: the shared `productCard()`. customer-site's
+       `bentoProductHtml()` shows the real `product_id` (or the newest
+       product when 0); the Builder shows a labelled sample. A product cell
+       is never itself a link, because the card has its own links and form;
+     - `countdown`: the Phase 3 Jalali countdown, compact
+       (`end_date`/`end_time`);
+     - `metric`: icon, a large localized figure («۱۲٬۰۰۰+») and its label.
+   - `content` cells render byte-identically to before.
+   - The platform editor's `show_if` also accepts `field=value` or
+     `field=a|b` (an empty value reads as the field's default), so
+     `product_id`, `end_date`/`end_time` and `metric_value` appear only for
+     their kind. customer-site's editor shows all fields, as it always has.
+2. **One review card,** `reviewCardHtml()`, plus `ratingSummaryHtml()` and
+   the shared `starsHtml()` (the product card uses it too, with unchanged
+   output).
+   - The card shows SVG stars with a spoken rating, the date in Jalali
+     («۲ آبان ۱۴۰۵», from Jalali or Gregorian input via the new
+     `JalaliDate::parse()`), «خریدار تاییدشده», and the avatar or initial.
+   - The summary shows the average, the count and one Persian bar per star
+     level («۵ ستاره ۶۰٪»), with counts for screen readers.
+   - Microdata only where it is true:
+     - authored testimonials get none: they review no item, and reviews of
+       the site's own business are not eligible;
+     - customer-site `module:reviews_grid` with `product_id` wraps its
+       reviews in that Product, with an `AggregateRating` over all its
+       approved reviews and each card as a nested `Review`;
+     - without a product, each card is a standalone `Review` whose
+       `itemReviewed` is its product. The store-wide breakdown carries no
+       microdata, because it rates no single item.
+   - Verified: the reviewer's account has a paid order containing that
+     product. One query covers the whole list.
+   - New props: `testimonials_slider` items get `verified` and `date`, and
+     the block gets `show_summary`. `module:reviews_grid` gets `product_id`
+     and `show_summary`.
+3. **Pricing.**
+   - The `billing_toggle` switch («ماهانه» / «سالانه» with the
+     `yearly_discount_label` pill) appears only when a plan has
+     `price_yearly`. Both prices are in the markup, with the yearly one
+     `hidden`, so without JavaScript the monthly prices show. A plan without
+     a yearly price keeps its monthly price in both modes.
+   - The highlighted plan wears a ribbon on its top edge (the badge text, or
+     «محبوب‌ترین»), in the primary token. Other badges stay `badgeHtml()`.
+   - Features `{text, included, tooltip}` show a Lucide `check` or `x`; an
+     excluded one is muted and struck, and says so to screen readers. A
+     tooltip is a button with `aria-describedby`. It shows on hover and
+     focus, toggles on tap, closes on an outside tap, and Esc dismisses it
+     while it is still hovered (WCAG 1.4.13). The bubble spans its feature
+     row, so it never leaves the card. Legacy string features count as
+     included.
+   - `blocks/pricing.js` is inlined once per render, only when a block has
+     the switch or a tooltip.
+4. **Bestselling counts paid orders:** `Order::SOLD_STATUSES` = paid,
+   processing, shipped, completed. Pending and cancelled orders do not
+   count; there is no refunded status in this schema. `paid` is included
+   because it is a paid order: leaving it out would drop an order from the
+   ranking between payment and processing.
+
+**Not done:**
+
+- The saas-platform commit pin in customer-site's `release-policy.json`.
+  `git_dependencies` has no commit field: `ReleasePreparer` records the HEAD
+  of the clean, pushed `main` checkout. An unread key would be a false pin.
+  Enforcing a pin is a deployment-system change, and that is the owner's
+  call.
+
+**Consequences:**
+
+- **Re-pinned on purpose:**
+  - the testimonials star assertions (`Phase01RepeaterContractTest` and the
+    phase01 browser spec) now check the spoken label and SVG stars;
+  - the phase01 spec's bento column count is 12 / 2 / 1 and its size labels
+    are the new ones. It also checks that kind-specific fields follow
+    `show_if`.
+- **Tests:**
+  - `Phase3bBentoReviewsPricingTest` (platform);
+  - `ThemePhase3bReviewsBentoTest` (customer-site; verified buyers, both
+    microdata modes, the live bento product);
+  - `ThemePhase3CommerceTest` (bestselling across statuses);
+  - browser `phase3b-bento-reviews-pricing.spec.ts` (stub origin, three
+    widths: column count and each size's share, no clipping, ticking
+    countdown, breakdown bars, toggle, tooltip hover, Esc and tap, no
+    horizontal overflow).
+- **Parity harness:** the before state is saas-platform `30b89909` (the last package without
+  Phase 3b) with customer-site `2e37c2d`.
+  - **Live markup:** 5 of 229 documents change, all reviews or pricing.
+    No bento document changes: content cells are byte-identical.
+  - **Old markup under the new CSS:** 16 element kinds, all from the bento
+    grid or the pricing restyle:
+    - the bento grid moves to 12 / 2 / 1 columns. At 1366 px only the track
+      list and the spans change (3 × 405 px tracks become 12 × 89 px, with
+      `span 4` and `span 8`), so no item moves or resizes. At 768 px the grid
+      has 2 columns instead of 3, as specified;
+    - pricing cards become `position: relative`, and the highlighted card
+      gets 12 px more top padding for the ribbon. The newsletter form below
+      shifts with them;
+    - reviews: nothing, because the old markup is untouched.
+  - **Preview vs live:** 48 distinct diffs across 230 platform documents,
+    all on `div.tb-skill-bar-fill` (the known host-only rule).
+- **Release note:** the Phase 3b package code was committed by another
+  session (`15323394`) before the editor half (`repeaterFieldVisible()`)
+  landed, and was released from `main` as `f5ffc2f5` (Hub release
+  `04a89771`, awaiting its artifact, not deployed). In that release the
+  platform editor hides the bento kind fields, because the old evaluator
+  reads `kind=product` as a field name. A release that includes this
+  phase's editor commit is needed..
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry` (bento_grid,
+  testimonials_slider, pricing_cards, module:reviews_grid),
+  `Support\JalaliDate::parse()`, the provider, the new `pricing.js` and
+  `theme-runtime-blocks.css`.
+- **Platform editor:** `repeaterFieldVisible()` and the repeater partial.
+- **customer-site:** `Order::SOLD_STATUSES`, `Product::scopeBestSelling`,
+  its BlockRenderer (`bentoProductHtml()`) and `ThemeCanvasRenderer`
+  (`module:reviews_grid`).
+
+There is no migration or Composer change.

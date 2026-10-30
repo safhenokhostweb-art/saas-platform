@@ -18,8 +18,8 @@ import { loadFixtures, loginAsAdmin, canvasUrl } from './helpers';
 
 const fx = loadFixtures();
 const WIDTHS = [
-  { name: 'desktop', width: 1366, bentoCols: 3, testimonialsPerView: '3' },
-  { name: 'tablet', width: 768, bentoCols: 3, testimonialsPerView: '2' },
+  { name: 'desktop', width: 1366, bentoCols: 12, testimonialsPerView: '3' },
+  { name: 'tablet', width: 768, bentoCols: 2, testimonialsPerView: '2' },
   { name: 'mobile', width: 390, bentoCols: 1, testimonialsPerView: '1' },
 ] as const;
 
@@ -129,12 +129,21 @@ test('Phase 0.1 schema-driven repeater: author → save → reload → preview a
   await expect(bento).toBeVisible();
   await expect(bento.locator('[data-testid^="tb-repeater-item-items-"]')).toHaveCount(3);
   await expect(panel.getByText('[object Object]')).toHaveCount(0);
-  await expect(panel.locator('#rf-items-0-size option')).toHaveText(['استاندارد (۱×۱)', 'عریض (۲×۱)', 'بلند (۱×۲)', 'ویژه (۲×۲)']);
+  await expect(panel.locator('#rf-items-0-size option')).toHaveText(['یک‌سوم (۴ از ۱۲)', 'نیمه (۶ از ۱۲)', 'دوسوم (۸ از ۱۲)', 'تمام‌عرض (۱۲ از ۱۲)', 'بلند (۴ از ۱۲، دو ردیف)', 'ویژه (۸ از ۱۲، دو ردیف)']); // Phase 3b: 12-column spans
 
   await panel.getByTestId('tb-repeater-add-items').click();
   await expect(bento.locator('[data-testid^="tb-repeater-item-items-"]')).toHaveCount(4);
   await panel.locator('#rf-items-3-title').fill('کارت تست فاز ۰٫۱');
   await panel.locator('#rf-items-3-size').selectOption('featured');
+  // Phase 3b (ADR-069): kind-specific fields follow the cell kind (show_if 'kind=…').
+  await expect(panel.locator('#rf-items-3-product_id')).toBeHidden();
+  await panel.locator('#rf-items-3-kind').selectOption('product');
+  await expect(panel.locator('#rf-items-3-product_id')).toBeVisible();
+  await expect(panel.locator('#rf-items-3-metric_value')).toBeHidden();
+  await panel.locator('#rf-items-3-kind').selectOption('metric');
+  await expect(panel.locator('#rf-items-3-metric_value')).toBeVisible();
+  await expect(panel.locator('#rf-items-3-product_id')).toBeHidden();
+  await panel.locator('#rf-items-3-kind').selectOption('content');
   await panel.locator('#rf-items-3-link').fill('/shop');
   await panel.getByTestId('tb-repeater-up-items-3').click();          // → index 2
   await panel.getByTestId('tb-repeater-duplicate-items-0').click();   // 5 items
@@ -221,7 +230,7 @@ test('Phase 0.1 schema-driven repeater: author → save → reload → preview a
   await expect(page.locator(`#tb-${faqId} summary`).first()).toHaveText('ارسال سفارش چقدر طول می‌کشد؟');
   const tRoot = page.locator(`#tb-${testimonialsId}`);
   await expect(tRoot.getByText('سارا محمدی')).toBeVisible();
-  await expect(tRoot.locator('.tb-testimonial-stars').first()).toHaveText('★★★★☆');
+  await expect(tRoot.locator('.tb-testimonial-stars').first()).toHaveAttribute('aria-label', 'امتیاز ۴ از ۵');
 
   for (const w of WIDTHS) {
     await page.setViewportSize({ width: w.width, height: 900 });
