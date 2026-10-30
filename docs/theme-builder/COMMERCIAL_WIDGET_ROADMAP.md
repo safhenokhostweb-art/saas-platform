@@ -1014,3 +1014,9 @@ Everything else renders byte-identically.
 - `header_modern_v1` and the theme-specific headers keep their own chrome.
 - Stored themes keep their emoji icons (see §12).
 - customer-site's editor does not apply `show_if`.
+
+**2026-10-31:** the local-vs-production widget audit, the WU-A link-scheme
+XSS delivery record (deployed: saas-platform `b92570d2`, customer-site
+`a717b684`), and implementation-ready specs for WU-B (carousel controller)
+and WU-C (commercial tokens) live in
+`CANVAS_WIDGET_LOCAL_VS_PROD_AUDIT_2026-10-30.md` §6–§7.
