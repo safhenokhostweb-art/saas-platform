@@ -1940,7 +1940,7 @@ class BlockRenderer
         $btn1t   = $this->escape($props['button_text'] ?? '');
         $btn1u   = $this->escapeUrl($props['button_url'] ?? '', '#');
         $btn2t   = $this->escape($props['button2_text'] ?? '');
-        $btn2u   = $this->escapeAttr($props['button2_url'] ?? '#');
+        $btn2u   = $this->linkHref($props['button2_url'] ?? '#');
         $imgUrl  = $this->escapeAttr($props['image_url'] ?? '');
         $imgSide = $props['image_side'] ?? 'left';
         $bg      = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-background, #ffffff)'));
@@ -1972,7 +1972,7 @@ class BlockRenderer
         $btn1t   = $this->escape($props['button_text'] ?? '');
         $btn1u   = $this->escapeUrl($props['button_url'] ?? '', '#');
         $btn2t   = $this->escape($props['button2_text'] ?? '');
-        $btn2u   = $this->escapeAttr($props['button2_url'] ?? '#');
+        $btn2u   = $this->linkHref($props['button2_url'] ?? '#');
         // Commercial Productization fase-3 (visual identity audit): a real,
         // confirmed bug — these defaults were hardcoded generic indigo/
         // violet hex values, completely independent of the Theme's own
@@ -4732,9 +4732,9 @@ class BlockRenderer
         $ratingLabel = $this->escape($props['rating_label'] ?? '');
         $phone    = $this->escape($props['phone'] ?? '');
         $btn1Text = $this->escape($props['btn_primary_text'] ?? '');
-        $btn1Url  = $this->escapeAttr($props['btn_primary_url'] ?? '#');
+        $btn1Url  = $this->linkHref($props['btn_primary_url'] ?? '#');
         $btn2Text = $this->escape($props['btn_secondary_text'] ?? '');
-        $btn2Url  = $this->escapeAttr($props['btn_secondary_url'] ?? '#');
+        $btn2Url  = $this->linkHref($props['btn_secondary_url'] ?? '#');
 
         $badgeHtml = $badge ? "<span class=\"tb-hero-split-badge\">{$badge}</span>" : '';
         $btn1Html  = $btn1Text ? "<a href=\"{$btn1Url}\" class=\"tb-btn tb-btn-primary\">{$btn1Text}</a>" : '';

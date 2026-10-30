@@ -3377,7 +3377,7 @@ function themeCanvas() {
                     this.mediaModal.uploadDone = true;
                     this.mediaModal.images.unshift({ url: d.url, name: d.name ?? file.name });
                 } else {
-                    this.showToast(d.error ?? 'خطا در آپلود', 'error');
+                    this.showToast(d.error ?? d.message ?? 'خطا در آپلود', 'error');
                 }
             } catch (_) { this.showToast('خطای شبکه', 'error'); }
             finally { this.mediaModal.uploading = false; }
