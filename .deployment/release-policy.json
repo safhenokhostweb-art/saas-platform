@@ -18,7 +18,13 @@
     "composer.lock",
     "package.json",
     "package-lock.json",
-    "phpunit.xml"
+    "phpunit.xml",
+    "DEPLOY_TEST.txt",
+    "FINAL_SAAS_DEPLOY_TEST.txt",
+    "deploy-test.txt",
+    "get(__FILE__)",
+    "getKeyType()",
+    "origin)"
   ],
   "excluded_runtime_paths": [
     ".env",
