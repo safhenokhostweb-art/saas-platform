@@ -1,6 +1,31 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-10-12
+> Last Updated: 2026-10-30
+
+---
+
+## Commercial Widget Program — Phase 3b (Bento v2, reviews, pricing)
+
+**DELIVERED — deployed to production 2026-10-30; Phase 3b closed.** Scope,
+evidence and remaining items: `docs/theme-builder/COMMERCIAL_WIDGET_ROADMAP.md`
+§15 and ADR-069 in `DECISIONS.md`.
+
+| Project | Release commit on `main` | Hub deployment | Result |
+|---|---|---|---|
+| saas-platform | `26877fb9` (supersedes `f5ffc2f5` / Hub `04a89771`, which lacked the editor `show_if` fix) | `7475212e-9230-4994-95e8-32f20eb78e1e` | HTTP 200, completed |
+| customer-site | `86777d9` | `75860a62-6042-44eb-9bae-8d0f0b897dac` | HTTP 200, completed |
+
+- Deployment IDs and results are as reported by the owner from the Hub
+  dashboard. The commits were checked locally: both are the tips of their
+  `origin/main` releases, and `86777d9`'s tree equals the customer-site
+  feature branch, Phase 3b host work included.
+- saas-platform `main` has since moved to `af1cf224` (`a0c8a84d` settings
+  secret removal, `cff426e0` constitution §16, `af1cf224` test fixes). None
+  of these touch runtime code, so production needs no redeploy for them.
+- **Open:** the post-deploy Sentinel verification
+  (`sentinel_verification_runs`) is not yet independently confirmed. There
+  is no read path to the Hub database from this workspace, and the local
+  agents journal holds no events for these deployment IDs.
 
 ---
 
