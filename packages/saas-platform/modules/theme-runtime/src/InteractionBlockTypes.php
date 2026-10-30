@@ -46,7 +46,7 @@ final class InteractionBlockTypes
                 ],
                 'target_value' => ['type' => 'string', 'label' => 'مقدار مقصد (URL یا انتخاب‌گر)', 'default' => '#'],
                 'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['primary' => 'اصلی', 'secondary' => 'ثانویه', 'outline' => 'خط‌دار', 'ghost' => 'شفاف'], 'default' => 'primary'],
-                'icon' => ['type' => 'string', 'label' => 'آیکون (اختیاری)', 'default' => ''],
+                'icon' => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => ''],
             ],
             'defaultProps' => [
                 'label' => 'دکمه',

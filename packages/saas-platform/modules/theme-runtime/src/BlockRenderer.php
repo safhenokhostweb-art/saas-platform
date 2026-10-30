@@ -3,6 +3,9 @@ namespace SaaSPlatform\ThemeRuntime;
 
 use Illuminate\Support\Str;
 use SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider;
+use SaaSPlatform\ThemeRuntime\Support\IconLibrary;
+use SaaSPlatform\ThemeRuntime\Support\JalaliDate;
+use SaaSPlatform\ThemeRuntime\Support\PersianNumber;
 
 /**
  * Phase 2h (ADR-029) — the ONE canonical structural Theme block renderer
@@ -39,6 +42,10 @@ class BlockRenderer
     public const MODE_EDITOR = 'editor';
     public const MODE_PUBLIC = 'public';
 
+    /** Phase 3 (ADR-068): the «پرامتیاز» product badge — see productCard(). */
+    public const TOP_RATED_MIN_RATING = 4.5;
+    public const TOP_RATED_MIN_REVIEWS = 5;
+
     protected array $context = [];
 
     /**
@@ -61,6 +68,17 @@ class BlockRenderer
 
     /** Phase 11: one JS/CSS carrier for every rendered modern-header document. */
     private bool $headerModernAssetsEmitted = false;
+
+    /** Phase 0.7 (ADR-066): blocks/site-forms.js is inlined once per render. */
+    private bool $siteFormsAssetsEmitted = false;
+
+    /** Phase 1/2 (ADR-067): site-header.js and cart.js, each once per render. */
+    private bool $siteHeaderAssetsEmitted = false;
+    private bool $cartAssetsEmitted = false;
+    private bool $headerNeedsScript = false;
+
+    /** Phase 3b (ADR-069): blocks/pricing.js, once per render. */
+    private bool $pricingAssetsEmitted = false;
 
     /**
      * Phase 9 / Step 2 — same once-per-document rule for the shared
@@ -672,12 +690,22 @@ class BlockRenderer
     {
         $padding = $this->spacingClass($props['padding'] ?? 'md');
         $bg = $this->escapeAttr($props['background'] ?? 'transparent');
+        // Phase 0.5: a token reference or rgba() from the colour control is a
+        // colour, not a class name (it used to become `tb-bg-var(--…)`).
+        $bgColor = (!str_starts_with($bg, '#') && !preg_match('/^[a-z][a-z0-9-]*$/', $bg))
+            ? $this->cssColor($props['background'] ?? null, '') : '';
+        if ($bgColor !== '') {
+            $bg = 'transparent';
+        }
         $bgImg = $this->escapeAttr($props['background_image'] ?? '');
         $useContainer = ($props['container'] ?? true);
         $inlineStyles = [];
         if ($bgImg) {
             $inlineStyles[] = "background-image: url({$bgImg})";
             $inlineStyles[] = "background-size: cover";
+        }
+        if ($bgColor !== '') {
+            $inlineStyles[] = 'background-color:' . $this->escapeAttr($bgColor);
         }
         $customBg = $props['_style']['background']['color'] ?? null;
         if ($customBg) {
@@ -795,8 +823,11 @@ class BlockRenderer
         $subtitle = $this->escape($props['subtitle'] ?? '');
         $btnText  = $this->escape($props['button_text'] ?? '');
         $btnUrl   = $this->escapeUrl($props['button_url'] ?? '', '#');
-        $bg    = $props['background'] ?? 'primary';
+        // Phase 0.5: both were interpolated into the class attribute
+        // unescaped. Same background contract as renderCta().
+        [$bgClass, $bgStyle] = $this->themeBackground($props['background'] ?? 'primary');
         $align = $props['align'] ?? 'center';
+        $align = in_array($align, ['left', 'center', 'right'], true) ? $align : 'center';
         $eaTitle = $this->editableAttr('title', 'text');
         $eaSub   = $this->editableAttr('subtitle', 'text');
         $eaBtn   = $this->editableAttr('button_text', 'text');
@@ -807,8 +838,9 @@ class BlockRenderer
         // had zero runtime effect. Same inline-style pattern renderSection()
         // already uses for the identical field.
         $bgImg = $this->escapeAttr($props['background_image'] ?? '');
-        $styleAttr = $bgImg ? " style=\"background-image:url({$bgImg});background-size:cover;background-position:center;\"" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-hero tb-bg-{$bg} tb-align-{$align}\"{$styleAttr}><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
+        $styles = array_filter([$bgStyle, $bgImg ? "background-image:url({$bgImg});background-size:cover;background-position:center;" : '']);
+        $styleAttr = $styles ? ' style="' . implode(';', $styles) . '"' : '';
+        return "<section id=\"tb-{$id}\" class=\"tb-hero {$bgClass} tb-align-{$align}\"{$styleAttr}><div class=\"tb-hero-inner\"><h1 class=\"tb-hero-title\"{$eaTitle}>{$title}</h1><p class=\"tb-hero-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</div></section>";
     }
 
     /**
@@ -943,6 +975,9 @@ class BlockRenderer
             $thumbnailHtml = '<div class="tb-carousel-thumbs">' . implode('', $buttons) . '</div>';
         }
 
+        // Phase 2 (ADR-067): arrows on logical sides (previous at the reading
+        // start, next at the end) pointing outward, styled by the shared sheet;
+        // the LTR mirror flips the glyphs.
         $carouselLabel = $this->escapeAttr('اسلایدر ' . $id);
 
         return "<div id=\"tb-{$id}\" class=\"tb-carousel {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" aria-label=\"{$carouselLabel}\" tabindex=\"0\"
@@ -967,8 +1002,8 @@ class BlockRenderer
                 <div class=\"tb-carousel-track\" style=\"{$trackStyle}\">" . implode('', $slides) . "</div>
             </div>
             {$statusHtml}
-            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\" style=\"position:absolute;top:50%;right:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">‹</button>
-            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\" style=\"position:absolute;top:50%;left:0.25rem;transform:translateY(-50%);width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;z-index:2;\">›</button>
+            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>
+            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>
             <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
             {$thumbnailHtml}
             {$this->carouselScript($id, $options)}
@@ -1129,8 +1164,12 @@ class BlockRenderer
      * `onerror` (there is no safe, fast way to verify an image URL
      * resolves from inside a server-side render call).
      */
-    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = '🖼️'): string
+    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = ''): string
     {
+        // Phase 0.6 (ADR-065): $icon is ready HTML; '' = the SVG image icon.
+        if ($icon === '') {
+            $icon = $this->iconHtml('image');
+        }
         $altAttr = $this->escapeAttr($alt);
         if ($url === '') {
             return "<div class=\"tb-img-fallback\" style=\"display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;{$style}\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>";
@@ -1158,7 +1197,7 @@ class BlockRenderer
     {
         $variant = in_array($variant, ['success', 'warning', 'error', 'info', 'neutral', 'primary'], true) ? $variant : 'neutral';
         $size    = in_array($size, ['sm', 'md', 'lg'], true) ? $size : 'md';
-        $labelEsc = $this->escape($label);
+        $labelEsc = $this->escape($this->displayNumber($label));
         if ($labelEsc === '') {
             return '';
         }
@@ -1190,7 +1229,7 @@ class BlockRenderer
             $image    = trim((string) ($slide['image'] ?? ''));
             $title    = $this->escape($slide['title'] ?? '');
             $subtitle = $this->escape($slide['subtitle'] ?? '');
-            $link     = $this->escapeUrl($slide['link'] ?? '', '');
+            $link     = $this->linkHref($slide['link'] ?? '', '');
             $ctaText  = $this->escape($slide['cta_text'] ?? '');
 
             // The visible slide heading already names the same content;
@@ -1322,7 +1361,7 @@ class BlockRenderer
 
     protected function renderIconBox(array $props, string $inner, string $id): string
     {
-        $icon = $this->escape($props['icon'] ?? '');
+        $icon = $this->iconHtml($props['icon'] ?? '');
         $title = $this->escape($props['title'] ?? '');
         $text = $this->escape($props['text'] ?? '');
         $url = $this->escapeUrl($props['link'] ?? '', '');
@@ -1399,12 +1438,12 @@ class BlockRenderer
             max(0, min(240, (int) ($props['padding_v'] ?? 96)))
         );
         if ($bgType === 'color') {
-            $style .= 'background-color:' . $this->escapeAttr($props['bg_color'] ?? '#4f46e5') . ';';
+            $style .= 'background-color:' . $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, 'var(--tb-primary, #4f46e5)')) . ';';
         } elseif ($bgType === 'gradient') {
             $style .= sprintf(
                 'background-image:linear-gradient(115deg,%s,%s);',
-                $this->escapeAttr($props['gradient_from'] ?? '#4f46e5'),
-                $this->escapeAttr($props['gradient_to'] ?? '#7c3aed')
+                $this->escapeAttr($this->cssColor($props['gradient_from'] ?? null, 'var(--tb-primary, #4f46e5)')),
+                $this->escapeAttr($this->cssColor($props['gradient_to'] ?? null, 'var(--tb-secondary, #7c3aed)'))
             );
         } elseif ($bgType === 'image' && (string) ($props['bg_image'] ?? '') !== '') {
             // Same inline background pattern renderSection()/renderHero()
@@ -1443,7 +1482,7 @@ class BlockRenderer
         // subtree — heading/text children remain untouched primitives.
         $style = "gap:{$gap}px;max-width:{$maxWidth}px;"
             . '--tb-hero-title-size:' . $titleSize . 'rem;'
-            . '--tb-hero-title-color:' . $this->escapeAttr($props['title_color'] ?? '#ffffff') . ';';
+            . '--tb-hero-title-color:' . $this->escapeAttr($this->cssColor($props['title_color'] ?? null, 'var(--tb-on-primary, #ffffff)')) . ';';
         return "<div id=\"tb-{$id}\" class=\"tb-hero-content\" style=\"{$style}\">{$inner}</div>";
     }
 
@@ -1536,7 +1575,9 @@ class BlockRenderer
     // fix (caught by the new Builder↔Registry↔Renderer contract test).
     protected function renderNavMenu(array $props, string $inner, string $id): string
     {
-        $location = $props['location'] ?? 'header';
+        // Phase 0.2c: allowlisted — the raw value was interpolated into
+        // the class attribute unescaped.
+        $location = ($props['location'] ?? 'header') === 'footer' ? 'footer' : 'header';
         $menuHtml = $this->context['menu_html'] ?? '';
         return "<nav id=\"tb-{$id}\" class=\"tb-nav tb-nav-{$location}\" aria-label=\"منوی اصلی\">{$menuHtml}</nav>";
     }
@@ -1555,13 +1596,66 @@ class BlockRenderer
         if (empty($links) && !empty($this->context['social_links'])) {
             $links = $this->context['social_links'];
         }
+        if (isset($props['style'])) {
+            return $this->renderStyledSocialIcons(is_array($links) ? $links : [], (string) $props['style'], $id);
+        }
         $items = [];
         foreach ($links as $link) {
-            $url = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : (string) $link, '#');
+            $url = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : $link, '#');
             $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : '');
             $items[] = "<a href=\"{$url}\" class=\"tb-social-link\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"{$label}\">{$label}</a>";
         }
         return "<div id=\"tb-{$id}\" class=\"tb-social-icons\">" . implode('', $items) . "</div>";
+    }
+
+    /**
+     * Phase 0.2c: the `style` variants promoted from customer-site, with
+     * its markup unchanged — `icons` shows each label's first letter,
+     * `buttons` renders secondary buttons, `text` full labels. Unauthored
+     * `style` keeps the original markup above.
+     */
+    protected function renderStyledSocialIcons(array $links, string $style, string $id): string
+    {
+        $style = in_array($style, ['buttons', 'text'], true) ? $style : 'icons';
+        $items = [];
+        foreach ($links as $link) {
+            if (!is_array($link)) {
+                continue;
+            }
+            $url   = $this->linkHref($link['url'] ?? '#', '#');
+            $label = $this->escape($link['label'] ?? '');
+            $shown = $style === 'icons' ? mb_substr($label, 0, 1) : $label;
+            $cls = $style === 'buttons' ? 'tb-btn tb-btn-secondary' : 'tb-social-link';
+            $items[] = "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"{$cls}\" aria-label=\"{$label}\">{$shown}</a>";
+        }
+
+        return "<div id=\"tb-{$id}\" class=\"tb-social-icons tb-social-icons-{$style}\" style=\"display:flex;gap:0.5rem;flex-wrap:wrap;\">" . implode('', $items) . "</div>";
+    }
+
+    /** Theme colour tokens with a `.tb-bg-*` rule in the shared CSS contracts. */
+    private const CTA_BACKGROUND_TOKENS = ['primary', 'secondary', 'surface', 'background', 'text', 'dark', 'light', 'gray'];
+
+    /**
+     * The background contract shared by renderCta() and renderHero()
+     * (Phase 0.2c, extended in 0.5): a theme token keeps its `tb-bg-*`
+     * class; a valid CSS colour — hex, rgba(), or a var(--tb-…) the colour
+     * control stores — is applied inline with a readable text colour when
+     * one can be computed; anything else falls back to the primary token.
+     *
+     * @return array{0: string, 1: string} [class, inline style ('' for none)]
+     */
+    protected function themeBackground(mixed $value): array
+    {
+        $bg = trim($this->stringify($value));
+        if (in_array($bg, self::CTA_BACKGROUND_TOKENS, true)) {
+            return ["tb-bg-{$bg}", ''];
+        }
+        $color = $this->cssColor($bg, '');
+        if ($color === '') {
+            return ['tb-bg-primary', ''];
+        }
+        $text = $this->readableTextColorOn($color);
+        return ['tb-bg-custom', 'background:' . $this->escapeAttr($color) . ($text ? ';color:' . $text : '')];
     }
 
     protected function renderCta(array $props, string $inner, string $id): string
@@ -1570,12 +1664,17 @@ class BlockRenderer
         $subtitle = $this->escape($props['subtitle'] ?? '');
         $btnText  = $this->escape($props['button_text'] ?? '');
         $btnUrl   = $this->escapeUrl($props['button_url'] ?? '', '#');
-        $bg       = $props['background'] ?? 'primary';
+        // Phase 0.2c: `background` was interpolated into the class
+        // attribute unescaped, and a CSS colour (what customer-site's colour
+        // control stores) became a class with no rule, so the chosen colour
+        // never showed. See themeBackground().
+        [$bgClass, $bgStyle] = $this->themeBackground($props['background'] ?? 'primary');
+        $styleAttr = $bgStyle !== '' ? ' style="' . $bgStyle . '"' : '';
         $eaTitle  = $this->editableAttr('title', 'text');
         $eaSub    = $this->editableAttr('subtitle', 'text');
         $eaBtn    = $this->editableAttr('button_text', 'text');
         $btn = $btnText ? "<a href=\"{$btnUrl}\" class=\"tb-btn tb-btn-primary\"{$eaBtn}>{$btnText}</a>" : '';
-        return "<section id=\"tb-{$id}\" class=\"tb-cta tb-bg-{$bg}\"><h2 class=\"tb-cta-title\"{$eaTitle}>{$title}</h2><p class=\"tb-cta-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</section>";
+        return "<section id=\"tb-{$id}\" class=\"tb-cta {$bgClass}\"{$styleAttr}><h2 class=\"tb-cta-title\"{$eaTitle}>{$title}</h2><p class=\"tb-cta-subtitle\"{$eaSub}>{$subtitle}</p>{$btn}</section>";
     }
 
     /**
@@ -1599,6 +1698,12 @@ class BlockRenderer
         $size = $sizeMap[$rawSize] ?? (preg_match('/^[\d.]+(px|rem|em)$/', $rawSize) ? $rawSize : $sizeMap['medium']);
         $safeName = $this->escape($name);
         $safeSize = $this->escapeAttr($size);
+        // Phase 0.6 (ADR-065): a catalog name is an SVG labelled in Persian;
+        // a legacy emoji/text keeps its original markup.
+        if (IconLibrary::has($name)) {
+            $svg = IconLibrary::svg($name, IconLibrary::label($name));
+            return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\">{$svg}</span>";
+        }
         return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\" role=\"img\" aria-label=\"{$safeName}\">{$safeName}</span>";
     }
 
@@ -1616,7 +1721,7 @@ class BlockRenderer
         $labelHtml = $label !== '' ? "<div class=\"tb-progress-label\" style=\"display:flex;justify-content:space-between;margin-bottom:0.35rem;font-size:0.85rem;\"><span>{$label}</span><span>{$value}%</span></div>" : '';
         return "<div id=\"tb-{$id}\" class=\"tb-progress-bar\">
             {$labelHtml}
-            <div class=\"tb-progress-track\" style=\"background:#e5e7eb;border-radius:999px;height:0.6rem;overflow:hidden;\" role=\"progressbar\" aria-valuenow=\"{$value}\" aria-valuemin=\"0\" aria-valuemax=\"100\"" . ($label !== '' ? " aria-label=\"{$label}\"" : '') . ">
+            <div class=\"tb-progress-track\" style=\"background:var(--tb-border, #e5e7eb);border-radius:999px;height:0.6rem;overflow:hidden;\" role=\"progressbar\" aria-valuenow=\"{$value}\" aria-valuemin=\"0\" aria-valuemax=\"100\"" . ($label !== '' ? " aria-label=\"{$label}\"" : '') . ">
                 <div class=\"tb-progress-fill\" style=\"background:var(--tb-primary,#4f46e5);height:100%;width:{$value}%;transition:width .3s ease;\"></div>
             </div>
         </div>";
@@ -1637,7 +1742,7 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-modal-wrap\">
             <button type=\"button\" class=\"tb-btn tb-btn-primary tb-modal-trigger\" data-modal-trigger=\"tb-{$id}-dialog\" aria-haspopup=\"dialog\">{$triggerText}</button>
             <div id=\"tb-{$id}-dialog\" class=\"tb-modal-overlay\" style=\"display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;\" role=\"dialog\" aria-modal=\"true\">
-                <div class=\"tb-modal-panel\" style=\"background:#fff;border-radius:0.75rem;max-width:36rem;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;\">
+                <div class=\"tb-modal-panel\" style=\"background:var(--tb-background, #fff);border-radius:0.75rem;max-width:36rem;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;\">
                     <button type=\"button\" class=\"tb-modal-close\" aria-label=\"بستن\" style=\"position:absolute;top:0.75rem;left:0.75rem;background:none;border:0;font-size:1.25rem;cursor:pointer;line-height:1;\">×</button>
                     <div class=\"tb-modal-body\">{$inner}</div>
                 </div>
@@ -1838,14 +1943,14 @@ class BlockRenderer
         $btn2u   = $this->escapeAttr($props['button2_url'] ?? '#');
         $imgUrl  = $this->escapeAttr($props['image_url'] ?? '');
         $imgSide = $props['image_side'] ?? 'left';
-        $bg      = $this->escapeAttr($props['background'] ?? '#ffffff');
+        $bg      = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-background, #ffffff)'));
 
         $badgeHtml = $badge ? "<span class=\"tb-hero-split-badge\">{$badge}</span>" : '';
         $btn1Html  = $btn1t ? "<a href=\"{$btn1u}\" class=\"tb-btn tb-btn-primary\">{$btn1t}</a>" : '';
         $btn2Html  = $btn2t ? "<a href=\"{$btn2u}\" class=\"tb-btn tb-btn-secondary\">{$btn2t}</a>" : '';
         $imgHtml   = $imgUrl
             ? "<img src=\"{$imgUrl}\" alt=\"{$title}\" class=\"tb-hero-split-img\" loading=\"eager\">"
-            : "<div class=\"tb-hero-split-img-placeholder\">🖼️</div>";
+            : "<div class=\"tb-hero-split-img-placeholder\">" . $this->iconHtml('image') . "</div>";
 
         $textCol = "<div class=\"tb-hero-split-text\">{$badgeHtml}<h1 class=\"tb-hero-split-title\">{$title}</h1><p class=\"tb-hero-split-sub\">{$sub}</p><div class=\"tb-hero-split-actions\">{$btn1Html}{$btn2Html}</div></div>";
         $imgCol  = "<div class=\"tb-hero-split-visual\">{$imgHtml}</div>";
@@ -1876,12 +1981,12 @@ class BlockRenderer
         // gradient_from/gradient_to) rendered the same generic purple
         // regardless of its actual brand palette — an explicit author
         // override of course still wins.
-        $gFrom   = $this->escapeAttr($props['gradient_from'] ?? 'var(--tb-primary, #4f46e5)');
-        $gTo     = $this->escapeAttr($props['gradient_to'] ?? 'var(--tb-secondary, #7c3aed)');
-        $tColor  = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $gFrom   = $this->escapeAttr($this->cssColor($props['gradient_from'] ?? null, 'var(--tb-primary, #4f46e5)'));
+        $gTo     = $this->escapeAttr($this->cssColor($props['gradient_to'] ?? null, 'var(--tb-secondary, #7c3aed)'));
+        $tColor  = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
 
         $badgeHtml = $badge ? "<span class=\"tb-hero-gradient-badge\">{$badge}</span><br>" : '';
-        $btn1Html  = $btn1t ? "<a href=\"{$btn1u}\" class=\"tb-btn\" style=\"background:#fff;color:{$gFrom};font-weight:700;\">{$btn1t}</a>" : '';
+        $btn1Html  = $btn1t ? "<a href=\"{$btn1u}\" class=\"tb-btn\" style=\"background:var(--tb-on-primary, #fff);color:{$gFrom};font-weight:700;\">{$btn1t}</a>" : '';
         $btn2Html  = $btn2t ? "<a href=\"{$btn2u}\" class=\"tb-btn\" style=\"background:rgba(255,255,255,0.15);color:{$tColor};border:2px solid rgba(255,255,255,0.4);\">{$btn2t}</a>" : '';
         $actions   = ($btn1Html || $btn2Html) ? "<div class=\"tb-hero-split-actions\" style=\"justify-content:center;margin-top:2rem;\">{$btn1Html}{$btn2Html}</div>" : '';
 
@@ -1923,7 +2028,7 @@ class BlockRenderer
 
         $cards = [];
         foreach ($features as $f) {
-            $icon  = $this->escape($f['icon'] ?? '✨');
+            $icon  = $this->iconHtml($f['icon'] ?? 'sparkles');
             $ftitle = $this->escape($f['title'] ?? '');
             $ftext  = $this->escape($f['text'] ?? '');
             $cards[] = "<div class=\"tb-feature-card tb-feature-card-{$style}\">
@@ -1943,7 +2048,7 @@ class BlockRenderer
     protected function renderStatsRow(array $props, string $inner, string $id): string
     {
         $title    = $this->escape($props['title'] ?? '');
-        $bg       = $this->escapeAttr($props['background'] ?? '#f8fafc');
+        $bg       = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-surface, #f8fafc)'));
         $backgroundImage = $this->escapeUrl($props['background_image'] ?? '', '');
         $dividers = (bool) ($props['dividers'] ?? true);
         // Phase 2k: applied as an INLINE style on every text-bearing child
@@ -1965,13 +2070,14 @@ class BlockRenderer
         $items = [];
         foreach ($stats as $i => $s) {
             $val    = $this->escape((string) ($s['value'] ?? '0'));
-            $suffix = $this->escape($s['suffix'] ?? '');
+            $shown  = $this->escape($this->displayNumber($s['value'] ?? '0'));
+            $suffix = $this->escape($this->displayNumber($s['suffix'] ?? ''));
             $label  = $this->escape($s['label'] ?? '');
             if ($dividers && $i > 0) {
                 $items[] = '<div class="tb-stat-divider" aria-hidden="true"></div>';
             }
             $items[] = "<div class=\"tb-stat-item\">
-                <span class=\"tb-stat-value\"{$textColorAttr} data-count=\"{$val}\">{$val}<span class=\"tb-stat-suffix\"{$textColorAttr}>{$suffix}</span></span>
+                <span class=\"tb-stat-value\"{$textColorAttr} data-count=\"{$val}\">{$shown}<span class=\"tb-stat-suffix\"{$textColorAttr}>{$suffix}</span></span>
                 <span class=\"tb-stat-label\"{$textColorAttr}>{$label}</span>
             </div>";
         }
@@ -2001,12 +2107,13 @@ class BlockRenderer
     protected function renderStatItem(array $props, string $inner, string $id): string
     {
         $value = $this->escape((string) ($props['value'] ?? '100'));
-        $suffix = $this->escape((string) ($props['suffix'] ?? '+'));
+        $shown = $this->escape($this->displayNumber($props['value'] ?? '100'));
+        $suffix = $this->escape($this->displayNumber($props['suffix'] ?? '+'));
         $label = $this->escape((string) ($props['label'] ?? ''));
         $emphasis = (bool) ($props['emphasis'] ?? false) ? ' tb-stat-item-emphasis' : '';
 
         return "<div id=\"tb-{$id}\" class=\"tb-stat-item{$emphasis}\">"
-            . "<span class=\"tb-stat-value\" data-count=\"{$value}\">{$value}<span class=\"tb-stat-suffix\">{$suffix}</span></span>"
+            . "<span class=\"tb-stat-value\" data-count=\"{$value}\">{$shown}<span class=\"tb-stat-suffix\">{$suffix}</span></span>"
             . "<span class=\"tb-stat-label\">{$label}</span>"
             . '</div>';
     }
@@ -2017,8 +2124,8 @@ class BlockRenderer
             ? $requestedAlign : 'center';
         $padding = max(16, min(160, (int) ($props['padding'] ?? 48)));
         $radius = max(0, min(48, (int) ($props['radius'] ?? 16)));
-        $background = $this->escapeAttr($props['background'] ?? '#4f46e5');
-        $textColor = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $background = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-primary, #4f46e5)'));
+        $textColor = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
         $style = "--tb-cta-band-bg:{$background};--tb-cta-band-text:{$textColor};"
             . "--tb-cta-band-padding:{$padding}px;--tb-cta-band-radius:{$radius}px;";
 
@@ -2031,7 +2138,7 @@ class BlockRenderer
     {
         $columns = max(2, min(4, (int) ($props['columns'] ?? 4)));
         $gap = max(0, min(64, (int) ($props['gap'] ?? 20)));
-        $background = $this->escapeAttr($props['background'] ?? '#ffffff');
+        $background = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-background, #ffffff)'));
         $style = "--tb-trust-gap:{$gap}px;--tb-trust-bg:{$background};";
 
         return "<section id=\"tb-{$id}\" class=\"tb-trust-badges-row tb-commercial-grid-cols-{$columns}\" style=\"{$style}\">"
@@ -2041,7 +2148,7 @@ class BlockRenderer
 
     protected function renderTrustItem(array $props, string $inner, string $id): string
     {
-        $icon = $this->escape((string) ($props['icon'] ?? '✓'));
+        $icon = $this->iconHtml($props['icon'] ?? 'badge-check');
         $label = $this->escape((string) ($props['label'] ?? ''));
         $description = $this->escape((string) ($props['description'] ?? ''));
         $style = in_array($requestedStyle = $props['style'] ?? '', ['plain', 'card', 'outline'], true)
@@ -2131,7 +2238,7 @@ class BlockRenderer
         $targetValue = $props['target_value'] ?? '#';
         $style = in_array($requestedStyle = $props['style'] ?? '', ['primary', 'secondary', 'outline', 'ghost'], true)
             ? $requestedStyle : 'primary';
-        $icon = $this->escape($props['icon'] ?? '');
+        $icon = $this->iconHtml($props['icon'] ?? '');
 
         $policy = $this->context['interaction_policy'] ?? null;
 
@@ -2233,7 +2340,7 @@ class BlockRenderer
             }
             $name  = (string) ($l['name'] ?? '');
             $image = trim((string) ($l['image'] ?? ''));
-            $url   = $this->escapeUrl($l['url'] ?? '', '');
+            $url   = $this->linkHref($l['url'] ?? '', '');
             $alt   = $this->escapeAttr($l['alt'] ?? $name);
 
             // A genuinely broken logo URL (unreachable host, deleted media)
@@ -2307,36 +2414,323 @@ class BlockRenderer
         ?string $originalPriceFormatted = null,
         string $addToCartHtml = ''
     ): string {
+        // Phase 2 (ADR-067): every product card is productCard(); this
+        // positional signature stays for existing callers.
+        $stockState = $stockLabel === null ? null : (str_contains($stockLabel, 'ناموجود') ? 'out' : (str_contains($stockLabel, 'باقی') ? 'low' : 'in'));
+        return $this->productCard([
+            'title' => $title, 'image' => $image, 'url' => $url,
+            'price' => $price, 'original' => $originalPrice,
+            'price_html' => $priceFormatted, 'original_html' => $originalPriceFormatted,
+            'badge' => $badge, 'stock' => $stockState, 'stock_label' => $stockLabel,
+            'action_html' => $addToCartHtml !== '' ? $addToCartHtml : null,
+        ]);
+    }
+
+    /**
+     * Phase 2 (ADR-067): the one commercial product card — demo fixtures in
+     * the Builder preview, real products on customer-site.
+     *
+     * Keys: title, image, url, price, original, price_html (Toman, ready
+     * HTML), original_html, badge (free text), is_new (bool), stock
+     * (in|low|out), stock_label, rating (0–5), reviews, product_id,
+     * needs_options (bool), action_html (overrides the button).
+     *
+     *  - the image carries derived badge overlays (Phase 3, ADR-068), in this
+     *    order: the real discount percentage («۲۱٪ تخفیف»), «پرامتیاز» for an
+     *    approved-review average of TOP_RATED_MIN_RATING over at least
+     *    TOP_RATED_MIN_REVIEWS reviews, «جدید» for is_new, then the free-text
+     *    badge — never more than three;
+     *  - stock is a coloured pill; out of stock disables the action;
+     *  - with host cart endpoints the action is an instant add-to-cart form
+     *    (blocks/cart.js posts it with fetch and opens the mini-cart; without
+     *    JavaScript it is a plain POST); a product with options links to its
+     *    page; the Builder preview shows the same button as a link.
+     */
+    protected function productCard(array $p): string
+    {
+        $title = (string) ($p['title'] ?? '');
         $titleEsc = $this->escape($title);
-        $urlAttr  = $this->escapeUrl($url, '#');
-        $imgHtml  = $this->imageWithFallback($image, $title, 'aspect-ratio:1/1;', '📦');
+        $urlAttr = $this->escapeUrl((string) ($p['url'] ?? '#'), '#');
+        $imgHtml = $this->imageWithFallback((string) ($p['image'] ?? ''), $title, 'aspect-ratio:1/1;', $this->iconHtml('package'));
+        $price = isset($p['price']) ? (float) $p['price'] : null;
+        $original = isset($p['original']) ? (float) $p['original'] : null;
 
-        $badgeHtml = $badge ? "<span class=\"tb-product-badge-wrap\" style=\"position:absolute;top:.5rem;inset-inline-start:.5rem;z-index:1;\">" . $this->badgeHtml($badge, 'error', 'sm') . "</span>" : '';
+        $percent = ($original !== null && $price !== null && $original > $price && $original > 0) ? (int) round(($original - $price) / $original * 100) : 0;
+        $rating = isset($p['rating']) ? max(0.0, min(5.0, (float) $p['rating'])) : 0.0;
+        $reviews = max(0, (int) ($p['reviews'] ?? 0));
 
-        // Real, proven contrast failure (khab-shimana-tablet certification,
-        // 2026-09-21): a real browser-measured WCAG check found #9ca3af
-        // (gray-400) on this card's near-white background (#f9fafb) at
-        // 2.43:1 — well under the 4.5:1 AA minimum for normal text — on
-        // every discounted product, in both the admin demo-fixture preview
-        // above and every real customer-site product card (this method is
-        // shared by both). #6b7280 (gray-500) keeps the same muted
-        // "de-emphasized old price" visual role at a real ~4.6:1.
-        $discountHtml = ($originalPrice !== null && $price !== null && $originalPrice > $price)
-            ? "<span class=\"tb-product-price-old\" style=\"text-decoration:line-through;color:#6b7280;font-size:.85rem;margin-inline-end:.4rem;\">{$originalPriceFormatted}</span>"
+        // The shared Badge primitive (badgeHtml()), never a second badge style.
+        $ribbons = [];
+        if ($percent > 0) {
+            $ribbons['تخفیف'] = $this->badgeHtml($this->displayNumber($percent . '%') . ' تخفیف', 'error', 'sm');
+        }
+        if ($rating >= self::TOP_RATED_MIN_RATING && $reviews >= self::TOP_RATED_MIN_REVIEWS) {
+            $ribbons['پرامتیاز'] = $this->badgeHtml('پرامتیاز', 'warning', 'sm');
+        }
+        if (!empty($p['is_new'])) {
+            $ribbons['جدید'] = $this->badgeHtml('جدید', 'info', 'sm');
+        }
+        $badge = trim((string) ($p['badge'] ?? ''));
+        if ($badge !== '' && !isset($ribbons[$badge])) {
+            $ribbons[$badge] = $this->badgeHtml($badge, 'primary', 'sm');
+        }
+        $ribbons = implode('', array_slice($ribbons, 0, 3));
+        $ribbonsHtml = $ribbons !== '' ? "<div class=\"tb-product-ribbons\">{$ribbons}</div>" : '';
+
+        $oldHtml = ($percent > 0 && !empty($p['original_html']))
+            ? '<span class="tb-product-price-old">' . $p['original_html'] . '</span>' : '';
+
+        $stock = in_array($p['stock'] ?? null, ['in', 'low', 'out'], true) ? $p['stock'] : null;
+        $stockLabel = trim((string) ($p['stock_label'] ?? ''));
+        if ($stock !== null && $stockLabel === '') {
+            $stockLabel = ['in' => 'موجود', 'low' => 'موجودی محدود', 'out' => 'ناموجود'][$stock];
+        }
+        $stockHtml = $stockLabel !== ''
+            ? '<span class="tb-product-stock tb-product-stock--' . ($stock ?? 'in') . '">' . $this->escape($this->displayNumber($stockLabel)) . '</span>'
             : '';
 
-        $stockHtml = $stockLabel ? "<div class=\"tb-product-stock\" style=\"font-size:.8rem;color:#6b7280;margin-top:.15rem;\">" . $this->escape($stockLabel) . "</div>" : '';
+        $ratingHtml = '';
+        if ($rating > 0) {
+            $stars = $this->starsHtml($rating);
+            $value = $this->displayNumber(number_format($rating, 1));
+            $count = $reviews;
+            $label = "امتیاز {$value} از ۵" . ($count > 0 ? ' از ' . $this->displayNumber($count) . ' نظر' : '');
+            $ratingHtml = '<div class="tb-product-rating" role="img" aria-label="' . $this->escapeAttr($label) . '">'
+                . '<span class="tb-product-stars" aria-hidden="true">' . $stars . '</span>'
+                . '<span class="tb-product-rating-value" aria-hidden="true">' . $value . '</span>'
+                . ($count > 0 ? '<span class="tb-product-rating-count" aria-hidden="true">(' . $this->displayNumber($count) . ')</span>' : '')
+                . '</div>';
+        }
 
-        return "<div class=\"tb-product-card\" style=\"position:relative;max-width:20rem;margin:0 auto;\">
-            {$badgeHtml}
-            <a href=\"{$urlAttr}\" class=\"tb-product-card-img\" style=\"display:block;\">{$imgHtml}</a>
-            <div class=\"tb-product-card-inner\" style=\"padding-top:.65rem;\">
-                <a href=\"{$urlAttr}\" style=\"color:inherit;text-decoration:none;\"><h3 class=\"tb-product-title\">{$titleEsc}</h3></a>
-                <div class=\"tb-product-price\">{$discountHtml}{$priceFormatted}</div>
+        $action = array_key_exists('action_html', $p) && $p['action_html'] !== null
+            ? (string) $p['action_html']
+            : $this->productActionHtml($p, $stock, $urlAttr, $title);
+
+        return "<div class=\"tb-product-card" . ($stock === 'out' ? ' is-out' : '') . "\">
+            {$ribbonsHtml}
+            <a href=\"{$urlAttr}\" class=\"tb-product-card-img\" tabindex=\"-1\" aria-hidden=\"true\">{$imgHtml}</a>
+            <div class=\"tb-product-card-inner\">
+                <a href=\"{$urlAttr}\" class=\"tb-product-card-link\"><h3 class=\"tb-product-title\">{$titleEsc}</h3></a>
+                {$ratingHtml}
+                <div class=\"tb-product-price\">{$oldHtml}<span class=\"tb-product-price-now\">" . ($p['price_html'] ?? '') . "</span></div>
                 {$stockHtml}
-                {$addToCartHtml}
+                {$action}
             </div>
         </div>";
+    }
+
+    /** Five SVG stars for a 0–5 rating, in half steps — product and review cards. */
+    protected function starsHtml(float $rating): string
+    {
+        $stars = '';
+        for ($i = 1; $i <= 5; $i++) {
+            $state = $rating >= $i - 0.25 ? 'is-on' : ($rating >= $i - 0.75 ? 'is-half' : 'is-off');
+            $stars .= IconLibrary::svg($state === 'is-half' ? 'star-half' : 'star', null, "tb-star {$state}");
+        }
+        return $stars;
+    }
+
+    /**
+     * Phase 3b (ADR-069): the one review card — testimonials and customer
+     * reviews.
+     *
+     * Keys: name, avatar (URL), show_avatar (bool, default true), role,
+     * text, rating (0–5), verified (bool),
+     * date (Jalali or Gregorian, shown as «۲ آبان ۱۴۰۵»), title, and
+     * `schema`: null (no microdata — authored testimonials are not reviews of
+     * an item), 'nested' (a schema.org Review inside the caller's Product,
+     * itemprop="review") or 'standalone' with `item` = [name, url] as its
+     * itemReviewed Product.
+     */
+    protected function reviewCardHtml(array $r): string
+    {
+        $name = trim($this->stringify($r['name'] ?? '')) ?: 'کاربر';
+        $rating = max(0.0, min(5.0, (float) ($r['rating'] ?? 0)));
+        $schema = in_array($r['schema'] ?? null, ['nested', 'standalone'], true) ? $r['schema'] : null;
+        $item = is_array($r['item'] ?? null) ? $r['item'] : [];
+        if ($schema === 'standalone' && trim($this->stringify($item['name'] ?? '')) === '') {
+            $schema = null;
+        }
+        $prop = static fn (string $p): string => $schema !== null ? " itemprop=\"{$p}\"" : '';
+
+        $avatar = trim($this->stringify($r['avatar'] ?? ''));
+        $avatarHtml = !$this->flag($r['show_avatar'] ?? true) ? '' : ($avatar !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($avatar)
+            ? '<img class="tb-testimonial-avatar tb-review-avatar" src="' . $this->escapeAttr($avatar) . '" alt="" loading="lazy" width="44" height="44">'
+            : '<span class="tb-testimonial-avatar tb-review-avatar" aria-hidden="true">' . $this->escape(mb_substr($name, 0, 1, 'UTF-8')) . '</span>');
+
+        $starsHtml = '';
+        if ($rating > 0) {
+            $shown = $this->displayNumber(rtrim(rtrim(number_format($rating, 1), '0'), '.'));
+            $starsHtml = '<div class="tb-testimonial-stars tb-review-stars" role="img" aria-label="' . $this->escapeAttr("امتیاز {$shown} از ۵") . '">'
+                . $this->starsHtml($rating) . '</div>'
+                . ($schema !== null ? '<span itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating"><meta itemprop="ratingValue" content="' . $this->escapeAttr((string) $rating) . '"><meta itemprop="bestRating" content="5"><meta itemprop="worstRating" content="1"></span>' : '');
+        }
+
+        $date = JalaliDate::parse($this->stringify($r['date'] ?? ''));
+        $dateHtml = $date !== null
+            ? '<time class="tb-review-date" datetime="' . sprintf('%04d-%02d-%02d', ...$date['gregorian']) . '"' . $prop('datePublished') . '>' . JalaliDate::format(...$date['jalali']) . '</time>'
+            : '';
+        $verifiedHtml = $this->flag($r['verified'] ?? false)
+            ? '<span class="tb-review-verified">' . IconLibrary::svg('badge-check') . 'خریدار تاییدشده</span>'
+            : '';
+        $role = trim($this->stringify($r['role'] ?? ''));
+        $title = trim($this->stringify($r['title'] ?? ''));
+        $text = trim($this->stringify($r['text'] ?? ''));
+
+        $itemReviewed = '';
+        if ($schema === 'standalone') {
+            $url = $this->escapeUrl($this->stringify($item['url'] ?? ''), '');
+            $itemReviewed = '<span itemprop="itemReviewed" itemscope itemtype="https://schema.org/Product"><meta itemprop="name" content="' . $this->escapeAttr($item['name']) . '">'
+                . ($url !== '' ? '<link itemprop="url" href="' . $url . '">' : '') . '</span>';
+        }
+        $product = trim($this->stringify($item['name'] ?? ''));
+        $productUrl = $this->escapeUrl($this->stringify($item['url'] ?? ''), '');
+        $productHtml = $product !== '' && $schema !== 'nested'
+            ? '<p class="tb-review-product">' . ($productUrl !== '' ? '<a href="' . $productUrl . '">' . $this->escape($product) . '</a>' : $this->escape($product)) . '</p>'
+            : '';
+
+        $scope = $schema !== null ? ($schema === 'nested' ? ' itemprop="review"' : '') . ' itemscope itemtype="https://schema.org/Review"' : '';
+        return "<article class=\"tb-testimonial-card tb-review-card\"{$scope}>"
+            . $itemReviewed
+            . '<div class="tb-review-head">' . $starsHtml . $dateHtml . '</div>'
+            . ($title !== '' ? '<h3 class="tb-review-title"' . $prop('name') . '>' . $this->escape($title) . '</h3>' : '')
+            . ($text !== '' ? '<p class="tb-testimonial-text"' . $prop('reviewBody') . '>' . $this->escape($text) . '</p>' : '')
+            . $productHtml
+            . '<div class="tb-testimonial-author">' . $avatarHtml
+            . '<div class="tb-review-who"><div class="tb-testimonial-name"' . ($schema !== null ? ' itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name">' . $this->escape($name) . '</span>' : '>' . $this->escape($name)) . '</div>'
+            . ($role !== '' ? '<div class="tb-testimonial-role">' . $this->escape($role) . '</div>' : '')
+            . $verifiedHtml . '</div></div>'
+            . '</article>';
+    }
+
+    /**
+     * Phase 3b (ADR-069): the average, star count and a Persian bar per
+     * star level («۵ ستاره ۶۰٪»). $counts maps 1–5 to review counts. With
+     * $aggregate the figures carry schema.org AggregateRating microdata as
+     * itemprop="aggregateRating" — only inside a caller's Product scope.
+     * No reviews → ''.
+     *
+     * @param array<int,int> $counts
+     */
+    protected function ratingSummaryHtml(array $counts, bool $aggregate = false): string
+    {
+        $total = 0;
+        $sum = 0;
+        for ($star = 1; $star <= 5; $star++) {
+            $n = max(0, (int) ($counts[$star] ?? 0));
+            $total += $n;
+            $sum += $n * $star;
+        }
+        if ($total === 0) {
+            return '';
+        }
+        $avg = round($sum / $total, 1);
+        $avgText = $this->displayNumber(number_format($avg, 1));
+        $rows = '';
+        for ($star = 5; $star >= 1; $star--) {
+            $n = max(0, (int) ($counts[$star] ?? 0));
+            $pct = (int) round($n / $total * 100);
+            $rows .= '<li class="tb-rating-row">'
+                . '<span class="tb-rating-row-label">' . $this->displayNumber($star) . ' ستاره</span>'
+                . '<span class="tb-rating-bar" aria-hidden="true"><span style="width:' . $pct . '%"></span></span>'
+                . '<span class="tb-rating-row-pct">' . $this->displayNumber($pct . '%') . '<span class="tb-visually-hidden"> (' . $this->displayNumber($n) . ' نظر)</span></span>'
+                . '</li>';
+        }
+        $micro = $aggregate
+            ? '<span itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating"><meta itemprop="ratingValue" content="' . $avg . '"><meta itemprop="reviewCount" content="' . $total . '"><meta itemprop="bestRating" content="5"><meta itemprop="worstRating" content="1"></span>'
+            : '';
+        return '<div class="tb-rating-summary">' . $micro
+            . '<div class="tb-rating-score"><span class="tb-rating-average">' . $avgText . '</span>'
+            . '<div class="tb-review-stars" role="img" aria-label="' . $this->escapeAttr("میانگین {$avgText} از ۵") . '">' . $this->starsHtml($avg) . '</div>'
+            . '<span class="tb-rating-total">از ' . $this->displayNumber($total) . ' نظر</span></div>'
+            . '<ul class="tb-rating-rows" aria-label="توزیع امتیازها">' . $rows . '</ul>'
+            . '</div>';
+    }
+
+    /** The card's call to action — see productCard(). */
+    private function productActionHtml(array $p, ?string $stock, string $urlAttr, string $title): string
+    {
+        $cartIcon = $this->iconHtml('shopping-cart');
+        if ($stock === 'out') {
+            return '<span class="tb-btn tb-product-add is-disabled" aria-disabled="true">ناموجود</span>';
+        }
+        if (!empty($p['needs_options'])) {
+            return "<a href=\"{$urlAttr}\" class=\"tb-btn tb-btn-secondary tb-product-add\">انتخاب گزینه‌ها</a>";
+        }
+        $cart = $this->cartEndpoints();
+        $productId = trim($this->stringify($p['product_id'] ?? ''));
+        if ($cart === null || !preg_match('/^\d{1,20}$/', $productId)) {
+            return "<a href=\"{$urlAttr}\" class=\"tb-btn tb-btn-primary tb-product-add\">{$cartIcon}<span>افزودن به سبد خرید</span></a>";
+        }
+        $csrf = $this->siteEndpoints()['csrf'] ?? null;
+        $config = $this->escapeAttr(json_encode(array_diff_key($cart, ['count' => 1]), JSON_UNESCAPED_SLASHES));
+        return '<form class="tb-product-add-form" method="post" action="' . $this->escapeAttr($cart['add']) . '" data-tb-cart="' . $config . '">'
+            . (is_string($csrf) && $csrf !== '' ? '<input type="hidden" name="_token" value="' . $this->escapeAttr($csrf) . '">' : '')
+            . '<input type="hidden" name="product_id" value="' . $productId . '"><input type="hidden" name="quantity" value="1">'
+            . '<button type="submit" class="tb-btn tb-btn-primary tb-product-add" data-tb-add-to-cart data-open-cart data-product-id="' . $productId . '" aria-label="' . $this->escapeAttr('افزودن «' . $title . '» به سبد خرید') . '">'
+            . $cartIcon . '<span>افزودن به سبد خرید</span></button></form>'
+            . $this->cartAssets();
+    }
+
+    /**
+     * Phase 2 (ADR-067): the one blog card — category pill, title, excerpt,
+     * author avatar (or initial), Persian date and reading time.
+     *
+     * Keys: title, url, image, excerpt, date (display text), date_iso,
+     * reading_minutes, category, category_url, author, author_avatar.
+     */
+    protected function blogCardHtml(array $p): string
+    {
+        $title = (string) ($p['title'] ?? '');
+        $url = $this->escapeUrl((string) ($p['url'] ?? '#'), '#');
+        $img = $this->imageWithFallback((string) ($p['image'] ?? ''), $title, 'aspect-ratio:16/10;', $this->iconHtml('file-text'));
+        $category = trim((string) ($p['category'] ?? ''));
+        $catHtml = $category !== ''
+            ? '<a class="tb-blog-card-cat" href="' . $this->escapeUrl((string) ($p['category_url'] ?? '#'), '#') . '">' . $this->escape($category) . '</a>'
+            : '';
+        $excerpt = trim((string) ($p['excerpt'] ?? ''));
+        $author = trim((string) ($p['author'] ?? ''));
+        $avatar = trim((string) ($p['author_avatar'] ?? ''));
+        $avatarHtml = $avatar !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($avatar)
+            ? '<img class="tb-blog-card-avatar" src="' . $this->escapeAttr($avatar) . '" alt="" loading="lazy" width="32" height="32">'
+            : ($author !== '' ? '<span class="tb-blog-card-avatar tb-blog-card-avatar--initial" aria-hidden="true">' . $this->escape(mb_substr($author, 0, 1)) . '</span>' : '');
+        $minutes = max(0, (int) ($p['reading_minutes'] ?? 0));
+        $date = trim((string) ($p['date'] ?? ''));
+        $info = [];
+        if ($date !== '') {
+            $iso = trim((string) ($p['date_iso'] ?? ''));
+            $info[] = '<time' . ($iso !== '' ? ' datetime="' . $this->escapeAttr($iso) . '"' : '') . '>' . $this->escape($this->displayNumber($date)) . '</time>';
+        }
+        if ($minutes > 0) {
+            $info[] = '<span class="tb-blog-card-read">' . $this->iconHtml('clock') . ' ' . $this->displayNumber($minutes) . ' دقیقه مطالعه</span>';
+        }
+
+        return '<article class="tb-blog-card">'
+            . "<a href=\"{$url}\" class=\"tb-blog-card-media\" tabindex=\"-1\" aria-hidden=\"true\">{$img}</a>"
+            . '<div class="tb-blog-card-body">'
+            . ($catHtml !== '' ? "<div class=\"tb-blog-card-cats\">{$catHtml}</div>" : '')
+            . "<h3 class=\"tb-blog-card-title\"><a href=\"{$url}\">" . $this->escape($title) . '</a></h3>'
+            . ($excerpt !== '' ? '<p class="tb-blog-card-excerpt">' . $this->escape($excerpt) . '</p>' : '')
+            . (($author !== '' || $info !== []) ? '<div class="tb-blog-card-meta">'
+                . ($author !== '' ? '<span class="tb-blog-card-author">' . $avatarHtml . '<span>' . $this->escape($author) . '</span></span>' : '')
+                . ($info !== [] ? '<span class="tb-blog-card-info">' . implode('<span aria-hidden="true">·</span>', $info) . '</span>' : '')
+                . '</div>' : '')
+            . '</div></article>';
+    }
+
+    /** Renders a block's blog cards as grid, list or carousel. */
+    protected function blogCardsLayout(array $cards, array $props, string $id, string $title): string
+    {
+        $layout = $props['layout'] ?? 'grid';
+        $layout = in_array($layout, ['grid', 'list', 'slider'], true) ? $layout : 'grid';
+        $titleHtml = $title !== '' ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
+        if ($layout === 'slider') {
+            $body = $this->renderCarousel($cards, $id . '-track', $this->flag($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-blog-slider', ['desktop' => 3, 'tablet' => 2, 'mobile' => 1]);
+        } else {
+            $body = '<div class="tb-grid ' . ($layout === 'list' ? 'tb-grid-cols-1 tb-blog-list' : 'tb-grid-cols-3') . ' tb-gap-lg tb-blog-grid">' . implode('', $cards) . '</div>';
+        }
+        return "<div id=\"tb-{$id}\" class=\"tb-blog-posts\">{$titleHtml}{$body}</div>";
+
     }
 
     /**
@@ -2365,18 +2759,8 @@ class BlockRenderer
         ];
 
         $cards = [];
-        foreach ($demo as $p) {
-            $cards[] = $this->productCardHtml(
-                $p['title'],
-                '',
-                (float) $p['price'],
-                $p['original'] !== null ? (float) $p['original'] : null,
-                $p['badge'],
-                $p['stock'],
-                '#',
-                number_format($p['price']) . ' تومان',
-                $p['original'] !== null ? number_format($p['original']) . ' تومان' : null
-            );
+        foreach ($demo as $i => $p) {
+            $cards[] = $this->productCard($this->demoProductCard($p, $i));
         }
 
         $titleHtml = $title ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
@@ -2403,9 +2787,24 @@ class BlockRenderer
         </div>";
     }
 
+    /** Phase 2 (ADR-067): a Builder-preview demo product as productCard() data. */
+    private function demoProductCard(array $p, int $i): array
+    {
+        $ratings = [[4.6, 128], [4.2, 37], [4.8, 412], [3.9, 18]];
+        return [
+            'title' => $p['title'], 'image' => '', 'url' => '#',
+            'price' => (float) $p['price'], 'original' => $p['original'] !== null ? (float) $p['original'] : null,
+            'price_html' => $this->displayToman($p['price']),
+            'original_html' => $p['original'] !== null ? $this->displayToman($p['original']) : null,
+            'badge' => in_array($p['badge'], ['تخفیف', 'جدید'], true) ? null : $p['badge'],
+            'is_new' => $p['badge'] === 'جدید',
+            'stock' => str_contains((string) $p['stock'], 'باقی') ? 'low' : 'in', 'stock_label' => $p['stock'],
+            'rating' => $ratings[$i % 4][0], 'reviews' => $ratings[$i % 4][1],
+        ];
+    }
+
     /**
-     * Canonical (shared) Product Grid. Real bug found via a full-page
-     * Playwright screenshot pass (Commercial Productization phase):
+     * Canonical (shared) Product Grid. Real bug found via a full-page     * Playwright screenshot pass (Commercial Productization phase):
      * `product_grid` is a real registered ECOMMERCE type with no canonical
      * renderer at all — every use of it on saas-platform's own admin
      * preview fell through to renderFallback(), which dumps
@@ -2429,13 +2828,8 @@ class BlockRenderer
         ];
 
         $cards = [];
-        foreach ($demo as $p) {
-            $cards[] = $this->productCardHtml(
-                $p['title'], '', (float) $p['price'], $p['original'] !== null ? (float) $p['original'] : null,
-                $p['badge'], $p['stock'], '#',
-                number_format($p['price']) . ' تومان',
-                $p['original'] !== null ? number_format($p['original']) . ' تومان' : null
-            );
+        foreach ($demo as $i => $p) {
+            $cards[] = $this->productCard($this->demoProductCard($p, $i));
         }
 
         return "<div id=\"tb-{$id}\" class=\"tb-grid tb-grid-cols-{$columns} tb-gap-md tb-product-grid-wrap\">" . implode('', $cards) . "</div>";
@@ -2455,27 +2849,32 @@ class BlockRenderer
      */
     protected function renderVideo(array $props, string $inner, string $id): string
     {
-        $url = trim((string) ($props['url'] ?? ''));
+        // Phase 0.2c: src/poster go through escapeUrl() (a javascript: or
+        // data: URL is refused), a non-string value (an unresolved
+        // {media_id}) counts as absent instead of raising an array-to-
+        // string error, and the switches read through flag() so a legacy
+        // "false" string is false.
+        $url = $this->escapeUrl(trim($this->stringify($props['url'] ?? '')), '');
         if ($url === '') {
             return "<div id=\"tb-{$id}\" class=\"tb-video tb-empty-state\"><p class=\"tb-text\">ویدیویی انتخاب نشده است.</p></div>";
         }
 
-        $poster   = trim((string) ($props['poster'] ?? ''));
+        $poster   = $this->escapeUrl(trim($this->stringify($props['poster'] ?? '')), '');
         $caption  = $this->escape($props['caption'] ?? '');
-        $autoplay = (bool) ($props['autoplay'] ?? false);
-        $loop     = (bool) ($props['loop'] ?? false);
-        $controls = $props['controls'] ?? true;
+        $autoplay = $this->flag($props['autoplay'] ?? false);
+        $loop     = $this->flag($props['loop'] ?? false);
+        $controls = $this->flag($props['controls'] ?? true);
 
         $attrs = [];
         if ($controls) $attrs[] = 'controls';
         if ($autoplay) $attrs[] = 'autoplay muted playsinline';
         if ($loop) $attrs[] = 'loop';
         $attrStr = implode(' ', $attrs);
-        $posterAttr = $poster !== '' ? ' poster="' . $this->escapeAttr($poster) . '"' : '';
+        $posterAttr = $poster !== '' ? ' poster="' . $poster . '"' : '';
         $captionHtml = $caption ? "<figcaption class=\"tb-video-caption\">{$caption}</figcaption>" : '';
 
         return "<figure id=\"tb-{$id}\" class=\"tb-video\">
-            <video src=\"" . $this->escapeAttr($url) . "\"{$posterAttr} {$attrStr} style=\"width:100%;border-radius:0.5rem;display:block;\"></video>
+            <video src=\"" . $url . "\"{$posterAttr} {$attrStr} style=\"width:100%;border-radius:0.5rem;display:block;\"></video>
             {$captionHtml}
         </figure>";
     }
@@ -2484,8 +2883,8 @@ class BlockRenderer
     protected function renderCartIcon(array $props, string $inner, string $id): string
     {
         $count = (int) ($props['count'] ?? 0);
-        $badge = $count > 0 ? "<span class=\"tb-cart-icon-badge\">" . number_format($count) . "</span>" : '';
-        return "<a href=\"/cart\" id=\"tb-{$id}\" class=\"tb-cart-icon\" aria-label=\"سبد خرید\" style=\"position:relative;display:inline-flex;\">🛒{$badge}</a>";
+        $badge = $count > 0 ? "<span class=\"tb-cart-icon-badge\">" . $this->displayNumber($count) . "</span>" : '';
+        return "<a href=\"/cart\" id=\"tb-{$id}\" class=\"tb-cart-icon\" aria-label=\"سبد خرید\" style=\"position:relative;display:inline-flex;\">" . $this->iconHtml('shopping-cart') . "{$badge}</a>";
     }
 
     /**
@@ -2529,18 +2928,18 @@ class BlockRenderer
         $columns = max(2, min(6, (int) ($props['columns'] ?? 4)));
 
         $demo = [
-            ['name' => 'پوشاک', 'count' => 128, 'icon' => '👕'],
-            ['name' => 'دیجیتال و لوازم الکترونیکی', 'count' => 76, 'icon' => '📱'],
-            ['name' => 'خانه و آشپزخانه', 'count' => 54, 'icon' => '🏠'],
-            ['name' => 'زیبایی و سلامت', 'count' => 39, 'icon' => '💄'],
+            ['name' => 'پوشاک', 'count' => 128, 'icon' => 'shirt'],
+            ['name' => 'دیجیتال و لوازم الکترونیکی', 'count' => 76, 'icon' => 'smartphone'],
+            ['name' => 'خانه و آشپزخانه', 'count' => 54, 'icon' => 'house'],
+            ['name' => 'زیبایی و سلامت', 'count' => 39, 'icon' => 'sparkles'],
         ];
 
         $cards = [];
         foreach ($demo as $c) {
             $cards[] = "<a href=\"#\" class=\"tb-category-card\" style=\"display:block;text-align:center;padding:1.5rem 1rem;border:1px solid #e5e7eb;border-radius:.75rem;text-decoration:none;color:inherit;\">
-                <div style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->escape($c['icon']) . "</div>
+                <div class=\"tb-category-card-icon\" style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->iconHtml($c['icon']) . "</div>
                 <div class=\"tb-category-name\" style=\"font-weight:700;\">" . $this->escape($c['name']) . "</div>
-                <div class=\"tb-category-count\" style=\"font-size:.8rem;color:#6b7280;margin-top:.2rem;\">" . number_format($c['count']) . " محصول</div>
+                <div class=\"tb-category-count\" style=\"font-size:.8rem;color:var(--tb-text-muted, #6b7280);margin-top:.2rem;\">" . $this->displayNumber($c['count']) . " محصول</div>
             </a>";
         }
 
@@ -2624,13 +3023,13 @@ class BlockRenderer
             $date  = $this->escape($it['date'] ?? '');
             $itemTitle = $this->escape($it['title'] ?? '');
             $text  = $this->escape($it['text'] ?? '');
-            $icon  = $this->escape($it['icon'] ?? '');
+            $icon  = $this->iconHtml($it['icon'] ?? '');
             $image = (string) ($it['image'] ?? '');
             $linkLabel = $this->escape($it['link_label'] ?? '');
-            $linkUrl   = $this->escapeAttr($it['link_url'] ?? '');
+            $linkUrl   = $this->linkHref($it['link_url'] ?? '', '');
 
             $mediaHtml = $image !== ''
-                ? $this->imageWithFallback($image, $itemTitle, 'width:64px;height:64px;border-radius:50%;', $icon !== '' ? $icon : '🖼️')
+                ? $this->imageWithFallback($image, $itemTitle, 'width:64px;height:64px;border-radius:50%;', $icon !== '' ? $icon : '')
                 : "<div class=\"tb-timeline-marker\">" . ($icon !== '' ? $icon : ($index + 1)) . "</div>";
 
             $ctaHtml = ($linkLabel !== '' && $linkUrl !== '')
@@ -2737,34 +3136,31 @@ class BlockRenderer
         $rawItems = $props['items'] ?? '[]';
         $items    = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
 
+        // Phase 3b (ADR-069): every card is reviewCardHtml() — SVG stars,
+        // verified-buyer badge, Jalali date, avatar or initial. Authored
+        // testimonials carry no Review microdata: they review no item, and
+        // reviews of the site's own business are not eligible.
         $cards = [];
+        $counts = [];
         foreach ($items as $t) {
             if (!is_array($t)) {
                 continue;
             }
-            $name    = $this->escape($t['name'] ?? '');
-            $role    = $this->escape($t['role'] ?? '');
-            $company = $this->escape($t['company'] ?? '');
-            $text    = $this->escape($t['text'] ?? '');
-            $rating  = max(0, min(5, (int) ($t['rating'] ?? 5)));
-            $stars   = $rating > 0 ? str_repeat('★', $rating) . str_repeat('☆', 5 - $rating) : '';
-            $avatar  = trim((string) ($t['avatar'] ?? $t['image'] ?? ''));
-
-            $avatarHtml = $avatar !== ''
-                ? "<img src=\"" . $this->escapeAttr($avatar) . "\" alt=\"" . $this->escapeAttr($t['name'] ?? '') . "\" loading=\"lazy\" class=\"tb-testimonial-avatar\" style=\"width:2.75rem;height:2.75rem;border-radius:999px;object-fit:cover;\" onerror=\"this.outerHTML='<div class=&quot;tb-testimonial-avatar&quot;>" . $this->escapeAttr(mb_substr((string) ($t['name'] ?? ''), 0, 1, 'UTF-8')) . "</div>';\">"
-                : "<div class=\"tb-testimonial-avatar\">" . mb_substr((string) ($t['name'] ?? ''), 0, 1, 'UTF-8') . "</div>";
-
-            $roleLine = trim(implode(' · ', array_filter([$role, $company])));
-
-            $cards[] = "<div class=\"tb-testimonial-card\">
-                " . ($stars !== '' ? "<div class=\"tb-testimonial-stars\">{$stars}</div>" : '') . "
-                <p class=\"tb-testimonial-text\">«{$text}»</p>
-                <div class=\"tb-testimonial-author\">
-                    {$avatarHtml}
-                    <div><div class=\"tb-testimonial-name\">{$name}</div><div class=\"tb-testimonial-role\">" . $this->escape($roleLine) . "</div></div>
-                </div>
-            </div>";
+            $rating = max(0, min(5, (int) ($t['rating'] ?? 5)));
+            if ($rating > 0) {
+                $counts[$rating] = ($counts[$rating] ?? 0) + 1;
+            }
+            $cards[] = $this->reviewCardHtml([
+                'name' => $t['name'] ?? '',
+                'avatar' => $t['avatar'] ?? $t['image'] ?? '',
+                'role' => implode(' · ', array_filter([trim($this->stringify($t['role'] ?? '')), trim($this->stringify($t['company'] ?? ''))])),
+                'text' => $t['text'] ?? '',
+                'rating' => $rating,
+                'verified' => $t['verified'] ?? false,
+                'date' => $t['date'] ?? '',
+            ]);
         }
+        $summary = $this->flag($props['show_summary'] ?? false) ? $this->ratingSummaryHtml($counts) : '';
 
         if (empty($cards)) {
             return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\"><div class=\"tb-container\"><h2 class=\"tb-features-section-title\">{$title}</h2></div></div>";
@@ -2784,6 +3180,7 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\">
             <div class=\"tb-container\">
                 <div class=\"tb-testimonials-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
+                {$summary}
                 {$body}
             </div>
         </div>";
@@ -2791,14 +3188,14 @@ class BlockRenderer
 
     protected function renderTrustBadges(array $props, string $inner, string $id): string
     {
-        $bg = $this->escapeAttr($props['background'] ?? '#f8fafc');
+        $bg = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-surface, #f8fafc)'));
 
         $rawBadges = $props['badges'] ?? '[]';
         $badges    = is_array($rawBadges) ? $rawBadges : (json_decode($rawBadges, true) ?? []);
 
         $items = [];
         foreach ($badges as $b) {
-            $icon  = $this->escape($b['icon'] ?? '✓');
+            $icon  = $this->iconHtml($b['icon'] ?? 'badge-check');
             $btitle = $this->escape($b['title'] ?? '');
             $btext  = $this->escape($b['text'] ?? '');
             $items[] = "<div class=\"tb-trust-badge\">
@@ -2831,40 +3228,107 @@ class BlockRenderer
             " . ($subtitle ? "<p class=\"tb-features-section-sub\">{$subtitle}</p>" : '') . "
         </div>";
 
-        $cards = [];
+        // Phase 3b (ADR-069): the monthly / yearly switch shows only when it
+        // is on and some plan has a yearly price; plans without one keep
+        // their monthly price in both modes. Both prices are in the markup
+        // (yearly `hidden`), so without JavaScript the monthly ones show.
+        $plans = array_values(array_filter($plans, 'is_array'));
+        $hasYearly = false;
         foreach ($plans as $p) {
+            $hasYearly = $hasYearly || trim($this->stringify($p['price_yearly'] ?? '')) !== '';
+        }
+        $toggle = $hasYearly && $this->flag($props['billing_toggle'] ?? true);
+        $toggleHtml = '';
+        if ($toggle) {
+            $pill = trim($this->stringify($props['yearly_discount_label'] ?? ''));
+            $toggleHtml = '<div class="tb-billing-toggle" role="group" aria-label="دورهٔ پرداخت">'
+                . '<button type="button" class="tb-billing-option is-active" data-tb-billing="monthly" aria-pressed="true">ماهانه</button>'
+                . '<button type="button" class="tb-billing-option" data-tb-billing="yearly" aria-pressed="false">سالانه'
+                . ($pill !== '' ? '<span class="tb-billing-pill">' . $this->escape($this->displayNumber($pill)) . '</span>' : '')
+                . '</button></div>';
+        }
+
+        $cards = [];
+        foreach ($plans as $pi => $p) {
             $name      = $this->escape($p['name'] ?? '');
-            $price     = $this->escape($p['price'] ?? '');
+            $price     = $this->escape($this->displayNumber($p['price'] ?? ''));
             $period    = $this->escape($p['period'] ?? '');
-            $badge     = $this->escape($p['badge'] ?? '');
-            $highlight = (bool) ($p['highlight'] ?? false);
+            $badge     = trim($this->stringify($p['badge'] ?? ''));
+            $highlight = $this->flag($p['highlight'] ?? false);
             $ctaText   = $this->escape($p['cta_text'] ?? 'انتخاب');
-            $ctaUrl    = $this->escapeAttr($p['cta_url'] ?? '#');
+            $ctaUrl    = $this->linkHref($p['cta_url'] ?? '#', '#');
             $rawFeat   = $p['features'] ?? [];
             $features  = is_array($rawFeat) ? $rawFeat : (json_decode((string) $rawFeat, true) ?? []);
             $hlClass   = $highlight ? ' highlighted' : '';
-            // Canvas repeater UI now saves each feature as {text: "..."};
-            // a bare string remains supported for already-saved legacy data.
-            $features  = array_map(fn($f) => is_array($f) ? ($f['text'] ?? '') : $f, $features);
 
-            $badgeHtml = $badge ? "<div class=\"tb-plan-badge-wrap\">" . $this->badgeHtml($badge, 'primary', 'md') . "</div>" : '';
-            $featureHtml = implode('', array_map(fn($f) => '<li>' . $this->escape($f) . '</li>', $features));
+            // The popular plan wears a ribbon on the card edge; any other
+            // badge stays the shared Badge primitive.
+            $badgeHtml = $highlight
+                ? '<div class="tb-plan-ribbon">' . $this->escape($this->displayNumber($badge !== '' ? $badge : 'محبوب‌ترین')) . '</div>'
+                : ($badge !== '' ? "<div class=\"tb-plan-badge-wrap\">" . $this->badgeHtml($badge, 'primary', 'md') . "</div>" : '');
+
+            $yearly = trim($this->stringify($p['price_yearly'] ?? ''));
+            if ($toggle && $yearly !== '') {
+                $yearlyPeriod = $this->escape(trim($this->stringify($p['period_yearly'] ?? '')) ?: '/ سال');
+                $priceHtml = "<div class=\"tb-plan-price\" data-tb-cycle=\"monthly\">{$price}</div><p class=\"tb-plan-period\" data-tb-cycle=\"monthly\">{$period}</p>"
+                    . '<div class="tb-plan-price" data-tb-cycle="yearly" hidden>' . $this->escape($this->displayNumber($yearly)) . '</div>'
+                    . "<p class=\"tb-plan-period\" data-tb-cycle=\"yearly\" hidden>{$yearlyPeriod}</p>";
+            } else {
+                $priceHtml = "<div class=\"tb-plan-price\">{$price}</div><p class=\"tb-plan-period\">{$period}</p>";
+            }
+
+            $featureHtml = '';
+            foreach ($features as $fi => $f) {
+                // Canvas saves {text, included, tooltip}; a bare string is
+                // legacy data and counts as included.
+                $f = is_array($f) ? $f : ['text' => $f];
+                $text = trim($this->stringify($f['text'] ?? ''));
+                if ($text === '') {
+                    continue;
+                }
+                $included = $this->flag($f['included'] ?? true);
+                $tip = trim($this->stringify($f['tooltip'] ?? ''));
+                $tipId = "tb-{$id}-tip-{$pi}-{$fi}";
+                $tipHtml = $tip !== ''
+                    ? '<span class="tb-tip"><button type="button" class="tb-tip-trigger" aria-label="' . $this->escapeAttr('توضیح «' . $text . '»') . '" aria-describedby="' . $tipId . '">' . IconLibrary::svg('info') . '</button>'
+                        . '<span class="tb-tip-bubble" role="tooltip" id="' . $tipId . '">' . $this->escape($this->displayNumber($tip)) . '</span></span>'
+                    : '';
+                $featureHtml .= '<li class="tb-plan-feature ' . ($included ? 'is-included' : 'is-excluded') . '">'
+                    . '<span class="tb-plan-feature-icon">' . IconLibrary::svg($included ? 'check' : 'x') . '</span>'
+                    . '<span class="tb-plan-feature-text">' . $this->escape($this->displayNumber($text))
+                    . ($included ? '' : '<span class="tb-visually-hidden"> (در این پلن نیست)</span>') . '</span>'
+                    . $tipHtml . '</li>';
+            }
 
             $cards[] = "<div class=\"tb-pricing-card{$hlClass}\">
                 {$badgeHtml}
                 <p class=\"tb-plan-name\">{$name}</p>
-                <div class=\"tb-plan-price\">{$price}</div>
-                <p class=\"tb-plan-period\">{$period}</p>
+                {$priceHtml}
                 <ul class=\"tb-plan-features\">{$featureHtml}</ul>
                 <a href=\"{$ctaUrl}\" class=\"tb-btn " . ($highlight ? 'tb-btn-primary' : 'tb-btn-secondary') . "\" style=\"width:100%;text-align:center;\">{$ctaText}</a>
             </div>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-pricing-cards tb-section\">
-            <div class=\"tb-container\">{$headerHtml}
+        $tips = str_contains(implode('', $cards), 'tb-tip-trigger');
+        return "<div id=\"tb-{$id}\" class=\"tb-pricing-cards tb-section\"" . ($toggle || $tips ? ' data-tb-pricing' : '') . ">
+            <div class=\"tb-container\">{$headerHtml}{$toggleHtml}
                 <div class=\"tb-pricing-grid cols-{$colCount}\">" . implode('', $cards) . "</div>
             </div>
-        </div>";
+        </div>" . ($toggle || $tips ? $this->pricingAssets() : '');
+    }
+
+    /** Phase 3b (ADR-069): blocks/pricing.js — once per render. */
+    private function pricingAssets(): string
+    {
+        if ($this->pricingAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::pricingScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: pricing.js is missing.');
+        }
+        $this->pricingAssetsEmitted = true;
+        return '<script data-tb-block-asset="pricing">' . $js . '</script>';
     }
 
     protected function renderNewsletterForm(array $props, string $inner, string $id): string
@@ -2876,20 +3340,137 @@ class BlockRenderer
         // Commercial Productization fase-3: same class of bug as
         // renderHeroGradient() — a hardcoded generic-indigo default
         // independent of the Theme's own --tb-primary.
-        $bg         = $this->escapeAttr($props['background'] ?? 'var(--tb-primary, #4f46e5)');
-        $tc         = $this->escapeAttr($props['text_color'] ?? '#ffffff');
+        $bg         = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-primary, #4f46e5)'));
+        $tc         = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-on-primary, #ffffff)'));
+
+        $form = $this->newsletterFormHtml($props, $id, $placeholder, $btnText, $bg);
 
         return "<div id=\"tb-{$id}\" class=\"tb-newsletter\" style=\"background:{$bg};color:{$tc};\">
             <div class=\"tb-container\">
                 <h2 class=\"tb-newsletter-title\">{$title}</h2>
                 " . ($subtitle ? "<p class=\"tb-newsletter-sub\">{$subtitle}</p>" : '') . "
-                <form class=\"tb-newsletter-form\" onsubmit=\"event.preventDefault();this.reset();\" novalidate>
-                    " . $this->visuallyHiddenLabel("tb-{$id}-newsletter-email", $props['placeholder'] ?? 'ایمیل یا شماره موبایل') . "
-                    <input id=\"tb-{$id}-newsletter-email\" type=\"text\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" autocomplete=\"off\">
-                    <button type=\"submit\" class=\"tb-newsletter-btn tb-btn\" style=\"background:#fff;color:{$bg};\">{$btnText}</button>
-                </form>
+                {$form}
             </div>
         </div>";
+    }
+
+    /**
+     * Phase 0.7 (ADR-066): the newsletter form. With a host endpoint it is a
+     * real POST (CSRF via the page token, a honeypot, a live status line;
+     * blocks/site-forms.js sends it with fetch). Without one — the Builder
+     * preview — it stays the inert form it always was.
+     */
+    private function newsletterFormHtml(array $props, string $id, string $placeholder, string $btnText, string $bg, ?string $buttonStyle = 'block'): string
+    {
+        $label = $this->visuallyHiddenLabel("tb-{$id}-newsletter-email", $props['placeholder'] ?? 'ایمیل یا شماره موبایل');
+        // The block's button is white on its coloured band; other placements
+        // (the footer, $buttonStyle null) style it from the stylesheet.
+        $style = $buttonStyle === 'block' ? " style=\"background:var(--tb-on-primary, #fff);color:{$bg};\"" : '';
+        $button = "<button type=\"submit\" class=\"tb-newsletter-btn tb-btn\"{$style}>{$btnText}</button>";
+        $endpoints = $this->siteEndpoints();
+        $endpoint = is_string($endpoints['newsletter'] ?? null) ? trim($endpoints['newsletter']) : '';
+        $action = $endpoint !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($endpoint) ? $this->escapeAttr($endpoint) : '';
+        if ($action === '') {
+            return "<form class=\"tb-newsletter-form\" onsubmit=\"event.preventDefault();this.reset();\" novalidate>
+                    {$label}
+                    <input id=\"tb-{$id}-newsletter-email\" type=\"text\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" autocomplete=\"off\">
+                    {$button}
+                </form>";
+        }
+        $token = is_string($endpoints['csrf'] ?? null) && $endpoints['csrf'] !== ''
+            ? '<input type="hidden" name="_token" value="' . $this->escapeAttr($endpoints['csrf']) . '">' : '';
+        $status = "tb-{$id}-newsletter-status";
+
+        return "<form class=\"tb-newsletter-form\" method=\"post\" action=\"{$action}\" data-tb-newsletter novalidate>"
+            . $token
+            . '<input type="hidden" name="source" value="' . $this->escapeAttr($id) . '">'
+            . $label
+            . "<input id=\"tb-{$id}-newsletter-email\" type=\"text\" name=\"contact\" inputmode=\"email\" autocomplete=\"email\" maxlength=\"190\" required dir=\"auto\" class=\"tb-newsletter-input\" placeholder=\"{$placeholder}\" aria-describedby=\"{$status}\">"
+            . '<span class="tb-hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></span>'
+            . $button
+            . "<p id=\"{$status}\" class=\"tb-newsletter-status\" role=\"status\" aria-live=\"polite\"></p>"
+            . '</form>'
+            . $this->siteFormsAssets();
+    }
+
+    /**
+     * Phase 0.7 (ADR-066): where this site's forms go. Hosts pass
+     * context['site_endpoints'] (customer-site overrides this with its real
+     * routes); none — the Builder preview — keeps every form inert.
+     *
+     *   newsletter: POST URL        csrf: token for the no-JS fallback
+     *   search:     ['all'|'products'|'posts' => ['action' => URL, 'params' => [...], 'param' => 'q']]
+     *   suggest:    GET URL answering {items: [{type, title, url, image, price}]}
+     *
+     * @return array<string, mixed>
+     */
+    protected function siteEndpoints(): array
+    {
+        $endpoints = $this->context['site_endpoints'] ?? null;
+        return is_array($endpoints) ? $endpoints : [];
+    }
+
+    /** The search routes per scope, each URL checked; [] when the site has no search. */
+    private function searchRoutes(): array
+    {
+        $routes = [];
+        $search = $this->siteEndpoints()['search'] ?? null;
+        foreach (['all', 'products', 'posts'] as $scope) {
+            $route = is_array($search) ? ($search[$scope] ?? null) : null;
+            $action = is_array($route) ? (string) ($route['action'] ?? '') : '';
+            if ($action === '' || !\SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($action)) {
+                continue;
+            }
+            $params = [];
+            foreach ((array) ($route['params'] ?? []) as $k => $v) {
+                if (is_string($k) && preg_match('/^[a-z_]{1,32}$/', $k) && is_scalar($v)) {
+                    $params[$k] = (string) $v;
+                }
+            }
+            $param = preg_match('/^[a-z_]{1,32}$/', (string) ($route['param'] ?? 'q')) ? (string) ($route['param'] ?? 'q') : 'q';
+            $routes[$scope] = ['action' => $action, 'params' => $params, 'param' => $param];
+        }
+        return $routes;
+    }
+
+    /**
+     * The attributes, hidden inputs and assets a search form needs. With
+     * host routes it is a real GET form that blocks/site-forms.js upgrades
+     * to the search dialog; without, the inert preview form.
+     *
+     * @return array{0: string, 1: string, 2: string, 3: string} attrs, hidden inputs, assets, field name
+     */
+    private function searchForm(string $scope): array
+    {
+        $routes = $this->searchRoutes();
+        if ($routes === []) {
+            return [' action="#" onsubmit="event.preventDefault();"', '', '', 'q'];
+        }
+        $scope = isset($routes[$scope]) ? $scope : (isset($routes['all']) ? 'all' : (string) array_key_first($routes));
+        $primary = $routes[$scope];
+        $suggest = (string) ($this->siteEndpoints()['suggest'] ?? '');
+        $attrs = ' method="get" action="' . $this->escapeAttr($primary['action']) . '"'
+            . ' data-tb-search="' . $this->escapeAttr(json_encode($routes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '"'
+            . ' data-tb-scope="' . $this->escapeAttr($scope) . '"'
+            . ($suggest !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($suggest) ? ' data-tb-suggest="' . $this->escapeAttr($suggest) . '"' : '');
+        $hidden = '';
+        foreach ($primary['params'] as $k => $v) {
+            $hidden .= '<input type="hidden" name="' . $this->escapeAttr($k) . '" value="' . $this->escapeAttr($v) . '">';
+        }
+        return [$attrs, $hidden, $this->siteFormsAssets(), $primary['param']];
+    }
+
+    private function siteFormsAssets(): string
+    {
+        if ($this->siteFormsAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::siteFormsScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: site-forms.js is missing.');
+        }
+        $this->siteFormsAssetsEmitted = true;
+        return '<script data-tb-block-asset="site_forms">' . $js . '</script>';
     }
 
     protected function renderBentoGrid(array $props, string $inner, string $id): string
@@ -2905,32 +3486,253 @@ class BlockRenderer
         foreach ($items as $item) {
             $ititle = $this->escape($item['title'] ?? '');
             $itext  = $this->escape($item['text'] ?? '');
-            $icon   = $this->escape($item['icon'] ?? '');
+            $icon   = $this->iconHtml($item['icon'] ?? '');
             $image  = $this->escapeUrl($item['image'] ?? '', '');
             $linkUrl = $this->escapeUrl($item['link_url'] ?? '', '');
             $linkLabel = $this->escape($item['link_label'] ?? 'مشاهده');
-            $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small']) ? $item['size'] : 'small';
-            $bgc    = $this->escapeAttr($item['bg_color'] ?? '#f8fafc');
-            $tc     = $this->escapeAttr($item['text_color'] ?? '#0f172a');
+            // Strict allowlist — the only classes the CSS contract defines.
+            // Anything else (incl. the legacy 'normal') renders as small.
+            $size   = in_array($item['size'] ?? '', ['large', 'tall', 'featured', 'small', 'half', 'full'], true) ? $item['size'] : 'small';
+            // Same colour allowlist as the gradient stops: an escaped but
+            // unvalidated value could still inject extra CSS declarations.
+            $bgc    = $this->escapeAttr($this->bentoColorToken($item['bg_color'] ?? '', '#f8fafc') ?: '#f8fafc');
+            $tc     = $this->escapeAttr($this->bentoColorToken($item['text_color'] ?? '', '#0f172a') ?: '#0f172a');
+
+            // ── Card background: image + dual-stop gradient overlay ──────
+            // Every value is sanitized before it reaches the inline style:
+            // the URL must be a renderable asset reference and each colour
+            // must be a legal CSS colour token, so a corrupted/malicious
+            // authored value degrades to "no image / no gradient" instead of
+            // breaking out of the style attribute.
+            $bgImage = trim((string) ($item['bg_image'] ?? ''));
+            if ($bgImage !== '' && (!$this->isValidUrl($bgImage) || preg_match('/[\'\"()<>\\\\]/', $bgImage) === 1)) {
+                $bgImage = '';
+            }
+            $fromColor = $this->bentoColorToken($item['bg_color_from'] ?? '');
+            $toColor   = $this->bentoColorToken($item['bg_color_to'] ?? '');
+
+            // The gradient is an overlay for a background image (it exists to
+            // keep text readable over a photo). On a plain colour card it would
+            // only muddy the authored bg_color/text_color pair — e.g. darken a
+            // light card under dark text — so it never applies without an image.
+            if ($bgImage === '') {
+                $fromColor = $toColor = '';
+            }
+
+            $gradientOverlay = '';
+            if ($fromColor !== '' && $toColor !== '') {
+                $gradientOverlay = "linear-gradient(to bottom, {$fromColor}, {$toColor})";
+            } elseif ($fromColor !== '') {
+                $gradientOverlay = "linear-gradient(to bottom, {$fromColor}, transparent)";
+            } elseif ($toColor !== '') {
+                $gradientOverlay = "linear-gradient(to bottom, transparent, {$toColor})";
+            }
+
+            if ($bgImage !== '' && $gradientOverlay !== '') {
+                // The gradient is the top layer, the image sits beneath it.
+                $backgroundStyle = "background: {$gradientOverlay}, url('{$bgImage}') center/cover no-repeat;";
+            } elseif ($bgImage !== '') {
+                $backgroundStyle = "background: url('{$bgImage}') center/cover no-repeat;";
+            } elseif ($gradientOverlay !== '') {
+                // No image: the overlay composites over the card's own colour
+                // instead of replacing it (bg_color stays authored, visible).
+                $backgroundStyle = "background: {$gradientOverlay}, {$bgc};";
+            } else {
+                $backgroundStyle = "background: {$bgc};";
+            }
+
+            // ── Pulse border glow: tolerant boolean + bounded speed ──────
+            // Persisted values arrive as real booleans, 1/0 or '1'/'0'
+            // (JSON round-trips, legacy string props) — all are accepted;
+            // anything else stays off. Speed must be a positive number.
+            $glowVal = $item['glow_enabled'] ?? false;
+            $isGlow = filter_var($glowVal, FILTER_VALIDATE_BOOLEAN) || $glowVal === 1 || $glowVal === '1';
+
+            $glowColor = $this->escapeAttr($this->bentoColorToken($item['glow_color'] ?? '') ?: '#6366f1');
+            $glowSpeed = floatval($item['glow_speed'] ?? 2);
+            if ($glowSpeed <= 0) { $glowSpeed = 2; }
+
+            $glowClass = $isGlow ? ' tb-bento-pulse-card' : '';
+            $glowStyle = $isGlow ? "--tb-glow-color:{$glowColor};--tb-glow-speed:{$glowSpeed}s;" : '';
+
             $mediaHtml = $image !== '' ? $this->imageWithFallback($image, (string) ($item['title'] ?? ''), '', 'تصویر') : '';
-            $linkHtml = ($linkUrl !== '' && $linkLabel !== '') ? "<a class=\"tb-bento-item-link\" href=\"{$linkUrl}\">{$linkLabel}<span aria-hidden=\"true\"> ←</span></a>" : '';
             $mediaClass = $image !== '' ? ' has-media' : '';
-            $cells[] = "<div class=\"tb-bento-item {$size}{$mediaClass}\" style=\"background:{$bgc};color:{$tc};\">
+
+            // Whole-card link: `link` (Canvas field, plain URL or structured
+            // {url,…} link object), falling back to the legacy `link_url`.
+            // Scheme-validated through escapeUrl() — '' fallback means an
+            // unsafe or empty URL simply yields a non-link card.
+            $rawLink = $item['link'] ?? '';
+            if (is_array($rawLink)) {
+                $rawLink = $rawLink['url'] ?? '';
+            }
+            $rawLink = trim(is_string($rawLink) ? $rawLink : '');
+            if ($rawLink === '') {
+                $rawLink = trim((string) ($item['link_url'] ?? ''));
+            }
+            $cardHref = $rawLink !== '' ? $this->escapeUrl($rawLink, '') : '';
+            $hasLink = $cardHref !== '';
+
+            // The label reads as a link affordance; the card itself is the one
+            // anchor, so no <a> is ever nested inside another <a>.
+            $linkHtml = ($hasLink && $linkLabel !== '' && $linkUrl !== '')
+                ? "<span class=\"tb-bento-item-link\">{$linkLabel}<span aria-hidden=\"true\"> ←</span></span>"
+                : '';
+
+            // Phase 3b (ADR-069): dynamic cells. A product cell holds its own
+            // links and add-to-cart form, so it is never itself a link.
+            $kind = $item['kind'] ?? 'content';
+            $kind = in_array($kind, ['content', 'product', 'countdown', 'metric'], true) ? $kind : 'content';
+            if ($kind === 'product') {
+                $hasLink = false;
+                $linkHtml = '';
+            }
+
+            $tag = $hasLink ? 'a' : 'div';
+            $hrefAttr = $hasLink ? " href=\"{$cardHref}\"" : '';
+            $cursorStyle = $hasLink ? 'cursor:pointer;text-decoration:none;' : '';
+            $pointerClass = $hasLink ? ' cursor-pointer group' : '';
+            $iconBlock = $icon ? "<div class=\"tb-bento-item-icon\">{$icon}</div>" : '';
+            $textHtml = $itext !== '' ? "<p class=\"tb-bento-item-text\">{$itext}</p>" : '';
+
+            $body = match ($kind) {
+                'product' => ($ititle !== '' ? "<p class=\"tb-bento-eyebrow\">{$ititle}</p>" : '') . $this->bentoProductHtml($item),
+                'countdown' => "{$iconBlock}<h3 class=\"tb-bento-item-title\">{$ititle}</h3>{$textHtml}"
+                    . $this->renderCountdown(['end_date' => $item['end_date'] ?? '', 'end_time' => $item['end_time'] ?? '', 'show_end_date' => true], '', "{$id}-cd" . count($cells)),
+                'metric' => $iconBlock
+                    . '<p class="tb-bento-metric-value">' . $this->escape($this->displayNumber($item['metric_value'] ?? '')) . '</p>'
+                    . "<h3 class=\"tb-bento-item-title\">{$ititle}</h3>{$textHtml}",
+                // Byte-identical to the pre-3b content cell.
+                default => "{$iconBlock}
+                <h3 class=\"tb-bento-item-title\">{$ititle}</h3>
+                <p class=\"tb-bento-item-text\">{$itext}</p>",
+            };
+            $kindClass = $kind !== 'content' ? " kind-{$kind}" : '';
+
+            $cells[] = "<{$tag}{$hrefAttr} class=\"tb-bento-item {$size}{$kindClass}{$mediaClass}{$pointerClass}{$glowClass}\" style=\"{$backgroundStyle}color:{$tc};{$cursorStyle}{$glowStyle}\">
                 {$mediaHtml}
                 <div class=\"tb-bento-item-content\">
-                " . ($icon ? "<div class=\"tb-bento-item-icon\">{$icon}</div>" : '') . "
-                <h3 class=\"tb-bento-item-title\">{$ititle}</h3>
-                <p class=\"tb-bento-item-text\">{$itext}</p>
+                {$body}
                 {$linkHtml}
                 </div>
-            </div>";
+            </{$tag}>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-bento tb-section\">
+        // Scoped to this block's own markup: the pulse keyframes travel with
+        // the block so the live Canvas preview and the published tenant page
+        // animate identically, with the card's own colour/speed custom
+        // properties (--tb-glow-color / --tb-glow-speed) driving each card.
+        $styleTag = "<style data-tb-block-asset=\"bento_grid\">
+@keyframes tb-bento-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); border-color: rgba(226, 232, 240, 0.8); }
+    50% { box-shadow: 0 0 16px 2px var(--tb-glow-color, rgba(99, 102, 241, 0.5)); border-color: var(--tb-glow-color, rgba(99, 102, 241, 0.9)); }
+}
+.tb-bento-pulse-card {
+    position: relative;
+    border: 2px solid transparent !important;
+    animation: tb-bento-pulse var(--tb-glow-speed, 2s) infinite ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    .tb-bento-pulse-card { animation: none; }
+}
+</style>";
+
+        return $styleTag . "<div id=\"tb-{$id}\" class=\"tb-bento tb-section\">
             <div class=\"tb-container\">{$titleHtml}
                 <div class=\"tb-bento-grid\">" . implode('', $cells) . "</div>
             </div>
         </div>";
+    }
+
+    /**
+     * Phase 3b (ADR-069): a bento cell's live product. This package has no
+     * products, so the Builder preview shows a labelled sample card;
+     * customer-site overrides this with the real product (`product_id`, or
+     * the newest when 0).
+     */
+    protected function bentoProductHtml(array $item): string
+    {
+        $card = $this->productCard($this->demoProductCard(['title' => 'محصول نمونه', 'price' => 1250000, 'original' => 1590000, 'badge' => null, 'stock' => 'موجود'], 2));
+        return $card . '<p class="tb-bento-note">نمونه؛ در سایت، محصول انتخاب‌شده نمایش داده می‌شود.</p>';
+    }
+
+    /**
+     * Sanitize a persisted Bento card colour into a token that is safe to
+     * interpolate into an inline style attribute: hex, a bare keyword
+     * (transparent/currentColor/…), an rgb()/hsl()-family function or a
+     * var(--token[, fallback]) reference. Anything else — quotes,
+     * semicolons, `url(...)`, `expression(...)` — returns `$fallback`
+     * ('' meaning "treat as not authored"), so a corrupted or malicious
+     * authored value degrades to a missing gradient instead of breaking out
+     * of the style attribute. Mirrors InspectorFieldRegistry::normalizeColor
+     * at render time for values that were saved before that boundary existed.
+     */
+    protected function bentoColorToken(mixed $value, string $fallback = ''): string
+    {
+        if (!is_scalar($value)) {
+            return $fallback;
+        }
+
+        $token = trim((string) $value);
+        if ($token === '') {
+            return '';
+        }
+
+        $numberish = '[0-9a-zA-Z%,.\s/*+-]+';
+        $pattern = '~^(?:#[0-9a-f]{3,8}|transparent|currentcolor|inherit|initial|unset|'
+            . '(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\(\s*' . $numberish . '\)|'
+            . 'var\(\s*--[A-Za-z0-9_-]+(?:\s*,\s*' . $numberish . ')?\s*\))$~i';
+
+        return preg_match($pattern, $token) === 1 ? $token : $fallback;
+    }
+
+    /**
+     * Phase 0.5 (ADR-064) — the one reader for an author colour prop. It
+     * accepts what the Canvas colour control stores: a hex value, an
+     * rgb()/rgba()/hsl()-family function, a theme token reference
+     * `var(--tb-…)` (optionally with a colour fallback), `transparent`, or a
+     * named colour. Anything else (quotes, `;`, `url(…)`, arrays) returns
+     * $fallback, so an authored value can never break out of a style
+     * attribute. $fallback is trusted renderer code, e.g.
+     * 'var(--tb-primary, #4f46e5)'.
+     */
+    protected function cssColor(mixed $value, string $fallback): string
+    {
+        if (!is_string($value)) {
+            return $fallback;
+        }
+        $color = trim($value);
+        return $color !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isCssColor($color) ? $color : $fallback;
+    }
+
+    /**
+     * Phase 0.5 (ADR-064): a counter, badge or count as Persian pages read
+     * it (Support\PersianNumber::localize — Persian digits, ٬/٫, ٪). A host
+     * rendering a Latin-digit site sets the context key `digits` => 'latin'.
+     */
+    protected function displayNumber(mixed $value): string
+    {
+        $text = $this->stringify($value);
+        return ($this->context['digits'] ?? null) === 'latin' ? $text : PersianNumber::localize($text);
+    }
+
+    /** A price in Toman: «۱٬۲۵۰٬۰۰۰ تومان» (or Latin digits, see displayNumber()). */
+    protected function displayToman(int|float $amount): string
+    {
+        return ($this->context['digits'] ?? null) === 'latin'
+            ? number_format($amount) . ' ' . PersianNumber::TOMAN
+            : PersianNumber::toman($amount);
+    }
+
+    /**
+     * Phase 0.6 (ADR-065): an icon prop. A Support\IconLibrary name renders
+     * as inline SVG (stroke = currentColor); anything else — a legacy emoji
+     * or text — is escaped exactly as before, so stored content is
+     * unchanged. '' stays '' (callers test it for "no icon").
+     */
+    protected function iconHtml(mixed $value): string
+    {
+        return IconLibrary::has($value) ? IconLibrary::svg((string) $value) : $this->escape($value);
     }
 
     protected function renderServicesCards(array $props, string $inner, string $id): string
@@ -2950,10 +3752,10 @@ class BlockRenderer
 
         $cards = [];
         foreach ($services as $svc) {
-            $icon     = $this->escape($svc['icon'] ?? '');
+            $icon     = $this->iconHtml($svc['icon'] ?? '');
             $stitle   = $this->escape($svc['title'] ?? '');
             $stext    = $this->escape($svc['text'] ?? '');
-            $link     = $this->escapeAttr($svc['link'] ?? '#');
+            $link     = $this->linkHref($svc['link'] ?? '#', '');
             $linkText = $this->escape($svc['link_text'] ?? 'بیشتر بدانید');
             $linkHtml = $link && $linkText ? "<a href=\"{$link}\" class=\"tb-service-link\">{$linkText} ←</a>" : '';
             $cards[] = "<div class=\"tb-service-card style-{$style}\">
@@ -2983,16 +3785,16 @@ class BlockRenderer
 
         $infoItems = [];
         if ($phone) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">📞</span><div><p class=\"tb-contact-info-label\">تلفن</p><p class=\"tb-contact-info-value\">{$phone}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('phone') . "</span><div><p class=\"tb-contact-info-label\">تلفن</p><p class=\"tb-contact-info-value\">{$phone}</p></div></div>";
         }
         if ($email) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">✉️</span><div><p class=\"tb-contact-info-label\">ایمیل</p><p class=\"tb-contact-info-value\">{$email}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('mail') . "</span><div><p class=\"tb-contact-info-label\">ایمیل</p><p class=\"tb-contact-info-value\">{$email}</p></div></div>";
         }
         if ($address) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">📍</span><div><p class=\"tb-contact-info-label\">آدرس</p><p class=\"tb-contact-info-value\">{$address}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('map-pin') . "</span><div><p class=\"tb-contact-info-label\">آدرس</p><p class=\"tb-contact-info-value\">{$address}</p></div></div>";
         }
         if ($hours) {
-            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">🕐</span><div><p class=\"tb-contact-info-label\">ساعات کاری</p><p class=\"tb-contact-info-value\">{$hours}</p></div></div>";
+            $infoItems[] = "<div class=\"tb-contact-info-item\"><span class=\"tb-contact-info-icon\">" . $this->iconHtml('clock') . "</span><div><p class=\"tb-contact-info-label\">ساعات کاری</p><p class=\"tb-contact-info-value\">{$hours}</p></div></div>";
         }
 
         // Stable, block-scoped field ids ("tb-{$id}-...") — $id is already
@@ -3071,7 +3873,7 @@ class BlockRenderer
     protected function renderPromoBanner(array $props, string $inner, string $id): string
     {
         $text = $this->escape($props['text'] ?? '');
-        $link = $this->escapeAttr($props['link'] ?? '#');
+        $link = $this->linkHref($props['link'] ?? '#', '');
         $variant = $this->escapeAttr($props['style'] ?? 'info');
         if ($text === '') {
             return '';
@@ -3132,9 +3934,10 @@ class BlockRenderer
     {
         $common = [
             'banner_image' => (string) ($link['mega_banner_image'] ?? ''),
-            'banner_url' => (string) ($link['mega_banner_url'] ?? ''),
+            'banner_url' => $this->linkValue($link['mega_banner_url'] ?? ''),
             'banner_text' => (string) ($link['mega_banner_text'] ?? ''),
-            'show_desktop' => array_key_exists('mega_show_desktop', $link) ? (bool) $link['mega_show_desktop'] : true,
+            'banner_cta' => (string) ($link['mega_banner_cta'] ?? ''),
+            'show_desktop' => array_key_exists('mega_show_desktop', $link) ? $this->flag($link['mega_show_desktop']) : true,
             'mobile_behavior' => in_array($link['mega_mobile_behavior'] ?? '', ['accordion', 'flat', 'hidden'], true) ? $link['mega_mobile_behavior'] : 'accordion',
         ];
 
@@ -3163,7 +3966,7 @@ class BlockRenderer
                         continue;
                     }
                     $links[] = [
-                        'url' => (string) ($it['url'] ?? '#'),
+                        'url' => $this->linkValue($it['url'] ?? '#'),
                         'label' => $itLabel,
                         'icon' => (string) ($it['icon'] ?? ''),
                         'image' => (string) ($it['image'] ?? ''),
@@ -3230,12 +4033,12 @@ class BlockRenderer
             $colLinks = is_array($col) ? ($col['links'] ?? []) : [];
             $linksHtml = '';
             foreach ((array) $colLinks as $l) {
-                $lUrl = $this->escapeUrl(is_array($l) ? ($l['url'] ?? '') : '', '#');
+                $lUrl = $this->linkHref(is_array($l) ? ($l['url'] ?? '') : '', '#');
                 $lLabel = $this->escape(is_array($l) ? ($l['label'] ?? '') : (string) $l);
                 if ($lLabel === '') {
                     continue;
                 }
-                $lIcon = $this->escape(is_array($l) ? ($l['icon'] ?? '') : '');
+                $lIcon = $this->iconHtml(is_array($l) ? ($l['icon'] ?? '') : '');
                 $lImage = trim((string) (is_array($l) ? ($l['image'] ?? '') : ''));
                 $mediaHtml = '';
                 if ($lImage !== '') {
@@ -3254,43 +4057,37 @@ class BlockRenderer
                 . "</div>";
         }
 
+        // Phase 1 (ADR-067): the promo slot — image, title and an optional
+        // call to action, all from the nested repeater item.
         $bannerImage = trim((string) ($mega['banner_image'] ?? ''));
         $bannerHtml = '';
         if ($bannerImage !== '') {
-            $bannerUrl = $this->escapeUrl($mega['banner_url'] ?? '', '#');
+            $bannerUrl = $this->linkHref($mega['banner_url'] ?? '', '#');
             $bannerText = $this->escape($mega['banner_text'] ?? '');
+            $bannerCta = $this->escape($mega['banner_cta'] ?? '');
             $bannerImgHtml = $this->imageWithFallback($bannerImage, (string) ($mega['banner_text'] ?? $label), 'width:100%;height:100%;');
             $bannerHtml = "<a href=\"{$bannerUrl}\" class=\"tb-mega-menu-banner\">"
                 . "<div class=\"tb-mega-menu-banner-img\">{$bannerImgHtml}</div>"
                 . ($bannerText !== '' ? "<div class=\"tb-mega-menu-banner-text\">{$bannerText}</div>" : '')
+                . ($bannerCta !== '' ? "<span class=\"tb-mega-menu-banner-cta\">{$bannerCta} " . $this->iconHtml('arrow-left') . '</span>' : '')
                 . "</a>";
         }
 
         $showDesktop = ($mega['show_desktop'] ?? true) !== false;
-        $mobileBehavior = in_array($mega['mobile_behavior'] ?? 'accordion', ['accordion', 'flat', 'hidden'], true) ? $mega['mobile_behavior'] : 'accordion';
+        $mobileBehavior = $mega['mobile_behavior'] ?? 'accordion';
+        $mobileBehavior = in_array($mobileBehavior, ['accordion', 'flat', 'hidden'], true) ? $mobileBehavior : 'accordion';
         $itemClasses = 'tb-mega-menu-item tb-mega-mobile-' . $mobileBehavior . ($showDesktop ? '' : ' tb-mega-desktop-hidden');
+        $this->headerNeedsScript = true;
 
+        // Toggling (touch, keyboard, Esc, outside click) is delegated in
+        // blocks/site-header.js, so a cloned copy (the host's mobile menu)
+        // works too — no per-item inline script.
         return "<div class=\"{$itemClasses}\" id=\"{$itemId}\">
-            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\">{$label}</a>
-            <div class=\"tb-mega-menu-panel\" role=\"menu\">
+            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\" aria-controls=\"{$itemId}-panel\">{$label}<span class=\"tb-mega-menu-caret\" aria-hidden=\"true\">" . $this->iconHtml('chevron-down') . "</span></a>
+            <div class=\"tb-mega-menu-panel\" id=\"{$itemId}-panel\">
                 <div class=\"tb-mega-menu-cols\">{$columnsHtml}</div>
                 {$bannerHtml}
             </div>
-            <script>(function(){
-                var root = document.getElementById('{$itemId}');
-                if (!root || root.dataset.tbMegaInit) return;
-                root.dataset.tbMegaInit = '1';
-                var trigger = root.querySelector('.tb-mega-menu-trigger');
-                trigger.addEventListener('click', function(e){
-                    if (window.matchMedia('(hover: hover)').matches) return;
-                    e.preventDefault();
-                    var open = root.classList.toggle('tb-mega-open');
-                    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-                });
-                document.addEventListener('click', function(e){
-                    if (!root.contains(e.target)) { root.classList.remove('tb-mega-open'); trigger.setAttribute('aria-expanded', 'false'); }
-                });
-            })();</script>
         </div>";
     }
 
@@ -3303,7 +4100,7 @@ class BlockRenderer
 
         $brandName = trim($this->stringify($props['brandName'] ?? 'برند شما'));
         $brandName = $this->escape($brandName !== '' ? $brandName : 'برند شما');
-        $homeUrl = $this->escapeUrl($this->stringify($props['homeUrl'] ?? '/'), '/');
+        $homeUrl = $this->linkHref($props['homeUrl'] ?? '/', '/');
         $logoUrl = trim($this->stringify($props['logoUrl'] ?? ''));
         $logoSrc = $logoUrl !== '' ? $this->escapeUrl($logoUrl, '') : '';
         $logo = $logoSrc !== ''
@@ -3322,7 +4119,7 @@ class BlockRenderer
         }
 
         $ctaText = trim($this->stringify($props['ctaText'] ?? 'شروع کنید'));
-        $ctaUrl = $this->escapeUrl($this->stringify($props['ctaUrl'] ?? '#'), '#');
+        $ctaUrl = $this->linkHref($props['ctaUrl'] ?? '#', '#');
         $ctaHtml = $ctaText !== ''
             ? '<a class="tb-header-modern__cta" href="' . $ctaUrl . '">' . $this->escape($ctaText) . '</a>'
             : '';
@@ -3375,9 +4172,9 @@ class BlockRenderer
     protected function renderNavHeader(array $props, string $inner, string $id): string
     {
         $logoText = $this->escape($props['logo_text'] ?? '');
-        $logoUrl  = $this->escapeAttr($props['logo_url'] ?? '/');
-        $bg       = $this->escapeAttr($props['bg_color'] ?? '#ffffff');
-        $tc       = $this->escapeAttr($props['text_color'] ?? '#111827');
+        $logoUrl  = $this->linkHref($props['logo_url'] ?? '/', '/');
+        $bg       = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, 'var(--tb-background, #ffffff)'));
+        $tc       = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-text, #111827)'));
         $sticky   = (bool) ($props['sticky'] ?? false);
 
         $rawLinks = $props['nav_links'] ?? $props['links'] ?? [];
@@ -3385,7 +4182,7 @@ class BlockRenderer
 
         $phone       = $this->escape($props['phone'] ?? '');
         $ctaText     = $this->escape($props['cta_text'] ?? '');
-        $ctaUrl      = $this->escapeAttr($props['cta_url'] ?? '#');
+        $ctaUrl      = $this->linkHref($props['cta_url'] ?? '#', '#');
         $showSearch  = (bool) ($props['show_search'] ?? false);
         $searchPh    = $props['search_placeholder'] ?? 'جستجو...';
         $showCart    = (bool) ($props['show_cart'] ?? false);
@@ -3404,7 +4201,7 @@ class BlockRenderer
         } else {
             $linkItems = '';
             foreach ($links as $link) {
-                $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+                $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
                 $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
                 if ($label === '') {
                     continue;
@@ -3438,15 +4235,25 @@ class BlockRenderer
         $searchHtml = '';
         if ($showSearch) {
             $searchFieldId = "tb-{$id}-search";
-            $searchHtml = "<form class=\"tb-nav-header-search\" role=\"search\" action=\"#\" onsubmit=\"event.preventDefault();\">"
+            // Phase 0.7 (ADR-066): the same real search as search_bar; on
+            // phones the field folds into an icon that opens the dialog.
+            $scope = $props['search_scope'] ?? 'all';
+            $scope = in_array($scope, ['all', 'products', 'posts'], true) ? $scope : 'all';
+            [$attrs, $hidden, $assets, $param] = $this->searchForm($scope);
+            $searchHtml = "<form id=\"{$searchFieldId}-form\" class=\"tb-nav-header-search\" role=\"search\"{$attrs}>"
                 . $this->visuallyHiddenLabel($searchFieldId, $searchPh)
-                . "<input id=\"{$searchFieldId}\" type=\"search\" placeholder=\"" . $this->escapeAttr($searchPh) . "\" class=\"tb-nav-header-search-input\">"
-                . "</form>";
+                . "<input id=\"{$searchFieldId}\" type=\"search\" name=\"" . $this->escapeAttr($param) . "\" placeholder=\"" . $this->escapeAttr($searchPh) . "\" class=\"tb-nav-header-search-input\" autocomplete=\"off\" enterkeyhint=\"search\">"
+                . $hidden
+                . "</form>"
+                . "<button type=\"button\" class=\"tb-nav-header-icon-link tb-nav-header-search-toggle\" data-tb-search-open=\"{$searchFieldId}-form\" aria-label=\"جستجو\">" . $this->iconHtml('search') . '</button>'
+                . $assets;
         }
 
         $phoneHtml   = $phone ? "<a href=\"tel:" . $this->escapeAttr(preg_replace('/[^+0-9]/', '', $props['phone'])) . "\" class=\"tb-nav-header-phone\">{$phone}</a>" : '';
-        $cartHtml    = $showCart ? "<a href=\"/cart\" class=\"tb-nav-header-icon-link\" aria-label=\"سبد خرید\">🛒</a>" : '';
-        $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">👤</a>" : '';
+        // Phase 1 (ADR-067): with host cart endpoints the icon opens the
+        // mini-cart drawer (blocks/cart.js); without, the old link.
+        $cartHtml    = $showCart ? $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart')) : '';
+        $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">" . $this->iconHtml('user') . "</a>" : '';
         $ctaHtml     = $ctaText ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\">{$ctaText}</a>" : '';
         $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
         // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
@@ -3491,13 +4298,106 @@ class BlockRenderer
         // own, leaving the single real banner role on the outer wrapper
         // where it belongs — see renderNavFooter() below for the
         // contentinfo/<footer> equivalent.
-        return "<div id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\">
+        // Phase 1 (ADR-067): scroll behaviour lives on the page's banner
+        // element (the host wraps this block in its own <header>), applied by
+        // blocks/site-header.js from these flags. Without the script the
+        // block keeps its plain inline sticky position.
+        $flags = array_keys(array_filter([
+            'sticky' => $sticky,
+            'smart' => $sticky && $this->flag($props['sticky_hide_on_scroll'] ?? false),
+            'overlay' => $this->flag($props['transparent_over_hero'] ?? false),
+        ]));
+        $headerAttrs = '';
+        if ($flags !== []) {
+            $this->headerNeedsScript = true;
+            // '' = auto: site-header.js picks light or dark text from the hero.
+            $rawOverlay = trim($this->stringify($props['transparent_text_color'] ?? ''));
+            $overlayText = $rawOverlay === '' ? 'auto' : $this->cssColor($rawOverlay, 'auto');
+            $headerAttrs = ' data-tb-header="' . implode(' ', $flags) . '"'
+                . (in_array('overlay', $flags, true) ? ' data-tb-overlay-text="' . $this->escapeAttr($overlayText) . '"' : '');
+        }
+        $assets = $this->headerNeedsScript ? $this->siteHeaderAssets() : '';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
                 <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\">{$linkItems}</nav>
                 <div class=\"tb-nav-header-actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$ctaHtml}</div>
             </div>
-        </div>";
+        </div>{$assets}";
+    }
+
+    /** Phase 1 (ADR-067): blocks/site-header.js, inlined once per render. */
+    private function siteHeaderAssets(): string
+    {
+        if ($this->siteHeaderAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::siteHeaderScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: site-header.js is missing.');
+        }
+        $this->siteHeaderAssetsEmitted = true;
+        return '<script data-tb-block-asset="site_header">' . $js . '</script>';
+    }
+
+    /**
+     * Phase 1 (ADR-067): a cart icon. With the host's cart endpoints
+     * (siteEndpoints()['cart']) it links to the cart page and opens the
+     * mini-cart drawer, with a live count badge; without them (the Builder
+     * preview) it is the plain `/cart` link it always was.
+     */
+    protected function cartTriggerHtml(string $class, string $inner, string $extraAttrs = ''): string
+    {
+        $cart = $this->cartEndpoints();
+        if ($cart === null) {
+            return "<a href=\"/cart\" class=\"{$class}\"{$extraAttrs} aria-label=\"سبد خرید\">{$inner}</a>";
+        }
+        $count = $cart['count'];
+        $badge = '<span class="tb-cart-badge" data-tb-cart-count' . ($count > 0 ? '' : ' hidden') . '>' . $this->displayNumber($count) . '</span>';
+
+        return '<a href="' . $this->escapeAttr($cart['page']) . "\" class=\"{$class} tb-cart-trigger\"{$extraAttrs} data-tb-cart-open"
+            . ' data-tb-cart="' . $this->escapeAttr(json_encode(array_diff_key($cart, ['count' => 1]), JSON_UNESCAPED_SLASHES)) . '"'
+            . ' aria-haspopup="dialog" aria-label="سبد خرید">' . $inner . $badge . '</a>'
+            . $this->cartAssets();
+    }
+
+    /** @return array{page:string,mini:string,add:string,remove:string,count:int}|null */
+    protected function cartEndpoints(): ?array
+    {
+        $cart = $this->siteEndpoints()['cart'] ?? null;
+        if (!is_array($cart)) {
+            return null;
+        }
+        $out = [];
+        foreach (['page', 'mini', 'add', 'remove'] as $key) {
+            $url = is_string($cart[$key] ?? null) ? trim($cart[$key]) : '';
+            if ($url === '' || !\SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($url)) {
+                return null;
+            }
+            $out[$key] = $url;
+        }
+        // Phase 3 (ADR-068): optional — without it the drawer has no stepper.
+        $update = is_string($cart['update'] ?? null) ? trim($cart['update']) : '';
+        if ($update !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($update)) {
+            $out['update'] = $update;
+        }
+        $out['count'] = max(0, (int) ($cart['count'] ?? 0));
+        return $out;
+    }
+
+    /** Phase 1/2 (ADR-067): blocks/cart.js — drawer + add-to-cart — once per render. */
+    protected function cartAssets(): string
+    {
+        if ($this->cartAssetsEmitted) {
+            return '';
+        }
+        $js = @file_get_contents(ThemeRuntimeServiceProvider::cartScriptPath());
+        if (!is_string($js) || $js === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: cart.js is missing.');
+        }
+        $this->cartAssetsEmitted = true;
+        return '<script data-tb-block-asset="cart">' . $js . '</script>';
     }
 
     /**
@@ -3516,14 +4416,17 @@ class BlockRenderer
     {
         $toggleId = "tb-{$parentId}-theme-toggle";
 
+        // Phase 1 (ADR-067): catalog SVG icons instead of ☀️ 🌙 💻.
+        $icons = json_encode(['light' => IconLibrary::svg('sun'), 'dark' => IconLibrary::svg('moon'), 'system' => IconLibrary::svg('monitor')], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
+
         return "<button type=\"button\" id=\"{$toggleId}\" class=\"tb-theme-toggle\" aria-label=\"تغییر حالت رنگی\">
-            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">🌓</span>
+            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">" . IconLibrary::svg('monitor') . "</span>
         </button>
         <script>(function(){
             var btn = document.getElementById('{$toggleId}');
             if (!btn || btn.dataset.tbInit) return;
             btn.dataset.tbInit = '1';
-            var ICONS = {light:'☀️', dark:'🌙', system:'💻'};
+            var ICONS = {$icons};
             var LABELS = {
                 light: 'حالت رنگی: روشن — برای تغییر به تاریک کلیک کنید',
                 dark: 'حالت رنگی: تاریک — برای تغییر به خودکار (سیستم) کلیک کنید',
@@ -3532,7 +4435,7 @@ class BlockRenderer
             function render() {
                 var p = (window.__tbTheme && window.__tbTheme.get) ? window.__tbTheme.get() : 'system';
                 var icon = btn.querySelector('.tb-theme-toggle-icon');
-                if (icon) icon.textContent = ICONS[p] || ICONS.system;
+                if (icon) icon.innerHTML = ICONS[p] || ICONS.system;
                 btn.setAttribute('aria-label', LABELS[p] || LABELS.system);
             }
             btn.addEventListener('click', function () {
@@ -3556,8 +4459,8 @@ class BlockRenderer
      */
     protected function renderNavFooter(array $props, string $inner, string $id): string
     {
-        $bg        = $this->escapeAttr($props['bg_color'] ?? '#111827');
-        $tc        = $this->escapeAttr($props['text_color'] ?? '#e5e7eb');
+        $bg        = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, '#111827'));
+        $tc        = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, '#e5e7eb'));
         $copyright = $this->escape($props['copyright'] ?? '');
         $tagline   = $this->escape($props['tagline'] ?? '');
         $logoText  = $this->escape($props['logo_text'] ?? '');
@@ -3596,7 +4499,7 @@ class BlockRenderer
 
                 $linkItems = '';
                 foreach ($clinks as $link) {
-                    $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+                    $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
                     $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
                     if ($label === '') {
                         continue;
@@ -3612,11 +4515,14 @@ class BlockRenderer
             }
         }
 
-        $socialHtml = $socialLinks !== [] ? $this->renderSocialIcons(['links' => $socialLinks], '', "{$id}-social") : '';
+        // Phase 1 (ADR-067): social links as catalog icons (network chosen or
+        // recognised from the URL; an unknown one keeps its text label).
+        $socialHtml = $socialLinks !== [] ? $this->socialIconsHtml($socialLinks, "{$id}-social") : '';
+        $extrasHtml = $this->footerExtrasHtml($props, $id);
 
         $legalHtml = '';
         foreach ($legalLinks as $link) {
-            $url   = $this->escapeUrl(is_array($link) ? ($link['url'] ?? '') : '', '#');
+            $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
             $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
             if ($label === '') {
                 continue;
@@ -3640,6 +4546,7 @@ class BlockRenderer
             <div class=\"tb-container\">
                 {$brandHtml}
                 " . ($colHtml ? "<div class=\"tb-nav-footer-cols\">{$colHtml}</div>" : '') . "
+                {$extrasHtml}
                 <div class=\"tb-nav-footer-bottom\">
                     " . ($copyright ? "<p class=\"tb-nav-footer-copyright\">{$copyright}</p>" : '') . "
                     {$legalHtml}
@@ -3647,6 +4554,165 @@ class BlockRenderer
                 </div>
             </div>
         </div>";
+    }
+
+    /** network => [catalog icon, Persian name, URL pattern] */
+    private const SOCIAL_NETWORKS = [
+        'instagram' => ['instagram', 'اینستاگرام', '~(//|\.)(instagram\.com|instagr\.am)/~i'],
+        'telegram' => ['send', 'تلگرام', '~(//|\.)(t\.me|telegram\.me|telegram\.org)/~i'],
+        'whatsapp' => ['message-circle', 'واتساپ', '~(//|\.)(wa\.me|whatsapp\.com)/~i'],
+        'linkedin' => ['linkedin', 'لینکدین', '~(//|\.)linkedin\.com/~i'],
+        'x' => ['twitter', 'ایکس (توییتر)', '~(//|\.)(twitter|x)\.com/~i'],
+        'youtube' => ['youtube', 'یوتیوب', '~(//|\.)(youtube\.com|youtu\.be)/~i'],
+        'aparat' => ['circle-play', 'آپارات', '~(//|\.)aparat\.com/~i'],
+        'eitaa' => ['message-circle-more', 'ایتا', '~(//|\.)eitaa\.com/~i'],
+        'bale' => ['message-circle-more', 'بله', '~(//|\.)ble\.ir/~i'],
+        'rubika' => ['message-circle-more', 'روبیکا', '~(//|\.)rubika\.ir/~i'],
+        'facebook' => ['facebook', 'فیسبوک', '~(//|\.)(facebook\.com|fb\.com)/~i'],
+        'github' => ['github', 'گیت‌هاب', '~(//|\.)github\.com/~i'],
+        'email' => ['mail', 'ایمیل', '~^mailto:~i'],
+        'phone' => ['phone', 'تلفن', '~^tel:~i'],
+    ];
+
+    /** The network a social link points at: its `network`, else recognised from the URL. */
+    protected function socialNetwork(array $link): ?string
+    {
+        $chosen = (string) ($link['network'] ?? '');
+        if (isset(self::SOCIAL_NETWORKS[$chosen])) {
+            return $chosen;
+        }
+        $url = $link['url'] ?? '';
+        $url = trim(is_array($url) ? (string) ($url['url'] ?? '') : $this->stringify($url));
+        foreach (self::SOCIAL_NETWORKS as $network => [, , $pattern]) {
+            if ($url !== '' && preg_match($pattern, $url)) {
+                return $network;
+            }
+        }
+        return null;
+    }
+
+    private function socialIconsHtml(array $links, string $id): string
+    {
+        $items = '';
+        foreach ($links as $link) {
+            if (!is_array($link)) {
+                continue;
+            }
+            $url = $this->linkHref($link['url'] ?? '', '');
+            if ($url === '') {
+                continue;
+            }
+            $network = $this->socialNetwork($link);
+            $label = trim($this->stringify($link['label'] ?? ''));
+            $name = $label !== '' ? $label : ($network !== null ? self::SOCIAL_NETWORKS[$network][1] : '');
+            if ($network === null && $name === '') {
+                continue;
+            }
+            $inner = $network !== null ? IconLibrary::svg(self::SOCIAL_NETWORKS[$network][0]) : $this->escape($name);
+            $external = in_array($network, ['email', 'phone'], true) ? '' : ' target="_blank" rel="noopener noreferrer"';
+            $items .= "<a href=\"{$url}\" class=\"tb-social-icon" . ($network === null ? ' tb-social-icon--text' : " tb-social-icon--{$network}") . "\"{$external} aria-label=\"" . $this->escapeAttr($name) . "\" title=\"" . $this->escapeAttr($name) . "\">{$inner}</a>";
+        }
+        return $items === '' ? '' : "<div id=\"tb-{$id}\" class=\"tb-social-icons tb-social-icons--svg\">{$items}</div>";
+    }
+
+    /** store => [catalog icon, prefix, store name] */
+    private const APP_STORES = [
+        'google_play' => ['play', 'دریافت از', 'گوگل‌پلی'],
+        'app_store' => ['smartphone', 'دانلود از', 'اپ‌استور'],
+        'bazaar' => ['shopping-bag', 'دریافت از', 'کافه‌بازار'],
+        'myket' => ['store', 'دریافت از', 'مایکت'],
+        'direct' => ['download', 'دانلود', 'مستقیم اپلیکیشن'],
+    ];
+
+    /**
+     * Phase 1 (ADR-067): the footer's conversion row — newsletter (the
+     * Phase 0.7 endpoint), app badges and trust seals. '' when the footer
+     * uses none of them, so existing footers render unchanged.
+     */
+    private function footerExtrasHtml(array $props, string $id): string
+    {
+        $newsletter = '';
+        if ($this->flag($props['newsletter_enabled'] ?? false)) {
+            $title = $this->escape($props['newsletter_title'] ?? 'عضویت در خبرنامه');
+            $text = $this->escape($props['newsletter_text'] ?? '');
+            $newsletter = '<div class="tb-nav-footer-newsletter">'
+                . ($title !== '' ? "<p class=\"tb-nav-footer-newsletter-title\">{$title}</p>" : '')
+                . ($text !== '' ? "<p class=\"tb-nav-footer-newsletter-text\">{$text}</p>" : '')
+                . $this->newsletterFormHtml(
+                    ['placeholder' => $props['newsletter_placeholder'] ?? 'ایمیل یا شماره موبایل'],
+                    "{$id}-footer",
+                    $this->escapeAttr($props['newsletter_placeholder'] ?? 'ایمیل یا شماره موبایل'),
+                    $this->escape($props['newsletter_button'] ?? 'عضویت'),
+                    '',
+                    null,
+                )
+                . '</div>';
+        }
+
+        $apps = '';
+        foreach ((array) ($props['app_links'] ?? []) as $app) {
+            $store = is_array($app) ? (string) ($app['store'] ?? '') : '';
+            $url = is_array($app) ? $this->linkHref($app['url'] ?? '', '') : '';
+            if (!isset(self::APP_STORES[$store]) || $url === '' || $url === '#') {
+                continue;
+            }
+            [$icon, $prefix, $name] = self::APP_STORES[$store];
+            $apps .= "<a href=\"{$url}\" class=\"tb-app-badge tb-app-badge--{$store}\" target=\"_blank\" rel=\"noopener noreferrer\">"
+                . '<span class="tb-app-badge__icon">' . IconLibrary::svg($icon) . '</span>'
+                . "<span class=\"tb-app-badge__text\"><small>{$prefix}</small><strong>{$name}</strong></span></a>";
+        }
+        $apps = $apps !== '' ? "<div class=\"tb-nav-footer-apps\" aria-label=\"دریافت اپلیکیشن\">{$apps}</div>" : '';
+        $seals = $this->trustSealsHtml($props);
+
+        if ($newsletter === '' && $apps === '' && $seals === '') {
+            return '';
+        }
+        return "<div class=\"tb-nav-footer-extras\">{$newsletter}"
+            . ($apps !== '' || $seals !== '' ? "<div class=\"tb-nav-footer-badges\">{$apps}{$seals}</div>" : '')
+            . '</div>';
+    }
+
+    /**
+     * Phase 1 (ADR-067): Enamad / Samandehi seals. Only the numeric id and
+     * the alphanumeric code are taken from the author (or parsed out of a
+     * pasted official snippet); the markup and the two official hosts are
+     * ours, so a pasted snippet can never inject script. The seals verify
+     * the page's Referer, hence referrerpolicy="origin" and no iframe.
+     */
+    protected function trustSealsHtml(array $props): string
+    {
+        $html = '';
+        $enamad = $this->sealIds($props['enamad_id'] ?? '', $props['enamad_code'] ?? '', 'Code');
+        if ($enamad !== null) {
+            [$sid, $code] = $enamad;
+            $q = "id={$sid}&amp;Code={$code}";
+            $html .= "<a class=\"tb-trust-seal\" href=\"https://trustseal.enamad.ir/?{$q}\" target=\"_blank\" rel=\"noopener\" referrerpolicy=\"origin\">"
+                . "<img src=\"https://trustseal.enamad.ir/logo.aspx?{$q}\" alt=\"نماد اعتماد الکترونیکی\" referrerpolicy=\"origin\" loading=\"lazy\" width=\"86\" height=\"94\"></a>";
+        }
+        $samandehi = $this->sealIds($props['samandehi_id'] ?? '', $props['samandehi_code'] ?? '', 'p');
+        if ($samandehi !== null) {
+            [$sid, $code] = $samandehi;
+            $q = "id={$sid}&amp;p={$code}";
+            $html .= "<a class=\"tb-trust-seal\" href=\"https://logo.samandehi.ir/Verify.aspx?{$q}\" target=\"_blank\" rel=\"noopener\" referrerpolicy=\"origin\">"
+                . "<img src=\"https://logo.samandehi.ir/logo.aspx?{$q}\" alt=\"نشان ملی ثبت رسانه‌های دیجیتال\" referrerpolicy=\"origin\" loading=\"lazy\" width=\"86\" height=\"94\"></a>";
+        }
+        return $html !== '' ? "<div class=\"tb-trust-seals\" aria-label=\"نمادهای اعتماد\">{$html}</div>" : '';
+    }
+
+    /** [id, code] from plain fields or a pasted official snippet; null when either is missing. */
+    private function sealIds(mixed $idField, mixed $codeField, string $codeParam): ?array
+    {
+        $raw = html_entity_decode($this->stringify($idField), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $code = trim($this->stringify($codeField));
+        if (preg_match('~[?&]id=(\d{1,20})~i', $raw, $m)) {
+            $id = $m[1];
+            if (preg_match('~[?&]' . $codeParam . '=([A-Za-z0-9]{1,64})~i', $raw, $c)) {
+                $code = $c[1];
+            }
+        } else {
+            $id = trim(\SaaSPlatform\ThemeRuntime\Support\PersianNumber::latinDigits($raw));
+        }
+        return preg_match('/^\d{1,20}$/', $id) && preg_match('/^[A-Za-z0-9]{1,64}$/', $code) ? [$id, $code] : null;
     }
 
     /**
@@ -3710,7 +4776,7 @@ class BlockRenderer
         $title    = $this->escape($props['title'] ?? '');
         $description = $this->sanitizeHtml($props['description'] ?? '');
         $btnText  = $this->escape($props['btn_text'] ?? '');
-        $btnUrl   = $this->escapeAttr($props['btn_url'] ?? '#');
+        $btnUrl   = $this->linkHref($props['btn_url'] ?? '#', '#');
         $features = is_array($props['features'] ?? null) ? $props['features'] : [];
         $stats    = is_array($props['stats'] ?? null) ? $props['stats'] : [];
 
@@ -3722,12 +4788,12 @@ class BlockRenderer
             if ($label === '') {
                 continue;
             }
-            $featuresHtml .= "<li class=\"tb-about-feature\"><span aria-hidden=\"true\">✓</span> {$label}</li>";
+            $featuresHtml .= "<li class=\"tb-about-feature\"><span aria-hidden=\"true\">" . $this->iconHtml('check') . "</span> {$label}</li>";
         }
 
         $statsHtml = '';
         foreach ($stats as $s) {
-            $val   = $this->escape((string) (is_array($s) ? ($s['value'] ?? '') : ''));
+            $val   = $this->escape($this->displayNumber(is_array($s) ? ($s['value'] ?? '') : ''));
             $label = $this->escape(is_array($s) ? ($s['label'] ?? '') : '');
             if ($val === '' && $label === '') {
                 continue;
@@ -3773,10 +4839,10 @@ class BlockRenderer
 
         $items = '';
         foreach ($cards as $card) {
-            $icon   = $this->escape(is_array($card) ? ($card['icon'] ?? '') : '');
+            $icon   = $this->iconHtml(is_array($card) ? ($card['icon'] ?? '') : '');
             $ctitle = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
             $desc   = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
-            $url    = $this->escapeUrl(is_array($card) ? ($card['url'] ?? '') : '', '');
+            $url    = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
             if ($ctitle === '' && $desc === '') {
                 continue;
             }
@@ -3817,7 +4883,7 @@ class BlockRenderer
             $cat    = $this->escape(is_array($card) ? ($card['category'] ?? '') : '');
             $ctitle = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
             $desc   = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
-            $url    = $this->escapeUrl(is_array($card) ? ($card['url'] ?? '') : '', '');
+            $url    = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
             if ($ctitle === '' && $desc === '') {
                 continue;
             }
@@ -3845,7 +4911,7 @@ class BlockRenderer
     {
         $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
-        $bg       = $this->escapeAttr($props['background'] ?? '');
+        $bg       = $this->escapeAttr($this->cssColor($props['background'] ?? null, ''));
         $rawItems = $props['items'] ?? [];
         $items    = is_array($rawItems) ? $rawItems : [];
 
@@ -3855,7 +4921,7 @@ class BlockRenderer
 
         $itemsHtml = '';
         foreach ($items as $item) {
-            $icon  = $this->escape(is_array($item) ? ($item['icon'] ?? '') : '');
+            $icon  = $this->iconHtml(is_array($item) ? ($item['icon'] ?? '') : '');
             $label = $this->escape(is_array($item) ? ($item['label'] ?? '') : '');
             $value = $this->escape(is_array($item) ? ($item['value'] ?? '') : '');
             if ($label === '' && $value === '') {
@@ -3910,39 +4976,86 @@ class BlockRenderer
      * native <details>/<summary> disclosure widget for a real accessible
      * expand/collapse with zero JavaScript, matching renderAccordion()'s
      * own approach.
+     *
+     * Phase 3 (ADR-068): the commercial accordion, and the one FAQ renderer
+     * on both hosts (customer-site's override is merged here):
+     *  - `exclusive` names every <details> alike, so opening one closes the
+     *    rest (native exclusive accordion; older browsers simply allow
+     *    several open); `open_first` opens the first answer;
+     *  - answers keep their line breaks; an answer with markup goes through
+     *    the shared rich-HTML sanitizer;
+     *  - `title`/`content` are read as aliases of `question`/`answer`;
+     *  - no questions → the editing hint, not an empty box.
+     * FAQPage JSON-LD is page-level and host-owned (customer-site
+     * CanvasStructuredData reads these same items), so a page with several
+     * FAQ blocks still publishes exactly one FAQPage.
      */
     protected function renderFaq(array $props, string $inner, string $id): string
     {
         $title = $this->escape($props['title'] ?? '');
+        $titleHtml = $title !== '' ? "<h2 class=\"tb-features-section-title\">{$title}</h2>" : '';
         $rawItems = $props['items'] ?? [];
-        $items = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
+        $items = is_array($rawItems) ? $rawItems : (json_decode((string) $rawItems, true) ?? []);
+        $items = is_array($items) ? $items : [];
+        $exclusive = $this->flag($props['exclusive'] ?? false);
+        $openFirst = $this->flag($props['open_first'] ?? false);
 
         $itemsHtml = '';
         foreach ($items as $item) {
-            $q = $this->escape(is_array($item) ? ($item['question'] ?? '') : '');
-            $a = $this->escape(is_array($item) ? ($item['answer'] ?? '') : '');
+            if (!is_array($item)) {
+                continue;
+            }
+            $q = $this->escape($item['question'] ?? $item['title'] ?? '');
             if ($q === '') {
                 continue;
             }
-            $itemsHtml .= "<details class=\"tb-faq-item\"><summary class=\"tb-faq-question\">{$q}</summary><div class=\"tb-faq-answer\">{$a}</div></details>";
+            $a = $this->faqAnswerHtml($this->stringify($item['answer'] ?? $item['content'] ?? ''));
+            $attrs = ($exclusive ? " name=\"tb-faq-{$id}\"" : '') . ($openFirst && $itemsHtml === '' ? ' open' : '');
+            $itemsHtml .= "<details class=\"tb-faq-item\"{$attrs}><summary class=\"tb-faq-question\"><span class=\"tb-faq-question-text\">{$q}</span>"
+                . '<span class="tb-faq-chevron" aria-hidden="true">' . $this->iconHtml('chevron-down') . '</span></summary>'
+                . "<div class=\"tb-faq-answer\">{$a}</div></details>";
         }
 
-        return "<div id=\"tb-{$id}\" class=\"tb-section\">
+        $body = $itemsHtml !== ''
+            ? "<div class=\"tb-faq-list\">{$itemsHtml}</div>"
+            : '<p class="tb-text tb-faq-empty">سوالات متداول از پنل مدیریت قابل ویرایش است.</p>';
+
+        return "<div id=\"tb-{$id}\" class=\"tb-section tb-faq\">
             <div class=\"tb-container\">
-                " . ($title ? "<h2 class=\"tb-features-section-title\">{$title}</h2>" : '') . "
-                <div class=\"tb-faq-list\">{$itemsHtml}</div>
+                {$titleHtml}
+                {$body}
             </div>
         </div>";
+    }
+
+    /** An FAQ answer: plain text keeps its line breaks; markup is sanitized. */
+    private function faqAnswerHtml(string $answer): string
+    {
+        $answer = trim($answer);
+        if ($answer === '') {
+            return '';
+        }
+        return preg_match('/<[a-z][^>]*>/i', $answer) === 1
+            ? $this->sanitizeHtml($answer)
+            : nl2br($this->escape($answer), false);
     }
 
     protected function renderSearchBar(array $props, string $inner, string $id): string
     {
         $placeholder = $props['placeholder'] ?? 'جستجو...';
         $fieldId = "tb-{$id}-search";
-        return "<form id=\"tb-{$id}\" class=\"tb-search-bar-wrap\" role=\"search\" action=\"#\" onsubmit=\"event.preventDefault();\">"
+        // Phase 0.7 (ADR-066): a real GET search (host routes, scope →
+        // products/posts) upgraded to the search dialog on live pages.
+        $scope = $props['scope'] ?? 'all';
+        $scope = in_array($scope, ['all', 'products', 'posts'], true) ? $scope : 'all';
+        [$attrs, $hidden, $assets, $param] = $this->searchForm($scope);
+        return "<form id=\"tb-{$id}\" class=\"tb-search-bar-wrap\" role=\"search\"{$attrs}>"
             . $this->visuallyHiddenLabel($fieldId, $placeholder)
-            . "<input id=\"{$fieldId}\" type=\"search\" placeholder=\"" . $this->escapeAttr($placeholder) . "\">"
-            . "</form>";
+            . '<span class="tb-search-bar-icon" aria-hidden="true">' . $this->iconHtml('search') . '</span>'
+            . "<input id=\"{$fieldId}\" type=\"search\" name=\"" . $this->escapeAttr($param) . "\" class=\"tb-search-bar-input\" placeholder=\"" . $this->escapeAttr($placeholder) . "\" autocomplete=\"off\" enterkeyhint=\"search\">"
+            . $hidden
+            . '<button type="submit" class="tb-search-bar-btn">جستجو</button>'
+            . "</form>" . $assets;
     }
 
     /**
@@ -3964,11 +5077,12 @@ class BlockRenderer
     protected function renderCounter(array $props, string $inner, string $id): string
     {
         $value  = $this->escape((string) ($props['value'] ?? ''));
-        $suffix = $this->escape($props['suffix'] ?? '');
+        $shown  = $this->escape($this->displayNumber($props['value'] ?? ''));
+        $suffix = $this->escape($this->displayNumber($props['suffix'] ?? ''));
         $label  = $this->escape($props['label'] ?? '');
 
         return "<div id=\"tb-{$id}\" class=\"tb-stat-item\">
-            <span class=\"tb-stat-value\" data-count=\"{$value}\">{$value}<span class=\"tb-stat-suffix\">{$suffix}</span></span>
+            <span class=\"tb-stat-value\" data-count=\"{$value}\">{$shown}<span class=\"tb-stat-suffix\">{$suffix}</span></span>
             <span class=\"tb-stat-label\">{$label}</span>
         </div>";
     }
@@ -3977,8 +5091,8 @@ class BlockRenderer
     {
         $loginText    = $this->escape($props['login_text'] ?? 'ورود');
         $registerText = $this->escape($props['register_text'] ?? 'ثبت‌نام');
-        $loginUrl     = $this->escapeAttr($props['login_url'] ?? '/login');
-        $registerUrl  = $this->escapeAttr($props['register_url'] ?? '/register');
+        $loginUrl     = $this->escapeUrl(is_string($props['login_url'] ?? null) ? $props['login_url'] : '/login', '/login');
+        $registerUrl  = $this->escapeUrl(is_string($props['register_url'] ?? null) ? $props['register_url'] : '/register', '/register');
 
         return "<div id=\"tb-{$id}\" class=\"tb-login-register\">
             <a href=\"{$loginUrl}\" class=\"tb-nav-header-icon-link\">{$loginText}</a>
@@ -3996,15 +5110,18 @@ class BlockRenderer
      */
     protected function renderBlogPosts(array $props, string $inner, string $id): string
     {
+        // Phase 2 (ADR-067): the Builder preview shows the real card and
+        // layout with clearly-labelled sample posts, so grid/list/slider can
+        // be judged before any post exists; the host renders real posts
+        // through the same blogCardHtml()/blogCardsLayout().
         $title = $this->escape($props['title'] ?? 'وبلاگ');
-        $limit = max(0, (int) ($props['limit'] ?? 3));
-
-        return "<div id=\"tb-{$id}\" class=\"tb-section\">
-            <div class=\"tb-container\">
-                <div class=\"tb-features-section-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
-                <p class=\"tb-text\" style=\"text-align:center;color:var(--tb-text-muted,#4b5563);\">{$limit} نوشته اخیر پس از انتشار محتوا در این‌جا نمایش داده می‌شود.</p>
-            </div>
-        </div>";
+        $samples = [
+            ['title' => 'راهنمای انتخاب بهترین محصول برای خانه', 'category' => 'راهنمای خرید', 'author' => 'تیم تحریریه', 'date' => '۵ آبان ۱۴۰۵', 'reading_minutes' => 6],
+            ['title' => 'ده نکته برای خریدی مطمئن‌تر از فروشگاه‌های اینترنتی', 'category' => 'آموزش', 'author' => 'سارا محمدی', 'date' => '۲۸ مهر ۱۴۰۵', 'reading_minutes' => 4],
+            ['title' => 'تازه‌های فصل: محصولاتی که نباید از دست بدهید', 'category' => 'اخبار', 'author' => 'علی رضایی', 'date' => '۲۰ مهر ۱۴۰۵', 'reading_minutes' => 3],
+        ];
+        $cards = array_map(fn ($s) => $this->blogCardHtml($s + ['url' => '#', 'excerpt' => 'متن نمونه؛ پس از انتشار مطالب، نوشته‌های واقعی سایت در این بخش نمایش داده می‌شوند.']), $samples);
+        return $this->blogCardsLayout($cards, $props, $id, $title);
     }
 
     /**
@@ -4063,36 +5180,105 @@ class BlockRenderer
      * the <script> element's position and the surrounding whitespace — is
      * deliberately unchanged, so the render snapshots pinned for both the
      * with-date and without-date shapes still hold.
+     *
+     * Phase 3 (ADR-068): a campaign countdown.
+     *  - `end_date` may be Jalali («۱۴۰۵/۰۸/۱۵», any digit script, - / or .
+     *    separators). It ends at `end_time` (HH:MM) or, without one, at the
+     *    end of that day, Tehran time (+03:30). The target ships as an ISO
+     *    8601 instant with that offset, so every visitor's clock agrees.
+     *  - A Gregorian value without `end_time` is emitted exactly as stored,
+     *    as before this phase, so existing countdowns keep their instant.
+     *  - Digits are Persian, the target is shown as «پایان: ۱۵ آبان ۱۴۰۵»,
+     *    `expired_text` replaces the expiry line, and `style` is a card or a
+     *    promo banner. The markup moved from inline styles to the shared
+     *    sheet, so the structural snapshots were re-pinned on purpose.
      */
     protected function renderCountdown(array $props, string $inner, string $id): string
     {
         $label = $this->escape($props['label'] ?? '');
-        $end = trim((string) ($props['end_date'] ?? ''));
+        $end = trim($this->stringify($props['end_date'] ?? ''));
         $labelHtml = $label !== '' ? "<span class=\"tb-countdown__label\">{$label}</span>" : '';
+        $style = $props['style'] ?? 'card';
+        $class = 'tb-countdown' . ($style === 'banner' ? ' tb-countdown--banner' : '');
 
-        if ($end === '') {
-            return "<div id=\"tb-{$id}\" class=\"tb-countdown\">{$labelHtml}<span class=\"tb-countdown__hint\">تاریخ پایان را در تنظیمات المان وارد کنید تا شمارش معکوس فعال شود.</span></div>";
+        $target = $end !== '' ? $this->countdownTarget($end, trim($this->stringify($props['end_time'] ?? ''))) : null;
+        if ($target === null) {
+            $hint = $end === ''
+                ? 'تاریخ پایان را در تنظیمات المان وارد کنید تا شمارش معکوس فعال شود.'
+                : 'تاریخ پایان معتبر نیست؛ آن را به شکل ۱۴۰۵/۰۸/۱۵ وارد کنید.';
+            return "<div id=\"tb-{$id}\" class=\"{$class}\">{$labelHtml}<span class=\"tb-countdown__hint\">{$hint}</span></div>";
         }
 
-        $safeEnd = $this->escapeAttr($end);
-        return "<div id=\"tb-{$id}\" class=\"tb-countdown\" data-end-date=\"{$safeEnd}\">
+        $units = '';
+        foreach (['d' => 'روز', 'h' => 'ساعت', 'm' => 'دقیقه', 's' => 'ثانیه'] as $key => $word) {
+            $units .= "<div class=\"tb-countdown__unit\"><span class=\"tb-countdown__num tb-countdown__{$key}\">--</span><small class=\"tb-countdown__word\">{$word}</small></div>";
+        }
+        $endHtml = ($target['display'] !== null && $this->flag($props['show_end_date'] ?? true))
+            ? '<p class="tb-countdown__end">پایان: <time datetime="' . $this->escapeAttr($target['iso']) . '">' . $target['display'] . '</time></p>'
+            : '';
+        $expired = trim($this->stringify($props['expired_text'] ?? ''));
+        $expiredHtml = $this->escape($expired !== '' ? $expired : 'این پیشنهاد به پایان رسیده است.');
+
+        $safeEnd = $this->escapeAttr($target['iso']);
+        return "<div id=\"tb-{$id}\" class=\"{$class}\" data-end-date=\"{$safeEnd}\">
             {$labelHtml}
-            <div class=\"tb-countdown__timer\" style=\"display:flex;gap:0.75rem;justify-content:center;margin-top:0.5rem;\">
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__d\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">روز</small></div>
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__h\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ساعت</small></div>
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__m\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">دقیقه</small></div>
-                <div class=\"tb-countdown__unit\"><span class=\"tb-countdown__s\" style=\"font-size:1.5rem;font-weight:700;\">--</span><small style=\"display:block;\">ثانیه</small></div>
-            </div>
-            <p class=\"tb-countdown__expired\" style=\"display:none;\">این پیشنهاد به پایان رسیده است.</p>
+            <div class=\"tb-countdown__timer\" role=\"timer\" aria-label=\"زمان باقی‌مانده\">{$units}</div>
+            {$endHtml}
+            <p class=\"tb-countdown__expired\" hidden>{$expiredHtml}</p>
             {$this->countdownAdapterScript()}
         </div>";
+    }
+
+    /**
+     * The countdown's target — see renderCountdown().
+     *
+     * @return array{iso:string, display:?string}|null null when the date is
+     *   recognisably a date but not a real one (e.g. ۱۴۰۵/۱۳/۰۱).
+     */
+    private function countdownTarget(string $end, string $time): ?array
+    {
+        $clockOf = static fn (string $h, string $m): ?array => ((int) $h < 24 && (int) $m < 60) ? [(int) $h, (int) $m, 0] : null;
+        $timeClock = preg_match('/^(\d{1,2}):(\d{2})$/', PersianNumber::latinDigits($time), $t) === 1 ? $clockOf($t[1], $t[2]) : null;
+        if (preg_match('#^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?$#', PersianNumber::latinDigits($end), $m) !== 1) {
+            return ['iso' => $end, 'display' => null]; // full ISO and other legacy strings: as stored
+        }
+        [$y, $mo, $d] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+
+        if ($y >= 1700) {
+            if (!checkdate($mo, $d, $y)) {
+                return null;
+            }
+            // Gregorian: only an explicit end_time opts into Tehran time.
+            if ($timeClock === null) {
+                return ['iso' => $end, 'display' => null];
+            }
+            $clock = $timeClock;
+            [$gy, $gm, $gd] = [$y, $mo, $d];
+            [$jy, $jm, $jd] = JalaliDate::fromGregorian($y, $mo, $d);
+        } else {
+            if (!JalaliDate::isValid($y, $mo, $d)) {
+                return null;
+            }
+            $clock = $timeClock ?? (isset($m[4]) ? $clockOf($m[4], $m[5]) : null);
+            [$jy, $jm, $jd] = [$y, $mo, $d];
+            [$gy, $gm, $gd] = JalaliDate::toGregorian($y, $mo, $d);
+        }
+
+        $display = JalaliDate::format($jy, $jm, $jd);
+        if ($clock !== null) {
+            $display .= '، ساعت ' . PersianNumber::digits(sprintf('%02d:%02d', $clock[0], $clock[1]));
+        }
+        $clock ??= [23, 59, 59];
+        $iso = sprintf('%04d-%02d-%02dT%02d:%02d:%02d', $gy, $gm, $gd, ...$clock) . JalaliDate::TEHRAN_OFFSET;
+
+        return ['iso' => $iso, 'display' => $display];
     }
 
     // ── END PHASE 2E CANONICAL BLOCKS ────────────────────────────────────────
 
     protected function renderFallback(string $type, array $props, string $inner, string $id): string
     {
-        $content = $inner ?: $this->escape(json_encode($props, JSON_UNESCAPED_UNICODE));
+        $content = $inner ?: '';
         return "<div id=\"tb-{$id}\" class=\"tb-block tb-block-{$type}\" data-type=\"{$type}\">{$content}</div>";
     }
 
@@ -4184,6 +5370,36 @@ class BlockRenderer
             return (string) $s;
         }
         return ''; // array/object/resource: never guess a string representation
+    }
+
+    /**
+     * Phase 0.2b (ADR-061): the one reader for a `link` field. A link is
+     * authored either as a plain URL string or as a structured {url, …}
+     * object (Canvas keeps whichever shape the value already has); any
+     * other shape is no link at all.
+     */
+    protected function linkValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            $value = $value['url'] ?? '';
+        }
+        return is_string($value) ? $value : '';
+    }
+
+    /** A `link` field as a validated, attribute-safe href (see escapeUrl()). */
+    protected function linkHref(mixed $value, string $fallback = '#'): string
+    {
+        return $this->escapeUrl($this->linkValue($value), $fallback);
+    }
+
+    /**
+     * A `boolean` field value. Older authoring stored these as free text,
+     * so "false", "0" and "" must read as false — a bare (bool) cast reads
+     * every non-empty string, "false" included, as true.
+     */
+    protected function flag(mixed $value): bool
+    {
+        return is_bool($value) ? $value : filter_var($value, FILTER_VALIDATE_BOOL);
     }
 
     /**

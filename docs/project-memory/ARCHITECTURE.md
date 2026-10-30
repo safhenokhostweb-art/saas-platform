@@ -10,6 +10,12 @@ SleepShiman Home blue adds 22 host-registered types to the existing shared `modu
 
 ---
 
+## Ariana MultiPlus theme boundary (2026-10-12)
+
+`ariana-multiplus` (Database\Seeders\ArianaMultiPlusThemeSeeder) introduces ZERO new block types, renderers, migrations, or package changes. It is a pure data composition of existing canonical `theme-runtime` block types (five professional slider families included), with fa-IR/RTL/Vazirmatn global styles and a mobile-number-only content identity (no email anywhere in the persisted document — `contact_split` is deliberately excluded because its shared renderer hardcodes an email placeholder). The seeder is an authoritative canonical source registered in `ThemeCatalogRebuildCommand::CANONICAL_SOURCES`, so `theme-catalog:rebuild` deterministically reconstructs it; commercial eligibility follows the standard `theme-release:backfill` → Commercial Quality Gate path.
+
+---
+
 ## Platform Overview
 
 ### Default Canvas homepage (2026-10-01)

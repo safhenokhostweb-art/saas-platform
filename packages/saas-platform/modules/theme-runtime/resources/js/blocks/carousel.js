@@ -171,9 +171,13 @@
             else start();
         });
 
+        // Phase 2 (ADR-067): the arrow key on the side the next slide comes
+        // from — ArrowLeft in RTL, ArrowRight in LTR — never reversed.
+        var nextKey = isRTL ? 'ArrowLeft' : 'ArrowRight';
+        var prevKey = isRTL ? 'ArrowRight' : 'ArrowLeft';
         rootEl.addEventListener('keydown', function (e) {
-            if (e.key === 'ArrowRight') { stepPrev(); start(); e.preventDefault(); }
-            else if (e.key === 'ArrowLeft') { stepNext(); start(); e.preventDefault(); }
+            if (e.key === prevKey) { stepPrev(); start(); e.preventDefault(); }
+            else if (e.key === nextKey) { stepNext(); start(); e.preventDefault(); }
         });
 
         if (pauseOnHover) {
@@ -183,16 +187,57 @@
             rootEl.addEventListener('focusout', start);
         }
 
-        var touchX = null;
-        rootEl.addEventListener('touchstart', function (e) {
-            touchX = e.touches[0].clientX;
-        }, { passive: true });
-        rootEl.addEventListener('touchend', function (e) {
-            if (touchX === null) return;
-            var dx = e.changedTouches[0].clientX - touchX;
-            if (Math.abs(dx) > 40) { (dx > 0 ? stepPrev : stepNext)(); start(); }
-            touchX = null;
-        }, { passive: true });
+        // Phase 2 (ADR-067): pointer drag (touch, pen and mouse) — the track
+        // follows the finger, and a swipe towards the reading end advances:
+        // in RTL that is a swipe to the right (the next slide sits to the
+        // left), in LTR a swipe to the left. The old touch handler had RTL
+        // reversed. A drag that moved never clicks the link under it.
+        var viewport = rootEl.querySelector('.tb-carousel-viewport') || rootEl;
+        var drag = null;
+        var trackTransition = track.style.transition; // the markup's own slide animation
+        var suppressClick = false;
+        if (!isFade) viewport.style.touchAction = 'pan-y';
+        viewport.addEventListener('pointerdown', function (e) {
+            if (isFade || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            if (e.target.closest && e.target.closest('button, input, select, textarea, form')) return;
+            drag = { x: e.clientX, y: e.clientY, dx: 0, id: e.pointerId, moving: false };
+        });
+        viewport.addEventListener('pointermove', function (e) {
+            if (!drag || e.pointerId !== drag.id) return;
+            drag.dx = e.clientX - drag.x;
+            if (!drag.moving) {
+                if (Math.abs(drag.dx) < 6 || Math.abs(drag.dx) < Math.abs(e.clientY - drag.y)) return;
+                drag.moving = true;
+                stop();
+                track.style.transition = 'none';
+                try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
+            }
+            var atEdge = (isForward(drag.dx) && idx >= maxIndex()) || (!isForward(drag.dx) && idx <= 0);
+            var offset = atEdge ? drag.dx * 0.35 : drag.dx;
+            track.style.transform = 'translateX(calc(' + (sign * idx * (100 / itemsPerView())) + '% + ' + offset + 'px))';
+        });
+        function isForward(dx) { return isRTL ? dx > 0 : dx < 0; }
+        function endDrag(e) {
+            if (!drag || (e && e.pointerId !== drag.id)) return;
+            var d = drag;
+            drag = null;
+            if (!d.moving) return;
+            track.style.transition = trackTransition;
+            suppressClick = true;
+            var threshold = Math.min(80, viewport.clientWidth / itemsPerView() / 5);
+            if (Math.abs(d.dx) > threshold) {
+                if (isForward(d.dx)) go(Math.min(idx + 1, maxIndex())); else go(Math.max(idx - 1, 0));
+            } else {
+                paint();
+            }
+            start();
+        }
+        viewport.addEventListener('pointerup', endDrag);
+        viewport.addEventListener('pointercancel', endDrag);
+        viewport.addEventListener('click', function (e) {
+            if (suppressClick) { e.preventDefault(); e.stopPropagation(); suppressClick = false; }
+        }, true);
+        viewport.addEventListener('dragstart', function (e) { e.preventDefault(); });
 
         // Registered on `window`, not on rootEl, so it is the ONE listener
         // here that outlives the element. It must therefore be unregistered

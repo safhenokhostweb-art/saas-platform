@@ -880,7 +880,7 @@ __FOODMART_RAW_EOF__;
             $label = $this->foodmartEscape((string) ($slide['label'] ?? ''));
             $title = $this->foodmartEscape((string) ($slide['title'] ?? ''));
             $desc = $this->foodmartEscape((string) ($slide['description'] ?? ''));
-            $cta = $this->foodmartEditableHref((string) ($slide['cta_url'] ?? ''), 'btn btn-outline-dark btn-lg text-uppercase fs-6 rounded-1 px-4 py-3 mt-3');
+            $cta = $this->foodmartEditableHref($this->linkValue($slide['cta_url'] ?? ''), 'btn btn-outline-dark btn-lg text-uppercase fs-6 rounded-1 px-4 py-3 mt-3');
             $image = $this->foodmartEditableSrc((string) ($slide['image'] ?? ''));
             $imageAlt = $this->foodmartEscape((string) ($slide['image_alt'] ?? 'Fruit'));
             $imgHtml = $image === '' ? '' : '<img src="'.$image.'" class="img-fluid" alt="'.$imageAlt.'">';
@@ -897,7 +897,7 @@ __FOODMART_RAW_EOF__;
         foreach ($promos as $promoIndex => $promo) {
             $badge = $this->foodmartEscape((string) ($promo['badge'] ?? ''));
             $title = $this->foodmartEscape((string) ($promo['title'] ?? ''));
-            $url = $this->foodmartEditableHref((string) ($promo['cta_url'] ?? ''), 'd-flex align-items-center nav-link');
+            $url = $this->foodmartEditableHref($this->linkValue($promo['cta_url'] ?? ''), 'd-flex align-items-center nav-link');
             $promoHtml .= '<div class="banner-ad bg-success-subtle block-2" data-tb-logical-group="promos" data-tb-logical-index="'.(int) $promoIndex.'"><div class="row banner-content p-5"><div class="content-wrapper col-md-7">'
                 .($badge !== '' ? '<div class="categories sale mb-3 pb-3">'.$badge.'</div>' : '')
                 .'<h3 class="banner-title">'.$title.'</h3>'

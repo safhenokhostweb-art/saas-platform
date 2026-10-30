@@ -2700,3 +2700,1020 @@ regressions remain green.
 `resources/views/admin/theme-builder/canvas.blade.php`. No migration, route,
 dependency, persistence, `BaseBlock`, `defineBlock`, or countdown behavior
 change.
+
+---
+
+## ADR-060
+
+**Title:** Commercial Iranian UI/UX Standard (Constitution §16) and Schema-Driven Repeater Contract
+
+**Status:** Accepted
+
+**Date:** 2026-10-25
+
+**Context:**
+
+The owner set a permanent quality bar for every user-facing interface:
+premium, RTL-first, Persian-typographic, mobile-first, conversion-focused
+commercial experiences. Generic or fragile output is not acceptable. The
+2026-10-25 widget-engine audit (`docs/theme-builder/COMMERCIAL_WIDGET_ROADMAP.md`)
+found concrete violations of that bar:
+
+- The platform Canvas repeater was hard-wired to Bento Grid (`propKey === 'items'`),
+  so every other `items` prop was edited, and corrupted, through Bento card fields.
+- Repeater child fields were declared under `item_schema`, which
+  `InspectorFieldRegistry` does not read, so they normalized to nothing.
+- Select options were declared as `{label,value}` objects, which rendered as
+  `[object Object]`.
+- Author URLs were rendered through `escapeAttr()` instead of the
+  scheme-validating `escapeUrl()`.
+
+Constitution §1 requires an explicit decision for any amendment.
+
+**Decision:**
+
+1. `PROJECT_CONSTITUTION.md` gains §16, *Commercial Iranian UI/UX Standard*, with
+   enforceable minimum requirements (RTL/typography, tokens, mobile and motion,
+   schema-generated authoring controls, honest interactions, safe output).
+2. The canonical repeater contract is the one `InspectorFieldRegistry` already
+   normalizes: `type: 'repeater'`, child controls under `fields`, persisted shape
+   in `storage` (`array` by default, `json` for legacy JSON-string props), and an
+   optional `item_label`. A child field may declare `show_if: '<sibling key>'`.
+   `item_schema` is not part of the contract.
+3. Select options are a `value => label` map, which is the shape
+   `normalizeSelect()` allowlists. A select may request a dedicated editor control
+   through `ui` (first use: `ui: 'column_picker'` on `columns.ratios`). A field
+   renders exactly one control.
+4. The platform Canvas renders every repeater from its `fields` alone, with add,
+   duplicate, reorder, remove, collapse, undo/redo, and live preview through
+   `updateProp()`. Schema-less `type: 'array'` props get a guarded JSON editor that
+   never writes an invalid draft.
+
+**Consequences:**
+
+- `bento_grid`, `faq`, `testimonials_slider`, and `list` now declare canonical
+  repeater fields. Legacy JSON-string values still load and render. The next edit
+  persists the array shape.
+- customer-site's schema-driven Canvas already reads `fields`/`storage`, so the two
+  hosts now agree on these types.
+- Promoting customer-site's remaining local repeater schemas into the canonical
+  registry is tracked as roadmap Phase 0.2.
+- `Phase01RepeaterContractTest` fails any canonical repeater without `fields` or
+  any select with object-list options.
+
+**Impact:** shared theme runtime (`src/BlockRegistry.php`, `src/BlockRenderer.php`),
+platform Canvas (`resources/views/admin/theme-builder/canvas.blade.php`),
+`PROJECT_CONSTITUTION.md`. No migration, route, dependency, or persistence-format
+break.
+
+## ADR-061
+
+**Title:** Nested Repeater Editing, `link`-Typed URL Fields and Strict Booleans
+
+**Status:** Accepted
+
+**Date:** 2026-10-26
+
+**Context:**
+
+Phase 0.2 (ADR-060 follow-up) put customer-site's list definitions into the
+canonical registry, including lists nested inside list items: pricing
+`plans[].features`, footer `columns[].links`, and the two-level mega menu
+`nav_links[].mega_columns[].items`. The platform Canvas showed "unsupported" for
+every nested field. Those fields were promoted verbatim, so two weak types came
+with them:
+
+- `pricing.plans[].highlight` was free text, and `(bool) 'false'` is true;
+- navigational URL fields were `string`, so editors showed plain text inputs.
+
+Six of those fields (`timeline` CTA, `about_section` button, header logo/CTA,
+`services_cards`, `promo_banner`) were rendered through `escapeAttr()`, which
+let a `javascript:` URL into an `href`. customer-site's own social-icon and
+service/project-card overrides had the same gap.
+
+**Decision:**
+
+1. A repeater list is addressed by a path below its root prop:
+   `[propKey, index, fieldKey, …]` (`CanvasListPath`, DOM-free). Every write
+   replaces the root prop through one `updateProp()`, copying only the
+   ancestors on the path. Structural edits (add, duplicate, move, remove) are
+   undo steps of their own; field edits coalesce per item field.
+2. The platform Canvas renders every list depth from one recursive template
+   (`partials/canvas-repeater.blade.php`), up to the registry depth cap
+   (`InspectorFieldRegistry` `maxDepth` ≤ 3: depths 0, 1, 2). A list whose
+   items are a single text field edits as compact inline rows.
+3. Legacy scalar list items (`["a", "b"]`) are presented and written back as
+   `{firstField: value}`, the shape renderers already accept. Copying a string
+   item never spreads it into characters.
+4. Every navigational URL field is `type: 'link'` on both hosts. A link value is
+   a URL string or a structured `{url, …}` object. Renderers read it through
+   `BlockRenderer::linkValue()` / `linkHref()`, which always validates with
+   `escapeUrl()`. Media sources (`video.url`, `header_modern_v1.logoUrl`) and
+   data endpoints (`dynamic_*.endpoint_url`) are not links.
+5. `pricing.plans[].highlight` is `type: 'boolean'`, default `false`. Boolean
+   props are read with `BlockRenderer::flag()`, so legacy `"false"`, `"0"` and
+   `""` are false.
+6. customer-site resolves an `{type: internal_page}` reference in any top-level
+   prop, not only the original allowlist, because its editor offers the page
+   picker on every top-level `link` field. Its schema validator gains a `link`
+   type that accepts a string, a `{url}` object, or a page reference.
+
+**Consequences:**
+
+- Pricing features, footer column links, the mega menu, FoodMart footer links,
+  and SleepShiman filter options and footer links are editable in the platform
+  Canvas. Every nested list declares an `item_label`.
+- Edited legacy scalar features persist as `{text}` objects. Unedited content is
+  untouched.
+- `Phase02bNestedListContractTest` fails:
+  - a list nested deeper than depth 2;
+  - a nested list without `fields` or `item_label`;
+  - any URL-named text field outside the non-navigational allowlist;
+  - a link field that drops a structured link or lets an unsafe scheme through;
+  - any non-strict highlight read.
+- customer-site's `CanonicalListSchemaParityTest` pins the same contract from the
+  host side.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRegistry`, `BlockRenderer`, the FoodMart and
+  SleepShiman types.
+- **Platform Canvas:** `canvas.blade.php`, the new `canvas-repeater` partial, and
+  `canvas-structural-services` (`CanvasListPath`).
+- **customer-site:**
+  - `BlockRegistry`;
+  - the Canvas editor, `InternalLinkResolver`, `ThemeCanvasRenderer` and
+    `ThemeBuilder\BlockRenderer`;
+  - `ElementSchemaRegistry` and `config/builder-element-schemas.php`.
+
+There is no migration, route, dependency, or persistence-format break: strings
+stay strings, and `highlight` text values still read correctly.
+
+## ADR-062
+
+**Title:** One Block Definition Authority: customer-site Overrides Retired
+
+**Status:** Accepted
+
+**Date:** 2026-10-26
+
+**Context:**
+
+customer-site's `ThemeCanvas\BlockRegistry` kept local copies of 65 canonical
+block types and merged them over the canonical registry, with the host copy
+winning. Phase 0.2 aligned their list fields. An audit of the rest found that
+all 65 still differed:
+
+- 47 canonical fields had no label, so an editor showed the raw prop key.
+- `section.padding` and `grid`/`columns.gap` were typed `spacing`. The
+  Inspector contract reserves that type for a structured four-side value, so
+  neither editor rendered any control. Container `blocks` fields showed a label
+  with no control.
+- Host option lists offered values no renderer implements: `button` `outline`,
+  `promo_banner` `success`/`warning`/`danger`, `nav_menu` `sidebar`.
+  Canonical had the same problem with `module:reviews_grid` `carousel`.
+- Some fields were read by no renderer on either host: host `gallery.columns`,
+  `product_grid.title` and `accordion.title`; canonical
+  `module:courses_grid.show_instructor` and `module:pricing_table`
+  `highlight_plan`/`show_annual_toggle`.
+- Host-only fields that customer-site's renderers do read were missing
+  canonically: `video` poster/autoplay/loop/controls, `blog_posts`
+  layout/source/category/manual ids/autoplay/interval, and `social_icons.style`.
+- `renderCta()` and `renderNavMenu()` put `background` and `location` into a
+  class attribute unescaped. A CSS colour, which customer-site's colour control
+  stores, became a class with no rule, so the chosen colour never showed.
+
+**Decision:**
+
+1. The canonical registry is the only block-definition authority. customer-site
+   assembles its registry as canonical plus `HOST_PATCHES`, a list of
+   field-level replacements. Each patch states why the host cannot use the
+   canonical field. There is one patch today: `module:shop_product_grid.source`
+   without `bestselling`, because the host renderer has no sales-backed query.
+2. Harmonization rules:
+   - **Labels:** a canonical label wins; a host label fills a missing one.
+   - **Controls:** keep the richer authoring control (media picker over text,
+     select over free text, textarea over a single line) when it keeps every
+     stored value valid.
+   - **Option lists:** a select offers only what the renderer honours, checked
+     against the CSS contracts and a survey of stored theme data.
+   - **Dead fields:** a field no renderer reads on either host is removed, not
+     promoted.
+3. A spacing token is a `select` over `BlockRegistry::SPACING_OPTIONS`, the
+   scale `spacingClass()` accepts.
+4. `video.url` is an `image` media field with `media_kind: 'video'`. The media
+   library stores `{media_id}` for it, and editors do not preview it as an
+   `<img>`.
+5. `renderCta()` keeps a class for theme tokens. It applies a valid CSS colour
+   inline, with a readable text colour, and falls back to `primary` for
+   anything else. `renderNavMenu()` allowlists `header`/`footer`.
+   `renderVideo()` validates `src`/`poster` with `escapeUrl()` and reads its
+   switches with `flag()`.
+6. The social-icon style variants live in the shared
+   `renderStyledSocialIcons()`, with the host markup unchanged.
+   customer-site's override only adds its site-wide `SocialLink` fallback.
+   Its `renderVideo()` copy is deleted.
+7. Both editors give every field type a control. `blocks` fields are hidden
+   from the content tab. `array` fields get the guarded JSON editor, and
+   `text`/`rich_text` get a textarea.
+
+**Consequences:**
+
+- customer-site's registry shrinks from 1,413 to 213 lines. A canonical change
+  now reaches customer-site's editor and validator directly.
+- customer-site's `CanonicalBlockDefinitionParityTest` fails when:
+  - an offered type differs from canonical outside a declared patch;
+  - a patch is stale or matches canonical;
+  - a field has no editor control;
+  - a type's defaults fail the live render validator.
+- `Phase02cCanonicalHarmonizationTest` pins the canonical side: every field has
+  a control, the shadowed types are fully labelled, option lists match
+  renderers, and the renderer fixes hold.
+- Effective validation contract on customer-site, before and after: unchanged
+  except `section`/`grid`/`columns.blocks` (now `mixed`) and
+  `stats_row.background_image` (now `media`). Neither rejects any stored value
+  found in the survey.
+- Rendering changes for stored content:
+  - CTAs whose `background` is a CSS colour now show that colour (4 blocks in
+    customer-site fixture data);
+  - unknown CTA tokens and `nav_menu` locations fall back to the default class;
+  - `javascript:`/`data:` video URLs render the empty state.
+  Everything else renders byte-identically.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRegistry`, `BlockRenderer`.
+- **Platform Canvas:** `canvas.blade.php`.
+- **customer-site:** `ThemeCanvas\BlockRegistry`, `ThemeCanvasRenderer`, the
+  Canvas editor.
+
+There is no migration, route, dependency, or stored-data change. Values of
+removed fields stay in documents and are ignored, as they already were.
+
+## ADR-063
+
+**Title:** One Shared Block Stylesheet; Local Vazirmatn; Package Persian Number Formatter
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+Each host carried its own copy of every block's CSS:
+
+- the platform preview's `admin/theme-builder/partials/canvas-css-contract`
+  (348 lines);
+- customer-site's live `partials/theme-canvas-style-contract` (514 lines).
+
+They had drifted: 37 shared selectors had different values, 23 rules existed
+only in the preview, and customer-site's bento grid declared `auto-rows`, a
+property that does not exist. The preview therefore showed many blocks
+(hero, CTA, stats, buttons, cards) differently from the live page.
+
+The platform Canvas preview, its live iframe and the editor layout loaded
+Vazirmatn from Google Fonts, which is unreliable from Iran. Five customer-site
+views did too; on three of them the `@import` came after other rules, so
+browsers ignored it and the page fell back to Tahoma. RTL hero titles used
+negative `letter-spacing`, which crowds Persian letters into each other.
+
+The package had no digit or currency formatter it could use:
+`App\Services\PersianFormatter` is host code.
+
+**Decision:**
+
+1. `theme-runtime/resources/css/theme-runtime-blocks.css` is the only source
+   of block CSS. Both host partials include it via `theme-runtime::css.blocks`,
+   right after their own chrome, and keep only rules that their own markup or
+   script needs:
+   - the platform keeps `body`;
+   - customer-site keeps `body`, `canvas-site-*`, the skip link,
+     `*:focus-visible`, `.visually-hidden`, the notifications bar, and the
+     skill-bar `width:0` pair that its IntersectionObserver script animates.
+2. The sheet was consolidated from customer-site's rules, since those are what
+   live pages ship, verbatim and in order. Preview-only rules were added only
+   where they style markup the live partial left unstyled. Six preview-only
+   rules (`.tb-hero h1|p|.tb-btn`, `.tb-cta h2|p|a`) out-ranked live rules by
+   specificity and were dropped, so the preview takes the live values.
+3. The platform preview's `body` uses the live rule (`--tb-*` tokens, with
+   fallbacks). The hard-coded `direction: rtl` is gone, so `<html dir>`
+   governs and LTR themes preview as LTR.
+4. Fixes:
+   - `.tb-bento-grid` gets `grid-auto-rows`;
+   - `.tb-hero-split-title` and `.tb-hero-gradient-title` lose their negative
+     tracking, which is kept under `[dir="ltr"]` only.
+5. The five local Vazirmatn faces (400–800) live in
+   `resources/css/vazirmatn-font-faces.css` and are included via
+   `theme-runtime::css.fonts`. customer-site's
+   `partials/vazirmatn-font-faces-inline` includes it unchanged. No platform
+   preview, editor layout, or customer-site view references a font CDN.
+6. `SaaSPlatform\ThemeRuntime\Support\PersianNumber` is a dependency-free
+   formatter:
+   - `digits()`, `latinDigits()`;
+   - `format()` with ٬ and ٫ separators;
+   - `rialToToman()`, `toman()`;
+   - `compact()` (`۱٫۲ میلیون`, rolling up a unit at a thousand);
+   - a directional minus that stays left of the number in RTL text.
+
+**Consequences:**
+
+- **Computed-style parity harness** (real Chromium; every element and
+  pseudo-element, full computed style; 1366/768/390):
+  - **customer-site live render:** 229 documents (every block type plus all
+    29 canonical theme snapshots), 16,381 elements per width.
+  - **Pure refactor:** the only diffs are the four previously unstyled blocks
+    (project cards, about section, hero trust, contact-info grid) gaining the
+    styling the preview already showed. All are in `acool-hvac-service`; the
+    other 28 themes are identical.
+  - **Fixes:** add only the hero-title tracking, the resulting width of the
+    hero-split text column, and `grid-auto-rows`. No bento item changes size.
+- **Preview vs live, same markup** (230 platform-rendered documents, 19,017
+  elements per width; excluding the `--platform-primary` variable):
+  - before: 38,540 distinct computed-style differences on 576 element kinds;
+  - after: 48, all on `div.tb-skill-bar-fill`, from the host-only skill-bar
+    rule.
+- **Phase03SharedStylesheetContractTest** fails when:
+  - either host partial regains block rules;
+  - the dropped rules return;
+  - `auto-rows` returns;
+  - RTL hero tracking turns negative again;
+  - any covered view references a font CDN.
+- `PersianNumberTest` pins the formatter.
+- `FoodMartPhase2bStyleContract` gains a third marker for the shared sheet.
+
+**Impact:**
+
+- **Shared theme runtime:**
+  - new `resources/css/theme-runtime-blocks.css` and
+    `vazirmatn-font-faces.css`;
+  - `css/blocks` and `css/fonts` views;
+  - two `ThemeRuntimeServiceProvider` paths;
+  - `Support\PersianNumber`.
+- **Platform:**
+  - the Canvas preview partial;
+  - `canvas-preview`, `canvas-live-preview` and `layouts/canvas`.
+- **customer-site:**
+  - the style partial and the font partial;
+  - `layouts/canvas-editor`, `builder/edit`, `front/lifecycle/pay`,
+    `restore-pay` and `front/suspended`.
+
+There is no migration, route, dependency or data change. The formatter is
+not yet wired into any renderer; prices keep their current output.
+
+## ADR-064
+
+**Title:** Theme Tokens Over Hex; One Colour Grammar; Persian Numbers in Shared Renderers
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+The shared stylesheets and renderers still hard-coded colours that should
+follow the theme:
+
+- borders (`#e5e7eb` ×27), surfaces and muted text;
+- indigo tints such as `rgba(99,102,241,…)`;
+- white text on brand fills;
+- brand-colour prop fallbacks and registry defaults (`#4f46e5`, `#7c3aed`).
+
+A theme with its own palette therefore kept indigo accents.
+
+Colour props reached `style` attributes through bare `escapeAttr()`, which
+does not block a `;` break-out. `renderSection()` turned any non-hex value,
+including `var(--tb-…)` and `rgba()`, into a class name. `renderHero()`
+interpolated `background` and `align` raw into its class attribute.
+
+The Canvas colour control could not express theme swatches with alpha,
+`rgba()` or `transparent`. The two editors kept separate palette logic.
+
+Shared renderers printed prices with `number_format()` (Latin digits) and
+counters as typed. Four Persian headings besides the hero titles had
+negative letter-spacing.
+
+**Decision:**
+
+1. **Tokens with the old literal as fallback.** Every themable colour in
+   `theme-runtime-blocks.css`, `theme-runtime-contract.css` and the
+   renderers reads `var(--tb-<token>, <previous literal>)`:
+   - borders → `--tb-border`;
+   - surfaces → `--tb-surface` or `--tb-background`;
+   - muted text → `--tb-text-muted`;
+   - text on a brand fill → `--tb-on-primary` / `--tb-on-error`;
+   - urgent → `--tb-error`;
+   - brand tints → `color-mix(in srgb, var(--tb-primary, #6366f1) N%, transparent)`.
+   Gold review stars, the named `.tb-bg-light/dark/gray` classes, the
+   installment badge greens, shadows, overlays on media, editor-only
+   placeholders and the dark `nav_footer` default stay literal.
+2. **Registry defaults.** Brand defaults are tokens with fallbacks:
+   - backgrounds and gradients → `var(--tb-primary, #4f46e5)` and
+     `var(--tb-secondary, #7c3aed)`;
+   - text on primary → `var(--tb-on-primary, #ffffff)`.
+   `header_modern_v1.ctaColor` stays hex: its renderer computes contrast from
+   it. Stored documents are not rewritten.
+3. **One colour grammar,** `HtmlSanitizer::isCssColor()`. It accepts:
+   - hex, `rgb()`/`hsl()`-family functions and named colours;
+   - `var(--token[, colour])`;
+   - `color-mix(in srgb, <colour> N%, transparent)`;
+   - `transparent`.
+   `BlockRenderer::cssColor()` (every colour prop, both hosts' renderers) and
+   `InspectorFieldRegistry::normalizeColor()` both use it.
+   `themeBackground()` gives `renderHero()` the 0.2c CTA contract.
+   `renderSection()` applies a `var()`/`rgba()` value inline.
+4. **One colour control model,** `theme-runtime/resources/js/canvas-color.js`
+   (`window.CanvasColor`, included via `theme-runtime::canvas.color`), shared
+   by both editors:
+   - eight theme swatches stored as `var(--tb-…, fallback)`;
+   - an opacity slider: a swatch becomes `color-mix()`, a fixed colour
+     `rgba()`;
+   - «بی‌رنگ» stores `transparent`;
+   - the preview resolves swatches against the theme's own global styles.
+   Nested list colours get the swatches and transparent.
+5. **Persian numbers:**
+   - `BlockRenderer::displayToman()` prints demo prices as «۱٬۲۵۰٬۰۰۰ تومان».
+   - `displayNumber()` → `PersianNumber::localize()` prints counters, stat
+     values and suffixes, badges, cart and category counts, and plan prices.
+     It converts digits, `,`→٬ and `.`→٫ between digits, and `%`→٪, and
+     groups 4+-digit integers except likely years and leading-zero numbers.
+   - `data-count` stays machine-readable.
+   - A host can opt out with the context key `digits => 'latin'`.
+   - FoodMart (an English LTR theme) is unchanged.
+6. **Negative tracking.** `.tb-nav-header-logo`, `.tb-features-section-title`,
+   `.tb-newsletter-title` and `.tb-header-modern__brand` keep it under
+   `[dir="ltr"]` only.
+
+**Consequences:**
+
+- `tests/Support/CssParity/` holds the computed-style harness
+  (`corpus.php`, `css.php`, `compare.cjs`, `summarize.php`, README):
+  - token modes `default`, `none` and a palette file;
+  - before/after corpora;
+  - colour normalisation.
+- `Phase05TokensAndNumbersTest` fails on:
+  - a bare brand tint or border literal;
+  - negative tracking outside `[dir="ltr"]`;
+  - a literal brand default outside the allowlist;
+  - colour-prop injection;
+  - Latin prices or counters.
+- `canvas-color.test.mjs` pins the value model.
+- Parity harness, customer-site live render (229 documents, 3 widths):
+  - no tokens: 148 diffs, none a colour (tracking and digit widths only);
+  - default tokens: only the intended alignment (tints follow
+    `--tb-primary`, WCAG-AA muted text, one-step surface fallbacks);
+  - custom palette: 45 element kinds now take the theme colour, and none
+    lands outside the palette.
+
+  Preview vs live on the same markup: 48 diffs, all from the host-only
+  skill-bar rule. Stored colours: 118 values across both repos and both
+  databases, 0 rejected.
+
+**Impact:**
+
+- **Shared theme runtime:**
+  - `BlockRenderer`, `BlockRegistry`, the SleepShiman trait;
+  - `Security\HtmlSanitizer`, `Inspector\InspectorFieldRegistry`,
+    `Support\PersianNumber`;
+  - both stylesheets and `header-modern.css`;
+  - new `canvas-color.js` and the `canvas/color` view.
+- **Platform:** `canvas.blade.php` and `partials/canvas-repeater`.
+- **customer-site:** `ThemeCanvasRenderer` (module colours) and the Canvas
+  editor.
+
+There is no migration, route or dependency change. Stored hex values keep
+rendering exactly as before.
+
+## ADR-065
+
+**Title:** One Vendored SVG Icon Catalog and a Shared Icon Picker; Legacy Emoji Keep Rendering
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+Every icon in the shared blocks was a raw emoji or a typed character:
+
+- features, bento, services and service cards, contact info, trust badges
+  and trust items, timeline, icon box, the icon block, mega-menu links;
+- registry defaults such as ⚡ 🔒 🚚 ☎️ and the demo data;
+- hard-coded placeholders: 🖼️ 📦 for a missing photo, 🛒 👤 in the header,
+  📞 ✉️ 📍 🕐 in contact sections.
+
+Emoji render differently on every OS, ignore the theme colour, and cannot
+be sized or weighted consistently. Both editors offered a plain text input,
+and a top-level `icon` field had no control at all. `type: 'icon'` existed
+in `InspectorFieldRegistry::TYPES` but nothing used it.
+
+**Decision:**
+
+1. **One catalog, vendored.** `theme-runtime/resources/icons/catalog.json`
+   holds 155 Lucide icons (`lucide-static@0.468.0`, ISC; licence in
+   `LICENSE-lucide.txt`). Each icon has a name, a category, a Persian label,
+   Persian and English keywords, and an SVG body. Only these icons ship, so
+   the set is tree-shaken by construction: no package dependency, no font,
+   no network request. The five categories are:
+   - فروشگاه (commerce);
+   - ناوبری و مکان (navigation);
+   - ارتباطات (communication);
+   - فناوری (tech);
+   - عمومی و رابط کاربری (ui).
+
+   The build allowlists every element (`path`, `circle`, `ellipse`, `rect`,
+   `line`, `polyline`, `polygon`) and attribute, so a body is inert geometry.
+   `Phase06IconSystemTest` re-checks that.
+2. **`Support\IconLibrary`.** It provides `has()`, `label()`, `svg()` and
+   `html()`. The SVG is a 1em square drawn with `currentColor`, decorative
+   (`aria-hidden`) unless it gets a label.
+3. **Renderer.** `BlockRenderer::iconHtml()` draws a catalog name as SVG and
+   escapes anything else exactly as before. Stored emoji therefore render
+   unchanged, with no migration. The icon block labels its SVG in Persian
+   (`role="img"`). Placeholders and header and contact glyphs use catalog
+   icons in both hosts' renderers.
+4. **Schema.** Every icon field is `type: 'icon'`, with a catalog default:
+   - top level: `icon_box.icon`, `icon.name`, `trust_item.icon`,
+     `action_button.icon`;
+   - lists: features, timeline, trust badges, bento, services, service
+     cards, contact info, mega-menu items.
+
+   Registry demo data uses icon names. The editors also stop using an icon
+   as a list item's title. Sleep Shiman's own blocks keep that theme's glyph
+   ids. customer-site's validator maps `icon` to `string`, as before.
+5. **One picker.** `resources/js/canvas-icons.js` (`window.CanvasIcons`) is
+   the DOM-free model: catalog, categories, ranked search, `kind()`, `svg()`.
+   Search normalises Arabic ي/ك to Persian ی/ک and folds digits, ZWNJ and
+   diacritics. `canvas/icons.blade.php` loads it with the catalog and the
+   picker's own scoped styles (`.tbip-*`, independent of either host's
+   Tailwind build). `canvas/icon-picker.blade.php` is the single markup
+   both editors include at every depth: the platform top level and
+   repeater partial, and the customer top level and its structured,
+   nested and deep lists.
+
+   The picker offers:
+   - a searchable grid (Persian or English); typing searches every category;
+   - category chips;
+   - arrow-key navigation (RTL-aware);
+   - Esc, which returns focus to the trigger;
+   - a clear button;
+   - a field for a custom emoji or text, so legacy values stay editable.
+6. **Styles.** `.tb-icon-svg` sizes from the slot's existing font-size.
+   Feature and service icons sit on a brand-tinted tile
+   (`color-mix(--tb-primary 10%)`). Slot colours target the SVG only, so a
+   legacy ✓ or emoji keeps its look.
+
+**Consequences:**
+
+- `Phase06IconSystemTest` checks:
+  - catalog licence, categories and Persian labels;
+  - the inert-body allowlist;
+  - that every icon field is an icon control with a catalog default;
+  - that no emoji default remains;
+  - SVG and legacy rendering in eight block types;
+  - the picker include.
+- `canvas-icons.test.mjs` pins search, ranking and legacy handling.
+- `ProductSliderRenderSnapshotTest` was re-pinned. Mapping the two
+  placeholder SVGs back to 🖼️/📦 reproduces both previous pins exactly.
+- **Browser** (three widths, save → reload → preview):
+  - platform `phase06-icon-picker.spec.ts`;
+  - customer-site `phase06-07-icons-forms.spec.js`.
+- **Parity harness:**
+  - old markup under new CSS: no icon slot changes, so stored emoji look
+    as before;
+  - across 221 theme documents no stored icon value changed;
+  - preview equals live apart from the known skill-bar rule.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry`,
+  `InteractionBlockTypes`, the provider, the new `Support\IconLibrary`,
+  `resources/icons/`, `canvas-icons.js`, the `canvas/icons` and
+  `canvas/icon-picker` views, and `theme-runtime-blocks.css`.
+- **Platform:** `canvas.blade.php`, `partials/canvas-repeater` and
+  `ThemePlaceholderService` (catalog names).
+- **customer-site:** its BlockRenderer placeholders, `ElementSchemaRegistry`
+  and the Canvas editor.
+
+There is no migration or Composer change.
+
+## ADR-066
+
+**Title:** Real Newsletter and Search Behind the Shared Blocks; Hosts Supply the Endpoints
+
+**Status:** Accepted
+
+**Date:** 2026-10-27
+
+**Context:**
+
+- `newsletter_form` (and `email_capture`, which delegates to it) reset
+  itself on submit and stored nothing. customer-site had no newsletter
+  model, route or controller.
+- `search_bar` and the `nav_header` search posted to `#`.
+- customer-site overrode `renderSearchBar()` to GET its shop listing. There
+  were no suggestions, no blog scope and no mobile treatment.
+- `search_bar` had no styles at all.
+
+**Decision:**
+
+1. **Hosts own endpoints; the renderer stays host-neutral.**
+   `BlockRenderer::siteEndpoints()` reads the context key `site_endpoints`:
+   - `newsletter` — POST URL;
+   - `csrf` — token for the script-less fallback;
+   - `search` — routes per scope (`all`, `products`, `posts`), each
+     `{action, params, param}`;
+   - `suggest` — a JSON suggestions URL.
+
+   Every URL passes `HtmlSanitizer::isValidUrl()`. Without endpoints (the
+   Builder preview, the customer editor) the forms render exactly as
+   before: inert, no script.
+2. **customer-site** overrides `siteEndpoints()` with a documented
+   `#[HostOwnedOverride]`:
+   - `newsletter.subscribe`;
+   - with the `advanced_search` module: `search.index` with
+     `type=products|posts`, plus `search.suggest`;
+   - otherwise: the shop and blog `?q=` listings the site actually has.
+
+   Its own `renderSearchBar()` copy is deleted.
+3. **Newsletter backend (customer-site).** `POST /newsletter/subscribe`:
+   - **Protection:** inside the web group (CSRF), throttled at 6 requests
+     per minute.
+   - **Accepts:** an email (lower-cased) or an Iranian mobile in any digit
+     script or format (`+98`, `0098`, Persian or Arabic digits), normalised
+     to `09xxxxxxxxx`.
+   - **Repeats:** a unique contact; a repeat answers «قبلاً ثبت شده» and is
+     never stored twice. A race on the unique index is handled.
+   - **Bots:** a honeypot field gets a normal answer and nothing is stored.
+   - **Responses:** JSON for the script; redirect-back for a plain post.
+     Every message is Persian.
+   - **Data:** `newsletter_subscribers` stores contact, channel, source,
+     IP HMAC and `unsubscribed_at`. The migration is create-only.
+4. **One live script,** `resources/js/blocks/site-forms.js`, inlined once
+   per render and only with endpoints. It uses document event delegation.
+   - **Newsletter:**
+     - the same contact rules as the server;
+     - one request per submit (busy flag and a 1 s repeat guard);
+     - debounced re-validation after an error;
+     - a CSRF header from the page meta (no token in cached markup);
+     - Persian toasts and an `aria-live` status line covering success,
+       duplicate, 422, 419, 429 and network errors.
+   - **Search:** a page field, or the header's phone icon, opens one dialog:
+     - a centred modal on desktop, full screen at ≤640 px;
+     - `aria-modal`, a focus trap, Esc, and focus returned to the opener;
+     - debounced (250 ms) suggestions with an `AbortController`;
+     - scope buttons (همه / محصولات / مطالب);
+     - Persian prices («۱۲٬۵۰۰٬۰۰۰ تومان»);
+     - arrow-key results and «مشاهدهٔ همهٔ نتایج برای «…»».
+
+     Without JavaScript the form is a plain GET with its scope parameters.
+5. **Styles.** The search bar is a real field (icon, rounded, focus ring on
+   `--tb-primary`). The header search folds into an icon at ≤640 px.
+   Toasts darken the theme's success/error colours for contrast. Two
+   existing layout bugs are fixed:
+   - the newsletter field was 240 px tall on phones (flex-basis in a column);
+   - the header lost its side gutter below 80rem
+     (`padding: 0.5rem 0` overrode `.tb-container`).
+6. **Open decisions recorded:**
+   - customer-site `CurrencyHelper` prints prices through
+     `PersianNumber::format()`, so the storefront and the runtime blocks
+     share the Persian separator ٬ (U+066C).
+   - `header_modern` keeps hex colours for its contrast maths (ADR-064).
+
+**Consequences:**
+
+- **platform** `Phase07SiteFormsTest`: inert without endpoints, the form
+  contract with endpoints, unsafe URL fallback, scope fallback, the script
+  once per render, and catalog parity of the script's icons.
+- **customer-site** `NewsletterSubscriptionTest`: normalisation, duplicates,
+  422 messages, honeypot, re-subscribe, plain-post redirect, the
+  web/throttle route contract, the real endpoint wiring with and without
+  `advanced_search`, and the inert editor.
+- `site-forms.test.mjs` covers the pure helpers.
+- **Browser:** `phase07-site-forms.spec.ts` (platform; stub origin, three
+  widths) and `phase06-07-icons-forms.spec.js` (customer-site; real route).
+- `CanonicalStructuralParityTest` gives the canonical renderer the host's
+  endpoints (same input, same output).
+- **Release gate:** the new migration's `down()` drops its own table, which
+  the customer-site release policy flags for owner review
+  (`migration_policy.reviewed`).
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry` (`scope`,
+  `search_scope`), the provider, `blocks/site-forms.js` and
+  `theme-runtime-blocks.css`.
+- **customer-site:** `NewsletterController`, `NewsletterSubscriber`, the
+  migration, the route, its BlockRenderer (`siteEndpoints()`, with
+  `renderSearchBar()` removed), `CurrencyHelper` and
+  `account/points/index`.
+
+There is no Composer change.
+
+## ADR-067
+
+**Title:** Commercial Header and Footer, RTL-Correct Carousel, One Product Card and One Blog Card
+
+**Status:** Accepted
+
+**Date:** 2026-10-28
+
+**Context:**
+
+- **Header.** customer-site wraps every header block in its own
+  `<header class="tb-site-header">` chrome. `nav_header`'s inline
+  `position: sticky` could only stick inside that wrapper, so "sticky" did
+  nothing on live pages. There was no scroll-shrink, hide-on-scroll or
+  transparent mode.
+- **Phone menu.** Below 768 px the chrome hid the block entirely and
+  showed a fixed list of generic links. The block's own links, mega menus,
+  cart and search were unreachable on phones.
+- **Mega menu.** The panel was anchored to its own item and could run off
+  screen in RTL. Each item shipped its own inline script, and the promo
+  slot had no call to action.
+- **Cart.** The header cart linked to `/cart`, a 404 on customer-site
+  (`/shop/cart`). customer-site had no mini-cart and no JSON cart API:
+  add and remove only redirected back.
+- **Footer.** Social links printed text or a first letter. There was no
+  newsletter, no app badges and no trust-seal slot.
+- **Carousel.**
+  - The touch handler was reversed in RTL: swiping right went back, though
+    the next slide sits to the left.
+  - The arrow keys were hard-coded for RTL.
+  - There was no mouse drag.
+  - The arrows used physical `left`/`right` with glyphs pointing inward.
+- **Cards.** The product card had a generic badge, a plain stock text
+  line, no rating and no action. Blog cards were a single `<a>` holding
+  date and excerpt only, without author, category or reading time.
+
+**Decision:**
+
+1. **Header behaviour lives on the banner element.** `nav_header` gains
+   three props:
+   - `sticky_hide_on_scroll` (smart);
+   - `transparent_over_hero`;
+   - `transparent_text_color` (`''` = automatic contrast).
+
+   It emits `data-tb-header` flags. `blocks/site-header.js`, inlined once
+   per render, applies them to `closest('header, [role=banner]')`:
+   - `.tb-hdr-sticky` with `.is-scrolled`, which shrinks the header past
+     8 px;
+   - `.tb-hdr-smart.is-hidden`, set on a down-scroll and cleared on an
+     up-scroll or on focus;
+   - `.tb-hdr-overlay`, transparent only when the first block below is a
+     hero, slider or carousel. Automatic text colour comes from the hero's
+     background luminance, or is light for photo heroes. The hero is padded
+     by the header's unscrolled height.
+
+   Without the script the block keeps its old inline sticky.
+2. **Mega menu.**
+   - A full-width panel under the header on desktop, with a hover bridge.
+   - An accordion on touch devices and narrow screens.
+   - Toggling is delegated (click, Esc, outside click, a truthful
+     `aria-expanded`), so the per-item inline scripts are gone.
+   - The promo slot gains `mega_banner_cta`.
+   - customer-site's phone menu copies the block's own links, mega menus
+     included, and keeps the block's action icons visible inside its
+     chrome.
+3. **Mini-cart.**
+   - `siteEndpoints()['cart']` carries page, mini, add, remove and count.
+     `cartTriggerHtml()` renders the cart page link with a live badge and
+     `data-tb-cart-open`. The Builder preview keeps the old link.
+   - customer-site adds `GET /shop/cart/mini`. `addToCart` and
+     `removeFromCart` answer JSON with the fresh mini-cart when asked;
+     variant-required products answer 422 with the product URL.
+   - `blocks/cart.js` provides the drawer: it slides in from the reading
+     end, with a focus trap, Esc and focus restore. Money HTML is
+     allowlisted and titles are text only.
+4. **Footer.**
+   - `newsletter_*` props reuse the Phase 0.7 form and endpoint.
+   - `social_links` gains a `network` select. URLs are also recognised
+     (instagram, t.me, wa.me, x/twitter, youtube, aparat, eitaa, bale,
+     rubika, linkedin, facebook, github, mailto, tel); host matching is
+     anchored, so netflix.com is not x.com. Icons come from 14 Lucide brand
+     and communication glyphs added to the catalog. An unknown network
+     keeps its text.
+   - `app_links`: Google Play, App Store, Bazaar, Myket, direct download.
+   - Trust seals: `enamad_id`/`enamad_code` and
+     `samandehi_id`/`samandehi_code`. Only a numeric id and an
+     alphanumeric code are kept; a pasted official snippet is parsed for
+     them. Our own `<a><img referrerpolicy="origin">` points at the two
+     official hosts. There is no iframe, because the seals verify the
+     Referer.
+
+   An existing footer without these props renders as before; its social
+   links now show icons.
+5. **Carousel.** One engine (`carousel.js`), direction-aware:
+   - previous at the reading start and next at the end, as outward SVG
+     chevrons (mirrored in LTR);
+   - the arrow key on the next slide's side;
+   - pointer drag (touch, pen, mouse) that follows the finger, damps at
+     the edges and suppresses the click after a drag;
+   - a swipe towards the reading end advances.
+
+   FoodMart, an LTR theme with its own Swiper markup, is out of scope.
+6. **One product card,** `productCard(array)`. `productCardHtml()` stays
+   as a positional adapter. It shows:
+   - a discount badge with the real percentage («۲۱٪ تخفیف») and other
+     badges, both through `badgeHtml()`;
+   - the Toman price with the old price struck through;
+   - a stock pill (in, low, out);
+   - a star rating with an accessible label.
+
+   Its action depends on context:
+   - with cart endpoints: an instant add-to-cart `<form>` posted by
+     `cart.js` (a plain POST without JavaScript), which opens the drawer;
+   - «انتخاب گزینه‌ها» for products with variants;
+   - «ناموجود» when out of stock;
+   - a link in the preview.
+
+   customer-site's `productCardData()` feeds it real products: the
+   approved-review average and count, and stock against the low-stock
+   threshold.
+7. **One blog card,** `blogCardHtml()` plus `blogCardsLayout()` (grid, list
+   or slider). It shows a category pill, the title, the excerpt, the author
+   avatar or initial, a `<time>` with a Persian date («۵ آبان ۱۴۰۵») and
+   the reading time. customer-site feeds real posts (Verta `j F Y`,
+   `estimatedReadingMinutes()`). The Builder preview shows three clearly
+   labelled sample posts in the chosen layout instead of one line of text.
+
+**Consequences:**
+
+- **Tests:**
+  - `Phase1HeaderFooterCarouselTest` (platform);
+  - `ThemeCartDrawerAndCardsTest` (customer-site);
+  - `site-header-cart.test.mjs`;
+  - browser `phase1-2-header-footer-carousel.spec.ts` (stub origin,
+    three widths) and customer-site `phase1-2-cart-drawer-cards.spec.js`
+    (real routes).
+- **Re-pinned:** the product-slider snapshot. Rendering the HEAD package
+  and this one with each slide's content and both arrows tokenised hashes
+  identically in both modes.
+- **Icon search ranking:** a whole-term match now beats a match on one
+  word of a longer name, so «star» finds star before star-half.
+- **Parity harness** (before is `83a4cdbb`):
+  - old markup under the new CSS changes only the mega-menu anchoring,
+    the arrows and the carousel grab cursor;
+  - preview equals live apart from the known skill-bar rule.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry`, the
+  provider, `carousel.js`, the new `site-header.js` and `cart.js`,
+  `catalog.json` (169 icons) and `theme-runtime-blocks.css`.
+- **customer-site:** `ShopController` (`mini()` plus JSON branches), the
+  route, its BlockRenderer (cart endpoints, `cart_icon`, product and blog
+  card data), `ThemeCanvasRenderer` and the canvas-theme layout (phone
+  menu and SVG theme toggle).
+
+There is no migration or Composer change.
+
+## ADR-068
+
+**Title:** Drawer Quantity Stepper, Derived Product Badges, One Bestselling Query, Jalali Countdown and the Commercial FAQ
+
+**Status:** Accepted
+
+**Date:** 2026-10-28
+
+**Context:**
+
+- **Drawer.** The Phase 1/2 mini-cart could only remove a line, at once
+  and without asking. Changing a quantity meant leaving for the cart page.
+  customer-site's `updateCart` only redirected back, and the package's
+  `cartEndpoints()` kept only page, mini, add and remove.
+- **Badges.** The product card showed the real discount and one
+  free-text badge. Rating was shown but never earned a badge, and «جدید»
+  arrived as free text.
+- **Bestselling.** customer-site's registry kept one `HOST_PATCHES` entry
+  that hid `module:shop_product_grid`'s «پرفروش» source, because the module
+  renderer had no sales query. That renderer also drew its own plain card
+  instead of the shared one. The data binding had a 30-day sales query
+  (`best_selling_30d`) inline in `ProductDataSource`.
+- **Countdown.** `end_date` was a Gregorian string handed to `new Date()`
+  in the visitor's browser, so its instant depended on the visitor's time
+  zone. There was no Jalali input, the digits were Latin and every style was
+  inline.
+- **FAQ.** The canonical `renderFaq()` escaped answers (line breaks lost)
+  and rendered an empty box with no items. customer-site overrode it with
+  an empty-state hint, aliases and sanitized rich answers, flagged as an
+  unmerged capability. The accordion had no styling beyond the contract
+  sheet. FAQPage JSON-LD already existed page-level on customer-site
+  (`CanvasStructuredData`), but only for `faq`, not `module:faq_dynamic`.
+
+**Decision:**
+
+1. **Stepper in the drawer** (`blocks/cart.js`, version 2).
+   - `cartEndpoints()` accepts an optional, URL-validated `update`.
+     Without it the drawer shows a quantity line and no stepper.
+   - Each line has «+», the quantity and «−». At one, «−» becomes a trash
+     button.
+   - A step repaints the line total, subtotal and header badge at once
+     from `unit_amount`, with `faNumber()` producing exactly
+     `PersianNumber::format()`'s digits and ٬ separator, plus the host's
+     `money_suffix_html` and unit. After 350 ms of quiet, the last quantity
+     per line is posted, and the host's mini-cart replaces the estimate. A
+     refusal (422) shows the host's message and reloads the host's cart.
+   - All cart writes (add, update, remove) go through one serial queue:
+     the session cart is not locked, and overlapping writes would drop one.
+     Leaving for the cart page or closing the drawer flushes pending steps
+     first.
+   - Removing (trash, or «−» at one) asks inline: «… از سبد حذف شود؟»
+     with «حذف» and «انصراف». Focus goes to «انصراف»; Esc cancels and
+     returns focus. Confirming removes the line at once and drops its
+     unsent step.
+   - customer-site: `updateCart` answers JSON through
+     `cartDone()`/`cartFail()` (plain posts still redirect). `miniCart()`
+     adds `unit_amount`, `money_suffix_html` and `unit`, from the new
+     `CurrencyHelper::displayValueWithContext()`/`fadedZerosHtml()` (which
+     `formatPriceWithContext()` now uses itself). `siteEndpoints()['cart']`
+     gains `update`.
+2. **Derived badges** in `productCard()`. Overlays sit on the image in this
+   order, three at most:
+   - the real discount;
+   - «پرامتیاز» (`warning`) for an approved-review average of at least
+     `TOP_RATED_MIN_RATING` (4.5) over at least `TOP_RATED_MIN_REVIEWS` (5)
+     reviews;
+   - «جدید» (`info`) from the new `is_new` key;
+   - the free-text badge, unless it repeats one of the above.
+
+   customer-site's `productCardData()` passes `is_new`. The Builder demo
+   cards do too.
+3. **One bestselling query,** `Product::scopeBestSelling($days = 30)`:
+   completed orders in the window, highest revenue first (the semantics
+   `best_selling_30d` already had), then by id. `ProductDataSource` and
+   the module renderer both call it. `module:shop_product_grid` and
+   `module:shop_product_slider` now render the shared `productCard()` with
+   ratings, badges and add-to-cart. A bestselling grid with no sales says
+   «در ۳۰ روز گذشته هنوز فروشی ثبت نشده است.» The `HOST_PATCHES` entry is
+   gone; the host registry is now the canonical registry exactly.
+4. **Countdown with Jalali end dates.**
+   - `Support\JalaliDate`: dependency-free Jalali ↔ Gregorian conversion
+     (the jalaali-js arithmetic), leap years and month names.
+   - `end_date` accepts a Jalali date (`۱۴۰۵/۰۸/۱۵`, any digit script,
+     `-`, `/` or `.`), ending at `end_time` (HH:MM) or at 23:59:59 on that
+     day. Times are Tehran time: +03:30, since Iran has no daylight saving
+     time from 2022. The target ships as an ISO 8601 instant with that
+     offset, so every visitor counts to the same moment.
+   - A Gregorian value without `end_time` is emitted exactly as stored, so
+     existing countdowns keep their instant. An impossible date (for
+     example ۱۴۰۴/۱۲/۳۰) shows a format hint and no script.
+   - New props: `end_time`, `expired_text`, `style` (card or promo banner)
+     and `show_end_date` («پایان: ۱۵ آبان ۱۴۰۵، ساعت ۲۰:۰۰»).
+   - The adapter prints Persian digits and marks `.is-expired`. The timer
+     has `role="timer"`. The styles moved from inline attributes to the
+     shared sheet.
+5. **Commercial FAQ,** with one renderer on both hosts.
+   - The canonical `renderFaq()` takes over customer-site's override: the
+     empty-state hint, `title`/`content` aliases and sanitized rich
+     answers. Plain answers keep their line breaks.
+   - New props: `exclusive` (every `<details>` shares a `name`, so opening
+     one closes the others) and `open_first`.
+   - A chevron in each summary, styled cards and an open state are added
+     in the shared sheet.
+   - `module:faq_dynamic`'s accordion style delegates to `renderFaq()`.
+   - FAQPage JSON-LD stays page-level and host-owned, so a page with several
+     FAQ blocks still publishes one FAQPage. `CanvasStructuredData` now
+     reads `module:faq_dynamic` too, sliced to its `limit`: structured data
+     matches what is visible. The aliases are read as well.
+6. **Migration rollback.** customer-site `d5c5e74` emptied
+   `create_newsletter_subscribers_table::down()`. Rolling back then
+   deleted the migration row and left the table in place, untracked.
+   `up()`'s `hasTable` guard would then hide any later schema change on
+   re-run. `down()` again drops only its own table. The file is restored
+   byte for byte to the content of the existing owner review in
+   `release-policy.json` (`c2eb08f8…`), so that review covers it with no new
+   entry.
+
+**Consequences:**
+
+- **Re-pinned on purpose:**
+  - the countdown with-date structural snapshot (inline styles to the
+    sheet, `role="timer"`, `hidden` expiry line); the no-date shape is
+    unchanged;
+  - the product-slider snapshot: three badge spans differ from the HEAD
+    render, and nothing else;
+  - the countdown JS test now expects Persian digits.
+- **Tests:**
+  - `Phase3CommerceWidgetsTest` (platform);
+  - `ThemePhase3CommerceTest` (customer-site);
+  - browser `phase3-commerce-widgets.spec.ts` (stub origin, three widths);
+  - customer-site `phase1-2-cart-drawer-cards.spec.js` now exercises the
+    stepper and the confirmed removal on real routes, unconditionally.
+- **Parity harness** (before is `82194f5d` + customer-site `852949e`):
+  - live markup changes in 34 of 229 documents, all FAQ;
+  - old markup under the new CSS changes four element kinds, all the FAQ
+    restyle (summary, answer, item, wrapper); no other block moves;
+  - preview equals live apart from the known skill-bar rule.
+
+**Impact:**
+
+- **Shared theme runtime:** `BlockRenderer`, `BlockRegistry`
+  (countdown, faq), the new `Support\JalaliDate`, `cart.js`,
+  `countdown_adapter.js` and `theme-runtime-blocks.css`.
+- **customer-site:** `ShopController`, `CurrencyHelper`, `Product`,
+  `ProductDataSource`, its BlockRenderer (renderFaq override removed,
+  `update` endpoint, `is_new`), `ThemeCanvasRenderer` (module product grid
+  and slider, faq_dynamic), `CanvasStructuredData`, `BlockRegistry`
+  (no patches) and the newsletter migration's `down()`.
+
+There is no new migration or Composer change.

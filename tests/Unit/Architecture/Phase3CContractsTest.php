@@ -33,6 +33,11 @@ class Phase3CContractsTest extends TestCase
 
     private const INSPECTOR_TYPES = [
         'string', 'number', 'boolean', 'select', 'color', 'textarea', 'link',
+        // Phase 0.6 (ADR-065): the SVG icon picker control.
+        'icon',
+        // Phase 0.2: list definitions promoted to canonical use the
+        // schema-driven repeater (InspectorFieldRegistry::TYPES).
+        'repeater',
     ];
 
     /** @test */
@@ -88,9 +93,15 @@ class Phase3CContractsTest extends TestCase
 
             foreach ($definition['defaultProps'] as $key => $value) {
                 $this->assertArrayHasKey($key, $definition['schema'], "{$type}.{$key} needs a schema field.");
+                // A repeater's legacy JSON-string default loads as its list
+                // (InspectorFieldRegistry::normalizeList); the next edit
+                // persists the array shape.
+                $expected = $definition['schema'][$key]['type'] === 'repeater' && is_string($value)
+                    ? json_decode($value, true)
+                    : $value;
                 foreach (['rtl', 'ltr'] as $direction) {
                     $this->assertEquals(
-                        $value,
+                        $expected,
                         InspectorFieldRegistry::normalizeValue(
                             $definition['schema'][$key],
                             $value,
@@ -201,8 +212,14 @@ class Phase3CContractsTest extends TestCase
             $definitions[$type] = $all[$type];
         }
 
+        // Phase 0.5 (ADR-064) re-pin: the only change is that the hero
+        // family's colour defaults became theme tokens with the previous
+        // literals as fallbacks (var(--tb-primary, #4f46e5),
+        // var(--tb-secondary, #7c3aed), var(--tb-on-primary, #ffffff)).
+        // Mapping exactly those three back reproduces the previous pin
+        // 2fbb713a33173877b7c21cf11b540e04c2cff2dc757b36c50267fae7a0702152.
         $this->assertSame(
-            '2fbb713a33173877b7c21cf11b540e04c2cff2dc757b36c50267fae7a0702152',
+            '947961869a831a136e2a0f12fba1ab3a00bda589a9a3c9ae2fac2399f0be0bbd',
             hash('sha256', json_encode($definitions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))
         );
     }

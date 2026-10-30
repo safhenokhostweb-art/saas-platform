@@ -85,8 +85,8 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
         $theme->forceFill(['current_release_id' => $release->id])->save();
 
         Http::fake([
-            'sync-http-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 2, 'revision_number' => 2, 'pages_installed' => 21,
+            'https://sync-http-test.local/builder/api/theme/install' => Http::response([
+                'success' => true, 'revision_id' => 2, 'revision_number' => 2, 'pages_installed' => 24,
             ], 200),
         ]);
 
@@ -110,7 +110,7 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
                 && $body['theme_id'] === $theme->slug
                 && $body['source_theme_version'] === '2.0.0'
                 && $body['source_release_id'] === $release->id
-                && count($body['pages']) === 21;
+                && count($body['pages']) === 24;
         });
     }
 
@@ -122,7 +122,7 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
         $theme = Theme::where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->sole();
 
         Http::fake([
-            'sync-http-test.local/builder/api/theme/install' => Http::response([
+            'https://sync-http-test.local/builder/api/theme/install' => Http::response([
                 'success' => false,
                 'error' => 'page_namespace_collision',
                 'message' => 'این عملیات صفحه(های) موجود را با این آدرس‌ها نامرئی می‌کند.',
@@ -147,8 +147,8 @@ class ThemeCanvasSyncPagesHttpTest extends TestCase
         $theme = Theme::where('slug', UniversalMultipurposeQaThemeSeeder::SLUG)->sole();
 
         Http::fake([
-            'sync-http-test.local/builder/api/theme/install' => Http::response([
-                'success' => true, 'revision_id' => 3, 'revision_number' => 1, 'pages_installed' => 21,
+            'https://sync-http-test.local/builder/api/theme/install' => Http::response([
+                'success' => true, 'revision_id' => 3, 'revision_number' => 1, 'pages_installed' => 24,
             ], 200),
         ]);
 

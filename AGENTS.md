@@ -76,6 +76,19 @@ After implementation:
 - Commit and push all task-owned changes, synchronize them to every affected production server, and verify health before marking the task complete.
 - For documentation-only work, synchronize files without unnecessary runtime restarts or application deployment actions.
 
+## Release Delivery to the Deployment Hub
+
+The cycle itself is owned by `docs/quality/WORK_UNIT_DELIVERY_WORKFLOW.md`; these are the operating facts agents must apply when running it:
+
+- Each project has its own Hub endpoint, set as `DEPLOYMENT_RELEASE_METADATA_URL` in the release shell only:
+  - `saas-platform`: `https://deployment.safhenokhost.ir/api/projects/saas-platform/releases`
+  - `customer-site`: `https://deployment.safhenokhost.ir/api/projects/customer-site/releases`
+- `DEPLOYMENT_RELEASE_SECRET` must equal that project's `github_webhook_secret` as stored by the Hub (`ProjectReleaseController` verifies `X-Deployment-Signature-256` against it and answers `401` on mismatch, `202` on acceptance). The local deployment-system database does not hold these projects and is never a source for the secret; obtain it from the owner. Never commit, print, or log it, and never rotate it to unblock a release: the same value authenticates the project's GitHub webhook.
+- `release-prepare prepare` commits and pushes the release commit to `main` before it delivers metadata. Run it only after `check` is `READY` and both variables are confirmed in the shell; otherwise stop at `check` and record P6 as `BLOCKED`.
+- The local role ends at `check`, `prepare`, the release manifest, and signed metadata delivery. The Hub builds the artifact on the server from the exact pushed commit; agents never hand-build an archive.
+- Release order is `saas-platform` first, then `customer-site`: customer-site resolves `saas-platform/packages/**` through Composer path repositories, so its `check` requires the sibling `saas-platform` checkout on a `main` that already contains the shared package code it calls.
+- Sentinel Verifier is a post-deploy auditor only. It runs automatically on `deployment.completed` after the Hub deploys an owner-approved release; agents must not fabricate or pre-generate Sentinel evidence before deployment.
+
 ## Documentation Ownership
 
 | Information | Canonical location |

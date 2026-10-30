@@ -1,6 +1,32 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-10-02
+> Last Updated: 2026-10-12
+
+---
+
+## COMPLETE: ARIANA MULTIPLUS — PERSIAN MULTIPURPOSE THEME — 2026-10-12 ✅
+
+**Status:** READY_FOR_FINAL_REVIEW_LOCAL.
+
+| Component | Status |
+|-----------|--------|
+| `database/seeders/ArianaMultiPlusThemeSeeder.php` (slug `ariana-multiplus`, v1.0.0) | ✅ DONE — canonical block types only |
+| Five professional slider families (slider, product_slider, category_slider, testimonials_slider, client_logos) | ✅ DONE |
+| Vazirmatn + fa-IR + RTL global styles/locale contract | ✅ DONE |
+| Mobile-number-only identity — zero email in the persisted document | ✅ DONE (contact_split excluded; pricing copy fixed) |
+| Virtual imagery via `ThemePlaceholderService::svgPlaceholder` | ✅ DONE |
+| Published + honest `ThemeMarketplace` row | ✅ DONE |
+| Canonical source registration in `ThemeCatalogRebuildCommand` | ✅ DONE |
+| `ArianaMultiPlusThemeSeederTest` | ✅ 6/6 (157 assertions) |
+| `ThemeCatalogRebuildCommandTest` | ✅ 8/8 |
+| `theme-release:backfill` (commercial eligibility) | ⏳ NEXT — requires explicit authorization |
+| Commit/push/deploy (ADR-019) | ⏳ NOT AUTHORIZED / NOT RUN |
+
+**Acceptance criteria met:** all blocks are canonical and render
+non-empty through the real shared renderer; every prop matches the
+canonical schema so the customer can edit everything later in Canvas;
+the theme is deterministic and idempotent through
+`theme-catalog:rebuild`.
 
 ---
 

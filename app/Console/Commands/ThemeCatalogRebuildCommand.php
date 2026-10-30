@@ -2,6 +2,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Theme;
+use Database\Seeders\ArianaMultiPlusThemeSeeder;
 use Database\Seeders\SalesSupportThemeSeeder;
 use Illuminate\Console\Command;
 
@@ -78,6 +79,10 @@ class ThemeCatalogRebuildCommand extends Command
             'label' => 'db:seed ' . SalesSupportThemeSeeder::class,
             'expected_slugs' => ['sales-support-pro'],
         ],
+        [
+            'label' => 'db:seed ' . ArianaMultiPlusThemeSeeder::class,
+            'expected_slugs' => ['ariana-multiplus'],
+        ],
     ];
 
     /**
@@ -102,6 +107,7 @@ class ThemeCatalogRebuildCommand extends Command
         $this->call('acool:seed');
         $this->call('malltina:seed');
         $this->call('db:seed', ['--class' => SalesSupportThemeSeeder::class, '--force' => true]);
+        $this->call('db:seed', ['--class' => ArianaMultiPlusThemeSeeder::class, '--force' => true]);
 
         $expectedSlugs = collect(self::CANONICAL_SOURCES)->flatMap(fn ($s) => $s['expected_slugs'])->unique()->values();
 

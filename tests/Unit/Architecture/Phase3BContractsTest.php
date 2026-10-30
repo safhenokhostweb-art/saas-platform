@@ -212,7 +212,9 @@ class Phase3BContractsTest extends TestCase
             $html
         );
         $this->assertStringContainsString('min-height:520px;padding-block:96px;', $html);
-        $this->assertStringContainsString('linear-gradient(115deg,#4f46e5,#7c3aed)', $html);
+        // Phase 0.5 (ADR-064): unset colours follow the theme tokens, with the
+        // previous literals as their fallbacks.
+        $this->assertStringContainsString('linear-gradient(115deg,var(--tb-primary, #4f46e5),var(--tb-secondary, #7c3aed))', $html);
         $this->assertStringContainsString('class="tb-hero-container"', $html);
         $this->assertStringContainsString('class="tb-hero-content"', $html);
         $this->assertStringContainsString('class="tb-hero-actions tb-hero-actions-start"', $html);
@@ -231,7 +233,7 @@ class Phase3BContractsTest extends TestCase
         $html = $this->renderHeroSample();
         $this->assertStringContainsString('--tb-hero-btn-radius:12px;', $html);
         $this->assertStringContainsString('--tb-hero-title-size:3.25rem;', $html);
-        $this->assertStringContainsString('--tb-hero-title-color:#ffffff;', $html);
+        $this->assertStringContainsString('--tb-hero-title-color:var(--tb-on-primary, #ffffff);', $html);
         $this->assertStringContainsString('max-width:1200px;', $html);
         $this->assertStringContainsString('max-width:640px;', $html);
     }
@@ -284,7 +286,10 @@ class Phase3BContractsTest extends TestCase
             'props' => ['title_color' => '"><script>alert(1)</script>', 'gap' => 20, 'max_width' => 640, 'title_size' => 3.25],
         ]);
         $this->assertStringNotContainsString('<script>', $html);
-        $this->assertStringContainsString('&quot;', $html);
+        // Phase 0.5 (ADR-064): an invalid colour is no longer escaped and kept
+        // but refused outright (HtmlSanitizer::isCssColor), leaving the theme fallback.
+        $this->assertStringNotContainsString('alert', $html);
+        $this->assertStringContainsString('--tb-hero-title-color:var(--tb-on-primary, #ffffff);', $html);
     }
 
     // ── Library package ─────────────────────────────────────────────────

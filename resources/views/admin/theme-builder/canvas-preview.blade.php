@@ -54,8 +54,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <x-seo-meta :meta-data="$metaData" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {{-- Phase 0.4 (ADR-063): local Vazirmatn, exactly as customer-site's live
+         page loads it — no Google Fonts (unreliable from Iran, FOUT). --}}
+    <link rel="preload" as="font" href="{{ asset('assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') }}" type="font/woff2" crossorigin>
+    <link rel="preload" as="font" href="{{ asset('assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') }}" type="font/woff2" crossorigin>
+    <style>@include('theme-runtime::css.fonts')</style>
     <style>
         {{-- Canvas fidelity fix (2026-09-20): this file's own comprehensive,
              parity-audited component CSS used to live only here, so the

@@ -45,29 +45,48 @@ use Throwable;
  */
 class ThemeReleaseBackfillCommand extends Command
 {
-    protected $signature = 'theme-release:backfill {--dry-run : Preview which themes would be released without writing anything}';
+    protected $signature = 'theme-release:backfill {--dry-run : Preview which themes would be released without writing anything} {--slug= : Target a single master theme by exact slug (site_id must be NULL, must have zero releases)}';
 
     protected $description = 'Give every master Theme Product with zero releases its honest first commercial release (v1.0.0), idempotently, through the Mandatory Commercial Quality Gate.';
 
     public function handle(ThemeReleaseService $releaseService, ThemeCommercialQualityGate $qualityGate): int
     {
         $dryRun = (bool) $this->option('dry-run');
+        $slug = $this->option('slug');
 
-        $candidates = Theme::whereNull('site_id')
+        $query = Theme::whereNull('site_id')
             ->whereDoesntHave('releases')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        if ($slug !== null) {
+            $query->where('slug', $slug);
+        }
+
+        $candidates = $query->get();
+
+        if ($slug !== null && $candidates->isEmpty()) {
+            $this->error("No master theme with slug \"{$slug}\" found (must have site_id=NULL and zero releases).");
+            return self::FAILURE;
+        }
 
         if ($candidates->isEmpty()) {
             $this->info('No master themes require backfilling — every master Theme already has at least one release.');
             return self::SUCCESS;
         }
 
-        $this->info(sprintf(
-            '%d master theme(s) require a first commercial release.%s',
-            $candidates->count(),
-            $dryRun ? ' [DRY RUN — no writes]' : ''
-        ));
+        if ($slug !== null) {
+            $this->info(sprintf(
+                'Targeting single master theme: %s%s',
+                $slug,
+                $dryRun ? ' [DRY RUN — no writes]' : ''
+            ));
+        } else {
+            $this->info(sprintf(
+                '%d master theme(s) require a first commercial release.%s',
+                $candidates->count(),
+                $dryRun ? ' [DRY RUN — no writes]' : ''
+            ));
+        }
 
         $succeeded = 0;
         $failed = 0;

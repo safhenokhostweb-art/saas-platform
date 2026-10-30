@@ -40,14 +40,41 @@ use Tests\TestCase;
  *   only their bodies — so a second tag is a real, intended structural
  *   change. No other markup moved: carousel structure, attributes, classes
  *   and text are unchanged.
+ *
+ *   Phase 0.5 (ADR-064) RE-PINNED them again, and this is the why: the demo
+ *   prices print through PersianNumber («۱٬۲۵۰٬۰۰۰ تومان», was
+ *   «1,250,000 تومان») and the old-price / stock text colour reads
+ *   var(--tb-text-muted, #6b7280) instead of the bare hex. Verified by a
+ *   line diff of the HEAD and new renders: only those price strings and
+ *   colour declarations differ — structure, classes and every other
+ *   attribute are unchanged.
+ *
+ *   Phase 0.6 (ADR-065) RE-PINNED them again: the placeholder of a card
+ *   without a photo is the catalog SVG (IconLibrary `image` / `package`)
+ *   instead of the 🖼️ / 📦 emoji. Verified by mapping those SVGs back to
+ *   the emoji: the result hashes to exactly the previous pins.
+ *
+ *   Phase 2 (ADR-067) RE-PINNED them again: the product card is the new
+ *   commercial productCard() (discount badge with percentage, rating,
+ *   stock pill, add-to-cart action) and the arrows are logical-side SVG
+ *   chevrons styled by the shared sheet. Verified by rendering the HEAD
+ *   package and this one with each slide's content and the two arrow
+ *   buttons replaced by tokens: both modes hash identically, so nothing
+ *   outside the cards and arrows moved.
+ *
+ * Re-pinned again in Phase 3 (ADR-068): the demo cards gained derived
+ * badge overlays — «پرامتیاز» on the two cards rated 4.6/128 and 4.8/412,
+ * and «جدید» moved from the free-text `primary` badge to `info`. Verified
+ * by diffing the HEAD-package render with this one: those three badge
+ * spans are the only change.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '3a1c8d14f71c226f448fe2b57d7785ac0f5cc1572da819ed264c35e3318a0625';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '419619285d3cf2ba1d5211971561681c689d55bb0c9a0bc4c4992f3447899c8c';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = 'd421a99425b7043c6e90c96e05567d2b78ab57b1caf5613af91c6470d17dbcdb';
+    private const PUBLIC_STRUCTURAL_SHA256 = '587e1281de610f117751d83393c789ec6f7ccf018ba7d5cc1bf715afbbe36949';
 
     private function render(string $mode = 'neutral'): string
     {

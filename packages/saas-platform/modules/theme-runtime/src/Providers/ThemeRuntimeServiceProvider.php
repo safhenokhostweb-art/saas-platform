@@ -31,6 +31,54 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/css/theme-runtime-contract.css';
     }
 
+    /** Phase 0.3 (ADR-063) — the shared block stylesheet, same seam as cssContractPath(). */
+    public static function cssBlocksPath(): string
+    {
+        return __DIR__ . '/../../resources/css/theme-runtime-blocks.css';
+    }
+
+    /** Phase 0.4 (ADR-063) — the local Vazirmatn @font-face rules, same seam. */
+    public static function fontFacesPath(): string
+    {
+        return __DIR__ . '/../../resources/css/vazirmatn-font-faces.css';
+    }
+
+    /** Phase 0.5 (ADR-064) — the Canvas colour control's shared value model. */
+    public static function canvasColorPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-color.js';
+    }
+
+    /** Phase 0.6 (ADR-065) — the Canvas icon picker's shared model. */
+    public static function canvasIconsPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-icons.js';
+    }
+
+    /** Phase 0.7 (ADR-066) — live newsletter + search-dialog behaviour. */
+    public static function siteFormsScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/site-forms.js';
+    }
+
+    /** Phase 1 (ADR-067) — header scroll behaviour + delegated mega menu. */
+    public static function siteHeaderScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/site-header.js';
+    }
+
+    /** Phase 1/2 (ADR-067) — mini-cart drawer and instant add-to-cart. */
+    public static function cartScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/cart.js';
+    }
+
+    /** Phase 3b (ADR-069) — pricing billing toggle and feature tooltips. */
+    public static function pricingScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/pricing.js';
+    }
+
     public static function canvasIdentityContractPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-identity.js';

@@ -33,7 +33,10 @@ class CountdownRenderTest extends TestCase
      * surrounding whitespace, and that no other node was added or removed.
      */
     private const NO_DATE_STRUCT = '35616221b9a4a3599d0dd839576427a15c844ab8443364c3383c1b3cb08e5f55';
-    private const WITH_DATE_STRUCT = '218a02c311a27d1d928b3bc0b9378d2373468776f1ee1e6589d2dfea6b4330a3';
+    // Re-pinned on purpose in Phase 3 (ADR-068): the timer moved from inline
+    // styles to the shared sheet and gained role="timer"; the expiry line is
+    // `hidden`. The no-date shape did not change.
+    private const WITH_DATE_STRUCT = 'bbf52229e6c4ff4cc2c9ee06f77f71e6727a5fc8e6bc87e34ad52071804347b8';
 
     protected function setUp(): void
     {
@@ -151,6 +154,59 @@ class CountdownRenderTest extends TestCase
      * instance must contribute NO <script> element rather than an empty one,
      * which is the bug the carousel carrier's contract was written to avoid.
      */
+    /** Phase 3 (ADR-068): a Jalali date in any digit script ends that day, Tehran time. */
+    public function test_a_jalali_end_date_targets_the_end_of_that_day_in_tehran(): void
+    {
+        foreach (['1405/08/15', '۱۴۰۵/۰۸/۱۵', '1405-8-15', '۱۴۰۵.۰۸.۱۵'] as $value) {
+            BlockRenderer::resetCountdownAdapterEmission();
+            $html = $this->render(['end_date' => $value]);
+            $this->assertStringContainsString('data-end-date="2026-11-06T23:59:59+03:30"', $html, $value);
+            $this->assertStringContainsString('پایان: <time datetime="2026-11-06T23:59:59+03:30">۱۵ آبان ۱۴۰۵</time>', $html, $value);
+        }
+    }
+
+    public function test_end_time_sets_the_tehran_clock_for_jalali_and_gregorian_dates(): void
+    {
+        $html = $this->render(['end_date' => '۱۴۰۵/۰۸/۱۵', 'end_time' => '۲۰:۳۰']);
+        $this->assertStringContainsString('data-end-date="2026-11-06T20:30:00+03:30"', $html);
+        $this->assertStringContainsString('۱۵ آبان ۱۴۰۵، ساعت ۲۰:۳۰', $html);
+
+        BlockRenderer::resetCountdownAdapterEmission();
+        $html = $this->render(['end_date' => '2026-11-06', 'end_time' => '20:30']);
+        $this->assertStringContainsString('data-end-date="2026-11-06T20:30:00+03:30"', $html);
+        $this->assertStringContainsString('۱۵ آبان ۱۴۰۵، ساعت ۲۰:۳۰', $html);
+    }
+
+    /** Stored Gregorian countdowns keep the exact instant they had before Phase 3. */
+    public function test_a_gregorian_value_without_end_time_is_emitted_as_stored(): void
+    {
+        foreach (['2026-12-31', '2026-12-31 23:59', '2027-01-01T00:00:00+00:00'] as $value) {
+            BlockRenderer::resetCountdownAdapterEmission();
+            $html = $this->render(['end_date' => $value]);
+            $this->assertStringContainsString('data-end-date="' . $value . '"', $html);
+            $this->assertStringNotContainsString('tb-countdown__end', $html, 'no end line for an instant this renderer did not compute');
+        }
+    }
+
+    public function test_an_impossible_date_shows_the_format_hint_and_no_script(): void
+    {
+        foreach (['1405/13/01', '1404/12/30', '2026-02-30'] as $value) {
+            $html = $this->render(['end_date' => $value]);
+            $this->assertStringContainsString('تاریخ پایان معتبر نیست', $html, $value);
+            $this->assertStringNotContainsString('<script', $html, $value);
+            $this->assertStringNotContainsString('data-end-date', $html, $value);
+        }
+    }
+
+    public function test_expired_text_style_and_end_line_toggle(): void
+    {
+        $html = $this->render(['end_date' => '1405/08/15', 'expired_text' => 'حراج تمام شد', 'style' => 'banner', 'show_end_date' => false]);
+        $this->assertStringContainsString('class="tb-countdown tb-countdown--banner"', $html);
+        $this->assertStringContainsString('<p class="tb-countdown__expired" hidden>حراج تمام شد</p>', $html);
+        $this->assertStringNotContainsString('tb-countdown__end', $html);
+        $this->assertStringContainsString('role="timer"', $html);
+    }
+
     public function test_the_adapter_is_emitted_once_per_document(): void
     {
         $renderer = new BlockRenderer();

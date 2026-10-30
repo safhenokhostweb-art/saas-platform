@@ -216,7 +216,8 @@ final class InspectorFieldRegistry
 
     private static function normalizeColor(mixed $value): string
     {
-        if (!is_string($value) || preg_match('/^(#[0-9a-f]{3,8}|(?:rgb|hsl)a?\([^;{}]+\)|var\(--[A-Za-z0-9_-]+\))$/i', trim($value)) !== 1) {
+        // Phase 0.5 (ADR-064): the same grammar the renderer accepts.
+        if (!is_string($value) || !HtmlSanitizer::isCssColor($value)) {
             throw new InvalidArgumentException('Invalid color value.');
         }
         return trim($value);

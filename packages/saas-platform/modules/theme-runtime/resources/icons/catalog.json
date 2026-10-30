@@ -1,0 +1,2777 @@
+{
+    "source": "lucide-static@0.468.0",
+    "license": "ISC",
+    "categories": [
+        {
+            "key": "commerce",
+            "label": "فروشگاه"
+        },
+        {
+            "key": "navigation",
+            "label": "ناوبری و مکان"
+        },
+        {
+            "key": "communication",
+            "label": "ارتباطات"
+        },
+        {
+            "key": "tech",
+            "label": "فناوری"
+        },
+        {
+            "key": "ui",
+            "label": "عمومی و رابط کاربری"
+        }
+    ],
+    "icons": {
+        "shopping-cart": {
+            "category": "commerce",
+            "label": "سبد خرید",
+            "keywords": [
+                "سبد",
+                "خرید",
+                "فروشگاه",
+                "shopping",
+                "cart",
+                "trolley",
+                "basket",
+                "e-commerce",
+                "store",
+                "purchase",
+                "products",
+                "items"
+            ],
+            "body": "<circle cx=\"8\" cy=\"21\" r=\"1\"/><circle cx=\"19\" cy=\"21\" r=\"1\"/><path d=\"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12\"/>"
+        },
+        "shopping-bag": {
+            "category": "commerce",
+            "label": "کیسهٔ خرید",
+            "keywords": [
+                "کیسهٔ",
+                "خرید",
+                "کیف",
+                "فروشگاه",
+                "shopping",
+                "bag",
+                "ecommerce",
+                "cart",
+                "purchase",
+                "store"
+            ],
+            "body": "<path d=\"M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z\"/><path d=\"M3 6h18\"/><path d=\"M16 10a4 4 0 0 1-8 0\"/>"
+        },
+        "shopping-basket": {
+            "category": "commerce",
+            "label": "سبد",
+            "keywords": [
+                "سبد",
+                "خرید",
+                "سوپرمارکت",
+                "shopping",
+                "basket",
+                "cart",
+                "e-commerce",
+                "store",
+                "purchase",
+                "products",
+                "items",
+                "ingredients"
+            ],
+            "body": "<path d=\"m15 11-1 9\"/><path d=\"m19 11-4-7\"/><path d=\"M2 11h20\"/><path d=\"m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4\"/><path d=\"M4.5 15.5h15\"/><path d=\"m5 11 4-7\"/><path d=\"m9 11 1 9\"/>"
+        },
+        "store": {
+            "category": "commerce",
+            "label": "فروشگاه",
+            "keywords": [
+                "فروشگاه",
+                "مغازه",
+                "بازار",
+                "store",
+                "shop",
+                "supermarket",
+                "stand",
+                "boutique",
+                "building"
+            ],
+            "body": "<path d=\"m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7\"/><path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\"/><path d=\"M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4\"/><path d=\"M2 7h20\"/><path d=\"M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7\"/>"
+        },
+        "package": {
+            "category": "commerce",
+            "label": "بسته",
+            "keywords": [
+                "بسته",
+                "محصول",
+                "جعبه",
+                "مرسوله",
+                "package",
+                "box",
+                "container",
+                "storage",
+                "sealed",
+                "delivery",
+                "undelivered",
+                "unopened",
+                "packed"
+            ],
+            "body": "<path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\"/><path d=\"M12 22V12\"/><path d=\"m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7\"/><path d=\"m7.5 4.27 9 5.15\"/>"
+        },
+        "package-check": {
+            "category": "commerce",
+            "label": "تحویل بسته",
+            "keywords": [
+                "تحویل",
+                "بسته",
+                "ارسال",
+                "شده",
+                "package",
+                "check",
+                "confirm",
+                "verified",
+                "done",
+                "todo",
+                "tick",
+                "complete",
+                "task",
+                "delivered"
+            ],
+            "body": "<path d=\"m16 16 2 2 4-4\"/><path d=\"M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14\"/><path d=\"m7.5 4.27 9 5.15\"/><polyline points=\"3.29 7 12 12 20.71 7\"/><line x1=\"12\" x2=\"12\" y1=\"22\" y2=\"12\"/>"
+        },
+        "truck": {
+            "category": "commerce",
+            "label": "ارسال",
+            "keywords": [
+                "ارسال",
+                "حمل",
+                "پست",
+                "کامیون",
+                "رایگان",
+                "truck",
+                "delivery",
+                "van",
+                "shipping",
+                "haulage",
+                "lorry"
+            ],
+            "body": "<path d=\"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2\"/><path d=\"M15 18H9\"/><path d=\"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/><circle cx=\"7\" cy=\"18\" r=\"2\"/>"
+        },
+        "credit-card": {
+            "category": "commerce",
+            "label": "کارت بانکی",
+            "keywords": [
+                "کارت",
+                "بانکی",
+                "پرداخت",
+                "درگاه",
+                "credit",
+                "card",
+                "bank",
+                "purchase",
+                "payment",
+                "cc"
+            ],
+            "body": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"/><line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\"/>"
+        },
+        "wallet": {
+            "category": "commerce",
+            "label": "کیف پول",
+            "keywords": [
+                "کیف",
+                "پول",
+                "پرداخت",
+                "اعتبار",
+                "wallet",
+                "money",
+                "finance",
+                "pocket"
+            ],
+            "body": "<path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"/><path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\"/>"
+        },
+        "banknote": {
+            "category": "commerce",
+            "label": "اسکناس",
+            "keywords": [
+                "اسکناس",
+                "پول",
+                "نقد",
+                "پرداخت",
+                "banknote",
+                "currency",
+                "money",
+                "payment"
+            ],
+            "body": "<rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M6 12h.01M18 12h.01\"/>"
+        },
+        "coins": {
+            "category": "commerce",
+            "label": "سکه",
+            "keywords": [
+                "سکه",
+                "پول",
+                "پاداش",
+                "امتیاز",
+                "coins",
+                "money",
+                "cash",
+                "finance",
+                "gamble"
+            ],
+            "body": "<circle cx=\"8\" cy=\"8\" r=\"6\"/><path d=\"M18.09 10.37A6 6 0 1 1 10.34 18\"/><path d=\"M7 6h1v4\"/><path d=\"m16.71 13.88.7.71-2.82 2.82\"/>"
+        },
+        "piggy-bank": {
+            "category": "commerce",
+            "label": "پس‌انداز",
+            "keywords": [
+                "پس‌انداز",
+                "قلک",
+                "صرفه‌جویی",
+                "piggy",
+                "bank",
+                "money",
+                "savings"
+            ],
+            "body": "<path d=\"M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z\"/><path d=\"M2 9v1c0 1.1.9 2 2 2h1\"/><path d=\"M16 11h.01\"/>"
+        },
+        "receipt": {
+            "category": "commerce",
+            "label": "فاکتور",
+            "keywords": [
+                "فاکتور",
+                "رسید",
+                "صورتحساب",
+                "receipt",
+                "bill",
+                "voucher",
+                "slip",
+                "check",
+                "counterfoil",
+                "currency",
+                "dollar",
+                "usd"
+            ],
+            "body": "<path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\"/><path d=\"M12 17.5v-11\"/>"
+        },
+        "tag": {
+            "category": "commerce",
+            "label": "برچسب",
+            "keywords": [
+                "برچسب",
+                "قیمت",
+                "تگ",
+                "tag",
+                "label",
+                "badge",
+                "ticket",
+                "mark"
+            ],
+            "body": "<path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/><circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>"
+        },
+        "tags": {
+            "category": "commerce",
+            "label": "برچسب‌ها",
+            "keywords": [
+                "برچسب‌ها",
+                "دسته",
+                "قیمت",
+                "tags",
+                "labels",
+                "badges",
+                "tickets",
+                "marks",
+                "copy",
+                "multiple"
+            ],
+            "body": "<path d=\"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19\"/><path d=\"M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8.29 18.29a2.426 2.426 0 0 0 3.42 0l3.58-3.58a2.426 2.426 0 0 0 0-3.42z\"/><circle cx=\"6.5\" cy=\"9.5\" r=\".5\" fill=\"currentColor\"/>"
+        },
+        "percent": {
+            "category": "commerce",
+            "label": "درصد",
+            "keywords": [
+                "درصد",
+                "تخفیف",
+                "percent",
+                "percentage",
+                "modulo",
+                "modulus",
+                "remainder",
+                "%",
+                "sale",
+                "discount",
+                "offer"
+            ],
+            "body": "<line x1=\"19\" x2=\"5\" y1=\"5\" y2=\"19\"/><circle cx=\"6.5\" cy=\"6.5\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/>"
+        },
+        "badge-percent": {
+            "category": "commerce",
+            "label": "تخفیف",
+            "keywords": [
+                "تخفیف",
+                "حراج",
+                "کد",
+                "درصد",
+                "badge",
+                "percent",
+                "verified",
+                "unverified",
+                "sale",
+                "discount",
+                "offer",
+                "marketing",
+                "sticker",
+                "price tag"
+            ],
+            "body": "<path d=\"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z\"/><path d=\"m15 9-6 6\"/><path d=\"M9 9h.01\"/><path d=\"M15 15h.01\"/>"
+        },
+        "gift": {
+            "category": "commerce",
+            "label": "هدیه",
+            "keywords": [
+                "هدیه",
+                "کادو",
+                "جایزه",
+                "gift",
+                "present",
+                "box",
+                "birthday",
+                "party"
+            ],
+            "body": "<rect x=\"3\" y=\"8\" width=\"18\" height=\"4\" rx=\"1\"/><path d=\"M12 8v13\"/><path d=\"M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7\"/><path d=\"M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5\"/>"
+        },
+        "barcode": {
+            "category": "commerce",
+            "label": "بارکد",
+            "keywords": [
+                "بارکد",
+                "کد",
+                "محصول",
+                "barcode",
+                "scan",
+                "checkout",
+                "till",
+                "cart",
+                "transaction",
+                "purchase",
+                "buy",
+                "product"
+            ],
+            "body": "<path d=\"M3 5v14\"/><path d=\"M8 5v14\"/><path d=\"M12 5v14\"/><path d=\"M17 5v14\"/><path d=\"M21 5v14\"/>"
+        },
+        "scan-barcode": {
+            "category": "commerce",
+            "label": "اسکن بارکد",
+            "keywords": [
+                "اسکن",
+                "بارکد",
+                "scan",
+                "barcode",
+                "checkout",
+                "till",
+                "cart",
+                "transaction",
+                "purchase",
+                "buy",
+                "product",
+                "packaging"
+            ],
+            "body": "<path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><path d=\"M8 7v10\"/><path d=\"M12 7v10\"/><path d=\"M17 7v10\"/>"
+        },
+        "box": {
+            "category": "commerce",
+            "label": "جعبه",
+            "keywords": [
+                "جعبه",
+                "بسته",
+                "محصول",
+                "box",
+                "cube",
+                "package",
+                "container",
+                "storage",
+                "geometry",
+                "3d",
+                "isometric"
+            ],
+            "body": "<path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\"/><path d=\"m3.3 7 8.7 5 8.7-5\"/><path d=\"M12 22V12\"/>"
+        },
+        "handshake": {
+            "category": "commerce",
+            "label": "همکاری",
+            "keywords": [
+                "همکاری",
+                "قرارداد",
+                "اعتماد",
+                "handshake",
+                "agreement",
+                "partnership",
+                "deal",
+                "business",
+                "assistance",
+                "cooperation",
+                "friendship",
+                "union"
+            ],
+            "body": "<path d=\"m11 17 2 2a1 1 0 1 0 3-3\"/><path d=\"m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4\"/><path d=\"m21 3 1 11h-2\"/><path d=\"M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3\"/><path d=\"M3 4h8\"/>"
+        },
+        "trending-up": {
+            "category": "commerce",
+            "label": "رشد",
+            "keywords": [
+                "رشد",
+                "افزایش",
+                "فروش",
+                "نمودار",
+                "trending",
+                "up",
+                "statistics"
+            ],
+            "body": "<polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\"/><polyline points=\"16 7 22 7 22 13\"/>"
+        },
+        "chart-column": {
+            "category": "commerce",
+            "label": "نمودار ستونی",
+            "keywords": [
+                "نمودار",
+                "ستونی",
+                "آمار",
+                "گزارش",
+                "chart",
+                "column",
+                "statistics",
+                "analytics",
+                "diagram",
+                "graph"
+            ],
+            "body": "<path d=\"M3 3v16a2 2 0 0 0 2 2h16\"/><path d=\"M18 17V9\"/><path d=\"M13 17V5\"/><path d=\"M8 17v-3\"/>"
+        },
+        "chart-pie": {
+            "category": "commerce",
+            "label": "نمودار دایره‌ای",
+            "keywords": [
+                "نمودار",
+                "دایره‌ای",
+                "آمار",
+                "سهم",
+                "chart",
+                "pie",
+                "statistics",
+                "analytics",
+                "diagram",
+                "presentation"
+            ],
+            "body": "<path d=\"M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z\"/><path d=\"M21.21 15.89A10 10 0 1 1 8 2.83\"/>"
+        },
+        "rotate-ccw": {
+            "category": "commerce",
+            "label": "بازگشت کالا",
+            "keywords": [
+                "بازگشت",
+                "کالا",
+                "مرجوعی",
+                "برگشت",
+                "rotate",
+                "ccw",
+                "arrow",
+                "left",
+                "counter-clockwise",
+                "restart",
+                "reload",
+                "rerun",
+                "refresh",
+                "backup"
+            ],
+            "body": "<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>"
+        },
+        "undo-2": {
+            "category": "commerce",
+            "label": "مرجوعی",
+            "keywords": [
+                "مرجوعی",
+                "بازگشت",
+                "آسان",
+                "undo",
+                "2",
+                "redo",
+                "rerun",
+                "history",
+                "back",
+                "return",
+                "reverse",
+                "revert",
+                "direction"
+            ],
+            "body": "<path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11\"/>"
+        },
+        "gem": {
+            "category": "commerce",
+            "label": "الماس",
+            "keywords": [
+                "الماس",
+                "ویژه",
+                "لوکس",
+                "جواهر",
+                "gem",
+                "diamond",
+                "crystal",
+                "ruby",
+                "jewellery",
+                "price",
+                "special",
+                "present",
+                "gift"
+            ],
+            "body": "<path d=\"M6 3h12l4 6-10 13L2 9Z\"/><path d=\"M11 3 8 9l4 13 4-13-3-6\"/><path d=\"M2 9h20\"/>"
+        },
+        "crown": {
+            "category": "commerce",
+            "label": "تاج",
+            "keywords": [
+                "تاج",
+                "ویژه",
+                "وی‌آی‌پی",
+                "اشتراک",
+                "crown",
+                "diadem",
+                "tiara",
+                "circlet",
+                "corona",
+                "king",
+                "ruler",
+                "winner",
+                "favourite"
+            ],
+            "body": "<path d=\"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z\"/><path d=\"M5 21h14\"/>"
+        },
+        "shirt": {
+            "category": "commerce",
+            "label": "پوشاک",
+            "keywords": [
+                "پوشاک",
+                "لباس",
+                "مد",
+                "shirt",
+                "t-shirt",
+                "shopping",
+                "store",
+                "clothing",
+                "clothes"
+            ],
+            "body": "<path d=\"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z\"/>"
+        },
+        "coffee": {
+            "category": "commerce",
+            "label": "کافه",
+            "keywords": [
+                "کافه",
+                "قهوه",
+                "نوشیدنی",
+                "coffee",
+                "drink",
+                "cup",
+                "mug",
+                "tea",
+                "cafe",
+                "hot",
+                "beverage"
+            ],
+            "body": "<path d=\"M10 2v2\"/><path d=\"M14 2v2\"/><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\"/><path d=\"M6 2v2\"/>"
+        },
+        "utensils": {
+            "category": "commerce",
+            "label": "رستوران",
+            "keywords": [
+                "رستوران",
+                "غذا",
+                "قاشق",
+                "چنگال",
+                "utensils",
+                "fork",
+                "knife",
+                "cutlery",
+                "flatware",
+                "tableware",
+                "silverware",
+                "food",
+                "restaurant"
+            ],
+            "body": "<path d=\"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2\"/><path d=\"M7 2v20\"/><path d=\"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7\"/>"
+        },
+        "sofa": {
+            "category": "commerce",
+            "label": "مبلمان",
+            "keywords": [
+                "مبلمان",
+                "خانه",
+                "دکوراسیون",
+                "sofa",
+                "armchair",
+                "furniture",
+                "leisure",
+                "lounge",
+                "loveseat",
+                "couch"
+            ],
+            "body": "<path d=\"M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3\"/><path d=\"M2 16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z\"/><path d=\"M4 18v2\"/><path d=\"M20 18v2\"/><path d=\"M12 4v9\"/>"
+        },
+        "flower-2": {
+            "category": "commerce",
+            "label": "گل",
+            "keywords": [
+                "گل",
+                "زیبایی",
+                "گیاه",
+                "flower",
+                "2",
+                "sustainability",
+                "nature",
+                "plant"
+            ],
+            "body": "<path d=\"M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1\"/><circle cx=\"12\" cy=\"8\" r=\"2\"/><path d=\"M12 10v12\"/><path d=\"M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z\"/><path d=\"M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z\"/>"
+        },
+        "house": {
+            "category": "navigation",
+            "label": "خانه",
+            "keywords": [
+                "خانه",
+                "صفحه",
+                "اصلی",
+                "house",
+                "home",
+                "living",
+                "building",
+                "residence",
+                "architecture"
+            ],
+            "body": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>"
+        },
+        "map-pin": {
+            "category": "navigation",
+            "label": "نشانی",
+            "keywords": [
+                "نشانی",
+                "آدرس",
+                "مکان",
+                "موقعیت",
+                "map",
+                "pin",
+                "location",
+                "waypoint",
+                "marker",
+                "drop"
+            ],
+            "body": "<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/>"
+        },
+        "map": {
+            "category": "navigation",
+            "label": "نقشه",
+            "keywords": [
+                "نقشه",
+                "مسیر",
+                "map",
+                "location",
+                "navigation",
+                "travel"
+            ],
+            "body": "<path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"/><path d=\"M15 5.764v15\"/><path d=\"M9 3.236v15\"/>"
+        },
+        "navigation": {
+            "category": "navigation",
+            "label": "مسیریابی",
+            "keywords": [
+                "مسیریابی",
+                "جهت",
+                "navigation",
+                "location",
+                "travel"
+            ],
+            "body": "<polygon points=\"3 11 22 2 13 21 11 13 3 11\"/>"
+        },
+        "compass": {
+            "category": "navigation",
+            "label": "قطب‌نما",
+            "keywords": [
+                "قطب‌نما",
+                "کاوش",
+                "جهت",
+                "compass",
+                "direction",
+                "north",
+                "east",
+                "south",
+                "west",
+                "safari",
+                "browser"
+            ],
+            "body": "<path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"/><circle cx=\"12\" cy=\"12\" r=\"10\"/>"
+        },
+        "globe": {
+            "category": "navigation",
+            "label": "جهانی",
+            "keywords": [
+                "جهانی",
+                "وب",
+                "اینترنت",
+                "کره",
+                "زمین",
+                "زبان",
+                "globe",
+                "world",
+                "browser",
+                "language",
+                "translate"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/><path d=\"M2 12h20\"/>"
+        },
+        "route": {
+            "category": "navigation",
+            "label": "مسیر",
+            "keywords": [
+                "مسیر",
+                "راه",
+                "route",
+                "path",
+                "journey",
+                "planner",
+                "points",
+                "stops",
+                "stations"
+            ],
+            "body": "<circle cx=\"6\" cy=\"19\" r=\"3\"/><path d=\"M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15\"/><circle cx=\"18\" cy=\"5\" r=\"3\"/>"
+        },
+        "flag": {
+            "category": "navigation",
+            "label": "پرچم",
+            "keywords": [
+                "پرچم",
+                "هدف",
+                "نشان",
+                "flag",
+                "report"
+            ],
+            "body": "<path d=\"M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z\"/><line x1=\"4\" x2=\"4\" y1=\"22\" y2=\"15\"/>"
+        },
+        "building": {
+            "category": "navigation",
+            "label": "ساختمان",
+            "keywords": [
+                "ساختمان",
+                "شرکت",
+                "دفتر",
+                "building",
+                "organisation",
+                "organization"
+            ],
+            "body": "<rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\" ry=\"2\"/><path d=\"M9 22v-4h6v4\"/><path d=\"M8 6h.01\"/><path d=\"M16 6h.01\"/><path d=\"M12 6h.01\"/><path d=\"M12 10h.01\"/><path d=\"M12 14h.01\"/><path d=\"M16 10h.01\"/><path d=\"M16 14h.01\"/><path d=\"M8 10h.01\"/><path d=\"M8 14h.01\"/>"
+        },
+        "building-2": {
+            "category": "navigation",
+            "label": "دفتر مرکزی",
+            "keywords": [
+                "دفتر",
+                "مرکزی",
+                "شرکت",
+                "سازمان",
+                "building",
+                "2",
+                "business",
+                "company",
+                "enterprise",
+                "skyscraper",
+                "organisation",
+                "organization"
+            ],
+            "body": "<path d=\"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z\"/><path d=\"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2\"/><path d=\"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2\"/><path d=\"M10 6h4\"/><path d=\"M10 10h4\"/><path d=\"M10 14h4\"/><path d=\"M10 18h4\"/>"
+        },
+        "plane": {
+            "category": "navigation",
+            "label": "هواپیما",
+            "keywords": [
+                "هواپیما",
+                "سفر",
+                "پرواز",
+                "plane",
+                "trip",
+                "airplane"
+            ],
+            "body": "<path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z\"/>"
+        },
+        "car": {
+            "category": "navigation",
+            "label": "خودرو",
+            "keywords": [
+                "خودرو",
+                "ماشین",
+                "car",
+                "vehicle",
+                "drive",
+                "trip",
+                "journey"
+            ],
+            "body": "<path d=\"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2\"/><circle cx=\"7\" cy=\"17\" r=\"2\"/><path d=\"M9 17h6\"/><circle cx=\"17\" cy=\"17\" r=\"2\"/>"
+        },
+        "arrow-left": {
+            "category": "navigation",
+            "label": "فلش به چپ",
+            "keywords": [
+                "فلش",
+                "به",
+                "چپ",
+                "بعدی",
+                "جهت",
+                "arrow",
+                "left",
+                "previous",
+                "back",
+                "direction",
+                "west",
+                "<-"
+            ],
+            "body": "<path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/>"
+        },
+        "arrow-right": {
+            "category": "navigation",
+            "label": "فلش به راست",
+            "keywords": [
+                "فلش",
+                "به",
+                "راست",
+                "قبلی",
+                "جهت",
+                "arrow",
+                "right",
+                "forward",
+                "next",
+                "direction",
+                "east",
+                "->"
+            ],
+            "body": "<path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/>"
+        },
+        "arrow-up": {
+            "category": "navigation",
+            "label": "فلش به بالا",
+            "keywords": [
+                "فلش",
+                "به",
+                "بالا",
+                "جهت",
+                "arrow",
+                "up",
+                "forward",
+                "direction",
+                "north"
+            ],
+            "body": "<path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/>"
+        },
+        "arrow-down": {
+            "category": "navigation",
+            "label": "فلش به پایین",
+            "keywords": [
+                "فلش",
+                "به",
+                "پایین",
+                "جهت",
+                "arrow",
+                "down",
+                "backwards",
+                "reverse",
+                "direction",
+                "south"
+            ],
+            "body": "<path d=\"M12 5v14\"/><path d=\"m19 12-7 7-7-7\"/>"
+        },
+        "chevron-left": {
+            "category": "navigation",
+            "label": "شورون چپ",
+            "keywords": [
+                "شورون",
+                "چپ",
+                "بعدی",
+                "chevron",
+                "left",
+                "back",
+                "previous",
+                "less than",
+                "fewer",
+                "menu",
+                "<"
+            ],
+            "body": "<path d=\"m15 18-6-6 6-6\"/>"
+        },
+        "chevron-right": {
+            "category": "navigation",
+            "label": "شورون راست",
+            "keywords": [
+                "شورون",
+                "راست",
+                "قبلی",
+                "chevron",
+                "right",
+                "forward",
+                "next",
+                "more than",
+                "greater",
+                "menu",
+                "code",
+                "coding",
+                "command line"
+            ],
+            "body": "<path d=\"m9 18 6-6-6-6\"/>"
+        },
+        "chevron-up": {
+            "category": "navigation",
+            "label": "شورون بالا",
+            "keywords": [
+                "شورون",
+                "بالا",
+                "chevron",
+                "up",
+                "caret",
+                "keyboard",
+                "mac",
+                "control",
+                "ctrl",
+                "superscript",
+                "exponential",
+                "power"
+            ],
+            "body": "<path d=\"m18 15-6-6-6 6\"/>"
+        },
+        "chevron-down": {
+            "category": "navigation",
+            "label": "شورون پایین",
+            "keywords": [
+                "شورون",
+                "پایین",
+                "بازشو",
+                "chevron",
+                "down",
+                "backwards",
+                "reverse",
+                "slow",
+                "dropdown"
+            ],
+            "body": "<path d=\"m6 9 6 6 6-6\"/>"
+        },
+        "external-link": {
+            "category": "navigation",
+            "label": "لینک خارجی",
+            "keywords": [
+                "لینک",
+                "خارجی",
+                "پیوند",
+                "external",
+                "link",
+                "outbound",
+                "open",
+                "share"
+            ],
+            "body": "<path d=\"M15 3h6v6\"/><path d=\"M10 14 21 3\"/><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/>"
+        },
+        "menu": {
+            "category": "navigation",
+            "label": "منو",
+            "keywords": [
+                "منو",
+                "فهرست",
+                "همبرگری",
+                "menu",
+                "bars",
+                "navigation",
+                "hamburger",
+                "options"
+            ],
+            "body": "<line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"/><line x1=\"4\" x2=\"20\" y1=\"6\" y2=\"6\"/><line x1=\"4\" x2=\"20\" y1=\"18\" y2=\"18\"/>"
+        },
+        "layout-grid": {
+            "category": "navigation",
+            "label": "شبکه",
+            "keywords": [
+                "شبکه",
+                "دسته‌بندی",
+                "چیدمان",
+                "layout",
+                "grid",
+                "app",
+                "home",
+                "start"
+            ],
+            "body": "<rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/>"
+        },
+        "list": {
+            "category": "navigation",
+            "label": "فهرست",
+            "keywords": [
+                "فهرست",
+                "لیست",
+                "list",
+                "options"
+            ],
+            "body": "<path d=\"M3 12h.01\"/><path d=\"M3 18h.01\"/><path d=\"M3 6h.01\"/><path d=\"M8 12h13\"/><path d=\"M8 18h13\"/><path d=\"M8 6h13\"/>"
+        },
+        "search": {
+            "category": "navigation",
+            "label": "جستجو",
+            "keywords": [
+                "جستجو",
+                "ذره‌بین",
+                "search",
+                "find",
+                "scan",
+                "magnifier",
+                "magnifying glass"
+            ],
+            "body": "<circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/>"
+        },
+        "filter": {
+            "category": "navigation",
+            "label": "فیلتر",
+            "keywords": [
+                "فیلتر",
+                "صافی",
+                "filter",
+                "funnel",
+                "hopper"
+            ],
+            "body": "<polygon points=\"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3\"/>"
+        },
+        "phone": {
+            "category": "communication",
+            "label": "تلفن",
+            "keywords": [
+                "تلفن",
+                "تماس",
+                "شماره",
+                "phone",
+                "call"
+            ],
+            "body": "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/>"
+        },
+        "phone-call": {
+            "category": "communication",
+            "label": "تماس تلفنی",
+            "keywords": [
+                "تماس",
+                "تلفنی",
+                "تلفن",
+                "پشتیبانی",
+                "phone",
+                "call",
+                "ring"
+            ],
+            "body": "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/><path d=\"M14.05 2a9 9 0 0 1 8 7.94\"/><path d=\"M14.05 6A5 5 0 0 1 18 10\"/>"
+        },
+        "smartphone": {
+            "category": "communication",
+            "label": "موبایل",
+            "keywords": [
+                "موبایل",
+                "گوشی",
+                "تلفن",
+                "همراه",
+                "smartphone",
+                "phone",
+                "cellphone",
+                "device",
+                "screen"
+            ],
+            "body": "<rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\"/><path d=\"M12 18h.01\"/>"
+        },
+        "mail": {
+            "category": "communication",
+            "label": "ایمیل",
+            "keywords": [
+                "ایمیل",
+                "نامه",
+                "پست",
+                "الکترونیک",
+                "mail",
+                "email",
+                "message",
+                "letter",
+                "unread"
+            ],
+            "body": "<rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/>"
+        },
+        "at-sign": {
+            "category": "communication",
+            "label": "اَت",
+            "keywords": [
+                "اَت",
+                "ایمیل",
+                "at",
+                "sign",
+                "mention",
+                "email",
+                "message",
+                "@"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8\"/>"
+        },
+        "message-circle": {
+            "category": "communication",
+            "label": "گفتگو",
+            "keywords": [
+                "گفتگو",
+                "پیام",
+                "چت",
+                "واتساپ",
+                "message",
+                "circle",
+                "comment",
+                "chat",
+                "conversation",
+                "dialog",
+                "feedback",
+                "speech bubble"
+            ],
+            "body": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\"/>"
+        },
+        "message-square": {
+            "category": "communication",
+            "label": "پیام",
+            "keywords": [
+                "پیام",
+                "نظر",
+                "message",
+                "square",
+                "comment",
+                "chat",
+                "conversation",
+                "dialog",
+                "feedback",
+                "speech bubble"
+            ],
+            "body": "<path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/>"
+        },
+        "messages-square": {
+            "category": "communication",
+            "label": "گفتگوها",
+            "keywords": [
+                "گفتگوها",
+                "چت",
+                "انجمن",
+                "messages",
+                "square",
+                "comment",
+                "chat",
+                "conversation",
+                "dialog",
+                "feedback",
+                "speech bubbles",
+                "copy",
+                "multiple"
+            ],
+            "body": "<path d=\"M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z\"/><path d=\"M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1\"/>"
+        },
+        "send": {
+            "category": "communication",
+            "label": "ارسال پیام",
+            "keywords": [
+                "ارسال",
+                "پیام",
+                "تلگرام",
+                "فرستادن",
+                "send",
+                "email",
+                "message",
+                "mail",
+                "paper airplane",
+                "paper aeroplane",
+                "submit"
+            ],
+            "body": "<path d=\"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z\"/><path d=\"m21.854 2.147-10.94 10.939\"/>"
+        },
+        "bell": {
+            "category": "communication",
+            "label": "اعلان",
+            "keywords": [
+                "اعلان",
+                "زنگ",
+                "خبر",
+                "bell",
+                "alarm",
+                "notification",
+                "sound",
+                "reminder"
+            ],
+            "body": "<path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/>"
+        },
+        "megaphone": {
+            "category": "communication",
+            "label": "اطلاعیه",
+            "keywords": [
+                "اطلاعیه",
+                "تبلیغ",
+                "بلندگو",
+                "megaphone",
+                "advertisement",
+                "attention",
+                "alert",
+                "notification"
+            ],
+            "body": "<path d=\"m3 11 18-5v12L3 14v-3z\"/><path d=\"M11.6 16.8a3 3 0 1 1-5.8-1.6\"/>"
+        },
+        "headphones": {
+            "category": "communication",
+            "label": "هدفون",
+            "keywords": [
+                "هدفون",
+                "صدا",
+                "headphones",
+                "music",
+                "audio",
+                "sound"
+            ],
+            "body": "<path d=\"M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3\"/>"
+        },
+        "headset": {
+            "category": "communication",
+            "label": "پشتیبانی",
+            "keywords": [
+                "پشتیبانی",
+                "۲۴",
+                "ساعته",
+                "هدست",
+                "headset",
+                "music",
+                "audio",
+                "sound",
+                "gaming",
+                "headphones",
+                "call",
+                "center"
+            ],
+            "body": "<path d=\"M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z\"/><path d=\"M21 16v2a4 4 0 0 1-4 4h-5\"/>"
+        },
+        "users": {
+            "category": "communication",
+            "label": "کاربران",
+            "keywords": [
+                "کاربران",
+                "تیم",
+                "مشتریان",
+                "users",
+                "group",
+                "people"
+            ],
+            "body": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>"
+        },
+        "user": {
+            "category": "communication",
+            "label": "کاربر",
+            "keywords": [
+                "کاربر",
+                "حساب",
+                "پروفایل",
+                "user",
+                "person",
+                "account",
+                "contact"
+            ],
+            "body": "<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>"
+        },
+        "user-check": {
+            "category": "communication",
+            "label": "کاربر تأییدشده",
+            "keywords": [
+                "کاربر",
+                "تأییدشده",
+                "عضویت",
+                "user",
+                "check",
+                "followed",
+                "subscribed",
+                "done",
+                "todo",
+                "tick",
+                "complete",
+                "task"
+            ],
+            "body": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><polyline points=\"16 11 18 13 22 9\"/>"
+        },
+        "contact": {
+            "category": "communication",
+            "label": "مخاطب",
+            "keywords": [
+                "مخاطب",
+                "تماس",
+                "دفترچه",
+                "contact",
+                "user",
+                "person",
+                "family",
+                "friend",
+                "acquaintance",
+                "listing",
+                "networking"
+            ],
+            "body": "<path d=\"M16 2v2\"/><path d=\"M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2\"/><path d=\"M8 2v2\"/><circle cx=\"12\" cy=\"11\" r=\"3\"/><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/>"
+        },
+        "share-2": {
+            "category": "communication",
+            "label": "اشتراک‌گذاری",
+            "keywords": [
+                "اشتراک‌گذاری",
+                "به",
+                "اشتراک",
+                "بگذارید",
+                "share",
+                "2",
+                "network",
+                "connections"
+            ],
+            "body": "<circle cx=\"18\" cy=\"5\" r=\"3\"/><circle cx=\"6\" cy=\"12\" r=\"3\"/><circle cx=\"18\" cy=\"19\" r=\"3\"/><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"/><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"/>"
+        },
+        "calendar": {
+            "category": "communication",
+            "label": "تقویم",
+            "keywords": [
+                "تقویم",
+                "تاریخ",
+                "رویداد",
+                "calendar",
+                "date",
+                "month",
+                "year",
+                "event",
+                "birthday",
+                "birthdate"
+            ],
+            "body": "<path d=\"M8 2v4\"/><path d=\"M16 2v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/>"
+        },
+        "calendar-check": {
+            "category": "communication",
+            "label": "رزرو",
+            "keywords": [
+                "رزرو",
+                "نوبت",
+                "تقویم",
+                "calendar",
+                "check",
+                "date",
+                "day",
+                "month",
+                "year",
+                "event",
+                "confirm",
+                "subscribe",
+                "schedule"
+            ],
+            "body": "<path d=\"M8 2v4\"/><path d=\"M16 2v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/><path d=\"m9 16 2 2 4-4\"/>"
+        },
+        "clock": {
+            "category": "communication",
+            "label": "ساعت",
+            "keywords": [
+                "ساعت",
+                "ساعات",
+                "کاری",
+                "زمان",
+                "clock",
+                "time",
+                "watch",
+                "alarm"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\"/>"
+        },
+        "timer": {
+            "category": "communication",
+            "label": "زمان‌سنج",
+            "keywords": [
+                "زمان‌سنج",
+                "شمارش",
+                "معکوس",
+                "timer",
+                "time",
+                "stopwatch"
+            ],
+            "body": "<line x1=\"10\" x2=\"14\" y1=\"2\" y2=\"2\"/><line x1=\"12\" x2=\"15\" y1=\"14\" y2=\"11\"/><circle cx=\"12\" cy=\"14\" r=\"8\"/>"
+        },
+        "hourglass": {
+            "category": "communication",
+            "label": "ساعت شنی",
+            "keywords": [
+                "ساعت",
+                "شنی",
+                "زمان",
+                "انتظار",
+                "hourglass",
+                "timer",
+                "time",
+                "sandglass"
+            ],
+            "body": "<path d=\"M5 22h14\"/><path d=\"M5 2h14\"/><path d=\"M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22\"/><path d=\"M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2\"/>"
+        },
+        "zap": {
+            "category": "tech",
+            "label": "سرعت",
+            "keywords": [
+                "سرعت",
+                "سریع",
+                "برق",
+                "انرژی",
+                "zap",
+                "flash",
+                "camera",
+                "lightning",
+                "electricity",
+                "energy"
+            ],
+            "body": "<path d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\"/>"
+        },
+        "rocket": {
+            "category": "tech",
+            "label": "موشک",
+            "keywords": [
+                "موشک",
+                "رشد",
+                "شروع",
+                "پرتاب",
+                "rocket",
+                "release",
+                "boost",
+                "launch",
+                "space",
+                "version"
+            ],
+            "body": "<path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"/><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"/><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/>"
+        },
+        "sparkles": {
+            "category": "tech",
+            "label": "درخشش",
+            "keywords": [
+                "درخشش",
+                "ویژه",
+                "جدید",
+                "هوش",
+                "sparkles",
+                "stars",
+                "effect",
+                "filter",
+                "night",
+                "magic"
+            ],
+            "body": "<path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/><path d=\"M20 3v4\"/><path d=\"M22 5h-4\"/><path d=\"M4 17v2\"/><path d=\"M5 18H3\"/>"
+        },
+        "lightbulb": {
+            "category": "tech",
+            "label": "ایده",
+            "keywords": [
+                "ایده",
+                "لامپ",
+                "خلاقیت",
+                "نوآوری",
+                "lightbulb",
+                "idea",
+                "bright",
+                "lights"
+            ],
+            "body": "<path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"/><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/>"
+        },
+        "cpu": {
+            "category": "tech",
+            "label": "پردازنده",
+            "keywords": [
+                "پردازنده",
+                "سخت‌افزار",
+                "cpu",
+                "processor",
+                "cores",
+                "technology",
+                "computer",
+                "chip",
+                "circuit",
+                "memory",
+                "ram"
+            ],
+            "body": "<rect width=\"16\" height=\"16\" x=\"4\" y=\"4\" rx=\"2\"/><rect width=\"6\" height=\"6\" x=\"9\" y=\"9\" rx=\"1\"/><path d=\"M15 2v2\"/><path d=\"M15 20v2\"/><path d=\"M2 15h2\"/><path d=\"M2 9h2\"/><path d=\"M20 15h2\"/><path d=\"M20 9h2\"/><path d=\"M9 2v2\"/><path d=\"M9 20v2\"/>"
+        },
+        "server": {
+            "category": "tech",
+            "label": "سرور",
+            "keywords": [
+                "سرور",
+                "میزبانی",
+                "هاست",
+                "server",
+                "cloud",
+                "storage"
+            ],
+            "body": "<rect width=\"20\" height=\"8\" x=\"2\" y=\"2\" rx=\"2\" ry=\"2\"/><rect width=\"20\" height=\"8\" x=\"2\" y=\"14\" rx=\"2\" ry=\"2\"/><line x1=\"6\" x2=\"6.01\" y1=\"6\" y2=\"6\"/><line x1=\"6\" x2=\"6.01\" y1=\"18\" y2=\"18\"/>"
+        },
+        "database": {
+            "category": "tech",
+            "label": "پایگاه داده",
+            "keywords": [
+                "پایگاه",
+                "داده",
+                "دیتابیس",
+                "database",
+                "storage",
+                "memory",
+                "container",
+                "tin",
+                "pot",
+                "bytes",
+                "servers"
+            ],
+            "body": "<ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"/><path d=\"M3 5V19A9 3 0 0 0 21 19V5\"/><path d=\"M3 12A9 3 0 0 0 21 12\"/>"
+        },
+        "cloud": {
+            "category": "tech",
+            "label": "ابر",
+            "keywords": [
+                "ابر",
+                "فضای",
+                "ابری",
+                "cloud",
+                "weather"
+            ],
+            "body": "<path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\"/>"
+        },
+        "code": {
+            "category": "tech",
+            "label": "کد",
+            "keywords": [
+                "کد",
+                "برنامه‌نویسی",
+                "توسعه",
+                "code",
+                "source",
+                "programming",
+                "html",
+                "xml"
+            ],
+            "body": "<polyline points=\"16 18 22 12 16 6\"/><polyline points=\"8 6 2 12 8 18\"/>"
+        },
+        "terminal": {
+            "category": "tech",
+            "label": "ترمینال",
+            "keywords": [
+                "ترمینال",
+                "خط",
+                "فرمان",
+                "terminal",
+                "code",
+                "command line",
+                "prompt",
+                "shell"
+            ],
+            "body": "<polyline points=\"4 17 10 11 4 5\"/><line x1=\"12\" x2=\"20\" y1=\"19\" y2=\"19\"/>"
+        },
+        "monitor": {
+            "category": "tech",
+            "label": "مانیتور",
+            "keywords": [
+                "مانیتور",
+                "دسکتاپ",
+                "نمایشگر",
+                "monitor",
+                "tv",
+                "screen",
+                "display",
+                "virtual machine",
+                "vm"
+            ],
+            "body": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\"/><line x1=\"8\" x2=\"16\" y1=\"21\" y2=\"21\"/><line x1=\"12\" x2=\"12\" y1=\"17\" y2=\"21\"/>"
+        },
+        "laptop": {
+            "category": "tech",
+            "label": "لپ‌تاپ",
+            "keywords": [
+                "لپ‌تاپ",
+                "کامپیوتر",
+                "laptop",
+                "computer",
+                "screen",
+                "remote"
+            ],
+            "body": "<path d=\"M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16\"/>"
+        },
+        "tablet": {
+            "category": "tech",
+            "label": "تبلت",
+            "keywords": [
+                "تبلت",
+                "tablet",
+                "device"
+            ],
+            "body": "<rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\" ry=\"2\"/><line x1=\"12\" x2=\"12.01\" y1=\"18\" y2=\"18\"/>"
+        },
+        "wifi": {
+            "category": "tech",
+            "label": "وای‌فای",
+            "keywords": [
+                "وای‌فای",
+                "اینترنت",
+                "شبکه",
+                "wifi",
+                "connection",
+                "signal",
+                "wireless"
+            ],
+            "body": "<path d=\"M12 20h.01\"/><path d=\"M2 8.82a15 15 0 0 1 20 0\"/><path d=\"M5 12.859a10 10 0 0 1 14 0\"/><path d=\"M8.5 16.429a5 5 0 0 1 7 0\"/>"
+        },
+        "bot": {
+            "category": "tech",
+            "label": "ربات",
+            "keywords": [
+                "ربات",
+                "هوش",
+                "مصنوعی",
+                "bot",
+                "robot",
+                "ai",
+                "chat",
+                "assistant"
+            ],
+            "body": "<path d=\"M12 8V4H8\"/><rect width=\"16\" height=\"12\" x=\"4\" y=\"8\" rx=\"2\"/><path d=\"M2 14h2\"/><path d=\"M20 14h2\"/><path d=\"M15 13v2\"/><path d=\"M9 13v2\"/>"
+        },
+        "brain": {
+            "category": "tech",
+            "label": "هوش",
+            "keywords": [
+                "هوش",
+                "مصنوعی",
+                "فکر",
+                "brain",
+                "medical",
+                "mind",
+                "intellect",
+                "cerebral",
+                "consciousness",
+                "genius",
+                "artificial intelligence",
+                "ai"
+            ],
+            "body": "<path d=\"M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z\"/><path d=\"M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z\"/><path d=\"M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4\"/><path d=\"M17.599 6.5a3 3 0 0 0 .399-1.375\"/><path d=\"M6.003 5.125A3 3 0 0 0 6.401 6.5\"/><path d=\"M3.477 10.896a4 4 0 0 1 .585-.396\"/><path d=\"M19.938 10.5a4 4 0 0 1 .585.396\"/><path d=\"M6 18a4 4 0 0 1-1.967-.516\"/><path d=\"M19.967 17.484A4 4 0 0 1 18 18\"/>"
+        },
+        "settings": {
+            "category": "tech",
+            "label": "تنظیمات",
+            "keywords": [
+                "تنظیمات",
+                "چرخ‌دنده",
+                "settings",
+                "cog",
+                "edit",
+                "gear",
+                "preferences"
+            ],
+            "body": "<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>"
+        },
+        "wrench": {
+            "category": "tech",
+            "label": "آچار",
+            "keywords": [
+                "آچار",
+                "تعمیر",
+                "خدمات",
+                "فنی",
+                "wrench",
+                "account",
+                "settings",
+                "spanner",
+                "diy",
+                "toolbox",
+                "build",
+                "construction"
+            ],
+            "body": "<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z\"/>"
+        },
+        "hammer": {
+            "category": "tech",
+            "label": "چکش",
+            "keywords": [
+                "چکش",
+                "ساخت",
+                "تعمیر",
+                "hammer",
+                "mallet",
+                "nails",
+                "diy",
+                "toolbox",
+                "build",
+                "construction"
+            ],
+            "body": "<path d=\"m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9\"/><path d=\"m18 15 4-4\"/><path d=\"m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5\"/>"
+        },
+        "lock": {
+            "category": "tech",
+            "label": "قفل",
+            "keywords": [
+                "قفل",
+                "امنیت",
+                "رمز",
+                "lock",
+                "security",
+                "password",
+                "secure",
+                "admin"
+            ],
+            "body": "<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>"
+        },
+        "shield": {
+            "category": "tech",
+            "label": "سپر",
+            "keywords": [
+                "سپر",
+                "امنیت",
+                "محافظت",
+                "shield",
+                "cybersecurity",
+                "secure",
+                "safety",
+                "protection",
+                "guardian",
+                "armored",
+                "armoured",
+                "defense"
+            ],
+            "body": "<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/>"
+        },
+        "shield-check": {
+            "category": "tech",
+            "label": "امنیت تأییدشده",
+            "keywords": [
+                "امنیت",
+                "تأییدشده",
+                "پرداخت",
+                "امن",
+                "ضمانت",
+                "shield",
+                "check",
+                "cybersecurity",
+                "secured",
+                "safety",
+                "protection",
+                "protected",
+                "guardian",
+                "guarded",
+                "armored"
+            ],
+            "body": "<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/><path d=\"m9 12 2 2 4-4\"/>"
+        },
+        "key": {
+            "category": "tech",
+            "label": "کلید",
+            "keywords": [
+                "کلید",
+                "رمز",
+                "دسترسی",
+                "key",
+                "password",
+                "login",
+                "authentication",
+                "secure",
+                "unlock",
+                "keychain",
+                "key ring",
+                "fob"
+            ],
+            "body": "<path d=\"m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4\"/><path d=\"m21 2-9.6 9.6\"/><circle cx=\"7.5\" cy=\"15.5\" r=\"5.5\"/>"
+        },
+        "fingerprint": {
+            "category": "tech",
+            "label": "اثر انگشت",
+            "keywords": [
+                "اثر",
+                "انگشت",
+                "هویت",
+                "fingerprint",
+                "2fa",
+                "authentication",
+                "biometric",
+                "identity",
+                "security"
+            ],
+            "body": "<path d=\"M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4\"/><path d=\"M14 13.12c0 2.38 0 6.38-1 8.88\"/><path d=\"M17.29 21.02c.12-.6.43-2.3.5-3.02\"/><path d=\"M2 12a10 10 0 0 1 18-6\"/><path d=\"M2 16h.01\"/><path d=\"M21.8 16c.2-2 .131-5.354 0-6\"/><path d=\"M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2\"/><path d=\"M8.65 22c.21-.66.45-1.32.57-2\"/><path d=\"M9 6.8a6 6 0 0 1 9 5.2v2\"/>"
+        },
+        "chart-line": {
+            "category": "tech",
+            "label": "نمودار خطی",
+            "keywords": [
+                "نمودار",
+                "خطی",
+                "آمار",
+                "تحلیل",
+                "chart",
+                "line",
+                "statistics",
+                "analytics",
+                "diagram",
+                "graph"
+            ],
+            "body": "<path d=\"M3 3v16a2 2 0 0 0 2 2h16\"/><path d=\"m19 9-5 5-4-4-3 3\"/>"
+        },
+        "gauge": {
+            "category": "tech",
+            "label": "عملکرد",
+            "keywords": [
+                "عملکرد",
+                "سرعت‌سنج",
+                "کارایی",
+                "gauge",
+                "dashboard",
+                "dial",
+                "meter",
+                "speed",
+                "pressure",
+                "measure",
+                "level"
+            ],
+            "body": "<path d=\"m12 14 4-4\"/><path d=\"M3.34 19a10 10 0 1 1 17.32 0\"/>"
+        },
+        "layers": {
+            "category": "tech",
+            "label": "لایه‌ها",
+            "keywords": [
+                "لایه‌ها",
+                "ساختار",
+                "layers",
+                "stack",
+                "pile",
+                "pages",
+                "sheets",
+                "paperwork",
+                "copies",
+                "copy"
+            ],
+            "body": "<path d=\"M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z\"/><path d=\"M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12\"/><path d=\"M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17\"/>"
+        },
+        "puzzle": {
+            "category": "tech",
+            "label": "افزونه",
+            "keywords": [
+                "افزونه",
+                "پازل",
+                "ادغام",
+                "puzzle",
+                "component",
+                "module",
+                "part",
+                "piece"
+            ],
+            "body": "<path d=\"M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z\"/>"
+        },
+        "plug": {
+            "category": "tech",
+            "label": "اتصال",
+            "keywords": [
+                "اتصال",
+                "دوشاخه",
+                "یکپارچه",
+                "plug",
+                "electricity",
+                "energy",
+                "electronics",
+                "socket",
+                "outlet"
+            ],
+            "body": "<path d=\"M12 22v-5\"/><path d=\"M9 8V2\"/><path d=\"M15 8V2\"/><path d=\"M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z\"/>"
+        },
+        "qr-code": {
+            "category": "tech",
+            "label": "کیوآر کد",
+            "keywords": [
+                "کیوآر",
+                "کد",
+                "بارکد",
+                "اسکن",
+                "qr",
+                "code",
+                "barcode",
+                "scan",
+                "link",
+                "url",
+                "information",
+                "digital"
+            ],
+            "body": "<rect width=\"5\" height=\"5\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\"16\" y=\"3\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/><path d=\"M21 16h-3a2 2 0 0 0-2 2v3\"/><path d=\"M21 21v.01\"/><path d=\"M12 7v3a2 2 0 0 1-2 2H7\"/><path d=\"M3 12h.01\"/><path d=\"M12 3h.01\"/><path d=\"M12 16v.01\"/><path d=\"M16 12h1\"/><path d=\"M21 12v.01\"/><path d=\"M12 21v-1\"/>"
+        },
+        "link": {
+            "category": "tech",
+            "label": "پیوند",
+            "keywords": [
+                "پیوند",
+                "لینک",
+                "link",
+                "chain",
+                "url"
+            ],
+            "body": "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/>"
+        },
+        "download": {
+            "category": "tech",
+            "label": "دانلود",
+            "keywords": [
+                "دانلود",
+                "بارگیری",
+                "download",
+                "import",
+                "export",
+                "save"
+            ],
+            "body": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/>"
+        },
+        "upload": {
+            "category": "tech",
+            "label": "آپلود",
+            "keywords": [
+                "آپلود",
+                "بارگذاری",
+                "upload",
+                "file"
+            ],
+            "body": "<path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"/>"
+        },
+        "instagram": {
+            "category": "communication",
+            "label": "اینستاگرام",
+            "keywords": [
+                "اینستاگرام",
+                "شبکه",
+                "اجتماعی",
+                "پیج",
+                "instagram",
+                "logo",
+                "camera",
+                "social"
+            ],
+            "body": "<rect width=\"20\" height=\"20\" x=\"2\" y=\"2\" rx=\"5\" ry=\"5\"/><path d=\"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z\"/><line x1=\"17.5\" x2=\"17.51\" y1=\"6.5\" y2=\"6.5\"/>"
+        },
+        "linkedin": {
+            "category": "communication",
+            "label": "لینکدین",
+            "keywords": [
+                "لینکدین",
+                "شبکه",
+                "اجتماعی",
+                "کاری",
+                "linkedin",
+                "logo",
+                "social media",
+                "social"
+            ],
+            "body": "<path d=\"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z\"/><rect width=\"4\" height=\"12\" x=\"2\" y=\"9\"/><circle cx=\"4\" cy=\"4\" r=\"2\"/>"
+        },
+        "youtube": {
+            "category": "communication",
+            "label": "یوتیوب",
+            "keywords": [
+                "یوتیوب",
+                "ویدیو",
+                "کانال",
+                "youtube",
+                "logo",
+                "social",
+                "video",
+                "play"
+            ],
+            "body": "<path d=\"M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17\"/><path d=\"m10 15 5-3-5-3z\"/>"
+        },
+        "twitter": {
+            "category": "communication",
+            "label": "ایکس (توییتر)",
+            "keywords": [
+                "ایکس",
+                "(توییتر)",
+                "شبکه",
+                "اجتماعی",
+                "twitter",
+                "logo",
+                "social"
+            ],
+            "body": "<path d=\"M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z\"/>"
+        },
+        "facebook": {
+            "category": "communication",
+            "label": "فیسبوک",
+            "keywords": [
+                "فیسبوک",
+                "شبکه",
+                "اجتماعی",
+                "facebook",
+                "logo",
+                "social"
+            ],
+            "body": "<path d=\"M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z\"/>"
+        },
+        "github": {
+            "category": "tech",
+            "label": "گیت‌هاب",
+            "keywords": [
+                "گیت‌هاب",
+                "کد",
+                "متن",
+                "باز",
+                "github",
+                "logo",
+                "version control"
+            ],
+            "body": "<path d=\"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4\"/><path d=\"M9 18c-4.51 2-5-2-7-2\"/>"
+        },
+        "circle-play": {
+            "category": "communication",
+            "label": "آپارات / پخش",
+            "keywords": [
+                "آپارات",
+                "/",
+                "پخش",
+                "ویدیو",
+                "circle",
+                "play",
+                "music",
+                "start",
+                "run"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><polygon points=\"10 8 16 12 10 16 10 8\"/>"
+        },
+        "message-circle-more": {
+            "category": "communication",
+            "label": "پیام‌رسان",
+            "keywords": [
+                "پیام‌رسان",
+                "ایتا",
+                "بله",
+                "روبیکا",
+                "سروش",
+                "message",
+                "circle",
+                "more",
+                "comment",
+                "chat",
+                "conversation",
+                "dialog",
+                "feedback",
+                "speech bubble",
+                "typing",
+                "writing"
+            ],
+            "body": "<path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\"/><path d=\"M8 12h.01\"/><path d=\"M12 12h.01\"/><path d=\"M16 12h.01\"/>"
+        },
+        "rss": {
+            "category": "communication",
+            "label": "خوراک RSS",
+            "keywords": [
+                "خوراک",
+                "RSS",
+                "فید",
+                "rss",
+                "feed",
+                "subscribe",
+                "news",
+                "updates",
+                "notifications",
+                "content",
+                "blog",
+                "articles"
+            ],
+            "body": "<path d=\"M4 11a9 9 0 0 1 9 9\"/><path d=\"M4 4a16 16 0 0 1 16 16\"/><circle cx=\"5\" cy=\"19\" r=\"1\"/>"
+        },
+        "circle-user": {
+            "category": "communication",
+            "label": "نویسنده",
+            "keywords": [
+                "نویسنده",
+                "کاربر",
+                "آواتار",
+                "circle",
+                "user",
+                "person",
+                "account",
+                "contact"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/><path d=\"M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662\"/>"
+        },
+        "trash-2": {
+            "category": "ui",
+            "label": "حذف",
+            "keywords": [
+                "حذف",
+                "سطل",
+                "زباله",
+                "پاک",
+                "کردن",
+                "trash",
+                "2",
+                "garbage",
+                "delete",
+                "remove",
+                "bin"
+            ],
+            "body": "<path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"/>"
+        },
+        "star-half": {
+            "category": "ui",
+            "label": "نیم‌ستاره",
+            "keywords": [
+                "نیم‌ستاره",
+                "امتیاز",
+                "star",
+                "half",
+                "bookmark",
+                "favorite",
+                "like",
+                "review",
+                "rating"
+            ],
+            "body": "<path d=\"M12 18.338a2.1 2.1 0 0 0-.987.244L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.12 2.12 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.12 2.12 0 0 0 1.597-1.16l2.309-4.679A.53.53 0 0 1 12 2\"/>"
+        },
+        "flame": {
+            "category": "commerce",
+            "label": "داغ",
+            "keywords": [
+                "داغ",
+                "پرفروش",
+                "شگفت‌انگیز",
+                "flame",
+                "fire",
+                "lit",
+                "burning",
+                "spark",
+                "embers",
+                "smoke",
+                "firefighter",
+                "fireman"
+            ],
+            "body": "<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/>"
+        },
+        "package-x": {
+            "category": "commerce",
+            "label": "ناموجود",
+            "keywords": [
+                "ناموجود",
+                "تمام",
+                "شد",
+                "موجودی",
+                "package",
+                "x",
+                "delete",
+                "remove"
+            ],
+            "body": "<path d=\"M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14\"/><path d=\"m7.5 4.27 9 5.15\"/><polyline points=\"3.29 7 12 12 20.71 7\"/><line x1=\"12\" x2=\"12\" y1=\"22\" y2=\"12\"/><path d=\"m17 13 5 5m-5 0 5-5\"/>"
+        },
+        "check": {
+            "category": "ui",
+            "label": "تیک",
+            "keywords": [
+                "تیک",
+                "تأیید",
+                "درست",
+                "check",
+                "done",
+                "todo",
+                "tick",
+                "complete",
+                "task"
+            ],
+            "body": "<path d=\"M20 6 9 17l-5-5\"/>"
+        },
+        "circle-check": {
+            "category": "ui",
+            "label": "تأیید",
+            "keywords": [
+                "تأیید",
+                "تیک",
+                "موفق",
+                "circle",
+                "check",
+                "done",
+                "todo",
+                "tick",
+                "complete",
+                "task"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/>"
+        },
+        "badge-check": {
+            "category": "ui",
+            "label": "نشان تأیید",
+            "keywords": [
+                "نشان",
+                "تأیید",
+                "اصالت",
+                "ضمانت",
+                "badge",
+                "check",
+                "verified"
+            ],
+            "body": "<path d=\"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z\"/><path d=\"m9 12 2 2 4-4\"/>"
+        },
+        "x": {
+            "category": "ui",
+            "label": "بستن",
+            "keywords": [
+                "بستن",
+                "حذف",
+                "ضربدر",
+                "x",
+                "cancel",
+                "close",
+                "delete",
+                "remove",
+                "times",
+                "clear",
+                "math",
+                "multiply"
+            ],
+            "body": "<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>"
+        },
+        "plus": {
+            "category": "ui",
+            "label": "افزودن",
+            "keywords": [
+                "افزودن",
+                "به‌علاوه",
+                "plus",
+                "add",
+                "new",
+                "increase",
+                "increment",
+                "positive",
+                "calculate",
+                "toolbar",
+                "crosshair"
+            ],
+            "body": "<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>"
+        },
+        "minus": {
+            "category": "ui",
+            "label": "کاهش",
+            "keywords": [
+                "کاهش",
+                "منها",
+                "minus",
+                "subtract",
+                "remove",
+                "decrease",
+                "decrement",
+                "reduce",
+                "negative",
+                "calculate",
+                "line"
+            ],
+            "body": "<path d=\"M5 12h14\"/>"
+        },
+        "info": {
+            "category": "ui",
+            "label": "اطلاعات",
+            "keywords": [
+                "اطلاعات",
+                "راهنما",
+                "info",
+                "help"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/>"
+        },
+        "circle-help": {
+            "category": "ui",
+            "label": "پرسش",
+            "keywords": [
+                "پرسش",
+                "سؤال",
+                "راهنما",
+                "circle",
+                "help",
+                "question mark"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"/><path d=\"M12 17h.01\"/>"
+        },
+        "triangle-alert": {
+            "category": "ui",
+            "label": "هشدار",
+            "keywords": [
+                "هشدار",
+                "اخطار",
+                "triangle",
+                "alert",
+                "warning",
+                "danger",
+                "exclamation mark",
+                "linter"
+            ],
+            "body": "<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/>"
+        },
+        "star": {
+            "category": "ui",
+            "label": "ستاره",
+            "keywords": [
+                "ستاره",
+                "امتیاز",
+                "محبوب",
+                "star",
+                "bookmark",
+                "favorite",
+                "like",
+                "review",
+                "rating"
+            ],
+            "body": "<path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\"/>"
+        },
+        "heart": {
+            "category": "ui",
+            "label": "قلب",
+            "keywords": [
+                "قلب",
+                "علاقه‌مندی",
+                "دوست",
+                "داشتن",
+                "heart",
+                "like",
+                "love",
+                "emotion",
+                "suit",
+                "playing",
+                "cards"
+            ],
+            "body": "<path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\"/>"
+        },
+        "thumbs-up": {
+            "category": "ui",
+            "label": "پسند",
+            "keywords": [
+                "پسند",
+                "لایک",
+                "رضایت",
+                "thumbs",
+                "up",
+                "like",
+                "good",
+                "emotion"
+            ],
+            "body": "<path d=\"M7 10v12\"/><path d=\"M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z\"/>"
+        },
+        "smile": {
+            "category": "ui",
+            "label": "لبخند",
+            "keywords": [
+                "لبخند",
+                "رضایت",
+                "مشتری",
+                "smile",
+                "emoji",
+                "face",
+                "happy",
+                "good",
+                "emotion"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M8 14s1.5 2 4 2 4-2 4-2\"/><line x1=\"9\" x2=\"9.01\" y1=\"9\" y2=\"9\"/><line x1=\"15\" x2=\"15.01\" y1=\"9\" y2=\"9\"/>"
+        },
+        "award": {
+            "category": "ui",
+            "label": "جایزه",
+            "keywords": [
+                "جایزه",
+                "افتخار",
+                "کیفیت",
+                "award",
+                "achievement",
+                "badge",
+                "rosette",
+                "prize",
+                "winner"
+            ],
+            "body": "<path d=\"m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526\"/><circle cx=\"12\" cy=\"8\" r=\"6\"/>"
+        },
+        "trophy": {
+            "category": "ui",
+            "label": "جام",
+            "keywords": [
+                "جام",
+                "برنده",
+                "قهرمان",
+                "trophy",
+                "prize",
+                "sports",
+                "winner",
+                "achievement",
+                "award"
+            ],
+            "body": "<path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/>"
+        },
+        "medal": {
+            "category": "ui",
+            "label": "مدال",
+            "keywords": [
+                "مدال",
+                "افتخار",
+                "medal",
+                "prize",
+                "sports",
+                "winner",
+                "trophy",
+                "award",
+                "achievement"
+            ],
+            "body": "<path d=\"M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15\"/><path d=\"M11 12 5.12 2.2\"/><path d=\"m13 12 5.88-9.8\"/><path d=\"M8 7h8\"/><circle cx=\"12\" cy=\"17\" r=\"5\"/><path d=\"M12 18v-2h-.5\"/>"
+        },
+        "target": {
+            "category": "ui",
+            "label": "هدف",
+            "keywords": [
+                "هدف",
+                "دقت",
+                "target",
+                "logo",
+                "bullseye",
+                "deadline",
+                "projects",
+                "overview",
+                "work",
+                "productivity"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/>"
+        },
+        "eye": {
+            "category": "ui",
+            "label": "نمایش",
+            "keywords": [
+                "نمایش",
+                "بازدید",
+                "چشم",
+                "eye",
+                "view",
+                "watch",
+                "see",
+                "show",
+                "expose",
+                "reveal",
+                "display",
+                "visible"
+            ],
+            "body": "<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>"
+        },
+        "image": {
+            "category": "ui",
+            "label": "تصویر",
+            "keywords": [
+                "تصویر",
+                "عکس",
+                "image",
+                "picture",
+                "photo"
+            ],
+            "body": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/>"
+        },
+        "camera": {
+            "category": "ui",
+            "label": "دوربین",
+            "keywords": [
+                "دوربین",
+                "عکاسی",
+                "camera",
+                "photo",
+                "webcam",
+                "video"
+            ],
+            "body": "<path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/>"
+        },
+        "video": {
+            "category": "ui",
+            "label": "ویدیو",
+            "keywords": [
+                "ویدیو",
+                "فیلم",
+                "video",
+                "camera",
+                "movie",
+                "film",
+                "recording",
+                "motion picture",
+                "camcorder",
+                "reel"
+            ],
+            "body": "<path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/>"
+        },
+        "play": {
+            "category": "ui",
+            "label": "پخش",
+            "keywords": [
+                "پخش",
+                "ویدیو",
+                "play",
+                "music",
+                "audio",
+                "video",
+                "start",
+                "run"
+            ],
+            "body": "<polygon points=\"6 3 20 12 6 21 6 3\"/>"
+        },
+        "music": {
+            "category": "ui",
+            "label": "موسیقی",
+            "keywords": [
+                "موسیقی",
+                "آهنگ",
+                "music",
+                "note",
+                "quaver",
+                "eighth note"
+            ],
+            "body": "<path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/>"
+        },
+        "file-text": {
+            "category": "ui",
+            "label": "سند",
+            "keywords": [
+                "سند",
+                "فایل",
+                "متن",
+                "مقاله",
+                "file",
+                "text",
+                "data",
+                "txt",
+                "pdf",
+                "document"
+            ],
+            "body": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"/><path d=\"M10 9H8\"/><path d=\"M16 13H8\"/><path d=\"M16 17H8\"/>"
+        },
+        "book-open": {
+            "category": "ui",
+            "label": "کتاب",
+            "keywords": [
+                "کتاب",
+                "آموزش",
+                "مطالعه",
+                "وبلاگ",
+                "book",
+                "open",
+                "reading",
+                "pages",
+                "booklet",
+                "magazine",
+                "leaflet",
+                "pamphlet",
+                "library",
+                "writing"
+            ],
+            "body": "<path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/>"
+        },
+        "graduation-cap": {
+            "category": "ui",
+            "label": "آموزش",
+            "keywords": [
+                "آموزش",
+                "دوره",
+                "دانشگاه",
+                "graduation",
+                "cap",
+                "school",
+                "university",
+                "learn",
+                "study",
+                "mortarboard",
+                "education",
+                "ceremony",
+                "academic"
+            ],
+            "body": "<path d=\"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z\"/><path d=\"M22 10v6\"/><path d=\"M6 12.5V16a6 3 0 0 0 12 0v-3.5\"/>"
+        },
+        "briefcase": {
+            "category": "ui",
+            "label": "کسب‌وکار",
+            "keywords": [
+                "کسب‌وکار",
+                "کیف",
+                "کار",
+                "استخدام",
+                "briefcase",
+                "work",
+                "bag",
+                "baggage",
+                "folder"
+            ],
+            "body": "<path d=\"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\"/><rect width=\"20\" height=\"14\" x=\"2\" y=\"6\" rx=\"2\"/>"
+        },
+        "palette": {
+            "category": "ui",
+            "label": "طراحی",
+            "keywords": [
+                "طراحی",
+                "رنگ",
+                "هنر",
+                "palette",
+                "colors",
+                "colours",
+                "theme",
+                "scheme",
+                "paint",
+                "watercolor",
+                "watercolour",
+                "artist"
+            ],
+            "body": "<circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"/><path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z\"/>"
+        },
+        "pen-tool": {
+            "category": "ui",
+            "label": "طراحی گرافیک",
+            "keywords": [
+                "طراحی",
+                "گرافیک",
+                "قلم",
+                "pen",
+                "tool",
+                "vector",
+                "drawing",
+                "path"
+            ],
+            "body": "<path d=\"M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z\"/><path d=\"m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18\"/><path d=\"m2.3 2.3 7.286 7.286\"/><circle cx=\"11\" cy=\"11\" r=\"2\"/>"
+        },
+        "brush": {
+            "category": "ui",
+            "label": "قلم‌مو",
+            "keywords": [
+                "قلم‌مو",
+                "نقاشی",
+                "brush",
+                "draw",
+                "paint",
+                "color",
+                "artist"
+            ],
+            "body": "<path d=\"m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08\"/><path d=\"M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z\"/>"
+        },
+        "scissors": {
+            "category": "ui",
+            "label": "قیچی",
+            "keywords": [
+                "قیچی",
+                "آرایشگاه",
+                "scissors",
+                "cut",
+                "snip",
+                "chop",
+                "stationery",
+                "crafts"
+            ],
+            "body": "<circle cx=\"6\" cy=\"6\" r=\"3\"/><path d=\"M8.12 8.12 12 12\"/><path d=\"M20 4 8.12 15.88\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><path d=\"M14.8 14.8 20 20\"/>"
+        },
+        "sun": {
+            "category": "ui",
+            "label": "خورشید",
+            "keywords": [
+                "خورشید",
+                "روشن",
+                "روز",
+                "sun",
+                "brightness",
+                "weather",
+                "light",
+                "summer"
+            ],
+            "body": "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/>"
+        },
+        "moon": {
+            "category": "ui",
+            "label": "ماه",
+            "keywords": [
+                "ماه",
+                "شب",
+                "تاریک",
+                "moon",
+                "dark",
+                "night"
+            ],
+            "body": "<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"/>"
+        },
+        "leaf": {
+            "category": "ui",
+            "label": "برگ",
+            "keywords": [
+                "برگ",
+                "طبیعی",
+                "ارگانیک",
+                "leaf",
+                "sustainability",
+                "nature",
+                "energy",
+                "plant",
+                "autumn"
+            ],
+            "body": "<path d=\"M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z\"/><path d=\"M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12\"/>"
+        },
+        "dumbbell": {
+            "category": "ui",
+            "label": "ورزش",
+            "keywords": [
+                "ورزش",
+                "باشگاه",
+                "دمبل",
+                "dumbbell",
+                "barbell",
+                "weight",
+                "workout",
+                "gym"
+            ],
+            "body": "<path d=\"M14.4 14.4 9.6 9.6\"/><path d=\"M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z\"/><path d=\"m21.5 21.5-1.4-1.4\"/><path d=\"M3.9 3.9 2.5 2.5\"/><path d=\"M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z\"/>"
+        },
+        "stethoscope": {
+            "category": "ui",
+            "label": "پزشکی",
+            "keywords": [
+                "پزشکی",
+                "دکتر",
+                "سلامت",
+                "stethoscope",
+                "phonendoscope",
+                "medical",
+                "heart",
+                "lungs",
+                "sound"
+            ],
+            "body": "<path d=\"M11 2v2\"/><path d=\"M5 2v2\"/><path d=\"M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1\"/><path d=\"M8 15a6 6 0 0 0 12 0v-3\"/><circle cx=\"20\" cy=\"10\" r=\"2\"/>"
+        },
+        "heart-pulse": {
+            "category": "ui",
+            "label": "سلامت",
+            "keywords": [
+                "سلامت",
+                "ضربان",
+                "heart",
+                "pulse",
+                "heartbeat",
+                "health",
+                "medical",
+                "blood pressure",
+                "cardiac",
+                "systole",
+                "diastole"
+            ],
+            "body": "<path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\"/><path d=\"M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27\"/>"
+        },
+        "paw-print": {
+            "category": "ui",
+            "label": "حیوانات خانگی",
+            "keywords": [
+                "حیوانات",
+                "خانگی",
+                "پت",
+                "paw",
+                "print",
+                "pets",
+                "vets",
+                "veterinarian",
+                "domesticated",
+                "cat",
+                "dog",
+                "bear"
+            ],
+            "body": "<circle cx=\"11\" cy=\"4\" r=\"2\"/><circle cx=\"18\" cy=\"8\" r=\"2\"/><circle cx=\"20\" cy=\"16\" r=\"2\"/><path d=\"M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z\"/>"
+        },
+        "printer": {
+            "category": "ui",
+            "label": "چاپ",
+            "keywords": [
+                "چاپ",
+                "پرینتر",
+                "printer",
+                "fax",
+                "office",
+                "device"
+            ],
+            "body": "<path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><path d=\"M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6\"/><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\" rx=\"1\"/>"
+        }
+    }
+}

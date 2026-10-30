@@ -210,15 +210,23 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
             </button>
 
             {{-- Save --}}
+            {{-- P1: disabled only while this user's save is outstanding (a second
+                 click would join the same queued save anyway). Editing stays
+                 fully available; "در صف" means it waits behind a save already
+                 on the wire and will include every edit made until it starts. --}}
             <button
                 @click="saveCurrentPage()"
                 :disabled="saving"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium transition disabled:opacity-60"
+                :aria-busy="saving ? 'true' : 'false'"
+                data-testid="canvas-save-button"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium transition disabled:opacity-60 disabled:cursor-progress"
             >
-                <svg x-show="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                <svg x-show="saving" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                <span x-text="saving ? 'در حال ذخیره...' : 'ذخیره'"></span>
+                <svg x-show="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <svg x-show="saving" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                <span x-text="saveWaiting ? 'در صف ذخیره…' : (saving ? 'در حال ذخیره...' : 'ذخیره')"></span>
             </button>
+            <span class="sr-only" role="status" aria-live="polite"
+                x-text="saveWaiting ? 'ذخیره در صف است' : (saving || quickSaving ? 'در حال ذخیره' : '')"></span>
 
             {{-- Publish --}}
             <button
@@ -978,7 +986,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- image (TB3-07) --}}
                                 <template x-if="schemaDef.type === 'image'">
                                     <div>
-                                        <div x-show="selectedBlock.props[propKey]" class="mb-2 relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50" style="height:80px;">
+                                        <div x-show="selectedBlock.props[propKey] && schemaDef.media_kind !== 'video'" class="mb-2 relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50" style="height:80px;">
                                             <img :src="selectedBlock.props[propKey]" class="w-full h-full object-cover">
                                             <button @click="updateProp(propKey, '')" class="absolute top-1 left-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600">×</button>
                                         </div>
@@ -987,7 +995,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                                 :id="'ctrl-' + propKey"
                                                 :value="selectedBlock.props[propKey] ?? ''"
                                                 @input="updateProp(propKey, $event.target.value)"
-                                                placeholder="آدرس URL تصویر"
+                                                :placeholder="schemaDef.media_kind === 'video' ? 'آدرس URL ویدیو' : 'آدرس URL تصویر'"
                                                 class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                             <button @click="openMediaPicker(propKey)"
                                                 class="flex items-center justify-center w-8 h-8 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition shrink-0" title="انتخاب از کتابخانه">
@@ -997,8 +1005,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </div>
                                 </template>
 
-                                {{-- string --}}
-                                <template x-if="schemaDef.type === 'string'">
+                                {{-- string; `motion` is an asset id here — the visual motion
+                                     picker needs a tenant's own permitted assets (customer-site). --}}
+                                <template x-if="schemaDef.type === 'string' || schemaDef.type === 'motion'">
                                     <input type="text"
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
@@ -1007,13 +1016,25 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         :placeholder="schemaDef.default ?? ''">
                                 </template>
 
+                                {{-- icon (Phase 0.6, ADR-065): the shared searchable SVG icon
+                                     picker; a legacy emoji/text value keeps rendering as-is. --}}
+                                <template x-if="schemaDef.type === 'icon'">
+                                    @include('theme-runtime::canvas.icon-picker', [
+                                        'value' => "selectedBlock.props[propKey] ?? schemaDef.default ?? ''",
+                                        'set' => 'updateProp(propKey, __icon)',
+                                        'id' => 'propKey',
+                                        'label' => 'schemaDef.label || propKey',
+                                    ])
+                                </template>
+
                                 {{-- number --}}
                                 <template x-if="schemaDef.type === 'number'">
                                     <input type="number"
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? 0"
                                         @input="updateProp(propKey, Number($event.target.value))"
-                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" :min="0">
+                                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
+                                        :min="schemaDef.min ?? 0" :max="schemaDef.max ?? null" :step="schemaDef.step ?? 'any'">
                                 </template>
 
                                 {{-- boolean --}}
@@ -1028,26 +1049,106 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </label>
                                 </template>
 
-                                {{-- select --}}
-                                <template x-if="schemaDef.type === 'select'">
+                                {{-- select (plain dropdown unless the schema asks for a dedicated `ui`) --}}
+                                <template x-if="schemaDef.type === 'select' && !schemaDef.ui">
                                     <select :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @change="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition">
-                                        <template x-for="(label, val) in schemaDef.options" :key="val">
-                                            <option :value="val" :selected="(selectedBlock.props[propKey] ?? schemaDef.default) == val" x-text="label"></option>
+                                        <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
+                                            <option :value="opt.value" :selected="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value" x-text="opt.label"></option>
                                         </template>
                                     </select>
                                 </template>
 
-                                {{-- color --}}
-                                <template x-if="schemaDef.type === 'color'">
-                                    <div class="flex items-center gap-2">
-                                        <input type="color" :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5">
-                                        <input type="text" :value="selectedBlock.props[propKey] ?? '#4f46e5'" @input="updateProp(propKey, $event.target.value)" class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000">
+                                {{-- Visual column picker — a select whose schema declares
+                                     ui: 'column_picker'. Buttons are generated from the
+                                     schema's own options, so the picker and the allowlist
+                                     can never disagree. --}}
+                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'column_picker'">
+                                    <div class="grid grid-cols-2 gap-2 mt-1" role="radiogroup" :aria-label="schemaDef.label || propKey" :data-testid="'tb-column-picker-' + propKey">
+                                        <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
+                                            <button type="button" role="radio"
+                                                :aria-checked="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value"
+                                                @click="updateProp(propKey, opt.value)"
+                                                :title="opt.label" :aria-label="opt.label"
+                                                :class="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                                                class="px-2.5 py-2 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition">
+                                                <span class="flex items-center gap-0.5" aria-hidden="true">
+                                                    <template x-for="n in opt.value.split(',').length" :key="n">
+                                                        <span class="h-2.5 rounded-sm bg-current opacity-70" :class="opt.value.split(',').length > 2 ? 'w-1' : 'w-1.5'"></span>
+                                                    </template>
+                                                </span>
+                                                <span x-text="faDigits(opt.value.split(',').length) + ' ستون'"></span>
+                                            </button>
+                                        </template>
                                     </div>
                                 </template>
 
-                                {{-- textarea --}}
-                                <template x-if="schemaDef.type === 'textarea'">
+                                {{-- Schema-driven repeater, nested to the registry depth cap
+                                     (Phase 0.1 / 0.2b) — see the partial for the contract. --}}
+                                <template x-if="schemaDef.type === 'repeater'">
+                                    <div>
+                                        @include('admin.theme-builder.partials.canvas-repeater', ['d' => 0, 'list' => '[propKey]', 'def' => 'schemaDef'])
+                                    </div>
+                                </template>
+
+                                {{-- Schema-less list props (type: array, no `fields`): guarded raw
+                                     JSON editor. An invalid draft is never written to the block. --}}
+                                <template x-if="schemaDef.type === 'array'">
+                                    <div x-data="{ jsonDraft: null, jsonDraftFor: null, jsonError: '' }">
+                                        <textarea :id="'ctrl-' + propKey" dir="ltr" rows="5" spellcheck="false"
+                                            :value="(jsonDraftFor === selectedBlock.id && jsonDraft !== null) ? jsonDraft : JSON.stringify(selectedBlock.props[propKey] ?? schemaDef.default ?? [], null, 2)"
+                                            @input="
+                                                jsonDraft = $event.target.value; jsonDraftFor = selectedBlock.id;
+                                                try {
+                                                    const parsed = JSON.parse(jsonDraft);
+                                                    if (!Array.isArray(parsed)) throw new Error('not a list');
+                                                    jsonError = '';
+                                                    updateProp(propKey, parsed);
+                                                } catch (_) { jsonError = 'JSON نامعتبر است؛ تا اصلاح نشود ذخیره نمی‌شود.'; }
+                                            "
+                                            @blur="if (!jsonError) { jsonDraft = null; jsonDraftFor = null; }"
+                                            class="w-full text-[11px] leading-5 px-2.5 py-2 rounded-lg border bg-white font-mono resize-y focus:outline-none focus:ring-2"
+                                            :class="jsonError ? 'border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:ring-indigo-300'"></textarea>
+                                        <p class="text-[10px] mt-1" :class="jsonError ? 'text-rose-600' : 'text-slate-400'" x-text="jsonError || 'ویرایش پیشرفته (فهرست JSON)'"></p>
+                                    </div>
+                                </template>
+
+                                {{-- color --}}
+                                {{-- Phase 0.5 (ADR-064): theme swatches (stored as var(--tb-…)
+                                     so the block follows the theme), opacity (rgba() or a
+                                     color-mix() of the swatch) and explicit transparent. The value
+                                     model is the shared theme-runtime CanvasColor. --}}
+                                <template x-if="schemaDef.type === 'color'">
+                                    <div class="space-y-2" :data-testid="'tb-color-' + propKey" x-data="{ get cv() { return selectedBlock.props[propKey] ?? schemaDef.default ?? ''; } }">
+                                        <div class="flex items-center gap-2">
+                                            <span class="relative w-10 h-10 rounded-lg border border-slate-200 overflow-hidden shrink-0" style="background-image:conic-gradient(#e2e8f0 25%,#fff 0 50%,#e2e8f0 0 75%,#fff 0);background-size:10px 10px;" aria-hidden="true">
+                                                <span class="absolute inset-0" :style="'background:' + colorPreview(cv)" :data-testid="'tb-color-preview-' + propKey"></span>
+                                            </span>
+                                            <input type="color" :id="'ctrl-' + propKey" :value="colorInputHex(cv)" @input="setColorBase(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5" aria-label="انتخاب رنگ دلخواه">
+                                            <input type="text" dir="ltr" :value="cv" @input="updateProp(propKey, $event.target.value)" class="flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000" aria-label="مقدار رنگ" :data-testid="'tb-color-value-' + propKey">
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="رنگ‌های قالب">
+                                            <template x-for="t in colorPalette()" :key="t.token">
+                                                <button type="button" @click="setColorSwatch(propKey, t.token)" :title="t.label" :aria-label="t.label" :aria-pressed="colorParse(cv).token === t.token ? 'true' : 'false'"
+                                                    :class="colorParse(cv).token === t.token ? 'ring-2 ring-indigo-500 ring-offset-1' : 'ring-1 ring-slate-200'"
+                                                    class="w-6 h-6 rounded-full border-2 border-white shadow hover:scale-110 transition" :style="'background:' + t.value" :data-testid="'tb-color-swatch-' + propKey + '-' + t.token"></button>
+                                            </template>
+                                            <button type="button" @click="updateProp(propKey, 'transparent')" :aria-pressed="colorParse(cv).kind === 'transparent' ? 'true' : 'false'"
+                                                :class="colorParse(cv).kind === 'transparent' ? 'ring-2 ring-indigo-500' : 'ring-1 ring-slate-200'"
+                                                class="px-2 h-6 rounded-full text-[11px] text-slate-600 bg-white" :data-testid="'tb-color-transparent-' + propKey">بی‌رنگ</button>
+                                        </div>
+                                        <label class="flex items-center gap-2 text-[11px] text-slate-600">
+                                            <span class="shrink-0">شفافیت</span>
+                                            <input type="range" min="0" max="100" step="5" class="flex-1 accent-indigo-600" :value="colorParse(cv).alpha" @input="setColorAlpha(propKey, Number($event.target.value))"
+                                                :disabled="!['token', 'hex', 'rgba'].includes(colorParse(cv).kind)" :data-testid="'tb-color-alpha-' + propKey" aria-label="میزان شفافیت رنگ">
+                                            <span class="w-9 text-left tabular-nums" x-text="(colorParse(cv).kind === 'transparent' ? 0 : colorParse(cv).alpha) + '٪'"></span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                {{-- textarea; also multi-line `text` and `rich_text` (sanitized
+                                     at render time), which had no control at all --}}
+                                <template x-if="schemaDef.type === 'textarea' || schemaDef.type === 'text' || schemaDef.type === 'rich_text'">
                                     <textarea :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input="updateProp(propKey, $event.target.value)" rows="3"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-y"
                                         :placeholder="schemaDef.default ?? ''"></textarea>
@@ -1746,6 +1847,8 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 <script>
 window.CANVAS_TREE_LIMITS = @json($canvasTreeLimits);
 </script>
+@include('theme-runtime::canvas.color')
+@include('theme-runtime::canvas.icons')
 @include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 @include('admin.theme-builder.partials.canvas-section-library')
 <script>
@@ -1794,9 +1897,14 @@ function themeCanvas() {
         globalStylesSaving: false,
         selectedTab:    'content',
         isDirty:        false,
-        saving:         false,
+        // P1: every Canvas save goes through one serial lane (CanvasSaveQueue,
+        // created in init()). `saving` / `quickSaving` are derived from the
+        // outstanding requests below — never set directly.
+        saveQueue:      null,
+        manualSaveRequests: 0,
+        backgroundSaveRequests: 0,
+        saveInFlight:   false,
         switchingTarget: false,
-        quickSaving:    false,
         publishing:     false,
         showAddPage:    false,
         newPageTitle:   '',
@@ -1832,7 +1940,9 @@ function themeCanvas() {
         // TB3-04: inline edit auto-save
         inlineAutoSaveTimer: null,
         // TB3-07: media manager
-        mediaModal: { show: false, tab: 'library', loading: false, images: [], uploading: false, uploadDone: false, targetPropKey: null },
+        mediaModal: { show: false, tab: 'library', loading: false, images: [], uploading: false, uploadDone: false, targetPropKey: null, onSelect: null },
+        // Phase 0.1: per-item collapse state of schema-driven repeaters (UI only, never saved).
+        repeaterOpen: {},
         // TB4: nested containers
         leftPanelTab:    'blocks',      // 'blocks' | 'tree'
         treeExpanded:    {},            // blockId → bool (default: expanded)
@@ -1895,13 +2005,22 @@ function themeCanvas() {
         },
         get selectedSchema() {
             if (!this.selectedBlock) return {};
-            return BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
+            // A `blocks` field is the container's child list, authored in
+            // the children panel — it has no content-tab control.
+            const schema = BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
+            return Object.fromEntries(Object.entries(schema).filter(([, def]) => def?.type !== 'blocks'));
         },
         get selectedEditorCapabilities() {
             return this.selectedBlock
                 ? (BLOCK_SCHEMAS[this.selectedBlock.type]?.editor ?? { allowCustomCss: true, lockedStructure: false, uiDirection: null })
                 : { allowCustomCss: true, lockedStructure: false, uiDirection: null };
         },
+        // A user-requested save (toolbar, Ctrl+S, zone switch, extension change) is outstanding.
+        get saving() { return this.manualSaveRequests > 0; },
+        // A background save (structural autosave, inline-edit autosave) is outstanding.
+        get quickSaving() { return this.backgroundSaveRequests > 0; },
+        // The user's save is waiting behind a request already on the wire.
+        get saveWaiting() { return this.saving && !!this.saveQueue?.waiting; },
         get canUndo() { this.historyVersion; return !!this.historyEngine?.canUndo; },
         get canRedo() { this.historyVersion; return !!this.historyEngine?.canRedo; },
         get recentHistory() { this.historyVersion; return this.historyEngine?.recent(10) ?? []; },
@@ -2234,7 +2353,9 @@ function themeCanvas() {
         },
 
         // Update a single prop and schedule live iframe update
-        updateProp(propKey, value) {
+        // `options.coalesceKey` overrides how consecutive edits merge into one
+        // undo step: null records a step of its own (structural list edits).
+        updateProp(propKey, value, options) {
             if (!this.selectedBlock) return;
             const targetId = this.selectedBlock.id;
             const before = this.selectedBlock.props?.[propKey];
@@ -2252,7 +2373,7 @@ function themeCanvas() {
             this.historyEngine?.record({
                 type: 'value', targetId, path: ['props', propKey], before, after: value,
                 selectionBefore: targetId, selectionAfter: targetId,
-                coalesceKey: `prop:${targetId}:${propKey}`,
+                coalesceKey: options?.coalesceKey === undefined ? `prop:${targetId}:${propKey}` : options.coalesceKey,
             });
             this.historyVersion++;
             this.isDirty = true;
@@ -2284,6 +2405,222 @@ function themeCanvas() {
             if (cur && typeof cur === 'object' && !Array.isArray(cur)) {
                 this.updateProp(propKey, { ...cur, target });
             }
+        },
+
+        // ── Phase 0.1 / 0.2b: schema-driven repeater ────────────────────
+        // Driven only by the normalized `fields` contract each repeater
+        // declares (InspectorFieldRegistry). A list is addressed by a path:
+        // [propKey] for the prop's own list, [propKey, index, fieldKey, …]
+        // for a list nested inside one of its items (CanvasListPath), always
+        // read against the root prop's schema. Every write replaces the root
+        // prop through one updateProp(), so undo/redo, dirty state and live
+        // preview behave exactly like any scalar prop; items are copied,
+        // never mutated in place, and unknown keys on an item are preserved.
+        repeaterPath(path) {
+            return Array.isArray(path) ? path : [path];
+        },
+        repeaterListId(path) {
+            return this.repeaterPath(path).join('-');
+        },
+        repeaterItems(path, rootDef) {
+            const [rootKey, ...rest] = this.repeaterPath(path);
+            return CanvasListPath.itemsAt(this.selectedBlock?.props?.[rootKey], rootDef, rest);
+        },
+        repeaterDef(path, rootDef) {
+            return CanvasListPath.defAt(rootDef, this.repeaterPath(path).slice(1));
+        },
+        // Structural edits (add/remove/move/duplicate) are always an undo
+        // step of their own; field edits pass a key so typing coalesces.
+        persistRepeaterItems(path, rootDef, items, coalesceKey = null) {
+            const [rootKey, ...rest] = this.repeaterPath(path);
+            const root = CanvasListPath.replaceAt(this.selectedBlock?.props?.[rootKey], rootDef, rest, items);
+            if (root === null) return false;
+            this.updateProp(rootKey, rootDef?.storage === 'json' ? JSON.stringify(root) : root, { coalesceKey });
+            return true;
+        },
+        // Stable `_id` when the item has one (every item created here does);
+        // legacy items keep a positional key and are never rewritten just to
+        // gain an id — same rule as InspectorFieldRegistry::compatibilityItemId.
+        repeaterItemKey(item, index) {
+            return (typeof item?._id === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(item._id)) ? item._id : `legacy-${index}`;
+        },
+        newRepeaterId() {
+            return 'item_' + (globalThis.crypto?.randomUUID?.().replaceAll('-', '') ?? (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+        },
+        newRepeaterItem(fields) {
+            const item = { _id: this.newRepeaterId() };
+            for (const [key, def] of Object.entries(fields ?? {})) {
+                item[key] = def?.default ?? ({ toggle: false, number: 0, range: 0, repeater: [], array: [] }[this.fieldControl(def)] ?? '');
+            }
+            return item;
+        },
+        addRepeaterItem(path, rootDef) {
+            const items = this.repeaterItems(path, rootDef).slice();
+            const item = this.newRepeaterItem(this.repeaterDef(path, rootDef)?.fields);
+            items.push(item);
+            if (this.persistRepeaterItems(path, rootDef, items)) this.setRepeaterItemOpen(path, item, items.length - 1, true);
+        },
+        duplicateRepeaterItem(path, rootDef, index) {
+            const items = this.repeaterItems(path, rootDef).slice();
+            if (items[index] === undefined) return;
+            const copy = CanvasListPath.cloneWithFreshIds(items[index], () => this.newRepeaterId());
+            if (CanvasListPath.isItem(copy)) copy._id = this.newRepeaterId();
+            items.splice(index + 1, 0, copy);
+            if (this.persistRepeaterItems(path, rootDef, items)) this.setRepeaterItemOpen(path, copy, index + 1, true);
+        },
+        removeRepeaterItem(path, rootDef, index) {
+            const items = this.repeaterItems(path, rootDef).slice();
+            if (items[index] === undefined) return;
+            items.splice(index, 1);
+            this.persistRepeaterItems(path, rootDef, items);
+        },
+        moveRepeaterItem(path, rootDef, index, direction) {
+            const items = this.repeaterItems(path, rootDef).slice();
+            const target = index + direction;
+            if (items[index] === undefined || target < 0 || target >= items.length) return;
+            const wasOpen = this.isRepeaterItemOpen(path, items[index], index);
+            [items[index], items[target]] = [items[target], items[index]];
+            if (this.persistRepeaterItems(path, rootDef, items)) this.setRepeaterItemOpen(path, items[target], target, wasOpen);
+        },
+        updateRepeaterField(path, rootDef, index, fieldKey, value) {
+            const items = this.repeaterItems(path, rootDef).slice();
+            if (!CanvasListPath.isItem(items[index])) return;
+            const coalesceKey = `repeater:${this.repeaterOpenKey(path, items[index], index)}:${fieldKey}`;
+            items[index] = { ...items[index], [fieldKey]: value };
+            this.persistRepeaterItems(path, rootDef, items, coalesceKey);
+        },
+        // Same object-preserving rule as updateLinkProp().
+        updateRepeaterLink(path, rootDef, index, fieldKey, url) {
+            const cur = this.repeaterItems(path, rootDef)[index]?.[fieldKey];
+            const value = CanvasListPath.isItem(cur) ? { ...cur, url } : url;
+            this.updateRepeaterField(path, rootDef, index, fieldKey, value);
+        },
+        // The chosen URL is delivered only if the same block is still
+        // selected when the library returns.
+        pickRepeaterMedia(path, rootDef, index, fieldKey) {
+            const blockId = this.selectedBlock?.id;
+            this.openMediaModal((url) => {
+                if (!this.selectedBlock || this.selectedBlock.id !== blockId) return;
+                this.updateRepeaterField(path, rootDef, index, fieldKey, url);
+            });
+        },
+        // Collapse state is editor-only UI and never persisted. It is keyed
+        // by the item identities along the path, so a nested item keeps its
+        // state when its parent is reordered. The first item of every list
+        // starts open so its fields are discoverable.
+        repeaterOpenKey(path, item, index) {
+            const [rootKey, ...rest] = this.repeaterPath(path);
+            const parts = [rootKey];
+            let items = CanvasListPath.parse(this.selectedBlock?.props?.[rootKey]);
+            for (let i = 0; i < rest.length; i += 2) {
+                const parent = items[rest[i]];
+                parts.push(this.repeaterItemKey(parent, rest[i]), rest[i + 1]);
+                items = CanvasListPath.isItem(parent) ? CanvasListPath.parse(parent[rest[i + 1]]) : [];
+            }
+            return `${this.selectedBlock?.id}:${parts.join('/')}:${this.repeaterItemKey(item, index)}`;
+        },
+        isRepeaterItemOpen(path, item, index) {
+            const state = this.repeaterOpen[this.repeaterOpenKey(path, item, index)];
+            return state === undefined ? index === 0 : state;
+        },
+        setRepeaterItemOpen(path, item, index, open) {
+            this.repeaterOpen = { ...this.repeaterOpen, [this.repeaterOpenKey(path, item, index)]: open };
+        },
+        toggleRepeaterItem(path, item, index) {
+            this.setRepeaterItemOpen(path, item, index, !this.isRepeaterItemOpen(path, item, index));
+        },
+        repeaterItemTitle(schemaDef, item, index) {
+            for (const [key, def] of Object.entries(schemaDef?.fields ?? {})) {
+                if (this.fieldControl(def) !== 'text') continue;
+                const v = item?.[key];
+                if (typeof v === 'string' && v.trim() !== '') return v.trim().length > 40 ? v.trim().slice(0, 40) + '…' : v.trim();
+            }
+            return `${schemaDef?.item_label || 'مورد'} ${this.faDigits(index + 1)}`;
+        },
+        // A list whose items are one short text each (pricing features)
+        // edits inline, one row per item, instead of as collapsible cards.
+        repeaterCompactField(schemaDef) {
+            const entries = Object.entries(schemaDef?.fields ?? {});
+            // An icon field always gets the icon picker (Phase 0.6).
+            return entries.length === 1 && this.fieldControl(entries[0][1]) === 'text' ? entries[0][0] : null;
+        },
+        repeaterFieldVisible(fieldDef, item) {
+            return !fieldDef?.show_if || this.isTruthy(item?.[fieldDef.show_if]);
+        },
+        fieldControl(def) {
+            const raw = def?.control ?? def?.type ?? 'text';
+            return ({ string: 'text', boolean: 'toggle', image: 'media' })[raw] ?? raw;
+        },
+        // Nested lists are editable up to the registry's own depth cap
+        // (InspectorFieldRegistry maxDepth ≤ 3: depths 0, 1 and 2).
+        isSupportedRepeaterControl(def, depth = 0) {
+            const control = this.fieldControl(def);
+            if (control === 'repeater') return depth < 2;
+            return ['text', 'icon', 'textarea', 'rich_text', 'number', 'range', 'toggle', 'select', 'color', 'link', 'media'].includes(control);
+        },
+        // Client mirror of HtmlSanitizer::isValidUrl(), so the author sees
+        // a link the renderer will refuse before it is published.
+        isUnsafeLink(value) {
+            const url = (CanvasListPath.isItem(value) ? value.url : value);
+            if (typeof url !== 'string' || url.trim() === '') return false;
+            const t = url.trim();
+            if (/^[\s\x00-\x1f]*(javascript|data|vbscript):/i.test(t)) return true;
+            if (!/^[a-z][a-z0-9+.\-]*:/i.test(t)) return false;
+            return !/^(https?|mailto|tel):/i.test(t);
+        },
+        // Accepts every options shape the registry uses: a value=>label map,
+        // a plain list of values, or a list of {value,label} objects.
+        selectOptions(def) {
+            const o = def?.options;
+            if (Array.isArray(o)) {
+                return o.map(x => (x && typeof x === 'object')
+                    ? { value: String(x.value ?? ''), label: String(x.label ?? x.value ?? '') }
+                    : { value: String(x), label: String(x) });
+            }
+            if (o && typeof o === 'object') return Object.entries(o).map(([value, label]) => ({ value: String(value), label: String(label) }));
+            return [];
+        },
+        // <input type=color> only understands #rrggbb; rgba()/var()/''
+        // stay editable through the paired text input.
+        colorInputValue(value, fallback) {
+            // A swatch or rgba() value shows its base colour in the native picker.
+            const palette = this.colorPalette();
+            return window.CanvasColor.parse(value, palette).hex
+                || window.CanvasColor.parse(fallback, palette).hex
+                || '#000000';
+        },
+        // Phase 0.5 (ADR-064): colour control — the value model is the
+        // shared window.CanvasColor (theme-runtime/resources/js/canvas-color.js).
+        colorPalette() { return window.CanvasColor.palette(this.globalStyles); },
+        colorParse(value) { return window.CanvasColor.parse(value, this.colorPalette()); },
+        colorPreview(value) { return window.CanvasColor.previewCss(value, this.colorPalette()); },
+        colorInputHex(value) { return window.CanvasColor.inputHex(value, this.colorPalette()); },
+        setColorSwatch(propKey, token) {
+            const current = this.colorParse(this.selectedBlock?.props?.[propKey] ?? '');
+            const alpha = ['token', 'hex', 'rgba'].includes(current.kind) ? current.alpha : 100;
+            this.updateProp(propKey, window.CanvasColor.swatch(token, alpha));
+        },
+        setColorBase(propKey, hex) {
+            const current = this.colorParse(this.selectedBlock?.props?.[propKey] ?? '');
+            const alpha = ['token', 'hex', 'rgba'].includes(current.kind) ? current.alpha : 100;
+            this.updateProp(propKey, window.CanvasColor.fixed(hex, alpha));
+        },
+        setColorAlpha(propKey, alpha) {
+            this.updateProp(propKey, window.CanvasColor.withAlpha(this.selectedBlock?.props?.[propKey] ?? '', alpha, this.colorPalette()));
+        },
+        clampNumber(raw, def) {
+            if (raw === '' || raw === null || raw === undefined) return '';
+            let n = Number(raw);
+            if (!Number.isFinite(n)) return '';
+            if (def?.min !== undefined && def?.min !== null) n = Math.max(Number(def.min), n);
+            if (def?.max !== undefined && def?.max !== null) n = Math.min(Number(def.max), n);
+            return n;
+        },
+        isTruthy(v) {
+            return v === true || v === 1 || v === '1' || v === 'true';
+        },
+        faDigits(v) {
+            return String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
         },
 
         // ── TB3-S2: Per-block style overrides (TB5: breakpoint-aware) ─
@@ -2499,15 +2836,6 @@ function themeCanvas() {
         selectedExtensionEntries() {
             return Object.entries(this.extensionSelections);
         },
-        canvasSavePayload(withOperations = true) {
-            return {
-                target: this.activeTarget,
-                page_key: this.activeTarget === 'page' ? this.currentPage : undefined,
-                blocks: this.blocks,
-                extension_selections: this.extensionSelections,
-                structural_operations: withOperations ? (this.documentState?.pendingOperations ?? []) : undefined,
-            };
-        },
         openExtensionsModal() {
             this.newExtensionProduct = AVAILABLE_EXTENSIONS[0]?.identifier ?? '';
             this.newExtensionVersion = this.releasesForProduct(this.newExtensionProduct)[0]?.version ?? '';
@@ -2526,100 +2854,100 @@ function themeCanvas() {
             await this.persistExtensionSelections();
         },
         async persistExtensionSelections() {
-            this.saving = true;
-            try {
-                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.canvasSavePayload())
-                });
-                const d = await r.json();
-                if (d.success) {
-                    this.documentState?.markSaved(this.blocks);
-                    this.showToast('انتخاب افزونه ذخیره شد ✓', 'success');
-                } else {
-                    this.showToast(d.error ?? 'خطا در ذخیره انتخاب افزونه', 'error');
-                }
-            } catch { this.showToast('خطای شبکه', 'error'); }
-            finally { this.saving = false; }
+            const result = await this.requestCanvasSave('manual');
+            if (result.ok) this.showToast('انتخاب افزونه ذخیره شد ✓', 'success');
+            else this.showToast(result.error ?? (result.network ? 'خطای شبکه' : 'خطا در ذخیره انتخاب افزونه'), 'error');
         },
 
         // ── Save & Publish ────────────────────────────────────────
-        async saveCurrentPage() {
-            if (this.saving) return;
-            this.saving = true;
-            try {
+        // P1: the ONLY code that talks to /canvas/save. Runs strictly one at a
+        // time (CanvasSaveQueue). Everything it sends — target, page, blocks,
+        // extension selections, operation log — is captured synchronously
+        // when the run starts, so edits made while the request is in flight
+        // are never confused with what was saved:
+        //   - only the operations this request carried are acknowledged;
+        //     operations queued mid-flight stay pending;
+        //   - `isDirty` is recomputed against the live tree, so a mid-flight
+        //     edit stays visibly unsaved instead of being marked saved;
+        //   - a document switched away from mid-flight is never touched.
+        async runCanvasSave() {
+            const docState = this.documentState;
+            const target = this.activeTarget;
+            const sentOperations = [...(docState?.pendingOperations ?? [])];
+            const blocksJson = JSON.stringify(this.blocks);
+            const snapshot = {
+                target,
+                page_key: target === 'page' ? this.currentPage : undefined,
+                blocks: JSON.parse(blocksJson),
+                extension_selections: JSON.parse(JSON.stringify(this.extensionSelections ?? {})),
+            };
+            const send = async (operations) => {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.canvasSavePayload())
+                    body: JSON.stringify({ ...snapshot, structural_operations: operations }),
                 });
-                let d = await r.json();
-                // Phase 2C hardening (same as autoSave): a replay-mismatched
-                // operation log falls back ONCE to an operations-free save;
-                // the server's implicit reconciler still enforces every guard.
-                if (!d.success && d.structure_errors && this.documentState) {
-                    this.documentState.pendingOperations = [];
-                    const retry = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                        body: JSON.stringify(this.canvasSavePayload(false))
-                    });
-                    d = await retry.json();
-                }
-                if (d.success) {
-                    this.documentState?.markSaved(this.blocks);
-                    this.isDirty = false;
-                    this.showToast('ذخیره شد ✓', 'success');
-                    return true;
-                }
-                this.showToast(d.error ?? 'خطا در ذخیره', 'error');
-                return false;
-            } catch {
-                this.showToast('خطای شبکه', 'error');
-                return false;
-            }
-            finally   { this.saving = false; }
-        },
+                return { r, d: await r.json().catch(() => ({})) };
+            };
 
-        // Silent auto-save (no toast) used before iframe reload
-        async autoSave() {
-            if (this.quickSaving) return;
-            this.quickSaving = true;
+            this.saveInFlight = true;
             try {
-                const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.canvasSavePayload())
-                });
-                let d = await r.json();
+                let { r, d } = await send(sentOperations);
                 // Phase 2C hardening: a replay-mismatched operation log falls
                 // back ONCE to an operations-free save. The server still runs
                 // its full implicit reconciler (every placement/locked guard)
                 // — this only forgives an incomplete local operation log, it
-                // never weakens server-side validation.
-                if (!r.ok && d.structure_errors && this.documentState) {
-                    this.documentState.pendingOperations = [];
-                    const retry = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/save`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-                        body: JSON.stringify(this.canvasSavePayload(false))
-                    });
-                    d = await retry.json();
-                    if (retry.ok && d.success) { this.isDirty = false; this.documentState?.markSaved(this.blocks); return true; }
+                // never weakens server-side validation. The rejected log is
+                // dropped either way; operations queued mid-flight are kept.
+                if ((!r.ok || !d.success) && d.structure_errors && docState) {
+                    const sent = new Set(sentOperations);
+                    docState.pendingOperations = docState.pendingOperations.filter(op => !sent.has(op));
+                    ({ r, d } = await send(undefined));
                 }
-                if (!r.ok || !d.success) {
-                    this.showToast(d.error ?? 'خطا در ذخیره', 'error');
-                    return false;
+                if (!r.ok || !d.success) return { ok: false, error: d.error ?? null };
+
+                const stillCurrent = this.documentState === docState;
+                docState?.markSavedSnapshot(snapshot.blocks, sentOperations, stillCurrent ? this.blocks : docState.tree);
+                if (stillCurrent) {
+                    this.isDirty = JSON.stringify(this.blocks) !== blocksJson
+                        || (docState?.pendingOperations.length ?? 0) > 0;
                 }
-                this.isDirty = false;
-                this.documentState?.markSaved(this.blocks);
-                return true;
+                return { ok: true };
             } catch (_) {
-                this.showToast('خطای شبکه', 'error');
-                return false;
+                return { ok: false, error: null, network: true };
+            } finally {
+                this.saveInFlight = false;
             }
-            finally { this.quickSaving = false; }
+        },
+
+        // `kind` only decides which indicator the request shows ('manual' →
+        // Save button, 'background' → toolbar spinner). Editing is never
+        // blocked: requests made during a save are queued and coalesced.
+        async requestCanvasSave(kind) {
+            const counter = kind === 'manual' ? 'manualSaveRequests' : 'backgroundSaveRequests';
+            this[counter]++;
+            try {
+                return await this.saveQueue.request();
+            } finally {
+                this[counter]--;
+            }
+        },
+
+        async saveCurrentPage() {
+            const result = await this.requestCanvasSave('manual');
+            if (result.ok) {
+                this.showToast('ذخیره شد ✓', 'success');
+                return true;
+            }
+            this.showToast(result.error ?? (result.network ? 'خطای شبکه' : 'خطا در ذخیره'), 'error');
+            return false;
+        },
+
+        // Silent auto-save (no success toast) used before iframe reload
+        async autoSave() {
+            const result = await this.requestCanvasSave('background');
+            if (!result.ok) this.showToast(result.error ?? (result.network ? 'خطای شبکه' : 'خطا در ذخیره'), 'error');
+            return result.ok;
         },
 
         async autoSaveAndReload() {
@@ -2629,7 +2957,8 @@ function themeCanvas() {
 
         async publishTheme() {
             if (this.publishing) return;
-            await this.saveCurrentPage();
+            // Never publish while the latest edits failed to save.
+            if (!(await this.saveCurrentPage())) return;
             this.publishing = true;
             try {
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/publish`, {
@@ -2961,6 +3290,20 @@ function themeCanvas() {
         // TB3-07: Media Manager
         openMediaPicker(propKey) {
             this.mediaModal.targetPropKey = propKey;
+            this.mediaModal.onSelect = null;
+            this.mediaModal.show  = true;
+            this.mediaModal.tab   = 'library';
+            this.mediaModal.uploadDone = false;
+            this.fetchMedia();
+        },
+
+        // Nested repeater media fields: opens the same media library but
+        // delivers the chosen URL to a callback instead of a top-level prop
+        // key, so the caller decides which item receives it (see
+        // pickRepeaterMedia()).
+        openMediaModal(onSelect) {
+            this.mediaModal.targetPropKey = null;
+            this.mediaModal.onSelect = typeof onSelect === 'function' ? onSelect : null;
             this.mediaModal.show  = true;
             this.mediaModal.tab   = 'library';
             this.mediaModal.uploadDone = false;
@@ -2980,6 +3323,13 @@ function themeCanvas() {
         },
 
         selectMedia(url) {
+            if (typeof this.mediaModal.onSelect === 'function') {
+                const deliver = this.mediaModal.onSelect;
+                this.mediaModal.onSelect = null;
+                this.mediaModal.show = false;
+                deliver(url);
+                return;
+            }
             if (this.mediaModal.targetPropKey && this.selectedBlock) {
                 this.updateProp(this.mediaModal.targetPropKey, url);
             }
@@ -3275,6 +3625,15 @@ function themeCanvas() {
             this.treeOperations = new CanvasTreeOperations(BLOCK_SCHEMAS);
             this.navigator = new CanvasNavigator();
             this.historyEngine = new CanvasHistory((entry, side) => this.applyHistoryEntry(entry, side), 100);
+            this.saveQueue = new CanvasSaveQueue(() => this.runCanvasSave());
+
+            // P1: leaving while a save is on the wire or queued would drop it.
+            // (Ordinary unsaved edits keep their existing visible "ذخیره نشده" cue.)
+            window.addEventListener('beforeunload', (e) => {
+                if (!this.saveQueue?.busy) return;
+                e.preventDefault();
+                e.returnValue = '';
+            });
 
             // TB3-02: Listen for postMessage from live preview iframe
             window.addEventListener('message', (e) => this.handleIframeMessage(e));

@@ -15,8 +15,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <x-seo-meta :meta-data="$metaData" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {{-- Phase 0.4 (ADR-063): no Google Fonts — app.css already bundles the
+         local Vazirmatn faces the editor chrome uses. --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * { box-sizing: border-box; }

@@ -81,13 +81,18 @@
 
         var interval = null;
 
-        function pad(n) { return String(n).padStart(2, '0'); }
+        // Phase 3 (ADR-068): Persian digits, two places — «۰۵».
+        function pad(n) {
+            var s = String(n).padStart(2, '0');
+            return s.replace(/[0-9]/g, function (c) { return String.fromCharCode(0x06F0 + Number(c)); });
+        }
 
         function tick() {
             var diff = end - Date.now();
             if (diff <= 0) {
                 if (timerEl) timerEl.style.display = 'none';
-                if (expiredEl) expiredEl.style.display = 'block';
+                if (expiredEl) { expiredEl.hidden = false; expiredEl.style.display = 'block'; }
+                if (rootEl.classList) rootEl.classList.add('is-expired');
                 stop();
                 return false;
             }
@@ -150,7 +155,7 @@
         // The server never renders a script for a countdown with no
         // `end_date`, so there is nothing to bind to in that case; defaults
         // stay empty to match the registry's schema.
-        CountdownBlock.defaultProps = { end_date: '', label: '' };
+        CountdownBlock.defaultProps = { end_date: '', end_time: '', label: '', expired_text: '', style: 'card', show_end_date: true };
 
         CountdownBlock.deps = { js: [], css: [] };
 

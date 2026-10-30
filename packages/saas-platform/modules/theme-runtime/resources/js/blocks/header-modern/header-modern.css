@@ -38,6 +38,10 @@
     text-decoration: none;
     font-size: 1.125rem;
     font-weight: 800;
+}
+
+/* Phase 0.5: tight tracking crowds Persian letters; LTR brands keep it. */
+[dir="ltr"] .tb-header-modern__brand {
     letter-spacing: -.025em;
 }
 

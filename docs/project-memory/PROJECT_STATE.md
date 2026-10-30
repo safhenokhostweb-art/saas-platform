@@ -1,6 +1,25 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-10-01
+> Last Updated: 2026-10-12
+
+---
+
+## Ariana MultiPlus — Persian Multipurpose Commercial Theme
+
+**READY_FOR_FINAL_REVIEW_LOCAL (2026-10-12).** `Database\Seeders\ArianaMultiPlusThemeSeeder`
+(seed `ariana-multiplus`, v1.0.0) delivers the requested multipurpose
+corporate/store/personal Persian template using only existing canonical
+block types — five professional slider families, Vazirmatn RTL (fa-IR),
+virtual placeholder imagery, fully Canvas-editable props, and a
+mobile-number-only identity (zero email anywhere in the persisted document;
+`contact_split` deliberately excluded because its shared renderer
+hardcodes an email placeholder). Seeds published + marketplace with an
+honest `ThemeMarketplace` row; registered as a canonical source in
+`ThemeCatalogRebuildCommand::CANONICAL_SOURCES`. Validation:
+`ArianaMultiPlusThemeSeederTest` 6/6 (157 assertions),
+`ThemeCatalogRebuildCommandTest` 8/8. Next gates: `theme-release:backfill`
+for commercial eligibility, then explicit commit/push/deploy authorization
+(ADR-019) — neither was run.
 
 ---
 

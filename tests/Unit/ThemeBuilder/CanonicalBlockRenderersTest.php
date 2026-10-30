@@ -554,11 +554,19 @@ class CanonicalBlockRenderersTest extends TestCase
 
     public function test_pricing_card_badge_uses_the_shared_badge_component_with_a_real_variant_class(): void
     {
-        $html = $this->render('pricing_cards', ['plans' => [['name' => 'حرفه‌ای', 'price' => '۴۹۰', 'badge' => 'محبوب‌ترین', 'highlight' => true, 'features' => []]]]);
+        $html = $this->render('pricing_cards', ['plans' => [['name' => 'حرفه‌ای', 'price' => '۴۹۰', 'badge' => 'محبوب‌ترین', 'highlight' => false, 'features' => []]]]);
         $this->assertStringContainsString('tb-badge tb-badge-primary', $html);
         $this->assertStringContainsString('tb-badge-label', $html);
         $this->assertStringContainsString('محبوب‌ترین', $html);
         $this->assertStringNotContainsString('background:#ef4444', $html);
+    }
+
+    // Phase 3b (ADR-069): a highlighted plan carries its badge as the ribbon.
+    public function test_highlighted_pricing_card_shows_its_badge_as_the_ribbon(): void
+    {
+        $html = $this->render('pricing_cards', ['plans' => [['name' => 'حرفه‌ای', 'price' => '۴۹۰', 'badge' => 'محبوب‌ترین', 'highlight' => true, 'features' => []]]]);
+        $this->assertStringContainsString('<div class="tb-plan-ribbon">محبوب‌ترین</div>', $html);
+        $this->assertStringNotContainsString('tb-plan-badge-wrap', $html);
     }
 
     public function test_pricing_card_with_no_badge_renders_no_empty_badge_shell(): void

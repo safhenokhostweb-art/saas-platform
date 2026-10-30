@@ -198,4 +198,92 @@ class ThemeReleaseBackfillCommandTest extends TestCase
             $this->assertSame($theme->releases()->first()->id, $theme->current_release_id);
         }
     }
+
+    public function test_slug_targets_exact_master_theme_only(): void
+    {
+        $target = $this->makeTheme(['slug' => 'ariana-multiplus']);
+        $other = $this->makeTheme(['slug' => 'other-theme-' . uniqid()]);
+
+        $this->artisan('theme-release:backfill --slug=ariana-multiplus')->assertExitCode(0);
+
+        $target->refresh();
+        $this->assertCount(1, $target->releases()->get());
+        $this->assertSame('1.0.0', $target->releases()->first()->version);
+
+        $other->refresh();
+        $this->assertCount(0, $other->releases()->get());
+    }
+
+    public function test_missing_slug_fails_safely(): void
+    {
+        $this->artisan('theme-release:backfill --slug=nonexistent-slug')->assertExitCode(1);
+    }
+
+    public function test_slug_excludes_customer_owned_theme_even_with_matching_slug(): void
+    {
+        $site = $this->makeCrmTestSite();
+        $customerInstance = $this->makeTheme([
+            'slug' => 'ariana-multiplus',
+            'site_id' => $site->id,
+        ]);
+
+        $this->artisan('theme-release:backfill --slug=ariana-multiplus')->assertExitCode(1);
+
+        $customerInstance->refresh();
+        $this->assertNull($customerInstance->current_release_id);
+        $this->assertCount(0, $customerInstance->releases()->get());
+    }
+
+    public function test_slug_excludes_theme_with_existing_release(): void
+    {
+        $service = $this->app->make(ThemeReleaseService::class);
+        $theme = $this->makeTheme(['slug' => 'ariana-multiplus']);
+        $service->release($theme, '2.0.0', 'Already published');
+
+        $this->artisan('theme-release:backfill --slug=ariana-multiplus')->assertExitCode(1);
+
+        $theme->refresh();
+        $this->assertCount(1, $theme->releases()->get());
+        $this->assertSame('2.0.0', $theme->releases()->first()->version);
+    }
+
+    public function test_dry_run_with_slug_writes_nothing(): void
+    {
+        $theme = $this->makeTheme(['slug' => 'ariana-multiplus']);
+
+        $this->artisan('theme-release:backfill --slug=ariana-multiplus --dry-run')->assertExitCode(0);
+
+        $theme->refresh();
+        $this->assertCount(0, $theme->releases()->get());
+        $this->assertNull($theme->current_release_id);
+    }
+
+    public function test_backward_compatibility_without_slug_preserves_existing_behavior(): void
+    {
+        $theme1 = $this->makeTheme(['slug' => 'theme-one-' . uniqid()]);
+        $theme2 = $this->makeTheme(['slug' => 'theme-two-' . uniqid()]);
+
+        $this->artisan('theme-release:backfill')->assertExitCode(0);
+
+        $theme1->refresh();
+        $theme2->refresh();
+        $this->assertCount(1, $theme1->releases()->get());
+        $this->assertCount(1, $theme2->releases()->get());
+    }
+
+    public function test_slug_invokes_quality_gate_only_for_targeted_theme(): void
+    {
+        $target = $this->makeTheme(['slug' => 'ariana-multiplus']);
+        $failing = $this->makeTheme(['slug' => 'failing-theme-' . uniqid(), 'pages' => []]);
+
+        // Without --slug, the batch would fail due to failing-theme
+        // With --slug=ariana-multiplus, only the target is processed and should succeed
+        $this->artisan('theme-release:backfill --slug=ariana-multiplus')->assertExitCode(0);
+
+        $target->refresh();
+        $this->assertCount(1, $target->releases()->get());
+
+        $failing->refresh();
+        $this->assertCount(0, $failing->releases()->get());
+    }
 }

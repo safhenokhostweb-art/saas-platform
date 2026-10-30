@@ -1,7 +1,36 @@
 # HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-10-02
+> Last Updated: 2026-10-12
+
+---
+
+## CURRENT TASK (2026-10-12 — ARIANA MULTIPLUS PERSIAN MULTIPURPOSE THEME — READY FOR FINAL REVIEW LOCAL)
+
+The requested multipurpose Persian commercial theme is implemented as
+`Database\Seeders\ArianaMultiPlusThemeSeeder` (slug `ariana-multiplus`,
+v1.0.0), authored exclusively from existing canonical block types — no new
+block type, renderer, migration, or package change. It covers corporate,
+store, and personal shapes in one preset: five professional slider families
+(`slider`, `product_slider`, `category_slider`, `testimonials_slider`,
+`client_logos`), Vazirmatn RTL (fa-IR) global styles, virtual
+`svgPlaceholder` imagery, and a mobile-number-only identity — the contact
+page deliberately has NO `contact_split` (its shared renderer hardcodes an
+"شماره موبایل یا ایمیل" placeholder) and uses `contact_info` + phone-centric
+`hero_trust` instead; the only email reference anywhere was removed
+(pricing "پشتیبانی ایمیلی" → "پشتیبانی تلفنی"). The theme seeds
+`status=published` + `is_marketplace` (authoring convention) with an honest
+`ThemeMarketplace` row, and is a registered canonical source in
+`ThemeCatalogRebuildCommand::CANONICAL_SOURCES`
+(`db:seed ArianaMultiPlusThemeSeeder`, expected slug `ariana-multiplus`).
+Validation: new `ArianaMultiPlusThemeSeederTest` 6/6 (157 assertions —
+identity/publish, every block type registered with a real renderer,
+render-integrity parity through the real shared renderer, zero email in the
+persisted document, fa-IR/RTL/Vazirmatn, idempotency);
+`ThemeCatalogRebuildCommandTest` 8/8 (canonical membership including
+`ariana-multiplus` is deterministic). Commercial eligibility still requires
+`theme-release:backfill` (ThemeRelease + passing Commercial Quality Gate)
+and explicit user authorization for commit/push/deploy — neither was run.
 
 ---
 
