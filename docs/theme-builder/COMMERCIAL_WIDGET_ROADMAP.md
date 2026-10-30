@@ -942,3 +942,75 @@ Everything else renders byte-identically.
 - No wishlist on the card yet.
 - `header_modern_v1` and the theme-specific headers keep their own chrome.
 - Stored themes keep their emoji icons (see §12).
+
+## 15. Phase 3b delivery: Bento v2, reviews, pricing (2026-10-30)
+
+**Done (ADR-069):**
+
+- **Bento v2:**
+  - a 12-column grid: 2 columns on tablets, 1 on phones; sizes one-third,
+    half, two-thirds, full width, tall and featured;
+  - dynamic cells: a live product card (the chosen product, or the newest),
+    a Jalali countdown teaser, or an icon metric («۱۲٬۰۰۰+ مشتری راضی»);
+  - in the platform editor the kind-specific fields appear only for their
+    kind.
+- **Reviews:**
+  - one review card: SVG stars, «خریدار تاییدشده», a Jalali date, and the
+    avatar or initial;
+  - an optional Persian star breakdown;
+  - customer-site's reviews grid verifies buyers against paid orders and
+    publishes schema.org Review microdata, plus AggregateRating for a
+    single product.
+- **Pricing:**
+  - a «ماهانه / سالانه» switch with a discount pill, and a popular-plan
+    ribbon;
+  - check/x features, with tooltips that can be tapped and dismissed with
+    Esc.
+- **Bestselling** counts paid orders (paid, processing, shipped, completed).
+
+**Evidence:**
+
+- **Parity harness:** the before state is saas-platform `30b89909` (the last package without
+  Phase 3b) with customer-site `2e37c2d`.
+  - **Live markup:** 5 of 229 documents change, all reviews or pricing.
+    No bento document changes: content cells are byte-identical.
+  - **Old markup under the new CSS:** 16 element kinds, all from the bento
+    grid or the pricing restyle:
+    - the bento grid moves to 12 / 2 / 1 columns. At 1366 px only the track
+      list and the spans change (3 × 405 px tracks become 12 × 89 px, with
+      `span 4` and `span 8`), so no item moves or resizes. At 768 px the grid
+      has 2 columns instead of 3, as specified;
+    - pricing cards become `position: relative`, and the highlighted card
+      gets 12 px more top padding for the ribbon. The newsletter form below
+      shifts with them;
+    - reviews: nothing, because the old markup is untouched.
+  - **Preview vs live:** 48 distinct diffs across 230 platform documents,
+    all on `div.tb-skill-bar-fill` (the known host-only rule).
+- **Tests:**
+  - `Phase3bBentoReviewsPricingTest` (platform) and
+    `ThemePhase3bReviewsBentoTest` (customer-site);
+  - bestselling across statuses in `ThemePhase3CommerceTest`; JS 116/116;
+  - saas-platform suites with only the known failures (10);
+  - customer-site suites with only the known 3.
+    `RealUniversalThemeInstallAcceptanceTest` returned 502s for remote
+    media under load, and was 7/7 on an idle rerun.
+- **Browser** (three widths):
+  - `phase3b-bento-reviews-pricing` (stub origin): each size's column share,
+    no product-card clipping (a bug this caught and the fix), a ticking
+    countdown, breakdown bars, the toggle, tooltip hover, Esc and tap, and
+    no horizontal overflow;
+  - `phase01-schema-repeater` (real editor): 12 / 2 / 1 columns, the new
+    size labels, and kind-specific fields following `show_if`;
+  - the Phase 1/2 and Phase 3 specs stay green. The Phase 3 spec failed
+    twice under load and passed 6 of 8 runs; it is a timing flake that
+    does not reproduce on an idle machine.
+
+**Remaining (next):**
+
+- FAQ categories and search.
+- A testimonial marquee and a logo wall.
+- A pricing comparison table across plans.
+- No wishlist on the card.
+- `header_modern_v1` and the theme-specific headers keep their own chrome.
+- Stored themes keep their emoji icons (see §12).
+- customer-site's editor does not apply `show_if`.

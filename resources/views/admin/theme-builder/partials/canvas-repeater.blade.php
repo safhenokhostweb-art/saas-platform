@@ -70,7 +70,7 @@
             <template x-if="!repeaterCompactField({!! $def !!})">
             <div x-show="isRepeaterItemOpen({!! $list !!}, {!! $item !!}, {!! $idx !!})" class="px-3 pb-3 pt-2 space-y-2.5 border-t border-slate-200">
                 <template x-for="({!! $fd !!}, {!! $fk !!}) in ({!! $def !!}.fields || {})" :key="{!! $fk !!}">
-                    <div x-show="repeaterFieldVisible({!! $fd !!}, {!! $item !!})">
+                    <div x-show="repeaterFieldVisible({!! $fd !!}, {!! $item !!}, {!! $def !!}.fields)">
                         <template x-if="fieldControl({!! $fd !!}) !== 'repeater'">
                             <label class="block text-[11px] font-medium text-slate-500 mb-1"
                                 :for="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`" x-text="{!! $fd !!}.label || {!! $fk !!}"></label>

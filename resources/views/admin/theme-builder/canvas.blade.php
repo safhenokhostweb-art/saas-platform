@@ -2544,8 +2544,17 @@ function themeCanvas() {
             // An icon field always gets the icon picker (Phase 0.6).
             return entries.length === 1 && this.fieldControl(entries[0][1]) === 'text' ? entries[0][0] : null;
         },
-        repeaterFieldVisible(fieldDef, item) {
-            return !fieldDef?.show_if || this.isTruthy(item?.[fieldDef.show_if]);
+        // show_if: 'flag' (a truthy field) or, Phase 3b, 'kind=product' /
+        // 'kind=a|b' (the field equals one of the values; empty = its default).
+        repeaterFieldVisible(fieldDef, item, fields = null) {
+            const rule = fieldDef?.show_if;
+            if (!rule) return true;
+            const eq = String(rule).indexOf('=');
+            if (eq < 0) return this.isTruthy(item?.[rule]);
+            const key = String(rule).slice(0, eq);
+            let value = item?.[key];
+            if (value === undefined || value === null || value === '') value = fields?.[key]?.default ?? '';
+            return String(rule).slice(eq + 1).split('|').includes(String(value));
         },
         fieldControl(def) {
             const raw = def?.control ?? def?.type ?? 'text';
