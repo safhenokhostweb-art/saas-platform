@@ -103,9 +103,9 @@
 
         @if(empty($page['blocks'] ?? []))
             <div style="text-align:center;padding:5rem 2rem;color:#9ca3af;">
-                <div style="font-size:3rem;margin-bottom:1rem;">🧩</div>
-                <p style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">صفحه خالی است</p>
-                <p style="font-size:0.85rem;">از قالب‌ساز بلوک اضافه کنید تا اینجا نمایش داده شود</p>
+                <div style="font-size:var(--tb-h1-size,3rem);margin-bottom:1rem;">🧩</div>
+                <p style="font-size:var(--tb-card-title-size,1rem);font-weight:600;margin-bottom:0.5rem;">صفحه خالی است</p>
+                <p style="font-size:var(--tb-body-size,1rem);">از قالب‌ساز بلوک اضافه کنید تا اینجا نمایش داده شود</p>
             </div>
         @endif
     </div>
