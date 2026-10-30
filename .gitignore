@@ -116,3 +116,18 @@ composer_output.txt
 
 # Stray empty file produced by a shell/tool mishap
 /Continue
+
+# Stray root files: shell-redirect mishaps (`> count()`, `> origin)`, `> echo`),
+# ad-hoc debug/restore scripts and deployment test notes. Root-anchored only.
+/*(*
+/*)*
+/echo
+/write.php
+/_writer.php
+/_debug_*.php
+/_check_*.php
+/artifact-*.txt
+/deploy-test.txt
+/deployment-test.txt
+/DEPLOY_TEST.txt
+/FINAL_*TEST*.txt
