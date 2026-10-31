@@ -13,6 +13,7 @@
     "database/**",
     "scripts/**",
     "AGENTS.md",
+    "config/resource_governance.php",
     ".gitignore",
     "composer.json",
     "composer.lock",
@@ -61,6 +62,20 @@
         "reviewed_by": "safhenokhostweb-art",
         "reviewed_at": "2026-10-26",
         "reason": "Create-only migration: up() creates ai_providers; down() drops only that table (rollback of its own creation). No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_10_31_120000_add_devops_disk_governance_columns.php",
+        "sha256": "57147ac3f5a1528704cc89636eecc37e5cbfa297470a4c0ea6f14ff56be37541",
+        "reviewed_by": "safhenokhostweb-art",
+        "reviewed_at": "2026-10-31",
+        "reason": "Additive-only migration (ADR-070): up() adds nullable/defaulted columns to site_resource_limits and site_resource_usage; down() drops only those columns and their index. No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_10_31_120001_create_tenant_prune_audit_logs_table.php",
+        "sha256": "bb7a6f4a962ee54b665f878b1e339692df9f58709912366120416e4664b89f2c",
+        "reviewed_by": "safhenokhostweb-art",
+        "reviewed_at": "2026-10-31",
+        "reason": "Create-only migration (ADR-070): up() creates tenant_prune_audit_logs; down() drops only that table (rollback of its own creation). No existing data is altered."
       }
     ]
   },

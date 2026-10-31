@@ -229,6 +229,8 @@ class HealthCheckService
                 'message'      => "Disk {$usedPct}% used — {$freeGb}GB free",
                 'used_percent' => $usedPct,
                 'free_gb'      => $freeGb,
+                'total_bytes'  => (int) $total,
+                'free_bytes'   => (int) $free,
             ];
         } catch (\Throwable $e) {
             return ['status' => 'unknown', 'message' => $e->getMessage()];
@@ -244,6 +246,8 @@ class HealthCheckService
 
             // System memory (Linux)
             $systemPercent = null;
+            $totalBytes    = null;
+            $availBytes    = null;
             if (is_readable('/proc/meminfo')) {
                 $lines   = file('/proc/meminfo');
                 $memInfo = [];
@@ -255,6 +259,8 @@ class HealthCheckService
                 $available = $memInfo['MemAvailable'] ?? ($memInfo['MemFree'] ?? 0);
                 if ($total > 0) {
                     $systemPercent = (int) round((($total - $available) / $total) * 100);
+                    $totalBytes    = $total * 1024;
+                    $availBytes    = $available * 1024;
                 }
             }
 
@@ -269,6 +275,8 @@ class HealthCheckService
                 'message'        => $systemPercent !== null ? "System memory {$systemPercent}% used" : "PHP peak: " . round($phpPeak / 1024 / 1024, 1) . "MB",
                 'used_percent'   => $systemPercent,
                 'php_used_mb'    => round($phpUsed / 1024 / 1024, 1),
+                'total_bytes'    => $totalBytes,
+                'available_bytes' => $availBytes,
             ];
         } catch (\Throwable $e) {
             return ['status' => 'unknown', 'message' => $e->getMessage()];
@@ -298,6 +306,10 @@ class HealthCheckService
                 'status'  => $status,
                 'message' => "Load avg 1m: {$load1} ({$pct}% of {$cores} cores)",
                 'load_1m' => $load1,
+                'load_5m'  => round($load[1], 2),
+                'load_15m' => round($load[2], 2),
+                'cores'    => $cores,
+                'percent'  => (int) $pct,
             ];
         } catch (\Throwable $e) {
             return ['status' => 'unknown', 'message' => $e->getMessage()];

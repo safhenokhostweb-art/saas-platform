@@ -12,6 +12,10 @@ class SiteResourceUsage extends Model
     protected $fillable = [
         'site_id',
         'storage_bytes',
+        'disk_usage_bytes',
+        'danger_level',
+        'disk_audited_at',
+        'disk_audit_error',
         'db_bytes',
         'backup_bytes',
         'archive_bytes',
@@ -29,6 +33,7 @@ class SiteResourceUsage extends Model
         'alerted_80'    => 'boolean',
         'alerted_95'    => 'boolean',
         'calculated_at' => 'datetime',
+        'disk_audited_at' => 'datetime',
     ];
 
     public function site(): BelongsTo

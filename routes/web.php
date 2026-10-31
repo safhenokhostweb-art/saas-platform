@@ -540,6 +540,17 @@ Route::prefix('admin')
         Route::post('resource-governance/{site}/recalculate', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'recalculate'])->name('resource-governance.recalculate');
         Route::put('resource-governance/{site}/limits', [\App\Http\Controllers\Admin\SiteResourceGovernanceController::class, 'updateLimits'])->name('resource-governance.update-limits');
 
+        // DEVOPS: measured disk governance, danger zones and audited storage pruning
+        Route::prefix('devops/resources')->name('devops.resources.')->controller(\App\Http\Controllers\Admin\DevOpsResourceController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('metrics', 'metrics')->name('metrics');
+            Route::get('{site}', 'show')->whereNumber('site')->name('show');
+            Route::post('{site}/audit', 'audit')->whereNumber('site')->middleware('throttle:10,1')->name('audit');
+            Route::post('{site}/preview', 'preview')->whereNumber('site')->middleware('throttle:10,1')->name('preview');
+            Route::post('{site}/prune', 'prune')->whereNumber('site')->middleware('throttle:5,1')->name('prune');
+            Route::put('{site}/quota', 'updateQuota')->whereNumber('site')->name('quota');
+        });
+
         Route::middleware('notifications.enabled')->group(function () {
             Route::get('sites/notifications/create-bulk', [SiteNotificationController::class, 'createBulk'])->name('sites.notifications.create-bulk');
             Route::post('sites/notifications/store-bulk', [SiteNotificationController::class, 'storeBulk'])->name('sites.notifications.store-bulk');
