@@ -21,6 +21,35 @@ namespace SaaSPlatform\ThemeRuntime;
 class ThemeTokenNormalizer
 {
     /**
+     * WU-C commercial tokens: `colors.<key>` (and `dark_mode.<key>`) =>
+     * CSS variable. Opt-in only — unlike every token above, none of these
+     * has a default. The shared block sheet and BlockRenderer read each one
+     * as `var(--tb-<token>, <legacy literal>)`, each consumer keeping its own
+     * old value as the fallback, so a Theme that does not define a key
+     * renders exactly as it did before the token existed. media_bg and
+     * on_overlay are the slide background and caption colour WU-B's
+     * `.tb-slide*` rules already read.
+     */
+    public const COMMERCIAL_TOKENS = [
+        'overlay' => '--tb-overlay',
+        'backdrop' => '--tb-backdrop',
+        'star' => '--tb-star',
+        'border_strong' => '--tb-border-strong',
+        'media_placeholder' => '--tb-media-placeholder',
+        'media_bg' => '--tb-media-bg',
+        'on_overlay' => '--tb-on-overlay',
+    ];
+
+    /**
+     * Rating stars are meaningful graphics, so an authored star colour must
+     * reach WCAG 1.4.11's 3:1 non-text minimum against the surface. (The
+     * legacy #f59e0b fallback itself measures about 2:1 on #f9fafb; it is
+     * kept only because the zero-diff rule forbids changing an undefined
+     * token's rendering.)
+     */
+    private const STAR_MIN_CONTRAST = 3.0;
+
+    /**
      * @param array $globalStyles   A Theme's raw `global_styles` field.
      * @param array $platformDefaults Optional host platform-level base
      *   variables (e.g. saas-platform's per-site DesignSystemService
@@ -83,6 +112,16 @@ class ThemeTokenNormalizer
         }
         if (isset($spacing['scale'])) {
             $vars['--tb-spacing-scale'] = (string) $spacing['scale'];
+        }
+
+        foreach (self::COMMERCIAL_TOKENS as $key => $token) {
+            $value = $this->authoredValue($colors[$key] ?? null);
+            if ($value !== null) {
+                $vars[$token] = $value;
+            }
+        }
+        if (isset($vars['--tb-star'])) {
+            $vars['--tb-star'] = $this->accessibleStar($vars['--tb-star'], $vars['--tb-surface']);
         }
 
         // Phase 2k (ADR-031 addendum / ADR-032) — real, browser-measured WCAG
@@ -191,6 +230,34 @@ class ThemeTokenNormalizer
         // Exhausted the hue-preserving range — fall back to the absolute
         // extreme (never silently return a still-failing color).
         return $darkening ? '#000000' : '#ffffff';
+    }
+
+    /**
+     * deriveAccessibleForeground() measures the unrounded HSL step, so the
+     * hex it returns can land a hair under the ratio (#f59e0b on #f9fafb
+     * gives 2.996:1). One more derivation from that hex takes the next step.
+     */
+    private function accessibleStar(string $star, string $surface): string
+    {
+        $star = $this->deriveAccessibleForeground($star, $surface, self::STAR_MIN_CONTRAST);
+        $rgb = $this->parseHex($star);
+        $bg = $this->parseHex($surface);
+        if ($rgb !== null && $bg !== null && $this->contrastRatio($rgb, $bg) < self::STAR_MIN_CONTRAST) {
+            $star = $this->deriveAccessibleForeground($star, $surface, self::STAR_MIN_CONTRAST);
+        }
+
+        return $star;
+    }
+
+    /** An authored opt-in token value, or null when the Theme leaves it undefined. */
+    private function authoredValue(mixed $value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 
     private function parseHex(string $hex): ?array
@@ -318,6 +385,20 @@ class ThemeTokenNormalizer
                 $darkVars["--tb-{$key}-text"] = $this->deriveAccessibleForeground($darkVars["--tb-{$key}"], $darkSurface);
             }
             $darkVars['--tb-surface-text'] = $this->pickReadableOn($darkSurface, '#111827');
+            // Commercial tokens stay opt-in in dark mode too: only an
+            // explicit dark_mode.<key> overrides. The star is the exception
+            // — a light-mode star readable on a light card is re-derived
+            // against the dark surface, like the *-text tokens above.
+            foreach (self::COMMERCIAL_TOKENS as $key => $token) {
+                $value = $this->authoredValue($dark[$key] ?? null);
+                if ($value !== null) {
+                    $darkVars[$token] = $value;
+                }
+            }
+            $darkStar = $darkVars['--tb-star'] ?? $this->authoredValue($globalStyles['colors']['star'] ?? null);
+            if ($darkStar !== null) {
+                $darkVars['--tb-star'] = $this->accessibleStar($darkStar, $darkSurface);
+            }
             foreach ($darkVars as $k => $v) {
                 $css .= "  {$k}: {$this->sanitizeCssValue($v)};\n";
             }

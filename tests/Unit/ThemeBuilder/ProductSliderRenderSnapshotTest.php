@@ -77,14 +77,21 @@ use Tests\TestCase;
  * b92570d2 package and this one, then reversing exactly those changes on
  * the new markup: the result is byte-identical to the old render in both
  * modes, so nothing else moved.
+ *
+ * Re-pinned again in WU-C (2026-10-31, audit doc §7.2): the image-less
+ * card placeholder reads
+ * var(--tb-media-placeholder, linear-gradient(135deg,#eef2ff,#f5f3ff))
+ * instead of the bare gradient (three occurrences per render). Verified by
+ * reversing exactly that string on the new markup: both modes hash to the
+ * WU-B pins (4078758e…, bd84203d…), so nothing else moved.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '4078758ea1dd9f89cb0dfd5d8f6cd2a0980387aa378631f05707887e8337300f';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '8e08274c4035ad94b6df17cdad944f7c4570b57ff7a7e179aca318b432c6b7d9';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = 'bd84203df5fea8d8aa51af728cb9185043e6c12441f07eb5e9ae003ab0edc0a0';
+    private const PUBLIC_STRUCTURAL_SHA256 = '0961db7cb3761d826aeb395f49300df88afa8a3402fbe29d0404e145f2f9e18f';
 
     private function render(string $mode = 'neutral'): string
     {

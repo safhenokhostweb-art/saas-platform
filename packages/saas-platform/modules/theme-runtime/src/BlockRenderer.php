@@ -1179,13 +1179,13 @@ class BlockRenderer
         }
         $altAttr = $this->escapeAttr($alt);
         if ($url === '') {
-            return "<div class=\"tb-img-fallback\" style=\"display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;{$style}\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>";
+            return "<div class=\"tb-img-fallback\" style=\"display:flex;align-items:center;justify-content:center;background:var(--tb-media-placeholder, linear-gradient(135deg,#eef2ff,#f5f3ff));color:#a5b4fc;font-size:2rem;{$style}\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>";
         }
         $urlAttr = $this->escapeAttr($url);
         $loading = $priority ? 'loading="eager" fetchpriority="high" decoding="async"' : 'loading="lazy"';
         return "<div class=\"tb-img-frame\" style=\"position:relative;overflow:hidden;{$style}\">"
             . "<img src=\"{$urlAttr}\" alt=\"{$altAttr}\" {$loading} style=\"width:100%;height:100%;object-fit:cover;display:block;\" onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex';\">"
-            . "<div class=\"tb-img-fallback\" style=\"display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>"
+            . "<div class=\"tb-img-fallback\" style=\"display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:var(--tb-media-placeholder, linear-gradient(135deg,#eef2ff,#f5f3ff));color:#a5b4fc;font-size:2rem;\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>"
             . "</div>";
     }
 
@@ -1753,7 +1753,7 @@ class BlockRenderer
         $triggerText = $this->escape($props['trigger_text'] ?? 'باز کردن');
         return "<div id=\"tb-{$id}\" class=\"tb-modal-wrap\">
             <button type=\"button\" class=\"tb-btn tb-btn-primary tb-modal-trigger\" data-modal-trigger=\"tb-{$id}-dialog\" aria-haspopup=\"dialog\">{$triggerText}</button>
-            <div id=\"tb-{$id}-dialog\" class=\"tb-modal-overlay\" style=\"display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;\" role=\"dialog\" aria-modal=\"true\">
+            <div id=\"tb-{$id}-dialog\" class=\"tb-modal-overlay\" style=\"display:none;position:fixed;inset:0;background:var(--tb-backdrop, rgba(15,23,42,.55));z-index:1000;align-items:center;justify-content:center;padding:1rem;\" role=\"dialog\" aria-modal=\"true\">
                 <div class=\"tb-modal-panel\" style=\"background:var(--tb-background, #fff);border-radius:0.75rem;max-width:36rem;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;\">
                     <button type=\"button\" class=\"tb-modal-close\" aria-label=\"بستن\" style=\"position:absolute;top:0.75rem;left:0.75rem;background:none;border:0;font-size:1.25rem;cursor:pointer;line-height:1;\">×</button>
                     <div class=\"tb-modal-body\">{$inner}</div>
@@ -2095,7 +2095,7 @@ class BlockRenderer
         }
 
         $backgroundStyle = $backgroundImage !== ''
-            ? "background-color:{$bg};background-image:linear-gradient(90deg,rgba(5,28,43,.94),rgba(5,28,43,.68)),url('{$backgroundImage}');background-size:cover;background-position:center;"
+            ? "background-color:{$bg};background-image:linear-gradient(90deg,var(--tb-overlay, rgba(5,28,43,.94)),var(--tb-overlay, rgba(5,28,43,.68))),url('{$backgroundImage}');background-size:cover;background-position:center;"
             : "background:{$bg};";
 
         // Phase 3C compositional path. Existing JSON-authored stats continue
@@ -2949,7 +2949,7 @@ class BlockRenderer
 
         $cards = [];
         foreach ($demo as $c) {
-            $cards[] = "<a href=\"#\" class=\"tb-category-card\" style=\"display:block;text-align:center;padding:1.5rem 1rem;border:1px solid #e5e7eb;border-radius:.75rem;text-decoration:none;color:inherit;\">
+            $cards[] = "<a href=\"#\" class=\"tb-category-card\" style=\"display:block;text-align:center;padding:1.5rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:.75rem;text-decoration:none;color:inherit;\">
                 <div class=\"tb-category-card-icon\" style=\"font-size:2rem;margin-bottom:.5rem;\">" . $this->iconHtml($c['icon']) . "</div>
                 <div class=\"tb-category-name\" style=\"font-weight:700;\">" . $this->escape($c['name']) . "</div>
                 <div class=\"tb-category-count\" style=\"font-size:.8rem;color:var(--tb-text-muted, #6b7280);margin-top:.2rem;\">" . $this->displayNumber($c['count']) . " محصول</div>
@@ -3823,13 +3823,13 @@ class BlockRenderer
                 <form onsubmit=\"event.preventDefault();\" novalidate>
                     <div style=\"margin-bottom:1rem;\">"
                         . $this->visuallyHiddenLabel($nameFieldId, 'نام شما')
-                        . "<input id=\"{$nameFieldId}\" type=\"text\" placeholder=\"نام شما\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid #e5e7eb;border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
+                        . "<input id=\"{$nameFieldId}\" type=\"text\" placeholder=\"نام شما\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
                     <div style=\"margin-bottom:1rem;\">"
                         . $this->visuallyHiddenLabel($contactFieldId, 'شماره موبایل یا ایمیل')
-                        . "<input id=\"{$contactFieldId}\" type=\"text\" placeholder=\"شماره موبایل یا ایمیل\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid #e5e7eb;border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
+                        . "<input id=\"{$contactFieldId}\" type=\"text\" placeholder=\"شماره موبایل یا ایمیل\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
                     <div style=\"margin-bottom:1rem;\">"
                         . $this->visuallyHiddenLabel($messageFieldId, 'پیام شما')
-                        . "<textarea id=\"{$messageFieldId}\" placeholder=\"پیام شما\" rows=\"4\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid #e5e7eb;border-radius:0.5rem;font-family:inherit;font-size:0.95rem;resize:vertical;\"></textarea></div>
+                        . "<textarea id=\"{$messageFieldId}\" placeholder=\"پیام شما\" rows=\"4\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;resize:vertical;\"></textarea></div>
                     <button type=\"submit\" class=\"tb-btn tb-btn-primary\" style=\"width:100%;\">ارسال پیام</button>
                 </form>
             </div>

@@ -206,6 +206,47 @@ class ThemeTokenNormalizerContrastTest extends TestCase
         $this->assertStringContainsString('--tb-surface-text:', $darkBlock);
     }
 
+    // ── --tb-star (WU-C): meaningful graphic, WCAG 1.4.11 3:1 on surface ───
+
+    public function test_an_authored_star_too_light_for_the_surface_is_minimally_darkened_to_three_to_one(): void
+    {
+        // The legacy amber itself: about 2:1 on the default #f9fafb surface.
+        $this->assertLessThan(3.0, $this->contrastRatioOf($this->hexToRgb('#f59e0b'), $this->hexToRgb('#f9fafb')));
+
+        $star = $this->n()->normalize(['colors' => ['star' => '#f59e0b']])['--tb-star'];
+
+        $this->assertNotSame('#f59e0b', $star);
+        $this->assertGreaterThanOrEqual(3.0, $this->contrastRatioOf($this->hexToRgb($star), $this->hexToRgb('#f9fafb')));
+        [$origH] = $this->rgbToHslPublic($this->hexToRgb('#f59e0b'));
+        [$starH] = $this->rgbToHslPublic($this->hexToRgb($star));
+        $this->assertEqualsWithDelta($origH, $starH, 5.0, 'Still amber: only lightness changes.');
+    }
+
+    public function test_an_authored_star_that_already_reaches_three_to_one_is_kept_exactly(): void
+    {
+        $this->assertSame('#b45309', $this->n()->normalize(['colors' => ['star' => '#b45309']])['--tb-star']);
+    }
+
+    public function test_the_star_is_derived_against_the_themes_own_surface(): void
+    {
+        $vars = $this->n()->normalize(['colors' => ['star' => '#facc15', 'surface' => '#1e293b']]);
+
+        $this->assertGreaterThanOrEqual(3.0, $this->contrastRatioOf($this->hexToRgb($vars['--tb-star']), $this->hexToRgb('#1e293b')));
+    }
+
+    public function test_dark_mode_re_derives_a_light_mode_star_against_the_dark_surface(): void
+    {
+        $css = $this->n()->renderCssBlock([
+            'colors' => ['star' => '#f59e0b'],
+            'dark_mode' => ['enabled' => true],
+        ]);
+        preg_match('/\[data-theme="dark"\] \{(.*?)\n\}/s', $css, $m);
+        preg_match('/--tb-star: (#[0-9a-f]{6});/', $m[1] ?? '', $star);
+
+        $this->assertNotEmpty($star, 'dark block must carry its own --tb-star');
+        $this->assertGreaterThanOrEqual(3.0, $this->contrastRatioOf($this->hexToRgb($star[1]), $this->hexToRgb('#1f2937')));
+    }
+
     // ── helpers (mirror the private math for direct, isolated assertions) ──
 
     private function hexToRgb(string $hex): array

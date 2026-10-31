@@ -198,3 +198,22 @@
 - **دامنه B7:** اسلایدر تمام‌عرض (حالت پیش‌فرض) از قبل با قواعد `!important` در `theme-runtime-contract.css` (L62–L71) تایپوگرافی fluid داشت. پس ادعای «عنوان ثابت ۱.۷۵rem» در §۳ فقط درباره حالت **boxed** درست بود، و B7 هم فقط همان‌جا اثر دارد.
 - **نقص پیشین بیرون از B (پیگیری لازم):** در حالت boxed، دکمه مکث «Ⅱ» و دکمه‌های thumbnail زیر اسلایدر به شکل دکمه خام مرورگر نمایش داده می‌شوند، چون استایل `.tb-carousel-status` و `.tb-carousel-thumbs` فقط برای `.tb-slider-full` تعریف شده است. B این markup را تغییر نداد و هارنس روی آن diff ندارد.
 - **override‌های customer-site** (`ThemeCanvasRenderer` L476، L658، L1821، L1878) برچسب پیش‌فرض «اسلایدر» می‌گیرند، نه عنوان بلاک. این پیگیری کوچکی در سمت host است.
+
+## ۹. ثبت تحویل WU-C — توکن‌های تجاری (۲۰۲۶-۱۰-۳۱)
+
+| مورد | مقدار |
+|---|---|
+| پیاده‌سازی | شیت مشترک: ستاره‌ها و `.tb-rating-bar > span` با `--tb-star`؛ `.tb-star.is-off`، `.tb-empty-state` و `.tb-product-grid-empty` با `--tb-border-strong`؛ backdrop جستجو و کشوی سبد با `--tb-backdrop` (هر کدام با fallback قدیم خودش). `BlockRenderer`: `imageWithFallback` با `--tb-media-placeholder`، `renderModal` با `--tb-backdrop`، overlay تصویر `renderStatsRow` با `--tb-overlay`، کارت `renderCategorySlider` و سه فیلد `renderContactSplit` با `--tb-border` (پیش‌فرضش همان `#e5e7eb` است و هیچ‌کدام از ۲۹ snapshot آن را override نمی‌کند) |
+| رجیستری توکن | `ThemeTokenNormalizer::COMMERCIAL_TOKENS`: پنج توکن §۷.۲ به‌اضافه `--tb-media-bg` و `--tb-on-overlay` که قواعد `.tb-slide*` در WU-B از قبل می‌خواندند. هر توکن **فقط وقتی** emit می‌شود که تم `colors.<key>` یا `dark_mode.<key>` را تعریف کند |
+| کنتراست ستاره | `#f59e0b` روی `#f9fafb` حدود ۲:۱ است و به حداقل ۳:۱ معیار WCAG 1.4.11 نمی‌رسد. fallback به خاطر قاعده صفر-diff دست نخورد، ولی رنگ ستاره‌ای که تم تعریف کند تا ۳:۱ تیره می‌شود (با حفظ hue) و در dark mode دوباره روی surface تیره محاسبه می‌شود |
+| baseline پاریتی | پکیج `bc6f52d2`. محتوای `packages/` در `822e6171` با آن یکی است، پس baseline با `822e6171` معادل است |
+| پاریتی CSS (بعد) | platform: ۲۳۰ سند، ۲۰۹۲۷ عنصر در هر عرض؛ customer: ۲۲۹ سند، ۱۸۰۰۶ عنصر. در هر دو host با توکن default و با `--tokens=none` **صفر diff**. کنترل مثبت (پالتی که همه توکن‌های تازه را تعریف می‌کند) فقط روی ۱۱ نوع عنصر هدف تغییر رنگ می‌دهد: ستاره‌ها، empty-state، دات کاروسل، overlay و کپشن اسلاید، overlay مودال، و fallback تصویر |
+| اسنپ‌شات product_slider | re-pin با اثبات: معکوس کردن فقط رشته placeholder روی render تازه، pinهای WU-B (`4078758e…`، `bd84203d…`) را در هر دو mode بازمی‌سازد |
+| تست‌ها | ۷۵ تست ThemeBuilder مرتبط سبز. کل `tests/Unit` روی sqlite حافظه‌ای (برای دور ماندن از DB تست مشترک): صفر شکست تازه نسبت به قبل. تست‌های جدید: `CommercialTokenRatchetTest` و `ThemeTokenNormalizerCommercialTokensTest`، به‌اضافه چهار تست ستاره در `ThemeTokenNormalizerContrastTest` |
+| readiness | روی worktree همین شاخه: READY با ۰ blocker و ۰ warning |
+
+**یافته‌ها و باقی‌مانده‌ها:**
+- **۱۷ رنگ خام عمداً ماندند** (تصمیم مالک، ۲۰۲۶-۱۰-۳۱): `renderBentoGrid` ۷، `renderHeaderModernV1` ۴، `renderHeroGradient` ۲، `renderNavFooter` ۲، و رنگ آیکن placeholder ۲. هیچ‌کدام توکنی ندارند که بدون تغییر بصری برای تم‌های موجود به آن وصل شوند. سقف هر تابع در `CommercialTokenRatchetTest` قفل است.
+- **`buildCssDeclarations`** (اختیاری) انجام نشد: پیش‌فرض `--tb-shadow-md/lg` با presetها برابر نیست و اتصالشان تغییر بصری می‌دهد.
+- **override‌های customer-site** برای `renderCategorySlider` (`ThemeCanvasRenderer`) و `renderContactSplit` (`ThemeBuilder\BlockRenderer`) هنوز `#e5e7eb` خام دارند. ویترین زنده صفر-diff است، ولی این دو بلاک تا هم‌ترازی host قابل theming نیستند.
+- **`deriveAccessibleForeground()`** کنتراست را پیش از گرد کردن به hex می‌سنجد، پس خروجی ممکن است کمی زیر نسبت هدف بیفتد (برای ستاره ۲.۹۹۶:۱). ستاره با یک گام اضافه اصلاح شد. توکن‌های `*-text` دست نخوردند تا صفر-diff بماند.
