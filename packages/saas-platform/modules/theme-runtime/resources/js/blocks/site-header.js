@@ -157,7 +157,8 @@
   }
 
   /* ── Mega menus ──────────────────────────────────────────────────── */
-  const touchMenus = () => !root.matchMedia('(hover: hover) and (min-width: 1025px)').matches;
+  // WU-D: same desktop step as the stylesheet's hover rules (lg = 1024px).
+  const touchMenus = () => !root.matchMedia('(hover: hover) and (min-width: 1024px)').matches;
 
   function setOpen(item, open) {
     item.classList.toggle('tb-mega-open', open);

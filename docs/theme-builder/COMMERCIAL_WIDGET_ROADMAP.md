@@ -1020,3 +1020,5 @@ XSS delivery record (deployed: saas-platform `b92570d2`, customer-site
 `a717b684`), and implementation-ready specs for WU-B (carousel controller)
 and WU-C (commercial tokens) live in
 `CANVAS_WIDGET_LOCAL_VS_PROD_AUDIT_2026-10-30.md` §6–§7.
+
+**2026-10-31 (WU-D):** the breakpoint scale (480/768/1024/1280), column and grid slots as size containers (`@container tb-slot`), fluid title floors and the boxed slider's controls. Zero visual diff on both hosts at 1366/768/390 and zero horizontal overflow at 360–1280. Delivery record: `CANVAS_WIDGET_LOCAL_VS_PROD_AUDIT_2026-10-30.md` §10; decision: ADR-071. The four legacy `max-width: 768px` rules stay pinned (owner decision 2026-10-31).

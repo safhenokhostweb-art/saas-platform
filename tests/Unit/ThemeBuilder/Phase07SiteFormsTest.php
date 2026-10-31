@@ -109,7 +109,7 @@ class Phase07SiteFormsTest extends TestCase
         $this->assertStringContainsString('data-tb-search-open="tb-b1-search-form" aria-label="جستجو"><svg class="tb-icon-svg tb-icon-svg-search"', $html);
 
         $css = file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
-        $this->assertStringContainsString('@media (max-width: 640px) { .tb-nav-header-search { display: none; } .tb-nav-header-search-toggle { display: inline-flex; }', $css);
+        $this->assertStringContainsString('@media (max-width: 767.98px) { .tb-nav-header-search { display: none; } .tb-nav-header-search-toggle { display: inline-flex; }', $css);
         $this->assertStringContainsString('.tb-search-overlay__panel { width: 100%; height: 100%;', $css, 'full-screen dialog on phones');
     }
 
