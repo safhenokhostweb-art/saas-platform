@@ -171,7 +171,7 @@
     outline-offset: 3px;
 }
 
-@media (max-width: 47.99rem) {
+@media (max-width: 767.98px) {
     .tb-header-modern__inner {
         grid-template-columns: minmax(0, 1fr) auto;
         min-height: 4.25rem;
@@ -219,7 +219,7 @@
     .tb-header-modern__link::after { display: none; }
 }
 
-@media (max-width: 27rem) {
+@media (max-width: 479.98px) {
     .tb-header-modern__inner { width: min(100% - 1rem, 76rem); }
     .tb-header-modern__cta { padding-inline: .8rem; }
 }

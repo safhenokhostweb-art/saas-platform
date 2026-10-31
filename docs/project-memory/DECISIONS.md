@@ -3986,3 +3986,86 @@ There is no migration or Composer change.
 - **Edited:** additive keys in `HealthCheckService`, the
   `config/resource_governance.php` `disk`/`prune` sections, the Kernel
   schedule, the admin routes and the `AdminMenu` entry.
+
+## ADR-071
+
+**Title:** One Breakpoint Scale for the Widget Runtime; Column and Grid Slots Are Size Containers; Fluid Title Floors That Keep Every Existing Size From 390px Up
+
+**Status:** Accepted
+
+**Date:** 2026-10-31
+
+**Context:**
+
+- The widget runtime used ten viewport widths (480, 500, 600, 639, 640,
+  767, 768, 1023, 1024, 1025) and no container queries
+  (`docs/theme-builder/CANVAS_WIDGET_LOCAL_VS_PROD_AUDIT_2026-10-30.md` §3).
+  The header's touch-menu switch was 1025px in `site-header.js` and
+  1023/1024px in CSS. The `767px`/`768px` pairs matched neither side at
+  fractional (zoomed) widths.
+- Card blocks inside a `columns` or `grid` layout block followed the
+  viewport, not their slot. A four-column product grid in a third-width
+  column stayed four columns wide.
+- In boxed mode the image slider's progress row, pause button and
+  thumbnails had no styles: the thumbnails rendered their images at full
+  size and the page scrolled sideways at every width.
+- The owner approved WU-D (audit §5) under the zero-diff rule. Existing
+  pages must not change at the widths the CSS parity harness measures
+  (390, 768, 1366).
+
+**Decision:**
+
+1. **Scale:** sm 480, md 768, lg 1024, xl 1280. Viewport queries use only
+   `max-width: 479.98 / 767.98 / 1023.98 / 1279.98px` and
+   `min-width: 480 / 768 / 1024 / 1280px`, in both package stylesheets,
+   `header-modern.css`, the renderer's inline `<style>` and
+   `site-header.js`.
+   - Off-scale widths move to the nearest step: 500/600 → 480, 639/640 →
+     768, 1025 → 1024.
+   - Carousel item counts are the one exception: the mobile count starts
+     below 480px, so a 480–767px landscape phone keeps the tablet count
+     instead of one stretched card.
+   - `BreakpointScaleTest` fails on any new off-scale width.
+2. **Legacy `max-width: 768px` rules stay.** Four rules put a 768px iPad in
+   phone mode: `renderColumns()` stacking, timeline, commercial and trust
+   grids, dynamic widget. Moving them to 767.98px would change existing
+   pages at 768px. Their count is pinned per file and may only go down.
+   Owner decision 2026-10-31: keep them as they are, for tablet-portrait
+   readability and strict zero-diff on existing layouts.
+3. **Slots are containers.** Each child of `.tb-columns` and of the
+   `grid` layout block (now marked `.tb-layout-grid`) gets
+   `container: tb-slot / inline-size`.
+   - `@container tb-slot` rules repeat the viewport steps for `.tb-grid`,
+     the commercial, trust, dynamic, testimonial and pricing grids, and for
+     carousel item counts.
+   - A grid that is itself the slot cannot query its own width. It fits as
+     many columns as hold a 14rem card, capped at its own count.
+   - Top-level blocks have no `tb-slot` ancestor and are untouched.
+   - A slot holding an overlay, drawer, modal or header is left
+     uncontained (`:not(:has(...))`), because containment would capture
+     its fixed-position layers. Browsers without `:has()` drop the rule
+     and contain nothing.
+4. **Fluid title floors.** For hero, h1, section, CTA and full-width slider
+   titles, only the clamp floor moves. It equals the old floor from 390px
+   up and shrinks 0.1px per px below it, to a lower bound. Every theme, at
+   any type scale, keeps its size at 390px and wider. The hero_section
+   heading now grows from 0.72× at 390px to full size at 768px instead of
+   jumping at 640px.
+5. **Boxed slider controls** get in-flow styles on the page surface. On the
+   dark slide they kept the full-width slider's overlay look.
+
+**Consequences:**
+
+- The CSS parity harness found no visual difference on either host, in
+  default or `--tokens=none` mode (229 + 230 documents, 3 widths). The only
+  diffs are `container-name`/`container-type` on the column slots of one
+  snapshot (sales-support-pro).
+- Between the measured widths, behaviour changes where an off-scale step
+  moved: 481–600px, 641–767px, exactly 1024px, and phones narrower than
+  390px. The overflow gate (`tests/Support/CssParity/overflow.cjs`)
+  reports zero horizontal overflow on every document at 360, 600, 768,
+  1024 and 1280px.
+- Nested card content changes on purpose: it now collapses by its slot.
+- customer-site host chrome (`layouts/canvas-theme.blade.php`) and its
+  account/admin pages keep their own widths. They are host-owned and
+  outside this scale.

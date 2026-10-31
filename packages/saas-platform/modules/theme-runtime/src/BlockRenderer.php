@@ -616,7 +616,7 @@ class BlockRenderer
             if (!empty($tabletStyle)) {
                 $tabletCss = $this->buildCssDeclarations($tabletStyle);
                 if (!empty($tabletCss)) {
-                    $mediaCss .= "@media(max-width:1024px){{$selector}{" . implode(';', $tabletCss) . "}}";
+                    $mediaCss .= "@media(max-width:1023.98px){{$selector}{" . implode(';', $tabletCss) . "}}";
                 }
             }
 
@@ -624,7 +624,7 @@ class BlockRenderer
             if (!empty($mobileStyle)) {
                 $mobileCss = $this->buildCssDeclarations($mobileStyle);
                 if (!empty($mobileCss)) {
-                    $mediaCss .= "@media(max-width:480px){{$selector}{" . implode(';', $mobileCss) . "}}";
+                    $mediaCss .= "@media(max-width:479.98px){{$selector}{" . implode(';', $mobileCss) . "}}";
                 }
             }
 
@@ -745,7 +745,10 @@ class BlockRenderer
     {
         $cols = max(1, min(6, (int) ($props['columns'] ?? 3)));
         $gap = $this->spacingClass($props['gap'] ?? 'md');
-        return "<div id=\"tb-{$id}\" class=\"tb-grid tb-grid-cols-{$cols} tb-gap-{$gap}\">{$inner}</div>";
+        // WU-D: .tb-layout-grid tells this layout block apart from the card
+        // grids that share .tb-grid, so only its children become tb-slot
+        // containers (theme-runtime-contract.css).
+        return "<div id=\"tb-{$id}\" class=\"tb-grid tb-grid-cols-{$cols} tb-gap-{$gap} tb-layout-grid\">{$inner}</div>";
     }
 
     /**
@@ -983,6 +986,10 @@ class BlockRenderer
         $label = trim(is_string($options['label'] ?? null) ? $options['label'] : '');
         $carouselLabel = $this->escapeAttr($label !== '' ? $label : 'اسلایدر');
 
+        // WU-D: the mobile count starts below 480px (portrait phones), so a
+        // 480–767px landscape phone keeps the tablet count instead of one
+        // stretched card. Inside a columns/grid slot the slot's own width
+        // picks the count (@container tb-slot).
         return "<div id=\"tb-{$id}\" class=\"tb-carousel{$fadeClass} {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" aria-label=\"{$carouselLabel}\" tabindex=\"0\"
             data-autoplay=\"{$autoplayAttr}\" data-interval=\"{$interval}\" data-pause-hover=\"{$pauseAttr}\" data-fade=\"{$fadeAttr}\"
             style=\"--tb-items-desktop:{$desktop};--tb-items-tablet:{$tablet};--tb-items-mobile:{$mobile};\">
@@ -998,8 +1005,10 @@ class BlockRenderer
                    actually matching decides the final value. */
                 #tb-{$id}{--tb-items:var(--tb-items-desktop);}
                 #tb-{$id} .tb-carousel-slide{flex:0 0 calc(100% / var(--tb-items,1));min-width:0;}
-                @media (max-width:1024px){ #tb-{$id}{--tb-items:var(--tb-items-tablet);} }
-                @media (max-width:640px){ #tb-{$id}{--tb-items:var(--tb-items-mobile);} }
+                @media (max-width:1023.98px){ #tb-{$id}{--tb-items:var(--tb-items-tablet);} }
+                @media (max-width:479.98px){ #tb-{$id}{--tb-items:var(--tb-items-mobile);} }
+                @container tb-slot (max-width:1023.98px){ #tb-{$id}{--tb-items:var(--tb-items-tablet);} }
+                @container tb-slot (max-width:479.98px){ #tb-{$id}{--tb-items:var(--tb-items-mobile);} }
             </style>
             <div class=\"tb-carousel-viewport\">
                 <div class=\"tb-carousel-track\">" . implode('', $slides) . "</div>

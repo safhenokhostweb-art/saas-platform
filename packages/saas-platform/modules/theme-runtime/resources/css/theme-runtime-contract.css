@@ -61,7 +61,9 @@
 .tb-bento-item-link { display: inline-flex; align-items: center; margin-top: .85rem; padding: .48rem .8rem; border-radius: .55rem; background: rgba(255,255,255,.92); color: #0f172a; font-size: .78rem; font-weight: 800; text-decoration: none; }
 .tb-slider-full .tb-slide { min-height: clamp(420px,48vw,640px); }
 .tb-slider-full .tb-slide-caption { width: min(50%,650px); margin-inline-start: auto; margin-inline-end: clamp(2rem,7vw,7rem); text-align: right !important; padding: 3rem !important; }
-.tb-slider-full .tb-slide-title { font-size: clamp(2rem,4vw,4.2rem) !important; line-height: 1.15; }
+/* WU-D: the 2rem floor shrinks below 390px only (see the fluid-title note in
+   theme-runtime-blocks.css); it made the old phone-only 2rem rule redundant. */
+.tb-slider-full .tb-slide-title { font-size: clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),4vw,4.2rem) !important; line-height: 1.15; }
 .tb-slider-full .tb-slide-subtitle { font-size: clamp(1rem,1.6vw,1.3rem) !important; line-height: 1.9; }
 .tb-slider-full .tb-carousel-dots { position: absolute; bottom: 1.35rem; inset-inline: 0; z-index: 3; margin: 0 !important; }
 .tb-slider-full .tb-carousel-dot { background: rgba(255,255,255,.58) !important; transition: width .2s ease, background .2s ease; }
@@ -76,10 +78,9 @@
 .tb-slider-full .tb-carousel-thumb.is-active { border-color: var(--tb-secondary,#14b8a6); opacity: 1; }
 .tb-carousel-pause:focus-visible,
 .tb-carousel-thumb:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-@media (max-width: 640px) {
+@media (max-width: 767.98px) {
     .tb-slider-full .tb-slide { min-height: 540px; }
     .tb-slider-full .tb-slide-caption { width: 100%; margin: 0; padding: 2rem 1.4rem 4rem !important; align-self: flex-end; }
-    .tb-slider-full .tb-slide-title { font-size: 2rem !important; }
     .tb-slider-full .tb-carousel-thumbs { display: none; }
 }
 
@@ -115,7 +116,7 @@
 .tb-grid.tb-grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .tb-grid.tb-grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .tb-grid.tb-grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-@media (max-width: 767px) {
+@media (max-width: 767.98px) {
     .tb-grid.tb-grid-cols-2,
     .tb-grid.tb-grid-cols-3,
     .tb-grid.tb-grid-cols-4,
@@ -123,17 +124,67 @@
     .tb-grid.tb-grid-cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .tb-grid.tb-grid-cols-1 { grid-template-columns: 1fr; }
 }
-@media (max-width: 480px) {
+@media (max-width: 479.98px) {
     .tb-grid.tb-grid-cols-2,
     .tb-grid.tb-grid-cols-3,
     .tb-grid.tb-grid-cols-4 { grid-template-columns: 1fr; }
 }
 
+/* ─── WU-D: container slots ──────────────────────────────────────────
+   Each child of a columns block (and of a grid layout block, which the
+   renderer marks .tb-layout-grid) is an inline-size container, so cards
+   inside a half or third column collapse by the column's own width
+   instead of the viewport's. The queries repeat the viewport steps above
+   with the same thresholds; a slot is never wider than the viewport, so
+   they can only collapse further, never re-expand. Top-level blocks have
+   no tb-slot ancestor and are untouched.
+   Containment makes the slot the containing block for fixed-position
+   descendants, so a slot holding an overlay, drawer, modal or header is
+   left uncontained. Without :has() support the whole rule is dropped and
+   nothing is contained (the pre-WU-D behaviour). */
+.tb-columns > :not(style):not(:has(.tb-modal-overlay, .tb-search-overlay, .tb-cart-drawer, .tb-toast-region, .tb-nav-header, .tb-header-modern, .tb-hdr-sticky)),
+.tb-layout-grid > :not(style):not(:has(.tb-modal-overlay, .tb-search-overlay, .tb-cart-drawer, .tb-toast-region, .tb-nav-header, .tb-header-modern, .tb-hdr-sticky)) { container: tb-slot / inline-size; }
+@container tb-slot (max-width: 767.98px) {
+    .tb-grid.tb-grid-cols-2,
+    .tb-grid.tb-grid-cols-3,
+    .tb-grid.tb-grid-cols-4,
+    .tb-grid.tb-grid-cols-5,
+    .tb-grid.tb-grid-cols-6,
+    .tb-commercial-grid,
+    .tb-trust-badges-row,
+    .tb-dynamic-product-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tb-testimonials-grid.cols-2,
+    .tb-testimonials-grid.cols-3,
+    .tb-pricing-grid.cols-2,
+    .tb-pricing-grid.cols-3,
+    .tb-pricing-grid.cols-4 { grid-template-columns: 1fr; }
+    .tb-pricing-card.highlighted { transform: none; }
+}
+@container tb-slot (max-width: 479.98px) {
+    .tb-grid.tb-grid-cols-2,
+    .tb-grid.tb-grid-cols-3,
+    .tb-grid.tb-grid-cols-4,
+    .tb-commercial-grid,
+    .tb-trust-badges-row,
+    .tb-dynamic-product-items { grid-template-columns: minmax(0, 1fr); }
+}
+/* A grid that is itself the slot (product_grid renders its .tb-grid as the
+   block root) cannot query its own width. It fits as many columns as hold a
+   14rem card instead, never more than its own count; auto-fill keeps the
+   track count, so a short list does not stretch. */
+.tb-columns > .tb-grid.tb-grid-cols-2, .tb-layout-grid > .tb-grid.tb-grid-cols-2 { --tb-fit-cols: 2; }
+.tb-columns > .tb-grid.tb-grid-cols-3, .tb-layout-grid > .tb-grid.tb-grid-cols-3 { --tb-fit-cols: 3; }
+.tb-columns > .tb-grid.tb-grid-cols-4, .tb-layout-grid > .tb-grid.tb-grid-cols-4 { --tb-fit-cols: 4; }
+.tb-columns > .tb-grid.tb-grid-cols-5, .tb-layout-grid > .tb-grid.tb-grid-cols-5 { --tb-fit-cols: 5; }
+.tb-columns > .tb-grid.tb-grid-cols-6, .tb-layout-grid > .tb-grid.tb-grid-cols-6 { --tb-fit-cols: 6; }
+.tb-columns > .tb-grid[class*="tb-grid-cols-"],
+.tb-layout-grid > .tb-grid[class*="tb-grid-cols-"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, max(14rem, calc((100% - (var(--tb-fit-cols, 1) - 1) * 1.5rem) / var(--tb-fit-cols, 1)))), 1fr)); }
+
 /* ─── stats row (real Phase 2g drift: no CSS at all in one host) ────── */
 .tb-stats-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
 .tb-stat-item { text-align: center; padding: 1.5rem 2rem; flex: 1 1 160px; }
 .tb-stat-divider { width: 1px; align-self: stretch; background: rgba(0,0,0,0.08); }
-@media (max-width: 600px) {
+@media (max-width: 479.98px) {
     .tb-stat-item { flex: 1 1 130px; padding: 1rem 0.75rem; }
     .tb-stat-divider { display: none; }
 }
@@ -184,10 +235,10 @@
 /* Commercial Productization fase-2: per-item "نمایش/عدم نمایش در دسکتاپ"
    and per-item "حالت موبایل" (accordion/flat/hidden), both real Editor
    fields on nav_link (see BlockRenderer::renderMegaMenuItem()). */
-@media (min-width: 1025px) {
+@media (min-width: 1024px) {
   .tb-mega-desktop-hidden .tb-mega-menu-panel { display: none !important; }
 }
-@media (max-width: 1024px) {
+@media (max-width: 1023.98px) {
   .tb-mega-menu-panel { position: static; box-shadow: none; border: none; display: none !important; }
   .tb-mega-menu-item.tb-mega-open > .tb-mega-menu-panel { display: flex !important; flex-direction: column; }
   .tb-mega-mobile-hidden { display: none !important; }
@@ -454,10 +505,13 @@
 .tb-hero-actions .tb-btn { border-radius: var(--tb-hero-btn-radius, 12px); }
 
 /* Small screens: stack columns and scale the title down; the section's
-   own min-height/padding props (inline) deliberately keep winning. */
-@media (max-width: 640px) {
+   own min-height/padding props (inline) deliberately keep winning.
+   WU-D: the title is 0.72× at 390px as before, grows toward the full size
+   up to the tablet step (0.036px per px reaches it at 768px for the default
+   scale) and shrinks below 390px, never under 0.6×. */
+@media (max-width: 767.98px) {
   .tb-hero-container { flex-direction: column; }
-  .tb-hero-content .tb-heading { font-size: calc(var(--tb-hero-title-size, 3.25rem) * 0.72); }
+  .tb-hero-content .tb-heading { font-size: clamp(calc(var(--tb-hero-title-size, 3.25rem) * 0.6), calc(var(--tb-hero-title-size, 3.25rem) * 0.72 + (100vw - 390px) * 0.036), var(--tb-hero-title-size, 3.25rem)); }
 }
 
 /* ─── Phase 3C / Milestone 1 — compositional commercial widgets ─────────
@@ -561,7 +615,7 @@
   .tb-commercial-grid,
   .tb-trust-badges-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 480px) {
+@media (max-width: 479.98px) {
   .tb-commercial-grid,
   .tb-trust-badges-row { grid-template-columns: minmax(0, 1fr); }
   .tb-commercial-stats-divided .tb-commercial-stats-grid > .tb-stat-item + .tb-stat-item {
@@ -664,7 +718,7 @@
   .tb-dynamic-product-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tb-dynamic-feed-track { grid-auto-columns: minmax(15rem, 75%); }
 }
-@media (max-width: 480px) {
+@media (max-width: 479.98px) {
   .tb-dynamic-product-items { grid-template-columns: minmax(0, 1fr); }
   .tb-dynamic-feed-track { grid-auto-columns: 90%; }
 }

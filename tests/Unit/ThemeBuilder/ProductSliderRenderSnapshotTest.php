@@ -84,14 +84,22 @@ use Tests\TestCase;
  * instead of the bare gradient (three occurrences per render). Verified by
  * reversing exactly that string on the new markup: both modes hash to the
  * WU-B pins (4078758e…, bd84203d…), so nothing else moved.
+ *
+ * Re-pinned again in WU-D (2026-10-31, ADR-071): the carousel's inline
+ * <style> uses the breakpoint scale (tablet count at max-width 1023.98px,
+ * was 1024px; mobile count at 479.98px, was 640px) and gains two
+ * @container tb-slot lines, so a carousel nested in a columns/grid slot
+ * picks its count by the slot's width. Verified by reversing exactly those
+ * four edits on the new markup: both modes hash to the WU-C pins
+ * (8e08274c…, 0961db7c…), so nothing else moved.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '8e08274c4035ad94b6df17cdad944f7c4570b57ff7a7e179aca318b432c6b7d9';
+    private const NEUTRAL_STRUCTURAL_SHA256 = 'bbf5e41d32e5e8c63859a7238aa2241fbba55e25d6fd2d83f2b320b3035899a7';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '0961db7cb3761d826aeb395f49300df88afa8a3402fbe29d0404e145f2f9e18f';
+    private const PUBLIC_STRUCTURAL_SHA256 = '547a3fde0d5afc67cfd1a22bfc8102e2fcd9bc26d780aebfd3341dd84b5ae7fa';
 
     private function render(string $mode = 'neutral'): string
     {
