@@ -13,6 +13,7 @@
     "database/**",
     "scripts/**",
     "AGENTS.md",
+    "config/resource_governance.php",
     ".gitignore",
     "composer.json",
     "composer.lock",
