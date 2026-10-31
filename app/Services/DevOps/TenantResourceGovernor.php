@@ -8,7 +8,6 @@ use App\Models\SiteResourceLimit;
 use App\Models\SiteResourceUsage;
 use App\Models\TenantPruneAuditLog;
 use App\Models\User;
-use App\Services\AuthorizationService;
 use App\Services\DevOps\Exceptions\PruneInProgressException;
 use App\Services\Notification\NotificationCenterService;
 use Illuminate\Support\Facades\Cache;
@@ -410,16 +409,14 @@ class TenantResourceGovernor
         return $limit;
     }
 
-    public const PRUNE_PERMISSION = 'devops.storage.prune';
-
     /**
-     * Deleting files on customer servers is narrower than admin access
-     * (same boundary style as tenant.upgrade.execute): super admins, or a
-     * role explicitly granted devops.storage.prune. Legacy is_admin-only
-     * users can view and edit quotas but cannot prune.
+     * Deleting files on customer servers is restricted to super admins
+     * (owner decision 2026-10-31). There is deliberately no grantable
+     * permission: no role, staff member or legacy is_admin-only user can
+     * prune. They can still view, re-measure and edit quotas.
      */
     public static function canPrune(?User $user): bool
     {
-        return $user !== null && app(AuthorizationService::class)->can($user, self::PRUNE_PERMISSION);
+        return $user !== null && $user->isSuperAdmin();
     }
 }

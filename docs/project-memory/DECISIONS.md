@@ -3874,7 +3874,7 @@ There is no migration or Composer change.
 
 ## ADR-070
 
-**Title:** DevOps Disk Governor Extends LIFECYCLE-2 Resource Governance; Measures and Prunes Through Each Site's Deployment Driver; One Shared Threshold Set; Prune Behind a Dedicated Permission
+**Title:** DevOps Disk Governor Extends LIFECYCLE-2 Resource Governance; Measures and Prunes Through Each Site's Deployment Driver; One Shared Threshold Set; Prune Is Super-Admin Only
 
 **Status:** Accepted
 
@@ -3947,11 +3947,10 @@ There is no migration or Composer change.
 6. **Authorization.**
    - Viewing, re-measuring and quota edits need admin access, the same level
      as LIFECYCLE-2's `recalculate` and `updateLimits`.
-   - Preview and prune need `devops.storage.prune` through
-     `AuthorizationService::can()`. Super admins pass. The permission is
-     seeded but assigned to no role. Unlike `tenant.upgrade.execute`, no one
-     had this capability, so there was no access to preserve. Legacy
-     `is_admin`-only users cannot prune.
+   - Preview and prune are **super-admin only** (`User::isSuperAdmin()`;
+     owner decision 2026-10-31). There is deliberately no grantable
+     permission, so no role, staff member or legacy `is_admin`-only user can
+     prune, even with a hand-made `devops.storage.prune` row.
    - A UI prune needs a single-use token from a preview, bound to site, user
      and profile. The prune re-scans the host itself.
 
@@ -3965,8 +3964,11 @@ There is no migration or Composer change.
 
 **Consequences:**
 
-- LIFECYCLE-2 storage alerts move from 95 % to 90 % unless
+- 90 % is the system-wide critical threshold (owner-confirmed 2026-10-31).
+  LIFECYCLE-2 storage alerts move from 95 % to 90 % unless
   `RESOURCE_ALERT_CRITICAL_PCT` is set.
+- Autonomous deletion stays off (`RESOURCE_AUTO_PRUNE_ENABLED=false`, owner
+  decision 2026-10-31) until the owner enables it.
 - The overcommit ratio counts only servers measured in the last 26 hours (the
   `df` from each audit is cached).
 - The panel-host tiles describe the panel server. Tenant capacity comes from
@@ -3974,9 +3976,10 @@ There is no migration or Composer change.
 
 **Impact:**
 
-- **Migrations:** `2026_10_31_120000` (adds columns; its `down()` drops
-  them, so it needs migration review), `2026_10_31_120001` (new table) and
-  `2026_10_31_120002` (permission seed).
+- **Migrations:** `2026_10_31_120000` (adds columns) and
+  `2026_10_31_120001` (new table). Their `down()` methods drop only what
+  their `up()` creates. The owner reviewed both on 2026-10-31, recorded in
+  `.deployment/release-policy.json`.
 - **New code:** `app/Services/DevOps/*`, `DevOpsResourceController`, the
   `devops:govern-resources` and `devops:prune-tenant` commands, and
   `resources/views/admin/devops/*`.

@@ -21,8 +21,8 @@ use Illuminate\Support\Str;
  *
  * Every endpoint needs admin access (route middleware); re-measuring and
  * quota edits stay at that level, like SiteResourceGovernanceController's
- * recalculate/updateLimits. Preview and prune additionally need
- * TenantResourceGovernor::canPrune(). A prune must follow a dry-run preview:
+ * recalculate/updateLimits. Preview and prune are super-admin only
+ * (TenantResourceGovernor::canPrune()). A prune must follow a dry-run preview:
  * the preview issues a single-use token bound to the site, user and profile,
  * and the prune is refused without it. The prune itself re-scans the host,
  * so the token proves intent, not the file list.
@@ -190,7 +190,7 @@ class DevOpsResourceController extends Controller
 
     private function authorizePrune(Request $request): void
     {
-        abort_unless(TenantResourceGovernor::canPrune($request->user()), 403, 'دسترسی پاک‌سازی فضای دیسک سایت‌ها را ندارید.');
+        abort_unless(TenantResourceGovernor::canPrune($request->user()), 403, 'پاک‌سازی فضای دیسک سایت‌ها فقط برای مدیر ارشد مجاز است.');
     }
 
     private function validatedSearch(Request $request): ?string

@@ -92,19 +92,37 @@ class DevOpsResourceControllerTest extends TestCase
         $this->assertSame(0, TenantPruneAuditLog::count());
     }
 
-    public function test_staff_needs_the_explicit_prune_permission(): void
+    public function test_prune_is_super_admin_only_and_not_grantable(): void
     {
-        [$site] = $this->hostWithOldLog();
+        [$site, $driver] = $this->hostWithOldLog();
         $staff = $this->user([], Role::STAFF);
         $this->actingAs($staff);
 
         $this->postJson(route('admin.devops.resources.preview', $site))->assertForbidden();
 
-        $permissionId = DB::table('permissions')->where('slug', 'devops.storage.prune')->value('id');
-        $this->assertNotNull($permissionId, 'migration must seed devops.storage.prune');
+        // Even a role carrying a hand-made permission row with the old slug gets nothing.
+        $permissionId = DB::table('permissions')->insertGetId([
+            'name' => 'test', 'slug' => 'devops.storage.prune', 'module_slug' => 'sites', 'guard_name' => 'web',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
         DB::table('role_has_permissions')->insert(['permission_id' => $permissionId, 'role_id' => $staff->roles()->first()->id]);
 
+        $this->postJson(route('admin.devops.resources.preview', $site))->assertForbidden();
+        $this->assertSame([], $driver->getCommandLog());
+
+        $this->actingAs($this->superAdmin());
         $this->postJson(route('admin.devops.resources.preview', $site))->assertOk();
+    }
+
+    public function test_dashboard_hides_prune_action_from_non_super_admin(): void
+    {
+        $this->makeDevOpsSite();
+
+        $this->actingAs($this->legacyAdmin());
+        $this->get(route('admin.devops.resources.index'))->assertOk()->assertViewHas('canPrune', false);
+
+        $this->actingAs($this->superAdmin());
+        $this->get(route('admin.devops.resources.index'))->assertOk()->assertViewHas('canPrune', true);
     }
 
     // ─── JSON integrity ──────────────────────────────────────────────────────

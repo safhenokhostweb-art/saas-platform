@@ -353,8 +353,8 @@ does not add a second quota store.
   per-site lock, audit-before-delete).
 - **Access:**
   - Viewing, re-measuring and quota edits need admin access.
-  - Preview and prune need the `devops.storage.prune` permission (super
-    admins pass).
+  - Preview and prune are super-admin only. There is no grantable
+    permission for them.
   - A UI prune needs a single-use token from a preview of the same site by
     the same user.
 - **Overcommit:** allocated soft quota divided by the physical disk of the
