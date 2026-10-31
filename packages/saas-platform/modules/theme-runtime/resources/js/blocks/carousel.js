@@ -120,9 +120,11 @@
                 var ipv = itemsPerView();
                 track.style.transform = 'translateX(' + (sign * idx * (100 / ipv)) + '%)';
             }
+            // WU-B: the colours live in the shared sheet (.tb-carousel-dot,
+            // .is-active), so a theme token reaches them.
             dots.forEach(function (d, j) {
                 var active = j === idx;
-                d.style.background = active ? 'var(--tb-primary,#4f46e5)' : '#d1d5db';
+                d.classList.toggle('is-active', active);
                 d.setAttribute('aria-current', active ? 'true' : 'false');
             });
             thumbs.forEach(function (t, j) {
@@ -138,12 +140,22 @@
 
         function stop() { if (timer) { root.clearInterval(timer); timer = null; } }
 
+        // WU-B: autoplay only runs when it can be watched and is wanted —
+        // never for prefers-reduced-motion (WCAG 2.2.2 / 2.3.3), never in a
+        // hidden tab, never while the carousel is scrolled out of view.
+        var motionQuery = typeof root.matchMedia === 'function' ? root.matchMedia('(prefers-reduced-motion: reduce)') : null;
+        var inView = true, hovered = false, focused = false;
+        function reducedMotion() { return !!(motionQuery && motionQuery.matches); }
+        function canAutoplay() {
+            return !manuallyPaused && autoplay && !reducedMotion() && !doc.hidden && inView && !hovered && !focused;
+        }
+
         function resetProgress() {
             if (!progressFill) return;
             progressFill.style.transition = 'none';
             progressFill.style.width = '0';
             void progressFill.offsetWidth;
-            if (!manuallyPaused && autoplay) {
+            if (canAutoplay()) {
                 progressFill.style.transition = 'width ' + intervalMs + 'ms linear';
                 progressFill.style.width = '100%';
             }
@@ -151,7 +163,7 @@
 
         function start() {
             stop();
-            if (!manuallyPaused && autoplay && slideEls.length > itemsPerView()) {
+            if (canAutoplay() && slideEls.length > itemsPerView()) {
                 timer = root.setInterval(stepNext, intervalMs);
             }
             resetProgress();
@@ -180,11 +192,13 @@
             else if (e.key === nextKey) { stepNext(); start(); e.preventDefault(); }
         });
 
+        // A hover/focus pause is a gate in canAutoplay(), so a visibility or
+        // viewport change cannot restart autoplay under the pointer.
         if (pauseOnHover) {
-            rootEl.addEventListener('mouseenter', stop);
-            rootEl.addEventListener('mouseleave', start);
-            rootEl.addEventListener('focusin', stop);
-            rootEl.addEventListener('focusout', start);
+            rootEl.addEventListener('mouseenter', function () { hovered = true; stop(); });
+            rootEl.addEventListener('mouseleave', function () { hovered = false; start(); });
+            rootEl.addEventListener('focusin', function () { focused = true; stop(); });
+            rootEl.addEventListener('focusout', function () { focused = false; start(); });
         }
 
         // Phase 2 (ADR-067): pointer drag (touch, pen and mouse) — the track
@@ -194,11 +208,13 @@
         // reversed. A drag that moved never clicks the link under it.
         var viewport = rootEl.querySelector('.tb-carousel-viewport') || rootEl;
         var drag = null;
-        var trackTransition = track.style.transition; // the markup's own slide animation
+        // WU-B: fade mode swipes too — the gesture is read the same way, but
+        // the track never follows the finger; the release picks the slide.
+        var trackTransition = track.style.transition; // '' = the sheet's own slide animation
         var suppressClick = false;
-        if (!isFade) viewport.style.touchAction = 'pan-y';
+        viewport.style.touchAction = 'pan-y';
         viewport.addEventListener('pointerdown', function (e) {
-            if (isFade || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
             if (e.target.closest && e.target.closest('button, input, select, textarea, form')) return;
             drag = { x: e.clientX, y: e.clientY, dx: 0, id: e.pointerId, moving: false };
         });
@@ -209,9 +225,10 @@
                 if (Math.abs(drag.dx) < 6 || Math.abs(drag.dx) < Math.abs(e.clientY - drag.y)) return;
                 drag.moving = true;
                 stop();
-                track.style.transition = 'none';
+                if (!isFade) track.style.transition = 'none';
                 try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
             }
+            if (isFade) return;
             var atEdge = (isForward(drag.dx) && idx >= maxIndex()) || (!isForward(drag.dx) && idx <= 0);
             var offset = atEdge ? drag.dx * 0.35 : drag.dx;
             track.style.transform = 'translateX(calc(' + (sign * idx * (100 / itemsPerView())) + '% + ' + offset + 'px))';
@@ -222,7 +239,7 @@
             var d = drag;
             drag = null;
             if (!d.moving) return;
-            track.style.transition = trackTransition;
+            if (!isFade) track.style.transition = trackTransition;
             suppressClick = true;
             var threshold = Math.min(80, viewport.clientWidth / itemsPerView() / 5);
             if (Math.abs(d.dx) > threshold) {
@@ -248,18 +265,46 @@
         var onResize = function () { go(Math.min(idx, maxIndex())); };
         root.addEventListener('resize', onResize);
 
+        // WU-B: the autoplay gates (see canAutoplay()). The document and
+        // media-query listeners outlive the element, like onResize, so
+        // destroy() removes them.
+        var onVisibility = function () { if (doc.hidden) stop(); else start(); };
+        var watchesVisibility = typeof doc.addEventListener === 'function' && typeof doc.removeEventListener === 'function';
+        if (watchesVisibility) doc.addEventListener('visibilitychange', onVisibility);
+        var onMotion = function () { start(); };
+        if (motionQuery) {
+            if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotion);
+            else if (motionQuery.addListener) motionQuery.addListener(onMotion);
+        }
+        var observer = null;
+        if (typeof root.IntersectionObserver === 'function') {
+            observer = new root.IntersectionObserver(function (entries) {
+                var visible = entries[entries.length - 1].isIntersecting;
+                if (visible === inView) return;
+                inView = visible;
+                if (inView) start(); else stop();
+            }, { threshold: 0.1 });
+            observer.observe(rootEl);
+        }
+
         paint();
         start();
 
         return {
             /**
              * Leave nothing behind. Element-scoped listeners die with the
-             * node and need no teardown, but the window listener and the
-             * autoplay timer are ours to clean up.
+             * node and need no teardown, but the window/document/media-query
+             * listeners, the observer and the autoplay timer are ours.
              */
             destroy: function () {
                 stop();
                 root.removeEventListener('resize', onResize);
+                if (watchesVisibility) doc.removeEventListener('visibilitychange', onVisibility);
+                if (motionQuery) {
+                    if (motionQuery.removeEventListener) motionQuery.removeEventListener('change', onMotion);
+                    else if (motionQuery.removeListener) motionQuery.removeListener(onMotion);
+                }
+                if (observer) observer.disconnect();
             },
         };
     }

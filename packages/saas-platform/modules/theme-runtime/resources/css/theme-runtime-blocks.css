@@ -780,6 +780,32 @@ html.tb-cart-open { overflow: hidden; }
 .tb-carousel-viewport img { -webkit-user-drag: none; user-select: none; }
 @media (max-width: 640px) { .tb-carousel-prev, .tb-carousel-next { width: 2.1rem; height: 2.1rem; } }
 
+/* ─── WU-B: carousel engine and image slider ───────────────────────────
+ * Was inline in renderCarousel()/renderSlider(); same values, with colours
+ * behind tokens (the fallback is the old literal). Fade stacks every slide
+ * in one grid cell; the first slide and first dot are active from the
+ * server. The full-width slider's own look stays in theme-runtime-contract.css. */
+.tb-carousel { position: relative; outline: none; }
+.tb-carousel:focus-visible { outline: 2px solid var(--tb-primary, #4f46e5); outline-offset: 4px; }
+.tb-carousel-viewport { overflow: hidden; }
+.tb-carousel-track { display: flex; transition: transform 0.45s ease; }
+.tb-carousel--fade .tb-carousel-track { display: grid; transition: initial; }
+.tb-carousel--fade .tb-carousel-slide { grid-column: 1; grid-row: 1; opacity: 0; transition: opacity 0.6s ease; }
+.tb-carousel--fade .tb-carousel-slide:first-child { opacity: 1; }
+.tb-carousel-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.85rem; }
+.tb-carousel-dot { width: 0.55rem; height: 0.55rem; padding: 0; border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db); cursor: pointer; }
+.tb-carousel-dot.is-active { background: var(--tb-primary, #4f46e5); }
+.tb-slider-box { max-width: 72rem; margin: 0 auto; }
+.tb-slide { position: relative; display: flex; align-items: center; justify-content: center; background: var(--tb-media-bg, #111827); overflow: hidden; }
+.tb-slide-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--tb-overlay, rgba(0, 0, 0, 0.55)), rgba(0, 0, 0, 0) 55%); }
+.tb-slide-overlay--off { background: none; }
+.tb-slide-caption { position: relative; z-index: 1; padding: clamp(1.25rem, 4vw, 2.5rem) 1.5rem; color: var(--tb-on-overlay, #fff); text-align: center; text-shadow: 0 1px 4px var(--tb-overlay, rgba(0, 0, 0, 0.55)); }
+.tb-slide .tb-slide-title { margin: 0 0 0.5rem; font-size: clamp(1.25rem, 1rem + 2vw, 2.25rem); font-weight: 700; }
+.tb-slide .tb-slide-subtitle { margin: 0; font-size: 1.05rem; opacity: 0.95; }
+.tb-slide .tb-slide-cta { position: relative; z-index: 1; margin-top: 1rem; display: inline-block; }
+a.tb-slide-link { display: block; color: inherit; text-decoration: none; }
+@media (prefers-reduced-motion: reduce) { .tb-carousel-track, .tb-carousel--fade .tb-carousel-slide, .tb-carousel .tb-carousel-dot { transition: none; } }
+
 /* Product card */
 .tb-product-card { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 20rem; margin: 0 auto; height: 100%; transition: box-shadow 0.2s, transform 0.2s; }
 .tb-carousel .tb-product-card { margin-inline: 0.5rem; }

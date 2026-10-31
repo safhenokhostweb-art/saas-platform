@@ -99,9 +99,14 @@ class SliderRenderersTest extends TestCase
             'boxed' => true,
         ]);
 
-        self::assertStringContainsString('display:grid', $html, 'fade mode must stack slides via grid, not translateX');
+        // WU-B: the layout moved from inline styles to the shared sheet, so
+        // the contract is the class in the markup plus the rule in the sheet.
+        $sheet = (string) file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
+        self::assertMatchesRegularExpression('/class="tb-carousel tb-carousel--fade[ "]/', $html);
+        self::assertStringContainsString('.tb-carousel--fade .tb-carousel-track { display: grid;', $sheet, 'fade mode must stack slides via grid, not translateX');
         self::assertStringContainsString('tb-slider-boxed', $html);
-        self::assertStringContainsString('max-width:72rem', $html);
+        self::assertStringStartsWith('<div class="tb-slider-box">', $html);
+        self::assertStringContainsString('.tb-slider-box { max-width: 72rem;', $sheet);
     }
 
     public function test_image_slider_renders_cta_button_when_slide_has_both_link_and_cta_text(): void

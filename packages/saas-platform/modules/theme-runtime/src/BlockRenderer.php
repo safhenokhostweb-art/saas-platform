@@ -943,24 +943,24 @@ class BlockRenderer
         $slideCount = count($slidesHtml);
         $slides = [];
         $dots = [];
-        // CSS Grid stacking (every slide in the same cell) rather than
-        // position:absolute — the grid container auto-sizes to the
-        // tallest slide, so fade mode never collapses to zero height the
-        // way stacked absolutely-positioned children would without extra
-        // JS-measured height.
-        $fadeSlideStyle = $fade ? 'grid-column:1;grid-row:1;opacity:0;transition:opacity .6s ease;' : '';
+        // WU-B: the slide, track and dot styling lives in the shared sheet
+        // (.tb-carousel-*), so a theme token or a reduced-motion rule can
+        // reach it. Fade mode stacks every slide in one grid cell (the
+        // container auto-sizes to the tallest slide); the first slide and
+        // the first dot carry their active state from the server, so the
+        // carousel is correct before (or without) its script.
+        $countLabel = $this->displayNumber($slideCount);
         foreach ($slidesHtml as $i => $html) {
-            $num = $i + 1;
-            $slides[] = "<div class=\"tb-carousel-slide\" role=\"group\" aria-roledescription=\"slide\" aria-label=\"اسلاید {$num} از {$slideCount}\" style=\"{$fadeSlideStyle}\">{$html}</div>";
-            $dots[] = "<button type=\"button\" class=\"tb-carousel-dot\" aria-label=\"رفتن به اسلاید {$num}\" style=\"width:.55rem;height:.55rem;padding:0;border-radius:999px;border:0;background:#d1d5db;cursor:pointer;\"></button>";
+            $num = $this->displayNumber($i + 1);
+            $active = $i === 0;
+            $slides[] = "<div class=\"tb-carousel-slide\" role=\"group\" aria-roledescription=\"slide\" aria-label=\"اسلاید {$num} از {$countLabel}\">{$html}</div>";
+            $dots[] = '<button type="button" class="tb-carousel-dot' . ($active ? ' is-active' : '') . "\" aria-label=\"رفتن به اسلاید {$num}\" aria-current=\"" . ($active ? 'true' : 'false') . '"></button>';
         }
 
         $autoplayAttr = $autoplay ? 'true' : 'false';
         $pauseAttr = $pauseOnHover ? 'true' : 'false';
         $fadeAttr = $fade ? 'true' : 'false';
-        $trackStyle = $fade
-            ? 'display:grid;'
-            : 'display:flex;transition:transform .45s ease;';
+        $fadeClass = $fade ? ' tb-carousel--fade' : '';
 
         $statusHtml = $showProgress
             ? '<div class="tb-carousel-status"><div class="tb-carousel-progress" aria-hidden="true"><span class="tb-carousel-progress-fill"></span></div><button type="button" class="tb-carousel-pause" aria-pressed="false" aria-label="توقف پخش خودکار">Ⅱ</button></div>'
@@ -969,7 +969,7 @@ class BlockRenderer
         if (!empty($thumbnailUrls)) {
             $buttons = [];
             foreach (array_values($thumbnailUrls) as $i => $url) {
-                $num = $i + 1;
+                $num = $this->displayNumber($i + 1);
                 $buttons[] = '<button type="button" class="tb-carousel-thumb" aria-label="نمایش اسلاید ' . $num . '"><img src="' . $this->escapeAttr((string) $url) . '" alt="" loading="lazy"></button>';
             }
             $thumbnailHtml = '<div class="tb-carousel-thumbs">' . implode('', $buttons) . '</div>';
@@ -978,11 +978,14 @@ class BlockRenderer
         // Phase 2 (ADR-067): arrows on logical sides (previous at the reading
         // start, next at the end) pointing outward, styled by the shared sheet;
         // the LTR mirror flips the glyphs.
-        $carouselLabel = $this->escapeAttr('اسلایدر ' . $id);
+        // WU-B: the accessible name is the block's own title when the caller
+        // has one ($options['label'], plain text), never the internal id.
+        $label = trim(is_string($options['label'] ?? null) ? $options['label'] : '');
+        $carouselLabel = $this->escapeAttr($label !== '' ? $label : 'اسلایدر');
 
-        return "<div id=\"tb-{$id}\" class=\"tb-carousel {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" aria-label=\"{$carouselLabel}\" tabindex=\"0\"
+        return "<div id=\"tb-{$id}\" class=\"tb-carousel{$fadeClass} {$extraClass}\" role=\"region\" aria-roledescription=\"carousel\" aria-label=\"{$carouselLabel}\" tabindex=\"0\"
             data-autoplay=\"{$autoplayAttr}\" data-interval=\"{$interval}\" data-pause-hover=\"{$pauseAttr}\" data-fade=\"{$fadeAttr}\"
-            style=\"position:relative;outline:none;--tb-items-desktop:{$desktop};--tb-items-tablet:{$tablet};--tb-items-mobile:{$mobile};\">
+            style=\"--tb-items-desktop:{$desktop};--tb-items-tablet:{$tablet};--tb-items-mobile:{$mobile};\">
             <style>
                 /* Real bug found via a full-page Playwright screenshot pass
                    (tablet/mobile columns silently stayed at the desktop
@@ -998,13 +1001,13 @@ class BlockRenderer
                 @media (max-width:1024px){ #tb-{$id}{--tb-items:var(--tb-items-tablet);} }
                 @media (max-width:640px){ #tb-{$id}{--tb-items:var(--tb-items-mobile);} }
             </style>
-            <div class=\"tb-carousel-viewport\" style=\"overflow:hidden;\">
-                <div class=\"tb-carousel-track\" style=\"{$trackStyle}\">" . implode('', $slides) . "</div>
+            <div class=\"tb-carousel-viewport\">
+                <div class=\"tb-carousel-track\">" . implode('', $slides) . "</div>
             </div>
             {$statusHtml}
             <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>
             <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>
-            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\" style=\"display:flex;justify-content:center;gap:0.4rem;margin-top:0.85rem;\">" . implode('', $dots) . "</div>
+            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\">" . implode('', $dots) . "</div>
             {$thumbnailHtml}
             {$this->carouselScript($id, $options)}
         </div>";
@@ -1164,7 +1167,11 @@ class BlockRenderer
      * `onerror` (there is no safe, fast way to verify an image URL
      * resolves from inside a server-side render call).
      */
-    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = ''): string
+    /**
+     * WU-B: `$priority` marks the likely LCP image (a hero slider's first
+     * slide) — fetched eagerly at high priority instead of lazily.
+     */
+    protected function imageWithFallback(string $url, string $alt, string $style = '', string $icon = '', bool $priority = false): string
     {
         // Phase 0.6 (ADR-065): $icon is ready HTML; '' = the SVG image icon.
         if ($icon === '') {
@@ -1175,8 +1182,9 @@ class BlockRenderer
             return "<div class=\"tb-img-fallback\" style=\"display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;{$style}\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>";
         }
         $urlAttr = $this->escapeAttr($url);
+        $loading = $priority ? 'loading="eager" fetchpriority="high" decoding="async"' : 'loading="lazy"';
         return "<div class=\"tb-img-frame\" style=\"position:relative;overflow:hidden;{$style}\">"
-            . "<img src=\"{$urlAttr}\" alt=\"{$altAttr}\" loading=\"lazy\" style=\"width:100%;height:100%;object-fit:cover;display:block;\" onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex';\">"
+            . "<img src=\"{$urlAttr}\" alt=\"{$altAttr}\" {$loading} style=\"width:100%;height:100%;object-fit:cover;display:block;\" onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex';\">"
             . "<div class=\"tb-img-fallback\" style=\"display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#a5b4fc;font-size:2rem;\" role=\"img\" aria-label=\"{$altAttr}\">{$icon}</div>"
             . "</div>";
     }
@@ -1218,7 +1226,11 @@ class BlockRenderer
         $boxed      = (bool) ($props['boxed'] ?? false);
         $aspect     = $this->escapeAttr($props['aspect_ratio'] ?? '16/9');
         $overlay    = (bool) ($props['overlay'] ?? true);
-        $gradientCss = $overlay ? 'background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 55%);' : '';
+        // WU-B: styling lives in the shared sheet (.tb-slide*); only the
+        // per-block aspect ratio stays inline. The overlay element is always
+        // present (its gradient switched off by a modifier) so the markup
+        // shape does not depend on the setting.
+        $overlayClass = $overlay ? 'tb-slide-overlay' : 'tb-slide-overlay tb-slide-overlay--off';
 
         $slidesHtml = [];
         $thumbnailUrls = [];
@@ -1235,25 +1247,26 @@ class BlockRenderer
             // The visible slide heading already names the same content;
             // treating the background image as decorative avoids announcing
             // that title twice to screen-reader users.
-            $imgHtml = $this->imageWithFallback($image, '', "position:absolute;inset:0;width:100%;height:100%;");
+            // The first slide is the likely LCP image of a hero slider (B4).
+            $imgHtml = $this->imageWithFallback($image, '', "position:absolute;inset:0;width:100%;height:100%;", '', $slidesHtml === []);
 
             $ctaHtml = ($ctaText !== '' && $link !== '')
-                ? "<a href=\"{$link}\" class=\"tb-btn tb-btn-primary tb-slide-cta\" style=\"position:relative;z-index:1;margin-top:1rem;display:inline-block;\">{$ctaText}</a>"
+                ? "<a href=\"{$link}\" class=\"tb-btn tb-btn-primary tb-slide-cta\">{$ctaText}</a>"
                 : '';
 
             $captionHtml = ($title !== '' || $subtitle !== '' || $ctaHtml !== '')
-                ? '<div class="tb-slide-caption" style="position:relative;z-index:1;padding:2.5rem 1.5rem;color:#fff;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.55);">'
-                    . ($title !== '' ? "<h2 class=\"tb-slide-title\" style=\"margin:0 0 .5rem;font-size:1.75rem;font-weight:700;\">{$title}</h2>" : '')
-                    . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\" style=\"margin:0;font-size:1.05rem;opacity:.95;\">{$subtitle}</p>" : '')
+                ? '<div class="tb-slide-caption">'
+                    . ($title !== '' ? "<h2 class=\"tb-slide-title\">{$title}</h2>" : '')
+                    . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\">{$subtitle}</p>" : '')
                     . $ctaHtml
                     . '</div>'
                 : '';
 
-            $slideInner = "<div class=\"tb-slide\" style=\"position:relative;aspect-ratio:{$aspect};display:flex;align-items:center;justify-content:center;background:#111827;overflow:hidden;\">"
-                . $imgHtml . "<div style=\"position:absolute;inset:0;{$gradientCss}\"></div>" . $captionHtml . '</div>';
+            $slideInner = "<div class=\"tb-slide\" style=\"aspect-ratio:{$aspect};\">"
+                . $imgHtml . "<div class=\"{$overlayClass}\"></div>" . $captionHtml . '</div>';
 
             $slidesHtml[] = ($link !== '' && $ctaHtml === '')
-                ? '<a href="' . $link . '" class="tb-slide-link" style="display:block;color:inherit;text-decoration:none;">' . $slideInner . '</a>'
+                ? '<a href="' . $link . '" class="tb-slide-link">' . $slideInner . '</a>'
                 : $slideInner;
             if ($image !== '') {
                 $thumbnailUrls[] = $image;
@@ -1265,7 +1278,6 @@ class BlockRenderer
         }
 
         $wrapClass = 'tb-slider' . ($boxed ? ' tb-slider-boxed' : ' tb-slider-full') . ($transition === 'fade' ? ' tb-slider-fade' : '');
-        $wrapStyle = $boxed ? 'max-width:72rem;margin:0 auto;' : '';
 
         $carousel = $this->renderCarousel(
             $slidesHtml,
@@ -1280,7 +1292,7 @@ class BlockRenderer
             $thumbnailUrls
         );
 
-        return $wrapStyle !== '' ? "<div style=\"{$wrapStyle}\">{$carousel}</div>" : $carousel;
+        return $boxed ? "<div class=\"tb-slider-box\">{$carousel}</div>" : $carousel;
     }
 
     /**
@@ -2372,7 +2384,8 @@ class BlockRenderer
                 max(1500, $speed * 200),
                 'tb-logos-carousel',
                 ['desktop' => $visibleDesktop, 'tablet' => max(2, (int) round($visibleDesktop / 2)), 'mobile' => 2],
-                true
+                true,
+                options: ['label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]
             );
         } elseif ($mode === 'static') {
             // Reuses the real shared .tb-logos-static rule (theme-runtime-contract.css)
@@ -2725,7 +2738,7 @@ class BlockRenderer
         $layout = in_array($layout, ['grid', 'list', 'slider'], true) ? $layout : 'grid';
         $titleHtml = $title !== '' ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
         if ($layout === 'slider') {
-            $body = $this->renderCarousel($cards, $id . '-track', $this->flag($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-blog-slider', ['desktop' => 3, 'tablet' => 2, 'mobile' => 1]);
+            $body = $this->renderCarousel($cards, $id . '-track', $this->flag($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-blog-slider', ['desktop' => 3, 'tablet' => 2, 'mobile' => 1], options: ['label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]);
         } else {
             $body = '<div class="tb-grid ' . ($layout === 'list' ? 'tb-grid-cols-1 tb-blog-list' : 'tb-grid-cols-3') . ' tb-gap-lg tb-blog-grid">' . implode('', $cards) . '</div>';
         }
@@ -2779,7 +2792,7 @@ class BlockRenderer
              // every caller has emitted it since this phase deleted the
              // per-instance inline controller, so the opt-in is now a
              // no-op kept for call-site compatibility.
-            ['script' => 'shared']
+            ['script' => 'shared', 'label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]
         );
 
         return "<div id=\"tb-{$id}-wrap\" class=\"tb-module-products tb-section\">
@@ -2947,7 +2960,7 @@ class BlockRenderer
 
         $body = $layout === 'grid'
             ? "<div class=\"tb-grid tb-grid-cols-{$columns} tb-gap-md\">" . implode('', $cards) . "</div>"
-            : $this->renderCarousel($cards, $id . '-track', (bool) ($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-category-slider', ['desktop' => $columns, 'tablet' => max(2, (int) round($columns / 2)), 'mobile' => 1]);
+            : $this->renderCarousel($cards, $id . '-track', (bool) ($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-category-slider', ['desktop' => $columns, 'tablet' => max(2, (int) round($columns / 2)), 'mobile' => 1], options: ['label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]);
 
         return "<div id=\"tb-{$id}\" class=\"tb-section\">
             <div class=\"tb-container\">{$titleHtml}{$body}</div>
@@ -3174,7 +3187,8 @@ class BlockRenderer
                 (bool) ($props['autoplay'] ?? true),
                 (int) ($props['interval'] ?? 5000),
                 'tb-testimonials-slider',
-                ['desktop' => $columns, 'tablet' => max(1, min(2, $columns)), 'mobile' => 1]
+                ['desktop' => $columns, 'tablet' => max(1, min(2, $columns)), 'mobile' => 1],
+                options: ['label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]
             );
 
         return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\">
