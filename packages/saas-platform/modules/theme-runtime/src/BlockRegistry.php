@@ -1980,6 +1980,12 @@ class BlockRegistry
                             'bg_color'      => ['type' => 'color',   'label' => 'رنگ پس‌زمینه', 'default' => '#f8fafc'],
                             'text_color'    => ['type' => 'color',   'label' => 'رنگ متن', 'default' => '#0f172a'],
                             'link'          => ['type' => 'link',    'label' => 'لینک کارت (اختیاری)', 'default' => ''],
+                            // Canvas overhaul Unit 2a: renderBentoGrid() has always
+                            // shown `image` as the card's own picture (the
+                            // `has-media` card the Universal QA theme seeds), but
+                            // no control existed, so it could not be edited or
+                            // localized on install.
+                            'image'         => ['type' => 'image',   'label' => 'تصویر کارت (اختیاری)', 'default' => '', 'show_if' => 'kind=content'],
                             'bg_image'      => ['type' => 'image',   'label' => 'تصویر پس‌زمینه (اختیاری)', 'default' => ''],
                             'bg_color_from' => ['type' => 'color',   'label' => 'رنگ بالای پوشش تصویر', 'default' => ''],
                             'bg_color_to'   => ['type' => 'color',   'label' => 'رنگ پایین پوشش تصویر', 'default' => ''],

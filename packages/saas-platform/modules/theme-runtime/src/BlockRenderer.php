@@ -825,7 +825,7 @@ class BlockRenderer
         $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
         $btnText  = $this->escape($props['button_text'] ?? '');
-        $btnUrl   = $this->escapeUrl($props['button_url'] ?? '', '#');
+        $btnUrl   = $this->linkHref($props['button_url'] ?? '', '#');
         // Phase 0.5: both were interpolated into the class attribute
         // unescaped. Same background contract as renderCta().
         [$bgClass, $bgStyle] = $this->themeBackground($props['background'] ?? 'primary');
@@ -1247,7 +1247,7 @@ class BlockRenderer
             if (!is_array($slide)) {
                 continue;
             }
-            $image    = trim((string) ($slide['image'] ?? ''));
+            $image    = trim($this->mediaSrc($slide['image'] ?? ''));
             $title    = $this->escape($slide['title'] ?? '');
             $subtitle = $this->escape($slide['subtitle'] ?? '');
             $link     = $this->linkHref($slide['link'] ?? '', '');
@@ -1385,7 +1385,7 @@ class BlockRenderer
         $icon = $this->iconHtml($props['icon'] ?? '');
         $title = $this->escape($props['title'] ?? '');
         $text = $this->escape($props['text'] ?? '');
-        $url = $this->escapeUrl($props['link'] ?? '', '');
+        $url = $this->linkHref($props['link'] ?? '', '');
         $alignMap = ['start' => 'tb-align-start', 'center' => 'tb-align-center', 'end' => 'tb-align-end'];
         $align = $alignMap[$props['align'] ?? 'start'] ?? 'tb-align-start';
         $styleMap = ['plain' => 'tb-icon-box-plain', 'card' => 'tb-icon-box-card', 'outline' => 'tb-icon-box-outline', 'solid' => 'tb-icon-box-solid'];
@@ -1402,10 +1402,10 @@ class BlockRenderer
 
     protected function renderImageBox(array $props, string $inner, string $id): string
     {
-        $url = $this->escapeUrl($props['url'] ?? '', '');
+        $url = $this->escapeUrl($this->mediaSrc($props['url'] ?? ''), '');
         $title = $this->escape($props['title'] ?? '');
         $text = $this->escape($props['text'] ?? '');
-        $link = $this->escapeUrl($props['link'] ?? '', '');
+        $link = $this->linkHref($props['link'] ?? '', '');
         $ratioMap = ['16/9' => 'tb-ratio-16-9', '4/3' => 'tb-ratio-4-3', '1/1' => 'tb-ratio-1-1'];
         $ratio = $ratioMap[$props['ratio'] ?? '4/3'] ?? 'tb-ratio-4-3';
         $align = ($props['align'] ?? 'start') === 'center' ? 'tb-align-center' : 'tb-align-start';
@@ -1466,7 +1466,7 @@ class BlockRenderer
                 $this->escapeAttr($this->cssColor($props['gradient_from'] ?? null, 'var(--tb-primary, #4f46e5)')),
                 $this->escapeAttr($this->cssColor($props['gradient_to'] ?? null, 'var(--tb-secondary, #7c3aed)'))
             );
-        } elseif ($bgType === 'image' && (string) ($props['bg_image'] ?? '') !== '') {
+        } elseif ($bgType === 'image' && $this->mediaSrc($props['bg_image'] ?? '') !== '') {
             // Same inline background pattern renderSection()/renderHero()
             // already use for background_image.
             $style .= 'background-image:url(' . $this->escapeAttr($props['bg_image']) . ');background-size:cover;background-position:center;';
@@ -1551,7 +1551,7 @@ class BlockRenderer
 
     protected function renderImage(array $props, string $inner, string $id): string
     {
-        $url     = $this->escapeUrl($props['url'] ?? '', '');
+        $url     = $this->escapeUrl($this->mediaSrc($props['url'] ?? ''), '');
         $alt     = $this->escapeAttr($props['alt'] ?? '');
         $caption = $this->escape($props['caption'] ?? '');
         if ($url === '') {
@@ -1573,7 +1573,7 @@ class BlockRenderer
     protected function renderButton(array $props, string $inner, string $id): string
     {
         $text  = $this->escape($props['text'] ?? '');
-        $url   = $this->escapeUrl($props['url'] ?? '', '#');
+        $url   = $this->linkHref($props['url'] ?? '', '#');
         // Phase 2j: was interpolated into a class attribute with no
         // validation/escaping at all — an arbitrary prop value could break
         // out of the attribute. Element SDK's ButtonElement already
@@ -1684,7 +1684,7 @@ class BlockRenderer
         $title    = $this->escape($props['title'] ?? '');
         $subtitle = $this->escape($props['subtitle'] ?? '');
         $btnText  = $this->escape($props['button_text'] ?? '');
-        $btnUrl   = $this->escapeUrl($props['button_url'] ?? '', '#');
+        $btnUrl   = $this->linkHref($props['button_url'] ?? '', '#');
         // Phase 0.2c: `background` was interpolated into the class
         // attribute unescaped, and a CSS colour (what customer-site's colour
         // control stores) became a class with no rule, so the chosen colour
@@ -1959,7 +1959,7 @@ class BlockRenderer
         $title   = $this->escape($props['title'] ?? '');
         $sub     = $this->escape($props['subtitle'] ?? '');
         $btn1t   = $this->escape($props['button_text'] ?? '');
-        $btn1u   = $this->escapeUrl($props['button_url'] ?? '', '#');
+        $btn1u   = $this->linkHref($props['button_url'] ?? '', '#');
         $btn2t   = $this->escape($props['button2_text'] ?? '');
         $btn2u   = $this->linkHref($props['button2_url'] ?? '#');
         $imgUrl  = $this->escapeAttr($props['image_url'] ?? '');
@@ -1991,7 +1991,7 @@ class BlockRenderer
         $title   = $this->escape($props['title'] ?? '');
         $sub     = $this->escape($props['subtitle'] ?? '');
         $btn1t   = $this->escape($props['button_text'] ?? '');
-        $btn1u   = $this->escapeUrl($props['button_url'] ?? '', '#');
+        $btn1u   = $this->linkHref($props['button_url'] ?? '', '#');
         $btn2t   = $this->escape($props['button2_text'] ?? '');
         $btn2u   = $this->linkHref($props['button2_url'] ?? '#');
         // Commercial Productization fase-3 (visual identity audit): a real,
@@ -2070,7 +2070,7 @@ class BlockRenderer
     {
         $title    = $this->escape($props['title'] ?? '');
         $bg       = $this->escapeAttr($this->cssColor($props['background'] ?? null, 'var(--tb-surface, #f8fafc)'));
-        $backgroundImage = $this->escapeUrl($props['background_image'] ?? '', '');
+        $backgroundImage = $this->escapeUrl($this->mediaSrc($props['background_image'] ?? ''), '');
         $dividers = (bool) ($props['dividers'] ?? true);
         // Phase 2k: applied as an INLINE style on every text-bearing child
         // element directly, not just the wrapper — .tb-stat-value/
@@ -2179,7 +2179,7 @@ class BlockRenderer
             . '<strong class="tb-trust-item-label">' . $label . '</strong>'
             . ($description !== '' ? '<span class="tb-trust-item-description">' . $description . '</span>' : '')
             . '</span>';
-        $url = (string) ($props['url'] ?? '');
+        $url = $this->linkValue($props['url'] ?? '');
 
         if ($url !== '') {
             $content = '<a class="tb-trust-item-link" href="' . $this->escapeUrl($url, '#') . '">' . $content . '</a>';
@@ -2200,7 +2200,7 @@ class BlockRenderer
     {
         $title = $this->escape($props['title'] ?? '');
         $submitLabel = $this->escape($props['submit_label'] ?? '');
-        $endpoint = $this->escapeUrl($props['endpoint_url'] ?? '', '');
+        $endpoint = $this->linkHref($props['endpoint_url'] ?? '', '');
         $successMessage = $this->escape($props['success_message'] ?? '');
         $errorMessage = $this->escape($props['error_message'] ?? '');
 
@@ -2360,7 +2360,7 @@ class BlockRenderer
                 $l = ['name' => (string) $l];
             }
             $name  = (string) ($l['name'] ?? '');
-            $image = trim((string) ($l['image'] ?? ''));
+            $image = trim($this->mediaSrc($l['image'] ?? ''));
             $url   = $this->linkHref($l['url'] ?? '', '');
             $alt   = $this->escapeAttr($l['alt'] ?? $name);
 
@@ -2472,8 +2472,8 @@ class BlockRenderer
     {
         $title = (string) ($p['title'] ?? '');
         $titleEsc = $this->escape($title);
-        $urlAttr = $this->escapeUrl((string) ($p['url'] ?? '#'), '#');
-        $imgHtml = $this->imageWithFallback((string) ($p['image'] ?? ''), $title, 'aspect-ratio:1/1;', $this->iconHtml('package'));
+        $urlAttr = $this->escapeUrl($this->linkValue($p['url'] ?? '#'), '#');
+        $imgHtml = $this->imageWithFallback($this->mediaSrc($p['image'] ?? ''), $title, 'aspect-ratio:1/1;', $this->iconHtml('package'));
         $price = isset($p['price']) ? (float) $p['price'] : null;
         $original = isset($p['original']) ? (float) $p['original'] : null;
 
@@ -2704,8 +2704,8 @@ class BlockRenderer
     protected function blogCardHtml(array $p): string
     {
         $title = (string) ($p['title'] ?? '');
-        $url = $this->escapeUrl((string) ($p['url'] ?? '#'), '#');
-        $img = $this->imageWithFallback((string) ($p['image'] ?? ''), $title, 'aspect-ratio:16/10;', $this->iconHtml('file-text'));
+        $url = $this->escapeUrl($this->linkValue($p['url'] ?? '#'), '#');
+        $img = $this->imageWithFallback($this->mediaSrc($p['image'] ?? ''), $title, 'aspect-ratio:16/10;', $this->iconHtml('file-text'));
         $category = trim((string) ($p['category'] ?? ''));
         $catHtml = $category !== ''
             ? '<a class="tb-blog-card-cat" href="' . $this->escapeUrl((string) ($p['category_url'] ?? '#'), '#') . '">' . $this->escape($category) . '</a>'
@@ -3046,7 +3046,7 @@ class BlockRenderer
             $itemTitle = $this->escape($it['title'] ?? '');
             $text  = $this->escape($it['text'] ?? '');
             $icon  = $this->iconHtml($it['icon'] ?? '');
-            $image = (string) ($it['image'] ?? '');
+            $image = $this->mediaSrc($it['image'] ?? '');
             $linkLabel = $this->escape($it['link_label'] ?? '');
             $linkUrl   = $this->linkHref($it['link_url'] ?? '', '');
 
@@ -3510,8 +3510,8 @@ class BlockRenderer
             $ititle = $this->escape($item['title'] ?? '');
             $itext  = $this->escape($item['text'] ?? '');
             $icon   = $this->iconHtml($item['icon'] ?? '');
-            $image  = $this->escapeUrl($item['image'] ?? '', '');
-            $linkUrl = $this->escapeUrl($item['link_url'] ?? '', '');
+            $image  = $this->escapeUrl($this->mediaSrc($item['image'] ?? ''), '');
+            $linkUrl = $this->escapeUrl($this->linkValue($item['link_url'] ?? ''), '');
             $linkLabel = $this->escape($item['link_label'] ?? 'مشاهده');
             // Strict allowlist — the only classes the CSS contract defines.
             // Anything else (incl. the legacy 'normal') renders as small.
@@ -3527,7 +3527,7 @@ class BlockRenderer
             // must be a legal CSS colour token, so a corrupted/malicious
             // authored value degrades to "no image / no gradient" instead of
             // breaking out of the style attribute.
-            $bgImage = trim((string) ($item['bg_image'] ?? ''));
+            $bgImage = trim($this->mediaSrc($item['bg_image'] ?? ''));
             if ($bgImage !== '' && (!$this->isValidUrl($bgImage) || preg_match('/[\'\"()<>\\\\]/', $bgImage) === 1)) {
                 $bgImage = '';
             }
@@ -3868,7 +3868,7 @@ class BlockRenderer
         $h = $title ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
         $cells = [];
         foreach ($items as $item) {
-            $url = $this->escapeUrl(is_array($item) ? ($item['url'] ?? '') : (string) $item, '');
+            $url = $this->escapeUrl($this->mediaSrc(is_array($item) ? ($item['url'] ?? '') : $item), '');
             $alt = $this->escape(is_array($item) ? ($item['alt'] ?? '') : '');
             if ($url === '') {
                 continue;
@@ -3956,7 +3956,7 @@ class BlockRenderer
     private function normalizeMegaMenuData(array $link): ?array
     {
         $common = [
-            'banner_image' => (string) ($link['mega_banner_image'] ?? ''),
+            'banner_image' => $this->mediaSrc($link['mega_banner_image'] ?? ''),
             'banner_url' => $this->linkValue($link['mega_banner_url'] ?? ''),
             'banner_text' => (string) ($link['mega_banner_text'] ?? ''),
             'banner_cta' => (string) ($link['mega_banner_cta'] ?? ''),
@@ -3992,7 +3992,7 @@ class BlockRenderer
                         'url' => $this->linkValue($it['url'] ?? '#'),
                         'label' => $itLabel,
                         'icon' => (string) ($it['icon'] ?? ''),
-                        'image' => (string) ($it['image'] ?? ''),
+                        'image' => $this->mediaSrc($it['image'] ?? ''),
                     ];
                 }
                 if (empty($links) && trim((string) ($col['title'] ?? '')) === '') {
@@ -4605,7 +4605,7 @@ class BlockRenderer
             return $chosen;
         }
         $url = $link['url'] ?? '';
-        $url = trim(is_array($url) ? (string) ($url['url'] ?? '') : $this->stringify($url));
+        $url = trim(is_array($url) ? $this->linkValue($url['url'] ?? '') : $this->stringify($url));
         foreach (self::SOCIAL_NETWORKS as $network => [, , $pattern]) {
             if ($url !== '' && preg_match($pattern, $url)) {
                 return $network;
@@ -5382,6 +5382,20 @@ class BlockRenderer
     protected function escapeAttr(mixed $s): string
     {
         return htmlspecialchars($this->stringify($s), ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Canvas overhaul Unit 2c: read an `image` control value. The host
+     * resolves a Media Library pick ({media_id}) to a URL before rendering;
+     * if one still arrives unresolved (deleted media, a render path without
+     * a resolver, the platform preview), it counts as "no image" instead of
+     * raising "Array to string conversion" and replacing the whole block
+     * with an error placeholder (bento_grid, nav_header mega banner,
+     * production log 2026-10-30/31).
+     */
+    protected function mediaSrc(mixed $value): string
+    {
+        return trim($this->stringify($value));
     }
 
     private function stringify(mixed $s): string

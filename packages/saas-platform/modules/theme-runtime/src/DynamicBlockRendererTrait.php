@@ -28,7 +28,7 @@ trait DynamicBlockRendererTrait
                 $price = $this->escape($item['price'] ?? '');
                 $excerpt = $this->escape($item['excerpt'] ?? $item['description'] ?? '');
                 $url = $this->escapeUrl((string) ($item['url'] ?? '#'));
-                $image = $this->escapeUrl((string) ($item['image'] ?? ''), '');
+                $image = $this->escapeUrl($this->mediaSrc($item['image'] ?? ''), '');
                 $imageHtml = $image !== ''
                     ? '<img class="tb-dynamic-card-image" src="'.$image.'" alt="'.$this->escapeAttr($item['image_alt'] ?? $itemTitle).'" loading="lazy">'
                     : '';

@@ -217,6 +217,9 @@ h6.tb-heading { font-size: var(--tb-h6-size, 1rem); }
 .tb-placeholder { min-height: 2rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; }
 .tb-placeholder-invalid { background: #fef3c7; border: 1px dashed #d97706; color: #92400e; }
 .tb-placeholder-error   { background: #fee2e2; border: 1px dashed #dc2626; color: #991b1b; }
+/* Canvas overhaul Unit 2e: the editor-only cause of a placeholder. */
+.tb-placeholder-detail { display: block; margin-top: 0.35rem; font-size: 0.8125rem; line-height: 1.6; }
+.tb-placeholder-detail code { display: block; margin-top: 0.15rem; font: 0.75rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; opacity: 0.85; }
 
 /* row/column */
 .tb-row { display: flex; flex-wrap: wrap; gap: 1rem; }

@@ -55,9 +55,9 @@ trait FoodMartBlockRendererTrait
     {
         $cards = '';
         foreach ($items as $index => $item) {
-            $url = $this->foodmartEditableHrefValue((string) ($item['url'] ?? 'index.html'));
+            $url = $this->foodmartEditableHrefValue($this->linkValue($item['url'] ?? 'index.html'));
             $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
-            $image = $this->foodmartEditableSrc((string) ($item['image'] ?? ''));
+            $image = $this->foodmartEditableSrc($this->mediaSrc($item['image'] ?? ''));
             $imageAlt = $this->foodmartEscape((string) ($item['image_alt'] ?? 'Category Thumbnail'));
             $imageHtml = $image !== '' ? '<img src="'.$image.'" alt="'.$imageAlt.'">' : '';
             $cards .= '<a href="'.$url.'" class="nav-link category-item swiper-slide" data-tb-logical-group="items" data-tb-logical-index="'.(int) $index.'">'
@@ -93,9 +93,9 @@ trait FoodMartBlockRendererTrait
             if (!is_array($item)) {
                 continue;
             }
-            $url = $this->foodmartEscape((string) ($item['url'] ?? '#'));
+            $url = $this->foodmartEscape($this->linkValue($item['url'] ?? '#'));
             $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
-            $image = $this->foodmartEscape((string) ($item['image_url'] ?? ''));
+            $image = $this->foodmartEscape($this->mediaSrc($item['image_url'] ?? ''));
             $count = (int) ($item['product_count'] ?? 0);
             $imageHtml = $image !== '' ? '<img src="'.$image.'" alt="'.$title.'">' : '';
             $cards .= '<a href="'.$url.'" class="nav-link category-item swiper-slide">'.$imageHtml
@@ -152,8 +152,8 @@ trait FoodMartBlockRendererTrait
     private function renderFoodmartBoundProductCard(array $item): string
     {
         $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
-        $url = $this->foodmartEscape((string) ($item['url'] ?? '#'));
-        $image = $this->foodmartEscape((string) ($item['image_url'] ?? ''));
+        $url = $this->foodmartEscape($this->linkValue($item['url'] ?? '#'));
+        $image = $this->foodmartEscape($this->mediaSrc($item['image_url'] ?? ''));
         $imageHtml = $image !== '' ? '<img src="'.$image.'" class="tab-image" alt="'.$title.'">' : '';
         $badge = isset($item['discount_percent']) && (int) $item['discount_percent'] > 0
             ? '<span class="badge bg-success position-absolute m-3">-'.(int) $item['discount_percent'].'%</span>'
@@ -199,8 +199,8 @@ trait FoodMartBlockRendererTrait
     private function renderFoodmartParityProductCard(array $item): string
     {
         $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
-        $url = $this->foodmartEscape((string) ($item['url'] ?? '#'));
-        $image = $this->foodmartEscape((string) ($item['image_url'] ?? ''));
+        $url = $this->foodmartEscape($this->linkValue($item['url'] ?? '#'));
+        $image = $this->foodmartEscape($this->mediaSrc($item['image_url'] ?? ''));
         $imageAlt = $this->foodmartEscape((string) ($item['image_alt'] ?? ($item['title'] ?? 'Product')));
         $imageHtml = $image !== '' ? '<img src="'.$image.'" class="tab-image" alt="'.$imageAlt.'">' : '';
         $badge = isset($item['discount_percent']) && (int) $item['discount_percent'] > 0
@@ -249,8 +249,8 @@ trait FoodMartBlockRendererTrait
     private function renderFoodmartManualProductCard(array $item, ?int $logicalIndex = null): string
     {
         $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
-        $url = $this->foodmartEditableHrefValue((string) ($item['url'] ?? '#'));
-        $image = $this->foodmartEditableSrc((string) ($item['image'] ?? ''));
+        $url = $this->foodmartEditableHrefValue($this->linkValue($item['url'] ?? '#'));
+        $image = $this->foodmartEditableSrc($this->mediaSrc($item['image'] ?? ''));
         $imageAlt = $this->foodmartEscape((string) ($item['image_alt'] ?? 'Product'));
         $imageHtml = $image !== '' ? '<img src="'.$image.'" class="tab-image" alt="'.$imageAlt.'">' : '';
         $badge = trim((string) ($item['badge'] ?? '')) !== ''
@@ -690,7 +690,7 @@ __FOODMART_RAW_EOF__;
      */
     private function renderFoodmartEditableHeader(array $props): string
     {
-        $logo = $this->foodmartEditableSrc((string) ($props['logo_image'] ?? ''));
+        $logo = $this->foodmartEditableSrc($this->mediaSrc($props['logo_image'] ?? ''));
         $logoAlt = $this->foodmartEscape((string) ($props['logo_alt'] ?? 'logo'));
         $logoHtml = '<a href="index.html"><img src="'.($logo !== '' ? $logo : 'images/logo.png').'" alt="'.$logoAlt.'" class="img-fluid"></a>';
         $searchPlaceholder = $this->foodmartEscape((string) ($props['search_placeholder'] ?? 'Search for more than 20,000 products'));
@@ -708,7 +708,7 @@ __FOODMART_RAW_EOF__;
         $navHtml = '';
         foreach ($navItems as $index => $item) {
             $label = $this->foodmartEscape((string) ($item['label'] ?? ''));
-            $url = $this->foodmartEditableHrefValue((string) ($item['url'] ?? '#'));
+            $url = $this->foodmartEditableHrefValue($this->linkValue($item['url'] ?? '#'));
             $navHtml .= '<li class="nav-item" data-tb-logical-group="nav_items" data-tb-logical-index="'.(int) $index.'">'
                 .'<a href="'.$url.'" class="nav-link">'.$label.'</a></li>';
         }
@@ -881,7 +881,7 @@ __FOODMART_RAW_EOF__;
             $title = $this->foodmartEscape((string) ($slide['title'] ?? ''));
             $desc = $this->foodmartEscape((string) ($slide['description'] ?? ''));
             $cta = $this->foodmartEditableHref($this->linkValue($slide['cta_url'] ?? ''), 'btn btn-outline-dark btn-lg text-uppercase fs-6 rounded-1 px-4 py-3 mt-3');
-            $image = $this->foodmartEditableSrc((string) ($slide['image'] ?? ''));
+            $image = $this->foodmartEditableSrc($this->mediaSrc($slide['image'] ?? ''));
             $imageAlt = $this->foodmartEscape((string) ($slide['image_alt'] ?? 'Fruit'));
             $imgHtml = $image === '' ? '' : '<img src="'.$image.'" class="img-fluid" alt="'.$imageAlt.'">';
             $slideHtml .= '<div class="swiper-slide" data-tb-logical-group="slides" data-tb-logical-index="'.(int) $slideIndex.'"><div class="row banner-content p-5"><div class="content-wrapper col-md-7">'
@@ -2036,12 +2036,12 @@ __FOODMART_RAW_EOF__;
             $spans = ['col-md-6', 'col-md-6'];
             foreach ($items as $index => $item) {
                 $span = $spans[$index] ?? 'col-md-6';
-                $bg = $this->foodmartEditableSrc((string) ($item['image'] ?? ''));
+                $bg = $this->foodmartEditableSrc($this->mediaSrc($item['image'] ?? ''));
                 $badge = $this->foodmartEscape((string) ($item['badge'] ?? ''));
                 $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
                 $description = $this->foodmartEscape((string) ($item['description'] ?? ''));
                 $ctaLabel = $this->foodmartEscape((string) ($item['cta_label'] ?? ''));
-                $ctaUrl = $this->foodmartEditableHrefValue((string) ($item['cta_url'] ?? '#'));
+                $ctaUrl = $this->foodmartEditableHrefValue($this->linkValue($item['cta_url'] ?? '#'));
                 $banners .= '<div class="'.$span.'" data-tb-logical-group="items" data-tb-logical-index="'.(int) $index.'">'
                     .'<div class="banner-ad bg-danger mb-3" style="background: url(\''.$bg.'\');background-repeat: no-repeat;background-position: right bottom;">'
                     .'<div class="banner-content p-5">'
@@ -2996,9 +2996,9 @@ __FOODMART_RAW_EOF__;
             return $this->renderFoodmartEditableBlog(
                 $props,
                 $manual ?? array_map(fn ($item) => is_array($item) ? [
-                    'image' => (string) ($item['image_url'] ?? ''),
+                    'image' => $this->mediaSrc($item['image_url'] ?? ''),
                     'image_alt' => (string) ($item['image_alt'] ?? 'post'),
-                    'url' => (string) ($item['url'] ?? '#'),
+                    'url' => $this->linkValue($item['url'] ?? '#'),
                     'date_text' => (string) ($item['date_text'] ?? ''),
                     'category_label' => (string) ($item['category_label'] ?? ''),
                     'title' => (string) ($item['title'] ?? ''),
@@ -3136,20 +3136,20 @@ __FOODMART_RAW_EOF__;
 
         // Phase 4B.6 — editable media/link content (phone + store badges).
         // All structural wrappers stay canonical; only src/href values move.
-        $phone = $this->foodmartEditableSrc((string) ($props['phone_image'] ?? ''));
+        $phone = $this->foodmartEditableSrc($this->mediaSrc($props['phone_image'] ?? ''));
         if ($phone !== '') {
             $markup = str_replace('src="images/phone.png"', 'src="'.$phone.'"', $markup);
         }
-        $store = $this->foodmartEditableSrc((string) ($props['store_image'] ?? ''));
+        $store = $this->foodmartEditableSrc($this->mediaSrc($props['store_image'] ?? ''));
         if ($store !== '') {
             $markup = str_replace('src="images/app-store.jpg"', 'src="'.$store.'"', $markup);
         }
-        $play = $this->foodmartEditableSrc((string) ($props['play_image'] ?? ''));
+        $play = $this->foodmartEditableSrc($this->mediaSrc($props['play_image'] ?? ''));
         if ($play !== '') {
             $markup = str_replace('src="images/google-play.jpg"', 'src="'.$play.'"', $markup);
         }
-        $storeUrl = trim((string) ($props['store_url'] ?? ''));
-        $playUrl = trim((string) ($props['play_url'] ?? ''));
+        $storeUrl = trim($this->linkValue($props['store_url'] ?? ''));
+        $playUrl = trim($this->linkValue($props['play_url'] ?? ''));
         if ($storeUrl !== '' || $playUrl !== '') {
             $storeSafe = $this->foodmartEditableHrefValue($storeUrl !== '' ? $storeUrl : '#');
             $playSafe = $this->foodmartEditableHrefValue($playUrl !== '' ? $playUrl : '#');
@@ -3213,7 +3213,7 @@ __FOODMART_RAW_EOF__;
             $chips = '';
             foreach ($keywords as $index => $item) {
                 $label = $this->foodmartEscape((string) ($item['label'] ?? ''));
-                $url = $this->foodmartEditableHrefValue((string) ($item['url'] ?? '#'));
+                $url = $this->foodmartEditableHrefValue($this->linkValue($item['url'] ?? '#'));
                 $chips .= '<a href="'.$url.'" class="btn btn-warning me-2 mb-2" data-tb-logical-group="items" data-tb-logical-index="'.(int) $index.'">'.$label.'</a>';
             }
             $markup = preg_replace('/<a href="#" class="btn btn-warning me-2 mb-2">.*?<\/a>/s', '', $markup) ?? $markup;
@@ -3235,7 +3235,7 @@ __FOODMART_RAW_EOF__;
     {
         $cards = '';
         foreach ($items as $index => $item) {
-            $image = $this->foodmartEditableSrc((string) ($item['image'] ?? ''));
+            $image = $this->foodmartEditableSrc($this->mediaSrc($item['image'] ?? ''));
             $name = $this->foodmartEscape((string) ($item['name'] ?? ''));
             $title = $this->foodmartEscape((string) ($item['title'] ?? ''));
             $cards .= '<div class="swiper-slide" data-tb-logical-group="items" data-tb-logical-index="'.(int) $index.'">'
@@ -3279,8 +3279,8 @@ __FOODMART_RAW_EOF__;
     {
         $cards = '';
         foreach ($items as $index => $item) {
-            $url = $this->foodmartEditableHrefValue((string) ($item['url'] ?? '#'));
-            $image = $this->foodmartEditableSrc((string) ($item['image'] ?? ''));
+            $url = $this->foodmartEditableHrefValue($this->linkValue($item['url'] ?? '#'));
+            $image = $this->foodmartEditableSrc($this->mediaSrc($item['image'] ?? ''));
             $imageAlt = $this->foodmartEscape((string) ($item['image_alt'] ?? 'post'));
             $imageHtml = $image !== '' ? '<img src="'.$image.'" alt="'.$imageAlt.'" class="card-img-top">' : '';
             $date = $this->foodmartEscape((string) ($item['date_text'] ?? ''));
@@ -3594,7 +3594,7 @@ __FOODMART_RAW_EOF__;
      */
     private function renderFoodmartEditableFooter(array $props): string
     {
-        $logo = $this->foodmartEditableSrc((string) ($props['logo_image'] ?? ''));
+        $logo = $this->foodmartEditableSrc($this->mediaSrc($props['logo_image'] ?? ''));
         $logoAlt = $this->foodmartEscape((string) ($props['logo_alt'] ?? 'logo'));
         $logoHtml = '<img src="'.($logo !== '' ? $logo : 'images/logo.png').'" alt="'.$logoAlt.'">';
         $socials = [
@@ -3621,7 +3621,7 @@ __FOODMART_RAW_EOF__;
             $linksHtml = '';
             foreach ($links as $linkIndex => $link) {
                 $label = $this->foodmartEscape((string) ($link['label'] ?? ''));
-                $url = $this->foodmartEditableHrefValue((string) ($link['url'] ?? '#'));
+                $url = $this->foodmartEditableHrefValue($this->linkValue($link['url'] ?? '#'));
                 $linksHtml .= '<li class="menu-item" data-tb-logical-group="columns" data-tb-logical-index="'.(int) $columnIndex.'" data-tb-logical-child="links" data-tb-logical-child-index="'.(int) $linkIndex.'">'
                     .'<a href="'.$url.'" class="nav-link">'.$label.'</a></li>';
             }

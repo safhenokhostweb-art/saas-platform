@@ -25,7 +25,7 @@ trait SleepShimanBlockRendererTrait
 
     private function ssUrl(mixed $value): string
     {
-        $url = trim((string) $value);
+        $url = trim($this->linkValue($value));
         if ($url === '' || str_starts_with($url, '#') || str_starts_with($url, '/') || preg_match('/^(https?:|mailto:|tel:)/i', $url) === 1
             || (preg_match('#^[a-zA-Z0-9][a-zA-Z0-9._/-]*$#', $url) === 1 && !str_contains($url, '..'))) {
             return $this->ssEscape($url === '' ? '#' : $url);
@@ -84,7 +84,7 @@ trait SleepShimanBlockRendererTrait
 
     private function ssImage(mixed $src, mixed $alt, string $class = ''): string
     {
-        $src = trim((string) $src);
+        $src = $this->mediaSrc($src);
         if ($src === '') return '';
         return '<img'.($class !== '' ? ' class="'.$this->ssEscape($class).'"' : '').' src="'.$this->ssUrl($src).'" alt="'.$this->ssEscape($alt).'" loading="lazy">';
     }

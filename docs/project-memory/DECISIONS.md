@@ -4069,3 +4069,94 @@ There is no migration or Composer change.
 - customer-site host chrome (`layouts/canvas-theme.blade.php`) and its
   account/admin pages keep their own widths. They are host-owned and
   outside this scale.
+
+## ADR-072
+
+**Title:** One Media and Link Field Map Derived From the Registry; One Pre-Render Step for Every Host Render Path; Renderers Never Cast a Media or Link Value
+
+**Status:** Accepted
+
+**Date:** 2026-10-31
+
+**Context:**
+
+- Canvas overhaul Unit 1 audit (read-only SSH, 2026-10-31): every block
+  render failure in the production customer-site log since the
+  2026-10-31 01:10 deploy was "Array to string conversion" — 65 ×
+  `bento_grid` (`BlockRenderer.php:3507`, `(string) $item['bg_image']`)
+  and 16 × `nav_header` (`normalizeMegaMenuData()`,
+  `(string) $link['mega_banner_image']`). That is the Bento "invalid after
+  one render" the owner reported.
+- A Media Library pick is stored as `{"media_id": "<uuid>"}`. Two separate
+  defects let it reach a renderer unresolved:
+  1. `CustomerMediaResolver::MEDIA_PROPS/MEDIA_REPEATERS` were hand-kept
+     lists. `bento_grid` named a field `image`; the registry field is
+     `bg_image`. A registry scan found 17 of 53 image fields unresolved
+     (every FoodMart image, `hero_section`, `image_box`, the mega-menu
+     column items). The list format allowed one field per repeater and one
+     nesting level.
+  2. Only `ThemeCanvasRenderer` resolved media and internal links. The
+     default theme layout (header/footer), `home.blade.php`,
+     `PageBuilderController` and `ContentBuilderController` render with the
+     plain host `BlockRenderer` and resolved neither.
+- Internal-page links were resolved at the top level only, and the
+  `LINK_PROPS` allowlist ran `resolveValue()` on every value of its fields,
+  turning an ADR-061 structured `{url, target}` button link into `''`.
+- The canonical renderers cast `image` and `link` values to string or
+  passed them to `escapeUrl(string)` in 25 + 52 places. A registry sweep
+  found 41 image fields and 52 link fields that broke the whole block on a
+  non-string value.
+- The editor showed `[invalid] bento_grid` with no cause; the cause was
+  only in the server log.
+
+**Decision:**
+
+1. **`App\Services\ThemeCanvas\SchemaFieldMap`** (customer-site) is the
+   one answer to "which props of this block type hold a control of type
+   X". It walks the registry schema, repeater `fields` at any depth (`*`
+   = every item), and keeps each repeater in its stored shape (a JSON
+   string stays a JSON string; an unchanged value is returned
+   byte-identical; a changed repeater is written in its declared
+   `storage` shape). `MEDIA_PROPS`/`MEDIA_REPEATERS` are deleted;
+   `CustomerMediaResolver` (render time) and `ThemeMediaLocalizationService`
+   (install time) both read the map for `image` controls.
+2. **`ThemeBuilder\BlockRenderer::prepareBlock()`** resolves media and
+   internal links inside `renderBlock()`, before validation, so every host
+   render path and every child block is prepared. `ThemeCanvasRenderer`
+   calls it for `module:*` blocks, which bypass the parent dispatch.
+   `preloadMediaFor()` moved to the same class.
+3. **Links resolve by shape only.** `InternalLinkResolver` replaces any
+   top-level `{type: internal_page}` value and every nested `link` control
+   (`SchemaFieldMap`), and leaves every other value untouched. `LINK_PROPS`
+   is deleted.
+4. **Renderers never cast.** Canonical `mediaSrc()` reads an `image`
+   value (unresolved → `''`, "no image"); `linkValue()`/`linkHref()` read a
+   `link` value. SleepShiman's `ssImage()`/`ssUrl()` funnels and the
+   FoodMart reads use them. The host Element SDK validator gains a `link`
+   type, and `hero`/`button` declare their URL props as `link`.
+5. **Registry `link` contracts win.** In `ElementSchemaRegistry`, a prop
+   that the registry declares as a `link` control validates as `link`
+   even where `config/builder-element-schemas.php` still says `string`.
+6. **`bento_grid.items[].image` is a real control.** `renderBentoGrid()`
+   has always rendered it as the card's own picture (the `has-media` card
+   the Universal QA theme seeds three of), but the schema had no control,
+   so it could not be edited and, once the map replaced the hand list, would
+   not be localized on install. It is now an `image` control
+   (`show_if: kind=content`) beside `bg_image`.
+7. **The editor shows the cause.** Placeholders carry a Persian reason and
+   the error (file paths cut to file names, 300 characters max) when
+   rendered for the editor (`isEditorRendering()`); public pages never do.
+
+**Consequences:**
+
+- Sweeps (both registries, every depth): `MediaFieldUnresolvedSweepTest`
+  and the structured-link case of `LinkFieldUnsafeSchemeSweepTest`
+  (platform); `MediaFieldResolutionSweepTest` (customer-site). They were
+  red on `e5a8e713` (41 image fields; 52 link fields).
+- The CSS-parity corpus is byte-identical before/after on both hosts:
+  existing themes render unchanged. Only Media Library and structured-link
+  values change behaviour.
+- A new `image` or `link` field in the registry is covered automatically;
+  there is no list to keep in step.
+- The platform editor stores URL strings, not `{media_id}`; the unified
+  entity/link selector (overhaul Phase 2) builds on this map.
