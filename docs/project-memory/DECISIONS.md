@@ -3871,3 +3871,115 @@ There is no new migration or Composer change.
   (`module:reviews_grid`).
 
 There is no migration or Composer change.
+
+## ADR-070
+
+**Title:** DevOps Disk Governor Extends LIFECYCLE-2 Resource Governance; Measures and Prunes Through Each Site's Deployment Driver; One Shared Threshold Set; Prune Behind a Dedicated Permission
+
+**Status:** Accepted
+
+**Date:** 2026-10-31
+
+**Context:**
+
+- The owner asked for a resource governor with thin-provisioned per-tenant
+  disk quotas, danger zones (normal below 80 %, warning 80–90 %, critical
+  above 90 %), autonomous and on-demand pruning, and a Persian dashboard.
+- The request proposed a new `tenant_resource_allocations` table. LIFECYCLE-2
+  (`docs/RESOURCE_GOVERNANCE_ARCHITECTURE.md`) already stores per-site limits
+  (`site_resource_limits`) and usage (`site_resource_usage`), and alerts at
+  80 / 95 %. Its `storage_bytes` is estimated from DB row counts, so nothing
+  measured real disk usage.
+- The request assumed tenant files at `/var/www/customer-sites/tenant-*`. In
+  this codebase, `customer-sites/tenant-{id}/` is the Arvan backup-bucket
+  prefix. Web roots are per installation (PROVISION_DOMAIN's document root,
+  else `WebRootResolver`: `/var/www/{slug}` or cPanel `public_html`), usually
+  on remote hosts that are reachable only through the installation's driver.
+- `HealthCheckService` already read panel-host disk, `/proc/meminfo` and
+  load average.
+
+**Decision (owner choices 2026-10-31):**
+
+1. **Extend LIFECYCLE-2, no parallel quota store.**
+   - `site_resource_limits` gains nullable `disk_soft_limit_bytes`,
+     `disk_hard_limit_bytes`, `cpu_cores_limit` and `memory_limit_bytes`.
+     Precedence is unchanged: site override, then plan row, then config
+     (`resource_governance.disk.*`, default soft limit 5 GB).
+   - `site_resource_usage` gains `disk_usage_bytes` (real `du`),
+     `danger_level`, `disk_audited_at` and `disk_audit_error`.
+     `storage_bytes` stays the DB estimate.
+   - New `tenant_prune_audit_logs` keyed by `site_id`, the repository's
+     tenant key.
+   - A quota edit that creates a per-site row seeds it from the site's
+     effective limits, so plan values are never replaced by column defaults.
+2. **Measure and prune through the driver.** `TenantTargetResolver` maps
+   site → latest completed installation → server → `DriverFactory` driver
+   and web root.
+   - SFTP, DirectAdmin and Docker cannot execute commands, so those sites
+     read "not measurable".
+   - Commands are quoted with POSIX rules (`PosixShell`), never
+     `escapeshellarg()`, which uses Windows rules on a Windows panel.
+3. **One threshold set.** Danger zones read `resource_governance.alert_*`.
+   The critical default moved from 95 to 90, so LIFECYCLE-2 storage alerts
+   now also fire at 90 %. At or above 80 % is warning; at or above 90 % is
+   critical.
+4. **Pruner safety model** (`TenantStoragePruner`, `PrunePathGuard`):
+   - **Fixed categories only:** `storage/logs`, framework cache, compiled
+     views, expired sessions, `storage/app/{livewire-tmp,tmp}`, and
+     `storage/backups/backup_*.sql*`. Dumps always keep the newest N. Media,
+     `public/` and `storage/app/public|uploads|media|private|theme-assets`
+     are protected. The shared system `/tmp` is never touched.
+   - **Root checks:** the web root must be normalized, at least two levels
+     deep and not a system directory. It is resolved with `realpath` and
+     must contain `artisan` and `storage/`.
+   - **Target and listing checks:** a symlinked target is skipped. Every
+     listed path is re-validated in PHP. Age is re-checked in PHP.
+   - **Deletion:** only explicit `rm -f -- <path>` batches, at most
+     `max_files_per_run` files per run.
+   - **Audit and locking:** each run writes its audit row before deleting
+     and holds a per-site lock.
+5. **Scheduling.** `devops:govern-resources` (alias `devops:resources:govern`)
+   runs every 6 hours. A warning site gets the `routine` profile, a critical
+   site gets `aggressive` and one notification when it escalates.
+   - It deletes only when `RESOURCE_AUTO_PRUNE_ENABLED=true`. The default
+     (false) records dry-run previews, so the owner sees what autonomous
+     pruning would do before enabling it.
+6. **Authorization.**
+   - Viewing, re-measuring and quota edits need admin access, the same level
+     as LIFECYCLE-2's `recalculate` and `updateLimits`.
+   - Preview and prune need `devops.storage.prune` through
+     `AuthorizationService::can()`. Super admins pass. The permission is
+     seeded but assigned to no role. Unlike `tenant.upgrade.execute`, no one
+     had this capability, so there was no access to preserve. Legacy
+     `is_admin`-only users cannot prune.
+   - A UI prune needs a single-use token from a preview, bound to site, user
+     and profile. The prune re-scans the host itself.
+
+**Not done:**
+
+- `cpu_cores_limit` and `memory_limit_bytes` are recorded for capacity
+  planning and are not enforced on any host. The UI says so.
+- Hosts must provide GNU `find -printf`, `head -z` (coreutils ≥ 8.25),
+  `realpath`, `du` and `df`. A host without them fails the run, and the
+  failure is audited.
+
+**Consequences:**
+
+- LIFECYCLE-2 storage alerts move from 95 % to 90 % unless
+  `RESOURCE_ALERT_CRITICAL_PCT` is set.
+- The overcommit ratio counts only servers measured in the last 26 hours (the
+  `df` from each audit is cached).
+- The panel-host tiles describe the panel server. Tenant capacity comes from
+  the per-server pool.
+
+**Impact:**
+
+- **Migrations:** `2026_10_31_120000` (adds columns; its `down()` drops
+  them, so it needs migration review), `2026_10_31_120001` (new table) and
+  `2026_10_31_120002` (permission seed).
+- **New code:** `app/Services/DevOps/*`, `DevOpsResourceController`, the
+  `devops:govern-resources` and `devops:prune-tenant` commands, and
+  `resources/views/admin/devops/*`.
+- **Edited:** additive keys in `HealthCheckService`, the
+  `config/resource_governance.php` `disk`/`prune` sections, the Kernel
+  schedule, the admin routes and the `AdminMenu` entry.

@@ -14,10 +14,14 @@ class SiteResourceLimit extends Model
         'plan_name',
         'storage_limit_bytes',
         'bandwidth_limit_bytes',
+        'disk_soft_limit_bytes',
+        'disk_hard_limit_bytes',
         'archive_retention_days',
         'backup_retention_days',
         'cpu_weight',
         'ram_weight',
+        'cpu_cores_limit',
+        'memory_limit_bytes',
         'storage_overage_fee_per_gb',
         'bandwidth_overage_fee_per_gb',
         'archive_retention_fee',
@@ -37,6 +41,18 @@ class SiteResourceLimit extends Model
     public function formattedBandwidthLimit(): string
     {
         return SiteResourceUsage::formatBytes((int) $this->bandwidth_limit_bytes);
+    }
+
+    /** Disk soft quota for the measured web root; config default when unset. */
+    public function effectiveDiskSoftLimit(): int
+    {
+        return (int) ($this->disk_soft_limit_bytes ?: config('resource_governance.disk.soft_limit_bytes', 5368709120));
+    }
+
+    /** Disk hard quota, or 0 when none is configured. */
+    public function effectiveDiskHardLimit(): int
+    {
+        return (int) ($this->disk_hard_limit_bytes ?: config('resource_governance.disk.hard_limit_bytes', 0));
     }
 
     public function storageOverageActive(): bool

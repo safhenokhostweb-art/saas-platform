@@ -134,6 +134,13 @@ class Kernel extends ConsoleKernel
                 \Illuminate\Support\Facades\Log::error('resource:bill-overage scheduled run failed');
             });
 
+        // DEVOPS: measure tenant web-root disk, classify danger zones, prune (every 6h).
+        // Deletes only when RESOURCE_AUTO_PRUNE_ENABLED=true; otherwise records previews.
+        $schedule->command('devops:govern-resources')
+            ->everySixHours()
+            ->withoutOverlapping(120)
+            ->appendOutputTo(storage_path('logs/resource.log'));
+
         // ARVAN-001 Phase 2: Weekly platform storage snapshot → ArvanCloud offsite (Sunday 03:30)
         $schedule->command('storage:backup')
             ->weeklyOn(0, '03:30')

@@ -121,7 +121,7 @@ UNIQUE(site_id, snapshot_date)
 | Event | Threshold | Channel |
 |---|---|---|
 | `alertStorageWarning` | >80% (configurable) | Dashboard (medium) + Slack |
-| `alertStorageCritical` | >95% (configurable) | Dashboard (critical) + Slack |
+| `alertStorageCritical` | >=90% (configurable; 95 before ADR-070) | Dashboard (critical) + Slack |
 | `alertAbnormalArchiveGrowth` | >100MB/day (configurable) | Dashboard (high) |
 | `alertBackupMissing` | No backup in N days | Dashboard (high) |
 
@@ -260,7 +260,13 @@ RESOURCE_RESTORE_FEE=0
 
 # Alerts
 RESOURCE_ALERT_WARNING_PCT=80
-RESOURCE_ALERT_CRITICAL_PCT=95
+RESOURCE_ALERT_CRITICAL_PCT=90   # was 95 before ADR-070
+
+# DevOps disk governance
+RESOURCE_DISK_SOFT_LIMIT_BYTES=5368709120    # 5 GB
+RESOURCE_DISK_HARD_LIMIT_BYTES=0             # 0 = none
+RESOURCE_AUTO_PRUNE_ENABLED=false            # true = scheduler deletes, false = previews only
+RESOURCE_PRUNE_MAX_FILES=20000
 
 # Data retention
 RESOURCE_SNAPSHOT_RETENTION_DAYS=90
@@ -305,6 +311,56 @@ RESOURCE_ARCHIVE_GROWTH_ANOMALY=104857600    # 100 MB/day
 | `resources/views/admin/account/resources.blade.php` | Full resources page |
 | `app/Helpers/NumberHelper.php` | Added `formatBytes()` helper |
 | `routes/web.php` | `/account/resources` route |
+
+---
+
+## DevOps Disk Governance (2026-10-31, ADR-070)
+
+Adds **measured** web-root disk usage next to the DB-derived `storage_bytes`
+estimate, danger zones, and audited pruning. It reuses the tables above; it
+does not add a second quota store.
+
+| Piece | Location |
+|---|---|
+| Quotas | `site_resource_limits.disk_soft_limit_bytes`, `disk_hard_limit_bytes`, `cpu_cores_limit`, `memory_limit_bytes` (null = `resource_governance.disk.*`, soft default 5 GB) |
+| Measurement | `site_resource_usage.disk_usage_bytes`, `danger_level`, `disk_audited_at`, `disk_audit_error` |
+| Prune audit | `tenant_prune_audit_logs` (one row per dry run or execution) |
+| Services | `app/Services/DevOps/`: `TenantTargetResolver`, `TenantResourceGovernor`, `TenantStoragePruner`, `PrunePathGuard`, `ServerMetricsCollector` |
+| Commands | `devops:govern-resources [--site=] [--dry-run]` (every 6 h; alias `devops:resources:govern`), `devops:prune-tenant {id} [--dry-run] [--profile=routine\|aggressive] [--force]` |
+| Admin UI | `/admin/devops/resources` (`DevOpsResourceController`, `resources/views/admin/devops/`) |
+
+- **Reaching files:** each site's latest completed installation → its
+  remote server → `DriverFactory` driver. The web root is the
+  PROVISION_DOMAIN document root, else `WebRootResolver`. Hosts whose
+  driver cannot run commands (SFTP, DirectAdmin, Docker) are "not
+  measurable".
+- **Danger zones:** these share `RESOURCE_ALERT_WARNING_PCT` and
+  `RESOURCE_ALERT_CRITICAL_PCT`, now 80 / 90 by default:
+  - normal: below 80 %;
+  - warning: at or above 80 %; the scheduler applies the `routine` profile;
+  - critical: at or above 90 %; the scheduler applies the `aggressive`
+    profile and sends one notification on escalation.
+- **Autonomy:** the scheduler deletes only with
+  `RESOURCE_AUTO_PRUNE_ENABLED=true`. Otherwise it records dry-run previews.
+- **What can be pruned:**
+  - aged logs, framework cache, compiled views, expired sessions and
+    upload temp files;
+  - `storage/backups/backup_*.sql*` dumps, always keeping the newest N.
+  - Never touched: media, `public/`, `storage/app/public`, or the shared
+    system `/tmp`.
+- **Safety controls:** see ADR-070 for the full model (root and target
+  validation, symlink skip, per-path re-validation, explicit `rm` batches,
+  per-site lock, audit-before-delete).
+- **Access:**
+  - Viewing, re-measuring and quota edits need admin access.
+  - Preview and prune need the `devops.storage.prune` permission (super
+    admins pass).
+  - A UI prune needs a single-use token from a preview of the same site by
+    the same user.
+- **Overcommit:** allocated soft quota divided by the physical disk of the
+  servers measured in the last 26 h (the `df` from each audit is cached).
+- **Not enforced:** CPU and memory limits are recorded for capacity
+  planning only.
 
 ---
 
