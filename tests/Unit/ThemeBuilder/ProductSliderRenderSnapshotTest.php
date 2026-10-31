@@ -67,14 +67,24 @@ use Tests\TestCase;
  * and «جدید» moved from the free-text `primary` badge to `info`. Verified
  * by diffing the HEAD-package render with this one: those three badge
  * spans are the only change.
+ *
+ * Re-pinned again in WU-B (2026-10-31, audit doc §7.1): the carousel chrome
+ * moved from inline styles to the shared sheet (root, viewport, track,
+ * slides, dots and dot row lose their style attributes), the root is named
+ * by the block title instead of «اسلایدر b1», slide and dot labels use
+ * Persian digits, and the first dot carries is-active + aria-current from
+ * the server (every dot now has aria-current). Verified by rendering the
+ * b92570d2 package and this one, then reversing exactly those changes on
+ * the new markup: the result is byte-identical to the old render in both
+ * modes, so nothing else moved.
  */
 class ProductSliderRenderSnapshotTest extends TestCase
 {
     /** Neutral render (no forced mode, no editor_mode context). */
-    private const NEUTRAL_STRUCTURAL_SHA256 = '419619285d3cf2ba1d5211971561681c689d55bb0c9a0bc4c4992f3447899c8c';
+    private const NEUTRAL_STRUCTURAL_SHA256 = '4078758ea1dd9f89cb0dfd5d8f6cd2a0980387aa378631f05707887e8337300f';
 
     /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '587e1281de610f117751d83393c789ec6f7ccf018ba7d5cc1bf715afbbe36949';
+    private const PUBLIC_STRUCTURAL_SHA256 = 'bd84203df5fea8d8aa51af728cb9185043e6c12441f07eb5e9ae003ab0edc0a0';
 
     private function render(string $mode = 'neutral'): string
     {

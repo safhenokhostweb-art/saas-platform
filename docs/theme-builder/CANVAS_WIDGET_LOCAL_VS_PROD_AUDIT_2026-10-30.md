@@ -179,3 +179,22 @@
 - تست unit که بشمارد هیچ رنگ خامی بیرون از `var()` در توابع هدف باقی نمانده باشد. این تست ابزار بازگشت‌ناپذیری است و از رشد دوباره رنگ‌های خام جلوگیری می‌کند.
 
 **پذیرش:** هارنس parity در هر دو host با صفر diff computed-style و صفر diff ساختاری روی هر ۲۹ snapshot، به‌علاوه یک تم آزمایشی که همه توکن‌های تازه را تعریف می‌کند و تغییرش در اسکرین‌شات دیده می‌شود.
+
+> نکته برای C: B پیش‌تر نام‌های `--tb-overlay`، `--tb-border-strong`، `--tb-media-bg` و `--tb-on-overlay` را با fallback قدیم به کار برده است. C باید همین نام‌ها را در `ThemeTokenNormalizer` ثبت کند، نه نام‌های تازه.
+
+## ۸. ثبت تحویل WU-B — کنترلر اسلایدر (۲۰۲۶-۱۰-۳۱)
+
+| مورد | مقدار |
+|---|---|
+| پیاده‌سازی | B1 تا B7 طبق §۷.۱ در `BlockRenderer.php` (`renderCarousel`، `renderSlider`، `imageWithFallback`، و برچسب ۵ فراخواننده عنوان‌دار)، `carousel.js` و `theme-runtime-blocks.css` |
+| کامیت پیاده‌سازی | saas `bc6f52d2`. این کامیت را بازیگری ناشناس، **پیش از پایان اعتبارسنجی**، از درخت کاری ساخت و مستقیم روی `origin/main` push کرد. محتوایش بایت‌به‌بایت همان کار اعتبارسنجی‌شده است، ولی re-pin اسنپ‌شات را نداشت. مالک گزینه A را برگزید: پذیرش آن کامیت و تکمیل از مسیر release-prepare |
+| baseline پاریتی | از کامیت صریح `b92570d2` (پکیج dev و میرور vendor هر دو برابر آن) |
+| پاریتی CSS (بعد) | live customer: ۲۲۹ سند، `--tokens=none`: ۲۲۹ سند، preview platform: ۲۳۰ سند. تعداد عنصرها در هر سه برابر است. تنها diff: پس‌زمینه **دات اول** (`#d1d5db` به `#4f46e5`) به‌اضافه پهنای مشتق از قاعده `[aria-current="true"]` در contract. این عمدی است، چون حالت فعال اولیه حالا از سرور می‌آید و هارنس اسکریپت اجرا نمی‌کند. بقیه computed-style یکسان است. خروجی `--tokens=none` با default یکی است، پس fallbackها مقدار قدیم را بازتولید می‌کنند |
+| اسنپ‌شات product_slider | re-pin با اثبات: معکوس کردن دقیق تغییرات WU-B روی render تازه، render پکیج `b92570d2` را بایت‌به‌بایت بازمی‌سازد (هر دو mode) |
+| تست‌ها | پلتفرم ۱۰۳۲ تست، customer ۸۱۰ تست؛ فقط شکست‌های شناخته‌شده قبلی. JS ۱۲۴/۱۲۴. `CarouselControllerMarkupTest` با ۷ تست. `carousel-motion.test.mjs`: ۸ تست که ۶ تای آن روی کنترلر قدیم قرمزند. Playwright `wu-b-slider-motion` (۳ عرض + reduced-motion) و `phase1-2-header-footer-carousel` سبز |
+| تست‌های به‌روزشده | `SliderRenderersTest` L102 و L104 (هر دو inline را pin می‌کردند)، `SliderRenderTest` L150 (customer)، و `ProductSliderRenderSnapshotTest` |
+
+**یافته‌ها:**
+- **دامنه B7:** اسلایدر تمام‌عرض (حالت پیش‌فرض) از قبل با قواعد `!important` در `theme-runtime-contract.css` (L62–L71) تایپوگرافی fluid داشت. پس ادعای «عنوان ثابت ۱.۷۵rem» در §۳ فقط درباره حالت **boxed** درست بود، و B7 هم فقط همان‌جا اثر دارد.
+- **نقص پیشین بیرون از B (پیگیری لازم):** در حالت boxed، دکمه مکث «Ⅱ» و دکمه‌های thumbnail زیر اسلایدر به شکل دکمه خام مرورگر نمایش داده می‌شوند، چون استایل `.tb-carousel-status` و `.tb-carousel-thumbs` فقط برای `.tb-slider-full` تعریف شده است. B این markup را تغییر نداد و هارنس روی آن diff ندارد.
+- **override‌های customer-site** (`ThemeCanvasRenderer` L476، L658، L1821، L1878) برچسب پیش‌فرض «اسلایدر» می‌گیرند، نه عنوان بلاک. این پیگیری کوچکی در سمت host است.
