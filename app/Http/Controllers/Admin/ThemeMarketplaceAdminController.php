@@ -12,7 +12,6 @@ use App\Services\PublishedThemeAssignmentService;
 use App\Services\ThemeBuilder\ThemeDemoDataService;
 use App\Services\ThemeBuilder\ThemeMarketplaceQualityService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use DomainException;
 
 class ThemeMarketplaceAdminController extends Controller
@@ -51,22 +50,6 @@ class ThemeMarketplaceAdminController extends Controller
         return view('admin.theme-marketplace.index', compact(
             'themes', 'categories', 'totalLicenses', 'totalRevenue', 'pendingOrders'
         ));
-    }
-
-    // GAP-001/003: Initialize marketplace data (seed themes + score them)
-    public function initialize(Request $request)
-    {
-        $fresh = $request->boolean('fresh', false);
-
-        Artisan::call('marketplace:seed', $fresh ? ['--fresh' => true] : []);
-        $seedOutput = Artisan::output();
-
-        Artisan::call('marketplace:score');
-        $scoreOutput = Artisan::output();
-
-        $count = Theme::whereNull('site_id')->where('is_marketplace', true)->count();
-
-        return back()->with('success', "مارکت‌پلیس راه‌اندازی شد: {$count} قالب فعال.");
     }
 
     // GAP-013: Theme marketplace preview page

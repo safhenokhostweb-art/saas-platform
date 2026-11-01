@@ -12,16 +12,6 @@
       <p class="text-sm text-gray-500 mt-1">قالب‌های قابل فروش را مدیریت کنید</p>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
-      {{-- Initialize marketplace (seed + score) --}}
-      <form method="POST" action="{{ route('admin.theme-marketplace.initialize') }}" class="inline"
-            onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').textContent='در حال اجرا...'">
-        @csrf
-        <button type="submit"
-          class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          راه‌اندازی
-        </button>
-      </form>
       <a href="{{ route('admin.theme-marketplace.scoring') }}"
          class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>

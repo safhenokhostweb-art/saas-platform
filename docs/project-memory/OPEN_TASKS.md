@@ -1,6 +1,45 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-10-12
+> Last Updated: 2026-11-01
+
+---
+
+## OPEN: CLEAN SLATE PURGE — LEGACY THEMES, PAGES, MENUS — 2026-11-01
+
+Owner brief: purge every legacy theme, page, header/footer and menu in both
+repositories (no live customers) and start from the commercial Canvas only.
+
+| Component | Status |
+|-----------|--------|
+| `themes:clean-slate` (platform): themes, releases, licenses, assignments, marketplace, revisions, quality reports, templates, packs, bundles, site menus; `sites.theme_id` detached | ✅ DONE — `ThemeCleanSlateCommandTest` 7/7 |
+| `canvas:clean-slate` (customer-site): active/draft/backup/rotating theme settings, `theme_instance_revisions` + their media usages, pages, page/section templates, menus; then installs the empty canvas (`CanvasBlankBaselineSeeder`) | ✅ DONE — `CanvasCleanSlateCommandTest` 5/5 |
+| Recovery path (constitution §5): verified JSON-lines snapshot + SHA-256 manifest before any delete; `--restore` into empty tables; `--confirm-database` required in production | ✅ DONE — shared `App\Support\DataPurge` (identical file in both repos) |
+| Admin marketplace "راه‌اندازی" button (re-seeded 22 legacy themes) | ✅ REMOVED (route, action, button) |
+| Orphan seeders `KhabShimanaTabletThemeSeeder`, `ThemeBuilderSampleThemesSeeder` | ✅ DELETED (their image assets kept) |
+| Local dev DBs `laravel` / `customer_site` | ✅ PURGED 2026-11-01; purge → restore → purge digests identical in both; e2e fixtures reseeded (#216/#217) |
+| Production databases | ⏳ OWNER DECISION — not run |
+
+Ids are reset except `themes` and `theme_releases` (platform): the kept
+`storage/app/public/theme-media/{theme id}/` folders and customer-site
+provenance refer to those ids.
+
+**Kept on purpose:** block types and renderers (`foodmart_*`, `sleepshiman_*`;
+Canvas overhaul owns them), media files (`theme-media/**`,
+`theme-assets/foodmart/**`, `customer_media`), colour/token presets
+(`theme_profiles`, preset slugs, `theme_settings`), the admin module menu
+(`menu_mode`, `menu_custom_menus`), and the release-gate fixtures
+(`theme-baselines/foodmart/integrity-manifest.tsv`, `tests/Support/FoodMart/*`,
+customer `storage/app/*-snapshot.json`, the Universal QA export fixture).
+
+**Follow-up (needs the Canvas overhaul owner, then this unit):**
+- Delete the remaining legacy catalog seeders/commands — FoodMart,
+  SleepShiman, Universal QA, SalesSupport, ArianaMultiPlus seeders and
+  `marketplace:seed` / `nexus:seed` / `acool:seed` / `malltina:*` /
+  `theme-catalog:rebuild` — together with the ~30 platform tests that seed
+  through them, once the template library replaces them as test fixtures.
+- Customer-site legacy page builder presets (`config/builder-section-presets.php`,
+  `item_schema` in `config/builder-elements.php`) belong to the old page
+  builder, not Canvas; retiring it is a separate decision.
 
 ---
 
