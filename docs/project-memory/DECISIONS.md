@@ -4160,3 +4160,87 @@ There is no migration or Composer change.
   there is no list to keep in step.
 - The platform editor stores URL strings, not `{media_id}`; the unified
   entity/link selector (overhaul Phase 2) builds on this map.
+
+## ADR-073
+
+**Title:** Visual Design System v1: Rhythm, Elevation and Motion Tokens; One Card Interaction; Section Style Controls That Work; Persian-Safe Typography
+
+**Status:** Accepted
+
+**Date:** 2026-11-01
+
+**Context:**
+
+- The owner's Canvas overhaul brief (2026-10-31) asks for soft modern
+  widgets: spacious vertical rhythm, multi-layer shadows, smooth radii,
+  hover lift, glass badges and fluid typography, with keyboard
+  accessibility and `prefers-reduced-motion`. The owner assigned the whole
+  visual system (CSS tokens and markup) to one session; findings from a
+  peer's read-only pass were folded in.
+- Two controls had no effect:
+  - `theme-runtime-blocks.css` loads after the contract sheet, and its
+    `.tb-section { padding: 2.5rem 0 }` overrode every `.tb-padding-*`
+    class (same specificity), so a section's padding control did nothing.
+  - `renderSection()` emits `tb-radius-*`, `tb-shadow-*` and
+    `tb-hover-lift`, and the grid blocks emit `tb-gap-*`, but only the
+    customer-site default layout defined them. Canvas pages and the
+    platform editor ignored them.
+- Every card family carried its own hover rule: single-layer shadows of
+  different strength, 0.15–0.35 s durations, `scale(1.02)` on bento,
+  `translateY(-2px)` on product/blog and `-4px` elsewhere, with no
+  keyboard equivalent and no shared reduced-motion guard.
+- `--tb-radius-md` defaulted to 0.5rem while its alias `--tb-radius` was
+  0.75rem.
+- Hero titles used line-heights of 1.05–1.2, which clip Persian ascenders
+  and descenders. Testimonials used `font-style: italic`, but Vazirmatn has
+  no italic, so browsers synthesise an oblique that breaks Persian joins.
+
+**Decision:**
+
+1. **Tokens** (`theme-runtime-contract.css`, on `:root, [data-theme]`):
+   `--tb-ease-out`, `--tb-dur-fast/--tb-dur/--tb-dur-slow`, `--tb-lift`,
+   `--tb-space-section`, `--tb-space-header`, `--tb-gap`, `--tb-hairline`
+   (8% of `--tb-text`), `--tb-radius-card`, `--tb-elev-rest/-hover` and
+   `--tb-focus-ring`. They are declared on `[data-theme]` too, because a
+   var() inside a custom property resolves where it is declared, so a
+   dark-mode subtree would otherwise inherit the light hairline. Fluid sizes
+   use `clamp()` only, with no viewport queries (ADR-071 scale).
+2. **Normalizer defaults** (`ThemeTokenNormalizer`): the radius scale is
+   sm 0.5 / md 0.75 / lg 1.125rem, and the shadow defaults are soft
+   two-layer shadows. A theme's authored `border_radius`/`shadows` still win.
+3. **The padding scale is fluid and actually applies.** The base rule only
+   targets `.tb-section:not([class*="tb-padding-"])`.
+4. **The section style utilities and grid gaps live in the package.**
+   `.tb-grid` takes its gap from `--tb-grid-gap`, which `tb-gap-*` sets. The
+   fit-columns calc reads that same variable instead of a hard-coded 1.5rem.
+5. **One card interaction**, in a single layer at the end of the shared
+   sheet: a lift of `--tb-lift` with `--tb-elev-hover` on `:hover` and
+   `:focus-within` (the same feedback for mouse and keyboard), a half-lift
+   on `:active`, a focus ring on card links, and one media-zoom curve for
+   product, blog and image-led bento. Minimal variants and live bento cells
+   (product, countdown) do not lift. Buttons gain a brand-tinted shadow,
+   a press state and `:focus-visible`.
+6. **Glass ribbons** over product photos: blur, an inner highlight and a
+   soft drop shadow. Tone fills stay opaque, so the `--tb-on-*` AA pairs
+   still hold. The neutral ribbon is a frosted surface.
+7. **Persian typography:** hero titles at 1.25–1.3 and headings at 1.4,
+   with the tight values kept for `[dir="ltr"]`. Testimonial text is
+   upright in RTL and italic only in LTR.
+8. **One reduced-motion guard** covers every lift, press and zoom above
+   and the logo marquee.
+
+**Consequences:**
+
+- This is an intentional visible change, proven with the CSS parity
+  harness (platform corpus, before and after stylesheets). Apart from the
+  changed token values, which every element inherits, the diffs are only
+  padding, line-height, border-radius, font-weight, box-shadow, header
+  margins, grid gaps and the columns they derive, the testimonial
+  font-style, the bento hairline and the ribbon backdrop-filter.
+- The overflow gate shows 0 overflowing documents at 360/768/1280 before
+  and after (230 documents).
+- Guard tests stay green: BreakpointScale, CommercialTokenRatchet,
+  TypographyScaleWiring, the stylesheet contracts and the token normalizer
+  (158 tests).
+- Themes that author their own radius/shadow tokens keep their values.
+  Themes that relied on the defaults get the new elevation and radii.

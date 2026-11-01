@@ -98,12 +98,15 @@ class ThemeTokenNormalizer
             '--tb-font-body' => $globalStyles['font_family'] ?? $typography['font_body'] ?? 'Vazirmatn, Tahoma, sans-serif',
             '--tb-scale' => $typography['scale'] ?? '1.25',
             '--tb-radius' => $borderRadius['md'] ?? '0.75rem',
-            '--tb-radius-sm' => $borderRadius['sm'] ?? '0.25rem',
-            '--tb-radius-md' => $borderRadius['md'] ?? '0.5rem',
-            '--tb-radius-lg' => $borderRadius['lg'] ?? '0.75rem',
-            '--tb-shadow-sm' => $shadows['sm'] ?? '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-            '--tb-shadow-md' => $shadows['md'] ?? '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-            '--tb-shadow-lg' => $shadows['lg'] ?? '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+            // Canvas overhaul unit 3 (ADR-073): one radius scale (md used to
+            // default to 0.5rem while --tb-radius, its own alias, was 0.75rem)
+            // and soft two-layer elevation. Authored values still win.
+            '--tb-radius-sm' => $borderRadius['sm'] ?? '0.5rem',
+            '--tb-radius-md' => $borderRadius['md'] ?? '0.75rem',
+            '--tb-radius-lg' => $borderRadius['lg'] ?? '1.125rem',
+            '--tb-shadow-sm' => $shadows['sm'] ?? '0 1px 2px rgb(15 23 42 / 0.04), 0 2px 6px -1px rgb(15 23 42 / 0.06)',
+            '--tb-shadow-md' => $shadows['md'] ?? '0 2px 4px rgb(15 23 42 / 0.04), 0 8px 20px -6px rgb(15 23 42 / 0.10)',
+            '--tb-shadow-lg' => $shadows['lg'] ?? '0 4px 10px -2px rgb(15 23 42 / 0.05), 0 22px 44px -14px rgb(15 23 42 / 0.20)',
             '--tb-container' => '80rem',
         ]);
 
