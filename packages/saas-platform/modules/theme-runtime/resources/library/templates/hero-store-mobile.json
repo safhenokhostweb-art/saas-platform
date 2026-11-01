@@ -1,0 +1,26 @@
+{
+    "order": 33,
+    "name": "هیرو فروشگاهی با موکاپ موبایل",
+    "description": "معرفی فروشگاه آنلاین با تصویر موبایل، نشان تخفیف و دکمه خرید؛ مناسب صفحه اول فروشگاه‌های دیجیتال و کالا.",
+    "type": "section",
+    "category": "hero",
+    "tags": ["هیرو", "فروشگاه", "موبایل", "تخفیف"],
+    "thumbnail": "mobile-store.webp",
+    "blocks": [
+        {
+            "type": "hero_split",
+            "props": {
+                "badge": "تا ۳۰٪ تخفیف ویژه اعضا",
+                "title": "خرید هوشمند، ارسال سریع، ضمانت اصالت",
+                "subtitle": "هزاران کالای اصل با بهترین قیمت؛ سفارش امروز، تحویل در کوتاه‌ترین زمان به سراسر کشور.",
+                "button_text": "ورود به فروشگاه",
+                "button_url": "@link:shop",
+                "button2_text": "راهنمای خرید",
+                "button2_url": "@link:blog",
+                "image_url": "@media:mobile-store.webp",
+                "image_side": "right",
+                "background": "#f1f5f9"
+            }
+        }
+    ]
+}

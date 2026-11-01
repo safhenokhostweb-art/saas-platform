@@ -1,0 +1,49 @@
+{
+    "order": 22,
+    "name": "فوتر چندستونه با دانلود اپلیکیشن",
+    "description": "سه ستون لینک، دکمه‌های دانلود از بازار و مایکت و شبکه‌های اجتماعی ایرانی؛ برای کسب‌وکارهایی که اپ موبایل دارند.",
+    "type": "footer",
+    "category": "store",
+    "tags": ["فوتر", "اپلیکیشن", "بازار", "مایکت"],
+    "thumbnail": "mobile-store.webp",
+    "blocks": [
+        {
+            "type": "nav_footer",
+            "layout_slot": "footer",
+            "props": {
+                "nav_source": "custom",
+                "logo_text": "برند شما",
+                "tagline": "همه خدمات ما، همیشه در جیب شما.",
+                "columns": [
+                    {"title": "خرید", "links": [
+                        {"label": "فروشگاه", "url": "@link:shop"},
+                        {"label": "پیشنهادهای امروز", "url": "@link:shop"}
+                    ]},
+                    {"title": "یادگیری", "links": [
+                        {"label": "دوره‌ها", "url": "@link:courses"},
+                        {"label": "وبلاگ", "url": "@link:blog"}
+                    ]},
+                    {"title": "ارتباط با ما", "links": [
+                        {"label": "تماس و پشتیبانی", "url": "@link:contact"},
+                        {"label": "صفحه اصلی", "url": "@link:home"}
+                    ]}
+                ],
+                "app_links": [
+                    {"store": "bazaar", "url": "https://cafebazaar.ir/"},
+                    {"store": "myket", "url": "https://myket.ir/"},
+                    {"store": "direct", "url": "@link:home"}
+                ],
+                "social_links": [
+                    {"network": "eitaa", "label": "ایتا", "url": "https://eitaa.com/"},
+                    {"network": "bale", "label": "بله", "url": "https://ble.ir/"},
+                    {"network": "aparat", "label": "آپارات", "url": "https://aparat.com/"},
+                    {"network": "telegram", "label": "تلگرام", "url": "https://t.me/"}
+                ],
+                "newsletter_enabled": false,
+                "copyright": "© تمامی حقوق محفوظ است.",
+                "bg_color": "#111827",
+                "text_color": "#e5e7eb"
+            }
+        }
+    ]
+}

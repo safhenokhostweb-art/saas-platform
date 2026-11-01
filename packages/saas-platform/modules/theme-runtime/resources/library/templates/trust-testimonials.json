@@ -1,0 +1,28 @@
+{
+    "order": 70,
+    "name": "اسلایدر نظرات مشتریان",
+    "description": "نظرات واقعی‌نما با تصویر، امتیاز و نشان خرید تأییدشده به همراه خلاصه امتیاز؛ قوی‌ترین عنصر اعتمادساز صفحه.",
+    "type": "section",
+    "category": "testimonials",
+    "tags": ["نظرات", "اعتماد", "اسلایدر", "امتیاز"],
+    "thumbnail": "portrait-2.webp",
+    "blocks": [
+        {
+            "type": "testimonials_slider",
+            "props": {
+                "title": "مشتریان درباره ما چه می‌گویند",
+                "columns": "3",
+                "mode": "carousel",
+                "autoplay": true,
+                "interval": 6000,
+                "show_summary": true,
+                "items": [
+                    {"name": "علی رضایی", "role": "مدیر فروش", "company": "بازرگانی آریا", "avatar": "@media:portrait-1.webp", "text": "از روز اول همه چیز شفاف بود. فروش آنلاین ما در سه ماه دو برابر شد و پشتیبانی همیشه پاسخ‌گو بود.", "rating": 5, "verified": true},
+                    {"name": "مریم احمدی", "role": "بنیان‌گذار", "company": "استودیو نقش", "avatar": "@media:portrait-2.webp", "text": "طراحی تمیز و سرعت بالای سایت، اولین چیزی است که مشتری‌هایمان درباره‌اش حرف می‌زنند.", "rating": 5, "verified": true},
+                    {"name": "رضا کریمی", "role": "توسعه‌دهنده", "company": "تک‌سازان", "avatar": "@media:portrait-3.webp", "text": "ابزارها کامل و منطقی چیده شده‌اند؛ بدون نیاز به کدنویسی، صفحات جدید را در چند دقیقه می‌سازیم.", "rating": 5, "verified": true},
+                    {"name": "سارا محمدی", "role": "مدیر بازاریابی", "company": "گلستان مارکت", "avatar": "@media:portrait-4.webp", "text": "کمپین‌های تخفیف را خودمان راه می‌اندازیم و نتیجه را همان روز در گزارش‌ها می‌بینیم.", "rating": 4, "verified": true}
+                ]
+            }
+        }
+    ]
+}

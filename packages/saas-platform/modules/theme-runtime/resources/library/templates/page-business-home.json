@@ -1,0 +1,10 @@
+{
+    "order": 90,
+    "name": "صفحه اصلی شرکتی کامل",
+    "description": "صفحه اصلی آماده از هیرو تا مقاله‌ها: معرفی، مزیت‌ها، آمار، تیم، نظرات و مجله؛ هر بخش جداگانه قابل ویرایش است.",
+    "type": "page",
+    "category": "corporate",
+    "tags": ["صفحه کامل", "شرکتی", "خدماتی"],
+    "thumbnail": "office-hero.webp",
+    "compose": ["hero-split-office", "bento-features", "trust-stats-logos", "trust-team", "trust-testimonials", "pricing-plans", "faq-accordion", "blog-editorial-grid"]
+}

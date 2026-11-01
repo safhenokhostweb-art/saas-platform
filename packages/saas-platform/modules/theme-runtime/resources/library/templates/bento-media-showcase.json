@@ -1,0 +1,71 @@
+{
+    "order": 41,
+    "name": "بنتو تصویری ویترین",
+    "description": "ترکیب کارت‌های تصویری بزرگ و بلند با کارت درخشان؛ ویترینی چشم‌نواز برای محصولات، پروژه‌ها و مجموعه‌ها.",
+    "type": "section",
+    "category": "features",
+    "tags": [
+        "بنتو",
+        "تصویر",
+        "ویترین",
+        "درخشش"
+    ],
+    "thumbnail": "tech-products.webp",
+    "blocks": [
+        {
+            "type": "bento_grid",
+            "props": {
+                "title": "مجموعه‌های منتخب این فصل",
+                "items": [
+                    {
+                        "kind": "content",
+                        "size": "featured",
+                        "title": "گجت‌های هوشمند",
+                        "text": "جدیدترین موبایل، ساعت و هدفون با ضمانت اصالت.",
+                        "icon": "smartphone",
+                        "bg_image": "@media:tech-products.webp",
+                        "bg_color_from": "rgba(15,23,42,0)",
+                        "bg_color_to": "rgba(15,23,42,0.88)",
+                        "text_color": "#ffffff",
+                        "link": "@link:shop"
+                    },
+                    {
+                        "kind": "content",
+                        "size": "tall",
+                        "title": "خرید از موبایل",
+                        "text": "تجربه‌ای روان در هر صفحه‌نمایش.",
+                        "icon": "shopping-bag",
+                        "bg_image": "@media:mobile-store.webp",
+                        "bg_color_from": "rgba(15,23,42,0)",
+                        "bg_color_to": "rgba(15,23,42,0.88)",
+                        "text_color": "#ffffff",
+                        "link": "@link:shop"
+                    },
+                    {
+                        "kind": "content",
+                        "size": "half",
+                        "title": "با هر خرید، یک هدیه",
+                        "text": "تا پایان ماه، هدیه ویژه برای همه سفارش‌ها.",
+                        "icon": "gift",
+                        "bg_color": "#0f172a",
+                        "text_color": "#f8fafc",
+                        "glow_enabled": true,
+                        "glow_color": "var(--tb-primary, #6366f1)",
+                        "glow_speed": 3,
+                        "link": "@link:shop"
+                    },
+                    {
+                        "kind": "content",
+                        "size": "half",
+                        "title": "ارسال رایگان",
+                        "text": "برای سفارش‌های بالای ۲ میلیون تومان به سراسر کشور.",
+                        "icon": "truck",
+                        "bg_color": "#f0fdfa",
+                        "text_color": "#134e4a",
+                        "link": "@link:shop"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "order": 60,
+    "name": "کاروسل تازه‌ترین مقاله‌ها",
+    "description": "اسلایدر مقاله‌های وبلاگ که با انتشار هر مطلب تازه، خودکار به‌روز می‌شود.",
+    "type": "section",
+    "category": "blog",
+    "tags": ["وبلاگ", "مقاله", "اسلایدر", "پویا"],
+    "thumbnail": "team-collaboration.webp",
+    "blocks": [
+        {
+            "type": "blog_posts",
+            "props": {
+                "title": "تازه‌ترین مقاله‌ها",
+                "limit": 6,
+                "layout": "slider",
+                "source": "latest",
+                "autoplay": true,
+                "interval": 6000
+            }
+        }
+    ]
+}

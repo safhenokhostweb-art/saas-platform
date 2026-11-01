@@ -1,0 +1,66 @@
+{
+    "order": 11,
+    "name": "هدر فروشگاهی با مگامنو",
+    "description": "مگامنوی دسته‌بندی با آیکون، بنر تبلیغاتی، جستجوی محصول، سبد خرید و حساب کاربری؛ همه لینک‌ها به صفحات زنده سایت متصل‌اند.",
+    "type": "header",
+    "category": "store",
+    "tags": ["هدر", "مگامنو", "فروشگاه", "سبد خرید"],
+    "thumbnail": "tech-products.webp",
+    "blocks": [
+        {
+            "type": "nav_header",
+            "layout_slot": "header",
+            "props": {
+                "logo_text": "فروشگاه شما",
+                "logo_url": "@link:home",
+                "nav_source": "custom",
+                "nav_links": [
+                    {"label": "صفحه اصلی", "url": "@link:home"},
+                    {
+                        "label": "محصولات",
+                        "url": "@link:shop",
+                        "mega_columns": [
+                            {
+                                "title": "دسته‌های محبوب",
+                                "items": [
+                                    {"label": "موبایل و تبلت", "url": "@link:shop", "icon": "smartphone"},
+                                    {"label": "لپ‌تاپ و کامپیوتر", "url": "@link:shop", "icon": "layers"},
+                                    {"label": "ساعت و پوشیدنی", "url": "@link:shop", "icon": "clock"},
+                                    {"label": "لوازم جانبی", "url": "@link:shop", "icon": "package"}
+                                ]
+                            },
+                            {
+                                "title": "خرید مطمئن",
+                                "items": [
+                                    {"label": "ارسال سریع به سراسر کشور", "url": "@link:shop", "icon": "truck"},
+                                    {"label": "ضمانت اصالت کالا", "url": "@link:shop", "icon": "badge-check"},
+                                    {"label": "پرداخت امن و اقساطی", "url": "@link:shop", "icon": "credit-card"},
+                                    {"label": "پشتیبانی هفت روز هفته", "url": "@link:contact", "icon": "headphones"}
+                                ]
+                            }
+                        ],
+                        "mega_banner_image": "@media:tech-products.webp",
+                        "mega_banner_url": "@link:shop",
+                        "mega_banner_text": "جشنواره فناوری؛ تا ۳۰٪ تخفیف",
+                        "mega_banner_cta": "مشاهده پیشنهادها",
+                        "mega_show_desktop": true,
+                        "mega_mobile_behavior": "accordion"
+                    },
+                    {"label": "وبلاگ", "url": "@link:blog"},
+                    {"label": "تماس با ما", "url": "@link:contact"}
+                ],
+                "sticky": true,
+                "sticky_hide_on_scroll": true,
+                "transparent_over_hero": false,
+                "bg_color": "#ffffff",
+                "text_color": "#0f172a",
+                "show_search": true,
+                "search_placeholder": "جستجوی محصول، برند یا دسته…",
+                "search_scope": "products",
+                "show_cart": true,
+                "show_account": true,
+                "show_dark_toggle": false
+            }
+        }
+    ]
+}

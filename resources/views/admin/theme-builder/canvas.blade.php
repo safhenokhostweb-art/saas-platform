@@ -168,7 +168,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
             </span>
 
             {{-- TB6: Template Library button --}}
-            <button @click="openTemplateLibrary()"
+            <button type="button" data-testid="tb-open-templates" @click="openTemplateLibrary()"
                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-medium transition"
                 title="کتابخانه قالب‌ها">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
@@ -1365,15 +1365,19 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 <select x-model="templateLibrary.category" @change="fetchTemplates()"
                     class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
                     <option value="">همه دسته‌ها</option>
+                    <option value="navigation">ناوبری</option>
                     <option value="hero">هیرو</option>
-                    <option value="features">ویژگی‌ها</option>
+                    <option value="features">ویژگی‌ها و بنتو</option>
+                    <option value="product">محصول</option>
+                    <option value="store">فروشگاه</option>
+                    <option value="blog">وبلاگ</option>
+                    <option value="testimonials">اعتماد و آمار</option>
                     <option value="pricing">قیمت‌گذاری</option>
-                    <option value="testimonials">نظرات</option>
+                    <option value="faq">سؤالات متداول</option>
+                    <option value="corporate">شرکتی</option>
                     <option value="contact">تماس</option>
                     <option value="gallery">گالری</option>
                     <option value="team">تیم</option>
-                    <option value="blog">وبلاگ</option>
-                    <option value="product">محصول</option>
                 </select>
             </div>
             {{-- Grid --}}
@@ -1390,26 +1394,29 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 <div x-show="!templateLibrary.loading && templateLibrary.templates.length > 0"
                     class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     <template x-for="tpl in templateLibrary.templates" :key="tpl.id">
-                        <div class="border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer group flex flex-col"
+                        <button type="button" class="text-start border border-slate-200 rounded-xl overflow-hidden hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 transition cursor-pointer group flex flex-col disabled:opacity-60 disabled:cursor-wait"
+                            :data-testid="'tpl-card-' + tpl.id" :disabled="templateLibrary.inserting"
                             @click="insertTemplate(tpl.id)">
                             {{-- Thumb --}}
-                            <div class="aspect-video bg-gradient-to-br from-slate-100 to-purple-50 flex items-center justify-center relative overflow-hidden">
+                            <div class="aspect-video w-full bg-gradient-to-br from-slate-100 to-purple-50 flex items-center justify-center relative overflow-hidden">
                                 <template x-if="tpl.thumbnail_url">
-                                    <img :src="tpl.thumbnail_url" class="w-full h-full object-cover">
+                                    <img :src="tpl.thumbnail_url" :alt="tpl.name" loading="lazy" class="w-full h-full object-cover transition duration-300 group-hover:scale-105">
                                 </template>
                                 <template x-if="!tpl.thumbnail_url">
                                     <svg class="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"/></svg>
                                 </template>
                                 <span class="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-purple-700" x-text="tpl.type_label"></span>
+                                <span x-show="tpl.source === 'library'" class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-600 text-white">آماده</span>
                                 <div class="absolute inset-0 bg-purple-600/0 group-hover:bg-purple-600/10 transition flex items-center justify-center">
-                                    <span class="opacity-0 group-hover:opacity-100 bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">درج</span>
+                                    <span class="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition" x-text="templateLibrary.inserting ? 'در حال درج…' : 'درج'"></span>
                                 </div>
                             </div>
-                            <div class="p-3">
+                            <div class="p-3 w-full">
                                 <p class="text-xs font-semibold text-slate-800 truncate" x-text="tpl.name"></p>
                                 <p class="text-[10px] text-slate-400 mt-0.5" x-text="tpl.category_label"></p>
+                                <p x-show="tpl.description" class="text-[10px] leading-relaxed text-slate-500 mt-1 line-clamp-2" x-text="tpl.description"></p>
                             </div>
-                        </div>
+                        </button>
                     </template>
                 </div>
             </div>
@@ -1952,7 +1959,7 @@ function themeCanvas() {
         // TB6: template library
         showTemplateLibrary: false,
         showSaveAsTemplate: false,
-        templateLibrary: { loading: false, templates: [], type: '', category: '', search: '' },
+        templateLibrary: { loading: false, inserting: false, templates: [], type: '', category: '', search: '' },
         saveTemplateForm: { name: '', type: 'section', category: 'hero', scope: 'block', saving: false },
         // Phase 3A — Section Library state (Persian-first composition library).
         showSectionLibrary: false,
@@ -3563,27 +3570,63 @@ function themeCanvas() {
                 this.templateLibrary.loading = false;
             }
         },
+        // Canvas overhaul Unit 5 (ADR-075): a template lands in its own zone
+        // (a header template in the header, never in the page body), a
+        // header/footer template replaces the current one after
+        // confirmation, and the canvas re-renders at once — every other
+        // structural insert already saves and reloads the iframe; this one
+        // only queued the operations, so nothing appeared until the next edit.
         async insertTemplate(id) {
+            if (this.templateLibrary.inserting) return;
+            this.templateLibrary.inserting = true;
             try {
                 const res = await fetch('{{ route('admin.theme-builder.canvas.insert-template', $theme) }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content, 'Accept': 'application/json' },
                     body: JSON.stringify({ template_id: id }),
                 });
-                const json = await res.json();
-                if (json.success && json.blocks) {
-                    for (const raw of json.blocks) {
-                        const block = this.normalizeBlock(JSON.parse(JSON.stringify(raw)));
-                        const operation = this.treeOperations.insertNode(this.blocks, block, 'page', this.blocks.length);
-                        this.documentState.queue(operation);
-                        this.recordStructuralHistory('insert', operation, null, block, this.documentState.selectedNodeId, block.id);
-                    }
-                    this.isDirty = true;
-                    this.showTemplateLibrary = false;
-                    this.showToast('قالب درج شد', 'success');
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || !json.success || !Array.isArray(json.blocks)) {
+                    this.showToast(json.message || 'درج قالب ممکن نشد.', 'error');
+                    return;
                 }
+                const zone = ['header', 'footer'].includes(json.zone) ? json.zone : 'page';
+                if (this.activeTarget !== zone) {
+                    await this.switchTarget(zone);
+                    if (this.activeTarget !== zone) return; // the dirty zone failed to save
+                }
+                if (zone !== 'page' && this.blocks.length > 0) {
+                    const label = zone === 'header' ? 'هدر' : 'فوتر';
+                    if (!confirm(`${label} فعلی با این قالب جایگزین شود؟ (با «بازگردانی» قابل برگشت است)`)) return;
+                    for (const old of [...this.blocks]) {
+                        // Legacy/imported chrome can lack an id; structural
+                        // operations address nodes by id only.
+                        if (typeof old.id !== 'string' || old.id === '') old.id = 'blk_' + Math.random().toString(36).slice(2, 10);
+                        const operation = this.treeOperations.deleteNode(this.blocks, old.id);
+                        this.documentState.queue(operation);
+                        this.recordStructuralHistory('delete', operation, operation.before.node, null, old.id, null);
+                    }
+                }
+                let firstId = null;
+                for (const raw of json.blocks) {
+                    const block = this.normalizeBlock(JSON.parse(JSON.stringify(raw)));
+                    const operation = this.treeOperations.insertNode(this.blocks, block, 'page', this.blocks.length);
+                    this.documentState.queue(operation);
+                    this.recordStructuralHistory('insert', operation, null, block, this.documentState.selectedNodeId, block.id);
+                    firstId ??= block.id;
+                }
+                this.showTemplateLibrary = false;
+                this.selectBlockById(firstId);
+                this.isDirty = true;
+                await this.autoSaveAndReload();
+                this.showToast('قالب درج شد', 'success');
             } catch (e) {
-                this.showToast('خطا در درج قالب', 'error');
+                console.error('[template-insert]', e);
+                const structural = ['cycle', 'locked-structure', 'invalid-parent-capability', 'invalid-child-capability', 'max-children', 'max-depth'];
+                if (structural.includes(e?.message)) this.structuralError(e);
+                else this.showToast('خطا در درج قالب', 'error');
+            } finally {
+                this.templateLibrary.inserting = false;
             }
         },
         async saveAsTemplate() {

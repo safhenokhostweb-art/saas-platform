@@ -1,0 +1,10 @@
+{
+    "order": 91,
+    "name": "صفحه اصلی فروشگاه کامل",
+    "description": "صفحه اصلی فروشگاهی آماده: هیرو، دسته‌بندی‌ها و محصولات زنده، ویترین بنتو، مزیت‌های خرید، نظرات و مقاله‌ها.",
+    "type": "page",
+    "category": "store",
+    "tags": ["صفحه کامل", "فروشگاه", "محصولات"],
+    "thumbnail": "mobile-store.webp",
+    "compose": ["hero-store-mobile", "products-showcase", "bento-media-showcase", "bento-store-highlights", "trust-testimonials", "blog-carousel"]
+}

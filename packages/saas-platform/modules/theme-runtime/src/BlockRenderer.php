@@ -3702,9 +3702,12 @@ class BlockRenderer
         }
 
         $numberish = '[0-9a-zA-Z%,.\s/*+-]+';
+        // A token's fallback may be a hex colour: the registry's own default
+        // glow_color is `var(--tb-primary, #6366f1)`, which this allowlist
+        // used to reject (Unit 5, ADR-075). `#` cannot leave a style value.
         $pattern = '~^(?:#[0-9a-f]{3,8}|transparent|currentcolor|inherit|initial|unset|'
             . '(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\(\s*' . $numberish . '\)|'
-            . 'var\(\s*--[A-Za-z0-9_-]+(?:\s*,\s*' . $numberish . ')?\s*\))$~i';
+            . 'var\(\s*--[A-Za-z0-9_-]+(?:\s*,\s*(?:#[0-9a-f]{3,8}|' . $numberish . '))?\s*\))$~i';
 
         return preg_match($pattern, $token) === 1 ? $token : $fallback;
     }

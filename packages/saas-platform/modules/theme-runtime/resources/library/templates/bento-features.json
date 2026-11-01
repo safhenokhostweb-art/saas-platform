@@ -1,0 +1,77 @@
+{
+    "order": 40,
+    "name": "بنتو ویژگی‌های کلیدی",
+    "description": "کارت‌های بنتو با آیکون، یک کارت تصویری بزرگ و یک کارت آمار؛ برای معرفی مزیت‌ها و خدمات در یک نگاه.",
+    "type": "section",
+    "category": "features",
+    "tags": [
+        "بنتو",
+        "ویژگی‌ها",
+        "خدمات",
+        "آیکون"
+    ],
+    "thumbnail": "team-collaboration.webp",
+    "blocks": [
+        {
+            "type": "bento_grid",
+            "props": {
+                "title": "چرا مشتریان ما را انتخاب می‌کنند",
+                "items": [
+                    {
+                        "kind": "content",
+                        "size": "large",
+                        "title": "تیمی که کنار شماست",
+                        "text": "از اولین گفت‌وگو تا تحویل نهایی، یک کارشناس اختصاصی پاسخ‌گوی شماست.",
+                        "icon": "users",
+                        "bg_image": "@media:team-collaboration.webp",
+                        "bg_color_from": "rgba(15,23,42,0)",
+                        "bg_color_to": "rgba(15,23,42,0.88)",
+                        "text_color": "#ffffff",
+                        "link": "@link:contact"
+                    },
+                    {
+                        "kind": "metric",
+                        "size": "small",
+                        "title": "رضایت مشتریان",
+                        "metric_value": "۹۸٪",
+                        "text": "بر اساس نظرسنجی پس از خرید",
+                        "icon": "star",
+                        "bg_color": "var(--tb-primary, #4f46e5)",
+                        "text_color": "#ffffff",
+                        "glow_enabled": true,
+                        "glow_color": "var(--tb-primary, #6366f1)",
+                        "glow_speed": 3
+                    },
+                    {
+                        "kind": "content",
+                        "size": "small",
+                        "title": "اجرای سریع",
+                        "text": "راه‌اندازی کامل در کمتر از یک هفته.",
+                        "icon": "zap",
+                        "bg_color": "#eef2ff",
+                        "text_color": "#1e1b4b"
+                    },
+                    {
+                        "kind": "content",
+                        "size": "small",
+                        "title": "امنیت کامل",
+                        "text": "پرداخت امن و داده‌های محافظت‌شده.",
+                        "icon": "shield-check",
+                        "bg_color": "#ecfdf5",
+                        "text_color": "#064e3b"
+                    },
+                    {
+                        "kind": "content",
+                        "size": "small",
+                        "title": "پشتیبانی هفت روز هفته",
+                        "text": "تلفن، پیام‌رسان و تیکت؛ هر طور که راحت‌ترید.",
+                        "icon": "headphones",
+                        "bg_color": "#fff7ed",
+                        "text_color": "#7c2d12",
+                        "link": "@link:contact"
+                    }
+                ]
+            }
+        }
+    ]
+}

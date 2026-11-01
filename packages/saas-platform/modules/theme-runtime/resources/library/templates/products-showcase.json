@@ -1,0 +1,33 @@
+{
+    "order": 50,
+    "name": "ویترین محصولات و دسته‌بندی‌ها",
+    "description": "اسلایدر دسته‌بندی‌ها و اسلایدر جدیدترین محصولات که مستقیم از فروشگاه سایت خوانده می‌شوند؛ با هر محصول تازه به‌روز می‌شود.",
+    "type": "section",
+    "category": "product",
+    "tags": ["محصولات", "اسلایدر", "دسته‌بندی", "پویا"],
+    "thumbnail": "tech-products.webp",
+    "blocks": [
+        {
+            "type": "category_slider",
+            "props": {
+                "title": "خرید بر اساس دسته‌بندی",
+                "layout": "carousel",
+                "columns": "6",
+                "autoplay": false,
+                "interval": 5000,
+                "source": "all"
+            }
+        },
+        {
+            "type": "product_slider",
+            "props": {
+                "title": "تازه‌ترین محصولات فروشگاه",
+                "limit": 8,
+                "columns": "4",
+                "source": "latest",
+                "autoplay": true,
+                "interval": 5000
+            }
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "order": 31,
+    "name": "هیرو گرادیانی معرفی محصول",
+    "description": "پس‌زمینه گرادیان برگرفته از رنگ‌های قالب، نشان معرفی و دو دکمه؛ برای لانچ محصول، اپلیکیشن و کمپین.",
+    "type": "section",
+    "category": "hero",
+    "tags": ["هیرو", "گرادیان", "لانچ", "کمپین"],
+    "thumbnail": "mobile-store.webp",
+    "blocks": [
+        {
+            "type": "hero_gradient",
+            "props": {
+                "badge": "تازه منتشر شد",
+                "title": "همه چیز برای فروش آنلاین، در یک پلتفرم",
+                "subtitle": "فروشگاه، وبلاگ، دوره‌های آموزشی و پرداخت امن؛ بدون دردسر فنی و با پشتیبانی همیشگی.",
+                "button_text": "شروع خرید",
+                "button_url": "@link:shop",
+                "button2_text": "گفت‌وگو با کارشناس",
+                "button2_url": "@link:contact",
+                "gradient_from": "var(--tb-primary, #4f46e5)",
+                "gradient_to": "var(--tb-secondary, #7c3aed)",
+                "text_color": "var(--tb-on-primary, #ffffff)"
+            }
+        }
+    ]
+}
