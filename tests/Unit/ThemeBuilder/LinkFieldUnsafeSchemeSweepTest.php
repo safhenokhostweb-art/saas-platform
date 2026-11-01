@@ -74,7 +74,7 @@ class LinkFieldUnsafeSchemeSweepTest extends TestCase
      * renderers omit a button whose text is empty, which would make its
      * URL field untestable (hero_trust's defaults are all empty).
      */
-    private function propsWith(array $target, string $value): array
+    private function propsWith(array $target, mixed $value): array
     {
         $props = BlockRegistry::defaultProps($target['type']);
         foreach ((array) (BlockRegistry::get($target['type'])['schema'] ?? []) as $key => $field) {
@@ -100,7 +100,7 @@ class LinkFieldUnsafeSchemeSweepTest extends TestCase
         return $props;
     }
 
-    private function setNested(array $item, array $path, string $value): array
+    private function setNested(array $item, array $path, mixed $value): array
     {
         $key = array_shift($path);
         if ($path === []) {
@@ -113,7 +113,7 @@ class LinkFieldUnsafeSchemeSweepTest extends TestCase
         return $item;
     }
 
-    private function render(array $target, string $value): string
+    private function render(array $target, mixed $value): string
     {
         return (new BlockRenderer())->renderBlock(['type' => $target['type'], 'id' => 'sweep', 'props' => $this->propsWith($target, $value)]);
     }
@@ -187,6 +187,38 @@ class LinkFieldUnsafeSchemeSweepTest extends TestCase
         }
 
         $this->assertSame([], array_values(array_unique($failures)));
+    }
+
+    /**
+     * Canvas overhaul Unit 2b: a `link` field may hold an ADR-061 structured
+     * {url, target} link. Renderers that passed it straight to escapeUrl()
+     * (hero.button_url among them) threw a TypeError and the block became
+     * an error placeholder. Only `link` controls: named-URL string fields
+     * never hold the structured shape.
+     */
+    public function test_a_structured_link_never_breaks_a_block(): void
+    {
+        $failures = [];
+        foreach ($this->targets() as $i => $target) {
+            $field = BlockRegistry::get($target['type'])['schema'] ?? [];
+            foreach ($target['path'] as $segment) {
+                $field = is_array($field) ? ($field[$segment] ?? ($field['fields'][$segment] ?? null)) : null;
+            }
+            if (($field['type'] ?? '') !== 'link') {
+                continue;
+            }
+            try {
+                $html = $this->render($target, ['url' => "/structured-probe-{$i}", 'target' => '_blank']);
+            } catch (\Throwable $e) {
+                $failures[] = $target['type'] . '.' . implode('.', $target['path']) . ' → ' . $e->getMessage();
+                continue;
+            }
+            if (preg_match('/\bArray\b(?![.(])/', $html) === 1) {
+                $failures[] = $target['type'] . '.' . implode('.', $target['path']) . ' → printed "Array"';
+            }
+        }
+
+        $this->assertSame([], $failures);
     }
 
     public function test_the_shared_sanitizer_drops_tab_and_newline_split_schemes(): void
