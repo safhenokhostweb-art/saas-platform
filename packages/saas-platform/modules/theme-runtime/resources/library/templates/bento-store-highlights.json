@@ -1,0 +1,73 @@
+{
+    "order": 42,
+    "name": "بنتو اعداد و مزیت‌های فروشگاه",
+    "description": "کارت‌های آماری گرادیانی کنار مزیت‌های خرید؛ برای ساختن اعتماد پیش از نمایش محصولات.",
+    "type": "section",
+    "category": "features",
+    "tags": [
+        "بنتو",
+        "آمار",
+        "فروشگاه",
+        "اعتماد"
+    ],
+    "thumbnail": "mobile-store.webp",
+    "blocks": [
+        {
+            "type": "bento_grid",
+            "props": {
+                "title": "خرید با خیال راحت",
+                "items": [
+                    {
+                        "kind": "metric",
+                        "size": "small",
+                        "title": "سفارش موفق",
+                        "metric_value": "+۱۲۰ هزار",
+                        "icon": "package",
+                        "bg_color": "#0369a1",
+                        "text_color": "#ffffff"
+                    },
+                    {
+                        "kind": "metric",
+                        "size": "small",
+                        "title": "کالای اصل",
+                        "metric_value": "+۸ هزار",
+                        "icon": "badge-check",
+                        "bg_color": "#047857",
+                        "text_color": "#ffffff"
+                    },
+                    {
+                        "kind": "metric",
+                        "size": "small",
+                        "title": "میانگین زمان ارسال",
+                        "metric_value": "۴۸ ساعت",
+                        "icon": "truck",
+                        "bg_color": "#c2410c",
+                        "text_color": "#ffffff",
+                        "glow_enabled": true,
+                        "glow_color": "#f97316",
+                        "glow_speed": 3
+                    },
+                    {
+                        "kind": "content",
+                        "size": "half",
+                        "title": "پرداخت اقساطی بدون ضامن",
+                        "text": "خرید امروز، پرداخت در چند قسط با سرویس‌های معتبر.",
+                        "icon": "credit-card",
+                        "bg_color": "#f8fafc",
+                        "text_color": "#0f172a",
+                        "link": "@link:shop"
+                    },
+                    {
+                        "kind": "content",
+                        "size": "half",
+                        "title": "هفت روز ضمانت بازگشت",
+                        "text": "اگر راضی نبودید، بدون پرسش بازگردانید.",
+                        "icon": "shield-check",
+                        "bg_color": "#fefce8",
+                        "text_color": "#713f12"
+                    }
+                ]
+            }
+        }
+    ]
+}

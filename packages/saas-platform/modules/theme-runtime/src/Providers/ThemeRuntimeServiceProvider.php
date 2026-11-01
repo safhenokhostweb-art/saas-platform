@@ -172,6 +172,10 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'theme-runtime');
 
+        // Canvas overhaul Unit 5 (ADR-075) — template library media, served
+        // by the package on both hosts (see TemplateLibraryMediaController).
+        $this->loadRoutesFrom(__DIR__ . '/../../routes/library.php');
+
         $this->publishes([
             __DIR__ . '/../../config/theme-runtime.php' => config_path('theme-runtime.php'),
         ], 'theme-runtime-config');

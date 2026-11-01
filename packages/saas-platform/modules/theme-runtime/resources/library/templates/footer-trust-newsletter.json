@@ -1,0 +1,45 @@
+{
+    "order": 20,
+    "name": "فوتر کامل با خبرنامه و نماد اعتماد",
+    "description": "ستون‌های لینک، عضویت در خبرنامه، شبکه‌های اجتماعی و جای نماد اعتماد الکترونیکی و ساماندهی؛ فوتر استاندارد فروشگاه ایرانی.",
+    "type": "footer",
+    "category": "store",
+    "tags": ["فوتر", "خبرنامه", "اینماد", "شبکه اجتماعی"],
+    "thumbnail": "team-collaboration.webp",
+    "blocks": [
+        {
+            "type": "nav_footer",
+            "layout_slot": "footer",
+            "props": {
+                "nav_source": "custom",
+                "logo_text": "برند شما",
+                "tagline": "تجربه خرید آنلاین مطمئن، سریع و همراه با پشتیبانی واقعی.",
+                "columns": [
+                    {"title": "فروشگاه", "links": [
+                        {"label": "همه محصولات", "url": "@link:shop"},
+                        {"label": "پیشنهادهای ویژه", "url": "@link:shop"},
+                        {"label": "دوره‌های آموزشی", "url": "@link:courses"}
+                    ]},
+                    {"title": "راهنمای مشتریان", "links": [
+                        {"label": "مجله و مقاله‌ها", "url": "@link:blog"},
+                        {"label": "تماس با پشتیبانی", "url": "@link:contact"},
+                        {"label": "صفحه اصلی", "url": "@link:home"}
+                    ]}
+                ],
+                "social_links": [
+                    {"network": "instagram", "label": "اینستاگرام", "url": "https://instagram.com/"},
+                    {"network": "telegram", "label": "تلگرام", "url": "https://t.me/"},
+                    {"network": "whatsapp", "label": "واتساپ", "url": "https://wa.me/"}
+                ],
+                "newsletter_enabled": true,
+                "newsletter_title": "عضویت در خبرنامه",
+                "newsletter_text": "از تخفیف‌ها، محصولات تازه و مقاله‌های کاربردی زودتر از همه باخبر شوید.",
+                "newsletter_placeholder": "ایمیل یا شماره موبایل",
+                "newsletter_button": "عضویت",
+                "copyright": "© تمامی حقوق این وب‌سایت محفوظ است.",
+                "bg_color": "#0f172a",
+                "text_color": "#e2e8f0"
+            }
+        }
+    ]
+}

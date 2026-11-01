@@ -1,0 +1,40 @@
+{
+    "order": 71,
+    "name": "آمار و لوگوی مشتریان",
+    "description": "نوار شمارنده اعداد کلیدی روی تصویر و نوار متحرک برندهای همکار؛ اثبات اجتماعی در یک نگاه.",
+    "type": "section",
+    "category": "testimonials",
+    "tags": ["آمار", "شمارنده", "لوگو", "اعتماد"],
+    "thumbnail": "mountain-panorama.webp",
+    "blocks": [
+        {
+            "type": "stats_row",
+            "props": {
+                "title": "اعدادی که به آن افتخار می‌کنیم",
+                "stats": [
+                    {"value": "1200", "suffix": "+", "label": "مشتری فعال"},
+                    {"value": "15", "suffix": " سال", "label": "تجربه"},
+                    {"value": "98", "suffix": "٪", "label": "رضایت مشتری"},
+                    {"value": "24", "suffix": "/۷", "label": "پشتیبانی"}
+                ],
+                "background": "#0f172a",
+                "background_image": "@media:mountain-panorama.webp",
+                "dividers": true
+            }
+        },
+        {
+            "type": "client_logos",
+            "props": {
+                "title": "مورد اعتماد برندهای پیشرو",
+                "logos": [
+                    {"name": "آریا"}, {"name": "پارس‌تک"}, {"name": "نقش"}, {"name": "گلستان"}, {"name": "تک‌سازان"}, {"name": "البرز"}
+                ],
+                "scroll": true,
+                "mode": "marquee",
+                "grayscale": true,
+                "speed": 25,
+                "visible_count": 5
+            }
+        }
+    ]
+}

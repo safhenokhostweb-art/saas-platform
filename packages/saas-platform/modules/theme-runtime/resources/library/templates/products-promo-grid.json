@@ -1,0 +1,33 @@
+{
+    "order": 51,
+    "name": "بنر کمپین و گرید محصولات",
+    "description": "بنر دوستونه کمپین با تصویر محصول و گرید محصولات زنده فروشگاه زیر آن؛ برای جشنواره‌ها و حراج‌ها.",
+    "type": "section",
+    "category": "product",
+    "tags": ["محصولات", "گرید", "کمپین", "حراج"],
+    "thumbnail": "tech-products.webp",
+    "blocks": [
+        {
+            "type": "hero_split",
+            "props": {
+                "badge": "جشنواره فناوری",
+                "title": "گجت‌های محبوب با تخفیف ویژه",
+                "subtitle": "موبایل، ساعت هوشمند، هدفون و دوربین؛ فقط تا پایان هفته با قیمت جشنواره.",
+                "button_text": "مشاهده همه",
+                "button_url": "@link:shop",
+                "button2_text": "",
+                "button2_url": "@link:shop",
+                "image_url": "@media:tech-products.webp",
+                "image_side": "left",
+                "background": "#f8fafc"
+            }
+        },
+        {
+            "type": "product_grid",
+            "props": {
+                "columns": 4,
+                "limit": 8
+            }
+        }
+    ]
+}

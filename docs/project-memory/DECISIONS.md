@@ -4312,3 +4312,122 @@ There is no migration or Composer change.
   templates without a customer's content. Template-library sections can
   ship `{type: 'entity', entity: 'route', id: 'shop'}` style links that
   resolve on any installed site.
+
+## ADR-075
+
+**Title:** A Ready-Made Template Library Shipped as Code in theme-runtime, with Package-Served Media and Route Entity Links; Template Insert Lands in Its Zone and Renders at Once
+
+**Status:** Accepted
+
+**Date:** 2026-11-01
+
+**Context:**
+
+- Canvas overhaul Unit 5 (owner brief 2026-10-31, scope extended
+  2026-11-01) asks for a ready-to-use library in the existing TB6
+  template modal: 3+ headers, 3+ footers, 3+ heroes, 3+ bento grids,
+  product showcases, blog carousels, trust/testimonials, a pricing
+  comparison table, stats counters and an FAQ accordion. Images must be
+  real, ship inside the package, and work identically locally and on the
+  server. "Inserting any template must cleanly inject its validated schema
+  and immediately render perfectly in the editor canvas, resolving all
+  internal media assets and entity links."
+- Both hosts' TB6 modals listed only database rows, which were empty
+  after the 2026-11-01 clean slate. Tenant media ids differ per host, so
+  rows cannot carry portable images.
+- The insert path had five defects:
+  - the platform `insertTemplate` queued operations without
+    `autoSaveAndReload()`, so nothing appeared until the next edit;
+  - neither editor routed a header or footer template to its zone, so it
+    landed in the page body;
+  - a 422 was swallowed silently;
+  - customer-site had no unknown-type gate;
+  - the platform gate built its type list with `array_keys(...) +
+    array_keys(...)`, a numeric-key union that dropped extension palette
+    types.
+
+**Decision:**
+
+1. **`SaaSPlatform\ThemeRuntime\TemplateLibrary`** reads one JSON document
+   per template from `resources/library/templates` (25 templates). Ids are
+   `lib:<key>`; each document declares `type`, `category`, `order`,
+   `thumbnail` and either `blocks` or `compose`. A `compose` list builds a
+   page template from section templates, so each section is authored
+   once. Both hosts merge `TemplateLibrary::list()` ahead of their saved
+   templates and accept `lib:` ids on insert. The response adds the
+   template's `zone`: `page`, `header` or `footer`.
+2. **Two whole-value tokens keep documents portable:**
+   - `@media:<file>` becomes `/theme-runtime/library/<file>?v=<sha256-12>`,
+     a host-relative, content-versioned URL. The media localizer leaves it
+     untouched because no host matches a trusted origin, so a platform
+     theme installed on a customer site keeps working.
+   - `@link:<route>` becomes `{type: 'entity', entity: 'route', id, label,
+     url}`. customer-site's `EntityLinkCatalog` (ADR-074; `contact` added)
+     resolves it to the live permalink, or to no link while the route's
+     module is off. Every other renderer reads the `url` fallback.
+
+   Repeaters are authored as arrays and written in the storage the
+   registry declares (ADR-060), so `json`-storage repeaters become strings.
+3. **Media ships in the package and is served by the package.**
+   - `resources/library/media` holds nine WebP files (~390 KB),
+     cover-cropped by `resources/library/tools/derive-media.php` from the
+     committed photographs in saas-platform's
+     `database/seeders/assets/universal-multipurpose-qa`. Those
+     photographs are unbranded and already live on production as theme
+     media 59/60. The owner's watermarked brand banners are deliberately
+     not used, so platform branding never lands on tenant sites.
+   - `routes/library.php` (loaded with `loadRoutesFrom`, so `route:cache`
+     works) serves exactly the shipped files by whitelist lookup, never a
+     path join, as `image/webp`, `immutable` and `nosniff`. There is no
+     publish step and no storage symlink.
+4. **Insert lands in its zone and renders at once, in both editors.**
+   - Platform: `switchTarget(zone)`, then for header and footer templates
+     a confirmed replace of the zone. Id-less legacy chrome gets an id
+     first, because structural operations address nodes by id. Inserts go
+     through `treeOperations`, then `autoSaveAndReload()`.
+   - customer-site: switch to the virtual `__header__`/`__footer__` page,
+     with the same confirmed replace. History is pushed before the change,
+     as `addBlock()` does, then `autoSaveAndReload()`.
+   - Both editors toast server messages (422 included), keep a busy state
+     and log caught errors. Cards are keyboard-accessible buttons with a
+     library badge and a description.
+   - The platform gate uses `array_merge`. customer-site
+     `SiteThemeTemplateService::insertBlocks()` fails closed on unknown
+     non-`ext:*` types; `ext:*` stays with the save-time reconciler.
+5. **Renderer fix found by the library:** `bentoColorToken()` rejected a
+   hex fallback inside `var()`. That included the registry's own default
+   `glow_color: var(--tb-primary, #6366f1)`, so token-coloured bento cards
+   silently fell back to grey. The allowlist now accepts
+   `var(--x, #hex)` and still rejects anything beyond one token.
+
+**Consequences:**
+
+- saas-platform `TemplateLibraryTest`:
+  - coverage of the owner's set;
+  - every prop declared in the registry, select values valid, images are
+    library URLs, links are library routes or absolute external URLs,
+    declared storage honoured;
+  - media served immutably from the whitelist only, and every shipped
+    file used;
+  - every template goes insert → `canvas.save` into its zone → canvas
+    `page-preview` with no placeholder, every image present and every
+    route link rendered;
+  - the colour fix.
+- customer-site `TemplateLibraryInsertTest` covers the same journey
+  through `canvas-save-blocks` and `canvas-live-preview`, with every route
+  link at its live permalink, a published full page with header and
+  footer on `/`, and disabled modules dropping their links.
+- Browser specs `canvas-template-library` in both repos click a library
+  card in the real editor. A header replaces the Header zone, a hero lands
+  on the page, both appear in the iframe with the library images loaded,
+  and nothing throws.
+- Product and blog templates use the live data blocks (`product_slider`,
+  `category_slider`, `product_grid`, `blog_posts`). They show the
+  platform's labelled samples in the builder and the site's real catalogue
+  on customer-site.
+- `insertBlocks()` now returns `{zone, blocks}` (the one existing caller
+  test is updated). The modal category list gains navigation, store,
+  pricing, FAQ and corporate.
+- Visual QA: every template rendered through the canonical renderer had
+  0 horizontal overflow, 0 broken images and 0 failed requests at
+  360/768/1280.

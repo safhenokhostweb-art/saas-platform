@@ -1,0 +1,76 @@
+{
+    "order": 80,
+    "name": "جدول مقایسه و قیمت‌گذاری پلن‌ها",
+    "description": "سه پلن با سوئیچ ماهانه و سالانه، پلن پیشنهادی برجسته و مقایسه امکانات با راهنمای هر مورد؛ آماده برای خدمات اشتراکی.",
+    "type": "section",
+    "category": "pricing",
+    "tags": ["قیمت‌گذاری", "پلن", "مقایسه", "اشتراک"],
+    "thumbnail": "team-collaboration.webp",
+    "blocks": [
+        {
+            "type": "pricing_cards",
+            "props": {
+                "title": "پلن مناسب کسب‌وکار خود را انتخاب کنید",
+                "subtitle": "بدون هزینه پنهان؛ هر زمان خواستید پلن را تغییر دهید.",
+                "billing_toggle": true,
+                "yearly_discount_label": "۲۰٪ تخفیف سالانه",
+                "plans": [
+                    {
+                        "name": "پایه",
+                        "price": "۴۹۰ هزار تومان",
+                        "period": "/ ماه",
+                        "price_yearly": "۴ میلیون و ۷۰۰ هزار تومان",
+                        "period_yearly": "/ سال",
+                        "badge": "",
+                        "highlight": false,
+                        "features": [
+                            {"text": "سایت و فروشگاه آنلاین", "included": true},
+                            {"text": "تا ۱۰۰ محصول", "included": true},
+                            {"text": "درگاه پرداخت امن", "included": true},
+                            {"text": "وبلاگ و مقاله", "included": false},
+                            {"text": "پشتیبانی تلفنی", "included": false, "tooltip": "در پلن پایه پشتیبانی از طریق تیکت انجام می‌شود."}
+                        ],
+                        "cta_text": "شروع با پلن پایه",
+                        "cta_url": "@link:contact"
+                    },
+                    {
+                        "name": "حرفه‌ای",
+                        "price": "۹۹۰ هزار تومان",
+                        "period": "/ ماه",
+                        "price_yearly": "۹ میلیون و ۵۰۰ هزار تومان",
+                        "period_yearly": "/ سال",
+                        "badge": "پیشنهاد ما",
+                        "highlight": true,
+                        "features": [
+                            {"text": "سایت و فروشگاه آنلاین", "included": true},
+                            {"text": "محصول نامحدود", "included": true},
+                            {"text": "درگاه پرداخت و پرداخت اقساطی", "included": true, "tooltip": "اتصال به سرویس‌های خرید اقساطی معتبر."},
+                            {"text": "وبلاگ و مقاله", "included": true},
+                            {"text": "پشتیبانی تلفنی", "included": true}
+                        ],
+                        "cta_text": "انتخاب پلن حرفه‌ای",
+                        "cta_url": "@link:contact"
+                    },
+                    {
+                        "name": "سازمانی",
+                        "price": "تماس بگیرید",
+                        "period": "",
+                        "price_yearly": "تماس بگیرید",
+                        "period_yearly": "",
+                        "badge": "",
+                        "highlight": false,
+                        "features": [
+                            {"text": "همه امکانات پلن حرفه‌ای", "included": true},
+                            {"text": "دوره‌های آموزشی و آکادمی", "included": true},
+                            {"text": "سرور اختصاصی", "included": true, "tooltip": "منابع جداگانه برای ترافیک بالا."},
+                            {"text": "مدیر حساب اختصاصی", "included": true},
+                            {"text": "قرارداد سطح خدمات (SLA)", "included": true}
+                        ],
+                        "cta_text": "گفت‌وگو با فروش",
+                        "cta_url": "@link:contact"
+                    }
+                ]
+            }
+        }
+    ]
+}

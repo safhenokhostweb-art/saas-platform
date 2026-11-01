@@ -1,0 +1,40 @@
+{
+    "order": 10,
+    "name": "هدر شیشه‌ای شناور",
+    "description": "هدر چسبان و شفاف روی هیرو که هنگام اسکرول به پس‌زمینه شیشه‌ای تبدیل می‌شود؛ مناسب سایت‌های شرکتی و خدماتی.",
+    "type": "header",
+    "category": "navigation",
+    "tags": ["هدر", "شیشه‌ای", "چسبان", "شرکتی"],
+    "thumbnail": "office-hero.webp",
+    "blocks": [
+        {
+            "type": "nav_header",
+            "layout_slot": "header",
+            "props": {
+                "logo_text": "برند شما",
+                "logo_url": "@link:home",
+                "nav_source": "custom",
+                "nav_links": [
+                    {"label": "صفحه اصلی", "url": "@link:home"},
+                    {"label": "فروشگاه", "url": "@link:shop"},
+                    {"label": "وبلاگ", "url": "@link:blog"},
+                    {"label": "تماس با ما", "url": "@link:contact"}
+                ],
+                "sticky": true,
+                "sticky_hide_on_scroll": false,
+                "transparent_over_hero": true,
+                "transparent_text_color": "#ffffff",
+                "bg_color": "#ffffff",
+                "text_color": "#0f172a",
+                "cta_text": "مشاوره رایگان",
+                "cta_url": "@link:contact",
+                "show_search": true,
+                "search_placeholder": "جستجو در سایت…",
+                "search_scope": "all",
+                "show_cart": false,
+                "show_account": false,
+                "show_dark_toggle": false
+            }
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "order": 32,
+    "name": "هیرو تمام‌عرض با تصویر منظره",
+    "description": "تصویر پانورامای کوهستان با تیتر وسط‌چین و یک دکمه؛ حس اعتماد، پایداری و چشم‌انداز برای برندهای خدماتی و گردشگری.",
+    "type": "section",
+    "category": "hero",
+    "tags": ["هیرو", "تمام‌عرض", "تصویر پس‌زمینه", "برند"],
+    "thumbnail": "mountain-panorama.webp",
+    "blocks": [
+        {
+            "type": "hero",
+            "props": {
+                "title": "قله‌های تازه را با هم فتح کنیم",
+                "subtitle": "سال‌ها تجربه، تیمی متعهد و خدماتی که به آن تکیه می‌کنید؛ مسیر رشد شما از همین‌جا شروع می‌شود.",
+                "button_text": "با ما در تماس باشید",
+                "button_url": "@link:contact",
+                "background": "dark",
+                "background_image": "@media:mountain-panorama.webp",
+                "align": "center"
+            }
+        }
+    ]
+}

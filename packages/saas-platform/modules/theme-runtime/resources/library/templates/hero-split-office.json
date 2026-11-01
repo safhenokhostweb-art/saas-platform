@@ -1,0 +1,26 @@
+{
+    "order": 30,
+    "name": "هیرو دوستونه با تصویر تیم",
+    "description": "تیتر قدرتمند، دو دکمه اقدام و تصویر واقعی محیط کار؛ شروعی حرفه‌ای برای سایت شرکتی و خدماتی.",
+    "type": "section",
+    "category": "hero",
+    "tags": ["هیرو", "دوستونه", "شرکتی", "تصویر"],
+    "thumbnail": "office-hero.webp",
+    "blocks": [
+        {
+            "type": "hero_split",
+            "props": {
+                "badge": "همراه رشد کسب‌وکارهای ایرانی",
+                "title": "کسب‌وکار خود را با اطمینان آنلاین کنید",
+                "subtitle": "از طراحی تا فروش و پشتیبانی، همه ابزارهای لازم برای معرفی خدمات و جذب مشتری را در یک جا در اختیار دارید.",
+                "button_text": "مشاهده محصولات",
+                "button_url": "@link:shop",
+                "button2_text": "مشاوره رایگان",
+                "button2_url": "@link:contact",
+                "image_url": "@media:office-hero.webp",
+                "image_side": "left",
+                "background": "#ffffff"
+            }
+        }
+    ]
+}

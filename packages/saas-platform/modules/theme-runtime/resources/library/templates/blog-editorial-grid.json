@@ -1,0 +1,22 @@
+{
+    "order": 61,
+    "name": "گرید سه‌تایی مجله",
+    "description": "سه مقاله تازه در قالب کارت‌های مجله‌ای؛ مناسب صفحه اصلی و صفحات خدمات برای تقویت سئو.",
+    "type": "section",
+    "category": "blog",
+    "tags": ["وبلاگ", "مجله", "گرید", "سئو"],
+    "thumbnail": "office-hero.webp",
+    "blocks": [
+        {
+            "type": "blog_posts",
+            "props": {
+                "title": "از مجله ما بخوانید",
+                "limit": 3,
+                "layout": "grid",
+                "source": "latest",
+                "autoplay": false,
+                "interval": 5000
+            }
+        }
+    ]
+}

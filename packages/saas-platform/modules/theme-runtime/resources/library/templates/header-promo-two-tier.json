@@ -1,0 +1,49 @@
+{
+    "order": 12,
+    "name": "هدر دوطبقه با نوار پیشنهاد",
+    "description": "نوار اطلاع‌رسانی فروش ویژه بالای هدر، شماره تماس، دکمه اقدام و سبد خرید؛ برای کمپین‌ها و فروشگاه‌های پرترافیک.",
+    "type": "header",
+    "category": "store",
+    "tags": ["هدر", "کمپین", "نوار اطلاع‌رسانی", "تماس"],
+    "thumbnail": "mobile-store.webp",
+    "blocks": [
+        {
+            "type": "promo_banner",
+            "props": {
+                "text": "ارسال رایگان برای سفارش‌های بالای ۲ میلیون تومان — فقط تا پایان هفته",
+                "link": "@link:shop",
+                "style": "sale"
+            }
+        },
+        {
+            "type": "nav_header",
+            "layout_slot": "header",
+            "props": {
+                "logo_text": "برند شما",
+                "logo_url": "@link:home",
+                "nav_source": "custom",
+                "nav_links": [
+                    {"label": "صفحه اصلی", "url": "@link:home"},
+                    {"label": "فروشگاه", "url": "@link:shop"},
+                    {"label": "دوره‌ها", "url": "@link:courses"},
+                    {"label": "وبلاگ", "url": "@link:blog"},
+                    {"label": "تماس با ما", "url": "@link:contact"}
+                ],
+                "sticky": true,
+                "sticky_hide_on_scroll": false,
+                "transparent_over_hero": false,
+                "bg_color": "#ffffff",
+                "text_color": "#0f172a",
+                "phone": "۰۲۱-۹۱۰۰۰۰۰۰",
+                "cta_text": "ثبت سفارش",
+                "cta_url": "@link:shop",
+                "show_search": true,
+                "search_placeholder": "جستجو…",
+                "search_scope": "all",
+                "show_cart": true,
+                "show_account": true,
+                "show_dark_toggle": false
+            }
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "order": 21,
+    "name": "فوتر مینیمال روشن",
+    "description": "یک ردیف لینک، شبکه‌های اجتماعی و کپی‌رایت روی پس‌زمینه روشن؛ مناسب سایت شخصی، لندینگ و برندهای ساده.",
+    "type": "footer",
+    "category": "corporate",
+    "tags": ["فوتر", "مینیمال", "روشن", "لندینگ"],
+    "thumbnail": "mountain-panorama.webp",
+    "blocks": [
+        {
+            "type": "nav_footer",
+            "layout_slot": "footer",
+            "props": {
+                "nav_source": "custom",
+                "logo_text": "برند شما",
+                "tagline": "ساده، دقیق و همیشه در دسترس.",
+                "links": [
+                    {"label": "صفحه اصلی", "url": "@link:home"},
+                    {"label": "وبلاگ", "url": "@link:blog"},
+                    {"label": "تماس با ما", "url": "@link:contact"}
+                ],
+                "social_links": [
+                    {"network": "linkedin", "label": "لینکدین", "url": "https://linkedin.com/"},
+                    {"network": "instagram", "label": "اینستاگرام", "url": "https://instagram.com/"},
+                    {"network": "email", "label": "ایمیل", "url": "mailto:info@example.com"}
+                ],
+                "newsletter_enabled": false,
+                "copyright": "© تمامی حقوق محفوظ است.",
+                "bg_color": "#f8fafc",
+                "text_color": "#334155"
+            }
+        }
+    ]
+}

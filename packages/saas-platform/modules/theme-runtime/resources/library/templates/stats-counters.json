@@ -1,0 +1,25 @@
+{
+    "order": 73,
+    "name": "شمارنده‌ها و آمار دستاوردها",
+    "description": "چهار شمارنده متحرک با جداکننده روی پس‌زمینه روشن؛ دستاوردها و اعداد کلیدی برند را برجسته می‌کند.",
+    "type": "section",
+    "category": "testimonials",
+    "tags": ["آمار", "شمارنده", "دستاورد", "اعداد"],
+    "thumbnail": "team-collaboration.webp",
+    "blocks": [
+        {
+            "type": "stats_row",
+            "props": {
+                "title": "دستاوردهای ما در یک نگاه",
+                "stats": [
+                    {"value": "350", "suffix": "+", "label": "پروژه موفق"},
+                    {"value": "1200", "suffix": "+", "label": "مشتری وفادار"},
+                    {"value": "40", "suffix": "+", "label": "متخصص در تیم"},
+                    {"value": "12", "suffix": "", "label": "جایزه و تقدیرنامه"}
+                ],
+                "background": "#f8fafc",
+                "dividers": true
+            }
+        }
+    ]
+}

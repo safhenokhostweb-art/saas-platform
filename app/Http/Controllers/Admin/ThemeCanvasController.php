@@ -22,6 +22,7 @@ use SaaSPlatform\ThemeRuntime\Layout\DocumentEnvelope;
 use SaaSPlatform\ThemeRuntime\Layout\DocumentValidator;
 use SaaSPlatform\ThemeRuntime\Layout\LockedStructureGuard;
 use SaaSPlatform\ThemeRuntime\Layout\LayoutContract;
+use SaaSPlatform\ThemeRuntime\TemplateLibrary;
 
 class ThemeCanvasController extends Controller
 {
@@ -603,14 +604,28 @@ class ThemeCanvasController extends Controller
 
     public function canvasTemplates(Request $request): JsonResponse
     {
-        $templates = $this->templateSvc->listForCanvas(
-            type:     $request->input('type'),
-            category: $request->input('category'),
-            term:     $request->input('search'),
-            siteId:   null,
-        );
+        $type = $request->input('type');
+        $category = $request->input('category');
+        $term = $request->input('search');
 
-        return response()->json(['templates' => $templates]);
+        // Canvas overhaul Unit 5 (ADR-075): the package's ready-made library
+        // first, then this platform's own saved templates, in one card shape.
+        $saved = $this->templateSvc->listForCanvas(type: $type, category: $category, term: $term, siteId: null)
+            ->map(fn (ThemeTemplate $t) => [
+                'id'             => $t->id,
+                'source'         => 'saved',
+                'name'           => $t->name,
+                'description'    => $t->description,
+                'type'           => $t->type,
+                'type_label'     => ThemeTemplate::TYPES[$t->type] ?? $t->type,
+                'category'       => $t->category,
+                'category_label' => ThemeTemplate::CATEGORIES[$t->category] ?? $t->category,
+                'zone'           => TemplateLibrary::zone((string) $t->type),
+                'tags'           => $t->tags ?? [],
+                'thumbnail_url'  => $t->thumbnail_url,
+            ]);
+
+        return response()->json(['templates' => array_merge(TemplateLibrary::list($type, $category, $term), $saved->values()->all())]);
     }
     public function canvasSaveAsTemplate(Request $request, Theme $theme): JsonResponse
     {
@@ -641,9 +656,21 @@ class ThemeCanvasController extends Controller
 
     public function canvasInsertTemplate(Request $request, Theme $theme): JsonResponse
     {
-        $data = $request->validate([
-            'template_id' => 'required|integer|exists:theme_templates,id',
-        ]);
+        // Canvas overhaul Unit 5 (ADR-075): a library id ("lib:<key>") or a
+        // saved template's integer id.
+        $libraryId = $request->input('template_id');
+        if (TemplateLibrary::isLibraryId($libraryId)) {
+            $library = TemplateLibrary::find($libraryId);
+            $sourceBlocks = $library['blocks'];
+            $zone = $library['zone'];
+        } else {
+            $data = $request->validate([
+                'template_id' => 'required|integer|exists:theme_templates,id',
+            ]);
+            $template = ThemeTemplate::findOrFail((int) $data['template_id']);
+            $sourceBlocks = $template->blocks ?? [];
+            $zone = TemplateLibrary::zone((string) $template->type);
+        }
 
         // Phase 3A — the call was shipped as insertIntoPage((int)$id, null),
         // a PHP Error against the (ThemeTemplate, array, ?int) signature.
@@ -657,9 +684,13 @@ class ThemeCanvasController extends Controller
         // a template referencing an unavailable/uninstalled widget type is
         // rejected here rather than surfacing as a broken node in the
         // editor. Unknown types never reach the client.
-        $template = ThemeTemplate::findOrFail((int) $data['template_id']);
-        $available = array_keys(BlockRegistry::all())
-            + array_keys(ExtensionCanvasPaletteAdapter::authorablePaletteFor($theme));
+        // array_merge, not `+`: a union of two key lists keeps the first
+        // list's indexes and silently dropped every palette type whose index
+        // the registry list already used.
+        $available = array_merge(
+            array_keys(BlockRegistry::all()),
+            array_keys(ExtensionCanvasPaletteAdapter::authorablePaletteFor($theme)),
+        );
         $unknown = [];
         $walk = function (array $blocks) use (&$walk, &$unknown, $available): void {
             foreach ($blocks as $block) {
@@ -677,7 +708,7 @@ class ThemeCanvasController extends Controller
                 }
             }
         };
-        $walk($template->blocks ?? []);
+        $walk($sourceBlocks);
         if ($unknown !== []) {
             return response()->json([
                 'success' => false,
@@ -685,9 +716,9 @@ class ThemeCanvasController extends Controller
             ], 422);
         }
 
-        $blocks = $this->templateSvc->regenIds($template->blocks ?? []);
+        $blocks = $this->templateSvc->regenIds($sourceBlocks);
 
-        return response()->json(['success' => true, 'blocks' => $blocks]);
+        return response()->json(['success' => true, 'zone' => $zone, 'blocks' => $blocks]);
     }
 
     // provisionThemePagesIntoDb() — REMOVED (SP-01, TASK 2-SEC). It opened a
