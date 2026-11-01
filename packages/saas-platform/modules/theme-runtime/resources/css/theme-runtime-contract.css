@@ -49,6 +49,28 @@
   --tb-button-size: 1rem;
 }
 
+/* ─── Visual design system v1 (Canvas overhaul unit 3, ADR-073) ─────────
+   Rhythm, elevation and motion tokens. Declared on `:root, [data-theme]`,
+   not :root alone: the hairline derives from --tb-text, and a var() inside
+   a custom property resolves where it is declared, so a dark-mode subtree
+   would otherwise inherit the light value. Fluid sizes use clamp() only,
+   no viewport queries (WU-D scale). */
+:root, [data-theme] {
+  --tb-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --tb-dur-fast: 160ms;
+  --tb-dur: 280ms;
+  --tb-dur-slow: 520ms;
+  --tb-lift: -4px;
+  --tb-space-section: clamp(3.5rem, 2.25rem + 4vw, 6rem);
+  --tb-space-header: clamp(2rem, 1.5rem + 1.5vw, 3rem);
+  --tb-gap: clamp(1.25rem, 0.9rem + 1vw, 2rem);
+  --tb-hairline: color-mix(in srgb, var(--tb-text, #0f172a) 8%, transparent);
+  --tb-radius-card: var(--tb-radius-lg, 1.125rem);
+  --tb-elev-rest: var(--tb-shadow-sm, 0 1px 2px rgb(15 23 42 / 0.05));
+  --tb-elev-hover: var(--tb-shadow-lg, 0 22px 44px -14px rgb(15 23 42 / 0.2));
+  --tb-focus-ring: color-mix(in srgb, var(--tb-primary, #4f46e5) 55%, transparent);
+}
+
 /* Universal flagship commercial composition. These rules live in the
    shared runtime package so platform Canvas, customer Canvas, preview and
    public runtime consume the same media-led contract. */
@@ -63,7 +85,8 @@
 .tb-slider-full .tb-slide-caption { width: min(50%,650px); margin-inline-start: auto; margin-inline-end: clamp(2rem,7vw,7rem); text-align: right !important; padding: 3rem !important; }
 /* WU-D: the 2rem floor shrinks below 390px only (see the fluid-title note in
    theme-runtime-blocks.css); it made the old phone-only 2rem rule redundant. */
-.tb-slider-full .tb-slide-title { font-size: clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),4vw,4.2rem) !important; line-height: 1.15; }
+.tb-slider-full .tb-slide-title { font-size: clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),4vw,4.2rem) !important; line-height: 1.3; }
+[dir="ltr"] .tb-slider-full .tb-slide-title { line-height: 1.15; }
 .tb-slider-full .tb-slide-subtitle { font-size: clamp(1rem,1.6vw,1.3rem) !important; line-height: 1.9; }
 .tb-slider-full .tb-carousel-dots { position: absolute; bottom: 1.35rem; inset-inline: 0; z-index: 3; margin: 0 !important; }
 .tb-slider-full .tb-carousel-dot { background: rgba(255,255,255,.58) !important; transition: width .2s ease, background .2s ease; }
@@ -93,23 +116,45 @@
 .tb-section { width: 100%; }
 .tb-section-inner { width: 100%; }
 
-/* ─── padding scale ──────────────────────────────────────────────────── */
+/* ─── padding scale ──────────────────────────────────────────────────────
+   Unit 3: a fluid vertical rhythm. These used to lose to the shared
+   sheet's later `.tb-section { padding: 2.5rem 0 }` (same specificity), so
+   a section's padding control had no effect; that rule now applies only to
+   sections without a padding class. */
 .tb-padding-none { padding-top: 0; padding-bottom: 0; }
-.tb-padding-xs   { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.tb-padding-sm   { padding-top: 1.25rem; padding-bottom: 1.25rem; }
-.tb-padding-md   { padding-top: 2.5rem; padding-bottom: 2.5rem; }
-.tb-padding-lg   { padding-top: 3.5rem; padding-bottom: 3.5rem; }
-.tb-padding-xl   { padding-top: 4.5rem; padding-bottom: 4.5rem; }
-@media (min-width: 768px) {
-    .tb-padding-lg { padding-top: 4rem; padding-bottom: 4rem; }
-    .tb-padding-xl { padding-top: 5.5rem; padding-bottom: 5.5rem; }
-}
+.tb-padding-xs   { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.tb-padding-sm   { padding-top: clamp(1.75rem, 1.25rem + 1.5vw, 2.75rem); padding-bottom: clamp(1.75rem, 1.25rem + 1.5vw, 2.75rem); }
+.tb-padding-md   { padding-top: var(--tb-space-section); padding-bottom: var(--tb-space-section); }
+.tb-padding-lg   { padding-top: clamp(4.5rem, 3rem + 5vw, 7.5rem); padding-bottom: clamp(4.5rem, 3rem + 5vw, 7.5rem); }
+.tb-padding-xl   { padding-top: clamp(5.5rem, 3.5rem + 6.5vw, 9.5rem); padding-bottom: clamp(5.5rem, 3.5rem + 6.5vw, 9.5rem); }
+
+/* ─── section style utilities (renderSection layout/effects controls) ──
+   Unit 3: emitted by the renderer since Phase 2 but defined only in the
+   customer-site default layout, so Canvas pages and the platform editor
+   ignored them. */
+.tb-radius-sm { border-radius: var(--tb-radius-sm, 0.5rem); }
+.tb-radius-md { border-radius: var(--tb-radius-md, 0.75rem); }
+.tb-radius-lg { border-radius: var(--tb-radius-lg, 1.125rem); }
+.tb-radius-sm, .tb-radius-md, .tb-radius-lg { overflow: hidden; }
+.tb-shadow-sm { box-shadow: var(--tb-shadow-sm); }
+.tb-shadow-md { box-shadow: var(--tb-shadow-md); }
+.tb-shadow-lg { box-shadow: var(--tb-shadow-lg); }
+.tb-hover-lift { transition: transform var(--tb-dur) var(--tb-ease-out), box-shadow var(--tb-dur) var(--tb-ease-out); }
+.tb-hover-lift:hover, .tb-hover-lift:focus-within { transform: translateY(var(--tb-lift)); box-shadow: var(--tb-elev-hover); }
 
 /* ─── responsive grid contract ───────────────────────────────────────
    The one authoritative class pair every multi-column block renderer
    emits (`class="tb-grid tb-grid-cols-{N}"`) — canonical across both
    hosts (confirmed identical in both BlockRenderer implementations). */
-.tb-grid { display: grid; gap: 1.5rem; }
+/* Unit 3: the gap is a token so the fit-columns calc below reads the real
+   gap; tb-gap-* (emitted by every card grid and the grid block) set it. */
+.tb-grid { display: grid; --tb-grid-gap: var(--tb-gap, 1.5rem); gap: var(--tb-grid-gap); }
+.tb-grid.tb-gap-none { --tb-grid-gap: 0; }
+.tb-grid.tb-gap-xs   { --tb-grid-gap: 0.5rem; }
+.tb-grid.tb-gap-sm   { --tb-grid-gap: 0.875rem; }
+.tb-grid.tb-gap-md   { --tb-grid-gap: var(--tb-gap, 1.5rem); }
+.tb-grid.tb-gap-lg   { --tb-grid-gap: clamp(1.5rem, 1rem + 1.5vw, 2.5rem); }
+.tb-grid.tb-gap-xl   { --tb-grid-gap: clamp(2rem, 1.25rem + 2.25vw, 3.25rem); }
 .tb-grid.tb-grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
 .tb-grid.tb-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tb-grid.tb-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -178,7 +223,7 @@
 .tb-columns > .tb-grid.tb-grid-cols-5, .tb-layout-grid > .tb-grid.tb-grid-cols-5 { --tb-fit-cols: 5; }
 .tb-columns > .tb-grid.tb-grid-cols-6, .tb-layout-grid > .tb-grid.tb-grid-cols-6 { --tb-fit-cols: 6; }
 .tb-columns > .tb-grid[class*="tb-grid-cols-"],
-.tb-layout-grid > .tb-grid[class*="tb-grid-cols-"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, max(14rem, calc((100% - (var(--tb-fit-cols, 1) - 1) * 1.5rem) / var(--tb-fit-cols, 1)))), 1fr)); }
+.tb-layout-grid > .tb-grid[class*="tb-grid-cols-"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, max(14rem, calc((100% - (var(--tb-fit-cols, 1) - 1) * var(--tb-grid-gap, 1.5rem)) / var(--tb-fit-cols, 1)))), 1fr)); }
 
 /* ─── stats row (real Phase 2g drift: no CSS at all in one host) ────── */
 .tb-stats-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
