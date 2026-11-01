@@ -4244,3 +4244,71 @@ There is no migration or Composer change.
   (158 tests).
 - Themes that author their own radius/shadow tokens keep their values.
   Themes that relied on the defaults get the new elevation and radii.
+
+## ADR-074
+
+**Title:** One Entity Link Catalog and Picker for Every Canvas Link Field; Links Are References Resolved Live
+
+**Status:** Accepted
+
+**Date:** 2026-11-01
+
+**Context:**
+
+- The owner's brief asks for Elementor-style dynamic links: header, footer,
+  nav menu, CTA and card links should pick CMS pages, product categories,
+  products and blog posts from the database, with no URL pasting, and should
+  follow the dashboard ("two-way sync").
+- The customer-site editor offered a page-only picker, and only on
+  top-level `link` fields. Every link nested in a repeater (nav links,
+  footer columns, card links) took a pasted URL, and a renamed product or
+  post silently broke every link to it.
+- ADR-072 already resolves references by shape at every repeater depth
+  (`SchemaFieldMap` + `InternalLinkResolver`), so the runtime side needed
+  only a broader reference type.
+
+**Decision:**
+
+1. **`App\Services\ThemeCanvas\EntityLinkCatalog`** (customer-site) is the
+   one catalog: fixed site destinations (home, shop, blog, courses), pages,
+   products, product categories, blog posts, blog categories and courses.
+   - It searches for the picker and resolves to the live permalink through
+     the same public routes menus use (`page.show`, `shop.show`,
+     `shop.index?category=`, `blog.show`, `blog.category`, `courses.show`).
+   - Only published content resolves (`Page::published`,
+     `Product::published`, `Post::published` including the editorial
+     status, `Course::active`). Anything missing resolves to `''`.
+   - Shop, blog and course routes are always registered but gated by the
+     `module:` middleware, so a destination is offered and resolved only
+     while `SiteHelper::moduleEnabled()` is true. A disabled module never
+     produces a link to a blocked page.
+2. **A picked link is stored as `{type: 'entity', entity, id, label}`.**
+   The label is only for the editor chip; the URL is resolved at every
+   render. `InternalLinkResolver` resolves it, and still resolves the
+   legacy `{type: 'internal_page'}` shape. The schema validator's `link`
+   type accepts the reference.
+3. **One editor control and one picker.** The anonymous component
+   `x-canvas-link-field` wraps every link input: the top-level field and
+   the item, nested and deep repeater levels. Each level passes its own
+   writer, so values persist through that level's usual update path. One
+   modal (`entityPicker`) searches live with type tabs and shows each
+   result's current URL.
+4. **Search endpoint:** `GET admin/theme-design/canvas/link-entities`
+   (`ThemeCanvasLinkEntityController`), inside the canvas admin group. It
+   queries the live database, so a page or product created in the
+   dashboard is offered immediately.
+
+**Consequences:**
+
+- `EntityLinkCatalogTest` covers resolution for every entity type, slug
+  renames, unpublish, disabled modules, the admin-only endpoint, a
+  reference inside `nav_links` and a public page following a slug change.
+  The existing internal-page tests keep passing.
+- The page-only picker state and methods (`linkPicker*`,
+  `searchLinkPages`, `selectLinkPage`) and the editor's use of the menu
+  page-search route are removed. The golden-journeys browser spec targets
+  the new picker.
+- The platform editor still stores URL strings: platform themes are
+  templates without a customer's content. Template-library sections can
+  ship `{type: 'entity', entity: 'route', id: 'shop'}` style links that
+  resolve on any installed site.

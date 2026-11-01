@@ -38,7 +38,7 @@
                 <template x-if="repeaterCompactField({!! $def !!})">
                     <input type="text" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${repeaterCompactField({!! $def !!})}`"
                         :value="{!! $item !!}[repeaterCompactField({!! $def !!})] ?? ''"
-                        @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, repeaterCompactField({!! $def !!}), $event.target.value)"
+                        @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, repeaterCompactField({!! $def !!}), $event.target.value)"
                         :aria-label="({!! $def !!}.fields[repeaterCompactField({!! $def !!})].label || repeaterCompactField({!! $def !!})) + ' ' + faDigits({!! $idx !!} + 1)"
                         :placeholder="{!! $def !!}.fields[repeaterCompactField({!! $def !!})].label || ''"
                         class="flex-1 min-w-0 text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
@@ -79,7 +79,7 @@
                         <template x-if="fieldControl({!! $fd !!}) === 'text'">
                             <input type="text" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`"
                                 :value="{!! $item !!}[{!! $fk !!}] ?? ''"
-                                @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
+                                @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
                                 class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
                         </template>
 
@@ -96,7 +96,7 @@
                         <template x-if="fieldControl({!! $fd !!}) === 'textarea' || fieldControl({!! $fd !!}) === 'rich_text'">
                             <textarea :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`" rows="2"
                                 :value="{!! $item !!}[{!! $fk !!}] ?? ''"
-                                @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
+                                @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
                                 class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
                         </template>
 
@@ -104,7 +104,7 @@
                             <input type="number" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`" dir="ltr"
                                 :value="{!! $item !!}[{!! $fk !!}] ?? {!! $fd !!}.default ?? ''"
                                 :min="{!! $fd !!}.min ?? null" :max="{!! $fd !!}.max ?? null" :step="{!! $fd !!}.step ?? 'any'"
-                                @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, clampNumber($event.target.value, {!! $fd !!}))"
+                                @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, clampNumber($event.target.value, {!! $fd !!}))"
                                 class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
                         </template>
 
@@ -135,12 +135,12 @@
                         <template x-if="fieldControl({!! $fd !!}) === 'color'">
                             <div class="flex items-center gap-1.5">
                                 <input type="color" :value="colorInputValue({!! $item !!}[{!! $fk !!}], {!! $fd !!}.default)"
-                                    @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
+                                    @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
                                     class="w-8 h-8 shrink-0 rounded-lg border border-slate-200 p-0.5 cursor-pointer bg-white"
                                     :aria-label="({!! $fd !!}.label || {!! $fk !!}) + ' — انتخابگر رنگ'">
                                 <input type="text" dir="ltr" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`"
                                     :value="{!! $item !!}[{!! $fk !!}] ?? ''" placeholder="#000000 / rgba() / خالی"
-                                    @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value.trim())"
+                                    @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value.trim())"
                                     class="flex-1 min-w-0 text-[11px] px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                 <button type="button" x-show="({!! $item !!}[{!! $fk !!}] ?? '') !== ''"
                                     @click="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, '')"
@@ -167,7 +167,7 @@
                             <div>
                                 <input type="text" dir="ltr" inputmode="url" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`"
                                     :value="typeof {!! $item !!}[{!! $fk !!}] === 'string' ? {!! $item !!}[{!! $fk !!}] : ({!! $item !!}[{!! $fk !!}]?.url ?? '')"
-                                    @input="updateRepeaterLink({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
+                                    @input.debounce.300ms="updateRepeaterLink({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
                                     :aria-invalid="isUnsafeLink({!! $item !!}[{!! $fk !!}]) ? 'true' : 'false'"
                                     placeholder="/products یا https://…"
                                     class="w-full text-xs px-2.5 py-1.5 bg-white border rounded-lg focus:outline-none focus:ring-2"
@@ -186,7 +186,7 @@
                                 <div class="flex items-center gap-1.5">
                                     <input type="text" dir="ltr" :id="`rf-${ {!! $lid !!} }-${ {!! $idx !!} }-${ {!! $fk !!} }`"
                                         :value="typeof {!! $item !!}[{!! $fk !!}] === 'string' ? {!! $item !!}[{!! $fk !!}] : ''"
-                                        @input="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
+                                        @input.debounce.300ms="updateRepeaterField({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!}, $event.target.value)"
                                         placeholder="آدرس تصویر"
                                         class="flex-1 min-w-0 text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                     <button type="button" @click="pickRepeaterMedia({!! $list !!}, schemaDef, {!! $idx !!}, {!! $fk !!})"

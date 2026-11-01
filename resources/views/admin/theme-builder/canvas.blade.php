@@ -704,7 +704,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         </p>
                                         <input type="number" min="8" max="200"
                                             :value="getCascadedValue('fontSize', '')"
-                                            @input="updateStyle('fontSize', $event.target.value === '' ? '' : Number($event.target.value))"
+                                            @input.debounce.300ms="updateStyle('fontSize', $event.target.value === '' ? '' : Number($event.target.value))"
                                             :placeholder="activeBreakpoint !== 'desktop' ? (selectedBlock?.style?.fontSize ?? 'ارث') : 'پیش‌فرض'"
                                             class="w-full text-xs px-2 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
                                             :class="hasResponsiveOverride('fontSize', activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
@@ -733,7 +733,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         <p class="text-[10px] text-slate-500 mb-1">فاصله خطوط</p>
                                         <input type="number" min="1" max="4" step="0.1"
                                             :value="getCascadedValue('lineHeight', '')"
-                                            @input="updateStyle('lineHeight', $event.target.value === '' ? '' : $event.target.value)"
+                                            @input.debounce.300ms="updateStyle('lineHeight', $event.target.value === '' ? '' : $event.target.value)"
                                             placeholder="پیش‌فرض"
                                             class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
@@ -741,7 +741,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         <p class="text-[10px] text-slate-500 mb-1">فاصله حروف (px)</p>
                                         <input type="number" min="-5" max="20" step="0.5"
                                             :value="getCascadedValue('letterSpacing', '')"
-                                            @input="updateStyle('letterSpacing', $event.target.value === '' ? '' : $event.target.value)"
+                                            @input.debounce.300ms="updateStyle('letterSpacing', $event.target.value === '' ? '' : $event.target.value)"
                                             placeholder="پیش‌فرض"
                                             class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
@@ -774,7 +774,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </p>
                                     <div class="flex items-center gap-1.5">
                                         <input type="color" :value="getCascadedValue('bgColor', '#ffffff')" @change="updateStyle('bgColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
-                                        <input type="text" :value="getCascadedValue('bgColor', '')" @input="updateStyle('bgColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <input type="text" :value="getCascadedValue('bgColor', '')" @input.debounce.300ms="updateStyle('bgColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
                                         <button x-show="getCascadedValue('bgColor')" @click="updateStyle('bgColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
                                     </div>
                                 </div>
@@ -785,7 +785,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </p>
                                     <div class="flex items-center gap-1.5">
                                         <input type="color" :value="getCascadedValue('textColor', '#1f2937')" @change="updateStyle('textColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
-                                        <input type="text" :value="getCascadedValue('textColor', '')" @input="updateStyle('textColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <input type="text" :value="getCascadedValue('textColor', '')" @input.debounce.300ms="updateStyle('textColor', $event.target.value)" placeholder="بدون رنگ" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
                                         <button x-show="getCascadedValue('textColor')" @click="updateStyle('textColor', '')" class="text-slate-400 hover:text-red-500 shrink-0">×</button>
                                     </div>
                                 </div>
@@ -830,7 +830,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                             <p class="text-[9px] text-slate-400 text-center mb-1" x-text="padding[1]"></p>
                                             <input type="number" min="0" max="300"
                                                 :value="getCascadedValue(padding[0], '')"
-                                                @input="updateStyle(padding[0], $event.target.value === '' ? '' : Number($event.target.value))"
+                                                @input.debounce.300ms="updateStyle(padding[0], $event.target.value === '' ? '' : Number($event.target.value))"
                                                 class="w-full text-xs text-center px-1 py-1.5 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-300"
                                                 :class="hasResponsiveOverride(padding[0], activeBreakpoint) && activeBreakpoint !== 'desktop' ? 'border-amber-300 bg-amber-50' : 'border-slate-200'">
                                         </div>
@@ -840,11 +840,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <p class="text-[9px] text-slate-400 mb-1">بالا</p>
-                                        <input type="number" min="-100" max="300" :value="getCascadedValue('marginTop', '')" @input="updateStyle('marginTop', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <input type="number" min="-100" max="300" :value="getCascadedValue('marginTop', '')" @input.debounce.300ms="updateStyle('marginTop', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
                                     <div>
                                         <p class="text-[9px] text-slate-400 mb-1">پایین</p>
-                                        <input type="number" min="-100" max="300" :value="getCascadedValue('marginBottom', '')" @input="updateStyle('marginBottom', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <input type="number" min="-100" max="300" :value="getCascadedValue('marginBottom', '')" @input.debounce.300ms="updateStyle('marginBottom', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
                                 </div>
                             </div>
@@ -861,7 +861,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <p class="text-[10px] text-slate-500 mb-1">ضخامت حاشیه (px)</p>
-                                        <input type="number" min="0" max="20" :value="getCascadedValue('borderWidth', '')" @input="updateStyle('borderWidth', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                        <input type="number" min="0" max="20" :value="getCascadedValue('borderWidth', '')" @input.debounce.300ms="updateStyle('borderWidth', $event.target.value === '' ? '' : Number($event.target.value))" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                     </div>
                                     <div>
                                         <p class="text-[10px] text-slate-500 mb-1">نوع حاشیه</p>
@@ -877,12 +877,12 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <p class="text-[10px] text-slate-500 mb-1">رنگ حاشیه</p>
                                     <div class="flex items-center gap-1.5">
                                         <input type="color" :value="getCascadedValue('borderColor', '#e5e7eb')" @change="updateStyle('borderColor', $event.target.value)" class="w-8 h-7 rounded border border-slate-200 cursor-pointer p-0.5 shrink-0">
-                                        <input type="text" :value="getCascadedValue('borderColor', '')" @input="updateStyle('borderColor', $event.target.value)" placeholder="#e5e7eb" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
+                                        <input type="text" :value="getCascadedValue('borderColor', '')" @input.debounce.300ms="updateStyle('borderColor', $event.target.value)" placeholder="#e5e7eb" class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300 font-mono">
                                     </div>
                                 </div>
                                 <div>
                                     <p class="text-[10px] text-slate-500 mb-1">گوشه‌های گرد (px)</p>
-                                    <input type="number" min="0" max="100" :value="getCascadedValue('borderRadius', '')" @input="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))" placeholder="۰" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                                    <input type="number" min="0" max="100" :value="getCascadedValue('borderRadius', '')" @input.debounce.300ms="updateStyle('borderRadius', $event.target.value === '' ? '' : Number($event.target.value))" placeholder="۰" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-300">
                                 </div>
                             </div>
                         </div>
@@ -909,7 +909,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         <div class="border-b border-slate-100 px-4 py-3">
                             <p class="text-[10px] text-slate-500 mb-2">شفافیت</p>
                             <div class="flex items-center gap-2">
-                                <input type="range" min="0.1" max="1" step="0.05" :value="getCascadedValue('opacity', 1)" @input="updateStyle('opacity', Number($event.target.value))" class="flex-1">
+                                <input type="range" min="0.1" max="1" step="0.05" :value="getCascadedValue('opacity', 1)" @input.debounce.300ms="updateStyle('opacity', Number($event.target.value))" class="flex-1">
                                 <span class="text-xs text-slate-500 w-8 text-left" x-text="Math.round(getCascadedValue('opacity', 1) * 100) + '%'"></span>
                             </div>
                         </div>
@@ -927,7 +927,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <label class="block text-xs font-semibold text-slate-600 mb-1.5">کلاس CSS سفارشی</label>
                             <input type="text"
                                 :value="selectedBlock?.style?.customClass ?? ''"
-                                @input="updateStyle('customClass', $event.target.value)"
+                                @input.debounce.300ms="updateStyle('customClass', $event.target.value)"
                                 placeholder="مثال: my-hero featured-section"
                                 class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono">
                         </div>
@@ -965,7 +965,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <label class="block text-[10px] text-slate-500 mb-1">مدت زمان انیمیشن (ms)</label>
                                     <input type="number" min="200" max="3000" step="100"
                                         :value="selectedBlock?.style?.animationDuration ?? 600"
-                                        @input="updateStyle('animationDuration', Number($event.target.value))"
+                                        @input.debounce.300ms="updateStyle('animationDuration', Number($event.target.value))"
                                         class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                 </div>
                             </template>
@@ -994,7 +994,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                             <input type="text"
                                                 :id="'ctrl-' + propKey"
                                                 :value="selectedBlock.props[propKey] ?? ''"
-                                                @input="updateProp(propKey, $event.target.value)"
+                                                @input.debounce.300ms="updateProp(propKey, $event.target.value)"
                                                 :placeholder="schemaDef.media_kind === 'video' ? 'آدرس URL ویدیو' : 'آدرس URL تصویر'"
                                                 class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                             <button @click="openMediaPicker(propKey)"
@@ -1011,7 +1011,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <input type="text"
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''"
-                                        @input="updateProp(propKey, $event.target.value)"
+                                        @input.debounce.300ms="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
                                         :placeholder="schemaDef.default ?? ''">
                                 </template>
@@ -1032,7 +1032,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     <input type="number"
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? 0"
-                                        @input="updateProp(propKey, Number($event.target.value))"
+                                        @input.debounce.300ms="updateProp(propKey, Number($event.target.value))"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
                                         :min="schemaDef.min ?? 0" :max="schemaDef.max ?? null" :step="schemaDef.step ?? 'any'">
                                 </template>
@@ -1125,7 +1125,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                                 <span class="absolute inset-0" :style="'background:' + colorPreview(cv)" :data-testid="'tb-color-preview-' + propKey"></span>
                                             </span>
                                             <input type="color" :id="'ctrl-' + propKey" :value="colorInputHex(cv)" @input="setColorBase(propKey, $event.target.value)" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5" aria-label="انتخاب رنگ دلخواه">
-                                            <input type="text" dir="ltr" :value="cv" @input="updateProp(propKey, $event.target.value)" class="flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000" aria-label="مقدار رنگ" :data-testid="'tb-color-value-' + propKey">
+                                            <input type="text" dir="ltr" :value="cv" @input.debounce.300ms="updateProp(propKey, $event.target.value)" class="flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono" placeholder="#000000" aria-label="مقدار رنگ" :data-testid="'tb-color-value-' + propKey">
                                         </div>
                                         <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="رنگ‌های قالب">
                                             <template x-for="t in colorPalette()" :key="t.token">
@@ -1149,7 +1149,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- textarea; also multi-line `text` and `rich_text` (sanitized
                                      at render time), which had no control at all --}}
                                 <template x-if="schemaDef.type === 'textarea' || schemaDef.type === 'text' || schemaDef.type === 'rich_text'">
-                                    <textarea :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input="updateProp(propKey, $event.target.value)" rows="3"
+                                    <textarea :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @input.debounce.300ms="updateProp(propKey, $event.target.value)" rows="3"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-y"
                                         :placeholder="schemaDef.default ?? ''"></textarea>
                                 </template>
@@ -1164,7 +1164,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         <input type="text"
                                             :id="'ctrl-' + propKey"
                                             :value="typeof (selectedBlock.props[propKey]) === 'string' ? selectedBlock.props[propKey] : (selectedBlock.props[propKey]?.url ?? '')"
-                                            @input="updateLinkProp(propKey, $event.target.value)"
+                                            @input.debounce.300ms="updateLinkProp(propKey, $event.target.value)"
                                             class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
                                             placeholder="https:// …">
                                         <template x-if="selectedBlock.props[propKey] && typeof selectedBlock.props[propKey] === 'object'">
