@@ -55,6 +55,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/canvas-icons.js';
     }
 
+    /** ADR-076 — the Canvas page-tab strip (horizontal scroll + chevrons). */
+    public static function canvasTabStripPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-tab-strip.js';
+    }
+
     /** Phase 0.7 (ADR-066) — live newsletter + search-dialog behaviour. */
     public static function siteFormsScriptPath(): string
     {

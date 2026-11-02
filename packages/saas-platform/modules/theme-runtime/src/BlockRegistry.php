@@ -162,6 +162,30 @@ class BlockRegistry
     }
 
     /**
+     * ADR-076: the social/messenger link list shared by nav_header and
+     * nav_footer. Its `network` options come from Support\SocialNetworks, the
+     * same rows the renderer draws icons from.
+     */
+    private static function socialLinksField(string $label, ?string $group = null): array
+    {
+        $field = ['type' => 'repeater', 'label' => $label, 'item_label' => 'شبکه', 'storage' => 'array', 'fields' => [
+            'url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#'],
+            'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
+            'network' => ['type' => 'select', 'label' => 'شبکه (آیکون)', 'options' => Support\SocialNetworks::options(), 'default' => 'auto'],
+        ], 'default' => []];
+
+        return $group === null ? $field : $field + ['group' => $group];
+    }
+
+    /** ADR-076: mono icons follow the block's text colour; brand fills each with its network colour. */
+    private static function socialStyleField(?string $group = null): array
+    {
+        $field = ['type' => 'select', 'ui' => 'segmented', 'label' => 'رنگ آیکون‌ها', 'options' => ['mono' => 'هم‌رنگ متن', 'brand' => 'رنگ برند هر شبکه'], 'default' => 'mono'];
+
+        return $group === null ? $field : $field + ['group' => $group];
+    }
+
+    /**
      * All block definitions: type => [ name, category, icon, schema, defaultProps ]
      */
     public static function all(): array
@@ -192,7 +216,7 @@ class BlockRegistry
                 'icon' => 'container',
                 'is_container' => true,
                 'schema' => [
-                    'maxWidth' => ['type' => 'string', 'default' => '7xl'],
+                    'maxWidth' => ['type' => 'string', 'label' => 'حداکثر عرض', 'default' => '7xl'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
                 'defaultProps' => ['maxWidth' => '7xl', 'blocks' => []],
@@ -363,7 +387,7 @@ class BlockRegistry
                 // read to decide whether to populate $inner automatically.
                 'is_container' => true,
                 'schema' => [
-                    'trigger_text' => ['type' => 'string', 'default' => 'باز کردن'],
+                    'trigger_text' => ['type' => 'string', 'label' => 'متن دکمهٔ باز کردن', 'default' => 'باز کردن'],
                     'blocks' => ['type' => 'blocks', 'default' => []],
                 ],
                 'defaultProps' => ['trigger_text' => 'باز کردن', 'blocks' => []],
@@ -655,7 +679,7 @@ class BlockRegistry
                 'icon' => 'icon',
                 'schema' => [
                     'name' => ['type' => 'icon', 'label' => 'آیکون', 'default' => ''],
-                    'size' => ['type' => 'string', 'default' => 'md'],
+                    'size' => ['type' => 'string', 'label' => 'اندازهٔ آیکون', 'default' => 'md'],
                 ],
                 'defaultProps' => ['name' => '', 'size' => 'md'],
             ],
@@ -675,8 +699,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'progress',
                 'schema' => [
-                    'value' => ['type' => 'number', 'default' => 70],
-                    'label' => ['type' => 'string', 'default' => ''],
+                    'value' => ['type' => 'number', 'label' => 'مقدار پیشرفت (درصد)', 'default' => 70],
+                    'label' => ['type' => 'string', 'label' => 'عنوان نوار', 'default' => ''],
                 ],
                 'defaultProps' => ['value' => 70, 'label' => ''],
             ],
@@ -709,9 +733,9 @@ class BlockRegistry
                 'category' => self::CATEGORY_DYNAMIC,
                 'icon' => 'products',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => 'محصولات'],
-                    'limit' => ['type' => 'number', 'default' => 8],
-                    'source' => ['type' => 'string', 'default' => 'recent'],
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'محصولات'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد محصولات', 'default' => 8],
+                    'source' => ['type' => 'string', 'label' => 'منبع محصولات', 'default' => 'recent'],
                 ],
                 'defaultProps' => ['title' => 'محصولات', 'limit' => 8, 'source' => 'recent'],
             ],
@@ -756,8 +780,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_DYNAMIC,
                 'icon' => 'users',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => 'تیم ما'],
-                    'limit' => ['type' => 'number', 'default' => 6],
+                    'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'تیم ما'],
+                    'limit' => ['type' => 'number', 'label' => 'تعداد اعضا', 'default' => 6],
                 ],
                 'defaultProps' => ['title' => 'تیم ما', 'limit' => 6],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
@@ -833,8 +857,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_ECOMMERCE,
                 'icon' => 'cart',
                 'schema' => [
-                    'product_id' => ['type' => 'string', 'default' => ''],
-                    'text' => ['type' => 'string', 'default' => 'افزودن به سبد'],
+                    'product_id' => ['type' => 'string', 'label' => 'شناسهٔ محصول', 'default' => ''],
+                    'text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'افزودن به سبد'],
                 ],
                 'defaultProps' => ['product_id' => '', 'text' => 'افزودن به سبد'],
             ],
@@ -843,7 +867,7 @@ class BlockRegistry
                 'category' => self::CATEGORY_ECOMMERCE,
                 'icon' => 'price',
                 'schema' => [
-                    'product_id' => ['type' => 'string', 'default' => ''],
+                    'product_id' => ['type' => 'string', 'label' => 'شناسهٔ محصول', 'default' => ''],
                 ],
                 'defaultProps' => ['product_id' => ''],
                 'emptyOutputPolicy' => self::EMPTY_POLICY_PLACEHOLDER,
@@ -887,8 +911,8 @@ class BlockRegistry
                 'category' => self::CATEGORY_MARKETING,
                 'icon' => 'mail',
                 'schema' => [
-                    'title' => ['type' => 'string', 'default' => 'در خبرنامه عضو شوید'],
-                    'button_text' => ['type' => 'string', 'default' => 'ثبت'],
+                    'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => 'در خبرنامه عضو شوید'],
+                    'button_text' => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'ثبت'],
                 ],
                 'defaultProps' => ['title' => 'در خبرنامه عضو شوید', 'button_text' => 'ثبت'],
             ],
@@ -975,9 +999,21 @@ class BlockRegistry
                 'name' => 'هدر سایت (Nav Header)',
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'menu',
+                // ADR-076: the slots this header marks with data-widget-slot.
+                'slots' => ['logo', 'menu', 'actions', 'quick-access'],
                 'schema' => [
-                    'logo_text'          => ['type' => 'string', 'label' => 'متن لوگو', 'default' => ''],
-                    'logo_url'           => ['type' => 'link', 'label' => 'لینک لوگو', 'default' => '/'],
+                    // ADR-076: an uploaded logo image (falls back to logo_text,
+                    // then to the site's global logo), its height per breakpoint
+                    // and its alt text.
+                    'logo_image'         => ['type' => 'image', 'label' => 'تصویر لوگو', 'default' => '', 'group' => 'لوگو و برند'],
+                    'logo_alt'           => ['type' => 'string', 'label' => 'متن جایگزین لوگو (برای صفحه‌خوان و موتور جستجو)', 'default' => '', 'group' => 'لوگو و برند'],
+                    'logo_height'        => ['type' => 'number', 'label' => 'ارتفاع لوگو در دسکتاپ (پیکسل)', 'default' => 40, 'min' => 20, 'max' => 120, 'step' => 1, 'group' => 'لوگو و برند'],
+                    'logo_height_mobile' => ['type' => 'number', 'label' => 'ارتفاع لوگو در موبایل (پیکسل)', 'default' => 32, 'min' => 16, 'max' => 96, 'step' => 1, 'group' => 'لوگو و برند'],
+                    'logo_text'          => ['type' => 'string', 'label' => 'متن لوگو', 'default' => '', 'group' => 'لوگو و برند'],
+                    'logo_url'           => ['type' => 'link', 'label' => 'لینک لوگو', 'default' => '/', 'group' => 'لوگو و برند'],
+                    // ADR-076: where the menu sits between the logo and the actions.
+                    // 'end' is the original layout (links next to the actions).
+                    'menu_align'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'چیدمان منو', 'options' => ['start' => 'راست (کنار لوگو)', 'center' => 'وسط', 'end' => 'چپ (کنار دکمه‌ها)'], 'default' => 'end', 'group' => 'منو'],
                     // TASK 3/3 Phase 6.5B — nav_source lets this header use
                     // the customer's own real, canonical primary Menu
                     // (/admin/menus, Menu-location "primary") instead of a
@@ -986,25 +1022,20 @@ class BlockRegistry
                     // current nav_links behavior unchanged — this is an
                     // opt-in convergence, not a breaking default flip. See
                     // renderNavHeader() below for the render-time branch.
-                    'nav_source'         => ['type' => 'select', 'label' => 'منبع لینک‌های ناوبری', 'options' => ['custom' => 'لینک‌های سفارشی این بلوک', 'menu' => 'منوی اصلی سایت (/admin/menus)'], 'default' => 'custom'],
-                    'nav_links'          => ['type' => 'repeater', 'label' => 'لینک‌های منو', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'mega_columns' => ['type' => 'repeater', 'label' => 'ستون‌های Mega Menu (اختیاری — برای منوی چندستونی)', 'item_label' => 'ستون', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'items' => ['type' => 'repeater', 'label' => 'آیتم‌های این ستون', 'item_label' => 'آیتم', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر آیتم (اختیاری، جای آیکون را می‌گیرد)', 'default' => '']]]]], 'mega_banner_image' => ['type' => 'image', 'label' => 'تصویر بنر Mega Menu (اختیاری)', 'default' => ''], 'mega_banner_url' => ['type' => 'link', 'label' => 'لینک بنر', 'default' => '#'], 'mega_banner_text' => ['type' => 'string', 'label' => 'متن روی بنر', 'default' => ''], 'mega_banner_cta' => ['type' => 'string', 'label' => 'متن دکمهٔ بنر (اختیاری)', 'default' => ''], 'mega_show_desktop' => ['type' => 'boolean', 'label' => 'نمایش Mega Menu در دسکتاپ', 'default' => true], 'mega_mobile_behavior' => ['type' => 'select', 'label' => 'رفتار در موبایل', 'options' => ['accordion' => 'آکاردئونی (پیش‌فرض)', 'flat' => 'فهرست تخت بدون ستون‌بندی', 'hidden' => 'مخفی در موبایل'], 'default' => 'accordion']], 'default' => []],
-                    'sticky'             => ['type' => 'boolean', 'label' => 'چسبان به بالا (با کوچک‌شدن نرم هنگام اسکرول)', 'default' => false],
-                    // Phase 1 (ADR-067): smart sticky and transparent-over-hero; the
-                    // behaviour runs on the page's banner element (blocks/site-header.js).
-                    'sticky_hide_on_scroll' => ['type' => 'boolean', 'label' => 'هوشمند: پنهان هنگام اسکرول به پایین، نمایان هنگام اسکرول به بالا', 'default' => false],
-                    'transparent_over_hero' => ['type' => 'boolean', 'label' => 'شفاف روی بنر بالای صفحه', 'default' => false],
-                    // '' = automatic: the script reads the hero under the header and picks light or dark text.
-                    'transparent_text_color' => ['type' => 'color', 'label' => 'رنگ متن در حالت شفاف (خالی = تشخیص خودکار کنتراست)', 'default' => ''],
-                    'bg_color'           => ['type' => 'string', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff'],
-                    'text_color'         => ['type' => 'string', 'label' => 'رنگ متن', 'default' => '#111827'],
-                    'phone'              => ['type' => 'string', 'label' => 'شماره تماس (اختیاری)', 'default' => ''],
-                    'cta_text'           => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => ''],
-                    'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه CTA', 'default' => '#'],
-                    'show_search'        => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false],
-                    'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...'],
-                    'search_scope'       => ['type' => 'select', 'label' => 'محدودهٔ جستجو', 'options' => ['all' => 'همه (محصولات و مطالب)', 'products' => 'فقط محصولات', 'posts' => 'فقط مطالب'], 'default' => 'all'],
-                    'show_cart'          => ['type' => 'boolean', 'label' => 'نمایش سبد خرید', 'default' => false],
-                    'show_account'       => ['type' => 'boolean', 'label' => 'نمایش حساب کاربری', 'default' => false],
+                    'nav_source'         => ['type' => 'select', 'label' => 'منبع لینک‌های ناوبری', 'options' => ['custom' => 'لینک‌های سفارشی این بلوک', 'menu' => 'منوی اصلی سایت (/admin/menus)'], 'default' => 'custom', 'group' => 'منو'],
+                    'nav_links'          => ['type' => 'repeater', 'label' => 'لینک‌های منو', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'mega_columns' => ['type' => 'repeater', 'label' => 'ستون‌های Mega Menu (اختیاری — برای منوی چندستونی)', 'item_label' => 'ستون', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'items' => ['type' => 'repeater', 'label' => 'آیتم‌های این ستون', 'item_label' => 'آیتم', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => ''], 'image' => ['type' => 'image', 'label' => 'تصویر آیتم (اختیاری، جای آیکون را می‌گیرد)', 'default' => '']]]]], 'mega_banner_image' => ['type' => 'image', 'label' => 'تصویر بنر Mega Menu (اختیاری)', 'default' => ''], 'mega_banner_url' => ['type' => 'link', 'label' => 'لینک بنر', 'default' => '#'], 'mega_banner_text' => ['type' => 'string', 'label' => 'متن روی بنر', 'default' => ''], 'mega_banner_cta' => ['type' => 'string', 'label' => 'متن دکمهٔ بنر (اختیاری)', 'default' => ''], 'mega_show_desktop' => ['type' => 'boolean', 'label' => 'نمایش Mega Menu در دسکتاپ', 'default' => true], 'mega_mobile_behavior' => ['type' => 'select', 'label' => 'رفتار در موبایل', 'options' => ['accordion' => 'آکاردئونی (پیش‌فرض)', 'flat' => 'فهرست تخت بدون ستون‌بندی', 'hidden' => 'مخفی در موبایل'], 'default' => 'accordion']], 'default' => [], 'group' => 'منو'],
+                    // ADR-076: quick-access social and messenger icons in the actions slot.
+                    'social_links'       => self::socialLinksField('آیکون‌های دسترسی سریع (شبکه‌ها و پیام‌رسان‌ها)', 'دسترسی سریع و اکشن‌ها'),
+                    'social_style'       => self::socialStyleField('دسترسی سریع و اکشن‌ها'),
+                    'social_show_mobile' => ['type' => 'boolean', 'label' => 'نمایش آیکون‌های دسترسی سریع در موبایل', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'phone'              => ['type' => 'string', 'label' => 'شماره تماس (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'cta_text'           => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه CTA', 'default' => '#', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'show_search'        => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'search_scope'       => ['type' => 'select', 'label' => 'محدودهٔ جستجو', 'options' => ['all' => 'همه (محصولات و مطالب)', 'products' => 'فقط محصولات', 'posts' => 'فقط مطالب'], 'default' => 'all', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'show_cart'          => ['type' => 'boolean', 'label' => 'نمایش سبد خرید', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'show_account'       => ['type' => 'boolean', 'label' => 'نمایش حساب کاربری', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     // Commercial Productization fase-4: a real, usable dark
                     // mode toggle — opt-in per theme (default false) since
                     // it is only meaningful for a theme that actually
@@ -1014,7 +1045,16 @@ class BlockRegistry
                     // real button + the head-bootstrap script (both hosts'
                     // layout templates) that prevents a flash of the wrong
                     // theme on load.
-                    'show_dark_toggle'   => ['type' => 'boolean', 'label' => 'نمایش تغییر حالت روشن/تاریک', 'default' => false],
+                    'show_dark_toggle'   => ['type' => 'boolean', 'label' => 'نمایش تغییر حالت روشن/تاریک', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'sticky'             => ['type' => 'boolean', 'label' => 'چسبان به بالا (با کوچک‌شدن نرم هنگام اسکرول)', 'default' => false, 'group' => 'رفتار و رنگ'],
+                    // Phase 1 (ADR-067): smart sticky and transparent-over-hero; the
+                    // behaviour runs on the page's banner element (blocks/site-header.js).
+                    'sticky_hide_on_scroll' => ['type' => 'boolean', 'label' => 'هوشمند: پنهان هنگام اسکرول به پایین، نمایان هنگام اسکرول به بالا', 'default' => false, 'group' => 'رفتار و رنگ'],
+                    'transparent_over_hero' => ['type' => 'boolean', 'label' => 'شفاف روی بنر بالای صفحه', 'default' => false, 'group' => 'رفتار و رنگ'],
+                    // '' = automatic: the script reads the hero under the header and picks light or dark text.
+                    'transparent_text_color' => ['type' => 'color', 'label' => 'رنگ متن در حالت شفاف (خالی = تشخیص خودکار کنتراست)', 'default' => '', 'group' => 'رفتار و رنگ'],
+                    'bg_color'           => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff', 'group' => 'رفتار و رنگ'],
+                    'text_color'         => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#111827', 'group' => 'رفتار و رنگ'],
                 ],
                 'defaultProps' => ['logo_text' => '', 'logo_url' => '/', 'nav_links' => [], 'sticky' => false, 'bg_color' => '#ffffff', 'text_color' => '#111827'],
             ],
@@ -1058,6 +1098,8 @@ class BlockRegistry
                 'name' => 'فوتر سایت (Nav Footer)',
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'layout-footer',
+                // ADR-076: the slots this footer marks with data-widget-slot.
+                'slots' => ['brand', 'columns', 'bottom', 'social'],
                 'schema' => [
                     // TASK 3/3 Phase 6.5C (BLD-26) — footer counterpart of
                     // nav_header's nav_source. See renderNavFooter() for
@@ -1066,12 +1108,14 @@ class BlockRegistry
                     'nav_source'   => ['type' => 'select', 'label' => 'منبع لینک‌های فوتر', 'options' => ['custom' => 'ستون‌های سفارشی این بلوک', 'menu' => 'منوی فوتر سایت (/admin/menus)'], 'default' => 'custom'],
                     'columns'      => ['type' => 'repeater', 'label' => 'ستون‌های لینک', 'item_label' => 'ستون', 'storage' => 'array', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'links' => ['type' => 'repeater', 'label' => 'لینک‌های ستون', 'item_label' => 'لینک', 'storage' => 'array', 'default' => [], 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#']]]], 'default' => []],
                     'links'        => ['type' => 'repeater', 'label' => 'لینک‌های حقوقی (اختیاری)', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#']], 'default' => []],
-                    'social_links' => ['type' => 'repeater', 'label' => 'شبکه‌های اجتماعی (اختیاری)', 'item_label' => 'شبکه', 'storage' => 'array', 'fields' => ['url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#'], 'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'network' => ['type' => 'select', 'label' => 'شبکه (آیکون)', 'options' => ['auto' => 'تشخیص خودکار از آدرس', 'instagram' => 'اینستاگرام', 'telegram' => 'تلگرام', 'whatsapp' => 'واتساپ', 'linkedin' => 'لینکدین', 'x' => 'ایکس (توییتر)', 'youtube' => 'یوتیوب', 'aparat' => 'آپارات', 'eitaa' => 'ایتا', 'bale' => 'بله', 'rubika' => 'روبیکا', 'facebook' => 'فیسبوک', 'github' => 'گیت‌هاب', 'email' => 'ایمیل', 'phone' => 'تلفن'], 'default' => 'auto']], 'default' => []],
+                    // ADR-076: one network list (Support\SocialNetworks), shared with nav_header.
+                    'social_links' => self::socialLinksField('شبکه‌های اجتماعی و پیام‌رسان‌ها (اختیاری)'),
+                    'social_style' => self::socialStyleField(),
                     'logo_text'    => ['type' => 'string', 'label' => 'متن لوگو', 'default' => ''],
                     'tagline'      => ['type' => 'string', 'label' => 'شعار برند (اختیاری)', 'default' => ''],
                     'copyright'    => ['type' => 'string', 'label' => 'متن کپی‌رایت', 'default' => ''],
-                    'bg_color'     => ['type' => 'string', 'label' => 'رنگ پس‌زمینه', 'default' => '#111827'],
-                    'text_color'   => ['type' => 'string', 'label' => 'رنگ متن', 'default' => '#e5e7eb'],
+                    'bg_color'     => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#111827'],
+                    'text_color'   => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#e5e7eb'],
                     // Phase 1 (ADR-067): high-conversion footer — newsletter on the
                     // Phase 0.7 endpoint, trust seals rebuilt from their ids only,
                     // app download badges.

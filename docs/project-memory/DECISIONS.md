@@ -4431,3 +4431,129 @@ There is no migration or Composer change.
 - Visual QA: every template rendered through the canonical renderer had
   0 horizontal overflow, 0 broken images and 0 failed requests at
   360/768/1280.
+
+## ADR-076
+
+**Title:** A Widget Schema Contract and Manifest over the Canonical Registry; Header Logo Image, Menu Placement and Quick-Access Icons; Native Iranian Messenger Marks; data-widget-* Hooks; a Shared Scrolling Page-Tab Strip
+
+**Status:** Accepted
+
+**Date:** 2026-11-02
+
+**Context:**
+
+- Owner brief 2026-11-02 (the "Sentinel Verifier" brief): make the Canvas a
+  commercial, schema-driven system and close four gaps:
+  - widgets need a stable id and a registry tests can address;
+  - the page tabs above the Canvas overflow with no standard scroll;
+  - the header has no menu placement and no logo upload, and the
+    header/footer lack native Iranian messengers (Eitaa, Bale, Rubika,
+    Soroush, Gap);
+  - quality depends on manual testing.
+  Phases 1 and 2 are implemented here. Phase 3 (the Sentinel verifier
+  suite) is planned in COMMERCIAL_WIDGET_ROADMAP.md §16.
+- Most of Phase 1 already existed:
+  - `BlockRegistry` keys are stable ids with a category, icon, `schema` and
+    `defaultProps`;
+  - both editors render the Inspector from `schema` alone (ADR-060/061/062),
+    and `InspectorFieldRegistry` normalises fields.
+  What was missing was a gate: nothing failed when a definition drifted out
+  of the vocabulary the editors render. 15 fields had no label, and one
+  `ui` hint was honoured by the platform editor only. The registry also
+  offered no machine-readable view for browser checks.
+- Platform page tabs sat in an `overflow-x-auto flex-none` box. `flex-none`
+  never shrinks, so each new page widened the toolbar past the screen.
+  customer-site's strip did scroll, but with a hidden scrollbar and no
+  control, so a mouse could not reach hidden tabs.
+- `nav_header` supported only a text logo, with the site's global logo as
+  fallback (BLD-25). Its links were always pushed beside the actions, and it
+  had no social icons. The footer listed Eitaa, Bale and Rubika with a
+  generic chat glyph, and had no Soroush or Gap.
+
+**Decision:**
+
+1. **`Widget\WidgetSchemaContract`** is the gate for every definition,
+   canonical or host-registered:
+   - the id is a slug, and the definition has a name;
+   - the category is a registry `CATEGORY_*`. Reference-theme packs
+     (`foodmart`, `sleepshiman`) are accepted without a palette icon;
+   - `InspectorFieldRegistry` accepts the schema;
+   - every non-`blocks` field has a label;
+   - select defaults are options;
+   - `ui` hints are ones both editors render (`select`: `column_picker`,
+     `segmented`);
+   - `group` is a top-level label;
+   - repeaters declare `fields` and never `item_schema`;
+   - number defaults sit inside min/max;
+   - `slots` are slugs;
+   - every default prop has a field.
+
+   `manifest()` publishes id → category, slots and field → control for
+   tests and the Sentinel verifier. `WidgetSchemaContractTest` runs it over
+   the booted registry (163 types) in saas-platform, and over the host
+   registry in customer-site.
+2. **Two schema-driven Inspector features, in both editors:**
+   - `ui: 'segmented'` renders a select as a radio-button group;
+   - a field's `group` opens a sidebar section where it first appears.
+
+   customer-site number inputs now honour schema `min`, `max` and `step`.
+   The 15 unlabelled fields got Persian labels.
+3. **`Support\SocialNetworks`** is the one network list:
+   - it supplies the select options, URL detection, Persian names, icons
+     and brand fills;
+   - `nav_header` and `nav_footer` build `social_links` from it through one
+     registry helper;
+   - Soroush Plus (`splus.ir`, `sapp.ir`) and Gap (`gap.im`) are added.
+   Iranian messengers draw simplified marks on Lucide's stroke grid
+   (`resources/icons/social-marks.json`). These are recognisable shapes,
+   not official logos, and kept apart from the ISC Lucide catalog. An opt-in
+   `social_style: brand` fills each icon with its network colour; every
+   fill keeps a white glyph at 4:1 or better. The default `mono` is the
+   previous look.
+4. **`nav_header`:**
+   - `logo_image`, `logo_alt`, and `logo_height` / `logo_height_mobile`
+     (clamped to 20–120 and 16–96 px). The fallback order is image (with
+     `logo_text` beside it), then `logo_text`, then the global logo;
+   - `menu_align` (start / center / end). `end` is the original layout and
+     adds no class. `center` uses a three-column grid from 1024 px;
+   - `social_links` in the actions slot before the CTA, plus
+     `social_style` and `social_show_mobile` (hidden below 768 px by
+     default);
+   - its fields are grouped into four sections, and `bg_color` and
+     `text_color` become real colour controls, as in `nav_footer`.
+5. **Hooks:**
+   - `data-widget-type` on every block wrapper: both package wrappers and
+     customer-site's `wrapEditorMode` override;
+   - `data-widget-slot` on the header (logo, menu, actions, quick-access)
+     and the footer (brand, columns, bottom, social). The slots are
+     declared in each definition's `slots`;
+   - `data-canvas-page-tab` on every page tab in both editors, including
+     the platform's header and footer switches as `__header__` and
+     `__footer__`.
+6. **`theme-runtime::canvas.tab-strip`** (+ `tab-strip-nav`,
+   `resources/js/canvas-tab-strip.js`) is included once by both editors:
+   - the page tabs scroll in their own viewport, with edge-aware chevrons;
+   - a vertical wheel scrolls the strip;
+   - the `aria-current` tab is kept in view when it changes or a page is
+     added;
+   - RTL scroll uses the standard negative scrollLeft model;
+   - `prefers-reduced-motion` is honoured;
+   - it adds no new Tailwind utilities, so it works before an asset rebuild.
+
+**Consequences:**
+
+- Adding a widget property is a registry edit. The contract test fails a
+  definition that the editors could not render.
+- Existing headers and footers render as before:
+  - attributes are added;
+  - no class is added for default values;
+  - mono icons keep their markup, and only the three native messengers'
+    glyphs change.
+- The registry's footer network option order changes, with the Iranian
+  messengers listed first. Stored values are unchanged.
+- customer-site's validator derives the new props from the registry with
+  no config change. Its media sweep covers `logo_image` automatically
+  through `SchemaFieldMap`.
+- Follow-ups: a footer logo image; a `network` field for the standalone
+  `social_icons` block; replacing a mark with an official glyph when the
+  owner supplies a licensed asset.

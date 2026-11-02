@@ -98,8 +98,14 @@ class ProductSliderRenderSnapshotTest extends TestCase
     /** Neutral render (no forced mode, no editor_mode context). */
     private const NEUTRAL_STRUCTURAL_SHA256 = 'bbf5e41d32e5e8c63859a7238aa2241fbba55e25d6fd2d83f2b320b3035899a7';
 
-    /** MODE_PUBLIC — the real customer-site surface. */
-    private const PUBLIC_STRUCTURAL_SHA256 = '547a3fde0d5afc67cfd1a22bfc8102e2fcd9bc26d780aebfd3341dd84b5ae7fa';
+    /**
+     * MODE_PUBLIC — the real customer-site surface.
+     *
+     * Re-pinned for ADR-076: the public wrapper gained exactly one attribute,
+     * data-widget-type="product_slider". With that attribute removed the
+     * markup hashes to the previous pin (547a3fde…ae7fa), so nothing else moved.
+     */
+    private const PUBLIC_STRUCTURAL_SHA256 = '369d91f3ff660b05b1c8a12a76509d21325e9873d149066caa6e9f77c94176fa';
 
     private function render(string $mode = 'neutral'): string
     {

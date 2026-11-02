@@ -1022,3 +1022,150 @@ and WU-C (commercial tokens) live in
 `CANVAS_WIDGET_LOCAL_VS_PROD_AUDIT_2026-10-30.md` §6–§7.
 
 **2026-10-31 (WU-D):** the breakpoint scale (480/768/1024/1280), column and grid slots as size containers (`@container tb-slot`), fluid title floors and the boxed slider's controls. Zero visual diff on both hosts at 1366/768/390 and zero horizontal overflow at 360–1280. Delivery record: `CANVAS_WIDGET_LOCAL_VS_PROD_AUDIT_2026-10-30.md` §10; decision: ADR-071. The four legacy `max-width: 768px` rules stay pinned (owner decision 2026-10-31).
+
+## 16. Schema registry, header/footer commercial fields, Sentinel verifier (2026-11-02, ADR-076)
+
+Owner brief 2026-11-02: give every widget a stable id and schema, fix the
+page tabs and the header/footer gaps, and replace manual checks with an
+automated verifier. Phases 1 and 2 are delivered. Phase 3 is planned.
+
+### 16.1 Phase 1: schema-driven registry (delivered)
+
+- The registry already held stable ids, categories and schemas. ADR-076
+  adds the missing gate, `Widget\WidgetSchemaContract`:
+  - `violations()` fails CI when a definition leaves the vocabulary the
+    editors render;
+  - `manifest()` publishes id → category, slots and field → control.
+- The Inspector renders two more things from schema alone, in both
+  editors:
+  - `ui: 'segmented'` (button group);
+  - `group` (sidebar sections).
+- Hooks:
+  - `data-widget-type` on every block wrapper;
+  - `data-widget-slot` on header and footer slots;
+  - `data-canvas-page-tab` on page tabs.
+
+### 16.2 Phase 2: Canvas fixes (delivered)
+
+- **Page tabs:** one shared strip, `theme-runtime::canvas.tab-strip`, in
+  both editors. It scrolls horizontally, shows edge chevrons only when tabs
+  are hidden, scrolls on the mouse wheel and keeps the active tab in view.
+- **Header (`nav_header`):**
+  - an uploaded logo image with desktop and mobile height, plus alt text;
+  - menu placement (right / centre / left);
+  - quick-access social and messenger icons, with optional brand colours,
+    shown on mobile if the author chooses;
+  - grouped sidebar sections and real colour controls.
+- **Footer (`nav_footer`):**
+  - Soroush Plus and Gap are added;
+  - Eitaa, Bale, Rubika, Soroush and Gap get their own vector marks;
+  - optional brand colours.
+  One network list (`Support\SocialNetworks`) feeds both the header and the
+  footer.
+
+### 16.3 Phase 3: Sentinel verifier suite (planned)
+
+Constraints from AGENTS.md:
+
+- Sentinel stays the post-deploy auditor that the Hub triggers on
+  `deployment.completed`.
+- Agents in `../agents` are read-only toward the projects and talk only
+  through registered Task contracts and bus topics.
+- The suite below is the verifier's browser layer. It runs against any
+  host via `BASE_URL`.
+
+1. **Suite** (`tests/sentinel/`, Playwright, one config):
+   - `BASE_URL` selects the target: local `127.0.0.1:8000` /
+     `customer-site.test`, or production.
+   - Read-only credentials come from env (`SENTINEL_USER`,
+     `SENTINEL_PASSWORD`). Without them, the suite audits public pages only.
+   - It never writes. Editor checks open a throwaway theme only when
+     `SENTINEL_ALLOW_WRITE=1`, which is local-only, and clean up.
+   - The widget list comes from a read-only JSON endpoint serving
+     `WidgetSchemaContract::manifest()`, behind auth on the platform and
+     never enumerated in the suite.
+2. **Visual regression and overflow:**
+   - for each public page and each Canvas preview, at 360, 390, 768, 1024,
+     1280 and 1440 px;
+   - flags any element whose box exceeds its `[data-widget-type]` container
+     or the viewport (the existing `tests/Support/CssParity/overflow.cjs`
+     logic, moved into the suite);
+   - flags horizontal scroll on `<html>`;
+   - flags clipped text (`scrollWidth > clientWidth` on single-line
+     labels);
+   - flags broken images and failed requests;
+   - adds the page-tab strip check: with 30 pages, the toolbar never exceeds
+     the viewport and the chevrons reach both ends.
+   - Screenshot baselines are kept per host and width. A diff above a
+     threshold is a finding with both images attached.
+3. **Feature audit:**
+   - a `WidgetFeatureProfile` per widget kind, declared next to the
+     registry. For example:
+     - header: logo (image or text), menu with placement, actions slot,
+       `dir="rtl"`, a working mobile menu;
+     - footer: social slot, legal links, a contrast-AA text colour;
+     - hero: a CTA with a real href.
+   - The suite renders each manifest widget and checks the profile against
+     the live DOM through `data-widget-slot`. It also checks RTL (logical
+     direction, Vazirmatn loaded), `prefers-reduced-motion`, and tap
+     targets of at least 44 px on mobile.
+4. **Defect report:**
+   - one JSON and one Markdown artifact per run under `storage/sentinel/`.
+     Each finding has a code (for example `WIDGET_OVERFLOW`,
+     `FEATURE_MISSING_LOGO`, `TAB_STRIP_UNREACHABLE`), the widget, slot,
+     width, a selector, evidence and the required change, written as a
+     task.
+   - The report maps to the agents finding schema in `../agents/README.md`,
+     so `deployment.readiness` and the Hub can consume it. A `blocker`
+     finding stops a release.
+   - Registering the verifier as an agent follows the README's "Adding an
+     agent" section. It is an owner decision because it touches
+     `agents.json`.
+5. **Order of work:**
+   1. manifest endpoint and feature profiles (PHP, unit-tested);
+   2. the overflow and visual layer;
+   3. the feature audit;
+   4. the report;
+   5. local CI wiring;
+   6. the Hub hook (owner).
+
+### 16.4 Delivery record
+
+See ADR-076 for the decisions. Base: saas-platform `e153ef33`,
+customer-site `928c1d1` (same tree as `a66b552`).
+
+- **Contract:** `WidgetSchemaContract::violations()` is empty for all 163
+  booted platform types (118 canonical + 45 host) and for the customer-site
+  host registry.
+- **PHPUnit:**
+  - platform `Adr076WidgetSchemaHeaderFooterTest`: 13 tests;
+  - customer-site `Adr076CanvasHooksTest`: 4 tests;
+  - platform baseline set (`tests/Unit/ThemeBuilder tests/Feature/ThemeBuilder
+    tests/Feature/ThemeCanvas tests/Feature/Admin`): 1078 tests. The one
+    failure was `ProductSliderRenderSnapshotTest`'s public pin, which
+    changed only by `data-widget-type`. Without that attribute the markup
+    hashes to the old pin, and it was re-pinned with that reason;
+  - customer-site baseline set: 846 tests, only the 3 known failures. The
+    media sweep covers the new `logo_image` automatically.
+- **JS:** 130/130, including `canvas-tab-strip.test.mjs` (RTL edge, step
+  and reveal geometry).
+- **Browser:** `adr076-canvas-tabs-header.spec.ts`, 2 tests.
+  - With 30 pages at 1280 and 1024 px, there is no page overflow, the strip
+    is inside the viewport and at least 280 px wide, the chevrons reach both
+    ends and the wheel scrolls back.
+  - Header groups and segmented placement drive `menu_align`. The editor
+    iframe carries `data-widget-type`, and the preview shows the centred
+    menu, a 44 px logo, five brand-filled messenger marks (Eitaa fill
+    `rgb(217, 72, 15)`), quick-access hidden below 768 px, and no overflow
+    at 1440/1024/768/390.
+- **CSS parity** (customer host, before = `e153ef33` package + `928c1d1`
+  host):
+  - 201 of 229 corpus documents change, and only by `data-widget-*`
+    attributes;
+  - old markup and CSS against new markup and CSS: 0 distinct diffs over
+    18,006 elements per width at 1366/768/390;
+  - both corpora render with no renderer warnings.
+- **Readiness:** `deployment.readiness --strict` gives 0 blockers. The
+  warnings are the expected pre-commit ones (uncommitted package,
+  cross-repo coupling, `.claude/CLAUDE.md` outside the release paths).
+  Artifact digest `3c978bed…78ca`.
