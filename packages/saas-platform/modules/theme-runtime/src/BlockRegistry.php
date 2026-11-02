@@ -1030,7 +1030,7 @@ class BlockRegistry
                     'social_show_mobile' => ['type' => 'boolean', 'label' => 'نمایش آیکون‌های دسترسی سریع در موبایل', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'phone'              => ['type' => 'string', 'label' => 'شماره تماس (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'cta_text'           => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
-                    'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه CTA', 'default' => '#', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه CTA', 'default' => '/contact', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'show_search'        => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'search_scope'       => ['type' => 'select', 'label' => 'محدودهٔ جستجو', 'options' => ['all' => 'همه (محصولات و مطالب)', 'products' => 'فقط محصولات', 'posts' => 'فقط مطالب'], 'default' => 'all', 'group' => 'دسترسی سریع و اکشن‌ها'],
@@ -1071,7 +1071,7 @@ class BlockRegistry
                     'brandName'  => ['type' => 'string', 'label' => 'نام برند', 'default' => 'برند شما'],
                     'homeUrl'    => ['type' => 'link', 'label' => 'لینک صفحه اصلی', 'default' => '/'],
                     'ctaText'    => ['type' => 'string', 'label' => 'متن دکمه اصلی', 'default' => 'شروع کنید'],
-                    'ctaUrl'     => ['type' => 'link', 'label' => 'لینک دکمه اصلی', 'default' => '#'],
+                    'ctaUrl'     => ['type' => 'link', 'label' => 'لینک دکمه اصلی', 'default' => '/contact'],
                 ],
                 'defaultProps' => [
                     'bgColor' => '#ffffff',
@@ -1087,7 +1087,8 @@ class BlockRegistry
                     'brandName' => 'برند شما',
                     'homeUrl' => '/',
                     'ctaText' => 'شروع کنید',
-                    'ctaUrl' => '#',
+                    // A real destination by default (Sentinel DEAD_LINK, 2026-11-02).
+                    'ctaUrl' => '/contact',
                 ],
             ],
             // Phase 2e (ADR-026): the site footer, the self-contained
@@ -1130,7 +1131,8 @@ class BlockRegistry
                     'samandehi_code' => ['type' => 'string', 'label' => 'ساماندهی: کد p', 'default' => ''],
                     'app_links'      => ['type' => 'repeater', 'label' => 'دریافت اپلیکیشن (اختیاری)', 'item_label' => 'فروشگاه', 'storage' => 'array', 'fields' => ['store' => ['type' => 'select', 'label' => 'فروشگاه', 'options' => ['google_play' => 'گوگل‌پلی', 'app_store' => 'اپ‌استور', 'bazaar' => 'کافه‌بازار', 'myket' => 'مایکت', 'direct' => 'دانلود مستقیم'], 'default' => 'bazaar'], 'url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#']], 'default' => []],
                 ],
-                'defaultProps' => ['columns' => [], 'copyright' => '', 'bg_color' => '#111827', 'text_color' => '#e5e7eb'],
+                // Sample links to pages every storefront has (Sentinel FEATURE_MISSING_FOOTER_LINKS, 2026-11-02).
+                'defaultProps' => ['columns' => [['title' => 'دسترسی سریع', 'links' => [['label' => 'صفحه اصلی', 'url' => '/'], ['label' => 'تماس با ما', 'url' => '/contact']]]], 'copyright' => '', 'bg_color' => '#111827', 'text_color' => '#e5e7eb'],
             ],
 
             // ─── MODULE: موشن گرافیک ─────────────────────────────────────────

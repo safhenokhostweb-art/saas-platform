@@ -1,0 +1,297 @@
+{
+    "schema": "sentinel.widget-profiles/v1",
+    "global": [
+        {
+            "code": "DEAD_LINK",
+            "severity": "warning",
+            "forbid": "a[href=\"#\"]:not([role=\"button\"]):not([aria-haspopup])",
+            "message": "The widget shows a link that goes nowhere (href=\"#\").",
+            "remedy": "Give the link a real destination in the widget settings, or remove it (Constitution §16, honest interactions)."
+        }
+    ],
+    "profiles": {
+        "cta": [
+            {
+                "selector": "a[href]:not([href=\"#\"]):not([href=\"\"])",
+                "code": "FEATURE_MISSING_CTA",
+                "severity": "warning",
+                "message": "The call-to-action has no real destination.",
+                "remedy": "Set the button link of the CTA block."
+            }
+        ],
+        "cta_band": [
+            {
+                "selector": "a[href]:not([href=\"#\"]):not([href=\"\"])",
+                "code": "FEATURE_MISSING_CTA",
+                "severity": "warning",
+                "message": "The call-to-action has no real destination.",
+                "remedy": "Set the button link of the CTA band."
+            }
+        ],
+        "hero": [
+            {
+                "selector": "a[href]:not([href=\"#\"]):not([href=\"\"])",
+                "code": "FEATURE_MISSING_CTA",
+                "severity": "warning",
+                "message": "The hero has no call-to-action with a real destination.",
+                "remedy": "Set the hero button text and link."
+            }
+        ],
+        "hero_gradient": [
+            {
+                "selector": "a[href]:not([href=\"#\"]):not([href=\"\"])",
+                "code": "FEATURE_MISSING_CTA",
+                "severity": "warning",
+                "message": "The hero has no call-to-action with a real destination.",
+                "remedy": "Set the hero button text and link."
+            }
+        ],
+        "hero_split": [
+            {
+                "selector": "a[href]:not([href=\"#\"]):not([href=\"\"])",
+                "code": "FEATURE_MISSING_CTA",
+                "severity": "warning",
+                "message": "The hero has no call-to-action with a real destination.",
+                "remedy": "Set the hero button text and link."
+            }
+        ],
+        "nav_footer": [
+            {
+                "selector": "[data-widget-slot=\"columns\"] a[href], .tb-nav-footer-legal-link",
+                "code": "FEATURE_MISSING_FOOTER_LINKS",
+                "severity": "warning",
+                "message": "The footer has no navigation or legal links.",
+                "remedy": "Add link columns or legal links (nav_footer.columns / links), or use nav_source=menu."
+            },
+            {
+                "selector": "[data-widget-slot=\"social\"] a[href]",
+                "code": "FEATURE_MISSING_SOCIAL",
+                "severity": "info",
+                "message": "The footer lists no social or messenger channels.",
+                "remedy": "Add social links (nav_footer.social_links); Iranian messengers have their own icons."
+            },
+            {
+                "selector": ".tb-nav-footer-copyright",
+                "code": "FEATURE_MISSING_COPYRIGHT",
+                "severity": "info",
+                "message": "The footer has no copyright line.",
+                "remedy": "Set nav_footer.copyright."
+            }
+        ],
+        "nav_header": [
+            {
+                "selector": "[data-widget-slot=\"menu\"]",
+                "code": "FEATURE_MISSING_MENU",
+                "severity": "blocker",
+                "message": "The header renders no menu slot.",
+                "remedy": "Render the menu slot (nav_header.nav_links or nav_source=menu)."
+            },
+            {
+                "selector": "[data-widget-slot=\"menu\"] a[href]",
+                "code": "FEATURE_EMPTY_MENU",
+                "severity": "warning",
+                "message": "The header menu has no links.",
+                "remedy": "Add menu links in the header settings or assign the site menu (nav_source=menu)."
+            },
+            {
+                "selector": "[data-widget-slot=\"logo\"], img, .site-logo, [class*=\"brand\"]",
+                "code": "FEATURE_MISSING_LOGO",
+                "severity": "warning",
+                "message": "The header shows no logo or brand.",
+                "remedy": "Upload a logo image (nav_header.logo_image), set logo_text, or set the site logo."
+            },
+            {
+                "selector": "[data-widget-slot=\"actions\"]",
+                "code": "FEATURE_MISSING_ACTIONS",
+                "severity": "blocker",
+                "message": "The header renders no actions slot.",
+                "remedy": "Render the actions slot (search, cart, account, quick-access icons, CTA)."
+            }
+        ],
+        "newsletter_form": [
+            {
+                "selector": "form[action]",
+                "code": "FEATURE_DEAD_FORM",
+                "severity": "warning",
+                "message": "The newsletter form has no endpoint.",
+                "remedy": "Wire the form to the host newsletter endpoint (site_endpoints, ADR-066)."
+            }
+        ],
+        "search_bar": [
+            {
+                "selector": "form[action]",
+                "code": "FEATURE_DEAD_FORM",
+                "severity": "warning",
+                "message": "The search form has no endpoint.",
+                "remedy": "Wire the search form to the host search route (site_endpoints, ADR-066)."
+            }
+        ]
+    },
+    "slots": {
+        "nav_footer": [
+            "brand",
+            "columns",
+            "bottom",
+            "social"
+        ],
+        "nav_header": [
+            "logo",
+            "menu",
+            "actions",
+            "quick-access"
+        ]
+    },
+    "friction": {
+        "blog_posts": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "category_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "dynamic_feed_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "autoplay",
+                    "label": "پخش خودکار"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "module:shop_product_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "product_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "testimonials_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        }
+    },
+    "style_panel": {
+        "responsive_padding": "پدینگ مستقل موبایل/تبلت/دسکتاپ (تب استایل، هر بریک‌پوینت)",
+        "radius": "شعاع گوشه (تب استایل)"
+    }
+}
