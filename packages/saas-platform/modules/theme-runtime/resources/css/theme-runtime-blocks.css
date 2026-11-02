@@ -966,3 +966,42 @@ a.tb-slide-link { display: block; color: inherit; text-decoration: none; }
   .tb-bento-item.has-media:is(:hover, :focus-within) .tb-img-frame img { transform: none !important; }
   .tb-logos-marquee { animation: none !important; }
 }
+
+/* ─── ADR-076: header logo image, menu placement, quick-access icons ─── */
+.tb-nav-header-logo--image { display: inline-flex; align-items: center; gap: 0.6rem; flex: none; }
+.tb-nav-header-logo-img { display: block; height: var(--tb-logo-h, 40px); width: auto; max-width: min(14rem, 45vw); object-fit: contain; transition: height 0.25s ease; }
+.tb-nav-header-logo-text { line-height: 1.2; }
+.tb-hdr-sticky.is-scrolled .tb-nav-header-logo-img { height: calc(var(--tb-logo-h, 40px) * 0.8); }
+@media (max-width: 767.98px) { .tb-nav-header-logo-img, .tb-hdr-sticky.is-scrolled .tb-nav-header-logo-img { height: var(--tb-logo-h-m, 32px); } }
+/* 'end' is the original layout: links beside the actions. */
+.tb-nav-header--menu-start .tb-nav-header-links { margin-inline-start: 0; margin-inline-end: auto; }
+.tb-nav-header--menu-center .tb-nav-header-links { margin-inline: auto; justify-content: center; }
+@media (min-width: 1024px) {
+    .tb-nav-header--menu-center .tb-nav-header-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+    .tb-nav-header--menu-center .tb-nav-header-inner > :first-child:not(.tb-nav-header-links) { grid-column: 1; justify-self: start; }
+    .tb-nav-header--menu-center .tb-nav-header-links { grid-column: 2; }
+    .tb-nav-header--menu-center .tb-nav-header-actions { grid-column: 3; justify-self: end; }
+}
+.tb-nav-header-social { flex-wrap: nowrap; gap: 0.35rem; }
+.tb-nav-header-social .tb-social-icon { width: 2.25rem; height: 2.25rem; font-size: 1.05rem; }
+@media (max-width: 767.98px) { .tb-nav-header-social:not(.tb-nav-header-social--mobile) { display: none; } }
+/* Brand style: each network's own fill, white glyph (every fill is >= 3:1, WCAG 1.4.11). */
+.tb-social-icon--instagram { --tb-social-brand: #C13584; }
+.tb-social-icon--telegram { --tb-social-brand: #2481CC; }
+.tb-social-icon--whatsapp { --tb-social-brand: #128C7E; }
+.tb-social-icon--eitaa { --tb-social-brand: #EA5A24; }
+.tb-social-icon--bale { --tb-social-brand: #00A693; }
+.tb-social-icon--rubika { --tb-social-brand: #9C27B0; }
+.tb-social-icon--soroush { --tb-social-brand: #1D72B8; }
+.tb-social-icon--gap { --tb-social-brand: #9B51E0; }
+.tb-social-icon--aparat { --tb-social-brand: #D6114F; }
+.tb-social-icon--linkedin { --tb-social-brand: #0A66C2; }
+.tb-social-icon--x { --tb-social-brand: #000000; }
+.tb-social-icon--youtube { --tb-social-brand: #E00000; }
+.tb-social-icon--facebook { --tb-social-brand: #1877F2; }
+.tb-social-icon--github { --tb-social-brand: #181717; }
+.tb-social-icons--brand .tb-social-icon:not(.tb-social-icon--text) { background: var(--tb-social-brand); color: #fff; }
+/* Email and phone have no brand: they take the theme's primary pair. */
+.tb-social-icons--brand .tb-social-icon.tb-social-icon--email, .tb-social-icons--brand .tb-social-icon.tb-social-icon--phone { background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); }
+.tb-social-icons--brand .tb-social-icon:not(.tb-social-icon--text):hover { background: var(--tb-social-brand, var(--tb-primary, #4f46e5)); filter: brightness(0.9); }
+@media (prefers-reduced-motion: reduce) { .tb-nav-header-logo-img, .tb-social-icon { transition: none; } .tb-social-icon:hover { transform: none; } }

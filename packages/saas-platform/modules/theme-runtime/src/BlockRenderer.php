@@ -6,6 +6,7 @@ use SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider;
 use SaaSPlatform\ThemeRuntime\Support\IconLibrary;
 use SaaSPlatform\ThemeRuntime\Support\JalaliDate;
 use SaaSPlatform\ThemeRuntime\Support\PersianNumber;
+use SaaSPlatform\ThemeRuntime\Support\SocialNetworks;
 
 /**
  * Phase 2h (ADR-029) — the ONE canonical structural Theme block renderer
@@ -395,6 +396,10 @@ class BlockRenderer
      * selection overlay, drag handle, or block badge), so ThemeCanvasRuntime
      * (replaceNode) and CanvasIdentity can address every block on a public
      * page while no editor chrome is present.
+     *
+     * ADR-076: data-widget-type repeats the type as the stable hook browser
+     * checks and the Sentinel verifier select widgets by; data-tb-block-type
+     * stays the runtime's own contract.
      */
     protected function wrapPublicStructural(string $html, string $id, string $type, array $props = []): string
     {
@@ -402,7 +407,7 @@ class BlockRenderer
         $idEsc = htmlspecialchars($id,   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $containerAttr = $this->isStructuralContainer($type)
             ? ' data-tb-container="1"' : '';
-        return "<div class=\"tb-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}"
+        return "<div class=\"tb-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\" data-widget-type=\"{$esc}\"{$containerAttr}"
             . $this->blockPropsAttr($props)
             . ">{$html}</div>";
     }
@@ -671,7 +676,7 @@ class BlockRenderer
         // registered or host-declared container exposes a nested drop zone.
         $containerAttr = $this->isStructuralContainer($type)
             ? ' data-tb-container="1"' : '';
-        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\"{$containerAttr}"
+        return "<div class=\"tb-canvas-block\" data-tb-block-id=\"{$idEsc}\" data-tb-block-type=\"{$esc}\" data-widget-type=\"{$esc}\"{$containerAttr}"
             . $this->blockPropsAttr($props)
             . ">"
             . "<button type=\"button\" class=\"tb-drag-handle\" aria-label=\"Move {$esc}\" title=\"Drag to move\">⋮⋮</button>"
@@ -4294,9 +4299,39 @@ class BlockRenderer
         // ($context['site_logo_html'], the same host-resolved value
         // <x-site-brand> already renders elsewhere) — zero behavior change
         // for any existing theme/instance that already authors logo_text.
-        $logoHtml = $logoText
-            ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\">{$logoText}</a>"
-            : ($this->context['site_logo_html'] ?? '');
+        //
+        // ADR-076: a block-level logo image now exists after all, because a
+        // header preset with its own logo is what every commercial theme
+        // ships. The fallback order keeps the BLD-25 behaviour: image (with
+        // logo_text beside it as the brand name), else logo_text, else the
+        // site's global logo.
+        $logoSrc = $this->mediaSrc($props['logo_image'] ?? '');
+        $logoSrc = $logoSrc !== '' ? $this->escapeUrl($logoSrc, '') : '';
+        if ($logoSrc !== '') {
+            $logoH = is_numeric($props['logo_height'] ?? null) ? max(20, min(120, (int) $props['logo_height'])) : 40;
+            $logoHm = is_numeric($props['logo_height_mobile'] ?? null) ? max(16, min(96, (int) $props['logo_height_mobile'])) : 32;
+            $alt = trim($this->stringify($props['logo_alt'] ?? ''));
+            $alt = $this->escapeAttr($alt !== '' ? $alt : trim($this->stringify($props['logo_text'] ?? '')));
+            $logoHtml = "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo tb-nav-header-logo--image\" style=\"--tb-logo-h:{$logoH}px;--tb-logo-h-m:{$logoHm}px\" data-widget-slot=\"logo\">"
+                . "<img src=\"{$logoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header-logo-img\" height=\"{$logoH}\" decoding=\"async\">"
+                . ($logoText !== '' ? "<span class=\"tb-nav-header-logo-text\">{$logoText}</span>" : '')
+                . '</a>';
+        } else {
+            $logoHtml = $logoText
+                ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\" data-widget-slot=\"logo\">{$logoText}</a>"
+                : ($this->context['site_logo_html'] ?? '');
+        }
+
+        // ADR-076: quick-access social/messenger icons, before the CTA.
+        $socialLinks = is_array($props['social_links'] ?? null) ? $props['social_links'] : [];
+        $quickHtml = $socialLinks !== []
+            ? $this->socialIconsHtml($socialLinks, "{$id}-quick", 'quick-access', ($props['social_style'] ?? 'mono') === 'brand',
+                'tb-nav-header-social' . ($this->flag($props['social_show_mobile'] ?? false) ? ' tb-nav-header-social--mobile' : ''))
+            : '';
+
+        // ADR-076: menu placement; 'end' (the original layout) adds no class.
+        $menuAlign = $props['menu_align'] ?? 'end';
+        $alignClass = in_array($menuAlign, ['start', 'center'], true) ? " tb-nav-header--menu-{$menuAlign}" : '';
 
         $stickyStyle = $sticky ? 'position:sticky;top:0;z-index:100;' : '';
 
@@ -4344,11 +4379,11 @@ class BlockRenderer
         }
         $assets = $this->headerNeedsScript ? $this->siteHeaderAssets() : '';
 
-        return "<div id=\"tb-{$id}\" class=\"tb-nav-header\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
+        return "<div id=\"tb-{$id}\" class=\"tb-nav-header{$alignClass}\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
-                <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\">{$linkItems}</nav>
-                <div class=\"tb-nav-header-actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$ctaHtml}</div>
+                <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\" data-widget-slot=\"menu\">{$linkItems}</nav>
+                <div class=\"tb-nav-header-actions\" data-widget-slot=\"actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$quickHtml}{$ctaHtml}</div>
             </div>
         </div>{$assets}";
     }
@@ -4543,7 +4578,7 @@ class BlockRenderer
 
         // Phase 1 (ADR-067): social links as catalog icons (network chosen or
         // recognised from the URL; an unknown one keeps its text label).
-        $socialHtml = $socialLinks !== [] ? $this->socialIconsHtml($socialLinks, "{$id}-social") : '';
+        $socialHtml = $socialLinks !== [] ? $this->socialIconsHtml($socialLinks, "{$id}-social", 'social', ($props['social_style'] ?? 'mono') === 'brand') : '';
         $extrasHtml = $this->footerExtrasHtml($props, $id);
 
         $legalHtml = '';
@@ -4557,7 +4592,7 @@ class BlockRenderer
         }
 
         $brandHtml = ($logoText || $tagline)
-            ? "<div class=\"tb-nav-footer-brand\">"
+            ? "<div class=\"tb-nav-footer-brand\" data-widget-slot=\"brand\">"
                 . ($logoText ? "<p class=\"tb-nav-footer-logo\">{$logoText}</p>" : '')
                 . ($tagline ? "<p class=\"tb-nav-footer-tagline\">{$tagline}</p>" : '')
                 . "</div>"
@@ -4571,9 +4606,9 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-nav-footer\" style=\"background:{$bg};color:{$tc};\">
             <div class=\"tb-container\">
                 {$brandHtml}
-                " . ($colHtml ? "<div class=\"tb-nav-footer-cols\">{$colHtml}</div>" : '') . "
+                " . ($colHtml ? "<div class=\"tb-nav-footer-cols\" data-widget-slot=\"columns\">{$colHtml}</div>" : '') . "
                 {$extrasHtml}
-                <div class=\"tb-nav-footer-bottom\">
+                <div class=\"tb-nav-footer-bottom\" data-widget-slot=\"bottom\">
                     " . ($copyright ? "<p class=\"tb-nav-footer-copyright\">{$copyright}</p>" : '') . "
                     {$legalHtml}
                     {$socialHtml}
@@ -4582,42 +4617,28 @@ class BlockRenderer
         </div>";
     }
 
-    /** network => [catalog icon, Persian name, URL pattern] */
-    private const SOCIAL_NETWORKS = [
-        'instagram' => ['instagram', 'اینستاگرام', '~(//|\.)(instagram\.com|instagr\.am)/~i'],
-        'telegram' => ['send', 'تلگرام', '~(//|\.)(t\.me|telegram\.me|telegram\.org)/~i'],
-        'whatsapp' => ['message-circle', 'واتساپ', '~(//|\.)(wa\.me|whatsapp\.com)/~i'],
-        'linkedin' => ['linkedin', 'لینکدین', '~(//|\.)linkedin\.com/~i'],
-        'x' => ['twitter', 'ایکس (توییتر)', '~(//|\.)(twitter|x)\.com/~i'],
-        'youtube' => ['youtube', 'یوتیوب', '~(//|\.)(youtube\.com|youtu\.be)/~i'],
-        'aparat' => ['circle-play', 'آپارات', '~(//|\.)aparat\.com/~i'],
-        'eitaa' => ['message-circle-more', 'ایتا', '~(//|\.)eitaa\.com/~i'],
-        'bale' => ['message-circle-more', 'بله', '~(//|\.)ble\.ir/~i'],
-        'rubika' => ['message-circle-more', 'روبیکا', '~(//|\.)rubika\.ir/~i'],
-        'facebook' => ['facebook', 'فیسبوک', '~(//|\.)(facebook\.com|fb\.com)/~i'],
-        'github' => ['github', 'گیت‌هاب', '~(//|\.)github\.com/~i'],
-        'email' => ['mail', 'ایمیل', '~^mailto:~i'],
-        'phone' => ['phone', 'تلفن', '~^tel:~i'],
-    ];
-
-    /** The network a social link points at: its `network`, else recognised from the URL. */
+    /**
+     * The network a social link points at: its `network`, else recognised
+     * from the URL. ADR-076: the list lives in Support\SocialNetworks, shared
+     * with the registry's `network` options.
+     */
     protected function socialNetwork(array $link): ?string
     {
         $chosen = (string) ($link['network'] ?? '');
-        if (isset(self::SOCIAL_NETWORKS[$chosen])) {
+        if (SocialNetworks::has($chosen)) {
             return $chosen;
         }
         $url = $link['url'] ?? '';
         $url = trim(is_array($url) ? $this->linkValue($url['url'] ?? '') : $this->stringify($url));
-        foreach (self::SOCIAL_NETWORKS as $network => [, , $pattern]) {
-            if ($url !== '' && preg_match($pattern, $url)) {
-                return $network;
-            }
-        }
-        return null;
+        return SocialNetworks::detect($url);
     }
 
-    private function socialIconsHtml(array $links, string $id): string
+    /**
+     * ADR-076: `$slot` names the container's data-widget-slot; `$brand`
+     * fills each icon with its network colour (white glyph, AA contrast)
+     * instead of following the text colour.
+     */
+    private function socialIconsHtml(array $links, string $id, string $slot = 'social', bool $brand = false, string $extraClass = ''): string
     {
         $items = '';
         foreach ($links as $link) {
@@ -4630,15 +4651,16 @@ class BlockRenderer
             }
             $network = $this->socialNetwork($link);
             $label = trim($this->stringify($link['label'] ?? ''));
-            $name = $label !== '' ? $label : ($network !== null ? self::SOCIAL_NETWORKS[$network][1] : '');
+            $name = $label !== '' ? $label : ($network !== null ? SocialNetworks::label($network) : '');
             if ($network === null && $name === '') {
                 continue;
             }
-            $inner = $network !== null ? IconLibrary::svg(self::SOCIAL_NETWORKS[$network][0]) : $this->escape($name);
-            $external = in_array($network, ['email', 'phone'], true) ? '' : ' target="_blank" rel="noopener noreferrer"';
+            $inner = $network !== null ? SocialNetworks::svg($network) : $this->escape($name);
+            $external = $network === null || SocialNetworks::opensExternally($network) ? ' target="_blank" rel="noopener noreferrer"' : '';
             $items .= "<a href=\"{$url}\" class=\"tb-social-icon" . ($network === null ? ' tb-social-icon--text' : " tb-social-icon--{$network}") . "\"{$external} aria-label=\"" . $this->escapeAttr($name) . "\" title=\"" . $this->escapeAttr($name) . "\">{$inner}</a>";
         }
-        return $items === '' ? '' : "<div id=\"tb-{$id}\" class=\"tb-social-icons tb-social-icons--svg\">{$items}</div>";
+        $class = 'tb-social-icons tb-social-icons--svg' . ($brand ? ' tb-social-icons--brand' : '') . ($extraClass !== '' ? ' ' . $extraClass : '');
+        return $items === '' ? '' : "<div id=\"tb-{$id}\" class=\"{$class}\" data-widget-slot=\"" . $this->escapeAttr($slot) . "\">{$items}</div>";
     }
 
     /** store => [catalog icon, prefix, store name] */

@@ -67,58 +67,73 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
         </div>
         <div class="h-6 w-px bg-slate-200 shrink-0"></div>
 
-        {{-- Page Tabs --}}
-        <div class="flex items-center gap-1.5 overflow-x-auto flex-none" style="scrollbar-width:none;">
+        {{-- Page Tabs. ADR-076: the target switches stay fixed and the page
+             tabs scroll inside their own strip (theme-runtime::canvas.tab-strip:
+             chevrons, wheel, active tab kept in view), so adding pages never
+             pushes the toolbar past the screen or forces a browser zoom-out. --}}
+        <div class="tbts-group" data-testid="tb-page-tabs-group">
             {{-- Header/footer are existing Theme block arrays, selected through
                  this one Canvas state path rather than represented as pages. --}}
             <button type="button" @click="switchTarget('page')" :disabled="switchingTarget"
                 :class="activeTarget === 'page' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                :aria-pressed="activeTarget === 'page' ? 'true' : 'false'"
                 aria-label="صفحات">صفحات</button>
             <button type="button" @click="switchTarget('header')" :disabled="switchingTarget"
                 :class="activeTarget === 'header' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                data-canvas-page-tab="__header__" :aria-pressed="activeTarget === 'header' ? 'true' : 'false'"
                 aria-label="ویرایش هدر">هدر</button>
             <button type="button" @click="switchTarget('footer')" :disabled="switchingTarget"
                 :class="activeTarget === 'footer' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                data-canvas-page-tab="__footer__" :aria-pressed="activeTarget === 'footer' ? 'true' : 'false'"
                 aria-label="ویرایش فوتر">فوتر</button>
             <button type="button" @click="openGlobalStylesPanel()"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap bg-violet-50 text-violet-700 hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap shrink-0 bg-violet-50 text-violet-700 hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 aria-label="استایل‌های سراسری"
                 data-testid="global-styles-entry">استایل‌های سراسری</button>
             <div class="h-6 w-px bg-slate-200 shrink-0"></div>
-            <template x-for="(page, key) in pages" :key="key">
-                {{-- Phase 3H-B: delete-page control was a plain hover-only
-                     <span> nested inside this switch-page <button> (invalid
-                     HTML — buttons can't nest — and unreachable by keyboard).
-                     Split into two sibling native <button>s inside a
-                     non-interactive wrapper so delete gets real keyboard
-                     semantics (Tab-focusable, Enter/Space via the browser)
-                     without changing switchPage()'s click target or
-                     deletePage()'s existing confirm/logic. --}}
-                <div
-                    :class="activeTarget === 'page' && currentPage === key
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                    class="rounded-lg text-xs font-medium transition whitespace-nowrap flex items-center group relative"
-                >
-                    <button type="button" @click="switchPage(key)" class="px-3 py-1.5" :aria-current="activeTarget === 'page' && currentPage === key ? 'page' : null">
-                        <span x-text="page.title"></span>
-                    </button>
-                    <button type="button"
-                        x-show="key !== 'home'"
-                        @click="deletePage(key)"
-                        :class="currentPage === key ? 'text-indigo-200 hover:text-white focus-visible:text-white' : 'text-slate-400 hover:text-red-500 focus-visible:text-red-500'"
-                        class="text-xs leading-none transition opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pl-0.5 pr-2.5 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-400 rounded"
-                        :aria-label="'حذف صفحه ' + page.title"
-                        title="حذف صفحه"
-                    >×</button>
+            <div class="tbts" data-tb-tabstrip data-testid="tb-page-tabs">
+                @include('theme-runtime::canvas.tab-strip-nav', ['dir' => 'start'])
+                <div class="tbts-viewport" data-tbts-viewport role="group" aria-label="صفحات قالب">
+                    <template x-for="(page, key) in pages" :key="key">
+                        {{-- Phase 3H-B: delete-page control was a plain hover-only
+                             <span> nested inside this switch-page <button> (invalid
+                             HTML — buttons can't nest — and unreachable by keyboard).
+                             Split into two sibling native <button>s inside a
+                             non-interactive wrapper so delete gets real keyboard
+                             semantics (Tab-focusable, Enter/Space via the browser)
+                             without changing switchPage()'s click target or
+                             deletePage()'s existing confirm/logic. --}}
+                        <div
+                            :data-canvas-page-tab="key"
+                            :data-testid="'tb-canvas-page-tab-' + key"
+                            :class="activeTarget === 'page' && currentPage === key
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                            class="rounded-lg text-xs font-medium transition whitespace-nowrap flex items-center group relative"
+                        >
+                            <button type="button" @click="switchPage(key)" class="px-3 py-1.5" :aria-current="activeTarget === 'page' && currentPage === key ? 'page' : null">
+                                <span x-text="page.title"></span>
+                            </button>
+                            <button type="button"
+                                x-show="key !== 'home'"
+                                @click="deletePage(key)"
+                                :class="currentPage === key ? 'text-indigo-200 hover:text-white focus-visible:text-white' : 'text-slate-400 hover:text-red-500 focus-visible:text-red-500'"
+                                class="text-xs leading-none transition opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pl-0.5 pr-2.5 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-400 rounded"
+                                :aria-label="'حذف صفحه ' + page.title"
+                                title="حذف صفحه"
+                            >×</button>
+                        </div>
+                    </template>
                 </div>
-            </template>
+                @include('theme-runtime::canvas.tab-strip-nav', ['dir' => 'end'])
+            </div>
             <button
                 @click="showAddPage = true"
-                class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition whitespace-nowrap"
+                data-testid="tb-add-page-open"
+                class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition whitespace-nowrap shrink-0"
                 title="افزودن صفحه جدید"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
@@ -981,6 +996,12 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                      propKey) — fixed once, generically, for built-in AND
                                      Extension controls alike, since both are rendered by this
                                      exact same loop. --}}
+                                {{-- ADR-076: a field's schema `group` opens a sidebar section
+                                     where it first appears, so a widget organises its own
+                                     Inspector without editor changes. --}}
+                                <template x-if="fieldGroupStart(propKey)">
+                                    <p class="mt-2 mb-3 pb-1 border-b border-slate-100 text-xs font-bold tracking-wide text-indigo-700" x-text="schemaDef.group" :data-testid="'tb-field-group-' + propKey"></p>
+                                </template>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1.5" :for="'ctrl-' + propKey" x-text="schemaDef.label || propKey"></label>
 
                                 {{-- image (TB3-07) --}}
@@ -1057,6 +1078,22 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                             <option :value="opt.value" :selected="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value" x-text="opt.label"></option>
                                         </template>
                                     </select>
+                                </template>
+
+                                {{-- ADR-076: segmented control — a select whose schema declares
+                                     ui: 'segmented' (alignment, icon colour mode). One button per
+                                     schema option, so the control and the allowlist agree. --}}
+                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'segmented'">
+                                    <div class="flex gap-1 p-1 rounded-lg bg-slate-100" role="radiogroup" :aria-label="schemaDef.label || propKey" :data-testid="'tb-segmented-' + propKey">
+                                        <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
+                                            <button type="button" role="radio"
+                                                :aria-checked="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value ? 'true' : 'false'"
+                                                @click="updateProp(propKey, opt.value)"
+                                                :class="String(selectedBlock.props[propKey] ?? schemaDef.default ?? '') === opt.value ? 'bg-white text-indigo-700 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-800'"
+                                                class="flex-1 px-2 py-1.5 rounded-md text-xs leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                                x-text="opt.label" :data-testid="'tb-segmented-' + propKey + '-' + opt.value"></button>
+                                        </template>
+                                    </div>
                                 </template>
 
                                 {{-- Visual column picker — a select whose schema declares
@@ -1856,6 +1893,7 @@ window.CANVAS_TREE_LIMITS = @json($canvasTreeLimits);
 </script>
 @include('theme-runtime::canvas.color')
 @include('theme-runtime::canvas.icons')
+@include('theme-runtime::canvas.tab-strip')
 @include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
 @include('admin.theme-builder.partials.canvas-section-library')
 <script>
@@ -2016,6 +2054,14 @@ function themeCanvas() {
             // the children panel — it has no content-tab control.
             const schema = BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
             return Object.fromEntries(Object.entries(schema).filter(([, def]) => def?.type !== 'blocks'));
+        },
+        // ADR-076: true where a field's schema `group` differs from the previous field's.
+        fieldGroupStart(propKey) {
+            const schema = this.selectedSchema;
+            const keys = Object.keys(schema);
+            const index = keys.indexOf(propKey);
+            const group = schema[propKey]?.group;
+            return !!group && (index <= 0 || schema[keys[index - 1]]?.group !== group);
         },
         get selectedEditorCapabilities() {
             return this.selectedBlock
