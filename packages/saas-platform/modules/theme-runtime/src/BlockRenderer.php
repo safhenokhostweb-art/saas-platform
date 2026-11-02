@@ -4151,8 +4151,8 @@ class BlockRenderer
 
         $ctaText = trim($this->stringify($props['ctaText'] ?? 'شروع کنید'));
         $ctaUrl = $this->linkHref($props['ctaUrl'] ?? '#', '#');
-        $ctaHtml = $ctaText !== ''
-            ? '<a class="tb-header-modern__cta" href="' . $ctaUrl . '">' . $this->escape($ctaText) . '</a>'
+        $ctaHtml = $ctaText !== '' && $this->showsLink($ctaUrl)
+            ? '<a class="tb-header-modern__cta" href="' . $ctaUrl . '"' . $this->deadLinkMark($ctaUrl) . '>' . $this->escape($ctaText) . '</a>'
             : '';
 
         $safeId = $this->escapeAttr($id);
@@ -4285,7 +4285,7 @@ class BlockRenderer
         // mini-cart drawer (blocks/cart.js); without, the old link.
         $cartHtml    = $showCart ? $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart')) : '';
         $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">" . $this->iconHtml('user') . "</a>" : '';
-        $ctaHtml     = $ctaText ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\">{$ctaText}</a>" : '';
+        $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\"{$this->deadLinkMark($ctaUrl)}>{$ctaText}</a>" : '';
         $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
         // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
         // golden-journey browser test) and fixed: nav_header's schema only
@@ -5446,6 +5446,21 @@ class BlockRenderer
             $value = $value['url'] ?? '';
         }
         return is_string($value) ? $value : '';
+    }
+
+    /**
+     * Sentinel DEAD_LINK (Constitution §16, honest interactions): a header
+     * CTA without a destination is left out of the site. The editor keeps
+     * it, marked by deadLinkMark(), so the author sees what is missing.
+     */
+    protected function showsLink(string $href): bool
+    {
+        return $href !== '#' || $this->isEditorRendering();
+    }
+
+    protected function deadLinkMark(string $href): string
+    {
+        return $href === '#' ? ' data-tb-dead-link title="این دکمه مقصد ندارد و در سایت نمایش داده نمی‌شود"' : '';
     }
 
     /** A `link` field as a validated, attribute-safe href (see escapeUrl()). */
