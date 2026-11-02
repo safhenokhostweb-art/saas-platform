@@ -528,6 +528,8 @@
             describe: function (type) { return typeof ctl.options.describe === 'function' ? ctl.options.describe(type) : null; },
             wanted: function () { return wanted; },
             changed: changed,
+            // WU-2: the preview's Design HUD summary (TbAudit) for the editor chrome.
+            audit: function (summary) { if (typeof ctl.options.onAudit === 'function') ctl.options.onAudit(summary); },
         };
         root.TbInspectHost__self = root.TbInspectHost;
         root.addEventListener('keydown', function (e) {

@@ -67,6 +67,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/canvas-inspect.js';
     }
 
+    /** Design HUD (WU-2) — live per-widget checks, Sentinel finding codes. */
+    public static function canvasAuditPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-audit.js';
+    }
+
     /** Phase 0.7 (ADR-066) — live newsletter + search-dialog behaviour. */
     public static function siteFormsScriptPath(): string
     {

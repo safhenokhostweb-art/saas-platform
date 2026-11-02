@@ -26,6 +26,22 @@ class CanvasInspectContractTest extends TestCase
 
         $view = view('theme-runtime::canvas.inspect')->render();
         $this->assertStringContainsString('root.TbInspect = api;', $view);
+        $this->assertStringContainsString('root.TbAudit = api;', $view, 'one include ships Inspect and the Design HUD');
+    }
+
+    public function test_the_design_hud_speaks_the_sentinel_vocabulary(): void
+    {
+        $hud = (string) file_get_contents(ThemeRuntimeServiceProvider::canvasAuditPath());
+        $sentinel = (string) file_get_contents(base_path('tests/sentinel/support/findings.ts'));
+        foreach (['WIDGET_OVERFLOW', 'WIDGET_CONTENT_OVERFLOW', 'TEXT_CLIPPED', 'TAP_TARGET_SMALL', 'BROKEN_IMAGE', 'RTL_MISSING'] as $code) {
+            $this->assertStringContainsString("{$code}:", $hud, "{$code} has a HUD remedy");
+            $this->assertStringContainsString("{$code}:", $sentinel, "{$code} is a Sentinel code");
+        }
+        $this->assertStringContainsString("'DEAD_LINK'", $hud);
+        $this->assertStringContainsString('requestIdleCallback', $hud, 'checks run off the frame');
+        $this->assertStringContainsString('ResizeObserver', $hud);
+        $this->assertStringContainsString(".tb-drag-handle, .tb-block-badge, .tb-drop-zone", $hud, 'editor chrome is never audited');
+        $this->assertStringNotContainsString('https://', $hud, 'no external origin (CSP)');
     }
 
     public function test_the_platform_editor_and_its_preview_both_load_it(): void

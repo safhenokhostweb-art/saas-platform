@@ -153,6 +153,17 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V5a1 1 0 011-1h3m8 0h3a1 1 0 011 1v3m0 8v3a1 1 0 01-1 1h-3m-8 0H5a1 1 0 01-1-1v-3M9.5 9.5l5 5m0-5l-5 5"/></svg>
                 بازرسی
             </button>
+            {{-- WU-2: Design HUD summary from the preview (TbAudit, Sentinel codes). --}}
+            <span x-show="inspectOn && auditSummary" x-cloak data-tb-audit-chip
+                :data-tone="auditSummary?.tone"
+                role="status" aria-live="polite"
+                :title="auditSummary ? `سلامت بوم در عرض ${auditSummary.width}px` : ''"
+                class="flex items-center gap-1.5 h-7 px-2 rounded-lg border text-xs font-medium"
+                :class="{ 'border-rose-200 bg-rose-50 text-rose-700': auditSummary?.tone === 'error', 'border-amber-200 bg-amber-50 text-amber-800': auditSummary?.tone === 'warn', 'border-emerald-200 bg-emerald-50 text-emerald-700': auditSummary?.tone === 'ok' }">
+                <span class="w-2 h-2 rounded-full" aria-hidden="true"
+                    :class="{ 'bg-rose-500': auditSummary?.tone === 'error', 'bg-amber-500': auditSummary?.tone === 'warn', 'bg-emerald-500': auditSummary?.tone === 'ok' }"></span>
+                <span x-text="!auditSummary ? '' : (auditSummary.tone === 'ok' ? 'سالم' : [auditSummary.counts.blocker ? `${auditSummary.counts.blocker} خطا` : '', auditSummary.counts.warning ? `${auditSummary.counts.warning} هشدار` : ''].filter(Boolean).join(' · '))"></span>
+            </span>
             {{-- Undo / Redo --}}
             <button @click="undo()" :disabled="!canUndo"
                 title="واگرد (Ctrl+Z)"
@@ -1973,6 +1984,7 @@ function themeCanvas() {
         iframeTimestamp: Date.now(),
         inspectOn: false,
         inspectHost: null,
+        auditSummary: null,
         iframeLoading:  true,
         iframeReady:    false,
         propUpdateTimer: null,
@@ -3755,7 +3767,8 @@ function themeCanvas() {
             this.inspectHost = window.TbInspect?.attachHost({
                 frame: () => this.getIframe(),
                 describe: (type) => ({ label: BLOCK_LABELS[type] || '', schema: BLOCK_SCHEMAS[type]?.schema || null, defaults: BLOCK_SCHEMAS[type]?.defaultProps || null }),
-                onChange: (on) => { this.inspectOn = on; },
+                onChange: (on) => { this.inspectOn = on; if (!on) this.auditSummary = null; },
+                onAudit: (summary) => { this.auditSummary = this.inspectOn ? summary : null; },
             }) ?? null;
 
             // TB3-S2: Keyboard shortcuts
