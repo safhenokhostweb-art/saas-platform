@@ -80,7 +80,7 @@ final class WidgetFeatureProfile
     ];
 
     /**
-     * @return array{schema:string, global:list<array>, profiles:array<string,list<array>>, slots:array<string,list<string>>}
+     * @return array{schema:string, global:list<array>, profiles:array<string,list<array>>, slots:array<string,list<string>>, friction:array<string,array>, style_panel:array<string,string>}
      */
     public static function export(array $definitions): array
     {
@@ -95,7 +95,15 @@ final class WidgetFeatureProfile
         $profiles = self::PROFILES;
         ksort($profiles);
 
-        return ['schema' => self::SCHEMA, 'global' => self::GLOBAL, 'profiles' => $profiles, 'slots' => $slots];
+        return [
+            'schema' => self::SCHEMA,
+            'global' => self::GLOBAL,
+            'profiles' => $profiles,
+            'slots' => $slots,
+            // Owner guardrail 2026-11-02: widgets missing essential author controls.
+            'friction' => WidgetFrictionProfile::analyze($definitions),
+            'style_panel' => WidgetFrictionProfile::STYLE_PANEL,
+        ];
     }
 
     /**

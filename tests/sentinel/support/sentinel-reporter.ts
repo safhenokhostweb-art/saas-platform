@@ -1,6 +1,8 @@
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { sentinelEnv } from './env';
 import { REMEDIES, type SentinelFinding } from './findings';
 
@@ -9,13 +11,17 @@ import { REMEDIES, type SentinelFinding } from './findings';
  * report.json (schema sentinel.ui-report/v1) and report.md in
  * SENTINEL_OUTPUT_DIR. Findings with severity warning or blocker become
  * tasks, one per (code, widget type, remedy), listing every page and width
- * where they occur.
+ * where they occur. Priority: P1 = blocker, P2 = warning, P3 = UX friction
+ * (an improvement, not a defect). `key` is stable across runs, so the agent
+ * can tell an already-reported task from a new one.
  */
 
 const RANK = { blocker: 0, warning: 1, info: 2 } as const;
 
 interface Task {
   id: string;
+  key: string;
+  priority: 'P1' | 'P2' | 'P3';
   severity: SentinelFinding['severity'];
   code: string;
   widget: string | null;
@@ -76,6 +82,7 @@ export default class SentinelReporter implements Reporter {
       counts,
       tests,
       tasks,
+      friction_inventory: this.frictionInventory(),
       findings,
     };
     fs.writeFileSync(path.join(this.env.outputDir, 'report.json'), JSON.stringify(report, null, 2));
@@ -108,15 +115,27 @@ export default class SentinelReporter implements Reporter {
       const widgetType = f.widget ? f.widget.split('#')[0] : null;
       const key = [f.code, widgetType, f.remedy].join('|');
       const where = `${f.page}${f.width ? ` @ ${f.width}px` : ''}`;
-      const task = groups.get(key) ?? { id: '', severity: f.severity, code: f.code, widget: widgetType, title: f.message, change: f.remedy, where: [], occurrences: 0 };
+      const priority = f.severity === 'blocker' ? 'P1' : f.category === 'ux-friction' ? 'P3' : 'P2';
+      const task = groups.get(key) ?? { id: '', key: createHash('sha256').update(key).digest('hex').slice(0, 16), priority, severity: f.severity, code: f.code, widget: widgetType, title: f.message, change: f.remedy, where: [], occurrences: 0 };
       if (RANK[f.severity] < RANK[task.severity]) task.severity = f.severity;
+      if (priority < task.priority) task.priority = priority;
       if (!task.where.includes(where)) task.where.push(where);
       task.occurrences++;
       groups.set(key, task);
     }
     return [...groups.values()]
-      .sort((a, b) => RANK[a.severity] - RANK[b.severity] || b.occurrences - a.occurrences)
+      .sort((a, b) => a.priority.localeCompare(b.priority) || b.occurrences - a.occurrences)
       .map((t, i) => ({ ...t, id: `T-${String(i + 1).padStart(3, '0')}` }));
+  }
+
+  /** Every registry widget with friction (from widget-profiles.json), present on the page or not. */
+  private frictionInventory(): Record<string, unknown> {
+    try {
+      const file = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'widget-profiles.json');
+      return JSON.parse(fs.readFileSync(file, 'utf8')).friction ?? {};
+    } catch {
+      return {};
+    }
   }
 
   private markdown(report: any, tasks: Task[]): string {
@@ -134,7 +153,7 @@ export default class SentinelReporter implements Reporter {
     ];
     if (tasks.length === 0) lines.push('No changes required.', '');
     for (const t of tasks) {
-      lines.push(`### ${t.id} [${t.severity}] ${t.code}${t.widget ? ` — ${t.widget}` : ''}`, '', `- Problem: ${t.title}`, `- Change: ${t.change}`, `- Where (${t.occurrences}×): ${t.where.slice(0, 12).join('; ')}${t.where.length > 12 ? '; …' : ''}`, '');
+      lines.push(`### ${t.id} [${t.priority} · ${t.severity}] ${t.code}${t.widget ? ` — ${t.widget}` : ''}`, '', `- Problem: ${t.title}`, `- Change: ${t.change}`, `- Where (${t.occurrences}×): ${t.where.slice(0, 12).join('; ')}${t.where.length > 12 ? '; …' : ''}`, '');
     }
     const infos = report.findings.filter((f: SentinelFinding) => f.severity === 'info');
     if (infos.length > 0) {

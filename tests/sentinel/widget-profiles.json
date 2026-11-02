@@ -140,5 +140,158 @@
             "actions",
             "quick-access"
         ]
+    },
+    "friction": {
+        "blog_posts": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "category_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "dynamic_feed_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "autoplay",
+                    "label": "پخش خودکار"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "module:shop_product_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "product_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        },
+        "testimonials_slider": {
+            "kind": "carousel",
+            "missing": [
+                {
+                    "control": "drag",
+                    "label": "فیزیک درگ و سوایپ"
+                },
+                {
+                    "control": "dots",
+                    "label": "دات‌های ناوبری"
+                },
+                {
+                    "control": "arrows",
+                    "label": "فلش‌های ناوبری"
+                }
+            ],
+            "provided_by_style_panel": [
+                "responsive_padding",
+                "radius"
+            ]
+        }
+    },
+    "style_panel": {
+        "responsive_padding": "پدینگ مستقل موبایل/تبلت/دسکتاپ (تب استایل، هر بریک‌پوینت)",
+        "radius": "شعاع گوشه (تب استایل)"
     }
 }

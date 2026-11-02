@@ -14,6 +14,8 @@ export interface SentinelFinding {
   message: string;
   evidence?: Record<string, unknown>;
   remedy: string;
+  /** `ux-friction` findings are improvement tasks (priority P3). */
+  category?: 'defect' | 'ux-friction';
 }
 
 /** Workers append to one JSONL file each; the reporter merges them. */
@@ -44,5 +46,6 @@ export const REMEDIES: Record<string, string> = {
   EDITOR_HORIZONTAL_OVERFLOW: 'The editor page scrolls sideways; fit the toolbar to the viewport.',
   VISUAL_DIFF: 'Review the screenshot diff; update the baseline only if the change is intended (SENTINEL_UPDATE_BASELINES=1).',
   VISUAL_BASELINE_MISSING: 'Create the baseline once with SENTINEL_UPDATE_BASELINES=1 on a known-good release.',
+  UX_FRICTION: 'Add the missing author controls to the widget schema and wire them in the renderer, so the setting is a real control in both editors.',
   SENTINEL_CHECK_ERROR: 'The check itself could not finish; rerun, and inspect the page if it repeats.',
 };

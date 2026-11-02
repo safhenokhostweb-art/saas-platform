@@ -1005,3 +1005,5 @@ a.tb-slide-link { display: block; color: inherit; text-decoration: none; }
 .tb-social-icons--brand .tb-social-icon.tb-social-icon--email, .tb-social-icons--brand .tb-social-icon.tb-social-icon--phone { background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); }
 .tb-social-icons--brand .tb-social-icon:not(.tb-social-icon--text):hover { background: var(--tb-social-brand, var(--tb-primary, #4f46e5)); filter: brightness(0.9); }
 @media (prefers-reduced-motion: reduce) { .tb-nav-header-logo-img, .tb-social-icon { transition: none; } .tb-social-icon:hover { transform: none; } }
+/* Sentinel TAP_TARGET_SMALL (2026-11-02): the header phone link was 22 px tall on phones. */
+@media (max-width: 767.98px) { .tb-nav-header-phone { display: inline-flex; align-items: center; min-block-size: 2.75rem; padding-inline: 0.25rem; } }

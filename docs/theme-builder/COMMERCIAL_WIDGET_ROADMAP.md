@@ -1197,3 +1197,13 @@ Owner approved the plan in 16.3 and the agent registration.
       Vazirmatn, small links).
   - Production storefront widget profiles start after customer-site
     `a85442e4` (the ADR-076 hooks) is deployed.
+
+### 16.6 Guardrails and first fixes (2026-11-02)
+
+- Sentinel UI verifier guardrails: capped (3–5, P1 first), de-duplicated by
+  state fingerprint with a 600 s cooldown, read-only; widget friction metric
+  (P3). See the ADR-077 amendment.
+- Platform landing page rebuilt (Persian, RTL, local Vazirmatn, no
+  third-party origin, 44 px targets): local audit BLOCKED → READY.
+- Storefront: header phone link 44 px on phones; CTA defaults `/contact`;
+  sample footer column.

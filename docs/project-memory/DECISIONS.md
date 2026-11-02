@@ -4654,3 +4654,40 @@ There is no migration or Composer change.
   - wiring the Hub's `deployment.completed` evidence into this chain on the
     deployment host. Production Hub hosts have no `agents` checkout, so
     today the chain runs on this workstation.
+
+**Amendment (2026-11-02, owner guardrails and the first fixes):**
+
+- **The agent is a read-only advisor with capped, de-duplicated output:**
+  - at most 3–5 findings per scan (`max_tasks`, default 5), most urgent
+    first (P1 blocker, P2 warning, P3 UX friction), with the rest kept as
+    backlog in the sealed report;
+  - a state fingerprint over the target, pages, widths, deployed commit,
+    suite commit and `widget-profiles.json` hash. While it is unchanged,
+    tasks already reported are not repeated, and a rerun inside the
+    600-second cooldown does not start the browser.
+  - `force` overrides both.
+
+  The details are in `../agents/README.md`.
+- **Widget friction metric:** `Widget\WidgetFrictionProfile` reads the
+  registry schema and lists widgets missing an essential author control.
+  Today that means carousels without drag/swipe physics, navigation dots,
+  arrows or autoplay; 7 widgets, including `slider`, `product_slider` and
+  `testimonials_slider`. Per-breakpoint padding and corner radius come from
+  both editors' Style tab for every block, so they count as provided. A
+  friction widget on an audited page is a `UX_FRICTION` task (P3); the
+  inventory ships in `widget-profiles.json`.
+- **Fixes from the first audit:**
+  - the platform landing page (`resources/views/welcome.blade.php`) is now
+    a Persian, RTL page using local Vazirmatn and no third-party origin,
+    with 44 px targets, logical properties and a working dashboard link
+    (the stock page linked to `/home`, which does not exist). The local
+    audit moved from BLOCKED (5 tasks) to READY at all six widths;
+  - the header phone link is a 44 px target below 768 px;
+  - the `header_modern_v1` and `nav_header` CTA defaults point at
+    `/contact` instead of `#`;
+  - new `nav_footer` blocks start with a "دسترسی سریع" column linking `/`
+    and `/contact`.
+
+  Only routes every storefront has are used. Content already saved on a
+  site, such as the local demo's header CTA and footer, is the author's to
+  change.

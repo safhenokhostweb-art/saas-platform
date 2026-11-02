@@ -5,6 +5,7 @@ namespace Tests\Unit\ThemeBuilder;
 use App\Console\Commands\SentinelProfilesCommand;
 use SaaSPlatform\ThemeRuntime\BlockRegistry;
 use SaaSPlatform\ThemeRuntime\Widget\WidgetFeatureProfile;
+use SaaSPlatform\ThemeRuntime\Widget\WidgetFrictionProfile;
 use Tests\TestCase;
 
 /**
@@ -46,6 +47,38 @@ class Adr077SentinelProfilesTest extends TestCase
                 $this->assertNotSame('', trim($rule['remedy']), "{$type}/{$rule['code']} has a task text");
             }
         }
+    }
+
+    public function test_friction_flags_carousels_without_drag_dots_or_arrows_controls(): void
+    {
+        $friction = WidgetFrictionProfile::analyze(BlockRegistry::all());
+        foreach (['slider', 'product_slider', 'category_slider', 'testimonials_slider', 'blog_posts'] as $type) {
+            $this->assertArrayHasKey($type, $friction, $type);
+            $this->assertSame('carousel', $friction[$type]['kind']);
+            $this->assertSame(['drag', 'dots', 'arrows'], array_column($friction[$type]['missing'], 'control'), $type);
+            $this->assertSame(['responsive_padding', 'radius'], $friction[$type]['provided_by_style_panel'], 'Style-tab controls are never reported as missing');
+        }
+        $this->assertArrayNotHasKey('video', $friction, 'autoplay alone does not make a carousel');
+        foreach (array_keys($friction) as $type) {
+            $this->assertNotContains(BlockRegistry::all()[$type]['category'] ?? null, ['foodmart', 'sleepshiman'], 'locked theme-pack blocks are exempt');
+        }
+        $complete = ['schema' => ['autoplay' => [], 'interval' => [], 'drag' => [], 'dots' => [], 'arrows' => []], 'category' => 'content'];
+        $this->assertSame([], WidgetFrictionProfile::analyze(['x_slider' => $complete]));
+        $this->assertSame(WidgetFrictionProfile::analyze(BlockRegistry::all()), WidgetFeatureProfile::export(BlockRegistry::all())['friction']);
+    }
+
+    public function test_registry_defaults_point_at_real_pages_and_the_phone_link_is_a_44px_target(): void
+    {
+        $all = BlockRegistry::all();
+        $this->assertSame('/contact', $all['header_modern_v1']['defaultProps']['ctaUrl']);
+        $this->assertSame('/contact', $all['header_modern_v1']['schema']['ctaUrl']['default']);
+        $this->assertSame('/contact', $all['nav_header']['schema']['cta_url']['default']);
+        $footer = (new \App\Services\ThemeBuilder\BlockRenderer())->renderBlock(['type' => 'nav_footer', 'id' => 'f1', 'props' => $all['nav_footer']['defaultProps']]);
+        $this->assertStringContainsString('<li><a href="/contact">تماس با ما</a></li>', $footer);
+        $this->assertStringNotContainsString('href="#"', $footer);
+
+        $css = file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
+        $this->assertStringContainsString('@media (max-width: 767.98px) { .tb-nav-header-phone { display: inline-flex; align-items: center; min-block-size: 2.75rem;', $css);
     }
 
     public function test_the_suite_is_read_only_and_driven_by_base_url(): void

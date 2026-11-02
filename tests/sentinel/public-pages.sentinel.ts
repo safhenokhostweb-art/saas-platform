@@ -98,6 +98,13 @@ for (const url of env.pages) {
         if (a.dir !== 'rtl') finding(url, null, { code: 'RTL_MISSING', severity: 'blocker', message: `The page direction is "${a.dir || 'unset'}", not rtl.` });
         if (!a.vazirmatn) finding(url, null, { code: 'FONT_NOT_LOADED', severity: 'warning', message: 'Vazirmatn is not loaded on this page.' });
         if (a.widgets.length === 0) finding(url, null, { code: 'NO_WIDGETS_FOUND', severity: 'info', message: 'No Canvas widgets (data-widget-type) on this page.' });
+        // Owner guardrail: widgets on this page that lack essential author controls (P3).
+        for (const type of a.widgets) {
+          const friction = profiles.friction?.[type];
+          if (!friction) continue;
+          const labels = friction.missing.map((m: { label: string }) => m.label).join('، ');
+          finding(url, null, { code: 'UX_FRICTION', severity: 'warning', category: 'ux-friction', widget: type, message: `${type} (${friction.kind}) has no author control for: ${labels}.`, evidence: { missing: friction.missing.map((m: { control: string }) => m.control) } });
+        }
       }
       flushConsole();
     });
