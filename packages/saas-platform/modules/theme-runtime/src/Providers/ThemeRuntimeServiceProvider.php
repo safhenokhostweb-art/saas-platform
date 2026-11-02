@@ -61,6 +61,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/canvas-tab-strip.js';
     }
 
+    /** Inspect Mode (WU-1) — widget outlines, labels and the plugin action bar. */
+    public static function canvasInspectPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-inspect.js';
+    }
+
     /** Phase 0.7 (ADR-066) — live newsletter + search-dialog behaviour. */
     public static function siteFormsScriptPath(): string
     {

@@ -261,6 +261,7 @@ body.tb-drag-active .tb-drop-zone {
 @endforeach
 
 @include('theme-runtime::canvas.editor-bootstrap', ['canvasStructuralServices' => ['admin.theme-builder.partials.canvas-structural-services']])
+@include('theme-runtime::canvas.inspect')
 <script>
 (function () {
     'use strict';
