@@ -3583,20 +3583,20 @@ class BlockRenderer
             $glowClass = $isGlow ? ' tb-bento-pulse-card' : '';
             $glowStyle = $isGlow ? "--tb-glow-color:{$glowColor};--tb-glow-speed:{$glowSpeed}s;" : '';
 
-            $mediaHtml = $image !== '' ? $this->imageWithFallback($image, (string) ($item['title'] ?? ''), '', 'تصویر') : '';
+            $altText = is_scalar($item['title'] ?? null) ? (string) $item['title'] : '';
+            $mediaHtml = $image !== '' ? $this->imageWithFallback($image, $altText, '', 'تصویر') : '';
             $mediaClass = $image !== '' ? ' has-media' : '';
 
             // Whole-card link: `link` (Canvas field, plain URL or structured
             // {url,…} link object), falling back to the legacy `link_url`.
             // Scheme-validated through escapeUrl() — '' fallback means an
-            // unsafe or empty URL simply yields a non-link card.
-            $rawLink = $item['link'] ?? '';
-            if (is_array($rawLink)) {
-                $rawLink = $rawLink['url'] ?? '';
-            }
-            $rawLink = trim(is_string($rawLink) ? $rawLink : '');
+            // unsafe or empty URL simply yields a non-link card. Both fields
+            // go through linkValue(): an imported card can hold link_url as
+            // a structured {url,…} too, which a string cast turned into a
+            // whole-block "Array to string conversion".
+            $rawLink = trim($this->linkValue($item['link'] ?? ''));
             if ($rawLink === '') {
-                $rawLink = trim((string) ($item['link_url'] ?? ''));
+                $rawLink = trim($this->linkValue($item['link_url'] ?? ''));
             }
             $cardHref = $rawLink !== '' ? $this->escapeUrl($rawLink, '') : '';
             $hasLink = $cardHref !== '';

@@ -119,17 +119,26 @@
             box-shadow: 0 0 0 3px var(--auth-login-primary-soft);
         }
         .auth-login-body .space-y-4 > * + * { margin-top: 1rem; }
+        /* Touch target: the checkbox itself is 24×24 (WCAG 2.2 SC 2.5.8) and
+           the whole label row, which toggles it, is 44 px tall. */
         .auth-login-remember {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.625rem;
+            width: fit-content;
+            min-height: 2.75rem;
             font-size: 0.875rem;
             color: #475569;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         .auth-login-remember input {
-            width: 1.05rem;
-            height: 1.05rem;
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            margin: 0;
             accent-color: var(--auth-login-primary);
+            cursor: pointer;
         }
         .auth-login-body .btn {
             display: inline-flex;
