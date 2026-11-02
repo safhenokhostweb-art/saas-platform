@@ -174,7 +174,7 @@ test('ADR-076 header Inspector: schema groups, segmented placement, logo and qui
       await expect(header.locator(`.tb-social-icon--${network} svg.tb-icon-svg-mark-${network}`)).toBeVisible();
     }
     const fill = await header.locator('.tb-social-icon--eitaa').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(fill, 'brand style fills Eitaa with its colour').toBe('rgb(217, 72, 15)');
+    expect(fill, 'brand style fills Eitaa with its colour').toBe('rgb(234, 90, 36)');
 
     // Centred menu: the links sit in the middle of the bar at desktop width.
     const bar = await header.locator('.tb-nav-header-inner').boundingBox();

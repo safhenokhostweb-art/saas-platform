@@ -177,7 +177,7 @@ class Adr076WidgetSchemaHeaderFooterTest extends TestCase
         }
     }
 
-    public function test_every_brand_fill_has_css_and_keeps_a_white_glyph_at_aa_contrast(): void
+    public function test_every_brand_fill_has_css_and_keeps_a_white_glyph_at_aa_icon_contrast(): void
     {
         $css = file_get_contents(base_path(self::RUNTIME . '/resources/css/theme-runtime-blocks.css'));
         foreach (SocialNetworks::keys() as $network) {
@@ -187,7 +187,8 @@ class Adr076WidgetSchemaHeaderFooterTest extends TestCase
                 continue;
             }
             $this->assertStringContainsString(".tb-social-icon--{$network} { --tb-social-brand: {$brand}; }", $css, $network);
-            $this->assertGreaterThanOrEqual(4.0, self::contrastWithWhite($brand), $network);
+            // WCAG 2.1 SC 1.4.11: icons need 3:1 against their fill.
+            $this->assertGreaterThanOrEqual(3.0, self::contrastWithWhite($brand), $network);
         }
     }
 

@@ -1156,7 +1156,7 @@ customer-site `928c1d1` (same tree as `a66b552`).
   - Header groups and segmented placement drive `menu_align`. The editor
     iframe carries `data-widget-type`, and the preview shows the centred
     menu, a 44 px logo, five brand-filled messenger marks (Eitaa fill
-    `rgb(217, 72, 15)`), quick-access hidden below 768 px, and no overflow
+    `rgb(234, 90, 36)`, owner colour), quick-access hidden below 768 px, and no overflow
     at 1440/1024/768/390.
 - **CSS parity** (customer host, before = `e153ef33` package + `928c1d1`
   host):

@@ -985,15 +985,15 @@ a.tb-slide-link { display: block; color: inherit; text-decoration: none; }
 .tb-nav-header-social { flex-wrap: nowrap; gap: 0.35rem; }
 .tb-nav-header-social .tb-social-icon { width: 2.25rem; height: 2.25rem; font-size: 1.05rem; }
 @media (max-width: 767.98px) { .tb-nav-header-social:not(.tb-nav-header-social--mobile) { display: none; } }
-/* Brand style: each network's own fill, white glyph (every fill is >= 4:1). */
+/* Brand style: each network's own fill, white glyph (every fill is >= 3:1, WCAG 1.4.11). */
 .tb-social-icon--instagram { --tb-social-brand: #C13584; }
 .tb-social-icon--telegram { --tb-social-brand: #2481CC; }
 .tb-social-icon--whatsapp { --tb-social-brand: #128C7E; }
-.tb-social-icon--eitaa { --tb-social-brand: #D9480F; }
-.tb-social-icon--bale { --tb-social-brand: #00897B; }
-.tb-social-icon--rubika { --tb-social-brand: #8E24AA; }
-.tb-social-icon--soroush { --tb-social-brand: #1565C0; }
-.tb-social-icon--gap { --tb-social-brand: #0277BD; }
+.tb-social-icon--eitaa { --tb-social-brand: #EA5A24; }
+.tb-social-icon--bale { --tb-social-brand: #00A693; }
+.tb-social-icon--rubika { --tb-social-brand: #9C27B0; }
+.tb-social-icon--soroush { --tb-social-brand: #1D72B8; }
+.tb-social-icon--gap { --tb-social-brand: #9B51E0; }
 .tb-social-icon--aparat { --tb-social-brand: #D6114F; }
 .tb-social-icon--linkedin { --tb-social-brand: #0A66C2; }
 .tb-social-icon--x { --tb-social-brand: #000000; }

@@ -13,8 +13,10 @@ namespace SaaSPlatform\ThemeRuntime\Support;
  * style (resources/icons/social-marks.json); they are recognisable shapes,
  * not the official logos. Every other network uses its catalog icon.
  *
- * `brand` is the fill used by the opt-in brand-colour style. Each one keeps
- * a white glyph at 4:1 contrast or better, so the style stays WCAG AA.
+ * `brand` is the fill used by the opt-in brand-colour style; the five
+ * Iranian messenger colours are the owner's (2026-11-02). Each keeps a
+ * white glyph at 3:1 contrast or better, the WCAG 2.1 AA requirement for
+ * icons (SC 1.4.11 non-text contrast).
  */
 final class SocialNetworks
 {
@@ -23,11 +25,11 @@ final class SocialNetworks
         'instagram' => ['instagram', 'اینستاگرام', '~(//|\.)(instagram\.com|instagr\.am)/~i', '#C13584'],
         'telegram' => ['send', 'تلگرام', '~(//|\.)(t\.me|telegram\.me|telegram\.org)/~i', '#2481CC'],
         'whatsapp' => ['message-circle', 'واتساپ', '~(//|\.)(wa\.me|whatsapp\.com)/~i', '#128C7E'],
-        'eitaa' => ['mark:eitaa', 'ایتا', '~(//|\.)eitaa\.com/~i', '#D9480F'],
-        'bale' => ['mark:bale', 'بله', '~(//|\.)ble\.ir/~i', '#00897B'],
-        'rubika' => ['mark:rubika', 'روبیکا', '~(//|\.)rubika\.ir/~i', '#8E24AA'],
-        'soroush' => ['mark:soroush', 'سروش پلاس', '~(//|\.)(splus\.ir|sapp\.ir)/~i', '#1565C0'],
-        'gap' => ['mark:gap', 'گپ', '~(//|\.)gap\.im/~i', '#0277BD'],
+        'eitaa' => ['mark:eitaa', 'ایتا', '~(//|\.)eitaa\.com/~i', '#EA5A24'],
+        'bale' => ['mark:bale', 'بله', '~(//|\.)ble\.ir/~i', '#00A693'],
+        'rubika' => ['mark:rubika', 'روبیکا', '~(//|\.)rubika\.ir/~i', '#9C27B0'],
+        'soroush' => ['mark:soroush', 'سروش پلاس', '~(//|\.)(splus\.ir|sapp\.ir)/~i', '#1D72B8'],
+        'gap' => ['mark:gap', 'گپ', '~(//|\.)gap\.im/~i', '#9B51E0'],
         'aparat' => ['circle-play', 'آپارات', '~(//|\.)aparat\.com/~i', '#D6114F'],
         'linkedin' => ['linkedin', 'لینکدین', '~(//|\.)linkedin\.com/~i', '#0A66C2'],
         'x' => ['twitter', 'ایکس (توییتر)', '~(//|\.)(twitter|x)\.com/~i', '#000000'],

@@ -4507,9 +4507,11 @@ There is no migration or Composer change.
    Iranian messengers draw simplified marks on Lucide's stroke grid
    (`resources/icons/social-marks.json`). These are recognisable shapes,
    not official logos, and kept apart from the ISC Lucide catalog. An opt-in
-   `social_style: brand` fills each icon with its network colour; every
-   fill keeps a white glyph at 4:1 or better. The default `mono` is the
-   previous look.
+   `social_style: brand` fills each icon with its network colour (the five
+   Iranian messenger colours are owner-specified: Eitaa `#EA5A24`, Bale
+   `#00A693`, Rubika `#9C27B0`, Soroush+ `#1D72B8`, Gap `#9B51E0`). Every
+   fill keeps a white glyph at 3:1 or better, the WCAG 2.1 AA requirement
+   for icons (SC 1.4.11). The default `mono` is the previous look.
 4. **`nav_header`:**
    - `logo_image`, `logo_alt`, and `logo_height` / `logo_height_mobile`
      (clamped to 20–120 and 16–96 px). The fallback order is image (with
