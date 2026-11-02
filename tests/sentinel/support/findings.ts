@@ -36,7 +36,7 @@ export const REMEDIES: Record<string, string> = {
   CONSOLE_ERROR: 'Fix the script error logged in the browser console.',
   PAGE_SCRIPT_ERROR: 'Fix the uncaught script error.',
   TEXT_CLIPPED: 'Let the text wrap or give it room; it is cut off without an ellipsis or tooltip.',
-  TAP_TARGET_SMALL: 'Make the control at least 24×24 px on touch screens (WCAG 2.2 target size).',
+  TAP_TARGET_SMALL: 'Make the control at least 24×24 px on touch screens, or space it so a 24 px circle around it touches no other target (WCAG 2.2 SC 2.5.8).',
   RTL_MISSING: 'Render the page with <html dir="rtl" lang="fa"> (Constitution §16).',
   FONT_NOT_LOADED: 'Serve Vazirmatn locally and apply it (theme-runtime::css.fonts).',
   MOTION_NOT_REDUCED: 'Stop infinite animations under prefers-reduced-motion: reduce.',
@@ -47,5 +47,6 @@ export const REMEDIES: Record<string, string> = {
   VISUAL_DIFF: 'Review the screenshot diff; update the baseline only if the change is intended (SENTINEL_UPDATE_BASELINES=1).',
   VISUAL_BASELINE_MISSING: 'Create the baseline once with SENTINEL_UPDATE_BASELINES=1 on a known-good release.',
   UX_FRICTION: 'Add the missing author controls to the widget schema and wire them in the renderer, so the setting is a real control in both editors.',
+  NAVIGATION_RETRIED: 'Nothing to change if it is rare; if it repeats, check the CDN and origin response times for this page.',
   SENTINEL_CHECK_ERROR: 'The check itself could not finish; rerun, and inspect the page if it repeats.',
 };

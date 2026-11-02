@@ -81,6 +81,36 @@ class Adr077SentinelProfilesTest extends TestCase
         $this->assertStringContainsString('@media (max-width: 767.98px) { .tb-nav-header-phone { display: inline-flex; align-items: center; min-block-size: 2.75rem;', $css);
     }
 
+    public function test_header_ctas_without_a_destination_stay_off_the_site_but_show_in_the_editor(): void
+    {
+        $cases = [
+            // The closing quote matches the class attribute, not header_modern_v1's inline CSS.
+            'header_modern_v1' => [['ctaText' => 'شروع', 'ctaUrl' => '#'], ['ctaText' => 'شروع', 'ctaUrl' => '/contact'], 'tb-header-modern__cta"'],
+            'nav_header' => [['cta_text' => 'شروع', 'cta_url' => ''], ['cta_text' => 'شروع', 'cta_url' => '/contact'], 'tb-nav-header-cta"'],
+        ];
+        foreach ($cases as $type => [$dead, $live, $class]) {
+            $renderer = new \App\Services\ThemeBuilder\BlockRenderer();
+            $site = $renderer->renderBlock(['type' => $type, 'id' => 'h1', 'props' => $dead]);
+            $this->assertStringNotContainsString($class, $site, $type);
+            $this->assertStringNotContainsString('href="#"', $site, $type);
+            $this->assertStringContainsString('href="/contact"', $renderer->renderBlock(['type' => $type, 'id' => 'h1', 'props' => $live]), $type);
+
+            $renderer->setContext(['editor_mode' => true]);
+            $editor = $renderer->renderBlock(['type' => $type, 'id' => 'h1', 'props' => $dead]);
+            $this->assertStringContainsString($class, $editor, $type);
+            $this->assertStringContainsString('data-tb-dead-link', $editor, $type);
+            $this->assertStringNotContainsString('data-tb-dead-link', $renderer->renderBlock(['type' => $type, 'id' => 'h1', 'props' => $live]), $type);
+        }
+    }
+
+    public function test_the_image_logo_shrinks_so_a_long_brand_name_cannot_widen_the_page(): void
+    {
+        $css = file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
+        $this->assertStringContainsString('.tb-nav-header-logo--image { display: inline-flex; align-items: center; gap: 0.6rem; flex: 0 1 auto; min-width: 0; max-width: 100%; }', $css);
+        $this->assertStringContainsString('.tb-nav-header-logo-text { line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }', $css);
+        $this->assertDoesNotMatchRegularExpression('/\.tb-nav-header-logo--image \{[^}]*flex: none/', $css);
+    }
+
     public function test_the_suite_is_read_only_and_driven_by_base_url(): void
     {
         $config = file_get_contents(base_path('tests/sentinel/playwright.sentinel.config.ts'));

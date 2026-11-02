@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { sentinelEnv } from './support/env';
 import { record, REMEDIES, type SentinelFinding } from './support/findings';
 import { pageAudit, type AuditInput } from './support/measure';
+import { gotoWithRetry } from './support/navigation';
 
 /**
  * ADR-077 — Sentinel public-page audit. For every page × width:
@@ -49,7 +50,10 @@ function watchNetwork(page: Page, url: string, width: number): () => void {
 }
 
 async function open(page: Page, url: string, width: number): Promise<boolean> {
-  const response = await page.goto(url, { waitUntil: 'load' });
+  const { response, retried, firstError } = await gotoWithRetry(page, url);
+  if (retried) {
+    finding(url, width, { code: 'NAVIGATION_RETRIED', severity: 'info', message: `The first load failed transiently and was retried once (${firstError}).` });
+  }
   if (!response || response.status() >= 400) {
     finding(url, width, { code: 'PAGE_HTTP_ERROR', severity: 'blocker', message: `The page answered ${response?.status() ?? 'no response'}.`, evidence: { status: response?.status() ?? null } });
     return false;
@@ -91,7 +95,7 @@ for (const url of env.pages) {
         finding(url, width, { code: 'TEXT_CLIPPED', severity: 'warning', widget: c.widget, selector: c.selector, message: `Text is cut off: «${c.text}».` });
       }
       for (const t of a.smallTargets) {
-        finding(url, width, { code: 'TAP_TARGET_SMALL', severity: 'warning', widget: t.widget, selector: t.selector, message: `${t.selector} is ${t.width}×${t.height}px on a touch screen.` });
+        finding(url, width, { code: 'TAP_TARGET_SMALL', severity: 'warning', widget: t.widget, selector: t.selector, message: `${t.selector} is ${t.width}×${t.height}px and crowded by a neighbouring target on a touch screen.` });
       }
       // Page-level facts are the same at every width: report them once.
       if (width === env.widths[0]) {
@@ -114,7 +118,7 @@ for (const url of env.pages) {
     const context = await browser.newContext({ reducedMotion: 'reduce', baseURL: env.baseUrl, ignoreHTTPSErrors: env.ignoreHttpsErrors, viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     try {
-      const response = await page.goto(url, { waitUntil: 'load' });
+      const { response } = await gotoWithRetry(page, url);
       if (!response || response.status() >= 400) return; // reported by the width tests
       await page.waitForTimeout(1500);
       const running = await page.evaluate(() => document.getAnimations()

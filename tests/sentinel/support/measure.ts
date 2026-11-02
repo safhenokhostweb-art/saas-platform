@@ -108,14 +108,31 @@ export function pageAudit(input: AuditInput): AuditOutput {
     }
   }
 
+  // WCAG 2.2 SC 2.5.8 (target size, minimum): a target under 24×24 px still
+  // passes when a 24 px circle centred on it intersects no other target and
+  // no other undersized target's circle (the spacing exception). Inline
+  // links in running text are exempt.
   const smallTargets: AuditOutput['smallTargets'] = [];
   if (input.touch) {
-    for (const el of Array.from(document.querySelectorAll('a[href], button, input:not([type="hidden"]), select, [role="button"]'))) {
+    const targets = Array.from(document.querySelectorAll('a[href], button, input:not([type="hidden"]), select, [role="button"]'))
+      .filter((el) => visible(el) && !el.closest('p, li > p, [data-tb-inline-text]'))
+      .map((el) => ({ el, r: el.getBoundingClientRect() }));
+    const centre = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    const circleHitsRect = (c: { x: number; y: number }, r: DOMRect) => {
+      const dx = Math.max(r.left - c.x, 0, c.x - r.right);
+      const dy = Math.max(r.top - c.y, 0, c.y - r.bottom);
+      return dx * dx + dy * dy < 12 * 12;
+    };
+    const undersized = targets.filter((t) => t.r.width < 24 || t.r.height < 24);
+    for (const t of undersized) {
       if (smallTargets.length >= 30) break;
-      if (!visible(el) || el.closest('p, li > p, [data-tb-inline-text]')) continue; // inline links are exempt (WCAG 2.5.8)
-      const r = el.getBoundingClientRect();
-      if (r.width < 24 || r.height < 24) {
-        smallTargets.push({ selector: describe(el), widget: widgetOf(el), width: Math.round(r.width), height: Math.round(r.height) });
+      const c = centre(t.r);
+      const crowded = targets.some((o) => o.el !== t.el && !o.el.contains(t.el) && !t.el.contains(o.el) && (
+        circleHitsRect(c, o.r)
+        || ((o.r.width < 24 || o.r.height < 24) && Math.hypot(centre(o.r).x - c.x, centre(o.r).y - c.y) < 24)
+      ));
+      if (crowded) {
+        smallTargets.push({ selector: describe(t.el), widget: widgetOf(t.el), width: Math.round(t.r.width), height: Math.round(t.r.height) });
       }
     }
   }

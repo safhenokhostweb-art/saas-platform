@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { sentinelEnv } from './support/env';
+import { gotoWithRetry } from './support/navigation';
 
 /**
  * ADR-077 — visual regression (opt-in, SENTINEL_VISUAL=1). Screenshots per
@@ -19,7 +20,7 @@ for (const url of env.pages) {
   for (const width of env.widths) {
     test(`visual ${url} @ ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(url, { waitUntil: 'load' });
+      await gotoWithRetry(page, url);
       await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
       await expect(page).toHaveScreenshot(`${slug(url)}-${width}.png`, { maxDiffPixelRatio: 0.02, animations: 'disabled', caret: 'hide' });
     });
