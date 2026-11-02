@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import { sentinelEnv } from './support/env';
 import { record, REMEDIES } from './support/findings';
+import { gotoWithRetry } from './support/navigation';
 
 /**
  * ADR-077 — read-only Canvas editor audit (opt-in). Needs an authenticated
@@ -23,7 +24,7 @@ for (const editorPath of env.editorPaths) {
       const note = (code: string, severity: 'warning' | 'blocker', message: string, evidence?: Record<string, unknown>) =>
         record({ code, severity, page: editorPath, width, widget: null, message, evidence, remedy: REMEDIES[code] ?? '' });
       await page.setViewportSize({ width, height: 860 });
-      const response = await page.goto(editorPath, { waitUntil: 'load' });
+      const { response } = await gotoWithRetry(page, editorPath);
       if (!response || response.status() >= 400 || /\/login\b/.test(page.url())) {
         note('PAGE_HTTP_ERROR', 'blocker', `The editor did not open (status ${response?.status() ?? 'none'}, at ${page.url()}); is the storage state still signed in?`);
         return;

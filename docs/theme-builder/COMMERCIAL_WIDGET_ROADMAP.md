@@ -1207,3 +1207,17 @@ Owner approved the plan in 16.3 and the agent registration.
   third-party origin, 44 px targets): local audit BLOCKED → READY.
 - Storefront: header phone link 44 px on phones; CTA defaults `/contact`;
   sample footer column.
+
+### 16.7 Live verification after the storefront deploy (2026-11-02)
+
+- Suite: one retry for transient navigation failures (CDN timeout,
+  `net::ERR_ABORTED` on a run's first load); HTTP errors are never retried.
+  Touch targets follow WCAG 2.2 SC 2.5.8 including its spacing exception
+  (the footer links, 23 px with 12 px gaps, pass).
+- Production, all six widths, every check completed:
+  - platform `panel.safhenokhost.ir` (2700635c): READY, 0 findings;
+  - storefront `safhenokhost.ir` (8e4e240c): header phone link 83×44 px
+    on phones (was 75×22); 0 blockers. Remaining: carousel dots 9×9 px and
+    crowded on `slider` and `testimonials_slider` (P2), and friction on
+    `slider`, `testimonials_slider` and `blog_posts` (no drag/dots/arrows
+    controls, P3). These are input for the Canvas widget redesign.
