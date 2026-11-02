@@ -13,6 +13,8 @@ acceptance gates on every widget, header, footer, section, and builder change.
 
 - Canonical registry/renderer: `packages/saas-platform/modules/theme-runtime/src/{BlockRegistry,BlockRenderer}.php`
 - Repeater contract: `type: 'repeater'` + `fields` + `storage` (ADR-060). `item_schema` is not read by anything canonical.
+- Schema contract + manifest for every definition: `theme-runtime/src/Widget/WidgetSchemaContract.php` (ADR-076; `ui: segmented`, `group`, `slots`). Social/messenger list: `Support/SocialNetworks.php`. Page-tab strip: `theme-runtime::canvas.tab-strip`.
+- Sentinel UI verifier (ADR-077): suite `tests/sentinel/` (`BASE_URL=... npx playwright test -c tests/sentinel/playwright.sentinel.config.ts`), profiles `Widget/WidgetFeatureProfile.php` -> `php artisan sentinel:profiles`; agent `sentinel-ui-verifier` in `../agents`.
 - customer-site registry = canonical + `HOST_PATCHES` (ADR-062, no local copies): `customer-site/app/Services/ThemeCanvas/BlockRegistry.php`
 - Platform editor: `resources/views/admin/theme-builder/canvas.blade.php`
 - Block CSS: one shared sheet, `packages/.../theme-runtime/resources/css/theme-runtime-blocks.css` (ADR-063), included by both host partials (platform `admin/theme-builder/partials/canvas-css-contract.blade.php`, customer `partials/theme-canvas-style-contract.blade.php`), which keep only host chrome. The customer partial is mirrored into `tests/Support/FoodMart/FoodMartPhase2bStyleContract.php` (three markers).

@@ -4559,3 +4559,98 @@ There is no migration or Composer change.
 - Follow-ups: a footer logo image; a `network` field for the standalone
   `social_icons` block; replacing a mark with an official glyph when the
   owner supplies a licensed asset.
+
+## ADR-077
+
+**Title:** Sentinel UI Verifier: a Read-Only Playwright Audit in saas-platform, Run by a Workspace Agent Chained after the Integrity Sentinel
+
+**Status:** Accepted
+
+**Date:** 2026-11-02
+
+**Context:**
+
+- The owner approved Phase 3 of the 2026-11-02 brief (roadmap §16.3) and
+  the registration of a Sentinel agent in `../agents/agents.json`. The aim
+  is an automatic feedback loop that finds UI/UX defects on local and
+  production sites and states each fix as a task, instead of relying on
+  manual checks.
+- The existing `sentinel-verifier` agent audits the deployment proof chain
+  from evidence files. Its spec forbids network access and probes, so
+  browser checks cannot live there.
+- ADR-076 added the hooks a browser check needs:
+  - `data-widget-type` and `data-widget-slot`;
+  - a registry manifest.
+
+**Decision:**
+
+1. **The suite lives in saas-platform at `tests/sentinel/`** (its own
+   Playwright config; every option is an environment variable, `BASE_URL`
+   required).
+   - **Per page and width** (default 360/390/768/1024/1280/1440), it checks:
+     - page horizontal overflow, with the culprit elements and their
+       widgets;
+     - content sticking out of its widget;
+     - the widget feature profiles and dead `href="#"` links;
+     - broken images, failed same-origin requests, console and script
+       errors;
+     - clipped text, ignoring screen-reader-only content;
+     - touch targets under 24 px on phones;
+   - **Once per page:** `dir="rtl"`, Vazirmatn, and infinite animations
+     under reduced motion.
+   - **Opt-in:**
+     - a read-only editor check, using a signed-in storage state, that
+       verifies the page-tab strip stays inside the toolbar;
+     - screenshot comparison against baselines per host. Baselines are
+       written only with `SENTINEL_UPDATE_BASELINES=1`.
+   - Specs only load pages. A PHPUnit guard rejects click, fill, type and
+     other write actions in them.
+2. **Feature profiles:** `Widget\WidgetFeatureProfile` declares per widget
+   type the selectors a live widget must match, each with a code,
+   severity, message and task text. They use the ADR-076 slots wherever
+   possible. `php artisan sentinel:profiles` writes them to
+   `tests/sentinel/widget-profiles.json`, and the test checks the file is
+   current and that every type and slot exists in the registry manifest.
+3. **The report:** the suite's reporter writes `report.json`
+   (`sentinel.ui-report/v1`) and `report.md`. Findings are grouped into
+   tasks, one per code, widget type and remedy, listing every page and
+   width. The verdict is BLOCKED if there is any blocker, else ATTENTION if
+   there is any warning, else READY.
+4. **The agent `sentinel-ui-verifier`** is in `../agents`, documented in
+   that README.
+   - Task `sentinel.ui-audit`. It is subscribed to
+     `sentinel.verification.passed` (it runs after the integrity audit
+     passes) and to `sentinel.ui-audit-requested`.
+   - It resolves the target from `workspace.json` `sentinel_ui.targets`.
+     Local is `http://127.0.0.1:8000` / `http://customer-site.test`;
+     production is `https://panel.safhenokhost.ir` /
+     `https://safhenokhost.ir`.
+   - It runs the suite with its output under `agents/var`, recomputes the
+     verdict, turns tasks into findings, seals the report as a
+     `sentinel-ui` artifact, and emits `sentinel.ui-audit.passed` or
+     `.failed`.
+   - It never writes to the projects.
+
+**Consequences:**
+
+- Every deployment that passes the integrity Sentinel gets a UI audit with
+  a task list. The verifier can also be run by hand against either host.
+- Widget hooks that are missing in an older production release make the
+  feature audit report `NO_WIDGETS_FOUND` rather than failing. The
+  page-level checks still apply.
+- The first runs found real defects:
+  - the platform landing page (`panel.safhenokhost.ir/`) is LTR, scrolls
+    sideways by 93 px, loads Figtree from `fonts.bunny.net` against its own
+    CSP, and has no Vazirmatn;
+  - the production storefront has a 22 px-tall header phone link on
+    phones;
+  - local demo content has a header CTA with `href="#"` and a footer
+    without links.
+
+  These are reported, not fixed here.
+- Follow-ups:
+  - more profiles (product grid, blog, pricing);
+  - baselines on a known-good release;
+  - wiring the Hub's `deployment.completed` evidence into this chain on the
+    deployment host. Production Hub hosts have no `agents` checkout, so
+    today the chain runs on this workstation.
