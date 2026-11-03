@@ -1,4 +1,5 @@
 <?php
+
 namespace SaaSPlatform\ThemeRuntime;
 
 use Illuminate\Support\Str;
@@ -318,13 +319,13 @@ class BlockRenderer
             // Non-editable chrome in the live iframe has its DOM id but
             // deliberately omits editor identity metadata.
             $safeId = preg_quote($this->escapeAttr($id), '/');
-            $pattern = '/<([a-z][a-z0-9-]*)\b(?![^>]*\bdata-layout-slot\s*=)([^>]*(?:\bdata-tb-block-id="'.$safeId.'"|(?<![\w-])id="tb-'.$safeId.'")[^>]*)>/i';
+            $pattern = '/<([a-z][a-z0-9-]*)\b(?![^>]*\bdata-layout-slot\s*=)([^>]*(?:\bdata-tb-block-id="' . $safeId . '"|(?<![\w-])id="tb-' . $safeId . '")[^>]*)>/i';
             $output = preg_replace_callback($pattern, static function (array $match) use ($slot): string {
                 $role = strtolower($match[1]) === 'div' && !preg_match('/\brole\s*=/i', $match[2])
-                    ? ' role="'.($slot === 'header' ? 'banner' : 'contentinfo').'"'
+                    ? ' role="' . ($slot === 'header' ? 'banner' : 'contentinfo') . '"'
                     : '';
 
-                return '<'.$match[1].$match[2].' data-layout-slot="'.$slot.'"'.$role.'>';
+                return '<' . $match[1] . $match[2] . ' data-layout-slot="' . $slot . '"' . $role . '>';
             }, $output, 1) ?? $output;
         }
 
@@ -929,7 +930,7 @@ class BlockRenderer
         array $thumbnailUrls = [],
         array $options = []
     ): string {
-        $slidesHtml = array_values(array_filter($slidesHtml, fn ($s) => trim((string) $s) !== ''));
+        $slidesHtml = array_values(array_filter($slidesHtml, fn($s) => trim((string) $s) !== ''));
         if (empty($slidesHtml)) {
             return '';
         }
@@ -1023,7 +1024,7 @@ class BlockRenderer
             <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>
             <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\">" . implode('', $dots) . "</div>
             {$thumbnailHtml}
-            {$this->carouselScript($id, $options)}
+            {$this->carouselScript($id,$options)}
         </div>";
     }
 
@@ -1055,7 +1056,7 @@ class BlockRenderer
         if (!is_string($controller) || $controller === '') {
             throw new \RuntimeException(
                 'Theme runtime packaging fault: the shared carousel controller is missing at '
-                . ThemeRuntimeServiceProvider::carouselBlockScriptPath()
+                    . ThemeRuntimeServiceProvider::carouselBlockScriptPath()
             );
         }
 
@@ -1063,7 +1064,7 @@ class BlockRenderer
         if (!is_string($adapter) || $adapter === '') {
             throw new \RuntimeException(
                 'Theme runtime packaging fault: the legacy carousel adapter is missing at '
-                . ThemeRuntimeServiceProvider::legacyCarouselScriptPath()
+                    . ThemeRuntimeServiceProvider::legacyCarouselScriptPath()
             );
         }
 
@@ -1111,7 +1112,7 @@ class BlockRenderer
         if (!is_string($adapter) || $adapter === '') {
             throw new \RuntimeException(
                 'Theme runtime packaging fault: the countdown adapter is missing at '
-                . ThemeRuntimeServiceProvider::countdownAdapterScriptPath()
+                    . ThemeRuntimeServiceProvider::countdownAdapterScriptPath()
             );
         }
 
@@ -1270,10 +1271,10 @@ class BlockRenderer
 
             $captionHtml = ($title !== '' || $subtitle !== '' || $ctaHtml !== '')
                 ? '<div class="tb-slide-caption">'
-                    . ($title !== '' ? "<h2 class=\"tb-slide-title\">{$title}</h2>" : '')
-                    . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\">{$subtitle}</p>" : '')
-                    . $ctaHtml
-                    . '</div>'
+                . ($title !== '' ? "<h2 class=\"tb-slide-title\">{$title}</h2>" : '')
+                . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\">{$subtitle}</p>" : '')
+                . $ctaHtml
+                . '</div>'
                 : '';
 
             $slideInner = "<div class=\"tb-slide\" style=\"aspect-ratio:{$aspect};\">"
@@ -2380,9 +2381,9 @@ class BlockRenderer
             // never string-building HTML inside an onerror attribute.
             $content = $image !== ''
                 ? "<span style=\"display:inline-flex;align-items:center;\">"
-                    . "<img src=\"" . $this->escapeAttr($image) . "\" alt=\"{$alt}\" loading=\"lazy\" style=\"max-height:2.5rem;max-width:9rem;width:auto;height:auto;object-fit:contain;{$filterCss}\"{$filterHoverAttr} onerror=\"this.style.display='none';this.nextElementSibling.style.display='inline-flex';\">"
-                    . "<span class=\"tb-logo-item\" style=\"display:none;\">" . $this->escape($name) . "</span>"
-                    . "</span>"
+                . "<img src=\"" . $this->escapeAttr($image) . "\" alt=\"{$alt}\" loading=\"lazy\" style=\"max-height:2.5rem;max-width:9rem;width:auto;height:auto;object-fit:contain;{$filterCss}\"{$filterHoverAttr} onerror=\"this.style.display='none';this.nextElementSibling.style.display='inline-flex';\">"
+                . "<span class=\"tb-logo-item\" style=\"display:none;\">" . $this->escape($name) . "</span>"
+                . "</span>"
                 : "<span class=\"tb-logo-item\">" . $this->escape($name) . "</span>";
 
             $items[] = $url !== ''
@@ -2445,10 +2446,16 @@ class BlockRenderer
         // positional signature stays for existing callers.
         $stockState = $stockLabel === null ? null : (str_contains($stockLabel, 'ناموجود') ? 'out' : (str_contains($stockLabel, 'باقی') ? 'low' : 'in'));
         return $this->productCard([
-            'title' => $title, 'image' => $image, 'url' => $url,
-            'price' => $price, 'original' => $originalPrice,
-            'price_html' => $priceFormatted, 'original_html' => $originalPriceFormatted,
-            'badge' => $badge, 'stock' => $stockState, 'stock_label' => $stockLabel,
+            'title' => $title,
+            'image' => $image,
+            'url' => $url,
+            'price' => $price,
+            'original' => $originalPrice,
+            'price_html' => $priceFormatted,
+            'original_html' => $originalPriceFormatted,
+            'badge' => $badge,
+            'stock' => $stockState,
+            'stock_label' => $stockLabel,
             'action_html' => $addToCartHtml !== '' ? $addToCartHtml : null,
         ]);
     }
@@ -2578,7 +2585,7 @@ class BlockRenderer
         if ($schema === 'standalone' && trim($this->stringify($item['name'] ?? '')) === '') {
             $schema = null;
         }
-        $prop = static fn (string $p): string => $schema !== null ? " itemprop=\"{$p}\"" : '';
+        $prop = static fn(string $p): string => $schema !== null ? " itemprop=\"{$p}\"" : '';
 
         $avatar = trim($this->stringify($r['avatar'] ?? ''));
         $avatarHtml = !$this->flag($r['show_avatar'] ?? true) ? '' : ($avatar !== '' && \SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer::isValidUrl($avatar)
@@ -2757,7 +2764,6 @@ class BlockRenderer
             $body = '<div class="tb-grid ' . ($layout === 'list' ? 'tb-grid-cols-1 tb-blog-list' : 'tb-grid-cols-3') . ' tb-gap-lg tb-blog-grid">' . implode('', $cards) . '</div>';
         }
         return "<div id=\"tb-{$id}\" class=\"tb-blog-posts\">{$titleHtml}{$body}</div>";
-
     }
 
     /**
@@ -2802,10 +2808,10 @@ class BlockRenderer
             false,
             false,
             [],
-// Phase 9 / Step 2 opted this caller into the shared asset;
-             // every caller has emitted it since this phase deleted the
-             // per-instance inline controller, so the opt-in is now a
-             // no-op kept for call-site compatibility.
+            // Phase 9 / Step 2 opted this caller into the shared asset;
+            // every caller has emitted it since this phase deleted the
+            // per-instance inline controller, so the opt-in is now a
+            // no-op kept for call-site compatibility.
             ['script' => 'shared', 'label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]
         );
 
@@ -2819,14 +2825,19 @@ class BlockRenderer
     {
         $ratings = [[4.6, 128], [4.2, 37], [4.8, 412], [3.9, 18]];
         return [
-            'title' => $p['title'], 'image' => '', 'url' => '#',
-            'price' => (float) $p['price'], 'original' => $p['original'] !== null ? (float) $p['original'] : null,
+            'title' => $p['title'],
+            'image' => '',
+            'url' => '#',
+            'price' => (float) $p['price'],
+            'original' => $p['original'] !== null ? (float) $p['original'] : null,
             'price_html' => $this->displayToman($p['price']),
             'original_html' => $p['original'] !== null ? $this->displayToman($p['original']) : null,
             'badge' => in_array($p['badge'], ['تخفیف', 'جدید'], true) ? null : $p['badge'],
             'is_new' => $p['badge'] === 'جدید',
-            'stock' => str_contains((string) $p['stock'], 'باقی') ? 'low' : 'in', 'stock_label' => $p['stock'],
-            'rating' => $ratings[$i % 4][0], 'reviews' => $ratings[$i % 4][1],
+            'stock' => str_contains((string) $p['stock'], 'باقی') ? 'low' : 'in',
+            'stock_label' => $p['stock'],
+            'rating' => $ratings[$i % 4][0],
+            'reviews' => $ratings[$i % 4][1],
         ];
     }
 
@@ -3319,7 +3330,7 @@ class BlockRenderer
                 $tipId = "tb-{$id}-tip-{$pi}-{$fi}";
                 $tipHtml = $tip !== ''
                     ? '<span class="tb-tip"><button type="button" class="tb-tip-trigger" aria-label="' . $this->escapeAttr('توضیح «' . $text . '»') . '" aria-describedby="' . $tipId . '">' . IconLibrary::svg('info') . '</button>'
-                        . '<span class="tb-tip-bubble" role="tooltip" id="' . $tipId . '">' . $this->escape($this->displayNumber($tip)) . '</span></span>'
+                    . '<span class="tb-tip-bubble" role="tooltip" id="' . $tipId . '">' . $this->escape($this->displayNumber($tip)) . '</span></span>'
                     : '';
                 $featureHtml .= '<li class="tb-plan-feature ' . ($included ? 'is-included' : 'is-excluded') . '">'
                     . '<span class="tb-plan-feature-icon">' . IconLibrary::svg($included ? 'check' : 'x') . '</span>'
@@ -3578,7 +3589,9 @@ class BlockRenderer
 
             $glowColor = $this->escapeAttr($this->bentoColorToken($item['glow_color'] ?? '') ?: '#6366f1');
             $glowSpeed = floatval($item['glow_speed'] ?? 2);
-            if ($glowSpeed <= 0) { $glowSpeed = 2; }
+            if ($glowSpeed <= 0) {
+                $glowSpeed = 2;
+            }
 
             $glowClass = $isGlow ? ' tb-bento-pulse-card' : '';
             $glowStyle = $isGlow ? "--tb-glow-color:{$glowColor};--tb-glow-speed:{$glowSpeed}s;" : '';
@@ -3839,14 +3852,14 @@ class BlockRenderer
             <div class=\"tb-contact-form-simple\">
                 <form onsubmit=\"event.preventDefault();\" novalidate>
                     <div style=\"margin-bottom:1rem;\">"
-                        . $this->visuallyHiddenLabel($nameFieldId, 'نام شما')
-                        . "<input id=\"{$nameFieldId}\" type=\"text\" placeholder=\"نام شما\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
+            . $this->visuallyHiddenLabel($nameFieldId, 'نام شما')
+            . "<input id=\"{$nameFieldId}\" type=\"text\" placeholder=\"نام شما\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
                     <div style=\"margin-bottom:1rem;\">"
-                        . $this->visuallyHiddenLabel($contactFieldId, 'شماره موبایل یا ایمیل')
-                        . "<input id=\"{$contactFieldId}\" type=\"text\" placeholder=\"شماره موبایل یا ایمیل\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
+            . $this->visuallyHiddenLabel($contactFieldId, 'شماره موبایل یا ایمیل')
+            . "<input id=\"{$contactFieldId}\" type=\"text\" placeholder=\"شماره موبایل یا ایمیل\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;\"></div>
                     <div style=\"margin-bottom:1rem;\">"
-                        . $this->visuallyHiddenLabel($messageFieldId, 'پیام شما')
-                        . "<textarea id=\"{$messageFieldId}\" placeholder=\"پیام شما\" rows=\"4\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;resize:vertical;\"></textarea></div>
+            . $this->visuallyHiddenLabel($messageFieldId, 'پیام شما')
+            . "<textarea id=\"{$messageFieldId}\" placeholder=\"پیام شما\" rows=\"4\" style=\"width:100%;padding:0.65rem 1rem;border:1px solid var(--tb-border, #e5e7eb);border-radius:0.5rem;font-family:inherit;font-size:0.95rem;resize:vertical;\"></textarea></div>
                     <button type=\"submit\" class=\"tb-btn tb-btn-primary\" style=\"width:100%;\">ارسال پیام</button>
                 </form>
             </div>
@@ -4200,210 +4213,242 @@ class BlockRenderer
             . '<script data-tb-block-asset="header_modern_v1">' . $js . '</script>';
     }
 
-    protected function renderNavHeader(array $props, string $inner, string $id): string
+    public function renderNavHeader(array $props, string $inner, string $id): string
     {
+        $safeId = preg_replace('/[^A-Za-z0-9_-]/', '-', $id) ?: 'header';
+        $rootId = 'tb-' . $safeId;
+        $menuPanelId = $rootId . '-menu-panel';
+        $searchFormId = $rootId . '-search-form';
+        $searchInputId = $rootId . '-search';
+
+        $background = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, 'var(--tb-surface, #fff)'));
+        $textColor = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-text, #172033)'));
+        $rawGlowColor = trim($this->stringify($props['cta_glow_color'] ?? ''));
+        $glowEnabled = $this->flag($props['cta_glow_enabled'] ?? false) || $rawGlowColor !== '';
+        $glowColor = $this->escapeAttr($this->cssColor($rawGlowColor, 'var(--tb-primary, #c2410c)'));
+
         $logoText = $this->escape($props['logo_text'] ?? '');
-        $logoUrl  = $this->linkHref($props['logo_url'] ?? '/', '/');
-        $bg       = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, 'var(--tb-background, #ffffff)'));
-        $tc       = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, 'var(--tb-text, #111827)'));
-        $sticky   = (bool) ($props['sticky'] ?? false);
+        $logoAlt = $this->escapeAttr($props['logo_alt'] ?? ($props['logo_text'] ?? 'لوگو'));
+        $logoUrl = $this->linkHref($props['logo_url'] ?? '/', '/');
+        $desktopLogoImage = $this->escapeUrl($this->mediaSrc($props['logo_image'] ?? ''), '');
+        $mobileLogoImage = $this->escapeUrl($this->mediaSrc($props['mobile_logo'] ?? ''), '');
+        $rawLogoHeight = $props['logo_height'] ?? 40;
+        $rawMobileLogoHeight = $props['logo_height_mobile'] ?? 32;
+        $logoHeight = max(20, min(120, is_numeric($rawLogoHeight) ? (int) $rawLogoHeight : 40));
+        $mobileLogoHeight = max(16, min(96, is_numeric($rawMobileLogoHeight) ? (int) $rawMobileLogoHeight : 32));
 
-        $rawLinks = $props['nav_links'] ?? $props['links'] ?? [];
-        $links    = is_array($rawLinks) ? $rawLinks : [];
+        $logoImageHtml = '';
+        if ($desktopLogoImage !== '') {
+            $logoImageHtml = '<img src="' . $desktopLogoImage . '" alt="' . $logoAlt . '" class="tb-nav-header-logo-img" height="' . $logoHeight . '" decoding="async">';
+        }
+        $siteLogoHtml = '';
+        if ($logoImageHtml === '' && $logoText === '' && is_string($this->context['site_logo_html'] ?? null)) {
+            $siteLogoHtml = $this->context['site_logo_html'];
+        }
+        $desktopLogoContent = $logoImageHtml
+            . ($logoText !== '' && $desktopLogoImage !== '' ? '<span class="tb-nav-header-logo-text">' . $logoText . '</span>' : '')
+            . ($logoImageHtml === '' && $siteLogoHtml === '' ? $logoText : '');
+        $desktopLogo = '';
+        if ($siteLogoHtml !== '') {
+            $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop">' . $siteLogoHtml . '</div>';
+        } elseif ($desktopLogoContent !== '') {
+            $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop"><a href="' . $logoUrl . '" class="tb-nav-header-logo' . ($desktopLogoImage !== '' ? ' tb-nav-header-logo--image' : '') . '"' . ($desktopLogoImage !== '' ? ' style="--tb-logo-h:' . $logoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px"' : '') . ' data-widget-slot="logo">' . $desktopLogoContent . '</a></div>';
+        }
 
-        $phone       = $this->escape($props['phone'] ?? '');
-        $ctaText     = $this->escape($props['cta_text'] ?? '');
-        $ctaUrl      = $this->linkHref($props['cta_url'] ?? '#', '#');
-        $showSearch  = (bool) ($props['show_search'] ?? false);
-        $searchPh    = $props['search_placeholder'] ?? 'جستجو...';
-        $showCart    = (bool) ($props['show_cart'] ?? false);
-        $showAccount = (bool) ($props['show_account'] ?? false);
+        $mobileLogo = '';
+        if ($mobileLogoImage !== '') {
+            $mobileLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--mobile"><a href="' . $logoUrl . '" class="tb-nav-header-logo tb-nav-header-logo--image tb-nav-header-logo--mobile" style="--tb-logo-h:' . $mobileLogoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px" data-widget-slot="logo"><img src="' . $mobileLogoImage . '" alt="' . $logoAlt . '" class="tb-nav-header-logo-img" height="' . $mobileLogoHeight . '" decoding="async"></a></div>';
+        }
+        if ($desktopLogo === '' && $mobileLogo === '') {
+            $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop"><span class="tb-nav-header-logo" data-widget-slot="logo">' . ($logoText !== '' ? $logoText : 'خانه') . '</span></div>';
+        }
 
-        // TASK 3/3 Phase 6.5B — when nav_source=menu, render the SAME real
-        // Menu tree the canonical nav_menu block uses ($context['menu_html'],
-        // built by the host from the site's real "primary" Menu location),
-        // instead of this block's own nav_links repeater. This is the
-        // header half of the Menu <-> Page convergence: a customer editing
-        // /admin/menus now genuinely controls the visible header nav for
-        // any theme/instance that opts in, rather than maintaining a
-        // second, disconnected label+url list with no Page-rename safety.
-        if (($props['nav_source'] ?? 'custom') === 'menu') {
-            $linkItems = $this->context['menu_html'] ?? '';
+        $menuHtml = '';
+        $hasMegaMenu = false;
+        if (trim($inner) !== '') {
+            $menuHtml = $inner;
+        } elseif (($props['nav_source'] ?? 'custom') === 'menu' && is_string($this->context['menu_html'] ?? null) && trim($this->context['menu_html']) !== '') {
+            $menuHtml = $this->context['menu_html'];
         } else {
-            $linkItems = '';
+            $links = $props['nav_links'] ?? $props['links'] ?? [];
+            if (is_string($links)) {
+                $decodedLinks = json_decode($links, true);
+                $links = is_array($decodedLinks) ? $decodedLinks : [];
+            }
+            if (!is_array($links) || $links === []) {
+                $links = [
+                    ['label' => 'خانه', 'url' => '/'],
+                    ['label' => 'فروشگاه', 'url' => '/shop'],
+                    ['label' => 'تماس با ما', 'url' => '/contact'],
+                ];
+            }
             foreach ($links as $link) {
-                $url   = $this->linkHref(is_array($link) ? ($link['url'] ?? '') : '', '#');
-                $label = $this->escape(is_array($link) ? ($link['label'] ?? '') : (string) $link);
+                if (!is_array($link)) {
+                    continue;
+                }
+                $label = $this->escape($link['label'] ?? '');
                 if ($label === '') {
                     continue;
                 }
-                // Universal Multipurpose Slider Overhaul (Commercial
-                // Productization): Mega Menu — a genuinely new,
-                // additive-only capability (a plain {url,label} item, the
-                // only shape every existing theme/instance has ever
-                // authored, renders identically to before). Two authoring
-                // shapes are accepted, normalized to the same internal
-                // {columns:[{title,links}], banner_*} structure:
-                //  - flat `mega_items` (a real visual, non-JSON editor —
-                //    the Canvas repeater UI supports exactly one level of
-                //    nested repeater, so each row is {column_title,
-                //    link_label, link_url} and consecutive rows sharing
-                //    the same column_title are grouped into one column at
-                //    render time) plus sibling `mega_banner_image/_url/_text`
-                //    fields on the same link item — this is what the
-                //    editor (App\Services\ThemeCanvas\BlockRegistry) authors.
-                //  - legacy raw-JSON `mega: {columns:[...], banner_*}` —
-                //    still accepted for programmatic/seeder authoring.
-                $mega = $this->normalizeMegaMenuData(is_array($link) ? $link : []);
+                $url = $this->linkHref($link['url'] ?? '#', '#');
+                $mega = $this->normalizeMegaMenuData($link);
                 if ($mega !== null) {
-                    $linkItems .= $this->renderMegaMenuItem($id, $url, $label, $mega);
+                    $menuHtml .= $this->renderMegaMenuItem($safeId, $url, $label, $mega);
+                    $hasMegaMenu = true;
                 } else {
-                    $linkItems .= "<a href=\"{$url}\" class=\"tb-nav-header-link\">{$label}</a>";
+                    $menuHtml .= '<a href="' . $url . '" class="tb-nav-header-link"' . $this->deadLinkMark($url) . '>' . $label . '</a>';
                 }
             }
         }
+        $hasMegaMenu = $hasMegaMenu || str_contains($menuHtml, 'tb-mega-menu');
 
-        $searchHtml = '';
-        if ($showSearch) {
-            $searchFieldId = "tb-{$id}-search";
-            // Phase 0.7 (ADR-066): the same real search as search_bar; on
-            // phones the field folds into an icon that opens the dialog.
-            $scope = $props['search_scope'] ?? 'all';
-            $scope = in_array($scope, ['all', 'products', 'posts'], true) ? $scope : 'all';
-            [$attrs, $hidden, $assets, $param] = $this->searchForm($scope);
-            $searchHtml = "<form id=\"{$searchFieldId}-form\" class=\"tb-nav-header-search\" role=\"search\"{$attrs}>"
-                . $this->visuallyHiddenLabel($searchFieldId, $searchPh)
-                . "<input id=\"{$searchFieldId}\" type=\"search\" name=\"" . $this->escapeAttr($param) . "\" placeholder=\"" . $this->escapeAttr($searchPh) . "\" class=\"tb-nav-header-search-input\" autocomplete=\"off\" enterkeyhint=\"search\">"
-                . $hidden
-                . "</form>"
-                . "<button type=\"button\" class=\"tb-nav-header-icon-link tb-nav-header-search-toggle\" data-tb-search-open=\"{$searchFieldId}-form\" aria-label=\"جستجو\">" . $this->iconHtml('search') . '</button>'
-                . $assets;
-        }
+        $menuAlignment = in_array($props['menu_align'] ?? 'end', ['start', 'center'], true)
+            ? ' tb-nav-header--menu-' . $props['menu_align']
+            : '';
+        $menuHtml = '<nav class="tb-nav-header-links" aria-label="منوی اصلی" data-widget-slot="menu">'
+            . '<div id="' . $this->escapeAttr($menuPanelId) . '" class="tb-nav-header-menu-panel">'
+            . '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>'
+            . $menuHtml
+            . '</div></nav>';
 
-        $phoneGlow = $this->flag($props['phone_glow_enabled'] ?? false) || !empty($props['phone_glow_color'] ?? '');
-$phoneGlowColor = $this->cssColor($props['phone_glow_color'] ?? '#22c55e', '#22c55e');
-$phoneGlowClass = $phoneGlow ? ' tb-phone--glow' : '';
-$phoneGlowStyle = $phoneGlow ? " style=\"--phone-glow-color:{$phoneGlowColor};\"" : '';
-$phoneHtml   = $phone ? "<a href=\"tel:" . $this->escapeAttr(preg_replace('/[^+0-9]/', '', $props['phone'])) . "\" class=\"tb-nav-header-phone{$phoneGlowClass}\"{$phoneGlowStyle}>{$phone}</a>" : '';
-        // Phase 1 (ADR-067): with host cart endpoints the icon opens the
-        // mini-cart drawer (blocks/cart.js); without, the old link.
-        $cartHtml    = $showCart ? $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart')) : '';
-        $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">" . $this->iconHtml('user') . "</a>" : '';
-        $ctaGlow = $this->flag($props['cta_glow_enabled'] ?? false) || !empty($props['cta_glow_color'] ?? '');
-$ctaGlowColor = $this->cssColor($props['cta_glow_color'] ?? '#4f46e5', '#4f46e5');
-$ctaGlowClass = $ctaGlow ? ' tb-cta--glow' : '';
-$ctaGlowStyle = $ctaGlow ? " style=\"--cta-glow-color:{$ctaGlowColor};\"" : '';
-$ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta{$ctaGlowClass}\"{$ctaGlowStyle}{$this->deadLinkMark($ctaUrl)}>{$ctaText}</a>" : '';
-        $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
-        // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
-        // golden-journey browser test) and fixed: nav_header's schema only
-        // ever supported a TEXT logo — a customer's real, canonical
-        // Settings > Logo upload (CustomerMediaService) had no rendering
-        // path into the actual live header at all. Rather than adding a
-        // second, block-level logo-image field the customer would have to
-        // separately author per header preset (a NEW duplicate authority,
-        // exactly what this phase exists to avoid), an un-set logo_text
-        // falls back to the site's real global logo image
-        // ($context['site_logo_html'], the same host-resolved value
-        // <x-site-brand> already renders elsewhere) — zero behavior change
-        // for any existing theme/instance that already authors logo_text.
-        //
-        // ADR-076: a block-level logo image now exists after all, because a
-        // header preset with its own logo is what every commercial theme
-        // ships. The fallback order keeps the BLD-25 behaviour: image (with
-        // logo_text beside it as the brand name), else logo_text, else the
-        // site's global logo.
-        $logoSrc = $this->mediaSrc($props['logo_image'] ?? '');
-        $logoSrc = $logoSrc !== '' ? $this->escapeUrl($logoSrc, '') : '';
-        if ($logoSrc !== '') {
-            $logoH = is_numeric($props['logo_height'] ?? null) ? max(20, min(120, (int) $props['logo_height'])) : 40;
-            $logoHm = is_numeric($props['logo_height_mobile'] ?? null) ? max(16, min(96, (int) $props['logo_height_mobile'])) : 32;
-            $alt = trim($this->stringify($props['logo_alt'] ?? ''));
-            $alt = $this->escapeAttr($alt !== '' ? $alt : trim($this->stringify($props['logo_text'] ?? '')));
-            $logoHtml = "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo tb-nav-header-logo--image\" style=\"--tb-logo-h:{$logoH}px;--tb-logo-h-m:{$logoHm}px\" data-widget-slot=\"logo\">"
-                . "<img src=\"{$logoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header-logo-img\" height=\"{$logoH}\" decoding=\"async\">"
-                . ($logoText !== '' ? "<span class=\"tb-nav-header-logo-text\">{$logoText}</span>" : '')
-                . '</a>';
-            $mobileLogoSrc = $this->mediaSrc($props['mobile_logo'] ?? '');
-            $mobileLogoSrc = $mobileLogoSrc !== '' ? $this->escapeUrl($mobileLogoSrc, '') : '';
-            if ($mobileLogoSrc !== '') {
-                $logoHtml .= "<img src=\"{$mobileLogoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header__logo--mobile\" height=\"{$logoHm}\" decoding=\"async\">";
+        $actions = '';
+        $searchAssets = '';
+        if ($this->flag($props['show_search'] ?? false)) {
+            $requestedScope = $props['search_scope'] ?? 'all';
+            $scope = in_array($requestedScope, ['all', 'products', 'posts'], true) ? $requestedScope : 'all';
+            [$searchAttrs, $hiddenSearchInputs, $searchAssets, $searchParam] = $this->searchForm($scope);
+            $placeholder = $this->escapeAttr($props['search_placeholder'] ?? 'جستجو...');
+            $searchInput = '<label class="tb-nav-header-visually-hidden" for="' . $this->escapeAttr($searchInputId) . '">' . $placeholder . '</label>'
+                . '<input id="' . $this->escapeAttr($searchInputId) . '" type="search" name="' . $this->escapeAttr($searchParam) . '" class="tb-nav-header-search-input" placeholder="' . $placeholder . '" autocomplete="off" enterkeyhint="search">'
+                . $hiddenSearchInputs;
+            $searchMode = ($props['search_mode'] ?? 'input') === 'icon' ? 'icon' : 'input';
+            if ($searchMode === 'icon') {
+                $actions .= '<div class="tb-nav-header-search-wrap tb-nav-header-search-wrap--icon">'
+                    . '<button type="button" class="tb-nav-header-search-toggle tb-nav-header-icon-link" aria-label="باز کردن جستجو" aria-expanded="false" aria-controls="' . $this->escapeAttr($searchFormId) . '">' . $this->iconHtml('search') . '</button>'
+                    . '<form id="' . $this->escapeAttr($searchFormId) . '" class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden' . $searchAttrs . '>' . $searchInput . '<button type="submit" class="tb-nav-header-search-submit" aria-label="جستجو">' . $this->iconHtml('search') . '</button></form>'
+                    . '</div>';
+            } else {
+                $actions .= '<form id="' . $this->escapeAttr($searchFormId) . '" class="tb-nav-header-search" role="search"' . $searchAttrs . '>'
+                    . $searchInput
+                    . '</form>';
             }
-        } else {
-            $logoHtml = $logoText
-                ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\" data-widget-slot=\"logo\">{$logoText}</a>"
-                : ($this->context['site_logo_html'] ?? '');
         }
 
-        // ADR-076: quick-access social/messenger icons, before the CTA.
         $socialLinks = is_array($props['social_links'] ?? null) ? $props['social_links'] : [];
-        $quickHtml = $socialLinks !== []
-            ? $this->socialIconsHtml($socialLinks, "{$id}-quick", 'quick-access', ($props['social_style'] ?? 'mono') === 'brand',
-                'tb-nav-header-social' . ($this->flag($props['social_show_mobile'] ?? false) ? ' tb-nav-header-social--mobile' : ''))
+        $socialStyle = ($props['social_style'] ?? '') === 'brand';
+        $socialClasses = 'tb-nav-header-social' . ($this->flag($props['social_show_mobile'] ?? false) ? ' tb-nav-header-social--mobile' : '');
+        $actions .= $this->socialIconsHtml($socialLinks, $safeId . '-quick', 'quick-access', $socialStyle, $socialClasses, true);
+
+        $phone = trim($this->stringify($props['phone'] ?? ''));
+        if ($phone !== '') {
+            $phoneHref = strtr($phone, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
+            $phoneHref = preg_replace('/[^0-9+]/', '', $phoneHref) ?: '';
+            $safePhoneUrl = $phoneHref !== '' ? $this->linkHref('tel:' . $phoneHref, '') : '';
+            if ($safePhoneUrl !== '') {
+                $rawPhoneGlowColor = trim($this->stringify($props['phone_glow_color'] ?? ''));
+                $phoneGlow = $glowEnabled || $this->flag($props['phone_glow_enabled'] ?? false) || $rawPhoneGlowColor !== '';
+                $phoneGlowColor = $this->escapeAttr($this->cssColor($rawPhoneGlowColor !== '' ? $rawPhoneGlowColor : $rawGlowColor, 'var(--tb-primary, #c2410c)'));
+                $phoneGlowClass = $phoneGlow ? ' tb-phone--glow tb-nav-header-glow' : '';
+                $phoneGlowStyle = $rawPhoneGlowColor !== '' ? ' style="--tb-nav-header-glow:' . $phoneGlowColor . ';--phone-glow-color:' . $phoneGlowColor . '"' : '';
+                $actions .= '<a href="' . $safePhoneUrl . '" class="tb-nav-header-phone' . $phoneGlowClass . '"' . $phoneGlowStyle . ' data-widget-slot="contact">' . $this->escape($phone) . '</a>';
+            }
+        }
+
+        if ($this->flag($props['show_cart'] ?? false)) {
+            $actions .= $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart'));
+        }
+        if ($this->flag($props['show_account'] ?? false)) {
+            $accountUrl = $this->linkHref($this->context['account_url'] ?? '/account', '/account');
+            $actions .= '<a href="' . $accountUrl . '" class="tb-nav-header-icon-link" aria-label="حساب کاربری">' . $this->iconHtml('user') . '</a>';
+        }
+        if ($this->flag($props['show_dark_toggle'] ?? false)) {
+            $actions .= $this->renderDarkModeToggle($safeId);
+        }
+
+        $ctaText = $this->escape($props['cta_text'] ?? '');
+        $ctaUrl = $this->linkHref($props['cta_url'] ?? '', '#');
+        if ($ctaText !== '' && $this->showsLink($ctaUrl)) {
+            $actions .= '<a href="' . $ctaUrl . '" class="tb-btn tb-btn-primary tb-nav-header-cta' . ($glowEnabled ? ' tb-cta--glow tb-nav-header-glow' : '') . '"' . $this->deadLinkMark($ctaUrl) . '>' . $ctaText . '</a>';
+        }
+
+        $burger = $menuHtml !== ''
+            ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '">' . $this->iconHtml('menu') . '</button>'
+            : '';
+        $headerFlags = [];
+        if ($this->flag($props['sticky'] ?? false)) {
+            $headerFlags[] = 'sticky';
+            if ($this->flag($props['sticky_hide_on_scroll'] ?? false)) {
+                $headerFlags[] = 'smart';
+            }
+        }
+        if ($this->flag($props['transparent_over_hero'] ?? false)) {
+            $headerFlags[] = 'overlay';
+        }
+        $overlayText = trim($this->stringify($props['transparent_text_color'] ?? ''));
+        $overlayText = $overlayText !== '' && $this->cssColor($overlayText, '') !== '' ? $this->escapeAttr($overlayText) : 'auto';
+        $headerAttrs = $headerFlags !== []
+            ? ' data-tb-header="' . implode(' ', $headerFlags) . '" data-tb-overlay-text="' . $overlayText . '"'
             : '';
 
-        // ADR-076: menu placement; 'end' (the original layout) adds no class.
-        $menuAlign = $props['menu_align'] ?? 'end';
-        $alignClass = in_array($menuAlign, ['start', 'center'], true) ? " tb-nav-header--menu-{$menuAlign}" : '';
+        $scripts = $headerFlags !== [] || $hasMegaMenu ? $this->siteHeaderAssets() : '';
+        $scriptRootId = json_encode($rootId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?: '""';
+        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();}else{document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])");if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
 
-        $stickyStyle = $sticky ? 'position:sticky;top:0;z-index:100;' : '';
+        $styles = '<style>'
+            . '.tb-nav-header-root{position:relative;isolation:isolate;width:100%;direction:rtl;color:inherit;}'
+            . '.tb-nav-header-root *{box-sizing:border-box;}'
+            . '.tb-nav-header-root .tb-nav-header-inner{display:flex;align-items:center;justify-content:space-between;direction:rtl;gap:clamp(.65rem,2vw,1.5rem);width:min(100%,80rem);min-width:0;min-height:4.25rem;margin-inline:auto;padding:.5rem 1rem;flex-wrap:nowrap;}'
+            . '.tb-nav-header-root .tb-nav-header-logo-slot{flex:0 1 auto;min-width:0;}'
+            . '.tb-nav-header-root .tb-nav-header-logo-slot--mobile{display:none;}'
+            . '.tb-nav-header-root .tb-nav-header-logo{display:inline-flex;align-items:center;gap:.55rem;max-width:100%;min-width:0;color:inherit;font-weight:800;text-decoration:none;}'
+            . '.tb-nav-header-root .tb-nav-header-logo-img{display:block;width:auto;max-width:min(14rem,35vw);height:var(--tb-logo-h,40px);object-fit:contain;}'
+            . '.tb-nav-header-root .tb-nav-header-logo-text{min-width:0;overflow-wrap:anywhere;}'
+            . '.tb-nav-header-root .tb-nav-header-links{display:flex;flex:1 1 auto;align-items:center;justify-content:center;min-width:0;}'
+            . '.tb-nav-header-root .tb-nav-header-menu-panel{display:flex;align-items:center;justify-content:center;gap:clamp(.75rem,1.7vw,1.5rem);min-width:0;}'
+            . '.tb-nav-header-root .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a,.tb-nav-header-root .tb-nav-header-links>a{color:inherit;text-decoration:none;white-space:nowrap;}'
+            . '.tb-nav-header--menu-start .tb-nav-header-root .tb-nav-header-links{justify-content:flex-start;}'
+            . '.tb-nav-header-root .tb-nav-header-actions{display:flex;flex:0 1 auto;align-items:center;justify-content:flex-end;gap:.55rem;min-width:0;}'
+            . '.tb-nav-header-root .tb-nav-header-search-wrap{position:relative;}'
+            . '.tb-nav-header-root .tb-nav-header-search{display:flex;align-items:center;gap:.35rem;}'
+            . '.tb-nav-header-root .tb-nav-header-search-popover{position:absolute;z-index:10003;inset-block-start:calc(100% + .55rem);inset-inline-start:0;width:min(22rem,calc(100vw - 2rem));padding:.65rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);border:1px solid var(--tb-border,#d1d5db);border-radius:.5rem;box-shadow:0 12px 32px rgb(15 23 42 / 18%);}'
+            . '.tb-nav-header-root .tb-nav-header-search[hidden]{display:none!important;}'
+            . '.tb-nav-header-root .tb-nav-header-search-input{width:min(12rem,32vw);min-width:0;min-height:2.5rem;padding:.5rem .75rem;border:1px solid var(--tb-border,#d1d5db);border-radius:.35rem;background:var(--tb-surface,#fff);color:inherit;font:inherit;}'
+            . '.tb-nav-header-root .tb-nav-header-search-popover .tb-nav-header-search-input{width:auto;flex:1;}'
+            . '.tb-nav-header-root .tb-nav-header-icon-link,.tb-nav-header-root .tb-nav-header-search-submit,.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:2.5rem;min-height:2.5rem;padding:.45rem;border:0;border-radius:.375rem;background:transparent;color:inherit;cursor:pointer;}'
+            . '.tb-nav-header-root .tb-nav-header-icon-link:hover,.tb-nav-header-root .tb-nav-header-search-submit:hover,.tb-nav-header-root .tb-nav-header-menu-close:hover{background:color-mix(in srgb,currentColor 9%,transparent);}'
+            . '.tb-nav-header-root .tb-nav-header-toggle,.tb-nav-header-root .tb-nav-header-menu-close{display:none;}'
+            . '.tb-nav-header-root .tb-nav-header-menu-close{align-self:flex-end;}'
+            . '.tb-nav-header-root .tb-nav-header-overlay{display:none;}'
+            . '.tb-nav-header-root .tb-nav-header-overlay[hidden]{display:none!important;}'
+            . '.tb-nav-header-root .tb-nav-header-phone{display:inline-flex;align-items:center;min-height:2.5rem;padding-inline:.35rem;color:inherit;font-weight:700;text-decoration:none;white-space:nowrap;}'
+            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon-svg{display:block;width:auto;height:1.2rem;max-width:100%;object-fit:contain;}'
+            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--eitaa,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--bale,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--soroush{background:var(--tb-surface,#fff);color:inherit;border:1px solid var(--tb-border,#d1d5db);}'
+            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika{width:3.75rem;border-radius:.375rem;}'
+            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika .tb-social-icon-svg{height:1.15rem;}'
+            . '.tb-nav-header-root .tb-nav-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:2.5rem;padding:.55rem 1rem;border-radius:.375rem;text-decoration:none;white-space:nowrap;}'
+            . '.tb-nav-header-root .tb-nav-header-glow{animation:tb-nav-header-glow 2.2s ease-in-out infinite;}'
+            . '@keyframes tb-nav-header-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tb-nav-header-glow) 0%,transparent);}50%{box-shadow:0 0 0 .45rem color-mix(in srgb,var(--tb-nav-header-glow) 24%,transparent);}}'
+            . '.tb-nav-header-root .tb-nav-header-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}'
+            . '@media(max-width:767.98px){.tb-nav-header-root .tb-nav-header-inner{min-height:3.75rem;gap:.5rem;padding-inline:.75rem;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--desktop{display:none;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--mobile{display:block;}.tb-nav-header-root .tb-nav-header-links{display:none;}.tb-nav-header-root[data-menu-open="true"]{z-index:10001;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{display:flex;position:fixed;z-index:10002;inset-block:0;inset-inline:0 auto;width:min(22rem,88vw);max-width:100%;padding:1rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);box-shadow:-12px 0 32px rgb(15 23 42 / 18%);overflow-y:auto;overscroll-behavior:contain;align-items:stretch;justify-content:flex-start;}.tb-nav-header-root .tb-nav-header-menu-panel{width:100%;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:.5rem;}.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;}.tb-nav-header-root .tb-nav-header-menu-panel .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a{display:flex;align-items:center;min-height:2.75rem;padding:.6rem .5rem;white-space:normal;border-bottom:1px solid var(--tb-border,#e5e7eb);}.tb-nav-header-root .tb-nav-header-overlay:not([hidden]){display:block;position:fixed;z-index:10000;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgb(15 23 42 / 52%);}.tb-nav-header-root .tb-nav-header-toggle{display:inline-flex;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-actions{position:relative;z-index:10001;}.tb-nav-header-root .tb-nav-header-actions{gap:.3rem;}.tb-nav-header-root .tb-nav-header-search-input{width:min(9rem,32vw);}.tb-nav-header-root .tb-nav-header-phone{max-width:7rem;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;}.tb-nav-header-root .tb-nav-header-cta{padding-inline:.65rem;font-size:.82rem;}.tb-nav-header-root .tb-nav-header-social:not(.tb-nav-header-social--mobile){display:none;}}'
+            . '@media(prefers-reduced-motion:reduce){.tb-nav-header-root .tb-nav-header-glow{animation:none;}.tb-nav-header-root *{scroll-behavior:auto!important;}}'
+            . '</style>';
 
-        // TASK 3/3 Phase 6 (BLD-18): nav_header — the primary header
-        // component every one of the 6 header presets uses in some
-        // combination — had ZERO CSS anywhere in either host's real
-        // rendering layout (confirmed: not one .tb-nav-header* rule
-        // existed), rendering as bare, unstyled <a> tags with no spacing.
-        // Real CSS added to the accompanying customer-site commit. No new
-        // mobile toggle needed here: both hosts' own page chrome already
-        // wraps every header block in a real, working hamburger/mobile-
-        // menu mechanism (customer-site: .tb-header-nav-wrap/.tb-mobile-
-        // menu in layouts/canvas-theme.blade.php) that hides this block's
-        // own inline links below 768px and shows its own real mobile nav
-        // instead — a second toggle nested in here would sit inside that
-        // already-hidden wrapper and never be reachable.
-        //
-        // BLD-19 (real axe-core scan): the root element was a literal
-        // <header>, and every real consumer of this block already wraps it
-        // in its OWN real <header role="banner"> page-chrome element — a
-        // <header> inside a <header> is two nested banner landmarks, a
-        // genuine WCAG/ARIA violation (landmark-banner-is-top-level,
-        // landmark-no-duplicate-banner), not just noise. A plain <div>
-        // carries the same classes/styling with no landmark role of its
-        // own, leaving the single real banner role on the outer wrapper
-        // where it belongs — see renderNavFooter() below for the
-        // contentinfo/<footer> equivalent.
-        // Phase 1 (ADR-067): scroll behaviour lives on the page's banner
-        // element (the host wraps this block in its own <header>), applied by
-        // blocks/site-header.js from these flags. Without the script the
-        // block keeps its plain inline sticky position.
-        $flags = array_keys(array_filter([
-            'sticky' => $sticky,
-            'smart' => $sticky && $this->flag($props['sticky_hide_on_scroll'] ?? false),
-            'overlay' => $this->flag($props['transparent_over_hero'] ?? false),
-        ]));
-        $headerAttrs = '';
-        if ($flags !== []) {
-            $this->headerNeedsScript = true;
-            // '' = auto: site-header.js picks light or dark text from the hero.
-            $rawOverlay = trim($this->stringify($props['transparent_text_color'] ?? ''));
-            $overlayText = $rawOverlay === '' ? 'auto' : $this->cssColor($rawOverlay, 'auto');
-            $headerAttrs = ' data-tb-header="' . implode(' ', $flags) . '"'
-                . (in_array('overlay', $flags, true) ? ' data-tb-overlay-text="' . $this->escapeAttr($overlayText) . '"' : '');
-        }
-        $assets = $this->headerNeedsScript ? $this->siteHeaderAssets() : '';
+        $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
+        $headerClass = 'tb-nav-header' . $menuAlignment;
 
-        return "<div id=\"tb-{$id}\" class=\"tb-nav-header{$alignClass}\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
-            <div class=\"tb-container tb-nav-header-inner\">
-                {$logoHtml}
-                <button type=\"button\" class=\"tb-nav-header__hamburger\" data-tb-drawer-toggle=\"{$id}\" aria-expanded=\"false\" aria-label=\"منو\">☰</button>
-                <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\" data-widget-slot=\"menu\">{$linkItems}</nav>
-                <div class=\"tb-nav-header__mobile-drawer\" id=\"tb-{$id}-drawer\" aria-hidden=\"true\">{$linkItems}</div>
-                <div class=\"tb-nav-header-actions\" data-widget-slot=\"actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$quickHtml}{$ctaHtml}</div>
-            </div>
-        </div>{$assets}";
+        return $styles
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';">'
+            . '<div class="' . $rootClass . '"' . $headerAttrs . '>'
+            . '<div class="tb-nav-header-inner">'
+            . $desktopLogo . $mobileLogo . $menuHtml
+            . '<div class="tb-nav-header-actions" data-widget-slot="actions">' . $actions . $burger . '</div>'
+            . '<button type="button" class="tb-nav-header-overlay" aria-label="بستن منو" hidden></button>'
+            . '</div></div></div>'
+            . $searchAssets
+            . $scripts
+            . $interactionScript;
     }
 
-    /** Phase 1 (ADR-067): blocks/site-header.js, inlined once per render. */
     private function siteHeaderAssets(): string
     {
         if ($this->siteHeaderAssetsEmitted) {
@@ -4608,9 +4653,9 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
 
         $brandHtml = ($logoText || $tagline)
             ? "<div class=\"tb-nav-footer-brand\" data-widget-slot=\"brand\">"
-                . ($logoText ? "<p class=\"tb-nav-footer-logo\">{$logoText}</p>" : '')
-                . ($tagline ? "<p class=\"tb-nav-footer-tagline\">{$tagline}</p>" : '')
-                . "</div>"
+            . ($logoText ? "<p class=\"tb-nav-footer-logo\">{$logoText}</p>" : '')
+            . ($tagline ? "<p class=\"tb-nav-footer-tagline\">{$tagline}</p>" : '')
+            . "</div>"
             : '';
 
         // BLD-19 (real axe-core scan): same nested-landmark issue as
@@ -4653,7 +4698,7 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
      * fills each icon with its network colour (white glyph, AA contrast)
      * instead of following the text colour.
      */
-    private function socialIconsHtml(array $links, string $id, string $slot = 'social', bool $brand = false, string $extraClass = ''): string
+    private function socialIconsHtml(array $links, string $id, string $slot = 'social', bool $brand = false, string $extraClass = '', bool $officialVectors = false): string
     {
         $items = '';
         foreach ($links as $link) {
@@ -4670,7 +4715,10 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
             if ($network === null && $name === '') {
                 continue;
             }
-            $inner = $network !== null ? SocialNetworks::svg($network) : $this->escape($name);
+            $officialSvg = $officialVectors && $network !== null ? SocialNetworks::officialSvgDataUri($network) : '';
+            $inner = $officialSvg !== ''
+                ? '<img class="tb-social-icon-svg" src="' . $this->escapeAttr($officialSvg) . '" alt="" aria-hidden="true">'
+                : ($network !== null ? SocialNetworks::svg($network) : $this->escape($name));
             $external = $network === null || SocialNetworks::opensExternally($network) ? ' target="_blank" rel="noopener noreferrer"' : '';
             $items .= "<a href=\"{$url}\" class=\"tb-social-icon" . ($network === null ? ' tb-social-icon--text' : " tb-social-icon--{$network}") . "\"{$external} aria-label=\"" . $this->escapeAttr($name) . "\" title=\"" . $this->escapeAttr($name) . "\">{$inner}</a>";
         }
@@ -5183,7 +5231,7 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
             ['title' => 'ده نکته برای خریدی مطمئن‌تر از فروشگاه‌های اینترنتی', 'category' => 'آموزش', 'author' => 'سارا محمدی', 'date' => '۲۸ مهر ۱۴۰۵', 'reading_minutes' => 4],
             ['title' => 'تازه‌های فصل: محصولاتی که نباید از دست بدهید', 'category' => 'اخبار', 'author' => 'علی رضایی', 'date' => '۲۰ مهر ۱۴۰۵', 'reading_minutes' => 3],
         ];
-        $cards = array_map(fn ($s) => $this->blogCardHtml($s + ['url' => '#', 'excerpt' => 'متن نمونه؛ پس از انتشار مطالب، نوشته‌های واقعی سایت در این بخش نمایش داده می‌شوند.']), $samples);
+        $cards = array_map(fn($s) => $this->blogCardHtml($s + ['url' => '#', 'excerpt' => 'متن نمونه؛ پس از انتشار مطالب، نوشته‌های واقعی سایت در این بخش نمایش داده می‌شوند.']), $samples);
         return $this->blogCardsLayout($cards, $props, $id, $title);
     }
 
@@ -5300,7 +5348,7 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
      */
     private function countdownTarget(string $end, string $time): ?array
     {
-        $clockOf = static fn (string $h, string $m): ?array => ((int) $h < 24 && (int) $m < 60) ? [(int) $h, (int) $m, 0] : null;
+        $clockOf = static fn(string $h, string $m): ?array => ((int) $h < 24 && (int) $m < 60) ? [(int) $h, (int) $m, 0] : null;
         $timeClock = preg_match('/^(\d{1,2}):(\d{2})$/', PersianNumber::latinDigits($time), $t) === 1 ? $clockOf($t[1], $t[2]) : null;
         if (preg_match('#^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?$#', PersianNumber::latinDigits($end), $m) !== 1) {
             return ['iso' => $end, 'display' => null]; // full ISO and other legacy strings: as stored

@@ -53,11 +53,96 @@ class CanonicalBlockRenderersTest extends TestCase
         $this->assertSame(2, $xpath->query('//nav//a')->length);
     }
 
+    public function test_nav_header_preserves_inner_content_and_emits_scoped_desktop_and_mobile_layout(): void
+    {
+        $renderer = new BlockRenderer();
+        $inner = '<a href="/inner">لینک فرزند</a>';
+        $html = $renderer->renderNavHeader([
+            'nav_links' => [['url' => '/ignored', 'label' => 'منوی جایگزین']],
+        ], $inner, 'hdr');
+
+        $this->assertStringContainsString($inner, $html);
+        $this->assertStringNotContainsString('منوی جایگزین', $html);
+        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-inner{display:flex;align-items:center;justify-content:space-between;direction:rtl;', $html);
+        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-links{display:none;}', $html);
+        $this->assertStringContainsString('inset-inline:0 auto;', $html, 'the mobile drawer opens from the physical right in RTL');
+        $this->assertStringContainsString('aria-controls="tb-hdr-menu-panel"', $html);
+        $this->assertStringContainsString('class="tb-nav-header-overlay"', $html);
+    }
+
+    public function test_nav_header_uses_resolved_site_menu_then_falls_back_to_default_links(): void
+    {
+        $renderer = new BlockRenderer();
+        $renderer->setContext(['menu_html' => '<a class="nav-link" href="/resolved">سایت</a>']);
+        $resolved = $renderer->renderNavHeader(['nav_source' => 'menu'], '', 'resolved');
+        $this->assertStringContainsString('<a class="nav-link" href="/resolved">سایت</a>', $resolved);
+        $this->assertStringNotContainsString('فروشگاه', $resolved);
+
+        $renderer->setContext(['menu_html' => '']);
+        $fallback = $renderer->renderNavHeader(['nav_source' => 'menu'], '', 'fallback');
+        $this->assertStringContainsString('خانه', $fallback);
+        $this->assertStringContainsString('فروشگاه', $fallback);
+        $this->assertStringContainsString('تماس با ما', $fallback);
+    }
+
+    public function test_nav_header_search_mode_switches_between_flat_input_and_icon_popover(): void
+    {
+        $icon = $this->render('nav_header', ['show_search' => true, 'search_mode' => 'icon']);
+        $this->assertStringContainsString('class="tb-nav-header-search-toggle tb-nav-header-icon-link"', $icon);
+        $this->assertStringContainsString('class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden', $icon);
+
+        $input = $this->render('nav_header', ['show_search' => true, 'search_mode' => 'input']);
+        $this->assertStringContainsString('class="tb-nav-header-search" role="search"', $input);
+        $this->assertStringNotContainsString('class="tb-nav-header-search-toggle', $input);
+        $this->assertStringNotContainsString('class="tb-nav-header-search tb-nav-header-search-popover"', $input);
+    }
+
+    public function test_nav_header_mobile_logo_and_custom_glow_are_rendered(): void
+    {
+        $html = $this->render('nav_header', [
+            'logo_image' => '/brand-desktop.svg',
+            'mobile_logo' => '/brand-mobile.svg',
+            'logo_text' => 'فروشگاه',
+            'phone' => '۰۹۱۲۱۲۳۴۵۶۷',
+            'cta_text' => 'مشاوره',
+            'cta_url' => '/contact',
+            'cta_glow_color' => '#0d9488',
+        ]);
+
+        $this->assertStringContainsString('src="/brand-desktop.svg"', $html);
+        $this->assertStringContainsString('src="/brand-mobile.svg"', $html);
+        $this->assertStringContainsString('--tb-nav-header-glow:#0d9488;', $html);
+        $this->assertStringContainsString('class="tb-nav-header-phone tb-phone--glow tb-nav-header-glow"', $html);
+        $this->assertStringContainsString('class="tb-btn tb-btn-primary tb-nav-header-cta tb-cta--glow tb-nav-header-glow"', $html);
+        $this->assertStringContainsString('@media(prefers-reduced-motion:reduce)', $html);
+    }
+
+    public function test_nav_header_embeds_first_party_social_vectors_locally(): void
+    {
+        $networks = ['eitaa', 'bale', 'rubika', 'soroush'];
+        $html = $this->render('nav_header', [
+            'social_links' => array_map(static fn(string $network): array => [
+                'network' => $network,
+                'url' => 'https://example.test/' . $network,
+            ], $networks),
+        ]);
+
+        foreach ($networks as $network) {
+            $dataUri = \SaaSPlatform\ThemeRuntime\Support\SocialNetworks::officialSvgDataUri($network);
+            $this->assertStringStartsWith('data:image/svg+xml;base64,', $dataUri, $network);
+            $this->assertStringContainsString('src="' . $dataUri . '"', $html, $network);
+            $svg = base64_decode(substr($dataUri, strlen('data:image/svg+xml;base64,')), true);
+            $this->assertIsString($svg, $network);
+            $this->assertStringStartsWith('<svg', ltrim($svg), $network);
+            $this->assertStringNotContainsString('<script', $svg, $network);
+        }
+    }
+
     public function test_nav_header_never_fabricates_optional_features(): void
     {
         $html = $this->render('nav_header', ['nav_links' => []]);
-        $this->assertStringNotContainsString('tb-nav-header-phone', $html);
-        $this->assertStringNotContainsString('tb-nav-header-cta', $html);
+        $this->assertStringNotContainsString('class="tb-nav-header-phone', $html);
+        $this->assertStringNotContainsString('class="tb-btn tb-btn-primary tb-nav-header-cta', $html);
         $this->assertStringNotContainsString('🛒', $html);
     }
 
@@ -76,7 +161,8 @@ class CanonicalBlockRenderersTest extends TestCase
     {
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/shop', 'label' => 'فروشگاه',
+                'url' => '/shop',
+                'label' => 'فروشگاه',
                 'mega' => [
                     'columns' => [
                         ['title' => 'پوشاک', 'links' => [['url' => '/shop/men', 'label' => 'مردانه'], ['url' => '/shop/women', 'label' => 'زنانه']]],
@@ -105,7 +191,8 @@ class CanonicalBlockRenderersTest extends TestCase
         // that string shape, not only a pre-decoded PHP array.
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/services', 'label' => 'خدمات',
+                'url' => '/services',
+                'label' => 'خدمات',
                 'mega' => json_encode(['columns' => [['title' => 'مشاوره', 'links' => [['url' => '/services/a', 'label' => 'مشاوره مالی']]]]]),
             ]],
         ]);
@@ -133,7 +220,8 @@ class CanonicalBlockRenderersTest extends TestCase
     {
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/shop', 'label' => 'فروشگاه',
+                'url' => '/shop',
+                'label' => 'فروشگاه',
                 'mega_items' => [
                     ['column_title' => 'پوشاک', 'link_label' => 'مردانه', 'link_url' => '/shop/men'],
                     ['column_title' => 'پوشاک', 'link_label' => 'زنانه', 'link_url' => '/shop/women'],
@@ -175,7 +263,8 @@ class CanonicalBlockRenderersTest extends TestCase
     {
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/shop', 'label' => 'فروشگاه',
+                'url' => '/shop',
+                'label' => 'فروشگاه',
                 'mega_columns' => [
                     ['title' => 'ویژه', 'items' => [['label' => 'مردانه', 'url' => '/m'], ['label' => 'زنانه', 'url' => '/w']]],
                     ['title' => 'ویژه', 'items' => [['label' => 'بچگانه', 'url' => '/k']]],
@@ -197,7 +286,8 @@ class CanonicalBlockRenderersTest extends TestCase
     {
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/shop', 'label' => 'فروشگاه',
+                'url' => '/shop',
+                'label' => 'فروشگاه',
                 'mega_columns' => [
                     ['title' => 'دسته‌ها', 'items' => [
                         ['label' => 'با آیکون', 'url' => '/a', 'icon' => '🎯'],
@@ -215,7 +305,8 @@ class CanonicalBlockRenderersTest extends TestCase
     {
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/shop', 'label' => 'فروشگاه',
+                'url' => '/shop',
+                'label' => 'فروشگاه',
                 'mega_columns' => [['title' => 'ستون', 'items' => [['label' => 'لینک', 'url' => '/a']]]],
                 'mega_show_desktop' => false,
                 'mega_mobile_behavior' => 'flat',
@@ -229,7 +320,8 @@ class CanonicalBlockRenderersTest extends TestCase
     {
         $html = $this->render('nav_header', [
             'nav_links' => [[
-                'url' => '/shop', 'label' => 'فروشگاه',
+                'url' => '/shop',
+                'label' => 'فروشگاه',
                 'mega_columns' => [['title' => 'جدید', 'items' => [['label' => 'لینک جدید', 'url' => '/new']]]],
                 'mega_items' => [['column_title' => 'قدیمی', 'link_label' => 'لینک قدیمی', 'link_url' => '/old']],
             ]],
@@ -256,7 +348,7 @@ class CanonicalBlockRenderersTest extends TestCase
             'logo_text' => '<script>alert(1)</script>',
             'nav_links' => [['url' => 'javascript:alert(1)"', 'label' => '<img onerror=alert(1)>']],
         ]);
-        $this->assertStringNotContainsString('<script>', $html);
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
         $this->assertStringNotContainsString('<img onerror', $html);
     }
 
@@ -296,7 +388,10 @@ class CanonicalBlockRenderersTest extends TestCase
     public function test_hero_trust_renders_title_and_rating_when_present(): void
     {
         $html = $this->render('hero_trust', [
-            'title' => 'عنوان تست', 'subtitle' => 'زیرعنوان تست', 'rating' => '4.8', 'rating_label' => '۲۰۰+ نظر',
+            'title' => 'عنوان تست',
+            'subtitle' => 'زیرعنوان تست',
+            'rating' => '4.8',
+            'rating_label' => '۲۰۰+ نظر',
         ]);
         $xpath = $this->xpathFor($html);
 

@@ -20,6 +20,14 @@ namespace SaaSPlatform\ThemeRuntime\Support;
  */
 final class SocialNetworks
 {
+    /** First-party, vendored SVGs used by the commercial site header. */
+    private const OFFICIAL_SVG_FILES = [
+        'eitaa' => 'eitaa.svg',
+        'bale' => 'bale.svg',
+        'rubika' => 'rubika.svg',
+        'soroush' => 'soroush.svg',
+    ];
+
     /** network => [icon (catalog name or mark:<key>), Persian name, URL pattern, brand fill] */
     private const NETWORKS = [
         'instagram' => ['instagram', 'اینستاگرام', '~(//|\.)(instagram\.com|instagr\.am)/~i', '#C13584'],
@@ -46,9 +54,29 @@ final class SocialNetworks
     /** @var array<string,array{label:string,body:string}>|null */
     private static ?array $marks = null;
 
+    /** @var array<string,string> */
+    private static array $officialSvgDataUris = [];
+
     public static function marksPath(): string
     {
         return __DIR__ . '/../../resources/icons/social-marks.json';
+    }
+
+    public static function officialSvgDataUri(string $network): string
+    {
+        $file = self::OFFICIAL_SVG_FILES[$network] ?? null;
+        if ($file === null) {
+            return '';
+        }
+        if (!isset(self::$officialSvgDataUris[$network])) {
+            $path = __DIR__ . '/../../resources/icons/social/' . $file;
+            $svg = @file_get_contents($path);
+            if (!is_string($svg) || !str_starts_with(ltrim($svg), '<svg')) {
+                return '';
+            }
+            self::$officialSvgDataUris[$network] = 'data:image/svg+xml;base64,' . base64_encode($svg);
+        }
+        return self::$officialSvgDataUris[$network];
     }
 
     /** @return list<string> */
@@ -94,7 +122,7 @@ final class SocialNetworks
         if ($url === '') {
             return null;
         }
-        foreach (self::NETWORKS as $network => [, , $pattern]) {
+        foreach (self::NETWORKS as $network => [,, $pattern]) {
             if (preg_match($pattern, $url)) {
                 return $network;
             }
