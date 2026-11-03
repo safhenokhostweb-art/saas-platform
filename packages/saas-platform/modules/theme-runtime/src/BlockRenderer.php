@@ -4324,6 +4324,11 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
                 . "<img src=\"{$logoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header-logo-img\" height=\"{$logoH}\" decoding=\"async\">"
                 . ($logoText !== '' ? "<span class=\"tb-nav-header-logo-text\">{$logoText}</span>" : '')
                 . '</a>';
+            $mobileLogoSrc = $this->mediaSrc($props['mobile_logo'] ?? '');
+            $mobileLogoSrc = $mobileLogoSrc !== '' ? $this->escapeUrl($mobileLogoSrc, '') : '';
+            if ($mobileLogoSrc !== '') {
+                $logoHtml .= "<img src=\"{$mobileLogoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header__logo--mobile\" height=\"{$logoHm}\" decoding=\"async\">";
+            }
         } else {
             $logoHtml = $logoText
                 ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\" data-widget-slot=\"logo\">{$logoText}</a>"
