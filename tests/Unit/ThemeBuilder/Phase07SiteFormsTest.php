@@ -101,16 +101,28 @@ class Phase07SiteFormsTest extends TestCase
         $this->assertStringContainsString('data-tb-scope="all"', $scopeless);
     }
 
-    public function test_nav_header_search_shares_the_dialog_and_folds_into_an_icon_on_phones(): void
+    public function test_nav_header_input_search_stays_flat_on_phones_and_uses_host_routes(): void
     {
-        $html = $this->render('nav_header', ['show_search' => true, 'search_scope' => 'posts'], self::ENDPOINTS);
+        $html = $this->render('nav_header', ['show_search' => true, 'search_scope' => 'posts', 'search_mode' => 'input'], self::ENDPOINTS);
         $this->assertStringContainsString('<form id="tb-b1-search-form" class="tb-nav-header-search" role="search" method="get" action="/search"', $html);
         $this->assertStringContainsString('data-tb-scope="posts"', $html);
-        $this->assertStringContainsString('data-tb-search-open="tb-b1-search-form" aria-label="جستجو"><svg class="tb-icon-svg tb-icon-svg-search"', $html);
+        $this->assertStringContainsString('<input id="tb-b1-search" type="search" name="q"', $html);
+        $this->assertStringNotContainsString('class="tb-nav-header-search-toggle', $html);
+        $this->assertStringContainsString('@media(max-width:767.98px)', $html);
+        $this->assertStringContainsString('class="tb-nav-header-search-input"', $html);
+        $this->assertStringContainsString('data-tb-block-asset="site_forms"', $html);
 
         $css = file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
-        $this->assertStringContainsString('@media (max-width: 767.98px) { .tb-nav-header-search { display: none; } .tb-nav-header-search-toggle { display: inline-flex; }', $css);
         $this->assertStringContainsString('.tb-search-overlay__panel { width: 100%; height: 100%;', $css, 'full-screen dialog on phones');
+    }
+
+    public function test_nav_header_icon_search_opens_a_local_popover_with_host_routes(): void
+    {
+        $html = $this->render('nav_header', ['show_search' => true, 'search_scope' => 'posts', 'search_mode' => 'icon'], self::ENDPOINTS);
+        $this->assertStringContainsString('class="tb-nav-header-search-toggle tb-nav-header-icon-link"', $html);
+        $this->assertStringContainsString('class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden method="get" action="/search"', $html);
+        $this->assertStringContainsString('data-tb-scope="posts"', $html);
+        $this->assertStringContainsString('data-tb-block-asset="site_forms"', $html);
     }
 
     public function test_the_site_forms_script_is_inlined_once_per_render(): void
