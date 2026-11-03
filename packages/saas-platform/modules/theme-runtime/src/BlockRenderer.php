@@ -4390,7 +4390,9 @@ $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" cl
         return "<div id=\"tb-{$id}\" class=\"tb-nav-header{$alignClass}\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
+                <button type=\"button\" class=\"tb-nav-header__hamburger\" data-tb-drawer-toggle=\"{$id}\" aria-expanded=\"false\" aria-label=\"منو\">☰</button>
                 <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\" data-widget-slot=\"menu\">{$linkItems}</nav>
+                <div class=\"tb-nav-header__mobile-drawer\" id=\"tb-{$id}-drawer\" aria-hidden=\"true\">{$linkItems}</div>
                 <div class=\"tb-nav-header-actions\" data-widget-slot=\"actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$quickHtml}{$ctaHtml}</div>
             </div>
         </div>{$assets}";
