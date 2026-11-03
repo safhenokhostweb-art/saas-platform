@@ -4280,12 +4280,20 @@ class BlockRenderer
                 . $assets;
         }
 
-        $phoneHtml   = $phone ? "<a href=\"tel:" . $this->escapeAttr(preg_replace('/[^+0-9]/', '', $props['phone'])) . "\" class=\"tb-nav-header-phone\">{$phone}</a>" : '';
+        $phoneGlow = $this->flag($props['phone_glow_enabled'] ?? false) || !empty($props['phone_glow_color'] ?? '');
+$phoneGlowColor = $this->cssColor($props['phone_glow_color'] ?? '#22c55e', '#22c55e');
+$phoneGlowClass = $phoneGlow ? ' tb-phone--glow' : '';
+$phoneGlowStyle = $phoneGlow ? " style=\"--phone-glow-color:{$phoneGlowColor};\"" : '';
+$phoneHtml   = $phone ? "<a href=\"tel:" . $this->escapeAttr(preg_replace('/[^+0-9]/', '', $props['phone'])) . "\" class=\"tb-nav-header-phone{$phoneGlowClass}\"{$phoneGlowStyle}>{$phone}</a>" : '';
         // Phase 1 (ADR-067): with host cart endpoints the icon opens the
         // mini-cart drawer (blocks/cart.js); without, the old link.
         $cartHtml    = $showCart ? $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart')) : '';
         $accountHtml = $showAccount ? "<a href=\"/account\" class=\"tb-nav-header-icon-link\" aria-label=\"حساب کاربری\">" . $this->iconHtml('user') . "</a>" : '';
-        $ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta\"{$this->deadLinkMark($ctaUrl)}>{$ctaText}</a>" : '';
+        $ctaGlow = $this->flag($props['cta_glow_enabled'] ?? false) || !empty($props['cta_glow_color'] ?? '');
+$ctaGlowColor = $this->cssColor($props['cta_glow_color'] ?? '#4f46e5', '#4f46e5');
+$ctaGlowClass = $ctaGlow ? ' tb-cta--glow' : '';
+$ctaGlowStyle = $ctaGlow ? " style=\"--cta-glow-color:{$ctaGlowColor};\"" : '';
+$ctaHtml     = $ctaText && $this->showsLink($ctaUrl) ? "<a href=\"{$ctaUrl}\" class=\"tb-btn tb-btn-primary tb-nav-header-cta{$ctaGlowClass}\"{$ctaGlowStyle}{$this->deadLinkMark($ctaUrl)}>{$ctaText}</a>" : '';
         $darkToggleHtml = ((bool) ($props['show_dark_toggle'] ?? false)) ? $this->renderDarkModeToggle($id) : '';
         // TASK 3/3 Phase 6.5C (BLD-25) — real defect found (via the LOGO
         // golden-journey browser test) and fixed: nav_header's schema only
@@ -4316,6 +4324,11 @@ class BlockRenderer
                 . "<img src=\"{$logoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header-logo-img\" height=\"{$logoH}\" decoding=\"async\">"
                 . ($logoText !== '' ? "<span class=\"tb-nav-header-logo-text\">{$logoText}</span>" : '')
                 . '</a>';
+            $mobileLogoSrc = $this->mediaSrc($props['mobile_logo'] ?? '');
+            $mobileLogoSrc = $mobileLogoSrc !== '' ? $this->escapeUrl($mobileLogoSrc, '') : '';
+            if ($mobileLogoSrc !== '') {
+                $logoHtml .= "<img src=\"{$mobileLogoSrc}\" alt=\"{$alt}\" class=\"tb-nav-header__logo--mobile\" height=\"{$logoHm}\" decoding=\"async\">";
+            }
         } else {
             $logoHtml = $logoText
                 ? "<a href=\"{$logoUrl}\" class=\"tb-nav-header-logo\" data-widget-slot=\"logo\">{$logoText}</a>"
@@ -4382,7 +4395,9 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-nav-header{$alignClass}\" style=\"background:{$bg};color:{$tc};{$stickyStyle}\"{$headerAttrs}>
             <div class=\"tb-container tb-nav-header-inner\">
                 {$logoHtml}
+                <button type=\"button\" class=\"tb-nav-header__hamburger\" data-tb-drawer-toggle=\"{$id}\" aria-expanded=\"false\" aria-label=\"منو\">☰</button>
                 <nav class=\"tb-nav-header-links\" aria-label=\"منوی اصلی\" data-widget-slot=\"menu\">{$linkItems}</nav>
+                <div class=\"tb-nav-header__mobile-drawer\" id=\"tb-{$id}-drawer\" aria-hidden=\"true\">{$linkItems}</div>
                 <div class=\"tb-nav-header-actions\" data-widget-slot=\"actions\">{$searchHtml}{$phoneHtml}{$cartHtml}{$accountHtml}{$darkToggleHtml}{$quickHtml}{$ctaHtml}</div>
             </div>
         </div>{$assets}";
