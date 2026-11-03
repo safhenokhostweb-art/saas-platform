@@ -49,6 +49,45 @@
       "type": "string",
       "label": "لینک دکمه اصلی",
       "default": "#"
+    },
+    "searchMode": {
+      "type": "select",
+      "label": "ط­ط§ظ„طھ ظ†ظ…ط§غŒط´ ط¬ط³طھط¬ظˆ",
+      "options": [
+        "box",
+        "icon"
+      ],
+      "default": "box"
+    },
+    "mobileLogoUrl": {
+      "type": "string",
+      "label": "ظ„ظˆع¯ظˆغŒ ظ…ظˆط¨ط§غŒظ„",
+      "default": ""
+    },
+    "mobileQuickActions": {
+      "type": "array",
+      "label": "ط¯ع©ظ…ظ‡â€Œظ‡ط§غŒ ط³ط±غŒط¹ ظ…ظˆط¨ط§غŒظ„",
+      "default": []
+    },
+    "ctaGlow": {
+      "type": "boolean",
+      "label": "ط§ظپع©طھ ط¯ط±ط®ط´ط´ CTA",
+      "default": false
+    },
+    "ctaGlowColor": {
+      "type": "color",
+      "label": "ط±ظ†ع¯ ط¯ط±ط®ط´ط´ CTA",
+      "default": "#4f46e5"
+    },
+    "phoneGlow": {
+      "type": "boolean",
+      "label": "ط§ظپع©طھ ط¯ط±ط®ط´ط´ طھظ„ظپظ†",
+      "default": false
+    },
+    "phoneGlowColor": {
+      "type": "color",
+      "label": "ط±ظ†ع¯ ط¯ط±ط®ط´ط´ طھظ„ظپظ†",
+      "default": "#22c55e"
     }
   },
   "defaultProps": {
@@ -57,15 +96,38 @@
     "ctaColor": "#4f46e5",
     "logoUrl": "",
     "menuItems": [
-      { "label": "خانه", "url": "/" },
-      { "label": "امکانات", "url": "#features" },
-      { "label": "تعرفه‌ها", "url": "#pricing" },
-      { "label": "تماس با ما", "url": "#contact" }
+      {
+        "label": "خانه",
+        "url": "/"
+      },
+      {
+        "label": "امکانات",
+        "url": "#features"
+      },
+      {
+        "label": "تعرفه‌ها",
+        "url": "#pricing"
+      },
+      {
+        "label": "تماس با ما",
+        "url": "#contact"
+      }
     ],
     "brandName": "برند شما",
     "homeUrl": "/",
     "ctaText": "شروع کنید",
-    "ctaUrl": "#"
+    "ctaUrl": "#",
+    "searchMode": "box",
+    "mobileLogoUrl": "",
+    "mobileQuickActions": [],
+    "ctaGlow": false,
+    "ctaGlowColor": "#4f46e5",
+    "phoneGlow": false,
+    "phoneGlowColor": "#22c55e"
   },
-  "fastPathProps": ["bgColor", "textColor", "ctaColor"]
+  "fastPathProps": [
+    "bgColor",
+    "textColor",
+    "ctaColor"
+  ]
 }
