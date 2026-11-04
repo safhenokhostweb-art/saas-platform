@@ -50,6 +50,11 @@
       "label": "لینک دکمه اصلی",
       "default": "#"
     },
+    "phone": {
+      "type": "string",
+      "label": "شماره تماس",
+      "default": ""
+    },
     "searchMode": {
       "type": "select",
       "label": "ط­ط§ظ„طھ ظ†ظ…ط§غŒط´ ط¬ط³طھط¬ظˆ",
@@ -117,6 +122,7 @@
     "homeUrl": "/",
     "ctaText": "شروع کنید",
     "ctaUrl": "#",
+    "phone": "",
     "searchMode": "box",
     "mobileLogoUrl": "",
     "mobileQuickActions": [],

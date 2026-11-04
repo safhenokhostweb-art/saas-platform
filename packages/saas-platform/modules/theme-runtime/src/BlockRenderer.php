@@ -1525,6 +1525,130 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-hero-actions tb-hero-actions-{$align}\" style=\"{$style}\">{$inner}</div>";
     }
 
+    /**
+     * Phase 3D — Hero Motion: a self-contained, silent, looping vector
+     * motion-graphic hero section rendered as inline SVG + CSS keyframes.
+     * No external assets, no third-party fonts, no JavaScript. RTL and
+     * responsive by construction; uses the organizational palette
+     * (#0F172A / #2563EB / #38BDF8 / #818CF8), Vazirmatn typography and
+     * glassmorphism surfaces with backdrop-filter blur. The 10-second loop
+     * runs four phases: grid/particles + browser entry, morphing theme
+     * pages with keyword pulses, shield + support plans, brand mark + CTA.
+     */
+    protected function renderHeroMotion(array $props, string $inner, string $id): string
+    {
+        $title    = $this->escape($props['title'] ?? 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست');
+        $subtitle = $this->escape($props['subtitle'] ?? '');
+        $btnText  = $this->escape($props['button_text'] ?? 'مشاهده پلن‌ها و شروع');
+        $btnUrl   = $this->linkHref($props['button_url'] ?? '#', '#');
+        $brandT   = $this->escape($props['brand_title'] ?? 'صفحه نخست');
+        $brandS   = $this->escape($props['brand_sub'] ?? 'شروع پرقدرت کسب‌وکار آنلاین شما');
+        $height   = max(0, min(900, (int) ($props['min_height'] ?? 560)));
+        $duration = max(0, min(20, (int) ($props['duration'] ?? 10)));
+        $style    = "--hm-duration:{$duration}s;--hm-height:{$height}px;";
+
+        $svg = '<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" aria-label="موشن گرافیک سکشن هیرو" role="img" style="direction:rtl;">'
+            . '<defs>'
+            . '<filter id="hm-glow" x="-50%" y="-50%" width="200%" height="200%">'
+            . '<feGaussianBlur stdDeviation="14" result="blur"/>'
+            . '<feComposite in="SourceGraphic" in2="blur" operator="over"/>'
+            . '</filter>'
+            . '<linearGradient id="hm-grad" x1="0" y1="0" x2="1" y2="1">'
+            . '<stop offset="0%" stop-color="#0f172a"/>'
+            . '<stop offset="100%" stop-color="#1e1b4b"/>'
+            . '</linearGradient>'
+            . '</defs>'
+            . '<rect class="hm-bg" width="1600" height="900" fill="url(#hm-grad)"/>'
+            . '<g class="hm-grid">'
+            . '<line x1="240" y1="140" x2="240" y2="760"/>'
+            . '<line x1="500" y1="140" x2="500" y2="760"/>'
+            . '<line x1="760" y1="140" x2="760" y2="760"/>'
+            . '<line x1="1020" y1="140" x2="1020" y2="760"/>'
+            . '<line x1="1280" y1="140" x2="1280" y2="760"/>'
+            . '<line x1="100" y1="250" x2="1500" y2="250"/>'
+            . '<line x1="100" y1="500" x2="1500" y2="500"/>'
+            . '<line x1="100" y1="750" x2="1500" y2="750"/>'
+            . '</g>'
+            . '<g class="hm-grid">'
+            . '<circle class="hm-grid-dot" cx="240" cy="250" r="2.5"/>'
+            . '<circle class="hm-grid-dot" cx="760" cy="500" r="2.5"/>'
+            . '<circle class="hm-grid-dot" cx="1280" cy="750" r="2.5"/>'
+            . '<circle class="hm-grid-dot" cx="500" cy="750" r="2.5"/>'
+            . '<circle class="hm-grid-dot" cx="1020" cy="250" r="2.5"/>'
+            . '</g>'
+            . '<g class="hm-particles">'
+            . '<circle class="hm-particle" cx="380" cy="180" r="4"/>'
+            . '<circle class="hm-particle" cx="1240" cy="300" r="3"/>'
+            . '<circle class="hm-particle" cx="720" cy="620" r="5"/>'
+            . '<circle class="hm-particle" cx="1420" cy="460" r="4"/>'
+            . '<circle class="hm-particle" cx="320" cy="720" r="3"/>'
+            . '</g>'
+            . '<g class="hm-browser" transform="translate(400, 200)">'
+            . '<rect class="hm-browser-frame" x="0" y="0" width="580" height="370" rx="24"/>'
+            . '<rect class="hm-browser-screen" x="24" y="46" width="532" height="304" rx="14"/>'
+            . '<rect class="hm-browser-bar" x="24" y="10" width="532" height="30" rx="8"/>'
+            . '<circle cx="34" cy="25" r="3" fill="#ef4444" opacity="0.9"/>'
+            . '<circle cx="48" cy="25" r="3" fill="#f59e0b" opacity="0.9"/>'
+            . '<circle cx="62" cy="25" r="3" fill="#10b981" opacity="0.9"/>'
+            . '<g class="hm-browser-glow">'
+            . '<rect x="10" y="36" width="560" height="320" rx="20"/>'
+            . '</g>'
+            . '<g class="hm-page" transform="translate(40, 60)">'
+            . '<rect class="hm-page-card" x="0" y="0" width="500" height="276" rx="12"/>'
+            . '<rect class="hm-page-badge" x="20" y="20" width="86" height="24" rx="12"/>'
+            . '<rect class="hm-page-card" x="20" y="58" width="136" height="8" rx="4"/>'
+            . '<rect class="hm-page-card" x="20" y="74" width="230" height="8" rx="4"/>'
+            . '<rect class="hm-page-card" x="20" y="98" width="310" height="8" rx="4"/>'
+            . '<rect class="hm-page-card" x="310" y="154" width="170" height="112" rx="10"/>'
+            . '<circle cx="395" cy="210" r="26" fill="var(--hm-cyan)" opacity="0.9"/>'
+            . '</g>'
+            . '</g>'
+            . '<g class="hm-keywords" transform="translate(1120, 150)">'
+            . '<text class="hm-keyword" x="0" y="0" text-anchor="end">فروشگاهی</text>'
+            . '<text class="hm-keyword" x="0" y="34" text-anchor="end">شرکتی</text>'
+            . '<text class="hm-keyword" x="0" y="68" text-anchor="end">تجاری</text>'
+            . '<text class="hm-keyword" x="0" y="102" text-anchor="end">شخصی</text>'
+            . '</g>'
+            . '<g class="hm-hero-text" transform="translate(1080, 300)">'
+            . '<text class="hm-title" x="0" y="0" text-anchor="end">' . $title . '</text>'
+            . '<text class="hm-subtitle" x="0" y="42" text-anchor="end" max-width="520">' . $subtitle . '</text>'
+            . '</g>'
+            . '<g class="hm-shield" transform="translate(1260, 470)">'
+            . '<path class="hm-shield-badge" d="M40 0 L80 0 L110 40 L110 90 L80 130 L40 130 L10 90 L10 40 Z" stroke-linejoin="round"/>'
+            . '<path class="hm-shield-fill" d="M42 4 L78 4 L108 38 L108 88 L78 126 L42 126 L12 88 L12 38 Z" opacity="0.6"/>'
+            . '<path class="hm-check" d="M44 82 L66 104 L92 74" stroke-linecap="round" stroke-linejoin="round"/>'
+            . '<path class="hm-check-glow" d="M44 82 L66 104 L92 74" opacity="0.5"/>'
+            . '<text class="hm-keyword" x="60" y="158" text-anchor="start" font-size="15" font-weight="700" fill="var(--hm-cyan)">پشتیبانی ۲۴/۷</text>'
+            . '</g>'
+            . '<g class="hm-plans" transform="translate(1140, 580)">'
+            . '<rect class="hm-plan hm-plan-1" x="0" y="0" width="250" height="86" rx="14"/>'
+            . '<rect class="hm-plan-tag" x="18" y="18" width="130" height="22" rx="11"/>'
+            . '<text class="hm-plan-text hm-plan-text-1" x="18" y="46" font-size="15">پشتیبانی ۲۴/۷ اختصاصی</text>'
+            . '<rect class="hm-plan hm-plan-2" x="0" y="102" width="250" height="86" rx="14"/>'
+            . '<rect class="hm-plan-tag" x="18" y="120" width="130" height="22" rx="11"/>'
+            . '<text class="hm-plan-text hm-plan-text-2" x="18" y="148" font-size="15">پلن‌های منعطف و اقتصادی</text>'
+            . '<rect class="hm-plan hm-plan-3" x="0" y="204" width="250" height="86" rx="14"/>'
+            . '<rect class="hm-plan-tag" x="18" y="222" width="130" height="22" rx="11"/>'
+            . '<text class="hm-plan-text hm-plan-text-3" x="18" y="250" font-size="15">امنیت و سرعت حداکثری</text>'
+            . '</g>'
+            . '<g class="hm-brand" transform="translate(1040, 720)">'
+            . '<circle class="hm-brand-mark" cx="110" cy="0" r="54"/>'
+            . '<circle class="hm-brand-ring" cx="110" cy="0" r="70"/>'
+            . '<text class="hm-brand-title" x="220" y="10" text-anchor="start">' . $brandT . '</text>'
+            . '<text class="hm-brand-sub" x="220" y="34" text-anchor="start" font-size="15">' . $brandS . '</text>'
+            . '<g class="hm-cta" transform="translate(1040, 800)" style="cursor:pointer;">'
+            . '<rect x="0" y="0" width="260" height="48" rx="24"/>'
+            . '<path class="hm-cta-glow" d="M0 0 L260 0 L260 48 L0 48 Z" fill="none" stroke-width="2"/>'
+            . '<text class="hm-cta-text" x="130" y="30" text-anchor="middle" dominant-baseline="middle">' . $btnText . '</text>'
+            . '</g>'
+            . '</g>'
+            . '</svg>';
+
+        return '<section id="tb-' . $id . '" class="tb-hero-motion-wrap" style="min-height:' . $height . 'px;">'
+            . '<div class="tb-hero-motion" style="' . $style . '">' . $svg . '</div>'
+            . '</section>';
+    }
+
     protected function renderList(array $props, string $inner, string $id): string
     {
         $items = $props['items'] ?? [];
@@ -4147,9 +4271,14 @@ class BlockRenderer
         $homeUrl = $this->linkHref($props['homeUrl'] ?? '/', '/');
         $logoUrl = trim($this->stringify($props['logoUrl'] ?? ''));
         $logoSrc = $logoUrl !== '' ? $this->escapeUrl($logoUrl, '') : '';
+        $mobileLogoUrl = trim($this->stringify($props['mobileLogoUrl'] ?? ''));
+        $mobileLogoSrc = $mobileLogoUrl !== '' ? $this->escapeUrl($mobileLogoUrl, '') : '';
         $logo = $logoSrc !== ''
             ? '<img class="tb-header-modern__logo" src="' . $logoSrc . '" alt="' . $brandName . '">'
             : '<span>' . $brandName . '</span>';
+        $mobileLogo = $mobileLogoSrc !== ''
+            ? '<img class="tb-header-modern__logo tb-header-modern__logo--mobile" src="' . $mobileLogoSrc . '" alt="' . $brandName . '">'
+            : '';
 
         $menuHtml = '';
         $menuItems = $props['menuItems'] ?? [];
@@ -4164,9 +4293,24 @@ class BlockRenderer
 
         $ctaText = trim($this->stringify($props['ctaText'] ?? 'شروع کنید'));
         $ctaUrl = $this->linkHref($props['ctaUrl'] ?? '#', '#');
-        $ctaHtml = $ctaText !== '' && $this->showsLink($ctaUrl)
-            ? '<a class="tb-header-modern__cta" href="' . $ctaUrl . '"' . $this->deadLinkMark($ctaUrl) . '>' . $this->escape($ctaText) . '</a>'
-            : '';
+        $ctaHtml = '';
+        if ($ctaText !== '' && $this->showsLink($ctaUrl)) {
+            $ctaGlow = $this->flag($props['ctaGlow'] ?? false);
+            $ctaGlowClass = $ctaGlow ? ' is-glow' : '';
+            $ctaHtml = '<a class="tb-header-modern__cta' . $ctaGlowClass . '" href="' . $ctaUrl . '"' . $this->deadLinkMark($ctaUrl) . '>' . $this->escape($ctaText) . '</a>';
+        }
+
+        $phone = trim($this->stringify($props['phone'] ?? ''));
+        $phoneHtml = '';
+        if ($phone !== '') {
+            $phoneHref = preg_replace('/[^0-9+]/', '', strtr($phone, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9'])) ?: '';
+            $safePhoneUrl = $phoneHref !== '' ? $this->linkHref('tel:' . $phoneHref, '') : '';
+            if ($safePhoneUrl !== '') {
+                $phoneGlow = $this->flag($props['phoneGlow'] ?? false);
+                $phoneGlowClass = $phoneGlow ? ' is-glow' : '';
+                $phoneHtml = '<a class="tb-header-modern__phone' . $phoneGlowClass . '" href="' . $safePhoneUrl . '">' . $this->escape($phone) . '</a>';
+            }
+        }
 
         $safeId = $this->escapeAttr($id);
         $menuId = 'tb-header-modern-menu-' . $safeId;
@@ -4179,9 +4323,9 @@ class BlockRenderer
 
         return '<div id="tb-' . $safeId . '" class="tb-header-modern" style="' . $style . '">'
             . '<div class="tb-header-modern__inner">'
-            . '<a class="tb-header-modern__brand" href="' . $homeUrl . '" aria-label="' . $brandName . '">' . $logo . '</a>'
+            . '<a class="tb-header-modern__brand" href="' . $homeUrl . '" aria-label="' . $brandName . '">' . $logo . ($mobileLogo !== '' ? $mobileLogo : '') . '</a>'
             . '<nav id="' . $menuId . '" class="tb-header-modern__menu" aria-label="منوی اصلی">' . $menuHtml . '</nav>'
-            . '<div class="tb-header-modern__actions">' . $ctaHtml
+            . '<div class="tb-header-modern__actions">' . $ctaHtml . $phoneHtml
             . '<button type="button" class="tb-header-modern__toggle" aria-expanded="false" aria-controls="' . $menuId . '" aria-label="باز کردن منو">'
             . '<span class="tb-header-modern__toggle-lines" aria-hidden="true"></span></button></div>'
             . '</div></div>' . $assets;
@@ -4312,6 +4456,7 @@ class BlockRenderer
             . '</div></nav>';
 
         $actions = '';
+        $searchHtml = '';
         $searchAssets = '';
         if ($this->flag($props['show_search'] ?? false)) {
             $requestedScope = $props['search_scope'] ?? 'all';
@@ -4323,12 +4468,12 @@ class BlockRenderer
                 . $hiddenSearchInputs;
             $searchMode = ($props['search_mode'] ?? 'input') === 'icon' ? 'icon' : 'input';
             if ($searchMode === 'icon') {
-                $actions .= '<div class="tb-nav-header-search-wrap tb-nav-header-search-wrap--icon">'
+                $searchHtml = '<div class="tb-nav-header-search-wrap tb-nav-header-search-wrap--icon">'
                     . '<button type="button" class="tb-nav-header-search-toggle tb-nav-header-icon-link" aria-label="باز کردن جستجو" aria-expanded="false" aria-controls="' . $this->escapeAttr($searchFormId) . '">' . $this->iconHtml('search') . '</button>'
                     . '<form id="' . $this->escapeAttr($searchFormId) . '" class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden' . $searchAttrs . '>' . $searchInput . '<button type="submit" class="tb-nav-header-search-submit" aria-label="جستجو">' . $this->iconHtml('search') . '</button></form>'
                     . '</div>';
             } else {
-                $actions .= '<form id="' . $this->escapeAttr($searchFormId) . '" class="tb-nav-header-search" role="search"' . $searchAttrs . '>'
+                $searchHtml = '<form id="' . $this->escapeAttr($searchFormId) . '" class="tb-nav-header-search" role="search"' . $searchAttrs . '>'
                     . $searchInput
                     . '</form>';
             }
@@ -4337,8 +4482,9 @@ class BlockRenderer
         $socialLinks = is_array($props['social_links'] ?? null) ? $props['social_links'] : [];
         $socialStyle = ($props['social_style'] ?? '') === 'brand';
         $socialClasses = 'tb-nav-header-social' . ($this->flag($props['social_show_mobile'] ?? false) ? ' tb-nav-header-social--mobile' : '');
-        $actions .= $this->socialIconsHtml($socialLinks, $safeId . '-quick', 'quick-access', $socialStyle, $socialClasses, true);
+        $socialHtml = $this->socialIconsHtml($socialLinks, $safeId . '-quick', 'quick-access', $socialStyle, $socialClasses, true);
 
+        $phoneHtml = '';
         $phone = trim($this->stringify($props['phone'] ?? ''));
         if ($phone !== '') {
             $phoneHref = strtr($phone, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
@@ -4350,30 +4496,88 @@ class BlockRenderer
                 $phoneGlowColor = $this->escapeAttr($this->cssColor($rawPhoneGlowColor !== '' ? $rawPhoneGlowColor : $rawGlowColor, 'var(--tb-primary, #c2410c)'));
                 $phoneGlowClass = $phoneGlow ? ' tb-phone--glow tb-nav-header-glow' : '';
                 $phoneGlowStyle = $rawPhoneGlowColor !== '' ? ' style="--tb-nav-header-glow:' . $phoneGlowColor . ';--phone-glow-color:' . $phoneGlowColor . '"' : '';
-                $actions .= '<a href="' . $safePhoneUrl . '" class="tb-nav-header-phone' . $phoneGlowClass . '"' . $phoneGlowStyle . ' data-widget-slot="contact">' . $this->escape($phone) . '</a>';
+                $phoneHtml = '<a href="' . $safePhoneUrl . '" class="tb-nav-header-phone' . $phoneGlowClass . '"' . $phoneGlowStyle . ' data-widget-slot="contact">' . $this->escape($phone) . '</a>';
             }
         }
 
+        $cartHtml = '';
         if ($this->flag($props['show_cart'] ?? false)) {
-            $actions .= $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart'));
+            $cartHtml = $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart'));
         }
+        $accountHtml = '';
         if ($this->flag($props['show_account'] ?? false)) {
             $accountUrl = $this->linkHref($this->context['account_url'] ?? '/account', '/account');
-            $actions .= '<a href="' . $accountUrl . '" class="tb-nav-header-icon-link" aria-label="حساب کاربری">' . $this->iconHtml('user') . '</a>';
+            $accountHtml = '<a href="' . $accountUrl . '" class="tb-nav-header-icon-link" aria-label="حساب کاربری">' . $this->iconHtml('user') . '</a>';
         }
+        $darkToggleHtml = '';
         if ($this->flag($props['show_dark_toggle'] ?? false)) {
-            $actions .= $this->renderDarkModeToggle($safeId);
+            $darkToggleHtml = $this->renderDarkModeToggle($safeId);
         }
 
+        $ctaHtml = '';
         $ctaText = $this->escape($props['cta_text'] ?? '');
         $ctaUrl = $this->linkHref($props['cta_url'] ?? '', '#');
         if ($ctaText !== '' && $this->showsLink($ctaUrl)) {
-            $actions .= '<a href="' . $ctaUrl . '" class="tb-btn tb-btn-primary tb-nav-header-cta' . ($glowEnabled ? ' tb-cta--glow tb-nav-header-glow' : '') . '"' . $this->deadLinkMark($ctaUrl) . '>' . $ctaText . '</a>';
+            $rawCtaGlowColor = trim($this->stringify($props['cta_glow_color'] ?? $rawGlowColor));
+            $ctaGlow = $glowEnabled || $rawCtaGlowColor !== '';
+            $ctaGlowColor = $this->escapeAttr($this->cssColor($rawCtaGlowColor, 'var(--tb-primary, #c2410c)'));
+            $ctaGlowClass = $ctaGlow ? ' tb-cta--glow tb-nav-header-glow' : '';
+            $ctaGlowStyle = $ctaGlow ? ' style="--tb-nav-header-glow:' . $ctaGlowColor . ';--cta-glow-color:' . $ctaGlowColor . '"' : '';
+            $ctaHtml = '<a href="' . $ctaUrl . '" class="tb-btn tb-btn-primary tb-nav-header-cta' . $ctaGlowClass . '"' . $ctaGlowStyle . $this->deadLinkMark($ctaUrl) . '>' . $ctaText . '</a>';
         }
 
         $burger = $menuHtml !== ''
             ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '">' . $this->iconHtml('menu') . '</button>'
             : '';
+
+        $headerOrderRaw = $props['header_order'] ?? null;
+        $headerOrder = [];
+        if (is_string($headerOrderRaw)) {
+            $decoded = json_decode($headerOrderRaw, true);
+            $headerOrder = is_array($decoded) ? $decoded : [];
+        } elseif (is_array($headerOrderRaw)) {
+            $headerOrder = $headerOrderRaw;
+        }
+        $defaultOrder = ['logo', 'menu', 'search', 'social', 'phone', 'cta', 'cart', 'account', 'dark_toggle', 'burger'];
+        if (empty($headerOrder)) {
+            $headerOrder = $defaultOrder;
+        }
+        $headerOrder = array_values(array_unique(array_filter($headerOrder, fn($k) => in_array($k, $defaultOrder, true), ARRAY_FILTER_USE_BOTH)));
+
+        $sectionHtml = [
+            'logo' => $desktopLogo . $mobileLogo,
+            'menu' => $menuHtml,
+            'search' => $searchHtml,
+            'social' => $socialHtml,
+            'phone' => $phoneHtml,
+            'cta' => $ctaHtml,
+            'cart' => $cartHtml,
+            'account' => $accountHtml,
+            'dark_toggle' => $darkToggleHtml,
+            'burger' => $burger,
+        ];
+
+        $actionKeys = ['search', 'social', 'phone', 'cta', 'cart', 'account', 'dark_toggle', 'burger'];
+        $orderedInner = '';
+        $actionsInner = '';
+        foreach ($headerOrder as $key) {
+            $html = $sectionHtml[$key] ?? '';
+            if ($html === '') {
+                continue;
+            }
+            if (in_array($key, $actionKeys, true)) {
+                $actionsInner .= $html;
+            } else {
+                if ($actionsInner !== '') {
+                    $orderedInner .= '<div class="tb-nav-header-actions" data-widget-slot="actions">' . $actionsInner . '</div>';
+                    $actionsInner = '';
+                }
+                $orderedInner .= $html;
+            }
+        }
+        if ($actionsInner !== '') {
+            $orderedInner .= '<div class="tb-nav-header-actions" data-widget-slot="actions">' . $actionsInner . '</div>';
+        }
         $headerFlags = [];
         if ($this->flag($props['sticky'] ?? false)) {
             $headerFlags[] = 'sticky';
@@ -4420,14 +4624,14 @@ class BlockRenderer
             . '.tb-nav-header-root .tb-nav-header-menu-close{align-self:flex-end;}'
             . '.tb-nav-header-root .tb-nav-header-overlay{display:none;}'
             . '.tb-nav-header-root .tb-nav-header-overlay[hidden]{display:none!important;}'
-            . '.tb-nav-header-root .tb-nav-header-phone{display:inline-flex;align-items:center;min-height:2.5rem;padding-inline:.35rem;color:inherit;font-weight:700;text-decoration:none;white-space:nowrap;}'
+            . '.tb-nav-header-root .tb-nav-header-phone{display:inline-flex;align-items:center;min-height:2.5rem;padding-inline:.35rem;color:inherit;font-weight:700;text-decoration:none;white-space:nowrap;transition:box-shadow .25s ease,filter .25s ease;}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon-svg{display:block;width:auto;height:1.2rem;max-width:100%;object-fit:contain;}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--eitaa,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--bale,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--soroush{background:var(--tb-surface,#fff);color:inherit;border:1px solid var(--tb-border,#d1d5db);}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika{width:3.75rem;border-radius:.375rem;}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika .tb-social-icon-svg{height:1.15rem;}'
-            . '.tb-nav-header-root .tb-nav-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:2.5rem;padding:.55rem 1rem;border-radius:.375rem;text-decoration:none;white-space:nowrap;}'
-            . '.tb-nav-header-root .tb-nav-header-glow{animation:tb-nav-header-glow 2.2s ease-in-out infinite;}'
-            . '@keyframes tb-nav-header-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tb-nav-header-glow) 0%,transparent);}50%{box-shadow:0 0 0 .45rem color-mix(in srgb,var(--tb-nav-header-glow) 24%,transparent);}}'
+            . '.tb-nav-header-root .tb-nav-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:2.5rem;padding:.55rem 1rem;border-radius:.375rem;text-decoration:none;white-space:nowrap;transition:box-shadow .25s ease,filter .25s ease;}'
+            . '.tb-nav-header-root .tb-nav-header-glow{animation:tb-glow-pulse 2.2s ease-in-out infinite;}'
+            . '@keyframes tb-glow-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tb-nav-header-glow) 0%,transparent);}50%{box-shadow:0 0 0 .45rem color-mix(in srgb,var(--tb-nav-header-glow) 24%,transparent);}}'
             . '.tb-nav-header-root .tb-nav-header-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}'
             . '@media(max-width:767.98px){.tb-nav-header-root .tb-nav-header-inner{min-height:3.75rem;gap:.5rem;padding-inline:.75rem;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--desktop{display:none;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--mobile{display:block;}.tb-nav-header-root .tb-nav-header-links{display:none;}.tb-nav-header-root[data-menu-open="true"]{z-index:10001;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{display:flex;position:fixed;z-index:10002;inset-block:0;inset-inline:0 auto;width:min(22rem,88vw);max-width:100%;padding:1rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);box-shadow:-12px 0 32px rgb(15 23 42 / 18%);overflow-y:auto;overscroll-behavior:contain;align-items:stretch;justify-content:flex-start;}.tb-nav-header-root .tb-nav-header-menu-panel{width:100%;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:.5rem;}.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;}.tb-nav-header-root .tb-nav-header-menu-panel .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a{display:flex;align-items:center;min-height:2.75rem;padding:.6rem .5rem;white-space:normal;border-bottom:1px solid var(--tb-border,#e5e7eb);}.tb-nav-header-root .tb-nav-header-overlay:not([hidden]){display:block;position:fixed;z-index:10000;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgb(15 23 42 / 52%);}.tb-nav-header-root .tb-nav-header-toggle{display:inline-flex;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-actions{position:relative;z-index:10001;}.tb-nav-header-root .tb-nav-header-actions{gap:.3rem;}.tb-nav-header-root .tb-nav-header-search-input{width:min(9rem,32vw);}.tb-nav-header-root .tb-nav-header-phone{max-width:7rem;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;}.tb-nav-header-root .tb-nav-header-cta{padding-inline:.65rem;font-size:.82rem;}.tb-nav-header-root .tb-nav-header-social:not(.tb-nav-header-social--mobile){display:none;}}'
             . '@media(prefers-reduced-motion:reduce){.tb-nav-header-root .tb-nav-header-glow{animation:none;}.tb-nav-header-root *{scroll-behavior:auto!important;}}'
@@ -4440,8 +4644,7 @@ class BlockRenderer
             . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';">'
             . '<div class="' . $rootClass . '"' . $headerAttrs . '>'
             . '<div class="tb-nav-header-inner">'
-            . $desktopLogo . $mobileLogo . $menuHtml
-            . '<div class="tb-nav-header-actions" data-widget-slot="actions">' . $actions . $burger . '</div>'
+            . $orderedInner
             . '<button type="button" class="tb-nav-header-overlay" aria-label="بستن منو" hidden></button>'
             . '</div></div></div>'
             . $searchAssets

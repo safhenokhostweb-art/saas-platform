@@ -499,6 +499,41 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['gap' => 16, 'radius' => 12, 'align' => 'start'],
             ],
+            // ─── Phase 3D — vector motion hero (Hero Motion) ───────────────
+            // A self-contained, silent, looping vector motion-graphic hero
+            // section rendered as inline SVG + CSS keyframes (no external
+            // assets, no third-party fonts, no JavaScript required). RTL and
+            // responsive by construction; uses the organizational palette
+            // (#0F172A / #2563EB / #38BDF8 / #818CF8), Vazirmatn typography,
+            // glassmorphism surfaces and backdrop-filter blur.
+            'hero_motion' => [
+                'name' => 'قهرمان موشن (Hero Motion)',
+                'category' => self::CATEGORY_LAYOUT,
+                'icon' => 'hero',
+                'is_container' => false,
+                'schema' => [
+                    'title'         => ['type' => 'string', 'label' => 'عنوان اصلی', 'default' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست'],
+                    'subtitle'      => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست'],
+                    'button_text'   => ['type' => 'string', 'label' => 'متن دکمه اقدام', 'default' => 'مشاهده پلن‌ها و شروع'],
+                    'button_url'    => ['type' => 'link', 'label' => 'لینک دکمه اقدام', 'default' => '#'],
+                    'brand_title'   => ['type' => 'string', 'label' => 'عنوان نشان تجاری', 'default' => 'صفحه نخست'],
+                    'brand_sub'     => ['type' => 'string', 'label' => 'زیرعنوان نشان تجاری', 'default' => 'شروع پرقدرت کسب‌وکار آنلاین شما'],
+                    'min_height'    => ['type' => 'number', 'label' => 'حداقل ارتفاع (px)', 'min' => 320, 'max' => 900, 'default' => 560],
+                    'duration'      => ['type' => 'number', 'label' => 'مدت تکرار (ثانیه)', 'min' => 6, 'max' => 20, 'default' => 10],
+                    'bg_tone'       => ['type' => 'select', 'label' => 'سربار پس‌زمینه', 'options' => ['deep' => 'آبی عمیق نیوی', 'gradient' => 'گرادیان سازمانی'], 'default' => 'deep'],
+                ],
+                'defaultProps' => [
+                    'title' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست',
+                    'subtitle' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست',
+                    'button_text' => 'مشاهده پلن‌ها و شروع',
+                    'button_url' => '#',
+                    'brand_title' => 'صفحه نخست',
+                    'brand_sub' => 'شروع پرقدرت کسب‌وکار آنلاین شما',
+                    'min_height' => 560,
+                    'duration' => 10,
+                    'bg_tone' => 'deep',
+                ],
+            ],
 
             // ─── CONTENT ─────────────────────────────────────────────────────
             'heading' => [
@@ -1059,6 +1094,7 @@ class BlockRegistry
                     'transparent_text_color' => ['type' => 'color', 'label' => 'رنگ متن در حالت شفاف (خالی = تشخیص خودکار کنتراست)', 'default' => '', 'group' => 'رفتار و رنگ'],
                     'bg_color'           => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff', 'group' => 'رفتار و رنگ'],
                     'text_color'         => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#111827', 'group' => 'رفتار و رنگ'],
+                    'header_order'       => ['type' => 'array', 'label' => 'ترتیب اجزای هدر (Drag & Drop)', 'default' => ['logo','menu','search','social','phone','cta','cart','account','dark_toggle','burger'], 'group' => 'چیدمان'],
                 ],
                 'defaultProps' => ['logo_text' => '', 'logo_url' => '/', 'nav_links' => [], 'sticky' => false, 'bg_color' => '#ffffff', 'text_color' => '#111827'],
             ],
