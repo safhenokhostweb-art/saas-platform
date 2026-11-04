@@ -4517,7 +4517,7 @@ class BlockRenderer
         $ctaHtml = '';
         $ctaText = $this->escape($props['cta_text'] ?? '');
         $ctaUrl = $this->linkHref($props['cta_url'] ?? '', '#');
-        if ($ctaText !== '' && $this->showsLink($ctaUrl)) {
+        if ($ctaText !== '') {
             $rawCtaGlowColor = trim($this->stringify($props['cta_glow_color'] ?? $rawGlowColor));
             $ctaGlow = $glowEnabled || $rawCtaGlowColor !== '';
             $ctaGlowColor = $this->escapeAttr($this->cssColor($rawCtaGlowColor, 'var(--tb-primary, #c2410c)'));
