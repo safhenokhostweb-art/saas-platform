@@ -1636,11 +1636,11 @@ class BlockRenderer
             . '<circle class="hm-brand-ring" cx="110" cy="0" r="70"/>'
             . '<text class="hm-brand-title" x="220" y="10" text-anchor="start">' . $brandT . '</text>'
             . '<text class="hm-brand-sub" x="220" y="34" text-anchor="start" font-size="15">' . $brandS . '</text>'
-            . '<g class="hm-cta" transform="translate(1040, 800)" style="cursor:pointer;">'
+            . '<a class="hm-cta" href="' . $this->escapeAttr($btnUrl) . '" transform="translate(1040, 800)" style="cursor:pointer;display:inline;">'
             . '<rect x="0" y="0" width="260" height="48" rx="24"/>'
             . '<path class="hm-cta-glow" d="M0 0 L260 0 L260 48 L0 48 Z" fill="none" stroke-width="2"/>'
             . '<text class="hm-cta-text" x="130" y="30" text-anchor="middle" dominant-baseline="middle">' . $btnText . '</text>'
-            . '</g>'
+            . '</a>'
             . '</g>'
             . '</svg>';
 
