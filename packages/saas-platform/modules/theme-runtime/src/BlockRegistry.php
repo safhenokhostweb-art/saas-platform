@@ -1006,6 +1006,7 @@ class BlockRegistry
                     // then to the site's global logo), its height per breakpoint
                     // and its alt text.
                     'logo_image'         => ['type' => 'image', 'label' => 'تصویر لوگو', 'default' => '', 'group' => 'لوگو و برند'],
+                    'mobile_logo'        => ['type' => 'image', 'label' => 'لوگوی اختصاصی موبایل', 'default' => '', 'group' => 'لوگو و برند'],
                     'logo_alt'           => ['type' => 'string', 'label' => 'متن جایگزین لوگو (برای صفحه‌خوان و موتور جستجو)', 'default' => '', 'group' => 'لوگو و برند'],
                     'logo_height'        => ['type' => 'number', 'label' => 'ارتفاع لوگو در دسکتاپ (پیکسل)', 'default' => 40, 'min' => 20, 'max' => 120, 'step' => 1, 'group' => 'لوگو و برند'],
                     'logo_height_mobile' => ['type' => 'number', 'label' => 'ارتفاع لوگو در موبایل (پیکسل)', 'default' => 32, 'min' => 16, 'max' => 96, 'step' => 1, 'group' => 'لوگو و برند'],
@@ -1031,7 +1032,10 @@ class BlockRegistry
                     'phone'              => ['type' => 'string', 'label' => 'شماره تماس (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'cta_text'           => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه CTA', 'default' => '/contact', 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'cta_glow_enabled'   => ['type' => 'boolean', 'label' => 'افکت نورانی CTA و تماس', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'cta_glow_color'     => ['type' => 'color', 'label' => 'رنگ افکت نورانی', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'show_search'        => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'search_mode'        => ['type' => 'select', 'label' => 'حالت جستجو', 'options' => ['input' => 'فیلد جستجوی ثابت', 'icon' => 'آیکون با پنجره بازشو'], 'default' => 'input', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'search_scope'       => ['type' => 'select', 'label' => 'محدودهٔ جستجو', 'options' => ['all' => 'همه (محصولات و مطالب)', 'products' => 'فقط محصولات', 'posts' => 'فقط مطالب'], 'default' => 'all', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'show_cart'          => ['type' => 'boolean', 'label' => 'نمایش سبد خرید', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],

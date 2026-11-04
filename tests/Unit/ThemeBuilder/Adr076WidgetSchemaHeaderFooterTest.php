@@ -82,6 +82,9 @@ class Adr076WidgetSchemaHeaderFooterTest extends TestCase
         $this->assertSame(['start', 'center', 'end'], array_keys($schema['menu_align']['options']));
         $this->assertSame(['end', 'segmented'], [$schema['menu_align']['default'], $schema['menu_align']['ui']]);
         $this->assertSame(['color', 'color'], [$schema['bg_color']['type'], $schema['text_color']['type']], 'real colour controls');
+        $this->assertSame(['input', 'icon'], array_keys($schema['search_mode']['options']));
+        $this->assertSame('image', $schema['mobile_logo']['type']);
+        $this->assertSame(['boolean', 'color'], [$schema['cta_glow_enabled']['type'], $schema['cta_glow_color']['type']]);
         foreach (['nav_header', 'nav_footer'] as $type) {
             $network = BlockRegistry::all()[$type]['schema']['social_links']['fields']['network'];
             $this->assertSame(['auto', ...SocialNetworks::keys()], array_keys($network['options']), $type);
@@ -101,14 +104,16 @@ class Adr076WidgetSchemaHeaderFooterTest extends TestCase
     public function test_the_logo_image_renders_with_clamped_heights_alt_text_and_brand_name(): void
     {
         $html = $this->render('nav_header', ['logo_image' => '/storage/brand/logo.webp', 'logo_text' => 'فروشگاه نمونه', 'logo_height' => 500, 'logo_height_mobile' => 'x', 'logo_url' => '/']);
-        $this->assertStringContainsString('class="tb-nav-header-logo tb-nav-header-logo--image" style="--tb-logo-h:120px;--tb-logo-h-m:32px" data-widget-slot="logo"', $html);
+        $this->assertStringContainsString('class="tb-nav-header-logo tb-nav-header-logo--image"', $html);
+        $this->assertStringContainsString('style="--tb-logo-h:120px;--tb-logo-h-m:32px"', $html);
+        $this->assertStringContainsString('data-widget-slot="logo"', $html);
         $this->assertStringContainsString('<img src="/storage/brand/logo.webp" alt="فروشگاه نمونه" class="tb-nav-header-logo-img" height="120" decoding="async">', $html);
         $this->assertStringContainsString('<span class="tb-nav-header-logo-text">فروشگاه نمونه</span>', $html);
 
         $alt = $this->render('nav_header', ['logo_image' => '/l.png', 'logo_alt' => 'لوگوی "ما"', 'logo_height' => 4]);
         $this->assertStringContainsString('alt="لوگوی &quot;ما&quot;"', $alt);
         $this->assertStringContainsString('--tb-logo-h:20px', $alt);
-        $this->assertStringNotContainsString('tb-nav-header-logo-text', $alt);
+        $this->assertStringNotContainsString('<span class="tb-nav-header-logo-text"', $alt);
     }
 
     public function test_an_unsafe_or_unresolved_logo_image_falls_back_to_the_text_logo(): void
@@ -138,16 +143,23 @@ class Adr076WidgetSchemaHeaderFooterTest extends TestCase
     public function test_quick_access_icons_render_in_the_actions_slot_before_the_cta(): void
     {
         $html = $this->render('nav_header', [
-            'cta_text' => 'تماس', 'cta_url' => '/contact',
+            'cta_text' => 'تماس',
+            'cta_url' => '/contact',
             'social_links' => [['url' => 'https://eitaa.com/shop'], ['url' => 'https://ble.ir/shop', 'network' => 'auto'], ['url' => 'javascript:alert(1)', 'network' => 'telegram']],
-            'social_style' => 'brand', 'social_show_mobile' => true,
+            'social_style' => 'brand',
+            'social_show_mobile' => true,
         ]);
         $this->assertStringContainsString('<div class="tb-nav-header-actions" data-widget-slot="actions">', $html);
         $this->assertStringContainsString('<div id="tb-b1-quick" class="tb-social-icons tb-social-icons--svg tb-social-icons--brand tb-nav-header-social tb-nav-header-social--mobile" data-widget-slot="quick-access">', $html);
         $this->assertStringContainsString('tb-social-icon--eitaa" target="_blank" rel="noopener noreferrer" aria-label="ایتا"', $html);
         $this->assertStringContainsString('tb-social-icon--bale"', $html);
         $this->assertStringNotContainsString('javascript:', $html);
-        $this->assertLessThan(strpos($html, 'tb-nav-header-cta'), strpos($html, 'data-widget-slot="quick-access"'));
+        $actionsStart = strpos($html, '<div class="tb-nav-header-actions"');
+        $socialPosition = strpos($html, 'data-widget-slot="quick-access"', $actionsStart);
+        $ctaPosition = strpos($html, 'class="tb-btn tb-btn-primary tb-nav-header-cta', $actionsStart);
+        $this->assertNotFalse($socialPosition);
+        $this->assertNotFalse($ctaPosition);
+        $this->assertLessThan($ctaPosition, $socialPosition);
         $this->assertStringContainsString('<nav class="tb-nav-header-links" aria-label="منوی اصلی" data-widget-slot="menu">', $html);
 
         $plain = $this->render('nav_header', ['social_links' => [['url' => 'https://t.me/x']]]);
@@ -194,9 +206,14 @@ class Adr076WidgetSchemaHeaderFooterTest extends TestCase
 
     public function test_the_footer_renders_every_native_messenger_with_slots_and_brand_style(): void
     {
-        $links = array_map(fn ($n) => ['url' => "https://example.ir/{$n}", 'network' => $n], self::NATIVE_MESSENGERS);
-        $html = $this->render('nav_footer', ['logo_text' => 'برند', 'copyright' => '©', 'social_links' => $links, 'social_style' => 'brand',
-            'columns' => [['title' => 'خدمات', 'links' => [['label' => 'ارسال', 'url' => '/shipping']]]]]);
+        $links = array_map(fn($n) => ['url' => "https://example.ir/{$n}", 'network' => $n], self::NATIVE_MESSENGERS);
+        $html = $this->render('nav_footer', [
+            'logo_text' => 'برند',
+            'copyright' => '©',
+            'social_links' => $links,
+            'social_style' => 'brand',
+            'columns' => [['title' => 'خدمات', 'links' => [['label' => 'ارسال', 'url' => '/shipping']]]]
+        ]);
         $this->assertStringContainsString('<div id="tb-b1-social" class="tb-social-icons tb-social-icons--svg tb-social-icons--brand" data-widget-slot="social">', $html);
         foreach (self::NATIVE_MESSENGERS as $network) {
             $this->assertStringContainsString("tb-social-icon--{$network}\"", $html);
