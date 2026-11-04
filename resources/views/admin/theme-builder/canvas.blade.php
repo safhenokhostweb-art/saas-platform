@@ -1149,9 +1149,66 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                     </div>
                                 </template>
 
+                                {{-- Header component order — visual Drag & Drop sortable list --}}
+                                <template x-if="schemaDef.type === 'array' && propKey === 'header_order'">
+                                    <div x-data="{
+                                        order: JSON.parse(JSON.stringify(selectedBlock.props.header_order ?? [])),
+                                        available: ['logo','menu','search','social','phone','cta','cart','account','dark_toggle','burger'],
+                                        dragging: null,
+                                        labelFor: (k) => ({
+                                            'logo': 'لوگو',
+                                            'menu': 'منو',
+                                            'search': 'جستجو',
+                                            'social': 'شبکه‌های اجتماعی',
+                                            'phone': 'تلفن تماس',
+                                            'cta': 'دکمه اقدام (CTA)',
+                                            'cart': 'سبد خرید',
+                                            'account': 'حساب کاربری',
+                                            'dark_toggle': 'تاریک/روشن',
+                                            'burger': 'هنور منو'
+                                        })[k] || k
+                                    }>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1.5" :for="'ctrl-' + propKey" x-text="schemaDef.label || propKey"></label>
+                                        <p class="text-[10px] text-slate-500 mb-3">اجزای هدر را با نگه‌داشتن و کشیدن جابه‌جا کنید.</p>
+                                        <div class="space-y-1.5">
+                                            <template x-for="(key, idx) in order" :key="key + '-' + idx">
+                                                <div
+                                                    draggable="true"
+                                                    @dragstart.prevent="dragging = key; $event.dataTransfer.setData('text/plain', key); $event.dataTransfer.effectAllowed = 'move';"
+                                                    @dragover.prevent="dragOverIdx = idx"
+                                                    @drop.prevent="
+                                                        const from = order.indexOf(dragging);
+                                                        const to = idx;
+                                                        if (from === to) return;
+                                                        order.splice(from, 1);
+                                                        order.splice(to, 0, dragging);
+                                                        updateProp(propKey, [...order]);
+                                                        dragging = null;
+                                                    "
+                                                    @dragend="dragging = null"
+                                                    :class="dragging === key ? 'opacity-50' : ''"
+                                                    class="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition cursor-grab active:cursor-grabbing">
+                                                    <button type="button" class="flex-shrink-0 text-indigo-600 hover:text-indigo-800 font-mono font-bold text-[10px]">⠿</button>
+                                                    <span class="flex-1 text-xs text-slate-700" x-text="labelFor(key)"></span>
+                                                    <button type="button" @click="order.splice(idx, 1); updateProp(propKey, [...order]);" class="text-[10px] text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded p-1 transition" title="حذف از ترتیب">×</button>
+                                                </div>
+                                            </template>
+                                            <template x-for="key in available.filter(k => !order.includes(k))" :key="key">
+                                                <button type="button" @click="order.push(key); updateProp(propKey, [...order]);" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition">
+                                                    <span class="text-indigo-600 font-mono font-bold text-[10px]">+</span>
+                                                    <span x-text="labelFor(key)"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                        <template x-if="order.length === 0">
+                                            <p class="text-[10px] text-slate-400 italic">هیچ חלקی انتخاب نشده است.</p>
+                                        </template>
+                                    </div>
+                                </template>
+
                                 {{-- Schema-less list props (type: array, no `fields`): guarded raw
                                      JSON editor. An invalid draft is never written to the block. --}}
-                                <template x-if="schemaDef.type === 'array'">
+                                <template x-if="schemaDef.type === 'array' && propKey !== 'header_order'">
                                     <div x-data="{ jsonDraft: null, jsonDraftFor: null, jsonError: '' }">
                                         <textarea :id="'ctrl-' + propKey" dir="ltr" rows="5" spellcheck="false"
                                             :value="(jsonDraftFor === selectedBlock.id && jsonDraft !== null) ? jsonDraft : JSON.stringify(selectedBlock.props[propKey] ?? schemaDef.default ?? [], null, 2)"
@@ -3578,6 +3635,7 @@ function themeCanvas() {
             if (['section','container','grid','columns','tabs','accordion','slider'].includes(type)) return 'bg-blue-400';
             if (['heading','text','image','gallery','video','button'].includes(type)) return 'bg-green-500';
             if (['countdown','promo_banner'].includes(type)) return 'bg-orange-400';
+            if (type === 'hero_motion') return 'bg-indigo-500';
             return 'bg-slate-400';
         },
 
