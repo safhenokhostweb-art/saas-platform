@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ProfileFieldSeeder::class,
             ModuleSeeder::class,
             ThemeProfileSeeder::class,
+            MotionGraphicsDefaultSeeder::class,
         ]);
 
         // Theme catalog: use `php artisan theme-catalog:rebuild`, the one

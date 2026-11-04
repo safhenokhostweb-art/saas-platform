@@ -1545,7 +1545,9 @@ class BlockRenderer
         $brandS   = $this->escape($props['brand_sub'] ?? 'شروع پرقدرت کسب‌وکار آنلاین شما');
         $height   = max(0, min(900, (int) ($props['min_height'] ?? 560)));
         $duration = max(0, min(20, (int) ($props['duration'] ?? 10)));
+        $motionId = $props['motion_id'] ?? null;
         $style    = "--hm-duration:{$duration}s;--hm-height:{$height}px;";
+        $motionAttr = $motionId ? ' data-tb-motion-id="' . $this->escapeAttr((string) $motionId) . '"' : '';
 
         $svg = '<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" aria-label="موشن گرافیک سکشن هیرو" role="img" style="direction:rtl;">'
             . '<defs>'
@@ -1644,7 +1646,7 @@ class BlockRenderer
             . '</g>'
             . '</svg>';
 
-        return '<section id="tb-' . $id . '" class="tb-hero-motion-wrap" style="min-height:' . $height . 'px;">'
+        return '<section id="tb-' . $id . '" class="tb-hero-motion-wrap" style="min-height:' . $height . 'px;"' . $motionAttr . '>'
             . '<div class="tb-hero-motion" style="' . $style . '">' . $svg . '</div>'
             . '</section>';
     }

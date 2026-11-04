@@ -64,6 +64,7 @@ class HeroMotionRenderTest extends TestCase
             'button_url' => 'https://example.com',
             'brand_title' => 'نشان تست',
             'brand_sub' => 'زیر نشان',
+            'motion_id' => 'hero_motion',
         ]);
         $this->assertStringContainsString('تست &lt;script&gt;alert(1)&lt;/script&gt; عنوان', $html);
         $this->assertStringContainsString('زیرعنوان سفارشی', $html);
@@ -71,6 +72,18 @@ class HeroMotionRenderTest extends TestCase
         $this->assertStringContainsString('https://example.com', $html);
         $this->assertStringContainsString('نشان تست', $html);
         $this->assertStringContainsString('زیر نشان', $html);
+        $this->assertStringContainsString('data-tb-motion-id="hero_motion"', $html);
+    }
+
+    public function test_zero_config_renders_when_motion_id_null(): void
+    {
+        $html = $this->render(['motion_id' => null]);
+        $this->assertStringContainsString('<svg', $html);
+        $this->assertStringContainsString('viewBox="0 0 1600 900"', $html);
+        $this->assertStringContainsString('hm-browser', $html);
+        $this->assertStringContainsString('hm-title', $html);
+        $this->assertStringContainsString('hm-cta', $html);
+        $this->assertStringNotContainsString('data-tb-motion-id', $html);
     }
 
     public function test_emits_all_four_phase_animation_classes(): void

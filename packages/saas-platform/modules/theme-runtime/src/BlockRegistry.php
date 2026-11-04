@@ -521,6 +521,7 @@ class BlockRegistry
                     'min_height'    => ['type' => 'number', 'label' => 'حداقل ارتفاع (px)', 'min' => 320, 'max' => 900, 'default' => 560],
                     'duration'      => ['type' => 'number', 'label' => 'مدت تکرار (ثانیه)', 'min' => 6, 'max' => 20, 'default' => 10],
                     'bg_tone'       => ['type' => 'select', 'label' => 'سربار پس‌زمینه', 'options' => ['deep' => 'آبی عمیق نیوی', 'gradient' => 'گرادیان سازمانی'], 'default' => 'deep'],
+                    'motion_id'     => ['type' => 'link', 'label' => 'شناسه موشن گرافیک (اختیاری)', 'default' => '', 'placeholder' => 'hero_motion'],
                 ],
                 'defaultProps' => [
                     'title' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست',
@@ -532,6 +533,7 @@ class BlockRegistry
                     'min_height' => 560,
                     'duration' => 10,
                     'bg_tone' => 'deep',
+                    'motion_id' => '',
                 ],
             ],
 
