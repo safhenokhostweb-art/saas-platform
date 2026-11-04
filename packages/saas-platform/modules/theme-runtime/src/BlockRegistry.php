@@ -499,41 +499,83 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['gap' => 16, 'radius' => 12, 'align' => 'start'],
             ],
-            // ─── Phase 3D — vector motion hero (Hero Motion) ───────────────
-            // A self-contained, silent, looping vector motion-graphic hero
-            // section rendered as inline SVG + CSS keyframes (no external
-            // assets, no third-party fonts, no JavaScript required). RTL and
-            // responsive by construction; uses the organizational palette
-            // (#0F172A / #2563EB / #38BDF8 / #818CF8), Vazirmatn typography,
-            // glassmorphism surfaces and backdrop-filter blur.
-            'hero_motion' => [
-                'name' => 'قهرمان موشن (Hero Motion)',
+            // ─── MOTION GRAPHICS — bridge block to official MotionGraphics module ─────────
+            // A canonical canvas block that references a published MotionGraphic entity.
+            // Rendering is delegated to MotionGraphicsComponent / MotionGraphicRuntimeController
+            // (module:motion-graphics), never inline SVG here — preserving modular boundaries,
+            // licensing, versioning, and per-site deployment entitlement.
+            'motion_graphic' => [
+                'name' => 'موشن گرافیک (Motion Graphics)',
                 'category' => self::CATEGORY_LAYOUT,
                 'icon' => 'hero',
                 'is_container' => false,
                 'schema' => [
-                    'title'         => ['type' => 'string', 'label' => 'عنوان اصلی', 'default' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست'],
-                    'subtitle'      => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست'],
-                    'button_text'   => ['type' => 'string', 'label' => 'متن دکمه اقدام', 'default' => 'مشاهده پلن‌ها و شروع'],
-                    'button_url'    => ['type' => 'link', 'label' => 'لینک دکمه اقدام', 'default' => '#'],
-                    'brand_title'   => ['type' => 'string', 'label' => 'عنوان نشان تجاری', 'default' => 'صفحه نخست'],
-                    'brand_sub'     => ['type' => 'string', 'label' => 'زیرعنوان نشان تجاری', 'default' => 'شروع پرقدرت کسب‌وکار آنلاین شما'],
-                    'min_height'    => ['type' => 'number', 'label' => 'حداقل ارتفاع (px)', 'min' => 320, 'max' => 900, 'default' => 560],
-                    'duration'      => ['type' => 'number', 'label' => 'مدت تکرار (ثانیه)', 'min' => 6, 'max' => 20, 'default' => 10],
-                    'bg_tone'       => ['type' => 'select', 'label' => 'سربار پس‌زمینه', 'options' => ['deep' => 'آبی عمیق نیوی', 'gradient' => 'گرادیان سازمانی'], 'default' => 'deep'],
-                    'motion_id'     => ['type' => 'link', 'label' => 'شناسه موشن گرافیک (اختیاری)', 'default' => '', 'placeholder' => 'hero_motion'],
+                    'motion_id' => [
+                        'type' => 'module_entity',
+                        'label' => 'موشن انتخاب‌شده',
+                        'panel' => 'content',
+                        'providers' => ['motion-graphics'],
+                        'default' => null,
+                        'description' => 'یک موشن منتشرشده و مجاز برای این سایت از کتابخانه موشن‌پذیری انتخاب کنید.',
+                    ],
+                    'aspect_ratio' => [
+                        'type' => 'select',
+                        'label' => 'نسبت تصویر',
+                        'panel' => 'style',
+                        'options' => [
+                            '16:9' => '۱۶:۹ (وidescreen)',
+                            '4:3' => '۴:۳',
+                            '1:1' => '۱:۱',
+                            'auto' => 'تلقایی',
+                        ],
+                        'default' => '16:9',
+                    ],
+                    'min_height' => [
+                        'type' => 'number',
+                        'label' => 'حداقل ارتفاع (px)',
+                        'panel' => 'style',
+                        'min' => 200,
+                        'max' => 1200,
+                        'default' => 560,
+                    ],
+                    'loop_duration' => [
+                        'type' => 'number',
+                        'label' => 'سرعت لوپ (ثانیه)',
+                        'panel' => 'style',
+                        'min' => 4,
+                        'max' => 30,
+                        'default' => 10,
+                    ],
+                    'bg_tone' => [
+                        'type' => 'select',
+                        'label' => 'تم پس‌زمینه',
+                        'panel' => 'style',
+                        'options' => [
+                            'deep' => 'آبی عمیق نیوی',
+                            'gradient' => 'گرادیان سازمانی',
+                            'glass' => 'شبه‌شفاف گلاس‌مورفیسم',
+                        ],
+                        'default' => 'deep',
+                    ],
+                    'reduced_motion' => [
+                        'type' => 'toggle',
+                        'label' => 'حترم به ترجیح کاهش حرکت',
+                        'panel' => 'advanced',
+                        'default' => true,
+                    ],
                 ],
                 'defaultProps' => [
-                    'title' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست',
-                    'subtitle' => 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست',
-                    'button_text' => 'مشاهده پلن‌ها و شروع',
-                    'button_url' => '#',
-                    'brand_title' => 'صفحه نخست',
-                    'brand_sub' => 'شروع پرقدرت کسب‌وکار آنلاین شما',
+                    'motion_id' => null,
+                    'aspect_ratio' => '16:9',
                     'min_height' => 560,
-                    'duration' => 10,
+                    'loop_duration' => 10,
                     'bg_tone' => 'deep',
-                    'motion_id' => '',
+                    'reduced_motion' => true,
+                ],
+                'editor' => [
+                    'allowCustomCss' => true,
+                    'lockedStructure' => false,
+                    'uiDirection' => 'rtl',
                 ],
             ],
 

@@ -1535,122 +1535,46 @@ class BlockRenderer
      * runs four phases: grid/particles + browser entry, morphing theme
      * pages with keyword pulses, shield + support plans, brand mark + CTA.
      */
-    protected function renderHeroMotion(array $props, string $inner, string $id): string
+    /**
+     * Phase 3D — Motion Graphics bridge block.
+     * Delegates rendering to the official MotionGraphics module.
+     * Never embeds inline SVG/CSS here — that would violate modular
+     * boundaries, licensing, versioning, and per-site deployment
+     * entitlement. The motion data lives exclusively in the
+     * motion_graphics table and is served via MotionGraphicRuntimeController.
+     */
+    protected function renderMotionGraphic(array $props, string $inner, string $id): string
     {
-        $title    = $this->escape($props['title'] ?? 'طراحی سایت حرفه‌ای و اختصاصی در صفحه نخست');
-        $subtitle = $this->escape($props['subtitle'] ?? '');
-        $btnText  = $this->escape($props['button_text'] ?? 'مشاهده پلن‌ها و شروع');
-        $btnUrl   = $this->linkHref($props['button_url'] ?? '#', '#');
-        $brandT   = $this->escape($props['brand_title'] ?? 'صفحه نخست');
-        $brandS   = $this->escape($props['brand_sub'] ?? 'شروع پرقدرت کسب‌وکار آنلاین شما');
-        $height   = max(0, min(900, (int) ($props['min_height'] ?? 560)));
-        $duration = max(0, min(20, (int) ($props['duration'] ?? 10)));
-        $motionId = $props['motion_id'] ?? null;
-        $style    = "--hm-duration:{$duration}s;--hm-height:{$height}px;";
-        $motionAttr = $motionId ? ' data-tb-motion-id="' . $this->escapeAttr((string) $motionId) . '"' : '';
+        $motionId  = $props['motion_id'] ?? null;
+        $height    = max(0, min(1200, (int) ($props['min_height'] ?? 560)));
+        $duration  = max(0, min(30, (int) ($props['loop_duration'] ?? 10)));
+        $bgTone    = $props['bg_tone'] ?? 'deep';
+        $aspect    = $props['aspect_ratio'] ?? '16:9';
+        $reduce    = (bool) ($props['reduced_motion'] ?? true);
 
-        $svg = '<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" aria-label="موشن گرافیک سکشن هیرو" role="img" style="direction:rtl;">'
-            . '<defs>'
-            . '<filter id="hm-glow" x="-50%" y="-50%" width="200%" height="200%">'
-            . '<feGaussianBlur stdDeviation="14" result="blur"/>'
-            . '<feComposite in="SourceGraphic" in2="blur" operator="over"/>'
-            . '</filter>'
-            . '<linearGradient id="hm-grad" x1="0" y1="0" x2="1" y2="1">'
-            . '<stop offset="0%" stop-color="#0f172a"/>'
-            . '<stop offset="100%" stop-color="#1e1b4b"/>'
-            . '</linearGradient>'
-            . '</defs>'
-            . '<rect class="hm-bg" width="1600" height="900" fill="url(#hm-grad)"/>'
-            . '<g class="hm-grid">'
-            . '<line x1="240" y1="140" x2="240" y2="760"/>'
-            . '<line x1="500" y1="140" x2="500" y2="760"/>'
-            . '<line x1="760" y1="140" x2="760" y2="760"/>'
-            . '<line x1="1020" y1="140" x2="1020" y2="760"/>'
-            . '<line x1="1280" y1="140" x2="1280" y2="760"/>'
-            . '<line x1="100" y1="250" x2="1500" y2="250"/>'
-            . '<line x1="100" y1="500" x2="1500" y2="500"/>'
-            . '<line x1="100" y1="750" x2="1500" y2="750"/>'
-            . '</g>'
-            . '<g class="hm-grid">'
-            . '<circle class="hm-grid-dot" cx="240" cy="250" r="2.5"/>'
-            . '<circle class="hm-grid-dot" cx="760" cy="500" r="2.5"/>'
-            . '<circle class="hm-grid-dot" cx="1280" cy="750" r="2.5"/>'
-            . '<circle class="hm-grid-dot" cx="500" cy="750" r="2.5"/>'
-            . '<circle class="hm-grid-dot" cx="1020" cy="250" r="2.5"/>'
-            . '</g>'
-            . '<g class="hm-particles">'
-            . '<circle class="hm-particle" cx="380" cy="180" r="4"/>'
-            . '<circle class="hm-particle" cx="1240" cy="300" r="3"/>'
-            . '<circle class="hm-particle" cx="720" cy="620" r="5"/>'
-            . '<circle class="hm-particle" cx="1420" cy="460" r="4"/>'
-            . '<circle class="hm-particle" cx="320" cy="720" r="3"/>'
-            . '</g>'
-            . '<g class="hm-browser" transform="translate(400, 200)">'
-            . '<rect class="hm-browser-frame" x="0" y="0" width="580" height="370" rx="24"/>'
-            . '<rect class="hm-browser-screen" x="24" y="46" width="532" height="304" rx="14"/>'
-            . '<rect class="hm-browser-bar" x="24" y="10" width="532" height="30" rx="8"/>'
-            . '<circle cx="34" cy="25" r="3" fill="#ef4444" opacity="0.9"/>'
-            . '<circle cx="48" cy="25" r="3" fill="#f59e0b" opacity="0.9"/>'
-            . '<circle cx="62" cy="25" r="3" fill="#10b981" opacity="0.9"/>'
-            . '<g class="hm-browser-glow">'
-            . '<rect x="10" y="36" width="560" height="320" rx="20"/>'
-            . '</g>'
-            . '<g class="hm-page" transform="translate(40, 60)">'
-            . '<rect class="hm-page-card" x="0" y="0" width="500" height="276" rx="12"/>'
-            . '<rect class="hm-page-badge" x="20" y="20" width="86" height="24" rx="12"/>'
-            . '<rect class="hm-page-card" x="20" y="58" width="136" height="8" rx="4"/>'
-            . '<rect class="hm-page-card" x="20" y="74" width="230" height="8" rx="4"/>'
-            . '<rect class="hm-page-card" x="20" y="98" width="310" height="8" rx="4"/>'
-            . '<rect class="hm-page-card" x="310" y="154" width="170" height="112" rx="10"/>'
-            . '<circle cx="395" cy="210" r="26" fill="var(--hm-cyan)" opacity="0.9"/>'
-            . '</g>'
-            . '</g>'
-            . '<g class="hm-keywords" transform="translate(1120, 150)">'
-            . '<text class="hm-keyword" x="0" y="0" text-anchor="end">فروشگاهی</text>'
-            . '<text class="hm-keyword" x="0" y="34" text-anchor="end">شرکتی</text>'
-            . '<text class="hm-keyword" x="0" y="68" text-anchor="end">تجاری</text>'
-            . '<text class="hm-keyword" x="0" y="102" text-anchor="end">شخصی</text>'
-            . '</g>'
-            . '<g class="hm-hero-text" transform="translate(1080, 300)">'
-            . '<text class="hm-title" x="0" y="0" text-anchor="end">' . $title . '</text>'
-            . '<text class="hm-subtitle" x="0" y="42" text-anchor="end" max-width="520">' . $subtitle . '</text>'
-            . '</g>'
-            . '<g class="hm-shield" transform="translate(1260, 470)">'
-            . '<path class="hm-shield-badge" d="M40 0 L80 0 L110 40 L110 90 L80 130 L40 130 L10 90 L10 40 Z" stroke-linejoin="round"/>'
-            . '<path class="hm-shield-fill" d="M42 4 L78 4 L108 38 L108 88 L78 126 L42 126 L12 88 L12 38 Z" opacity="0.6"/>'
-            . '<path class="hm-check" d="M44 82 L66 104 L92 74" stroke-linecap="round" stroke-linejoin="round"/>'
-            . '<path class="hm-check-glow" d="M44 82 L66 104 L92 74" opacity="0.5"/>'
-            . '<text class="hm-keyword" x="60" y="158" text-anchor="start" font-size="15" font-weight="700" fill="var(--hm-cyan)">پشتیبانی ۲۴/۷</text>'
-            . '</g>'
-            . '<g class="hm-plans" transform="translate(1140, 580)">'
-            . '<rect class="hm-plan hm-plan-1" x="0" y="0" width="250" height="86" rx="14"/>'
-            . '<rect class="hm-plan-tag" x="18" y="18" width="130" height="22" rx="11"/>'
-            . '<text class="hm-plan-text hm-plan-text-1" x="18" y="46" font-size="15">پشتیبانی ۲۴/۷ اختصاصی</text>'
-            . '<rect class="hm-plan hm-plan-2" x="0" y="102" width="250" height="86" rx="14"/>'
-            . '<rect class="hm-plan-tag" x="18" y="120" width="130" height="22" rx="11"/>'
-            . '<text class="hm-plan-text hm-plan-text-2" x="18" y="148" font-size="15">پلن‌های منعطف و اقتصادی</text>'
-            . '<rect class="hm-plan hm-plan-3" x="0" y="204" width="250" height="86" rx="14"/>'
-            . '<rect class="hm-plan-tag" x="18" y="222" width="130" height="22" rx="11"/>'
-            . '<text class="hm-plan-text hm-plan-text-3" x="18" y="250" font-size="15">امنیت و سرعت حداکثری</text>'
-            . '</g>'
-            . '<g class="hm-brand" transform="translate(1040, 720)">'
-            . '<circle class="hm-brand-mark" cx="110" cy="0" r="54"/>'
-            . '<circle class="hm-brand-ring" cx="110" cy="0" r="70"/>'
-            . '<text class="hm-brand-title" x="220" y="10" text-anchor="start">' . $brandT . '</text>'
-            . '<text class="hm-brand-sub" x="220" y="34" text-anchor="start" font-size="15">' . $brandS . '</text>'
-            . '<a class="hm-cta" href="' . $this->escapeAttr($btnUrl) . '" transform="translate(1040, 800)" style="cursor:pointer;display:inline;">'
-            . '<rect x="0" y="0" width="260" height="48" rx="24"/>'
-            . '<path class="hm-cta-glow" d="M0 0 L260 0 L260 48 L0 48 Z" fill="none" stroke-width="2"/>'
-            . '<text class="hm-cta-text" x="130" y="30" text-anchor="middle" dominant-baseline="middle">' . $btnText . '</text>'
-            . '</a>'
-            . '</g>'
-            . '</svg>';
+        $style = "--mg-height:{$height}px;--mg-duration:{$duration}s;"
+               . "--mg-tone:{$bgTone};--mg-aspect:{$aspect};"
+               . "--mg-reduced:" . ($reduce ? '1' : '0') . ";";
 
-        return '<section id="tb-' . $id . '" class="tb-hero-motion-wrap" style="min-height:' . $height . 'px;"' . $motionAttr . '>'
-            . '<div class="tb-hero-motion" style="' . $style . '">' . $svg . '</div>'
-            . '</section>';
+        $motionAttr = $motionId
+            ? ' data-motion-id="' . $this->escapeAttr((string) $motionId) . '"'
+            : '';
+
+        if ($motionId === null) {
+            return '<div id="tb-' . $id . '" class="tb-motion-graphic tb-motion-graphic-empty"'
+                . ' style="min-height:' . $height . 'px;"' . $motionAttr . '>'
+                . '<div class="tb-motion-graphic-placeholder">'
+                . '<span class="tb-motion-graphic-placeholder-icon">🎬</span>'
+                . '<span class="tb-motion-graphic-placeholder-text">موشن انتخاب نشده — از کتابخانه موشن‌های مجاز انتخاب کنید</span>'
+                . '</div>'
+                . '</div>';
+        }
+
+        return '<div id="tb-' . $id . '" class="tb-motion-graphic"'
+            . ' style="min-height:' . $height . 'px;"' . $motionAttr . '>'
+            . '<div class="tb-motion-graphic-surface" style="' . $style . '"></div>'
+            . '</div>';
     }
-
     protected function renderList(array $props, string $inner, string $id): string
     {
         $items = $props['items'] ?? [];

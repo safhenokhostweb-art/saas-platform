@@ -3635,7 +3635,7 @@ function themeCanvas() {
             if (['section','container','grid','columns','tabs','accordion','slider'].includes(type)) return 'bg-blue-400';
             if (['heading','text','image','gallery','video','button'].includes(type)) return 'bg-green-500';
             if (['countdown','promo_banner'].includes(type)) return 'bg-orange-400';
-            if (type === 'hero_motion') return 'bg-indigo-500';
+            if (type === 'motion_graphic') return 'bg-indigo-500';
             return 'bg-slate-400';
         },
 
