@@ -1,0 +1,43 @@
+{
+  "order": 25,
+  "name": "هدر استاندارد موبایل",
+  "description": "لوگوی متناسب، همبرگری تعاملی، کشوی منو، بنر تبلیغاتی و لینک‌های دسترسی سریع — بهینه برای نمایشگرهای کوچک.",
+  "type": "header",
+  "category": "navigation",
+  "tags": ["هدر", "موبایل", "همبرگری", "کشوی منو", "دسترسی سریع"],
+  "thumbnail": "mobile-store.webp",
+  "blocks": [
+    {
+      "type": "nav_header",
+      "layout_slot": "header",
+      "props": {
+        "logo_text": "فروشگاه من",
+        "logo_url": "@link:home",
+        "mobile_logo_url": "",
+        "sticky": true,
+        "search_mode": "icon",
+        "show_search": true,
+        "search_placeholder": "جستجو در فروشگاه...",
+        "cta_text": "تماس با ما",
+        "cta_url": "tel:+982112345678",
+        "cta_glow_enabled": true,
+        "cta_glow_color": "#c2410c",
+        "phone": "+98 21 1234 5678",
+        "phone_glow_enabled": true,
+        "phone_glow_color": "#22c55e",
+        "social_links": [
+          {"label": "ایتا", "url": "https://eitaa.com", "network": "eitaa"},
+          {"label": "بله", "url": "https://bale.ai", "network": "bale"},
+          {"label": "روبیکا", "url": "https://rubika.ir", "network": "rubika"},
+          {"label": "سروش", "url": "https://soroush.ir", "network": "soroush"}
+        ],
+        "social_style": "brand",
+        "social_show_mobile": true,
+        "show_cart": true,
+        "show_account": true,
+        "show_dark_toggle": false,
+        "header_order": ["logo", "search", "social", "phone", "cta", "cart", "account", "menu", "burger"]
+      }
+    }
+  ]
+}
