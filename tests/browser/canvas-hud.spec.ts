@@ -97,8 +97,7 @@ test('Design HUD: planted defects light up, the fix task lists them, a fix clear
     await expect(chip).toHaveAttribute('data-tone', 'error');
     await expect(chip).toContainText('خطا');
 
-    // The header root repeats the wrapper hook (live selection); the outer one is the widget.
-    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`).first();
+    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`);
     const findings = await widget.evaluate((el) => (window as any).TbAudit.findings(el).map((f: any) => f.code));
     expect(findings).toEqual(expect.arrayContaining(['WIDGET_OVERFLOW', 'DEAD_LINK', 'CONTRAST_LOW']));
     const selectors = await widget.evaluate((el) => (window as any).TbAudit.findings(el).map((f: any) => f.selector));

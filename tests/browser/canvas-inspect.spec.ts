@@ -59,8 +59,7 @@ test('Inspect Mode: toggle, label, action bar and clipboard copies', async ({ pa
   try {
     const toggle = page.locator('[data-tb-inspect-toggle]');
     const frame = page.frameLocator('#tb-live-iframe');
-    // The header root repeats the wrapper hook (live selection); the outer one is the widget.
-    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`).first();
+    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`);
     await expect(widget).toHaveCount(1);
     // Document coordinates inside the preview, after the editor's smooth scroll settles.
     const place = async () => {

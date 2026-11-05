@@ -127,7 +127,8 @@
     /* ── Checks ───────────────────────────────────────────────────── */
 
     var doc = root.document;
-    var WIDGET = '[data-widget-type]';
+    // A host may put the hook on a leading <style> of a block's markup: only rendered elements are widgets.
+    var WIDGET = '[data-widget-type]:not(style):not(script):not(template):not(link)';
     // The editor's own chrome inside a block wrapper (BlockRenderer::wrapEditorMode()
     // and the preview's drop zones) is not site content: never audited.
     var EDITOR_CHROME = '.tb-drag-handle, .tb-block-badge, .tb-drop-zone, [data-tb-editor-chrome]';

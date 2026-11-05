@@ -32,7 +32,8 @@
 
     if (root.TbInspect && root.TbInspect.version === 1) return;
 
-    var WIDGET = '[data-widget-type]';
+    // A host may put the hook on a leading <style> of a block's markup: only rendered elements are widgets.
+    var WIDGET = '[data-widget-type]:not(style):not(script):not(template):not(link)';
     var UI_ATTR = 'data-tb-inspect-ui';
     var FILES = {
         registry: 'packages/saas-platform/modules/theme-runtime/src/BlockRegistry.php',
