@@ -86,7 +86,6 @@ class Adr077SentinelProfilesTest extends TestCase
         $cases = [
             // The closing quote matches the class attribute, not header_modern_v1's inline CSS.
             'header_modern_v1' => [['ctaText' => 'شروع', 'ctaUrl' => '#'], ['ctaText' => 'شروع', 'ctaUrl' => '/contact'], 'tb-header-modern__cta"'],
-            'nav_header' => [['cta_text' => 'شروع', 'cta_url' => ''], ['cta_text' => 'شروع', 'cta_url' => '/contact'], 'tb-nav-header-cta"'],
         ];
         foreach ($cases as $type => [$dead, $live, $class]) {
             $renderer = new \App\Services\ThemeBuilder\BlockRenderer();
@@ -101,6 +100,37 @@ class Adr077SentinelProfilesTest extends TestCase
             $this->assertStringContainsString('data-tb-dead-link', $editor, $type);
             $this->assertStringNotContainsString('data-tb-dead-link', $renderer->renderBlock(['type' => $type, 'id' => 'h1', 'props' => $live]), $type);
         }
+    }
+
+    /**
+     * nav_header (640304d0, owner decision): a CTA with text but no
+     * destination stays visible as a stub on the site too, so the site
+     * manager can see it, and is still flagged as a dead link.
+     */
+    public function test_nav_header_cta_without_a_destination_renders_as_a_flagged_stub(): void
+    {
+        $dead = ['cta_text' => 'شروع', 'cta_url' => ''];
+        $live = ['cta_text' => 'شروع', 'cta_url' => '/contact'];
+
+        foreach ([[], ['editor_mode' => true]] as $context) {
+            $renderer = new \App\Services\ThemeBuilder\BlockRenderer();
+            if ($context !== []) {
+                $renderer->setContext($context);
+            }
+            $label = $context === [] ? 'site' : 'editor';
+
+            $stub = $renderer->renderBlock(['type' => 'nav_header', 'id' => 'h1', 'props' => $dead]);
+            $this->assertStringContainsString('<a href="#" class="tb-btn tb-btn-primary tb-nav-header-cta"', $stub, $label);
+            $this->assertStringContainsString('data-tb-dead-link', $stub, $label);
+
+            $real = $renderer->renderBlock(['type' => 'nav_header', 'id' => 'h1', 'props' => $live]);
+            $this->assertStringContainsString('<a href="/contact" class="tb-btn tb-btn-primary tb-nav-header-cta"', $real, $label);
+            $this->assertStringNotContainsString('data-tb-dead-link', $real, $label);
+        }
+
+        // No CTA text means no CTA, whatever the destination.
+        $none = (new \App\Services\ThemeBuilder\BlockRenderer())->renderBlock(['type' => 'nav_header', 'id' => 'h1', 'props' => ['cta_text' => '', 'cta_url' => '/contact']]);
+        $this->assertStringNotContainsString('tb-nav-header-cta"', $none);
     }
 
     public function test_the_image_logo_shrinks_so_a_long_brand_name_cannot_widen_the_page(): void

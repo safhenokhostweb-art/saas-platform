@@ -4465,10 +4465,16 @@ class BlockRenderer
             $headerOrder = $headerOrderRaw;
         }
         $defaultOrder = ['logo', 'menu', 'search', 'social', 'phone', 'cta', 'cart', 'account', 'dark_toggle', 'burger'];
-        if (empty($headerOrder)) {
-            $headerOrder = $defaultOrder;
-        }
-        $headerOrder = array_values(array_unique(array_filter($headerOrder, fn($k) => in_array($k, $defaultOrder, true), ARRAY_FILTER_USE_BOTH)));
+        // The stored order positions elements; it never hides one. Unknown
+        // keys are dropped, and every known element the stored order omits
+        // (an empty value, or a template saved before the element existed)
+        // follows in default order, matching the Canvas drag list. Whether an
+        // element renders at all stays with its own show_* / content props.
+        $headerOrder = array_values(array_unique(array_filter(
+            array_map(fn($k) => is_scalar($k) ? (string) $k : '', $headerOrder),
+            fn($k) => in_array($k, $defaultOrder, true),
+        )));
+        $headerOrder = array_merge($headerOrder, array_values(array_diff($defaultOrder, $headerOrder)));
 
         $sectionHtml = [
             'logo' => $desktopLogo . $mobileLogo,
