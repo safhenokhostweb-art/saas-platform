@@ -499,86 +499,6 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['gap' => 16, 'radius' => 12, 'align' => 'start'],
             ],
-            // ─── MOTION GRAPHICS — bridge block to official MotionGraphics module ─────────
-            // A canonical canvas block that references a published MotionGraphic entity.
-            // Rendering is delegated to MotionGraphicsComponent / MotionGraphicRuntimeController
-            // (module:motion-graphics), never inline SVG here — preserving modular boundaries,
-            // licensing, versioning, and per-site deployment entitlement.
-            'motion_graphic' => [
-                'name' => 'موشن گرافیک (Motion Graphics)',
-                'category' => self::CATEGORY_LAYOUT,
-                'icon' => 'hero',
-                'is_container' => false,
-                'schema' => [
-                    'motion_id' => [
-                        'type' => 'module_entity',
-                        'label' => 'موشن انتخاب‌شده',
-                        'panel' => 'content',
-                        'providers' => ['motion-graphics'],
-                        'default' => null,
-                        'description' => 'یک موشن منتشرشده و مجاز برای این سایت از کتابخانه موشن‌پذیری انتخاب کنید.',
-                    ],
-                    'aspect_ratio' => [
-                        'type' => 'select',
-                        'label' => 'نسبت تصویر',
-                        'panel' => 'style',
-                        'options' => [
-                            '16:9' => '۱۶:۹ (وidescreen)',
-                            '4:3' => '۴:۳',
-                            '1:1' => '۱:۱',
-                            'auto' => 'تلقایی',
-                        ],
-                        'default' => '16:9',
-                    ],
-                    'min_height' => [
-                        'type' => 'number',
-                        'label' => 'حداقل ارتفاع (px)',
-                        'panel' => 'style',
-                        'min' => 200,
-                        'max' => 1200,
-                        'default' => 560,
-                    ],
-                    'loop_duration' => [
-                        'type' => 'number',
-                        'label' => 'سرعت لوپ (ثانیه)',
-                        'panel' => 'style',
-                        'min' => 4,
-                        'max' => 30,
-                        'default' => 10,
-                    ],
-                    'bg_tone' => [
-                        'type' => 'select',
-                        'label' => 'تم پس‌زمینه',
-                        'panel' => 'style',
-                        'options' => [
-                            'deep' => 'آبی عمیق نیوی',
-                            'gradient' => 'گرادیان سازمانی',
-                            'glass' => 'شبه‌شفاف گلاس‌مورفیسم',
-                        ],
-                        'default' => 'deep',
-                    ],
-                    'reduced_motion' => [
-                        'type' => 'toggle',
-                        'label' => 'حترم به ترجیح کاهش حرکت',
-                        'panel' => 'advanced',
-                        'default' => true,
-                    ],
-                ],
-                'defaultProps' => [
-                    'motion_id' => null,
-                    'aspect_ratio' => '16:9',
-                    'min_height' => 560,
-                    'loop_duration' => 10,
-                    'bg_tone' => 'deep',
-                    'reduced_motion' => true,
-                ],
-                'editor' => [
-                    'allowCustomCss' => true,
-                    'lockedStructure' => false,
-                    'uiDirection' => 'rtl',
-                ],
-            ],
-
             // ─── CONTENT ─────────────────────────────────────────────────────
             'heading' => [
                 'name' => 'عنوان',
@@ -1220,11 +1140,13 @@ class BlockRegistry
             ],
 
             // ─── MODULE: موشن گرافیک ─────────────────────────────────────────
-            // Authoring-time only: this entry exists so the Theme Builder
-            // canvas preview shows a proper "موشن گرافیک" label instead of
-            // the raw block type. Actual resolution/rendering only ever
-            // happens on customer-site's ThemeCanvasRenderer, against a
-            // specific site's own authorized Motion assignment — see
+            // ADR-078: the ONE canvas widget for every motion asset. A hero
+            // motion, a business-growth motion, or any future library asset
+            // is a selectable asset of this widget, never a block type of its
+            // own (the standalone `hero_motion`/`motion_graphic` blocks were
+            // retired). Resolution/rendering happens only on customer-site's
+            // ThemeCanvasRenderer, against the site's own runtime manifest,
+            // which lists only assets that site is licensed for — see
             // docs/theme-builder-motion/TEMPLATE_MOTION_CONTRACT.md.
             'module:motion' => [
                 'name' => 'موشن گرافیک',
@@ -1232,8 +1154,9 @@ class BlockRegistry
                 'icon' => 'sparkles',
                 'schema' => [
                     // `motion`: customer-site's picker over the site's own
-                    // permitted assets; the platform Canvas shows the id.
-                    'motion_asset_id' => ['type' => 'motion', 'label' => 'موشن انتخاب‌شده', 'default' => ''],
+                    // manifest (licensed assets only); the platform Canvas
+                    // shows the id.
+                    'motion_asset_id' => ['type' => 'motion', 'label' => 'موشن انتخاب‌شده', 'default' => '', 'description' => 'از موشن‌های مجاز این سایت (رایگان یا دارای لایسنس ویژه) انتخاب کنید.'],
                     'placement' => ['type' => 'select', 'label' => 'جایگاه', 'options' => ['hero' => 'هیرو', 'section' => 'بخش', 'cta' => 'فراخوان به اقدام', 'background' => 'پس‌زمینه'], 'default' => 'section'],
                     'enabled' => ['type' => 'boolean', 'label' => 'فعال', 'default' => true],
                     'fallback_image' => ['type' => 'image', 'label' => 'تصویر جایگزین (در صورت نبود موشن)', 'default' => ''],

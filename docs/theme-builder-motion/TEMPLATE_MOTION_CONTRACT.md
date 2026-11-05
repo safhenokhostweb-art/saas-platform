@@ -21,6 +21,21 @@
 | `enabled` | Customer-facing on/off toggle (Step 6). |
 | `fallback_image` | Optional plain image URL shown when the asset can't be resolved (unpublished, unassigned, unauthorized, deleted). No new asset type — just an `<img>`. |
 
+## One widget for every motion (ADR-078)
+
+`module:motion` is the only motion block. A hero motion, a business-growth
+motion, or any future library asset is an asset chosen in this widget's
+picker, never a block type of its own (`hero_motion` and `motion_graphic`
+were retired). The customer-site picker reads the site's runtime manifest,
+which lists only assets the site is licensed for:
+
+| Tier | Needs |
+|---|---|
+| `free` (e.g. `hero-motion`) | the `motion-graphics` module license |
+| `premium` (e.g. `business-growth-motion`) | also the `motion-graphics-premium` license |
+
+The platform library and its publishing rules are described in ADR-078.
+
 ## Explicitly never stored in a template/block
 
 Master SVG/Lottie source, editable timeline/schema, AI prompts or provider metadata, internal Motion Graphics IDs beyond the public `asset_id`, or any other customer's assets. This is enforced independently at **three** layers, not just by convention: `MotionGraphic`/`MotionGraphicVersion` hide+encrypt these fields; the manifest reader hard-rejects a payload containing `source_definition`/`ai_metadata`/`editable_schema`/`prompt`/etc.; and the block schema itself has no field capable of holding them.

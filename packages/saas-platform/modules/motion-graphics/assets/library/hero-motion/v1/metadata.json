@@ -1,0 +1,106 @@
+{
+    "name": "موشن قهرمان سازمانی",
+    "name_fa": "موشن قهرمان سازمانی",
+    "name_en": "Corporate Hero Motion",
+    "slug": "hero-motion",
+    "category": "hero",
+    "description": "داشبورد هوشمند سازمان با نمودار رشد، کارت امنیت و اعتماد، پایداری سرویس و پشتیبانی شبانه‌روزی برای صفحه نخست سایت‌های سازمانی و شرکتی.",
+    "purpose": "Corporate homepage hero conveying trust, innovation and technology",
+    "usage": [
+        "hero",
+        "section",
+        "background"
+    ],
+    "target_usage": [
+        "homepage hero",
+        "corporate landing",
+        "saas landing"
+    ],
+    "industry": [
+        "corporate",
+        "technology",
+        "services"
+    ],
+    "tags": [
+        "hero",
+        "corporate",
+        "trust",
+        "technology",
+        "dashboard",
+        "rtl",
+        "dark-mode",
+        "iranian-business",
+        "motion-graphics",
+        "master-asset",
+        "themeable"
+    ],
+    "engine": "svg-js",
+    "type": "motion",
+    "subcategory": "animated-svg",
+    "version": "v1",
+    "dependencies": [],
+    "license_tier": "free",
+    "dimensions": {
+        "width": 960,
+        "height": 540,
+        "viewBox": "0 0 960 540"
+    },
+    "accessibility": {
+        "reduced_motion": true,
+        "rtl": true,
+        "color_scheme": [
+            "light",
+            "dark"
+        ],
+        "label": "موشن قهرمان سازمانی"
+    },
+    "theme_support": true,
+    "theme_tokens": {
+        "primary": true,
+        "secondary": true,
+        "accent": true,
+        "background": true,
+        "border": true,
+        "surface": true,
+        "ink": true,
+        "muted": true,
+        "success": true
+    },
+    "editable_properties": [
+        "colors",
+        "text",
+        "speed",
+        "theme"
+    ],
+    "ai_editable": true,
+    "unique_elements": [
+        "smart dashboard window",
+        "RTL growth chart",
+        "trust shield card",
+        "orbiting network nodes",
+        "data packets"
+    ],
+    "visual_concept": "یک پنجره داشبورد سازمانی در مرکز، با کارت‌های شناور اعتماد، نوآوری، رشد و پشتیبانی که با بسته‌های داده به هسته متصل‌اند.",
+    "performance": {
+        "animated_properties": [
+            "transform",
+            "opacity",
+            "stroke-dashoffset",
+            "stroke-dasharray"
+        ],
+        "filters": false,
+        "smil": false,
+        "scripts": false
+    },
+    "library_id": "motion:hero:hero-motion:v1",
+    "asset_role": "master",
+    "variant_supported": true,
+    "source_asset": null,
+    "ownership": {
+        "type": "platform",
+        "license": "free",
+        "customer_restriction": false
+    },
+    "created_source": "motion-library-authoring",
+    "status": "active"
+}

@@ -76,7 +76,7 @@ class SiteIsolationTest extends TestCase
                     return null;
                 }
                 return new RuntimeProjectionReadModel(
-                    assetReference: new AssetReadModel($assetId, $this->version, 'lottie', null, [], 'checksum', false),
+                    assetReference: new AssetReadModel($assetId, $this->version, 'lottie', null, ['license_tier' => 'free'], 'checksum', false),
                     publishedVersion: $this->version,
                     optimizedReference: '/motion/x/v'.$this->version.'/a.json',
                 );

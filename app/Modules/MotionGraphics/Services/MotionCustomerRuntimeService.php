@@ -10,6 +10,7 @@ use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Support\AbstractMotionAdapter;
+use App\Modules\MotionGraphics\Support\MotionAssetLicensePolicy;
 use App\Modules\MotionGraphics\Support\MotionAuditEvents;
 use App\Modules\MotionGraphics\Support\ReadModelMapper;
 use Illuminate\Support\Carbon;
@@ -51,6 +52,7 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
         private readonly MotionLicenseGatewayContract $license,
         private readonly MotionAssetReadContract $assets,
         private readonly MotionRuntimeProjectionReadContract $projections,
+        private readonly MotionAssetLicensePolicy $licensePolicy,
     ) {
         parent::__construct($tenantContext, $auditEvents);
     }
@@ -110,6 +112,23 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
             }
 
             $projectionDto = ReadModelMapper::toRuntimeProjectionDTO($projection);
+
+            // ADR-078: re-checked on every fetch, not only at activation,
+            // so an expired or revoked premium license removes the item
+            // from the next manifest without anyone re-activating the
+            // package. A skipped item is a smaller manifest, never an error.
+            $license = $this->licensePolicy->decide($site, $projectionDto->assetReference->compatibility);
+            if (! $license->allowed) {
+                $this->auditEvents->record(MotionAuditEvents::ASSET_SKIPPED, [
+                    'site_id' => $site->id,
+                    'asset_id' => $item->asset_id,
+                    'version' => $item->active_version,
+                    'reason' => $license->code,
+                    'actor' => $context->actorId,
+                    'correlation_id' => $context->correlationId,
+                ]);
+                continue;
+            }
 
             $assets[] = new CustomerRuntimeAssetEntry(
                 assetId: $projectionDto->assetReference->assetId,

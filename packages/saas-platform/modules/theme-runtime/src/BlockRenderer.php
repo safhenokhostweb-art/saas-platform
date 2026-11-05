@@ -1525,56 +1525,6 @@ class BlockRenderer
         return "<div id=\"tb-{$id}\" class=\"tb-hero-actions tb-hero-actions-{$align}\" style=\"{$style}\">{$inner}</div>";
     }
 
-    /**
-     * Phase 3D — Hero Motion: a self-contained, silent, looping vector
-     * motion-graphic hero section rendered as inline SVG + CSS keyframes.
-     * No external assets, no third-party fonts, no JavaScript. RTL and
-     * responsive by construction; uses the organizational palette
-     * (#0F172A / #2563EB / #38BDF8 / #818CF8), Vazirmatn typography and
-     * glassmorphism surfaces with backdrop-filter blur. The 10-second loop
-     * runs four phases: grid/particles + browser entry, morphing theme
-     * pages with keyword pulses, shield + support plans, brand mark + CTA.
-     */
-    /**
-     * Phase 3D — Motion Graphics bridge block.
-     * Delegates rendering to the official MotionGraphics module.
-     * Never embeds inline SVG/CSS here — that would violate modular
-     * boundaries, licensing, versioning, and per-site deployment
-     * entitlement. The motion data lives exclusively in the
-     * motion_graphics table and is served via MotionGraphicRuntimeController.
-     */
-    protected function renderMotionGraphic(array $props, string $inner, string $id): string
-    {
-        $motionId  = $props['motion_id'] ?? null;
-        $height    = max(0, min(1200, (int) ($props['min_height'] ?? 560)));
-        $duration  = max(0, min(30, (int) ($props['loop_duration'] ?? 10)));
-        $bgTone    = $props['bg_tone'] ?? 'deep';
-        $aspect    = $props['aspect_ratio'] ?? '16:9';
-        $reduce    = (bool) ($props['reduced_motion'] ?? true);
-
-        $style = "--mg-height:{$height}px;--mg-duration:{$duration}s;"
-               . "--mg-tone:{$bgTone};--mg-aspect:{$aspect};"
-               . "--mg-reduced:" . ($reduce ? '1' : '0') . ";";
-
-        $motionAttr = $motionId
-            ? ' data-motion-id="' . $this->escapeAttr((string) $motionId) . '"'
-            : '';
-
-        if ($motionId === null) {
-            return '<div id="tb-' . $id . '" class="tb-motion-graphic tb-motion-graphic-empty"'
-                . ' style="min-height:' . $height . 'px;"' . $motionAttr . '>'
-                . '<div class="tb-motion-graphic-placeholder">'
-                . '<span class="tb-motion-graphic-placeholder-icon">🎬</span>'
-                . '<span class="tb-motion-graphic-placeholder-text">موشن انتخاب نشده — از کتابخانه موشن‌های مجاز انتخاب کنید</span>'
-                . '</div>'
-                . '</div>';
-        }
-
-        return '<div id="tb-' . $id . '" class="tb-motion-graphic"'
-            . ' style="min-height:' . $height . 'px;"' . $motionAttr . '>'
-            . '<div class="tb-motion-graphic-surface" style="' . $style . '"></div>'
-            . '</div>';
-    }
     protected function renderList(array $props, string $inner, string $id): string
     {
         $items = $props['items'] ?? [];

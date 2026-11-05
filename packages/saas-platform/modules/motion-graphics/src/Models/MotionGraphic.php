@@ -18,6 +18,14 @@ final class MotionGraphic extends Model
     public const OWNERSHIP_GLOBAL = 'global';
     public const OWNERSHIP_CUSTOMER_SPECIFIC = 'customer_specific';
 
+    /**
+     * Commercial tier (ADR-078). Stored as `runtime_configuration.license_tier`.
+     * Anything missing or unrecognised is treated as premium, so an asset
+     * is never handed out for free by accident.
+     */
+    public const LICENSE_TIER_FREE = 'free';
+    public const LICENSE_TIER_PREMIUM = 'premium';
+
     protected $fillable = [
         'name', 'slug', 'description', 'ownership_type', 'owner_site_identifier',
         'group_id', 'category_id', 'engine', 'asset_type', 'source_definition_json',
@@ -62,6 +70,13 @@ final class MotionGraphic extends Model
         if ($this->ownership_type === self::OWNERSHIP_CUSTOMER_SPECIFIC && blank($this->owner_site_identifier)) {
             throw new InvalidArgumentException('Customer-specific motions require one site identifier.');
         }
+    }
+
+    public function licenseTier(): string
+    {
+        $tier = ($this->runtime_configuration ?? [])['license_tier'] ?? null;
+
+        return $tier === self::LICENSE_TIER_FREE ? self::LICENSE_TIER_FREE : self::LICENSE_TIER_PREMIUM;
     }
 
     public function group(): BelongsTo

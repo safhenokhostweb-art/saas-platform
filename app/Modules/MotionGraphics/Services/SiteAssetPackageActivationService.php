@@ -4,7 +4,7 @@ namespace App\Modules\MotionGraphics\Services;
 
 use App\Modules\MotionGraphics\Contracts\MotionAssetResolverInterface;
 use App\Modules\MotionGraphics\Contracts\MotionAuthorizationInterface;
-use App\Modules\MotionGraphics\DTO\LicenseCompatibilityDecision;
+use App\Models\Site;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\AssetActivation;
@@ -13,6 +13,7 @@ use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Models\SiteAssetPackageItem;
 use App\Modules\MotionGraphics\Models\TemplateAssetPackage;
 use App\Modules\MotionGraphics\Support\AbstractMotionAdapter;
+use App\Modules\MotionGraphics\Support\MotionAssetLicensePolicy;
 use App\Modules\MotionGraphics\Support\MotionAuditEvents;
 use App\Modules\MotionGraphics\Support\ReadModelMapper;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +54,7 @@ final class SiteAssetPackageActivationService extends AbstractMotionAdapter
         private readonly MotionAssetReadContract $assets,
         private readonly MotionVersionReadContract $versions,
         private readonly MotionRuntimeProjectionReadContract $projections,
+        private readonly MotionAssetLicensePolicy $licensePolicy,
     ) {
         parent::__construct($tenantContext, $auditEvents);
     }
@@ -77,7 +79,10 @@ final class SiteAssetPackageActivationService extends AbstractMotionAdapter
             throw new MotionAdapterFailClosedException('tenant_context_mismatch', 'No resolvable site tenant is present.');
         }
 
-        $resolvedItems = $this->validateRequiredAssets($templatePackage, $context->siteId);
+        $resolvedItems = [
+            ...$this->validateRequiredAssets($templatePackage, $context->siteId, $site),
+            ...$this->resolveEntitledOptionalAssets($templatePackage, $context, $site),
+        ];
 
         return DB::transaction(function () use ($templatePackage, $brandVariantReference, $resolvedItems, $site, $context): SiteAssetPackage {
             $sitePackage = $this->findOrCreateSitePackage($templatePackage, $brandVariantReference, (int) $site->id, $context);
@@ -162,7 +167,7 @@ final class SiteAssetPackageActivationService extends AbstractMotionAdapter
     /**
      * @return list<array{asset_id: string, version: int, checksum: string, type: string}>
      */
-    private function validateRequiredAssets(TemplateAssetPackage $templatePackage, string $siteId): array
+    private function validateRequiredAssets(TemplateAssetPackage $templatePackage, string $siteId, Site $site): array
     {
         $resolved = [];
 
@@ -188,9 +193,63 @@ final class SiteAssetPackageActivationService extends AbstractMotionAdapter
                 throw new MotionAdapterFailClosedException('compatibility_rejected', $compatibility->reason);
             }
 
-            $license = LicenseCompatibilityDecision::notImplemented();
+            $license = $this->licensePolicy->decide($site, $assetDto->compatibility);
             if (! $license->allowed) {
                 throw new MotionAdapterFailClosedException($license->code, $license->reason);
+            }
+
+            $resolved[] = [
+                'asset_id' => $assetId,
+                'version' => $projection->publishedVersion,
+                'checksum' => $projection->assetReference->checksum,
+                'type' => $projection->assetReference->type,
+            ];
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * ADR-078: optional assets are what makes a library package useful —
+     * every site gets the same template package, and each site receives
+     * only the items it is entitled to. An optional asset that is not
+     * published at its frozen version, not owned by the site, incompatible,
+     * or not licensed is left out (and audited); it never fails the
+     * activation the way a missing *required* asset does.
+     *
+     * @return list<array{asset_id: string, version: int, checksum: string, type: string}>
+     */
+    private function resolveEntitledOptionalAssets(TemplateAssetPackage $templatePackage, MotionAdapterContext $context, Site $site): array
+    {
+        $resolved = [];
+
+        foreach ($templatePackage->optional_assets ?? [] as $reference) {
+            $assetId = (string) ($reference['asset_id'] ?? '');
+            $version = (int) ($reference['version'] ?? 0);
+
+            $projection = $assetId === '' ? null : $this->projections->projectAsset($assetId, $context->siteId);
+            $reason = match (true) {
+                $projection === null || $projection->publishedVersion !== $version => 'asset_not_available_for_site',
+                default => null,
+            };
+
+            if ($reason === null) {
+                $assetDto = ReadModelMapper::toAssetReferenceDTO($projection->assetReference);
+                $compatibility = $this->assetResolver->validateCompatibility($assetDto, $templatePackage->compatibility_rules ?? [], []);
+                $license = $this->licensePolicy->decide($site, $assetDto->compatibility);
+                $reason = ! $compatibility->compatible ? 'compatibility_rejected' : (! $license->allowed ? $license->code : null);
+            }
+
+            if ($reason !== null) {
+                $this->auditEvents->record(MotionAuditEvents::ASSET_SKIPPED, [
+                    'site_id' => $site->id,
+                    'asset_id' => $assetId,
+                    'version' => $version,
+                    'reason' => $reason,
+                    'actor' => $context->actorId,
+                    'correlation_id' => $context->correlationId,
+                ]);
+                continue;
             }
 
             $resolved[] = [

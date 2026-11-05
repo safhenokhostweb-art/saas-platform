@@ -61,6 +61,16 @@ class ModuleSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        self::seedMotionModules();
+    }
+
+    /**
+     * Motion Graphics commercial modules. Public and static so the local
+     * demo seeder (MotionGraphicsDemoSiteSeeder) can ensure exactly these
+     * rows without re-seeding every other module.
+     */
+    public static function seedMotionModules(): void
+    {
         // Phase 9 (docs/motion-commercialization/AUDIT_REPORT.md §5):
         // reclassified from Phase 6's type=core (deliberately internal
         // -only, for safely proving the technical integration with zero
@@ -121,6 +131,29 @@ class ModuleSeeder extends Seeder
                 'is_one_time' => true,
                 'is_active' => true,
                 'description' => 'افزودن انیمیشن‌های موشن‌گرافیک آماده به قالب سایت — دسته‌بندی: بهبود طراحی (Design Enhancement).',
+            ]
+        );
+
+        // ADR-078: premium motion tier. A license-only module
+        // (license_required=true → Module::MODE_LICENSE_ONLY): a site can use
+        // premium-tier motion assets only with a valid ModuleLicense for it,
+        // checked by MotionAssetLicensePolicy through the same
+        // ModuleLicenseServiceInterface as every other module. No price and
+        // not marketplace-visible: granting is an admin action
+        // (ModuleLicenseController::grant()) until the owner sets a price.
+        Module::updateOrCreate(
+            ['slug' => \App\Modules\MotionGraphics\Support\MotionAssetLicensePolicy::PREMIUM_MODULE_SLUG],
+            [
+                'title' => 'Motion Graphics Premium',
+                'description' => 'دسترسی به موشن‌گرافیک‌های ویژه (Premium) کتابخانه موشن، علاوه بر موشن‌های رایگان ماژول موشن گرافیک.',
+                'short_description' => 'Premium motion assets',
+                'category' => 'design_enhancement',
+                'is_active' => true,
+                'type' => Module::TYPE_PAID,
+                'free_assignable' => false,
+                'license_required' => true,
+                'marketplace_visible' => false,
+                'license_type_default' => \App\Models\ModuleLicense::TYPE_ONE_TIME,
             ]
         );
     }

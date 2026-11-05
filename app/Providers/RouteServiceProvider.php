@@ -41,6 +41,13 @@ class RouteServiceProvider extends ServiceProvider
                 ->prefix('api/mobile')
                 ->group(base_path('packages/saas-platform/core-utils/Routes/mobile-api.php'));
 
+            // ADR-078 — curated motion library files, referenced root-relative by
+            // the Motion Graphics runtime manifest. Deliberately outside the
+            // `web` group: a static, immutable asset gets no session or cookie.
+            Route::get('motion/{slug}/{version}/animation.svg', \App\Http\Controllers\MotionLibraryAssetController::class)
+                ->where(['slug' => '[a-z0-9-]+', 'version' => 'v[0-9]+'])
+                ->name('motion.library.asset');
+
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });

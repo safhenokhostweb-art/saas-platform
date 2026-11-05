@@ -90,6 +90,7 @@ class SiteAssetPackageActivationServiceTest extends TestCase
             $assets,
             $versions,
             $projections,
+            \Tests\Support\MotionLicensePolicyFactory::allowAll(),
         );
     }
 

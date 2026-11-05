@@ -108,6 +108,7 @@ class MotionGraphicsAdminServiceTest extends TestCase
         $activation = new SiteAssetPackageActivationService(
             $tenantContext, $auditEvents, $authorization, $this->compatibleAssetResolver(), $assets,
             Mockery::mock(MotionVersionReadContract::class), $projections,
+            \Tests\Support\MotionLicensePolicyFactory::allowAll(),
         );
         $installation = new MotionRuntimeInstallationService(
             $tenantContext, $auditEvents, $authorization, $templatePackages, $activation, $assets, $projections,

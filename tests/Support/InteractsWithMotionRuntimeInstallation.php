@@ -103,7 +103,7 @@ trait InteractsWithMotionRuntimeInstallation
             ) {}
             public function findByCanonicalId(string $assetId, ?int $version = null): ?AssetReadModel {
                 return $assetId === $this->assetId
-                    ? new AssetReadModel($assetId, $this->version, 'lottie', $this->category, [], 'checksum', false, $this->name)
+                    ? new AssetReadModel($assetId, $this->version, 'lottie', $this->category, ['license_tier' => 'free'], 'checksum', false, $this->name)
                     : null;
             }
             public function resolveActiveVersion(string $assetId): ?int {
@@ -126,7 +126,7 @@ trait InteractsWithMotionRuntimeInstallation
                     return null;
                 }
                 return new RuntimeProjectionReadModel(
-                    assetReference: new AssetReadModel($assetId, $this->version, 'lottie', $this->category, [], 'checksum', false, $this->name),
+                    assetReference: new AssetReadModel($assetId, $this->version, 'lottie', $this->category, ['license_tier' => 'free'], 'checksum', false, $this->name),
                     publishedVersion: $this->version,
                     optimizedReference: '/motion/x/v'.$this->version.'/a.json',
                     themeTokens: ['primary' => '#111111'],
@@ -158,7 +158,7 @@ trait InteractsWithMotionRuntimeInstallation
             }
             public function findByCanonicalId(string $assetId, ?int $version = null): ?AssetReadModel {
                 $a = $this->find($assetId);
-                return $a ? new AssetReadModel($assetId, $a['version'], 'lottie', $a['category'] ?? null, [], 'checksum', false, $a['name'] ?? null) : null;
+                return $a ? new AssetReadModel($assetId, $a['version'], 'lottie', $a['category'] ?? null, ['license_tier' => 'free'], 'checksum', false, $a['name'] ?? null) : null;
             }
             public function resolveActiveVersion(string $assetId): ?int {
                 return $this->find($assetId)['version'] ?? null;
@@ -175,7 +175,7 @@ trait InteractsWithMotionRuntimeInstallation
                 foreach ($this->assets as $a) {
                     if ($a['id'] === $assetId) {
                         return new RuntimeProjectionReadModel(
-                            assetReference: new AssetReadModel($assetId, $a['version'], 'lottie', $a['category'] ?? null, [], 'checksum', false, $a['name'] ?? null),
+                            assetReference: new AssetReadModel($assetId, $a['version'], 'lottie', $a['category'] ?? null, ['license_tier' => 'free'], 'checksum', false, $a['name'] ?? null),
                             publishedVersion: $a['version'],
                             optimizedReference: '/motion/'.$assetId.'/v'.$a['version'].'/a.json',
                             themeTokens: ['primary' => '#111111'],

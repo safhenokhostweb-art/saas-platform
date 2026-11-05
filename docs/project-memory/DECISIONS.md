@@ -4691,3 +4691,128 @@ There is no migration or Composer change.
   Only routes every storefront has are used. Content already saved on a
   site, such as the local demo's header CTA and footer, is the author's to
   change.
+
+## ADR-078
+
+**Title:** One Motion Widget, a Curated Motion Library with Free/Premium Tiers, and Lifecycle-Safe Publishing
+
+**Status:** Accepted
+
+**Date:** 2026-11-05
+
+**Context:**
+
+- The owner asked for the Motion Graphics ecosystem to be finalized across
+  both repositories: every motion selectable from one comprehensive canvas
+  widget, a picker fed only by the site's runtime manifest, licensed
+  (premium) motions shown only to licensed sites, and two production-grade
+  motions (a corporate hero and a business-growth motion).
+- An audit on 2026-11-05 found:
+  - **Two motion widgets.** The canonical `module:motion` block (picker over
+    the site manifest, rendered by customer-site through
+    `<x-motion.graphics>`) and a second `motion_graphic` block (e91b1ccb)
+    that only ever rendered an empty `<div data-motion-id>`. It also broke
+    customer-site's `CanonicalBlockDefinitionParityTest` (`module_entity`
+    and `toggle` have no customer canvas control). The `hero_motion` block
+    before it had embedded its SVG in `BlockRenderer`, outside licensing
+    and versioning; about 300 lines of its CSS were still in the shared
+    sheet.
+  - **No real asset behind the only catalog record.** `hero-vector-showcase`
+    v1 was published with `compiled_assets = []`, later patched by a raw
+    `DB::table()` update to an absolute URL that does not exist, with an
+    invented size. That bypassed `MotionGraphicVersion`'s immutability
+    guard. Re-running its seeder now throws, because it `updateOrCreate`s
+    an immutable version. Its engine `svg-css` is not in `allowed_engines`.
+  - **Nothing serves `/motion/...`.** The module binds
+    `InMemoryMotionAssetStorage`, so no compiled asset URL resolves.
+  - **No per-asset licensing.** `SiteAssetPackageActivationService` carried
+    `LicenseCompatibilityDecision::notImplemented()`, and only
+    `required_assets` were ever installed (`optional_assets` were ignored).
+  - **Two hard constraints in the manifest contract:** customer-site's
+    reader accepts only root-relative `optimized_reference` values and
+    `asset_id` matching `^[a-z0-9-]+$`. Absolute URLs and underscore slugs
+    (`hero_motion`) are rejected by design.
+
+**Decision:**
+
+1. **`module:motion` is the only motion widget.** Every motion (hero,
+   business, any future library asset) is an asset selected in that
+   widget, never a block type of its own. `motion_graphic`
+   (registry entry, `renderMotionGraphic()`, editor color case) is retired.
+   The orphaned Hero Motion CSS is replaced by sizing rules for
+   `.tb-module-motion`. Prop keys and types of `module:motion` are
+   unchanged. Stored `motion_graphic` blocks (none found in either local
+   database) fall to `renderFallback()`.
+2. **The curated library is the source of truth for platform motions.**
+   Assets live in the module's
+   `assets/library/{slug}/{vN}/` (`animation.svg`, `preview.svg`,
+   `metadata.json`, README, AI-editing rules). That directory is the only
+   copy: `MotionLibraryAssetController` serves it at
+   `/motion/{slug}/{vN}/animation.svg` (the module's `asset_path_prefix`),
+   registered outside the `web` group (no session or cookie), for catalog
+   slugs and existing version directories only, with immutable caching,
+   `nosniff`, a `default-src 'none'` CSP and
+   `Cross-Origin-Resource-Policy: cross-origin` so customer sites can embed
+   it. A copy under `public/` was rejected: `public/**` is outside the
+   release policy's `allowed_release_paths`, so it would never ship, and a
+   second copy can drift. References are root-relative; customer-site
+   prefixes the platform origin. A new art version is a new directory;
+   published files are never edited in place.
+3. **`MotionLibraryCatalogService` publishes the library** (used by
+   `MotionGraphicsDefaultSeeder`, safe in every environment):
+   - a version row is never updated: a changed file becomes version N+1,
+     published, with the previous published version retired (status only),
+     exactly like `MotionLibraryService::publish()`;
+   - unchanged files write nothing (idempotent);
+   - `compiled_assets[0]` = `{type, path, url, mime, mime_type, size,
+     sha256}` (the pipeline's storage descriptor plus `type`/`mime_type`);
+     `source_checksum` = sha256 of the source snapshot, as the pipeline
+     computes it;
+   - the broken `hero-vector-showcase` record is archived (no published
+     pointer, versions retired, history kept).
+4. **Two commercial tiers, one licensing system.**
+   `runtime_configuration.license_tier` is `free` or `premium`; missing or
+   unknown means premium. `MotionAssetLicensePolicy` decides:
+   - free: allowed (the site still needs the existing `motion-graphics`
+     module license, checked once per manifest by `RealMotionLicenseGateway`,
+     unchanged);
+   - premium: additionally needs the new `motion-graphics-premium` module,
+     a license-only module (no price, not marketplace-visible; granted by an
+     admin until the owner prices it), checked through the same
+     `ModuleLicenseServiceInterface` as every module.
+   The tier crosses the read boundary as `compatibility.license_tier`
+   (`DatabaseMotionAssetReader`).
+5. **Entitlement is applied twice, by design.**
+   - At activation: required assets must be licensed or the activation
+     fails atomically (as before); optional assets are installed only when
+     available, compatible and licensed, otherwise skipped with a
+     `motion.asset.skipped` audit event. So a site package holds only what
+     the site may use.
+   - At every manifest build: an item whose license lapsed or was revoked
+     is skipped, so revocation takes effect without re-activation.
+6. **One shared template package, `motion-library:core`,** lists the
+   library assets as optional; each site's package receives its entitled
+   subset. `MotionGraphicsDemoSiteSeeder` provisions a local/test site
+   through the real services (licenses, package, activation, flag) and
+   refuses to run in production.
+7. **Asset quality bar** (enforced by `CommercialMotionLibraryTest`): 960×540
+   `viewBox`; `role="img"` with a Persian title; no script, event handlers,
+   `foreignObject`, external URLs, web fonts, filters or SMIL; only
+   transform, opacity and stroke-dash animation; an intro that plays once
+   and ends in its complete frame, then ambient loops;
+   `prefers-reduced-motion:reduce` stops everything; `prefers-color-scheme:dark`
+   swaps the `--asset-*` tokens; RTL with Persian digits; under 20 KB.
+
+**Consequences:**
+
+- The canvas picker on customer-site (`canvasMotionAssets`, unchanged)
+  lists exactly the site's licensed assets, because it reads the same
+  manifest.
+- customer-site's `MotionRuntimeRenderer` now uses the asset's display name
+  as `alt` (not the uuid) and emits intrinsic `width`/`height` from
+  placement dimensions.
+- Light/dark inside an `<img>` follows the visitor's OS/browser color
+  scheme, not a site-level theme toggle.
+- Not done: per-asset (rather than per-tier) purchases, theme-token
+  overrides delivered into the SVG, and a real object-storage adapter.
+  Each is a separate decision.

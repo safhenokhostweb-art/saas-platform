@@ -93,6 +93,7 @@ class MotionRuntimeInstallationServiceTest extends TestCase
         $activation = new SiteAssetPackageActivationService(
             $tenantContext, $auditEvents, $authorization, $this->compatibleResolver(), $assets,
             Mockery::mock(MotionVersionReadContract::class), $projections,
+            \Tests\Support\MotionLicensePolicyFactory::allowAll(),
         );
 
         $installation = new MotionRuntimeInstallationService(

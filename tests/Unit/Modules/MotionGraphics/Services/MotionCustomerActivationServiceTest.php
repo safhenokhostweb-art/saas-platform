@@ -109,6 +109,7 @@ class MotionCustomerActivationServiceTest extends TestCase
         // through SiteAssetPackageActivationService/MotionRuntimeInstallationService.
         $runtimeService = new MotionCustomerRuntimeService(
             $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $assets, $projections,
+            \Tests\Support\MotionLicensePolicyFactory::allowAll(),
         );
 
         return new MotionCustomerActivationService($tenantContext, $auditEvents, $runtimeService);

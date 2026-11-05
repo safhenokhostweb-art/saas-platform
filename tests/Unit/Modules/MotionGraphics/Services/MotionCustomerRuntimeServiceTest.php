@@ -92,6 +92,7 @@ class MotionCustomerRuntimeServiceTest extends TestCase
 
         $service = new MotionCustomerRuntimeService(
             $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $assets, $projections,
+            \Tests\Support\MotionLicensePolicyFactory::allowAll(),
         );
 
         return [$service, $assets, $projections];

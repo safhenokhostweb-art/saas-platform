@@ -23,6 +23,9 @@ class MotionAuditEvents
     public const SITE_PACKAGE_CREATED = 'motion.site.package.created';
     public const ASSET_ACTIVATED = 'motion.asset.activated';
     public const ASSET_ROLLBACK = 'motion.asset.rollback';
+    // ADR-078: an optional/manifest item left out because the site is not
+    // entitled to it (or it is no longer published). Never an error.
+    public const ASSET_SKIPPED = 'motion.asset.skipped';
 
     // Phase 4 — runtime installation & template activation bridge.
     public const TEMPLATE_ACTIVATION_STARTED = 'motion.template.activation.started';
