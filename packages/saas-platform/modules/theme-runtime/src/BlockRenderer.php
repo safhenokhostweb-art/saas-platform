@@ -5658,7 +5658,7 @@ class BlockRenderer
 
     protected function deadLinkMark(string $href): string
     {
-        return $href === '#' ? ' data-tb-dead-link title="این دکمه مقصد ندارد و در سایت نمایش داده نمی‌شود"' : '';
+        return $href === '#' ? ' data-tb-dead-link title="لینک مقصد تنظیم نشده است"' : '';
     }
 
     /** A `link` field as a validated, attribute-safe href (see escapeUrl()). */
