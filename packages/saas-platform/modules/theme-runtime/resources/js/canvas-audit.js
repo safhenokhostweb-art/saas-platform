@@ -23,6 +23,11 @@
  * Results reach TbInspect (label dot, "کپی تسک رفع ایراد" action) and the
  * editor through TbInspectHost.audit(summary) for its toolbar and sidebar.
  *
+ * WU-3: the checks run while anyone holds them (hold(name, on)): Inspect
+ * Mode, the editor's «سلامت ویجت» tab (TbInspectHost.auditWanted(), which
+ * survives a preview reload) or start()/stop(). fixTask(key) and
+ * reveal(key) serve that tab by summary key (type#blockId).
+ *
  * parseColor(), contrastRatio(), isLargeText(), crowded() and tone() are pure
  * and unit-tested (tests/js/canvas-audit.test.mjs).
  */
@@ -126,6 +131,16 @@
     // The editor's own chrome inside a block wrapper (BlockRenderer::wrapEditorMode()
     // and the preview's drop zones) is not site content: never audited.
     var EDITOR_CHROME = '.tb-drag-handle, .tb-block-badge, .tb-drop-zone, [data-tb-editor-chrome]';
+
+    // A widget's own root may repeat the block wrapper's hook (the header
+    // root carries it for live selection): the outermost element of one
+    // block id is the widget, and its inner twin is part of its content.
+    function widgetRoot(el) {
+        var id = el && el.getAttribute('data-tb-block-id');
+        if (!id) return el;
+        for (var up = el.parentElement && el.parentElement.closest(WIDGET); up && up.getAttribute('data-tb-block-id') === id; up = up.parentElement && up.parentElement.closest(WIDGET)) el = up;
+        return el;
+    }
     var BUDGET = 600;
     var REMEDY = {
         WIDGET_OVERFLOW: 'عرض ثابت، کلمه‌های بلند یا ستون‌های grid را مهار کن (min-width:0، عرض منطقی، شکستن خط) تا صفحه افقی اسکرول نخورد.',
@@ -199,6 +214,7 @@
         }
         var wcs = root.getComputedStyle(widget);
         if (!visible(widget, wcs)) return findings;
+        var blockId = widget.getAttribute('data-tb-block-id');
         var vw = doc.documentElement.clientWidth;
         var box = widget.getBoundingClientRect();
         var pageRtl = (doc.documentElement.getAttribute('dir') || '').toLowerCase() === 'rtl';
@@ -216,7 +232,8 @@
             for (var i = 0; i < el.children.length; i++) {
                 var child = el.children[i];
                 if (++seen > BUDGET) return;
-                if (child.matches(WIDGET)) continue; // nested widgets are audited on their own
+                // Nested widgets are audited on their own; the widget's inner twin is not nested.
+                if (child.matches(WIDGET) && (!blockId || child.getAttribute('data-tb-block-id') !== blockId)) continue;
                 if (child.matches(EDITOR_CHROME)) continue;
                 var cs = root.getComputedStyle(child);
                 if (cs.display === 'none') continue;
@@ -297,6 +314,7 @@
         : function (fn) { return root.setTimeout(function () { fn({ timeRemaining: function () { return 8; }, didTimeout: false }); }, 16); };
 
     function enqueue(el) {
+        el = widgetRoot(el);
         if (!enabled || !el || !el.isConnected) return;
         queue.add(el);
         if (!idleHandle) idleHandle = idle(drain);
@@ -407,9 +425,44 @@
         publish();
     }
 
+    // WU-3: several owners keep the checks running — Inspect Mode, the
+    // editor's «سلامت ویجت» tab ('host'), a direct start() ('api'). The
+    // checks stop only when the last one lets go.
+    var holds = {};
+    function hold(name, on) {
+        holds[name] = !!on;
+        if (Object.keys(holds).some(function (k) { return holds[k]; })) start(); else stop();
+    }
+
     function findingsFor(el) {
-        var res = el && results.get(el);
+        var res = el && results.get(widgetRoot(el));
         return res ? res.findings : [];
+    }
+
+    /** The audited widget for a summary key (type#blockId), else the first widget with that block id. */
+    function widgetFor(key) {
+        var hit = null;
+        results.forEach(function (res, el) { if (!hit && el.isConnected && res.key === key) hit = el; });
+        if (hit) return hit;
+        var id = String(key || '').split('#')[1];
+        return id ? doc.querySelector(WIDGET + '[data-tb-block-id="' + (root.CSS && root.CSS.escape ? root.CSS.escape(id) : id) + '"]') : null;
+    }
+
+    /** WU-3: the «کپی پرامپت اصلاحی» text for one widget — the same prompt as the Inspect action. */
+    function fixTask(key) {
+        var el = widgetFor(key);
+        var I = root.TbInspect;
+        if (!el || !I || typeof I.info !== 'function') return null;
+        var findings = results.has(el) ? findingsFor(el) : auditWidget(el);
+        return I.buildPrompt(I.info(el), { page: root.location.pathname, width: doc.documentElement.clientWidth, findings: findings });
+    }
+
+    /** Scrolls a widget into view in its own document (the editor selects it by id on its side). */
+    function reveal(key) {
+        var el = widgetFor(key);
+        if (!el) return false;
+        try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { el.scrollIntoView(); }
+        return true;
     }
 
     /* ── Inspect integration ──────────────────────────────────────── */
@@ -428,22 +481,33 @@
             when: function (info) { return findingsFor(info.element).some(function (f) { return f.severity !== 'info'; }); },
             run: function (info) { return I.buildPrompt(info, { page: root.location.pathname, width: doc.documentElement.clientWidth, findings: findingsFor(info.element) }); },
         });
-        I.on('toggle', function (on) { if (on) start(); else stop(); });
+        I.on('toggle', function (on) { hold('inspect', on); });
         I.on('select', function () { /* re-render picks up copy-fix-task availability */ });
-        if (I.isEnabled()) start();
+        if (I.isEnabled()) hold('inspect', true);
     }
 
     var api = Object.freeze(Object.assign({
         version: 1,
-        start: start,
-        stop: stop,
+        start: function () { hold('api', true); },
+        stop: function () { hold('api', false); },
+        hold: hold,
         isRunning: function () { return enabled; },
-        auditNow: function (el) { return auditWidget(el); },
+        auditNow: function (el) { return auditWidget(widgetRoot(el)); },
         findings: findingsFor,
         summary: summary,
+        fixTask: fixTask,
+        reveal: reveal,
         onChange: function (fn) { listeners.push(fn); return function () { listeners = listeners.filter(function (f) { return f !== fn; }); }; },
     }, pure));
     root.TbAudit = api;
 
     if (root.TbInspect && root.TbInspect.version === 1 && typeof root.TbInspect.registerBadge === 'function') hookInspect(root.TbInspect);
+
+    // WU-3: a preview reload keeps the editor's «سلامت ویجت» tab running.
+    function bootHost() {
+        var h = hostOf();
+        if (h && typeof h.auditWanted === 'function' && h.auditWanted() && doc.querySelector(WIDGET)) hold('host', true);
+    }
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', bootHost, { once: true });
+    else bootHost();
 }(typeof window !== 'undefined' ? window : globalThis));

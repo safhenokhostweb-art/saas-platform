@@ -13,7 +13,8 @@
  * (or a promise of one), which is copied to the clipboard.
  *
  * Host seam (no preview-protocol message is involved):
- *   window.TbInspectHost = { describe(type), wanted(), changed(enabled) }
+ *   window.TbInspectHost = { describe(type), wanted(), changed(enabled),
+ *                            audit(summary), auditWanted() }
  * The parent editor installs it with TbInspect.attachHost(); a widget
  * document finds it on itself or on its same-origin parent. describe(type)
  * returns { label, category, schema (field map), defaults, slots, files }
@@ -148,7 +149,19 @@
 
     function widgetOf(node) {
         if (!node || node.nodeType !== 1 || ownsNode(node)) return null;
-        return node.closest(WIDGET);
+        return widgetRoot(node.closest(WIDGET));
+    }
+
+    /**
+     * A widget's own root may repeat the block wrapper's hook (the header
+     * root carries data-tb-block-id + data-widget-type for live selection):
+     * the outermost element of one block id is the widget.
+     */
+    function widgetRoot(el) {
+        var id = el && el.getAttribute('data-tb-block-id');
+        if (!id) return el;
+        for (var up = el.parentElement && el.parentElement.closest(WIDGET); up && up.getAttribute('data-tb-block-id') === id; up = up.parentElement && up.parentElement.closest(WIDGET)) el = up;
+        return el;
     }
 
     function ownsNode(node) {
@@ -430,6 +443,7 @@
     }
 
     function select(el) {
+        el = el ? widgetRoot(el) : null;
         state.selected = el || null;
         state.selectedId = el ? el.getAttribute('data-tb-block-id') : null;
         if (!ui) return;
@@ -509,10 +523,19 @@
         if (hostController) { hostController.options = options; return hostController.api; }
         var ctl = hostController = { options: options, api: null };
         var wanted = false;
+        var auditWanted = false;
+        var lastSummary = null;
+        var subscribers = [];
         function frameApi() {
             try {
                 var f = ctl.options.frame && ctl.options.frame();
                 return f && f.contentWindow && f.contentWindow.TbInspect && f.contentWindow.TbInspect !== api ? f.contentWindow.TbInspect : null;
+            } catch (_) { return null; }
+        }
+        function frameAudit() {
+            try {
+                var f = ctl.options.frame && ctl.options.frame();
+                return f && f.contentWindow && f.contentWindow.TbAudit && f.contentWindow.TbAudit !== root.TbAudit ? f.contentWindow.TbAudit : null;
             } catch (_) { return null; }
         }
         function changed(enabled) {
@@ -529,13 +552,44 @@
             wanted: function () { return wanted; },
             changed: changed,
             // WU-2: the preview's Design HUD summary (TbAudit) for the editor chrome.
-            audit: function (summary) { if (typeof ctl.options.onAudit === 'function') ctl.options.onAudit(summary); },
+            audit: function (summary) {
+                lastSummary = summary;
+                // Each listener is isolated: an editor error must not starve the «سلامت ویجت» tab.
+                subscribers.slice().forEach(function (fn) { try { fn(summary); } catch (_) { /* a panel is optional */ } });
+                if (typeof ctl.options.onAudit === 'function') { try { ctl.options.onAudit(summary); } catch (e) { root.console && console.error('TbInspect onAudit:', e); } }
+            },
+            // WU-3: the «سلامت ویجت» tab keeps the checks running without the overlay.
+            auditWanted: function () { return auditWanted; },
         };
         root.TbInspectHost__self = root.TbInspectHost;
         root.addEventListener('keydown', function (e) {
             if (isToggleShortcut(e) && !isEditableTarget(e.target)) { e.preventDefault(); set(!wanted); }
         });
-        ctl.api = { set: set, toggle: function () { set(!wanted); }, enabled: function () { return wanted; } };
+        ctl.api = {
+            set: set,
+            toggle: function () { set(!wanted); },
+            enabled: function () { return wanted; },
+            // WU-3 — the editor's «سلامت ویجت» tab.
+            setAudit: function (on) {
+                auditWanted = !!on;
+                var a = frameAudit();
+                if (a && typeof a.hold === 'function') a.hold('host', auditWanted);
+            },
+            auditing: function () { return auditWanted; },
+            summary: function () { return lastSummary; },
+            subscribe: function (fn) {
+                subscribers.push(fn);
+                if (lastSummary) fn(lastSummary);
+                return function () { subscribers = subscribers.filter(function (s) { return s !== fn; }); };
+            },
+            describe: function (type) { return root.TbInspectHost.describe(type) || {}; },
+            fixTask: function (key) { var a = frameAudit(); return a && typeof a.fixTask === 'function' ? a.fixTask(key) : null; },
+            reveal: function (key, blockId) {
+                if (blockId && typeof ctl.options.select === 'function') { try { ctl.options.select(blockId); } catch (_) { /* selection is the editor's */ } }
+                var a = frameAudit();
+                return !!(a && typeof a.reveal === 'function' && a.reveal(key));
+            },
+        };
         return ctl.api;
     }
 
@@ -568,6 +622,8 @@
         registerBadge: registerBadge,
         refresh: schedule,
         attachHost: attachHost,
+        /** The parent editor's controller from attachHost(), or null (WU-3 panels). */
+        host: function () { return hostController ? hostController.api : null; },
     }, pure));
     root.TbInspect = api;
 
