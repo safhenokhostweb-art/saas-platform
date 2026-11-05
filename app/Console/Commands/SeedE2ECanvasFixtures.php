@@ -270,7 +270,15 @@ class SeedE2ECanvasFixtures extends Command
         $assetThemeSlug = 'e2e-test-asset-theme';
         $existingAssetTheme = Theme::where('slug', $assetThemeSlug)->first();
         if ($existingAssetTheme) {
-            $existingAssetTheme->delete();
+            // Same rule as the Canvas fixture theme above: release ledger
+            // rows block the delete, so keep them and free the slug.
+            if ($existingAssetTheme->releases()->exists()) {
+                $existingAssetTheme->update([
+                    'slug' => "{$assetThemeSlug}-archived-{$existingAssetTheme->id}",
+                ]);
+            } else {
+                $existingAssetTheme->delete();
+            }
         }
 
         // Pinned to 1.0.0 with the element already placed — current_release_id

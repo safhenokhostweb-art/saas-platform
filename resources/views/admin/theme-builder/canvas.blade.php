@@ -1165,9 +1165,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                             'cart': 'سبد خرید',
                                             'account': 'حساب کاربری',
                                             'dark_toggle': 'تاریک/روشن',
-                                            'burger': 'هنور منو'
+                                            'burger': 'منوی همبرگری'
                                         })[k] || k
-                                    }>
+                                    }">
                                         <label class="block text-xs font-semibold text-slate-600 mb-1.5" :for="'ctrl-' + propKey" x-text="schemaDef.label || propKey"></label>
                                         <p class="text-[10px] text-slate-500 mb-3">اجزای هدر را با نگه‌داشتن و کشیدن جابه‌جا کنید.</p>
                                         <div class="space-y-1.5">
