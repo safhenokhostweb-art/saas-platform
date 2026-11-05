@@ -73,6 +73,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/canvas-audit.js';
     }
 
+    /** «سلامت ویجت» sidebar tab (WU-3) — the Design HUD as a per-widget list. */
+    public static function canvasHealthPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-health.js';
+    }
+
     /** Phase 0.7 (ADR-066) — live newsletter + search-dialog behaviour. */
     public static function siteFormsScriptPath(): string
     {

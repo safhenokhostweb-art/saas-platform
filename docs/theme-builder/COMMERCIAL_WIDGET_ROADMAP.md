@@ -1221,3 +1221,107 @@ Owner approved the plan in 16.3 and the agent registration.
     crowded on `slider` and `testimonials_slider` (P2), and friction on
     `slider`, `testimonials_slider` and `blog_posts` (no drag/dots/arrows
     controls, P3). These are input for the Canvas widget redesign.
+
+## 17. Inspect Mode, Design HUD, widget health, Sentinel data, catalog (2026-11-02 → )
+
+Owner brief 2026-11-02, approved the same day: Ctrl+I with an
+editable-field exception; Sentinel data is a hybrid (local read with a soft
+fallback plus a snapshot bundled in the build); the catalog lives at exactly
+`/admin/canvas/catalog`, behind admin auth. Both editors get every unit;
+the package owns all logic (ADR-062: no host copies).
+
+### 17.1 Delivered
+
+| Unit | What | Where |
+|---|---|---|
+| WU-1 | Inspect Mode: outlines, type label, RTL action bar, copy id / schema / AI prompt; Ctrl+I; shadow-root UI; `TbInspectHost` seam, PreviewProtocol unchanged | `theme-runtime::canvas.inspect` (`canvas-inspect.js`); platform da6469a5, customer host 5124631 |
+| WU-2 | Design HUD: live per-widget checks with the Sentinel codes, idle-time queue, toolbar chip, «کپی تسک رفع ایراد» | `canvas-audit.js`; platform ea7d8164, customer host 5124631 |
+| WU-3 | «سلامت ویجت» sidebar tab: widgets red → amber → green, details with remedies, «کپی پرامپت اصلاحی» per widget and «کپی همه تسک‌ها», row selects its block; checks run while the tab is open (no overlay) and survive a preview reload | `theme-runtime::canvas.health` (`canvas-health.js`); both editors add one tab + `select(blockId)` |
+
+WU-3 also hardened WU-1/2:
+- The audit is held by name (`inspect`, `host`, `api`), so turning Inspect
+  off no longer stops the tab's checks.
+- One block id is one widget: the header root repeats the wrapper's
+  `data-widget-type` since 2189ce37, and Inspect/HUD no longer split it into
+  two widgets.
+- A host `onAudit` error can no longer starve the tab.
+
+Known HUD limit: overflow is measured on element boxes, so a long
+unbreakable line inside a full-width block element that spills out of its
+own box is not reported (Sentinel's page-level scroll check still sees it).
+
+### 17.2 WU-4 plan: Sentinel data in the editor
+
+Goal: the health tab shows what production Sentinel found for the same
+widget, beside the live checks, so a defect seen on the live site is one
+click from its block.
+
+- Source: `sentinel.ui-report/v1` (`../agents/var/artifacts/sentinel-ui/<run>/report.json`).
+  The join key is the finding's `widget` (`type#blockId`), the same key as
+  the HUD summary. Findings without a widget (page-level) go to a page row.
+- Hybrid read (owner decision):
+  1. local: newest sealed report for the host's project/environment, read by
+     a small package service, `Sentinel\SentinelReportReader`, path from
+     `workspace.json` `sentinel_ui`, never from user input;
+  2. soft fallback: no readable report → the tab shows «داده Sentinel در
+     دسترس نیست» and keeps working on live checks only;
+  3. snapshot bundled in the build: `release-prepare` copies the newest
+     report digest into the artifact (`storage/app/sentinel/snapshot.json`),
+     so production hosts have data without reaching `../agents`.
+- Editor API: one read-only JSON endpoint per host
+  (`GET admin/…/canvas/sentinel?page=/`) returning
+  `{ run, sealed_at, widths, findings_by_widget, page_findings }`, admin
+  auth, cached by report digest. Agents stay read-only; nothing writes back.
+- UI: a «Sentinel» badge on rows with production findings (width list,
+  run date), merged details, the fix prompt includes both sources; a filter
+  «فقط ایرادهای پروداکشن».
+- Tests: reader unit test on fixture reports (v1 schema, missing file,
+  corrupt file, digest cache), endpoint auth + shape, health-tab spec with a
+  fixture report, CSP (no external origin).
+- Open questions for the owner: which environment the customer editor
+  shows (its own site's report vs the shared storefront), and whether the
+  snapshot step may be added to `release-prepare` (deployment-system change).
+
+### 17.3 WU-5 plan: widget catalog at `/admin/canvas/catalog`
+
+Goal: every registered widget (163 in the booted platform registry, ADR-076)
+rendered once with its defaults, inspectable and audited, as the QA surface
+for the Canvas redesign.
+
+- Route: `GET /admin/canvas/catalog` (platform), `auth` + super-admin
+  middleware, `noindex`; optional `?type=` and `?category=` filters, `?w=`
+  preview width.
+- Page: grouped by registry category; each widget in an isolated frame at
+  the chosen width (360 / 390 / 768 / 1280), rendered by the canonical
+  `BlockRenderer` in public mode from `BlockRegistry` defaults +
+  `WidgetFeatureProfile` sample data; the shared block CSS; includes
+  `theme-runtime::canvas.inspect` so Inspect, the HUD and the fix prompts
+  work there unchanged.
+- Summary header: counts by tone across all widgets, «کپی همه تسک‌ها»,
+  links into the health of each widget; an export of the summary
+  (`sentinel.ui-report/v1`-compatible) so Sentinel can audit the catalog URL
+  too.
+- Theme-pack types (41 FoodMart/SleepShiman) render only with their pack's
+  CSS; listed in their own group.
+- Tests: route auth (guest 302, non-admin 403), every registry type
+  renders without exception (data provider over the registry), the 163
+  count pinned against `WidgetSchemaContract::manifest()`, one Playwright
+  spec that opens the catalog at 360 px and asserts the HUD summary arrives.
+- customer-site: no catalog of its own; its editor already shares the
+  package scripts. A host route can follow if the owner wants one.
+
+### 17.4 Regressions found on main (2026-11-05), not from this program
+
+- 2189ce37: the header root repeats `data-widget-type="nav_header"`, so
+  `tests/browser/adr076-canvas-tabs-header.spec.ts:160` (one hook per
+  block) fails; nothing reads the inner hook. Proposed: drop it from the
+  root, keep `data-tb-block-id` for live selection.
+- 2189ce37: the platform `header_order` inspector control's `x-data`
+  attribute was never closed (`}>`), throwing on every header selection;
+  fixed on `feat/canvas-widget-health`.
+- `motion_graphic` (2026-11-04): customer `CanonicalBlockDefinitionParityTest`
+  (two fields without a customer control) and
+  `ThemeCanvasPaletteCompatibilityTest` (159 vs 158) fail on customer main.
+- `header-mobile-standard` template: `TemplateLibraryTest` reports four
+  props outside the `nav_header` schema / an invalid CTA link;
+  `UniversalMultipurposeQaThemeSeederTest` counts 164 vs 163 types.

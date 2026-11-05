@@ -341,6 +341,17 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     <svg class="w-3 h-3 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     ساختار
                 </button>
+                <button @click="leftPanelTab='health'" data-testid="tb-canvas-health-tab"
+                    :class="leftPanelTab==='health' ? 'border-b-2 border-indigo-500 text-indigo-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
+                    class="flex-1 py-2 text-xs text-center transition">
+                    <svg class="w-3 h-3 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    سلامت ویجت
+                </button>
+            </div>
+
+            {{-- WU-3: «سلامت ویجت» — the Design HUD as a per-widget list (theme-runtime::canvas.health). --}}
+            <div x-show="leftPanelTab==='health'" x-cloak class="flex-1 overflow-y-auto">
+                @include('theme-runtime::canvas.health', ['active' => "leftPanelTab === 'health'"])
             </div>
 
             {{-- TB4: Structure Tree --}}
@@ -2071,7 +2082,7 @@ function themeCanvas() {
         // Phase 0.1: per-item collapse state of schema-driven repeaters (UI only, never saved).
         repeaterOpen: {},
         // TB4: nested containers
-        leftPanelTab:    'blocks',      // 'blocks' | 'tree'
+        leftPanelTab:    'blocks',      // 'blocks' | 'tree' | 'health' (WU-3)
         treeExpanded:    {},            // blockId → bool (default: expanded)
         showAddChildModal: false,
         // TB5: responsive editor
@@ -3826,6 +3837,8 @@ function themeCanvas() {
                 describe: (type) => ({ label: BLOCK_LABELS[type] || '', schema: BLOCK_SCHEMAS[type]?.schema || null, defaults: BLOCK_SCHEMAS[type]?.defaultProps || null }),
                 onChange: (on) => { this.inspectOn = on; if (!on) this.auditSummary = null; },
                 onAudit: (summary) => { this.auditSummary = this.inspectOn ? summary : null; },
+                // WU-3: a «سلامت ویجت» row selects its block.
+                select: (blockId) => { this.selectBlockById(blockId); this.sendToIframe({ action: 'select', blockId }); },
             }) ?? null;
 
             // TB3-S2: Keyboard shortcuts

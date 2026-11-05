@@ -37,12 +37,12 @@ async function idle(page: Page): Promise<void> {
   });
 }
 
-test('Design HUD: planted defects light up, the fix task lists them, a fix clears live', async ({ page, context }) => {
+test('Design HUD: planted defects light up, the fix task lists them, a fix clears live', async ({ page, context, baseURL }) => {
   test.setTimeout(240_000);
   const problems: string[] = [];
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(canvasUrl(fx), 'http://127.0.0.1:8000').origin });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(canvasUrl(fx), baseURL || 'http://127.0.0.1:8000').origin });
 
   await loginAsAdmin(page, fx);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -75,6 +75,15 @@ test('Design HUD: planted defects light up, the fix task lists them, a fix clear
     await expect(frame.locator(`#tb-${id} .tb-nav-header-phone`)).toHaveCount(1, { timeout: 15_000 });
     await expect(frame.locator(`#tb-${id} .tb-nav-header-cta[data-tb-dead-link]`)).toHaveCount(1);
     await expect.poll(() => frame.locator('body').evaluate(() => document.documentElement.clientWidth)).toBeLessThan(500);
+    // The header contains a long phone itself now (overflow hidden at phone
+    // widths), so the blocker is planted in the preview DOM: an 800 px item in
+    // the header row. The next prop update re-renders the block and drops it.
+    await frame.locator(`#tb-${id} .tb-nav-header-inner`).evaluate((el) => {
+      const plant = document.createElement('span');
+      plant.setAttribute('data-planted', '1');
+      plant.style.cssText = 'display:inline-block;flex:none;width:800px;height:4px';
+      el.appendChild(plant);
+    });
     await frame.locator('body').evaluate(() => {
       (window as any).__longTasks = [];
       try { new PerformanceObserver((l) => l.getEntries().forEach((e) => (window as any).__longTasks.push(Math.round(e.duration)))).observe({ type: 'longtask', buffered: false }); } catch { /* not supported */ }
@@ -88,7 +97,8 @@ test('Design HUD: planted defects light up, the fix task lists them, a fix clear
     await expect(chip).toHaveAttribute('data-tone', 'error');
     await expect(chip).toContainText('خطا');
 
-    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`);
+    // The header root repeats the wrapper hook (live selection); the outer one is the widget.
+    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`).first();
     const findings = await widget.evaluate((el) => (window as any).TbAudit.findings(el).map((f: any) => f.code));
     expect(findings).toEqual(expect.arrayContaining(['WIDGET_OVERFLOW', 'DEAD_LINK', 'CONTRAST_LOW']));
     const selectors = await widget.evaluate((el) => (window as any).TbAudit.findings(el).map((f: any) => f.selector));
@@ -108,7 +118,9 @@ test('Design HUD: planted defects light up, the fix task lists them, a fix clear
     await page.locator('#tb-live-iframe').screenshot({ path: 'test-results/hud-mobile-defects.png' });
     await page.locator('[data-tb-audit-chip]').screenshot({ path: 'test-results/hud-chip-error.png' });
 
-    // Fix the overflow: the HUD re-checks the replaced block on its own.
+    // Fix the overflow: the HUD re-checks the updated block on its own. A live
+    // update may patch the header in place, so the plant is removed first.
+    await frame.locator('[data-planted]').evaluateAll((els) => els.forEach((el) => el.remove()));
     await canvas(page, `(s) => { s.selectBlockById('${id}'); s.updateProp('phone', '021-1234'); }`);
     await expect.poll(() => widget.evaluate((el) => (window as any).TbAudit.findings(el).map((f: any) => f.code)), { timeout: 10_000 })
       .not.toContain('WIDGET_OVERFLOW');

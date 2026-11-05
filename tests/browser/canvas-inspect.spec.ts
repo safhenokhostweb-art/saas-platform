@@ -31,12 +31,12 @@ async function idle(page: Page): Promise<void> {
   });
 }
 
-test('Inspect Mode: toggle, label, action bar and clipboard copies', async ({ page, context }) => {
+test('Inspect Mode: toggle, label, action bar and clipboard copies', async ({ page, context, baseURL }) => {
   test.setTimeout(240_000);
   const problems: string[] = [];
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(canvasUrl(fx), 'http://127.0.0.1:8000').origin });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(canvasUrl(fx), baseURL || 'http://127.0.0.1:8000').origin });
 
   await loginAsAdmin(page, fx);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -59,7 +59,8 @@ test('Inspect Mode: toggle, label, action bar and clipboard copies', async ({ pa
   try {
     const toggle = page.locator('[data-tb-inspect-toggle]');
     const frame = page.frameLocator('#tb-live-iframe');
-    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`);
+    // The header root repeats the wrapper hook (live selection); the outer one is the widget.
+    const widget = frame.locator(`[data-tb-block-id="${id}"][data-widget-type="nav_header"]`).first();
     await expect(widget).toHaveCount(1);
     // Document coordinates inside the preview, after the editor's smooth scroll settles.
     const place = async () => {
