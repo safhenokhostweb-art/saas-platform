@@ -39,10 +39,20 @@ final class CustomerRuntimeAssetEntry
         public readonly array $responsiveRules = [],
         public readonly ?string $name = null,
         public readonly ?string $category = null,
+        /**
+         * ADR-079: the asset's public runtime parameters (what the customer
+         * Canvas inspector may let a site owner change, and how). Distinct
+         * from — and never derived at runtime from — the encrypted master
+         * editable schema.
+         *
+         * @var list<array<string, mixed>>
+         */
+        public readonly array $parameters = [],
     ) {
         ForbiddenFieldGuard::assertClean($themeTokens, 'theme_tokens');
         ForbiddenFieldGuard::assertClean($placementRules, 'placement_rules');
         ForbiddenFieldGuard::assertClean($responsiveRules, 'responsive_rules');
+        ForbiddenFieldGuard::assertClean($parameters, 'parameters');
     }
 
     /**
@@ -63,6 +73,7 @@ final class CustomerRuntimeAssetEntry
             // never source/AI/ownership data; see class docblock allowlist.
             'name' => $this->name,
             'category' => $this->category,
+            'parameters' => $this->parameters,
         ];
     }
 }

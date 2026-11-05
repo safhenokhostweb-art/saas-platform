@@ -28,6 +28,9 @@ final class InspectorFieldRegistry
         // Existing hosts render this through their motion-library adapter.
         // The shared contract treats the persisted selection as opaque text.
         'motion' => 'text',
+        // ADR-079: {key: value} runtime parameters of the selected motion;
+        // their controls come from the site's runtime manifest.
+        'motion_params' => 'array',
     ];
 
     private const PANELS = ['content', 'style', 'advanced', 'responsive'];

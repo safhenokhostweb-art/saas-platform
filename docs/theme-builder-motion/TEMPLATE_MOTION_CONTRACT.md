@@ -9,10 +9,17 @@
     "motion_asset_id": "medical-hero-intro",
     "placement": "hero",
     "enabled": true,
-    "fallback_image": ""
+    "fallback_image": "",
+    "motion_params": { "window_title": "پنل مدیریت شرکت", "speed": "fast" }
   }
 }
 ```
+
+`motion_params` (ADR-079) holds sparse overrides of the selected asset's
+public runtime parameters, as declared in the manifest's
+`assets[].parameters`. It is validated on customer-site and again on the
+platform, and unknown or invalid keys are ignored. It is never the master
+editable schema.
 
 | Field | Meaning |
 |---|---|

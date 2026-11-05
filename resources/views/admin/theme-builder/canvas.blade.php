@@ -1069,6 +1069,16 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         :placeholder="schemaDef.default ?? ''">
                                 </template>
 
+                                {{-- motion_params (ADR-079): per-asset runtime parameters come
+                                     from a site's own runtime manifest, so they are edited in
+                                     the site's Canvas; a master template keeps the asset's
+                                     defaults. --}}
+                                <template x-if="schemaDef.type === 'motion_params'">
+                                    <p class="text-xs text-slate-500 leading-6 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2" data-testid="tb-motion-params-hint">
+                                        متن‌ها، رنگ‌ها و تنظیمات انیمیشن هر موشن در ادیتور سایت مشتری و بر اساس موشن انتخاب‌شده تنظیم می‌شوند؛ قالب مادر از مقادیر پیش‌فرض موشن استفاده می‌کند.
+                                    </p>
+                                </template>
+
                                 {{-- icon (Phase 0.6, ADR-065): the shared searchable SVG icon
                                      picker; a legacy emoji/text value keeps rendering as-is. --}}
                                 <template x-if="schemaDef.type === 'icon'">

@@ -6,6 +6,7 @@ use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\Model\RuntimeProjectionRe
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Models\MotionGraphic;
+use SaaSPlatform\Modules\MotionGraphics\Support\MotionSvgComposer;
 
 /**
  * Database-backed MotionRuntimeProjectionReadContract. Builds the
@@ -54,6 +55,9 @@ final class PublishedRuntimeProjectionProvider implements MotionRuntimeProjectio
             optimizedReference: $optimizedReference,
             themeTokens: $this->safeThemeTokens($motion->runtime_configuration ?? []),
             placementRules: $this->safePlacementRules($motion->dimensions ?? [], $motion->accessibility ?? []),
+            // ADR-079: re-normalized on the way out, so only the public
+            // runtime-parameter contract can ever cross this boundary.
+            parameters: MotionSvgComposer::normalizeDefinitions((array) (($motion->runtime_configuration ?? [])['parameters'] ?? [])),
         );
     }
 

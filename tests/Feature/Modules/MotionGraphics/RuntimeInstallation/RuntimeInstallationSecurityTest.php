@@ -52,8 +52,11 @@ class RuntimeInstallationSecurityTest extends TestCase
         ForbiddenFieldGuard::assertClean($projection->themeTokens, 'theme_tokens');
         ForbiddenFieldGuard::assertClean($projection->placementRules, 'placement_rules');
         ForbiddenFieldGuard::assertClean($projection->assetReference->compatibility, 'compatibility');
+        ForbiddenFieldGuard::assertClean($projection->parameters, 'parameters');
 
-        $allowedProjectionFields = ['assetReference', 'publishedVersion', 'themeTokens', 'placementRules', 'optimizedReference'];
+        // ADR-079: `parameters` is the public runtime-parameter contract
+        // (never the master editable schema), guarded like the others.
+        $allowedProjectionFields = ['assetReference', 'publishedVersion', 'themeTokens', 'placementRules', 'optimizedReference', 'parameters'];
         $actualFields = array_map(
             fn (\ReflectionProperty $p): string => $p->getName(),
             (new ReflectionClass($projection))->getProperties()

@@ -24,8 +24,11 @@ class RuntimeProjectionDTO
         public readonly array $themeTokens = [],
         public readonly array $placementRules = [],
         public readonly ?string $optimizedReference = null,
+        /** @var list<array<string, mixed>> ADR-079 runtime parameters */
+        public readonly array $parameters = [],
     ) {
         ForbiddenFieldGuard::assertClean($themeTokens, 'theme_tokens');
         ForbiddenFieldGuard::assertClean($placementRules, 'placement_rules');
+        ForbiddenFieldGuard::assertClean($parameters, 'parameters');
     }
 }

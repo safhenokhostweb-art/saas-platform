@@ -25,11 +25,9 @@ final class MotionLibraryCatalogTest extends TestCase
         return $this->app->make(MotionLibraryCatalogService::class)->sync();
     }
 
-    public function test_every_published_reference_is_served_as_the_exact_library_file(): void
+    public function test_every_published_reference_is_served_with_the_font_embedded_and_hardened_headers(): void
     {
         foreach (MotionLibraryCatalogService::ASSETS as $slug => $libraryVersion) {
-            $library = MotionLibraryCatalogService::libraryDirectory($slug, $libraryVersion).'/animation.svg';
-
             $response = $this->get('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion));
 
             $response->assertOk();
@@ -37,10 +35,50 @@ final class MotionLibraryCatalogTest extends TestCase
             $this->assertStringContainsString('immutable', $response->headers->get('Cache-Control'));
             $this->assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
             $this->assertStringContainsString("default-src 'none'", $response->headers->get('Content-Security-Policy'));
+            $this->assertStringContainsString('font-src data:', $response->headers->get('Content-Security-Policy'));
             $this->assertSame('cross-origin', $response->headers->get('Cross-Origin-Resource-Policy'));
             $this->assertNull($response->headers->get('Set-Cookie'), 'a static asset must not start a session');
-            $this->assertSame(hash_file('sha256', $library), hash_file('sha256', $response->baseResponse->getFile()->getPathname()));
+
+            $body = $response->getContent();
+            $this->assertSame(MotionLibraryCatalogService::render($slug, $libraryVersion, []), $body);
+            // ADR-079: Vazirmatn travels inside the SVG (an <img> cannot load fonts).
+            $this->assertStringContainsString("@font-face{font-family:'Vazirmatn';src:url(data:font/woff2;base64,", $body);
+            $this->assertNotFalse(simplexml_load_string($body));
         }
+    }
+
+    public function test_query_parameters_customise_the_served_svg_safely(): void
+    {
+        $response = $this->get('/motion/business-growth-motion/v2/animation.svg?'.http_build_query([
+            'report_title' => 'گزارش <b>ویژه</b> 1405',
+            'share_percent' => '72',
+            'primary' => '#7C3AED',
+            'speed' => 'fast',
+            'loop' => '0',
+            'accent' => 'javascript:alert(1)',
+            'nope' => 'x',
+        ]));
+
+        $response->assertOk();
+        $svg = $response->getContent();
+        $this->assertStringContainsString('data-p="report_title">گزارش &lt;b&gt;ویژه&lt;/b&gt; ۱۴۰۵</text>', $svg);
+        $this->assertStringContainsString('data-p="share_percent">۷۲٪</text>', $svg);
+        $this->assertStringContainsString('--asset-primary:#7c3aed', $svg);
+        $this->assertStringContainsString('--p-share_percent:72;--p-share_percent-rest:28', $svg);
+        $this->assertStringContainsString('--k:0.7', $svg);
+        $this->assertStringContainsString('*{animation-iteration-count:1!important}', $svg);
+        $this->assertStringNotContainsString('javascript', $svg);
+        $this->assertStringNotContainsString('<b>', $svg);
+
+        // An oversized query is refused outright.
+        $this->get('/motion/hero-motion/v2/animation.svg?window_title='.str_repeat('a', 5000))->assertStatus(414);
+    }
+
+    public function test_v1_is_still_served_byte_for_byte_as_published(): void
+    {
+        $file = MotionLibraryCatalogService::libraryDirectory('hero-motion', 'v1').'/animation.svg';
+
+        $this->assertSame(file_get_contents($file), $this->get('/motion/hero-motion/v1/animation.svg?window_title=x')->getContent());
     }
 
     public function test_only_catalog_slugs_and_existing_versions_are_served(): void
@@ -48,6 +86,7 @@ final class MotionLibraryCatalogTest extends TestCase
         foreach ([
             '/motion/not-a-motion/v1/animation.svg',
             '/motion/hero-motion/v99/animation.svg',
+            '/motion/hero-motion/v3/animation.svg',
             '/motion/hero-motion/v0/animation.svg',
             '/motion/hero-motion/..%2F..%2Fmetadata.json/animation.svg',
             '/motion/ai-business-assistant/v1/animation.svg',
@@ -72,14 +111,50 @@ final class MotionLibraryCatalogTest extends TestCase
             $this->assertSame('published', $version->status);
             $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $version->source_checksum);
 
-            $file = MotionLibraryCatalogService::libraryDirectory($slug, $libraryVersion).'/animation.svg';
+            // ADR-079: size/sha256 describe the bytes actually served for
+            // the default parameters (font embedded), not the source file.
+            $served = MotionLibraryCatalogService::render($slug, $libraryVersion, []);
             $asset = $version->compiled_assets[0];
             $this->assertSame('svg', $asset['type']);
             $this->assertSame('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion), $asset['url']);
             $this->assertSame('image/svg+xml', $asset['mime_type']);
-            $this->assertSame(filesize($file), $asset['size']);
-            $this->assertSame(hash_file('sha256', $file), $asset['sha256']);
+            $this->assertSame(strlen($served), $asset['size']);
+            $this->assertSame(hash('sha256', $served), $asset['sha256']);
+
+            // The public runtime-parameter contract is stored for the manifest.
+            $declared = json_decode(file_get_contents(MotionLibraryCatalogService::libraryDirectory($slug, $libraryVersion).'/metadata.json'), true)['parameters'];
+            $this->assertCount(count($declared), $motion->runtime_configuration['parameters']);
         }
+    }
+
+    public function test_a_version_a_site_is_bound_to_stays_published_until_the_site_upgrades(): void
+    {
+        $this->test_a_changed_library_file_becomes_a_new_version_and_the_old_one_is_retired_untouched();
+        // (above: v1 had no site bound, so it was retired)
+
+        $motion = MotionGraphic::query()->where('slug', 'business-growth-motion')->firstOrFail();
+        $old = MotionGraphicVersion::query()->create([
+            'motion_graphic_id' => $motion->id, 'version' => 9, 'source_snapshot' => [], 'editable_schema_snapshot' => [],
+            'compiled_assets' => [['url' => '/motion/business-growth-motion/v1/animation.svg', 'sha256' => str_repeat('1', 64)]],
+            'source_checksum' => str_repeat('1', 64), 'status' => 'published', 'change_description' => 'bound', 'created_by_actor_identifier' => 'test',
+        ]);
+        $site = \App\Models\Site::query()->create([
+            'customer_id' => \App\Models\Customer::query()->create(['name' => 'C', 'mobile' => '09120000777'])->id,
+            'title' => 'Bound site',
+        ]);
+        $template = \App\Modules\MotionGraphics\Models\TemplateAssetPackage::query()->create(['template_reference' => 't', 'required_assets' => [], 'package_version' => 1]);
+        $package = \App\Modules\MotionGraphics\Models\SiteAssetPackage::query()->create(['site_id' => $site->id, 'template_reference' => 't', 'template_asset_package_id' => $template->id]);
+        \App\Modules\MotionGraphics\Models\SiteAssetPackageItem::query()->create([
+            'site_asset_package_id' => $package->id, 'asset_id' => $motion->uuid, 'active_version' => 9,
+            'bound_checksum' => 'x', 'installed_at' => now(),
+        ]);
+
+        $this->sync();
+        $this->assertSame('published', $old->fresh()->status, 'a bound version must stay readable (VERSION_BINDING_RULES)');
+
+        \App\Modules\MotionGraphics\Models\SiteAssetPackageItem::query()->update(['active_version' => 1]);
+        $this->sync();
+        $this->assertSame('retired', $old->fresh()->status, 'once unbound, the next sync retires it');
     }
 
     public function test_the_read_contracts_project_the_published_file_and_expose_the_tier(): void
@@ -88,8 +163,11 @@ final class MotionLibraryCatalogTest extends TestCase
 
         $projection = $this->app->make(MotionRuntimeProjectionReadContract::class)->projectAsset($uuid);
         $this->assertNotNull($projection);
-        $this->assertSame('/motion/business-growth-motion/v1/animation.svg', $projection->optimizedReference);
+        $this->assertSame('/motion/business-growth-motion/v2/animation.svg', $projection->optimizedReference);
         $this->assertSame(['width' => 960, 'height' => 540, 'viewBox' => '0 0 960 540'], $projection->placementRules['dimensions']);
+        $keys = array_column($projection->parameters, 'key');
+        $this->assertContains('share_percent', $keys);
+        $this->assertContains('speed', $keys);
 
         $asset = $this->app->make(MotionAssetReadContract::class)->findByCanonicalId($uuid);
         $this->assertSame('premium', $asset->compatibility['license_tier']);

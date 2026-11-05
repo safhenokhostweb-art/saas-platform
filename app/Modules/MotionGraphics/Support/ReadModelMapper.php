@@ -45,6 +45,7 @@ final class ReadModelMapper
             themeTokens: $model->themeTokens,
             placementRules: $model->placementRules,
             optimizedReference: $model->optimizedReference,
+            parameters: $model->parameters,
         );
     }
 }

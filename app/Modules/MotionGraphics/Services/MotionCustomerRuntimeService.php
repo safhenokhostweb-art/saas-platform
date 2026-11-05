@@ -141,6 +141,7 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
                 responsiveRules: [],
                 name: $projectionDto->assetReference->compatibility['name'] ?? null,
                 category: $projectionDto->assetReference->compatibility['category'] ?? null,
+                parameters: $projectionDto->parameters,
             );
         }
 

@@ -1,0 +1,301 @@
+{
+    "name": "موشن رشد کسب‌وکار",
+    "name_fa": "موشن رشد کسب‌وکار",
+    "name_en": "Business Growth Motion",
+    "slug": "business-growth-motion",
+    "category": "business",
+    "description": "گزارش فروش نیم‌سال اول با ماه‌های شمسی از راست به چپ، خط روند در برابر هدف، رشد فصلی، سهم بازار و اعلان سفارش جدید برای لندینگ‌های SaaS، فروشگاه‌ها و خدمات مالی.",
+    "purpose": "Sales growth and analytics storytelling for SaaS, e-commerce and financial services landings",
+    "usage": [
+        "hero",
+        "section",
+        "card"
+    ],
+    "target_usage": [
+        "saas landing",
+        "online store",
+        "financial services",
+        "investor section"
+    ],
+    "industry": [
+        "ecommerce",
+        "finance",
+        "saas"
+    ],
+    "tags": [
+        "business",
+        "growth",
+        "sales",
+        "analytics",
+        "jalali",
+        "rtl",
+        "dark-mode",
+        "premium",
+        "iranian-business",
+        "motion-graphics",
+        "master-asset",
+        "themeable"
+    ],
+    "engine": "svg-js",
+    "type": "motion",
+    "subcategory": "animated-svg",
+    "version": "v2",
+    "dependencies": [],
+    "license_tier": "premium",
+    "dimensions": {
+        "width": 960,
+        "height": 540,
+        "viewBox": "0 0 960 540"
+    },
+    "accessibility": {
+        "reduced_motion": true,
+        "rtl": true,
+        "color_scheme": [
+            "light",
+            "dark"
+        ],
+        "label": "موشن رشد کسب‌وکار"
+    },
+    "theme_support": true,
+    "theme_tokens": {
+        "primary": true,
+        "secondary": true,
+        "accent": true,
+        "background": true,
+        "border": true,
+        "surface": true,
+        "ink": true,
+        "muted": true,
+        "success": true
+    },
+    "editable_properties": [
+        "colors",
+        "text",
+        "speed",
+        "loop",
+        "animate"
+    ],
+    "ai_editable": true,
+    "unique_elements": [
+        "Jalali-month bar chart (RTL)",
+        "trend vs target lines",
+        "quarterly growth KPI",
+        "market share donut",
+        "new order toast"
+    ],
+    "visual_concept": "کارت گزارش فروش با ستون‌های ماه‌های شمسی که از راست به چپ رشد می‌کنند، در کنار کارت‌های رشد، سهم بازار و اعلان سفارش.",
+    "performance": {
+        "animated_properties": [
+            "transform",
+            "opacity",
+            "stroke-dashoffset",
+            "stroke-dasharray"
+        ],
+        "filters": false,
+        "smil": false,
+        "scripts": false
+    },
+    "library_id": "motion:business:business-growth-motion:v2",
+    "asset_role": "master",
+    "variant_supported": true,
+    "source_asset": null,
+    "ownership": {
+        "type": "platform",
+        "license": "premium",
+        "customer_restriction": false
+    },
+    "created_source": "motion-library-authoring",
+    "status": "active",
+    "typography": {
+        "font_family": "Vazirmatn",
+        "embedded": true,
+        "direction": "rtl"
+    },
+    "parameters": [
+        {
+            "key": "report_title",
+            "type": "text",
+            "group": "content",
+            "label": "عنوان گزارش",
+            "default": "گزارش فروش نیم‌سال اول",
+            "max": 26
+        },
+        {
+            "key": "report_unit",
+            "type": "text",
+            "group": "content",
+            "label": "واحد مبالغ",
+            "default": "مبالغ به میلیون تومان",
+            "max": 26
+        },
+        {
+            "key": "year_label",
+            "type": "text",
+            "group": "content",
+            "label": "برچسب سال",
+            "default": "سال ۱۴۰۵",
+            "max": 10
+        },
+        {
+            "key": "tooltip_text",
+            "type": "text",
+            "group": "content",
+            "label": "مقدار برجسته نمودار",
+            "default": "۷۲۰ میلیون تومان",
+            "max": 18
+        },
+        {
+            "key": "growth_label",
+            "type": "text",
+            "group": "content",
+            "label": "کارت رشد — عنوان",
+            "default": "رشد فروش فصلی",
+            "max": 18
+        },
+        {
+            "key": "growth_value",
+            "type": "text",
+            "group": "content",
+            "label": "کارت رشد — مقدار",
+            "default": "۴۸٪",
+            "max": 6
+        },
+        {
+            "key": "growth_note",
+            "type": "text",
+            "group": "content",
+            "label": "کارت رشد — توضیح",
+            "default": "نسبت به فصل قبل",
+            "max": 18
+        },
+        {
+            "key": "share_label",
+            "type": "text",
+            "group": "content",
+            "label": "سهم بازار — عنوان",
+            "default": "سهم بازار",
+            "max": 18
+        },
+        {
+            "key": "share_percent",
+            "type": "number",
+            "group": "content",
+            "label": "سهم بازار (درصد)",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "default": 36,
+            "format": "percent",
+            "css": true
+        },
+        {
+            "key": "share_note",
+            "type": "text",
+            "group": "content",
+            "label": "سهم بازار — توضیح",
+            "default": "در حوزه فروش آنلاین",
+            "max": 22
+        },
+        {
+            "key": "toast_title",
+            "type": "text",
+            "group": "content",
+            "label": "اعلان — عنوان",
+            "default": "سفارش جدید ثبت شد",
+            "max": 22
+        },
+        {
+            "key": "toast_text",
+            "type": "text",
+            "group": "content",
+            "label": "اعلان — توضیح",
+            "default": "۲ دقیقه پیش · ۲٫۴ میلیون تومان",
+            "max": 32
+        },
+        {
+            "key": "orders_value",
+            "type": "text",
+            "group": "content",
+            "label": "تعداد سفارش‌ها",
+            "default": "۱۸٬۴۲۰",
+            "max": 9
+        },
+        {
+            "key": "customers_value",
+            "type": "text",
+            "group": "content",
+            "label": "مشتریان جدید",
+            "default": "۳٬۲۶۰",
+            "max": 9
+        },
+        {
+            "key": "conversion_value",
+            "type": "text",
+            "group": "content",
+            "label": "نرخ تبدیل",
+            "default": "۴٫۸ درصد",
+            "max": 10
+        },
+        {
+            "key": "badge_text",
+            "type": "text",
+            "group": "content",
+            "label": "متن نوار پرداخت",
+            "default": "پرداخت امن ریالی و تسویه سریع",
+            "max": 30
+        },
+        {
+            "key": "primary",
+            "type": "color",
+            "group": "style",
+            "label": "رنگ اصلی",
+            "token": "--asset-primary",
+            "default": "#059669"
+        },
+        {
+            "key": "secondary",
+            "type": "color",
+            "group": "style",
+            "label": "رنگ دوم (روند)",
+            "token": "--asset-secondary",
+            "default": "#4f46e5"
+        },
+        {
+            "key": "accent",
+            "type": "color",
+            "group": "style",
+            "label": "رنگ تأکید (هدف)",
+            "token": "--asset-accent",
+            "default": "#f59e0b"
+        },
+        {
+            "key": "animate",
+            "type": "boolean",
+            "role": "animate",
+            "group": "motion",
+            "label": "پخش انیمیشن",
+            "default": true
+        },
+        {
+            "key": "loop",
+            "type": "boolean",
+            "role": "loop",
+            "group": "motion",
+            "label": "حرکت پیوسته (لوپ)",
+            "default": true
+        },
+        {
+            "key": "speed",
+            "type": "select",
+            "role": "speed",
+            "group": "motion",
+            "label": "سرعت انیمیشن",
+            "options": {
+                "slow": "آرام",
+                "normal": "عادی",
+                "fast": "تند"
+            },
+            "default": "normal"
+        }
+    ]
+}

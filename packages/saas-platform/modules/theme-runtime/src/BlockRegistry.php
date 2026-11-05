@@ -1160,8 +1160,15 @@ class BlockRegistry
                     'placement' => ['type' => 'select', 'label' => 'جایگاه', 'options' => ['hero' => 'هیرو', 'section' => 'بخش', 'cta' => 'فراخوان به اقدام', 'background' => 'پس‌زمینه'], 'default' => 'section'],
                     'enabled' => ['type' => 'boolean', 'label' => 'فعال', 'default' => true],
                     'fallback_image' => ['type' => 'image', 'label' => 'تصویر جایگزین (در صورت نبود موشن)', 'default' => ''],
+                    // ADR-079: {key: value} overrides of the selected asset's
+                    // runtime parameters (texts, colours, animate/loop/speed).
+                    // Controls are built from the manifest's `parameters` for
+                    // that asset; unknown or invalid values are ignored at
+                    // render time, so stale keys after switching assets are
+                    // harmless.
+                    'motion_params' => ['type' => 'motion_params', 'label' => 'تنظیمات اختصاصی موشن', 'default' => []],
                 ],
-                'defaultProps' => ['motion_asset_id' => '', 'placement' => 'section', 'enabled' => true, 'fallback_image' => ''],
+                'defaultProps' => ['motion_asset_id' => '', 'placement' => 'section', 'enabled' => true, 'fallback_image' => '', 'motion_params' => []],
             ],
 
             // ─── MODULE: وبلاگ ───────────────────────────────────────────────

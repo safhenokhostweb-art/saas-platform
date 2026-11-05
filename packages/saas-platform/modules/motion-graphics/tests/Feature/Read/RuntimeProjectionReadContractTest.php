@@ -65,8 +65,11 @@ final class RuntimeProjectionReadContractTest extends TestCase
             fn (\ReflectionProperty $p): string => $p->getName(),
             (new \ReflectionClass($projection))->getProperties()
         );
+        // ADR-079 added `parameters`: the public runtime-parameter contract,
+        // re-normalized by MotionSvgComposer on the way out — still no draft,
+        // approval, source, editable-schema or AI field.
         $this->assertEqualsCanonicalizing(
-            ['assetReference', 'publishedVersion', 'optimizedReference', 'themeTokens', 'placementRules'],
+            ['assetReference', 'publishedVersion', 'optimizedReference', 'themeTokens', 'placementRules', 'parameters'],
             $properties
         );
     }

@@ -4816,3 +4816,115 @@ There is no migration or Composer change.
 - Not done: per-asset (rather than per-tier) purchases, theme-token
   overrides delivered into the SVG, and a real object-storage adapter.
   Each is a separate decision.
+
+## ADR-079
+
+**Title:** Motion Runtime Parameters, Embedded Vazirmatn, and Nested Motion Validation
+
+**Status:** Accepted
+
+**Date:** 2026-11-06
+
+**Context:**
+
+- Three defects in the motion widget after ADR-078:
+  1. A `module:motion` block inside a container (`flex_container`,
+     `section`, `grid`, …) rendered the whole container as an invalid
+     placeholder: `[child 0] Unknown element type: module:motion`.
+     customer-site's `ElementSchemaRegistry` skipped every `module:*` type,
+     on the assumption that module blocks never enter the validator. That
+     holds at top level only; a container validates its whole subtree.
+  2. Site owners could pick a motion but could not change anything in it
+     (texts, figures, colours, loop, speed).
+  3. Text inside the motion SVGs fell back to system fonts. An SVG shown
+     through `<img>` cannot load external resources, so the page's
+     Vazirmatn never reaches it.
+- Constraints:
+  - the master `editable_schema_json` is encrypted, hidden, and forbidden
+    in the runtime manifest (ADR-078, MANIFEST_SCHEMA.md);
+  - `<img>` embedding is what isolates the SVG from the page (no script,
+    no CSS leakage either way); inlining the SVG would lose that;
+  - versions are immutable, and installed sites must never break when the
+    master changes (`docs/motion-persistence/VERSION_BINDING_RULES.md`).
+
+**Decision:**
+
+1. **Nested validation.** `ElementSchemaRegistry` registers `module:*`
+   types as leaves (children `none`) with their typed props, so a nested
+   motion is validated like any other leaf. Top-level dispatch is
+   unchanged. A real prop error (e.g. malformed `motion_params`) now reports
+   that error instead of "Unknown element type".
+2. **Runtime parameters: a separate, public contract.** Each library asset
+   version declares `parameters` in `metadata.json`. Types:
+   - `text`: targets `data-p="key"` elements;
+   - `color`: overrides one `--asset-*` token, light and dark;
+   - `number`: optional percent text, and `--p-key`/`--p-key-rest`
+     variables;
+   - `boolean` with role `animate` (static frame) or `loop` (one cycle);
+   - `select` with role `speed` (slow/normal/fast scale every duration
+     through `var(--k)`).
+   `MotionSvgComposer` (motion-graphics package) normalizes definitions
+   (malformed ones are dropped), validates values (unknown keys, invalid
+   values and defaults are dropped; control characters stripped; Latin
+   digits become Persian; text is set as DOM text, never markup) and
+   composes the SVG deterministically. The catalog stores the normalized
+   definitions in `runtime_configuration.parameters`; they travel as
+   `parameters` through the projection read model, `RuntimeProjectionDTO`
+   and `CustomerRuntimeAssetEntry` into the manifest. The master editable
+   schema is never read for this.
+3. **Applying parameters keeps `<img>` isolation.** The block stores sparse
+   overrides in a new canonical field `module:motion.motion_params`
+   (`type: motion_params`). customer-site re-validates them against the
+   manifest definitions (`MotionRuntimeParameters`) and appends only valid,
+   non-default values, sorted, as the image URL's query. The platform route
+   validates again and composes. The same URL always yields the same bytes,
+   so `Cache-Control: immutable` stays correct. Queries over 4 KB are refused
+   (414).
+4. **Inspector.** The customer Canvas renders the selected motion's controls
+   from its manifest parameters, grouped (texts and figures, colours,
+   animation), with a reset button. Values are stored on every input event:
+   `schedulePropUpdate()` is already debounced, and a per-field debounce
+   read the input after a re-render had reset it, which lost typed text.
+   Choosing a different motion clears the previous motion's overrides. The
+   platform Canvas shows a hint for `motion_params`, because master templates
+   have no site manifest.
+5. **Vazirmatn travels inside the SVG.** A Persian subset of the Vazirmatn
+   variable font, limited to weights 400–800 (42.7 KB woff2,
+   `assets/fonts/vazirmatn-motion.woff2`, with `OFL.txt` and build notes),
+   is embedded by the route as an `@font-face` `data:` URI. The response CSP
+   gains `font-src data:`. The SVG source keeps the stack
+   `'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+   sans-serif` and root `direction="rtl"`, and never embeds a font itself.
+6. **Library v2.** `hero-motion` and `business-growth-motion` get a `v2`
+   directory: `data-p` hooks, speed-scaled durations, the font stack, and for
+   business growth a donut arc bound to `share_percent`. `v1` is untouched
+   and is still served byte-for-byte. The compiled asset's size/sha256 now
+   describe the served default bytes (font included); `source_checksum`
+   stays the library file's.
+7. **Version binding is respected on publish.** The catalog retires an
+   older published version only when no active site package item is bound
+   to it; every sync re-applies this. Publishing v2 therefore never breaks a
+   site still bound to v1. Re-activation upgrades the site (for example
+   `MotionGraphicsDemoSiteSeeder`, or the admin activation flow), and the
+   next sync retires v1. ADR-078's "previous published version retired"
+   is refined by this rule.
+
+**Consequences:**
+
+- A served motion is about 70 KB (about 57 KB of it the font), cached as
+  immutable per distinct parameter set.
+- Changing the font or the composer's output for an existing version
+  changes bytes under an unchanged URL; such a change needs a new library
+  version.
+- `MotionCustomerRuntimeService` still projects the master's latest published
+  version for a bound item, as before this ADR. Until upgraded, a site bound
+  to v1 receives v2 visuals and parameters through that existing behaviour.
+- Tests:
+  - package: `MotionSvgComposerTest`, `CommercialMotionLibraryTest` (v1 and
+    v2 rules, font licence);
+  - host: `MotionLibraryCatalogTest` (route parameters, font, bound
+    versions), `MotionLibraryEndToEndTest`;
+  - customer-site: `MotionRuntimeParametersTest`, reader parameter
+    normalization, nested `module:motion` validation, and the browser spec
+    `canvas-motion-widget.spec.js`, which inserts into a section, picks a
+    motion, edits parameters, saves, reloads and checks the render.

@@ -12,6 +12,9 @@ final class RuntimeProjectionReadModel
     /**
      * @param array<string, mixed> $themeTokens
      * @param array<string, mixed> $placementRules
+     * @param list<array<string, mixed>> $parameters ADR-079 customer-facing
+     *   runtime parameters (MotionSvgComposer::normalizeDefinitions shape);
+     *   never the master editable schema.
      */
     public function __construct(
         public readonly AssetReadModel $assetReference,
@@ -19,5 +22,6 @@ final class RuntimeProjectionReadModel
         public readonly string $optimizedReference,
         public readonly array $themeTokens = [],
         public readonly array $placementRules = [],
+        public readonly array $parameters = [],
     ) {}
 }
