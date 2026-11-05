@@ -126,7 +126,9 @@ test('ADR-076 header Inspector: schema groups, segmented placement, logo and qui
     await expect(panel.getByTestId('tb-field-group-menu_align')).toHaveText('منو');
     await expect(panel.getByTestId('tb-field-group-social_links')).toHaveText('دسترسی سریع و اکشن‌ها');
     await expect(panel.getByTestId('tb-field-group-sticky')).toHaveText('رفتار و رنگ');
-    await expect(panel.locator('[data-testid^="tb-field-group-"]')).toHaveCount(4);
+    // d32d17c2 added the drag-ordered header layout as its own group.
+    await expect(panel.getByTestId('tb-field-group-header_order')).toHaveText('چیدمان');
+    await expect(panel.locator('[data-testid^="tb-field-group-"]')).toHaveCount(5);
 
     const centre = panel.getByTestId('tb-segmented-menu_align-center');
     await expect(panel.getByTestId('tb-segmented-menu_align-end')).toHaveAttribute('aria-checked', 'true');
@@ -170,8 +172,12 @@ test('ADR-076 header Inspector: schema groups, segmented placement, logo and qui
     await expect(logo).toHaveAttribute('alt', 'فروشگاه نمونه');
     await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
     expect(Math.round((await logo.boundingBox())!.height), 'logo height from the schema control').toBe(44);
+    // WU-HEADER-5ITEMS (06cc103c) draws a brand mark as an <img> data URI
+    // where the network has an official asset (gap keeps its inline mark).
     for (const network of ['eitaa', 'bale', 'rubika', 'soroush', 'gap']) {
-      await expect(header.locator(`.tb-social-icon--${network} svg.tb-icon-svg-mark-${network}`)).toBeVisible();
+      const mark = header.locator(`.tb-social-icon--${network}`).locator(`img.tb-social-icon-svg, svg.tb-icon-svg-mark-${network}`);
+      await expect(mark).toBeVisible();
+      await expect.poll(() => mark.evaluate((el) => !(el instanceof HTMLImageElement) || (el.complete && el.naturalWidth > 0)), `${network} mark renders`).toBe(true);
     }
     const fill = await header.locator('.tb-social-icon--eitaa').evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(fill, 'brand style fills Eitaa with its colour').toBe('rgb(234, 90, 36)');
