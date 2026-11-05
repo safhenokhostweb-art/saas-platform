@@ -4522,6 +4522,10 @@ class BlockRenderer
         }
         $overlayText = trim($this->stringify($props['transparent_text_color'] ?? ''));
         $overlayText = $overlayText !== '' && $this->cssColor($overlayText, '') !== '' ? $this->escapeAttr($overlayText) : 'auto';
+        // On the outer .tb-nav-header element: site-header.js initialises
+        // '.tb-nav-header[data-tb-header]' and makes the page banner around it
+        // sticky. On any inner element the selector matches nothing and the
+        // sticky / hide-on-scroll / overlay settings silently do nothing.
         $headerAttrs = $headerFlags !== []
             ? ' data-tb-header="' . implode(' ', $headerFlags) . '" data-tb-overlay-text="' . $overlayText . '"'
             : '';
@@ -4573,8 +4577,8 @@ class BlockRenderer
         $headerClass = 'tb-nav-header' . $menuAlignment;
 
         return $styles
-            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header" data-widget-type="nav_header">'
-            . '<div class="' . $rootClass . '"' . $headerAttrs . '>'
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header" data-widget-type="nav_header"' . $headerAttrs . '>'
+            . '<div class="' . $rootClass . '">'
             . '<div class="tb-nav-header-inner">'
             . $orderedInner
             . '<button type="button" class="tb-nav-header-overlay" aria-label="بستن منو" hidden></button>'
