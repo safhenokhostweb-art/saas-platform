@@ -699,7 +699,10 @@ html.tb-search-open { overflow: hidden; }
 .tb-mega-menu-banner-cta { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.4rem; font-size: 0.8rem; font-weight: 700; color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); }
 .tb-mega-menu-link .tb-icon-svg { color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); }
 @media (min-width: 1024px) and (hover: hover) {
-    .tb-nav-header { position: relative; }
+    /* Anchors the full-width mega panel. Zero specificity: when the block is
+       itself the banner (theme-owned chrome), .tb-hdr-sticky / .tb-hdr-overlay
+       must still win; sticky, absolute and fixed anchor the panel too. */
+    :where(.tb-nav-header) { position: relative; }
     .tb-nav-header-links { position: static; }
     .tb-mega-menu-item { position: static; }
     .tb-mega-menu-trigger { position: relative; }

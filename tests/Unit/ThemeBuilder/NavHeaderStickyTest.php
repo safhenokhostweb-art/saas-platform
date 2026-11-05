@@ -57,6 +57,21 @@ class NavHeaderStickyTest extends TestCase
         $this->assertSame('#0f172a', $attrs['data-tb-overlay-text'] ?? null);
     }
 
+    /**
+     * With theme-owned chrome the block itself is the banner, so it carries
+     * .tb-hdr-sticky. The desktop mega-menu anchor must not out-rank it: a
+     * plain `.tb-nav-header { position: relative }` later in the sheet did,
+     * and the header stopped sticking at >= 1024px.
+     */
+    public function test_the_desktop_mega_menu_anchor_cannot_override_sticky(): void
+    {
+        $css = file_get_contents(base_path('packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css'));
+
+        $this->assertStringContainsString(':where(.tb-nav-header) { position: relative; }', $css);
+        $this->assertDoesNotMatchRegularExpression('/(^|[\s,}])\.tb-nav-header\s*\{[^}]*\bposition\s*:/m', $css, 'no single-class position rule on .tb-nav-header');
+        $this->assertStringContainsString('.tb-hdr-sticky { position: sticky; top: 0; z-index: 900;', $css);
+    }
+
     public function test_a_non_sticky_header_carries_no_flags(): void
     {
         $attrs = $this->outerAttributes(['sticky' => false]);
