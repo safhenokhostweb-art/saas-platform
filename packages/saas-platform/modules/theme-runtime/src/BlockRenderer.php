@@ -4488,6 +4488,8 @@ class BlockRenderer
             . '.tb-nav-header-root{position:relative;isolation:isolate;width:100%;direction:rtl;color:inherit;pointer-events:auto;}'
             . '.tb-nav-header-root *{box-sizing:border-box;}'
             . '.tb-nav-header-root .tb-nav-header-inner{display:flex;align-items:center;justify-content:space-between;direction:rtl;gap:clamp(.65rem,2vw,1.5rem);width:min(100%,80rem);min-width:0;min-height:4.25rem;margin-inline:auto;padding:.5rem 1rem;flex-wrap:nowrap;}'
+            // menu_align=center keeps its desktop grid (theme-runtime-blocks.css); the flex row above must not undo it.
+            . '@media(min-width:1024px){.tb-nav-header--menu-center .tb-nav-header-root .tb-nav-header-inner{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);}}'
             . '.tb-nav-header-root .tb-nav-header-logo-slot{flex:0 1 auto;min-width:0;}'
             . '.tb-nav-header-root .tb-nav-header-logo-slot--mobile{display:none;}'
             . '.tb-nav-header-root .tb-nav-header-logo{display:inline-flex;align-items:center;gap:.55rem;max-width:100%;min-width:0;color:inherit;font-weight:800;text-decoration:none;}'
@@ -4512,7 +4514,7 @@ class BlockRenderer
             . '.tb-nav-header-root .tb-nav-header-overlay[hidden]{display:none!important;}'
             . '.tb-nav-header-root .tb-nav-header-phone{display:inline-flex;align-items:center;min-height:2.5rem;padding-inline:.35rem;color:inherit;font-weight:700;text-decoration:none;white-space:nowrap;transition:box-shadow .25s ease,filter .25s ease;}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon-svg{display:block;width:auto;height:1.2rem;max-width:100%;object-fit:contain;}'
-            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--eitaa,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--bale,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika,.tb-nav-header-root .tb-nav-header-social .tb-social-icon--soroush{background:var(--tb-surface,#fff);color:inherit;border:1px solid var(--tb-border,#d1d5db);}'
+            . '.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--eitaa,.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--bale,.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--rubika,.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--soroush{background:var(--tb-surface,#fff);color:inherit;border:1px solid var(--tb-border,#d1d5db);}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika{width:3.75rem;border-radius:.375rem;}'
             . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika .tb-social-icon-svg{height:1.15rem;}'
             . '.tb-nav-header-root .tb-nav-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:2.5rem;padding:.55rem 1rem;border-radius:.375rem;text-decoration:none;white-space:nowrap;transition:box-shadow .25s ease,filter .25s ease;}'
