@@ -90,6 +90,13 @@ class CanonicalBlockRenderersTest extends TestCase
         $icon = $this->render('nav_header', ['show_search' => true, 'search_mode' => 'icon']);
         $this->assertStringContainsString('class="tb-nav-header-search-toggle tb-nav-header-icon-link"', $icon);
         $this->assertStringContainsString('class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden', $icon);
+        // No host search (the Builder preview): the popover is the search.
+        $this->assertStringContainsString('aria-expanded="false" aria-controls="tb-b1-search-form"', $icon);
+        $this->assertStringNotContainsString('data-tb-search-open="', $icon);
+        // Anchored to the icon's end edge so it opens into the page, and
+        // spanning the header on phones, instead of running off the edge.
+        $this->assertStringContainsString('inset-block-start:calc(100% + .55rem);inset-inline-end:0;', $icon);
+        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-search-popover{inset-block-start:calc(100% + .25rem);inset-inline:.75rem;width:auto;}', $icon);
 
         $input = $this->render('nav_header', ['show_search' => true, 'search_mode' => 'input']);
         $this->assertStringContainsString('class="tb-nav-header-search" role="search"', $input);
