@@ -815,9 +815,17 @@ html.tb-cart-open { overflow: hidden; }
 .tb-carousel--fade .tb-carousel-track { display: grid; transition: initial; }
 .tb-carousel--fade .tb-carousel-slide { grid-column: 1; grid-row: 1; opacity: 0; transition: opacity 0.6s ease; }
 .tb-carousel--fade .tb-carousel-slide:first-child { opacity: 1; }
-.tb-carousel-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.85rem; }
-.tb-carousel-dot { width: 0.55rem; height: 0.55rem; padding: 0; border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db); cursor: pointer; }
-.tb-carousel-dot.is-active { background: var(--tb-primary, #4f46e5); }
+/* TAP_TARGET_SMALL (WCAG 2.2 SC 2.5.8): each dot is a 24x24 px button that
+   paints only its 0.55rem centre (background-clip: content-box). The size is
+   one calc() so it is exactly 24 px; separate content + padding would snap
+   to 23.98 px. The boxes abut (gap 0), so neighbouring targets never overlap,
+   and the margins give back the padding so the visible dots sit where they
+   did. Colours use background-color: the background shorthand would reset
+   the clip and fill the whole box. */
+.tb-carousel-dots, .tb-carousel-dot { --tb-dot-pad: max(0px, calc((24px - 0.55rem) / 2)); }
+.tb-carousel-dots { display: flex; justify-content: center; gap: 0; margin-top: calc(0.85rem - var(--tb-dot-pad)); margin-bottom: calc(-1 * var(--tb-dot-pad)); }
+.tb-carousel-dot { box-sizing: border-box; width: calc(0.55rem + 2 * var(--tb-dot-pad)); height: calc(0.55rem + 2 * var(--tb-dot-pad)); padding: var(--tb-dot-pad); border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db); background-clip: content-box; cursor: pointer; }
+.tb-carousel-dot.is-active { background-color: var(--tb-primary, #4f46e5); }
 .tb-slider-box { max-width: 72rem; margin: 0 auto; }
 .tb-slide { position: relative; display: flex; align-items: center; justify-content: center; background: var(--tb-media-bg, #111827); overflow: hidden; }
 .tb-slide-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--tb-overlay, rgba(0, 0, 0, 0.55)), rgba(0, 0, 0, 0) 55%); }

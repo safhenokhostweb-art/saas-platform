@@ -88,9 +88,9 @@
 .tb-slider-full .tb-slide-title { font-size: clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),4vw,4.2rem) !important; line-height: 1.3; }
 [dir="ltr"] .tb-slider-full .tb-slide-title { line-height: 1.15; }
 .tb-slider-full .tb-slide-subtitle { font-size: clamp(1rem,1.6vw,1.3rem) !important; line-height: 1.9; }
-.tb-slider-full .tb-carousel-dots { position: absolute; bottom: 1.35rem; inset-inline: 0; z-index: 3; margin: 0 !important; }
-.tb-slider-full .tb-carousel-dot { background: rgba(255,255,255,.58) !important; transition: width .2s ease, background .2s ease; }
-.tb-slider-full .tb-carousel-dot[aria-current="true"] { width: 2.4rem !important; background: var(--tb-secondary,#14b8a6) !important; }
+.tb-slider-full .tb-carousel-dots { position: absolute; bottom: calc(1.35rem - var(--tb-dot-pad, 0px)); inset-inline: 0; z-index: 3; margin: 0 !important; }
+.tb-slider-full .tb-carousel-dot { background-color: rgba(255,255,255,.58) !important; transition: width .2s ease, background-color .2s ease; }
+.tb-slider-full .tb-carousel-dot[aria-current="true"] { width: calc(2.4rem + 2 * var(--tb-dot-pad, 0px)) !important; background-color: var(--tb-secondary,#14b8a6) !important; }
 .tb-slider-full .tb-carousel-status { position: absolute; inset-inline: 1.25rem; bottom: 3.25rem; z-index: 4; display: flex; align-items: center; gap: .75rem; }
 .tb-slider-full .tb-carousel-progress { height: 3px; flex: 1; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.35); }
 .tb-slider-full .tb-carousel-progress-fill { display: block; width: 0; height: 100%; background: var(--tb-secondary,#14b8a6); }
@@ -302,7 +302,7 @@
 .tb-carousel-dot:focus-visible { outline: 2px solid var(--tb-primary, #4f46e5); outline-offset: 2px; }
 .tb-carousel-prev:hover,
 .tb-carousel-next:hover { background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); border-color: var(--tb-primary, #4f46e5); }
-.tb-carousel-dot:hover { background: var(--tb-primary, #4f46e5) !important; opacity: .7; }
+.tb-carousel-dot:hover { background-color: var(--tb-primary, #4f46e5) !important; opacity: .7; }
 
 /* ─── FAQ / accordion / tabs (simple, host-identical structural shells) ─ */
 .tb-faq-item { border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
