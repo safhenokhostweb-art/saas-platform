@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" direction="rtl" viewBox="0 0 960 540" role="img" aria-labelledby="title desc" aria-label="موشن رشد کسب‌وکار — گزارش فروش و تحلیل رشد"><title id="title">موشن رشد کسب‌وکار</title><desc id="desc">گزارش فروش نیم‌سال اول ۱۴۰۵ با ماه‌های شمسی از راست به چپ، خط روند در برابر هدف، کارت رشد فصلی، سهم بازار و اعلان سفارش جدید.</desc>
+<style id="asset-theme">:root{--asset-primary:#059669;--asset-secondary:#4f46e5;--asset-accent:#f59e0b;--asset-background:#f3f7f5;--asset-border:#dbe6e1;--asset-surface:#ffffff;--asset-ink:#0f1f1a;--asset-muted:#5f736c;--asset-success:#059669;--asset-oncolor:#ffffff}@media (prefers-color-scheme:dark){:root{--asset-primary:#34d399;--asset-secondary:#818cf8;--asset-accent:#fbbf24;--asset-background:#0a1512;--asset-border:#1f3530;--asset-surface:#11211d;--asset-ink:#e3f1ec;--asset-muted:#8fa9a0;--asset-success:#34d399;--asset-oncolor:#ffffff}}</style>
+<style>
+.bg{fill:var(--asset-background)}.dot{fill:var(--asset-border)}
+.s-p{stop-color:var(--asset-primary)}.s-a{stop-color:var(--asset-accent)}.s-s{stop-color:var(--asset-secondary)}
+.surface{fill:var(--asset-surface);stroke:var(--asset-border);stroke-width:1.2}
+.soft{fill:var(--asset-background)}.shadow{fill:var(--asset-ink);opacity:.07}
+.axis{fill:none;stroke:var(--asset-muted);stroke-width:1.2;opacity:.5}.line{fill:none;stroke:var(--asset-border);stroke-width:1}
+.pri{fill:var(--asset-primary)}.acc{fill:var(--asset-accent)}.sec{fill:var(--asset-secondary)}
+.bar{fill:var(--asset-primary);opacity:.32}.bar-top{fill:url(#bg-bar)}
+.tint{fill:var(--asset-primary);opacity:.13}.tint-acc{fill:var(--asset-accent);opacity:.18}.tint-sec{fill:var(--asset-secondary);opacity:.14}
+.trend{fill:none;stroke:var(--asset-secondary);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.target{fill:none;stroke:var(--asset-accent);stroke-width:2;stroke-dasharray:6 6;stroke-linecap:round}
+.spark{fill:none;stroke:var(--asset-primary);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.track{fill:none;stroke:var(--asset-border);stroke-width:14}
+.share{fill:none;stroke:var(--asset-primary);stroke-width:14;stroke-linecap:round;stroke-dasharray:var(--p-share_percent,36) var(--p-share_percent-rest,64)}
+.ic{fill:none;stroke:var(--asset-primary);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.ic-acc{stroke:var(--asset-accent)}.ic-sec{stroke:var(--asset-secondary)}
+.pt{fill:var(--asset-surface);stroke:var(--asset-secondary);stroke-width:2.6}
+.t{direction:rtl;font-family:'Vazirmatn',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;fill:var(--asset-ink)}
+.h{font-size:16px;font-weight:800}.l{font-size:11px;fill:var(--asset-muted)}.c{font-size:12px;font-weight:700}.m{font-size:11px;fill:var(--asset-muted)}
+.big{font-size:34px;font-weight:800;fill:var(--asset-primary)}.v{font-size:26px;font-weight:800}.b{font-weight:800;fill:var(--asset-ink)}
+.tip{font-size:12px;font-weight:800;fill:var(--asset-oncolor)}
+.g{transform-box:fill-box;transform-origin:center}
+.card{animation:rise calc(.9s*var(--k,1)) cubic-bezier(.2,.8,.2,1) both}
+.grow{transform-box:fill-box;transform-origin:50% 100%;animation:grow calc(.8s*var(--k,1)) cubic-bezier(.2,.9,.3,1.1) both}
+.b1{animation-delay:calc(.5s*var(--k,1))}.b2{animation-delay:calc(.62s*var(--k,1))}.b3{animation-delay:calc(.74s*var(--k,1))}.b4{animation-delay:calc(.86s*var(--k,1))}.b5{animation-delay:calc(.98s*var(--k,1))}.b6{animation-delay:calc(1.1s*var(--k,1))}
+.draw{stroke-dasharray:100;animation:draw calc(1.5s*var(--k,1)) calc(1.3s*var(--k,1)) cubic-bezier(.4,0,.2,1) both}
+.fade{animation:fade calc(.9s*var(--k,1)) calc(1.2s*var(--k,1)) ease-out both}.fade2{animation:fade calc(.9s*var(--k,1)) calc(1.9s*var(--k,1)) ease-out both}
+.pop{animation:pop calc(.45s*var(--k,1)) cubic-bezier(.2,.9,.3,1.4) both}.p1{animation-delay:calc(1.45s*var(--k,1))}.p2{animation-delay:calc(1.65s*var(--k,1))}.p3{animation-delay:calc(1.85s*var(--k,1))}.p4{animation-delay:calc(2.05s*var(--k,1))}.p5{animation-delay:calc(2.25s*var(--k,1))}.p6{animation-delay:calc(2.45s*var(--k,1))}
+.bubble{animation:pop calc(.5s*var(--k,1)) calc(2.6s*var(--k,1)) cubic-bezier(.2,.9,.3,1.4) both}
+.in-l{animation:inL calc(.8s*var(--k,1)) cubic-bezier(.2,.8,.2,1) both}.d1{animation-delay:calc(.35s*var(--k,1))}.d2{animation-delay:calc(.6s*var(--k,1))}
+.spark-d{stroke-dasharray:100;animation:draw calc(1.2s*var(--k,1)) calc(1s*var(--k,1)) ease-out both}
+.sweep{animation:sweep calc(1.4s*var(--k,1)) calc(1.1s*var(--k,1)) cubic-bezier(.4,0,.2,1) both}
+.float{animation:float calc(6s*var(--k,1)) ease-in-out infinite}.f2{animation-duration:calc(7.5s*var(--k,1));animation-delay:calc(-3s*var(--k,1))}
+.bob{animation:bob calc(2.4s*var(--k,1)) ease-in-out infinite}
+.hl{animation:hl calc(3.2s*var(--k,1)) calc(2.8s*var(--k,1)) ease-in-out infinite}
+.live{animation:pulse calc(2.2s*var(--k,1)) calc(2.8s*var(--k,1)) ease-out infinite;opacity:0}
+.glow{animation:breathe calc(9s*var(--k,1)) ease-in-out infinite}.glow2{animation-delay:calc(-4.5s*var(--k,1))}
+.toast{animation:toast calc(9s*var(--k,1)) calc(3s*var(--k,1)) cubic-bezier(.2,.8,.2,1) infinite}
+.coin{opacity:0;animation:coin calc(6s*var(--k,1)) ease-in infinite}.c2{animation-delay:calc(-1.5s*var(--k,1))}.c3{animation-delay:calc(-3s*var(--k,1))}.c4{animation-delay:calc(-4.5s*var(--k,1))}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleY(0)}to{transform:none}}
+@keyframes draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes inL{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes sweep{from{stroke-dasharray:0 100}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes hl{0%,100%{opacity:1}50%{opacity:.72}}
+@keyframes pulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(3.4)}}
+@keyframes breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.9;transform:scale(1.07)}}
+@keyframes toast{0%{opacity:0;transform:translateX(-40px)}7%,72%{opacity:1;transform:none}80%,100%{opacity:0;transform:translateX(-40px)}}
+@keyframes coin{0%{opacity:0;transform:translateY(0)}20%{opacity:.8}100%{opacity:0;transform:translateY(-70px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<defs>
+<pattern id="bg-dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle class="dot" cx="2" cy="2" r="1.2"/></pattern>
+<radialGradient id="bg-glow-a"><stop offset="0" class="s-p" stop-opacity=".28"/><stop offset="1" class="s-p" stop-opacity="0"/></radialGradient>
+<radialGradient id="bg-glow-b"><stop offset="0" class="s-a" stop-opacity=".24"/><stop offset="1" class="s-a" stop-opacity="0"/></radialGradient>
+<linearGradient id="bg-bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="s-p"/><stop offset="1" class="s-p" stop-opacity=".55"/></linearGradient>
+</defs>
+<rect class="bg" width="960" height="540"/>
+<g data-s="show_backdrop">
+<rect width="960" height="540" fill="url(#bg-dots)" opacity=".7"/>
+<circle class="g glow" cx="700" cy="140" r="250" fill="url(#bg-glow-a)"/>
+<circle class="g glow glow2" cx="190" cy="430" r="210" fill="url(#bg-glow-b)"/>
+</g>
+<g transform="translate(0 500)" data-s="show_coins"><circle class="coin acc" cx="96" r="5"/><circle class="coin c2 pri" cx="168" r="4"/><circle class="coin c3 acc" cx="244" r="4.5"/><circle class="coin c4 sec" cx="304" r="3.5"/></g>
+<g class="card">
+<rect class="shadow" x="362" y="70" width="544" height="428" rx="24"/>
+<rect class="surface" x="360" y="56" width="544" height="428" rx="20"/>
+<text class="t h" x="880" y="96" data-p="report_title">گزارش فروش نیم‌سال اول</text>
+<text class="t l" x="880" y="118" data-p="report_unit">مبالغ به میلیون تومان</text>
+<rect class="soft" x="384" y="78" width="112" height="32" rx="16"/>
+<rect class="ic ic-sec" x="466" y="86" width="16" height="15" rx="3"/><path class="ic ic-sec" d="M466 91 h16 M470 83 v5 M478 83 v5"/>
+<text class="t c" x="458" y="99" data-p="year_label">سال ۱۴۰۵</text>
+<g data-s="show_legend">
+<rect class="bar-top" x="870" y="137" width="10" height="10" rx="3"/><text class="t m" x="864" y="146" data-p="legend_sales">فروش</text>
+<path class="target" d="M812 142 H832" style="stroke-dasharray:4 4"/><text class="t m" x="806" y="146" data-p="legend_target">هدف</text>
+<path class="trend" d="M752 142 H772"/><text class="t m" x="746" y="146" data-p="legend_trend">روند</text>
+</g>
+<path class="line" d="M390 170 H856 M390 227.5 H856 M390 285 H856 M390 342.5 H856"/>
+<path class="axis" d="M390 400 H856"/>
+<text class="t m" x="884" y="174" data-p="axis_1">۸۰۰</text><text class="t m" x="884" y="231" data-p="axis_2">۶۰۰</text><text class="t m" x="884" y="289" data-p="axis_3">۴۰۰</text><text class="t m" x="884" y="346" data-p="axis_4">۲۰۰</text><text class="t m" x="884" y="404" data-p="axis_5">۰</text>
+<rect class="bar grow b1" x="792" y="311" width="40" height="89" rx="8"/>
+<rect class="bar grow b2" x="712" y="291" width="40" height="109" rx="8"/>
+<rect class="bar grow b3" x="632" y="299" width="40" height="101" rx="8"/>
+<rect class="bar grow b4" x="552" y="262" width="40" height="138" rx="8"/>
+<rect class="bar grow b5" x="472" y="230" width="40" height="170" rx="8"/>
+<g class="hl"><rect class="bar-top grow b6" x="392" y="193" width="40" height="207" rx="8"/></g>
+<g style="text-anchor:middle"><text class="t m" x="812" y="424" data-p="month_1">فروردین</text><text class="t m" x="732" y="424" data-p="month_2">اردیبهشت</text><text class="t m" x="652" y="424" data-p="month_3">خرداد</text><text class="t m" x="572" y="424" data-p="month_4">تیر</text><text class="t m" x="492" y="424" data-p="month_5">مرداد</text><text class="t m" x="412" y="424" data-p="month_6">شهریور</text></g>
+<path class="target fade" data-s="show_target" d="M812 320 L412 214"/>
+<path class="trend draw" pathLength="100" d="M812 299 L732 279 L652 288 L572 250 L492 218 L412 181"/>
+<circle class="g pt pop p1" cx="812" cy="299" r="5"/><circle class="g pt pop p2" cx="732" cy="279" r="5"/><circle class="g pt pop p3" cx="652" cy="288" r="5"/><circle class="g pt pop p4" cx="572" cy="250" r="5"/><circle class="g pt pop p5" cx="492" cy="218" r="5"/>
+<circle class="g live sec" cx="412" cy="181" r="6"/>
+<circle class="g pop p6 sec" cx="412" cy="181" r="6"/>
+<g transform="translate(432 144)" data-s="show_tooltip"><g class="bubble"><g class="float f2">
+<rect class="sec" width="120" height="34" rx="10"/>
+<path class="sec" d="M0 24 l-8 9 l14 -5z"/>
+<text class="t tip" x="108" y="22" data-p="tooltip_text">۷۲۰ میلیون تومان</text>
+</g></g></g>
+<g data-s="show_stats">
+<path class="line fade2" d="M384 440 H880"/>
+<g class="fade2"><text class="t l" x="880" y="466"><tspan data-p="orders_label">سفارش‌ها</tspan> <tspan class="b" data-p="orders_value">۱۸٬۴۲۰</tspan></text><text class="t l" x="712" y="466"><tspan data-p="customers_label">مشتریان جدید</tspan> <tspan class="b" data-p="customers_value">۳٬۲۶۰</tspan></text><text class="t l" x="530" y="466"><tspan data-p="conversion_label">نرخ تبدیل</tspan> <tspan class="b" data-p="conversion_value">۴٫۸ درصد</tspan></text></g>
+</g>
+</g>
+<g class="in-l d1" data-s="show_growth"><g class="float">
+<rect class="shadow" x="58" y="68" width="280" height="140" rx="22"/>
+<rect class="surface" x="56" y="56" width="280" height="140" rx="20"/>
+<text class="t l" x="312" y="88" data-p="growth_label">رشد فروش فصلی</text>
+<text class="t big" x="312" y="134" data-p="growth_value">۴۸٪</text>
+<text class="t l" x="312" y="168" data-p="growth_note">نسبت به فصل قبل</text>
+<circle class="tint" cx="100" cy="92" r="20"/>
+<g class="bob"><path class="ic" d="M91 99 l9-11 9 11 M100 88 v16"/></g>
+<path class="spark spark-d" pathLength="100" d="M200 176 L178 168 L160 172 L140 156 L120 160 L98 140 L80 132"/>
+</g></g>
+<g class="in-l d2" data-s="show_share">
+<rect class="shadow" x="58" y="224" width="280" height="140" rx="22"/>
+<rect class="surface" x="56" y="212" width="280" height="140" rx="20"/>
+<circle class="track" cx="112" cy="282" r="40"/>
+<circle class="share sweep" cx="112" cy="282" r="40" pathLength="100" transform="rotate(-90 112 282)"/>
+<text class="t l" x="312" y="252" data-p="share_label">سهم بازار</text>
+<text class="t v" x="312" y="290" data-p="share_percent">۳۶٪</text>
+<text class="t l" x="312" y="318" data-p="share_note">در حوزه فروش آنلاین</text>
+</g>
+<g class="toast" data-s="show_toast">
+<rect class="shadow" x="58" y="378" width="280" height="62" rx="18"/>
+<rect class="surface" x="56" y="368" width="280" height="62" rx="16"/>
+<circle class="tint-acc" cx="96" cy="399" r="18"/>
+<path class="ic ic-acc" d="M86 391 h3 l3 11 h11 l3-8 h-15 M94 407 a1.6 1.6 0 1 0 .1 0 M102 407 a1.6 1.6 0 1 0 .1 0"/>
+<text class="t c" x="312" y="394" data-p="toast_title">سفارش جدید ثبت شد</text>
+<text class="t l" x="312" y="415" data-p="toast_text">۲ دقیقه پیش · ۲٫۴ میلیون تومان</text>
+</g>
+<g data-s="show_badge">
+<rect class="tint-sec" x="56" y="452" width="280" height="34" rx="17"/>
+<path class="ic ic-sec" d="M300 462 l7 3 v5 c0 4-3 7-7 8 c-4-1-7-4-7-8 v-5z"/>
+<text class="t c" x="284" y="474" data-p="badge_text">پرداخت امن ریالی و تسویه سریع</text>
+</g>
+</svg>

@@ -42,11 +42,26 @@ final class MotionLibraryCatalogService
      * @var array<string, string>
      */
     public const ASSETS = [
-        'hero-motion' => 'v2',
-        'business-growth-motion' => 'v2',
+        'hero-motion' => 'v3',
+        'business-growth-motion' => 'v3',
     ];
 
+    /** ADR-079 subset (weights 400–800); the font of every v2 file. */
     public const FONT_FILE = 'packages/saas-platform/modules/motion-graphics/assets/fonts/vazirmatn-motion.woff2';
+
+    /**
+     * Fonts a library version may ask for through metadata
+     * `typography.embedded_font`; a version that names none gets the
+     * ADR-079 subset, so files published before ADR-080 keep their bytes.
+     * ADR-080: `vazirmatn-variable` is the complete, unmodified Vazirmatn
+     * variable font (every glyph, weights 100–900).
+     *
+     * @var array<string, array{file: string, weight: string}>
+     */
+    public const FONTS = [
+        'vazirmatn-motion' => ['file' => self::FONT_FILE, 'weight' => '400 800'],
+        'vazirmatn-variable' => ['file' => 'packages/saas-platform/modules/motion-graphics/assets/fonts/vazirmatn-variable.woff2', 'weight' => '100 900'],
+    ];
 
     /** Records whose published versions never pointed at a real file. */
     public const LEGACY_SLUGS = ['hero-vector-showcase'];
@@ -125,19 +140,21 @@ final class MotionLibraryCatalogService
 
         $definitions = MotionSvgComposer::normalizeDefinitions((array) $metadata['parameters']);
         $values = MotionSvgComposer::resolveValues($definitions, $input);
+        $fontKey = $metadata['typography']['embedded_font'] ?? 'vazirmatn-motion';
+        $font = self::FONTS[is_string($fontKey) && isset(self::FONTS[$fontKey]) ? $fontKey : 'vazirmatn-motion'];
 
-        return (new MotionSvgComposer())->compose($svg, $definitions, $values, self::font());
+        return (new MotionSvgComposer())->compose($svg, $definitions, $values, self::font($font['file']), $font['weight']);
     }
 
-    private static function font(): ?string
+    private static function font(string $file): ?string
     {
-        static $font = null;
-        if ($font === null) {
-            $path = base_path(self::FONT_FILE);
-            $font = is_file($path) ? (string) file_get_contents($path) : '';
+        static $fonts = [];
+        if (! array_key_exists($file, $fonts)) {
+            $path = base_path($file);
+            $fonts[$file] = is_file($path) ? (string) file_get_contents($path) : '';
         }
 
-        return $font === '' ? null : $font;
+        return $fonts[$file] === '' ? null : $fonts[$file];
     }
 
     /**

@@ -82,7 +82,7 @@ final class MotionLibraryEndToEndTest extends TestCase
             ->assertJsonCount(1, 'assets')
             ->assertJsonPath('assets.0.asset_type', 'svg')
             ->assertJsonPath('assets.0.name', self::HERO)
-            ->assertJsonPath('assets.0.optimized_reference', '/motion/hero-motion/v2/animation.svg');
+            ->assertJsonPath('assets.0.optimized_reference', '/motion/hero-motion/v3/animation.svg');
 
         // Exactly the shape customer-site's MotionRuntimeManifestReader accepts.
         $asset = $response->json('assets.0');
@@ -98,7 +98,7 @@ final class MotionLibraryEndToEndTest extends TestCase
         $this->assertSame('window_title', $keys[0]);
         $this->assertContains('primary', $keys);
         $this->assertContains('speed', $keys);
-        $this->assertSame('/motion/hero-motion/v2/animation.svg', $asset['optimized_reference']);
+        $this->assertSame('/motion/hero-motion/v3/animation.svg', $asset['optimized_reference']);
     }
 
     public function test_a_premium_license_adds_business_growth_and_revoking_it_removes_it_without_reactivation(): void

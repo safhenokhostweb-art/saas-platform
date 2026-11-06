@@ -107,6 +107,74 @@ final class MotionSvgComposerTest extends TestCase
         $this->assertNotFalse(simplexml_load_string($a));
     }
 
+    private const THEMED = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540"><style id="asset-theme">:root{--asset-ink:#111111}@media (prefers-color-scheme:dark){:root{--asset-ink:#eeeeee}}</style><g data-s="show_card"><text data-p="title">کارت</text></g><path data-s="show_card"/></svg>';
+
+    private function sectionDefinitions(): array
+    {
+        return MotionSvgComposer::normalizeDefinitions([
+            ['key' => 'title', 'type' => 'text', 'label' => 'عنوان', 'default' => 'کارت', 'max' => 12],
+            ['key' => 'ink', 'type' => 'color', 'group' => 'style', 'label' => 'متن', 'token' => '--asset-ink', 'default' => '#111111'],
+            ['key' => 'scheme', 'type' => 'select', 'role' => 'scheme', 'group' => 'style', 'label' => 'حالت رنگی', 'options' => ['auto' => 'خودکار', 'light' => 'روشن', 'dark' => 'تیره', 'sepia' => 'نامعتبر'], 'default' => 'auto'],
+            ['key' => 'show_card', 'type' => 'boolean', 'role' => 'show', 'group' => 'sections', 'label' => 'کارت', 'default' => true],
+        ]);
+    }
+
+    public function test_adr080_sections_group_show_and_scheme_roles_are_normalized(): void
+    {
+        $defs = $this->sectionDefinitions();
+
+        $this->assertSame(['title', 'ink', 'scheme', 'show_card'], array_column($defs, 'key'));
+        $this->assertSame(['auto', 'light', 'dark'], array_keys($defs[2]['options']), 'scheme options are limited to known schemes');
+        $this->assertSame('scheme', $defs[2]['role']);
+        $this->assertSame('show', $defs[3]['role']);
+        $this->assertSame('sections', $defs[3]['group']);
+        $this->assertSame([], MotionSvgComposer::resolveValues($defs, ['scheme' => 'sepia', 'show_card' => 'nope']));
+    }
+
+    public function test_a_hidden_section_hides_every_marked_element(): void
+    {
+        $defs = $this->sectionDefinitions();
+        $composer = new MotionSvgComposer();
+
+        $hidden = $composer->compose(self::THEMED, $defs, MotionSvgComposer::resolveValues($defs, ['show_card' => '0']));
+        $this->assertStringContainsString('[data-s="show_card"]{display:none!important}', $hidden);
+
+        $shown = $composer->compose(self::THEMED, $defs, MotionSvgComposer::resolveValues($defs, ['show_card' => '1']));
+        $this->assertStringNotContainsString('display:none', $shown, 'the default (shown) adds nothing');
+    }
+
+    public function test_scheme_pins_one_palette_and_colour_overrides_still_win(): void
+    {
+        $defs = $this->sectionDefinitions();
+        $composer = new MotionSvgComposer();
+
+        $light = $composer->compose(self::THEMED, $defs, MotionSvgComposer::resolveValues($defs, ['scheme' => 'light']));
+        $this->assertStringContainsString('<style id="asset-theme">:root{--asset-ink:#111111}</style>', $light);
+
+        $dark = $composer->compose(self::THEMED, $defs, MotionSvgComposer::resolveValues($defs, ['scheme' => 'dark', 'ink' => '#ff0000']));
+        $this->assertStringContainsString('<style id="asset-theme">:root{--asset-ink:#eeeeee}</style>', $dark);
+        $this->assertStringContainsString(':root{--asset-ink:#ff0000}', $dark);
+        $this->assertLessThan(strpos($dark, 'id="asset-runtime"'), strpos($dark, 'id="asset-theme"'));
+
+        $auto = $composer->compose(self::THEMED, $defs, []);
+        $this->assertStringContainsString('@media (prefers-color-scheme:dark){:root{--asset-ink:#eeeeee}}', $auto);
+
+        // A theme style in an unexpected shape is left as authored.
+        $odd = str_replace(':root{--asset-ink:#111111}@media', ':root{--asset-ink:#111111} .x{} @media', self::THEMED);
+        $this->assertStringContainsString('.x{}', $composer->compose($odd, $defs, MotionSvgComposer::resolveValues($defs, ['scheme' => 'dark'])));
+    }
+
+    public function test_the_font_weight_range_is_declared_and_validated(): void
+    {
+        $composer = new MotionSvgComposer();
+        $full = $composer->compose(self::SVG, [], [], 'WOFF2BYTES', '100 900');
+        $this->assertStringContainsString("format('woff2');font-weight:100 900;", $full);
+        $this->assertStringContainsString('font-weight:400 800;', $composer->compose(self::SVG, [], [], 'WOFF2BYTES'), 'the ADR-079 default is unchanged');
+
+        $this->expectException(InvalidArgumentException::class);
+        $composer->compose(self::SVG, [], [], 'WOFF2BYTES', '100 900;}*{x:y');
+    }
+
     public function test_non_svg_input_is_rejected(): void
     {
         $this->expectException(InvalidArgumentException::class);

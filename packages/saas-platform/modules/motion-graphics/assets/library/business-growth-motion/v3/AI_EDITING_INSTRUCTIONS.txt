@@ -1,0 +1,21 @@
+Asset: business-growth-motion v3 (Business Growth Motion)
+
+Allowed edits:
+- Colors: change only the --asset-* values in <style id="asset-theme">, in both the light :root block and the prefers-color-scheme:dark block.
+- Text: Persian copy inside <text> elements; keep Persian digits and right-to-left reading order.
+- Speed: animation durations and delays in the second <style> block.
+
+Forbidden:
+- <script>, event handler attributes (on*), <foreignObject>, external href/src, web fonts, SMIL <animate*> elements.
+- Animating layout or filter properties; animate transform/opacity only.
+- Removing the @media (prefers-reduced-motion:reduce) rule or the viewBox.
+- Editing a published version in place: create a new version directory instead.
+
+v2 additions:
+- Keep every data-p attribute and its key: runtime parameters target them.
+- Write every duration and delay as calc(Ns*var(--k,1)).
+- Keep the font stack starting with 'Vazirmatn'; do not embed fonts in the file (the platform embeds them).
+
+v3 additions:
+- Keep every data-s attribute: section switches target them. Every visible text needs a data-p key.
+- Colours only through classes that read --asset-* tokens; never hard-code fill or stroke colours.

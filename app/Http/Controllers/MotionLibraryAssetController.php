@@ -12,7 +12,8 @@ use Illuminate\Http\Response;
  * module's `asset_path_prefix`). The library directory is the only copy.
  *
  * Query parameters are the asset version's declared runtime parameters
- * (texts, colour tokens, animate/loop/speed). They are validated and
+ * (texts, colour tokens, colour scheme, section visibility,
+ * animate/loop/speed). They are validated and
  * applied by MotionSvgComposer: unknown or invalid values are ignored, text
  * is set as DOM text (never markup), and Vazirmatn is embedded so `<img>`
  * rendering never falls back to a system font. The same URL always yields
@@ -28,7 +29,13 @@ use Illuminate\Http\Response;
  */
 final class MotionLibraryAssetController
 {
-    private const MAX_QUERY_BYTES = 4096;
+    /**
+     * ADR-080: v3 makes every text editable, so a fully customised Persian
+     * motion needs more than ADR-079's 4 KB. 7 KB keeps the whole request
+     * line under the common 8 KB server limit; CommercialMotionLibraryTest
+     * proves each library version's worst case fits.
+     */
+    public const MAX_QUERY_BYTES = 7168;
 
     public function __invoke(Request $request, string $slug, string $version): Response
     {

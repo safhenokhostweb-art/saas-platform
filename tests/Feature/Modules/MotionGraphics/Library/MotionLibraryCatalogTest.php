@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Modules\MotionGraphics\Library;
 
+use App\Http\Controllers\MotionLibraryAssetController;
 use App\Modules\MotionGraphics\Services\MotionLibraryCatalogService;
+use SaaSPlatform\Modules\MotionGraphics\Support\MotionSvgComposer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
@@ -71,7 +73,79 @@ final class MotionLibraryCatalogTest extends TestCase
         $this->assertStringNotContainsString('<b>', $svg);
 
         // An oversized query is refused outright.
-        $this->get('/motion/hero-motion/v2/animation.svg?window_title='.str_repeat('a', 5000))->assertStatus(414);
+        $this->get('/motion/hero-motion/v2/animation.svg?window_title='.str_repeat('a', MotionLibraryAssetController::MAX_QUERY_BYTES + 1))->assertStatus(414);
+    }
+
+    public function test_v2_keeps_the_adr079_subset_font_and_v3_embeds_the_full_vazirmatn(): void
+    {
+        $subset = base64_encode(file_get_contents(base_path(MotionLibraryCatalogService::FONT_FILE)));
+        $full = base64_encode(file_get_contents(base_path(MotionLibraryCatalogService::FONTS['vazirmatn-variable']['file'])));
+
+        $v2 = $this->get('/motion/hero-motion/v2/animation.svg')->getContent();
+        $this->assertStringContainsString($subset, $v2);
+        $this->assertStringContainsString('font-weight:400 800;', $v2);
+
+        foreach (MotionLibraryCatalogService::ASSETS as $slug => $libraryVersion) {
+            $this->assertSame('v3', $libraryVersion);
+            $v3 = $this->get('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion))->getContent();
+            $this->assertStringContainsString($full, $v3);
+            $this->assertStringContainsString('font-weight:100 900;', $v3);
+            $this->assertStringNotContainsString($subset, $v3);
+        }
+    }
+
+    public function test_v3_sections_scheme_and_every_colour_are_applied_when_served(): void
+    {
+        $svg = $this->get('/motion/hero-motion/v3/animation.svg?'.http_build_query([
+            'show_kpis' => '0',
+            'show_cta' => '0',
+            'scheme' => 'dark',
+            'background' => '#101010',
+            'oncolor' => '#000000',
+            'cta_text' => 'شروع کنید',
+        ]))->assertOk()->getContent();
+
+        $this->assertStringContainsString('[data-s="show_kpis"]{display:none!important}', $svg);
+        $this->assertStringContainsString('[data-s="show_cta"]{display:none!important}', $svg);
+        $this->assertStringNotContainsString('[data-s="show_chart"]', $svg);
+        $this->assertDoesNotMatchRegularExpression('/<style id="asset-theme">[^<]*prefers-color-scheme/', $svg, 'dark is pinned');
+        $this->assertStringContainsString('<style id="asset-theme">:root{--asset-primary:#60a5fa;', $svg);
+        $this->assertStringContainsString('--asset-background:#101010', $svg);
+        $this->assertStringContainsString('--asset-oncolor:#000000', $svg);
+        $this->assertStringContainsString('data-p="cta_text">شروع کنید</text>', $svg);
+
+        $business = $this->get('/motion/business-growth-motion/v3/animation.svg?'.http_build_query([
+            'month_1' => 'ژانویه', 'orders_label' => 'خریدها', 'show_toast' => '0',
+        ]))->assertOk()->getContent();
+        $this->assertStringContainsString('data-p="month_1">ژانویه</text>', $business);
+        $this->assertStringContainsString('<tspan data-p="orders_label">خریدها</tspan>', $business);
+        $this->assertStringContainsString('[data-s="show_toast"]{display:none!important}', $business);
+    }
+
+    /**
+     * The longest query a site can send for a library version (every text at
+     * its max in two-byte Persian, every switch flipped) must fit the
+     * route's limit, or a fully customised motion would break with a 414.
+     */
+    public function test_a_fully_customised_query_fits_the_route_limit(): void
+    {
+        foreach (MotionLibraryCatalogService::ASSETS as $slug => $libraryVersion) {
+            $metadata = json_decode(file_get_contents(MotionLibraryCatalogService::libraryDirectory($slug, $libraryVersion).'/metadata.json'), true);
+            $worst = [];
+            foreach (MotionSvgComposer::normalizeDefinitions($metadata['parameters']) as $def) {
+                $worst[$def['key']] = match ($def['type']) {
+                    'text' => str_repeat('گ', $def['max']),
+                    'color' => '#abcdef',
+                    'number' => (string) $def['max'],
+                    'boolean' => $def['default'] ? '0' : '1',
+                    'select' => (string) collect(array_keys($def['options']))->sortByDesc(fn (string $o): int => strlen($o))->first(),
+                };
+            }
+            $query = http_build_query($worst, '', '&', PHP_QUERY_RFC3986);
+
+            $this->assertLessThan(MotionLibraryAssetController::MAX_QUERY_BYTES, strlen($query), "{$slug}/{$libraryVersion} worst case is ".strlen($query).' bytes');
+            $this->get('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion).'?'.$query)->assertOk();
+        }
     }
 
     public function test_v1_is_still_served_byte_for_byte_as_published(): void
@@ -86,7 +160,7 @@ final class MotionLibraryCatalogTest extends TestCase
         foreach ([
             '/motion/not-a-motion/v1/animation.svg',
             '/motion/hero-motion/v99/animation.svg',
-            '/motion/hero-motion/v3/animation.svg',
+            '/motion/hero-motion/v4/animation.svg',
             '/motion/hero-motion/v0/animation.svg',
             '/motion/hero-motion/..%2F..%2Fmetadata.json/animation.svg',
             '/motion/ai-business-assistant/v1/animation.svg',
@@ -163,7 +237,7 @@ final class MotionLibraryCatalogTest extends TestCase
 
         $projection = $this->app->make(MotionRuntimeProjectionReadContract::class)->projectAsset($uuid);
         $this->assertNotNull($projection);
-        $this->assertSame('/motion/business-growth-motion/v2/animation.svg', $projection->optimizedReference);
+        $this->assertSame('/motion/business-growth-motion/v3/animation.svg', $projection->optimizedReference);
         $this->assertSame(['width' => 960, 'height' => 540, 'viewBox' => '0 0 960 540'], $projection->placementRules['dimensions']);
         $keys = array_column($projection->parameters, 'key');
         $this->assertContains('share_percent', $keys);

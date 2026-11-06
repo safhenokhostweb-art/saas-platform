@@ -22,12 +22,29 @@ final class CommercialMotionLibraryTest extends TestCase
             'hero v2' => ['hero-motion', 'v2', 'free'],
             'business growth v1' => ['business-growth-motion', 'v1', 'premium'],
             'business growth v2' => ['business-growth-motion', 'v2', 'premium'],
+            'hero v3' => ['hero-motion', 'v3', 'free'],
+            'business growth v3' => ['business-growth-motion', 'v3', 'premium'],
         ];
     }
 
+    /** Versions with runtime parameters (ADR-079 and later). */
     public static function v2Assets(): array
     {
-        return array_filter(self::assets(), fn (array $a): bool => $a[1] === 'v2');
+        return array_filter(self::assets(), fn (array $a): bool => $a[1] !== 'v1');
+    }
+
+    public static function v3Assets(): array
+    {
+        return array_filter(self::assets(), fn (array $a): bool => $a[1] === 'v3');
+    }
+
+    private const FULL_FONT_SHA256 = '4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92';
+
+    private static function definitions(string $slug, string $version): array
+    {
+        $declared = json_decode(file_get_contents(self::LIBRARY.'/'.$slug.'/'.$version.'/metadata.json'), true, 512, JSON_THROW_ON_ERROR)['parameters'];
+
+        return MotionSvgComposer::normalizeDefinitions($declared);
     }
 
     #[DataProvider('assets')]
@@ -144,6 +161,84 @@ final class CommercialMotionLibraryTest extends TestCase
         $this->assertStringContainsString("font-family:'Vazirmatn',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif", $svg);
         $this->assertStringNotContainsString('Tahoma', $svg);
         $this->assertStringContainsString('direction="rtl"', $svg);
+    }
+
+    #[DataProvider('v3Assets')]
+    public function test_v3_makes_every_text_editable(string $slug, string $version): void
+    {
+        $doc = new \DOMDocument();
+        $this->assertTrue($doc->load(self::LIBRARY.'/'.$slug.'/'.$version.'/animation.svg'));
+        $xpath = new \DOMXPath($doc);
+        $xpath->registerNamespace('s', 'http://www.w3.org/2000/svg');
+
+        $texts = 0;
+        foreach ($xpath->query('//s:text//text()[normalize-space()]') as $node) {
+            $texts++;
+            $this->assertTrue(
+                $node->parentNode instanceof \DOMElement && $node->parentNode->hasAttribute('data-p'),
+                "visible text «{$node->textContent}» has no data-p hook"
+            );
+        }
+        $this->assertGreaterThan(10, $texts);
+    }
+
+    #[DataProvider('v3Assets')]
+    public function test_v3_exposes_every_colour_token_the_artwork_uses_and_a_scheme(string $slug, string $version): void
+    {
+        $svg = file_get_contents(self::LIBRARY.'/'.$slug.'/'.$version.'/animation.svg');
+        $definitions = self::definitions($slug, $version);
+
+        preg_match_all('/var\((--asset-[a-z]+)\)/', $svg, $m);
+        $used = array_values(array_unique($m[1]));
+        sort($used);
+        $declared = array_column(array_filter($definitions, fn (array $d): bool => $d['type'] === 'color'), 'token');
+        sort($declared);
+        $this->assertSame($used, $declared, 'colour parameters = the tokens the artwork actually reads');
+        $this->assertDoesNotMatchRegularExpression('/fill:#|fill="#|stroke:#|stroke="#/i', preg_replace('/<style id="asset-theme">.*?<\/style>/s', '', $svg), 'colours only through tokens');
+
+        $scheme = array_values(array_filter($definitions, fn (array $d): bool => $d['key'] === 'scheme'));
+        $this->assertCount(1, $scheme);
+        $this->assertSame('scheme', $scheme[0]['role']);
+        $this->assertSame(['auto', 'light', 'dark'], array_keys($scheme[0]['options']));
+    }
+
+    #[DataProvider('v3Assets')]
+    public function test_v3_sections_and_show_switches_match_one_to_one(string $slug, string $version): void
+    {
+        $svg = file_get_contents(self::LIBRARY.'/'.$slug.'/'.$version.'/animation.svg');
+        preg_match_all('/data-s="([a-z0-9_]+)"/', $svg, $m);
+        $hooks = array_values(array_unique($m[1]));
+        sort($hooks);
+        $switches = array_column(array_filter(self::definitions($slug, $version), fn (array $d): bool => $d['type'] === 'boolean' && $d['role'] === 'show'), 'key');
+        sort($switches);
+
+        $this->assertNotEmpty($switches);
+        $this->assertSame($hooks, $switches);
+        foreach (self::definitions($slug, $version) as $def) {
+            if ($def['type'] === 'boolean' && $def['role'] === 'show') {
+                $this->assertSame('sections', $def['group']);
+                $this->assertTrue($def['default'], 'every section is visible by default');
+            }
+        }
+    }
+
+    #[DataProvider('v3Assets')]
+    public function test_v3_asks_for_the_full_vazirmatn_font(string $slug, string $version): void
+    {
+        $metadata = json_decode(file_get_contents(self::LIBRARY.'/'.$slug.'/'.$version.'/metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('vazirmatn-variable', $metadata['typography']['embedded_font']);
+        $this->assertSame('100 900', $metadata['typography']['font_weights']);
+    }
+
+    public function test_the_full_vazirmatn_font_ships_unmodified(): void
+    {
+        $font = __DIR__.'/../../assets/fonts/vazirmatn-variable.woff2';
+
+        $this->assertFileExists($font);
+        $this->assertSame('wOF2', substr(file_get_contents($font), 0, 4));
+        $this->assertSame(self::FULL_FONT_SHA256, hash_file('sha256', $font), 'the complete Vazirmatn 33.003 variable font, byte for byte');
+        $this->assertStringContainsString(self::FULL_FONT_SHA256, file_get_contents(__DIR__.'/../../assets/fonts/README.md'));
     }
 
     public function test_the_bundled_font_ships_with_its_licence(): void

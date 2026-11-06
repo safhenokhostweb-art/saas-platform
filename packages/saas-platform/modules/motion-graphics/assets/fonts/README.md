@@ -1,4 +1,20 @@
-# Motion library font
+# Motion library fonts
+
+## `vazirmatn-variable.woff2` (library v3 and later, ADR-080)
+
+The complete Vazirmatn 33.003 variable font, byte-identical to the
+project's `public/assets/fonts/vazirmatn/Vazirmatn[wght].woff2`
+(SHA-256 `4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92`):
+every glyph (811 code points), `wght` axis 100–900. It is not modified,
+only renamed (no brackets in the path). © 2015 The Vazirmatn Project
+Authors, SIL Open Font License 1.1 (`OFL.txt`).
+
+A library version selects it with metadata
+`typography.embedded_font: "vazirmatn-variable"`; the platform embeds it as
+`@font-face{…font-weight:100 900…}`. A version that names no font gets the
+subset below, so files published before ADR-080 keep their exact bytes.
+
+## `vazirmatn-motion.woff2` (library v2, ADR-079)
 
 `vazirmatn-motion.woff2` is a Modified Version (subset + axis-limited
 instance) of Vazirmatn 33.003, © 2015 The Vazirmatn Project Authors,

@@ -4928,3 +4928,106 @@ There is no migration or Composer change.
     normalization, nested `module:motion` validation, and the browser spec
     `canvas-motion-widget.spec.js`, which inserts into a section, picks a
     motion, edits parameters, saves, reloads and checks the render.
+
+## ADR-080
+
+**Title:** Motion Library v3: Full Vazirmatn and Every Part of a Motion Editable
+
+**Status:** Accepted
+
+**Date:** 2026-11-06
+
+**Context:**
+
+- Owner request through the Canvas Dev HUD, for a `module:motion` block
+  nested in `columns`: ship the complete Vazirmatn font for motions, and make
+  every property and every section of a motion editable.
+- After ADR-079, a motion embedded a 42.7 KB Persian subset of Vazirmatn,
+  limited to weights 400–800. Only some of it was editable:
+  - `business-growth-motion` v2 had 17 visible texts with no `data-p` hook:
+    the legend, axis values, Jalali months, and the labels of the stats row;
+  - 3 of the 9–10 `--asset-*` colour tokens were parameters;
+  - the white text on coloured fills was hard-coded `#fff`;
+  - no part of the artwork could be hidden;
+  - the colour scheme always followed the visitor's device.
+- Constraints from ADR-079 still apply:
+  - a published library version never changes bytes under its URL
+    (`Cache-Control: immutable`);
+  - versions are immutable;
+  - sites bound to an older version keep working.
+
+**Decision:**
+
+1. **Library v3** for `hero-motion` and `business-growth-motion`. v1 and
+   v2 are untouched and still served exactly as before. The catalog
+   publishes v3 (`MotionLibraryCatalogService::ASSETS`), so the next
+   `sync()` creates a new catalog version. Under ADR-079's projection rule,
+   bound sites receive it, and the old version is retired once nothing is
+   bound to it.
+2. **Full font, chosen per version.** `assets/fonts/vazirmatn-variable.woff2`
+   is the complete Vazirmatn 33.003 variable font: 811 code points, weights
+   100–900, SIL OFL 1.1. It is byte-identical to the project's
+   `public/assets/fonts/vazirmatn/Vazirmatn[wght].woff2`; the SHA-256 is
+   pinned in a test and in the fonts README. A version opts in with metadata
+   `typography.embedded_font: "vazirmatn-variable"`. The composer declares
+   the weight range it was given, here `font-weight:100 900`; the range is
+   validated against a strict pattern. A version that names no font gets the
+   ADR-079 subset, so v2 bytes are unchanged.
+3. **Everything visible is a parameter (v3 rules, enforced by
+   `CommercialMotionLibraryTest`):**
+   - every non-empty text node sits in an element with `data-p`;
+   - the `color` parameters are exactly the `--asset-*` tokens the artwork
+     reads through `var()`;
+   - no hard-coded fill or stroke colours outside the theme style;
+   - the new `--asset-oncolor` token covers text on coloured fills.
+4. **New composer roles:**
+   - **sections:** a new parameter group, `sections`, holds `boolean` +
+     `role: show` parameters. A false value adds
+     `[data-s="key"]{display:none!important}`. In the artwork, each
+     optional part is wrapped in, or marked with, `data-s="show_*"`. Hooks
+     and switches must match one to one, and every switch defaults to
+     visible.
+   - **scheme:** `select` + `role: scheme` (`auto`/`light`/`dark`).
+     `light` or `dark` rewrites `<style id="asset-theme">` to keep only that
+     palette, without the media query. A theme style that does not have the
+     authored `:root{…}@media (prefers-color-scheme:dark){:root{…}}` shape is
+     left alone. Colour overrides still come later in the document, so they
+     still win.
+5. **Limits.**
+   - `MAX_PARAMETERS` goes from 40 to 80, in the composer and in
+     customer-site's `MotionRuntimeParameters`. business-growth v3 declares
+     56 parameters and hero v3 declares 40.
+   - The route's query limit goes from 4 KB to 7 KB, which keeps the request
+     line under the common 8 KB server limit.
+   - A host test builds each published version's worst-case query (every
+     text at its max in two-byte Persian, every switch flipped) and checks
+     that it fits the limit and is served.
+6. **customer-site:**
+   - `MotionRuntimeParameters` accepts the `sections` group.
+   - The Canvas inspector shows the groups texts, «رنگ‌ها و حالت رنگی»,
+     «بخش‌های موشن» and animation.
+   - Section toggles read «نمایش»/«پنهان».
+   - No other contract change: the manifest already carries `parameters`,
+     and values travel as before.
+
+**Consequences:**
+
+- A served v3 motion is about 160 KB, up from about 70 KB: the full font
+  is about 148 KB once base64-encoded. It is cached as immutable per
+  distinct parameter set. This is the cost of shipping the complete font,
+  as requested.
+- Production receives v3 only after the platform release is deployed and
+  `MotionGraphicsDefaultSeeder` (catalog sync) runs. Both are owner actions.
+  Existing blocks keep their `motion_params`: v3 keeps every v2 key, with
+  the same defaults.
+- A pinned colour scheme applies the user's colour overrides to that scheme.
+  The inspector's colour defaults show the light palette.
+- Tests:
+  - package: `MotionSvgComposerTest` (show/scheme roles, weight range) and
+    `CommercialMotionLibraryTest` (v3 rules, full font hash);
+  - host: `MotionLibraryCatalogTest` (v2 subset vs v3 full font, served
+    sections/scheme/colours, worst-case query) and
+    `MotionLibraryEndToEndTest`;
+  - customer-site: `MotionRuntimeParametersTest` and
+    `canvas-motion-widget.spec.js` (sections group, scheme, persisted
+    `scheme=dark&show_kpis=0`).

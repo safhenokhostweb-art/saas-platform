@@ -21,10 +21,13 @@ use InvalidArgumentException;
  *   color    → overrides one `--asset-*` theme token (light and dark)
  *   number   → optional data-p text (format plain|percent) and, with
  *              `css: true`, CSS variables --p-key / --p-key-rest
- *   boolean  → role `animate` (false = static final frame) or `loop`
- *              (false = every animation runs once)
+ *   boolean  → role `animate` (false = static final frame), `loop`
+ *              (false = every animation runs once) or, ADR-080, `show`
+ *              (false = every element with data-s="key" is hidden)
  *   select   → role `speed` (slow|normal|fast scales every duration
- *              through the SVG's `var(--k)`)
+ *              through the SVG's `var(--k)`) or, ADR-080, `scheme`
+ *              (auto|light|dark: follow the device, or pin one palette of
+ *              `<style id="asset-theme">`)
  *
  * Pure and deterministic: the same inputs always produce the same bytes,
  * which is what lets the served URL be cached as immutable.
@@ -32,9 +35,13 @@ use InvalidArgumentException;
 final class MotionSvgComposer
 {
     public const TYPES = ['text', 'color', 'number', 'boolean', 'select'];
-    public const GROUPS = ['content', 'style', 'motion'];
+    public const GROUPS = ['content', 'style', 'sections', 'motion'];
     public const SPEED_FACTORS = ['slow' => '1.5', 'normal' => '1', 'fast' => '0.7'];
-    public const MAX_PARAMETERS = 40;
+    public const SCHEMES = ['auto', 'light', 'dark'];
+    public const BOOLEAN_ROLES = ['animate', 'loop', 'show'];
+    public const MAX_PARAMETERS = 80;
+    /** Weight range a subset font covers when the caller does not say. */
+    public const DEFAULT_FONT_WEIGHT = '400 800';
     private const SVG_NS = 'http://www.w3.org/2000/svg';
     private const KEY = '/^[a-z][a-z0-9_]{0,39}$/';
 
@@ -114,9 +121,13 @@ final class MotionSvgComposer
      * @param list<array<string, mixed>> $definitions normalized definitions
      * @param array<string, mixed> $values output of resolveValues()
      * @param string|null $fontWoff2 raw woff2 bytes to embed as Vazirmatn
+     * @param string $fontWeight the CSS font-weight range those bytes cover
      */
-    public function compose(string $svg, array $definitions, array $values, ?string $fontWoff2 = null): string
+    public function compose(string $svg, array $definitions, array $values, ?string $fontWoff2 = null, string $fontWeight = self::DEFAULT_FONT_WEIGHT): string
     {
+        if (preg_match('/^[1-9]00(?: [1-9]00)?$/', $fontWeight) !== 1) {
+            throw new InvalidArgumentException('Font weight must be a CSS weight or weight range.');
+        }
         $doc = new DOMDocument();
         $previous = libxml_use_internal_errors(true);
         $loaded = $doc->loadXML($svg, LIBXML_NONET);
@@ -132,6 +143,7 @@ final class MotionSvgComposer
         }
 
         $this->applyText($doc, $byKey, $values);
+        $this->applyScheme($root, $byKey, $values);
 
         $css = $this->runtimeCss($byKey, $values);
         if ($css !== '') {
@@ -139,8 +151,9 @@ final class MotionSvgComposer
         }
         if ($fontWoff2 !== null && $fontWoff2 !== '') {
             $this->insertStyle($doc, $root, 'asset-font', sprintf(
-                "@font-face{font-family:'Vazirmatn';src:url(data:font/woff2;base64,%s) format('woff2');font-weight:400 800;font-style:normal;font-display:block}",
-                base64_encode($fontWoff2)
+                "@font-face{font-family:'Vazirmatn';src:url(data:font/woff2;base64,%s) format('woff2');font-weight:%s;font-style:normal;font-display:block}",
+                base64_encode($fontWoff2),
+                $fontWeight
             ), after: false);
         }
 
@@ -202,7 +215,7 @@ final class MotionSvgComposer
             return null;
         }
 
-        return [...$clean, 'default' => $def['default'], 'role' => in_array($def['role'] ?? null, ['animate', 'loop'], true) ? $def['role'] : null];
+        return [...$clean, 'default' => $def['default'], 'role' => in_array($def['role'] ?? null, self::BOOLEAN_ROLES, true) ? $def['role'] : null];
     }
 
     private static function normalizeSelect(array $def, array $clean): ?array
@@ -213,9 +226,11 @@ final class MotionSvgComposer
                 $options[$value] = mb_substr(trim($label), 0, 40);
             }
         }
-        $role = ($def['role'] ?? null) === 'speed' ? 'speed' : null;
+        $role = in_array($def['role'] ?? null, ['speed', 'scheme'], true) ? $def['role'] : null;
         if ($role === 'speed') {
             $options = array_intersect_key($options, self::SPEED_FACTORS);
+        } elseif ($role === 'scheme') {
+            $options = array_intersect_key($options, array_flip(self::SCHEMES));
         }
         $default = $def['default'] ?? null;
         if ($options === [] || ! is_string($default) || ! array_key_exists($default, $options)) {
@@ -316,6 +331,9 @@ final class MotionSvgComposer
                 $rules['animate'] = '*{animation:none!important}';
             } elseif ($def['type'] === 'boolean' && $value === false && $def['role'] === 'loop') {
                 $rules['loop'] = '*{animation-iteration-count:1!important}';
+            } elseif ($def['type'] === 'boolean' && $value === false && $def['role'] === 'show') {
+                // The key is [a-z0-9_], so it is safe inside the selector.
+                $rules['show:'.$key] = '[data-s="'.$key.'"]{display:none!important}';
             }
         }
 
@@ -328,6 +346,40 @@ final class MotionSvgComposer
         }
 
         return $css.implode('', $rules);
+    }
+
+    /**
+     * ADR-080: a `scheme` select pins one palette. The authored theme style
+     * is `:root{LIGHT}@media (prefers-color-scheme:dark){:root{DARK}}`;
+     * `light` keeps only the first block, `dark` keeps only the second one,
+     * unconditionally. A theme style in any other shape is left alone, so
+     * the asset simply keeps following the device.
+     *
+     * @param array<string, array<string, mixed>> $byKey
+     * @param array<string, mixed> $values
+     */
+    private function applyScheme(DOMElement $root, array $byKey, array $values): void
+    {
+        $scheme = null;
+        foreach ($byKey as $key => $def) {
+            if ($def['type'] === 'select' && $def['role'] === 'scheme') {
+                $scheme = array_key_exists($key, $values) ? $values[$key] : $def['default'];
+                break;
+            }
+        }
+        if ($scheme !== 'light' && $scheme !== 'dark') {
+            return;
+        }
+        foreach ($root->childNodes as $child) {
+            if (! $child instanceof DOMElement || $child->localName !== 'style' || $child->getAttribute('id') !== 'asset-theme') {
+                continue;
+            }
+            if (preg_match('/^\s*:root\{([^{}]*)\}\s*@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root\{([^{}]*)\}\s*\}\s*$/', $child->textContent, $m) === 1) {
+                $child->textContent = ':root{'.($scheme === 'light' ? $m[1] : $m[2]).'}';
+            }
+
+            return;
+        }
     }
 
     private function insertStyle(DOMDocument $doc, DOMElement $root, string $id, string $css, bool $after): void
