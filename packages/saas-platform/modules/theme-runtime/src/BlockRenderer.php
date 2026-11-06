@@ -769,15 +769,59 @@ class BlockRenderer
      * children — out of scope here; documented, not hidden). Equal-width
      * flex distribution with a real, working gap is a strict improvement
      * over the previous "no layout at all" state, not a regression.
+     *
+     * 2026-11-06 (owner, Dev HUD): that equal flex distribution ignored
+     * `ratios`, so a lone child of a 2-column block (e.g. a motion) grew to
+     * the whole row instead of its own cell. The tracks now come from
+     * `ratios` as a CSS grid, which needs no per-child data: each declared
+     * column is one track, a child takes exactly one cell, and children
+     * beyond the declared count wrap to a new row. Below 768px it stacks
+     * into one column, as before.
      */
     protected function renderColumns(array $props, string $inner, string $id): string
     {
-        $ratios = $props['ratios'] ?? '1/2,1/2';
-        $count = max(1, count(array_map('trim', explode(',', $ratios))));
+        $tracks = $this->columnTracks((string) ($props['ratios'] ?? '1/2,1/2'));
+        $count = count($tracks);
         $gap = ['none' => '0', 'xs' => '0.5rem', 'sm' => '0.75rem', 'md' => '1.5rem', 'lg' => '2rem', 'xl' => '3rem'][$props['gap'] ?? 'md'] ?? '1.5rem';
         $safeId = preg_replace('/[^a-zA-Z0-9_\-]/', '', $id);
-        $style = "<style>#tb-{$safeId}{display:flex;flex-wrap:wrap;gap:{$gap};}#tb-{$safeId}>*{flex:1 1 0;min-width:0;}@media(max-width:768px){#tb-{$safeId}{flex-direction:column;}}</style>";
+        $template = count(array_unique($tracks)) === 1
+            ? "repeat({$count},minmax(0,1fr))"
+            : implode(' ', array_map(fn (string $fr): string => "minmax(0,{$fr}fr)", $tracks));
+        $style = "<style>#tb-{$safeId}{display:grid;grid-template-columns:{$template};gap:{$gap};}#tb-{$safeId}>*{min-width:0;}@media(max-width:768px){#tb-{$safeId}{grid-template-columns:minmax(0,1fr);}}</style>";
         return "{$style}<div id=\"tb-{$id}\" class=\"tb-columns\" data-columns=\"{$count}\">{$inner}</div>";
+    }
+
+    /**
+     * `ratios` ("1/2,1/2", "1/3,2/3", "1") → one relative track weight per
+     * column, normalised so the weights sum to the column count (equal
+     * columns are all "1"). A malformed list falls back to two equal
+     * columns, never to a guessed layout; at most 6 columns.
+     *
+     * @return list<string>
+     */
+    protected function columnTracks(string $ratios): array
+    {
+        $values = [];
+        foreach (array_slice(explode(',', $ratios), 0, 6) as $part) {
+            if (preg_match('/^\s*(\d{1,3})\s*(?:\/\s*(\d{1,3})\s*)?$/', $part, $m) !== 1) {
+                return ['1', '1'];
+            }
+            $den = isset($m[2]) ? (int) $m[2] : 1;
+            if ((int) $m[1] === 0 || $den === 0) {
+                return ['1', '1'];
+            }
+            $values[] = (int) $m[1] / $den;
+        }
+        if ($values === []) {
+            return ['1', '1'];
+        }
+        $sum = array_sum($values);
+        $count = count($values);
+
+        return array_map(
+            fn (float $v): string => rtrim(rtrim(number_format($v / $sum * $count, 3, '.', ''), '0'), '.'),
+            $values
+        );
     }
 
     /**
