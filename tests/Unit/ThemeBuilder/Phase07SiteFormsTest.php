@@ -116,10 +116,14 @@ class Phase07SiteFormsTest extends TestCase
         $this->assertStringContainsString('.tb-search-overlay__panel { width: 100%; height: 100%;', $css, 'full-screen dialog on phones');
     }
 
-    public function test_nav_header_icon_search_opens_a_local_popover_with_host_routes(): void
+    public function test_nav_header_icon_search_opens_only_the_search_dialog_with_host_routes(): void
     {
         $html = $this->render('nav_header', ['show_search' => true, 'search_scope' => 'posts', 'search_mode' => 'icon'], self::ENDPOINTS);
-        $this->assertStringContainsString('class="tb-nav-header-search-toggle tb-nav-header-icon-link"', $html);
+        // The icon opens the site-forms dialog straight away; the popover
+        // stays hidden (it would sit under the dialog otherwise).
+        $this->assertStringContainsString('class="tb-nav-header-search-toggle tb-nav-header-icon-link" aria-label="باز کردن جستجو" aria-haspopup="dialog" data-tb-search-open="tb-b1-search-form"', $html);
+        $this->assertStringNotContainsString('aria-controls="tb-b1-search-form"', $html);
+        $this->assertStringContainsString('if(searchToggle.hasAttribute("data-tb-search-open")&&window.TbSiteForms)return;', $html);
         $this->assertStringContainsString('class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden method="get" action="/search"', $html);
         $this->assertStringContainsString('data-tb-scope="posts"', $html);
         $this->assertStringContainsString('data-tb-block-asset="site_forms"', $html);
