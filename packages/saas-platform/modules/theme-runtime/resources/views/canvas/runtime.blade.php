@@ -160,18 +160,54 @@
         return true;
     }
 
+    // A block's markup may carry its own assets beside its root: nav_header
+    // opens with a <style>. Those are never the block's root.
+    function tagOf(el) { return String(el && el.tagName || '').toUpperCase(); }
+    function isAsset(el) { return ['STYLE', 'SCRIPT', 'LINK', 'TEMPLATE'].includes(tagOf(el)); }
+    // Assets that travel with the root on a live update: styles and
+    // stylesheets (a <script> parsed from a template would never run).
+    function isStyleAsset(el) { return tagOf(el) === 'STYLE' || (tagOf(el) === 'LINK' && el.getAttribute('rel') === 'stylesheet'); }
+
     function replaceNode(blockId, html) {
         if (typeof blockId !== 'string' || typeof html !== 'string') return null;
-        const current = document.querySelector('[data-tb-block-id="' + CSS.escape(blockId) + '"]');
+        const selector = '[data-tb-block-id="' + CSS.escape(blockId) + '"]';
+        const hooked = Array.from(document.querySelectorAll(selector));
+        const current = hooked.find((el) => !isAsset(el)) || hooked[0];
         if (!current) return null;
         const template = document.createElement('template');
         template.innerHTML = html.trim();
-        const replacement = template.content.firstElementChild;
-        if (!replacement || replacement.getAttribute('data-tb-block-id') !== blockId) return null;
+        const content = template.content;
+        const nodes = content.children ? Array.from(content.children) : (content.firstElementChild ? [content.firstElementChild] : []);
+        // The root is the first rendered element carrying the block id, not
+        // simply the first element (which may be the block's own <style>).
+        const replacement = nodes.find((el) => !isAsset(el) && el.getAttribute('data-tb-block-id') === blockId) || null;
+        if (!replacement) return null;
+        const at = nodes.indexOf(replacement);
+        const leading = nodes.slice(0, at).filter(isStyleAsset);
+        const trailing = nodes.slice(at + 1).filter(isStyleAsset);
         const selected = current.classList.contains('tb-selected');
         const scroll = { x: window.scrollX, y: window.scrollY };
         lifecycle('destroy', current, { blockId });
+        if (leading.length || trailing.length) {
+            // Retire the block's previous assets: the ones an earlier live
+            // update tagged, else the untagged run the server rendered right
+            // around the root (as many as the new markup brings).
+            let stale = Array.from(document.querySelectorAll('[data-tb-block-asset="' + CSS.escape(blockId) + '"]'));
+            if (!stale.length) {
+                const run = (start, step, limit) => {
+                    const out = [];
+                    for (let el = start; el && out.length < limit && isStyleAsset(el) && !el.hasAttribute('data-tb-block-asset'); el = el[step]) out.push(el);
+                    return out;
+                };
+                stale = run(current.previousElementSibling, 'previousElementSibling', leading.length)
+                    .concat(run(current.nextElementSibling, 'nextElementSibling', trailing.length));
+            }
+            stale.filter((el) => el !== current).forEach((el) => el.remove());
+            leading.forEach((el) => { el.setAttribute('data-tb-block-asset', blockId); current.before(el); });
+        }
         current.replaceWith(replacement);
+        let anchor = replacement;
+        trailing.forEach((el) => { el.setAttribute('data-tb-block-asset', blockId); anchor.after(el); anchor = el; });
         if (selected) replacement.classList.add('tb-selected');
         lifecycle('update', replacement, { blockId });
         window.scrollTo(scroll.x, scroll.y);
