@@ -97,6 +97,7 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
 
         $entries = new CustomerRuntimeAssetEntryFactory();
         $assets = [];
+        $locked = [];
         foreach ($sitePackage?->items ?? [] as $item) {
             $assetModel = $this->assets->findByCanonicalId($item->asset_id, $item->active_version);
             if ($assetModel === null) {
@@ -130,6 +131,7 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
                     'actor' => $context->actorId,
                     'correlation_id' => $context->correlationId,
                 ]);
+                $locked[] = ['asset_id' => $item->asset_id, 'reason' => $license->code];
                 continue;
             }
 
@@ -168,6 +170,7 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
             generatedAt: $generatedAt,
             assets: $assets,
             manifestChecksum: $manifestChecksum,
+            lockedAssets: $locked,
         );
 
         $this->auditEvents->record(MotionAuditEvents::CUSTOMER_DEPLOYMENT_PREPARED, [
