@@ -21,8 +21,17 @@ final class CustomerRuntimeManifest
 {
     public const SCHEMA_VERSION = '1.0';
 
+    /** Reasons a package item may be withheld; nothing else can be emitted. */
+    public const LOCK_REASONS = ['premium_license_required'];
+
     /**
      * @param list<CustomerRuntimeAssetEntry> $assets
+     * @param list<array{asset_id: string, reason: string}> $lockedAssets items of
+     *   this site's own package withheld by the license policy. Only the
+     *   asset id (already in the site's package) and a fixed reason code,
+     *   no reference, so a locked asset can never be rendered from it.
+     *   The customer editor uses it to say why a placed motion shows nothing.
+     *   Additive: consumers that predate it ignore the key.
      */
     public function __construct(
         public readonly string $siteReference,
@@ -33,10 +42,11 @@ final class CustomerRuntimeManifest
         public readonly array $assets,
         public readonly string $manifestChecksum,
         public readonly string $schemaVersion = self::SCHEMA_VERSION,
+        public readonly array $lockedAssets = [],
     ) {}
 
     /**
-     * @return array{schema_version: string, site_reference: string, template_reference: string, package_id: string, package_version: int, generated_at: string, assets: list<array<string,mixed>>, manifest_checksum: string}
+     * @return array{schema_version: string, site_reference: string, template_reference: string, package_id: string, package_version: int, generated_at: string, assets: list<array<string,mixed>>, locked_assets: list<array{asset_id: string, reason: string}>, manifest_checksum: string}
      */
     public function toArray(): array
     {
@@ -48,6 +58,10 @@ final class CustomerRuntimeManifest
             'package_version' => $this->packageVersion,
             'generated_at' => $this->generatedAt,
             'assets' => array_map(fn (CustomerRuntimeAssetEntry $a): array => $a->toArray(), $this->assets),
+            'locked_assets' => array_values(array_map(
+                fn (array $l): array => ['asset_id' => (string) $l['asset_id'], 'reason' => (string) $l['reason']],
+                array_filter($this->lockedAssets, fn (array $l): bool => in_array($l['reason'] ?? null, self::LOCK_REASONS, true))
+            )),
             'manifest_checksum' => $this->manifestChecksum,
         ];
     }

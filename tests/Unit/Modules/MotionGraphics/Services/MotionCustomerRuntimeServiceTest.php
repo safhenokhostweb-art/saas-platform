@@ -84,6 +84,7 @@ class MotionCustomerRuntimeServiceTest extends TestCase
         bool $licenseAllows = true,
         ?MotionAssetReadContract $assets = null,
         ?MotionRuntimeProjectionReadContract $projections = null,
+        ?\App\Modules\MotionGraphics\Support\MotionAssetLicensePolicy $policy = null,
     ): array {
         $tenantContext = $this->tenantContext($site, $flagEnabled);
         $auditEvents = Mockery::mock(MotionAuditEvents::class)->shouldIgnoreMissing();
@@ -92,7 +93,7 @@ class MotionCustomerRuntimeServiceTest extends TestCase
 
         $service = new MotionCustomerRuntimeService(
             $tenantContext, $auditEvents, new FakeMotionLicenseGateway(allow: $licenseAllows), $assets, $projections,
-            \Tests\Support\MotionLicensePolicyFactory::allowAll(),
+            $policy ?? \Tests\Support\MotionLicensePolicyFactory::allowAll(),
         );
 
         return [$service, $assets, $projections];
@@ -186,6 +187,48 @@ class MotionCustomerRuntimeServiceTest extends TestCase
         } catch (MotionAdapterFailClosedException $e) {
             $this->assertSame('no_active_package', $e->failureCode);
         }
+    }
+
+    public function test_a_premium_item_without_a_license_is_withheld_and_listed_as_locked(): void
+    {
+        $site = $this->createSite();
+        $this->activePackage($site);
+        // The stub asset declares no license_tier, so the policy treats it as premium.
+        [$service, $assets, $projections] = $this->service($site, policy: \Tests\Support\MotionLicensePolicyFactory::freeOnly());
+        $this->stubAssetAndProjection($assets, $projections, $site, 'motion-1', 1);
+
+        $manifest = $service->buildManifestForSite($site, new MotionAdapterContext('customer-site:'.$site->id, (string) $site->id, 'corr-1'));
+        $array = $manifest->toArray();
+
+        $this->assertSame([], $array['assets'], 'a locked asset is never deliverable');
+        $this->assertSame([['asset_id' => 'motion-1', 'reason' => 'premium_license_required']], $array['locked_assets']);
+        $this->assertStringNotContainsString('/motion/motion-1/', json_encode($array), 'a locked entry carries no reference');
+    }
+
+    public function test_an_entitled_site_has_no_locked_assets(): void
+    {
+        $site = $this->createSite();
+        $this->activePackage($site);
+        [$service, $assets, $projections] = $this->service($site);
+        $this->stubAssetAndProjection($assets, $projections, $site, 'motion-1', 1);
+
+        $array = $service->buildManifestForSite($site, new MotionAdapterContext('customer-site:'.$site->id, (string) $site->id, 'corr-1'))->toArray();
+
+        $this->assertCount(1, $array['assets']);
+        $this->assertSame([], $array['locked_assets']);
+    }
+
+    public function test_only_known_lock_reasons_leave_the_platform(): void
+    {
+        $manifest = new \App\Modules\MotionGraphics\DTO\CustomerRuntimeManifest(
+            '1', 'template-1', 'pkg', 1, now()->toIso8601String(), [], 'checksum',
+            lockedAssets: [
+                ['asset_id' => 'motion-1', 'reason' => 'premium_license_required'],
+                ['asset_id' => 'motion-2', 'reason' => 'some internal detail'],
+            ],
+        );
+
+        $this->assertSame([['asset_id' => 'motion-1', 'reason' => 'premium_license_required']], $manifest->toArray()['locked_assets']);
     }
 
     public function test_the_manifest_never_carries_forbidden_fields(): void
