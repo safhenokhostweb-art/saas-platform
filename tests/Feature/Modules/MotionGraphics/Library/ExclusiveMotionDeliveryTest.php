@@ -3,6 +3,7 @@
 namespace Tests\Feature\Modules\MotionGraphics\Library;
 
 use App\Models\Module;
+use App\Models\ModuleLicense;
 use App\Models\Site;
 use App\Models\User;
 use App\Modules\MotionGraphics\Models\MotionBespokeAssignment;
@@ -11,6 +12,7 @@ use App\Modules\MotionGraphics\Models\MotionBespokePurchase;
 use App\Modules\MotionGraphics\Models\SiteAssetPackageItem;
 use App\Modules\MotionGraphics\Services\MotionCustomerRuntimeService;
 use App\Modules\MotionGraphics\Services\MotionLibraryCatalogService;
+use App\Modules\MotionGraphics\Support\MotionAssetLicensePolicy;
 use App\Modules\MotionGraphics\Support\MotionPrivateAssetUrl;
 use App\Modules\MotionGraphics\Support\RealMotionLicenseGateway;
 use App\Services\LicenseServerService;
@@ -264,6 +266,43 @@ final class ExclusiveMotionDeliveryTest extends TestCase
         $assignment->update(['status' => MotionBespokeAssignment::STATUS_REVOKED]);
         $this->fetchManifest($siteA)->assertOk()->assertJson(['available' => false, 'reason' => 'no_active_package']);
         $this->get($url)->assertNotFound();
+    }
+
+    public function test_locked_premium_items_and_bespoke_assets_coexist_in_one_manifest(): void
+    {
+        $siteA = $this->createSite('A');
+        $this->writeExclusive($siteA->id);
+
+        // The public package, premium item included, is installed while the
+        // site is licensed; the exclusive asset is published afterwards and
+        // reaches the site only through its bespoke assignment.
+        config(['motion-library.exclusive_assets' => []]);
+        $this->provision($siteA, $this->admin());
+        config(['motion-library.exclusive_assets' => [self::SLUG => 'v1']]);
+        $this->app->make(MotionLibraryCatalogService::class)->sync();
+
+        // The premium license lapses: without re-activation the premium item
+        // becomes a locked asset (e6295b32).
+        $premiumModule = Module::query()->where('slug', MotionAssetLicensePolicy::PREMIUM_MODULE_SLUG)->value('id');
+        foreach (ModuleLicense::query()->where('site_id', $siteA->id)->where('module_id', $premiumModule)->get() as $license) {
+            $this->app->make(ModuleLicenseService::class)->revoke($license);
+        }
+
+        $commission = MotionBespokeCommission::query()->create([
+            'site_id' => $siteA->id, 'title' => 'Hero A', 'status' => MotionBespokeCommission::STATUS_PUBLISHED,
+            'asset_id' => $this->exclusiveUuid(), 'published_at' => now(),
+        ]);
+        MotionBespokeAssignment::query()->create([
+            'commission_id' => $commission->id, 'site_id' => $siteA->id, 'asset_id' => $this->exclusiveUuid(),
+            'active_version' => 1, 'status' => MotionBespokeAssignment::STATUS_ACTIVE, 'assigned_at' => now(),
+        ]);
+
+        $manifest = $this->fetchManifest($siteA)->assertOk()->assertJsonPath('available', true)
+            ->assertJsonCount(2, 'assets')
+            ->assertJsonCount(1, 'locked_assets')
+            ->assertJsonPath('locked_assets.0.reason', 'premium_license_required');
+        $this->assertNotNull($this->exclusiveEntry($manifest), 'the bespoke asset is delivered next to the free package item');
+        $this->assertContains('/motion/hero-motion/v2/animation.svg', array_column($manifest->json('assets'), 'optimized_reference'));
     }
 
     public function test_a_bespoke_bound_version_is_not_retired_by_a_library_update(): void

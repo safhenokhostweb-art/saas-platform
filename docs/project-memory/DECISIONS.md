@@ -5031,5 +5031,6 @@ There is no migration or Composer change.
 - Tests: `ExclusiveMotionDeliveryTest` (owner sees it with full fields and a
   signed URL; another site sees it neither in its manifest nor at any
   re-scoped, forged, unsigned, public or expired URL; bespoke-only manifest
-  and immediate revocation; bespoke-bound version not retired; public
+  and immediate revocation; locked premium items next to bespoke assets;
+  bespoke-bound version not retired; public
   catalog unchanged; catalog refusals) and `MotionPrivateAssetUrlTest`.
