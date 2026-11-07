@@ -213,6 +213,23 @@
     .tb-trust-badges-row,
     .tb-dynamic-product-items { grid-template-columns: minmax(0, 1fr); }
 }
+/* 2026-11-07 (owner, Canvas Dev HUD): a full-width slider in a columns /
+   layout-grid cell. Its hero min-height above is sized from the viewport
+   (48vw, 540px on phones), so in a half cell it ignored aspect_ratio and
+   stood about twice as tall as a 16:9 module:motion beside it. In a cell
+   the slide follows its own aspect_ratio, so equal ratios give equal
+   heights. Caption, type and controls then scale with the cell (cqi), not
+   the viewport. The caption sits at the bottom above the progress bar
+   (bottom 3.25rem + 2rem), and its 3.25rem sides clear the prev/next
+   arrows, which a short slide brings level with the title. */
+.tb-columns .tb-slider-full .tb-slide,
+.tb-layout-grid .tb-slider-full .tb-slide { min-height: 0; }
+@container tb-slot (max-width: 767.98px) {
+    .tb-slider-full .tb-slide-caption { width: 100%; margin: 0; padding: clamp(1rem, 5cqi, 2rem) 3.25rem 5.75rem !important; align-self: flex-end; }
+    .tb-slider-full .tb-slide-title { font-size: clamp(1.1rem, 5cqi, 2rem) !important; }
+    .tb-slider-full .tb-slide-subtitle { font-size: clamp(0.875rem, 2.6cqi, 1.1rem) !important; line-height: 1.7; }
+    .tb-slider-full .tb-carousel-thumbs { display: none; }
+}
 /* A grid that is itself the slot (product_grid renders its .tb-grid as the
    block root) cannot query its own width. It fits as many columns as hold a
    14rem card instead, never more than its own count; auto-fill keeps the
