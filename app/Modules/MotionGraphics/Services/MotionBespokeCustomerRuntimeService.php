@@ -11,8 +11,8 @@ use App\Modules\MotionGraphics\Models\MotionBespokeAssignment;
 use App\Modules\MotionGraphics\Models\MotionBespokeCommission;
 use App\Modules\MotionGraphics\Models\MotionBespokePurchase;
 use App\Modules\MotionGraphics\Support\AbstractMotionAdapter;
+use App\Modules\MotionGraphics\Support\BespokeAssignedAssets;
 use App\Modules\MotionGraphics\Support\MotionAuditEvents;
-use App\Modules\MotionGraphics\Support\ReadModelMapper;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
@@ -65,40 +65,9 @@ final class MotionBespokeCustomerRuntimeService extends AbstractMotionAdapter
             throw new MotionAdapterFailClosedException($entitlement->code, $entitlement->reason);
         }
 
-        $assignments = MotionBespokeAssignment::query()
-            ->where('site_id', $site->id)
-            ->where('status', MotionBespokeAssignment::STATUS_ACTIVE)
-            ->get();
-
-        $entries = [];
-        foreach ($assignments as $assignment) {
-            $assetModel = $this->assets->findByCanonicalId($assignment->asset_id, $assignment->active_version);
-            if ($assetModel === null) {
-                // Fail closed for THIS entry only — a version that stopped
-                // being readable (e.g. retired) never silently disappears
-                // from the count without a trace, but it also never blocks
-                // the rest of this site's legitimately readable assets.
-                continue;
-            }
-
-            $projection = $this->projections->projectAsset($assignment->asset_id, $context->siteId);
-            if ($projection === null) {
-                continue;
-            }
-
-            $projectionDto = ReadModelMapper::toRuntimeProjectionDTO($projection);
-
-            $entries[] = new CustomerRuntimeAssetEntry(
-                assetId: $projectionDto->assetReference->assetId,
-                publishedVersion: $projectionDto->publishedVersion,
-                optimizedReference: $projectionDto->optimizedReference,
-                checksum: (string) ($projectionDto->assetReference->compatibility['checksum'] ?? ''),
-                assetType: $projectionDto->assetReference->type,
-                themeTokens: $projectionDto->themeTokens,
-                placementRules: $projectionDto->placementRules,
-                responsiveRules: [],
-            );
-        }
+        // ADR-081: the same entries /manifest appends — full picker fields,
+        // and exclusive references signed for this site.
+        $entries = (new BespokeAssignedAssets($this->assets, $this->projections))->entriesFor((int) $site->id);
 
         $this->auditEvents->record(MotionAuditEvents::RUNTIME_REQUESTED, [
             'site_id' => $site->id,

@@ -28,7 +28,7 @@ use Illuminate\Http\Response;
  */
 final class MotionLibraryAssetController
 {
-    private const MAX_QUERY_BYTES = 4096;
+    public const MAX_QUERY_BYTES = 4096;
 
     public function __invoke(Request $request, string $slug, string $version): Response
     {
@@ -36,6 +36,9 @@ final class MotionLibraryAssetController
             array_key_exists($slug, MotionLibraryCatalogService::ASSETS) && preg_match('/^v[1-9][0-9]{0,3}$/', $version) === 1,
             404
         );
+        // ADR-081: a file that declares an owner is never public, even if its
+        // slug were ever listed here; it is served by MotionPrivateAssetController.
+        abort_if(MotionLibraryCatalogService::fileOwnerSiteId($slug, $version) !== null, 404);
         abort_if(strlen((string) $request->server('QUERY_STRING', '')) > self::MAX_QUERY_BYTES, 414);
 
         $svg = MotionLibraryCatalogService::render($slug, $version, $request->query());

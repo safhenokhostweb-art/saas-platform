@@ -4928,3 +4928,108 @@ There is no migration or Composer change.
     normalization, nested `module:motion` validation, and the browser spec
     `canvas-motion-widget.spec.js`, which inserts into a section, picks a
     motion, edits parameters, saves, reloads and checks the render.
+
+## ADR-081
+
+**Title:** Exclusive (Site-Owned) Motions Beside the Public Catalog
+
+**Status:** Accepted
+
+**Date:** 2026-11-07
+
+**Context:**
+
+- The public motion catalog (ADR-078/079) gives every licensed site the same
+  motions, split by tier: free for every site, premium with the
+  `motion-graphics-premium` license.
+- The owner also needs custom motions that are active for one specific site
+  and invisible to every other site, in the manifest and at the file URL.
+- An audit found most of the model already in place:
+  - `motion_graphics.ownership_type` (`global` / `customer_specific`) and
+    `owner_site_identifier` (numeric site id), enforced by the model;
+  - the runtime projection and `SitePackageReader` return nothing to a site
+    that does not own a `customer_specific` asset;
+  - the bespoke commission, purchase and assignment tables, with the
+    `/api/motion-runtime/bespoke-manifest` endpoint.
+- Four connections were missing:
+  1. customer-site reads only `/api/motion-runtime/manifest`, so bespoke
+     assignments never reached the canvas picker;
+  2. the bespoke entries had no `name`, `category` or `parameters`;
+  3. the catalog always published `global`, and the only file route is
+     public, unauthenticated and immutably cached;
+  4. `/manifest` failed with `no_active_package` for a site that has bespoke
+     assignments but no package.
+- Constraints: one owner site per motion; no customer-site change or
+  release; hero-motion and business-growth-motion keep their bytes, URLs,
+  versions and manifest checksums.
+
+**Decision:**
+
+1. **One manifest.** `/api/motion-runtime/manifest` appends the site's
+   active bespoke assignments after its package items. An asset the package
+   already delivers is not repeated. A site with only bespoke assignments
+   gets a manifest with `template_reference` `motion-bespoke` and an empty
+   `package_id`. `no_active_package` now means neither an active package nor
+   an active assignment. `/bespoke-manifest` stays, and both use one
+   builder, so every entry carries `name`, `category` and `parameters`.
+   Bespoke entries get no tier check: the purchase recorded before an admin
+   could assign the commission is the entitlement.
+2. **Ownership in metadata.json.** `MotionLibraryCatalogService::EXCLUSIVE_ASSETS`
+   lists exclusive library assets (slug => version directory). The existing
+   metadata `ownership` block is extended:
+   `{"type": "customer_specific", "site_id": N, "customer_restriction": true}`.
+   Sync refuses all of these:
+   - an exclusive slug that does not declare such an owner;
+   - a public slug that does;
+   - an owner site that does not exist;
+   - a restriction without `type: customer_specific`;
+   - the reserved slug `private`;
+   - any ownership change of an already published motion (publish a new slug
+     instead; changing it would strand bound sites).
+   Exclusive assets are package references like the public ones. Activation
+   binds an optional asset only for a site the projection lets read it, so
+   only the owner installs it and every other site's skip is audited.
+3. **Site-scoped signed URLs.** An exclusive version stores the unsigned
+   base `/motion/private/{slug}/{vN}/animation.svg`, which no route serves.
+   The manifest signs it for the requesting site:
+   `/motion/private/{slug}/{vN}/{site}/{expires}/{hmac}/animation.svg`.
+   - The HMAC covers slug, version, site and expiry, under a key derived
+     from APP_KEY.
+   - The signature is in the path, because customer-site appends runtime
+     parameters as a query string.
+   - Expiry is aligned to 7-day windows (valid one to two windows), so every
+     manifest inside a window has the same URL, checksum and browser cache.
+   - `MotionPrivateAssetController` re-checks on every request that the
+     motion is published, customer_specific, and owned by the signed site,
+     that the files declare that owner, and that an active assignment exists
+     when one is used. Revocation is therefore immediate.
+   - Every refusal is a 404, and caching is `private`.
+   - The public route also refuses any file that declares an owner.
+4. **Version binding.** An active bespoke assignment keeps its version
+   published, like a bound package item (ADR-079 §7).
+
+**Consequences:**
+
+- customer-site needs no change: the signed reference is root-relative and
+  passes `MotionRuntimeManifestReader`, which already accepts any
+  `optimized_reference` and resolves it against the platform URL.
+- The motion-graphics package (with the library files) is not mirrored into
+  customer-site, so exclusive files stay on the platform.
+- Adding an exclusive motion needs:
+  1. the library files with the ownership block, plus its slug in
+     `EXCLUSIVE_ASSETS`, then a release;
+  2. a catalog sync (`MotionGraphicsDefaultSeeder`, owner-run in production);
+  3. either re-activating the owner site's library package, or a bespoke
+     commission, purchase and assignment.
+  Exclusive assets follow their metadata `license_tier` on the package path
+  like any asset, so an exclusive motion that should not need the premium
+  license declares `"license_tier": "free"`.
+- Sites with only public motions keep a byte-identical manifest: public
+  references are untouched, and the checksum payload is unchanged when no
+  bespoke entry exists. Package item order in the manifest remains the
+  relation's index order, as before.
+- Tests: `ExclusiveMotionDeliveryTest` (owner sees it with full fields and a
+  signed URL; another site sees it neither in its manifest nor at any
+  re-scoped, forged, unsigned, public or expired URL; bespoke-only manifest
+  and immediate revocation; bespoke-bound version not retired; public
+  catalog unchanged; catalog refusals) and `MotionPrivateAssetUrlTest`.
