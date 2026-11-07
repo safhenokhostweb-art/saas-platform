@@ -241,6 +241,19 @@
 .tb-columns > .tb-grid.tb-grid-cols-6, .tb-layout-grid > .tb-grid.tb-grid-cols-6 { --tb-fit-cols: 6; }
 .tb-columns > .tb-grid[class*="tb-grid-cols-"],
 .tb-layout-grid > .tb-grid[class*="tb-grid-cols-"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, max(14rem, calc((100% - (var(--tb-fit-cols, 1) - 1) * var(--tb-grid-gap, 1.5rem)) / var(--tb-fit-cols, 1)))), 1fr)); }
+/* 2026-11-07 (owner, live storefront): vertical balance in a columns row.
+   A widget is the cell itself (renderColumns() emits no column wrapper),
+   and grid cells already stretch to the row's height, so cards, forms and
+   sliders side by side stay equal-height and keep doing so. Widgets that
+   draw no box of their own sat at the top of a cell that a taller
+   neighbour (e.g. a slider) had stretched, leaving a gap beneath them:
+   - a motion keeps the full cell height and centres its artwork inside,
+     so its placement styling still covers the whole cell;
+   - heading, text, rich text and image centre the widget in the cell.
+   Below 768px the columns stack, so every row is its own height and this
+   is a no-op. */
+.tb-columns > :is(.tb-module-motion, .tb-module-motion-fallback) { display: flex; flex-direction: column; justify-content: center; }
+.tb-columns > :is(.tb-heading, .tb-text, .tb-rich-text, .tb-image) { align-self: center; }
 
 /* ─── stats row (real Phase 2g drift: no CSS at all in one host) ────── */
 .tb-stats-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
