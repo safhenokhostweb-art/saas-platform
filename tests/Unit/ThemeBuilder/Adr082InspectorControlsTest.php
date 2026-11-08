@@ -177,8 +177,24 @@ class Adr082InspectorControlsTest extends TestCase
         foreach ($schema as $key => $field) {
             $byPanel[$field['panel']][] = $key;
         }
-        $this->assertSame(['bg_color', 'text_color', 'cta_glow_enabled', 'cta_glow_color'], $byPanel['style']);
-        $this->assertSame(['sticky', 'sticky_hide_on_scroll', 'transparent_over_hero', 'transparent_text_color'], $byPanel['advanced']);
+        $this->assertSame([
+            'bg_color', 'text_color',
+            // step 3: the header container, then the menu
+            'min_height', 'padding', 'items_gap', 'content_width', 'content_max_width', 'border_bottom_width', 'border_bottom_color', 'header_shadow', 'backdrop_blur',
+            'menu_typography', 'menu_gap', 'menu_item_padding_x', 'menu_item_padding_y', 'menu_color', 'menu_color_hover', 'menu_color_active', 'menu_bg', 'menu_bg_hover', 'menu_bg_active',
+            'pointer', 'pointer_animation', 'pointer_color', 'pointer_thickness',
+            // step 4: the phone drawer and burger
+            'drawer_bg', 'drawer_text', 'drawer_divider_color', 'drawer_width', 'drawer_overlay_color', 'burger_color', 'burger_size',
+            'cta_glow_enabled', 'cta_glow_color',
+        ], $byPanel['style']);
+        $this->assertSame(['menu_color', 'menu_color_hover', 'menu_color_active'], array_keys(array_filter($schema, fn ($f) => ($f['state_group'] ?? null) === 'menu_text')));
+        $this->assertSame([
+            'sticky', 'sticky_hide_on_scroll',
+            // step 4: sticky options and the scrolled look
+            'sticky_devices', 'sticky_offset', 'scroll_threshold', 'sticky_shrink', 'sticky_shrink_height', 'sticky_logo_scale', 'scrolled_bg_color', 'scrolled_text_color', 'scrolled_shadow',
+            'transparent_over_hero', 'transparent_text_color',
+            'burger_breakpoint', 'drawer_style', 'drawer_side',
+        ], $byPanel['advanced']);
         $this->assertContains('logo_image', $byPanel['content']);
         $this->assertSame(true, $definition['editor']['hideGenericStyle']);
 

@@ -4522,6 +4522,10 @@ class BlockRenderer
             if ($this->flag($props['sticky_hide_on_scroll'] ?? false)) {
                 $headerFlags[] = 'smart';
             }
+            // ADR-082 step 4: the scroll shrink can be turned off.
+            if (array_key_exists('sticky_shrink', $props) && !$this->flag($props['sticky_shrink'])) {
+                $headerFlags[] = 'noshrink';
+            }
         }
         if ($this->flag($props['transparent_over_hero'] ?? false)) {
             $headerFlags[] = 'overlay';
@@ -4535,10 +4539,32 @@ class BlockRenderer
         $headerAttrs = $headerFlags !== []
             ? ' data-tb-header="' . implode(' ', $headerFlags) . '" data-tb-overlay-text="' . $overlayText . '"'
             : '';
+        // ADR-082 step 4: behaviour read by blocks/site-header.js (integers
+        // and allowlisted words only; nothing when the value is the default).
+        if ($headerFlags !== []) {
+            $threshold = $props['scroll_threshold'] ?? null;
+            if (is_numeric($threshold) && (int) $threshold !== 8 && (int) $threshold >= 0 && (int) $threshold <= 600) {
+                $headerAttrs .= ' data-tb-scroll-threshold="' . (int) $threshold . '"';
+            }
+        }
+        if (in_array('sticky', $headerFlags, true)) {
+            $offset = $props['sticky_offset'] ?? null;
+            if (is_numeric($offset) && (int) $offset > 0 && (int) $offset <= 300) {
+                $headerAttrs .= ' data-tb-sticky-offset="' . (int) $offset . '"';
+            }
+            $stickyOn = ['desktop' => 'desktop', 'desktop_tablet' => 'tablet'][$props['sticky_devices'] ?? ''] ?? null;
+            if ($stickyOn !== null) {
+                $headerAttrs .= ' data-tb-sticky-on="' . $stickyOn . '"';
+            }
+        }
+        $burger = $props['burger_breakpoint'] ?? 'mobile';
+        if (in_array($burger, ['tablet', 'always', 'never'], true)) {
+            $headerAttrs .= ' data-tb-burger="' . $burger . '"';
+        }
 
         $scripts = $headerFlags !== [] || $hasMegaMenu ? $this->siteHeaderAssets() : '';
         $scriptRootId = json_encode($rootId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?: '""';
-        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();}else{document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){if(searchToggle.hasAttribute("data-tb-search-open")&&window.TbSiteForms)return;setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])");if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
+        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();}else{document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){if(searchToggle.hasAttribute("data-tb-search-open")&&window.TbSiteForms)return;setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])");if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});if(panel){var here=location.pathname.replace(/\/+$/,"")||"/";panel.querySelectorAll(":scope>a,.tb-nav-header-link,.nav-link").forEach(function(a){if(a.hasAttribute("aria-current"))return;try{var u=new URL(a.getAttribute("href")||"",location.href);if(u.origin===location.origin&&(u.pathname.replace(/\/+$/,"")||"/")===here)a.setAttribute("aria-current","page");}catch(e){}});}var bp=host.getAttribute("data-tb-burger");if(bp){var wide=window.matchMedia("(min-width: 1024px)"),mid=window.matchMedia("(min-width: 768px)");var mode=function(){var drawer=mid.matches&&(bp==="always"||(bp==="tablet"&&!wide.matches));root.classList.toggle("tb-nav-header-root--drawer",drawer);root.classList.toggle("tb-nav-header-root--inline",bp==="never"&&!mid.matches);if(!drawer&&mid.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};mode();[wide,mid].forEach(function(m){if(m.addEventListener)m.addEventListener("change",mode);else m.addListener(mode);});}var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true"&&!root.classList.contains("tb-nav-header-root--drawer"))setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
 
         // ADR-082 step 2: the header layout lives in the shared CSS
         // (theme-runtime-header.css, shipped by theme-runtime::css.blocks and
@@ -4546,8 +4572,16 @@ class BlockRenderer
 
         $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
         $headerClass = 'tb-nav-header' . $menuAlignment;
+        // ADR-082 step 3: the Style tab (menu, states, spacing, shadow, blur)
+        // as the header's own --tb-hdr-* values; nothing when nothing is set.
+        $headerStyle = Widget\HeaderStyleVars::forHeader($rootId, $props);
+        if ($headerStyle['classes'] !== []) {
+            $headerClass .= ' ' . implode(' ', $headerStyle['classes']);
+        }
+        $headerSetAttr = $headerStyle['set'] !== [] ? ' data-tb-hdr-set="' . implode(' ', $headerStyle['set']) . '"' : '';
 
-        return '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
+        return $headerStyle['style']
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
             . '<div class="' . $rootClass . '">'
             . '<div class="tb-nav-header-inner">'
             . $orderedInner

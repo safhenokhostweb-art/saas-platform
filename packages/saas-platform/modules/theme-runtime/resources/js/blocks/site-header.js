@@ -39,9 +39,9 @@
     return l !== null && l > 0.45 ? '#111827' : '#ffffff';
   }
 
-  /** Scroll state from the previous and current offsets. */
-  function scrollState(prevY, y, headerHeight, wasHidden) {
-    const scrolled = y > 8;
+  /** Scroll state from the previous and current offsets; `threshold` (default 8px) is when it counts as scrolled. */
+  function scrollState(prevY, y, headerHeight, wasHidden, threshold) {
+    const scrolled = y > (Number.isFinite(threshold) ? threshold : 8);
     let hidden = wasHidden;
     if (y <= headerHeight) hidden = false;
     else if (y > prevY + 6) hidden = true;
@@ -108,11 +108,30 @@
     const host = bannerOf(block);
     const sticky = flags.includes('sticky');
     const hero = flags.includes('overlay') ? heroAfter(host) : null;
+    // ADR-082 step 4: behaviour from the block (integers / allowlisted words, set by the renderer).
+    const threshold = parseInt(block.getAttribute('data-tb-scroll-threshold') || '', 10);
+    const offset = parseInt(block.getAttribute('data-tb-sticky-offset') || '', 10);
+    const stickyOn = block.getAttribute('data-tb-sticky-on');
+    const stickyQuery = stickyOn === 'desktop' ? '(min-width: 1024px)' : stickyOn === 'tablet' ? '(min-width: 768px)' : null;
 
     if (sticky) {
-      host.classList.add('tb-hdr-sticky');
       if (host !== block) block.style.position = 'static'; // the banner sticks, not the block inside it
-      if (flags.includes('smart')) host.classList.add('tb-hdr-smart');
+      if (flags.includes('noshrink')) host.classList.add('tb-hdr-no-shrink');
+      if (/(^|\s)scrolled-shadow(\s|$)/.test(block.getAttribute('data-tb-hdr-set') || '')) host.classList.add('tb-hdr-own-shadow');
+      if (offset > 0) host.style.top = offset + 'px';
+      // Sticky on every device, or only from the tablet / desktop width up.
+      const applySticky = () => {
+        const on = !stickyQuery || root.matchMedia(stickyQuery).matches;
+        host.classList.toggle('tb-hdr-sticky', on);
+        host.classList.toggle('tb-hdr-smart', on && flags.includes('smart'));
+        if (!on) host.classList.remove('is-hidden');
+      };
+      applySticky();
+      if (stickyQuery) {
+        const mq = root.matchMedia(stickyQuery);
+        if (mq.addEventListener) mq.addEventListener('change', applySticky);
+        else if (mq.addListener) mq.addListener(applySticky);
+      }
     }
     if (hero) {
       const wanted = block.getAttribute('data-tb-overlay-text') || 'auto';
@@ -133,7 +152,7 @@
     function update() {
       ticking = false;
       const y = root.scrollY;
-      const state = scrollState(prevY, y, host.offsetHeight, hidden);
+      const state = scrollState(prevY, y, host.offsetHeight, hidden, Number.isFinite(threshold) ? threshold : undefined);
       hidden = state.hidden && host.classList.contains('tb-hdr-smart') && !host.contains(document.activeElement);
       host.classList.toggle('is-scrolled', state.scrolled);
       host.classList.toggle('is-hidden', hidden);

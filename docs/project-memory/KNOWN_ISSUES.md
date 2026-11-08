@@ -413,6 +413,27 @@ Firebase FCM is listed in Phase M2.1 backlog but is explicitly optional. Push no
 
 ---
 
+### TD-006 — MEDIUM | OPEN (2026-11-08)
+
+**Title:** Legacy storefront layout squeezes the theme's header blocks into one row  
+**Module:** customer-site — `resources/views/themes/default/layout.blade.php` (blog, platform products)  
+**Description:**  
+On `/blog` at ≥ 768px, the layout's host wrapper `.tb-header-nav-wrap` (`display:flex`, row) holds the canvas theme's two `nav_header` blocks (top bar and main header) side by side. At 1280px the main header gets 830px and wraps its brand text one word per line (header height 210px). Below 768px the wrapper is `display:none` and the host menu shows instead.  
+**Evidence:** Live check after Hub deployments 315/316 (2026-11-08). An A/B on the live page put the header rules back in their pre-ADR-082 inline position and measured identical boxes. So the defect predates the header CSS move and does not come from it.  
+**Plan:** A separate work unit. Stack the wrapper's header blocks, or let the theme's header blocks own the chrome as canvas pages do. Prove it with the header pixel ratchet plus a legacy-layout case.
+
+---
+
+### TD-007 — LOW | OPEN (2026-11-08)
+
+**Title:** Stale browser spec `tests/browser/phase07-site-forms.spec.ts` (header search on phones)  
+**Module:** saas-platform — browser tests  
+**Description:**  
+The spec still expects the header's *input* search to fold into an icon on phones. WU-HEADER-SEARCH-ICON (release 0fcade6a) made the field stay on phones and updated `Phase07SiteFormsTest::test_nav_header_input_search_stays_flat_on_phones_and_uses_host_routes`, but not this spec. The spec fails on main, before and after ADR-082.  
+**Plan:** A separate work unit. Align the spec's phone branch with the unit test (field visible, no toggle in input mode; the icon only with `search_mode=icon`).
+
+---
+
 ## TEMPORARY WORKAROUNDS
 
 ### TW-001 — ACTIVE

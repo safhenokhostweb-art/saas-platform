@@ -1356,8 +1356,33 @@ proposal were approved on 2026-11-08 with three decisions:
 - Pixel- and computed-style-identical: 20 screenshots and 20 style dumps
   match the pre-change baseline (ADR-082, step 2).
 
-### 18.3 Steps 3–5
+### 18.3 Step 3: header Style tab (done, branch `feat/header-pro-style-controls`)
 
-Header Style controls, then sticky-after-scroll / burger breakpoint /
-drawer, then the active link and accessibility, following the approved
-proposal.
+- Container: height, padding and gap per device; full or boxed width;
+  bottom border; shadow; backdrop blur.
+- Menu: typography per device, gap, item padding, Normal / Hover / Active
+  text and background, and 7 pointer styles with 4 animations.
+- Active item marked with `aria-current`.
+- All of it through `HeaderStyleVars::forHeader()`. Default headers stay
+  pixel-identical (ADR-082, step 3).
+
+### 18.4 Step 4: behaviour and the mobile drawer (done, same branch; ships with step 3)
+
+- Sticky header:
+  - which devices it sticks on;
+  - offset from the top;
+  - scroll threshold;
+  - optional shrink, with its height and logo scale;
+  - background, text colour and shadow after scrolling.
+- Burger breakpoint: mobile, tablet, always, or never (inline links).
+- Drawer:
+  - style: side, full screen, or dropdown;
+  - side: start or end;
+  - colours, width, overlay, dividers;
+  - burger colour and size.
+- A toggle shows its schema default in both editors.
+- Default headers stay pixel-identical (ADR-082, step 4).
+
+### 18.5 Step 5
+
+Accessibility, following the approved proposal.

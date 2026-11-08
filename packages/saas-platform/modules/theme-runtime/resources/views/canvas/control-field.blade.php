@@ -15,7 +15,7 @@
 <template x-if="schemaDef.type === 'range'">
     <div class="tbc" :data-testid="'tbc-range-' + propKey">
         <div class="tbc-row">
-            <input type="range" class="tbc-range" :id="'ctrl-' + propKey"
+            <input type="range" class="tbc-range" :class="ctlRange(propKey).size === '' ? 'is-empty' : ''" :id="'ctrl-' + propKey"
                 :min="CanvasControls.rangeLimits(schemaDef, ctlRange(propKey).unit).min"
                 :max="CanvasControls.rangeLimits(schemaDef, ctlRange(propKey).unit).max"
                 :step="CanvasControls.rangeLimits(schemaDef, ctlRange(propKey).unit).step"

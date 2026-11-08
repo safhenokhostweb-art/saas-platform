@@ -156,6 +156,19 @@ test('selectOptions accepts a map or a list', () => {
   assert.deepEqual(plain(C.selectOptions({ options: [{ value: 'x', label: 'ایکس' }, 'y'] })), [{ value: 'x', label: 'ایکس' }, { value: 'y', label: 'y' }]);
 });
 
+test('a toggle shows its stored value, else the schema default (as conditions read it)', () => {
+  const host = {
+    selectedBlock: { props: { a: false, b: '1' } },
+    selectedSchema: { a: { type: 'boolean', default: true }, b: { type: 'boolean', default: false }, c: { type: 'boolean', default: true }, d: { type: 'boolean' } },
+    ...C.editorMixin(),
+  };
+  assert.equal(host.ctlChecked('a'), false, 'an explicit off wins');
+  assert.equal(host.ctlChecked('b'), true, 'a truthy stored value');
+  assert.equal(host.ctlChecked('c'), true, 'nothing stored: the default (true)');
+  assert.equal(host.ctlChecked('d'), false, 'no default: off');
+  assert.equal(C.conditionMet({ condition: { c: true } }, host.selectedBlock.props, host.selectedSchema), true, 'the same answer the condition gives');
+});
+
 test('the editor mixin routes writes to the active device and switches states', () => {
   const writes = [];
   const host = {

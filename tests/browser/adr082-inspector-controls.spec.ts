@@ -195,3 +195,120 @@ test('ADR-082 header Inspector: tabs, conditions, hidden generic style and the s
 
   expect(problems, problems.join('\n')).toEqual([]);
 });
+
+test('ADR-082 step 3: the header Style tab drives the live preview through its own --tb-hdr-* values', async ({ page }) => {
+  test.setTimeout(240_000);
+  const problems = watchProblems(page);
+  await loginAsAdmin(page, fx);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(canvasUrl(fx));
+  await hydrate(page);
+  await page.locator('input[x-model="librarySearch"]').fill('هدر سایت');
+  const button = page.locator('button[data-block-type="nav_header"]');
+  if (!(await button.isVisible())) {
+    await page.evaluate(() => {
+      const s = (document.querySelector('[x-data="themeCanvas()"]') as any)._x_dataStack[0];
+      for (const k of Object.keys(s.expandedCats)) s.expandedCats[k] = true;
+    });
+  }
+  await button.click();
+  await page.locator('input[x-model="librarySearch"]').fill('');
+  await idle(page);
+  const id = await state(page, (s) => s.selectedBlock.id as string);
+
+  try {
+    await tab(page, 'استایل').click();
+    const style = page.getByTestId('tb-panel-fields-style');
+    await expect(style.getByTestId('tb-field-group-min_height')).toHaveText('کانتینر هدر');
+    await expect(style.getByTestId('tb-field-group-menu_typography')).toHaveText('منوی ناوبری');
+    await expect(style.getByTestId('tbc-states-menu_text')).toBeVisible();
+    await expect(style.getByTestId('tb-field-content_max_width')).toBeVisible();
+    await style.getByTestId('tb-segmented-content_width-full').click();
+    await expect(style.getByTestId('tb-field-content_max_width'), 'max width only for a boxed header').toHaveCount(0);
+    await expect(style.getByTestId('tb-field-pointer_animation')).toBeVisible();
+    await style.getByTestId('tb-field-pointer').locator('select').selectOption('framed');
+    await expect(style.getByTestId('tb-field-pointer_animation'), 'animation only for line pointers').toHaveCount(0);
+
+    // Height through the range control → the preview header re-renders with its own style.
+    await style.getByTestId('tbc-range-value-min_height').fill('92');
+    await style.getByTestId('tbc-range-value-min_height').press('Tab');
+    expect(await state(page, (s) => s.selectedBlock.props.min_height)).toBe(92);
+    const frame = page.frameLocator('#tb-live-iframe');
+    await expect.poll(() => frame.locator(`#tb-${id} .tb-nav-header-inner`).evaluate((el) => getComputedStyle(el).minHeight), { timeout: 20_000 }).toBe('92px');
+    await expect(frame.locator(`#tb-${id}`)).toHaveClass(/tb-nav-header--pointer-framed/);
+    await expect(frame.locator(`style[data-tb-hdr="tb-${id}"]`)).toHaveCount(1);
+
+    // A menu hover colour: the Hover tab, then the colour value.
+    await style.getByTestId('tbc-state-menu_text-hover').click();
+    await style.getByTestId('tb-color-value-menu_color_hover').fill('#2563eb');
+    await expect.poll(() => state(page, (s) => s.selectedBlock.props.menu_color_hover)).toBe('#2563eb');
+    await expect.poll(() => frame.locator(`#tb-${id}`).getAttribute('data-tb-hdr-set'), { timeout: 20_000 }).toContain('menu-color-hover');
+    await expect(frame.locator(`style[data-tb-hdr="tb-${id}"]`), 'still one style for the header after another swap').toHaveCount(1);
+    await page.getByTestId('tb-inspector-scroll').screenshot({ path: 'test-results/adr082-step3-style-tab.png' });
+  } finally {
+    await page.evaluate((blockId) => {
+      const s = (document.querySelector('[x-data="themeCanvas()"]') as any)._x_dataStack[0];
+      s.selectBlockById(blockId);
+      if (s.selectedBlock?.id === blockId) s.removeSelected();
+    }, id);
+    await idle(page);
+    expect(await state(page, (s) => s.saveCurrentPage())).toBe(true);
+    await idle(page);
+  }
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('ADR-082 step 4: the header Advanced tab shows sticky and drawer options only while they apply', async ({ page }) => {
+  test.setTimeout(240_000);
+  const problems = watchProblems(page);
+  await loginAsAdmin(page, fx);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(canvasUrl(fx));
+  await hydrate(page);
+  await page.locator('input[x-model="librarySearch"]').fill('هدر سایت');
+  await page.evaluate(() => {
+    const s = (document.querySelector('[x-data="themeCanvas()"]') as any)._x_dataStack[0];
+    for (const k of Object.keys(s.expandedCats)) s.expandedCats[k] = true;
+  });
+  await page.locator('button[data-block-type="nav_header"]').click();
+  await page.locator('input[x-model="librarySearch"]').fill('');
+  await idle(page);
+  const id = await state(page, (s) => s.selectedBlock.id as string);
+
+  try {
+    await tab(page, 'پیشرفته').click();
+    const advanced = page.getByTestId('tb-panel-fields-advanced');
+    for (const key of ['sticky_devices', 'scroll_threshold', 'scrolled_bg_color', 'sticky_shrink_height']) {
+      await expect(advanced.getByTestId(`tb-field-${key}`), `${key} needs sticky`).toHaveCount(0);
+    }
+    await advanced.getByTestId('tb-field-sticky').locator('label').last().click();
+    for (const key of ['sticky_devices', 'sticky_offset', 'scroll_threshold', 'sticky_shrink', 'sticky_shrink_height', 'sticky_logo_scale', 'scrolled_bg_color', 'scrolled_shadow']) {
+      await expect(advanced.getByTestId(`tb-field-${key}`), key).toBeVisible();
+    }
+    await advanced.getByTestId('tb-field-sticky_shrink').locator('label').last().click();
+    await expect(advanced.getByTestId('tb-field-sticky_shrink_height'), 'no shrink: no shrink height').toHaveCount(0);
+
+    await expect(advanced.getByTestId('tb-field-group-burger_breakpoint')).toHaveText('منوی موبایل');
+    await expect(advanced.getByTestId('tb-field-drawer_side')).toBeVisible();
+    await advanced.getByTestId('tb-segmented-drawer_style-full').click();
+    await expect(advanced.getByTestId('tb-field-drawer_side'), 'a full-screen menu has no side').toHaveCount(0);
+    await advanced.getByTestId('tb-field-burger_breakpoint').locator('select').selectOption('never');
+    await expect(advanced.getByTestId('tb-field-drawer_style'), 'never: no drawer').toHaveCount(0);
+    expect(await state(page, (s) => [s.selectedBlock.props.sticky, s.selectedBlock.props.sticky_shrink, s.selectedBlock.props.drawer_style, s.selectedBlock.props.burger_breakpoint]))
+      .toEqual([true, false, 'full', 'never']);
+
+    const frame = page.frameLocator('#tb-live-iframe');
+    await expect.poll(() => frame.locator(`#tb-${id}`).getAttribute('data-tb-burger'), { timeout: 20_000 }).toBe('never');
+    await page.getByTestId('tb-inspector-scroll').screenshot({ path: 'test-results/adr082-step4-advanced-tab.png' });
+  } finally {
+    await page.evaluate((blockId) => {
+      const s = (document.querySelector('[x-data="themeCanvas()"]') as any)._x_dataStack[0];
+      s.selectBlockById(blockId);
+      if (s.selectedBlock?.id === blockId) s.removeSelected();
+    }, id);
+    await idle(page);
+    expect(await state(page, (s) => s.saveCurrentPage())).toBe(true);
+    await idle(page);
+  }
+  expect(problems, problems.join('\n')).toEqual([]);
+});

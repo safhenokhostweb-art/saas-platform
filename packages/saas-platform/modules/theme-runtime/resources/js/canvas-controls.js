@@ -459,6 +459,11 @@
       ctlRead(propKey) {
         return this.ctlInfo(propKey).value;
       },
+      /** A toggle's effective state: its stored value, else the schema default (as conditions and renderers read it). */
+      ctlChecked(propKey) {
+        const v = this.selectedBlock?.props?.[propKey];
+        return truthy(v === undefined || v === null || v === '' ? this.ctlDef(propKey).default : v);
+      },
       /** True when the shown value is not the active device's own (it is inherited or a default). */
       ctlInherited(propKey) {
         return this.ctlIsResponsive(propKey) && this.activeBreakpoint !== 'desktop' && isEmpty(this.ctlInfo(propKey).own);

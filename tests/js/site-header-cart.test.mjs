@@ -40,6 +40,13 @@ test('scroll state: shrink past 8px, hide on a down-scroll, reveal on an up-scro
   assert.ok(H.HERO.test('tb-hero tb-hero-split') && H.HERO.test('tb-carousel tb-slider-full') && !H.HERO.test('tb-section'));
 });
 
+test('ADR-082 step 4: the header sets when it counts as scrolled', () => {
+  assert.equal(H.scrollState(0, 60, 70, false, 120).scrolled, false, 'below the threshold');
+  assert.equal(H.scrollState(0, 121, 70, false, 120).scrolled, true);
+  assert.equal(H.scrollState(0, 1, 70, false, 0).scrolled, true, 'zero: any scroll');
+  assert.equal(H.scrollState(0, 6, 70, false, undefined).scrolled, false, 'no threshold: the 8px default');
+});
+
 test('cart count labels are Persian', () => {
   assert.equal(C.countLabel(3), '۳ کالا');
   assert.equal(C.countLabel(0), 'سبد خالی است');

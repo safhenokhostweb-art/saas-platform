@@ -20,8 +20,10 @@ use SaaSPlatform\ThemeRuntime\Security\HtmlSanitizer;
  *
  * Kinds: length (a number with an allowlisted unit), color (the renderer's
  * colour grammar, incl. var(--tb-*) swatches), shadow (a structured
- * InspectorFieldRegistry shadow), weight (100–900) and time (s / ms).
- * Suffix -m = phones (< 768px).
+ * InspectorFieldRegistry shadow), weight (100–900), time (s / ms), number
+ * (a unitless line height, 0–5) and font (a theme font token).
+ * Suffix -m = phones (< 768px). A null default marks a gated value: its
+ * rule has no fallback and applies only through data-tb-hdr-set (step 3).
  */
 final class HeaderStyleVars
 {
@@ -91,7 +93,113 @@ final class HeaderStyleVars
         'phone-size-m' => ['length', '.8rem'],
         'cta-pad-inline-m' => ['length', '.65rem'],
         'cta-size-m' => ['length', '.82rem'],
+        // ADR-082 step 3: one padding value per logical side, per device.
+        'pad-bs' => ['length', 'var(--tb-hdr-pad-block, .5rem)'],
+        'pad-be' => ['length', 'var(--tb-hdr-pad-block, .5rem)'],
+        'pad-is' => ['length', 'var(--tb-hdr-pad-inline, 1rem)'],
+        'pad-ie' => ['length', 'var(--tb-hdr-pad-inline, 1rem)'],
+        'pad-bs-m' => ['length', 'var(--tb-hdr-pad-bs, var(--tb-hdr-pad-block, .5rem))'],
+        'pad-be-m' => ['length', 'var(--tb-hdr-pad-be, var(--tb-hdr-pad-block, .5rem))'],
+        'pad-is-m' => ['length', 'var(--tb-hdr-pad-inline-m, .75rem)'],
+        'pad-ie-m' => ['length', 'var(--tb-hdr-pad-inline-m, .75rem)'],
+        // Gated values (default null): their rules apply only while the
+        // header lists them in data-tb-hdr-set (see GATED).
+        'border-w' => ['length', null],
+        'border-c' => ['color', 'var(--tb-border,#e5e7eb)'],
+        'shadow' => ['shadow', null],
+        'blur' => ['length', null],
+        'menu-size' => ['length', '.95rem'],
+        'menu-weight' => ['weight', '600'],
+        'menu-lh' => ['number', null],
+        'menu-ls' => ['length', null],
+        'menu-font' => ['font', null],
+        'menu-pad-y' => ['length', '.4rem'],
+        'menu-pad-x' => ['length', '0'],
+        'menu-color' => ['color', null],
+        'menu-color-hover' => ['color', null],
+        'menu-color-active' => ['color', null],
+        'menu-bg' => ['color', null],
+        'menu-bg-hover' => ['color', 'color-mix(in srgb,currentColor 10%,transparent)'],
+        'menu-bg-active' => ['color', null],
+        'pointer-color' => ['color', 'currentColor'],
+        'pointer-h' => ['length', '2px'],
+        // ADR-082 step 4: scrolled look, sticky shrink (theme-runtime-blocks.css), burger, drawer side.
+        'shrink-h' => ['length', '3.5rem'],
+        'logo-scale' => ['number', '0.8'],
+        'scrolled-bg' => ['color', null],
+        'scrolled-text' => ['color', null],
+        'scrolled-shadow' => ['shadow', null],
+        'burger-color' => ['color', null],
+        'burger-size' => ['length', null],
+        'drawer-shadow-end' => ['shadow', '12px 0 32px rgb(15 23 42 / 18%)'],
     ];
+
+    /** Variables read by theme-runtime-blocks.css (the sticky shrink) rather than the header sheet. */
+    public const BLOCK_SHEET_VARS = ['shrink-h', 'logo-scale'];
+
+    /**
+     * ADR-082 step 3: values whose rules replace something the default
+     * cascade sets elsewhere, so they apply only while the header lists the
+     * name in data-tb-hdr-set. A header that sets none renders as before.
+     */
+    public const GATED = [
+        'border-w', 'shadow', 'blur', 'menu-size', 'menu-weight', 'menu-lh', 'menu-ls', 'menu-font',
+        'menu-pad-y', 'menu-pad-x', 'menu-color', 'menu-color-hover', 'menu-color-active',
+        'menu-bg', 'menu-bg-hover', 'menu-bg-active', 'pointer-color', 'pointer-h',
+        'scrolled-bg', 'scrolled-text', 'scrolled-shadow', 'burger-color', 'burger-size',
+    ];
+
+    /** ADR-082 step 4: phone drawer style and side; side + start is the default and has no class. */
+    public const DRAWER_STYLES = ['side', 'full', 'dropdown'];
+    public const DRAWER_SIDES = ['start', 'end'];
+
+    /** Pointer styles and animations; the defaults (underline, grow) have no class. */
+    public const POINTERS = ['underline', 'overline', 'double', 'framed', 'background', 'text', 'none'];
+    public const POINTER_ANIMATIONS = ['grow', 'fade', 'slide', 'none'];
+
+    /**
+     * Style-tab field => the variable each device writes. A field without a
+     * mobile entry writes its base variable inside the phone media query.
+     * `padding` is a logical spacing value: one variable per side.
+     */
+    private const FIELDS = [
+        'min_height' => ['min-h', 'min-h-m'],
+        'items_gap' => ['gap', 'gap-m'],
+        'menu_gap' => ['menu-gap', 'drawer-gap'],
+        'menu_item_padding_x' => ['menu-pad-x', 'drawer-item-pad-inline'],
+        'menu_item_padding_y' => ['menu-pad-y', 'drawer-item-pad-block'],
+        'border_bottom_width' => ['border-w', null],
+        'border_bottom_color' => ['border-c', null],
+        'header_shadow' => ['shadow', null],
+        'backdrop_blur' => ['blur', null],
+        'menu_color' => ['menu-color', null],
+        'menu_color_hover' => ['menu-color-hover', null],
+        'menu_color_active' => ['menu-color-active', null],
+        'menu_bg' => ['menu-bg', null],
+        'menu_bg_hover' => ['menu-bg-hover', null],
+        'menu_bg_active' => ['menu-bg-active', null],
+        'pointer_color' => ['pointer-color', null],
+        'pointer_thickness' => ['pointer-h', null],
+        // step 4
+        'sticky_shrink_height' => ['shrink-h', null],
+        'scrolled_bg_color' => ['scrolled-bg', null],
+        'scrolled_text_color' => ['scrolled-text', null],
+        'scrolled_shadow' => ['scrolled-shadow', null],
+        'drawer_bg' => ['drawer-bg', null],
+        'drawer_text' => ['drawer-text', null],
+        'drawer_width' => ['drawer-w', null],
+        'drawer_overlay_color' => ['backdrop', null],
+        'drawer_divider_color' => ['drawer-divider', null],
+        'burger_color' => ['burger-color', null],
+        'burger_size' => ['burger-size', null],
+    ];
+
+    private const PADDING_SIDES = ['block-start' => 'bs', 'block-end' => 'be', 'inline-start' => 'is', 'inline-end' => 'ie'];
+    private const TYPOGRAPHY = ['size' => 'menu-size', 'weight' => 'menu-weight', 'lineHeight' => 'menu-lh', 'letterSpacing' => 'menu-ls', 'fontToken' => 'menu-font'];
+    private const FONT_TOKENS = ['body' => 'var(--tb-font-body, inherit)', 'heading' => 'var(--tb-font-heading, var(--tb-font-body, inherit))'];
+    private const SIGNED_LENGTHS = ['menu-ls'];
+    private const TABLET_QUERY = '@media(max-width:1023.98px)';
+    private const MOBILE_QUERY = '@media(max-width:767.98px)';
 
     private const LENGTH = '/^-?(?:\d+|\d*\.\d+)(?:px|rem|em|%|vw|vh)$|^0$/';
 
@@ -111,22 +219,142 @@ final class HeaderStyleVars
     {
         $kind = self::VARS[$name][0] ?? null;
         return match ($kind) {
-            'length' => self::length($value),
+            // Only letter-spacing may go below zero; a negative size, gap,
+            // padding or thickness is never a design value.
+            'length' => ($css = self::length($value)) !== null && ($css[0] !== '-' || in_array($name, self::SIGNED_LENGTHS, true)) ? $css : null,
             'color' => is_string($value) && HtmlSanitizer::isCssColor($value) ? trim($value) : null,
             'shadow' => self::shadow($value),
             'weight' => is_numeric($value) && (int) $value >= 100 && (int) $value <= 900 && (int) $value % 100 === 0 ? (string) (int) $value : null,
             'time' => is_string($value) && preg_match('/^(?:\d+|\d*\.\d+)m?s$/', trim($value)) === 1 ? trim($value) : null,
+            'number' => is_numeric($value) && (float) $value > 0 && (float) $value <= 5 ? (string) (0 + $value) : null,
+            'font' => is_string($value) ? (self::FONT_TOKENS[$value] ?? null) : null,
             default => null,
         };
+    }
+
+    /**
+     * ADR-082 step 3: a header's Style-tab props as CSS.
+     *
+     * Each device writes only its own value (key, key_tablet, key_mobile):
+     * desktop on the root, tablet and phone in their media queries. A device
+     * without its own value inherits from the stylesheet, which already
+     * chains phone → desktop where the design does. Returns the scoped
+     * `<style>` ('' when nothing is set), the gated names for
+     * data-tb-hdr-set, and the pointer modifier classes.
+     *
+     * @return array{style: string, set: list<string>, classes: list<string>}
+     */
+    public static function forHeader(string $rootId, array $props): array
+    {
+        $devices = ['desktop' => [], 'tablet' => [], 'mobile' => []];
+        $suffix = InspectorFieldRegistry::DEVICE_SUFFIXES;
+
+        foreach (self::FIELDS as $field => [$base, $mobile]) {
+            foreach ($devices as $device => $_) {
+                $raw = $props[$field . $suffix[$device]] ?? null;
+                if ($raw === null || $raw === '' || $raw === []) {
+                    continue;
+                }
+                if (in_array($base, ['border-w', 'blur'], true) && (float) (is_array($raw) ? ($raw['size'] ?? 0) : $raw) <= 0) {
+                    continue; // 0 = off: no border / no blur layer
+                }
+                $devices[$device][$device === 'mobile' && $mobile !== null ? $mobile : $base] = $raw;
+            }
+        }
+
+        foreach ($devices as $device => $_) {
+            $padding = $props['padding' . $suffix[$device]] ?? null;
+            if (is_array($padding)) {
+                $unit = in_array($padding['unit'] ?? 'px', InspectorFieldRegistry::UNITS, true) ? ($padding['unit'] ?? 'px') : 'px';
+                foreach (self::PADDING_SIDES as $side => $short) {
+                    if (isset($padding[$side]) && is_numeric($padding[$side])) {
+                        $devices[$device]['pad-' . $short . ($device === 'mobile' ? '-m' : '')] = ['size' => 0 + $padding[$side], 'unit' => $unit];
+                    }
+                }
+            }
+            $typography = $props['menu_typography' . $suffix[$device]] ?? null;
+            if (is_array($typography)) {
+                foreach (self::TYPOGRAPHY as $sub => $name) {
+                    if (isset($typography[$sub]) && $typography[$sub] !== '') {
+                        $devices[$device][$name] = $typography[$sub];
+                    }
+                }
+            }
+        }
+
+        // Logo size once scrolled: a percentage of its height.
+        if (isset($props['sticky_logo_scale']) && is_numeric($props['sticky_logo_scale'])) {
+            $pct = (float) $props['sticky_logo_scale'];
+            if ($pct >= 30 && $pct <= 100) {
+                $devices['desktop']['logo-scale'] = round($pct / 100, 3);
+            }
+        }
+
+        // Content width is desktop only: full width, or a boxed maximum.
+        if (($props['content_width'] ?? 'boxed') === 'full') {
+            $devices['desktop']['max-w'] = '100%';
+        } elseif (isset($props['content_max_width']) && $props['content_max_width'] !== '') {
+            $devices['desktop']['max-w'] = $props['content_max_width'];
+        }
+
+        $set = [];
+        $css = '';
+        foreach ($devices as $device => $values) {
+            $declarations = self::declarations($values, $device !== 'desktop');
+            if ($declarations === '') {
+                continue;
+            }
+            foreach (array_keys($values) as $name) {
+                if (in_array($name, self::GATED, true) && self::value($name, $values[$name]) !== null) {
+                    $set[$name] = true;
+                }
+            }
+            $rule = '#' . $rootId . '{' . $declarations . '}';
+            $css .= match ($device) {
+                'tablet' => self::TABLET_QUERY . '{' . $rule . '}',
+                'mobile' => self::MOBILE_QUERY . '{' . $rule . '}',
+                default => $rule,
+            };
+        }
+
+        $classes = [];
+        $pointer = $props['pointer'] ?? 'underline';
+        if (in_array($pointer, self::POINTERS, true) && $pointer !== 'underline') {
+            $classes[] = 'tb-nav-header--pointer-' . $pointer;
+        }
+        $animation = $props['pointer_animation'] ?? 'grow';
+        if (in_array($animation, self::POINTER_ANIMATIONS, true) && $animation !== 'grow' && in_array($pointer, ['underline', 'overline', 'double'], true)) {
+            $classes[] = 'tb-nav-header--pointer-anim-' . $animation;
+        }
+
+        $drawer = $props['drawer_style'] ?? 'side';
+        if (in_array($drawer, self::DRAWER_STYLES, true) && $drawer !== 'side') {
+            $classes[] = 'tb-nav-header--drawer-' . $drawer;
+        } elseif (($props['drawer_side'] ?? 'start') === 'end') {
+            $classes[] = 'tb-nav-header--drawer-end';
+        }
+
+        if ($css !== '' && preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $rootId) !== 1) {
+            throw new InvalidArgumentException('Header root id must be a plain DOM id.');
+        }
+
+        return [
+            'style' => $css === '' ? '' : '<style data-tb-hdr="' . $rootId . '">' . $css . '</style>',
+            'set' => array_values(array_intersect(self::GATED, array_keys($set))),
+            'classes' => $classes,
+        ];
     }
 
     /**
      * `--tb-hdr-a:x;--tb-hdr-b:y` for the given name => value pairs, in
      * VARS order; unknown names, invalid values and defaults are left out.
      *
+     * A tablet / phone value is kept even when it equals the default: it
+     * overrides a wider device's value there.
+     *
      * @param array<string, mixed> $values
      */
-    public static function declarations(array $values): string
+    public static function declarations(array $values, bool $keepDefaults = false): string
     {
         $out = [];
         foreach (self::VARS as $name => [, $default]) {
@@ -134,7 +362,7 @@ final class HeaderStyleVars
                 continue;
             }
             $css = self::value($name, $values[$name]);
-            if ($css !== null && $css !== $default) {
+            if ($css !== null && ($keepDefaults || $css !== $default)) {
                 $out[] = self::property($name) . ':' . $css;
             }
         }

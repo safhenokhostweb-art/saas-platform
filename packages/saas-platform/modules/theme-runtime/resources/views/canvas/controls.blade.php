@@ -16,6 +16,8 @@
 .tbc-unit { flex: none; width: auto; padding-inline: .35rem; }
 .tbc-range { flex: 1 1 auto; min-width: 0; accent-color: #4f46e5; }
 .tbc-range:focus { outline: none; }
+/* An empty (automatic) range: the slider rests at its start, faded, so it never reads as 0. */
+.tbc-range.is-empty { opacity: .4; }
 .tbc-range:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; border-radius: 999px; }
 .tbc-hint { margin-top: .25rem; font-size: .6875rem; color: #94a3b8; }
 .tbc-sub { display: block; margin-bottom: .25rem; font-size: .6875rem; color: #64748b; }

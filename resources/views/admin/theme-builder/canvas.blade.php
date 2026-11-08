@@ -1139,11 +1139,11 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <template x-if="schemaDef.type === 'boolean'">
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <div class="relative">
-                                            <input type="checkbox" :id="'ctrl-' + propKey" :checked="selectedBlock.props[propKey] ?? false" @change="updateProp(propKey, $event.target.checked)" class="sr-only peer">
+                                            <input type="checkbox" :id="'ctrl-' + propKey" :checked="ctlChecked(propKey)" @change="updateProp(propKey, $event.target.checked)" class="sr-only peer">
                                             <div class="w-9 h-5 bg-slate-200 peer-checked:bg-indigo-500 rounded-full transition"></div>
                                             <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-full rtl:peer-checked:-translate-x-full transition-transform"></div>
                                         </div>
-                                        <span class="text-sm text-slate-700" x-text="(selectedBlock.props[propKey] ?? false) ? 'فعال' : 'غیرفعال'"></span>
+                                        <span class="text-sm text-slate-700" x-text="ctlChecked(propKey) ? 'فعال' : 'غیرفعال'"></span>
                                     </label>
                                 </template>
 

@@ -5170,3 +5170,120 @@ There is no migration or Composer change.
   The baseline was recorded on the pre-change renderer (commits 6b7062c0 /
   3204761b) and compared at zero pixels and zero threshold. A 0.05rem
   change fails it.
+
+**Step 3 (2026-11-08): the header Style tab.**
+
+- Schema: the Style tab now has 23 more `nav_header` fields.
+  - Container: `min_height`, `padding` (logical spacing), `items_gap`,
+    `content_width` / `content_max_width`, `border_bottom_width/color`,
+    `header_shadow`, `backdrop_blur`.
+  - Menu: `menu_typography`, `menu_gap`, `menu_item_padding_x/y`, the
+    `menu_text` and `menu_bg` Normal / Hover / Active groups, `pointer`,
+    `pointer_animation`, `pointer_color`, `pointer_thickness`.
+  - Responsive fields store `key_tablet` / `key_mobile`; `min_height` has
+    `mobile_default` 60.
+- `Widget\HeaderStyleVars::forHeader()` is the one mapping from these props
+  to CSS. Each device writes only its own value: desktop on `#tb-<id>`,
+  tablet and phone in the 1023.98px / 767.98px queries. A phone value goes
+  to the sheet's `-m` property where one exists (the drawer's for menu gap
+  and item padding). The renderer prints the result as
+  `<style data-tb-hdr>` before the header root, which also gets the gate
+  list `data-tb-hdr-set` and the pointer classes.
+- Gating keeps the default look. A rule that would replace a value the
+  default cascade sets elsewhere (e.g. the menu link size and weight from
+  theme-runtime-blocks.css) only applies while the header lists the value
+  in `data-tb-hdr-set` (`HeaderStyleVars::GATED`), or carries a
+  `tb-nav-header--pointer-*` class. Header padding was split into four
+  logical-side properties whose fallbacks chain to the old ones. A header
+  without Style props still matches the step-2 baseline pixel for pixel,
+  with no snapshot changed.
+- Menu colours, item padding and the pointer apply from 768px up. The phone
+  drawer keeps its own surface (drawer colours are a later step).
+  Typography applies everywhere, with the phone's own size in the drawer.
+- Active state: the header's script marks the item whose URL is the current
+  path with `aria-current="page"` (same origin, trailing slash ignored). The
+  marking is client-side, so it is cache-safe and works for the site menu
+  too. Active colour, background and a full pointer apply only when an
+  Active value is set.
+- Backdrop blur is a `::before` layer (`backdrop-filter`) behind the content,
+  never on the header itself, which would make it the containing block of
+  the fixed phone drawer. The browser test opens the drawer with blur on: it
+  stays fixed at full height.
+- Hardening found by the tests: negative lengths are allowed only for
+  letter-spacing. The gated pointer colour and thickness rules exclude the
+  double / framed pointers, which read the same values themselves (a
+  higher-specificity gated rule had turned the frame into a solid bar).
+  Every pointer modifier rule is prefixed `.tb-nav-header` so a style's own
+  rule beats the shared line-pointer rule. An empty (automatic) range
+  slider is faded so it never reads as 0.
+- Tests:
+  - `HeaderStyleVarsTest`: gating, per-device emission, invalid values
+    dropped, renderer output.
+  - `tests/browser/header-style-controls.spec.ts`: container, typography,
+    states and hover, active item, all 7 pointers by shape, blur with the
+    drawer.
+  - the ADR-082 editor specs on both hosts: Style tab to live preview with
+    one scoped style per swap.
+  - `header-pixel-parity.spec.ts`: unchanged.
+
+**Step 4 (2026-11-08): header behaviour and the mobile drawer.** Steps 3
+and 4 ship as one release.
+
+- Advanced tab, sticky group (all fields need `sticky`):
+  - `sticky_devices`: all, desktop + tablet, or desktop only.
+  - `sticky_offset`: 0–300px.
+  - `scroll_threshold`: 0–600px, default 8.
+  - `sticky_shrink`: on by default; `sticky_shrink_height` 36–160px;
+    `sticky_logo_scale` 30–100%.
+  - The look after scrolling: `scrolled_bg_color`, `scrolled_text_color`,
+    `scrolled_shadow`.
+- Advanced tab, mobile menu group:
+  - `burger_breakpoint`: mobile (default), tablet, always, or never.
+  - `drawer_style`: side, full, or dropdown; hidden for never.
+  - `drawer_side`: start or end; side style only.
+- Style tab, drawer group: `drawer_bg`, `drawer_text`,
+  `drawer_divider_color`, `drawer_width` (px or %, side style only),
+  `drawer_overlay_color`, `burger_color`, `burger_size`.
+- Attributes: behaviour reaches the browser as root attributes, and only
+  when it differs from the default:
+  - `data-tb-scroll-threshold`, `data-tb-sticky-offset` and
+    `data-tb-sticky-on` are read by `blocks/site-header.js`;
+    `scrollState()` takes the threshold.
+  - `data-tb-burger` is read by the header's inline script. It toggles
+    `tb-nav-header-root--drawer` (the phone drawer at 768px and up: tablet
+    below 1024, or always) and `--inline` (never: the phone menu is a
+    plain row of links). An open drawer closes when the mode no longer
+    applies.
+  - `noshrink` in `data-tb-header` turns off the shrink rules
+    (`tb-hdr-no-shrink`).
+- Scrolled colours and shadow, burger colour and size: gated through
+  `data-tb-hdr-set`, like step 3. The step-3 desktop menu rules exclude
+  drawer mode, so a tablet drawer shows drawer styling, not the desktop
+  menu's.
+- Shrink height and logo scale: variables in the block sheet
+  (`HeaderStyleVars::BLOCK_SHEET_VARS`), with the old values as fallbacks.
+  The end-side drawer has its own shadow variable (`drawer-shadow-end`),
+  so a start-side shadow value never applies to it.
+- Default headers emit nothing new. The pixel baseline is unchanged.
+- Toggle defaults: a toggle with no stored value now shows its schema
+  default, in both editors (`CanvasControls` mixin `ctlChecked`). The
+  step-4 editor test found that `sticky_shrink` (default on) displayed as
+  off while its condition already read it as on.
+- Tests:
+  - `HeaderStyleVarsTest`: values, classes, and behaviour attributes only
+    when they differ from the default.
+  - `site-header-cart.test.mjs`: the threshold.
+  - `canvas-controls.test.mjs`: `ctlChecked`.
+  - `tests/browser/header-behavior.spec.ts`, real scroll and viewport:
+    - the scrolled look;
+    - sticky by device;
+    - burger tablet / always / never, including the row layout;
+    - drawer full / dropdown / end side;
+    - burger colour and size.
+  - The ADR-082 editor spec on both hosts: Advanced-tab conditions, the
+    toggle default, select defaults, and the live `data-tb-burger`.
+  - `Adr082InspectorControlsHostTest`: customer-site validation and
+    rendering.
+  - The customer `CanonicalListSchemaParityTest` sample generator now
+    respects a range's `min`, and writes `{size, unit}` for a multi-unit
+    range.
