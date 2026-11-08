@@ -108,7 +108,8 @@ class Phase07SiteFormsTest extends TestCase
         $this->assertStringContainsString('data-tb-scope="posts"', $html);
         $this->assertStringContainsString('<input id="tb-b1-search" type="search" name="q"', $html);
         $this->assertStringNotContainsString('class="tb-nav-header-search-toggle', $html);
-        $this->assertStringContainsString('@media(max-width:767.98px)', $html);
+        // ADR-082 step 2: the phone rules live in the shared header sheet.
+        $this->assertStringContainsString('@media(max-width:767.98px)', (string) file_get_contents(\SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider::cssHeaderPath()));
         $this->assertStringContainsString('class="tb-nav-header-search-input"', $html);
         $this->assertStringContainsString('data-tb-block-asset="site_forms"', $html);
 

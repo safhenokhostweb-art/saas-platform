@@ -63,9 +63,12 @@ class CanonicalBlockRenderersTest extends TestCase
 
         $this->assertStringContainsString($inner, $html);
         $this->assertStringNotContainsString('منوی جایگزین', $html);
-        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-inner{display:flex;align-items:center;justify-content:space-between;direction:rtl;', $html);
-        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-links{display:none;}', $html);
-        $this->assertStringContainsString('inset-inline:0 auto;', $html, 'the mobile drawer opens from the physical right in RTL');
+        // ADR-082 step 2: the layout is the shared header sheet, not an inline <style>.
+        $this->assertStringNotContainsString('<style', $html);
+        $css = (string) file_get_contents(\SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider::cssHeaderPath());
+        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-inner{display:flex;align-items:center;justify-content:space-between;direction:rtl;', $css);
+        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-links{display:none;}', $css);
+        $this->assertStringContainsString('inset-inline:0 auto;', $css, 'the mobile drawer opens from the physical right in RTL');
         $this->assertStringContainsString('aria-controls="tb-hdr-menu-panel"', $html);
         $this->assertStringContainsString('class="tb-nav-header-overlay"', $html);
     }
@@ -95,8 +98,10 @@ class CanonicalBlockRenderersTest extends TestCase
         $this->assertStringNotContainsString('data-tb-search-open="', $icon);
         // Anchored to the icon's end edge so it opens into the page, and
         // spanning the header on phones, instead of running off the edge.
-        $this->assertStringContainsString('inset-block-start:calc(100% + .55rem);inset-inline-end:0;', $icon);
-        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-search-popover{inset-block-start:calc(100% + .25rem);inset-inline:.75rem;width:auto;}', $icon);
+        // ADR-082 step 2: values are --tb-hdr-* properties with these fallbacks.
+        $css = (string) file_get_contents(\SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider::cssHeaderPath());
+        $this->assertStringContainsString('inset-block-start:calc(100% + var(--tb-hdr-popover-offset, .55rem));inset-inline-end:0;', $css);
+        $this->assertStringContainsString('.tb-nav-header-root .tb-nav-header-search-popover{inset-block-start:calc(100% + var(--tb-hdr-popover-offset-m, .25rem));inset-inline:var(--tb-hdr-popover-inset-m, .75rem);width:auto;}', $css);
 
         $input = $this->render('nav_header', ['show_search' => true, 'search_mode' => 'input']);
         $this->assertStringContainsString('class="tb-nav-header-search" role="search"', $input);
@@ -121,7 +126,11 @@ class CanonicalBlockRenderersTest extends TestCase
         $this->assertStringContainsString('--tb-nav-header-glow:#0d9488;', $html);
         $this->assertStringContainsString('class="tb-nav-header-phone tb-phone--glow tb-nav-header-glow"', $html);
         $this->assertStringContainsString('class="tb-btn tb-btn-primary tb-nav-header-cta tb-cta--glow tb-nav-header-glow"', $html);
-        $this->assertStringContainsString('@media(prefers-reduced-motion:reduce)', $html);
+        // ADR-082 step 2: the glow stops for reduced motion in the shared header sheet.
+        $this->assertStringContainsString(
+            '@media(prefers-reduced-motion:reduce){.tb-nav-header-root .tb-nav-header-glow{animation:none;}',
+            (string) file_get_contents(\SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider::cssHeaderPath())
+        );
     }
 
     public function test_nav_header_embeds_first_party_social_vectors_locally(): void

@@ -5034,3 +5034,139 @@ There is no migration or Composer change.
   and immediate revocation; locked premium items next to bespoke assets;
   bespoke-bound version not retired; public
   catalog unchanged; catalog refusals) and `MotionPrivateAssetUrlTest`.
+
+## ADR-082
+
+**Title:** Elementor-Grade Inspector Vocabulary: Tabs, Conditions, Per-Device Values, States
+
+**Status:** Accepted
+
+**Date:** 2026-11-08
+
+**Context:**
+
+- The owner decided to rebuild every Canvas widget to the Elementor Pro
+  control standard, starting with the header (`nav_header`). The Phase 1
+  discovery (2026-11-07) found four gaps in the editors, not in the widgets:
+  - both Inspectors listed every schema field on the Content tab; Style and
+    Advanced held only the generic wrapper controls (`block.style`), so a
+    widget could not own a Style or Advanced control;
+  - `InspectorFieldRegistry` already defined `range`, `spacing`,
+    `typography` and a `panel` key, but neither editor rendered or read them;
+  - the wrapper's mobile override applied below 480px while every widget's
+    own phone layout (the header's burger included) switches below 768px;
+  - on the header, the generic Style colours painted a div behind the
+    header's own background, so they appeared to do nothing.
+- Owner decisions (2026-11-08): breakpoints mobile < 768px, tablet < 1024px,
+  desktop ≥ 1024px, with the Inspector's mobile override at 768px;
+  `header_modern_v1` is frozen; the header hides the generic Style sections.
+
+**Decision:**
+
+1. **Schema vocabulary** (checked by `WidgetSchemaContract`, normalised by
+   `InspectorFieldRegistry`):
+   - `panel`: `content` | `style` | `advanced`. Absent means content. It is
+     never inferred from the control type, so no existing field moves.
+   - `condition`: `{field: value | [values], 'field!': value}`. Every entry
+     must hold for the field to show. `true`/`false` compare as booleans and
+     `''` matches empty values, lists included.
+   - `responsive: true` on `number`, `range`, `select`, `spacing` and
+     `typography`. Values are stored as `key`, `key_tablet` and `key_mobile`
+     (Elementor's convention, so the existing `logo_height_mobile` key
+     already fits). A device without its own value takes its optional
+     `tablet_default` / `mobile_default`, else the next wider device's.
+     `InspectorFieldRegistry::responsiveValue()` and
+     `CanvasControls.read()` resolve the same way. Typography merges
+     sub-values down the devices.
+   - `state_group` + `state` (`normal` | `hover` | `active`): adjacent
+     fields in one tab and section, shown as one control with
+     Normal / Hover / Active tabs. Each state keeps its own schema key.
+   - New control `shadow` (`{x, y, blur, spread, color, inset}`, clamped and
+     colour-checked). `range` takes `unit`, or `units` + `unit_limits`
+     (several units store `{size, unit}`).
+   - `editor.hideGenericStyle`: `true` or a list of the generic Style
+     sections (`typography`, `colors`, `spacing`, `border`, `shadow`,
+     `opacity`). Their wrapper device bar hides with them.
+2. **One implementation for both editors.** `theme-runtime` ships the
+   DOM-free model `resources/js/canvas-controls.js` (`window.CanvasControls`
+   plus `editorMixin()`, Node-tested) and the controls in
+   `canvas.controls`, `canvas.control-field`, `canvas.control-devices`,
+   `canvas.control-states` and `canvas.control-inherit`. The styles are
+   self-contained `.tbc-*` because the hosts' Tailwind builds do not scan
+   the package. Each host spreads the mixin and supplies one prop writer,
+   `ctlSetProp(key, value)`. The field loop renders
+   `panelFields(selectedTab)`, so the same loop serves all three tabs. It
+   sits above the generic sections on Style and Advanced.
+3. **Scope variables in shared partials are prefixed `tbc`.** Alpine
+   assigns `this.x = …` to the innermost scope that has `x`. A loop variable
+   named `device` swallowed the editor's own `setDevice()` write; the
+   browser spec caught it.
+4. **Breakpoint.** `BlockRenderer::applyBlockStyle()` emits the mobile
+   override at `max-width:767.98px`.
+   `LayoutContract::BREAKPOINT_MAX_WIDTH_BY_NAME` is `{tablet: 1024, mobile: 768}`.
+5. **Header.** `nav_header` declares `editor.hideGenericStyle: true`. Its
+   colours and CTA glow move to Style, sticky/overlay behaviour to Advanced,
+   and `logo_height*` become `range`. Conditions hide the search options
+   until search is on, the CTA link until it has text, the custom links
+   while the site menu is the source, the social icon options until there
+   is a link, and the smart / overlay-text options until sticky / overlay is
+   on. The glow colour has no condition: a colour alone turns the glow on.
+   Storage keys and the renderer are unchanged.
+
+**Consequences:**
+
+- Saved mobile wrapper overrides (`responsive.mobile`) now apply from 767px
+  down instead of 479px down. This is the owner's breakpoint decision.
+  Widget-specific 480px rules (carousel item counts, grids) are not the
+  Inspector override and stay.
+- A block saved with wrapper values in a section its widget now hides keeps
+  rendering them. The Style tab shows a notice with one action that clears
+  them; Advanced-tab keys (`customClass`, `hide*`, `animation*`) stay.
+- customer-site's `ElementSchemaRegistry` types `range` (numeric, or array
+  with several units), `spacing` / `typography` / `shadow` (array) and a
+  responsive field's device keys.
+- Step 2 of the header program (CSS variables, inline `<style>` moved to the
+  shared sheet) builds on this vocabulary. Every new header control is a
+  schema field, never an editor edit.
+- Tests: `tests/js/canvas-controls.test.mjs` (13),
+  `Adr082InspectorControlsTest` (12),
+  customer `Adr082InspectorControlsHostTest` (3), and browser specs
+  `adr082-inspector-controls` on both hosts. `BreakpointScaleTest`,
+  `Phase2BSharedContractsTest`, `Phase02cCanonicalHarmonizationTest`, the
+  customer `CanonicalBlockDefinitionParityTest` and `adr076-canvas-tabs-header`
+  follow the change.
+
+**Step 2 (2026-11-08): the header layout as shared, variable-driven CSS.**
+
+- `renderNavHeader()` no longer prints the roughly 40-rule `<style>` before
+  every header. The rules moved verbatim (same selectors, so the same
+  specificity) to `resources/css/theme-runtime-header.css`.
+- Every design value there reads a `--tb-hdr-<name>` custom property whose
+  fallback is the old literal, 64 in all; suffix `-m` = phones.
+  `Widget\HeaderStyleVars::VARS` registers each with its kind and default,
+  and `HeaderStyleVarsTest` parses the sheet so the two stay equal.
+- Structure (display, position, z-index, the 768 / 1024 breakpoints) stays
+  literal. Rubika's wordmark geometry too. The root's inline `background` /
+  `color` from `bg_color` / `text_color` is unchanged, so overlay
+  `!important` rules and inline priority behave as before.
+- Cascade place: the inline `<style>` came after every stylesheet.
+  `theme-runtime::css.blocks` now ends with the header sheet, so both host
+  partials ship it unchanged and it still comes after every block rule.
+  customer-site's legacy storefront layout (`themes/default/layout`: blog,
+  platform products) renders `nav_header` without the block sheet. It now
+  includes `theme-runtime::css.header` as the last stylesheet in `<head>`;
+  nothing in its `<body>` precedes the header.
+- `HeaderStyleVars::style($rootId, $values)` emits one scoped
+  `<style data-tb-hdr>#tb-<id>{…}</style>`. It takes known names only,
+  checks each value against its kind (lengths with allowlisted units, the
+  renderer colour grammar, structured shadows, weights, times) and drops
+  defaults, so a default header emits nothing. Step 3 feeds it from the
+  new Style controls. customer-site's runtime and host decorator already
+  handle a header that opens with its own `<style>`.
+- Proof: `tests/browser/header-pixel-parity.spec.ts`. Five configurations
+  at 360 / 768 / 1280 plus the open drawer, search popover, mega menu and
+  scrolled sticky states give 20 screenshots (image content masked, image
+  boxes kept) and 20 computed-style dumps of every element in the header.
+  The baseline was recorded on the pre-change renderer (commits 6b7062c0 /
+  3204761b) and compared at zero pixels and zero threshold. A 0.05rem
+  change fails it.

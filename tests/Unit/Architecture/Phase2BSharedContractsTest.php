@@ -25,6 +25,7 @@ final class Phase2BSharedContractsTest extends TestCase
             'select', 'color', 'link', 'media', 'icon', 'repeater', 'array',
             'spacing', 'dimensions', 'typography', 'alignment', 'responsive',
             'module_entity',
+            'shadow', // ADR-082: structured box shadow
         ], InspectorFieldRegistry::TYPES);
     }
 

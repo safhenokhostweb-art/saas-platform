@@ -697,11 +697,20 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             class="flex-1 py-2 text-xs text-center transition">پیشرفته</button>
                     </div>
 
+                    {{-- ADR-082: one scroll area for the three tabs. The schema
+                         field loop (below the generic panes) serves every tab:
+                         it lists the active tab's own fields (`panel`) and moves
+                         above the generic sections on Style / Advanced (order-first). --}}
+                    <div class="flex-1 overflow-y-auto flex flex-col" data-testid="tb-inspector-scroll">
                     {{-- ── STYLE TAB ──────────────────────────────────────────── --}}
-                    <div x-show="selectedTab === 'style'" class="flex-1 overflow-y-auto">
+                    <div x-show="selectedTab === 'style'">
 
-                        {{-- TB5: Breakpoint Toggle Bar --}}
-                        <div class="flex items-center gap-0.5 bg-slate-50 border-b border-slate-100 p-2">
+                        {{-- TB5: Breakpoint Toggle Bar — for the generic wrapper
+                             sections below; a widget that hides them all (ADR-082)
+                             switches devices beside each responsive field instead. --}}
+                        <div class="flex items-center gap-0.5 bg-slate-50 border-b border-slate-100 p-2"
+                            x-show="CanvasControls.hiddenStyleSections(selectedEditorCapabilities).length < Object.keys(CanvasControls.GENERIC_STYLE_SECTIONS).length"
+                            data-testid="tb-style-breakpoints">
                             <span class="text-[10px] text-slate-400 ml-1">ریسپانسیو:</span>
                             <button @click="activeBreakpoint='desktop'"
                                 :class="activeBreakpoint==='desktop' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'"
@@ -728,15 +737,24 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             <span x-show="activeBreakpoint !== 'desktop'" class="mr-auto text-[9px] text-amber-600 font-medium">
                                 override روی <span x-text="activeBreakpoint === 'tablet' ? 'تبلت' : 'موبایل'"></span>
                             </span>
-                            <button x-show="activeBreakpoint !== 'desktop'"
+                            <button x-show="activeBreakpoint !== 'desktop' && CanvasControls.hiddenStyleSections(selectedEditorCapabilities).length === 0"
                                 @click="resetBlockStyle()"
                                 class="mr-1 text-[10px] text-red-500 hover:text-red-700 font-medium underline">
                                 پاک کردن
                             </button>
                         </div>
 
+                        {{-- ADR-082: a widget hiding the generic sections whose block
+                             still holds values saved in them before. --}}
+                        <template x-if="hasHiddenGenericStyle()">
+                            <div class="tbc-notice" data-testid="tb-hidden-generic-style">
+                                این ویجت استایل‌های خودش را دارد و بخش‌های عمومی استایل برایش پنهان است، اما این بلوک هنوز مقدارهایی از آن بخش‌ها دارد که روی ظاهرش اثر می‌گذارند.
+                                <button type="button" class="tbc-reset" @click="clearHiddenGenericStyle()" data-testid="tb-clear-hidden-generic-style">حذف این مقدارها</button>
+                            </div>
+                        </template>
+
                         {{-- Section: Typography --}}
-                        <div class="border-b border-slate-100">
+                        <div class="border-b border-slate-100" x-show="genericStyleVisible('typography')">
                             <button @click="styleSection.typography = !styleSection.typography"
                                 class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 <span>تایپوگرافی</span>
@@ -807,7 +825,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </div>
 
                         {{-- Section: Colors --}}
-                        <div class="border-b border-slate-100">
+                        <div class="border-b border-slate-100" x-show="genericStyleVisible('colors')">
                             <button @click="styleSection.colors = !styleSection.colors"
                                 class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 <span>رنگ‌ها</span>
@@ -863,7 +881,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </div>
 
                         {{-- Section: Spacing --}}
-                        <div class="border-b border-slate-100">
+                        <div class="border-b border-slate-100" x-show="genericStyleVisible('spacing')">
                             <button @click="styleSection.spacing = !styleSection.spacing"
                                 class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 <span>فاصله‌گذاری</span>
@@ -898,7 +916,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </div>
 
                         {{-- Section: Border --}}
-                        <div class="border-b border-slate-100">
+                        <div class="border-b border-slate-100" x-show="genericStyleVisible('border')">
                             <button @click="styleSection.border = !styleSection.border"
                                 class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 <span>حاشیه</span>
@@ -935,7 +953,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </div>
 
                         {{-- Section: Shadow --}}
-                        <div class="border-b border-slate-100">
+                        <div class="border-b border-slate-100" x-show="genericStyleVisible('shadow')">
                             <button @click="styleSection.shadow = !styleSection.shadow"
                                 class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 <span>سایه</span>
@@ -953,7 +971,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </div>
 
                         {{-- Section: Opacity --}}
-                        <div class="border-b border-slate-100 px-4 py-3">
+                        <div class="border-b border-slate-100 px-4 py-3" x-show="genericStyleVisible('opacity')">
                             <p class="text-[10px] text-slate-500 mb-2">شفافیت</p>
                             <div class="flex items-center gap-2">
                                 <input type="range" min="0.1" max="1" step="0.05" :value="getCascadedValue('opacity', 1)" @input.debounce.300ms="updateStyle('opacity', Number($event.target.value))" class="flex-1">
@@ -961,7 +979,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             </div>
                         </div>
 
-                        <div class="px-4 py-3">
+                        <div class="px-4 py-3" x-show="CanvasControls.hiddenStyleSections(selectedEditorCapabilities).length === 0">
                             <button @click="resetBlockStyle()" class="w-full text-xs py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-red-500 transition"
                                 x-text="activeBreakpoint === 'desktop' ? 'پاک کردن همه استایل‌ها' : 'پاک کردن override ' + (activeBreakpoint === 'tablet' ? 'تبلت' : 'موبایل')">
                             </button>
@@ -969,7 +987,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     </div>
 
                     {{-- ── ADVANCED TAB ───────────────────────────────────────── --}}
-                    <div x-show="selectedTab === 'advanced'" class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+                    <div x-show="selectedTab === 'advanced'" class="px-4 py-4 space-y-5">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1.5">کلاس CSS سفارشی</label>
                             <input type="text"
@@ -1020,9 +1038,15 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     </div>
 
                     {{-- ── CONTENT TAB ────────────────────────────────────────── --}}
-                    <div x-show="selectedTab === 'content'" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                        <template x-for="(schemaDef, propKey) in selectedSchema" :key="propKey">
-                            <div>
+                    {{-- ADR-082: this loop renders the active tab's own schema
+                         fields (CanvasControls.visibleFields: panel, condition,
+                         state), so on Style / Advanced it shows above the
+                         generic sections and only when the widget has fields there. --}}
+                    <div x-show="selectedTab === 'content' || panelHasFields(selectedTab)"
+                        :class="selectedTab === 'content' ? '' : 'order-first border-b border-slate-100'"
+                        class="px-4 py-4 space-y-4" :data-testid="'tb-panel-fields-' + selectedTab">
+                        <template x-for="(schemaDef, propKey) in panelFields(selectedTab)" :key="propKey">
+                            <div :data-testid="'tb-field-' + propKey">
                                 {{-- Phase 3G-B-6 (§30): every control below now carries a real
                                      programmatic id<->label association (:id / :for keyed by
                                      propKey) — fixed once, generically, for built-in AND
@@ -1034,7 +1058,18 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 <template x-if="fieldGroupStart(propKey)">
                                     <p class="mt-2 mb-3 pb-1 border-b border-slate-100 text-xs font-bold tracking-wide text-indigo-700" x-text="schemaDef.group" :data-testid="'tb-field-group-' + propKey"></p>
                                 </template>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1.5" :for="'ctrl-' + propKey" x-text="schemaDef.label || propKey"></label>
+                                {{-- ADR-082: Normal / Hover / Active above a state_group --}}
+                                <template x-if="fieldStateStart(propKey)">
+                                    @include('theme-runtime::canvas.control-states')
+                                </template>
+                                <div class="flex items-center mb-1.5">
+                                    <label class="block text-xs font-semibold text-slate-600" :for="'ctrl-' + propKey" x-text="schemaDef.label || propKey"></label>
+                                    @include('theme-runtime::canvas.control-devices')
+                                </div>
+
+                                {{-- ADR-082: range, responsive number/select, spacing,
+                                     typography and shadow — the shared controls. --}}
+                                @include('theme-runtime::canvas.control-field')
 
                                 {{-- image (TB3-07) --}}
                                 <template x-if="schemaDef.type === 'image'">
@@ -1091,7 +1126,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 </template>
 
                                 {{-- number --}}
-                                <template x-if="schemaDef.type === 'number'">
+                                <template x-if="schemaDef.type === 'number' && !ctlIsResponsive(propKey)">
                                     <input type="number"
                                         :id="'ctrl-' + propKey"
                                         :value="selectedBlock.props[propKey] ?? schemaDef.default ?? 0"
@@ -1113,7 +1148,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 </template>
 
                                 {{-- select (plain dropdown unless the schema asks for a dedicated `ui`) --}}
-                                <template x-if="schemaDef.type === 'select' && !schemaDef.ui">
+                                <template x-if="schemaDef.type === 'select' && !schemaDef.ui && !ctlIsResponsive(propKey)">
                                     <select :id="'ctrl-' + propKey" :value="selectedBlock.props[propKey] ?? schemaDef.default ?? ''" @change="updateProp(propKey, $event.target.value)"
                                         class="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition">
                                         <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
@@ -1125,7 +1160,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 {{-- ADR-076: segmented control — a select whose schema declares
                                      ui: 'segmented' (alignment, icon colour mode). One button per
                                      schema option, so the control and the allowlist agree. --}}
-                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'segmented'">
+                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'segmented' && !ctlIsResponsive(propKey)">
                                     <div class="flex gap-1 p-1 rounded-lg bg-slate-100" role="radiogroup" :aria-label="schemaDef.label || propKey" :data-testid="'tb-segmented-' + propKey">
                                         <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
                                             <button type="button" role="radio"
@@ -1142,7 +1177,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                      ui: 'column_picker'. Buttons are generated from the
                                      schema's own options, so the picker and the allowlist
                                      can never disagree. --}}
-                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'column_picker'">
+                                <template x-if="schemaDef.type === 'select' && schemaDef.ui === 'column_picker' && !ctlIsResponsive(propKey)">
                                     <div class="grid grid-cols-2 gap-2 mt-1" role="radiogroup" :aria-label="schemaDef.label || propKey" :data-testid="'tb-column-picker-' + propKey">
                                         <template x-for="opt in selectOptions(schemaDef)" :key="opt.value">
                                             <button type="button" role="radio"
@@ -1316,12 +1351,12 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             </div>
                         </template>
 
-                        <div x-show="Object.keys(selectedSchema).length === 0 && !isContainerType(selectedBlock?.type)" class="text-center py-6">
+                        <div x-show="selectedTab === 'content' && Object.keys(selectedSchema).length === 0 && !isContainerType(selectedBlock?.type)" class="text-center py-6">
                             <p class="text-xs text-slate-400">این بلوک تنظیماتی ندارد</p>
                         </div>
 
                         {{-- TB4: Container Children Panel ──────────────────── --}}
-                        <template x-if="isContainerType(selectedBlock?.type)">
+                        <template x-if="selectedTab === 'content' && isContainerType(selectedBlock?.type)">
                             <div class="mt-4 pt-4 border-t border-slate-200">
                                 <div class="flex items-center justify-between px-1 mb-2">
                                     <span class="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
@@ -1366,6 +1401,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             </div>
                         </template>
                     </div>
+                    </div>{{-- /tb-inspector-scroll --}}
 
                 </div>
             </template>
@@ -1991,6 +2027,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 window.CANVAS_TREE_LIMITS = @json($canvasTreeLimits);
 </script>
 @include('theme-runtime::canvas.color')
+@include('theme-runtime::canvas.controls')
 @include('theme-runtime::canvas.icons')
 @include('theme-runtime::canvas.tab-strip')
 @include('theme-runtime::canvas.inspect')
@@ -2029,6 +2066,9 @@ window.CANVAS_LAYOUT_ATTRIBUTES = CANVAS_LAYOUT_ATTRIBUTES;
 
 function themeCanvas() {
     return {
+        // ADR-082: tabs, conditions, per-device values and states of the
+        // Inspector (theme-runtime canvas-controls.js; ctlSetProp below).
+        ...window.CanvasControls.editorMixin(),
         // ── State ───────────────────────────────────────────────
         pages:          JSON.parse(JSON.stringify(INITIAL_PAGES)),
         currentPage:    Object.keys(INITIAL_PAGES)[0] ?? 'home',
@@ -2158,13 +2198,13 @@ function themeCanvas() {
             const schema = BLOCK_SCHEMAS[this.selectedBlock.type]?.schema ?? {};
             return Object.fromEntries(Object.entries(schema).filter(([, def]) => def?.type !== 'blocks'));
         },
-        // ADR-076: true where a field's schema `group` differs from the previous field's.
-        fieldGroupStart(propKey) {
-            const schema = this.selectedSchema;
-            const keys = Object.keys(schema);
-            const index = keys.indexOf(propKey);
-            const group = schema[propKey]?.group;
-            return !!group && (index <= 0 || schema[keys[index - 1]]?.group !== group);
+        // ADR-076 section headers (fieldGroupStart) come from the
+        // CanvasControls mixin, computed over the active tab's visible fields.
+        // ADR-082: the mixin's prop writer — one undo step per key, like any
+        // control; `undefined` drops a device value back to inheritance.
+        ctlSetProp(key, value) {
+            this.updateProp(key, value);
+            if (value === undefined && this.selectedBlock?.props) delete this.selectedBlock.props[key];
         },
         get selectedEditorCapabilities() {
             return this.selectedBlock

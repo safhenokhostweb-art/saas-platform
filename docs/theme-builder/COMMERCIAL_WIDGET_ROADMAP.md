@@ -1325,3 +1325,39 @@ for the Canvas redesign.
 - `header-mobile-standard` template: `TemplateLibraryTest` reports four
   props outside the `nav_header` schema / an invalid CTA link;
   `UniversalMultipurposeQaThemeSeederTest` counts 164 vs 163 types.
+
+## 18. Elementor-grade widgets, header first (2026-11-08 →, ADR-082)
+
+Owner directive (2026-11-07): rebuild every Canvas widget to the Elementor Pro
+control standard, starting with `nav_header`. The Phase 1 discovery and schema
+proposal were approved on 2026-11-08 with three decisions:
+
+- breakpoints are mobile < 768, tablet < 1024, desktop ≥ 1024;
+- `header_modern_v1` is frozen;
+- the header hides the generic Style sections.
+
+### 18.1 Step 1: editor infrastructure (done on `feat/header-pro-editor-infra`, both repos)
+
+- Schema vocabulary: `panel`, `condition`, `responsive`
+  (`key_tablet`/`key_mobile`), `state_group`/`state`, `shadow`, multi-unit
+  `range` and `editor.hideGenericStyle`.
+- Shared controls in `theme-runtime`, used by both editors: range, spacing,
+  typography, shadow, the device switch and Normal / Hover / Active.
+- The Inspector's mobile override is now 767.98px.
+- `nav_header` fields are split by tab, with conditions.
+
+### 18.2 Step 2: header CSS variables (done, same branch)
+
+- The header's inline `<style>` moved to `theme-runtime-header.css`. It is
+  shipped by `css.blocks`, and by `css.header` on the legacy storefront
+  layout.
+- 64 `--tb-hdr-*` variables, registered in `HeaderStyleVars` with a safe
+  scoped emitter.
+- Pixel- and computed-style-identical: 20 screenshots and 20 style dumps
+  match the pre-change baseline (ADR-082, step 2).
+
+### 18.3 Steps 3–5
+
+Header Style controls, then sticky-after-scroll / burger breakpoint /
+drawer, then the active link and accessibility, following the approved
+proposal.

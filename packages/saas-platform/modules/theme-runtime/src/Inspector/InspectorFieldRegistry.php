@@ -17,7 +17,7 @@ final class InspectorFieldRegistry
         'text', 'textarea', 'rich_text', 'number', 'range', 'toggle',
         'select', 'color', 'link', 'media', 'icon', 'repeater', 'array',
         'spacing', 'dimensions', 'typography', 'alignment', 'responsive',
-        'module_entity',
+        'module_entity', 'shadow',
     ];
 
     private const ALIASES = [
@@ -34,8 +34,51 @@ final class InspectorFieldRegistry
     ];
 
     private const PANELS = ['content', 'style', 'advanced', 'responsive'];
-    private const UNITS = ['px', 'rem', 'em', '%', 'vw', 'vh'];
+    public const UNITS = ['px', 'rem', 'em', '%', 'vw', 'vh'];
     private const LINK_TARGETS = ['_self', '_blank'];
+
+    /**
+     * ADR-082: the Inspector tabs both editors render a field in. A field is
+     * in `content` unless its schema declares `panel` — explicit only, so no
+     * existing widget's field moves tab without its own schema saying so.
+     */
+    public const EDITOR_PANELS = ['content', 'style', 'advanced'];
+
+    /**
+     * ADR-082: a `responsive: true` field stores one value per device under
+     * the Elementor convention `key`, `key_tablet`, `key_mobile`. A device
+     * without its own value inherits the next wider one (mobile → tablet →
+     * desktop). The widths are LayoutContract::BREAKPOINT_MAX_WIDTH_BY_NAME.
+     */
+    public const DEVICE_SUFFIXES = ['desktop' => '', 'tablet' => '_tablet', 'mobile' => '_mobile'];
+
+    /** ADR-082: controls whose value may differ per device. */
+    public const RESPONSIVE_CONTROLS = ['number', 'range', 'select', 'spacing', 'typography'];
+
+    /**
+     * ADR-082: interaction states a `state_group` switches between
+     * (Elementor's Normal / Hover / Active tabs). Each state is its own
+     * schema key; the group only decides which one the Inspector shows.
+     */
+    public const STATES = ['normal', 'hover', 'active'];
+
+    /**
+     * ADR-082: the generic wrapper sections of the Style tab a widget can
+     * hide with `editor.hideGenericStyle` (true = all of them), each with
+     * the block `style` / `responsive` keys it writes. The Advanced tab's
+     * own keys (customClass, hide*, animation*) are never part of these.
+     */
+    public const GENERIC_STYLE_SECTIONS = [
+        'typography' => ['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign'],
+        'colors' => ['bgColor', 'textColor', 'bgGradientFrom', 'bgGradientTo', 'bgGradientDir'],
+        'spacing' => ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'paddingX', 'paddingY', 'marginTop', 'marginBottom'],
+        'border' => ['borderWidth', 'borderStyle', 'borderColor', 'borderRadius'],
+        'shadow' => ['shadow'],
+        'opacity' => ['opacity'],
+    ];
+
+    /** ADR-082: limits of a structured box-shadow value. */
+    private const SHADOW_LIMITS = ['x' => [-100, 100], 'y' => [-100, 100], 'blur' => [0, 200], 'spread' => [-100, 100]];
 
     /** @return array<string,mixed> */
     public static function normalizeDefinition(array $definition): array
@@ -63,9 +106,58 @@ final class InspectorFieldRegistry
                 ? $editor['maxChildren'] : null,
             'uiDirection' => in_array($editor['uiDirection'] ?? null, ['rtl', 'ltr'], true)
                 ? $editor['uiDirection'] : null,
+            'hideGenericStyle' => self::normalizeHiddenStyleSections($editor['hideGenericStyle'] ?? null),
         ];
 
         return $normalized;
+    }
+
+    /**
+     * ADR-082: `editor.hideGenericStyle` as the list of generic Style-tab
+     * sections a widget hides: true means every section, a list names some.
+     * Unknown names are dropped (WidgetSchemaContract reports them).
+     *
+     * @return list<string>
+     */
+    public static function normalizeHiddenStyleSections(mixed $value): array
+    {
+        if ($value === true) {
+            return array_keys(self::GENERIC_STYLE_SECTIONS);
+        }
+        if (!is_array($value)) {
+            return [];
+        }
+        return array_values(array_intersect(array_keys(self::GENERIC_STYLE_SECTIONS), $value));
+    }
+
+    /** ADR-082: the schema key a responsive field stores its value under on `$device`. */
+    public static function deviceKey(string $key, string $device): string
+    {
+        return $key . (self::DEVICE_SUFFIXES[$device] ?? '');
+    }
+
+    /**
+     * ADR-082: a responsive field's value on `$device`. A device without a
+     * value of its own takes its `<device>_default` when the schema declares
+     * one, else the next wider device's (mobile → tablet → desktop), and
+     * finally the field's `default`. Same order as CanvasControls.read(),
+     * so the Inspector shows what the renderer emits.
+     */
+    public static function responsiveValue(array $props, string $key, string $device, array $field = []): mixed
+    {
+        $order = array_keys(self::DEVICE_SUFFIXES);
+        $index = array_search($device, $order, true);
+        for ($i = $index === false ? 0 : (int) $index; $i >= 0; $i--) {
+            $value = $props[self::deviceKey($key, $order[$i])] ?? null;
+            if ($value !== null && $value !== '' && $value !== []) {
+                return $value;
+            }
+            $deviceDefault = $i > 0 ? ($field[$order[$i] . '_default'] ?? null) : null;
+            if ($deviceDefault !== null && $deviceDefault !== '') {
+                return $deviceDefault;
+            }
+        }
+        return $field['default'] ?? null;
     }
 
     private static function normalizeKindList(mixed $value): ?array
@@ -156,7 +248,41 @@ final class InspectorFieldRegistry
             'alignment' => self::normalizeAlignment($value, (string) ($context['direction'] ?? LayoutContract::DEFAULT_DIRECTION)),
             'responsive' => self::normalizeResponsive($value),
             'module_entity' => self::normalizeModuleEntity($value, $field),
+            'shadow' => self::normalizeShadow($value),
         };
+    }
+
+    /**
+     * ADR-082: a box shadow as {x, y, blur, spread, color, inset}; '' or
+     * null is "no shadow". Offsets are clamped, the colour goes through the
+     * renderer's own colour grammar, so the value is always safe to emit.
+     *
+     * @return array{x:int|float,y:int|float,blur:int|float,spread:int|float,color:string,inset:bool}|null
+     */
+    public static function normalizeShadow(mixed $value): ?array
+    {
+        if ($value === null || $value === '' || $value === 'none') {
+            return null;
+        }
+        if (!is_array($value)) {
+            throw new InvalidArgumentException('Shadow must be structured.');
+        }
+        $result = [];
+        foreach (self::SHADOW_LIMITS as $key => [$min, $max]) {
+            $n = $value[$key] ?? 0;
+            if (!is_numeric($n)) {
+                throw new InvalidArgumentException("Invalid shadow '{$key}'.");
+            }
+            $n = max($min, min($max, (float) $n));
+            $result[$key] = floor($n) === $n ? (int) $n : $n;
+        }
+        $color = $value['color'] ?? 'rgba(15, 23, 42, 0.12)';
+        if (!is_string($color) || !HtmlSanitizer::isCssColor($color)) {
+            throw new InvalidArgumentException('Invalid shadow colour.');
+        }
+        $result['color'] = trim($color);
+        $result['inset'] = ($value['inset'] ?? false) === true;
+        return $result;
     }
 
     /** Add stable identity only to a newly-created item; legacy items remain untouched. */
@@ -192,13 +318,30 @@ final class InspectorFieldRegistry
         return $result;
     }
 
+    /**
+     * ADR-082: `panel` is where both editors render the field, so it is
+     * content unless the schema declares it. Inferring style from the
+     * control type would move every existing colour field out of its tab.
+     */
     private static function defaultPanel(string $type): string
     {
-        return in_array($type, ['color', 'spacing', 'dimensions', 'typography', 'alignment'], true) ? 'style' : 'content';
+        return 'content';
     }
 
-    private static function normalizeNumber(mixed $value, array $field): int|float
+    private static function normalizeNumber(mixed $value, array $field): int|float|array
     {
+        // ADR-082: a range with several units stores {size, unit}.
+        if (is_array($field['units'] ?? null) && count($field['units']) > 1) {
+            if (!is_array($value)) {
+                $value = ['size' => $value, 'unit' => $field['unit'] ?? $field['units'][0]];
+            }
+            $unit = $value['unit'] ?? null;
+            if (!in_array($unit, $field['units'], true)) {
+                throw new InvalidArgumentException('Unit is not allowlisted for this field.');
+            }
+            $limits = is_array($field['unit_limits'][$unit] ?? null) ? $field['unit_limits'][$unit] + $field : $field;
+            return ['size' => self::normalizeNumber($value['size'] ?? null, array_diff_key($limits, ['units' => true])), 'unit' => $unit];
+        }
         if (!is_numeric($value)) {
             throw new InvalidArgumentException('Numeric inspector value required.');
         }
