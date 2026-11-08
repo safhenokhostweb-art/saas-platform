@@ -119,6 +119,9 @@
       if (flags.includes('noshrink')) host.classList.add('tb-hdr-no-shrink');
       if (/(^|\s)scrolled-shadow(\s|$)/.test(block.getAttribute('data-tb-hdr-set') || '')) host.classList.add('tb-hdr-own-shadow');
       if (offset > 0) host.style.top = offset + 'px';
+      // ADR-082 step 5: the banner's stacking order (the sheet's default is 900).
+      const z = parseInt(block.getAttribute('data-tb-z') || '', 10);
+      if (z >= 1 && z <= 9999) host.style.zIndex = String(z);
       // Sticky on every device, or only from the tablet / desktop width up.
       const applySticky = () => {
         const on = !stickyQuery || root.matchMedia(stickyQuery).matches;
@@ -208,10 +211,39 @@
     const open = document.querySelector('.tb-mega-menu-item.tb-mega-open, .tb-mega-menu-item:focus-within');
     if (!open) return;
     closeAll(null);
+    setOpen(open, false); // a desktop panel opened by focus (CSS :focus-within) has no tb-mega-open
     const trigger = open.querySelector('.tb-mega-menu-trigger');
     if (trigger) {
-      trigger.focus();
+      // Suppress first: focusing the trigger must not report the panel as open again.
       open.classList.add('tb-mega-suppress'); // hide the focus-within panel until focus moves on
+      trigger.focus();
+    }
+  });
+  // ADR-082 step 5: keyboard. On desktop a focused trigger shows its panel
+  // (CSS :focus-within), so aria-expanded follows focus as it follows hover;
+  // ArrowDown moves into the panel, ArrowUp from its first link returns.
+  document.addEventListener('focusin', (e) => {
+    const item = e.target.closest && e.target.closest('.tb-mega-menu-item');
+    if (item && !touchMenus() && !item.classList.contains('tb-mega-suppress')) {
+      item.querySelector('.tb-mega-menu-trigger')?.setAttribute('aria-expanded', 'true');
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const item = e.target.closest && e.target.closest('.tb-mega-menu-item');
+    if (!item) return;
+    const trigger = item.querySelector('.tb-mega-menu-trigger');
+    const links = Array.from(item.querySelectorAll('.tb-mega-menu-panel a[href]')).filter((a) => a.getClientRects().length > 0);
+    if (e.key === 'ArrowDown' && e.target === trigger) {
+      if (touchMenus() && !item.classList.contains('tb-mega-open')) { closeAll(item); setOpen(item, true); }
+      item.classList.remove('tb-mega-suppress');
+      const first = links[0] || Array.from(item.querySelectorAll('.tb-mega-menu-panel a[href]')).find((a) => a.getClientRects().length > 0);
+      if (first) { e.preventDefault(); first.focus(); }
+    } else if (links.length && e.target !== trigger && links.includes(e.target)) {
+      const i = links.indexOf(e.target);
+      e.preventDefault();
+      if (e.key === 'ArrowUp' && i === 0) trigger?.focus();
+      else links[Math.max(0, Math.min(links.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))].focus();
     }
   });
   document.addEventListener('focusout', (e) => {

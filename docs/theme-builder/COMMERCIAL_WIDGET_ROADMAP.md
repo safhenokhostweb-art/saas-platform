@@ -1383,6 +1383,18 @@ proposal were approved on 2026-11-08 with three decisions:
 - A toggle shows its schema default in both editors.
 - Default headers stay pixel-identical (ADR-082, step 4).
 
-### 18.5 Step 5
+### 18.5 Step 5: header accessibility (done, branch `feat/header-pro-a11y`)
 
-Accessibility, following the approved proposal.
+- A menu without links renders no burger, drawer or navigation. This
+  fixes the live top bar's second, empty burger.
+- The open drawer is a named modal dialog. The rest of the header is
+  inert, Tab stays in the drawer (hidden items skipped), and Escape
+  returns focus.
+- Keyboard focus rings on every header link and button, with an optional
+  colour.
+- The mega menu works from the keyboard: `aria-expanded` follows focus,
+  arrow keys walk it, and Escape closes it.
+- New fields: menu name for screen readers, focus colour, sticky
+  `z-index`.
+- axe-core reports 0 violations on the header in every state. Default
+  headers stay pixel-identical (ADR-082, step 5).

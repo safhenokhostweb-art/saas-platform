@@ -177,3 +177,12 @@
 .tb-nav-header.tb-nav-header--drawer-end .tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{inset-inline:auto 0;box-shadow:var(--tb-hdr-drawer-shadow-end, 12px 0 32px rgb(15 23 42 / 18%));}
 .tb-nav-header.tb-nav-header--drawer-full .tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{inset-inline:0;width:100%;max-width:none;box-shadow:none;}
 .tb-nav-header.tb-nav-header--drawer-dropdown .tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{position:absolute;inset-block:100% auto;inset-inline:0;width:100%;max-width:none;max-height:calc(100vh - 100%);border-radius:0 0 .75rem .75rem;box-shadow:0 18px 32px -14px rgb(15 23 42 / 30%);}
+
+/* ADR-082 step 5: accessibility.
+   A visible keyboard focus ring on every header link and button, in the
+   element's own colour (the header text, or the drawer text, which already
+   contrast with their background) unless the header sets one. Text inputs
+   keep their own focus style; the CTA keeps the shared button ring. Pointer
+   clicks never match :focus-visible, so the mouse look is unchanged. */
+.tb-nav-header-root :is(a,button):not(.tb-btn):focus-visible{outline:2px solid var(--tb-hdr-focus, currentColor);outline-offset:2px;}
+.tb-nav-header[data-tb-hdr-set~="focus"] .tb-nav-header-root .tb-btn:focus-visible{outline-color:var(--tb-hdr-focus);}

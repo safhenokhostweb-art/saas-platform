@@ -231,4 +231,57 @@ class HeaderStyleVarsTest extends TestCase
         $this->assertStringContainsString('data-tb-burger="never"', $notSticky, 'the burger breakpoint is independent');
         $this->assertStringContainsString('root.classList.toggle("tb-nav-header-root--drawer",drawer)', $notSticky);
     }
+
+    /** ADR-082 step 5: no links → no navigation landmark, burger, drawer or backdrop. */
+    public function test_a_menu_without_links_renders_no_navigation_burger_or_drawer(): void
+    {
+        $render = fn (array $p) => (new BlockRenderer())->renderBlock(['type' => 'nav_header', 'id' => 'h', 'props' => ['logo_text' => 'x'] + $p]);
+
+        // The live top bar: every authored link lacks a label.
+        $empty = $render(['nav_links' => [['label' => null, 'url' => '/'], ['label' => '', 'url' => '/shop']], 'cta_text' => 'شروع کنید']);
+        $markup = substr($empty, 0, (int) strpos($empty, '<script')); // the inline script names these classes
+        foreach (['<nav', 'tb-nav-header-toggle', 'tb-nav-header-menu-panel', 'tb-nav-header-overlay'] as $absent) {
+            $this->assertStringNotContainsString($absent, $markup, $absent);
+        }
+        $this->assertStringContainsString('tb-nav-header-cta', $empty, 'the rest of the header still renders');
+
+        $one = $render(['nav_links' => [['label' => null, 'url' => '/'], ['label' => 'وبلاگ', 'url' => '/blog']]]);
+        $this->assertStringContainsString('<nav class="tb-nav-header-links" aria-label="منوی اصلی"', $one, 'one labelled link is a menu');
+        $this->assertStringContainsString('class="tb-nav-header-toggle', $one);
+        $this->assertStringContainsString('<button type="button" class="tb-nav-header-overlay" aria-label="بستن منو" tabindex="-1" hidden>', $one, 'the backdrop is pointer-only');
+
+        $this->assertStringContainsString('class="tb-nav-header-toggle', $render([]), 'no authored links: the default menu, as before');
+    }
+
+    public function test_menu_name_focus_colour_and_z_index_are_safe_and_only_written_when_set(): void
+    {
+        $render = fn (array $p) => (new BlockRenderer())->renderBlock(['type' => 'nav_header', 'id' => 'h', 'props' => ['logo_text' => 'x'] + $p]);
+
+        $named = $render(['menu_aria_label' => 'منوی بالا "><script>']);
+        $this->assertStringContainsString('aria-label="منوی بالا &quot;&gt;&lt;script&gt;"', $named);
+        $this->assertStringContainsString('aria-label="منوی اصلی"', $render(['menu_aria_label' => '  ']), 'blank: the default name');
+
+        $out = HeaderStyleVars::forHeader('tb-h', ['focus_color' => '#f59e0b']);
+        $this->assertStringContainsString('--tb-hdr-focus:#f59e0b', $out['style']);
+        $this->assertSame(['focus'], $out['set'], 'the CTA ring follows only a set colour');
+        $this->assertSame('', HeaderStyleVars::forHeader('tb-h', ['focus_color' => 'url(x)'])['style']);
+
+        $rootTag = fn (string $html) => substr($html, 0, (int) strpos($html, '>') + 1);
+        $this->assertStringNotContainsString('data-tb-z', $rootTag($render(['sticky' => true, 'z_index' => 900])), 'the default stays in the sheet');
+        $this->assertStringContainsString('data-tb-z="1200"', $rootTag($render(['sticky' => true, 'z_index' => '1200'])));
+        $this->assertStringNotContainsString('data-tb-z', $rootTag($render(['sticky' => true, 'z_index' => 99999])), 'out of range');
+        $this->assertStringNotContainsString('data-tb-z', $rootTag($render(['sticky' => false, 'z_index' => 1200])), 'only the sticky banner stacks');
+    }
+
+    public function test_the_open_drawer_is_a_labelled_modal_dialog_and_the_tab_trap_skips_hidden_items(): void
+    {
+        $html = (new BlockRenderer())->renderBlock(['type' => 'nav_header', 'id' => 'h', 'props' => ['logo_text' => 'x']]);
+        $this->assertStringContainsString('panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",menu.getAttribute("aria-label")||"")', $html);
+        $this->assertStringContainsString('panel.removeAttribute("role");panel.removeAttribute("aria-modal")', $html);
+        $this->assertStringContainsString('return el.getClientRects().length>0;', $html);
+        // The rest of the header turns inert after focus moves in, and back before it returns; the burger stays clickable.
+        $this->assertStringContainsString('close&&close.focus();setInert(true);}else{setInert(false);', $html);
+        $this->assertStringContainsString('if(el===menu||el===overlay||el===toggle)return;', $html);
+        $this->assertStringNotContainsString('role="dialog"', substr($html, 0, (int) strpos($html, '<script')), 'a closed menu is plain navigation');
+    }
 }

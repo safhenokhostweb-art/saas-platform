@@ -5287,3 +5287,69 @@ and 4 ship as one release.
   - The customer `CanonicalListSchemaParityTest` sample generator now
     respects a range's `min`, and writes `{size, unit}` for a multi-unit
     range.
+
+**Step 5 (2026-11-08): header accessibility.** Steps 3 and 4 were released
+and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
+
+- **Empty menu.** A menu without a link renders no `<nav>`, burger, drawer
+  or backdrop. The burger used to be tested after the menu was wrapped in
+  its `<nav>`, so it always rendered. The live home page's top-bar header
+  (links without labels) showed a second burger that opened an empty
+  drawer. Child blocks count as menu content; with no authored links, the
+  default menu still renders.
+- **Modal drawer.** While the drawer is open, its panel is
+  `role="dialog"` + `aria-modal="true"`, named by the menu.
+  - The rest of the header turns `inert` after focus moves into the
+    drawer, and comes back before focus returns. The burger is left out:
+    it stays the pointer's way to close where the drawer leaves it
+    uncovered.
+  - The Tab trap skips hidden items (the collapsed mega panels), which
+    used to let Tab escape.
+  - The backdrop button is pointer-only (`tabindex="-1"`).
+  - When closed, the panel is plain navigation again.
+- **Focus ring.** Every header link and button shows a 2px
+  `:focus-visible` ring in its own colour (the header or drawer text,
+  which already contrast with their surface), or in `focus_color`
+  (`--tb-hdr-focus`).
+  - Text inputs keep their own focus style.
+  - The CTA keeps the shared `.tb-btn` ring unless the header sets a
+    colour (gated).
+  - Pointer clicks never match `:focus-visible`, so the mouse look and
+    the pixel ratchet are unchanged.
+- **Mega menu keyboard.**
+  - A focused trigger reports `aria-expanded="true"`; the panel already
+    opened on `:focus-within`.
+  - ArrowDown moves into the panel, the arrows walk its links, and
+    ArrowUp from the first link returns to the trigger.
+  - Escape closes the focused panel too, including a desktop panel
+    opened by focus, which has no `tb-mega-open` class.
+  - The suppress class is set before focus returns, so the trigger no
+    longer reports open again.
+- **Advanced fields.**
+  - `menu_aria_label` (default «منوی اصلی») tells two navigations apart.
+  - `focus_color`.
+  - `z_index` for the sticky banner (1–9999; the sheet default 900 emits
+    nothing). Written as `data-tb-z` and applied to the banner host by
+    `site-header.js`.
+- **Not added.** A skip link belongs to the page layout, and the customer
+  layout already has one (`#canvas-main`). The smart header already
+  reveals itself on `focusin`.
+- **Tests:**
+  - `HeaderStyleVarsTest`: empty menu, safe name, `z-index` and
+    `focus_color` only when set, dialog / inert / trap script.
+  - `tests/browser/header-a11y.spec.ts`, keyboard only:
+    - the drawer dialog, the trap, Escape and focus return;
+    - inert, burger and backdrop taps;
+    - focus rings on desktop, the CTA ring and `focus_color`;
+    - the mega menu arrows and Escape;
+    - the empty top bar at three widths;
+    - `z-index`.
+  - customer-site `header-a11y-axe.spec.js`: axe-core (WCAG 2 A/AA +
+    best-practice) on the host's header, closed and open, phone and
+    desktop with the mega menu open, and the empty top bar: 0
+    violations.
+    - It found one real defect, now fixed by `inert`: with the drawer
+      open, the phone number sat over the backdrop at 4.35:1.
+  - `Adr082InspectorControlsHostTest` covers the step-5 props on the
+    customer host.
+  - The pixel ratchet is unchanged.

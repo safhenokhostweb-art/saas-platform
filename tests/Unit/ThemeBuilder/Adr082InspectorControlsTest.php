@@ -192,8 +192,11 @@ class Adr082InspectorControlsTest extends TestCase
             'sticky', 'sticky_hide_on_scroll',
             // step 4: sticky options and the scrolled look
             'sticky_devices', 'sticky_offset', 'scroll_threshold', 'sticky_shrink', 'sticky_shrink_height', 'sticky_logo_scale', 'scrolled_bg_color', 'scrolled_text_color', 'scrolled_shadow',
+            'z_index', // step 5
             'transparent_over_hero', 'transparent_text_color',
             'burger_breakpoint', 'drawer_style', 'drawer_side',
+            // step 5: accessibility
+            'menu_aria_label', 'focus_color',
         ], $byPanel['advanced']);
         $this->assertContains('logo_image', $byPanel['content']);
         $this->assertSame(true, $definition['editor']['hideGenericStyle']);

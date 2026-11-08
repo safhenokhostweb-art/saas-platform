@@ -1069,6 +1069,8 @@ class BlockRegistry
                     'scrolled_bg_color'     => ['type' => 'color', 'label' => 'رنگ پس‌زمینه پس از اسکرول', 'default' => '', 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف', 'condition' => ['sticky' => true]],
                     'scrolled_text_color'   => ['type' => 'color', 'label' => 'رنگ متن پس از اسکرول', 'default' => '', 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف', 'condition' => ['sticky' => true]],
                     'scrolled_shadow'       => ['type' => 'shadow', 'label' => 'سایه پس از اسکرول (خالی = سایهٔ پیش‌فرض)', 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف', 'condition' => ['sticky' => true]],
+                    // ADR-082 step 5: the sticky banner's stacking order (above chat widgets, below dialogs).
+                    'z_index'               => ['type' => 'number', 'label' => 'ترتیب لایه (z-index) هدر چسبان', 'default' => 900, 'min' => 1, 'max' => 9999, 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف', 'condition' => ['sticky' => true]],
                     'transparent_over_hero' => ['type' => 'boolean', 'label' => 'شفاف روی بنر بالای صفحه', 'default' => false, 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف'],
                     // '' = automatic: the script reads the hero under the header and picks light or dark text.
                     'transparent_text_color' => ['type' => 'color', 'label' => 'رنگ متن در حالت شفاف (خالی = تشخیص خودکار کنتراست)', 'default' => '', 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف', 'condition' => ['transparent_over_hero' => true]],
@@ -1076,6 +1078,9 @@ class BlockRegistry
                     'burger_breakpoint'     => ['type' => 'select', 'label' => 'نمایش منوی همبرگری', 'options' => ['mobile' => 'موبایل (کمتر از ۷۶۸ پیکسل)', 'tablet' => 'تبلت و موبایل (کمتر از ۱۰۲۴ پیکسل)', 'always' => 'همیشه', 'never' => 'هرگز (منو همیشه در هدر)'], 'default' => 'mobile', 'panel' => 'advanced', 'group' => 'منوی موبایل'],
                     'drawer_style'          => ['type' => 'select', 'ui' => 'segmented', 'label' => 'سبک منوی بازشو', 'options' => ['side' => 'کشوی کناری', 'full' => 'تمام‌صفحه', 'dropdown' => 'زیر هدر'], 'default' => 'side', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_side'           => ['type' => 'select', 'ui' => 'segmented', 'label' => 'سمت کشو', 'options' => ['start' => 'راست', 'end' => 'چپ'], 'default' => 'start', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never', 'drawer_style' => 'side']],
+                    // ADR-082 step 5: accessibility. The menu name tells two navigations apart for screen readers.
+                    'menu_aria_label'       => ['type' => 'string', 'label' => 'نام منو برای صفحه‌خوان', 'default' => 'منوی اصلی', 'panel' => 'advanced', 'group' => 'دسترس‌پذیری'],
+                    'focus_color'           => ['type' => 'color', 'label' => 'رنگ حلقهٔ فوکوس کیبورد (خالی = رنگ همان آیتم)', 'default' => '', 'panel' => 'advanced', 'group' => 'دسترس‌پذیری'],
                     // Style tab: the header's own colours.
                     'bg_color'           => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'رنگ‌های هدر'],
                     'text_color'         => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#111827', 'panel' => 'style', 'group' => 'رنگ‌های هدر'],

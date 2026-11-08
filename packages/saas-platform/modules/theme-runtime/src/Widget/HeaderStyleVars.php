@@ -132,6 +132,8 @@ final class HeaderStyleVars
         'burger-color' => ['color', null],
         'burger-size' => ['length', null],
         'drawer-shadow-end' => ['shadow', '12px 0 32px rgb(15 23 42 / 18%)'],
+        // ADR-082 step 5: the keyboard focus ring (falls back to the element's own colour).
+        'focus' => ['color', 'currentColor'],
     ];
 
     /** Variables read by theme-runtime-blocks.css (the sticky shrink) rather than the header sheet. */
@@ -147,6 +149,8 @@ final class HeaderStyleVars
         'menu-pad-y', 'menu-pad-x', 'menu-color', 'menu-color-hover', 'menu-color-active',
         'menu-bg', 'menu-bg-hover', 'menu-bg-active', 'pointer-color', 'pointer-h',
         'scrolled-bg', 'scrolled-text', 'scrolled-shadow', 'burger-color', 'burger-size',
+        // step 5: the CTA keeps the shared button ring unless the header sets its own colour.
+        'focus',
     ];
 
     /** ADR-082 step 4: phone drawer style and side; side + start is the default and has no class. */
@@ -192,6 +196,8 @@ final class HeaderStyleVars
         'drawer_divider_color' => ['drawer-divider', null],
         'burger_color' => ['burger-color', null],
         'burger_size' => ['burger-size', null],
+        // step 5
+        'focus_color' => ['focus', null],
     ];
 
     private const PADDING_SIDES = ['block-start' => 'bs', 'block-end' => 'be', 'inline-start' => 'is', 'inline-end' => 'ie'];
