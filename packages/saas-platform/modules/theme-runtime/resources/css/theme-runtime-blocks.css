@@ -27,7 +27,7 @@
 .tb-section:not([class*="tb-padding-"]) { padding-top: var(--tb-space-section, 2.5rem); padding-bottom: var(--tb-space-section, 2.5rem); }
 .tb-section-inner { width: 100%; }
 .tb-container { max-width: var(--tb-container, 80rem); margin: 0 auto; padding: 0 1rem; }
-.tb-hero { padding: 3rem 1.5rem; text-align: center; border-radius: var(--tb-radius, 0.75rem); background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); margin-bottom: 2.5rem; }
+.tb-hero { padding: 0; text-align: center; border-radius: var(--tb-radius, 0.75rem); background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); margin-bottom: 0; }
 .tb-hero-inner { max-width: 56rem; margin: 0 auto; }
 /* WU-D fluid titles: only the floor moves. It equals the old floor from 390px
    up and shrinks 0.1px per px below it (to a lower bound), so 320–389px phones
@@ -76,7 +76,7 @@ h6.tb-heading { font-size: var(--tb-h6-size, 1rem); }
 .tb-hero.tb-align-center  { text-align: center; }
 
 /* CTA */
-.tb-cta { padding: 2.5rem 1.5rem; border-radius: var(--tb-radius, 0.75rem); text-align: center; background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); }
+.tb-cta { padding: 0; border-radius: var(--tb-radius, 0.75rem); text-align: center; background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); }
 .tb-cta-title    { font-size: max(1.25rem, min(1.75rem, calc(1.75rem + (100vw - 390px) * 0.1))); font-weight: 800; margin: 0 0 0.5rem; }
 .tb-cta-subtitle { font-size: 1rem; opacity: 0.9; margin: 0 0 1rem; }
 .tb-cta .tb-btn  { background: var(--tb-on-primary, #fff) !important; color: var(--tb-primary-text, #4f46e5) !important; }
@@ -224,8 +224,8 @@ h6.tb-heading { font-size: var(--tb-h6-size, 1rem); }
 .tb-placeholder-detail { display: block; margin-top: 0.35rem; font-size: 0.8125rem; line-height: 1.6; }
 .tb-placeholder-detail code { display: block; margin-top: 0.15rem; font: 0.75rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; opacity: 0.85; }
 
-/* row/column */
-.tb-row { display: flex; flex-wrap: wrap; gap: 1rem; }
+/* row/column - zero default gap, spacing via widget Margin/Padding or Spacer */
+.tb-row { display: flex; flex-wrap: wrap; gap: 0; }
 .tb-column { min-width: 0; }
 .tb-col-full { flex: 1 1 100%; }
 .tb-col-1-2 { flex: 1 1 calc(50% - 0.5rem); }
@@ -258,7 +258,7 @@ h6.tb-heading { font-size: var(--tb-h6-size, 1rem); }
 @media (max-width: 767.98px) { .tb-hero-split{flex-direction:column-reverse;gap:1.5rem;} .tb-hero-split-title{font-size:max(1.5rem, min(1.875rem, calc(1.875rem + (100vw - 390px) * 0.1)));} .tb-hero-split-img,.tb-hero-split-img-placeholder{max-width:100%;height:220px;} }
 
 /* ─── hero_gradient ─────────────────────────────────────────── */
-.tb-hero-gradient { text-align:center; padding:5.5rem 1.5rem; position:relative; overflow:hidden; }
+.tb-hero-gradient { text-align:center; padding:0; position:relative; overflow:hidden; }
 .tb-hero-gradient-inner { max-width:58rem; margin:0 auto; position:relative; z-index:1; }
 .tb-hero-gradient-badge { display:inline-block; background:rgba(255,255,255,0.18); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.3); font-size:0.82rem; font-weight:700; padding:0.3rem 1.1rem; border-radius:999px; margin-bottom:1.25rem; }
 .tb-hero-gradient-title { font-size:clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),5.5vw,calc(var(--tb-hero-title-size,4.5rem) * 1.15)); font-weight:800; line-height:1.25; margin:0 0 1.25rem; }
@@ -267,7 +267,7 @@ h6.tb-heading { font-size: var(--tb-h6-size, 1rem); }
 [dir="ltr"] .tb-hero-split-title { letter-spacing:-0.02em; line-height:1.1; }
 [dir="ltr"] .tb-hero-gradient-title { letter-spacing:-0.03em; line-height:1.05; }
 .tb-hero-gradient-sub { font-size:1.15rem; opacity:0.9; line-height:1.7; margin:0 auto; max-width:50ch; }
-@media (max-width: 479.98px) { .tb-hero-gradient{padding:3.5rem 1rem;} }
+@media (max-width: 479.98px) { .tb-hero-gradient{padding:0;} }
 
 /* ─── features_grid ─────────────────────────────────────────── */
 .tb-features-grid { }
@@ -449,7 +449,7 @@ img.tb-review-avatar { object-fit:cover; }
 @media (max-width: 767.98px) { .tb-pricing-grid.cols-2,.tb-pricing-grid.cols-3,.tb-pricing-grid.cols-4{grid-template-columns:1fr;} .tb-pricing-card.highlighted{transform:none;} }
 
 /* ─── newsletter_form ───────────────────────────────────────── */
-.tb-newsletter { padding:3.5rem 2rem; border-radius:1rem; text-align:center; }
+.tb-newsletter { padding:0; border-radius:1rem; text-align:center; }
 .tb-newsletter-title { font-size:clamp(1.5rem,3vw,2.25rem); font-weight:800; margin:0 0 0.75rem; }
 /* Phase 0.5: like the hero titles, tight tracking is for LTR text only. */
 [dir="ltr"] .tb-newsletter-title, [dir="ltr"] .tb-nav-header-logo, [dir="ltr"] .tb-features-section-title { letter-spacing:-0.01em; }
@@ -522,7 +522,7 @@ img.tb-review-avatar { object-fit:cover; }
    reusable component" gap, not a composition problem: any Theme
    using these blocks got unstyled text. Fixed once, canonically,
    here rather than per-page inline styles. */
-.tb-promo-banner { text-align:center; padding:0.85rem 1.25rem; }
+.tb-promo-banner { text-align:center; padding:0; }
 .tb-promo-banner__link { display:inline-block; font-weight:700; font-size:0.95rem; text-decoration:none; letter-spacing:0.01em; }
 .tb-promo-info    { background:var(--tb-surface,#f9fafb); border-bottom:1px solid var(--tb-border, #e5e7eb); }
 .tb-promo-info .tb-promo-banner__link    { color:var(--tb-text,#111827); }
@@ -531,7 +531,7 @@ img.tb-review-avatar { object-fit:cover; }
 .tb-promo-urgent   { background:var(--tb-error,#dc2626); }
 .tb-promo-urgent .tb-promo-banner__link   { color:var(--tb-on-error,#fff); }
 
-.tb-countdown { text-align:center; padding:2.5rem 1.5rem; background:var(--tb-surface,#f9fafb); border-radius:var(--tb-radius,0.75rem); border:1px solid var(--tb-border, #e5e7eb); }
+.tb-countdown { text-align:center; padding:0; background:var(--tb-surface,#f9fafb); border-radius:var(--tb-radius,0.75rem); border:1px solid var(--tb-border, #e5e7eb); }
 .tb-countdown__label { display:block; font-weight:700; font-size:1.1rem; margin-bottom:1rem; color:var(--tb-text,#111827); }
 .tb-countdown__hint { display:inline-block; font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; color:var(--tb-primary-text,#4f46e5); letter-spacing:0.02em; }
 @media (max-width: 479.98px) { .tb-countdown__hint { font-size:1.15rem; } }

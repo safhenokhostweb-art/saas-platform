@@ -147,8 +147,9 @@
    emits (`class="tb-grid tb-grid-cols-{N}"`) — canonical across both
    hosts (confirmed identical in both BlockRenderer implementations). */
 /* Unit 3: the gap is a token so the fit-columns calc below reads the real
-   gap; tb-gap-* (emitted by every card grid and the grid block) set it. */
-.tb-grid { display: grid; --tb-grid-gap: var(--tb-gap, 1.5rem); gap: var(--tb-grid-gap); }
+   gap; tb-gap-* (emitted by every card grid and the grid block) set it.
+   Default gap is 0 — spacing controlled via widget Margin/Padding or Spacer. */
+.tb-grid { display: grid; --tb-grid-gap: 0; gap: var(--tb-grid-gap); }
 .tb-grid.tb-gap-none { --tb-grid-gap: 0; }
 .tb-grid.tb-gap-xs   { --tb-grid-gap: 0.5rem; }
 .tb-grid.tb-gap-sm   { --tb-grid-gap: 0.875rem; }
