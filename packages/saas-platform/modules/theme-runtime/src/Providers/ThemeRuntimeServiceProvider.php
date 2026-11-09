@@ -37,6 +37,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/css/theme-runtime-blocks.css';
     }
 
+    /** ADR-082 step 2 — the nav_header layout, emitted after the block sheet. */
+    public static function cssHeaderPath(): string
+    {
+        return __DIR__ . '/../../resources/css/theme-runtime-header.css';
+    }
+
     /** Phase 0.4 (ADR-063) — the local Vazirmatn @font-face rules, same seam. */
     public static function fontFacesPath(): string
     {
@@ -47,6 +53,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
     public static function canvasColorPath(): string
     {
         return __DIR__ . '/../../resources/js/canvas-color.js';
+    }
+
+    /** ADR-082 — the Inspector's tab, condition, responsive, state and value models. */
+    public static function canvasControlsPath(): string
+    {
+        return __DIR__ . '/../../resources/js/canvas-controls.js';
     }
 
     /** Phase 0.6 (ADR-065) — the Canvas icon picker's shared model. */

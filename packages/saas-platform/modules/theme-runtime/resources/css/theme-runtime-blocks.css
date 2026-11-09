@@ -668,8 +668,9 @@ html.tb-search-open { overflow: hidden; }
 .tb-nav-header-logo { transition: font-size 0.25s ease; }
 .tb-hdr-sticky { position: sticky; top: 0; z-index: 900; transition: box-shadow 0.25s ease, background-color 0.25s ease, transform 0.3s ease; }
 .tb-hdr-sticky.is-scrolled { box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.35); }
-.tb-hdr-sticky.is-scrolled .tb-nav-header-inner { min-height: 3.5rem; padding-block: 0.25rem; }
-.tb-hdr-sticky.is-scrolled .tb-nav-header-logo { font-size: 1.15rem; }
+/* ADR-082 step 4: the shrink is optional (.tb-hdr-no-shrink) and sized by the header (--tb-hdr-shrink-h, --tb-hdr-logo-scale). */
+.tb-hdr-sticky.is-scrolled:not(.tb-hdr-no-shrink) .tb-nav-header-inner { min-height: var(--tb-hdr-shrink-h, 3.5rem); padding-block: 0.25rem; }
+.tb-hdr-sticky.is-scrolled:not(.tb-hdr-no-shrink) .tb-nav-header-logo { font-size: 1.15rem; }
 .tb-hdr-smart.is-hidden { transform: translateY(-100%); box-shadow: none; }
 .tb-hdr-overlay { position: absolute; inset-inline: 0; top: 0; z-index: 900; }
 .tb-hdr-overlay.tb-hdr-sticky { position: fixed; }
@@ -815,9 +816,17 @@ html.tb-cart-open { overflow: hidden; }
 .tb-carousel--fade .tb-carousel-track { display: grid; transition: initial; }
 .tb-carousel--fade .tb-carousel-slide { grid-column: 1; grid-row: 1; opacity: 0; transition: opacity 0.6s ease; }
 .tb-carousel--fade .tb-carousel-slide:first-child { opacity: 1; }
-.tb-carousel-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.85rem; }
-.tb-carousel-dot { width: 0.55rem; height: 0.55rem; padding: 0; border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db); cursor: pointer; }
-.tb-carousel-dot.is-active { background: var(--tb-primary, #4f46e5); }
+/* TAP_TARGET_SMALL (WCAG 2.2 SC 2.5.8): each dot is a 24x24 px button that
+   paints only its 0.55rem centre (background-clip: content-box). The size is
+   one calc() so it is exactly 24 px; separate content + padding would snap
+   to 23.98 px. The boxes abut (gap 0), so neighbouring targets never overlap,
+   and the margins give back the padding so the visible dots sit where they
+   did. Colours use background-color: the background shorthand would reset
+   the clip and fill the whole box. */
+.tb-carousel-dots, .tb-carousel-dot { --tb-dot-pad: max(0px, calc((24px - 0.55rem) / 2)); }
+.tb-carousel-dots { display: flex; justify-content: center; gap: 0; margin-top: calc(0.85rem - var(--tb-dot-pad)); margin-bottom: calc(-1 * var(--tb-dot-pad)); }
+.tb-carousel-dot { box-sizing: border-box; width: calc(0.55rem + 2 * var(--tb-dot-pad)); height: calc(0.55rem + 2 * var(--tb-dot-pad)); padding: var(--tb-dot-pad); border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db); background-clip: content-box; cursor: pointer; }
+.tb-carousel-dot.is-active { background-color: var(--tb-primary, #4f46e5); }
 .tb-slider-box { max-width: 72rem; margin: 0 auto; }
 .tb-slide { position: relative; display: flex; align-items: center; justify-content: center; background: var(--tb-media-bg, #111827); overflow: hidden; }
 .tb-slide-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, var(--tb-overlay, rgba(0, 0, 0, 0.55)), rgba(0, 0, 0, 0) 55%); }
@@ -979,8 +988,8 @@ a.tb-slide-link { display: block; color: inherit; text-decoration: none; }
 .tb-nav-header-logo-img { display: block; flex-shrink: 0; height: var(--tb-logo-h, 40px); width: auto; max-width: min(14rem, 45vw); object-fit: contain; transition: height 0.25s ease; }
 .tb-nav-header-logo-text { line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 767.98px) { .tb-nav-header-logo-text { font-size: 1.05rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; } }
-.tb-hdr-sticky.is-scrolled .tb-nav-header-logo-img { height: calc(var(--tb-logo-h, 40px) * 0.8); }
-@media (max-width: 767.98px) { .tb-nav-header-logo-img, .tb-hdr-sticky.is-scrolled .tb-nav-header-logo-img { height: var(--tb-logo-h-m, 32px); } }
+.tb-hdr-sticky.is-scrolled:not(.tb-hdr-no-shrink) .tb-nav-header-logo-img { height: calc(var(--tb-logo-h, 40px) * var(--tb-hdr-logo-scale, 0.8)); }
+@media (max-width: 767.98px) { .tb-nav-header-logo-img, .tb-hdr-sticky.is-scrolled:not(.tb-hdr-no-shrink) .tb-nav-header-logo-img { height: var(--tb-logo-h-m, 32px); } }
 /* 'end' is the original layout: links beside the actions. */
 .tb-nav-header--menu-start .tb-nav-header-links { margin-inline-start: 0; margin-inline-end: auto; }
 .tb-nav-header--menu-center .tb-nav-header-links { margin-inline: auto; justify-content: center; }

@@ -98,6 +98,18 @@ class Handler extends ExceptionHandler
             if ($status < 400) {
                 $status = 500;
             }
+            // An unknown api/* path (NotFoundHttpException, or any abort(404))
+            // kept its 404 status above but was still labelled `server_error`
+            // with "خطای سرور. بعداً تلاش کنید.". That made a caller using a
+            // wrong URL (and anyone reading its logs) chase a server crash
+            // that never happened.
+            if ($status === 404) {
+                return response()->json([
+                    'valid' => false,
+                    'error' => 'not_found',
+                    'message' => 'مسیر یا منبع درخواستی یافت نشد.',
+                ], 404);
+            }
             $message = config('app.debug')
                 ? ($e->getMessage() . ' (در ' . basename($e->getFile()) . ' خط ' . $e->getLine() . ')')
                 : 'خطای سرور. بعداً تلاش کنید.';

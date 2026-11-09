@@ -1325,3 +1325,76 @@ for the Canvas redesign.
 - `header-mobile-standard` template: `TemplateLibraryTest` reports four
   props outside the `nav_header` schema / an invalid CTA link;
   `UniversalMultipurposeQaThemeSeederTest` counts 164 vs 163 types.
+
+## 18. Elementor-grade widgets, header first (2026-11-08 →, ADR-082)
+
+Owner directive (2026-11-07): rebuild every Canvas widget to the Elementor Pro
+control standard, starting with `nav_header`. The Phase 1 discovery and schema
+proposal were approved on 2026-11-08 with three decisions:
+
+- breakpoints are mobile < 768, tablet < 1024, desktop ≥ 1024;
+- `header_modern_v1` is frozen;
+- the header hides the generic Style sections.
+
+### 18.1 Step 1: editor infrastructure (done on `feat/header-pro-editor-infra`, both repos)
+
+- Schema vocabulary: `panel`, `condition`, `responsive`
+  (`key_tablet`/`key_mobile`), `state_group`/`state`, `shadow`, multi-unit
+  `range` and `editor.hideGenericStyle`.
+- Shared controls in `theme-runtime`, used by both editors: range, spacing,
+  typography, shadow, the device switch and Normal / Hover / Active.
+- The Inspector's mobile override is now 767.98px.
+- `nav_header` fields are split by tab, with conditions.
+
+### 18.2 Step 2: header CSS variables (done, same branch)
+
+- The header's inline `<style>` moved to `theme-runtime-header.css`. It is
+  shipped by `css.blocks`, and by `css.header` on the legacy storefront
+  layout.
+- 64 `--tb-hdr-*` variables, registered in `HeaderStyleVars` with a safe
+  scoped emitter.
+- Pixel- and computed-style-identical: 20 screenshots and 20 style dumps
+  match the pre-change baseline (ADR-082, step 2).
+
+### 18.3 Step 3: header Style tab (done, branch `feat/header-pro-style-controls`)
+
+- Container: height, padding and gap per device; full or boxed width;
+  bottom border; shadow; backdrop blur.
+- Menu: typography per device, gap, item padding, Normal / Hover / Active
+  text and background, and 7 pointer styles with 4 animations.
+- Active item marked with `aria-current`.
+- All of it through `HeaderStyleVars::forHeader()`. Default headers stay
+  pixel-identical (ADR-082, step 3).
+
+### 18.4 Step 4: behaviour and the mobile drawer (done, same branch; ships with step 3)
+
+- Sticky header:
+  - which devices it sticks on;
+  - offset from the top;
+  - scroll threshold;
+  - optional shrink, with its height and logo scale;
+  - background, text colour and shadow after scrolling.
+- Burger breakpoint: mobile, tablet, always, or never (inline links).
+- Drawer:
+  - style: side, full screen, or dropdown;
+  - side: start or end;
+  - colours, width, overlay, dividers;
+  - burger colour and size.
+- A toggle shows its schema default in both editors.
+- Default headers stay pixel-identical (ADR-082, step 4).
+
+### 18.5 Step 5: header accessibility (done, branch `feat/header-pro-a11y`)
+
+- A menu without links renders no burger, drawer or navigation. This
+  fixes the live top bar's second, empty burger.
+- The open drawer is a named modal dialog. The rest of the header is
+  inert, Tab stays in the drawer (hidden items skipped), and Escape
+  returns focus.
+- Keyboard focus rings on every header link and button, with an optional
+  colour.
+- The mega menu works from the keyboard: `aria-expanded` follows focus,
+  arrow keys walk it, and Escape closes it.
+- New fields: menu name for screen readers, focus colour, sticky
+  `z-index`.
+- axe-core reports 0 violations on the header in every state. Default
+  headers stay pixel-identical (ADR-082, step 5).

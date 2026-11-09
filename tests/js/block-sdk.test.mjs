@@ -73,6 +73,12 @@ class FakeElement {
         parent.childNodes[index] = node;
         this.parentNode = null;
     }
+    // Sibling operations, for markup that is more than one root (a block's own <style>).
+    get previousElementSibling() { const s = this.parentNode ? this.parentNode.childNodes : []; return s[s.indexOf(this) - 1] || null; }
+    get nextElementSibling() { const s = this.parentNode ? this.parentNode.childNodes : []; const i = s.indexOf(this); return i === -1 ? null : (s[i + 1] || null); }
+    before(node) { const s = this.parentNode.childNodes; node.parentNode = this.parentNode; s.splice(s.indexOf(this), 0, node); }
+    after(node) { const s = this.parentNode.childNodes; node.parentNode = this.parentNode; s.splice(s.indexOf(this) + 1, 0, node); }
+    remove() { if (!this.parentNode) return; const s = this.parentNode.childNodes; s.splice(s.indexOf(this), 1); this.parentNode = null; }
     addEventListener(name, fn) {
         if (!this.listeners.has(name)) this.listeners.set(name, []);
         this.listeners.get(name).push(fn);
@@ -137,7 +143,11 @@ function makeTemplate(doc) {
     const tpl = new FakeElement('template', doc);
     Object.defineProperty(tpl, 'innerHTML', {
         set(value) {
-            tpl.content = { firstElementChild: doc.templates.get(value.trim()) || null };
+            // A registered node, or a list of nodes for multi-element markup.
+            const entry = doc.templates.get(value.trim()) || null;
+            tpl.content = Array.isArray(entry)
+                ? { firstElementChild: entry[0] || null, children: entry }
+                : { firstElementChild: entry };
         },
     });
     tpl.content = { firstElementChild: null };
@@ -621,6 +631,51 @@ test('replaceNode destroys the old element, inits the new one and calls onUpdate
     assert.equal(oldEl.classList.contains('tb-block-ready'), false, 'the detached node keeps no state');
     assert.equal(replacement.classList.contains('tb-block-ready'), true);
     assert.equal(sdk.getBlockType('swapped').instanceCount, 1, 'the old instance is released');
+});
+
+// A block whose markup opens with its own <style> (nav_header): the root is
+// the first rendered element carrying the id, and the style travels with it.
+function detached(doc, tag, attrs = {}) {
+    const el = new FakeElement(tag, doc);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+}
+const bodyTags = (doc) => doc.body.childNodes.map((n) => n.tagName + (n.getAttribute('data-tb-block-id') ? '#' + n.getAttribute('data-tb-block-id') : '') + (n.getAttribute('data-tb-block-asset') ? '@' + n.getAttribute('data-tb-block-asset') : '') + (n.getAttribute('data-v') ? ':' + n.getAttribute('data-v') : ''));
+
+test('replaceNode swaps a block whose markup opens with its own <style>, and its style with it', () => {
+    const { runtime, doc } = boot();
+    doc.body.appendChild(detached(doc, 'style', { 'data-v': 'page' }));      // a page-level style before it
+    doc.body.appendChild(detached(doc, 'style', { 'data-v': 'old' }));       // the header's server-rendered style
+    const oldRoot = doc.body.appendChild(detached(doc, 'div', { 'data-tb-block-id': 'h1', 'data-tb-block-type': 'nav_header', 'data-v': 'old' }));
+    oldRoot.classList.add('tb-selected');
+    doc.body.appendChild(detached(doc, 'div', { 'data-tb-block-id': 'next', 'data-v': 'keep' }));
+
+    const html = '<style>…</style><div data-tb-block-id="h1">v2</div>';
+    const style2 = detached(doc, 'style', { 'data-v': 'v2' });
+    const root2 = detached(doc, 'div', { 'data-tb-block-id': 'h1', 'data-tb-block-type': 'nav_header', 'data-v': 'v2' });
+    doc.templates.set(html, [style2, root2]);
+
+    assert.equal(runtime.replaceNode('h1', html), root2, 'the root is the element carrying the id, not the leading <style>');
+    assert.deepEqual(bodyTags(doc), ['style:page', 'style@h1:v2', 'div#h1:v2', 'div#next:keep'], 'old style retired, new one tagged; neighbours untouched');
+    assert.equal(root2.classList.contains('tb-selected'), true, 'selection survives');
+
+    // The next live update replaces the tagged style: still exactly one.
+    const html3 = '<style>…3</style><div data-tb-block-id="h1">v3</div>';
+    const style3 = detached(doc, 'style', { 'data-v': 'v3' });
+    const root3 = detached(doc, 'div', { 'data-tb-block-id': 'h1', 'data-v': 'v3' });
+    doc.templates.set(html3, [style3, root3]);
+    assert.equal(runtime.replaceNode('h1', html3), root3);
+    assert.deepEqual(bodyTags(doc), ['style:page', 'style@h1:v3', 'div#h1:v3', 'div#next:keep']);
+});
+
+test('replaceNode refuses markup with no rendered root carrying the block id', () => {
+    const { runtime, doc } = boot();
+    const oldRoot = doc.body.appendChild(detached(doc, 'div', { 'data-tb-block-id': 'h1', 'data-v': 'old' }));
+    const html = '<style data-tb-block-id="h1"></style><div>no hook</div>';
+    doc.templates.set(html, [detached(doc, 'style', { 'data-tb-block-id': 'h1' }), detached(doc, 'div')]);
+    assert.equal(runtime.replaceNode('h1', html), null, 'a <style> carrying the hook is not a root');
+    assert.deepEqual(bodyTags(doc), ['div#h1:old'], 'nothing changed');
+    void oldRoot;
 });
 
 test('a destroy landing during a pending async init is delivered AFTER the init continuation, then the instance is released (SDK-002 gate)', async () => {

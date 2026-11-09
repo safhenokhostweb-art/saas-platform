@@ -102,6 +102,21 @@ final class WidgetSchemaContract
             foreach (self::fieldViolations("{$type}.{$key}", $field, true) as $problem) {
                 $out[] = $problem;
             }
+            foreach (self::layoutViolations("{$type}.{$key}", (string) $key, $field, $schema) as $problem) {
+                $out[] = $problem;
+            }
+        }
+        foreach (self::stateGroupViolations($type, $schema) as $problem) {
+            $out[] = $problem;
+        }
+
+        $editor = $definition['editor'] ?? [];
+        if (is_array($editor) && array_key_exists('hideGenericStyle', $editor)) {
+            $hidden = $editor['hideGenericStyle'];
+            $known = array_keys(InspectorFieldRegistry::GENERIC_STYLE_SECTIONS);
+            if ($hidden !== true && (!is_array($hidden) || !array_is_list($hidden) || $hidden === [] || array_diff($hidden, $known) !== [])) {
+                $out[] = "{$type}: editor.hideGenericStyle must be true or a list of " . implode('/', $known);
+            }
         }
 
         if (array_key_exists('slots', $definition)) {
@@ -122,7 +137,7 @@ final class WidgetSchemaContract
             $out[] = "{$type}: defaultProps must be an array";
         } else {
             foreach (array_keys($defaults) as $key) {
-                if (!array_key_exists($key, $schema)) {
+                if (!array_key_exists($key, $schema) && self::responsiveBaseOf((string) $key, $schema) === null) {
                     $out[] = "{$type}.{$key}: default prop has no schema field";
                 }
             }
@@ -165,7 +180,22 @@ final class WidgetSchemaContract
                 $out[] = "{$path}: default '" . (is_scalar($field['default']) ? $field['default'] : '?') . "' is not an option";
             }
         }
-        if ($type === 'number' && is_numeric($field['default'] ?? null)) {
+        if (in_array($type, ['number', 'range'], true)) {
+            if (isset($field['min'], $field['max']) && (float) $field['min'] >= (float) $field['max']) {
+                $out[] = "{$path}: min must be below max";
+            }
+            if (array_key_exists('units', $field)) {
+                $units = $field['units'];
+                if (!is_array($units) || !array_is_list($units) || $units === [] || array_diff($units, InspectorFieldRegistry::UNITS) !== []) {
+                    $out[] = "{$path}: units must be a list of " . implode('/', InspectorFieldRegistry::UNITS);
+                } elseif (isset($field['unit']) && !in_array($field['unit'], $units, true)) {
+                    $out[] = "{$path}: unit is not one of its units";
+                }
+            } elseif (isset($field['unit']) && !in_array($field['unit'], InspectorFieldRegistry::UNITS, true)) {
+                $out[] = "{$path}: unknown unit";
+            }
+        }
+        if (in_array($type, ['number', 'range'], true) && is_numeric($field['default'] ?? null)) {
             $default = (float) $field['default'];
             if ((isset($field['min']) && $default < (float) $field['min']) || (isset($field['max']) && $default > (float) $field['max'])) {
                 $out[] = "{$path}: default is outside min/max";
@@ -181,6 +211,131 @@ final class WidgetSchemaContract
             }
         }
         return $out;
+    }
+
+    /**
+     * ADR-082: a top-level field's tab, visibility condition and responsive
+     * storage. Nested repeater fields carry none of them.
+     *
+     * @return list<string>
+     */
+    private static function layoutViolations(string $path, string $key, array $field, array $schema): array
+    {
+        $out = [];
+        if (array_key_exists('panel', $field) && !in_array($field['panel'], InspectorFieldRegistry::EDITOR_PANELS, true)) {
+            $out[] = "{$path}: panel must be one of " . implode('/', InspectorFieldRegistry::EDITOR_PANELS);
+        }
+
+        if (array_key_exists('condition', $field)) {
+            $condition = $field['condition'];
+            if (!is_array($condition) || $condition === [] || array_is_list($condition)) {
+                $out[] = "{$path}: condition must map field names to values";
+            } else {
+                foreach ($condition as $rawKey => $expected) {
+                    $target = rtrim((string) $rawKey, '!');
+                    if ($target === $key) {
+                        $out[] = "{$path}: condition cannot depend on the field itself";
+                    } elseif (!array_key_exists($target, $schema)) {
+                        $out[] = "{$path}: condition references unknown field '{$target}'";
+                    }
+                    $values = is_array($expected) ? $expected : [$expected];
+                    if ((is_array($expected) && (!array_is_list($expected) || $expected === [])) || array_filter($values, fn ($v) => !is_scalar($v)) !== []) {
+                        $out[] = "{$path}: condition value for '{$target}' must be a scalar or a list of scalars";
+                    }
+                }
+            }
+        }
+
+        if (array_key_exists('responsive', $field)) {
+            if (!is_bool($field['responsive'])) {
+                $out[] = "{$path}: responsive must be a boolean";
+            } elseif ($field['responsive'] && !in_array($field['type'] ?? null, InspectorFieldRegistry::RESPONSIVE_CONTROLS, true)) {
+                $out[] = "{$path}: responsive is supported on " . implode('/', InspectorFieldRegistry::RESPONSIVE_CONTROLS) . ' only';
+            } elseif ($field['responsive']) {
+                foreach (['tablet', 'mobile'] as $device) {
+                    $derived = InspectorFieldRegistry::deviceKey($key, $device);
+                    if (array_key_exists($derived, $schema)) {
+                        $out[] = "{$path}: '{$derived}' is this responsive field's {$device} value and cannot be a field of its own";
+                    }
+                }
+            }
+        }
+
+        foreach (['tablet_default', 'mobile_default'] as $deviceDefault) {
+            if (array_key_exists($deviceDefault, $field) && ($field['responsive'] ?? false) !== true) {
+                $out[] = "{$path}: {$deviceDefault} applies to responsive fields only";
+            }
+        }
+
+        if (array_key_exists('state', $field) && !array_key_exists('state_group', $field)) {
+            $out[] = "{$path}: state needs a state_group";
+        }
+        return $out;
+    }
+
+    /**
+     * ADR-082: every `state_group` is one Normal / Hover / Active control:
+     * two or more adjacent fields in the same tab and section, one per
+     * state, one of them `normal`.
+     *
+     * @return list<string>
+     */
+    private static function stateGroupViolations(string $type, array $schema): array
+    {
+        $out = [];
+        $members = [];
+        $keys = array_keys($schema);
+        foreach ($keys as $index => $key) {
+            $field = $schema[$key];
+            if (!is_array($field) || !array_key_exists('state_group', $field)) {
+                continue;
+            }
+            $group = $field['state_group'];
+            if (!is_string($group) || !preg_match(self::SLOT_PATTERN, str_replace('_', '-', $group))) {
+                $out[] = "{$type}.{$key}: state_group must be a slug";
+                continue;
+            }
+            $state = $field['state'] ?? 'normal';
+            if (!in_array($state, InspectorFieldRegistry::STATES, true)) {
+                $out[] = "{$type}.{$key}: state must be one of " . implode('/', InspectorFieldRegistry::STATES);
+            }
+            $members[$group][] = ['key' => (string) $key, 'index' => $index, 'state' => $state, 'panel' => $field['panel'] ?? 'content', 'group' => $field['group'] ?? null];
+        }
+        foreach ($members as $group => $fields) {
+            $states = array_column($fields, 'state');
+            if (count($fields) < 2) {
+                $out[] = "{$type}: state_group '{$group}' needs at least two states";
+            }
+            if (count(array_unique($states)) !== count($states)) {
+                $out[] = "{$type}: state_group '{$group}' repeats a state";
+            }
+            if (!in_array('normal', $states, true)) {
+                $out[] = "{$type}: state_group '{$group}' has no normal state";
+            }
+            if (count(array_unique(array_column($fields, 'panel'))) > 1 || count(array_unique(array_map('strval', array_column($fields, 'group')))) > 1) {
+                $out[] = "{$type}: state_group '{$group}' spans several tabs or sections";
+            }
+            $indexes = array_column($fields, 'index');
+            if (max($indexes) - min($indexes) !== count($indexes) - 1) {
+                $out[] = "{$type}: state_group '{$group}' fields must be adjacent";
+            }
+        }
+        return $out;
+    }
+
+    /** ADR-082: the responsive field `$key` is a device value of, or null. */
+    private static function responsiveBaseOf(string $key, array $schema): ?string
+    {
+        foreach (['tablet', 'mobile'] as $device) {
+            $suffix = InspectorFieldRegistry::DEVICE_SUFFIXES[$device];
+            if (str_ends_with($key, $suffix)) {
+                $base = substr($key, 0, -strlen($suffix));
+                if (($schema[$base]['responsive'] ?? false) === true) {
+                    return $base;
+                }
+            }
+        }
+        return null;
     }
 
     /**

@@ -10,6 +10,8 @@ use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Support\AbstractMotionAdapter;
+use App\Modules\MotionGraphics\Support\BespokeAssignedAssets;
+use App\Modules\MotionGraphics\Support\CustomerRuntimeAssetEntryFactory;
 use App\Modules\MotionGraphics\Support\MotionAssetLicensePolicy;
 use App\Modules\MotionGraphics\Support\MotionAuditEvents;
 use App\Modules\MotionGraphics\Support\ReadModelMapper;
@@ -46,6 +48,12 @@ use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionRe
  */
 final class MotionCustomerRuntimeService extends AbstractMotionAdapter
 {
+    /**
+     * ADR-081: `template_reference` of a manifest built for a site that has
+     * bespoke assignments but no active package (`package_id` is then '').
+     */
+    public const BESPOKE_ONLY_TEMPLATE_REFERENCE = 'motion-bespoke';
+
     public function __construct(
         TenantContextContract $tenantContext,
         MotionAuditEvents $auditEvents,
@@ -59,7 +67,8 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
 
     /**
      * @throws MotionAdapterFailClosedException when the flag is off, the
-     *   site is not entitled, or no active package exists for the site —
+     *   site is not entitled, or the site has neither an active package
+     *   nor an active bespoke assignment (ADR-081) —
      *   every branch fails closed with a stable code the API controller
      *   maps to a safe "not available" response, never a 500.
      */
@@ -86,15 +95,10 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
             ->latest('activated_at')
             ->first();
 
-        if ($sitePackage === null) {
-            throw new MotionAdapterFailClosedException(
-                'no_active_package',
-                'No active Motion Graphics package is assigned to this site.'
-            );
-        }
-
+        $entries = new CustomerRuntimeAssetEntryFactory();
         $assets = [];
-        foreach ($sitePackage->items as $item) {
+        $locked = [];
+        foreach ($sitePackage?->items ?? [] as $item) {
             $assetModel = $this->assets->findByCanonicalId($item->asset_id, $item->active_version);
             if ($assetModel === null) {
                 throw new MotionAdapterFailClosedException(
@@ -127,42 +131,54 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
                     'actor' => $context->actorId,
                     'correlation_id' => $context->correlationId,
                 ]);
+                $locked[] = ['asset_id' => $item->asset_id, 'reason' => $license->code];
                 continue;
             }
 
-            $assets[] = new CustomerRuntimeAssetEntry(
-                assetId: $projectionDto->assetReference->assetId,
-                publishedVersion: $projectionDto->publishedVersion,
-                optimizedReference: $projectionDto->optimizedReference,
-                checksum: (string) ($projectionDto->assetReference->compatibility['checksum'] ?? ''),
-                assetType: $projectionDto->assetReference->type,
-                themeTokens: $projectionDto->themeTokens,
-                placementRules: $projectionDto->placementRules,
-                responsiveRules: [],
-                name: $projectionDto->assetReference->compatibility['name'] ?? null,
-                category: $projectionDto->assetReference->compatibility['category'] ?? null,
-                parameters: $projectionDto->parameters,
-            );
+            $entry = $entries->fromProjection($projectionDto, (int) $site->id);
+            if ($entry === null) {
+                continue;
+            }
+            $assets[] = $entry;
         }
 
+        // ADR-081: bespoke assets assigned to this site ride the same
+        // manifest, after the package items (so existing entries keep their
+        // positions) and without duplicating an asset the package delivers.
+        $bespoke = (new BespokeAssignedAssets($this->assets, $this->projections))
+            ->entriesFor((int) $site->id, array_map(fn (CustomerRuntimeAssetEntry $a): string => $a->assetId, $assets));
+
+        if ($sitePackage === null && $bespoke === []) {
+            throw new MotionAdapterFailClosedException(
+                'no_active_package',
+                'No active Motion Graphics package is assigned to this site.'
+            );
+        }
+        $assets = [...$assets, ...$bespoke];
+
+        $templateReference = $sitePackage?->template_reference ?? self::BESPOKE_ONLY_TEMPLATE_REFERENCE;
+        $packageId = $sitePackage === null ? '' : (string) $sitePackage->uuid;
+
         $generatedAt = Carbon::now()->toIso8601String();
-        $manifestChecksum = $this->computeChecksum($site, $sitePackage, $assets);
+        $manifestChecksum = $this->computeChecksum($site, $templateReference, $packageId, $assets);
 
         $manifest = new CustomerRuntimeManifest(
             siteReference: (string) $site->id,
-            templateReference: $sitePackage->template_reference,
-            packageId: (string) $sitePackage->uuid,
-            packageVersion: $sitePackage->templateAssetPackage?->package_version ?? 0,
+            templateReference: $templateReference,
+            packageId: $packageId,
+            packageVersion: $sitePackage?->templateAssetPackage?->package_version ?? 0,
             generatedAt: $generatedAt,
             assets: $assets,
             manifestChecksum: $manifestChecksum,
+            lockedAssets: $locked,
         );
 
         $this->auditEvents->record(MotionAuditEvents::CUSTOMER_DEPLOYMENT_PREPARED, [
             'site_id' => $site->id,
-            'site_package_id' => $sitePackage->id,
+            'site_package_id' => $sitePackage?->id,
             'manifest_checksum' => $manifestChecksum,
             'asset_count' => count($assets),
+            ...($bespoke === [] ? [] : ['bespoke_asset_count' => count($bespoke)]),
             'actor' => $context->actorId,
             'correlation_id' => $context->correlationId,
         ]);
@@ -173,13 +189,13 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
     /**
      * @param list<CustomerRuntimeAssetEntry> $assets
      */
-    private function computeChecksum(Site $site, SiteAssetPackage $sitePackage, array $assets): string
+    private function computeChecksum(Site $site, string $templateReference, string $packageId, array $assets): string
     {
         $payload = [
             'schema_version' => CustomerRuntimeManifest::SCHEMA_VERSION,
             'site_reference' => (string) $site->id,
-            'template_reference' => $sitePackage->template_reference,
-            'package_id' => (string) $sitePackage->uuid,
+            'template_reference' => $templateReference,
+            'package_id' => $packageId,
             'assets' => array_map(fn (CustomerRuntimeAssetEntry $a): array => $a->toArray(), $assets),
         ];
 

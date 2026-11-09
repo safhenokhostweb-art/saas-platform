@@ -43,11 +43,12 @@ final class LayoutContract
 
     /**
      * Media-query emission order (narrowest last) and per-name max-widths,
-     * matching the existing renderer convention (desktop base +
-     * max-width:1024px tablet + max-width:480px mobile).
+     * matching the renderer (desktop base + max-width:1023.98px tablet +
+     * max-width:767.98px mobile). ADR-082 (owner decision 2026-11-08):
+     * mobile is below 768px, tablet below 1024px, desktop 1024px and up.
      */
-    public const BREAKPOINT_MAX_WIDTHS = [1024, 480];
-    public const BREAKPOINT_MAX_WIDTH_BY_NAME = ['tablet' => 1024, 'mobile' => 480];
+    public const BREAKPOINT_MAX_WIDTHS = [1024, 768];
+    public const BREAKPOINT_MAX_WIDTH_BY_NAME = ['tablet' => 1024, 'mobile' => 768];
 
     public static function isSupportedDirection(string $direction): bool
     {

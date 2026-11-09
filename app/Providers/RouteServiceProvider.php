@@ -48,6 +48,12 @@ class RouteServiceProvider extends ServiceProvider
                 ->where(['slug' => '[a-z0-9-]+', 'version' => 'v[0-9]+'])
                 ->name('motion.library.asset');
 
+            // ADR-081 — exclusive (customer_specific) library motions, only at
+            // the site-scoped signed URL the owning site's manifest carries.
+            Route::get('motion/private/{slug}/{version}/{site}/{expires}/{signature}/animation.svg', \App\Http\Controllers\MotionPrivateAssetController::class)
+                ->where(['slug' => '[a-z0-9-]+', 'version' => 'v[0-9]+', 'site' => '[0-9]+', 'expires' => '[0-9]+', 'signature' => '[a-f0-9]{64}'])
+                ->name('motion.library.private-asset');
+
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });

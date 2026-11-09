@@ -4928,3 +4928,428 @@ There is no migration or Composer change.
     normalization, nested `module:motion` validation, and the browser spec
     `canvas-motion-widget.spec.js`, which inserts into a section, picks a
     motion, edits parameters, saves, reloads and checks the render.
+
+## ADR-081
+
+**Title:** Exclusive (Site-Owned) Motions Beside the Public Catalog
+
+**Status:** Accepted
+
+**Date:** 2026-11-07
+
+**Context:**
+
+- The public motion catalog (ADR-078/079) gives every licensed site the same
+  motions, split by tier: free for every site, premium with the
+  `motion-graphics-premium` license.
+- The owner also needs custom motions that are active for one specific site
+  and invisible to every other site, in the manifest and at the file URL.
+- An audit found most of the model already in place:
+  - `motion_graphics.ownership_type` (`global` / `customer_specific`) and
+    `owner_site_identifier` (numeric site id), enforced by the model;
+  - the runtime projection and `SitePackageReader` return nothing to a site
+    that does not own a `customer_specific` asset;
+  - the bespoke commission, purchase and assignment tables, with the
+    `/api/motion-runtime/bespoke-manifest` endpoint.
+- Four connections were missing:
+  1. customer-site reads only `/api/motion-runtime/manifest`, so bespoke
+     assignments never reached the canvas picker;
+  2. the bespoke entries had no `name`, `category` or `parameters`;
+  3. the catalog always published `global`, and the only file route is
+     public, unauthenticated and immutably cached;
+  4. `/manifest` failed with `no_active_package` for a site that has bespoke
+     assignments but no package.
+- Constraints: one owner site per motion; no customer-site change or
+  release; hero-motion and business-growth-motion keep their bytes, URLs,
+  versions and manifest checksums.
+
+**Decision:**
+
+1. **One manifest.** `/api/motion-runtime/manifest` appends the site's
+   active bespoke assignments after its package items. An asset the package
+   already delivers is not repeated. A site with only bespoke assignments
+   gets a manifest with `template_reference` `motion-bespoke` and an empty
+   `package_id`. `no_active_package` now means neither an active package nor
+   an active assignment. `/bespoke-manifest` stays, and both use one
+   builder, so every entry carries `name`, `category` and `parameters`.
+   Bespoke entries get no tier check: the purchase recorded before an admin
+   could assign the commission is the entitlement.
+2. **Ownership in metadata.json.** `MotionLibraryCatalogService::EXCLUSIVE_ASSETS`
+   lists exclusive library assets (slug => version directory). The existing
+   metadata `ownership` block is extended:
+   `{"type": "customer_specific", "site_id": N, "customer_restriction": true}`.
+   Sync refuses all of these:
+   - an exclusive slug that does not declare such an owner;
+   - a public slug that does;
+   - an owner site that does not exist;
+   - a restriction without `type: customer_specific`;
+   - the reserved slug `private`;
+   - any ownership change of an already published motion (publish a new slug
+     instead; changing it would strand bound sites).
+   Exclusive assets are package references like the public ones. Activation
+   binds an optional asset only for a site the projection lets read it, so
+   only the owner installs it and every other site's skip is audited.
+3. **Site-scoped signed URLs.** An exclusive version stores the unsigned
+   base `/motion/private/{slug}/{vN}/animation.svg`, which no route serves.
+   The manifest signs it for the requesting site:
+   `/motion/private/{slug}/{vN}/{site}/{expires}/{hmac}/animation.svg`.
+   - The HMAC covers slug, version, site and expiry, under a key derived
+     from APP_KEY.
+   - The signature is in the path, because customer-site appends runtime
+     parameters as a query string.
+   - Expiry is aligned to 7-day windows (valid one to two windows), so every
+     manifest inside a window has the same URL, checksum and browser cache.
+   - `MotionPrivateAssetController` re-checks on every request that the
+     motion is published, customer_specific, and owned by the signed site,
+     that the files declare that owner, and that an active assignment exists
+     when one is used. Revocation is therefore immediate.
+   - Every refusal is a 404, and caching is `private`.
+   - The public route also refuses any file that declares an owner.
+4. **Version binding.** An active bespoke assignment keeps its version
+   published, like a bound package item (ADR-079 §7).
+
+**Consequences:**
+
+- customer-site needs no change: the signed reference is root-relative and
+  passes `MotionRuntimeManifestReader`, which already accepts any
+  `optimized_reference` and resolves it against the platform URL.
+- The motion-graphics package (with the library files) is not mirrored into
+  customer-site, so exclusive files stay on the platform.
+- Adding an exclusive motion needs:
+  1. the library files with the ownership block, plus its slug in
+     `EXCLUSIVE_ASSETS`, then a release;
+  2. a catalog sync (`MotionGraphicsDefaultSeeder`, owner-run in production);
+  3. either re-activating the owner site's library package, or a bespoke
+     commission, purchase and assignment.
+  Exclusive assets follow their metadata `license_tier` on the package path
+  like any asset, so an exclusive motion that should not need the premium
+  license declares `"license_tier": "free"`.
+- Sites with only public motions keep a byte-identical manifest: public
+  references are untouched, and the checksum payload is unchanged when no
+  bespoke entry exists. Package item order in the manifest remains the
+  relation's index order, as before.
+- Tests: `ExclusiveMotionDeliveryTest` (owner sees it with full fields and a
+  signed URL; another site sees it neither in its manifest nor at any
+  re-scoped, forged, unsigned, public or expired URL; bespoke-only manifest
+  and immediate revocation; locked premium items next to bespoke assets;
+  bespoke-bound version not retired; public
+  catalog unchanged; catalog refusals) and `MotionPrivateAssetUrlTest`.
+
+## ADR-082
+
+**Title:** Elementor-Grade Inspector Vocabulary: Tabs, Conditions, Per-Device Values, States
+
+**Status:** Accepted
+
+**Date:** 2026-11-08
+
+**Context:**
+
+- The owner decided to rebuild every Canvas widget to the Elementor Pro
+  control standard, starting with the header (`nav_header`). The Phase 1
+  discovery (2026-11-07) found four gaps in the editors, not in the widgets:
+  - both Inspectors listed every schema field on the Content tab; Style and
+    Advanced held only the generic wrapper controls (`block.style`), so a
+    widget could not own a Style or Advanced control;
+  - `InspectorFieldRegistry` already defined `range`, `spacing`,
+    `typography` and a `panel` key, but neither editor rendered or read them;
+  - the wrapper's mobile override applied below 480px while every widget's
+    own phone layout (the header's burger included) switches below 768px;
+  - on the header, the generic Style colours painted a div behind the
+    header's own background, so they appeared to do nothing.
+- Owner decisions (2026-11-08): breakpoints mobile < 768px, tablet < 1024px,
+  desktop ≥ 1024px, with the Inspector's mobile override at 768px;
+  `header_modern_v1` is frozen; the header hides the generic Style sections.
+
+**Decision:**
+
+1. **Schema vocabulary** (checked by `WidgetSchemaContract`, normalised by
+   `InspectorFieldRegistry`):
+   - `panel`: `content` | `style` | `advanced`. Absent means content. It is
+     never inferred from the control type, so no existing field moves.
+   - `condition`: `{field: value | [values], 'field!': value}`. Every entry
+     must hold for the field to show. `true`/`false` compare as booleans and
+     `''` matches empty values, lists included.
+   - `responsive: true` on `number`, `range`, `select`, `spacing` and
+     `typography`. Values are stored as `key`, `key_tablet` and `key_mobile`
+     (Elementor's convention, so the existing `logo_height_mobile` key
+     already fits). A device without its own value takes its optional
+     `tablet_default` / `mobile_default`, else the next wider device's.
+     `InspectorFieldRegistry::responsiveValue()` and
+     `CanvasControls.read()` resolve the same way. Typography merges
+     sub-values down the devices.
+   - `state_group` + `state` (`normal` | `hover` | `active`): adjacent
+     fields in one tab and section, shown as one control with
+     Normal / Hover / Active tabs. Each state keeps its own schema key.
+   - New control `shadow` (`{x, y, blur, spread, color, inset}`, clamped and
+     colour-checked). `range` takes `unit`, or `units` + `unit_limits`
+     (several units store `{size, unit}`).
+   - `editor.hideGenericStyle`: `true` or a list of the generic Style
+     sections (`typography`, `colors`, `spacing`, `border`, `shadow`,
+     `opacity`). Their wrapper device bar hides with them.
+2. **One implementation for both editors.** `theme-runtime` ships the
+   DOM-free model `resources/js/canvas-controls.js` (`window.CanvasControls`
+   plus `editorMixin()`, Node-tested) and the controls in
+   `canvas.controls`, `canvas.control-field`, `canvas.control-devices`,
+   `canvas.control-states` and `canvas.control-inherit`. The styles are
+   self-contained `.tbc-*` because the hosts' Tailwind builds do not scan
+   the package. Each host spreads the mixin and supplies one prop writer,
+   `ctlSetProp(key, value)`. The field loop renders
+   `panelFields(selectedTab)`, so the same loop serves all three tabs. It
+   sits above the generic sections on Style and Advanced.
+3. **Scope variables in shared partials are prefixed `tbc`.** Alpine
+   assigns `this.x = …` to the innermost scope that has `x`. A loop variable
+   named `device` swallowed the editor's own `setDevice()` write; the
+   browser spec caught it.
+4. **Breakpoint.** `BlockRenderer::applyBlockStyle()` emits the mobile
+   override at `max-width:767.98px`.
+   `LayoutContract::BREAKPOINT_MAX_WIDTH_BY_NAME` is `{tablet: 1024, mobile: 768}`.
+5. **Header.** `nav_header` declares `editor.hideGenericStyle: true`. Its
+   colours and CTA glow move to Style, sticky/overlay behaviour to Advanced,
+   and `logo_height*` become `range`. Conditions hide the search options
+   until search is on, the CTA link until it has text, the custom links
+   while the site menu is the source, the social icon options until there
+   is a link, and the smart / overlay-text options until sticky / overlay is
+   on. The glow colour has no condition: a colour alone turns the glow on.
+   Storage keys and the renderer are unchanged.
+
+**Consequences:**
+
+- Saved mobile wrapper overrides (`responsive.mobile`) now apply from 767px
+  down instead of 479px down. This is the owner's breakpoint decision.
+  Widget-specific 480px rules (carousel item counts, grids) are not the
+  Inspector override and stay.
+- A block saved with wrapper values in a section its widget now hides keeps
+  rendering them. The Style tab shows a notice with one action that clears
+  them; Advanced-tab keys (`customClass`, `hide*`, `animation*`) stay.
+- customer-site's `ElementSchemaRegistry` types `range` (numeric, or array
+  with several units), `spacing` / `typography` / `shadow` (array) and a
+  responsive field's device keys.
+- Step 2 of the header program (CSS variables, inline `<style>` moved to the
+  shared sheet) builds on this vocabulary. Every new header control is a
+  schema field, never an editor edit.
+- Tests: `tests/js/canvas-controls.test.mjs` (13),
+  `Adr082InspectorControlsTest` (12),
+  customer `Adr082InspectorControlsHostTest` (3), and browser specs
+  `adr082-inspector-controls` on both hosts. `BreakpointScaleTest`,
+  `Phase2BSharedContractsTest`, `Phase02cCanonicalHarmonizationTest`, the
+  customer `CanonicalBlockDefinitionParityTest` and `adr076-canvas-tabs-header`
+  follow the change.
+
+**Step 2 (2026-11-08): the header layout as shared, variable-driven CSS.**
+
+- `renderNavHeader()` no longer prints the roughly 40-rule `<style>` before
+  every header. The rules moved verbatim (same selectors, so the same
+  specificity) to `resources/css/theme-runtime-header.css`.
+- Every design value there reads a `--tb-hdr-<name>` custom property whose
+  fallback is the old literal, 64 in all; suffix `-m` = phones.
+  `Widget\HeaderStyleVars::VARS` registers each with its kind and default,
+  and `HeaderStyleVarsTest` parses the sheet so the two stay equal.
+- Structure (display, position, z-index, the 768 / 1024 breakpoints) stays
+  literal. Rubika's wordmark geometry too. The root's inline `background` /
+  `color` from `bg_color` / `text_color` is unchanged, so overlay
+  `!important` rules and inline priority behave as before.
+- Cascade place: the inline `<style>` came after every stylesheet.
+  `theme-runtime::css.blocks` now ends with the header sheet, so both host
+  partials ship it unchanged and it still comes after every block rule.
+  customer-site's legacy storefront layout (`themes/default/layout`: blog,
+  platform products) renders `nav_header` without the block sheet. It now
+  includes `theme-runtime::css.header` as the last stylesheet in `<head>`;
+  nothing in its `<body>` precedes the header.
+- `HeaderStyleVars::style($rootId, $values)` emits one scoped
+  `<style data-tb-hdr>#tb-<id>{…}</style>`. It takes known names only,
+  checks each value against its kind (lengths with allowlisted units, the
+  renderer colour grammar, structured shadows, weights, times) and drops
+  defaults, so a default header emits nothing. Step 3 feeds it from the
+  new Style controls. customer-site's runtime and host decorator already
+  handle a header that opens with its own `<style>`.
+- Proof: `tests/browser/header-pixel-parity.spec.ts`. Five configurations
+  at 360 / 768 / 1280 plus the open drawer, search popover, mega menu and
+  scrolled sticky states give 20 screenshots (image content masked, image
+  boxes kept) and 20 computed-style dumps of every element in the header.
+  The baseline was recorded on the pre-change renderer (commits 6b7062c0 /
+  3204761b) and compared at zero pixels and zero threshold. A 0.05rem
+  change fails it.
+
+**Step 3 (2026-11-08): the header Style tab.**
+
+- Schema: the Style tab now has 23 more `nav_header` fields.
+  - Container: `min_height`, `padding` (logical spacing), `items_gap`,
+    `content_width` / `content_max_width`, `border_bottom_width/color`,
+    `header_shadow`, `backdrop_blur`.
+  - Menu: `menu_typography`, `menu_gap`, `menu_item_padding_x/y`, the
+    `menu_text` and `menu_bg` Normal / Hover / Active groups, `pointer`,
+    `pointer_animation`, `pointer_color`, `pointer_thickness`.
+  - Responsive fields store `key_tablet` / `key_mobile`; `min_height` has
+    `mobile_default` 60.
+- `Widget\HeaderStyleVars::forHeader()` is the one mapping from these props
+  to CSS. Each device writes only its own value: desktop on `#tb-<id>`,
+  tablet and phone in the 1023.98px / 767.98px queries. A phone value goes
+  to the sheet's `-m` property where one exists (the drawer's for menu gap
+  and item padding). The renderer prints the result as
+  `<style data-tb-hdr>` before the header root, which also gets the gate
+  list `data-tb-hdr-set` and the pointer classes.
+- Gating keeps the default look. A rule that would replace a value the
+  default cascade sets elsewhere (e.g. the menu link size and weight from
+  theme-runtime-blocks.css) only applies while the header lists the value
+  in `data-tb-hdr-set` (`HeaderStyleVars::GATED`), or carries a
+  `tb-nav-header--pointer-*` class. Header padding was split into four
+  logical-side properties whose fallbacks chain to the old ones. A header
+  without Style props still matches the step-2 baseline pixel for pixel,
+  with no snapshot changed.
+- Menu colours, item padding and the pointer apply from 768px up. The phone
+  drawer keeps its own surface (drawer colours are a later step).
+  Typography applies everywhere, with the phone's own size in the drawer.
+- Active state: the header's script marks the item whose URL is the current
+  path with `aria-current="page"` (same origin, trailing slash ignored). The
+  marking is client-side, so it is cache-safe and works for the site menu
+  too. Active colour, background and a full pointer apply only when an
+  Active value is set.
+- Backdrop blur is a `::before` layer (`backdrop-filter`) behind the content,
+  never on the header itself, which would make it the containing block of
+  the fixed phone drawer. The browser test opens the drawer with blur on: it
+  stays fixed at full height.
+- Hardening found by the tests: negative lengths are allowed only for
+  letter-spacing. The gated pointer colour and thickness rules exclude the
+  double / framed pointers, which read the same values themselves (a
+  higher-specificity gated rule had turned the frame into a solid bar).
+  Every pointer modifier rule is prefixed `.tb-nav-header` so a style's own
+  rule beats the shared line-pointer rule. An empty (automatic) range
+  slider is faded so it never reads as 0.
+- Tests:
+  - `HeaderStyleVarsTest`: gating, per-device emission, invalid values
+    dropped, renderer output.
+  - `tests/browser/header-style-controls.spec.ts`: container, typography,
+    states and hover, active item, all 7 pointers by shape, blur with the
+    drawer.
+  - the ADR-082 editor specs on both hosts: Style tab to live preview with
+    one scoped style per swap.
+  - `header-pixel-parity.spec.ts`: unchanged.
+
+**Step 4 (2026-11-08): header behaviour and the mobile drawer.** Steps 3
+and 4 ship as one release.
+
+- Advanced tab, sticky group (all fields need `sticky`):
+  - `sticky_devices`: all, desktop + tablet, or desktop only.
+  - `sticky_offset`: 0–300px.
+  - `scroll_threshold`: 0–600px, default 8.
+  - `sticky_shrink`: on by default; `sticky_shrink_height` 36–160px;
+    `sticky_logo_scale` 30–100%.
+  - The look after scrolling: `scrolled_bg_color`, `scrolled_text_color`,
+    `scrolled_shadow`.
+- Advanced tab, mobile menu group:
+  - `burger_breakpoint`: mobile (default), tablet, always, or never.
+  - `drawer_style`: side, full, or dropdown; hidden for never.
+  - `drawer_side`: start or end; side style only.
+- Style tab, drawer group: `drawer_bg`, `drawer_text`,
+  `drawer_divider_color`, `drawer_width` (px or %, side style only),
+  `drawer_overlay_color`, `burger_color`, `burger_size`.
+- Attributes: behaviour reaches the browser as root attributes, and only
+  when it differs from the default:
+  - `data-tb-scroll-threshold`, `data-tb-sticky-offset` and
+    `data-tb-sticky-on` are read by `blocks/site-header.js`;
+    `scrollState()` takes the threshold.
+  - `data-tb-burger` is read by the header's inline script. It toggles
+    `tb-nav-header-root--drawer` (the phone drawer at 768px and up: tablet
+    below 1024, or always) and `--inline` (never: the phone menu is a
+    plain row of links). An open drawer closes when the mode no longer
+    applies.
+  - `noshrink` in `data-tb-header` turns off the shrink rules
+    (`tb-hdr-no-shrink`).
+- Scrolled colours and shadow, burger colour and size: gated through
+  `data-tb-hdr-set`, like step 3. The step-3 desktop menu rules exclude
+  drawer mode, so a tablet drawer shows drawer styling, not the desktop
+  menu's.
+- Shrink height and logo scale: variables in the block sheet
+  (`HeaderStyleVars::BLOCK_SHEET_VARS`), with the old values as fallbacks.
+  The end-side drawer has its own shadow variable (`drawer-shadow-end`),
+  so a start-side shadow value never applies to it.
+- Default headers emit nothing new. The pixel baseline is unchanged.
+- Toggle defaults: a toggle with no stored value now shows its schema
+  default, in both editors (`CanvasControls` mixin `ctlChecked`). The
+  step-4 editor test found that `sticky_shrink` (default on) displayed as
+  off while its condition already read it as on.
+- Tests:
+  - `HeaderStyleVarsTest`: values, classes, and behaviour attributes only
+    when they differ from the default.
+  - `site-header-cart.test.mjs`: the threshold.
+  - `canvas-controls.test.mjs`: `ctlChecked`.
+  - `tests/browser/header-behavior.spec.ts`, real scroll and viewport:
+    - the scrolled look;
+    - sticky by device;
+    - burger tablet / always / never, including the row layout;
+    - drawer full / dropdown / end side;
+    - burger colour and size.
+  - The ADR-082 editor spec on both hosts: Advanced-tab conditions, the
+    toggle default, select defaults, and the live `data-tb-burger`.
+  - `Adr082InspectorControlsHostTest`: customer-site validation and
+    rendering.
+  - The customer `CanonicalListSchemaParityTest` sample generator now
+    respects a range's `min`, and writes `{size, unit}` for a multi-unit
+    range.
+
+**Step 5 (2026-11-08): header accessibility.** Steps 3 and 4 were released
+and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
+
+- **Empty menu.** A menu without a link renders no `<nav>`, burger, drawer
+  or backdrop. The burger used to be tested after the menu was wrapped in
+  its `<nav>`, so it always rendered. The live home page's top-bar header
+  (links without labels) showed a second burger that opened an empty
+  drawer. Child blocks count as menu content; with no authored links, the
+  default menu still renders.
+- **Modal drawer.** While the drawer is open, its panel is
+  `role="dialog"` + `aria-modal="true"`, named by the menu.
+  - The rest of the header turns `inert` after focus moves into the
+    drawer, and comes back before focus returns. The burger is left out:
+    it stays the pointer's way to close where the drawer leaves it
+    uncovered.
+  - The Tab trap skips hidden items (the collapsed mega panels), which
+    used to let Tab escape.
+  - The backdrop button is pointer-only (`tabindex="-1"`).
+  - When closed, the panel is plain navigation again.
+- **Focus ring.** Every header link and button shows a 2px
+  `:focus-visible` ring in its own colour (the header or drawer text,
+  which already contrast with their surface), or in `focus_color`
+  (`--tb-hdr-focus`).
+  - Text inputs keep their own focus style.
+  - The CTA keeps the shared `.tb-btn` ring unless the header sets a
+    colour (gated).
+  - Pointer clicks never match `:focus-visible`, so the mouse look and
+    the pixel ratchet are unchanged.
+- **Mega menu keyboard.**
+  - A focused trigger reports `aria-expanded="true"`; the panel already
+    opened on `:focus-within`.
+  - ArrowDown moves into the panel, the arrows walk its links, and
+    ArrowUp from the first link returns to the trigger.
+  - Escape closes the focused panel too, including a desktop panel
+    opened by focus, which has no `tb-mega-open` class.
+  - The suppress class is set before focus returns, so the trigger no
+    longer reports open again.
+- **Advanced fields.**
+  - `menu_aria_label` (default «منوی اصلی») tells two navigations apart.
+  - `focus_color`.
+  - `z_index` for the sticky banner (1–9999; the sheet default 900 emits
+    nothing). Written as `data-tb-z` and applied to the banner host by
+    `site-header.js`.
+- **Not added.** A skip link belongs to the page layout, and the customer
+  layout already has one (`#canvas-main`). The smart header already
+  reveals itself on `focusin`.
+- **Tests:**
+  - `HeaderStyleVarsTest`: empty menu, safe name, `z-index` and
+    `focus_color` only when set, dialog / inert / trap script.
+  - `tests/browser/header-a11y.spec.ts`, keyboard only:
+    - the drawer dialog, the trap, Escape and focus return;
+    - inert, burger and backdrop taps;
+    - focus rings on desktop, the CTA ring and `focus_color`;
+    - the mega menu arrows and Escape;
+    - the empty top bar at three widths;
+    - `z-index`.
+  - customer-site `header-a11y-axe.spec.js`: axe-core (WCAG 2 A/AA +
+    best-practice) on the host's header, closed and open, phone and
+    desktop with the mega menu open, and the empty top bar: 0
+    violations.
+    - It found one real defect, now fixed by `inert`: with the drawer
+      open, the phone number sat over the backdrop at 4.35:1.
+  - `Adr082InspectorControlsHostTest` covers the step-5 props on the
+    customer host.
+  - The pixel ratchet is unchanged.

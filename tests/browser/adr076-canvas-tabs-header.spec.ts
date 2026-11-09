@@ -121,21 +121,24 @@ test('ADR-076 header Inspector: schema groups, segmented placement, logo and qui
   const id = await state(page, (s) => s.selectedBlock.id as string);
 
   try {
-    const panel = page.locator('div[x-show="selectedTab === \'content\'"]');
+    // ADR-082: the field loop renders the active tab's own fields; the
+    // colours and the sticky/overlay behaviour moved to Style / Advanced
+    // (adr082-inspector-controls.spec.ts covers those tabs).
+    const panel = page.getByTestId('tb-panel-fields-content');
     await expect(panel.getByTestId('tb-field-group-logo_image')).toHaveText('لوگو و برند');
     await expect(panel.getByTestId('tb-field-group-menu_align')).toHaveText('منو');
     await expect(panel.getByTestId('tb-field-group-social_links')).toHaveText('دسترسی سریع و اکشن‌ها');
-    await expect(panel.getByTestId('tb-field-group-sticky')).toHaveText('رفتار و رنگ');
     // d32d17c2 added the drag-ordered header layout as its own group.
     await expect(panel.getByTestId('tb-field-group-header_order')).toHaveText('چیدمان');
-    await expect(panel.locator('[data-testid^="tb-field-group-"]')).toHaveCount(5);
+    await expect(panel.locator('[data-testid^="tb-field-group-"]')).toHaveCount(4);
 
     const centre = panel.getByTestId('tb-segmented-menu_align-center');
     await expect(panel.getByTestId('tb-segmented-menu_align-end')).toHaveAttribute('aria-checked', 'true');
     await centre.click();
     await expect(centre).toHaveAttribute('aria-checked', 'true');
     expect(await state(page, (s) => s.selectedBlock.props.menu_align)).toBe('center');
-    await panel.getByTestId('tb-segmented-social_style-brand').click();
+    // ADR-082: the icon-colour mode shows once there is a quick-access link.
+    await expect(panel.getByTestId('tb-segmented-social_style')).toHaveCount(0);
 
     await page.evaluate(() => {
       const s = (document.querySelector('[x-data="themeCanvas()"]') as any)._x_dataStack[0];
@@ -153,6 +156,7 @@ test('ADR-076 header Inspector: schema groups, segmented placement, logo and qui
       ]);
       s.updateProp('cta_text', 'مشاوره رایگان');
     });
+    await panel.getByTestId('tb-segmented-social_style-brand').click();
     await idle(page);
     expect(await state(page, (s) => s.saveCurrentPage())).toBe(true);
     await idle(page);

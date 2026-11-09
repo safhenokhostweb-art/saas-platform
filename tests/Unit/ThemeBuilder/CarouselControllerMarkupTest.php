@@ -130,13 +130,22 @@ class CarouselControllerMarkupTest extends TestCase
         $sheet = $this->sheet();
 
         foreach ([
-            '.tb-carousel-dot { width: 0.55rem; height: 0.55rem; padding: 0; border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db);',
-            '.tb-carousel-dot.is-active { background: var(--tb-primary, #4f46e5); }',
+            // TAP_TARGET_SMALL: a 24x24 px button around a 0.55rem painted dot.
+            '.tb-carousel-dots, .tb-carousel-dot { --tb-dot-pad: max(0px, calc((24px - 0.55rem) / 2)); }',
+            '.tb-carousel-dots { display: flex; justify-content: center; gap: 0;',
+            '.tb-carousel-dot { box-sizing: border-box; width: calc(0.55rem + 2 * var(--tb-dot-pad)); height: calc(0.55rem + 2 * var(--tb-dot-pad)); padding: var(--tb-dot-pad); border-radius: 999px; border: 0; background: var(--tb-border-strong, #d1d5db); background-clip: content-box;',
+            '.tb-carousel-dot.is-active { background-color: var(--tb-primary, #4f46e5); }',
             '.tb-slide { position: relative; display: flex; align-items: center; justify-content: center; background: var(--tb-media-bg, #111827);',
             '.tb-carousel--fade .tb-carousel-slide:first-child { opacity: 1; }',
             '.tb-slide .tb-slide-title { margin: 0 0 0.5rem; font-size: clamp(1.25rem, 1rem + 2vw, 2.25rem);',
         ] as $rule) {
             $this->assertStringContainsString($rule, $sheet);
+        }
+        // The background shorthand would reset background-clip and paint the
+        // whole 24 px box; dot colours must set background-color only.
+        $contract = (string) file_get_contents(dirname(__DIR__, 3) . '/packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-contract.css');
+        foreach ([$sheet, $contract] as $css) {
+            $this->assertDoesNotMatchRegularExpression('/\.tb-carousel-dot[^{,]*\{[^}]*(?<![-\w])background\s*:(?!\s*var\(--tb-border-strong)/', $css);
         }
         $this->assertMatchesRegularExpression('/@media \(prefers-reduced-motion: reduce\) \{ \.tb-carousel-track, \.tb-carousel--fade \.tb-carousel-slide, \.tb-carousel \.tb-carousel-dot \{ transition: none; \} \}/', $sheet);
     }

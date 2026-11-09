@@ -88,9 +88,9 @@
 .tb-slider-full .tb-slide-title { font-size: clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),4vw,4.2rem) !important; line-height: 1.3; }
 [dir="ltr"] .tb-slider-full .tb-slide-title { line-height: 1.15; }
 .tb-slider-full .tb-slide-subtitle { font-size: clamp(1rem,1.6vw,1.3rem) !important; line-height: 1.9; }
-.tb-slider-full .tb-carousel-dots { position: absolute; bottom: 1.35rem; inset-inline: 0; z-index: 3; margin: 0 !important; }
-.tb-slider-full .tb-carousel-dot { background: rgba(255,255,255,.58) !important; transition: width .2s ease, background .2s ease; }
-.tb-slider-full .tb-carousel-dot[aria-current="true"] { width: 2.4rem !important; background: var(--tb-secondary,#14b8a6) !important; }
+.tb-slider-full .tb-carousel-dots { position: absolute; bottom: calc(1.35rem - var(--tb-dot-pad, 0px)); inset-inline: 0; z-index: 3; margin: 0 !important; }
+.tb-slider-full .tb-carousel-dot { background-color: rgba(255,255,255,.58) !important; transition: width .2s ease, background-color .2s ease; }
+.tb-slider-full .tb-carousel-dot[aria-current="true"] { width: calc(2.4rem + 2 * var(--tb-dot-pad, 0px)) !important; background-color: var(--tb-secondary,#14b8a6) !important; }
 .tb-slider-full .tb-carousel-status { position: absolute; inset-inline: 1.25rem; bottom: 3.25rem; z-index: 4; display: flex; align-items: center; gap: .75rem; }
 .tb-slider-full .tb-carousel-progress { height: 3px; flex: 1; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.35); }
 .tb-slider-full .tb-carousel-progress-fill { display: block; width: 0; height: 100%; background: var(--tb-secondary,#14b8a6); }
@@ -213,6 +213,23 @@
     .tb-trust-badges-row,
     .tb-dynamic-product-items { grid-template-columns: minmax(0, 1fr); }
 }
+/* 2026-11-07 (owner, Canvas Dev HUD): a full-width slider in a columns /
+   layout-grid cell. Its hero min-height above is sized from the viewport
+   (48vw, 540px on phones), so in a half cell it ignored aspect_ratio and
+   stood about twice as tall as a 16:9 module:motion beside it. In a cell
+   the slide follows its own aspect_ratio, so equal ratios give equal
+   heights. Caption, type and controls then scale with the cell (cqi), not
+   the viewport. The caption sits at the bottom above the progress bar
+   (bottom 3.25rem + 2rem), and its 3.25rem sides clear the prev/next
+   arrows, which a short slide brings level with the title. */
+.tb-columns .tb-slider-full .tb-slide,
+.tb-layout-grid .tb-slider-full .tb-slide { min-height: 0; }
+@container tb-slot (max-width: 767.98px) {
+    .tb-slider-full .tb-slide-caption { width: 100%; margin: 0; padding: clamp(1rem, 5cqi, 2rem) 3.25rem 5.75rem !important; align-self: flex-end; }
+    .tb-slider-full .tb-slide-title { font-size: clamp(1.1rem, 5cqi, 2rem) !important; }
+    .tb-slider-full .tb-slide-subtitle { font-size: clamp(0.875rem, 2.6cqi, 1.1rem) !important; line-height: 1.7; }
+    .tb-slider-full .tb-carousel-thumbs { display: none; }
+}
 /* A grid that is itself the slot (product_grid renders its .tb-grid as the
    block root) cannot query its own width. It fits as many columns as hold a
    14rem card instead, never more than its own count; auto-fill keeps the
@@ -224,6 +241,19 @@
 .tb-columns > .tb-grid.tb-grid-cols-6, .tb-layout-grid > .tb-grid.tb-grid-cols-6 { --tb-fit-cols: 6; }
 .tb-columns > .tb-grid[class*="tb-grid-cols-"],
 .tb-layout-grid > .tb-grid[class*="tb-grid-cols-"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, max(14rem, calc((100% - (var(--tb-fit-cols, 1) - 1) * var(--tb-grid-gap, 1.5rem)) / var(--tb-fit-cols, 1)))), 1fr)); }
+/* 2026-11-07 (owner, live storefront): vertical balance in a columns row.
+   A widget is the cell itself (renderColumns() emits no column wrapper),
+   and grid cells already stretch to the row's height, so cards, forms and
+   sliders side by side stay equal-height and keep doing so. Widgets that
+   draw no box of their own sat at the top of a cell that a taller
+   neighbour (e.g. a slider) had stretched, leaving a gap beneath them:
+   - a motion keeps the full cell height and centres its artwork inside,
+     so its placement styling still covers the whole cell;
+   - heading, text, rich text and image centre the widget in the cell.
+   Below 768px the columns stack, so every row is its own height and this
+   is a no-op. */
+.tb-columns > :is(.tb-module-motion, .tb-module-motion-fallback) { display: flex; flex-direction: column; justify-content: center; }
+.tb-columns > :is(.tb-heading, .tb-text, .tb-rich-text, .tb-image) { align-self: center; }
 
 /* ─── stats row (real Phase 2g drift: no CSS at all in one host) ────── */
 .tb-stats-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
@@ -302,7 +332,7 @@
 .tb-carousel-dot:focus-visible { outline: 2px solid var(--tb-primary, #4f46e5); outline-offset: 2px; }
 .tb-carousel-prev:hover,
 .tb-carousel-next:hover { background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); border-color: var(--tb-primary, #4f46e5); }
-.tb-carousel-dot:hover { background: var(--tb-primary, #4f46e5) !important; opacity: .7; }
+.tb-carousel-dot:hover { background-color: var(--tb-primary, #4f46e5) !important; opacity: .7; }
 
 /* ─── FAQ / accordion / tabs (simple, host-identical structural shells) ─ */
 .tb-faq-item { border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }

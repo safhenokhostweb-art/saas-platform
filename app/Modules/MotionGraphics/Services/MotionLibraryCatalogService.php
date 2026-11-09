@@ -2,7 +2,10 @@
 
 namespace App\Modules\MotionGraphics\Services;
 
+use App\Models\Site;
+use App\Modules\MotionGraphics\Models\MotionBespokeAssignment;
 use App\Modules\MotionGraphics\Models\SiteAssetPackageItem;
+use App\Modules\MotionGraphics\Support\MotionPrivateAssetUrl;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use SaaSPlatform\Modules\MotionGraphics\Models\MotionCategory;
@@ -46,6 +49,22 @@ final class MotionLibraryCatalogService
         'business-growth-motion' => 'v2',
     ];
 
+    /**
+     * ADR-081: exclusive library assets, slug => library version directory.
+     * Each one's metadata.json must declare
+     * `"ownership": {"type": "customer_specific", "site_id": N}`;
+     * it is published as customer_specific for that one site and served
+     * only through site-scoped signed URLs (MotionPrivateAssetController),
+     * never by the public `/motion/{slug}/{vN}/animation.svg` route.
+     *
+     * Runtime config `motion-library.exclusive_assets` adds entries (and
+     * `motion-library.exclusive_library_path` relocates their files); tests
+     * use both. There is no config file, so production uses this list only.
+     *
+     * @var array<string, string>
+     */
+    public const EXCLUSIVE_ASSETS = [];
+
     public const FONT_FILE = 'packages/saas-platform/modules/motion-graphics/assets/fonts/vazirmatn-motion.woff2';
 
     /** Records whose published versions never pointed at a real file. */
@@ -62,7 +81,7 @@ final class MotionLibraryCatalogService
     public function sync(): array
     {
         $result = [];
-        foreach (self::ASSETS as $slug => $libraryVersion) {
+        foreach (self::catalogAssets() as $slug => $libraryVersion) {
             $result[$slug] = $this->publishAsset($slug, $libraryVersion);
         }
         $this->archiveLegacy();
@@ -71,12 +90,17 @@ final class MotionLibraryCatalogService
     }
 
     /**
+     * ADR-081: exclusive assets are package references too. Activation
+     * binds an optional asset only for a site the projection lets read it,
+     * so every other site skips an exclusive asset (audited as
+     * `asset_not_available_for_site`) and only its owner installs it.
+     *
      * @return list<array{asset_id: string}> references for a template package
      */
     public function packageReferences(): array
     {
         return MotionGraphic::query()
-            ->whereIn('slug', array_keys(self::ASSETS))
+            ->whereIn('slug', array_keys(self::catalogAssets()))
             ->whereNotNull('published_version')
             ->orderBy('id')
             ->pluck('uuid')
@@ -84,9 +108,93 @@ final class MotionLibraryCatalogService
             ->all();
     }
 
+    /** @return array<string, string> */
+    public static function exclusiveAssets(): array
+    {
+        return [...self::EXCLUSIVE_ASSETS, ...(array) config('motion-library.exclusive_assets', [])];
+    }
+
+    /**
+     * Every asset the catalog publishes, public ones first so they keep
+     * their publish (and package) order. A slug cannot be both public and
+     * exclusive: the public entry wins, and sync() then refuses it if its
+     * metadata declares an owner.
+     *
+     * @return array<string, string>
+     */
+    public static function catalogAssets(): array
+    {
+        return self::ASSETS + self::exclusiveAssets();
+    }
+
+    public static function isExclusive(string $slug): bool
+    {
+        return array_key_exists($slug, self::exclusiveAssets()) && ! array_key_exists($slug, self::ASSETS);
+    }
+
     public static function libraryDirectory(string $slug, string $libraryVersion): string
     {
+        $exclusiveRoot = config('motion-library.exclusive_library_path');
+        if (is_string($exclusiveRoot) && $exclusiveRoot !== '' && self::isExclusive($slug)) {
+            return rtrim($exclusiveRoot, '/\\').'/'.$slug.'/'.$libraryVersion;
+        }
+
         return base_path('packages/saas-platform/modules/motion-graphics/assets/library/'.$slug.'/'.$libraryVersion);
+    }
+
+    /**
+     * ADR-081: the owning site a library version's metadata declares, or
+     * null for a public asset. Extends the metadata's existing `ownership`
+     * block (`{"type": "platform", "license": ..., "customer_restriction": false}`):
+     *
+     *   "ownership": {"type": "customer_specific", "site_id": 7, "customer_restriction": true}
+     *
+     * Only `type: customer_specific` makes an asset exclusive. A declaration
+     * that asks for a restriction but does not name exactly one valid site is
+     * an error, never silently "public".
+     *
+     * @param array<string, mixed> $metadata
+     */
+    public static function declaredOwnerSiteId(array $metadata): ?int
+    {
+        $ownership = $metadata['ownership'] ?? null;
+        if (! is_array($ownership)) {
+            return null;
+        }
+        $exclusive = ($ownership['type'] ?? null) === MotionGraphic::OWNERSHIP_CUSTOMER_SPECIFIC;
+        if (! $exclusive) {
+            if (($ownership['customer_restriction'] ?? false) === true || array_key_exists('site_id', $ownership)) {
+                throw new RuntimeException('Motion library ownership restricts customers but its type is not "customer_specific".');
+            }
+
+            return null;
+        }
+        $siteId = $ownership['site_id'] ?? null;
+        if (! is_int($siteId) || $siteId < 1) {
+            throw new RuntimeException('Exclusive motion ownership must name one site: {"type": "customer_specific", "site_id": <positive integer>}.');
+        }
+
+        return $siteId;
+    }
+
+    /**
+     * The owner a library version's files declare, read straight from its
+     * metadata.json: null when it declares none (or has no metadata), 0 when
+     * the declaration is malformed. The public file route refuses anything
+     * non-null, so an owned file is never served publicly even if it were
+     * ever listed there.
+     */
+    public static function fileOwnerSiteId(string $slug, string $libraryVersion): ?int
+    {
+        $metadata = json_decode((string) @file_get_contents(self::libraryDirectory($slug, $libraryVersion).'/metadata.json'), true);
+        if (! is_array($metadata)) {
+            return null;
+        }
+        try {
+            return self::declaredOwnerSiteId($metadata);
+        } catch (RuntimeException) {
+            return 0;
+        }
     }
 
     /**
@@ -152,6 +260,22 @@ final class MotionLibraryCatalogService
             throw new RuntimeException("Motion library asset [{$slug}/{$libraryVersion}] is missing or malformed.");
         }
 
+        // ADR-081: ownership comes from metadata.json and must agree with the
+        // list the slug is in, so a file meant for one site can never be
+        // published as public (or the reverse) by a listing mistake.
+        $ownerSiteId = self::declaredOwnerSiteId($metadata);
+        if (MotionPrivateAssetUrl::isReservedSlug($slug)) {
+            throw new RuntimeException("Motion library slug [{$slug}] is reserved.");
+        }
+        if (self::isExclusive($slug) !== ($ownerSiteId !== null)) {
+            throw new RuntimeException(self::isExclusive($slug)
+                ? "Exclusive motion [{$slug}] must declare ownership.site_id in its metadata.json."
+                : "Public motion [{$slug}] declares an owner; list it as an exclusive asset instead.");
+        }
+        if ($ownerSiteId !== null && ! Site::query()->whereKey($ownerSiteId)->exists()) {
+            throw new RuntimeException("Exclusive motion [{$slug}] names site [{$ownerSiteId}], which does not exist.");
+        }
+
         $relative = self::assetPath($slug, $libraryVersion);
         // ADR-079: the compiled asset is what the route actually serves for
         // the default parameters (font embedded), so size/sha256 describe the
@@ -162,7 +286,9 @@ final class MotionLibraryCatalogService
         $descriptor = [
             'type' => 'svg',
             'path' => $relative,
-            'url' => '/'.$relative,
+            // An exclusive version stores the unsigned private base, which no
+            // route serves; the manifest signs it per site.
+            'url' => $ownerSiteId === null ? '/'.$relative : MotionPrivateAssetUrl::baseReference($slug, $libraryVersion),
             'mime' => 'image/svg+xml',
             'mime_type' => 'image/svg+xml',
             'size' => strlen($served),
@@ -175,16 +301,28 @@ final class MotionLibraryCatalogService
             'sha256' => hash('sha256', $svg),
         ];
 
-        return DB::transaction(function () use ($slug, $metadata, $descriptor, $source, $sha256, $parameters): array {
+        return DB::transaction(function () use ($slug, $metadata, $descriptor, $source, $sha256, $parameters, $ownerSiteId): array {
             [$group, $category] = $this->classification((string) ($metadata['category'] ?? 'hero'));
 
             $motion = MotionGraphic::withTrashed()->where('slug', $slug)->lockForUpdate()->first();
             $created = $motion === null;
+            $ownership = $ownerSiteId === null
+                ? ['ownership_type' => MotionGraphic::OWNERSHIP_GLOBAL, 'owner_site_identifier' => null]
+                : ['ownership_type' => MotionGraphic::OWNERSHIP_CUSTOMER_SPECIFIC, 'owner_site_identifier' => (string) $ownerSiteId];
+
+            // ADR-081: ownership is fixed at first publish. Moving a motion
+            // to another owner, or between public and exclusive, would strand
+            // the sites already bound to it (their manifest fails closed on an
+            // asset they can no longer read); publish a new slug instead.
+            if (! $created && ($motion->ownership_type !== $ownership['ownership_type']
+                || $motion->owner_site_identifier !== $ownership['owner_site_identifier'])) {
+                throw new RuntimeException("Motion [{$slug}] ownership cannot change after it is published; use a new slug.");
+            }
+
             $attributes = [
                 'name' => (string) $metadata['name'],
                 'description' => (string) ($metadata['description'] ?? ''),
-                'ownership_type' => MotionGraphic::OWNERSHIP_GLOBAL,
-                'owner_site_identifier' => null,
+                ...$ownership,
                 'group_id' => $group->id,
                 'category_id' => $category->id,
                 'engine' => (string) ($metadata['engine'] ?? 'svg-js'),
@@ -225,6 +363,7 @@ final class MotionLibraryCatalogService
 
             $existing = $motion->versions()->get()->first(
                 fn (MotionGraphicVersion $v): bool => ($v->compiled_assets[0]['sha256'] ?? null) === $sha256
+                    && ($v->compiled_assets[0]['url'] ?? null) === $descriptor['url']
             );
 
             if ($existing !== null && $existing->status === 'published' && (int) $motion->published_version === (int) $existing->version) {
@@ -279,6 +418,8 @@ final class MotionLibraryCatalogService
      * would make that site's manifest fail (`asset_not_available`). A bound
      * version stays published until the site is explicitly upgraded
      * (re-activation binds the new version); the next sync then retires it.
+     *
+     * ADR-081: an active bespoke assignment binds its version the same way.
      */
     private function retireUnboundVersions(MotionGraphic $motion, int $current): void
     {
@@ -286,6 +427,10 @@ final class MotionLibraryCatalogService
             ->where('asset_id', $motion->uuid)
             ->where('is_active', true)
             ->pluck('active_version')
+            ->merge(MotionBespokeAssignment::query()
+                ->where('asset_id', $motion->uuid)
+                ->where('status', MotionBespokeAssignment::STATUS_ACTIVE)
+                ->pluck('active_version'))
             ->map(fn ($v): int => (int) $v)
             ->all();
 

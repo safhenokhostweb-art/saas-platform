@@ -31,6 +31,8 @@ class BreakpointScaleTest extends TestCase
     {
         return [
             'blocks sheet' => ['resources/css/theme-runtime-blocks.css', 0],
+            // ADR-082 step 2: the header layout, formerly the renderer's inline <style>.
+            'header sheet' => ['resources/css/theme-runtime-header.css', 0],
             // Timeline, commercial/trust grids, dynamic widget.
             'contract sheet' => ['resources/css/theme-runtime-contract.css', 3],
             'header-modern sheet' => ['resources/js/blocks/header-modern/header-modern.css', 0],
@@ -99,6 +101,7 @@ class BreakpointScaleTest extends TestCase
         $this->assertStringContainsString('@container tb-slot (max-width:479.98px){ #tb-c1-carousel{--tb-items:var(--tb-items-mobile);} }', $this->normalizeId($html));
     }
 
+    /** ADR-082: the Inspector's tablet and mobile overrides are the 1024 / 768 platform breakpoints. */
     public function test_style_responsive_overrides_use_the_scale(): void
     {
         $html = (new BlockRenderer())->renderBlock([
@@ -107,7 +110,8 @@ class BreakpointScaleTest extends TestCase
         ]);
 
         $this->assertStringContainsString('@media(max-width:1023.98px){.tb-blk-h1{', $html);
-        $this->assertStringContainsString('@media(max-width:479.98px){.tb-blk-h1{', $html);
+        $this->assertStringContainsString('@media(max-width:767.98px){.tb-blk-h1{', $html);
+        $this->assertStringNotContainsString('@media(max-width:479.98px){.tb-blk-h1{', $html);
     }
 
     /**

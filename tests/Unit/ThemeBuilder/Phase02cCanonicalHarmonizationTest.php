@@ -21,6 +21,7 @@ class Phase02cCanonicalHarmonizationTest extends TestCase
         'number', 'motion', 'boolean', 'select', 'color',
         'motion_params', // ADR-079: per-asset runtime parameters (site Canvas renders them; platform shows a hint)
         'icon', // Phase 0.6 (ADR-065): the shared icon picker
+        'range', 'spacing', 'typography', 'shadow', // ADR-082: theme-runtime::canvas.control-field, both editors
     ];
 
     private function render(string $type, array $props): string
