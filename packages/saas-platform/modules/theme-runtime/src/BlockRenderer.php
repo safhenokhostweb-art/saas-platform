@@ -8,6 +8,7 @@ use SaaSPlatform\ThemeRuntime\Support\IconLibrary;
 use SaaSPlatform\ThemeRuntime\Support\JalaliDate;
 use SaaSPlatform\ThemeRuntime\Support\PersianNumber;
 use SaaSPlatform\ThemeRuntime\Support\SocialNetworks;
+use SaaSPlatform\ThemeRuntime\Widget\FooterStyleVars;
 
 /**
  * Phase 2h (ADR-029) — the ONE canonical structural Theme block renderer
@@ -4344,8 +4345,17 @@ class BlockRenderer
                 . $hiddenSearchInputs;
             $searchMode = ($props['search_mode'] ?? 'input') === 'icon' ? 'icon' : 'input';
             if ($searchMode === 'icon') {
+                // With host routes the icon opens the one search dialog
+                // (site-forms.js, data-tb-search-open) and nothing else. The
+                // local popover is only the fallback where that script is
+                // absent (the Builder preview); opening both stacked the
+                // popover under the dialog, because focusing its field
+                // opened the dialog as well.
+                $toggleAttrs = str_contains($searchAttrs, ' data-tb-search=')
+                    ? ' aria-haspopup="dialog" data-tb-search-open="' . $this->escapeAttr($searchFormId) . '"'
+                    : ' aria-expanded="false" aria-controls="' . $this->escapeAttr($searchFormId) . '"';
                 $searchHtml = '<div class="tb-nav-header-search-wrap tb-nav-header-search-wrap--icon">'
-                    . '<button type="button" class="tb-nav-header-search-toggle tb-nav-header-icon-link" aria-label="باز کردن جستجو" aria-expanded="false" aria-controls="' . $this->escapeAttr($searchFormId) . '">' . $this->iconHtml('search') . '</button>'
+                    . '<button type="button" class="tb-nav-header-search-toggle tb-nav-header-icon-link" aria-label="باز کردن جستجو"' . $toggleAttrs . '>' . $this->iconHtml('search') . '</button>'
                     . '<form id="' . $this->escapeAttr($searchFormId) . '" class="tb-nav-header-search tb-nav-header-search-popover" role="search" hidden' . $searchAttrs . '>' . $searchInput . '<button type="submit" class="tb-nav-header-search-submit" aria-label="جستجو">' . $this->iconHtml('search') . '</button></form>'
                     . '</div>';
             } else {
@@ -4482,7 +4492,7 @@ class BlockRenderer
 
         $scripts = $headerFlags !== [] || $hasMegaMenu ? $this->siteHeaderAssets() : '';
         $scriptRootId = json_encode($rootId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?: '""';
-        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();}else{document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])");if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
+        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();}else{document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){if(searchToggle.hasAttribute("data-tb-search-open")&&window.TbSiteForms)return;setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])");if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
 
         $styles = '<style>'
             . '.tb-nav-header-root{position:relative;isolation:isolate;width:100%;direction:rtl;color:inherit;pointer-events:auto;}'
@@ -4502,7 +4512,7 @@ class BlockRenderer
             . '.tb-nav-header-root .tb-nav-header-actions{display:flex;flex:0 1 auto;align-items:center;justify-content:flex-end;gap:.55rem;min-width:0;}'
             . '.tb-nav-header-root .tb-nav-header-search-wrap{position:relative;}'
             . '.tb-nav-header-root .tb-nav-header-search{display:flex;align-items:center;gap:.35rem;}'
-            . '.tb-nav-header-root .tb-nav-header-search-popover{position:absolute;z-index:10003;inset-block-start:calc(100% + .55rem);inset-inline-start:0;width:min(22rem,calc(100vw - 2rem));padding:.65rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);border:1px solid var(--tb-border,#d1d5db);border-radius:.5rem;box-shadow:0 12px 32px rgb(15 23 42 / 18%);}'
+            . '.tb-nav-header-root .tb-nav-header-search-popover{position:absolute;z-index:10003;inset-block-start:calc(100% + .55rem);inset-inline-end:0;width:min(22rem,calc(100vw - 2rem));padding:.65rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);border:1px solid var(--tb-border,#d1d5db);border-radius:.5rem;box-shadow:0 12px 32px rgb(15 23 42 / 18%);}'
             . '.tb-nav-header-root .tb-nav-header-search[hidden]{display:none!important;}'
             . '.tb-nav-header-root .tb-nav-header-search-input{width:min(12rem,32vw);min-width:0;min-height:2.5rem;padding:.5rem .75rem;border:1px solid var(--tb-border,#d1d5db);border-radius:.35rem;background:var(--tb-surface,#fff);color:inherit;font:inherit;}'
             . '.tb-nav-header-root .tb-nav-header-search-popover .tb-nav-header-search-input{width:auto;flex:1;}'
@@ -4521,7 +4531,7 @@ class BlockRenderer
             . '.tb-nav-header-root .tb-nav-header-glow{animation:tb-glow-pulse 2.2s ease-in-out infinite;}'
             . '@keyframes tb-glow-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tb-nav-header-glow) 0%,transparent);}50%{box-shadow:0 0 0 .45rem color-mix(in srgb,var(--tb-nav-header-glow) 24%,transparent);}}'
             . '.tb-nav-header-root .tb-nav-header-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}'
-            . '@media(max-width:767.98px){.tb-nav-header-root .tb-nav-header-inner{min-height:3.75rem;gap:.5rem;padding-inline:.75rem;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--desktop{display:none;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--mobile{display:block;}.tb-nav-header-root .tb-nav-header-links{display:none;}.tb-nav-header-root[data-menu-open="true"]{z-index:10001;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{display:flex;position:fixed;z-index:10002;inset-block:0;inset-inline:0 auto;width:min(22rem,88vw);max-width:100%;padding:1rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);box-shadow:-12px 0 32px rgb(15 23 42 / 18%);overflow-y:auto;overscroll-behavior:contain;align-items:stretch;justify-content:flex-start;}.tb-nav-header-root .tb-nav-header-menu-panel{width:100%;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:.5rem;}.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;}.tb-nav-header-root .tb-nav-header-menu-panel .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a{display:flex;align-items:center;min-height:2.75rem;padding:.6rem .5rem;white-space:normal;border-bottom:1px solid var(--tb-border,#e5e7eb);}.tb-nav-header-root .tb-nav-header-overlay:not([hidden]){display:block;position:fixed;z-index:10000;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgb(15 23 42 / 52%);}.tb-nav-header-root .tb-nav-header-toggle{display:inline-flex;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-actions{position:relative;z-index:10001;}.tb-nav-header-root .tb-nav-header-actions{gap:.3rem;}.tb-nav-header-root .tb-nav-header-search-input{width:min(9rem,32vw);}.tb-nav-header-root .tb-nav-header-phone{max-width:7rem;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;}.tb-nav-header-root .tb-nav-header-cta{padding-inline:.65rem;font-size:.82rem;}.tb-nav-header-root .tb-nav-header-social:not(.tb-nav-header-social--mobile){display:none;}}'
+            . '@media(max-width:767.98px){.tb-nav-header-root .tb-nav-header-inner{min-height:3.75rem;gap:.5rem;padding-inline:.75rem;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--desktop{display:none;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--mobile{display:block;}.tb-nav-header-root .tb-nav-header-links{display:none;}.tb-nav-header-root[data-menu-open="true"]{z-index:10001;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{display:flex;position:fixed;z-index:10002;inset-block:0;inset-inline:0 auto;width:min(22rem,88vw);max-width:100%;padding:1rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);box-shadow:-12px 0 32px rgb(15 23 42 / 18%);overflow-y:auto;overscroll-behavior:contain;align-items:stretch;justify-content:flex-start;}.tb-nav-header-root .tb-nav-header-menu-panel{width:100%;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:.5rem;}.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;}.tb-nav-header-root .tb-nav-header-menu-panel .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a{display:flex;align-items:center;min-height:2.75rem;padding:.6rem .5rem;white-space:normal;border-bottom:1px solid var(--tb-border,#e5e7eb);}.tb-nav-header-root .tb-nav-header-overlay:not([hidden]){display:block;position:fixed;z-index:10000;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgb(15 23 42 / 52%);}.tb-nav-header-root .tb-nav-header-toggle{display:inline-flex;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-actions{position:relative;z-index:10001;}.tb-nav-header-root .tb-nav-header-actions{gap:.3rem;}.tb-nav-header-root .tb-nav-header-search-input{width:min(9rem,32vw);}.tb-nav-header-root .tb-nav-header-search-wrap{position:static;}.tb-nav-header-root .tb-nav-header-search-popover{inset-block-start:calc(100% + .25rem);inset-inline:.75rem;width:auto;}.tb-nav-header-root .tb-nav-header-phone{max-width:7rem;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;}.tb-nav-header-root .tb-nav-header-cta{padding-inline:.65rem;font-size:.82rem;}.tb-nav-header-root .tb-nav-header-social:not(.tb-nav-header-social--mobile){display:none;}}'
             . '@media(prefers-reduced-motion:reduce){.tb-nav-header-root .tb-nav-header-glow{animation:none;}.tb-nav-header-root *{scroll-behavior:auto!important;}}'
             . '</style>';
 
@@ -4668,11 +4678,18 @@ class BlockRenderer
      * themes are currently in (no social data was ever authored for them)
      * and renders nothing for that section rather than fabricating profile
      * links that do not exist.
+     *
+     * Step 2 (ADR-082 parity): uses FooterStyleVars for scoped --footer-*
+     * CSS variables + dedicated nav-footer.css asset (zero inline styles).
      */
     protected function renderNavFooter(array $props, string $inner, string $id): string
     {
-        $bg        = $this->escapeAttr($this->cssColor($props['bg_color'] ?? null, '#111827'));
-        $tc        = $this->escapeAttr($this->cssColor($props['text_color'] ?? null, '#e5e7eb'));
+        // Build scoped CSS variables via FooterStyleVars (inline style only)
+        $styleAttr = FooterStyleVars::build($props, $id);
+
+        // Include the CSS asset once per document (like headerModernAssets)
+        $cssAsset = $this->navFooterAssets();
+
         $copyright = $this->escape($props['copyright'] ?? '');
         $tagline   = $this->escape($props['tagline'] ?? '');
         $logoText  = $this->escape($props['logo_text'] ?? '');
@@ -4701,9 +4718,10 @@ class BlockRenderer
             // targeted by the exact same .tb-nav-footer-links CSS
             // (`.tb-nav-footer-links a`, not `li a`).
             $menuHtml = $this->context['footer_menu_html'] ?? '';
-            $colHtml = $menuHtml !== '' ? "<div class=\"tb-nav-footer-col\"><div class=\"tb-nav-footer-links\">{$menuHtml}</div></div>" : '';
+            $colHtml = $menuHtml !== '' ? "<div class=\"tb-nav-footer-col\" role=\"region\" aria-label=\"منوی پاورقی\"><div class=\"tb-nav-footer-links\">{$menuHtml}</div></div>" : '';
         } else {
             $colHtml = '';
+            $i = 0;
             foreach ($columns as $col) {
                 $ctitle = $this->escape(is_array($col) ? ($col['title'] ?? '') : '');
                 $clinks = is_array($col) ? ($col['links'] ?? []) : [];
@@ -4721,9 +4739,10 @@ class BlockRenderer
                 if ($linkItems === '' && $ctitle === '') {
                     continue;
                 }
-                $colHtml .= "<div class=\"tb-nav-footer-col\">"
-                    . ($ctitle ? "<h3 class=\"tb-nav-footer-col-title\">{$ctitle}</h3>" : '')
+                $colHtml .= "<div class=\"tb-nav-footer-col\" role=\"region\" aria-labelledby=\"{$id}-col-title-{$i}\">"
+                    . ($ctitle ? "<h3 id=\"{$id}-col-title-{$i}\" class=\"tb-nav-footer-col-title\">{$ctitle}</h3>" : '')
                     . "<ul class=\"tb-nav-footer-links\">{$linkItems}</ul></div>";
+                $i++;
             }
         }
 
@@ -4742,30 +4761,86 @@ class BlockRenderer
             $legalHtml .= "<a href=\"{$url}\" class=\"tb-nav-footer-legal-link\">{$label}</a>";
         }
 
-        $brandHtml = ($logoText || $tagline)
+        // Section visibility checks
+        $showBrand   = filter_var($props['show_brand'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showColumns = filter_var($props['show_columns'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showBottom  = filter_var($props['show_bottom'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showSocial  = filter_var($props['show_social'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+        $brandHtml = ($showBrand && ($logoText || $tagline))
             ? "<div class=\"tb-nav-footer-brand\" data-widget-slot=\"brand\">"
             . ($logoText ? "<p class=\"tb-nav-footer-logo\">{$logoText}</p>" : '')
             . ($tagline ? "<p class=\"tb-nav-footer-tagline\">{$tagline}</p>" : '')
             . "</div>"
             : '';
 
+        $colsHtml = ($showColumns && $colHtml !== '')
+            ? "<nav class=\"tb-nav-footer-cols\" data-widget-slot=\"columns\" aria-label=\"منوی پاورقی\">{$colHtml}</nav>"
+            : '';
+
+        $bottomHtml = ($showBottom && ($copyright !== '' || $legalHtml !== '' || ($showSocial && $socialHtml !== '')))
+            ? "<div class=\"tb-nav-footer-bottom\" data-widget-slot=\"bottom\">"
+            . ($copyright ? "<p class=\"tb-nav-footer-copyright\">{$copyright}</p>" : '')
+            . $legalHtml
+            . ($showSocial ? $socialHtml : '')
+            . "</div>"
+            : '';
+
+        // Data attributes for CSS to consume (mirrors header-modern pattern)
+        $bgType      = $this->escapeAttr($props['background_type'] ?? 'color');
+        $borderTop   = filter_var($props['border_top'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        $boxShadow   = filter_var($props['box_shadow'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        $positionMode = $this->escapeAttr($props['position_mode'] ?? 'static');
+        $layoutStackMobile = filter_var($props['layout_stack_mobile'] ?? true, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        $reverseColumnsMobile = filter_var($props['reverse_columns_mobile'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        $hideOnDesktop = filter_var($props['hide_on_desktop'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        $hideOnTablet = filter_var($props['hide_on_tablet'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        $hideOnMobile = filter_var($props['hide_on_mobile'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+
         // BLD-19 (real axe-core scan): same nested-landmark issue as
         // renderNavHeader() above (landmark-contentinfo-is-top-level /
         // landmark-no-duplicate-contentinfo) — every real consumer already
         // wraps this in its own <footer role="contentinfo">, so the root
         // element here is a plain <div>, not a second nested <footer>.
-        return "<div id=\"tb-{$id}\" class=\"tb-nav-footer\" style=\"background:{$bg};color:{$tc};\">
+        return "<div id=\"tb-{$id}\" class=\"tb-nav-footer\" {$styleAttr}
+            data-bg-type=\"{$bgType}\"
+            data-border-top=\"{$borderTop}\"
+            data-box-shadow=\"{$boxShadow}\"
+            data-position-mode=\"{$positionMode}\"
+            data-layout-stack-mobile=\"{$layoutStackMobile}\"
+            data-reverse-columns-mobile=\"{$reverseColumnsMobile}\"
+            data-hide-on-desktop=\"{$hideOnDesktop}\"
+            data-hide-on-tablet=\"{$hideOnTablet}\"
+            data-hide-on-mobile=\"{$hideOnMobile}\"
+            data-tb-block-id=\"{$id}\"
+            data-canvas-block-id=\"{$id}\"
+            data-tb-block-type=\"nav_footer\">
             <div class=\"tb-container\">
                 {$brandHtml}
-                " . ($colHtml ? "<div class=\"tb-nav-footer-cols\" data-widget-slot=\"columns\">{$colHtml}</div>" : '') . "
+                {$colsHtml}
                 {$extrasHtml}
-                <div class=\"tb-nav-footer-bottom\" data-widget-slot=\"bottom\">
-                    " . ($copyright ? "<p class=\"tb-nav-footer-copyright\">{$copyright}</p>" : '') . "
-                    {$legalHtml}
-                    {$socialHtml}
-                </div>
+                {$bottomHtml}
             </div>
-        </div>";
+        </div>{$cssAsset}";
+    }
+
+    /**
+     * Inline the nav-footer CSS asset once per document (like headerModernAssets).
+     */
+    private function navFooterAssets(): string
+    {
+        static $emitted = false;
+        if ($emitted) {
+            return '';
+        }
+        $emitted = true;
+
+        $css = @file_get_contents(ThemeRuntimeServiceProvider::navFooterStylePath());
+        if (!is_string($css) || $css === '') {
+            throw new \RuntimeException('Theme runtime packaging fault: nav-footer CSS asset is missing.');
+        }
+
+        return '<style data-tb-block-asset="nav_footer">' . $css . '</style>';
     }
 
     /**

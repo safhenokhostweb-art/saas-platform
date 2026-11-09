@@ -143,6 +143,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         return __DIR__ . '/../../resources/js/blocks/header-modern/header-modern.json';
     }
 
+    /** Footer widget (ADR-082 parity) — scoped CSS with --footer-* variables. */
+    public static function navFooterStylePath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/nav-footer/nav-footer.css';
+    }
+
     /**
      * Phase 9 / Step 2 — the shared carousel controller, inlined once per
      * document by BlockRenderer::renderCarousel().

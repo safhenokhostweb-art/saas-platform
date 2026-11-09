@@ -42,9 +42,8 @@ class CommercialTokenRatchetTest extends TestCase
             // Hex defaults feed readableTextColorOn() contrast math and are
             // emitted as the block's own --tb-header-* variables.
             'renderHeaderModernV1' => ['renderHeaderModernV1', 4],
-            // Dark footer defaults; --tb-text/--tb-border would invert on a
-            // dark Theme.
-            'renderNavFooter' => ['renderNavFooter', 2],
+            // Footer now uses FooterStyleVars (--footer-*) — zero inline raw colours.
+            'renderNavFooter' => ['renderNavFooter', 0],
         ];
     }
 

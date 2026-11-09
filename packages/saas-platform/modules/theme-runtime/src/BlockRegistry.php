@@ -1099,6 +1099,9 @@ class BlockRegistry
             // counterpart to nav_header. Superset schema — a theme with no
             // social_links/tagline/legal-links data simply omits those
             // sections rather than fabricating them.
+            // Step 1 (ADR-082 parity): enhanced with Content/Layout controls,
+            // responsive breakpoints, section visibility, and CSS variable
+            // extraction via FooterStyleVars (--footer-* prefix).
             'nav_footer' => [
                 'name' => 'فوتر سایت (Nav Footer)',
                 'category' => self::CATEGORY_UTILITY,
@@ -1106,37 +1109,164 @@ class BlockRegistry
                 // ADR-076: the slots this footer marks with data-widget-slot.
                 'slots' => ['brand', 'columns', 'bottom', 'social'],
                 'schema' => [
+                    // ─── LAYOUT / CONTENT TAB ─────────────────────────────
+                    // Grid configuration for the columns area.
+                    'layout_columns'     => ['type' => 'number', 'label' => 'تعداد ستون‌ها', 'default' => 4, 'min' => 1, 'max' => 6, 'step' => 1, 'group' => 'چیدمان و محتوا'],
+                    'layout_gap'         => ['type' => 'select', 'label' => 'فاصله ستون‌ها', 'options' => self::SPACING_OPTIONS, 'default' => 'lg', 'group' => 'چیدمان و محتوا'],
+                    'layout_row_gap'     => ['type' => 'select', 'label' => 'فاصله ردیف‌ها', 'options' => self::SPACING_OPTIONS, 'default' => 'md', 'group' => 'چیدمان و محتوا'],
+                    'layout_justify'     => ['type' => 'select', 'ui' => 'segmented', 'label' => 'تراز افقی (Justify)', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها', 'space-between' => 'فاصله برابر', 'space-around' => 'فاصله دور', 'space-evenly' => 'فاصله یکنواخت'], 'default' => 'start', 'group' => 'چیدمان و محتوا'],
+                    'layout_align'       => ['type' => 'select', 'ui' => 'segmented', 'label' => 'تراز عمودی (Align)', 'options' => ['stretch' => 'کشیده', 'flex-start' => 'ابتدا', 'center' => 'وسط', 'flex-end' => 'انتها'], 'default' => 'stretch', 'group' => 'چیدمان و محتوا'],
+                    'layout_wrap'        => ['type' => 'boolean', 'label' => 'شکست خط (Wrap)', 'default' => true, 'group' => 'چیدمان و محتوا'],
+                    'layout_direction'   => ['type' => 'select', 'label' => 'جهت چیدمان', 'options' => ['row' => 'افقی', 'column' => 'عمودی'], 'default' => 'row', 'group' => 'چیدمان و محتوا'],
+                    // Responsive overrides — tablet (<1024px)
+                    'layout_columns_tablet'   => ['type' => 'number', 'label' => 'ستون‌ها (تبلت)', 'default' => 2, 'min' => 1, 'max' => 6, 'step' => 1, 'group' => 'ریسپانسیو'],
+                    'layout_gap_tablet'       => ['type' => 'select', 'label' => 'فاصله (تبلت)', 'options' => self::SPACING_OPTIONS, 'default' => 'md', 'group' => 'ریسپانسیو'],
+                    'layout_justify_tablet'   => ['type' => 'select', 'label' => 'تراز افقی (تبلت)', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها', 'space-between' => 'فاصله برابر', 'space-around' => 'فاصله دور', 'space-evenly' => 'فاصله یکنواخت'], 'default' => 'start', 'group' => 'ریسپانسیو'],
+                    'layout_align_tablet'     => ['type' => 'select', 'label' => 'تراز عمودی (تبلت)', 'options' => ['stretch' => 'کشیده', 'flex-start' => 'ابتدا', 'center' => 'وسط', 'flex-end' => 'انتها'], 'default' => 'stretch', 'group' => 'ریسپانسیو'],
+                    // Responsive overrides — mobile (<768px)
+                    'layout_columns_mobile'   => ['type' => 'number', 'label' => 'ستون‌ها (موبایل)', 'default' => 1, 'min' => 1, 'max' => 4, 'step' => 1, 'group' => 'ریسپانسیو'],
+                    'layout_gap_mobile'       => ['type' => 'select', 'label' => 'فاصله (موبایل)', 'options' => self::SPACING_OPTIONS, 'default' => 'sm', 'group' => 'ریسپانسیو'],
+                    'layout_justify_mobile'   => ['type' => 'select', 'label' => 'تراز افقی (موبایل)', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها', 'space-between' => 'فاصله برابر', 'space-around' => 'فاصله دور', 'space-evenly' => 'فاصله یکنواخت'], 'default' => 'start', 'group' => 'ریسپانسیو'],
+                    'layout_align_mobile'     => ['type' => 'select', 'label' => 'تراز عمودی (موبایل)', 'options' => ['stretch' => 'کشیده', 'flex-start' => 'ابتدا', 'center' => 'وسط', 'flex-end' => 'انتها'], 'default' => 'stretch', 'group' => 'ریسپانسیو'],
+                    'layout_stack_mobile'     => ['type' => 'boolean', 'label' => 'پشته‌کردن کامل در موبایل', 'default' => true, 'group' => 'ریسپانسیو'],
+                    // Column order & visibility per breakpoint
+                    'reverse_columns_mobile'  => ['type' => 'boolean', 'label' => 'معکوس کردن ترتیب ستون‌ها در موبایل', 'default' => false, 'group' => 'ریسپانسیو'],
+                    'hide_on_desktop'         => ['type' => 'boolean', 'label' => 'پنهان در دسکتاپ (≥1024px)', 'default' => false, 'group' => 'ریسپانسیو'],
+                    'hide_on_tablet'          => ['type' => 'boolean', 'label' => 'پنهان در تبلت (<1024px)', 'default' => false, 'group' => 'ریسپانسیو'],
+                    'hide_on_mobile'          => ['type' => 'boolean', 'label' => 'پنهان در موبایل (<768px)', 'default' => false, 'group' => 'ریسپانسیو'],
+                    // Section visibility toggles
+                    'show_brand'      => ['type' => 'boolean', 'label' => 'نمایش برند/شعار', 'default' => true, 'group' => 'بخش‌های قابل مشاهده'],
+                    'show_columns'    => ['type' => 'boolean', 'label' => 'نمایش ستون‌های لینک', 'default' => true, 'group' => 'بخش‌های قابل مشاهده'],
+                    'show_bottom'     => ['type' => 'boolean', 'label' => 'نمایش نوار پایینی (کپی‌رایت/حقوقی)', 'default' => true, 'group' => 'بخش‌های قابل مشاهده'],
+                    'show_social'     => ['type' => 'boolean', 'label' => 'نمایش آیکون‌های اجتماعی', 'default' => true, 'group' => 'بخش‌های قابل مشاهده'],
+                    'show_newsletter' => ['type' => 'boolean', 'label' => 'نمایش عضویت در خبرنامه', 'default' => false, 'group' => 'بخش‌های قابل مشاهده'],
+                    'show_trust_seals'=> ['type' => 'boolean', 'label' => 'نمایش نشان‌های اعتماد', 'default' => false, 'group' => 'بخش‌های قابل مشاهده'],
+                    'show_app_badges' => ['type' => 'boolean', 'label' => 'نمایش نشان‌های اپلیکیشن', 'default' => false, 'group' => 'بخش‌های قابل مشاهده'],
+
+                    // ─── CONTENT (existing fields, grouped) ───────────────
                     // TASK 3/3 Phase 6.5C (BLD-26) — footer counterpart of
                     // nav_header's nav_source. See renderNavFooter() for
                     // the render-time branch. Default 'custom' — zero
                     // behavior change for any existing theme/instance.
-                    'nav_source'   => ['type' => 'select', 'label' => 'منبع لینک‌های فوتر', 'options' => ['custom' => 'ستون‌های سفارشی این بلوک', 'menu' => 'منوی فوتر سایت (/admin/menus)'], 'default' => 'custom'],
-                    'columns'      => ['type' => 'repeater', 'label' => 'ستون‌های لینک', 'item_label' => 'ستون', 'storage' => 'array', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'links' => ['type' => 'repeater', 'label' => 'لینک‌های ستون', 'item_label' => 'لینک', 'storage' => 'array', 'default' => [], 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#']]]], 'default' => []],
-                    'links'        => ['type' => 'repeater', 'label' => 'لینک‌های حقوقی (اختیاری)', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#']], 'default' => []],
+                    'nav_source'   => ['type' => 'select', 'label' => 'منبع لینک‌های فوتر', 'options' => ['custom' => 'ستون‌های سفارشی این بلوک', 'menu' => 'منوی فوتر سایت (/admin/menus)'], 'default' => 'custom', 'group' => 'محتوا'],
+                    'columns'      => ['type' => 'repeater', 'label' => 'ستون‌های لینک', 'item_label' => 'ستون', 'storage' => 'array', 'fields' => ['title' => ['type' => 'string', 'label' => 'عنوان ستون', 'default' => ''], 'links' => ['type' => 'repeater', 'label' => 'لینک‌های ستون', 'item_label' => 'لینک', 'storage' => 'array', 'default' => [], 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#']]]], 'default' => [], 'group' => 'محتوا'],
+                    'links'        => ['type' => 'repeater', 'label' => 'لینک‌های حقوقی (اختیاری)', 'item_label' => 'لینک', 'storage' => 'array', 'fields' => ['label' => ['type' => 'string', 'label' => 'متن لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#']], 'default' => [], 'group' => 'محتوا'],
                     // ADR-076: one network list (Support\SocialNetworks), shared with nav_header.
-                    'social_links' => self::socialLinksField('شبکه‌های اجتماعی و پیام‌رسان‌ها (اختیاری)'),
-                    'social_style' => self::socialStyleField(),
-                    'logo_text'    => ['type' => 'string', 'label' => 'متن لوگو', 'default' => ''],
-                    'tagline'      => ['type' => 'string', 'label' => 'شعار برند (اختیاری)', 'default' => ''],
-                    'copyright'    => ['type' => 'string', 'label' => 'متن کپی‌رایت', 'default' => ''],
-                    'bg_color'     => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#111827'],
-                    'text_color'   => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#e5e7eb'],
+                    'social_links' => self::socialLinksField('شبکه‌های اجتماعی و پیام‌رسان‌ها (اختیاری)', 'محتوا'),
+                    'social_style' => self::socialStyleField('محتوا'),
+                    'logo_text'    => ['type' => 'string', 'label' => 'متن لوگو', 'default' => '', 'group' => 'محتوا'],
+                    'tagline'      => ['type' => 'string', 'label' => 'شعار برند (اختیاری)', 'default' => '', 'group' => 'محتوا'],
+                    'copyright'    => ['type' => 'string', 'label' => 'متن کپی‌رایت', 'default' => '', 'group' => 'محتوا'],
                     // Phase 1 (ADR-067): high-conversion footer — newsletter on the
                     // Phase 0.7 endpoint, trust seals rebuilt from their ids only,
                     // app download badges.
-                    'newsletter_enabled'     => ['type' => 'boolean', 'label' => 'نمایش عضویت در خبرنامه', 'default' => false],
-                    'newsletter_title'       => ['type' => 'string', 'label' => 'عنوان خبرنامه', 'default' => 'عضویت در خبرنامه'],
-                    'newsletter_text'        => ['type' => 'textarea', 'label' => 'توضیح خبرنامه', 'default' => 'از تخفیف‌ها و محصولات تازه زودتر از همه باخبر شوید.'],
-                    'newsletter_placeholder' => ['type' => 'string', 'label' => 'متن راهنمای فیلد', 'default' => 'ایمیل یا شماره موبایل'],
-                    'newsletter_button'      => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'عضویت'],
-                    'enamad_id'      => ['type' => 'string', 'label' => 'اینماد: شناسه (یا کل کد HTML اینماد)', 'default' => ''],
-                    'enamad_code'    => ['type' => 'string', 'label' => 'اینماد: Code', 'default' => ''],
-                    'samandehi_id'   => ['type' => 'string', 'label' => 'ساماندهی: شناسه (یا کل کد HTML ساماندهی)', 'default' => ''],
-                    'samandehi_code' => ['type' => 'string', 'label' => 'ساماندهی: کد p', 'default' => ''],
-                    'app_links'      => ['type' => 'repeater', 'label' => 'دریافت اپلیکیشن (اختیاری)', 'item_label' => 'فروشگاه', 'storage' => 'array', 'fields' => ['store' => ['type' => 'select', 'label' => 'فروشگاه', 'options' => ['google_play' => 'گوگل‌پلی', 'app_store' => 'اپ‌استور', 'bazaar' => 'کافه‌بازار', 'myket' => 'مایکت', 'direct' => 'دانلود مستقیم'], 'default' => 'bazaar'], 'url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#']], 'default' => []],
+                    'newsletter_enabled'     => ['type' => 'boolean', 'label' => 'نمایش عضویت در خبرنامه', 'default' => false, 'group' => 'محتوا'],
+                    'newsletter_title'       => ['type' => 'string', 'label' => 'عنوان خبرنامه', 'default' => 'عضویت در خبرنامه', 'group' => 'محتوا'],
+                    'newsletter_text'        => ['type' => 'textarea', 'label' => 'توضیح خبرنامه', 'default' => 'از تخفیف‌ها و محصولات تازه زودتر از همه باخبر شوید.', 'group' => 'محتوا'],
+                    'newsletter_placeholder' => ['type' => 'string', 'label' => 'متن راهنمای فیلد', 'default' => 'ایمیل یا شماره موبایل', 'group' => 'محتوا'],
+                    'newsletter_button'      => ['type' => 'string', 'label' => 'متن دکمه', 'default' => 'عضویت', 'group' => 'محتوا'],
+                    'enamad_id'      => ['type' => 'string', 'label' => 'اینماد: شناسه (یا کل کد HTML اینماد)', 'default' => '', 'group' => 'محتوا'],
+                    'enamad_code'    => ['type' => 'string', 'label' => 'اینماد: Code', 'default' => '', 'group' => 'محتوا'],
+                    'samandehi_id'   => ['type' => 'string', 'label' => 'ساماندهی: شناسه (یا کل کد HTML ساماندهی)', 'default' => '', 'group' => 'محتوا'],
+                    'samandehi_code' => ['type' => 'string', 'label' => 'ساماندهی: کد p', 'default' => '', 'group' => 'محتوا'],
+                    'app_links'      => ['type' => 'repeater', 'label' => 'دریافت اپلیکیشن (اختیاری)', 'item_label' => 'فروشگاه', 'storage' => 'array', 'fields' => ['store' => ['type' => 'select', 'label' => 'فروشگاه', 'options' => ['google_play' => 'گوگل‌پلی', 'app_store' => 'اپ‌استور', 'bazaar' => 'کافه‌بازار', 'myket' => 'مایکت', 'direct' => 'دانلود مستقیم'], 'default' => 'bazaar'], 'url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#']], 'default' => [], 'group' => 'محتوا'],
+
+                    // ─── STYLE TAB (colors, backgrounds) ──────────────────
+                    'bg_color'     => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#111827', 'group' => 'استایل و رنگ'],
+                    'text_color'   => ['type' => 'color', 'label' => 'رنگ متن', 'default' => '#e5e7eb', 'group' => 'استایل و رنگ'],
+                    'link_color'   => ['type' => 'color', 'label' => 'رنگ لینک (عادی)', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'link_hover_color' => ['type' => 'color', 'label' => 'رنگ لینک (هاور)', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'link_active_color' => ['type' => 'color', 'label' => 'رنگ لینک (فعال)', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'divider_color'    => ['type' => 'color', 'label' => 'رنگ خطوط جداکننده', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'divider_width'    => ['type' => 'number', 'label' => 'ضخامت خط جداکننده (px)', 'default' => 1, 'min' => 0, 'max' => 4, 'step' => 1, 'group' => 'استایل و رنگ'],
+                    'divider_style'    => ['type' => 'select', 'label' => 'استایل خط جداکننده', 'options' => ['solid' => 'پهن', 'dashed' => 'خط‌چین', 'dotted' => 'نقطه‌چین', 'double' => 'دوخطی'], 'default' => 'solid', 'group' => 'استایل و رنگ'],
+                    'background_type'  => ['type' => 'select', 'label' => 'نوع پس‌زمینه', 'options' => ['color' => 'رنگ ساده', 'gradient' => 'گرادیان', 'image' => 'تصویر'], 'default' => 'color', 'group' => 'استایل و رنگ'],
+                    'gradient_from'    => ['type' => 'color', 'label' => 'گرادیان — ابتدا', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'gradient_to'      => ['type' => 'color', 'label' => 'گرادیان — انتها', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'gradient_angle'   => ['type' => 'number', 'label' => 'زاویه گرادیان (درجه)', 'default' => 180, 'min' => 0, 'max' => 360, 'step' => 1, 'group' => 'استایل و رنگ'],
+                    'bg_image'         => ['type' => 'image', 'label' => 'تصویر پس‌زمینه', 'default' => '', 'group' => 'استایل و رنگ'],
+                    'bg_image_position' => ['type' => 'select', 'label' => 'موقعیت تصویر', 'options' => ['center' => 'وسط', 'top' => 'بالا', 'bottom' => 'پایین', 'left' => 'چپ', 'right' => 'راست', 'cover' => 'پوشش کامل'], 'default' => 'center', 'group' => 'استایل و رنگ'],
+                    'bg_image_size'    => ['type' => 'select', 'label' => 'اندازه تصویر', 'options' => ['cover' => 'پوشش کامل', 'contain' => 'درهم‌گنجانده', 'auto' => 'خودکار'], 'default' => 'cover', 'group' => 'استایل و رنگ'],
+                    'bg_image_repeat'  => ['type' => 'select', 'label' => 'تکرار تصویر', 'options' => ['no-repeat' => 'بدون تکرار', 'repeat' => 'تکرار', 'repeat-x' => 'تکرار افقی', 'repeat-y' => 'تکرار عمودی'], 'default' => 'no-repeat', 'group' => 'استایل و رنگ'],
+                    'bg_image_attachment' => ['type' => 'select', 'label' => 'پیوست تصویر', 'options' => ['scroll' => 'اسکرول', 'fixed' => 'ثابت'], 'default' => 'scroll', 'group' => 'استایل و رنگ'],
+
+                    // ─── Column Title Typography ──────────────────────────
+                    'col_title_font_size'      => ['type' => 'number', 'label' => 'اندازه فونت عنوان ستون (px)', 'default' => 13.6, 'min' => 8, 'max' => 24, 'step' => 0.4, 'group' => 'تیپوگرافی عنوان ستون'],
+                    'col_title_font_weight'    => ['type' => 'select', 'label' => 'ضخامت فونت عنوان ستون', 'options' => ['400' => 'Normal', '500' => 'Medium', '600' => 'Semi Bold', '700' => 'Bold', '800' => 'Extra Bold'], 'default' => '700', 'group' => 'تیپوگرافی عنوان ستون'],
+                    'col_title_text_transform' => ['type' => 'select', 'label' => 'تبدیل متن عنوان ستون', 'options' => ['none' => 'بدون تغییر', 'uppercase' => 'حروف بزرگ', 'lowercase' => 'حروف کوچک', 'capitalize' => 'اولین حرف بزرگ'], 'default' => 'uppercase', 'group' => 'تیپوگرافی عنوان ستون'],
+                    'col_title_letter_spacing' => ['type' => 'number', 'label' => 'فاصله حروف عنوان ستون (em)', 'default' => 0.04, 'min' => 0, 'max' => 0.5, 'step' => 0.01, 'group' => 'تیپوگرافی عنوان ستون'],
+                    'col_title_color'          => ['type' => 'color', 'label' => 'رنگ عنوان ستون', 'default' => '', 'group' => 'تیپوگرافی عنوان ستون'],
+                    'col_title_opacity'        => ['type' => 'number', 'label' => 'شفافیت عنوان ستون (0-1)', 'default' => 0.6, 'min' => 0, 'max' => 1, 'step' => 0.05, 'group' => 'تیپوگرافی عنوان ستون'],
+                    'col_title_margin_bottom'  => ['type' => 'number', 'label' => 'حاشیه پایین عنوان ستون (px)', 'default' => 16, 'min' => 0, 'max' => 48, 'step' => 4, 'group' => 'تیپوگرافی عنوان ستون'],
+
+                    // ─── Link Focus State ─────────────────────────────────
+                    'link_focus_color' => ['type' => 'color', 'label' => 'رنگ لینک (فوکوس قابل‌مشاهده)', 'default' => '', 'group' => 'استایل و رنگ'],
+
+                    // ─── Divider Margins ──────────────────────────────────
+                    'divider_margin_top'    => ['type' => 'number', 'label' => 'حاشیه بالای خط جداکننده (px)', 'default' => 28, 'min' => 0, 'max' => 120, 'step' => 4, 'group' => 'استایل و رنگ'],
+                    'divider_margin_bottom' => ['type' => 'number', 'label' => 'حاشیه پایین خط جداکننده (px)', 'default' => 28, 'min' => 0, 'max' => 120, 'step' => 4, 'group' => 'استایل و رنگ'],
+
+                    // ─── Bottom Bar Styling ───────────────────────────────
+                    'bottom_copyright_font_size' => ['type' => 'number', 'label' => 'اندازه فونت کپی‌رایت (px)', 'default' => 13.6, 'min' => 8, 'max' => 20, 'step' => 0.4, 'group' => 'نوار پایین'],
+                    'bottom_copyright_opacity'   => ['type' => 'number', 'label' => 'شفافیت کپی‌رایت (0-1)', 'default' => 0.65, 'min' => 0, 'max' => 1, 'step' => 0.05, 'group' => 'نوار پایین'],
+                    'bottom_copyright_line_height' => ['type' => 'number', 'label' => 'ارتفاع خط کپی‌رایت', 'default' => 1.5, 'min' => 1, 'max' => 2.5, 'step' => 0.1, 'group' => 'نوار پایین'],
+                    'bottom_legal_font_size'     => ['type' => 'number', 'label' => 'اندازه فونت لینک‌های قانونی (px)', 'default' => 13.6, 'min' => 8, 'max' => 20, 'step' => 0.4, 'group' => 'نوار پایین'],
+                    'bottom_legal_opacity'       => ['type' => 'number', 'label' => 'شفافیت لینک‌های قانونی (0-1)', 'default' => 0.7, 'min' => 0, 'max' => 1, 'step' => 0.05, 'group' => 'نوار پایین'],
+                    'bottom_legal_margin'        => ['type' => 'number', 'label' => 'حاشیه لینک‌های قانونی (px)', 'default' => 20, 'min' => 0, 'max' => 48, 'step' => 4, 'group' => 'نوار پایین'],
+                    'bottom_padding_top'         => ['type' => 'number', 'label' => 'پدینگ بالای نوار پایین (px)', 'default' => 28, 'min' => 0, 'max' => 120, 'step' => 4, 'group' => 'نوار پایین'],
+                    'bottom_gap'                 => ['type' => 'number', 'label' => 'فاصله اقلام نوار پایین (px)', 'default' => 16, 'min' => 0, 'max' => 48, 'step' => 4, 'group' => 'نوار پایین'],
+
+                    // ─── ADVANCED TAB (spacing, borders, behavior) ─────────
+                    'padding_top'    => ['type' => 'number', 'label' => 'پدینگ بالا (px)', 'default' => 80, 'min' => 0, 'max' => 300, 'step' => 4, 'group' => 'فاصله و حاشیه'],
+                    'padding_right'  => ['type' => 'number', 'label' => 'پدینگ راست (px)', 'default' => 24, 'min' => 0, 'max' => 120, 'step' => 4, 'group' => 'فاصله و حاشیه'],
+                    'padding_bottom' => ['type' => 'number', 'label' => 'پدینگ پایین (px)', 'default' => 48, 'min' => 0, 'max' => 300, 'step' => 4, 'group' => 'فاصله و حاشیه'],
+                    'padding_left'   => ['type' => 'number', 'label' => 'پدینگ چپ (px)', 'default' => 24, 'min' => 0, 'max' => 120, 'step' => 4, 'group' => 'فاصله و حاشیه'],
+                    // Responsive padding
+                    'padding_top_tablet'    => ['type' => 'number', 'label' => 'پدینگ بالا (تبلت)', 'default' => 60, 'min' => 0, 'max' => 200, 'step' => 4, 'group' => 'ریسپانسیو'],
+                    'padding_bottom_tablet' => ['type' => 'number', 'label' => 'پدینگ پایین (تبلت)', 'default' => 40, 'min' => 0, 'max' => 200, 'step' => 4, 'group' => 'ریسپانسیو'],
+                    'padding_top_mobile'    => ['type' => 'number', 'label' => 'پدینگ بالا (موبایل)', 'default' => 48, 'min' => 0, 'max' => 160, 'step' => 4, 'group' => 'ریسپانسیو'],
+                    'padding_bottom_mobile' => ['type' => 'number', 'label' => 'پدینگ پایین (موبایل)', 'default' => 32, 'min' => 0, 'max' => 160, 'step' => 4, 'group' => 'ریسپانسیو'],
+                    'border_top'      => ['type' => 'boolean', 'label' => 'خط بالا', 'default' => false, 'group' => 'فاصله و حاشیه'],
+                    'border_top_color'=> ['type' => 'color', 'label' => 'رنگ خط بالا', 'default' => '', 'group' => 'فاصله و حاشیه'],
+                    'border_top_width'=> ['type' => 'number', 'label' => 'ضخامت خط بالا (px)', 'default' => 1, 'min' => 0, 'max' => 4, 'step' => 1, 'group' => 'فاصله و حاشیه'],
+                    'border_radius'   => ['type' => 'number', 'label' => 'گردی گوشه‌ها (px)', 'default' => 0, 'min' => 0, 'max' => 48, 'step' => 1, 'group' => 'فاصله و حاشیه'],
+                    'box_shadow'      => ['type' => 'boolean', 'label' => 'سایه جعبه', 'default' => false, 'group' => 'فاصله و حاشیه'],
+                    'box_shadow_color'=> ['type' => 'color', 'label' => 'رنگ سایه', 'default' => '', 'group' => 'فاصله و حاشیه'],
+                    'box_shadow_blur' => ['type' => 'number', 'label' => 'بور سایه (px)', 'default' => 20, 'min' => 0, 'max' => 80, 'step' => 1, 'group' => 'فاصله و حاشیه'],
+                    'box_shadow_spread'=> ['type' => 'number', 'label' => 'افکن سایه (px)', 'default' => -4, 'min' => -20, 'max' => 20, 'step' => 1, 'group' => 'فاصله و حاشیه'],
+                    // Behavior (sticky bottom only; reveal is out of scope for Phase 1)
+                    'position_mode'   => ['type' => 'select', 'label' => 'حالت موقعیت', 'options' => ['static' => 'معمولی', 'sticky-bottom' => 'چسبنده به پایین (Sticky Bottom)'], 'default' => 'static', 'group' => 'رفتار پیشرفته'],
+                    'z_index'         => ['type' => 'number', 'label' => 'زایندکس (z-index)', 'default' => 10, 'min' => 0, 'max' => 9999, 'step' => 1, 'group' => 'رفتار پیشرفته'],
+                    'margin_top'      => ['type' => 'number', 'label' => 'مارجین بالا (px، منفی مجاز)', 'default' => 0, 'min' => -200, 'max' => 200, 'step' => 1, 'group' => 'رفتار پیشرفته'],
                 ],
                 // Sample links to pages every storefront has (Sentinel FEATURE_MISSING_FOOTER_LINKS, 2026-11-02).
-                'defaultProps' => ['columns' => [['title' => 'دسترسی سریع', 'links' => [['label' => 'صفحه اصلی', 'url' => '/'], ['label' => 'تماس با ما', 'url' => '/contact']]]], 'copyright' => '', 'bg_color' => '#111827', 'text_color' => '#e5e7eb'],
+                'defaultProps' => [
+                    'layout_columns' => 4, 'layout_gap' => 'lg', 'layout_row_gap' => 'md',
+                    'layout_justify' => 'start', 'layout_align' => 'stretch', 'layout_wrap' => true, 'layout_direction' => 'row',
+                    'layout_columns_tablet' => 2, 'layout_gap_tablet' => 'md', 'layout_justify_tablet' => 'start', 'layout_align_tablet' => 'stretch',
+                    'layout_columns_mobile' => 1, 'layout_gap_mobile' => 'sm', 'layout_justify_mobile' => 'start', 'layout_align_mobile' => 'stretch', 'layout_stack_mobile' => true,
+                    'reverse_columns_mobile' => false, 'hide_on_desktop' => false, 'hide_on_tablet' => false, 'hide_on_mobile' => false,
+                    'show_brand' => true, 'show_columns' => true, 'show_bottom' => true, 'show_social' => true,
+                    'show_newsletter' => false, 'show_trust_seals' => false, 'show_app_badges' => false,
+                    'columns' => [['title' => 'دسترسی سریع', 'links' => [['label' => 'صفحه اصلی', 'url' => '/'], ['label' => 'تماس با ما', 'url' => '/contact']]]],
+                    'copyright' => '', 'bg_color' => '#111827', 'text_color' => '#e5e7eb',
+                    'link_color' => '', 'link_hover_color' => '', 'link_active_color' => '',
+                    'divider_color' => '', 'divider_width' => 1, 'divider_style' => 'solid',
+                    'background_type' => 'color', 'gradient_from' => '', 'gradient_to' => '', 'gradient_angle' => 180,
+                    'bg_image' => '', 'bg_image_position' => 'center', 'bg_image_size' => 'cover', 'bg_image_repeat' => 'no-repeat', 'bg_image_attachment' => 'scroll',
+                    'padding_top' => 80, 'padding_right' => 24, 'padding_bottom' => 48, 'padding_left' => 24,
+                    'padding_top_tablet' => 60, 'padding_bottom_tablet' => 40,
+                    'padding_top_mobile' => 48, 'padding_bottom_mobile' => 32,
+                    'border_top' => false, 'border_top_color' => '', 'border_top_width' => 1,
+                    'border_radius' => 0, 'box_shadow' => false, 'box_shadow_color' => '', 'box_shadow_blur' => 20, 'box_shadow_spread' => -4,
+                    'position_mode' => 'static', 'z_index' => 10, 'margin_top' => 0,
+                    'col_title_font_size' => 13.6, 'col_title_font_weight' => '700', 'col_title_text_transform' => 'uppercase', 'col_title_letter_spacing' => 0.04, 'col_title_color' => '', 'col_title_opacity' => 0.6, 'col_title_margin_bottom' => 16,
+                    'link_focus_color' => '',
+                    'divider_margin_top' => 28, 'divider_margin_bottom' => 28,
+                    'bottom_copyright_font_size' => 13.6, 'bottom_copyright_opacity' => 0.65, 'bottom_copyright_line_height' => 1.5,
+                    'bottom_legal_font_size' => 13.6, 'bottom_legal_opacity' => 0.7, 'bottom_legal_margin' => 20,
+                    'bottom_padding_top' => 28, 'bottom_gap' => 16,
+                ],
             ],
 
             // ─── MODULE: موشن گرافیک ─────────────────────────────────────────
