@@ -201,7 +201,17 @@ class BlockRenderer
             }
             $html[] = $this->renderBlock($block);
         }
-        return implode("\n", $html);
+        // Zero-gap enforcement (2026-11-09): inject a defensive <style> at the
+        // START of every renderBlocks() output so it appears AFTER any
+        // per-block <style data-tb-block-asset="..."> tags that otherwise
+        // neutralize layout.blade.css, guaranteeing .tb-section /
+        // .tb-padding-* / .tb-style-wrap always win regardless of block
+        // ordering, hard-coded styles, or inline overrides.
+        $zeroGapStyle = '<style>
+            .tb-section, .tb-padding-xl, .tb-padding-lg, .tb-padding-md, .tb-padding-sm, .tb-padding-xs, .tb-padding-none { padding-top: 0 !important; padding-bottom: 0 !important; }
+            .tb-style-wrap { margin: 0 !important; }
+        </style>';
+        return $zeroGapStyle . implode("\n", $html);
     }
 
     public function renderBlock(array $block): string
@@ -1985,7 +1995,7 @@ class BlockRenderer
 
         $cols = $imgSide === 'right' ? $textCol . $imgCol : $imgCol . $textCol;
 
-        return "<section id=\"tb-{$id}\" class=\"tb-section tb-padding-xl\" style=\"background:{$bg};\">
+        return "<section id=\"tb-{$id}\" class=\"tb-section tb-padding-none\" style=\"background:{$bg};>
             <div class=\"tb-container\">
                 <div class=\"tb-hero-split\">{$cols}</div>
             </div>

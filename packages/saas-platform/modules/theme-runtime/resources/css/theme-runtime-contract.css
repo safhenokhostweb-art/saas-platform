@@ -118,15 +118,15 @@
 
 /* ─── padding scale ──────────────────────────────────────────────────────
    Unit 3: a fluid vertical rhythm. These used to lose to the shared
-   sheet's later `.tb-section { padding: 2.5rem 0 }` (same specificity), so
+   sheet's later `.tb-section { padding: 2.5rem 0 !important; }` (same specificity), so
    a section's padding control had no effect; that rule now applies only to
    sections without a padding class. */
-.tb-padding-none { padding-top: 0; padding-bottom: 0; }
+.tb-padding-none { padding-top: 0 !important; padding-bottom: 0 !important; }
 .tb-padding-xs   { padding-top: 0.75rem; padding-bottom: 0.75rem; }
 .tb-padding-sm   { padding-top: clamp(1.75rem, 1.25rem + 1.5vw, 2.75rem); padding-bottom: clamp(1.75rem, 1.25rem + 1.5vw, 2.75rem); }
 .tb-padding-md   { padding-top: var(--tb-space-section); padding-bottom: var(--tb-space-section); }
 .tb-padding-lg   { padding-top: clamp(4.5rem, 3rem + 5vw, 7.5rem); padding-bottom: clamp(4.5rem, 3rem + 5vw, 7.5rem); }
-.tb-padding-xl   { padding-top: clamp(5.5rem, 3.5rem + 6.5vw, 9.5rem); padding-bottom: clamp(5.5rem, 3.5rem + 6.5vw, 9.5rem); }
+.tb-padding-xl   { padding-top: clamp(0.5rem, 0.5rem + 0.5vw, 1.5rem) !important; padding-bottom: clamp(0.5rem, 0.5rem + 0.5vw, 1.5rem) !important; }
 
 /* ─── section style utilities (renderSection layout/effects controls) ──
    Unit 3: emitted by the renderer since Phase 2 but defined only in the
