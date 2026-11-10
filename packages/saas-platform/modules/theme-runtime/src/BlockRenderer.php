@@ -1995,7 +1995,7 @@ class BlockRenderer
 
         $cols = $imgSide === 'right' ? $textCol . $imgCol : $imgCol . $textCol;
 
-        return "<section id=\"tb-{$id}\" class=\"tb-section tb-padding-none\" style=\"background:{$bg};>
+        return "<section id=\"tb-{$id}\" class=\"tb-section tb-padding-none\" style=\"background:{$bg};\">
             <div class=\"tb-container\">
                 <div class=\"tb-hero-split\">{$cols}</div>
             </div>
