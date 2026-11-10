@@ -27,6 +27,12 @@
             case 'getDropIndex': return Number.isFinite(Number(data.clientY)) && Number.isFinite(Number(data.clientX));
             case 'iframeHeight': return Number.isFinite(Number(data.height));
             case 'inlinePropChange': return typeof data.propKey === 'string' && typeof data.final === 'boolean';
+            case 'setColumnWidths': return typeof data.blockId === 'string' && data.blockId !== ''
+                && Array.isArray(data.columns) && data.columns.length >= 1
+                && data.columns.every(function (column) { return column && Number.isFinite(Number(column.width)); });
+            case 'columnResize': return typeof data.blockId === 'string' && data.blockId !== ''
+                && Array.isArray(data.columns) && data.columns.length >= 2
+                && data.columns.every(function (column) { return column && Number.isFinite(Number(column.width)); });
             case 'dragStart':
             case 'dragCancel': return typeof data.nodeId === 'string';
             case 'dragOver':

@@ -203,7 +203,11 @@
         record(entry) {
             const now = Date.now();
             const previous = this.undoStack[this.undoStack.length - 1];
-            if (entry.coalesceKey && previous?.coalesceKey === entry.coalesceKey && now - previous.timestamp < 700) {
+            // A writer may ask for a wider merge window than the default 700ms
+            // (Inspector column-width typing, whose input debounce alone can
+            // outlast a short pause). Everything else keeps the old window.
+            const windowMs = Number.isFinite(entry.coalesceWindow) ? entry.coalesceWindow : 700;
+            if (entry.coalesceKey && previous?.coalesceKey === entry.coalesceKey && now - previous.timestamp < windowMs) {
                 previous.after = clone(entry.after); previous.timestamp = now; previous.selectionAfter = entry.selectionAfter;
             } else {
                 this.undoStack.push({ ...entry, before: clone(entry.before), after: clone(entry.after), timestamp: now });

@@ -162,7 +162,7 @@ const RUNTIME_SOURCE = fs
     .replace(/^\s*<script>\s*/, '')
     .replace(/\s*<\/script>\s*$/, '')
     .replace(/const TO_PREVIEW = new Set\(@json\([^)]*\)\);/,
-        "const TO_PREVIEW = new Set(['select','updateBlock','setProp','showDropZones','setDropTarget','setContainerTarget','getDropIndex','setStructuralDrop']);")
+        "const TO_PREVIEW = new Set(['select','updateBlock','setProp','showDropZones','setDropTarget','setContainerTarget','getDropIndex','setStructuralDrop','setColumnWidths']);")
     .replace(/const TO_EDITOR = new Set\(@json\([^)]*\)\);/,
         "const TO_EDITOR = new Set(['ready','iframeHeight','blockSelected','dropIndexResult','inlinePropChange','dragStart','dragOver','dropNode','dragCancel']);");
 
@@ -512,6 +512,12 @@ test('the preview protocol validates setProp payloads before routing the command
     assert.equal(runtime.valid({ ...message, protocolVersion: 2 }, 'to-preview'), false);
     assert.equal(runtime.valid({ ...message, blockId: '' }, 'to-preview'), false);
     assert.equal(runtime.valid({ ...message, propKey: 4 }, 'to-preview'), false);
+    // Inspector → Canvas column widths (2026-11-10): percentages only.
+    assert.equal(runtime.valid({ action: 'setColumnWidths', blockId: 'c1', columns: [{ width: 60 }, { width: 40 }] }, 'to-preview'), true);
+    assert.equal(runtime.valid({ action: 'setColumnWidths', blockId: '', columns: [{ width: 60 }] }, 'to-preview'), false);
+    assert.equal(runtime.valid({ action: 'setColumnWidths', blockId: 'c1', columns: [] }, 'to-preview'), false);
+    assert.equal(runtime.valid({ action: 'setColumnWidths', blockId: 'c1', columns: [{ width: 'x' }] }, 'to-preview'), false);
+    assert.equal(runtime.valid({ action: 'setColumnWidths', blockId: 'c1', columns: [{ width: 60 }] }, 'to-editor'), false);
 
     sdk.setProp(message.blockId, message.propKey, message.value);
     assert.equal(JSON.parse(el.getAttribute('data-tb-block-props')).title, 'After');

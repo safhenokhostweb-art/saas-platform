@@ -81,6 +81,37 @@ test('history coalesces high-frequency edits', () => {
   assert.equal(history.undoStack[0].after, 'abc');
 });
 
+test('history honours a wider per-entry coalesce window', () => {
+  const realNow = Date.now;
+  let now = 1_000_000;
+  Date.now = () => now;
+  try {
+    const history = new CanvasHistory(() => {});
+    const record = () => history.record({
+      type: 'value', targetId: 'a', path: ['props', 'columns'],
+      before: ['old'], after: ['new'], coalesceKey: 'column-widths:a:0', coalesceWindow: 5000,
+    });
+    record();
+    now += 4000;
+    record();
+    assert.equal(history.undoStack.length, 1, 'a pause inside the window still merges');
+    now += 4000;
+    record();
+    assert.equal(history.undoStack.length, 1, 'the window slides with the latest edit');
+    now += 6000;
+    record();
+    assert.equal(history.undoStack.length, 2, 'a new interaction after the window is its own step');
+    // Entries without an explicit window keep the 700ms default.
+    now += 1000;
+    history.record({ type: 'value', targetId: 'b', before: 'x', after: 'y', coalesceKey: 'prop:b:title' });
+    now += 800;
+    history.record({ type: 'value', targetId: 'b', before: 'y', after: 'z', coalesceKey: 'prop:b:title' });
+    assert.equal(history.undoStack.length, 4);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
 test('drop geometry projects horizontal before/after naturally in RTL and LTR', () => {
   const rect = { left: 0, right: 100, top: 0, bottom: 40, width: 100, height: 40 };
   assert.equal(CanvasDragDrop.resolve(rect, 10, 5, 'ltr', false, true), 'before');

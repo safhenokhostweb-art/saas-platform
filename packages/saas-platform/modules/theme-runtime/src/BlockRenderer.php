@@ -769,26 +769,124 @@ class BlockRenderer
     }
 
     /**
-     * Builder integrity audit (2026-09-11): .tb-columns/.tb-col-N carried
-     * ZERO CSS anywhere in the shared contract — children rendered as
-     * plain stacked block divs with no side-by-side layout at all, and
-     * 'gap' (a real, long-declared schema field) had no effect. Fixed
-     * with a scoped inline <style> block (this method only receives
-     * $inner as an already-flattened HTML string, not the raw children
-     * array, so real per-child weighting from 'ratios' would need a
-     * base-class change to how structural containers receive their
-     * children — out of scope here; documented, not hidden). Equal-width
-     * flex distribution with a real, working gap is a strict improvement
-     * over the previous "no layout at all" state, not a regression.
+     * Columns layout.
+     *
+     * 2026-11-10 (owner, column widget rework): the row is a real CSS grid
+     * — `ratios` produces weighted tracks, and a Canvas drag writes the
+     * author's own widths into `props.columns[i].width` (percent). Grid
+     * cells stretch to the tallest cell by default, which is what keeps
+     * side-by-side cards equal-height; the shared contract CSS turns each
+     * cell into a flex column so an inner card can fill it and pin its
+     * last action to the baseline.
+     *
+     * Ratios parsing is deliberately defensive: malformed author data
+     * ('', 'abc', '1/0', injected CSS) falls back to two equal columns
+     * instead of reaching the inline <style>.
      */
     protected function renderColumns(array $props, string $inner, string $id): string
     {
-        $ratios = $props['ratios'] ?? '1/2,1/2';
-        $count = max(1, count(array_map('trim', explode(',', $ratios))));
+        [$count, $fractions] = $this->columnFractions((string) ($props['ratios'] ?? '1/2,1/2'));
+
+        // Canvas-written widths win over ratios; they carry the count too,
+        // so adding/removing a child never leaves a fixed track behind.
+        $widths = $this->columnWidths($props['columns'] ?? null);
+        if ($widths !== null) {
+            $count = count($widths);
+            $total = array_sum($widths);
+            $fractions = array_map(static fn (float $width): float => $width / $total, $widths);
+        }
+
         $gap = ['none' => '0', 'xs' => '0.5rem', 'sm' => '0.75rem', 'md' => '1.5rem', 'lg' => '2rem', 'xl' => '3rem'][$props['gap'] ?? 'md'] ?? '1.5rem';
         $safeId = preg_replace('/[^a-zA-Z0-9_\-]/', '', $id);
-        $style = "<style>#tb-{$safeId}{display:flex;flex-wrap:wrap;gap:{$gap};}#tb-{$safeId}>*{flex:1 1 0;min-width:0;}@media(max-width:768px){#tb-{$safeId}{flex-direction:column;}}</style>";
-        return "{$style}<div id=\"tb-{$id}\" class=\"tb-columns\" data-columns=\"{$count}\">{$inner}</div>";
+        $tracks = $this->columnTrackList($fractions, $count);
+        // The drag handles exist only in the editor; public output stays
+        // byte-compatible with the previous structural markup.
+        $resizable = $this->isEditorRendering() ? ' data-tb-resizable="1"' : '';
+        $style = "<style>#tb-{$safeId}{display:grid;grid-template-columns:{$tracks};gap:{$gap};}#tb-{$safeId}>*{min-width:0;}@media(max-width:768px){#tb-{$safeId}{grid-template-columns:minmax(0,1fr);}}</style>";
+        return "{$style}<div id=\"tb-{$id}\" class=\"tb-columns\" data-columns=\"{$count}\"{$resizable}>{$inner}</div>";
+    }
+
+    /**
+     * Parse the allowlisted `ratios` string ('1/2,1/2') into track
+     * fractions. Any malformed token collapses the whole row to two equal
+     * columns — never a partial layout, never raw input in the CSS.
+     *
+     * @return array{0:int,1:array<int,float>}
+     */
+    private function columnFractions(string $ratios): array
+    {
+        // The picker's single-column option is the literal "1" (full width).
+        if (trim($ratios) === '1') {
+            return [1, [1.0]];
+        }
+
+        $fractions = [];
+        foreach (explode(',', $ratios) as $part) {
+            if (!preg_match('/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/', trim($part), $match)) {
+                return [2, [0.5, 0.5]];
+            }
+            $numerator = (float) $match[1];
+            $denominator = (float) $match[2];
+            if ($denominator <= 0 || $numerator <= 0 || $numerator > $denominator) {
+                return [2, [0.5, 0.5]];
+            }
+            $fractions[] = $numerator / $denominator;
+        }
+
+        if (count($fractions) < 1 || count($fractions) > 6) {
+            return [2, [0.5, 0.5]];
+        }
+
+        $sum = array_sum($fractions);
+
+        return [count($fractions), array_map(static fn (float $fraction): float => $fraction / $sum, $fractions)];
+    }
+
+    /**
+     * Read Canvas-authored column widths (percent). A single invalid entry
+     * rejects the whole list rather than producing a half-sized row.
+     *
+     * @return array<int,float>|null
+     */
+    private function columnWidths(mixed $columns): ?array
+    {
+        if (!is_array($columns) || count($columns) < 2 || count($columns) > 6) {
+            return null;
+        }
+
+        $widths = [];
+        foreach ($columns as $column) {
+            $width = is_array($column) ? ($column['width'] ?? null) : null;
+            if (!is_numeric($width)) {
+                return null;
+            }
+            // Requirement: no column may collapse below 10% of the row.
+            $widths[] = max(10.0, min(90.0, (float) $width));
+        }
+
+        return $widths;
+    }
+
+    /**
+     * Equal fractions become one `repeat()`; weighted fractions become
+     * explicit fr tracks (same weighting the ratio picker always implied:
+     * each fraction is scaled by the column count).
+     *
+     * @param array<int,float> $fractions
+     */
+    private function columnTrackList(array $fractions, int $count): string
+    {
+        if (max($fractions) - min($fractions) < 0.0005) {
+            return 'repeat(' . $count . ',minmax(0,1fr))';
+        }
+
+        $tracks = [];
+        foreach ($fractions as $fraction) {
+            $weight = rtrim(rtrim(number_format($fraction * $count, 3, '.', ''), '0'), '.');
+            $tracks[] = 'minmax(0,' . ($weight === '' ? '1' : $weight) . 'fr)';
+        }
+
+        return implode(' ', $tracks);
     }
 
     /**

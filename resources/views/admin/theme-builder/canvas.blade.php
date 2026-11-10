@@ -1351,6 +1351,51 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             </div>
                         </template>
 
+                        {{-- Column widths — the Inspector half of the Canvas resizer.
+                             The values are exactly props.columns[i].width (percent) a
+                             drag writes, so a numeric edit and a drag cannot drift. --}}
+                        <template x-if="selectedTab === 'content' && selectedBlock?.type === 'columns' && (selectedBlock?.children?.length ?? 0) >= 2">
+                            <div class="mt-2 pt-3 border-t border-slate-100" data-testid="tb-column-widths">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-semibold text-slate-700">عرض ستون‌ها</span>
+                                    <span class="text-[10px] text-slate-400">مجموع <span x-text="faDigits(Math.round(columnWidthTotal()))"></span>٪</span>
+                                </div>
+                                <div class="space-y-2.5">
+                                    <template x-for="(width, index) in columnWidths()" :key="index">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-11 shrink-0 text-[10px] text-slate-500" x-text="'ستون ' + faDigits(index + 1)"></span>
+                                            <input type="range" min="10" max="90" step="1" dir="ltr"
+                                                :value="Math.round(width)"
+                                                @focus="beginColumnWidthEdit()"
+                                                @input="setColumnWidth(index, $event.target.value)"
+                                                :aria-label="'عرض ستون ' + faDigits(index + 1) + ' درصد'"
+                                                :data-testid="'tb-col-width-range-' + index"
+                                                class="flex-1 accent-indigo-600">
+                                            <input type="number" min="10" max="90" step="0.1" dir="ltr"
+                                                :value="columnWidthInput(width)"
+                                                @focus="beginColumnWidthEdit()"
+                                                @input="queueColumnWidthInput(index, $event.target.value)"
+                                                :aria-label="'درصد عرض ستون ' + faDigits(index + 1)"
+                                                :data-testid="'tb-col-width-input-' + index"
+                                                class="w-16 text-xs text-center tabular-nums px-1.5 py-1 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                            <span class="text-[10px] text-slate-400">٪</span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="flex gap-1.5 mt-2.5">
+                                    <button type="button" @click="distributeColumnsEvenly()"
+                                        :disabled="selectedEditorCapabilities.lockedStructure"
+                                        data-testid="tb-col-widths-even"
+                                        class="flex-1 text-[11px] px-2 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition">توزیع مساوی</button>
+                                    <button type="button" @click="resetColumnWidths()"
+                                        :disabled="selectedEditorCapabilities.lockedStructure"
+                                        data-testid="tb-col-widths-reset"
+                                        class="flex-1 text-[11px] px-2 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-40 transition">بازگشت به نسبت</button>
+                                </div>
+                                <p x-show="selectedBlock?.props?.columns?.length" class="text-[10px] text-amber-600 mt-1.5" data-testid="tb-col-widths-custom">عرض دستی فعال است؛ انتخاب نسبت جدید آن را بازنشانی می‌کند.</p>
+                            </div>
+                        </template>
+
                         <div x-show="selectedTab === 'content' && Object.keys(selectedSchema).length === 0 && !isContainerType(selectedBlock?.type)" class="text-center py-6">
                             <p class="text-xs text-slate-400">این بلوک تنظیماتی ندارد</p>
                         </div>
@@ -2106,7 +2151,16 @@ function themeCanvas() {
         iframeLoading:  true,
         iframeReady:    false,
         propUpdateTimer: null,
+        // Per-block render request sequence: an HTML reply that started
+        // before an undo/redo (or before a newer render) must never replace
+        // the newer DOM.
+        propRenderSeq: {},
         pendingFastPropUpdates: [],
+        pendingColumnWidthsMessage: null,
+        columnWidthInputTimer: null,
+        // One undo step per typing/slider interaction: focusing a width field
+        // starts a new session, so edits from different visits never merge.
+        columnWidthSession: 0,
         // TB3-03: drag state
         isDraggingBlock:     false,
         draggedBlockType:    null,
@@ -2266,10 +2320,20 @@ function themeCanvas() {
 
         // ── TB4: Block Tree Helpers ───────────────────────────────
         makeBlock(type) {
+            // Default props may be a non-object (e.g. an empty PHP array
+            // serialised as `[]` for widgets such as `columns`). A block whose
+            // `props` is an array breaks every named-property write (including
+            // the Inspector's column-width editor) and the live-preview ready
+            // path, so coerce it to a plain object up front rather than only
+            // fixing it on the first updateProp (which `addBlock` never hits).
+            const raw = BLOCK_SCHEMAS[type]?.defaultProps ?? {};
+            const props = raw && typeof raw === 'object' && !Array.isArray(raw)
+                ? JSON.parse(JSON.stringify(raw))
+                : {};
             return {
                 id: 'blk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
                 type,
-                props: JSON.parse(JSON.stringify(BLOCK_SCHEMAS[type]?.defaultProps ?? {})),
+                props,
                 ...(this.isContainerType(type) ? { children: [] } : {})
             };
         },
@@ -2493,6 +2557,7 @@ function themeCanvas() {
                         operation = { operation: 'delete', node_id: entry.targetId };
                     }
                 } else                if (entry.type === 'value') {
+                    const isColumnWidth = entry.path[0] === 'props' && entry.path[1] === 'columns';
                     const found = this.treeOperations.find(this.blocks, entry.targetId);
                     if (!found) return;
                     let bag = found.node;
@@ -2500,6 +2565,10 @@ function themeCanvas() {
                     const key = entry.path[entry.path.length - 1];
                     if (value === undefined) delete bag[key]; else bag[key] = JSON.parse(JSON.stringify(value));
                     this.schedulePropUpdate();
+                    // Undo/redo is a state change like any other: the Inspector
+                    // inputs follow reactively, and the preview gets the restored
+                    // widths immediately instead of waiting for the 350ms render.
+                    if (isColumnWidth) this.pushColumnWidthsFor(entry.targetId);
                 }
                 // Phase 3A root-cause fix (replay-mismatch defect class): a
                 // history REPLAY re-derives tree state from full snapshots,
@@ -2565,11 +2634,21 @@ function themeCanvas() {
             if (!this.selectedBlock.props || typeof this.selectedBlock.props !== 'object' || Array.isArray(this.selectedBlock.props)) {
                 this.selectedBlock.props = {};
             }
+            // A repeated commit (a redundant drag release, a re-applied value)
+            // must not add a no-op undo step that makes Ctrl+Z look broken.
+            // Ratios still pass through: re-picking one clears manual widths.
+            if (propKey !== 'ratios' && JSON.stringify(before) === JSON.stringify(value)) return;
             this.selectedBlock.props[propKey] = value;
+            // A ratio pick is a fresh layout: previously dragged widths no
+            // longer describe it, so they must not keep overriding the pick.
+            if (propKey === 'ratios' && this.selectedBlock.type === 'columns') {
+                delete this.selectedBlock.props.columns;
+            }
             this.historyEngine?.record({
                 type: 'value', targetId, path: ['props', propKey], before, after: value,
                 selectionBefore: targetId, selectionAfter: targetId,
                 coalesceKey: options?.coalesceKey === undefined ? `prop:${targetId}:${propKey}` : options.coalesceKey,
+                coalesceWindow: options?.coalesceWindow,
             });
             this.historyVersion++;
             this.isDirty = true;
@@ -2580,6 +2659,196 @@ function themeCanvas() {
             } else {
                 this.schedulePropUpdate();
             }
+        },
+
+        // ── Column widths: Inspector ⇄ Canvas ─────────────────────
+        // Both surfaces read and write props.columns[i].width (percent). A
+        // drag lands here through the `columnResize` message; a number or
+        // slider edit goes out as `setColumnWidths` so the preview follows
+        // before the debounced block re-render.
+        columnWidthCount(block = this.selectedBlock) {
+            if (!block) return 0;
+            const children = Array.isArray(block.children) ? block.children.length : 0;
+            if (children > 0) return children;
+            const ratios = String(block.props?.ratios ?? '').trim();
+            return ratios ? Math.max(1, ratios.split(',').length) : 2;
+        },
+        columnRatioWidths(block = this.selectedBlock) {
+            const count = this.columnWidthCount(block);
+            if (count < 1) return [];
+            if (count === 1) return [100];
+            const parts = String(block?.props?.ratios ?? '').split(',').map(part => part.trim()).filter(Boolean);
+            const fractions = [];
+            for (const part of parts) {
+                if (part === '1') { fractions.push(1); continue; }
+                const match = part.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+                if (!match) return new Array(count).fill(100 / count);
+                const numerator = Number(match[1]);
+                const denominator = Number(match[2]);
+                if (!(denominator > 0) || !(numerator > 0) || numerator > denominator) {
+                    return new Array(count).fill(100 / count);
+                }
+                fractions.push(numerator / denominator);
+            }
+            if (fractions.length !== count) return new Array(count).fill(100 / count);
+            const total = fractions.reduce((sum, value) => sum + value, 0);
+            const widths = fractions.map(value => Math.round((value / total) * 1000) / 10);
+            const drift = Math.round((100 - widths.reduce((sum, value) => sum + value, 0)) * 10) / 10;
+            widths[widths.length - 1] = Math.round((widths[widths.length - 1] + drift) * 10) / 10;
+            return widths;
+        },
+        columnWidths() {
+            const count = this.columnWidthCount();
+            if (count < 1) return [];
+            const stored = this.selectedBlock?.props?.columns;
+            if (Array.isArray(stored) && stored.length === count) {
+                const widths = stored.map(column => Number(column && column.width));
+                if (widths.every(width => Number.isFinite(width) && width > 0)) {
+                    return this.clampColumnWidths(widths);
+                }
+            }
+            return this.columnRatioWidths();
+        },
+        // One column keeps the whole row, so a count of one is always 100%.
+        clampColumnWidths(widths) {
+            if (widths.length <= 1) return [100];
+            const minimum = 10;
+            const maximum = 100 - minimum * (widths.length - 1);
+            const next = widths.map(width => Math.round(Math.min(maximum, Math.max(minimum, width)) * 10) / 10);
+            const drift = Math.round((100 - next.reduce((sum, width) => sum + width, 0)) * 10) / 10;
+            let fixIndex = next.length - 1;
+            next[fixIndex] = Math.round((next[fixIndex] + drift) * 10) / 10;
+            if (next[fixIndex] < minimum) {
+                const deficit = minimum - next[fixIndex];
+                next[fixIndex] = minimum;
+                let largest = 0;
+                next.forEach((width, index) => { if (width > next[largest]) largest = index; });
+                next[largest] = Math.round((next[largest] - deficit) * 10) / 10;
+            }
+            return next;
+        },
+        columnWidthTotal() {
+            return Math.round(this.columnWidths().reduce((sum, width) => sum + width, 0) * 10) / 10;
+        },
+        /**
+         * The text shown in the number input for one column's width.
+         *
+         * `columnWidths()` may return the raw stored widths and a separate
+         * `clampColumnWidths()` step inside `commitColumnWidths("` is what
+         * may round those widths further (e.g. when a 2% arrow step would
+         * push a column below the 10% floor and the clamp rounds the result).
+         * So the Inspector input must mirror the clamped/committed value, not
+         * the pre-clamp one that `columnWidths()` hands back for draws. The
+         * easiest correct source is the full resolved layout: read it from
+         * `columnWidths()` and round each entry identically.
+         *
+         * The input itself is always a 0.1-stepped number control, so these
+         * values are round to one decimal (e.g. 54.0, not 54.1).
+         */
+        columnWidthInput(width) {
+            // `width` is already a number from `columnWidths()`; round to one
+            // decimal for display consistency with the range stepper.
+            return Math.round(Number(width) * 10) / 10;
+        },
+        // Typing is debounced so a partial number never reflows the row; a
+        // button action cancels it so Reset/Distribute cannot be undone by a
+        // keystroke that was still in flight.
+        queueColumnWidthInput(index, value) {
+            if (value === '' || value === null) return;
+            clearTimeout(this.columnWidthInputTimer);
+            const blockId = this.selectedBlock?.id;
+            this.columnWidthInputTimer = setTimeout(() => {
+                if (!this.selectedBlock || this.selectedBlock.id !== blockId) return;
+                this.setColumnWidth(index, value);
+            }, 200);
+        },
+        cancelColumnWidthInput() {
+            clearTimeout(this.columnWidthInputTimer);
+            this.columnWidthInputTimer = null;
+        },
+        setColumnWidth(index, value) {
+            const widths = this.columnWidths();
+            const count = widths.length;
+            if (count < 2 || index < 0 || index >= count) return;
+            if (value === '' || value === null) return;
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return;
+            const minimum = 10;
+            const target = Math.round(
+                Math.min(100 - minimum * (count - 1), Math.max(minimum, parsed)) * 10
+            ) / 10;
+            const others = widths.map((width, position) => position === index ? 0 : Math.max(minimum, width));
+            const othersTotal = others.reduce((sum, width) => sum + width, 0);
+            const remaining = 100 - target;
+            const next = others.map((width, position) => {
+                if (position === index) return target;
+                return othersTotal > 0 ? (width / othersTotal) * remaining : remaining / (count - 1);
+            });
+            this.commitColumnWidths(this.clampColumnWidths(next));
+        },
+        commitColumnWidths(widths, options = {}) {
+            if (!this.selectedBlock) return;
+            const blockId = this.selectedBlock.id;
+            this.pushColumnWidths(widths);
+            const historyOptions = options.coalesceKey === undefined
+                ? { coalesceKey: this.columnWidthCoalesceKey(blockId), coalesceWindow: 1500 }
+                : { coalesceKey: options.coalesceKey };
+            this.updateProp('columns', widths.map(width => ({ width })), historyOptions);
+            clearTimeout(this.inlineAutoSaveTimer);
+            this.inlineAutoSaveTimer = setTimeout(() => this.autoSave(), 1500);
+        },
+        distributeColumnsEvenly() {
+            const count = this.columnWidthCount();
+            if (count < 2) return;
+            this.cancelColumnWidthInput();
+            // A button press is a complete operation, never merged with typing.
+            this.commitColumnWidths(new Array(count).fill(100 / count), { coalesceKey: null });
+        },
+        resetColumnWidths() {
+            if (!this.selectedBlock) return;
+            this.cancelColumnWidthInput();
+            const blockId = this.selectedBlock.id;
+            this.pushColumnWidths(this.columnRatioWidths());
+            this.updateProp('columns', undefined, { coalesceKey: null });
+            // `undefined` is dropped by JSON.stringify; drop the local key too
+            // so the Inspector and the next payload both fall back to ratios.
+            if (this.selectedBlock.props) delete this.selectedBlock.props.columns;
+            clearTimeout(this.inlineAutoSaveTimer);
+            this.inlineAutoSaveTimer = setTimeout(() => this.autoSave(), 1500);
+        },
+        columnWidthCoalesceKey(blockId) {
+            return `column-widths:${blockId}:${this.columnWidthSession}`;
+        },
+        beginColumnWidthEdit() {
+            this.columnWidthSession++;
+        },
+        columnWidthMessage(blockId, widths) {
+            return {
+                action: 'setColumnWidths',
+                blockId,
+                columns: widths.map(width => ({ width: Math.round(Number(width) * 10) / 10 })),
+            };
+        },
+        pushColumnWidths(widths) {
+            if (!this.selectedBlock) return;
+            const message = this.columnWidthMessage(this.selectedBlock.id, widths);
+            if (!this.iframeReady) { this.pendingColumnWidthsMessage = message; return; }
+            this.sendToIframe(message);
+        },
+        // After an undo/redo of a columns value: send whatever that block now
+        // holds, or its ratio layout when manual widths were cleared.
+        pushColumnWidthsFor(blockId) {
+            const block = this.treeOperations?.find(this.blocks, blockId)?.node;
+            if (!block || block.type !== 'columns') return;
+            const stored = Array.isArray(block.props?.columns)
+                ? block.props.columns.map(column => Number(column && column.width))
+                    .filter(width => Number.isFinite(width) && width > 0)
+                : [];
+            const widths = stored.length ? this.clampColumnWidths(stored) : this.columnRatioWidths(block);
+            if (!widths.length) return;
+            const message = this.columnWidthMessage(blockId, widths);
+            if (!this.iframeReady) { this.pendingColumnWidthsMessage = message; return; }
+            this.sendToIframe(message);
         },
 
         // Phase 2B-R: link-typed fields. Preserves a structured link object
@@ -3377,17 +3646,27 @@ function themeCanvas() {
             // remember the pending update and flush it when 'ready' arrives;
             // a bail-and-forget here made first-second edits vanish.
             if (!this.iframeReady) { this.pendingPropUpdate = true; return; }
+            const block = this.selectedBlock;
+            const blockId = block.id;
+            const requestId = (this.propRenderSeq[blockId] ?? 0) + 1;
+            this.propRenderSeq[blockId] = requestId;
             try {
-                const blockPayload = JSON.parse(JSON.stringify(this.selectedBlock)); // includes .style if set
+                const blockPayload = JSON.parse(JSON.stringify(block)); // includes .style if set
+                const snapshot = JSON.stringify(blockPayload);
                 const r = await fetch(`/admin/theme-builder/${THEME_ID}/canvas/render-block`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
                     body: JSON.stringify({ block: blockPayload })
                 });
                 const d = await r.json();
-                if (d.html) {
-                    this.sendToIframe({ action: 'updateBlock', blockId: this.selectedBlock.id, html: d.html });
-                }
+                if (!d.html) return;
+                // A slow reply for an older value must not overwrite an undo,
+                // a redo or a newer edit (column widths made this visible as
+                // a 50/50 flash after restoring 60/40).
+                if (this.propRenderSeq[blockId] !== requestId) return;
+                const current = this.treeOperations?.find(this.blocks, blockId)?.node;
+                if (!current || JSON.stringify(current) !== snapshot) return;
+                this.sendToIframe({ action: 'updateBlock', blockId, html: d.html });
             } catch (_) {}
         },
 
@@ -3402,6 +3681,10 @@ function themeCanvas() {
                     this.iframeReady   = true;
                     this.iframeLoading = false;
                     this.flushFastPropUpdates();
+                    if (this.pendingColumnWidthsMessage) {
+                        this.sendToIframe(this.pendingColumnWidthsMessage);
+                        this.pendingColumnWidthsMessage = null;
+                    }
                     if (this.pendingPropUpdate) { this.pendingPropUpdate = false; this.pushPropUpdate(); }
                     if (this.selectedBlock) {
                         this.sendToIframe({ action: 'select', blockId: this.selectedBlock.id });
@@ -3474,6 +3757,29 @@ function themeCanvas() {
                         }
                     }
                     break;
+
+                // 2026-11-10: a completed column drag. The iframe measured the
+                // real tracks; here they become persisted author data
+                // (props.columns[i].width, percent) and the block is
+                // re-rendered so the saved DOM and the preview agree.
+                case 'columnResize': {
+                    const block = CanvasIdentity.findById(this.blocks, d.blockId);
+                    const incoming = Array.isArray(d.columns) ? d.columns : [];
+                    const columns = incoming
+                        .map(col => ({ width: Math.round(Number(col?.width ?? 0) * 10) / 10 }))
+                        .filter(col => Number.isFinite(col.width) && col.width >= 10 && col.width <= 90);
+                    if (!block || columns.length < 2) break;
+                    this.selectBlockById(block.id);
+                    // One undoable value operation, exactly like any other
+                    // Inspector control; this also normalises legacy
+                    // `props: []` blocks before the first write.
+                    // A completed drag is one discrete undo step; it must not
+                    // merge with a typing step that happened moments earlier.
+                    this.updateProp('columns', columns, { coalesceKey: null });
+                    clearTimeout(this.inlineAutoSaveTimer);
+                    this.inlineAutoSaveTimer = setTimeout(() => this.autoSave(), 1500);
+                    break;
+                }
             }
         },
 

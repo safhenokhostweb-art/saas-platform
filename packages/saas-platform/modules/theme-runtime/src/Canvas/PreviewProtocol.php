@@ -5,10 +5,10 @@ namespace SaaSPlatform\ThemeRuntime\Canvas;
 final class PreviewProtocol
 {
     public const VERSION = 1;
-    public const TO_PREVIEW = ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop'];
+    public const TO_PREVIEW = ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop', 'setColumnWidths'];
     public const TO_EDITOR = [
         'ready', 'iframeHeight', 'blockSelected', 'dropIndexResult', 'inlinePropChange',
-        'dragStart', 'dragOver', 'dropNode', 'dragCancel',
+        'dragStart', 'dragOver', 'dropNode', 'dragCancel', 'columnResize',
     ];
 
     public static function validate(array $message, string $direction): bool
@@ -26,6 +26,26 @@ final class PreviewProtocol
             'getDropIndex' => is_numeric($message['clientY'] ?? null) && is_numeric($message['clientX'] ?? null),
             'iframeHeight' => is_numeric($message['height'] ?? null),
             'inlinePropChange' => is_string($message['propKey'] ?? null) && is_bool($message['final'] ?? null),
+            // 2026-11-10: a finished Canvas column drag. Percentages only —
+            // the editor clamps and persists them; the renderer re-validates.
+            // 2026-11-10: Inspector column-width input → Canvas. Percentages
+            // are clamped by the editor; this only proves the shape so a
+            // malformed message never reaches the preview DOM.
+            'setColumnWidths' => is_string($message['blockId'] ?? null)
+                && $message['blockId'] !== ''
+                && is_array($message['columns'] ?? null)
+                && count($message['columns']) >= 1
+                && count(array_filter(
+                    $message['columns'],
+                    static fn ($column): bool => is_array($column) && is_numeric($column['width'] ?? null)
+                )) === count($message['columns']),
+            'columnResize' => is_string($message['blockId'] ?? null)
+                && is_array($message['columns'] ?? null)
+                && count($message['columns']) >= 2
+                && count(array_filter(
+                    $message['columns'],
+                    static fn ($column): bool => is_array($column) && is_numeric($column['width'] ?? null)
+                )) === count($message['columns']),
             'dragStart', 'dragCancel' => is_string($message['nodeId'] ?? null),
             'dragOver', 'dropNode' => is_string($message['nodeId'] ?? null)
                 && is_string($message['targetParentId'] ?? null)

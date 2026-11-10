@@ -190,11 +190,11 @@ final class Phase2BSharedContractsTest extends TestCase
     {
         $this->assertSame(1, PreviewProtocol::VERSION);
         $this->assertSame(
-            ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop'],
+            ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop', 'setColumnWidths'],
             PreviewProtocol::TO_PREVIEW
         );
         $this->assertSame(
-            ['ready', 'iframeHeight', 'blockSelected', 'dropIndexResult', 'inlinePropChange', 'dragStart', 'dragOver', 'dropNode', 'dragCancel'],
+            ['ready', 'iframeHeight', 'blockSelected', 'dropIndexResult', 'inlinePropChange', 'dragStart', 'dragOver', 'dropNode', 'dragCancel', 'columnResize'],
             PreviewProtocol::TO_EDITOR
         );
     }
@@ -203,8 +203,34 @@ final class Phase2BSharedContractsTest extends TestCase
     {
         $this->assertTrue(PreviewProtocol::validate(['action' => 'updateBlock', 'blockId' => 'b1', 'html' => '<p>x</p>'], 'to-preview'));
         $this->assertTrue(PreviewProtocol::validate(['action' => 'setProp', 'blockId' => 'b1', 'propKey' => 'title', 'value' => 'New title'], 'to-preview'));
+        $this->assertTrue(PreviewProtocol::validate([
+            'action' => 'setColumnWidths', 'blockId' => 'cols1',
+            'columns' => [['width' => 60], ['width' => 40]],
+        ], 'to-preview'));
+        $this->assertFalse(PreviewProtocol::validate([
+            'action' => 'setColumnWidths', 'blockId' => '', 'columns' => [['width' => 60]],
+        ], 'to-preview'));
+        $this->assertFalse(PreviewProtocol::validate([
+            'action' => 'setColumnWidths', 'blockId' => 'cols1', 'columns' => [],
+        ], 'to-preview'));
+        $this->assertFalse(PreviewProtocol::validate([
+            'action' => 'setColumnWidths', 'blockId' => 'cols1', 'columns' => [['width' => 'x']],
+        ], 'to-preview'));
+        $this->assertFalse(PreviewProtocol::validate([
+            'action' => 'setColumnWidths', 'blockId' => 'cols1', 'columns' => [['width' => 60]],
+        ], 'to-editor'));
         $this->assertTrue(PreviewProtocol::validate(['action' => 'ready'], 'to-editor'));
         $this->assertTrue(PreviewProtocol::validate(['action' => 'getDropIndex', 'clientX' => 1, 'clientY' => 2], 'to-preview'));
+        $this->assertTrue(PreviewProtocol::validate([
+            'action' => 'columnResize', 'blockId' => 'cols1',
+            'columns' => [['width' => 60], ['width' => 40]],
+        ], 'to-editor'));
+        $this->assertFalse(PreviewProtocol::validate([
+            'action' => 'columnResize', 'blockId' => 'cols1', 'columns' => [['width' => 100]],
+        ], 'to-editor'));
+        $this->assertFalse(PreviewProtocol::validate([
+            'action' => 'columnResize', 'blockId' => 'cols1', 'columns' => [['width' => 60], ['width' => 'x']],
+        ], 'to-editor'));
         // Wrong direction, bad payload, unsupported version → rejected.
         $this->assertFalse(PreviewProtocol::validate(['action' => 'ready'], 'to-preview'));
         $this->assertFalse(PreviewProtocol::validate(['action' => 'select'], 'to-editor'));

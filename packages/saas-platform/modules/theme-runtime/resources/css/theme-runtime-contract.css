@@ -256,6 +256,94 @@
 .tb-columns > :is(.tb-module-motion, .tb-module-motion-fallback) { display: flex; flex-direction: column; justify-content: center; }
 .tb-columns > :is(.tb-heading, .tb-text, .tb-rich-text, .tb-image) { align-self: center; }
 
+/* 2026-11-10 (owner, column widget rework): equal-height columns.
+   The row is a grid, so cells already stretch to the tallest cell; the
+   missing half was inside the cell. Each cell is now a flex column and the
+   editor's own wrapper (.tb-canvas-block / .tb-block / .tb-style-wrap)
+   grows to fill it, so a card fills the column and its last action can sit
+   on the shared baseline instead of floating mid-column. */
+/* place-items keeps the explicit stretch intent without an `align-items`
+   declaration on .tb-columns, which ColumnsVerticalBalanceTest guards:
+   centring the row would undo equal-height cards. */
+.tb-columns { position: relative; place-items: stretch; }
+.tb-columns > :not(style):not(.tb-col-splitters) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.tb-columns > :not(style):not(.tb-col-splitters) > :is(.tb-style-wrap, .tb-block, .tb-canvas-block) {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+/* Card roots fill the column so their content can push the action down. */
+.tb-columns :is(.tb-icon-box-card, .tb-image-box-card, .tb-testimonial-card, .tb-pricing-card, .tb-bento-item, .card) {
+    flex: 1 1 auto;
+}
+/* A card's last action (pricing CTA, card button) pins to the bottom so
+   buttons in neighbouring columns share one horizontal line. */
+.tb-columns :is(.tb-pricing-card, .tb-testimonial-card, .tb-icon-box-card, .tb-image-box-card) > .tb-btn:last-child,
+.tb-columns .tb-card-cta { margin-top: auto; }
+
+/* 2026-11-10 (owner, column widget rework): Canvas-only drag handles.
+   canvas-live-preview.blade.php positions each handle over a track boundary
+   and posts the new percentages back to the editor. Hidden below 768px,
+   where the row stacks and dragging is disabled. */
+.tb-col-splitters { position: absolute; inset: 0; z-index: 60; pointer-events: none; }
+.tb-col-resizer {
+    position: absolute;
+    inset-block: 0;
+    width: 16px;
+    margin-left: -8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: col-resize;
+    touch-action: none;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tb-col-resizer::before {
+    content: '';
+    width: 3px;
+    height: 100%;
+    border-radius: 999px;
+    background: transparent;
+    transition: background 0.15s ease;
+}
+.tb-columns:hover > .tb-col-splitters .tb-col-resizer::before {
+    background: color-mix(in srgb, var(--tb-primary, #4f46e5) 30%, transparent);
+}
+.tb-col-resizer:hover::before,
+.tb-col-resizer:focus-visible::before { background: var(--tb-primary, #4f46e5); }
+.tb-col-resizer::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    width: 6px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: var(--tb-surface, #fff);
+    border: 1px solid var(--tb-border, #e5e7eb);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.tb-columns:hover > .tb-col-splitters .tb-col-resizer::after,
+.tb-col-resizer:focus-visible::after { opacity: 1; }
+.tb-col-resizer:focus-visible { outline: 2px solid var(--tb-primary, #4f46e5); outline-offset: -2px; }
+body.tb-col-resizing { cursor: col-resize !important; user-select: none; }
+@media (max-width: 767.98px) {
+    .tb-col-splitters { display: none; }
+    /* The row is one track here; each cell still claims the full width. */
+    .tb-columns > :not(style):not(.tb-col-splitters) { width: 100% !important; }
+}
+
 /* ─── stats row (real Phase 2g drift: no CSS at all in one host) ────── */
 .tb-stats-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
 .tb-stat-item { text-align: center; padding: 1.5rem 2rem; flex: 1 1 160px; }

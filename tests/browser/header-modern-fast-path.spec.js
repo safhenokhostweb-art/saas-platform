@@ -27,7 +27,7 @@ const runtimeSource = scriptSource(path.join(themeRuntime, 'resources/views/canv
     .replace(/^\s*<script>\s*/, '')
     .replace(/\s*<\\\/script>\s*$/, '')
     .replace(/const TO_PREVIEW = new Set\(@json\([^)]*\)\);/,
-        "const TO_PREVIEW = new Set(['select','updateBlock','setProp','showDropZones','setDropTarget','setContainerTarget','getDropIndex','setStructuralDrop']);")
+        "const TO_PREVIEW = new Set(['select','updateBlock','setProp','showDropZones','setDropTarget','setContainerTarget','getDropIndex','setStructuralDrop','setColumnWidths']);")
     .replace(/const TO_EDITOR = new Set\(@json\([^)]*\)\);/,
         "const TO_EDITOR = new Set(['ready','iframeHeight','blockSelected','dropIndexResult','inlinePropChange','dragStart','dragOver','dropNode','dragCancel']);");
 const sdkSource = scriptSource(path.join(themeRuntime, 'resources/js/block-sdk.js'));

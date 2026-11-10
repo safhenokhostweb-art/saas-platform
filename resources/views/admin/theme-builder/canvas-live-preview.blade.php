@@ -250,7 +250,7 @@ body.tb-drag-active .tb-drop-zone {
 
 {{-- Drop zone after this block --}}
 <div class="tb-drop-zone"
-     data-before="{{ $nextBlock ? $nextBlock['id'] : '__end__' }}"
+     data-before="{{ $nextBlock['id'] ?? '__end__' }}"
      data-index="{{ $index + 1 }}"></div>
 @endforeach
 
@@ -396,6 +396,8 @@ body.tb-drag-active .tb-drop-zone {
     function updateBlockHtml(blockId, html) {
         disableInlineEditing();
         ThemeCanvasRuntime.replaceNode(blockId, html);
+        // A replaced subtree loses its measured handles.
+        requestAnimationFrame(syncColumnResizers);
     }
 
     /* ── Drop zone helpers (TB3-03 + TB4) ────────────────────── */
@@ -503,6 +505,245 @@ body.tb-drag-active .tb-drop-zone {
     document.addEventListener('pointerup', function (event) { finishPointerDrag(event, false); }, true);
     document.addEventListener('pointercancel', function (event) { finishPointerDrag(event, true); }, true);
 
+    /* ── Column resizers (2026-11-10) ──────────────────────────
+       The row is a CSS grid. Each handle sits on a track boundary and, while
+       dragged, rewrites the row's inline grid-template-columns so the preview
+       follows the pointer without a server round-trip. Releasing posts the
+       final percentages to the editor, which persists them as
+       props.columns[i].width. Disabled below 768px (the row stacks). */
+    var COLUMN_MIN_PX = 100;
+    var COLUMN_MIN_FRACTION = 0.1;
+    var columnResize = null;
+
+    function columnCells(colsEl) {
+        return Array.prototype.filter.call(colsEl.children, function (el) {
+            return el.nodeType === 1 && !el.matches('style, link, script, .tb-col-splitters');
+        });
+    }
+
+    function columnsBlockId(colsEl) {
+        var block = colsEl.closest('[data-tb-block-id]');
+        return block ? block.getAttribute('data-tb-block-id') : null;
+    }
+
+    function applyColumnWidths(colsEl, widths) {
+        var total = widths.reduce(function (sum, width) { return sum + width; }, 0);
+        if (!total) return;
+        var count = widths.length;
+        colsEl.style.gridTemplateColumns = widths.map(function (width) {
+            var weight = Math.round((width / total) * count * 1000) / 1000;
+            return 'minmax(0,' + weight + 'fr)';
+        }).join(' ');
+    }
+
+    // Inspector → Canvas: a number/slider edit applies the same live track
+    // rewrite a drag does, without waiting for the debounced re-render.
+    function setBlockColumnWidths(blockId, columns) {
+        var colsEl = document.getElementById('tb-' + blockId);
+        if (!colsEl || !colsEl.classList.contains('tb-columns')) {
+            var block = document.querySelector('[data-tb-block-id="' + blockId.replace(/"/g, '\\"') + '"]');
+            colsEl = block ? block.querySelector('.tb-columns') : null;
+        }
+        if (!colsEl) return;
+        var cells = columnCells(colsEl);
+        if (!cells.length) return;
+        var widths = columns.map(function (column) { return Number(column && column.width); })
+            .filter(function (width) { return Number.isFinite(width) && width > 0; });
+        // A count mismatch means the two documents disagree; the next block
+        // re-render is authoritative, so leave this frame alone.
+        if (widths.length !== cells.length) return;
+        applyColumnWidths(colsEl, widths);
+        syncColumnResizers();
+    }
+
+    function roundedColumnPercents(widths) {
+        var total = widths.reduce(function (sum, width) { return sum + width; }, 0);
+        if (!total) return [];
+        var percents = widths.map(function (width) {
+            return Math.round((width / total) * 1000) / 10;
+        });
+        var drift = Math.round((100 - percents.reduce(function (sum, value) { return sum + value; }, 0)) * 10) / 10;
+        percents[percents.length - 1] = Math.round((percents[percents.length - 1] + drift) * 10) / 10;
+        return percents;
+    }
+
+    // Handles are re-measured from the live DOM, so they stay correct after
+    // block replacement, image loading, font swap and window resizes.
+    function syncColumnResizers() {
+        document.querySelectorAll('.tb-columns[data-tb-resizable="1"]').forEach(function (colsEl) {
+            var cells = columnCells(colsEl);
+            var overlay = colsEl.querySelector(':scope > .tb-col-splitters');
+            if (cells.length < 2) {
+                if (overlay) overlay.remove();
+                return;
+            }
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'tb-col-splitters';
+                overlay.setAttribute('aria-hidden', 'true');
+                colsEl.appendChild(overlay);
+            }
+            var wanted = cells.length - 1;
+            while (overlay.children.length > wanted) overlay.removeChild(overlay.lastChild);
+            while (overlay.children.length < wanted) {
+                var handle = document.createElement('button');
+                handle.type = 'button';
+                handle.className = 'tb-col-resizer';
+                handle.setAttribute('role', 'separator');
+                handle.setAttribute('aria-orientation', 'vertical');
+                handle.setAttribute('aria-label', 'تغییر عرض ستون');
+                handle.title = 'بکشید تا عرض ستون تغییر کند · دوبار کلیک برای عرض مساوی';
+                overlay.appendChild(handle);
+            }
+
+            var box = colsEl.getBoundingClientRect();
+            var rtl = (document.documentElement.dir || '').toLowerCase() === 'rtl';
+            for (var index = 1; index < cells.length; index++) {
+                var previous = cells[index - 1].getBoundingClientRect();
+                var current = cells[index].getBoundingClientRect();
+                var boundary = rtl
+                    ? (previous.left + current.right) / 2
+                    : (previous.right + current.left) / 2;
+                overlay.children[index - 1].style.left = (boundary - box.left) + 'px';
+            }
+        });
+    }
+
+    function finishColumnResize(event, cancelled) {
+        if (!columnResize || event.pointerId !== columnResize.pointerId) return;
+        var active = columnResize;
+        columnResize = null;
+        document.body.classList.remove('tb-col-resizing');
+        if (cancelled) {
+            active.colsEl.style.gridTemplateColumns = '';
+            syncColumnResizers();
+            return;
+        }
+        commitColumnWidths(active.colsEl, active.widths);
+    }
+
+    function commitColumnWidths(colsEl, widths) {
+        var blockId = columnsBlockId(colsEl);
+        var percents = roundedColumnPercents(widths);
+        if (!blockId || percents.length < 2) {
+            colsEl.style.gridTemplateColumns = '';
+            syncColumnResizers();
+            return;
+        }
+        applyColumnWidths(colsEl, widths);
+        syncColumnResizers();
+        notifyParent({
+            action: 'columnResize',
+            blockId: blockId,
+            columns: percents.map(function (width) { return { width: width }; })
+        });
+    }
+
+    document.addEventListener('pointerdown', function (event) {
+        var handle = event.target.closest('.tb-col-resizer');
+        if (!handle || event.button !== 0) return;
+        if (window.innerWidth <= 768) return;
+        var colsEl = handle.closest('.tb-columns');
+        if (!colsEl) return;
+        var cells = columnCells(colsEl);
+        if (cells.length < 2) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        handle.setPointerCapture?.(event.pointerId);
+
+        var rtl = (document.documentElement.dir || '').toLowerCase() === 'rtl';
+        var index = Array.prototype.indexOf.call(handle.parentElement.children, handle);
+        var rects = cells.map(function (cell) {
+            var rect = cell.getBoundingClientRect();
+            return rect.width;
+        });
+        columnResize = {
+            pointerId: event.pointerId,
+            colsEl: colsEl,
+            startX: event.clientX,
+            rowWidth: colsEl.getBoundingClientRect().width,
+            widths: rects,
+            leftIndex: rtl ? index + 1 : index,
+            rightIndex: rtl ? index : index + 1
+        };
+        document.body.classList.add('tb-col-resizing');
+    }, true);
+
+    document.addEventListener('pointermove', function (event) {
+        if (!columnResize || event.pointerId !== columnResize.pointerId) return;
+        event.preventDefault();
+        var delta = event.clientX - columnResize.startX;
+        var pair = columnResize.widths[columnResize.leftIndex] + columnResize.widths[columnResize.rightIndex];
+        var minimum = Math.max(COLUMN_MIN_PX, columnResize.rowWidth * COLUMN_MIN_FRACTION);
+        minimum = Math.min(minimum, pair / 2);
+        var left = columnResize.widths[columnResize.leftIndex] + delta;
+        var right = columnResize.widths[columnResize.rightIndex] - delta;
+        left = Math.max(minimum, Math.min(pair - minimum, left));
+        right = pair - left;
+        var widths = columnResize.widths.slice();
+        widths[columnResize.leftIndex] = left;
+        widths[columnResize.rightIndex] = right;
+        columnResize.liveWidths = widths;
+        applyColumnWidths(columnResize.colsEl, widths);
+        syncColumnResizers();
+    }, true);
+
+    document.addEventListener('pointerup', function (event) {
+        if (!columnResize || event.pointerId !== columnResize.pointerId) return;
+        if (columnResize.liveWidths) columnResize.widths = columnResize.liveWidths;
+        finishColumnResize(event, false);
+    }, true);
+    document.addEventListener('pointercancel', function (event) { finishColumnResize(event, true); }, true);
+
+    // Keyboard: arrows resize by 2% of the row; Home/Enter/Space distribute;
+    // double-click also distributes. Keyboard distribution is its own committed
+    // edit so Ctrl+Z returns to the layout before the shortcut.
+    document.addEventListener('keydown', function (event) {
+        var handle = event.target.closest && event.target.closest('.tb-col-resizer');
+        if (!handle) return;
+        var colsEl = handle.closest('.tb-columns');
+        if (!colsEl) return;
+        var cells = columnCells(colsEl);
+        if (cells.length < 2) return;
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            var rtl = (document.documentElement.dir || '').toLowerCase() === 'rtl';
+            var index = Array.prototype.indexOf.call(handle.parentElement.children, handle);
+            var rects = cells.map(function (cell) { return cell.getBoundingClientRect().width; });
+            var pair = rects[rtl ? index + 1 : index] + rects[rtl ? index : index + 1];
+            var rowRect = colsEl.getBoundingClientRect();
+            var minimum = Math.min(Math.max(COLUMN_MIN_PX, rowRect.width * COLUMN_MIN_FRACTION), pair / 2);
+            var minimumPercent = pair > 0 ? (minimum / pair) * 100 : 5;
+            var currentIndex = rtl ? index + 1 : index;
+            var currentPercent = pair > 0 ? (rects[currentIndex] / pair) * 100 : 50;
+            var step = 2;
+            var delta = event.key === 'ArrowRight' ? step : -step;
+            if (rtl) delta = -delta;
+            var newPercent = Math.max(minimumPercent, Math.min(100 - minimumPercent, currentPercent + delta));
+            var widths = rects.slice();
+            widths[currentIndex] = pair * (newPercent / 100);
+            widths[rtl ? index : index + 1] = pair - widths[currentIndex];
+            commitColumnWidths(colsEl, widths);
+        } else if (event.key === 'Home' || event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            var count = cells.length;
+            commitColumnWidths(colsEl, new Array(count).fill(100 / count));
+        }
+    }, true);
+
+    document.addEventListener('dblclick', function (event) {
+        var handle = event.target.closest && event.target.closest('.tb-col-resizer');
+        if (!handle) return;
+        var colsEl = handle.closest('.tb-columns');
+        if (!colsEl) return;
+        var count = columnCells(colsEl).length;
+        if (count < 2) return;
+        event.preventDefault();
+        event.stopPropagation();
+        commitColumnWidths(colsEl, new Array(count).fill(100 / count));
+    }, true);
+
     // TB4: only searches top-level blocks (direct children of body)
     function getTopLevelBlocks() {
         return Array.from(document.body.querySelectorAll(':scope > [data-tb-block-id], :scope > .tb-style-wrap > [data-tb-block-id]'));
@@ -564,6 +805,9 @@ body.tb-drag-active .tb-drop-zone {
                     console.error('[CanvasPreview] setProp failed:', error);
                 }
                 break;
+            case 'setColumnWidths':
+                setBlockColumnWidths(d.blockId, Array.isArray(d.columns) ? d.columns : []);
+                break;
             case 'showDropZones':
                 document.body.classList.toggle('tb-drag-active', !!d.visible);
                 if (!d.visible) { setDropTarget(null); setContainerTarget(null); }
@@ -593,16 +837,27 @@ body.tb-drag-active .tb-drop-zone {
     });
 
     /* ── Signal ready + initial height ───────────────────────── */
-    notifyParent({ action: 'ready' });
     if (document.readyState === 'complete') {
         sendHeight();
+        syncColumnResizers();
     } else {
-        window.addEventListener('load', sendHeight);
+        window.addEventListener('load', function () { sendHeight(); syncColumnResizers(); });
     }
-    // Also watch for DOM resizes (images loading, etc.)
+    notifyParent({ action: 'ready' });
+
+    // Also watch for DOM resizes (images loading, fonts, block replacement)
     if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(sendHeight).observe(document.body);
+        var columnSyncFrame = 0;
+        new ResizeObserver(function () {
+            sendHeight();
+            if (columnSyncFrame) return;
+            columnSyncFrame = requestAnimationFrame(function () {
+                columnSyncFrame = 0;
+                syncColumnResizers();
+            });
+        }).observe(document.body);
     }
+    window.addEventListener('resize', syncColumnResizers);
 }());
 </script>
 </body>
