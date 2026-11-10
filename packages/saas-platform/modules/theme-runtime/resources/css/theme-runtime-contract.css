@@ -798,3 +798,30 @@
   .tb-dynamic-product-items { grid-template-columns: minmax(0, 1fr); }
   .tb-dynamic-feed-track { grid-auto-columns: 90%; }
 }
+
+
+/* ─── Zero-gap overrides (permanent, 2026-11-10) ────────────────────────────
+   These rules guarantee zero vertical spacing between sections regardless of
+   any padding class, inline style, or per-block <style> tag that may follow.
+   */
+.tb-section,
+.tb-pricing-cards,
+.tb-features-section-header,
+.tb-pricing-header {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+}
+.tb-features-section-title {
+    margin-top: 0 !important;
+    padding-top: 0.5rem !important;
+}
+.tb-section.tb-padding-xl,
+.tb-section.tb-padding-lg,
+.tb-section.tb-padding-md,
+.tb-padding-xl,
+.tb-padding-lg,
+.tb-padding-md {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
