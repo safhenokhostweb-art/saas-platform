@@ -432,6 +432,14 @@ On `/blog` at ≥ 768px, the layout's host wrapper `.tb-header-nav-wrap` (`displ
 The spec still expects the header's *input* search to fold into an icon on phones. WU-HEADER-SEARCH-ICON (release 0fcade6a) made the field stay on phones and updated `Phase07SiteFormsTest::test_nav_header_input_search_stays_flat_on_phones_and_uses_host_routes`, but not this spec. The spec fails on main, before and after ADR-082.  
 **Plan:** A separate work unit. Align the spec's phone branch with the unit test (field visible, no toggle in input mode; the icon only with `search_mode=icon`).
 
+### TD-008 — LOW | OPEN (2026-11-08)
+
+**Title:** Deploy-window errors on customer-site: `bootstrap/cache` missing during the release swap  
+**Module:** deployment agent (Hub) / customer-site runtime  
+**Description:**  
+A request that reaches customer-site while a deployment swaps the release in finds `bootstrap/cache` not yet present and writable. Laravel then logs one chain of three errors: "The bootstrap/cache directory must be present and writable" (PackageManifest), then "Target class [view] does not exist", then an uncaught ReflectionException. Seen on 2026-09-20, 10-01, 10-02, 10-06, 11-01 and 11-08 (deployment 320, 19:27:06 UTC, inside the 19:26:49 to 19:27:14 window). No error follows once the deployment completes, and the Hub health check passes. It is a short gap in the deployment agent's swap, not application code.  
+**Plan:** A separate deployment-system work unit. Create `bootstrap/cache` (writable by group `www-data`) and warm the caches in the release directory before the symlink switch, so the live path never points at a release without them. Verify with a request loop during a deployment: no `.ERROR` lines.
+
 ---
 
 ## TEMPORARY WORKAROUNDS
