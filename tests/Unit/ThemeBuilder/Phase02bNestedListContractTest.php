@@ -22,6 +22,9 @@ class Phase02bNestedListContractTest extends TestCase
     private const NON_NAVIGATIONAL_URLS = [
         'video.url', 'header_modern_v1.logoUrl',
         'dynamic_product_grid.endpoint_url', 'dynamic_feed_slider.endpoint_url',
+        // ADR-083: the same data_source identifier on the spec's list widgets.
+        'event_calendar.endpoint_url', 'dual_sale_product_grid.endpoint_url',
+        'course_video_filter.endpoint_url', 'downloadable_assets.endpoint_url',
     ];
 
     private const LINK_FIELDS = [

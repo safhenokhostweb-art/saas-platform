@@ -1,0 +1,54 @@
+{
+    "order": 101,
+    "name": "فوتر صنعتی انرژی با ستون تماس",
+    "description": "برند و معرفی کوتاه، دسترسی سریع، خدمات و اطلاعات تماس در چهار ستون؛ یک ستون در موبایل. رنگ‌ها از توکن‌های قالب.",
+    "type": "footer",
+    "category": "corporate",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "tags": ["فوتر", "انرژی خورشیدی", "صنعتی", "تیره", "تماس"],
+    "blocks": [
+        {
+            "type": "nav_footer",
+            "layout_slot": "footer",
+            "props": {
+                "nav_source": "custom",
+                "logo_text": "برند شما",
+                "tagline": "طراحی و اجرای سیستم‌های خورشیدی در سراسر کشور؛ از مشاوره و تأمین تجهیزات تا نصب و پشتیبانی.",
+                "layout_columns": 4,
+                "layout_columns_tablet": 2,
+                "layout_columns_mobile": 1,
+                "columns": [
+                    {"title": "دسترسی سریع", "links": [
+                        {"label": "خانه", "url": "@link:home"},
+                        {"label": "فروشگاه", "url": "@link:shop"},
+                        {"label": "آموزش", "url": "@link:courses"},
+                        {"label": "درباره ما", "url": "@link:about"},
+                        {"label": "تماس", "url": "@link:contact"}
+                    ]},
+                    {"title": "خدمات", "links": [
+                        {"label": "طراحی سیستم خورشیدی", "url": "@link:about"},
+                        {"label": "اجرا و نصب", "url": "@link:about"},
+                        {"label": "مشاورهٔ انرژی", "url": "@link:contact"},
+                        {"label": "سیستم‌های Hybrid", "url": "@link:contact"},
+                        {"label": "آموزش تخصصی", "url": "@link:courses"}
+                    ]},
+                    {"title": "تماس", "links": [
+                        {"label": "۰۲۱-۱۲۳۴۵۶۷۸", "url": "@link:contact"},
+                        {"label": "info@example.com", "url": "mailto:info@example.com"},
+                        {"label": "نشانی دفتر مرکزی شما", "url": "@link:contact"}
+                    ]}
+                ],
+                "show_brand": true,
+                "show_columns": true,
+                "show_bottom": true,
+                "show_social": false,
+                "newsletter_enabled": false,
+                "copyright": "© ۱۴۰۵ برند شما — تمامی حقوق محفوظ است.",
+                "bg_color": "var(--tb-background)",
+                "text_color": "var(--tb-text-muted)",
+                "link_hover_color": "var(--tb-primary)",
+                "padding_bottom": 24
+            }
+        }
+    ]
+}

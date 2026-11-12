@@ -1,0 +1,29 @@
+{
+    "key": "solar-dark",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "name": "تیره صنعتی (انرژی خورشیدی)",
+    "description": "پالت تیره با تأکید نارنجی برای سایت‌های صنعتی و انرژی. مقدار global_styles همان شکلی است که ThemeTokenNormalizer می‌خواند.",
+    "global_styles": {
+        "colors": {
+            "primary": "#FF7900",
+            "primary_hover": "#E06600",
+            "secondary": "#12121F",
+            "accent": "#FF7900",
+            "background": "#0B0B0B",
+            "surface": "#1E1E1E",
+            "input_bg": "#12121F",
+            "media_placeholder": "#12121F",
+            "text": "#F5F5F5",
+            "text_muted": "#A3A3A3",
+            "border": "#2A2A2A"
+        },
+        "typography": {
+            "font_heading": "IRANSans, Vazir, Vazirmatn, Tahoma, sans-serif",
+            "font_body": "IRANSans, Vazir, Vazirmatn, Tahoma, sans-serif"
+        },
+        "border_radius": {
+            "sm": "6px",
+            "md": "10px"
+        }
+    }
+}

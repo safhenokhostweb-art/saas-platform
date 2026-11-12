@@ -1,0 +1,60 @@
+{
+    "order": 105,
+    "name": "فروشگاه تجهیزات خورشیدی",
+    "description": "سربرگ فروشگاه، سه گروه اصلی تجهیزات و شبکهٔ محصولات با خرید مستقیم و جزئیات؛ صفحهٔ محصولات همان فروشگاه سایت است. مطابق مرجع PLATFORM-THEME-SPEC-v1.",
+    "type": "page",
+    "category": "store",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "route": "shop",
+    "tags": ["صفحه کامل", "فروشگاه", "محصولات", "انرژی خورشیدی"],
+    "blocks": [
+        {
+            "type": "hero_with_stats",
+            "props": {
+                "eyebrow": "فروشگاه تخصصی",
+                "title": "فروشگاه تجهیزات",
+                "highlight": "خورشیدی",
+                "subtitle": "محصولات حرفه‌ای، قیمت و موجودی به‌روز؛ با مشاورهٔ فنی پیش از خرید.",
+                "primary_label": "مشاورهٔ خرید",
+                "primary_url": "@link:contact",
+                "layout": "centered",
+                "stats": [],
+                "section_spacing": "compact"
+            }
+        },
+        {
+            "type": "target_audience_grid",
+            "props": {
+                "title": "گروه‌های اصلی تجهیزات",
+                "columns": "3",
+                "card_align": "start",
+                "items": [
+                    {"icon": "sun", "title": "پنل‌های خورشیدی", "text": "پنل مونوکریستال، پلی‌کریستال و نازک‌فیلم.", "link_label": "مشاهدهٔ پنل‌ها", "link_url": "@link:shop"},
+                    {"icon": "zap", "title": "اینورتر و ذخیره‌سازی", "text": "اینورتر خورشیدی، باتری لیتیومی و سیستم مدیریت انرژی (EMS).", "link_label": "مشاهدهٔ اینورترها", "link_url": "@link:shop"},
+                    {"icon": "wrench", "title": "تجهیزات جانبی", "text": "سازه و پایه‌های نصب، کابل و تجهیزات حفاظتی.", "link_label": "مشاهدهٔ تجهیزات", "link_url": "@link:shop"}
+                ],
+                "section_spacing": "compact"
+            }
+        },
+        {
+            "type": "dual_sale_product_grid",
+            "props": {
+                "source_type": "internal",
+                "endpoint_url": "products",
+                "query_params": "{\"limit\": 8, \"sort\": \"latest\"}",
+                "title": "محصولات",
+                "subtitle": "خرید مستقیم با افزودن به سبد، یا مشاهدهٔ مشخصات فنی هر محصول.",
+                "columns": "4",
+                "buy_label": "خرید",
+                "details_label": "جزئیات",
+                "view_all_label": "همهٔ محصولات",
+                "view_all_url": "@link:shop",
+                "items": [
+                    {"title": "پنل خورشیدی ۷۲۰ وات TSM-NEG21C.20", "badge": "جدید", "meta": "پنل مونوکریستال", "url": "@link:shop"}
+                ],
+                "empty_text": "محصولی برای نمایش وجود ندارد.",
+                "section_spacing": "regular"
+            }
+        }
+    ]
+}

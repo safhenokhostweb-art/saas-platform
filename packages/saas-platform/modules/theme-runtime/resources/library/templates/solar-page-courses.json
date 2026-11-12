@@ -1,0 +1,115 @@
+{
+    "order": 104,
+    "name": "آکادمی آموزش انرژی خورشیدی",
+    "description": "معرفی آکادمی، تقویم آموزشی ماه، دوره‌های جاری با ثبت‌نام، ویدئوهای رایگان و هزینه‌دار با فیلتر و مرکز دانلود کاتالوگ‌ها؛ مطابق مرجع PLATFORM-THEME-SPEC-v1.",
+    "type": "page",
+    "category": "corporate",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "route": "courses",
+    "tags": ["صفحه کامل", "آموزش", "دوره", "تقویم", "دانلود"],
+    "blocks": [
+        {
+            "type": "hero_with_stats",
+            "props": {
+                "eyebrow": "آکادمی آموزش",
+                "title": "آموزش تخصصی و پروژه‌محور",
+                "highlight": "انرژی خورشیدی",
+                "subtitle": "آموزش تخصصی و پروژه‌محور با سرفصل‌های عملی و قابل پیگیری؛ از مبانی رایگان تا دوره‌های طراحی، نصب و عیب‌یابی.",
+                "primary_label": "ثبت‌نام در دوره‌ها",
+                "primary_url": "@link:courses",
+                "secondary_label": "مشاوره برای انتخاب دوره",
+                "secondary_url": "@link:contact",
+                "layout": "centered",
+                "stats": [],
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "event_calendar",
+            "props": {
+                "source_type": "static",
+                "endpoint_url": "",
+                "query_params": "{}",
+                "title": "تقویم آموزشی",
+                "subtitle": "رویدادهای ماه و وضعیت ثبت‌نام هر دوره در یک نگاه.",
+                "month_label": "خرداد ۱۴۰۵",
+                "days_in_month": 31,
+                "first_weekday": "fri",
+                "show_legend": true,
+                "items": [
+                    {"title": "آموزش نصب و راه‌اندازی تجهیزات", "day": 7, "date_label": "۷ خرداد", "end_label": "۱۹ خرداد", "hours": "۴ ساعت", "status": "finished", "url": "@link:courses"},
+                    {"title": "طراحی عملی نیروگاه خورشیدی", "day": 25, "date_label": "۲۵ خرداد", "end_label": "۶ تیر", "hours": "۴ ساعت", "status": "finished", "url": "@link:courses"},
+                    {"title": "آموزش آنلاین مقدماتی انرژی خورشیدی", "day": 26, "date_label": "۲۶ خرداد", "end_label": "۷ تیر", "hours": "۴ ساعت", "status": "finished", "url": "@link:courses"},
+                    {"title": "عیب‌یابی ارتباط مانیتورینگ", "day": 28, "date_label": "۲۸ خرداد", "end_label": "۳۱ خرداد", "hours": "۱ ساعت", "status": "finished", "url": "@link:courses"},
+                    {"title": "دورهٔ نگهداری تجهیزات", "day": 28, "date_label": "۲۸ خرداد", "end_label": "۹ تیر", "hours": "۴ ساعت", "status": "finished", "url": "@link:courses"}
+                ],
+                "empty_text": "رویدادی برای این ماه ثبت نشده است.",
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "dual_sale_product_grid",
+            "props": {
+                "source_type": "static",
+                "endpoint_url": "",
+                "query_params": "{}",
+                "title": "دوره‌های جاری",
+                "subtitle": "ثبت‌نام کنید یا پیش از ثبت‌نام سرفصل‌های هر دوره را ببینید.",
+                "columns": "2",
+                "buy_label": "ثبت‌نام",
+                "details_label": "مشاهدهٔ صفحهٔ آموزش",
+                "items": [
+                    {"title": "آموزش آنلاین مقدماتی انرژی خورشیدی", "badge": "هزینه‌دار", "meta": "شروع: ۲۶ خرداد ۱۴۰۵ · پایان: ۷ تیر ۱۴۰۵ · ۴ ساعت", "url": "@link:courses"},
+                    {"title": "آموزش آنلاین پیشرفتهٔ طراحی سیستم", "badge": "هزینه‌دار", "meta": "شروع: ۷ تیر ۱۴۰۵ · پایان: ۱۸ تیر ۱۴۰۵ · ۴ ساعت", "url": "@link:courses"},
+                    {"title": "کارگاه آنلاین تخصصی انتخاب اینورتر", "badge": "هزینه‌دار", "meta": "شروع: ۲۶ تیر ۱۴۰۵ · پایان: ۷ مرداد ۱۴۰۵ · ۴ ساعت", "url": "@link:courses"},
+                    {"title": "کارگاه ایمنی و عیب‌یابی تجهیزات", "badge": "هزینه‌دار", "meta": "شروع: ۱۰ تیر ۱۴۰۵ · پایان: ۲۲ تیر ۱۴۰۵ · ۴ ساعت", "url": "@link:courses"}
+                ],
+                "empty_text": "دوره‌ای در حال برگزاری نیست.",
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "course_video_filter",
+            "props": {
+                "source_type": "static",
+                "endpoint_url": "",
+                "query_params": "{}",
+                "title": "آموزش‌های ویدئویی",
+                "subtitle": "آموزش‌های کوتاه رایگان و دوره‌های تخصصی هزینه‌دار.",
+                "columns": "3",
+                "show_filters": true,
+                "show_sort": true,
+                "cta_label": "مشاهدهٔ صفحهٔ آموزش",
+                "items": [
+                    {"title": "عیب‌یابی ارتباط مانیتورینگ", "url": "@link:courses", "access": "paid", "start_label": "۲۸ خرداد ۱۴۰۵", "end_label": "۳۱ خرداد ۱۴۰۵", "duration": "۱ ساعت", "popularity": 70, "published": "1405-03-28"},
+                    {"title": "دورهٔ نگهداری تجهیزات", "url": "@link:courses", "access": "paid", "start_label": "۲۸ خرداد ۱۴۰۵", "end_label": "۹ تیر ۱۴۰۵", "duration": "۴ ساعت", "popularity": 85, "published": "1405-03-28"},
+                    {"title": "روش صحیح تمیزکردن پنل", "url": "@link:courses", "access": "free", "duration": "", "popularity": 120, "published": "1405-03-20"},
+                    {"title": "خواندن پلاک مشخصات پنل", "url": "@link:courses", "access": "free", "duration": "", "popularity": 95, "published": "1405-03-18"},
+                    {"title": "سه نکتهٔ اتصال MC4", "url": "@link:courses", "access": "free", "duration": "", "popularity": 110, "published": "1405-03-15"},
+                    {"title": "بررسی سریع سایه‌اندازی", "url": "@link:courses", "access": "free", "duration": "", "popularity": 60, "published": "1405-03-12"}
+                ],
+                "empty_text": "آموزشی با این فیلتر وجود ندارد.",
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "downloadable_assets",
+            "props": {
+                "source_type": "static",
+                "endpoint_url": "",
+                "query_params": "{}",
+                "title": "منابع و اسناد آموزشی",
+                "subtitle": "کاتالوگ فنی تجهیزاتی که در دوره‌ها و پروژه‌ها به کار می‌روند.",
+                "columns": "2",
+                "button_label": "دانلود",
+                "items": [
+                    {"title": "کاتالوگ پنل خورشیدی", "description": "مشخصات فنی و ابعاد پنل", "size_label": "PDF", "file_type": "pdf"},
+                    {"title": "کاتالوگ اینورتر ON-GRID", "description": "مشخصات فنی و نقشهٔ اتصال", "size_label": "PDF", "file_type": "pdf"},
+                    {"title": "کاتالوگ اینورتر HYBRID", "description": "مشخصات فنی، باتری و حالت‌های کار", "size_label": "PDF", "file_type": "pdf"}
+                ],
+                "empty_text": "فایلی برای دانلود وجود ندارد.",
+                "section_spacing": "regular"
+            }
+        }
+    ]
+}

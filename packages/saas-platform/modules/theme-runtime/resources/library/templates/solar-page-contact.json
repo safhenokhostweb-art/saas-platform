@@ -1,0 +1,52 @@
+{
+    "order": 106,
+    "name": "تماس با شرکت انرژی خورشیدی",
+    "description": "سربرگ تماس، فرم و اطلاعات دفتر مرکزی و کارت‌های آدرس، تلفن، ایمیل و ساعت کاری؛ مطابق مرجع PLATFORM-THEME-SPEC-v1.",
+    "type": "page",
+    "category": "corporate",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "route": "contact",
+    "tags": ["صفحه کامل", "تماس", "فرم", "انرژی خورشیدی"],
+    "blocks": [
+        {
+            "type": "hero_with_stats",
+            "props": {
+                "title": "تماس",
+                "highlight": "با ما",
+                "subtitle": "ما همیشه برای پاسخگویی به شما در دسترس هستیم.",
+                "primary_label": "",
+                "layout": "centered",
+                "stats": [],
+                "section_spacing": "compact"
+            }
+        },
+        {
+            "type": "contact_split",
+            "style": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 24, "paddingRight": 24},
+            "responsive": {"mobile": {"paddingTop": 32, "paddingBottom": 32, "paddingLeft": 16, "paddingRight": 16}},
+            "props": {
+                "title": "با ما در تماس باشید",
+                "subtitle": "برای دریافت مشاوره، ثبت درخواست اجرای پروژه یا همکاری، فرم را پر کنید؛ کارشناسان فروش و دفتر مرکزی پاسخ می‌دهند.",
+                "phone": "۰۲۱-۱۲۳۴۵۶۷۸",
+                "email": "info@example.com",
+                "address": "نشانی دفتر مرکزی شما",
+                "hours": "شنبه تا چهارشنبه، ۹ تا ۱۷",
+                "show_form": true
+            }
+        },
+        {
+            "type": "contact_info",
+            "style": {"paddingTop": 48, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24},
+            "responsive": {"mobile": {"paddingTop": 32, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
+            "props": {
+                "title": "اطلاعات تماس",
+                "items": [
+                    {"icon": "map-pin", "label": "آدرس", "value": "نشانی دفتر مرکزی شما"},
+                    {"icon": "phone", "label": "تلفن", "value": "۰۲۱-۱۲۳۴۵۶۷۸"},
+                    {"icon": "mail", "label": "ایمیل", "value": "info@example.com"},
+                    {"icon": "clock", "label": "ساعت کاری", "value": "شنبه تا چهارشنبه، ۹ تا ۱۷"}
+                ]
+            }
+        }
+    ]
+}

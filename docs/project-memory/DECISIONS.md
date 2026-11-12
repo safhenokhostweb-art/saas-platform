@@ -5353,3 +5353,73 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   - `Adr082InspectorControlsHostTest` covers the step-5 props on the
     customer host.
   - The pixel ratchet is unchanged.
+
+## ADR-083
+
+**Title:** PLATFORM-THEME-SPEC-v1: Solar Token Preset, Seven Neutral Commercial Widgets, Spec Templates
+
+**Status:** Accepted
+
+**Date:** 2026-11-12
+
+**Context:**
+
+- The owner commissioned a commercial energy theme modelled on a live
+  reference site (https://oxinsolar.org/), as the handoff
+  "PLATFORM-THEME-SPEC-v1". Another agent started step 1 and stopped after
+  adding two tokens and the preset file. The token test still pinned the
+  old registry, and `--tb-input-bg` had no consumer.
+- The reference needs seven section types the registry lacks: a hero with
+  stats, zigzag rows and steps, an audience/service grid, an event calendar,
+  a product grid with two actions, a course grid with a free/paid filter,
+  and a download centre.
+- The sticky blur header, mega menu, phone drawer and cart drawer already
+  exist (ADR-067, ADR-082).
+
+**Decision:**
+
+1. `solar-dark` token preset under `resources/library/tokens`, read by
+   `TemplateLibrary::tokenPresets()`. `primary_hover` and `input_bg` join
+   `ThemeTokenNormalizer::COMMERCIAL_TOKENS` (opt-in, consumed with the old
+   value as fallback).
+2. `CommercialBlockTypes` registers seven palette widgets through
+   `registerHostType`, rendered by `CommercialBlockRendererTrait`:
+   - neutral defaults, no colour props, `.tb-cx-*` rules painted only with
+     `--tb-*` tokens;
+   - `section_spacing` defaults to `none` (zero-gap rule);
+   - the four list widgets use the Phase 3C `data_source` contract, with the
+     manual repeater as the static source and as the fallback while a
+     resolver is missing or failing.
+3. The shell is configured, not rebuilt. The spec header sets `nav_header`
+   to sticky, a 60px scroll threshold, a 14px backdrop blur and three-column
+   mega menus. The product grid calls the existing `productActionHtml()`, so
+   the server cart's drawer, badges and toasts apply. No `localStorage` cart
+   was added.
+4. Seven library templates (`solar-*`, `spec: PLATFORM-THEME-SPEC-v1`):
+   header, footer, and the pages home, about, courses, products (the shop
+   route) and contact. They contain no colours or media and use library
+   routes or https links. `TemplateLibrary::ROUTES` gains `about`.
+5. Spec: `docs/theme-builder/PLATFORM_THEME_SPEC_V1.md`.
+
+**Consequences:**
+
+- Seven new palette entries on both hosts once customer-site's package
+  mirror is refreshed.
+- `CommercialWidgetResilienceTest` gates the widgets with a malformed-props
+  sweep, XSS probes, data-source fallbacks, cart wiring, blueprint colour
+  rules and a stylesheet token check. `TemplateLibraryTest` drives every
+  spec template through insert, save and canvas render.
+- The header's blur and 60px threshold depend on the `renderNavHeader`
+  style wiring that merge `08512a47` dropped (released in `007f2471`). The
+  next work unit restores it with a three-way merge, keeping the later
+  footer, zero-gap and columns work.
+- Owner decisions (2026-11-12):
+  - `about` is the dynamic page with that slug; customer-site's
+    `EntityLinkCatalog` maps it to `page.show` and adds no fixed route;
+  - library download cards ship without a file, never linking a tenant's
+    domain;
+  - the library and palette are white-label: no tenant name, domain, email
+    or phone in labels or template content (guarded by a test);
+  - `dual_sale_product_grid` stays in `dynamic`;
+  - restoring the merge loss is the next, separate work unit.
+- The team section and the course registration form were left out.

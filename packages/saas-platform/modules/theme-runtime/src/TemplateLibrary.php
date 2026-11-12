@@ -33,6 +33,11 @@ final class TemplateLibrary
         'blog' => ['وبلاگ', '/blog'],
         'courses' => ['دوره‌ها', '/courses'],
         'contact' => ['تماس با ما', '/contact'],
+        // PLATFORM-THEME-SPEC-v1 (ADR-083). About is the dynamic page with the
+        // slug `about` (customer-site resolves it through page.show), not a
+        // fixed route. A products page is the shop: the spec's /products
+        // blueprint links through "@link:shop".
+        'about' => ['درباره ما', '/page/about'],
     ];
 
     /** Template type => the editor zone its blocks belong to. */
@@ -174,6 +179,27 @@ final class TemplateLibrary
         uasort($docs, fn (array $a, array $b) => [$a['order'] ?? 999, $a['name']] <=> [$b['order'] ?? 999, $b['name']]);
 
         return self::$documents = $docs;
+    }
+
+    /**
+     * PLATFORM-THEME-SPEC-v1 (ADR-083): token presets under
+     * resources/library/tokens — key => {name, description, global_styles}.
+     * `global_styles` is exactly the shape ThemeTokenNormalizer reads, so a
+     * preset applies by copying it onto a Theme; the blueprints themselves
+     * carry no colour and follow whichever preset the Theme uses.
+     *
+     * @return array<string, array>
+     */
+    public static function tokenPresets(): array
+    {
+        $presets = [];
+        foreach (glob(self::root() . '/tokens/*.json') ?: [] as $path) {
+            $preset = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+            $presets[basename($path, '.json')] = $preset;
+        }
+        ksort($presets);
+
+        return $presets;
     }
 
     private static function node(array $block): array
