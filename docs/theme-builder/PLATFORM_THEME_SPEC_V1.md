@@ -109,10 +109,10 @@ the link resolves (owner decision 2026-11-12). A products page is the shop:
 The templates are white-label (owner decision 2026-11-12). The brand slot
 is "برند شما", body copy speaks as "ما", and the contact details are samples
 (`info@example.com`, `۰۲۱-۱۲۳۴۵۶۷۸`, "نشانی دفتر مرکزی شما").
-`CommercialWidgetResilienceTest` fails if the reference brand, its domain or
-its phone numbers reappear in a widget name, palette category, template card
-or template content. Region-specific copy (اهواز / خوزستان) remains as
-example text.
+Region-specific copy is general too ("سراسر کشور", "شهر و استان شما"; owner
+decision 2026-11-13). `CommercialWidgetResilienceTest` fails if the reference
+brand, its domain, its phone numbers or its city and province reappear in a
+widget name, palette category, template card or template content.
 
 The download cards ship without a file (owner decision 2026-11-12). Each
 renders a disabled "به‌زودی" button until the tenant picks the uploaded PDF,

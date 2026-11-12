@@ -209,7 +209,8 @@ class CommercialWidgetResilienceTest extends TestCase
      */
     public function test_the_library_and_the_palette_are_white_label(): void
     {
-        $brand = '/اکسین|تابان انرژی|oxin|۳۵۵۳۰۰۶۶|۰۹۹۰۱۲۷۱۵۲۵/iu';
+        // The reference site's region too (owner decision 2026-11-13): sample copy says «سراسر کشور».
+        $brand = '/اکسین|تابان انرژی|oxin|۳۵۵۳۰۰۶۶|۰۹۹۰۱۲۷۱۵۲۵|اهواز|خوزستان/iu';
 
         foreach (CommercialBlockTypes::TYPES as $type) {
             $definition = $this->definition($type);
