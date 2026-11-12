@@ -38,6 +38,10 @@ class ThemeTokenNormalizer
         'media_placeholder' => '--tb-media-placeholder',
         'media_bg' => '--tb-media-bg',
         'on_overlay' => '--tb-on-overlay',
+        // PLATFORM-THEME-SPEC-v1 (ADR-083): interactive-state and form
+        // surface colours a commercial preset may author.
+        'primary_hover' => '--tb-primary-hover',
+        'input_bg' => '--tb-input-bg',
     ];
 
     /**

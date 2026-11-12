@@ -4,6 +4,7 @@ namespace SaaSPlatform\ThemeRuntime\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use SaaSPlatform\ThemeRuntime\Browser\PlaywrightExtractionService;
+use SaaSPlatform\ThemeRuntime\CommercialBlockTypes;
 use SaaSPlatform\ThemeRuntime\DynamicBlockTypes;
 use SaaSPlatform\ThemeRuntime\FoodMartBlockTypes;
 use SaaSPlatform\ThemeRuntime\InteractionBlockTypes;
@@ -239,5 +240,9 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         // this call they exist only behind the explicit register() that the
         // contract test performs, i.e. dead code in every real runtime.
         InteractionBlockTypes::register();
+
+        // PLATFORM-THEME-SPEC-v1 (ADR-083) — the seven neutral commercial
+        // widgets (CommercialBlockRendererTrait renders them), same seam.
+        CommercialBlockTypes::register();
     }
 }

@@ -28,6 +28,8 @@ class ThemeTokenNormalizerCommercialTokensTest extends TestCase
             'media_placeholder' => '--tb-media-placeholder',
             'media_bg' => '--tb-media-bg',
             'on_overlay' => '--tb-on-overlay',
+            'primary_hover' => '--tb-primary-hover',
+            'input_bg' => '--tb-input-bg',
         ], ThemeTokenNormalizer::COMMERCIAL_TOKENS);
     }
 
@@ -46,7 +48,7 @@ class ThemeTokenNormalizerCommercialTokensTest extends TestCase
         $palettes = [
             [],
             ['primary_color' => '#e11d48', 'colors' => ['surface' => '#fff7ed', 'border' => '#fed7aa']],
-            ['colors' => ['star' => '', 'overlay' => '   ', 'backdrop' => null, 'border_strong' => ['x'], 'media_placeholder' => false]],
+            ['colors' => ['star' => '', 'overlay' => '   ', 'backdrop' => null, 'border_strong' => ['x'], 'media_placeholder' => false, 'primary_hover' => '', 'input_bg' => ' ']],
             ['dark_mode' => ['enabled' => true]],
         ];
 

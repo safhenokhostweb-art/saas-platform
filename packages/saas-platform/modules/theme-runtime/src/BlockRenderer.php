@@ -35,6 +35,7 @@ class BlockRenderer
     use FoodMartBlockRendererTrait;
     use SleepShimanBlockRendererTrait;
     use DynamicBlockRendererTrait;
+    use CommercialBlockRendererTrait;
 
     /**
      * Smart Public Rendering — canonical dual-mode contract, mirroring

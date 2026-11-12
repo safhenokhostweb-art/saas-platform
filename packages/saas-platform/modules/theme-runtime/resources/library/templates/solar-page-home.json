@@ -1,0 +1,105 @@
+{
+    "order": 102,
+    "name": "صفحهٔ اصلی شرکت انرژی خورشیدی",
+    "description": "هیرو با آمار، شش خدمت اصلی، معرفی شرکت، پروژه‌های اخیر، مقاله‌ها و فرم تماس؛ ترتیب و فاصله‌ها مطابق مرجع PLATFORM-THEME-SPEC-v1.",
+    "type": "page",
+    "category": "corporate",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "route": "home",
+    "tags": ["صفحه کامل", "انرژی خورشیدی", "صنعتی", "خدماتی"],
+    "blocks": [
+        {
+            "type": "hero_with_stats",
+            "props": {
+                "eyebrow": "مهندسی انرژی خورشیدی",
+                "title": "طراحی و اجرای سیستم‌های خورشیدی در",
+                "highlight": "اهواز و خوزستان",
+                "subtitle": "از مشاوره و طراحی تا تأمین تجهیزات، نصب و پشتیبانی؛ کاهش هزینهٔ برق و انرژی پایدار برای خانه، کسب‌وکار و صنعت.",
+                "primary_label": "دریافت مشاوره",
+                "primary_url": "@link:contact",
+                "secondary_label": "فروشگاه تجهیزات",
+                "secondary_url": "@link:shop",
+                "layout": "split",
+                "stats": [
+                    {"value": "+۷", "label": "سال تجربه"},
+                    {"value": "+۱۲", "label": "پروژهٔ اجراشده"},
+                    {"value": "+۵", "label": "متخصص و مهندس"},
+                    {"value": "٪۱۰۰", "label": "رضایت مشتریان"}
+                ],
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "target_audience_grid",
+            "props": {
+                "title": "خدمات طراحی و اجرای سیستم‌های خورشیدی در اهواز",
+                "subtitle": "از مشاوره تا اجرا، تمام مراحل پروژه‌های انرژی را با بالاترین کیفیت انجام می‌دهیم.",
+                "columns": "3",
+                "card_align": "center",
+                "items": [
+                    {"icon": "sun", "title": "طراحی سیستم‌های خورشیدی", "text": "محاسبات دقیق، طراحی مهندسی و شبیه‌سازی سیستم‌های فتوولتائیک با نرم‌افزارهای تخصصی.", "link_label": "اطلاعات بیشتر", "link_url": "@link:about"},
+                    {"icon": "hammer", "title": "اجرا و نصب نیروگاه", "text": "نصب حرفه‌ای پنل‌های خورشیدی، اینورترها و تجهیزات جانبی با رعایت استانداردهای بین‌المللی.", "link_label": "اطلاعات بیشتر", "link_url": "@link:about"},
+                    {"icon": "chart-line", "title": "مدیریت و بهینه‌سازی انرژی", "text": "آنالیز مصرف، امکان‌سنجی، بهینه‌سازی هزینه‌های انرژی و ارائهٔ راهکارهای هوشمند.", "link_label": "اطلاعات بیشتر", "link_url": "@link:contact"},
+                    {"icon": "zap", "title": "نیروگاه خورشیدی هیبریدی", "text": "طراحی و پیاده‌سازی سیستم‌های ترکیبی خورشید + باتری + شبکه برای پایداری حداکثری.", "link_label": "اطلاعات بیشتر", "link_url": "@link:contact"},
+                    {"icon": "headset", "title": "نگهداری و پشتیبانی", "text": "خدمات پس از فروش، بازرسی دوره‌ای، تعمیرات و عیب‌یابی سیستم‌های خورشیدی.", "link_label": "اطلاعات بیشتر", "link_url": "@link:contact"},
+                    {"icon": "graduation-cap", "title": "آموزش تخصصی", "text": "دوره‌های عملی و تئوری طراحی، نصب و نگهداری سیستم‌های خورشیدی برای مهندسان و تکنسین‌ها.", "link_label": "اطلاعات بیشتر", "link_url": "@link:courses"}
+                ],
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "zigzag_rows",
+            "props": {
+                "title": "درباره اکسین سولار",
+                "variant": "zigzag",
+                "start_side": "start",
+                "rows": [
+                    {"icon": "building-2", "title": "شرکت تابان انرژی اکسین", "text": "شرکت تابان انرژی اکسین با نام تجاری اکسین سولار، خدمات مشاوره، طراحی و اجرای سیستم‌های خورشیدی را در اهواز، خوزستان و سراسر کشور ارائه می‌دهد و تأمین تجهیزات و نگهداری این سیستم‌ها را نیز انجام می‌دهد. خدمات ما از امکان‌سنجی و طراحی مهندسی تا نصب، راه‌اندازی، بهینه‌سازی و پشتیبانی پس از فروش ادامه دارد تا مشتریان خانگی، تجاری، کشاورزی و صنعتی به برق پایدار و مطمئن دسترسی داشته باشند.", "link_label": "درخواست مشاوره", "link_url": "@link:contact"}
+                ],
+                "section_spacing": "regular"
+            }
+        },
+        {
+            "type": "project_cards",
+            "style": {"paddingTop": 72, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24},
+            "responsive": {"mobile": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
+            "props": {
+                "title": "پروژه‌های اخیر",
+                "subtitle": "نمونه‌هایی از پروژه‌های موفق اکسین سولار در بخش‌های مختلف",
+                "columns": "3",
+                "cards": [
+                    {"category": "نیروگاه هیبریدی", "title": "نیروگاه خورشیدی ۲۰ کیلووات", "description": "اهواز • Solar + Battery", "url": "@link:about"},
+                    {"category": "نیروگاه هیبریدی", "title": "نیروگاه خورشیدی ۱۵ کیلووات", "description": "اهواز • Solar + Battery", "url": "@link:about"},
+                    {"category": "نیروگاه هیبریدی", "title": "نیروگاه خورشیدی ۱۲ کیلووات", "description": "اهواز • Solar + Battery", "url": "@link:about"}
+                ]
+            }
+        },
+        {
+            "type": "blog_posts",
+            "style": {"paddingTop": 72, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24, "textAlign": "center"},
+            "responsive": {"mobile": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
+            "props": {
+                "title": "وبلاگ و مقالات",
+                "limit": 3,
+                "layout": "grid",
+                "source": "latest",
+                "autoplay": false,
+                "interval": 5000
+            }
+        },
+        {
+            "type": "contact_split",
+            "style": {"paddingTop": 72, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24},
+            "responsive": {"mobile": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
+            "props": {
+                "title": "با ما در تماس باشید",
+                "subtitle": "برای دریافت مشاوره، ثبت درخواست یا همکاری با ما، از راه‌های زیر ارتباط برقرار کنید.",
+                "phone": "۰۶۱-۳۵۵۳۰۰۶۶ · ۰۹۹۰۱۲۷۱۵۲۵",
+                "email": "business@oxinsolar.org",
+                "address": "اهواز، خیابان امام شرقی، بعد از خیابان یوسفی، ساختمان سپهر، طبقهٔ دوم، واحد ۳",
+                "hours": "شنبه تا چهارشنبه، ۹ تا ۱۷",
+                "show_form": true
+            }
+        }
+    ]
+}
