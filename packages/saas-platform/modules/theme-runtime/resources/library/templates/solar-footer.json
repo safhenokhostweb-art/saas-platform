@@ -12,7 +12,7 @@
             "layout_slot": "footer",
             "props": {
                 "nav_source": "custom",
-                "logo_text": "اکسین سولار",
+                "logo_text": "برند شما",
                 "tagline": "طراحی و اجرای سیستم‌های خورشیدی در اهواز و خوزستان؛ از مشاوره و تأمین تجهیزات تا نصب و پشتیبانی.",
                 "layout_columns": 4,
                 "layout_columns_tablet": 2,
@@ -33,10 +33,9 @@
                         {"label": "آموزش تخصصی", "url": "@link:courses"}
                     ]},
                     {"title": "تماس", "links": [
-                        {"label": "۰۶۱-۳۵۵۳۰۰۶۶", "url": "@link:contact"},
-                        {"label": "۰۹۹۰۱۲۷۱۵۲۵", "url": "@link:contact"},
-                        {"label": "business@oxinsolar.org", "url": "mailto:business@oxinsolar.org"},
-                        {"label": "اهواز، خیابان امام شرقی، بعد از خیابان یوسفی، ساختمان سپهر، طبقهٔ دوم، واحد ۳", "url": "@link:contact"}
+                        {"label": "۰۲۱-۱۲۳۴۵۶۷۸", "url": "@link:contact"},
+                        {"label": "info@example.com", "url": "mailto:info@example.com"},
+                        {"label": "نشانی دفتر مرکزی شما", "url": "@link:contact"}
                     ]}
                 ],
                 "show_brand": true,
@@ -44,7 +43,7 @@
                 "show_bottom": true,
                 "show_social": false,
                 "newsletter_enabled": false,
-                "copyright": "© ۱۴۰۵ اکسین سولار — تمامی حقوق محفوظ است.",
+                "copyright": "© ۱۴۰۵ برند شما — تمامی حقوق محفوظ است.",
                 "bg_color": "var(--tb-background)",
                 "text_color": "var(--tb-text-muted)",
                 "link_hover_color": "var(--tb-primary)",

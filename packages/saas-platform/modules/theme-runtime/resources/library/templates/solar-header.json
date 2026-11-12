@@ -11,9 +11,9 @@
             "type": "nav_header",
             "layout_slot": "header",
             "props": {
-                "logo_text": "اکسین سولار",
+                "logo_text": "برند شما",
                 "logo_url": "@link:home",
-                "logo_alt": "اکسین سولار — مهندسی انرژی خورشیدی",
+                "logo_alt": "برند شما — مهندسی انرژی خورشیدی",
                 "menu_align": "center",
                 "nav_source": "custom",
                 "nav_links": [
@@ -88,7 +88,7 @@
                             ]}
                         ],
                         "mega_banner_url": "@link:about",
-                        "mega_banner_text": "مشاهدهٔ همهٔ خدمات اکسین سولار",
+                        "mega_banner_text": "مشاهدهٔ همهٔ خدمات",
                         "mega_banner_cta": "همهٔ خدمات",
                         "mega_show_desktop": true,
                         "mega_mobile_behavior": "accordion"

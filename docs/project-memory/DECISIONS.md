@@ -5418,6 +5418,8 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
     `EntityLinkCatalog` maps it to `page.show` and adds no fixed route;
   - library download cards ship without a file, never linking a tenant's
     domain;
+  - the library and palette are white-label: no tenant name, domain, email
+    or phone in labels or template content (guarded by a test);
   - `dual_sale_product_grid` stays in `dynamic`;
   - restoring the merge loss is the next, separate work unit.
 - The team section and the course registration form were left out.

@@ -201,6 +201,27 @@ class CommercialWidgetResilienceTest extends TestCase
         }
     }
 
+    /**
+     * Owner decision 2026-11-12 (white-label): the library and the palette
+     * name no tenant. The spec's reference brand, its domain and its contact
+     * details appear in no widget name, palette category, template card or
+     * template content.
+     */
+    public function test_the_library_and_the_palette_are_white_label(): void
+    {
+        $brand = '/اکسین|تابان انرژی|oxin|۳۵۵۳۰۰۶۶|۰۹۹۰۱۲۷۱۵۲۵/iu';
+
+        foreach (CommercialBlockTypes::TYPES as $type) {
+            $definition = $this->definition($type);
+            $this->assertDoesNotMatchRegularExpression($brand, $definition['name'] . ' ' . $definition['category'], $type);
+            $this->assertDoesNotMatchRegularExpression($brand, json_encode($definition['defaultProps'], JSON_UNESCAPED_UNICODE), "{$type} defaults");
+        }
+        foreach (TemplateLibrary::list() as $card) {
+            $this->assertDoesNotMatchRegularExpression($brand, implode(' ', [$card['name'], $card['description'], $card['category_label'], implode(' ', $card['tags'])]), $card['id']);
+            $this->assertDoesNotMatchRegularExpression($brand, json_encode(TemplateLibrary::find($card['id'])['blocks'], JSON_UNESCAPED_UNICODE), "{$card['id']} content");
+        }
+    }
+
     public function test_the_commercial_stylesheet_paints_only_with_tokens(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 3) . '/packages/saas-platform/modules/theme-runtime/resources/css/theme-runtime-blocks.css');

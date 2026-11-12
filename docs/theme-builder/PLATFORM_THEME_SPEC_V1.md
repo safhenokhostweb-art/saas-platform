@@ -106,6 +106,14 @@ to `page.show` (`/page/about`), so a tenant creates a page with that slug and
 the link resolves (owner decision 2026-11-12). A products page is the shop:
 `/products` links through `@link:shop`.
 
+The templates are white-label (owner decision 2026-11-12). The brand slot
+is "برند شما", body copy speaks as "ما", and the contact details are samples
+(`info@example.com`, `۰۲۱-۱۲۳۴۵۶۷۸`, "نشانی دفتر مرکزی شما").
+`CommercialWidgetResilienceTest` fails if the reference brand, its domain or
+its phone numbers reappear in a widget name, palette category, template card
+or template content. Region-specific copy (اهواز / خوزستان) remains as
+example text.
+
 The download cards ship without a file (owner decision 2026-11-12). Each
 renders a disabled "به‌زودی" button until the tenant picks the uploaded PDF,
 so no template depends on any one domain.
