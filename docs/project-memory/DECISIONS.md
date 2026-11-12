@@ -5409,10 +5409,10 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   sweep, XSS probes, data-source fallbacks, cart wiring, blueprint colour
   rules and a stylesheet token check. `TemplateLibraryTest` drives every
   spec template through insert, save and canvas render.
-- The header's blur and 60px threshold need the `renderNavHeader` style
-  wiring that merge `08512a47` dropped from `main` (released in `007f2471`).
-  Restoring it is a separate work unit. Until then the blueprint's values
-  are stored but not rendered.
+- The header's blur and 60px threshold depend on the `renderNavHeader`
+  style wiring that merge `08512a47` dropped (released in `007f2471`). The
+  next work unit restores it with a three-way merge, keeping the later
+  footer, zero-gap and columns work.
 - Owner decisions (2026-11-12):
   - `about` is the dynamic page with that slug; customer-site's
     `EntityLinkCatalog` maps it to `page.show` and adds no fixed route;

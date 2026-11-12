@@ -76,7 +76,7 @@ it:
 
 | Spec item | Provided by |
 |---|---|
-| Sticky header, blur past 60px | `nav_header`: `sticky`, `scroll_threshold: 60`, `backdrop_blur: 14`, semi-transparent `bg_color`/`scrolled_bg_color` (`blocks/site-header.js`, ADR-067/082). Blur and threshold are blocked on `main`; see §5. |
+| Sticky header, blur past 60px | `nav_header`: `sticky`, `scroll_threshold: 60`, `backdrop_blur: 14`, semi-transparent `bg_color`/`scrolled_bg_color` (`blocks/site-header.js`, ADR-067/082) |
 | Three-column mega dropdown | `nav_links[].mega_columns` (3 columns each) + promo strip (`mega_banner_*`) |
 | Mobile drawer | `burger_breakpoint: tablet`, `drawer_style: side` (ADR-082 step 4) |
 | Cart drawer, live counters, toast | `show_cart` + `blocks/cart.js` (ADR-067/068). The cart is server-side, so a `localStorage` copy would disagree with it, and none was added. |
@@ -112,14 +112,12 @@ so no template depends on any one domain.
 
 ## 5. Known gaps (owner decisions)
 
-- **Header style wiring is missing on `main`.** Merge `08512a47` (2026-11-09)
-  dropped `HeaderStyleVars::forHeader()` and `data-tb-hdr-set` from
-  `renderNavHeader` (they were released in `007f2471`). The 768px wrapper
-  breakpoint and a `renderGrid` hunk were lost in the same merge. Until that
-  is restored, the header's Style-tab values (`backdrop_blur`, `min_height`,
-  menu and drawer colours) and `scroll_threshold` do not reach the page, so
-  the blur and 60px threshold in `solar-header` do not apply yet. Sticky,
-  mega menus, drawer and cart work today.
+- Merge `08512a47` (2026-11-09) had dropped the header's style wiring
+  (`HeaderStyleVars::forHeader()`, `data-tb-hdr-set`, scroll threshold),
+  the 768px wrapper breakpoint and a `renderGrid` hunk released in
+  `007f2471`. They were restored in the work unit after this spec; the
+  `solar-header` blur (14px) and 60px threshold were verified in a browser
+  after the restore.
 - The mega promo strip renders only with `mega_banner_image`. The templates
   ship no media, so it stays hidden until the tenant adds an image.
 

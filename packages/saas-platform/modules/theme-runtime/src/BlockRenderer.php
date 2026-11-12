@@ -638,11 +638,14 @@ class BlockRenderer
                 }
             }
 
+            // ADR-082 (owner decision 2026-11-08): the Inspector's mobile
+            // override is the platform mobile breakpoint, below 768px — the
+            // width every widget's own phone layout switches at — not 480px.
             $mobileStyle = $responsive['mobile'] ?? [];
             if (!empty($mobileStyle)) {
                 $mobileCss = $this->buildCssDeclarations($mobileStyle);
                 if (!empty($mobileCss)) {
-                    $mediaCss .= "@media(max-width:479.98px){{$selector}{" . implode(';', $mobileCss) . "}}";
+                    $mediaCss .= "@media(max-width:767.98px){{$selector}{" . implode(';', $mobileCss) . "}}";
                 }
             }
 
@@ -889,6 +892,7 @@ class BlockRenderer
 
         return implode(' ', $tracks);
     }
+
 
     /**
      * Phase 2i: was `renderFlex_container` — Str::studly('flex_container')
@@ -4435,11 +4439,20 @@ class BlockRenderer
         $menuAlignment = in_array($props['menu_align'] ?? 'end', ['start', 'center'], true)
             ? ' tb-nav-header--menu-' . $props['menu_align']
             : '';
-        $menuHtml = '<nav class="tb-nav-header-links" aria-label="منوی اصلی" data-widget-slot="menu">'
-            . '<div id="' . $this->escapeAttr($menuPanelId) . '" class="tb-nav-header-menu-panel">'
-            . '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>'
-            . $menuHtml
-            . '</div></nav>';
+        // ADR-082 step 5: a menu with no link renders no navigation landmark,
+        // no burger and no drawer (every authored link may lack a label, e.g.
+        // a top bar that only carries the logo and the CTA). Child blocks
+        // count as content.
+        $hasMenu = trim($inner) !== '' || preg_match('/<a\b/i', $menuHtml) === 1;
+        $menuLabel = trim($this->stringify($props['menu_aria_label'] ?? ''));
+        $menuLabel = $this->escapeAttr($menuLabel !== '' ? mb_substr($menuLabel, 0, 80) : 'منوی اصلی');
+        $menuHtml = $hasMenu
+            ? '<nav class="tb-nav-header-links" aria-label="' . $menuLabel . '" data-widget-slot="menu">'
+                . '<div id="' . $this->escapeAttr($menuPanelId) . '" class="tb-nav-header-menu-panel">'
+                . '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>'
+                . $menuHtml
+                . '</div></nav>'
+            : '';
 
         $actions = '';
         $searchHtml = '';
@@ -4585,6 +4598,10 @@ class BlockRenderer
             if ($this->flag($props['sticky_hide_on_scroll'] ?? false)) {
                 $headerFlags[] = 'smart';
             }
+            // ADR-082 step 4: the scroll shrink can be turned off.
+            if (array_key_exists('sticky_shrink', $props) && !$this->flag($props['sticky_shrink'])) {
+                $headerFlags[] = 'noshrink';
+            }
         }
         if ($this->flag($props['transparent_over_hero'] ?? false)) {
             $headerFlags[] = 'overlay';
@@ -4598,61 +4615,59 @@ class BlockRenderer
         $headerAttrs = $headerFlags !== []
             ? ' data-tb-header="' . implode(' ', $headerFlags) . '" data-tb-overlay-text="' . $overlayText . '"'
             : '';
+        // ADR-082 step 4: behaviour read by blocks/site-header.js (integers
+        // and allowlisted words only; nothing when the value is the default).
+        if ($headerFlags !== []) {
+            $threshold = $props['scroll_threshold'] ?? null;
+            if (is_numeric($threshold) && (int) $threshold !== 8 && (int) $threshold >= 0 && (int) $threshold <= 600) {
+                $headerAttrs .= ' data-tb-scroll-threshold="' . (int) $threshold . '"';
+            }
+        }
+        if (in_array('sticky', $headerFlags, true)) {
+            $offset = $props['sticky_offset'] ?? null;
+            if (is_numeric($offset) && (int) $offset > 0 && (int) $offset <= 300) {
+                $headerAttrs .= ' data-tb-sticky-offset="' . (int) $offset . '"';
+            }
+            $stickyOn = ['desktop' => 'desktop', 'desktop_tablet' => 'tablet'][$props['sticky_devices'] ?? ''] ?? null;
+            if ($stickyOn !== null) {
+                $headerAttrs .= ' data-tb-sticky-on="' . $stickyOn . '"';
+            }
+            // ADR-082 step 5: the sticky banner's stacking order (sheet default 900).
+            $zIndex = $props['z_index'] ?? null;
+            if (is_numeric($zIndex) && (int) $zIndex !== 900 && (int) $zIndex >= 1 && (int) $zIndex <= 9999) {
+                $headerAttrs .= ' data-tb-z="' . (int) $zIndex . '"';
+            }
+        }
+        $burger = $props['burger_breakpoint'] ?? 'mobile';
+        if (in_array($burger, ['tablet', 'always', 'never'], true)) {
+            $headerAttrs .= ' data-tb-burger="' . $burger . '"';
+        }
 
         $scripts = $headerFlags !== [] || $hasMegaMenu ? $this->siteHeaderAssets() : '';
         $scriptRootId = json_encode($rootId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?: '""';
-        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();}else{document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){if(searchToggle.hasAttribute("data-tb-search-open")&&window.TbSiteForms)return;setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])");if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
+        $interactionScript = '<script>(function(){var host=document.getElementById(' . $scriptRootId . ');var root=host&&host.querySelector(".tb-nav-header-root");if(!root||root.dataset.tbNavInit)return;root.dataset.tbNavInit="1";var menu=root.querySelector(".tb-nav-header-links"),panel=root.querySelector(".tb-nav-header-menu-panel"),toggle=root.querySelector(".tb-nav-header-toggle"),close=root.querySelector(".tb-nav-header-menu-close"),overlay=root.querySelector(".tb-nav-header-overlay"),searchToggle=root.querySelector(".tb-nav-header-search-toggle"),searchForm=root.querySelector(".tb-nav-header-search-popover");var previousFocus=null,oldOverflow="";function setInert(on){var bar=menu&&menu.parentNode;if(!bar)return;var mark=function(el){if(el===menu||el===overlay||el===toggle)return;if(el.contains(toggle)){Array.prototype.forEach.call(el.children,mark);return;}if(on)el.setAttribute("inert","");else el.removeAttribute("inert");};Array.prototype.forEach.call(bar.children,mark);}function setMenu(open,restore){if(!menu||!toggle)return;root.setAttribute("data-menu-open",open?"true":"false");toggle.setAttribute("aria-expanded",open?"true":"false");if(overlay)overlay.hidden=!open;if(panel){if(open){panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",menu.getAttribute("aria-label")||"");}else{panel.removeAttribute("role");panel.removeAttribute("aria-modal");panel.removeAttribute("aria-label");}}if(open){previousFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";close&&close.focus();setInert(true);}else{setInert(false);document.body.style.overflow=oldOverflow;if(restore&&previousFocus&&typeof previousFocus.focus==="function")previousFocus.focus();}}function setSearch(open){if(!searchForm||!searchToggle)return;searchForm.hidden=!open;searchToggle.setAttribute("aria-expanded",open?"true":"false");if(open){var input=searchForm.querySelector("input[type=search]");input&&input.focus();}}toggle&&toggle.addEventListener("click",function(){setMenu(root.getAttribute("data-menu-open")!=="true",true);});close&&close.addEventListener("click",function(){setMenu(false,true);});overlay&&overlay.addEventListener("click",function(){setMenu(false,true);});searchToggle&&searchToggle.addEventListener("click",function(){if(searchToggle.hasAttribute("data-tb-search-open")&&window.TbSiteForms)return;setSearch(searchForm.hidden);});document.addEventListener("click",function(event){if(!root.contains(event.target)){if(root.getAttribute("data-menu-open")==="true")setMenu(false,false);if(searchForm&&!searchForm.hidden)setSearch(false);}});document.addEventListener("keydown",function(event){if(event.key==="Escape"){if(searchForm&&!searchForm.hidden){setSearch(false);searchToggle&&searchToggle.focus();}else if(root.getAttribute("data-menu-open")==="true"){setMenu(false,true);}return;}if(event.key!=="Tab"||root.getAttribute("data-menu-open")!=="true"||!panel)return;var items=Array.prototype.filter.call(panel.querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex=\"-1\"])"),function(el){return el.getClientRects().length>0;});if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});if(panel){var here=location.pathname.replace(/\/+$/,"")||"/";panel.querySelectorAll(":scope>a,.tb-nav-header-link,.nav-link").forEach(function(a){if(a.hasAttribute("aria-current"))return;try{var u=new URL(a.getAttribute("href")||"",location.href);if(u.origin===location.origin&&(u.pathname.replace(/\/+$/,"")||"/")===here)a.setAttribute("aria-current","page");}catch(e){}});}var bp=host.getAttribute("data-tb-burger");if(bp){var wide=window.matchMedia("(min-width: 1024px)"),mid=window.matchMedia("(min-width: 768px)");var mode=function(){var drawer=mid.matches&&(bp==="always"||(bp==="tablet"&&!wide.matches));root.classList.toggle("tb-nav-header-root--drawer",drawer);root.classList.toggle("tb-nav-header-root--inline",bp==="never"&&!mid.matches);if(!drawer&&mid.matches&&root.getAttribute("data-menu-open")==="true")setMenu(false,false);};mode();[wide,mid].forEach(function(m){if(m.addEventListener)m.addEventListener("change",mode);else m.addListener(mode);});}var mq=window.matchMedia("(min-width: 768px)");var reset=function(){if(mq.matches&&root.getAttribute("data-menu-open")==="true"&&!root.classList.contains("tb-nav-header-root--drawer"))setMenu(false,false);};if(mq.addEventListener)mq.addEventListener("change",reset);else mq.addListener(reset);})();</script>';
 
-        $styles = '<style>'
-            . '.tb-nav-header-root{position:relative;isolation:isolate;width:100%;direction:rtl;color:inherit;pointer-events:auto;}'
-            . '.tb-nav-header-root *{box-sizing:border-box;}'
-            . '.tb-nav-header-root .tb-nav-header-inner{display:flex;align-items:center;justify-content:space-between;direction:rtl;gap:clamp(.65rem,2vw,1.5rem);width:min(100%,80rem);min-width:0;min-height:4.25rem;margin-inline:auto;padding:.5rem 1rem;flex-wrap:nowrap;}'
-            // menu_align=center keeps its desktop grid (theme-runtime-blocks.css); the flex row above must not undo it.
-            . '@media(min-width:1024px){.tb-nav-header--menu-center .tb-nav-header-root .tb-nav-header-inner{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);}}'
-            . '.tb-nav-header-root .tb-nav-header-logo-slot{flex:0 1 auto;min-width:0;}'
-            . '.tb-nav-header-root .tb-nav-header-logo-slot--mobile{display:none;}'
-            . '.tb-nav-header-root .tb-nav-header-logo{display:inline-flex;align-items:center;gap:.55rem;max-width:100%;min-width:0;color:inherit;font-weight:800;text-decoration:none;}'
-            . '.tb-nav-header-root .tb-nav-header-logo-img{display:block;width:auto;max-width:min(14rem,35vw);height:var(--tb-logo-h,40px);object-fit:contain;}'
-            . '.tb-nav-header-root .tb-nav-header-logo-text{min-width:0;overflow-wrap:anywhere;}'
-            . '.tb-nav-header-root .tb-nav-header-links{display:flex;flex:1 1 auto;align-items:center;justify-content:center;min-width:0;}'
-            . '.tb-nav-header-root .tb-nav-header-menu-panel{display:flex;align-items:center;justify-content:center;gap:clamp(.75rem,1.7vw,1.5rem);min-width:0;}'
-            . '.tb-nav-header-root .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a,.tb-nav-header-root .tb-nav-header-links>a{color:inherit;text-decoration:none;white-space:nowrap;}'
-            . '.tb-nav-header--menu-start .tb-nav-header-root .tb-nav-header-links{justify-content:flex-start;}'
-            . '.tb-nav-header-root .tb-nav-header-actions{display:flex;flex:0 1 auto;align-items:center;justify-content:flex-end;gap:.55rem;min-width:0;}'
-            . '.tb-nav-header-root .tb-nav-header-search-wrap{position:relative;}'
-            . '.tb-nav-header-root .tb-nav-header-search{display:flex;align-items:center;gap:.35rem;}'
-            . '.tb-nav-header-root .tb-nav-header-search-popover{position:absolute;z-index:10003;inset-block-start:calc(100% + .55rem);inset-inline-end:0;width:min(22rem,calc(100vw - 2rem));padding:.65rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);border:1px solid var(--tb-border,#d1d5db);border-radius:.5rem;box-shadow:0 12px 32px rgb(15 23 42 / 18%);}'
-            . '.tb-nav-header-root .tb-nav-header-search[hidden]{display:none!important;}'
-            . '.tb-nav-header-root .tb-nav-header-search-input{width:min(12rem,32vw);min-width:0;min-height:2.5rem;padding:.5rem .75rem;border:1px solid var(--tb-border,#d1d5db);border-radius:.35rem;background:var(--tb-surface,#fff);color:inherit;font:inherit;}'
-            . '.tb-nav-header-root .tb-nav-header-search-popover .tb-nav-header-search-input{width:auto;flex:1;}'
-            . '.tb-nav-header-root .tb-nav-header-icon-link,.tb-nav-header-root .tb-nav-header-search-submit,.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:2.5rem;min-height:2.5rem;padding:.45rem;border:0;border-radius:.375rem;background:transparent;color:inherit;cursor:pointer;}'
-            . '.tb-nav-header-root .tb-nav-header-icon-link:hover,.tb-nav-header-root .tb-nav-header-search-submit:hover,.tb-nav-header-root .tb-nav-header-menu-close:hover{background:color-mix(in srgb,currentColor 9%,transparent);}'
-            . '.tb-nav-header-root .tb-nav-header-toggle,.tb-nav-header-root .tb-nav-header-menu-close{display:none;}'
-            . '.tb-nav-header-root .tb-nav-header-menu-close{align-self:flex-end;}'
-            . '.tb-nav-header-root .tb-nav-header-overlay{display:none;}'
-            . '.tb-nav-header-root .tb-nav-header-overlay[hidden]{display:none!important;}'
-            . '.tb-nav-header-root .tb-nav-header-phone{display:inline-flex;align-items:center;min-height:2.5rem;padding-inline:.35rem;color:inherit;font-weight:700;text-decoration:none;white-space:nowrap;transition:box-shadow .25s ease,filter .25s ease;}'
-            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon-svg{display:block;width:auto;height:1.2rem;max-width:100%;object-fit:contain;}'
-            . '.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--eitaa,.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--bale,.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--rubika,.tb-nav-header-root .tb-nav-header-social:not(.tb-social-icons--brand) .tb-social-icon--soroush{background:var(--tb-surface,#fff);color:inherit;border:1px solid var(--tb-border,#d1d5db);}'
-            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika{width:3.75rem;border-radius:.375rem;}'
-            . '.tb-nav-header-root .tb-nav-header-social .tb-social-icon--rubika .tb-social-icon-svg{height:1.15rem;}'
-            . '.tb-nav-header-root .tb-nav-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:2.5rem;padding:.55rem 1rem;border-radius:.375rem;text-decoration:none;white-space:nowrap;transition:box-shadow .25s ease,filter .25s ease;}'
-            . '.tb-nav-header-root .tb-nav-header-glow{animation:tb-glow-pulse 2.2s ease-in-out infinite;}'
-            . '@keyframes tb-glow-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tb-nav-header-glow) 0%,transparent);}50%{box-shadow:0 0 0 .45rem color-mix(in srgb,var(--tb-nav-header-glow) 24%,transparent);}}'
-            . '.tb-nav-header-root .tb-nav-header-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}'
-            . '@media(max-width:767.98px){.tb-nav-header-root .tb-nav-header-inner{min-height:3.75rem;gap:.5rem;padding-inline:.75rem;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--desktop{display:none;}.tb-nav-header-root--has-mobile-logo .tb-nav-header-logo-slot--mobile{display:block;}.tb-nav-header-root .tb-nav-header-links{display:none;}.tb-nav-header-root[data-menu-open="true"]{z-index:10001;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-links{display:flex;position:fixed;z-index:10002;inset-block:0;inset-inline:0 auto;width:min(22rem,88vw);max-width:100%;padding:1rem;background:var(--tb-surface,#fff);color:var(--tb-text,#172033);box-shadow:-12px 0 32px rgb(15 23 42 / 18%);overflow-y:auto;overscroll-behavior:contain;align-items:stretch;justify-content:flex-start;}.tb-nav-header-root .tb-nav-header-menu-panel{width:100%;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:.5rem;}.tb-nav-header-root .tb-nav-header-menu-close{display:inline-flex;}.tb-nav-header-root .tb-nav-header-menu-panel .tb-nav-header-link,.tb-nav-header-root .tb-nav-header-menu-panel>a{display:flex;align-items:center;min-height:2.75rem;padding:.6rem .5rem;white-space:normal;border-bottom:1px solid var(--tb-border,#e5e7eb);}.tb-nav-header-root .tb-nav-header-overlay:not([hidden]){display:block;position:fixed;z-index:10000;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgb(15 23 42 / 52%);}.tb-nav-header-root .tb-nav-header-toggle{display:inline-flex;}.tb-nav-header-root[data-menu-open="true"] .tb-nav-header-actions{position:relative;z-index:10001;}.tb-nav-header-root .tb-nav-header-actions{gap:.3rem;}.tb-nav-header-root .tb-nav-header-search-input{width:min(9rem,32vw);}.tb-nav-header-root .tb-nav-header-search-wrap{position:static;}.tb-nav-header-root .tb-nav-header-search-popover{inset-block-start:calc(100% + .25rem);inset-inline:.75rem;width:auto;}.tb-nav-header-root .tb-nav-header-phone{max-width:7rem;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;}.tb-nav-header-root .tb-nav-header-cta{padding-inline:.65rem;font-size:.82rem;}.tb-nav-header-root .tb-nav-header-social:not(.tb-nav-header-social--mobile){display:none;}}'
-            . '@media(prefers-reduced-motion:reduce){.tb-nav-header-root .tb-nav-header-glow{animation:none;}.tb-nav-header-root *{scroll-behavior:auto!important;}}'
-            . '</style>';
+        // ADR-082 step 2: the header layout lives in the shared CSS
+        // (theme-runtime-header.css, shipped by theme-runtime::css.blocks and
+        // css.header), driven by --tb-hdr-* properties; no per-header <style>.
 
         $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
         $headerClass = 'tb-nav-header' . $menuAlignment;
+        // ADR-082 step 3: the Style tab (menu, states, spacing, shadow, blur)
+        // as the header's own --tb-hdr-* values; nothing when nothing is set.
+        $headerStyle = Widget\HeaderStyleVars::forHeader($rootId, $props);
+        if ($headerStyle['classes'] !== []) {
+            $headerClass .= ' ' . implode(' ', $headerStyle['classes']);
+        }
+        $headerSetAttr = $headerStyle['set'] !== [] ? ' data-tb-hdr-set="' . implode(' ', $headerStyle['set']) . '"' : '';
 
-        return $styles
-            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
+        return $headerStyle['style']
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
             . '<div class="' . $rootClass . '">'
             . '<div class="tb-nav-header-inner">'
             . $orderedInner
-            . '<button type="button" class="tb-nav-header-overlay" aria-label="بستن منو" hidden></button>'
+            // The backdrop is pointer-only: the drawer's own close button is the keyboard path.
+            . ($hasMenu ? '<button type="button" class="tb-nav-header-overlay" aria-label="بستن منو" tabindex="-1" hidden></button>' : '')
             . '</div></div></div>'
             . $searchAssets
             . $scripts
