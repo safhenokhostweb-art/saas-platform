@@ -5423,3 +5423,97 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   - `dual_sale_product_grid` stays in `dynamic`;
   - restoring the merge loss is the next, separate work unit.
 - The team section and the course registration form were left out.
+
+## ADR-084
+
+**Title:** nav_header capability props for the «قالب صنعت برق» reference header; the theme pack as a canonical catalog theme
+
+**Status:** Accepted
+
+**Date:** 2026-11-13
+
+**Context:**
+
+- The owner supplied an AI Studio header blueprint
+  (`white-label-solar-industrial-header-blueprint`) for «قالب صنعت برق».
+  It shows features the canonical `nav_header` could not express: a
+  floating-card mega panel, top-level item icons with a pill hover,
+  boxed sub-item icons, sub-item badges, promo cards under the columns,
+  column-title dividers, a two-part brand name with a tagline, outline
+  and second header buttons, and a phone drawer carrying the logo, the
+  search and the buttons.
+- Owner mandate (2026-11-13): no custom or template-specific header,
+  footer or renderer. Every visual difference between themes comes from
+  theme tokens (`--tb-*`) and generic widget props.
+
+**Decision:**
+
+1. `nav_header` gains opt-in generic props (registry schema, rendered by
+   `renderNavHeader()` / `renderMegaMenuItem()`, styled in
+   `theme-runtime-header.css` through `--tb-hdr-*` values registered in
+   `Widget\HeaderStyleVars`):
+   - logo lockup: `logo_icon`, `logo_text_accent`, `logo_tagline` (+ colours, icon size);
+   - top-level `nav_links[].icon`, `menu_icon_size` / `menu_icon_color`;
+     `pointer: pill` with `menu_item_radius` and `menu_border_hover`
+     (stays highlighted while its mega panel is open);
+   - mega panel: `mega_layout` (`full` default / `card` with max width,
+     radius, offset, padding), `mega_bg`, `mega_border_color`, `mega_shadow`,
+     `mega_col_title_color`, `mega_col_title_divider`, `mega_link_color`,
+     `mega_link_bg_hover`, `mega_icon_style` (`bare` / `boxed` + box size,
+     radius, surface, border, icon colour);
+   - sub-item `badge` + `badge_variant` (token colours only);
+   - per mega item `mega_promo_cards` (eyebrow, title, link, icon); the
+     renderer shows at most two, desktop only;
+   - buttons: `cta_icon`, `cta_style` (`primary` / `outline`), a second
+     button `cta2_*` rendered first in the same `cta` slot (so
+     `header_order` is unchanged), `cta_radius`, `cta_font_size`;
+   - boxed action icons: `action_icon_bg`, `action_icon_bg_hover`,
+     `action_icon_border`, `action_icon_color`, `action_icon_radius`;
+   - drawer: `drawer_show_logo`, `drawer_show_search`, `drawer_show_ctas`
+     (on phones the bar's search and buttons then move into the drawer);
+   - `compact_below: 1280` tightens the bar from 1024 to 1279.98px (no
+     tagline or item icons, smaller items and buttons, actions on one
+     line). The only option is the 1280px scale step (WU-D
+     `BreakpointScaleTest`).
+2. Every new prop defaults to off or empty; `HeaderStyleVars` drops
+   default values and every new rule needs the markup, class or
+   `data-tb-hdr-set` gate its prop produces, so existing headers render
+   unchanged (`header-pixel-parity`).
+3. Shared fix found while testing: an open mega item inside the phone or
+   tablet drawer stacks its columns. The shared panel kept
+   `min-width:32rem`, which pushed the second column past the drawer's
+   edge for every header with a mega menu (`flat` mode keeps its row).
+4. Sixteen Lucide icons join the shared catalog from the pinned
+   `lucide-static@0.468.0`. That version has no `solar-panel`, so
+   `grid-3x3` (labelled «پنل خورشیدی») stands in.
+5. `TemplateLibrary::ROUTES` (and customer-site's `EntityLinkCatalog`)
+   gain `login` and `register`.
+6. `solar-header.json` is pure configuration of these props and the
+   `solar-dark` tokens: five mega menus, three badges, nine promo cards,
+   «ورود» / «ثبت‌نام», search, cart and account.
+7. «قالب صنعت برق» (`solar-industry`) is a canonical catalog theme:
+   `SolarIndustryThemeSeeder` assembles header, footer and five pages
+   from the library blueprints and the `solar-dark` preset, and
+   `ThemeCatalogRebuildCommand` lists it, so `theme-release:backfill` and
+   the commercial quality gate treat it like every standard theme.
+
+**Consequences:**
+
+- Any theme can use the same capabilities through props; there is no
+  solar-specific type, branch or stylesheet.
+- Gates: `Adr084NavHeaderCapabilitiesTest`, `SolarIndustryThemeSeederTest`,
+  `HeaderStyleVarsTest`, `BreakpointScaleTest`, the full-gate test
+  (30/30 catalog themes), and `tests/browser/adr084-solar-header.spec.ts`
+  (1024 / 1280 / 1440 / 1920 bar, every mega card at 1280, keyboard,
+  768 drawer, 360 RTL drawer).
+- Owner decisions (2026-11-13): cart and account stay beside the two
+  buttons; the platform search dialog stays (no inline popover with a text
+  button); the burger stays below 1024px; Lucide `sun` (or an uploaded
+  logo) replaces the blueprint's sun-gear, with no hover spin; promo cards
+  are desktop only.
+- Measured trade-off: with cart and account added, the blueprint's 13px
+  item padding and 14px text do not fit 1280px. The template uses 8px and
+  13.5px from 1280px up, and the compact bar below that.
+- The theme's products, courses and contact pages render at
+  `/page/{slug}`, while the header links (ADR-083) open the module routes
+  `/shop`, `/courses` and `/contact`.

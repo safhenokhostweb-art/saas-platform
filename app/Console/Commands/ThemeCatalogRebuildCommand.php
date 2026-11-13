@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 use App\Models\Theme;
 use Database\Seeders\ArianaMultiPlusThemeSeeder;
 use Database\Seeders\SalesSupportThemeSeeder;
+use Database\Seeders\SolarIndustryThemeSeeder;
 use Illuminate\Console\Command;
 
 /**
@@ -83,6 +84,11 @@ class ThemeCatalogRebuildCommand extends Command
             'label' => 'db:seed ' . ArianaMultiPlusThemeSeeder::class,
             'expected_slugs' => ['ariana-multiplus'],
         ],
+        // ADR-084: «قالب صنعت برق», assembled from the template library.
+        [
+            'label' => 'db:seed ' . SolarIndustryThemeSeeder::class,
+            'expected_slugs' => [SolarIndustryThemeSeeder::SLUG],
+        ],
     ];
 
     /**
@@ -108,6 +114,7 @@ class ThemeCatalogRebuildCommand extends Command
         $this->call('malltina:seed');
         $this->call('db:seed', ['--class' => SalesSupportThemeSeeder::class, '--force' => true]);
         $this->call('db:seed', ['--class' => ArianaMultiPlusThemeSeeder::class, '--force' => true]);
+        $this->call('db:seed', ['--class' => SolarIndustryThemeSeeder::class, '--force' => true]);
 
         $expectedSlugs = collect(self::CANONICAL_SOURCES)->flatMap(fn ($s) => $s['expected_slugs'])->unique()->values();
 

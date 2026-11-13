@@ -183,9 +183,17 @@ class Adr082InspectorControlsTest extends TestCase
             'min_height', 'padding', 'items_gap', 'content_width', 'content_max_width', 'border_bottom_width', 'border_bottom_color', 'header_shadow', 'backdrop_blur',
             'menu_typography', 'menu_gap', 'menu_item_padding_x', 'menu_item_padding_y', 'menu_color', 'menu_color_hover', 'menu_color_active', 'menu_bg', 'menu_bg_hover', 'menu_bg_active',
             'pointer', 'pointer_animation', 'pointer_color', 'pointer_thickness',
+            // ADR-084: the pill pointer and item icons, the mega panel, the logo lockup, boxed action icons
+            'menu_item_radius', 'menu_border_hover', 'menu_icon_size', 'menu_icon_color',
+            'mega_layout', 'mega_max_width', 'mega_radius', 'mega_offset', 'mega_padding', 'mega_bg', 'mega_border_color', 'mega_shadow',
+            'mega_col_title_color', 'mega_col_title_divider', 'mega_link_color', 'mega_link_bg_hover',
+            'mega_icon_style', 'mega_icon_box_size', 'mega_icon_box_radius', 'mega_icon_box_bg', 'mega_icon_box_border', 'mega_icon_color',
+            'logo_icon_size', 'logo_icon_color', 'logo_accent_color', 'logo_tagline_color',
+            'action_icon_bg', 'action_icon_bg_hover', 'action_icon_border', 'action_icon_color', 'action_icon_radius',
             // step 4: the phone drawer and burger
             'drawer_bg', 'drawer_text', 'drawer_divider_color', 'drawer_width', 'drawer_overlay_color', 'burger_color', 'burger_size',
             'cta_glow_enabled', 'cta_glow_color',
+            'cta_radius', 'cta_font_size', // ADR-084
         ], $byPanel['style']);
         $this->assertSame(['menu_color', 'menu_color_hover', 'menu_color_active'], array_keys(array_filter($schema, fn ($f) => ($f['state_group'] ?? null) === 'menu_text')));
         $this->assertSame([
@@ -195,6 +203,8 @@ class Adr082InspectorControlsTest extends TestCase
             'z_index', // step 5
             'transparent_over_hero', 'transparent_text_color',
             'burger_breakpoint', 'drawer_style', 'drawer_side',
+            // ADR-084: drawer extras and the compact desktop bar
+            'drawer_show_logo', 'drawer_show_search', 'drawer_show_ctas', 'compact_below',
             // step 5: accessibility
             'menu_aria_label', 'focus_color',
         ], $byPanel['advanced']);

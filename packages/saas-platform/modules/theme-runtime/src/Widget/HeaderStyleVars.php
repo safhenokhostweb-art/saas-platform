@@ -134,6 +134,49 @@ final class HeaderStyleVars
         'drawer-shadow-end' => ['shadow', '12px 0 32px rgb(15 23 42 / 18%)'],
         // ADR-082 step 5: the keyboard focus ring (falls back to the element's own colour).
         'focus' => ['color', 'currentColor'],
+        // ADR-084: logo lockup (its elements exist only when their props are set).
+        'logo-title-size' => ['length', '.88em'],
+        'logo-icon-size' => ['length', '2.125rem'],
+        'logo-icon-color' => ['color', 'var(--tb-primary,currentColor)'],
+        'logo-accent' => ['color', 'var(--tb-primary,currentColor)'],
+        'tagline-size' => ['length', '.66rem'],
+        'tagline-color' => ['color', 'var(--tb-text-muted,currentColor)'],
+        // ADR-084: top-level item icons and the pill pointer.
+        'menu-icon-size' => ['length', '.9375rem'],
+        'menu-icon-color' => ['color', 'currentColor'],
+        'menu-radius' => ['length', '.5rem'],
+        'menu-border-hover' => ['color', 'color-mix(in srgb,currentColor 20%,transparent)'],
+        'pill-pad-x' => ['length', '.8rem'],
+        // ADR-084: the compact desktop bar.
+        'compact-menu-size' => ['length', '.84rem'],
+        'compact-pill-pad-x' => ['length', '.45rem'],
+        'compact-cta-pad-inline' => ['length', '.6rem'],
+        // ADR-084: the mega panel. Card values apply only with .tb-nav-header--mega-card.
+        'mega-max-w' => ['length', '57.5rem'],
+        'mega-radius' => ['length', '1rem'],
+        'mega-offset' => ['length', '.25rem'],
+        'mega-pad' => ['length', '1.75rem'],
+        'mega-bg' => ['color', null],
+        'mega-border' => ['color', null],
+        'mega-shadow' => ['shadow', null],
+        'mega-title-color' => ['color', null],
+        'mega-divider' => ['color', 'var(--tb-border,#e5e7eb)'],
+        'mega-link-color' => ['color', null],
+        'mega-link-bg-hover' => ['color', null],
+        'mega-icon-color' => ['color', 'var(--tb-primary-text,var(--tb-primary,#4f46e5))'],
+        'mega-icon-box' => ['length', '2.625rem'],
+        'mega-icon-radius' => ['length', '.625rem'],
+        'mega-icon-bg' => ['color', 'color-mix(in srgb,currentColor 6%,transparent)'],
+        'mega-icon-border' => ['color', 'color-mix(in srgb,currentColor 10%,transparent)'],
+        'mega-icon-size' => ['length', '1.125rem'],
+        'promo-bg' => ['color', 'color-mix(in srgb,var(--tb-primary,#4f46e5) 7%,transparent)'],
+        'promo-border' => ['color', 'color-mix(in srgb,var(--tb-primary,#4f46e5) 22%,transparent)'],
+        'promo-radius' => ['length', '.75rem'],
+        // ADR-084: boxed action icons (search, cart, account; the burger keeps burger-color).
+        'icon-border' => ['color', null],
+        'icon-color' => ['color', null],
+        // ADR-084: the buttons' text size from 768px up (phones keep cta-size-m).
+        'cta-size' => ['length', null],
     ];
 
     /** Variables read by theme-runtime-blocks.css (the sticky shrink) rather than the header sheet. */
@@ -151,14 +194,23 @@ final class HeaderStyleVars
         'scrolled-bg', 'scrolled-text', 'scrolled-shadow', 'burger-color', 'burger-size',
         // step 5: the CTA keeps the shared button ring unless the header sets its own colour.
         'focus',
+        // ADR-084
+        'mega-bg', 'mega-border', 'mega-shadow', 'mega-title-color', 'mega-link-color', 'mega-link-bg-hover',
+        'icon-border', 'icon-color', 'cta-size',
     ];
+
+    /** ADR-084: mega panel layouts and sub-item icon styles; full and bare are the defaults and have no class. */
+    public const MEGA_LAYOUTS = ['full', 'card'];
+    public const MEGA_ICON_STYLES = ['bare', 'boxed'];
+    /** ADR-084: the compact desktop bar's upper width, on the breakpoint scale ('off' has no class). */
+    public const COMPACT_WIDTHS = ['1280'];
 
     /** ADR-082 step 4: phone drawer style and side; side + start is the default and has no class. */
     public const DRAWER_STYLES = ['side', 'full', 'dropdown'];
     public const DRAWER_SIDES = ['start', 'end'];
 
     /** Pointer styles and animations; the defaults (underline, grow) have no class. */
-    public const POINTERS = ['underline', 'overline', 'double', 'framed', 'background', 'text', 'none'];
+    public const POINTERS = ['underline', 'overline', 'double', 'framed', 'background', 'pill', 'text', 'none'];
     public const POINTER_ANIMATIONS = ['grow', 'fade', 'slide', 'none'];
 
     /**
@@ -198,6 +250,37 @@ final class HeaderStyleVars
         'burger_size' => ['burger-size', null],
         // step 5
         'focus_color' => ['focus', null],
+        // ADR-084
+        'logo_icon_size' => ['logo-icon-size', null],
+        'logo_icon_color' => ['logo-icon-color', null],
+        'logo_accent_color' => ['logo-accent', null],
+        'logo_tagline_color' => ['tagline-color', null],
+        'menu_icon_size' => ['menu-icon-size', null],
+        'menu_icon_color' => ['menu-icon-color', null],
+        'menu_item_radius' => ['menu-radius', null],
+        'menu_border_hover' => ['menu-border-hover', null],
+        'mega_max_width' => ['mega-max-w', null],
+        'mega_radius' => ['mega-radius', null],
+        'mega_offset' => ['mega-offset', null],
+        'mega_padding' => ['mega-pad', null],
+        'mega_bg' => ['mega-bg', null],
+        'mega_border_color' => ['mega-border', null],
+        'mega_shadow' => ['mega-shadow', null],
+        'mega_col_title_color' => ['mega-title-color', null],
+        'mega_link_color' => ['mega-link-color', null],
+        'mega_link_bg_hover' => ['mega-link-bg-hover', null],
+        'mega_icon_box_size' => ['mega-icon-box', null],
+        'mega_icon_box_radius' => ['mega-icon-radius', null],
+        'mega_icon_box_bg' => ['mega-icon-bg', null],
+        'mega_icon_box_border' => ['mega-icon-border', null],
+        'mega_icon_color' => ['mega-icon-color', null],
+        'action_icon_bg' => ['icon-bg', null],
+        'action_icon_bg_hover' => ['icon-bg-hover', null],
+        'action_icon_border' => ['icon-border', null],
+        'action_icon_color' => ['icon-color', null],
+        'action_icon_radius' => ['icon-radius', null],
+        'cta_radius' => ['cta-radius', null],
+        'cta_font_size' => ['cta-size', null],
     ];
 
     private const PADDING_SIDES = ['block-start' => 'bs', 'block-end' => 'be', 'inline-start' => 'is', 'inline-end' => 'ie'];
@@ -296,6 +379,16 @@ final class HeaderStyleVars
             }
         }
 
+        // ADR-084: the pill pointer pads its items itself; an authored item
+        // padding still wins, so it is copied onto the pill's own value.
+        if (($props['pointer'] ?? '') === 'pill') {
+            foreach ($devices as $device => $values) {
+                if (array_key_exists('menu-pad-x', $values)) {
+                    $devices[$device]['pill-pad-x'] = $values['menu-pad-x'];
+                }
+            }
+        }
+
         // Content width is desktop only: full width, or a boxed maximum.
         if (($props['content_width'] ?? 'boxed') === 'full') {
             $devices['desktop']['max-w'] = '100%';
@@ -338,6 +431,22 @@ final class HeaderStyleVars
             $classes[] = 'tb-nav-header--drawer-' . $drawer;
         } elseif (($props['drawer_side'] ?? 'start') === 'end') {
             $classes[] = 'tb-nav-header--drawer-end';
+        }
+
+        // ADR-084: mega panel layout, sub-item icon style, column divider, compact bar.
+        if (($props['mega_layout'] ?? 'full') === 'card') {
+            $classes[] = 'tb-nav-header--mega-card';
+        }
+        if (($props['mega_icon_style'] ?? 'bare') === 'boxed') {
+            $classes[] = 'tb-nav-header--mega-icons-boxed';
+        }
+        $divider = $props['mega_col_title_divider'] ?? false;
+        if ($divider === true || $divider === 1 || $divider === '1' || $divider === 'true') {
+            $classes[] = 'tb-nav-header--mega-divider';
+        }
+        $compact = (string) ($props['compact_below'] ?? 'off');
+        if (in_array($compact, self::COMPACT_WIDTHS, true)) {
+            $classes[] = 'tb-nav-header--compact-' . $compact;
         }
 
         if ($css !== '' && preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $rootId) !== 1) {

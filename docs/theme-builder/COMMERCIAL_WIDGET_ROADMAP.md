@@ -1398,3 +1398,18 @@ proposal were approved on 2026-11-08 with three decisions:
   `z-index`.
 - axe-core reports 0 violations on the header in every state. Default
   headers stay pixel-identical (ADR-082, step 5).
+
+### 18.6 Header capability props for «قالب صنعت برق» (2026-11-13, ADR-084, branch `feat/nav-header-solar-capabilities`)
+
+- Source: the owner's AI Studio header blueprint. Owner mandate: no custom
+  header; every difference comes from tokens and generic `nav_header` props.
+- New opt-in props: logo lockup (icon, coloured part, tagline), item icons,
+  pill pointer, mega card layout, column dividers, boxed sub-item icons,
+  badges, up to two promo cards per mega item, outline and second button,
+  boxed action icons, drawer logo / search / buttons, and a compact bar from
+  1024 to 1279.98px.
+- Default headers render unchanged (pixel parity). Shared fix: the drawer
+  accordion stacks mega columns instead of overflowing.
+- The theme pack is the catalog theme «قالب صنعت برق» (`solar-industry`),
+  assembled from the library blueprints and the `solar-dark` preset. It
+  passes the full commercial gate with the other 29 themes.

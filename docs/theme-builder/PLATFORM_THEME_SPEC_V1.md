@@ -77,7 +77,7 @@ it:
 | Spec item | Provided by |
 |---|---|
 | Sticky header, blur past 60px | `nav_header`: `sticky`, `scroll_threshold: 60`, `backdrop_blur: 14`, semi-transparent `bg_color`/`scrolled_bg_color` (`blocks/site-header.js`, ADR-067/082) |
-| Three-column mega dropdown | `nav_links[].mega_columns` (3 columns each) + promo strip (`mega_banner_*`) |
+| Three-column mega dropdown | `nav_links[].mega_columns` (3 columns each), `mega_layout: card`, boxed icons, badges and `mega_promo_cards` (ADR-084) |
 | Mobile drawer | `burger_breakpoint: tablet`, `drawer_style: side` (ADR-082 step 4) |
 | Cart drawer, live counters, toast | `show_cart` + `blocks/cart.js` (ADR-067/068). The cart is server-side, so a `localStorage` copy would disagree with it, and none was added. |
 | Footer shell | `nav_footer`, four columns → two → one |
@@ -92,7 +92,7 @@ instead.
 
 | Template | Route | Sections (reference order) |
 |---|---|---|
-| `solar-header` | — | logo, 4 mega items (3 columns each) + about + contact, search, cart, account (as the reference: no header CTA) |
+| `solar-header` | — | icon + two-part name + tagline, 5 mega items (3 columns, boxed icons, badges, 1–2 promo cards each) + about + contact, search, cart, account, «ورود» / «ثبت‌نام», drawer with logo, search and buttons (ADR-084; the AI Studio header blueprint, 2026-11-13) |
 | `solar-footer` | — | brand + tagline, quick links, services, contact |
 | `solar-page-home` | `home` | hero + stats, 6 services, about, recent projects, articles, contact |
 | `solar-page-about` | `about` | hero + stats, company rows, why us (4), 4-step approach, mission/vision/values, capabilities, CTA |
@@ -126,8 +126,12 @@ so no template depends on any one domain.
   `007f2471`. They were restored in the work unit after this spec; the
   `solar-header` blur (14px) and 60px threshold were verified in a browser
   after the restore.
-- The mega promo strip renders only with `mega_banner_image`. The templates
-  ship no media, so it stays hidden until the tenant adds an image.
+- The image promo strip (`mega_banner_*`) renders only with an image; the
+  header now uses text promo cards (`mega_promo_cards`, ADR-084) instead.
+- The whole pack is the catalog theme «قالب صنعت برق» (`solar-industry`,
+  `SolarIndustryThemeSeeder`, listed in `theme-catalog:rebuild`; ADR-084).
+  Its products, courses and contact pages render at `/page/{slug}`; the
+  header links open the module routes.
 
 - The reference's team section (staff names and personal mobiles) and the
   course registration form are not in the templates.

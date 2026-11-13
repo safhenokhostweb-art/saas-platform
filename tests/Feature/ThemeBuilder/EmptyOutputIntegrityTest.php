@@ -241,8 +241,9 @@ class EmptyOutputIntegrityTest extends TestCase
         }
     }
 
-    // ── 11. 29/29 real catalog passes the full gate ────────────────────────
-    // 29 since ariana-multiplus joined the canonical catalog (9010288c).
+    // ── 11. 30/30 real catalog passes the full gate ────────────────────────
+    // 29 since ariana-multiplus joined the canonical catalog (9010288c);
+    // 30 since solar-industry («قالب صنعت برق», ADR-084).
 
     public function test_all_canonical_themes_pass_the_full_quality_gate(): void
     {
@@ -251,7 +252,7 @@ class EmptyOutputIntegrityTest extends TestCase
         $this->artisan('theme:quality-gate')->assertExitCode(0);
 
         $themes = Theme::whereNull('site_id')->get();
-        $this->assertSame(29, $themes->count());
+        $this->assertSame(30, $themes->count());
         foreach ($themes as $theme) {
             $report = ThemeQualityReport::where('theme_id', $theme->id)->latest('evaluated_at')->first();
             $this->assertNotNull($report, "{$theme->slug} has no quality report");

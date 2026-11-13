@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use SaaSPlatform\ThemeRuntime\BlockRegistry;
+use SaaSPlatform\ThemeRuntime\Inspector\InspectorFieldRegistry;
 use SaaSPlatform\ThemeRuntime\TemplateLibrary;
 use Tests\TestCase;
 
@@ -117,6 +118,13 @@ class TemplateLibraryTest extends TestCase
     {
         foreach ($props as $key => $value) {
             $def = $schema[$key] ?? null;
+            // ADR-082: a responsive field also declares its tablet and phone values (key_tablet, key_mobile).
+            foreach (InspectorFieldRegistry::DEVICE_SUFFIXES as $suffix) {
+                if ($def === null && $suffix !== '' && str_ends_with((string) $key, $suffix)
+                    && (($schema[substr((string) $key, 0, -strlen($suffix))]['responsive'] ?? false) === true)) {
+                    $def = $schema[substr((string) $key, 0, -strlen($suffix))];
+                }
+            }
             if (!is_array($def)) {
                 $errors[] = "{$where}.{$key}: not in the schema";
                 continue;
@@ -127,6 +135,10 @@ class TemplateLibraryTest extends TestCase
                 if (!in_array((string) $value, array_map('strval', $options), true)) {
                     $errors[] = "{$where}.{$key}: '{$value}' is not an option";
                 }
+            }
+            // A size with a unit choice is stored as {size, unit}; customer-site's schema validator rejects a bare number.
+            if (in_array($type, ['range', 'number'], true) && isset($def['units']) && $value !== '' && !(is_array($value) && isset($value['size'], $value['unit']))) {
+                $errors[] = "{$where}.{$key}: a field with units stores {size, unit}";
             }
             if ($type === 'image' && $value !== '' && !preg_match('~^/theme-runtime/library/[a-z0-9-]+\.webp\?v=[0-9a-f]{12}$~', (string) $value)) {
                 $errors[] = "{$where}.{$key}: image is not a library media URL";

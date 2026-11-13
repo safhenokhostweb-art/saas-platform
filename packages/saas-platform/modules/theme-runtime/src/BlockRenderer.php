@@ -4097,6 +4097,7 @@ class BlockRenderer
             'banner_cta' => (string) ($link['mega_banner_cta'] ?? ''),
             'show_desktop' => array_key_exists('mega_show_desktop', $link) ? $this->flag($link['mega_show_desktop']) : true,
             'mobile_behavior' => in_array($link['mega_mobile_behavior'] ?? '', ['accordion', 'flat', 'hidden'], true) ? $link['mega_mobile_behavior'] : 'accordion',
+            'promo_cards' => $this->normalizeMegaPromoCards($link['mega_promo_cards'] ?? null),
         ];
 
         // Commercial Productization fase-2 (real column/group structure):
@@ -4128,6 +4129,9 @@ class BlockRenderer
                         'label' => $itLabel,
                         'icon' => (string) ($it['icon'] ?? ''),
                         'image' => $this->mediaSrc($it['image'] ?? ''),
+                        // ADR-084: an optional short badge and its token colour.
+                        'badge' => is_scalar($it['badge'] ?? null) ? mb_substr(trim((string) $it['badge']), 0, 24) : '',
+                        'badge_variant' => in_array($it['badge_variant'] ?? '', self::MEGA_BADGE_VARIANTS, true) ? $it['badge_variant'] : 'primary',
                     ];
                 }
                 if (empty($links) && trim((string) ($col['title'] ?? '')) === '') {
@@ -4180,7 +4184,46 @@ class BlockRenderer
         return null;
     }
 
-    private function renderMegaMenuItem(string $parentId, string $url, string $label, array $mega): string
+    /** ADR-084: the badge colours a mega sub-item may use (theme tokens only). */
+    private const MEGA_BADGE_VARIANTS = ['primary', 'accent', 'success', 'warning', 'neutral'];
+
+    /** ADR-084: a mega panel shows at most two promo cards. */
+    private const MEGA_PROMO_LIMIT = 2;
+
+    /**
+     * ADR-084: the promo cards under a mega panel's columns — the first
+     * two with a title, each {eyebrow, title, url, icon}.
+     *
+     * @return list<array{eyebrow: string, title: string, url: mixed, icon: string}>
+     */
+    private function normalizeMegaPromoCards(mixed $raw): array
+    {
+        if (is_string($raw) && trim($raw) !== '') {
+            $raw = json_decode($raw, true);
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+        $cards = [];
+        foreach ($raw as $card) {
+            if (!is_array($card) || !is_scalar($card['title'] ?? null) || trim((string) $card['title']) === '') {
+                continue;
+            }
+            $cards[] = [
+                'eyebrow' => is_scalar($card['eyebrow'] ?? null) ? mb_substr(trim((string) $card['eyebrow']), 0, 60) : '',
+                'title' => mb_substr(trim((string) $card['title']), 0, 90),
+                'url' => $this->linkValue($card['url'] ?? '#'),
+                'icon' => array_key_exists('icon', $card) ? (is_scalar($card['icon']) ? (string) $card['icon'] : '') : 'arrow-left',
+            ];
+            if (count($cards) === self::MEGA_PROMO_LIMIT) {
+                break;
+            }
+        }
+
+        return $cards;
+    }
+
+    private function renderMegaMenuItem(string $parentId, string $url, string $label, array $mega, string $iconHtml = ''): string
     {
         static $counter = 0;
         $itemId = "tb-mega-{$parentId}-" . (++$counter);
@@ -4204,7 +4247,14 @@ class BlockRenderer
                 } elseif ($lIcon !== '') {
                     $mediaHtml = "<span class=\"tb-mega-menu-link-icon\">{$lIcon}</span>";
                 }
-                $linksHtml .= "<a href=\"{$lUrl}\" class=\"tb-mega-menu-link\">{$mediaHtml}<span>{$lLabel}</span></a>";
+                $lBadge = is_array($l) ? trim((string) ($l['badge'] ?? '')) : '';
+                if ($lBadge !== '') {
+                    $variant = in_array($l['badge_variant'] ?? '', self::MEGA_BADGE_VARIANTS, true) ? $l['badge_variant'] : 'primary';
+                    $textHtml = "<span class=\"tb-mega-menu-link-text\"><span>{$lLabel}</span><span class=\"tb-mega-badge tb-mega-badge--{$variant}\">" . $this->escape($lBadge) . '</span></span>';
+                } else {
+                    $textHtml = "<span>{$lLabel}</span>";
+                }
+                $linksHtml .= "<a href=\"{$lUrl}\" class=\"tb-mega-menu-link\">{$mediaHtml}{$textHtml}</a>";
             }
             if ($colTitle === '' && $linksHtml === '') {
                 continue;
@@ -4231,6 +4281,26 @@ class BlockRenderer
                 . "</a>";
         }
 
+        // ADR-084: up to two promo cards under the columns (desktop only).
+        $promoHtml = '';
+        $promos = is_array($mega['promo_cards'] ?? null) ? array_slice($mega['promo_cards'], 0, self::MEGA_PROMO_LIMIT) : [];
+        foreach ($promos as $card) {
+            if (!is_array($card) || trim((string) ($card['title'] ?? '')) === '') {
+                continue;
+            }
+            $cardUrl = $this->linkHref($card['url'] ?? '', '#');
+            $cardIcon = trim((string) ($card['icon'] ?? ''));
+            $promoHtml .= "<a href=\"{$cardUrl}\" class=\"tb-mega-menu-promo\">"
+                . (trim((string) ($card['eyebrow'] ?? '')) !== '' ? '<span class="tb-mega-menu-promo-eyebrow">' . $this->escape($card['eyebrow']) . '</span>' : '')
+                . '<span class="tb-mega-menu-promo-title">' . ($cardIcon !== '' ? '<span class="tb-mega-menu-promo-icon" aria-hidden="true">' . $this->iconHtml($cardIcon) . '</span>' : '') . '<span>' . $this->escape($card['title']) . '</span></span>'
+                . '</a>';
+        }
+        $panelBody = "<div class=\"tb-mega-menu-cols\">{$columnsHtml}</div>";
+        if ($promoHtml !== '') {
+            $promoClass = 'tb-mega-menu-promos' . (substr_count($promoHtml, 'class="tb-mega-menu-promo"') === 1 ? ' tb-mega-menu-promos--single' : '');
+            $panelBody = "<div class=\"tb-mega-menu-main\">{$panelBody}<div class=\"{$promoClass}\">{$promoHtml}</div></div>";
+        }
+
         $showDesktop = ($mega['show_desktop'] ?? true) !== false;
         $mobileBehavior = $mega['mobile_behavior'] ?? 'accordion';
         $mobileBehavior = in_array($mobileBehavior, ['accordion', 'flat', 'hidden'], true) ? $mobileBehavior : 'accordion';
@@ -4241,9 +4311,9 @@ class BlockRenderer
         // blocks/site-header.js, so a cloned copy (the host's mobile menu)
         // works too — no per-item inline script.
         return "<div class=\"{$itemClasses}\" id=\"{$itemId}\">
-            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\" aria-controls=\"{$itemId}-panel\">{$label}<span class=\"tb-mega-menu-caret\" aria-hidden=\"true\">" . $this->iconHtml('chevron-down') . "</span></a>
+            <a href=\"{$url}\" class=\"tb-nav-header-link tb-mega-menu-trigger\" aria-haspopup=\"true\" aria-expanded=\"false\" aria-controls=\"{$itemId}-panel\">{$iconHtml}{$label}<span class=\"tb-mega-menu-caret\" aria-hidden=\"true\">" . $this->iconHtml('chevron-down') . "</span></a>
             <div class=\"tb-mega-menu-panel\" id=\"{$itemId}-panel\">
-                <div class=\"tb-mega-menu-cols\">{$columnsHtml}</div>
+                {$panelBody}
                 {$bannerHtml}
             </div>
         </div>";
@@ -4379,9 +4449,25 @@ class BlockRenderer
         if ($logoImageHtml === '' && $logoText === '' && is_string($this->context['site_logo_html'] ?? null)) {
             $siteLogoHtml = $this->context['site_logo_html'];
         }
-        $desktopLogoContent = $logoImageHtml
-            . ($logoText !== '' && $desktopLogoImage !== '' ? '<span class="tb-nav-header-logo-text">' . $logoText . '</span>' : '')
-            . ($logoImageHtml === '' && $siteLogoHtml === '' ? $logoText : '');
+        // ADR-084: the text lockup (icon, coloured second part, tagline). It
+        // applies only to a text name; without any of the three the markup is
+        // exactly as before.
+        $logoIconName = trim($this->stringify($props['logo_icon'] ?? ''));
+        $logoAccent = $this->escape(mb_substr(trim($this->stringify($props['logo_text_accent'] ?? '')), 0, 60));
+        $logoTagline = $this->escape(mb_substr(trim($this->stringify($props['logo_tagline'] ?? '')), 0, 90));
+        $logoLockup = $logoText !== '' && ($logoIconName !== '' || $logoAccent !== '' || $logoTagline !== '');
+        if ($logoLockup) {
+            $desktopLogoContent = $logoImageHtml
+                . ($desktopLogoImage === '' && $logoIconName !== '' ? '<span class="tb-nav-header-logo-icon" aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '')
+                . '<span class="tb-nav-header-logo-text tb-nav-header-logo-lockup">'
+                . '<span class="tb-nav-header-logo-title">' . $logoText . ($logoAccent !== '' ? ' <span class="tb-nav-header-logo-accent">' . $logoAccent . '</span>' : '') . '</span>'
+                . ($logoTagline !== '' ? '<span class="tb-nav-header-logo-tagline">' . $logoTagline . '</span>' : '')
+                . '</span>';
+        } else {
+            $desktopLogoContent = $logoImageHtml
+                . ($logoText !== '' && $desktopLogoImage !== '' ? '<span class="tb-nav-header-logo-text">' . $logoText . '</span>' : '')
+                . ($logoImageHtml === '' && $siteLogoHtml === '' ? $logoText : '');
+        }
         $desktopLogo = '';
         if ($siteLogoHtml !== '') {
             $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop">' . $siteLogoHtml . '</div>';
@@ -4425,12 +4511,15 @@ class BlockRenderer
                     continue;
                 }
                 $url = $this->linkHref($link['url'] ?? '#', '#');
+                // ADR-084: an optional icon before the item's label.
+                $linkIcon = trim($this->stringify($link['icon'] ?? ''));
+                $linkIconHtml = $linkIcon !== '' ? '<span class="tb-nav-header-link-icon" aria-hidden="true">' . $this->iconHtml($linkIcon) . '</span>' : '';
                 $mega = $this->normalizeMegaMenuData($link);
                 if ($mega !== null) {
-                    $menuHtml .= $this->renderMegaMenuItem($safeId, $url, $label, $mega);
+                    $menuHtml .= $this->renderMegaMenuItem($safeId, $url, $label, $mega, $linkIconHtml);
                     $hasMegaMenu = true;
                 } else {
-                    $menuHtml .= '<a href="' . $url . '" class="tb-nav-header-link"' . $this->deadLinkMark($url) . '>' . $label . '</a>';
+                    $menuHtml .= '<a href="' . $url . '" class="tb-nav-header-link"' . $this->deadLinkMark($url) . '>' . $linkIconHtml . $label . '</a>';
                 }
             }
         }
@@ -4446,13 +4535,10 @@ class BlockRenderer
         $hasMenu = trim($inner) !== '' || preg_match('/<a\b/i', $menuHtml) === 1;
         $menuLabel = trim($this->stringify($props['menu_aria_label'] ?? ''));
         $menuLabel = $this->escapeAttr($menuLabel !== '' ? mb_substr($menuLabel, 0, 80) : 'منوی اصلی');
-        $menuHtml = $hasMenu
-            ? '<nav class="tb-nav-header-links" aria-label="' . $menuLabel . '" data-widget-slot="menu">'
-                . '<div id="' . $this->escapeAttr($menuPanelId) . '" class="tb-nav-header-menu-panel">'
-                . '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>'
-                . $menuHtml
-                . '</div></nav>'
-            : '';
+        // The <nav> is assembled once the search and the buttons exist (ADR-084:
+        // the drawer may carry copies of them).
+        $menuItemsHtml = $menuHtml;
+        $menuHtml = '';
 
         $actions = '';
         $searchHtml = '';
@@ -4523,6 +4609,7 @@ class BlockRenderer
         }
 
         $ctaHtml = '';
+        $ctaPlainHtml = '';
         $ctaText = $this->escape($props['cta_text'] ?? '');
         $ctaUrl = $this->linkHref($props['cta_url'] ?? '', '#');
         if ($ctaText !== '') {
@@ -4531,8 +4618,53 @@ class BlockRenderer
             $ctaGlowColor = $this->escapeAttr($this->cssColor($rawCtaGlowColor, 'var(--tb-primary, #c2410c)'));
             $ctaGlowClass = $ctaGlow ? ' tb-cta--glow tb-nav-header-glow' : '';
             $ctaGlowStyle = $ctaGlow ? ' style="--tb-nav-header-glow:' . $ctaGlowColor . ';--cta-glow-color:' . $ctaGlowColor . '"' : '';
-            $ctaHtml = '<a href="' . $ctaUrl . '" class="tb-btn tb-btn-primary tb-nav-header-cta' . $ctaGlowClass . '"' . $ctaGlowStyle . $this->deadLinkMark($ctaUrl) . '>' . $ctaText . '</a>';
+            // ADR-084: an icon, and the outline look (the filled one is the default and unchanged).
+            $ctaOutline = ($props['cta_style'] ?? 'primary') === 'outline';
+            $ctaInner = $this->headerButtonIcon($props['cta_icon'] ?? '') . $ctaText;
+            $ctaClass = 'tb-btn ' . ($ctaOutline ? 'tb-nav-header-cta--outline' : 'tb-btn-primary') . ' tb-nav-header-cta';
+            $ctaHtml = '<a href="' . $ctaUrl . '" class="' . $ctaClass . $ctaGlowClass . '"' . $ctaGlowStyle . $this->deadLinkMark($ctaUrl) . '>' . $ctaInner . '</a>';
+            $ctaPlainHtml = '<a href="' . $ctaUrl . '" class="' . $ctaClass . '"' . $this->deadLinkMark($ctaUrl) . '>' . $ctaInner . '</a>';
         }
+        // ADR-084: the second button sits before the first one in the same slot.
+        $cta2Html = '';
+        $cta2Text = $this->escape(mb_substr(trim($this->stringify($props['cta2_text'] ?? '')), 0, 40));
+        if ($cta2Text !== '') {
+            $cta2Url = $this->linkHref($props['cta2_url'] ?? '', '#');
+            $cta2Class = 'tb-btn ' . (($props['cta2_style'] ?? 'outline') === 'primary' ? 'tb-btn-primary' : 'tb-nav-header-cta--outline') . ' tb-nav-header-cta tb-nav-header-cta--second';
+            $cta2Html = '<a href="' . $cta2Url . '" class="' . $cta2Class . '"' . $this->deadLinkMark($cta2Url) . '>' . $this->headerButtonIcon($props['cta2_icon'] ?? '') . $cta2Text . '</a>';
+        }
+
+        // ADR-084: what the open drawer carries besides the menu (phones move
+        // the bar's search and buttons into it; the CSS hides the copies
+        // everywhere else).
+        $drawerEnabled = ($props['burger_breakpoint'] ?? 'mobile') !== 'never';
+        $drawerLogo = $drawerEnabled && $this->flag($props['drawer_show_logo'] ?? false) && $desktopLogoContent !== '' && $siteLogoHtml === ''
+            ? '<a href="' . $logoUrl . '" class="tb-nav-header-logo tb-nav-header-drawer-logo' . ($desktopLogoImage !== '' ? ' tb-nav-header-logo--image' : '') . '"' . ($desktopLogoImage !== '' ? ' style="--tb-logo-h:' . $mobileLogoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px"' : '') . '>' . $desktopLogoContent . '</a>'
+            : '';
+        $drawerSearch = '';
+        if ($drawerEnabled && $searchHtml !== '' && $this->flag($props['drawer_show_search'] ?? false)) {
+            $drawerInputId = $rootId . '-drawer-search';
+            $drawerSearch = '<form class="tb-nav-header-search tb-nav-header-drawer-search tb-nav-header-drawer-only" role="search"' . $searchAttrs . '>'
+                . '<label class="tb-nav-header-visually-hidden" for="' . $this->escapeAttr($drawerInputId) . '">' . $placeholder . '</label>'
+                . '<input id="' . $this->escapeAttr($drawerInputId) . '" type="search" name="' . $this->escapeAttr($searchParam) . '" class="tb-nav-header-search-input" placeholder="' . $placeholder . '" autocomplete="off" enterkeyhint="search">'
+                . $hiddenSearchInputs
+                . '<button type="submit" class="tb-nav-header-search-submit" aria-label="جستجو">' . $this->iconHtml('search') . '</button></form>';
+        }
+        $drawerCtas = $drawerEnabled && $this->flag($props['drawer_show_ctas'] ?? false) && ($cta2Html !== '' || $ctaPlainHtml !== '')
+            ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . $cta2Html . $ctaPlainHtml . '</div>'
+            : '';
+
+        $closeButton = '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>';
+        $menuHtml = $hasMenu
+            ? '<nav class="tb-nav-header-links" aria-label="' . $menuLabel . '" data-widget-slot="menu">'
+                . '<div id="' . $this->escapeAttr($menuPanelId) . '" class="tb-nav-header-menu-panel">'
+                . ($drawerLogo !== '' ? '<div class="tb-nav-header-drawer-head">' . $drawerLogo . $closeButton . '</div>' : $closeButton)
+                . $drawerSearch
+                . $menuItemsHtml
+                . $drawerCtas
+                . '</div></nav>'
+            : '';
+        $drawerClasses = ($drawerSearch !== '' ? ' tb-nav-header--drawer-search' : '') . ($drawerCtas !== '' ? ' tb-nav-header--drawer-ctas' : '');
 
         $burger = $menuHtml !== ''
             ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '">' . $this->iconHtml('menu') . '</button>'
@@ -4564,7 +4696,7 @@ class BlockRenderer
             'search' => $searchHtml,
             'social' => $socialHtml,
             'phone' => $phoneHtml,
-            'cta' => $ctaHtml,
+            'cta' => $cta2Html . $ctaHtml,
             'cart' => $cartHtml,
             'account' => $accountHtml,
             'dark_toggle' => $darkToggleHtml,
@@ -4652,7 +4784,7 @@ class BlockRenderer
         // css.header), driven by --tb-hdr-* properties; no per-header <style>.
 
         $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
-        $headerClass = 'tb-nav-header' . $menuAlignment;
+        $headerClass = 'tb-nav-header' . $menuAlignment . $drawerClasses;
         // ADR-082 step 3: the Style tab (menu, states, spacing, shadow, blur)
         // as the header's own --tb-hdr-* values; nothing when nothing is set.
         $headerStyle = Widget\HeaderStyleVars::forHeader($rootId, $props);
@@ -4672,6 +4804,14 @@ class BlockRenderer
             . $searchAssets
             . $scripts
             . $interactionScript;
+    }
+
+    /** ADR-084: a header button's optional leading icon. */
+    private function headerButtonIcon(mixed $name): string
+    {
+        $name = trim($this->stringify($name));
+
+        return $name === '' ? '' : '<span class="tb-nav-header-cta-icon" aria-hidden="true">' . $this->iconHtml($name) . '</span>';
     }
 
     private function siteHeaderAssets(): string

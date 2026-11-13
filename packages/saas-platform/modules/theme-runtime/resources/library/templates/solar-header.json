@@ -1,101 +1,133 @@
 {
     "order": 100,
-    "name": "هدر صنعتی انرژی با مگامنوی سه‌ستونه",
-    "description": "هدر چسبان با محوشدگی پس از ۶۰ پیکسل اسکرول، مگامنوی سه‌ستونه برای محصولات، راهکارها، خدمات، پروژه‌ها و آموزش، جستجو، سبد خرید و کشوی موبایل؛ رنگ‌ها از توکن‌های قالب.",
+    "name": "هدر صنعتی انرژی با مگامنوی کارتی",
+    "description": "هدر چسبان با محوشدگی پس از ۶۰ پیکسل اسکرول، نشان برند دوبخشی با شعار، منوی آیکون‌دار با افکت کپسول، مگامنوی کارتی سه‌ستونه با آیکون‌های قاب‌دار، نشان «جدید/پرفروش» و کارت‌های پیشنهادی، جستجو، سبد خرید، حساب کاربری، دکمه‌های ورود و ثبت‌نام و کشوی موبایل؛ رنگ‌ها فقط از توکن‌های قالب.",
     "type": "header",
     "category": "corporate",
     "spec": "PLATFORM-THEME-SPEC-v1",
-    "tags": ["هدر", "مگامنو", "انرژی خورشیدی", "صنعتی", "تیره"],
+    "tags": ["هدر", "مگامنو", "انرژی خورشیدی", "صنعتی", "تیره", "صنعت برق"],
     "blocks": [
         {
             "type": "nav_header",
             "layout_slot": "header",
             "props": {
-                "logo_text": "برند شما",
+                "logo_text": "برند",
+                "logo_text_accent": "شما",
+                "logo_tagline": "مهندسی و خدمات انرژی",
+                "logo_icon": "sun",
                 "logo_url": "@link:home",
-                "logo_alt": "برند شما — مهندسی انرژی خورشیدی",
-                "menu_align": "center",
+                "logo_alt": "برند شما — مهندسی و خدمات انرژی",
+                "menu_align": "end",
                 "nav_source": "custom",
                 "nav_links": [
                     {
                         "label": "محصولات",
                         "url": "@link:shop",
+                        "icon": "grid-3x3",
                         "mega_columns": [
                             {"title": "پنل‌های خورشیدی", "items": [
-                                {"label": "پنل مونوکریستال", "url": "@link:shop", "icon": "sun"},
+                                {"label": "پنل مونوکریستال", "url": "@link:shop", "icon": "grid-3x3", "badge": "جدید", "badge_variant": "primary"},
                                 {"label": "پنل پلی‌کریستال", "url": "@link:shop", "icon": "layout-grid"},
                                 {"label": "پنل نازک‌فیلم", "url": "@link:shop", "icon": "layers"}
                             ]},
                             {"title": "اینورتر و ذخیره‌سازی", "items": [
                                 {"label": "اینورتر خورشیدی", "url": "@link:shop", "icon": "zap"},
-                                {"label": "باتری لیتیومی", "url": "@link:shop", "icon": "plug"},
-                                {"label": "سیستم مدیریت انرژی (EMS)", "url": "@link:shop", "icon": "gauge"}
+                                {"label": "باتری لیتیومی", "url": "@link:shop", "icon": "battery-full", "badge": "پرفروش", "badge_variant": "primary"},
+                                {"label": "سیستم مدیریت انرژی (EMS)", "url": "@link:shop", "icon": "cpu"}
                             ]},
                             {"title": "تجهیزات جانبی", "items": [
                                 {"label": "سازه و پایه‌های نصب", "url": "@link:shop", "icon": "wrench"},
-                                {"label": "کابل و تجهیزات حفاظتی", "url": "@link:shop", "icon": "shield-check"},
-                                {"label": "مشاهدهٔ همهٔ محصولات", "url": "@link:shop", "icon": "store"}
+                                {"label": "کابل و تجهیزات حفاظتی", "url": "@link:shop", "icon": "plug"}
                             ]}
                         ],
-                        "mega_banner_url": "@link:shop",
-                        "mega_banner_text": "فروشگاه تجهیزات خورشیدی — محصولات جدید ۱۴۰۵",
-                        "mega_banner_cta": "مشاهدهٔ همه",
+                        "mega_promo_cards": [
+                            {"eyebrow": "مشاهده همه", "title": "فروشگاه تجهیزات خورشیدی", "url": "@link:shop", "icon": "arrow-left"},
+                            {"eyebrow": "پیشنهاد ویژه", "title": "محصولات جدید ۱۴۰۵", "url": "@link:shop", "icon": "arrow-left"}
+                        ],
                         "mega_show_desktop": true,
                         "mega_mobile_behavior": "accordion"
                     },
                     {
                         "label": "راهکارها",
                         "url": "@link:contact",
+                        "icon": "lightbulb",
                         "mega_columns": [
                             {"title": "بر اساس کاربری", "items": [
                                 {"label": "راهکار مسکونی", "url": "@link:contact", "icon": "house"},
                                 {"label": "راهکار تجاری", "url": "@link:contact", "icon": "building-2"},
-                                {"label": "راهکار صنعتی", "url": "@link:contact", "icon": "cpu"}
+                                {"label": "راهکار صنعتی", "url": "@link:contact", "icon": "factory"}
                             ]},
                             {"title": "بر اساس نیاز", "items": [
-                                {"label": "سیستم On-Grid", "url": "@link:contact", "icon": "plug"},
-                                {"label": "سیستم Off-Grid", "url": "@link:contact", "icon": "sun"},
-                                {"label": "سیستم Hybrid", "url": "@link:contact", "icon": "zap"}
+                                {"label": "سیستم On-Grid", "url": "@link:contact", "icon": "network"},
+                                {"label": "سیستم Off-Grid", "url": "@link:contact", "icon": "battery-medium"},
+                                {"label": "سیستم Hybrid", "url": "@link:contact", "icon": "battery-charging", "badge": "پیشنهادی", "badge_variant": "primary"}
                             ]},
                             {"title": "راهکارهای تخصصی", "items": [
-                                {"label": "پمپاژ خورشیدی", "url": "@link:contact", "icon": "leaf"},
-                                {"label": "برق اضطراری", "url": "@link:contact", "icon": "triangle-alert"},
-                                {"label": "راهنمای انتخاب بهترین سیستم", "url": "@link:contact", "icon": "compass"}
+                                {"label": "پمپاژ خورشیدی", "url": "@link:contact", "icon": "droplets"},
+                                {"label": "برق اضطراری", "url": "@link:contact", "icon": "plug-zap"},
+                                {"label": "ماشین‌حساب خورشیدی", "url": "@link:contact", "icon": "calculator"}
                             ]}
                         ],
-                        "mega_banner_url": "@link:contact",
-                        "mega_banner_text": "مشاورهٔ رایگان برای انتخاب سیستم",
-                        "mega_banner_cta": "درخواست مشاوره",
+                        "mega_promo_cards": [
+                            {"eyebrow": "راهنمای انتخاب", "title": "بهترین سیستم برای شما", "url": "@link:contact", "icon": "arrow-left"},
+                            {"eyebrow": "مشاورهٔ رایگان", "title": "ماشین‌حساب خورشیدی", "url": "@link:contact", "icon": "arrow-left"}
+                        ],
                         "mega_show_desktop": true,
                         "mega_mobile_behavior": "accordion"
                     },
                     {
                         "label": "خدمات",
                         "url": "@link:about",
+                        "icon": "wrench",
                         "mega_columns": [
                             {"title": "خدمات مهندسی", "items": [
-                                {"label": "طراحی سیستم", "url": "@link:about", "icon": "pen-tool"},
-                                {"label": "اجرا و نصب", "url": "@link:about", "icon": "hammer"}
+                                {"label": "طراحی سیستم", "url": "@link:about", "icon": "drafting-compass"},
+                                {"label": "اجرا و نصب", "url": "@link:about", "icon": "hard-hat"}
                             ]},
                             {"title": "خدمات پشتیبانی", "items": [
                                 {"label": "نگهداری و تعمیرات", "url": "@link:contact", "icon": "wrench"},
-                                {"label": "مشاورهٔ انرژی", "url": "@link:contact", "icon": "chart-line"},
-                                {"label": "Hybrid و ذخیره‌سازی", "url": "@link:contact", "icon": "zap"}
+                                {"label": "مشاورهٔ انرژی", "url": "@link:contact", "icon": "message-circle"},
+                                {"label": "Hybrid و ذخیره‌سازی", "url": "@link:contact", "icon": "battery-full"}
                             ]},
-                            {"title": "آموزش", "items": [
+                            {"title": "آموزش و منابع", "items": [
                                 {"label": "دوره‌های تخصصی", "url": "@link:courses", "icon": "graduation-cap"},
                                 {"label": "مرکز دانلود", "url": "@link:courses", "icon": "download"}
                             ]}
                         ],
-                        "mega_banner_url": "@link:about",
-                        "mega_banner_text": "مشاهدهٔ همهٔ خدمات",
-                        "mega_banner_cta": "همهٔ خدمات",
+                        "mega_promo_cards": [
+                            {"eyebrow": "همهٔ خدمات", "title": "مشاهدهٔ خدمات برند شما", "url": "@link:about", "icon": "arrow-left"}
+                        ],
+                        "mega_show_desktop": true,
+                        "mega_mobile_behavior": "accordion"
+                    },
+                    {
+                        "label": "پروژه‌ها",
+                        "url": "@link:about",
+                        "icon": "folder-kanban",
+                        "mega_columns": [
+                            {"title": "پروژه‌های خورشیدی", "items": [
+                                {"label": "پروژه‌های Off-Grid", "url": "@link:about", "icon": "battery-medium"},
+                                {"label": "پروژه‌های On-Grid", "url": "@link:about", "icon": "network"},
+                                {"label": "پروژه‌های Hybrid PV", "url": "@link:about", "icon": "grid-3x3"}
+                            ]},
+                            {"title": "خدمات مهندسی", "items": [
+                                {"label": "پروژه‌های خدمات مهندسی", "url": "@link:about", "icon": "settings"}
+                            ]},
+                            {"title": "اطلاعات بیشتر", "items": [
+                                {"label": "گالری پروژه‌ها", "url": "@link:about", "icon": "images"}
+                            ]}
+                        ],
+                        "mega_promo_cards": [
+                            {"eyebrow": "مشاهده همه", "title": "همهٔ پروژه‌های برند شما", "url": "@link:about", "icon": "arrow-left"},
+                            {"eyebrow": "درخواست پروژه", "title": "ثبت درخواست اجرای پروژه", "url": "@link:contact", "icon": "arrow-left"}
+                        ],
                         "mega_show_desktop": true,
                         "mega_mobile_behavior": "accordion"
                     },
                     {
                         "label": "آموزش",
                         "url": "@link:courses",
+                        "icon": "graduation-cap",
                         "mega_columns": [
                             {"title": "اطلاعیه و ثبت‌نام", "items": [
                                 {"label": "دوره‌های آموزشی", "url": "@link:courses", "icon": "graduation-cap"},
@@ -103,60 +135,121 @@
                                 {"label": "آموزش‌های رایگان", "url": "@link:courses", "icon": "gift"}
                             ]},
                             {"title": "دوره‌های جاری", "items": [
-                                {"label": "طراحی سیستم‌ها", "url": "@link:courses", "icon": "pen-tool"},
+                                {"label": "طراحی سیستم‌ها", "url": "@link:courses", "icon": "drafting-compass"},
                                 {"label": "نصب و راه‌اندازی", "url": "@link:courses", "icon": "wrench"},
                                 {"label": "انتخاب اینورتر", "url": "@link:courses", "icon": "zap"}
                             ]},
                             {"title": "محتواهای آموزشی", "items": [
                                 {"label": "آموزش‌های ویدئویی", "url": "@link:courses", "icon": "circle-play"},
-                                {"label": "منابع و اسناد آموزشی", "url": "@link:courses", "icon": "file-text"}
+                                {"label": "منابع و اسناد آموزشی", "url": "@link:courses", "icon": "file-text"},
+                                {"label": "آموزش‌های من", "url": "@link:courses", "icon": "user"}
                             ]}
                         ],
-                        "mega_banner_url": "@link:courses",
-                        "mega_banner_text": "برنامهٔ دوره‌ها در تقویم آموزشی",
-                        "mega_banner_cta": "مشاهدهٔ همهٔ دوره‌ها",
+                        "mega_promo_cards": [
+                            {"eyebrow": "ثبت‌نام", "title": "مشاهدهٔ همهٔ دوره‌ها", "url": "@link:courses", "icon": "arrow-left"},
+                            {"eyebrow": "برنامه", "title": "تقویم آموزشی", "url": "@link:courses", "icon": "arrow-left"}
+                        ],
                         "mega_show_desktop": true,
                         "mega_mobile_behavior": "accordion"
                     },
-                    {"label": "درباره ما", "url": "@link:about"},
-                    {"label": "تماس", "url": "@link:contact"}
+                    {"label": "درباره ما", "url": "@link:about", "icon": "info"},
+                    {"label": "تماس", "url": "@link:contact", "icon": "mail"}
                 ],
                 "show_search": true,
                 "search_mode": "icon",
-                "search_placeholder": "جستجوی محصول یا مقاله…",
+                "search_placeholder": "جستجو در سایت…",
                 "search_scope": "all",
                 "show_cart": true,
                 "show_account": true,
                 "show_dark_toggle": false,
+                "cta2_text": "ورود",
+                "cta2_url": "@link:login",
+                "cta2_icon": "log-in",
+                "cta2_style": "outline",
+                "cta_text": "ثبت‌نام",
+                "cta_url": "@link:register",
+                "cta_icon": "user-plus",
+                "cta_style": "primary",
+                "header_order": ["logo", "menu", "search", "cart", "account", "cta", "social", "phone", "dark_toggle", "burger"],
                 "sticky": true,
                 "sticky_hide_on_scroll": false,
                 "sticky_devices": "all",
                 "scroll_threshold": 60,
                 "sticky_shrink": true,
-                "sticky_shrink_height": 64,
-                "scrolled_bg_color": "color-mix(in srgb, var(--tb-background) 82%, transparent)",
+                "sticky_shrink_height": 65,
+                "scrolled_bg_color": "color-mix(in srgb, var(--tb-background) 97%, transparent)",
                 "scrolled_text_color": "var(--tb-text)",
+                "scrolled_shadow": {"x": 0, "y": 10, "blur": 32, "spread": 0, "color": "color-mix(in srgb, var(--tb-background) 45%, transparent)"},
                 "transparent_over_hero": false,
                 "burger_breakpoint": "tablet",
                 "drawer_style": "side",
                 "drawer_side": "start",
+                "drawer_show_logo": true,
+                "drawer_show_search": true,
+                "drawer_show_ctas": true,
+                "compact_below": "1280",
                 "menu_aria_label": "منوی اصلی",
+                "focus_color": "var(--tb-primary)",
                 "bg_color": "color-mix(in srgb, var(--tb-background) 92%, transparent)",
                 "text_color": "var(--tb-text)",
-                "min_height": 76,
+                "min_height": 77,
+                "min_height_mobile": 60,
+                "padding": {"block-start": 0, "block-end": 0, "inline-start": 24, "inline-end": 24, "unit": "px"},
+                "padding_mobile": {"block-start": 0, "block-end": 0, "inline-start": 16, "inline-end": 16, "unit": "px"},
+                "items_gap": 14,
                 "content_width": "boxed",
-                "content_max_width": 1200,
+                "content_max_width": 1380,
                 "border_bottom_width": 1,
                 "border_bottom_color": "var(--tb-border)",
                 "backdrop_blur": 14,
-                "menu_color_hover": "var(--tb-primary)",
+                "menu_typography": {"size": 13.5, "weight": 500},
+                "menu_gap": 2,
+                "menu_item_padding_x": 8,
+                "menu_item_padding_y": 9,
+                "menu_color": "var(--tb-text)",
+                "menu_color_hover": "var(--tb-text)",
                 "menu_color_active": "var(--tb-primary)",
-                "pointer": "text",
+                "menu_bg_hover": "color-mix(in srgb, var(--tb-primary) 12%, transparent)",
+                "pointer": "pill",
+                "menu_item_radius": 8,
+                "menu_border_hover": "color-mix(in srgb, var(--tb-primary) 20%, transparent)",
+                "menu_icon_size": 15,
+                "menu_icon_color": "color-mix(in srgb, var(--tb-text) 82%, transparent)",
+                "mega_layout": "card",
+                "mega_max_width": 920,
+                "mega_radius": 16,
+                "mega_offset": 4,
+                "mega_padding": 28,
+                "mega_bg": "var(--tb-surface)",
+                "mega_border_color": "var(--tb-border)",
+                "mega_shadow": {"x": 0, "y": 24, "blur": 64, "spread": 0, "color": "color-mix(in srgb, var(--tb-background) 72%, transparent)"},
+                "mega_col_title_color": "var(--tb-primary)",
+                "mega_col_title_divider": true,
+                "mega_link_color": "var(--tb-text)",
+                "mega_link_bg_hover": "color-mix(in srgb, var(--tb-text) 5%, transparent)",
+                "mega_icon_style": "boxed",
+                "mega_icon_box_size": 42,
+                "mega_icon_box_radius": 10,
+                "mega_icon_box_bg": "color-mix(in srgb, var(--tb-text) 4%, transparent)",
+                "mega_icon_box_border": "var(--tb-border)",
+                "mega_icon_color": "var(--tb-primary)",
+                "logo_icon_size": 34,
+                "logo_icon_color": "var(--tb-primary)",
+                "logo_accent_color": "var(--tb-primary)",
+                "logo_tagline_color": "var(--tb-text-muted)",
+                "action_icon_bg": "var(--tb-surface)",
+                "action_icon_bg_hover": "color-mix(in srgb, var(--tb-primary) 12%, transparent)",
+                "action_icon_border": "var(--tb-border)",
+                "action_icon_color": "var(--tb-primary)",
+                "action_icon_radius": 10,
+                "cta_radius": 10,
+                "cta_font_size": 13.5,
                 "drawer_bg": "var(--tb-surface)",
-                "drawer_text": "var(--tb-surface-text)",
+                "drawer_text": "var(--tb-text)",
                 "drawer_divider_color": "var(--tb-border)",
-                "burger_color": "var(--tb-text)",
-                "focus_color": "var(--tb-primary)"
+                "drawer_width": {"size": 340, "unit": "px"},
+                "drawer_overlay_color": "color-mix(in srgb, var(--tb-background) 68%, transparent)",
+                "burger_color": "var(--tb-text)"
             }
         }
     ]

@@ -2772,6 +2772,230 @@
                 "device"
             ],
             "body": "<path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><path d=\"M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6\"/><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\" rx=\"1\"/>"
+        },
+        "grid-3x3": {
+            "category": "tech",
+            "label": "پنل خورشیدی (شبکه سلول‌ها)",
+            "keywords": [
+                "پنل",
+                "خورشیدی",
+                "سلول",
+                "شبکه",
+                "solar",
+                "panel",
+                "grid",
+                "cells"
+            ],
+            "body": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M3 9h18\"/><path d=\"M3 15h18\"/><path d=\"M9 3v18\"/><path d=\"M15 3v18\"/>"
+        },
+        "battery-full": {
+            "category": "tech",
+            "label": "باتری پر",
+            "keywords": [
+                "باتری",
+                "ذخیره",
+                "انرژی",
+                "battery",
+                "full",
+                "storage",
+                "power"
+            ],
+            "body": "<rect width=\"16\" height=\"10\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><line x1=\"22\" x2=\"22\" y1=\"11\" y2=\"13\"/><line x1=\"6\" x2=\"6\" y1=\"11\" y2=\"13\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"13\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"13\"/>"
+        },
+        "battery-medium": {
+            "category": "tech",
+            "label": "باتری نیمه‌پر",
+            "keywords": [
+                "باتری",
+                "شارژ",
+                "آفگرید",
+                "battery",
+                "medium",
+                "off-grid"
+            ],
+            "body": "<rect width=\"16\" height=\"10\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><line x1=\"22\" x2=\"22\" y1=\"11\" y2=\"13\"/><line x1=\"6\" x2=\"6\" y1=\"11\" y2=\"13\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"13\"/>"
+        },
+        "battery-charging": {
+            "category": "tech",
+            "label": "باتری در حال شارژ",
+            "keywords": [
+                "باتری",
+                "شارژ",
+                "برق",
+                "battery",
+                "charging",
+                "power"
+            ],
+            "body": "<path d=\"M15 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2\"/><path d=\"M6 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1\"/><path d=\"m11 7-3 5h4l-3 5\"/><line x1=\"22\" x2=\"22\" y1=\"11\" y2=\"13\"/>"
+        },
+        "plug-zap": {
+            "category": "tech",
+            "label": "پریز و برق",
+            "keywords": [
+                "برق",
+                "پریز",
+                "اتصال",
+                "شارژ",
+                "plug",
+                "zap",
+                "electric",
+                "charge"
+            ],
+            "body": "<path d=\"M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z\"/><path d=\"m2 22 3-3\"/><path d=\"M7.5 13.5 10 11\"/><path d=\"M10.5 16.5 13 14\"/><path d=\"m18 3-4 4h6l-4 4\"/>"
+        },
+        "house-plug": {
+            "category": "tech",
+            "label": "برق مسکونی",
+            "keywords": [
+                "خانه",
+                "برق",
+                "مسکونی",
+                "house",
+                "plug",
+                "residential",
+                "energy"
+            ],
+            "body": "<path d=\"M10 12V8.964\"/><path d=\"M14 12V8.964\"/><path d=\"M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z\"/><path d=\"M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2\"/>"
+        },
+        "hard-hat": {
+            "category": "tech",
+            "label": "کلاه ایمنی (اجرا و نصب)",
+            "keywords": [
+                "کلاه",
+                "ایمنی",
+                "نصب",
+                "اجرا",
+                "مهندسی",
+                "hard",
+                "hat",
+                "construction",
+                "install"
+            ],
+            "body": "<path d=\"M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5\"/><path d=\"M14 6a6 6 0 0 1 6 6v3\"/><path d=\"M4 15v-3a6 6 0 0 1 6-6\"/><rect x=\"2\" y=\"15\" width=\"20\" height=\"4\" rx=\"1\"/>"
+        },
+        "drafting-compass": {
+            "category": "tech",
+            "label": "پرگار طراحی",
+            "keywords": [
+                "طراحی",
+                "مهندسی",
+                "نقشه",
+                "پرگار",
+                "drafting",
+                "compass",
+                "design",
+                "engineering"
+            ],
+            "body": "<path d=\"m12.99 6.74 1.93 3.44\"/><path d=\"M19.136 12a10 10 0 0 1-14.271 0\"/><path d=\"m21 21-2.16-3.84\"/><path d=\"m3 21 8.02-14.26\"/><circle cx=\"12\" cy=\"5\" r=\"2\"/>"
+        },
+        "calculator": {
+            "category": "tech",
+            "label": "ماشین‌حساب",
+            "keywords": [
+                "ماشین‌حساب",
+                "محاسبه",
+                "برآورد",
+                "calculator",
+                "estimate",
+                "math"
+            ],
+            "body": "<rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"/><line x1=\"8\" x2=\"16\" y1=\"6\" y2=\"6\"/><line x1=\"16\" x2=\"16\" y1=\"14\" y2=\"18\"/><path d=\"M16 10h.01\"/><path d=\"M12 10h.01\"/><path d=\"M8 10h.01\"/><path d=\"M12 14h.01\"/><path d=\"M8 14h.01\"/><path d=\"M12 18h.01\"/><path d=\"M8 18h.01\"/>"
+        },
+        "network": {
+            "category": "tech",
+            "label": "شبکه",
+            "keywords": [
+                "شبکه",
+                "آن‌گرید",
+                "اتصال",
+                "network",
+                "grid",
+                "on-grid",
+                "topology"
+            ],
+            "body": "<rect x=\"16\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\"/><rect x=\"2\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\"/><rect x=\"9\" y=\"2\" width=\"6\" height=\"6\" rx=\"1\"/><path d=\"M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3\"/><path d=\"M12 12V8\"/>"
+        },
+        "factory": {
+            "category": "commerce",
+            "label": "کارخانه",
+            "keywords": [
+                "کارخانه",
+                "صنعتی",
+                "تولید",
+                "factory",
+                "industry",
+                "industrial",
+                "plant"
+            ],
+            "body": "<path d=\"M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z\"/><path d=\"M17 18h1\"/><path d=\"M12 18h1\"/><path d=\"M7 18h1\"/>"
+        },
+        "droplets": {
+            "category": "ui",
+            "label": "قطره‌های آب",
+            "keywords": [
+                "آب",
+                "پمپاژ",
+                "قطره",
+                "droplets",
+                "water",
+                "pumping"
+            ],
+            "body": "<path d=\"M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z\"/><path d=\"M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97\"/>"
+        },
+        "folder-kanban": {
+            "category": "ui",
+            "label": "پوشهٔ پروژه‌ها",
+            "keywords": [
+                "پروژه",
+                "پوشه",
+                "مدیریت",
+                "folder",
+                "kanban",
+                "projects"
+            ],
+            "body": "<path d=\"M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z\"/><path d=\"M8 10v4\"/><path d=\"M12 10v2\"/><path d=\"M16 10v6\"/>"
+        },
+        "images": {
+            "category": "ui",
+            "label": "گالری تصاویر",
+            "keywords": [
+                "گالری",
+                "تصاویر",
+                "عکس",
+                "images",
+                "gallery",
+                "photos"
+            ],
+            "body": "<path d=\"M18 22H4a2 2 0 0 1-2-2V6\"/><path d=\"m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18\"/><circle cx=\"12\" cy=\"8\" r=\"2\"/><rect width=\"16\" height=\"16\" x=\"6\" y=\"2\" rx=\"2\"/>"
+        },
+        "log-in": {
+            "category": "ui",
+            "label": "ورود به حساب",
+            "keywords": [
+                "ورود",
+                "حساب",
+                "وارد شدن",
+                "log",
+                "in",
+                "login",
+                "sign in",
+                "enter"
+            ],
+            "body": "<path d=\"M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4\"/><polyline points=\"10 17 15 12 10 7\"/><line x1=\"15\" x2=\"3\" y1=\"12\" y2=\"12\"/>"
+        },
+        "user-plus": {
+            "category": "ui",
+            "label": "ثبت‌نام کاربر",
+            "keywords": [
+                "ثبت‌نام",
+                "کاربر جدید",
+                "عضویت",
+                "user",
+                "plus",
+                "register",
+                "sign up"
+            ],
+            "body": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><line x1=\"19\" x2=\"19\" y1=\"8\" y2=\"14\"/><line x1=\"22\" x2=\"16\" y1=\"11\" y2=\"11\"/>"
         }
     }
 }
