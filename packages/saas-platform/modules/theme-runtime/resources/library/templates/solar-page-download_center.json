@@ -23,8 +23,12 @@
                 "primary_url": "#downloads",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/hero-commercial-slide3.jpg",
+                "image_url": "/storage/solar-assets/hero-commercial-slide3.jpg",
+                "bg_image": "/storage/solar-assets/hero-commercial-slide3.jpg"
+            },
+            "id": "solar-download_center-34-hero-with-stats"
         },
         {
             "type": "downloadable_assets",
@@ -64,7 +68,8 @@
                 ],
                 "empty_text": "فایلی برای دانلود یافت نشد.",
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-download_center-35-downloadable-assets"
         }
     ]
 }

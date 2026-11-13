@@ -42,8 +42,12 @@
                         "label": "گارانتی اینورتر و باتری"
                     }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/residental-solar-system-khuzestan.jpg",
+                "image_url": "/storage/solar-assets/residental-solar-system-khuzestan.jpg",
+                "bg_image": "/storage/solar-assets/residental-solar-system-khuzestan.jpg"
+            },
+            "id": "solar-residential-65-hero-with-stats"
         },
         {
             "type": "target_audience_grid",
@@ -75,7 +79,8 @@
                         "link_url": "@link:ongrid"
                     }
                 ]
-            }
+            },
+            "id": "solar-residential-66-target-audience-grid"
         },
         {
             "type": "testimonials_slider",
@@ -92,7 +97,7 @@
                         "company": "ویلای شخصی",
                         "rating": 5,
                         "verified": true,
-                        "date": "۱۴۰۵\/۰۵\/۱۰",
+                        "date": "۱۴۰۵/۰۵/۱۰",
                         "text": "با نصب پکیج ۵ کیلوواتی دیگر هیچ ترسی از قطعی برق در اوج گرمای تابستان نداریم. کارکرد کولر گازی کاملاً پایدار است."
                     },
                     {
@@ -101,11 +106,12 @@
                         "company": "مجتمع مسکونی",
                         "rating": 5,
                         "verified": true,
-                        "date": "۱۴۰۵\/۰۶\/۱۵",
+                        "date": "۱۴۰۵/۰۶/۱۵",
                         "text": "سیستم هیبریدی پشت‌بام را برای آسانسور و پمپ‌های آب مجتمع نصب کردیم. هنگام قطع برق، سیستم در کمتر از ۱۰ میلی‌ثانیه سوئیچ می‌کند."
                     }
                 ]
-            }
+            },
+            "id": "solar-residential-67-testimonials-slider"
         }
     ]
 }

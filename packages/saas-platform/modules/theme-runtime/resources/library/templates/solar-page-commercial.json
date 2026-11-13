@@ -42,8 +42,12 @@
                         "label": "سرعت سوییچ بدون قطعی سیستم‌ها"
                     }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/commercial-building.jpg",
+                "image_url": "/storage/solar-assets/commercial-building.jpg",
+                "bg_image": "/storage/solar-assets/commercial-building.jpg"
+            },
+            "id": "solar-commercial-19-hero-with-stats"
         },
         {
             "type": "target_audience_grid",
@@ -75,7 +79,8 @@
                         "link_url": "@link:contact"
                     }
                 ]
-            }
+            },
+            "id": "solar-commercial-20-target-audience-grid"
         }
     ]
 }

@@ -23,8 +23,12 @@
                 "primary_url": "@link:contact",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/industrial-rooftop-banner.jpg",
+                "image_url": "/storage/solar-assets/industrial-rooftop-banner.jpg",
+                "bg_image": "/storage/solar-assets/industrial-rooftop-banner.jpg"
+            },
+            "id": "solar-installation-49-hero-with-stats"
         },
         {
             "type": "zigzag_rows",
@@ -38,7 +42,9 @@
                         "title": "نصب مکانیکال سازه‌ها و استراکچر",
                         "text": "مهار اصولی سازه‌ها با رول‌بولت‌های ضدزنگ، آب‌بندی کامل سقف، رعایت شیب بهینه جغرافیایی و تنظیم زوایای فصلی برای بیشترین میزان جذب فوتون‌های نور.",
                         "link_label": "تماس با تیم نصب",
-                        "link_url": "@link:contact"
+                        "link_url": "@link:contact",
+                        "image": "/storage/solar-assets/residential-panels.jpg",
+                        "image_url": "/storage/solar-assets/residential-panels.jpg"
                     },
                     {
                         "icon": "zap",
@@ -54,8 +60,11 @@
                         "link_label": "دریافت گواهی تست",
                         "link_url": "@link:contact"
                     }
-                ]
-            }
+                ],
+                "image": "/storage/solar-assets/residential-panels.jpg",
+                "image_url": "/storage/solar-assets/residential-panels.jpg"
+            },
+            "id": "solar-installation-50-zigzag-rows"
         }
     ]
 }

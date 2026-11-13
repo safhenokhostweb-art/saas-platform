@@ -23,8 +23,12 @@
                 "primary_url": "@link:contact",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/about-plant-feature.jpg",
+                "image_url": "/storage/solar-assets/about-plant-feature.jpg",
+                "bg_image": "/storage/solar-assets/about-plant-feature.jpg"
+            },
+            "id": "solar-maintenance-51-hero-with-stats"
         },
         {
             "type": "zigzag_rows",
@@ -38,7 +42,9 @@
                         "title": "شست‌وشوی اصولی پنل‌ها با آب دیونیزه",
                         "text": "شستشوی پنل‌ها در ساعات خنک روز با آب بدون رسوب و تجهیزات استاندارد نرم جهت جلوگیری از خط و خش روی شیشه آنتی‌رفلکت.",
                         "link_label": "ثبت درخواست شستشو",
-                        "link_url": "@link:contact"
+                        "link_url": "@link:contact",
+                        "image": "/storage/solar-assets/pv-ongrid-plant.jpg",
+                        "image_url": "/storage/solar-assets/pv-ongrid-plant.jpg"
                     },
                     {
                         "icon": "camera",
@@ -47,8 +53,11 @@
                         "link_label": "مشاوره ترموگرافی",
                         "link_url": "@link:contact"
                     }
-                ]
-            }
+                ],
+                "image": "/storage/solar-assets/pv-ongrid-plant.jpg",
+                "image_url": "/storage/solar-assets/pv-ongrid-plant.jpg"
+            },
+            "id": "solar-maintenance-52-zigzag-rows"
         }
     ]
 }

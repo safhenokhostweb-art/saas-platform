@@ -23,8 +23,12 @@
                 "primary_url": "@link:contact",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/project-elevator-hybrid.jpg",
+                "image_url": "/storage/solar-assets/project-elevator-hybrid.jpg",
+                "bg_image": "/storage/solar-assets/project-elevator-hybrid.jpg"
+            },
+            "id": "solar-emergency_power-36-hero-with-stats"
         },
         {
             "type": "zigzag_rows",
@@ -38,17 +42,24 @@
                         "title": "کیفیت برتر قطعات و گارانتی معتبر",
                         "text": "تمامی تجهیزات به کار رفته دارای بالاترین تاییدیه‌های بین‌المللی TUV و گواهی آزمون پژوهشگاه نیرو می‌باشند.",
                         "link_label": "مشاهده کاتالوگ",
-                        "link_url": "@link:download_center"
+                        "link_url": "@link:download_center",
+                        "image": "/storage/solar-assets/diagram-hybrid.jpg",
+                        "image_url": "/storage/solar-assets/diagram-hybrid.jpg"
                     },
                     {
                         "icon": "zap",
                         "title": "پایداری و کاهش هزینه‌های انرژی",
                         "text": "مهندسی دقیق و تناسب تجهیزات باعث افزایش طول عمر باتری‌ها و بیشترین تولید کیلووات‌ساعت در شرایط آب‌وهوایی گوناگون می‌شود.",
                         "link_label": "مشاوره تلفنی",
-                        "link_url": "@link:contact"
+                        "link_url": "@link:contact",
+                        "image": "/storage/solar-assets/diagram-offgrid.jpg",
+                        "image_url": "/storage/solar-assets/diagram-offgrid.jpg"
                     }
-                ]
-            }
+                ],
+                "image": "/storage/solar-assets/diagram-hybrid.jpg",
+                "image_url": "/storage/solar-assets/diagram-hybrid.jpg"
+            },
+            "id": "solar-emergency_power-37-zigzag-rows"
         },
         {
             "type": "contact_split",
@@ -59,8 +70,11 @@
                 "email": "info@example.com",
                 "address": "دفتر فنی و مهندسی",
                 "hours": "شنبه تا چهارشنبه ۹ الی ۱۷",
-                "show_form": true
-            }
+                "show_form": true,
+                "image": "/storage/solar-assets/diagram-hybrid.jpg",
+                "image_url": "/storage/solar-assets/diagram-hybrid.jpg"
+            },
+            "id": "solar-emergency_power-38-contact-split"
         }
     ]
 }

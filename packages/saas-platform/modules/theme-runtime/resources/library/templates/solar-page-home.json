@@ -21,9 +21,9 @@
                 "highlight": "سراسر کشور",
                 "subtitle": "از مشاوره و طراحی تا تأمین تجهیزات، نصب و پشتیبانی؛ کاهش هزینهٔ برق و انرژی پایدار برای خانه، کسب‌وکار و صنعت.",
                 "primary_label": "دریافت مشاوره رایگان",
-                "primary_url": "\/page\/contact",
+                "primary_url": "/page/contact",
                 "secondary_label": "فروشگاه تجهیزات",
-                "secondary_url": "\/page\/products",
+                "secondary_url": "/page/products",
                 "layout": "split",
                 "stats": [
                     {
@@ -44,8 +44,12 @@
                     }
                 ],
                 "section_spacing": "regular",
-                "background_image": "\/storage\/solar-assets\/hero-industrial-slide1.jpg"
-            }
+                "background_image": "/storage/solar-assets/hero-industrial-slide1.jpg",
+                "image": "/storage/solar-assets/hero-industrial-slide1.jpg",
+                "image_url": "/storage/solar-assets/hero-industrial-slide1.jpg",
+                "bg_image": "/storage/solar-assets/hero-industrial-slide1.jpg"
+            },
+            "id": "solar-home-1-hero-with-stats"
         },
         {
             "type": "target_audience_grid",
@@ -60,46 +64,47 @@
                         "title": "طراحی سیستم‌های خورشیدی",
                         "text": "محاسبات دقیق، طراحی مهندسی و شبیه‌سازی سیستم‌های فتوولتائیک با نرم‌افزارهای تخصصی.",
                         "link_label": "اطلاعات بیشتر",
-                        "link_url": "\/page\/design"
+                        "link_url": "/page/design"
                     },
                     {
                         "icon": "hammer",
                         "title": "اجرا و نصب نیروگاه",
                         "text": "نصب حرفه‌ای پنل‌های خورشیدی، اینورترها و تجهیزات جانبی با رعایت استانداردهای بین‌المللی.",
                         "link_label": "اطلاعات بیشتر",
-                        "link_url": "\/page\/installation"
+                        "link_url": "/page/installation"
                     },
                     {
                         "icon": "chart-line",
                         "title": "مدیریت و بهینه‌سازی انرژی",
                         "text": "آنالیز مصرف، امکان‌سنجی، بهینه‌سازی هزینه‌های انرژی و ارائهٔ راهکارهای هوشمند.",
                         "link_label": "اطلاعات بیشتر",
-                        "link_url": "\/page\/consulting"
+                        "link_url": "/page/consulting"
                     },
                     {
                         "icon": "zap",
                         "title": "نیروگاه خورشیدی هیبریدی",
                         "text": "طراحی و پیاده‌سازی سیستم‌های ترکیبی خورشید + باتری + شبکه برای پایداری حداکثری.",
                         "link_label": "اطلاعات بیشتر",
-                        "link_url": "\/page\/hybrid"
+                        "link_url": "/page/hybrid"
                     },
                     {
                         "icon": "headset",
                         "title": "نگهداری و پشتیبانی",
                         "text": "خدمات پس از فروش، بازرسی دوره‌ای، تعمیرات و عیب‌یابی سیستم‌های خورشیدی.",
                         "link_label": "اطلاعات بیشتر",
-                        "link_url": "\/page\/courses"
+                        "link_url": "/page/courses"
                     },
                     {
                         "icon": "graduation-cap",
                         "title": "آموزش تخصصی",
                         "text": "دوره‌های عملی و تئوری طراحی، نصب و نگهداری سیستم‌های خورشیدی برای مهندسان و تکنسین‌ها.",
                         "link_label": "اطلاعات بیشتر",
-                        "link_url": "\/page\/contact"
+                        "link_url": "/page/contact"
                     }
                 ],
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-home-2-target-audience-grid"
         },
         {
             "type": "zigzag_rows",
@@ -114,12 +119,13 @@
                         "text": "ما خدمات مشاوره، طراحی و اجرای سیستم‌های خورشیدی را با بالاترین استانداردهای مهندسی در سراسر کشور ارائه می‌دهیم. از امکان‌سنجی اولیه و طراحی دقیق با نرم‌افزارهای تخصصی تا تأمین مستقیم تجهیزات، نصب، راه‌اندازی و پشتیبانی پس از فروش، در تمامی مراحل در کنار شما هستیم تا به برق پایدار، پاک و مطمئن دسترسی داشته باشید.",
                         "link_label": "درخواست مشاوره",
                         "link_url": "@link:contact",
-                        "image": "\/storage\/solar-assets\/about-plant-feature.jpg",
+                        "image": "/storage/solar-assets/about-plant-feature.jpg",
                         "image_alt": "نیروگاه خورشیدی اجراشده صنعتی و تجاری"
                     }
                 ],
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-home-3-zigzag-rows"
         },
         {
             "type": "dual_sale_product_grid",
@@ -162,7 +168,8 @@
                 ],
                 "empty_text": "دوره‌ای در حال حاضر فعال نیست.",
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-home-4-dual-sale-product-grid"
         },
         {
             "type": "project_cards",
@@ -171,7 +178,7 @@
                 "subtitle": "نمونه‌هایی از پروژه‌های موفق ما در بخش‌های مختلف سراسر کشور",
                 "columns": "3",
                 "view_all_label": "مشاهده همه پروژه‌ها",
-                "view_all_url": "\/page\/projects",
+                "view_all_url": "/page/projects",
                 "cards": [
                     {
                         "category": "نیروگاه هیبریدی",
@@ -197,19 +204,20 @@
                 ],
                 "items": [
                     {
-                        "image": "\/storage\/solar-assets\/project-hybrid-20kw.jpeg",
+                        "image": "/storage/solar-assets/project-hybrid-20kw.jpeg",
                         "image_alt": "نیروگاه خورشیدی ۲۰ کیلووات"
                     },
                     {
-                        "image": "\/storage\/solar-assets\/project-elevator-hybrid.jpg",
+                        "image": "/storage/solar-assets/project-elevator-hybrid.jpg",
                         "image_alt": "پروژه هیبریدی تجاری و آسانسور"
                     },
                     {
-                        "image": "\/storage\/solar-assets\/project-hybrid-12kw.jpg",
+                        "image": "/storage/solar-assets/project-hybrid-12kw.jpg",
                         "image_alt": "نیروگاه خورشیدی ۱۲ کیلووات"
                     }
                 ]
-            }
+            },
+            "id": "solar-home-5-project-cards"
         },
         {
             "type": "testimonials_slider",
@@ -226,7 +234,7 @@
                         "company": "شرکت صنعتی کوثر",
                         "rating": 5,
                         "verified": true,
-                        "date": "۱۴۰۵\/۰۷\/۱۵",
+                        "date": "۱۴۰۵/۰۷/۱۵",
                         "text": "طراحی دقیق سیستم خورشیدی هیبریدی و نصب بدون نقص تجهیزات در کمترین زمان ممکن انجام شد. اکنون هزینه‌های انرژی مجموعه به طور چشمگیری کاهش یافته است."
                     },
                     {
@@ -235,7 +243,7 @@
                         "company": "مجتمع مسکونی نور",
                         "rating": 5,
                         "verified": true,
-                        "date": "۱۴۰۵\/۰۶\/۲۸",
+                        "date": "۱۴۰۵/۰۶/۲۸",
                         "text": "پشتیبانی عالی و پیگیری مستمر تیم فنی حتی پس از اتمام پروژه، اطمینان خاطر کاملی برای ساکنان مجتمع در تامین برق اضطراری فراهم کرد."
                     },
                     {
@@ -244,11 +252,12 @@
                         "company": "پروژه نیروگاه خورشیدی",
                         "rating": 5,
                         "verified": true,
-                        "date": "۱۴۰۵\/۰۶\/۱۰",
+                        "date": "۱۴۰۵/۰۶/۱۰",
                         "text": "محاسبات فنی و امکان‌سنجی اقتصادی بسیار دقیق بود. بازگشت سرمایه طبق برنامه‌ریزی پیش‌بینی‌شده محقق شد و از عملکرد نیروگاه بسیار راضی هستم."
                     }
                 ]
-            }
+            },
+            "id": "solar-home-6-testimonials-slider"
         },
         {
             "type": "blog_posts",
@@ -260,7 +269,8 @@
                 "source": "latest",
                 "autoplay": false,
                 "interval": 5000
-            }
+            },
+            "id": "solar-home-7-blog-posts"
         },
         {
             "type": "contact_split",
@@ -272,7 +282,8 @@
                 "address": "نشانی دفتر مرکزی شما",
                 "hours": "شنبه تا چهارشنبه، ۹ تا ۱۷",
                 "show_form": true
-            }
+            },
+            "id": "solar-home-8-contact-split"
         }
     ]
 }

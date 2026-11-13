@@ -6,7 +6,12 @@
     "category": "corporate",
     "spec": "PLATFORM-THEME-SPEC-v1",
     "route": "about",
-    "tags": ["صفحه کامل", "درباره ما", "انرژی خورشیدی", "صنعتی"],
+    "tags": [
+        "صفحه کامل",
+        "درباره ما",
+        "انرژی خورشیدی",
+        "صنعتی"
+    ],
     "blocks": [
         {
             "type": "hero_with_stats",
@@ -22,13 +27,29 @@
                 "secondary_url": "@link:courses",
                 "layout": "split",
                 "stats": [
-                    {"value": "+۷", "label": "سال تجربه"},
-                    {"value": "+۱۲", "label": "پروژهٔ اجراشده"},
-                    {"value": "+۵", "label": "متخصص و مهندس"},
-                    {"value": "٪۱۰۰", "label": "رضایت مشتریان"}
+                    {
+                        "value": "+۷",
+                        "label": "سال تجربه"
+                    },
+                    {
+                        "value": "+۱۲",
+                        "label": "پروژهٔ اجراشده"
+                    },
+                    {
+                        "value": "+۵",
+                        "label": "متخصص و مهندس"
+                    },
+                    {
+                        "value": "٪۱۰۰",
+                        "label": "رضایت مشتریان"
+                    }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/about-plant-feature.jpg",
+                "image_url": "/storage/solar-assets/about-plant-feature.jpg",
+                "bg_image": "/storage/solar-assets/about-plant-feature.jpg"
+            },
+            "id": "solar-about-9-hero-with-stats"
         },
         {
             "type": "zigzag_rows",
@@ -37,12 +58,29 @@
                 "variant": "zigzag",
                 "start_side": "start",
                 "rows": [
-                    {"icon": "sun", "title": "از بررسی نیاز تا پشتیبانی", "text": "ما مجموعه‌ای تخصصی در حوزهٔ انرژی خورشیدی و سیستم‌های تجدیدپذیر هستیم و خدمات خود را از مرحلهٔ بررسی نیاز و امکان‌سنجی تا طراحی، تأمین تجهیزات، اجرا، راه‌اندازی و پشتیبانی ارائه می‌کنیم."},
-                    {"icon": "target", "title": "راهکار متناسب با هر پروژه", "text": "تمرکز ما بر ارائهٔ راهکاری متناسب با شرایط واقعی هر پروژه است؛ راهکاری که براساس میزان مصرف انرژی، موقعیت جغرافیایی، شرایط محل اجرا، بودجه و هدف سرمایه‌گذاری مشتری طراحی شود."},
-                    {"icon": "map-pin", "title": "نزدیک به شما، فعال در سراسر کشور", "text": "خدمات خود را برای پروژه‌های مسکونی، تجاری، کشاورزی و صنعتی در شهر و استان شما و سایر نقاط کشور ارائه می‌کنیم؛ راهکارهایی که هم از نظر فنی بهینه‌اند و هم از نظر اقتصادی برای کارفرما توجیه‌پذیر."}
+                    {
+                        "icon": "sun",
+                        "title": "از بررسی نیاز تا پشتیبانی",
+                        "text": "ما مجموعه‌ای تخصصی در حوزهٔ انرژی خورشیدی و سیستم‌های تجدیدپذیر هستیم و خدمات خود را از مرحلهٔ بررسی نیاز و امکان‌سنجی تا طراحی، تأمین تجهیزات، اجرا، راه‌اندازی و پشتیبانی ارائه می‌کنیم.",
+                        "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
+                        "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                    },
+                    {
+                        "icon": "target",
+                        "title": "راهکار متناسب با هر پروژه",
+                        "text": "تمرکز ما بر ارائهٔ راهکاری متناسب با شرایط واقعی هر پروژه است؛ راهکاری که براساس میزان مصرف انرژی، موقعیت جغرافیایی، شرایط محل اجرا، بودجه و هدف سرمایه‌گذاری مشتری طراحی شود."
+                    },
+                    {
+                        "icon": "map-pin",
+                        "title": "نزدیک به شما، فعال در سراسر کشور",
+                        "text": "خدمات خود را برای پروژه‌های مسکونی، تجاری، کشاورزی و صنعتی در شهر و استان شما و سایر نقاط کشور ارائه می‌کنیم؛ راهکارهایی که هم از نظر فنی بهینه‌اند و هم از نظر اقتصادی برای کارفرما توجیه‌پذیر."
+                    }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
+                "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+            },
+            "id": "solar-about-10-zigzag-rows"
         },
         {
             "type": "target_audience_grid",
@@ -52,13 +90,30 @@
                 "columns": "4",
                 "card_align": "start",
                 "items": [
-                    {"icon": "pen-tool", "title": "طراحی مهندسی، نه فروش پکیج آماده", "text": "هر پروژه ابتدا به‌صورت فنی بررسی می‌شود و سیستم بر اساس مصرف واقعی، شرایط محل و بودجهٔ کارفرما طراحی می‌شود."},
-                    {"icon": "receipt", "title": "شفافیت کامل فنی و مالی", "text": "پیشنهاد قیمت با تفکیک اقلام، مشخصات فنی دقیق تجهیزات و زمان‌بندی اجرا ارائه می‌شود. بدون هزینهٔ پنهان."},
-                    {"icon": "shield-check", "title": "گارانتی کتبی و پشتیبانی واقعی", "text": "گارانتی عملکرد سیستم به‌صورت کتبی در قرارداد درج می‌شود و خدمات پشتیبانی دوره‌ای پس از اجرا ارائه می‌گردد."},
-                    {"icon": "users", "title": "تیم متخصص، نه واسطه", "text": "تمام مراحل از طراحی تا اجرا توسط تیم فنی خودمان انجام می‌شود؛ نه پیمانکار فرعی و نه واسطه."}
+                    {
+                        "icon": "pen-tool",
+                        "title": "طراحی مهندسی، نه فروش پکیج آماده",
+                        "text": "هر پروژه ابتدا به‌صورت فنی بررسی می‌شود و سیستم بر اساس مصرف واقعی، شرایط محل و بودجهٔ کارفرما طراحی می‌شود."
+                    },
+                    {
+                        "icon": "receipt",
+                        "title": "شفافیت کامل فنی و مالی",
+                        "text": "پیشنهاد قیمت با تفکیک اقلام، مشخصات فنی دقیق تجهیزات و زمان‌بندی اجرا ارائه می‌شود. بدون هزینهٔ پنهان."
+                    },
+                    {
+                        "icon": "shield-check",
+                        "title": "گارانتی کتبی و پشتیبانی واقعی",
+                        "text": "گارانتی عملکرد سیستم به‌صورت کتبی در قرارداد درج می‌شود و خدمات پشتیبانی دوره‌ای پس از اجرا ارائه می‌گردد."
+                    },
+                    {
+                        "icon": "users",
+                        "title": "تیم متخصص، نه واسطه",
+                        "text": "تمام مراحل از طراحی تا اجرا توسط تیم فنی خودمان انجام می‌شود؛ نه پیمانکار فرعی و نه واسطه."
+                    }
                 ],
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-about-11-target-audience-grid"
         },
         {
             "type": "zigzag_rows",
@@ -67,13 +122,38 @@
                 "subtitle": "نزد ما، انتخاب سیستم پیش از بررسی دقیق پروژه انجام نمی‌شود؛ سیستم نهایی متناسب با نیاز واقعی پروژه طراحی و اجرا می‌شود.",
                 "variant": "steps",
                 "rows": [
-                    {"number": "۰۱", "icon": "search", "title": "بررسی نیاز", "text": "تحلیل مصرف و شرایط پروژه"},
-                    {"number": "۰۲", "icon": "pen-tool", "title": "طراحی مهندسی", "text": "محاسبات فنی و شبیه‌سازی"},
-                    {"number": "۰۳", "icon": "hammer", "title": "اجرا و نصب", "text": "نصب استاندارد و راه‌اندازی"},
-                    {"number": "۰۴", "icon": "headset", "title": "پشتیبانی", "text": "نگهداری و بهینه‌سازی"}
+                    {
+                        "number": "۰۱",
+                        "icon": "search",
+                        "title": "بررسی نیاز",
+                        "text": "تحلیل مصرف و شرایط پروژه",
+                        "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
+                        "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                    },
+                    {
+                        "number": "۰۲",
+                        "icon": "pen-tool",
+                        "title": "طراحی مهندسی",
+                        "text": "محاسبات فنی و شبیه‌سازی"
+                    },
+                    {
+                        "number": "۰۳",
+                        "icon": "hammer",
+                        "title": "اجرا و نصب",
+                        "text": "نصب استاندارد و راه‌اندازی"
+                    },
+                    {
+                        "number": "۰۴",
+                        "icon": "headset",
+                        "title": "پشتیبانی",
+                        "text": "نگهداری و بهینه‌سازی"
+                    }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
+                "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+            },
+            "id": "solar-about-12-zigzag-rows"
         },
         {
             "type": "target_audience_grid",
@@ -82,12 +162,25 @@
                 "columns": "3",
                 "card_align": "start",
                 "items": [
-                    {"icon": "target", "title": "مأموریت ما", "text": "ارائهٔ راهکارهای مهندسی، قابل‌اعتماد و متناسب با نیاز واقعی هر پروژه در حوزهٔ انرژی خورشیدی."},
-                    {"icon": "eye", "title": "چشم‌انداز ما", "text": "نقش‌آفرینی مؤثر در توسعهٔ انرژی‌های تجدیدپذیر و تبدیل‌شدن به مجموعه‌ای قابل‌اعتماد در بازار انرژی خورشیدی ایران."},
-                    {"icon": "award", "title": "ارزش‌های ما", "text": "صداقت در مشاوره، دقت در طراحی و اجرا، شفافیت فنی و مالی، انتخاب تجهیزات متناسب، تعهد به پشتیبانی و توجه به ایمنی و کیفیت."}
+                    {
+                        "icon": "target",
+                        "title": "مأموریت ما",
+                        "text": "ارائهٔ راهکارهای مهندسی، قابل‌اعتماد و متناسب با نیاز واقعی هر پروژه در حوزهٔ انرژی خورشیدی."
+                    },
+                    {
+                        "icon": "eye",
+                        "title": "چشم‌انداز ما",
+                        "text": "نقش‌آفرینی مؤثر در توسعهٔ انرژی‌های تجدیدپذیر و تبدیل‌شدن به مجموعه‌ای قابل‌اعتماد در بازار انرژی خورشیدی ایران."
+                    },
+                    {
+                        "icon": "award",
+                        "title": "ارزش‌های ما",
+                        "text": "صداقت در مشاوره، دقت در طراحی و اجرا، شفافیت فنی و مالی، انتخاب تجهیزات متناسب، تعهد به پشتیبانی و توجه به ایمنی و کیفیت."
+                    }
                 ],
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-about-13-target-audience-grid"
         },
         {
             "type": "target_audience_grid",
@@ -97,23 +190,51 @@
                 "columns": "4",
                 "card_align": "center",
                 "items": [
-                    {"icon": "chart-column", "title": "مطالعات و طراحی مهندسی", "text": "امکان‌سنجی، تحلیل مصرف، محاسبات و طراحی سیستم"},
-                    {"icon": "zap", "title": "راهکارهای تأمین و ذخیرهٔ انرژی", "text": "سیستم‌های On-Grid، Off-Grid، Hybrid و برق اضطراری"},
-                    {"icon": "lightbulb", "title": "پشتیبانی و توسعهٔ دانش", "text": "نگهداری، عیب‌یابی، بهینه‌سازی و آموزش تخصصی"},
-                    {"icon": "package-check", "title": "تأمین و اجرای پروژه", "text": "انتخاب تجهیزات، نصب، تست و راه‌اندازی"}
+                    {
+                        "icon": "chart-column",
+                        "title": "مطالعات و طراحی مهندسی",
+                        "text": "امکان‌سنجی، تحلیل مصرف، محاسبات و طراحی سیستم"
+                    },
+                    {
+                        "icon": "zap",
+                        "title": "راهکارهای تأمین و ذخیرهٔ انرژی",
+                        "text": "سیستم‌های On-Grid، Off-Grid، Hybrid و برق اضطراری"
+                    },
+                    {
+                        "icon": "lightbulb",
+                        "title": "پشتیبانی و توسعهٔ دانش",
+                        "text": "نگهداری، عیب‌یابی، بهینه‌سازی و آموزش تخصصی"
+                    },
+                    {
+                        "icon": "package-check",
+                        "title": "تأمین و اجرای پروژه",
+                        "text": "انتخاب تجهیزات، نصب، تست و راه‌اندازی"
+                    }
                 ],
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-about-14-target-audience-grid"
         },
         {
             "type": "zigzag_rows",
             "props": {
                 "variant": "zigzag",
                 "rows": [
-                    {"icon": "phone-call", "title": "برای انتخاب راهکار مناسب، با ما در ارتباط باشید", "text": "اگر برای خانه، مجموعهٔ تجاری، واحد صنعتی یا پروژهٔ کشاورزی خود به سیستم خورشیدی نیاز دارید، کارشناسان ما شرایط پروژه را بررسی کرده و راهکار مناسب را پیشنهاد می‌دهند.", "link_label": "درخواست مشاوره", "link_url": "@link:contact"}
+                    {
+                        "icon": "phone-call",
+                        "title": "برای انتخاب راهکار مناسب، با ما در ارتباط باشید",
+                        "text": "اگر برای خانه، مجموعهٔ تجاری، واحد صنعتی یا پروژهٔ کشاورزی خود به سیستم خورشیدی نیاز دارید، کارشناسان ما شرایط پروژه را بررسی کرده و راهکار مناسب را پیشنهاد می‌دهند.",
+                        "link_label": "درخواست مشاوره",
+                        "link_url": "@link:contact",
+                        "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
+                        "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                    }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
+                "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+            },
+            "id": "solar-about-15-zigzag-rows"
         }
     ]
 }

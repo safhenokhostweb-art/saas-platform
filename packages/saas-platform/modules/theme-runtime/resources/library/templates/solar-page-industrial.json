@@ -42,8 +42,12 @@
                         "label": "ضمانت راندمان پنل"
                     }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/industrial-solar-power-khuzestan.jpg",
+                "image_url": "/storage/solar-assets/industrial-solar-power-khuzestan.jpg",
+                "bg_image": "/storage/solar-assets/industrial-solar-power-khuzestan.jpg"
+            },
+            "id": "solar-industrial-45-hero-with-stats"
         },
         {
             "type": "target_audience_grid",
@@ -75,7 +79,8 @@
                         "link_url": "@link:projects"
                     }
                 ]
-            }
+            },
+            "id": "solar-industrial-46-target-audience-grid"
         },
         {
             "type": "zigzag_rows",
@@ -89,18 +94,25 @@
                         "title": "امکان‌سنجی، محاسبات فنی و آنالیز هارمونیک",
                         "text": "تیم مهندسی با بررسی دقیق قبوض برق، گراف‌های بار، پایداری سقف سالن‌ها و زاویه تابش، دقیق‌ترین مدل شبیه‌سازی را با نرم‌افزارهای استاندارد استخراج می‌کند.",
                         "link_label": "درخواست امکان‌سنجی",
-                        "link_url": "@link:contact"
+                        "link_url": "@link:contact",
+                        "image": "/storage/solar-assets/industrial-rooftop-banner.jpg",
+                        "image_url": "/storage/solar-assets/industrial-rooftop-banner.jpg"
                     },
                     {
                         "icon": "wrench",
                         "title": "تأمین تجهیزات تراز اول بین‌المللی و نصب استاندارد",
                         "text": "استفاده از اینورترهای استرینگ صنعتی، پنل‌های خورشیدی دابل‌گلس با راندمان بالای ۲۲ درصد، و سازه‌های آلومینیومی مقاوم در برابر بادهای شدید.",
                         "link_label": "کاتالوگ تجهیزات",
-                        "link_url": "@link:download_center"
+                        "link_url": "@link:download_center",
+                        "image": "/storage/solar-assets/diagram-ongrid.jpg",
+                        "image_url": "/storage/solar-assets/diagram-ongrid.jpg"
                     }
                 ],
-                "section_spacing": "regular"
-            }
+                "section_spacing": "regular",
+                "image": "/storage/solar-assets/industrial-rooftop-banner.jpg",
+                "image_url": "/storage/solar-assets/industrial-rooftop-banner.jpg"
+            },
+            "id": "solar-industrial-47-zigzag-rows"
         },
         {
             "type": "contact_split",
@@ -111,8 +123,11 @@
                 "email": "industrial@example.com",
                 "address": "دفتر فنی و مهندسی",
                 "hours": "شنبه تا چهارشنبه ۸ الی ۱۷",
-                "show_form": true
-            }
+                "show_form": true,
+                "image": "/storage/solar-assets/industrial-rooftop-banner.jpg",
+                "image_url": "/storage/solar-assets/industrial-rooftop-banner.jpg"
+            },
+            "id": "solar-industrial-48-contact-split"
         }
     ]
 }

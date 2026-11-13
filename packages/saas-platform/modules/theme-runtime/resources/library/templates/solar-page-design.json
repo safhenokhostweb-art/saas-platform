@@ -23,8 +23,12 @@
                 "primary_url": "@link:contact",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/solar-engineering-ahvaz.jpg",
+                "image_url": "/storage/solar-assets/solar-engineering-ahvaz.jpg",
+                "bg_image": "/storage/solar-assets/solar-engineering-ahvaz.jpg"
+            },
+            "id": "solar-design-32-hero-with-stats"
         },
         {
             "type": "target_audience_grid",
@@ -56,7 +60,8 @@
                         "link_url": "@link:contact"
                     }
                 ]
-            }
+            },
+            "id": "solar-design-33-target-audience-grid"
         }
     ]
 }

@@ -23,8 +23,12 @@
                 "primary_url": "@link:contact",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/pv-ongrid-plant.jpg",
+                "image_url": "/storage/solar-assets/pv-ongrid-plant.jpg",
+                "bg_image": "/storage/solar-assets/pv-ongrid-plant.jpg"
+            },
+            "id": "solar-projects-62-hero-with-stats"
         },
         {
             "type": "project_cards",
@@ -37,40 +41,53 @@
                         "badge": "۲۰ کیلووات",
                         "title": "نیروگاه خورشیدی هیبریدی ۲۰ کیلووات",
                         "description": "پروژه صنعتی-خدماتی • پنل مونوکریستال ۷۲۰ وات دابل‌گلس • اینورتر هیبریدی Deye • باتری لیتیومی ۴۸V",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/project-hybrid-20kw.jpeg",
+                        "image_url": "/storage/solar-assets/project-hybrid-20kw.jpeg"
                     },
                     {
                         "badge": "۱۵ کیلووات",
                         "title": "نیروگاه خورشیدی هیبریدی ۱۵ کیلووات",
                         "description": "مجتمع تجاری اداری • پشتیبانی کامل بار سه‌فاز • پایش هوشمند از راه دور اینترنتی",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/project-elevator-hybrid.jpg",
+                        "image_url": "/storage/solar-assets/project-elevator-hybrid.jpg"
                     },
                     {
                         "badge": "۱۲ کیلووات",
                         "title": "نیروگاه خورشیدی ۱۲ کیلووات",
                         "description": "پروژه مسکونی لوکس • سیستم ذخیره‌ساز لیتیومی ضدحریق • تأمین بار کامل سرمایشی",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/project-hybrid-12kw.jpg",
+                        "image_url": "/storage/solar-assets/project-hybrid-12kw.jpg"
                     },
                     {
                         "badge": "۶ کیلووات",
                         "title": "نیروگاه خورشیدی هیبریدی ۶ کیلووات",
                         "description": "واحد مسکونی تک‌فاز • سیستم کم‌حجم دیواری با طول عمر باتری بالای ۱۰ سال",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/industrial-rooftop-banner.jpg",
+                        "image_url": "/storage/solar-assets/industrial-rooftop-banner.jpg"
                     },
                     {
                         "badge": "۳۰ کیلووات",
                         "title": "نیروگاه هیبریدی مرکز درمانی ۳۰ کیلووات",
                         "description": "کلینیک تخصصی • تضمین تداوم عملکرد دستگاه‌های تصویربرداری و تجهیزات حساس",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/commercial-building.jpg",
+                        "image_url": "/storage/solar-assets/commercial-building.jpg"
                     },
                     {
                         "badge": "۵۰ کیلووات",
                         "title": "نیروگاه هیبریدی کارخانه مواد غذایی",
                         "description": "واحد تولیدی • کنترل هوشمند پیک‌سایی (Peak Shaving) و تزریق در زمان قطعی",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/residential-panels.jpg",
+                        "image_url": "/storage/solar-assets/residential-panels.jpg"
                     }
                 ]
-            }
+            },
+            "id": "solar-projects-63-project-cards"
         },
         {
             "type": "project_cards",
@@ -83,22 +100,29 @@
                         "badge": "۱۰۰ کیلووات",
                         "title": "نیروگاه خورشیدی متصل به شبکه ۱۰۰ کیلووات",
                         "description": "شهرک صنعتی • اینورتر Sungrow • اتصال به پست فشار متوسط",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/project-hybrid-20kw.jpeg",
+                        "image_url": "/storage/solar-assets/project-hybrid-20kw.jpeg"
                     },
                     {
                         "badge": "۲۰ کیلووات",
                         "title": "نیروگاه پشت‌بامی فروش تضمینی ۲۰ کیلووات",
                         "description": "ساختمان مسکونی • قرارداد ۲۰ ساله خرید تضمینی ساتبا",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/project-elevator-hybrid.jpg",
+                        "image_url": "/storage/solar-assets/project-elevator-hybrid.jpg"
                     },
                     {
                         "badge": "۲۰۰ کیلووات",
                         "title": "مزرعه خورشیدی زمینی ۲۰۰ کیلووات",
                         "description": "پروژه سرمایه‌گذاری • سازه‌های گالوانیزه گرم مقاوم در برابر خوردگی",
-                        "url": "@link:contact"
+                        "url": "@link:contact",
+                        "image": "/storage/solar-assets/project-hybrid-12kw.jpg",
+                        "image_url": "/storage/solar-assets/project-hybrid-12kw.jpg"
                     }
                 ]
-            }
+            },
+            "id": "solar-projects-64-project-cards"
         }
     ]
 }

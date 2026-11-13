@@ -6,7 +6,12 @@
     "category": "store",
     "spec": "PLATFORM-THEME-SPEC-v1",
     "route": "shop",
-    "tags": ["صفحه کامل", "فروشگاه", "محصولات", "انرژی خورشیدی"],
+    "tags": [
+        "صفحه کامل",
+        "فروشگاه",
+        "محصولات",
+        "انرژی خورشیدی"
+    ],
     "blocks": [
         {
             "type": "hero_with_stats",
@@ -19,8 +24,12 @@
                 "primary_url": "@link:contact",
                 "layout": "centered",
                 "stats": [],
-                "section_spacing": "compact"
-            }
+                "section_spacing": "compact",
+                "image": "/storage/solar-assets/residential-panels.jpg",
+                "image_url": "/storage/solar-assets/residential-panels.jpg",
+                "bg_image": "/storage/solar-assets/residential-panels.jpg"
+            },
+            "id": "solar-products-1-hero-with-stats"
         },
         {
             "type": "target_audience_grid",
@@ -29,12 +38,37 @@
                 "columns": "3",
                 "card_align": "start",
                 "items": [
-                    {"icon": "sun", "title": "پنل‌های خورشیدی", "text": "پنل مونوکریستال، پلی‌کریستال و نازک‌فیلم.", "link_label": "مشاهدهٔ پنل‌ها", "link_url": "@link:shop"},
-                    {"icon": "zap", "title": "اینورتر و ذخیره‌سازی", "text": "اینورتر خورشیدی، باتری لیتیومی و سیستم مدیریت انرژی (EMS).", "link_label": "مشاهدهٔ اینورترها", "link_url": "@link:shop"},
-                    {"icon": "wrench", "title": "تجهیزات جانبی", "text": "سازه و پایه‌های نصب، کابل و تجهیزات حفاظتی.", "link_label": "مشاهدهٔ تجهیزات", "link_url": "@link:shop"}
+                    {
+                        "icon": "sun",
+                        "title": "پنل‌های خورشیدی",
+                        "text": "پنل مونوکریستال، پلی‌کریستال و نازک‌فیلم.",
+                        "link_label": "مشاهدهٔ پنل‌ها",
+                        "link_url": "@link:shop",
+                        "image": "/storage/solar-assets/residential-panels.jpg",
+                        "image_url": "/storage/solar-assets/residential-panels.jpg"
+                    },
+                    {
+                        "icon": "zap",
+                        "title": "اینورتر و ذخیره‌سازی",
+                        "text": "اینورتر خورشیدی، باتری لیتیومی و سیستم مدیریت انرژی (EMS).",
+                        "link_label": "مشاهدهٔ اینورترها",
+                        "link_url": "@link:shop",
+                        "image": "/storage/solar-assets/diagram-hybrid.jpg",
+                        "image_url": "/storage/solar-assets/diagram-hybrid.jpg"
+                    },
+                    {
+                        "icon": "wrench",
+                        "title": "تجهیزات جانبی",
+                        "text": "سازه و پایه‌های نصب، کابل و تجهیزات حفاظتی.",
+                        "link_label": "مشاهدهٔ تجهیزات",
+                        "link_url": "@link:shop",
+                        "image": "/storage/solar-assets/project-hybrid-20kw.jpeg",
+                        "image_url": "/storage/solar-assets/project-hybrid-20kw.jpeg"
+                    }
                 ],
                 "section_spacing": "compact"
-            }
+            },
+            "id": "solar-products-2-target-audience-grid"
         },
         {
             "type": "dual_sale_product_grid",
@@ -50,11 +84,19 @@
                 "view_all_label": "همهٔ محصولات",
                 "view_all_url": "@link:shop",
                 "items": [
-                    {"title": "پنل خورشیدی ۷۲۰ وات TSM-NEG21C.20", "badge": "جدید", "meta": "پنل مونوکریستال", "url": "@link:shop"}
+                    {
+                        "title": "پنل خورشیدی ۷۲۰ وات TSM-NEG21C.20",
+                        "badge": "جدید",
+                        "meta": "پنل مونوکریستال",
+                        "url": "@link:shop",
+                        "image": "/storage/solar-assets/residential-panels.jpg",
+                        "image_url": "/storage/solar-assets/residential-panels.jpg"
+                    }
                 ],
                 "empty_text": "محصولی برای نمایش وجود ندارد.",
                 "section_spacing": "regular"
-            }
+            },
+            "id": "solar-products-3-dual-sale-product-grid"
         }
     ]
 }
