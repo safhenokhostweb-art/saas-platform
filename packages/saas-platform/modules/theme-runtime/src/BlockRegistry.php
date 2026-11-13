@@ -1097,6 +1097,10 @@ class BlockRegistry
                     'drawer_show_logo'      => ['type' => 'boolean', 'label' => 'نمایش لوگو در بالای منوی بازشو', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_show_search'    => ['type' => 'boolean', 'label' => 'جستجو داخل منوی بازشو (در موبایل از نوار هدر برداشته می‌شود)', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never', 'show_search' => true]],
                     'drawer_show_ctas'      => ['type' => 'boolean', 'label' => 'دکمه‌ها در پایین منوی بازشو (در موبایل از نوار هدر برداشته می‌شوند)', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_action_text'    => ['type' => 'string', 'label' => 'متن دکمه ویژه کشوی موبایل (مثلا ماشین‌حساب خورشیدی)', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_action_url'     => ['type' => 'string', 'label' => 'لینک دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_action_icon'    => ['type' => 'icon', 'label' => 'آیکون دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_action_style'   => ['type' => 'select', 'label' => 'سبک دکمه ویژه کشوی موبایل', 'options' => ['primary' => 'اصلی (پررنگ)', 'outline' => 'خط دور'], 'default' => 'primary', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     // ADR-084: between the burger breakpoint and this width the bar
                     // tightens (no tagline, smaller menu items and buttons) so a
                     // full menu and actions row never wraps.

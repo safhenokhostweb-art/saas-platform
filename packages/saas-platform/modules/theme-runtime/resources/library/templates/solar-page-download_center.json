@@ -1,0 +1,70 @@
+{
+    "order": 150,
+    "name": "مرکز دانلود کاتالوگ و اسناد فنی",
+    "description": "دانلود کاتالوگ فنی پنل‌های خورشیدی، دفترچه راهنمای اینورترها و اسناد قوانین ساتبا.",
+    "type": "page",
+    "category": "industrial",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "route": "download-center",
+    "tags": [
+        "صنعت برق",
+        "انرژی خورشیدی",
+        "تخصصی"
+    ],
+    "blocks": [
+        {
+            "type": "hero_with_stats",
+            "props": {
+                "eyebrow": "بانک مدارک مهندسی",
+                "title": "کاتالوگ‌ها، دیتاشیت‌ها و",
+                "highlight": "اسناد فنی تجهیزات خورشیدی",
+                "subtitle": "دریافت مستقیم فایل‌های PDF مشخصات فنی پنل‌ها، اینورترها، باتری‌ها و آیین‌نامه‌های مصوب وزارت نیرو.",
+                "primary_label": "مشاهده اسناد",
+                "primary_url": "#downloads",
+                "layout": "centered",
+                "stats": [],
+                "section_spacing": "compact"
+            }
+        },
+        {
+            "type": "downloadable_assets",
+            "props": {
+                "source_type": "static",
+                "endpoint_url": "",
+                "query_params": "{}",
+                "title": "کاتالوگ‌های فنی تجهیزات",
+                "subtitle": "مشخصات کامل تجهیزات استاندارد مورد تأیید در پروژه‌های خورشیدی",
+                "columns": "2",
+                "button_label": "دانلود فایل PDF",
+                "items": [
+                    {
+                        "title": "کاتالوگ پنل‌های خورشیدی ۷۲۰ وات دابل‌گلس",
+                        "description": "مشخصات مکانیکی، ابعاد، راندمان سلولی و ضرایب دمایی (PDF - 2.4MB)",
+                        "size_label": "PDF",
+                        "file_type": "pdf"
+                    },
+                    {
+                        "title": "کاتالوگ اینورترهای هیبریدی تک‌فاز و سه‌فاز",
+                        "description": "نمودار اتصالات الکتریکی، ولتاژ کاری MPPT و قابلیت‌های اتصال باتری (PDF - 4.1MB)",
+                        "size_label": "PDF",
+                        "file_type": "pdf"
+                    },
+                    {
+                        "title": "راهنمای ایمنی و استاندارد نصب سیستم‌های فتوولتائیک",
+                        "description": "دستورالعمل جامع الزامات ارتینگ، کلیدهای DC و اتصالات MC4 (PDF - 1.8MB)",
+                        "size_label": "PDF",
+                        "file_type": "pdf"
+                    },
+                    {
+                        "title": "قوانین و مصوبات ماده ۱۶ خرید تضمینی برق پاک",
+                        "description": "متن رسمی قانون جهش تولید دانش‌بنیان و شیوه‌نامه اجرایی خرید برق (PDF - 850KB)",
+                        "size_label": "PDF",
+                        "file_type": "pdf"
+                    }
+                ],
+                "empty_text": "فایلی برای دانلود یافت نشد.",
+                "section_spacing": "regular"
+            }
+        }
+    ]
+}

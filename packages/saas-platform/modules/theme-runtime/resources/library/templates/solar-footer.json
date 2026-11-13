@@ -5,7 +5,13 @@
     "type": "footer",
     "category": "corporate",
     "spec": "PLATFORM-THEME-SPEC-v1",
-    "tags": ["فوتر", "انرژی خورشیدی", "صنعتی", "تیره", "تماس"],
+    "tags": [
+        "فوتر",
+        "انرژی خورشیدی",
+        "صنعتی",
+        "تیره",
+        "تماس"
+    ],
     "blocks": [
         {
             "type": "nav_footer",
@@ -18,25 +24,114 @@
                 "layout_columns_tablet": 2,
                 "layout_columns_mobile": 1,
                 "columns": [
-                    {"title": "دسترسی سریع", "links": [
-                        {"label": "خانه", "url": "@link:home"},
-                        {"label": "فروشگاه", "url": "@link:shop"},
-                        {"label": "آموزش", "url": "@link:courses"},
-                        {"label": "درباره ما", "url": "@link:about"},
-                        {"label": "تماس", "url": "@link:contact"}
-                    ]},
-                    {"title": "خدمات", "links": [
-                        {"label": "طراحی سیستم خورشیدی", "url": "@link:about"},
-                        {"label": "اجرا و نصب", "url": "@link:about"},
-                        {"label": "مشاورهٔ انرژی", "url": "@link:contact"},
-                        {"label": "سیستم‌های Hybrid", "url": "@link:contact"},
-                        {"label": "آموزش تخصصی", "url": "@link:courses"}
-                    ]},
-                    {"title": "تماس", "links": [
-                        {"label": "۰۲۱-۱۲۳۴۵۶۷۸", "url": "@link:contact"},
-                        {"label": "info@example.com", "url": "mailto:info@example.com"},
-                        {"label": "نشانی دفتر مرکزی شما", "url": "@link:contact"}
-                    ]}
+                    {
+                        "title": "دسترسی سریع",
+                        "links": [
+                            {
+                                "label": "صفحه اصلی",
+                                "url": "\/"
+                            },
+                            {
+                                "label": "پروژه‌های اجرایی",
+                                "url": "\/page\/projects"
+                            },
+                            {
+                                "label": "ماشین‌حساب خورشیدی",
+                                "url": "\/page\/solar-calculator"
+                            },
+                            {
+                                "label": "مرکز دانلود اسناد",
+                                "url": "\/page\/download-center"
+                            },
+                            {
+                                "label": "آکادمی آموزش",
+                                "url": "\/page\/courses"
+                            },
+                            {
+                                "label": "درباره ما",
+                                "url": "\/page\/about"
+                            },
+                            {
+                                "label": "تماس با ما",
+                                "url": "\/page\/contact"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "راهکارهای تخصصی",
+                        "links": [
+                            {
+                                "label": "سیستم‌های صنعتی و مگاواتی",
+                                "url": "\/page\/industrial"
+                            },
+                            {
+                                "label": "سیستم‌های مسکونی و ویلایی",
+                                "url": "\/page\/residential"
+                            },
+                            {
+                                "label": "سیستم‌های تجاری و درمانی",
+                                "url": "\/page\/commercial"
+                            },
+                            {
+                                "label": "نیروگاه متصل به شبکه (On-Grid)",
+                                "url": "\/page\/ongrid"
+                            },
+                            {
+                                "label": "نیروگاه مستقل و ذخیره‌ساز (Off-Grid)",
+                                "url": "\/page\/offgrid"
+                            },
+                            {
+                                "label": "سیستم هیبریدی پیشرفته",
+                                "url": "\/page\/hybrid"
+                            },
+                            {
+                                "label": "پمپاژ آب خورشیدی",
+                                "url": "\/page\/solar-pumping"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "خدمات مهندسی",
+                        "links": [
+                            {
+                                "label": "طراحی مهندسی و PVSyst",
+                                "url": "\/page\/design"
+                            },
+                            {
+                                "label": "اجرا، نصب و راه‌اندازی",
+                                "url": "\/page\/installation"
+                            },
+                            {
+                                "label": "نگهداری، پایش و شستشو",
+                                "url": "\/page\/maintenance"
+                            },
+                            {
+                                "label": "امکان‌سنجی و مشاوره",
+                                "url": "\/page\/consulting"
+                            },
+                            {
+                                "label": "رزرو وقت مشاوره حضوری",
+                                "url": "\/page\/expert-consultation"
+                            }
+                        ]
+                    },
+                    {
+                        "title": "ارتباط با ما",
+                        "links": [
+                            {
+                                "label": "۰۲۱-۱۲۳۴۵۶۷۸",
+                                "url": "tel:02112345678"
+                            },
+                            {
+                                "label": "info@example.com",
+                                "url": "mailto:info@example.com"
+                            },
+                            {
+                                "label": "نشانی دفتر مرکزی و فنی",
+                                "url": "\/page\/contact"
+                            }
+                        ]
+                    }
                 ],
                 "show_brand": true,
                 "show_columns": true,

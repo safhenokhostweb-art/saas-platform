@@ -4654,9 +4654,18 @@ class BlockRenderer
                 . $hiddenSearchInputs
                 . '<button type="submit" class="tb-nav-header-search-submit" aria-label="جستجو">' . $this->iconHtml('search') . '</button></form>';
         }
-        $drawerCtas = $drawerEnabled && $this->flag($props['drawer_show_ctas'] ?? false) && ($cta2Html !== '' || $ctaPlainHtml !== '')
-            ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . $cta2Html . $ctaPlainHtml . '</div>'
-            : '';
+        $drawerExtraAction = '';
+        $drawerActionText = trim($this->stringify($props['drawer_action_text'] ?? ''));
+        if ($drawerEnabled && $drawerActionText !== '') {
+            $drawerActionUrl = $this->linkHref($props['drawer_action_url'] ?? '#');
+            $drawerActionIcon = $this->headerButtonIcon($props['drawer_action_icon'] ?? 'calculator');
+            $drawerActionStyle = ($props['drawer_action_style'] ?? 'primary') === 'outline' ? ' tb-nav-header-cta--outline' : '';
+            $drawerExtraAction = '<a href="' . $this->escapeAttr($drawerActionUrl) . '" class="tb-btn tb-nav-header-cta tb-nav-header-drawer-calc-btn' . $drawerActionStyle . '">' . $drawerActionIcon . '<span>' . $this->escape($drawerActionText) . '</span></a>';
+        }
+
+        $drawerCtas = $drawerEnabled && $this->flag($props['drawer_show_ctas'] ?? false) && ($cta2Html !== '' || $ctaPlainHtml !== '' || $drawerExtraAction !== '')
+            ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . ($drawerExtraAction !== '' ? $drawerExtraAction . '<div class="tb-nav-header-drawer-btns" style="display:flex;gap:0.5rem;width:100%;">' . $cta2Html . $ctaPlainHtml . '</div>' : $cta2Html . $ctaPlainHtml) . '</div>'
+            : ($drawerExtraAction !== '' ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . $drawerExtraAction . '</div>' : '');
 
         $closeButton = '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>';
         $menuHtml = $hasMenu

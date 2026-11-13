@@ -1,0 +1,62 @@
+{
+    "order": 150,
+    "name": "طراحی مهندسی سیستم‌های خورشیدی",
+    "description": "طراحی و شبیه‌سازی سیستم‌های خورشیدی با نرم‌افزارهای تخصصی PVSyst و AutoCAD.",
+    "type": "page",
+    "category": "industrial",
+    "spec": "PLATFORM-THEME-SPEC-v1",
+    "route": "design",
+    "tags": [
+        "صنعت برق",
+        "انرژی خورشیدی",
+        "تخصصی"
+    ],
+    "blocks": [
+        {
+            "type": "hero_with_stats",
+            "props": {
+                "eyebrow": "مهندسی و شبیه‌سازی",
+                "title": "طراحی دقیق مهندسی با",
+                "highlight": "نرم‌افزارهای تخصصی خورشیدی",
+                "subtitle": "محاسبه دقیق تولید ماهانه و سالانه، تخمین افت‌های دمایی، تلفات سایه‌اندازی و انتخاب بهینه‌ترین سایز کابل و اینورتر.",
+                "primary_label": "سفارش طراحی مهندسی",
+                "primary_url": "@link:contact",
+                "layout": "centered",
+                "stats": [],
+                "section_spacing": "compact"
+            }
+        },
+        {
+            "type": "target_audience_grid",
+            "props": {
+                "title": "خدمات دفتر فنی و طراحی",
+                "subtitle": "ارائه گزارش‌های رسمی برای ارائه به بانک‌ها، سرمایه‌گذاران و شرکت‌های توزیع برق.",
+                "columns": "3",
+                "card_align": "center",
+                "items": [
+                    {
+                        "icon": "file-text",
+                        "title": "گزارش شبیه‌سازی PVSyst",
+                        "text": "تولید دیاگرام‌های افت انرژی، پیش‌بینی تولید ۲۵ ساله، شبیه‌سازی تابش مستقیم و پخشی با بانک داده‌های Meteonorm.",
+                        "link_label": "مشاهده نمونه گزارش",
+                        "link_url": "@link:download_center"
+                    },
+                    {
+                        "icon": "drafting-compass",
+                        "title": "نقشه‌های اجرایی Single Line (SLD)",
+                        "text": "ترسیم کامل دیاگرام تک‌خطی الکتریکی، جانمایی تابلوها، محاسبات سایزینگ کلیدها و سیستم حفاظت صاعقه.",
+                        "link_label": "اطلاعات بیشتر",
+                        "link_url": "@link:contact"
+                    },
+                    {
+                        "icon": "calculator",
+                        "title": "امکان‌سنجی اقتصادی و تحلیل مالی",
+                        "text": "محاسبه نرخ بازگشت سرمایه (IRR)، دوره بازگشت سرمایه (Payback Period) و ارزش خالص فعلی (NPV).",
+                        "link_label": "مشاوره مالی",
+                        "link_url": "@link:contact"
+                    }
+                ]
+            }
+        }
+    ]
+}
