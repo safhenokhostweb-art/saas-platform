@@ -195,6 +195,7 @@ final class CommercialBlockTypes
                     'items' => $repeater('محصولات دستی', 'محصول', [
                         'product_id' => $text('شناسهٔ محصول در فروشگاه (برای افزودن مستقیم به سبد)'),
                         'title' => $text('نام محصول'), 'image' => $image('تصویر'), 'image_alt' => $text('متن جایگزین تصویر'),
+                        'icon' => $icon('آیکون جایگزین تصویر (اختیاری)', ''),
                         'badge' => $text('نشان'), 'price' => $text('قیمت'), 'old_price' => $text('قیمت پیش از تخفیف'),
                         'meta' => $text('ویژگی کوتاه'), 'url' => $link('لینک صفحهٔ محصول'),
                     ], $products),

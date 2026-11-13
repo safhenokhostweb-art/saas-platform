@@ -716,6 +716,7 @@ class BlockRegistry
                 // product_slider's source fields below.
                 'schema' => [
                     'title' => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => 'آخرین مطالب'],
+                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان بخش', 'default' => ''],
                     'limit' => ['type' => 'number', 'label' => 'تعداد نوشته', 'default' => 6],
                     'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['grid' => 'گرید', 'list' => 'لیست', 'slider' => 'اسلایدر'], 'default' => 'grid'],
                     'source' => ['type' => 'select', 'label' => 'منبع', 'options' => ['latest' => 'جدیدترین', 'category' => 'یک دسته‌بندی خاص', 'manual' => 'انتخاب دستی'], 'default' => 'latest'],
@@ -2172,8 +2173,9 @@ class BlockRegistry
                 'category' => self::CATEGORY_DYNAMIC,
                 'icon' => 'testimonials',
                 'schema' => [
-                    'title'    => ['type' => 'string',  'label' => 'عنوان بخش',  'default' => 'مشتریان ما چه می‌گویند'],
-                    'columns'  => ['type' => 'select',  'label' => 'تعداد ستون', 'options' => ['1' => '۱', '2' => '۲', '3' => '۳'], 'default' => '3'],
+                    'title'        => ['type' => 'string',  'label' => 'عنوان بخش',  'default' => 'مشتریان ما چه می‌گویند'],
+                    'subtitle'     => ['type' => 'string',  'label' => 'زیرعنوان بخش', 'default' => ''],
+                    'columns'      => ['type' => 'select',  'label' => 'تعداد ستون', 'options' => ['1' => '۱', '2' => '۲', '3' => '۳'], 'default' => '3'],
                     'mode'     => ['type' => 'select', 'label' => 'نوع نمایش', 'options' => ['carousel' => 'اسلایدر با کنترل', 'static' => 'ثابت (Grid)'], 'default' => 'carousel'],
                     'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
                     'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
@@ -2405,12 +2407,22 @@ class BlockRegistry
                 'category' => self::CATEGORY_CONTENT,
                 'icon' => 'gallery',
                 'schema' => [
-                    'title'    => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => ''],
-                    'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
-                    'columns'  => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '2'],
-                    'cards'    => ['type' => 'repeater', 'label' => 'کارت‌ها', 'item_label' => 'کارت', 'storage' => 'array', 'fields' => ['category' => ['type' => 'string', 'label' => 'دسته‌بندی', 'default' => ''], 'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''], 'description' => ['type' => 'textarea', 'label' => 'توضیحات', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'لینک (اختیاری)', 'default' => '']], 'default' => []],
+                    'title'          => ['type' => 'string', 'label' => 'عنوان بخش', 'default' => ''],
+                    'subtitle'       => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                    'columns'        => ['type' => 'select', 'label' => 'تعداد ستون', 'options' => ['2' => '۲', '3' => '۳', '4' => '۴'], 'default' => '2'],
+                    'view_all_label' => ['type' => 'string', 'label' => 'متن دکمه انتهای بخش', 'default' => ''],
+                    'view_all_url'   => ['type' => 'link', 'label' => 'لینک دکمه انتهای بخش', 'default' => '#', 'condition' => ['view_all_label!' => '']],
+                    'cards'          => ['type' => 'repeater', 'label' => 'کارت‌ها', 'item_label' => 'کارت', 'storage' => 'array', 'fields' => [
+                        'category'    => ['type' => 'string', 'label' => 'دسته‌بندی', 'default' => ''],
+                        'badge'       => ['type' => 'string', 'label' => 'نشان یا مشخصه', 'default' => ''],
+                        'title'       => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
+                        'description' => ['type' => 'textarea', 'label' => 'توضیحات', 'default' => ''],
+                        'image'       => ['type' => 'image', 'label' => 'تصویر پروژه', 'default' => ''],
+                        'image_alt'   => ['type' => 'string', 'label' => 'متن جایگزین تصویر', 'default' => ''],
+                        'url'         => ['type' => 'link', 'label' => 'لینک (اختیاری)', 'default' => ''],
+                    ], 'default' => []],
                 ],
-                'defaultProps' => ['title' => '', 'subtitle' => '', 'columns' => '2', 'cards' => []],
+                'defaultProps' => ['title' => '', 'subtitle' => '', 'columns' => '2', 'view_all_label' => '', 'view_all_url' => '#', 'cards' => []],
             ],
             'contact_info' => [
                 'name' => 'اطلاعات تماس (Contact Info)',

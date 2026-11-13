@@ -1,7 +1,7 @@
 {
     "order": 102,
     "name": "صفحهٔ اصلی شرکت انرژی خورشیدی",
-    "description": "هیرو با آمار، شش خدمت اصلی، معرفی شرکت، پروژه‌های اخیر، مقاله‌ها و فرم تماس؛ ترتیب و فاصله‌ها مطابق مرجع PLATFORM-THEME-SPEC-v1.",
+    "description": "هیرو با آمار، شش خدمت اصلی، معرفی شرکت، دوره‌های آموزشی، پروژه‌های اخیر، نظرات مشتریان، مقاله‌ها و فرم تماس؛ ترتیب و فاصله‌ها مطابق مرجع PLATFORM-THEME-SPEC-v1.",
     "type": "page",
     "category": "corporate",
     "spec": "PLATFORM-THEME-SPEC-v1",
@@ -15,15 +15,15 @@
                 "title": "طراحی و اجرای سیستم‌های خورشیدی در",
                 "highlight": "سراسر کشور",
                 "subtitle": "از مشاوره و طراحی تا تأمین تجهیزات، نصب و پشتیبانی؛ کاهش هزینهٔ برق و انرژی پایدار برای خانه، کسب‌وکار و صنعت.",
-                "primary_label": "دریافت مشاوره",
+                "primary_label": "دریافت مشاوره رایگان",
                 "primary_url": "@link:contact",
                 "secondary_label": "فروشگاه تجهیزات",
                 "secondary_url": "@link:shop",
                 "layout": "split",
                 "stats": [
                     {"value": "+۷", "label": "سال تجربه"},
-                    {"value": "+۱۲", "label": "پروژهٔ اجراشده"},
-                    {"value": "+۵", "label": "متخصص و مهندس"},
+                    {"value": "+۱۲۰", "label": "پروژهٔ اجراشده"},
+                    {"value": "+۱۵", "label": "متخصص و مهندس"},
                     {"value": "٪۱۰۰", "label": "رضایت مشتریان"}
                 ],
                 "section_spacing": "regular"
@@ -54,32 +54,68 @@
                 "variant": "zigzag",
                 "start_side": "start",
                 "rows": [
-                    {"icon": "building-2", "title": "مجموعهٔ تخصصی انرژی خورشیدی", "text": "ما خدمات مشاوره، طراحی و اجرای سیستم‌های خورشیدی را در شهر و استان شما و سراسر کشور ارائه می‌دهیم و تأمین تجهیزات و نگهداری این سیستم‌ها را نیز انجام می‌دهیم. خدمات ما از امکان‌سنجی و طراحی مهندسی تا نصب، راه‌اندازی، بهینه‌سازی و پشتیبانی پس از فروش ادامه دارد تا مشتریان خانگی، تجاری، کشاورزی و صنعتی به برق پایدار و مطمئن دسترسی داشته باشند.", "link_label": "درخواست مشاوره", "link_url": "@link:contact"}
+                    {"icon": "building-2", "title": "مجموعهٔ تخصصی مهندسی انرژی خورشیدی", "text": "ما خدمات مشاوره، طراحی و اجرای سیستم‌های خورشیدی را با بالاترین استانداردهای مهندسی در سراسر کشور ارائه می‌دهیم. از امکان‌سنجی اولیه و طراحی دقیق با نرم‌افزارهای تخصصی تا تأمین مستقیم تجهیزات، نصب، راه‌اندازی و پشتیبانی پس از فروش، در تمامی مراحل در کنار شما هستیم تا به برق پایدار، پاک و مطمئن دسترسی داشته باشید.", "link_label": "درخواست مشاوره", "link_url": "@link:contact"}
                 ],
                 "section_spacing": "regular"
             }
         },
         {
+            "type": "dual_sale_product_grid",
+            "props": {
+                "source_type": "static",
+                "endpoint_url": "",
+                "query_params": "{}",
+                "title": "دوره‌های آموزشی تخصصی",
+                "subtitle": "با شرکت در دوره‌های تخصصی، دانش مهندسی و کاربردی سیستم‌های خورشیدی خود را ارتقا دهید.",
+                "columns": "3",
+                "buy_label": "ثبت‌نام",
+                "details_label": "مشاهده سرفصل‌ها",
+                "view_all_label": "مشاهده تقویم آموزشی",
+                "view_all_url": "@link:courses",
+                "items": [
+                    {"title": "مقدمات طراحی سیستم خورشیدی", "badge": "رایگان", "meta": "شروع: ۱ شهریور ۱۴۰۵ · ۱۲ ساعت", "price": "رایگان", "icon": "sun", "url": "@link:courses"},
+                    {"title": "شبیه‌سازی نیروگاه با PVsyst", "badge": "هزینه‌دار", "meta": "شروع: ۱۵ شهریور ۱۴۰۵ · ۲۰ ساعت", "price": "۳٬۵۰۰٬۰۰۰ تومان", "icon": "zap", "url": "@link:courses"},
+                    {"title": "نصب و نگهداری پنل‌های خورشیدی", "badge": "رایگان", "meta": "شروع: ۲ مهر ۱۴۰۵ · ۱۶ ساعت", "price": "رایگان", "icon": "wrench", "url": "@link:courses"}
+                ],
+                "empty_text": "دوره‌ای در حال حاضر فعال نیست.",
+                "section_spacing": "regular"
+            }
+        },
+        {
             "type": "project_cards",
-            "style": {"paddingTop": 72, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24},
-            "responsive": {"mobile": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
             "props": {
                 "title": "پروژه‌های اخیر",
-                "subtitle": "نمونه‌هایی از پروژه‌های موفق ما در بخش‌های مختلف",
+                "subtitle": "نمونه‌هایی از پروژه‌های موفق ما در بخش‌های مختلف سراسر کشور",
                 "columns": "3",
+                "view_all_label": "مشاهده همه پروژه‌ها",
+                "view_all_url": "@link:projects",
                 "cards": [
-                    {"category": "نیروگاه هیبریدی", "title": "نیروگاه خورشیدی ۲۰ کیلووات", "description": "مسکونی • Solar + Battery", "url": "@link:about"},
-                    {"category": "نیروگاه هیبریدی", "title": "نیروگاه خورشیدی ۱۵ کیلووات", "description": "مسکونی • Solar + Battery", "url": "@link:about"},
-                    {"category": "نیروگاه هیبریدی", "title": "نیروگاه خورشیدی ۱۲ کیلووات", "description": "مسکونی • Solar + Battery", "url": "@link:about"}
+                    {"category": "نیروگاه هیبریدی", "badge": "۲۰ کیلووات", "title": "نیروگاه خورشیدی ۲۰ کیلووات", "description": "پروژه صنعتی مسکونی • Solar + Battery", "url": "@link:projects"},
+                    {"category": "نیروگاه هیبریدی", "badge": "۱۵ کیلووات", "title": "نیروگاه خورشیدی ۱۵ کیلووات", "description": "پروژه ساختمانی • Solar + Battery", "url": "@link:projects"},
+                    {"category": "نیروگاه هیبریدی", "badge": "۱۲ کیلووات", "title": "نیروگاه خورشیدی ۱۲ کیلووات", "description": "پروژه ویلایی • Solar + Battery", "url": "@link:projects"}
+                ]
+            }
+        },
+        {
+            "type": "testimonials_slider",
+            "props": {
+                "title": "نظرات مشتریان و همکاران",
+                "subtitle": "آنچه کارفرمایان و مشتریان درباره کیفیت پروژه‌ها و خدمات ما می‌گویند",
+                "columns": "3",
+                "mode": "static",
+                "show_summary": false,
+                "items": [
+                    {"name": "مهندس م. رضایی", "role": "مدیرعامل", "company": "شرکت صنعتی کوثر", "rating": 5, "verified": true, "date": "۱۴۰۵/۰۷/۱۵", "text": "طراحی دقیق سیستم خورشیدی هیبریدی و نصب بدون نقص تجهیزات در کمترین زمان ممکن انجام شد. اکنون هزینه‌های انرژی مجموعه به طور چشمگیری کاهش یافته است."},
+                    {"name": "خانم ز. موسوی", "role": "مدیر مجتمع", "company": "مجتمع مسکونی نور", "rating": 5, "verified": true, "date": "۱۴۰۵/۰۶/۲۸", "text": "پشتیبانی عالی و پیگیری مستمر تیم فنی حتی پس از اتمام پروژه، اطمینان خاطر کاملی برای ساکنان مجتمع در تامین برق اضطراری فراهم کرد."},
+                    {"name": "دکتر ح. اسدی", "role": "سرمایه‌گذار", "company": "پروژه نیروگاه خورشیدی", "rating": 5, "verified": true, "date": "۱۴۰۵/۰۶/۱۰", "text": "محاسبات فنی و امکان‌سنجی اقتصادی بسیار دقیق بود. بازگشت سرمایه طبق برنامه‌ریزی پیش‌بینی‌شده محقق شد و از عملکرد نیروگاه بسیار راضی هستم."}
                 ]
             }
         },
         {
             "type": "blog_posts",
-            "style": {"paddingTop": 72, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24, "textAlign": "center"},
-            "responsive": {"mobile": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
             "props": {
-                "title": "وبلاگ و مقالات",
+                "title": "وبلاگ و مقالات تخصصی",
+                "subtitle": "جدیدترین مطالب و تحلیل‌های تخصصی در حوزه انرژی خورشیدی",
                 "limit": 3,
                 "layout": "grid",
                 "source": "latest",
@@ -89,8 +125,6 @@
         },
         {
             "type": "contact_split",
-            "style": {"paddingTop": 72, "paddingBottom": 72, "paddingLeft": 24, "paddingRight": 24},
-            "responsive": {"mobile": {"paddingTop": 48, "paddingBottom": 48, "paddingLeft": 16, "paddingRight": 16}},
             "props": {
                 "title": "با ما در تماس باشید",
                 "subtitle": "برای دریافت مشاوره، ثبت درخواست یا همکاری با ما، از راه‌های زیر ارتباط برقرار کنید.",

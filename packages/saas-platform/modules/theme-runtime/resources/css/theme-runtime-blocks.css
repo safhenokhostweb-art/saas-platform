@@ -572,10 +572,17 @@ img.tb-review-avatar { object-fit:cover; }
 .tb-bg-light      { background: #f8fafc; }
 .tb-bg-gray       { background: #f1f5f9; }
 .tb-services-grid, .tb-project-cards-grid { margin: 0; }
-.tb-project-card { display: block; background: var(--tb-surface, #fff); border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.75rem; padding: 1.5rem; text-decoration: none; color: inherit; }
-.tb-project-card-category { display: inline-block; background: var(--tb-background, #eff6ff); color: var(--tb-primary, #4f46e5); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; }
+.tb-project-card { display: flex; flex-direction: column; background: var(--tb-surface, #fff); border: 1px solid var(--tb-border, #e5e7eb); border-radius: var(--tb-radius-md, 0.75rem); padding: 1.5rem; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; overflow: hidden; }
+.tb-project-card:hover { border-color: var(--tb-primary, #4f46e5); transform: translateY(-3px); box-shadow: var(--tb-shadow-md, none); }
+.tb-project-card-media { margin: -1.5rem -1.5rem 1rem -1.5rem; overflow: hidden; aspect-ratio: 16 / 9; background: var(--tb-background, #f8fafc); }
+.tb-project-card-media img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
+.tb-project-card:hover .tb-project-card-media img { transform: scale(1.05); }
+.tb-project-card-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.tb-project-card-category { display: inline-block; background: color-mix(in srgb, var(--tb-primary, #4f46e5) 12%, transparent); color: var(--tb-primary-text, var(--tb-primary, #4f46e5)); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+.tb-project-card-badge { display: inline-block; background: var(--tb-background, #f1f5f9); border: 1px solid var(--tb-border, #e5e7eb); color: var(--tb-text-muted, #6b7280); padding: 0.2rem 0.6rem; border-radius: var(--tb-radius-sm, 6px); font-size: 0.75rem; font-weight: 600; }
 .tb-project-card-title { font-size: 1.0625rem; font-weight: 700; color: var(--tb-text, #111827); margin: 0 0 0.4rem; }
 .tb-project-card-text { font-size: 0.875rem; color: var(--tb-text-muted, #6b7280); line-height: 1.5; margin: 0; }
+.tb-project-cards-footer { margin-top: 2rem; display: flex; justify-content: center; }
 .tb-contact-info-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; }
 .tb-about-section { max-width: 48rem; margin: 0 auto; text-align: center; }
 .tb-about-features { list-style: none; padding: 0; margin: 1rem 0; text-align: start; display: inline-block; }

@@ -2871,7 +2871,9 @@ class BlockRenderer
     {
         $layout = $props['layout'] ?? 'grid';
         $layout = in_array($layout, ['grid', 'list', 'slider'], true) ? $layout : 'grid';
-        $titleHtml = $title !== '' ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>" : '';
+        $subtitle = $this->escape($props['subtitle'] ?? '');
+        $subHtml  = $subtitle !== '' ? "<p class=\"tb-section-subtitle\" style=\"margin-top:-0.5rem;margin-bottom:1.75rem;text-align:center;color:var(--tb-text-muted);\">{$subtitle}</p>" : '';
+        $titleHtml = $title !== '' ? "<h2 class=\"tb-heading tb-section-title\">{$title}</h2>{$subHtml}" : '';
         if ($layout === 'slider') {
             $body = $this->renderCarousel($cards, $id . '-track', $this->flag($props['autoplay'] ?? true), (int) ($props['interval'] ?? 5000), 'tb-blog-slider', ['desktop' => 3, 'tablet' => 2, 'mobile' => 1], options: ['label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]);
         } else {
@@ -3281,9 +3283,10 @@ class BlockRenderer
      */
     protected function renderTestimonialsSlider(array $props, string $inner, string $id): string
     {
-        $title   = $this->escape($props['title'] ?? 'نظرات مشتریان');
-        $columns = max(1, min(3, (int) ($props['columns'] ?? 3)));
-        $mode    = in_array($props['mode'] ?? 'carousel', ['static', 'carousel'], true) ? ($props['mode'] ?? 'carousel') : 'carousel';
+        $title    = $this->escape($props['title'] ?? 'نظرات مشتریان');
+        $subtitle = $this->escape($props['subtitle'] ?? '');
+        $columns  = max(1, min(3, (int) ($props['columns'] ?? 3)));
+        $mode     = in_array($props['mode'] ?? 'carousel', ['static', 'carousel'], true) ? ($props['mode'] ?? 'carousel') : 'carousel';
 
         $rawItems = $props['items'] ?? '[]';
         $items    = is_array($rawItems) ? $rawItems : (json_decode($rawItems, true) ?? []);
@@ -3330,9 +3333,10 @@ class BlockRenderer
                 options: ['label' => html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')]
             );
 
+        $subHtml = $subtitle !== '' ? "<p class=\"tb-features-section-sub\">{$subtitle}</p>" : '';
         return "<div id=\"tb-{$id}\" class=\"tb-testimonials tb-section\">
             <div class=\"tb-container\">
-                <div class=\"tb-testimonials-header\"><h2 class=\"tb-features-section-title\">{$title}</h2></div>
+                <div class=\"tb-testimonials-header\"><h2 class=\"tb-features-section-title\">{$title}</h2>{$subHtml}</div>
                 {$summary}
                 {$body}
             </div>
@@ -5421,23 +5425,43 @@ class BlockRenderer
 
         $items = '';
         foreach ($cards as $card) {
-            $cat    = $this->escape(is_array($card) ? ($card['category'] ?? '') : '');
-            $ctitle = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
-            $desc   = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
-            $url    = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
+            $cat      = $this->escape(is_array($card) ? ($card['category'] ?? '') : '');
+            $badge    = $this->escape(is_array($card) ? ($card['badge'] ?? '') : '');
+            $ctitle   = $this->escape(is_array($card) ? ($card['title'] ?? '') : '');
+            $desc     = $this->escape(is_array($card) ? ($card['description'] ?? '') : '');
+            $url      = $this->linkHref(is_array($card) ? ($card['url'] ?? '') : '', '');
+            $imgSrc   = $this->mediaSrc(is_array($card) ? ($card['image'] ?? '') : '');
+            $imgAlt   = $this->escape(is_array($card) ? ($card['image_alt'] ?? '') : '') ?: $ctitle;
             if ($ctitle === '' && $desc === '') {
                 continue;
             }
-            $body = ($cat ? "<span class=\"tb-project-card-category\">{$cat}</span>" : '')
+            $mediaHtml = $imgSrc !== ''
+                ? "<div class=\"tb-project-card-media\"><img src=\"{$this->escapeUrl($imgSrc, '')}\" alt=\"{$imgAlt}\" loading=\"lazy\" decoding=\"async\"></div>"
+                : '';
+            $badgesHtml = '';
+            if ($cat !== '' || $badge !== '') {
+                $badgesHtml = "<div class=\"tb-project-card-meta\">"
+                    . ($cat ? "<span class=\"tb-project-card-category\">{$cat}</span>" : '')
+                    . ($badge ? "<span class=\"tb-project-card-badge\">{$badge}</span>" : '')
+                    . "</div>";
+            }
+            $body = $mediaHtml . $badgesHtml
                 . "<h3 class=\"tb-project-card-title\">{$ctitle}</h3><p class=\"tb-project-card-text\">{$desc}</p>";
             $items .= $url !== ''
                 ? "<a href=\"{$url}\" class=\"tb-project-card\">{$body}</a>"
                 : "<div class=\"tb-project-card\">{$body}</div>";
         }
 
+        $viewAll = $this->escape($props['view_all_label'] ?? '');
+        $viewAllUrl = $this->linkHref($props['view_all_url'] ?? '', '#');
+        $footerHtml = $viewAll !== ''
+            ? "<div class=\"tb-project-cards-footer\"><a href=\"{$viewAllUrl}\" class=\"tb-btn tb-btn-primary\">{$viewAll}</a></div>"
+            : '';
+
         return "<div id=\"tb-{$id}\" class=\"tb-section\">
             <div class=\"tb-container\">{$headerHtml}
                 <div class=\"tb-project-cards-grid tb-grid tb-grid-cols-{$columns} tb-gap-md\">{$items}</div>
+                {$footerHtml}
             </div>
         </div>";
     }

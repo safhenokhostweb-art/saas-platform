@@ -219,9 +219,10 @@ trait CommercialBlockRendererTrait
             }
             $url = $this->cxUrl($item['url'] ?? '#');
             $image = $this->mediaSrc($item['image'] ?? '');
+            $itemIcon = $this->cxText($item['icon'] ?? '') ?: 'package';
             $media = $image !== ''
                 ? '<img src="' . $this->escapeUrl($image, '') . '" alt="' . $this->escapeAttr($this->cxText($item['image_alt'] ?? '') ?: $title) . '" loading="lazy" decoding="async">'
-                : '<span class="tb-cx-media-icon" aria-hidden="true">' . $this->iconHtml('package') . '</span>';
+                : '<span class="tb-cx-media-icon" aria-hidden="true">' . $this->iconHtml($itemIcon) . '</span>';
             $badge = $this->cxText($item['badge'] ?? '');
             $price = $this->cxText($item['price'] ?? '');
             $oldPrice = $this->cxText($item['old_price'] ?? '');

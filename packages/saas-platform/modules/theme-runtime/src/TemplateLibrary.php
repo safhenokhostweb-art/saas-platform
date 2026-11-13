@@ -38,6 +38,7 @@ final class TemplateLibrary
         // fixed route. A products page is the shop: the spec's /products
         // blueprint links through "@link:shop".
         'about' => ['درباره ما', '/page/about'],
+        'projects' => ['پروژه‌ها', '/page/projects'],
         // ADR-084: the header's sign-in and sign-up buttons.
         'login' => ['ورود', '/login'],
         'register' => ['ثبت‌نام', '/register'],
