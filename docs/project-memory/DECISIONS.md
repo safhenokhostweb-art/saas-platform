@@ -5731,3 +5731,12 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   `CommercialMotionLibraryTest` (solar asset contract); customer-site
   `MotionRuntimeManifestReaderTest` (refresh, sanitising) and
   `MotionPickerTest` (category, version, instant refresh).
+- Guards (`MotionLicensingGuardsTest`), added after the shared dev tree was
+  found carrying uncommitted work that bypassed these rules (base
+  `motion-graphics` made free-assignable, and a distribution-mode reorder
+  that let a priced module be assigned for free; package auto-provisioning
+  on manifest build that was hidden from tests by `runningUnitTests()`): the
+  paid motion modules are never free-assignable; an active `site_modules`
+  row without a licence never unlocks premium; building a manifest never
+  creates a package; the motion runtime has no test-only branches and does
+  not call module assignment.
