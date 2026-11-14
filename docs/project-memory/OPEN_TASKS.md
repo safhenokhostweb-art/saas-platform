@@ -1,8 +1,31 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-11-01
+> Last Updated: 2026-11-14
 
 ---
+
+## OPEN: SOLAR CALCULATOR MODULE (ADR-085) — 2026-11-14
+
+Owner brief: a site-specific solar calculator (sizing, itemized quote,
+editable formula table, exchange-rate pricing, lead gate) for the «قالب صنعت
+برق» customer, invisible to every other tenant.
+
+| Component | Status |
+|-----------|--------|
+| customer-site `app/Modules/SolarCalculator` (formula engine, settings, calculation, lead + CRM capture, quote view, admin: leads/formulas/settings) | ✅ BUILT — branch `feat/solar-calculator` |
+| Generic exchange-rate store `App\Services\ExchangeRates` (manual + SSRF-guarded HTTPS JSON provider, hourly `exchange-rates:sync`) | ✅ BUILT |
+| Canvas widget `module:solar_calculator` (host-only, license-gated palette entry) | ✅ BUILT |
+| Platform catalog row `solar_calculator` (`marketplace_visible=false`, `license_required=true`) | ✅ BUILT — branch `feat/solar-calculator` |
+| Release (saas first, then customer-site) | ⏳ via work-unit delivery workflow |
+| Activation: assign `solar_calculator` to the customer's license, set the USD rate, add the widget to the calculator page | ⏳ OWNER |
+
+**Follow-up:**
+- Server-side PDF: dompdf cannot join Persian letters; the quote is a print
+  view («دانلود PDF» = browser Save as PDF). A true PDF file needs mPDF
+  (dependency decision for the owner).
+- A platform-wide exchange-rate feed would be one more
+  `ExchangeRateProvider`; the admin page's gate (`module:solar_calculator`)
+  widens when a second module reads rates.
 
 ## OPEN: CLEAN SLATE PURGE — LEGACY THEMES, PAGES, MENUS — 2026-11-01
 

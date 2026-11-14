@@ -5517,3 +5517,100 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
 - The theme's products, courses and contact pages render at
   `/page/{slug}`, while the header links (ADR-083) open the module routes
   `/shop`, `/courses` and `/contact`.
+
+## ADR-085
+
+**Title:** Site-specific Solar Calculator module (customer-site), formula table, exchange-rate store and lead-gated quotes
+
+**Status:** Accepted
+
+**Date:** 2026-11-14
+
+**Context:**
+
+- The owner asked for a solar calculator for one customer site (the
+  «قالب صنعت برق» customer): system sizing, an itemized quotation, editable
+  formulas, foreign-currency equipment prices and a lead gate. It must stay
+  invisible to every other tenant.
+- Every customer install runs the same customer-site code, so files alone
+  cannot isolate a feature. Isolation has to be an entitlement.
+- ADR-084 forbids theme-specific renderers for header, footer and sections.
+  A calculator is a functional module with its own data, not a visual
+  variant.
+- The brief assumed a central exchange-rate module. None exists: the
+  platform `currencies` table holds only IRR/IRT denominations, and
+  `multi_currency` is a description-only placeholder.
+- The existing quote/invoice PDF path (dompdf + DejaVu Sans) does not
+  join Persian letters.
+
+**Decision:**
+
+1. **Entitlement, not files.** License key `solar_calculator`. The platform
+   seeds it with `marketplace_visible = false`, `license_required = true`,
+   no price and no Product, so it appears in no module store and reaches a
+   site only when the owner assigns it. On customer-site every route sits
+   behind `module:solar_calculator` (403 otherwise). The admin menu entry,
+   the canvas palette entry and the widget output exist only on a
+   licensed site.
+2. **Self-contained module.** `app/Modules/SolarCalculator` holds models,
+   services, controllers, routes, its provider and the canvas widget.
+   Views live in `resources/views/modules/solar-calculator`, so the admin
+   Tailwind build scans them. The host touches it at four seams:
+   `bootstrap/providers.php`, the `ThemeCanvasRenderer` dispatch, the
+   palette in `ThemeDesignController::canvasEdit()` (the `column`
+   precedent), and AdminMenu/config entries.
+3. **Host-only widget.** `module:solar_calculator` is not in the canonical
+   theme-runtime registry or in `App\Services\ThemeCanvas\BlockRegistry`,
+   so `CanonicalBlockDefinitionParityTest` holds and the platform Canvas
+   never sees it. Its schema is generated from
+   `SolarCalculatorDefaults::UI_FIELDS`, the same list that builds the
+   admin settings form. Every text and image is editable in both places;
+   an empty block prop inherits the module setting.
+4. **Formula table.** `solar_calculator_formulas` stores named constants
+   and expressions, evaluated by a small recursive-descent parser
+   (`Formula\Expression`; no `eval`, whitelisted functions, bounded length
+   and depth) in dependency order (`Formula\FormulaEngine`; cycle and
+   unknown-name detection). An admin save is accepted only if the whole set
+   parses, lints clean and dry-runs on sample input. Inputs are fixed names
+   (`input_monthly_kwh`, `psh`, `is_hybrid`, …) plus one `rate_<code>` per
+   active currency. Result cards, quote lines and totals are config rows
+   that point at formula keys.
+5. **Exchange rates are generic.** `currency_exchange_rates` +
+   `App\Services\ExchangeRates` hold Toman per unit, set manually or by
+   an optional HTTPS JSON provider (SSRF-guarded: https only, public IPs
+   only, port 443, no redirects), synced hourly (`exchange-rates:sync`, a
+   no-op unless enabled). A rate of 0 means "not set": the price is shown
+   as unavailable, never as zero. A future platform feed is one more
+   `ExchangeRateProvider`. The admin page is gated by its only consumer
+   today.
+6. **Lead gate.** `access.mode` is `open` / `login_results` /
+   `login_quote`. In every mode the lead row, the CRM contact (source
+   `form`, tag `solar_calculator`, because `crm_contacts.source` is an enum)
+   and a CRM activity are written in one transaction before the quote URL
+   is returned. The quote is a 48-character bearer token. In login modes it
+   is bound to the first account that opens it. It is served `private,
+   no-store`, `noindex`, `no-referrer`.
+7. **Quote document.** A standalone A4 print view in Vazirmatn. «دانلود
+   PDF» opens it with `?print=1` (browser Save as PDF), which keeps Persian
+   shaping exact. Each quote stores a snapshot of inputs, results, lines,
+   company branding and exchange rates, so later edits never rewrite an
+   issued quote.
+
+**Consequences:**
+
+- Other tenants get three empty tables and a permission row from the
+  migrations. They get no route, menu, palette entry or output.
+- Activation for the customer: release both repos (saas first), assign
+  `solar_calculator` to that site's license, then add the widget to the
+  solar calculator page in the canvas editor. Its default anchor
+  `calc-tool` matches the page template's `#calc-tool` links. The theme
+  templates are unchanged: the platform catalog must not carry a host-only
+  type.
+- Open: a server-side PDF needs a Persian-capable engine (mPDF, an owner
+  dependency decision); a platform-wide rate feed; a browser acceptance
+  spec for the widget flow.
+- Tests (customer-site): `ExpressionTest`, `FormulaEngineTest`,
+  `JsonEndpointExchangeRateProviderTest`, `SolarCalculationServiceTest`
+  (hand-computed sizing and price), `SolarCalculatorPublicFlowTest`
+  (license isolation, lead + CRM capture, gate modes, token binding),
+  `SolarCalculatorWidgetTest`, `SolarCalculatorAdminTest`.
