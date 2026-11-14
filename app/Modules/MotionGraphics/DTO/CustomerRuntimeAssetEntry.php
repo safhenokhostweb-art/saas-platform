@@ -48,6 +48,17 @@ final class CustomerRuntimeAssetEntry
          * @var list<array<string, mixed>>
          */
         public readonly array $parameters = [],
+        /**
+         * ADR-086: which release of the motion this site receives. The
+         * integer `published_version` stays the binding key; these say it in
+         * human terms (`v2`, `1.2.0`) and pin the exact delivered bytes
+         * (12-hex build id), so a site owner and an admin can tell which
+         * iteration a site has.
+         */
+        public readonly ?string $versionLabel = null,
+        public readonly ?string $buildId = null,
+        /** ADR-086: display name of `category` for the customer picker. */
+        public readonly ?string $categoryLabel = null,
     ) {
         ForbiddenFieldGuard::assertClean($themeTokens, 'theme_tokens');
         ForbiddenFieldGuard::assertClean($placementRules, 'placement_rules');
@@ -56,13 +67,15 @@ final class CustomerRuntimeAssetEntry
     }
 
     /**
-     * @return array{asset_id: string, published_version: int, optimized_reference: ?string, checksum: string, asset_type: string, theme_tokens: array<string,string>, placement_rules: array<string,mixed>, responsive_rules: array<string,mixed>, name: ?string, category: ?string}
+     * @return array{asset_id: string, published_version: int, version_label: ?string, build_id: ?string, optimized_reference: ?string, checksum: string, asset_type: string, theme_tokens: array<string,string>, placement_rules: array<string,mixed>, responsive_rules: array<string,mixed>, name: ?string, category: ?string, category_label: ?string}
      */
     public function toArray(): array
     {
         return [
             'asset_id' => $this->assetId,
             'published_version' => $this->publishedVersion,
+            'version_label' => $this->versionLabel,
+            'build_id' => $this->buildId,
             'optimized_reference' => $this->optimizedReference,
             'checksum' => $this->checksum,
             'asset_type' => $this->assetType,
@@ -73,6 +86,7 @@ final class CustomerRuntimeAssetEntry
             // never source/AI/ownership data; see class docblock allowlist.
             'name' => $this->name,
             'category' => $this->category,
+            'category_label' => $this->categoryLabel,
             'parameters' => $this->parameters,
         ];
     }

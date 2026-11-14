@@ -1,0 +1,14 @@
+Asset: solar-motion-graphic v1 (Solar Power Plant Motion)
+
+Allowed edits:
+- Colors: change only the --asset-* values in <style id="asset-theme">, in both the light :root block and the prefers-color-scheme:dark block.
+- Text: Persian copy inside <text> elements; keep Persian digits and right-to-left reading order.
+- Speed: animation durations and delays in the second <style> block, always as calc(Ns*var(--k,1)).
+
+Forbidden:
+- <script>, event handler attributes (on*), <foreignObject>, external href/src, web fonts, SMIL <animate*> elements, <filter>.
+- Animating layout or filter properties; animate transform/opacity/stroke-dash only.
+- Removing the @media (prefers-reduced-motion:reduce) rule, the viewBox or root direction="rtl".
+- Removing or renaming a data-p attribute: runtime parameters target them.
+- Changing "visibility": "private" in metadata.json without an owner decision: it decides which sites receive this motion.
+- Editing a published version in place: create a new version directory instead.

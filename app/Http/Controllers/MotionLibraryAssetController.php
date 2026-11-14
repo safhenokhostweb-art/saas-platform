@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Modules\MotionGraphics\Services\MotionLibraryCatalogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use SaaSPlatform\Modules\MotionGraphics\Models\MotionGraphic;
 
 /**
  * ADR-078/079: serves a curated motion library file at the root-relative URL
@@ -39,6 +40,9 @@ final class MotionLibraryAssetController
         // ADR-081: a file that declares an owner is never public, even if its
         // slug were ever listed here; it is served by MotionPrivateAssetController.
         abort_if(MotionLibraryCatalogService::fileOwnerSiteId($slug, $version) !== null, 404);
+        // ADR-086: likewise a private (grant-only) file; only signed URLs of
+        // a granted site reach it.
+        abort_if(MotionLibraryCatalogService::fileVisibility($slug, $version) !== MotionGraphic::VISIBILITY_PUBLIC, 404);
         abort_if(strlen((string) $request->server('QUERY_STRING', '')) > self::MAX_QUERY_BYTES, 414);
 
         $svg = MotionLibraryCatalogService::render($slug, $version, $request->query());

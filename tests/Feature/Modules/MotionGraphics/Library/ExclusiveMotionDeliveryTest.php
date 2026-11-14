@@ -242,14 +242,21 @@ final class ExclusiveMotionDeliveryTest extends TestCase
             'active_version' => 1, 'status' => MotionBespokeAssignment::STATUS_ACTIVE, 'assigned_at' => now(),
         ]);
 
+        // ADR-086: once the runtime is open for the site, the public library
+        // motions ride along (hero-motion is free; business-growth-motion is
+        // premium and this site has no premium licence, so it is locked).
         $manifest = $this->fetchManifest($siteA)->assertOk()
             ->assertJsonPath('available', true)
             ->assertJsonPath('template_reference', MotionCustomerRuntimeService::BESPOKE_ONLY_TEMPLATE_REFERENCE)
-            ->assertJsonCount(1, 'assets')
-            ->assertJsonPath('assets.0.name', self::NAME)
-            ->assertJsonPath('assets.0.category', 'hero-motion');
-        $this->assertNotEmpty($manifest->json('assets.0.parameters'));
-        $url = $manifest->json('assets.0.optimized_reference');
+            ->assertJsonCount(2, 'assets');
+        $this->assertSame(['hero-motion', 'site-a-exclusive-motion'], MotionGraphic::query()
+            ->whereIn('uuid', array_column($manifest->json('assets'), 'asset_id'))->orderBy('slug')->pluck('slug')->all());
+        $entry = $this->exclusiveEntry($manifest);
+        $this->assertNotNull($entry);
+        $this->assertSame(self::NAME, $entry['name']);
+        $this->assertSame('hero-motion', $entry['category']);
+        $this->assertNotEmpty($entry['parameters']);
+        $url = $entry['optimized_reference'];
         $this->assertMatchesRegularExpression(self::SIGNED, $url);
         $this->get($url)->assertOk();
 

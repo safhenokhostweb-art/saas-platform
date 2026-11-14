@@ -47,6 +47,11 @@ final class MotionLibraryCatalogService
     public const ASSETS = [
         'hero-motion' => 'v2',
         'business-growth-motion' => 'v2',
+        // ADR-086: the reference PRIVATE library motion. Its metadata.json
+        // declares `"visibility": "private"`, so it is published with a
+        // private (signed) reference and reaches only sites granted it in
+        // the central panel (motion_site_asset_grants).
+        'solar-motion-graphic' => 'v1',
     ];
 
     /**
@@ -73,6 +78,7 @@ final class MotionLibraryCatalogService
     private const GROUPS = [
         'hero' => ['name' => 'هیرو', 'category' => 'موشن هیرو', 'sort' => 1],
         'business' => ['name' => 'کسب‌وکار', 'category' => 'رشد و تحلیل کسب‌وکار', 'sort' => 2],
+        'solar' => ['name' => 'صنعت برق و انرژی خورشیدی', 'category' => 'موشن صنعت برق و انرژی', 'sort' => 3],
     ];
 
     /**
@@ -178,6 +184,72 @@ final class MotionLibraryCatalogService
     }
 
     /**
+     * ADR-086: the visibility a library version's metadata declares.
+     * `visibility` absent = public (every asset published before ADR-086);
+     * anything other than "public"/"private" is an error, never silently
+     * public.
+     *
+     * @param array<string, mixed> $metadata
+     */
+    public static function declaredVisibility(array $metadata): string
+    {
+        $visibility = $metadata['visibility'] ?? MotionGraphic::VISIBILITY_PUBLIC;
+        if (! in_array($visibility, [MotionGraphic::VISIBILITY_PUBLIC, MotionGraphic::VISIBILITY_PRIVATE], true)) {
+            throw new RuntimeException('Motion library visibility must be "public" or "private".');
+        }
+
+        return $visibility;
+    }
+
+    /**
+     * ADR-086: the visibility a library version's files declare, read
+     * straight from its metadata.json (public when there is none). A
+     * malformed declaration reads as private, so a file route never serves
+     * it publicly by mistake.
+     */
+    public static function fileVisibility(string $slug, string $libraryVersion): string
+    {
+        $metadata = json_decode((string) @file_get_contents(self::libraryDirectory($slug, $libraryVersion).'/metadata.json'), true);
+        if (! is_array($metadata)) {
+            return MotionGraphic::VISIBILITY_PUBLIC;
+        }
+        try {
+            return self::declaredVisibility($metadata);
+        } catch (RuntimeException) {
+            return MotionGraphic::VISIBILITY_PRIVATE;
+        }
+    }
+
+    /**
+     * ADR-086: true for a catalog (non-exclusive) library version whose
+     * files are private: served only through MotionPrivateAssetController
+     * to a granted site.
+     */
+    public static function isPrivateLibraryFile(string $slug, string $libraryVersion): bool
+    {
+        return array_key_exists($slug, self::ASSETS)
+            && self::fileVisibility($slug, $libraryVersion) === MotionGraphic::VISIBILITY_PRIVATE;
+    }
+
+    /**
+     * ADR-086: the release label a new version row records: the metadata's
+     * `version_label` (`1.2.0`), else its `version` (`v2`), else the
+     * library directory. Never invented, never empty.
+     *
+     * @param array<string, mixed> $metadata
+     */
+    public static function versionLabelFor(array $metadata, string $libraryVersion): string
+    {
+        foreach ([$metadata['version_label'] ?? null, $metadata['version'] ?? null] as $candidate) {
+            if (MotionGraphicVersion::isValidVersionLabel($candidate)) {
+                return (string) $candidate;
+            }
+        }
+
+        return $libraryVersion;
+    }
+
+    /**
      * The owner a library version's files declare, read straight from its
      * metadata.json: null when it declares none (or has no metadata), 0 when
      * the declaration is malformed. The public file route refuses anything
@@ -264,6 +336,13 @@ final class MotionLibraryCatalogService
         // list the slug is in, so a file meant for one site can never be
         // published as public (or the reverse) by a listing mistake.
         $ownerSiteId = self::declaredOwnerSiteId($metadata);
+        // ADR-086: visibility governs GLOBAL motions. An exclusive motion is
+        // already restricted to its owner by ownership, so it must not also
+        // ask for grants (its owner would then need a grant to see it).
+        $visibility = self::declaredVisibility($metadata);
+        if ($ownerSiteId !== null && array_key_exists('visibility', $metadata)) {
+            throw new RuntimeException("Exclusive motion [{$slug}] is already private to its owner; remove `visibility` from its metadata.json.");
+        }
         if (MotionPrivateAssetUrl::isReservedSlug($slug)) {
             throw new RuntimeException("Motion library slug [{$slug}] is reserved.");
         }
@@ -286,9 +365,12 @@ final class MotionLibraryCatalogService
         $descriptor = [
             'type' => 'svg',
             'path' => $relative,
-            // An exclusive version stores the unsigned private base, which no
-            // route serves; the manifest signs it per site.
-            'url' => $ownerSiteId === null ? '/'.$relative : MotionPrivateAssetUrl::baseReference($slug, $libraryVersion),
+            // An exclusive or private (ADR-086) version stores the unsigned
+            // private base, which no route serves; the manifest signs it per
+            // site.
+            'url' => $ownerSiteId === null && $visibility === MotionGraphic::VISIBILITY_PUBLIC
+                ? '/'.$relative
+                : MotionPrivateAssetUrl::baseReference($slug, $libraryVersion),
             'mime' => 'image/svg+xml',
             'mime_type' => 'image/svg+xml',
             'size' => strlen($served),
@@ -301,7 +383,9 @@ final class MotionLibraryCatalogService
             'sha256' => hash('sha256', $svg),
         ];
 
-        return DB::transaction(function () use ($slug, $metadata, $descriptor, $source, $sha256, $parameters, $ownerSiteId): array {
+        $versionLabel = self::versionLabelFor($metadata, $libraryVersion);
+
+        return DB::transaction(function () use ($slug, $metadata, $descriptor, $source, $sha256, $parameters, $ownerSiteId, $visibility, $versionLabel): array {
             [$group, $category] = $this->classification((string) ($metadata['category'] ?? 'hero'));
 
             $motion = MotionGraphic::withTrashed()->where('slug', $slug)->lockForUpdate()->first();
@@ -323,6 +407,10 @@ final class MotionLibraryCatalogService
                 'name' => (string) $metadata['name'],
                 'description' => (string) ($metadata['description'] ?? ''),
                 ...$ownership,
+                // ADR-086: metadata.json is authoritative, like license_tier.
+                // The admin switch (`runtime_enabled`) is deliberately not
+                // here, so a sync never re-enables a motion an admin turned off.
+                'visibility' => $visibility,
                 'group_id' => $group->id,
                 'category_id' => $category->id,
                 'engine' => (string) ($metadata['engine'] ?? 'svg-js'),
@@ -376,6 +464,7 @@ final class MotionLibraryCatalogService
             $version = $existing ?? MotionGraphicVersion::query()->create([
                 'motion_graphic_id' => $motion->id,
                 'version' => 1 + (int) $motion->versions()->max('version'),
+                'version_label' => $versionLabel,
                 'parent_version' => $motion->published_version,
                 'source_snapshot' => $source,
                 'editable_schema_snapshot' => ['editable_properties' => $metadata['editable_properties'] ?? []],

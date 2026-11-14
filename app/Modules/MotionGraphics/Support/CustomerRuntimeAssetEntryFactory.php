@@ -50,6 +50,9 @@ final class CustomerRuntimeAssetEntryFactory
             name: $compatibility['name'] ?? null,
             category: $compatibility['category'] ?? null,
             parameters: $projection->parameters,
+            versionLabel: is_string($compatibility['version_label'] ?? null) ? $compatibility['version_label'] : null,
+            buildId: is_string($compatibility['build_id'] ?? null) ? $compatibility['build_id'] : null,
+            categoryLabel: is_string($compatibility['category_label'] ?? null) ? $compatibility['category_label'] : null,
         );
     }
 }

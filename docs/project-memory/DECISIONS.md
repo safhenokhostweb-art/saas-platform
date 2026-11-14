@@ -5614,3 +5614,120 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   (hand-computed sizing and price), `SolarCalculatorPublicFlowTest`
   (license isolation, lead + CRM capture, gate modes, token binding),
   `SolarCalculatorWidgetTest`, `SolarCalculatorAdminTest`.
+
+## ADR-086
+
+**Title:** Granular motion licensing: public/private visibility, per-site grants, admin availability switch and version labels
+
+**Status:** Accepted
+
+**Date:** 2026-11-14
+
+**Context:**
+
+- The owner asked for per-asset motion licensing. Public motions should reach
+  every tenant. Private, bespoke or paid motions should reach only a site that
+  bought them or was assigned them in the central panel. The general «Motion
+  Graphics Premium» module must not unlock every paid motion.
+- The owner also asked for a switch that hides one motion from every site at
+  once (debugging, maintenance), and for a visible version identifier in the
+  manifest.
+- Most of the machinery existed: the ADR-078 tier check
+  (`MotionAssetLicensePolicy`, re-run on every manifest build), ADR-081
+  exclusive motions (`customer_specific` ownership, bespoke assignments,
+  signed `/motion/private/...` URLs), and version binding per package item.
+  Missing were: (a) a way to sell one *global* library motion to chosen sites,
+  (b) a kill switch, (c) human version labels, (d) delivery of a public
+  motion added after a site's package was activated.
+- The reference case is `solar-motion-graphic`, the electrical/solar industry
+  motion. In the shared dev tree it existed only as an uncommitted
+  theme-runtime block type. It is now a library asset.
+
+**Decision:**
+
+1. **Visibility on the motion.** `motion_graphics.visibility` is `public` or
+   `private`. Unknown values read as private, so a typo never publishes a paid
+   motion. For library motions, `metadata.json` `visibility` is authoritative
+   (like `license_tier`) and catalog sync applies it. Existing rows default to
+   `public`, so behaviour is unchanged. Visibility governs *global* motions
+   only. An exclusive (ADR-081) motion is already restricted by ownership, and
+   sync refuses one that also declares `visibility`.
+2. **Grants are the entitlement for private motions.** The host table
+   `motion_site_asset_grants` has one row per (site, asset): status
+   `active`/`revoked`, source `admin_grant`/`purchase`/`license`, an optional
+   order or licence reference, and who and when for both grant and revoke.
+   `MotionAssetLicensePolicy::decide()` checks visibility first. A private
+   asset is allowed only while that site holds an active grant for that exact
+   asset. The premium module is not consulted for it. Public assets keep the
+   ADR-078 tier rules unchanged (free = everyone, premium = the
+   `motion-graphics-premium` licence). The same policy call runs at activation
+   and on every manifest build, so a revoked grant removes the motion on the
+   next fetch.
+3. **Private files are signed.** A private library version stores the ADR-081
+   private base reference, and the manifest signs it for the requesting site.
+   `MotionPrivateAssetController` now also admits a private *global* motion,
+   re-checking an active grant on every request, so revocation closes the file
+   at once. The public `/motion/{slug}/{vN}/animation.svg` route refuses any
+   file whose metadata declares `private`. Every refusal is a 404.
+4. **Availability switch.** `motion_graphics.runtime_enabled` (with
+   `runtime_disabled_at` and the actor who disabled it) is written only by
+   `MotionCatalogAdminService`. A disabled motion is skipped by
+   `MotionCustomerRuntimeService` (package items, public extras, grants) and by
+   `BespokeAssignedAssets` before anything that could fail a manifest. The
+   rest of the site's manifest is unaffected, and nothing is reported as
+   locked. Versions, bindings and grants stay intact, so re-enabling restores
+   each site exactly. Catalog sync never writes the column, so a deploy never
+   re-enables a motion. Files stay servable, so a page rendered from an older
+   cached manifest does not break.
+5. **Manifest composition.** The manifest lists package items (bound
+   versions, as before), then every public, enabled library-catalog motion the
+   package does not bind (latest published version), then granted private
+   motions, then bespoke assignments (ADR-081). This makes "public = every
+   tenant" true for motions added after activation. It applies only to sites
+   whose runtime is open: an active package, a bespoke assignment or a grant.
+   A grant alone opens it, like a bespoke assignment. A non-granted private
+   motion is never listed, not even in `locked_assets`. A public premium motion
+   without the licence is listed there as before.
+6. **Version labels.** `motion_graphic_versions.version_label` is set when the
+   catalog creates a version: metadata `version_label` (`1.0.0`), else
+   `version` (`v2`), else the library directory. Rows published earlier are not
+   rewritten (versions are immutable); `versionLabel()` falls back to
+   `preview_metadata.library_version`, then `v{N}`. Each manifest entry adds
+   `version_label`, `build_id` (the first 12 hex characters of the delivered
+   bytes' sha256) and `category_label`. The integer `published_version` stays
+   the binding key.
+7. **Central panel.** Admin → Motion Graphics → «کاتالوگ و دسترسی موشن‌ها»
+   (`admin.motion-graphics.catalog.*`) lists every motion with visibility,
+   tier, published version label and build, bound-site count and state. It
+   hosts the switch and the grant/revoke controls. Every write is audited
+   (`motion.catalog.asset.*`).
+8. **customer-site.** The picker endpoint reads the platform's current answer
+   (`MotionRuntimeManifestReader::refresh()`) and writes it back to the cache,
+   so a switch, grant or revoke shows the next time the picker opens, and the
+   public runtime follows. An unreachable or invalid answer keeps the last
+   good cached copy. The picker refetches on every open, groups assets by
+   category label and shows each motion's version label. The reader passes
+   `version_label`, `build_id` and `category_label` only when well formed.
+
+**Consequences:**
+
+- `solar-motion-graphic` v1 (release `1.0.0`, category «موشن صنعت برق و
+  انرژی», premium, private) joins `MotionLibraryCatalogService::ASSETS`.
+  After release, `MotionGraphicsDefaultSeeder` / catalog sync must run in
+  production (owner action, as always). It then reaches no site until the
+  owner grants it in the panel.
+- Every manifest gains three fields, so each site's manifest checksum changes
+  once. Consumers that predate them ignore them.
+- Bespoke-only sites now also receive the public library motions (hero-motion;
+  business-growth-motion locked without the premium licence).
+- Prod site 1 keeps business-growth-motion: it is public premium and the site
+  holds the premium licence. Making a paid motion grant-only means declaring
+  it `private` in a new library version and granting the sites that should
+  keep it. Without grants, those sites lose it on the next manifest. That is
+  an owner decision per motion.
+- Tests: platform `PrivateMotionLicensingTest` (end to end, no fakes),
+  `MotionAssetLicensePolicyTest`, `MotionVersionLabelTest`, updated
+  `MotionLibraryCatalogTest` / `ExclusiveMotionDeliveryTest`, package
+  `CommercialMotionLibraryTest` (solar asset contract); customer-site
+  `MotionRuntimeManifestReaderTest` (refresh, sanitising) and
+  `MotionPickerTest` (category, version, instant refresh).

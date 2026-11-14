@@ -18,6 +18,7 @@ use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionRe
  *
  * No license-tier check here: the purchase recorded before an admin could
  * assign the commission is the entitlement (MotionBespokeAssignmentService).
+ * The admin availability switch (ADR-086) still applies.
  */
 final class BespokeAssignedAssets
 {
@@ -42,8 +43,11 @@ final class BespokeAssignedAssets
         $entries = [];
         $seen = array_fill_keys($exclude, true);
         foreach ($assignments as $assignment) {
-            if (isset($seen[$assignment->asset_id])
-                || $this->assets->findByCanonicalId($assignment->asset_id, $assignment->active_version) === null) {
+            $asset = isset($seen[$assignment->asset_id])
+                ? null
+                : $this->assets->findByCanonicalId($assignment->asset_id, $assignment->active_version);
+            // ADR-086: an admin-disabled motion leaves bespoke delivery too.
+            if ($asset === null || ! MotionAssetLicensePolicy::isRuntimeEnabled($asset->compatibility)) {
                 continue;
             }
 

@@ -8,6 +8,7 @@ use App\Modules\MotionGraphics\DTO\CustomerRuntimeAssetEntry;
 use App\Modules\MotionGraphics\DTO\CustomerRuntimeManifest;
 use App\Modules\MotionGraphics\DTO\MotionAdapterContext;
 use App\Modules\MotionGraphics\Exceptions\MotionAdapterFailClosedException;
+use App\Modules\MotionGraphics\Models\MotionSiteAssetGrant;
 use App\Modules\MotionGraphics\Models\SiteAssetPackage;
 use App\Modules\MotionGraphics\Support\AbstractMotionAdapter;
 use App\Modules\MotionGraphics\Support\BespokeAssignedAssets;
@@ -19,6 +20,7 @@ use Illuminate\Support\Carbon;
 use SaaSPlatform\CoreUtils\Contracts\TenantContextContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionRuntimeProjectionReadContract;
+use SaaSPlatform\Modules\MotionGraphics\Models\MotionGraphic;
 
 /**
  * Phase 8 (docs/motion-customer-runtime-phase8/CUSTOMER_RUNTIME_ARCHITECTURE.md):
@@ -54,6 +56,9 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
      */
     public const BESPOKE_ONLY_TEMPLATE_REFERENCE = 'motion-bespoke';
 
+    /** ADR-086: audit reason of an item skipped because an admin disabled it. */
+    public const SKIP_DISABLED = 'asset_disabled';
+
     public function __construct(
         TenantContextContract $tenantContext,
         MotionAuditEvents $auditEvents,
@@ -67,8 +72,8 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
 
     /**
      * @throws MotionAdapterFailClosedException when the flag is off, the
-     *   site is not entitled, or the site has neither an active package
-     *   nor an active bespoke assignment (ADR-081) —
+     *   site is not entitled, or the site has no active package, no active
+     *   bespoke assignment (ADR-081) and no private-asset grant (ADR-086) —
      *   every branch fails closed with a stable code the API controller
      *   maps to a safe "not available" response, never a 500.
      */
@@ -107,6 +112,14 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
                 );
             }
 
+            // ADR-086: an admin-disabled motion drops out of the next
+            // manifest. Checked before anything that could fail the whole
+            // manifest: switching one motion off never breaks a site.
+            if (! MotionAssetLicensePolicy::isRuntimeEnabled($assetModel->compatibility)) {
+                $this->recordSkipped($site, $item->asset_id, (int) $item->active_version, self::SKIP_DISABLED, $context);
+                continue;
+            }
+
             $projection = $this->projections->projectAsset($item->asset_id, $context->siteId);
             if ($projection === null) {
                 throw new MotionAdapterFailClosedException(
@@ -121,16 +134,12 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
             // so an expired or revoked premium license removes the item
             // from the next manifest without anyone re-activating the
             // package. A skipped item is a smaller manifest, never an error.
-            $license = $this->licensePolicy->decide($site, $projectionDto->assetReference->compatibility);
+            // ADR-086: the same call enforces visibility, so a private item
+            // whose grant was revoked leaves too (its lock reason is not a
+            // published one, so it is dropped from `locked_assets`).
+            $license = $this->licensePolicy->decide($site, $projectionDto->assetReference->compatibility, $item->asset_id);
             if (! $license->allowed) {
-                $this->auditEvents->record(MotionAuditEvents::ASSET_SKIPPED, [
-                    'site_id' => $site->id,
-                    'asset_id' => $item->asset_id,
-                    'version' => $item->active_version,
-                    'reason' => $license->code,
-                    'actor' => $context->actorId,
-                    'correlation_id' => $context->correlationId,
-                ]);
+                $this->recordSkipped($site, $item->asset_id, (int) $item->active_version, $license->code, $context);
                 $locked[] = ['asset_id' => $item->asset_id, 'reason' => $license->code];
                 continue;
             }
@@ -142,17 +151,44 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
             $assets[] = $entry;
         }
 
+        // ADR-086: private motions this site was granted explicitly in the
+        // central panel. A grant is a direct assignment, like a bespoke one,
+        // so it also opens the runtime for a site without a package.
+        $grantedIds = MotionSiteAssetGrant::grantedAssetIds((int) $site->id);
+
         // ADR-081: bespoke assets assigned to this site ride the same
         // manifest, after the package items (so existing entries keep their
         // positions) and without duplicating an asset the package delivers.
         $bespoke = (new BespokeAssignedAssets($this->assets, $this->projections))
             ->entriesFor((int) $site->id, array_map(fn (CustomerRuntimeAssetEntry $a): string => $a->assetId, $assets));
 
-        if ($sitePackage === null && $bespoke === []) {
+        if ($sitePackage === null && $bespoke === [] && $grantedIds === []) {
             throw new MotionAdapterFailClosedException(
                 'no_active_package',
                 'No active Motion Graphics package is assigned to this site.'
             );
+        }
+
+        // ADR-086: after the package items, every public library motion the
+        // package does not bind (so a motion added to the catalog later
+        // reaches every runtime-enabled site without re-activation), then the
+        // granted private ones. Package items, even skipped ones, are never
+        // re-added here, so a bound version is never overridden.
+        $packageIds = [];
+        foreach ($sitePackage?->items ?? [] as $item) {
+            $packageIds[] = (string) $item->asset_id;
+        }
+        $bespokeIds = array_map(fn (CustomerRuntimeAssetEntry $a): string => $a->assetId, $bespoke);
+        $seen = array_fill_keys([...$packageIds, ...$bespokeIds], true);
+        foreach ([...$this->publicCatalogAssetIds(), ...$grantedIds] as $assetId) {
+            if (isset($seen[$assetId])) {
+                continue;
+            }
+            $seen[$assetId] = true;
+            $entry = $this->catalogEntry($site, $assetId, $entries, $context, $locked);
+            if ($entry !== null) {
+                $assets[] = $entry;
+            }
         }
         $assets = [...$assets, ...$bespoke];
 
@@ -184,6 +220,81 @@ final class MotionCustomerRuntimeService extends AbstractMotionAdapter
         ]);
 
         return $manifest;
+    }
+
+    /**
+     * ADR-086: one public-catalog or granted asset at its latest published
+     * version, through the same read contracts, availability switch and
+     * licence policy as a package item. Unlike a package item, a problem
+     * here only skips this asset: it was never bound to the site, so it can
+     * never fail the manifest.
+     *
+     * @param list<array{asset_id: string, reason: string}> $locked
+     */
+    private function catalogEntry(Site $site, string $assetId, CustomerRuntimeAssetEntryFactory $entries, MotionAdapterContext $context, array &$locked): ?CustomerRuntimeAssetEntry
+    {
+        $assetModel = $this->assets->findByCanonicalId($assetId);
+        if ($assetModel === null) {
+            return null;
+        }
+        if (! MotionAssetLicensePolicy::isRuntimeEnabled($assetModel->compatibility)) {
+            $this->recordSkipped($site, $assetId, $assetModel->version, self::SKIP_DISABLED, $context);
+
+            return null;
+        }
+
+        $projection = $this->projections->projectAsset($assetId, $context->siteId);
+        if ($projection === null) {
+            return null;
+        }
+        $projectionDto = ReadModelMapper::toRuntimeProjectionDTO($projection);
+
+        $license = $this->licensePolicy->decide($site, $projectionDto->assetReference->compatibility, $assetId);
+        if (! $license->allowed) {
+            $this->recordSkipped($site, $assetId, $projectionDto->publishedVersion, $license->code, $context);
+            // Public motions are listed in the catalog anyway, so saying one
+            // is locked leaks nothing. A private one is never mentioned.
+            if (MotionAssetLicensePolicy::visibilityOf($projectionDto->assetReference->compatibility) === MotionGraphic::VISIBILITY_PUBLIC) {
+                $locked[] = ['asset_id' => $assetId, 'reason' => $license->code];
+            }
+
+            return null;
+        }
+
+        return $entries->fromProjection($projectionDto, (int) $site->id);
+    }
+
+    /**
+     * ADR-086: the public, enabled, published platform library motions, in
+     * catalog (publish) order. Only the curated library catalog is "public
+     * for everyone"; motions authored elsewhere reach a site through its
+     * package as before.
+     *
+     * @return list<string>
+     */
+    private function publicCatalogAssetIds(): array
+    {
+        return MotionGraphic::query()
+            ->whereIn('slug', array_keys(MotionLibraryCatalogService::ASSETS))
+            ->where('ownership_type', MotionGraphic::OWNERSHIP_GLOBAL)
+            ->where('visibility', MotionGraphic::VISIBILITY_PUBLIC)
+            ->where('runtime_enabled', true)
+            ->whereNotNull('published_version')
+            ->orderBy('id')
+            ->pluck('uuid')
+            ->all();
+    }
+
+    private function recordSkipped(Site $site, string $assetId, int $version, string $reason, MotionAdapterContext $context): void
+    {
+        $this->auditEvents->record(MotionAuditEvents::ASSET_SKIPPED, [
+            'site_id' => $site->id,
+            'asset_id' => $assetId,
+            'version' => $version,
+            'reason' => $reason,
+            'actor' => $context->actorId,
+            'correlation_id' => $context->correlationId,
+        ]);
     }
 
     /**
