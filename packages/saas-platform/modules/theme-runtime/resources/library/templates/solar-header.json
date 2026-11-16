@@ -441,12 +441,27 @@
                 "show_login_btn": false,
                 "show_register_btn": false,
                 "show_calc_btn": false,
+<<<<<<< HEAD
                 "cta2_text": "ورود",
                 "cta2_url": "@link:login",
                 "cta2_icon": "log-in",
                 "cta2_style": "outline",
                 "cta_text": "ثبت‌نام",
                 "cta_url": "@link:register",
+=======
+                "cta2_text": "",
+                "cta2_url": {
+                    "type": "route",
+                    "id": "login"
+                },
+                "cta2_icon": "log-in",
+                "cta2_style": "outline",
+                "cta_text": "",
+                "cta_url": {
+                    "type": "route",
+                    "id": "register"
+                },
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                 "cta_icon": "user-plus",
                 "cta_style": "primary",
                 "header_order": [

@@ -1212,8 +1212,13 @@ class BlockRegistry
                     'split_reverse' => ['type' => 'boolean', 'label' => 'معکوس‌سازی ستون‌ها (جابه‌جایی فرم و پنل معرفی)', 'default' => false, 'group' => 'چیدمان', 'condition' => ['layout_type' => 'split']],
                     'card_max_width' => ['type' => 'range', 'unit' => 'px', 'label' => 'حداکثر عرض کادر فرم', 'default' => 440, 'min' => 320, 'max' => 700, 'step' => 10, 'group' => 'چیدمان'],
                     'brand_logo' => ['type' => 'image', 'label' => 'تصویر لوگوی برند', 'default' => '', 'group' => 'برند و عنوان'],
+<<<<<<< HEAD
                     'brand_name' => ['type' => 'string', 'label' => 'نام برند', 'default' => '', 'group' => 'برند و عنوان'],
                     'brand_tagline' => ['type' => 'string', 'label' => 'شعار یا عنوان کوتاه برند', 'default' => '', 'group' => 'برند و عنوان'],
+=======
+                    'brand_name' => ['type' => 'string', 'label' => 'نام برند', 'default' => 'اکسین‌سولار', 'group' => 'برند و عنوان'],
+                    'brand_tagline' => ['type' => 'string', 'label' => 'شعار یا عنوان کوتاه برند', 'default' => 'صنعت انرژی و برق خورشیدی', 'group' => 'برند و عنوان'],
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'brand_url' => ['type' => 'link', 'label' => 'لینک لوگو', 'default' => '/', 'group' => 'برند و عنوان'],
                     'login_title' => ['type' => 'string', 'label' => 'عنوان فرم ورود', 'default' => 'ورود به حساب کاربری', 'group' => 'محتوای فرم'],
                     'login_subtitle' => ['type' => 'string', 'label' => 'توضیحات فرم ورود', 'default' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.', 'group' => 'محتوای فرم'],
@@ -1230,9 +1235,15 @@ class BlockRegistry
                     'login_url' => ['type' => 'link', 'label' => 'مقصد فرم ورود', 'default' => '/login', 'group' => 'محتوای فرم'],
                     'register_url' => ['type' => 'link', 'label' => 'مقصد فرم ثبت‌نام', 'default' => '/register', 'group' => 'محتوای فرم'],
                     'show_hero' => ['type' => 'boolean', 'label' => 'نمایش پنل معرفی (Hero Side)', 'default' => true, 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+<<<<<<< HEAD
                     'hero_title' => ['type' => 'string', 'label' => 'عنوان پنل معرفی', 'default' => 'به حساب کاربری خود خوش آمدید', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_subtitle' => ['type' => 'string', 'label' => 'توضیحات پنل معرفی', 'default' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_icon' => ['type' => 'icon', 'label' => 'آیکون شاخص معرفی', 'default' => 'user', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+=======
+                    'hero_title' => ['type' => 'string', 'label' => 'عنوان پنل معرفی', 'default' => 'پلتفرم جامع صنعت انرژی خورشیدی', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_subtitle' => ['type' => 'string', 'label' => 'توضیحات پنل معرفی', 'default' => 'دسترسی امن به سفارش تجهیزات، دوره‌های آکادمی و پشتیبانی آنلاین پروژه‌های نیروگاهی.', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_icon' => ['type' => 'icon', 'label' => 'آیکون شاخص معرفی', 'default' => 'sun', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'hero_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه پنل معرفی (اختیاری)', 'default' => '', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه پنل معرفی', 'default' => '#12121F', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_text_color' => ['type' => 'color', 'label' => 'رنگ متن پنل معرفی', 'default' => '#ffffff', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
@@ -1258,16 +1269,26 @@ class BlockRegistry
                 'defaultProps' => [
                     'auth_mode' => 'dual',
                     'layout_type' => 'split',
+<<<<<<< HEAD
                     'brand_name' => '',
                     'brand_tagline' => '',
+=======
+                    'brand_name' => 'اکسین‌سولار',
+                    'brand_tagline' => 'صنعت انرژی و برق خورشیدی',
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'login_title' => 'ورود به حساب کاربری',
                     'login_subtitle' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.',
                     'login_btn_text' => 'ورود به حساب',
                     'register_title' => 'ایجاد حساب کاربری جدید',
                     'register_subtitle' => 'عضویت سریع و امن در کمتر از یک دقیقه.',
                     'register_btn_text' => 'ثبت‌نام در سامانه',
+<<<<<<< HEAD
                     'hero_title' => 'به حساب کاربری خود خوش آمدید',
                     'hero_subtitle' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.',
+=======
+                    'hero_title' => 'پلتفرم جامع صنعت انرژی خورشیدی',
+                    'hero_subtitle' => 'دسترسی امن به سفارش تجهیزات، دوره‌های آکادمی و پشتیبانی آنلاین پروژه‌های نیروگاهی.',
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'btn_bg_color' => '#FF7900',
                     'card_bg_color' => '#1E1E1E',
                     'page_bg_color' => '#0B0B0B',
@@ -1283,8 +1304,13 @@ class BlockRegistry
                     'split_reverse' => ['type' => 'boolean', 'label' => 'معکوس‌سازی ستون‌ها (جابه‌جایی فرم و پنل معرفی)', 'default' => false, 'group' => 'چیدمان', 'condition' => ['layout_type' => 'split']],
                     'card_max_width' => ['type' => 'range', 'unit' => 'px', 'label' => 'حداکثر عرض کادر فرم', 'default' => 440, 'min' => 320, 'max' => 700, 'step' => 10, 'group' => 'چیدمان'],
                     'brand_logo' => ['type' => 'image', 'label' => 'تصویر لوگوی برند', 'default' => '', 'group' => 'برند و عنوان'],
+<<<<<<< HEAD
                     'brand_name' => ['type' => 'string', 'label' => 'نام برند', 'default' => '', 'group' => 'برند و عنوان'],
                     'brand_tagline' => ['type' => 'string', 'label' => 'شعار یا عنوان کوتاه برند', 'default' => '', 'group' => 'برند و عنوان'],
+=======
+                    'brand_name' => ['type' => 'string', 'label' => 'نام برند', 'default' => 'اکسین‌سولار', 'group' => 'برند و عنوان'],
+                    'brand_tagline' => ['type' => 'string', 'label' => 'شعار یا عنوان کوتاه برند', 'default' => 'صنعت انرژی و برق خورشیدی', 'group' => 'برند و عنوان'],
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'brand_url' => ['type' => 'link', 'label' => 'لینک لوگو', 'default' => '/', 'group' => 'برند و عنوان'],
                     'login_title' => ['type' => 'string', 'label' => 'عنوان فرم ورود', 'default' => 'ورود به حساب کاربری', 'group' => 'محتوای فرم'],
                     'login_subtitle' => ['type' => 'string', 'label' => 'توضیحات فرم ورود', 'default' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.', 'group' => 'محتوای فرم'],
@@ -1301,9 +1327,15 @@ class BlockRegistry
                     'login_url' => ['type' => 'link', 'label' => 'مقصد فرم ورود', 'default' => '/login', 'group' => 'محتوای فرم'],
                     'register_url' => ['type' => 'link', 'label' => 'مقصد فرم ثبت‌نام', 'default' => '/register', 'group' => 'محتوای فرم'],
                     'show_hero' => ['type' => 'boolean', 'label' => 'نمایش پنل معرفی (Hero Side)', 'default' => true, 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+<<<<<<< HEAD
                     'hero_title' => ['type' => 'string', 'label' => 'عنوان پنل معرفی', 'default' => 'به حساب کاربری خود خوش آمدید', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_subtitle' => ['type' => 'string', 'label' => 'توضیحات پنل معرفی', 'default' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_icon' => ['type' => 'icon', 'label' => 'آیکون شاخص معرفی', 'default' => 'user', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+=======
+                    'hero_title' => ['type' => 'string', 'label' => 'عنوان پنل معرفی', 'default' => 'پلتفرم جامع صنعت انرژی خورشیدی', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_subtitle' => ['type' => 'string', 'label' => 'توضیحات پنل معرفی', 'default' => 'دسترسی امن به سفارش تجهیزات، دوره‌های آکادمی و پشتیبانی آنلاین پروژه‌های نیروگاهی.', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_icon' => ['type' => 'icon', 'label' => 'آیکون شاخص معرفی', 'default' => 'sun', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'hero_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه پنل معرفی (اختیاری)', 'default' => '', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه پنل معرفی', 'default' => '#12121F', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
                     'hero_text_color' => ['type' => 'color', 'label' => 'رنگ متن پنل معرفی', 'default' => '#ffffff', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
@@ -1329,16 +1361,26 @@ class BlockRegistry
                 'defaultProps' => [
                     'auth_mode' => 'dual',
                     'layout_type' => 'split',
+<<<<<<< HEAD
                     'brand_name' => '',
                     'brand_tagline' => '',
+=======
+                    'brand_name' => 'اکسین‌سولار',
+                    'brand_tagline' => 'صنعت انرژی و برق خورشیدی',
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'login_title' => 'ورود به حساب کاربری',
                     'login_subtitle' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.',
                     'login_btn_text' => 'ورود به حساب',
                     'register_title' => 'ایجاد حساب کاربری جدید',
                     'register_subtitle' => 'عضویت سریع و امن در کمتر از یک دقیقه.',
                     'register_btn_text' => 'ثبت‌نام در سامانه',
+<<<<<<< HEAD
                     'hero_title' => 'به حساب کاربری خود خوش آمدید',
                     'hero_subtitle' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.',
+=======
+                    'hero_title' => 'پلتفرم جامع صنعت انرژی خورشیدی',
+                    'hero_subtitle' => 'دسترسی امن به سفارش تجهیزات، دوره‌های آکادمی و پشتیبانی آنلاین پروژه‌های نیروگاهی.',
+>>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                     'btn_bg_color' => '#FF7900',
                     'card_bg_color' => '#1E1E1E',
                     'page_bg_color' => '#0B0B0B',
