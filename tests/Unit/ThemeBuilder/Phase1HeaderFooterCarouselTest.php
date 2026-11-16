@@ -70,11 +70,11 @@ class Phase1HeaderFooterCarouselTest extends TestCase
     public function test_cart_icon_opens_the_drawer_with_host_endpoints_and_stays_a_link_in_the_preview(): void
     {
         $preview = $this->render('nav_header', ['show_cart' => true]);
-        $this->assertStringContainsString('<a href="/cart" class="tb-nav-header-icon-link" aria-label="سبد خرید">', $preview);
+        $this->assertStringContainsString('<a href="/cart" class="tb-nav-header-icon-link tb-nav-header-cart" aria-label="سبد خرید">', $preview);
         $this->assertStringNotContainsString('data-tb-cart', $preview);
 
         $live = $this->render('nav_header', ['show_cart' => true], ['cart' => self::CART]);
-        $this->assertStringContainsString('<a href="/shop/cart" class="tb-nav-header-icon-link tb-cart-trigger" data-tb-cart-open', $live);
+        $this->assertStringContainsString('<a href="/shop/cart" class="tb-nav-header-icon-link tb-nav-header-cart tb-cart-trigger" data-tb-cart-open', $live);
         $this->assertStringContainsString('<span class="tb-cart-badge" data-tb-cart-count>۳</span>', $live);
         $this->assertSame(1, substr_count($live, 'data-tb-block-asset="cart"'));
         preg_match('/data-tb-cart="([^"]+)"/', $live, $m);

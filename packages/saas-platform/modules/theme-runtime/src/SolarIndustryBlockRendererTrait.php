@@ -62,7 +62,9 @@ trait SolarIndustryBlockRendererTrait
         $badgeIcon = (string) ($props['badge_icon'] ?? 'zap');
         $showCta = (bool) ($props['show_cta'] ?? true);
         $ctaLabel = (string) ($props['cta_label'] ?? 'محاسبه تولید و ظرفیت خورشیدی');
-        $ctaUrl = (string) ($props['cta_url'] ?? '/page/solar_calculator');
+        // A `link` field may arrive structured ({url, ...}); read it through the
+        // shared link reader, never a string cast.
+        $ctaUrl = $this->linkValue($props['cta_url'] ?? '') ?: '/page/solar_calculator';
 
         // Dynamic Counters
         $showCounters = (bool) ($props['show_counters'] ?? true);
@@ -355,7 +357,7 @@ HTML;
             </g>
         </g>
 
-        <!-- Photon Beam Wave Guides: Sun to Solar PV Array -->
+        <!-- Photon Beam Wave Guides: Sun to the solar PV panels -->
         <g class="smg-photon-stream" stroke="url(#smg-ray-grad-{$id})" stroke-width="1.8" stroke-dasharray="6 8" opacity="0.6">
             <path d="M 940 140 C 880 200, 830 250, 770 300" />
             <path d="M 960 170 C 890 230, 840 280, 750 330" />
@@ -493,8 +495,10 @@ SVG;
      */
     private function renderSolarLottieCanvas(array $props, string $id, float $duration, bool $autoplay, string $loop): string
     {
-        $lottieUrl = trim((string) ($props['lottie_url'] ?? ''));
-        $poster = (string) ($props['poster_image'] ?? '/storage/solar-assets/solar-panel-grid.jpg');
+        // Media sources: unresolved values count as empty and the scheme is
+        // validated (escapeUrl), so a javascript: URL never reaches src.
+        $lottieUrl = $this->escapeUrl($this->mediaSrc($props['lottie_url'] ?? ''), '');
+        $poster = $this->mediaSrc($props['poster_image'] ?? '') ?: '/storage/solar-assets/solar-panel-grid.jpg';
         $autoAttr = $autoplay ? 'autoplay' : '';
         $loopAttr = ($loop === 'infinite' || $loop === 'alternate') ? 'loop' : '';
 
@@ -524,7 +528,7 @@ HTML;
 <div class="smg-lottie-player-wrapper w-full h-full flex items-center justify-center relative">
     {$playerScript}
     <lottie-player
-        src="{$this->solarEscape($lottieUrl)}"
+        src="{$lottieUrl}"
         background="transparent"
         speed="1"
         style="width: 100%; max-height: 520px;"
@@ -540,9 +544,9 @@ HTML;
      */
     private function renderSolarWebmVideo(array $props, string $id, bool $autoplay, string $loop): string
     {
-        $webmUrl = trim((string) ($props['video_webm_url'] ?? ''));
-        $mp4Url = trim((string) ($props['video_mp4_fallback_url'] ?? ''));
-        $poster = (string) ($props['poster_image'] ?? '/storage/solar-assets/solar-panel-grid.jpg');
+        $webmUrl = $this->escapeUrl($this->mediaSrc($props['video_webm_url'] ?? ''), '');
+        $mp4Url = $this->escapeUrl($this->mediaSrc($props['video_mp4_fallback_url'] ?? ''), '');
+        $poster = $this->mediaSrc($props['poster_image'] ?? '') ?: '/storage/solar-assets/solar-panel-grid.jpg';
         $autoAttr = $autoplay ? 'autoplay muted' : '';
         $loopAttr = ($loop === 'infinite' || $loop === 'alternate') ? 'loop' : '';
 
@@ -565,10 +569,10 @@ HTML;
 
         $sources = '';
         if ($webmUrl !== '') {
-            $sources .= '<source src="' . $this->solarEscape($webmUrl) . '" type="video/webm">';
+            $sources .= '<source src="' . $webmUrl . '" type="video/webm">';
         }
         if ($mp4Url !== '') {
-            $sources .= '<source src="' . $this->solarEscape($mp4Url) . '" type="video/mp4">';
+            $sources .= '<source src="' . $mp4Url . '" type="video/mp4">';
         }
 
         return <<<HTML
@@ -628,7 +632,11 @@ HTML;
             $desc = (string) ($step['desc'] ?? '');
             $badge = (string) ($step['badge'] ?? '');
             $tooltip = (string) ($step['tooltip'] ?? '');
-            $icon = (string) ($step['icon'] ?? 'sun');
+            $iconName = IconLibrary::name($step['icon'] ?? 'sun');
+            $iconMarkup = $iconName !== null ? $this->iconHtml($iconName) : '';
+            if ($iconMarkup === '') {
+                $iconMarkup = $this->solarIcon(is_string($step['icon'] ?? null) ? $step['icon'] : 'sun');
+            }
 
             $cards .= <<<CARD
 <div class="smg-step-card group relative p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between">
@@ -642,7 +650,7 @@ HTML;
             </span>
         </div>
         <div class="flex items-center gap-2 mb-2">
-            <span class="w-5 h-5 text-amber-400">{$this->solarIcon($icon)}</span>
+            <span class="smg-step-icon w-5 h-5 text-amber-400">{$iconMarkup}</span>
             <h4 class="font-bold text-white text-sm md:text-base group-hover:text-amber-300 transition-colors" style="font-family: var(--smg-font);">
                 {$this->solarEscape($title)}
             </h4>
@@ -703,6 +711,10 @@ HTML;
 
         return <<<CSS
 <style>
+/* Catalog icons (24px markup) fill the step's icon slot like the inline glyphs. */
+.smg-step-icon { display: inline-flex; }
+.smg-step-icon > svg { inline-size: 100%; block-size: 100%; }
+
 /* ── Solar Energy Cycle Scoped Keyframe Animations ── */
 @keyframes smg-sun-spin {
     0% { transform: rotate(0deg); }

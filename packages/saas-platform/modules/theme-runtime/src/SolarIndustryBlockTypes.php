@@ -103,14 +103,9 @@ final class SolarIndustryBlockTypes
         $stepFields = [
             'title' => $text('عنوان مرحله', 'تابش فوتون‌ها'),
             'step_num' => $text('شماره مرحله', '۱'),
-            'icon' => $select('آیکن مرحله', [
-                'sun' => 'خورشید و پرتو نور',
-                'zap' => 'الکتریسیته و بار فوتوالکتریک',
-                'cpu' => 'اینورتر و پردازش هوشمند',
-                'battery' => 'باتری و ذخیره‌ساز توان',
-                'grid' => 'شبکه انتقال سراسری',
-                'shield' => 'حفاظت و راندمان',
-            ], 'sun'),
+            // The shared icon picker (catalog names); the renderer still draws
+            // the legacy select values (battery, grid) saved before this change.
+            'icon' => ['type' => 'icon', 'label' => 'آیکن مرحله', 'default' => 'sun'],
             'desc' => $area('توضیح کوتاه مرحله', 'جذب فوتون‌های نور توسط لایه‌های سیلیکونی کریستالی پنل.'),
             'badge' => $text('برچسب نشان مرحله', 'جذب تابش ۹۸٪'),
             'tooltip' => $text('متن راهنمای جزئیات (تول‌تیپ)', 'طیف نور با طول موج ۴۰۰ تا ۷۰۰ نانومتر'),
@@ -144,7 +139,7 @@ final class SolarIndustryBlockTypes
             [
                 'title' => 'تغذیه بار و ذخیره در باتری',
                 'step_num' => '۴',
-                'icon' => 'battery',
+                'icon' => 'battery-charging',
                 'desc' => 'تأمین مصرف تجهیزات خانگی و صنعتی، شارژ سریع باتری‌های لیتیومی و تزریق مازاد به شبکه.',
                 'badge' => 'شبکه هوشمند + باتری',
                 'tooltip' => 'مدیریت اولویت تغذیه بار بدون قطعی حتی در شرایط ابری',

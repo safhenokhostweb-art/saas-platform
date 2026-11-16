@@ -1113,7 +1113,9 @@ class BlockRenderer
 
         $controlsHtml = '';
         if (!$hideControls) {
-            $controlsHtml = "\n            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>\n"
+            // The template already puts this on its own indented line, so the
+            // shown-controls markup stays byte-identical to before hide_controls.
+            $controlsHtml = "<button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>\n"
                 . "            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>\n"
                 . "            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\">" . implode('', $dots) . "</div>";
         }

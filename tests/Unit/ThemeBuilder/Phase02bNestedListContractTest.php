@@ -25,6 +25,9 @@ class Phase02bNestedListContractTest extends TestCase
         // ADR-083: the same data_source identifier on the spec's list widgets.
         'event_calendar.endpoint_url', 'dual_sale_product_grid.endpoint_url',
         'course_video_filter.endpoint_url', 'downloadable_assets.endpoint_url',
+        // solar-energy-cycle media sources (Lottie JSON, WebM/MP4), not links;
+        // rendered through escapeUrl().
+        'solar-energy-cycle.lottie_url', 'solar-energy-cycle.video_webm_url', 'solar-energy-cycle.video_mp4_fallback_url',
     ];
 
     private const LINK_FIELDS = [
