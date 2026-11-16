@@ -21,6 +21,7 @@
         }
     },
     "templates": {
+        "auth-solar-industrial": "solar-industry",
         "bento-features": "public",
         "bento-media-showcase": "public",
         "bento-store-highlights": "public",
@@ -77,6 +78,7 @@
         "about_section": "public",
         "accordion": "public",
         "add_to_cart": "public",
+        "auth_canvas": "public",
         "badge": "public",
         "bento_grid": "public",
         "blog_posts": "public",
@@ -170,6 +172,7 @@
         "project_cards": "public",
         "promo_banner": "public",
         "rich_text": "public",
+        "scroll_to_top": "public",
         "search_bar": "public",
         "section": "public",
         "service_cards": "public",
@@ -192,6 +195,7 @@
         "trust_badges_row": "public",
         "trust_item": "public",
         "video": "public",
+        "solar-energy-cycle": "solar-industry",
         "solar_calculator": "solar-calculator"
     }
 }
