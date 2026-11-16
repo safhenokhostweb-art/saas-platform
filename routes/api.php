@@ -109,6 +109,16 @@ Route::prefix('motion-runtime')->middleware(['throttle:60,1', 'tenant.api'])->gr
     Route::get('/bespoke-commissions', [\App\Http\Controllers\Api\MotionCustomerRuntimeApiController::class, 'bespokeCommissions'])->name('api.motion-runtime.bespoke-commissions');
 });
 
+/*
+| Asset Entitlements API — ADR-087. Auth: license_key + domain (tenant.api).
+| The tenant's vertical, entitlement keys, per-asset grants and the
+| platform's policy overrides; customer-site's canvas editor gates the
+| template library and widget palette with it.
+*/
+Route::prefix('asset-entitlements')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\SiteAssetEntitlementApiController::class, 'show'])->name('api.asset-entitlements.show');
+});
+
 // Finance Ledger API — customer-site pushes payment events to platform ledger
 Route::prefix('ledger')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
     Route::post('/push-event', [\App\Http\Controllers\Api\FinanceLedgerApiController::class, 'pushEvent'])->name('api.ledger.push-event');

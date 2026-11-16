@@ -15,6 +15,8 @@ use App\Models\ThemeTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use App\Services\AssetProvisioning\SiteAssetEntitlementService;
+use SaaSPlatform\ThemeRuntime\Access\AssetAccessGate;
 use SaaSPlatform\ThemeRuntime\Canvas\CanvasTreeOperations;
 use SaaSPlatform\ThemeRuntime\Layout\DirectionProjector;
 use SaaSPlatform\ThemeRuntime\Layout\DirectionCompatibilityAdapter;
@@ -70,6 +72,11 @@ class ThemeCanvasController extends Controller
         $catLabels = $catLabels + [ExtensionCanvasPaletteAdapter::FALLBACK_CATEGORY => 'افزونه‌ها'];
         $catIcons  = $catIcons + [ExtensionCanvasPaletteAdapter::FALLBACK_CATEGORY => '🧩'];
 
+        // ADR-087: a theme a site owns offers only what that site may use
+        // (hidden widgets dropped, locked ones badged); a global catalog
+        // theme is the platform's design surface and badges restricted ones.
+        [$byCategory, $assetAccess] = AssetAccessGate::filterPalette($byCategory, app(SiteAssetEntitlementService::class)->forTheme($theme));
+
         $extensionSelections = $theme->settings['extension_selections'] ?? [];
         $extensionSelectionErrors = ExtensionCanvasPaletteAdapter::resolveSelections($extensionSelections)['errors'];
         $availableExtensions = ExtensionCanvasPaletteAdapter::selectableProducts();
@@ -109,7 +116,7 @@ class ThemeCanvasController extends Controller
             'theme', 'pages', 'registry', 'byCategory', 'catLabels', 'catIcons',
             'extensionSelections', 'extensionSelectionErrors', 'availableExtensions',
             'visualGlobalStyles', 'sites', 'layoutEnvelope', 'layoutAttributes',
-            'canvasTreeLimits'
+            'canvasTreeLimits', 'assetAccess'
         ));
     }
 
@@ -602,7 +609,7 @@ class ThemeCanvasController extends Controller
             ->with('success', 'صفحات قالب "' . $theme->name . '" با موفقیت در سایت "' . $site->title . '" همگام‌سازی شدند.');
     }
 
-    public function canvasTemplates(Request $request): JsonResponse
+    public function canvasTemplates(Request $request, Theme $theme): JsonResponse
     {
         $type = $request->input('type');
         $category = $request->input('category');
@@ -625,7 +632,11 @@ class ThemeCanvasController extends Controller
                 'thumbnail_url'  => $t->thumbnail_url,
             ]);
 
-        return response()->json(['templates' => array_merge(TemplateLibrary::list($type, $category, $term), $saved->values()->all())]);
+        // ADR-087: library cards are gated by the theme's site entitlements
+        // (hidden dropped, locked badged); saved templates are not platform assets.
+        $cards = array_merge(TemplateLibrary::list($type, $category, $term), $saved->values()->all());
+
+        return response()->json(['templates' => AssetAccessGate::annotateTemplateCards($cards, app(SiteAssetEntitlementService::class)->forTheme($theme))]);
     }
     public function canvasSaveAsTemplate(Request $request, Theme $theme): JsonResponse
     {
@@ -660,6 +671,16 @@ class ThemeCanvasController extends Controller
         // saved template's integer id.
         $libraryId = $request->input('template_id');
         if (TemplateLibrary::isLibraryId($libraryId)) {
+            // ADR-087: a restricted library template reaches a site-owned
+            // theme only while that site may use it.
+            $access = AssetAccessGate::decideTemplate($libraryId, app(SiteAssetEntitlementService::class)->forTheme($theme));
+            if ($access !== null && !$access->allowed()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $access->message() ?? 'این قالب برای سایت این تم در دسترس نیست.',
+                    'access' => $access->toArray(),
+                ], 403);
+            }
             $library = TemplateLibrary::find($libraryId);
             $sourceBlocks = $library['blocks'];
             $zone = $library['zone'];

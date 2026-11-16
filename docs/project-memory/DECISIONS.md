@@ -5614,3 +5614,135 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   (hand-computed sizing and price), `SolarCalculatorPublicFlowTest`
   (license isolation, lead + CRM capture, gate modes, token binding),
   `SolarCalculatorWidgetTest`, `SolarCalculatorAdminTest`.
+
+## ADR-087
+
+**Title:** Centralized platform-asset access: one policy manifest, licence- and vertical-scoped templates and widgets, per-site grants, provisioning API
+
+**Status:** Accepted
+
+**Date:** 2026-11-16
+
+**Context:**
+
+- The owner directive: templates, headers, footers, widgets, motions and
+  future specialized assets must never be public to every tenant by
+  default. They are managed centrally on the platform and reach a tenant
+  only through its licence, its business vertical, a subscription or a
+  purchase. Restricted items are hidden in the Canvas editor, or shown
+  locked with a badge («اختصاصی لایسنس» / «نیازمند خرید») as an upgrade path.
+- The ADR-075 template library (pages, sections, headers, footers) and the
+  canonical widget registry are code, not rows: they ship byte-identical
+  in the theme-runtime package on the platform and on every tenant. Before
+  this ADR both hosts offered every library template to every site; the
+  25 solar-industry templates of ADR-084 (header, footer, 23 pages) were
+  visible to all tenants.
+- Motions already have this model (ADR-086, branch
+  feat/motion-granular-licensing, not merged): public/private visibility,
+  per-site grants, signed private files. ADR-085 gates one widget
+  (`solar_calculator`) by a licence key.
+- The platform already projects a site's licence state to the tenant
+  (`EntitlementResolver::projectionForSite`, sent as `modules` by the
+  licence check). No site had a business vertical.
+
+**Decision:**
+
+1. **One policy manifest, in the package.** theme-runtime
+   `resources/access/policy.json` classifies every library template and
+   every canonical widget as `"public"` or as a named *family* (a
+   restricted rule with a label). It is code: versioned and reviewed with
+   the assets themselves, identical on both hosts. An unlisted template or
+   canonical widget is treated as restricted, grant-only and hidden, and
+   `AssetAccessCatalogContractTest` fails, so nothing becomes public by
+   omission. Host-only and extension widget types (`column`, `ext:*`) stay
+   with their hosts' own contracts unless listed.
+2. **Rule semantics** (`Access\AssetAccessRule`, `Access\AssetAccessPolicy`,
+   shared by both hosts). A restricted asset is available to a site that
+   holds an active grant for exactly that asset, or that meets every
+   declared condition: `required_vertical` equals the site's
+   `business_vertical`, and the site holds at least one of
+   `entitlement_keys` (module/licence slugs from the platform projection).
+   A restricted rule without conditions is grant-only. A vertical mismatch
+   hides the asset (another industry's kit is noise). A missing key or
+   grant locks it, shown as a teaser or hidden per `locked_display`.
+   Parsing fails closed: only the exact visibility `public` is public, and
+   a malformed condition is dropped, which leaves a grant-only rule.
+3. **Platform data.** `sites.business_vertical` (vocabulary
+   `Access\BusinessVerticals`); `site_asset_grants` (one row per site and
+   asset, status active/revoked, source admin_grant/purchase/license,
+   reference, who/when both ways); `platform_asset_policies` (an override
+   of one asset's declared rule, `is_public`, `required_vertical`,
+   `entitlement_keys` JSON, `locked_display`, for every site and without a
+   release). All writes go through `SiteAssetEntitlementService`, which
+   also builds a site's `SiteAssetEntitlements` from platform state only
+   (projection, vertical, active grants, overrides) and audits every write
+   (`asset_access.*` activity events).
+4. **The solar kit.** Family `solar-industry` = vertical `solar_energy` +
+   licence key `solar_industry_kit`, `teaser`. A migration registers the
+   key like ADR-085's: licence-only, no price, not in the marketplace. The
+   host-only `solar_calculator` widget is listed as family
+   `solar-calculator` (key `solar_calculator`, hidden), matching ADR-085.
+   Every other current template and widget is public.
+5. **Provisioning.** `GET /api/asset-entitlements` (`tenant.api`: licence
+   key + domain, which also binds the site, so a tenant reads only its own
+   answer; `no-store`) returns the schema-1 payload `{vertical,
+   entitlement_keys, grants, overrides, issued_at}`. customer-site's
+   `AssetEntitlementClient` syncs it: the editor refreshes on open, other
+   calls read the cache, a failed or malformed answer never replaces the
+   last good one (kept in settings), and a site that never synced holds
+   public assets only. It unions the keys with the licence's own module
+   list, the same platform projection, so a key-gated widget keeps working
+   during an outage. The payload is validated strictly and rejected whole.
+   The decision is pull-based: a grant or revoke reaches the site on its
+   next editor open, with no push channel to secure.
+6. **Editors.** Both canvas editors call `Access\AssetAccessGate`. Listing:
+   template cards and the widget palette drop hidden assets and mark locked
+   ones (shared partials `theme-runtime::canvas.asset-access-badge` and
+   `asset-access-template-card`). A locked card or palette item stays
+   focusable, explains itself and cannot be inserted or dragged. Writing:
+   the template insert endpoint refuses a locked library template (403
+   with the reason), and customer-site's block save refuses a restricted
+   widget the incoming tree *introduces*. One already on the page is kept,
+   so a lapsed licence never blocks editing the rest. On the platform, a
+   theme owned by a site is gated by that site's entitlements. A global
+   catalog theme is the platform's own design surface: everything is
+   usable, restricted items carry their badge.
+7. **Panel.** Admin → «دسترسی قالب‌ها و ویجت‌های اختصاصی»
+   (`admin.asset-access.index`: restricted assets, effective rule, grant
+   counts, override form) and per site (`admin.sites.asset-access`:
+   vertical, entitlement keys, each restricted asset's state and reason,
+   grant/revoke), linked from the site edit and site modules pages.
+
+**Consequences:**
+
+- No change for any current site except one: the solar templates leave
+  every editor of a site that is not `solar_energy`, and show as a
+  «نیازمند خرید» teaser inside that vertical until the kit is licensed or
+  the templates are granted. Production effect after release: the owner
+  sets the solar customer's vertical to `solar_energy` and licenses
+  `solar_industry_kit` (or grants single templates), or the customer loses
+  insert access to the solar templates on its next editor open. Pages that
+  already contain solar sections keep rendering.
+- Rendering is never gated. Revocation stops further use and never breaks a
+  live page. Removing restricted content from published pages would be a
+  separate, explicit owner decision.
+- `TemplateLibrary::list()/find()` are unchanged (pure library), so every
+  existing caller and test of the library itself keeps its behaviour.
+- Saved templates (`theme_templates`, `site_theme_templates`) are authored
+  content, not platform assets, and are not gated. A saved template that
+  copies a restricted widget is still refused at save time on the tenant.
+- Motions stay on ADR-086's own model and endpoint. The central panel links
+  to its catalog page when that route exists. A future asset family (a
+  new kind of asset) adds an `Access\AssetRef` kind, a manifest section and
+  catalog wiring, never a host-local list.
+- Adding a template or widget now requires one manifest line. The contract
+  test names any that are missing.
+- The customer-site autosave no longer reports success for a refused save.
+  It keeps the page dirty and shows the refusal, which also surfaces the
+  existing locked-structure 422s.
+- Tests: platform `AssetAccessPolicyTest`, `AssetAccessCatalogContractTest`,
+  `AssetAccessGateTest` (unit) and `AssetProvisioningTest` (real licence →
+  projection → API → decision, panel writes and audit, tenant isolation,
+  overrides, platform canvas). customer-site `PlatformAssetAccessTest`
+  (client auth, last-good fallback, listing, insert and save gates), and
+  `TemplateLibraryInsertTest` now provisions a licensed solar site.

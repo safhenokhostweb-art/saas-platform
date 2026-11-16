@@ -6,6 +6,7 @@
 </h1>
 <p class="mb-4">
     <a href="{{ route('admin.sites.module-upgrades.index', $site) }}" class="text-indigo-600 hover:underline text-sm">مشاهدهٔ بروزرسانی‌های موجود ماژول‌ها →</a>
+    <a href="{{ route('admin.sites.asset-access', $site) }}" class="text-indigo-600 hover:underline text-sm ms-4">قالب‌ها و ویجت‌های اختصاصی این سایت →</a>
 </p>
 <p class="text-gray-600 mb-4">
     در اینجا فقط ماژول‌های <strong>رایگان (قابل اختصاص دستی)</strong> و <strong>فقط با لایسنس</strong> نمایش داده می‌شوند.

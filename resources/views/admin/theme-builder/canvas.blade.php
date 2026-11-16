@@ -478,6 +478,23 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         <div x-show="expandedCats['{{ $catKey }}']" x-collapse>
                             <div class="px-2 pb-2 grid grid-cols-2 gap-1">
                                 @foreach($catBlocks as $blockType => $blockDef)
+                                    @php $blockAccess = ($assetAccess ?? [])[$blockType] ?? null; @endphp
+                                    @if(!empty($blockAccess['locked']))
+                                        {{-- ADR-087: a locked widget is advertised, never draggable. --}}
+                                        <div role="button" tabindex="0" aria-disabled="true"
+                                             data-testid="tb-palette-locked-{{ $blockType }}"
+                                             x-show="isBlockVisible('{{ $blockType }}', '{{ $blockDef['name'] }}')"
+                                             @click="showToast(@js($blockAccess['message'] ?? $blockAccess['badge']), 'error')"
+                                             @keydown.enter.prevent="showToast(@js($blockAccess['message'] ?? $blockAccess['badge']), 'error')"
+                                             class="flex flex-col items-start gap-1 p-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 text-right"
+                                             style="cursor:not-allowed"
+                                             title="{{ $blockAccess['message'] ?? $blockDef['name'] }}">
+                                            <div class="text-base leading-none" style="filter:grayscale(1);opacity:.6">🧩</div>
+                                            <span class="text-[10px] font-medium text-slate-500 leading-tight line-clamp-2">{{ $blockDef['name'] }}</span>
+                                            @include('theme-runtime::canvas.asset-access-badge', ['access' => $blockAccess])
+                                        </div>
+                                        @continue
+                                    @endif
                                     <button
                                         draggable="true"
                                         data-block-type="{{ $blockType }}"
@@ -515,6 +532,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         @if($blockDef['requires'] ?? null)
                                             <span class="text-[9px] px-1.5 py-0.5 rounded {{ $badgeClass }} font-medium leading-none">{{ $blockDef['requires'] }}</span>
                                         @endif
+                                        @include('theme-runtime::canvas.asset-access-badge', ['access' => $blockAccess])
                                     </button>
                                 @endforeach
                             </div>
@@ -1462,6 +1480,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         @foreach($orderedCats as $catKey)
                             @if(!isset($byCategory[$catKey])) @continue @endif
                             @foreach($byCategory[$catKey] as $blockType => $blockDef)
+                                @if(!empty((($assetAccess ?? [])[$blockType] ?? [])['locked'])) @continue @endif
                                 <button
                                     @click="addChildBlock('{{ $blockType }}'); showAddChildModal = false"
                                     class="flex items-center gap-2 px-2 py-2 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-xs text-right transition">
@@ -1613,7 +1632,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                     <template x-for="tpl in templateLibrary.templates" :key="tpl.id">
                         <button type="button" class="text-start border border-slate-200 rounded-xl overflow-hidden hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 transition cursor-pointer group flex flex-col disabled:opacity-60 disabled:cursor-wait"
                             :data-testid="'tpl-card-' + tpl.id" :disabled="templateLibrary.inserting"
-                            @click="insertTemplate(tpl.id)">
+                            :aria-disabled="tpl.access && tpl.access.locked ? 'true' : 'false'"
+                            :title="tpl.access && tpl.access.locked ? tpl.access.message : tpl.name"
+                            @click="tpl.access && tpl.access.locked ? showToast(tpl.access.message || tpl.access.badge, 'error') : insertTemplate(tpl.id)">
                             {{-- Thumb --}}
                             <div class="aspect-video w-full bg-gradient-to-br from-slate-100 to-purple-50 flex items-center justify-center relative overflow-hidden">
                                 <template x-if="tpl.thumbnail_url">
@@ -1624,6 +1645,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 </template>
                                 <span class="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-purple-700" x-text="tpl.type_label"></span>
                                 <span x-show="tpl.source === 'library'" class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-600 text-white">آماده</span>
+                                @include('theme-runtime::canvas.asset-access-template-card')
                                 <div class="absolute inset-0 bg-purple-600/0 group-hover:bg-purple-600/10 transition flex items-center justify-center">
                                     <span class="opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition" x-text="templateLibrary.inserting ? 'در حال درج…' : 'درج'"></span>
                                 </div>

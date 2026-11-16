@@ -504,6 +504,14 @@ Route::prefix('admin')
         Route::get('sites/{site}/modules', [SiteModuleController::class, 'edit'])->name('sites.modules.edit');
         Route::put('sites/{site}/modules', [SiteModuleController::class, 'update'])->name('sites.modules.update');
         Route::post('sites/{site}/modules/toggle', [SiteModuleController::class, 'toggle'])->name('sites.modules.toggle');
+        // ADR-087 — central platform-asset access (templates, widgets).
+        Route::get('asset-access', [\App\Http\Controllers\Admin\AssetAccessController::class, 'index'])->name('asset-access.index');
+        Route::post('asset-access/overrides', [\App\Http\Controllers\Admin\AssetAccessController::class, 'saveOverride'])->name('asset-access.overrides.save');
+        Route::post('asset-access/overrides/clear', [\App\Http\Controllers\Admin\AssetAccessController::class, 'clearOverride'])->name('asset-access.overrides.clear');
+        Route::get('sites/{site}/asset-access', [\App\Http\Controllers\Admin\AssetAccessController::class, 'site'])->name('sites.asset-access');
+        Route::post('sites/{site}/asset-access/vertical', [\App\Http\Controllers\Admin\AssetAccessController::class, 'updateVertical'])->name('sites.asset-access.vertical');
+        Route::post('sites/{site}/asset-access/grants', [\App\Http\Controllers\Admin\AssetAccessController::class, 'grant'])->name('sites.asset-access.grant');
+        Route::post('sites/{site}/asset-access/grants/revoke', [\App\Http\Controllers\Admin\AssetAccessController::class, 'revoke'])->name('sites.asset-access.revoke');
         // Phase 13-K — module upgrade request & approval flow
         Route::get('sites/{site}/module-upgrades', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'index'])->name('sites.module-upgrades.index');
         Route::get('sites/{site}/module-upgrades/{moduleSlug}', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'confirm'])->name('sites.module-upgrades.confirm');
