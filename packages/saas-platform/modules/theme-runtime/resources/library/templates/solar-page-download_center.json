@@ -4,7 +4,7 @@
     "description": "دانلود کاتالوگ فنی پنل‌های خورشیدی، دفترچه راهنمای اینورترها و اسناد قوانین ساتبا.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "download-center",
     "tags": [
         "صنعت برق",

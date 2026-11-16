@@ -27,6 +27,7 @@ final class WidgetDefinition
     public const CATEGORIES = [
         'basic', 'layout', 'content', 'media', 'commerce', 'blog', 'forms',
         'navigation', 'social', 'marketing', 'dynamic', 'module', 'utility',
+        'solar-industry',
     ];
 
     /** Safe capability flags a definition may declare. */

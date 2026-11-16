@@ -4,7 +4,7 @@
     "description": "آرشیو تصاویر و مشخصات فنی نیروگاه‌های خورشیدی اجراشده توسط تیم مهندسی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "projects",
     "tags": [
         "صنعت برق",

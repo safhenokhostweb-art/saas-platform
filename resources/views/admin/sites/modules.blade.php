@@ -26,6 +26,9 @@
         @endphp
         <div class="border p-4 rounded mb-4">
             <label class="flex items-center gap-2">
+                @if($canToggle)
+                    <input type="hidden" name="modules[{{ $module->id }}]" value="0">
+                @endif
                 <input type="checkbox"
                        name="modules[{{ $module->id }}]"
                        value="1"

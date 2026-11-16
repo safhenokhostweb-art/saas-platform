@@ -4,7 +4,7 @@
     "description": "تأمین برق خورشیدی خانگی، برق اضطراری در زمان قطعی و کسب درآمد پایدار از پشت‌بام.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "residential",
     "tags": [
         "صنعت برق",

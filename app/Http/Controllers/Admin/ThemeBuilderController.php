@@ -72,10 +72,11 @@ class ThemeBuilderController extends Controller
     public function edit(Theme $theme_builder)
     {
         $theme = $theme_builder;
+        $themeSlug = $theme->slug ?? ($theme->settings['meta']['id'] ?? null);
         $blockRegistry = [
-            'blocks' => BlockRegistry::all(),
-            'byCategory' => BlockRegistry::byCategory(),
-            'categoryLabels' => BlockRegistry::categoryLabels(),
+            'blocks' => BlockRegistry::forTheme($themeSlug),
+            'byCategory' => BlockRegistry::byCategory($themeSlug),
+            'categoryLabels' => BlockRegistry::categoryLabels($themeSlug),
         ];
         $defaultStyles = $this->themeService->defaultGlobalStyles();
         return view('admin.theme-builder.edit', compact('theme', 'blockRegistry', 'defaultStyles'));

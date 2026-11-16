@@ -204,7 +204,9 @@ class Adr082InspectorControlsTest extends TestCase
             'transparent_over_hero', 'transparent_text_color',
             'burger_breakpoint', 'drawer_style', 'drawer_side',
             // ADR-084: drawer extras and the compact desktop bar
-            'drawer_show_logo', 'drawer_show_search', 'drawer_show_ctas', 'compact_below',
+            'drawer_show_logo', 'drawer_show_search', 'drawer_show_ctas',
+            'drawer_action_text', 'drawer_action_url', 'drawer_action_icon', 'drawer_action_style', 'drawer_duration', 'drawer_easing',
+            'compact_below',
             // step 5: accessibility
             'menu_aria_label', 'focus_color',
         ], $byPanel['advanced']);

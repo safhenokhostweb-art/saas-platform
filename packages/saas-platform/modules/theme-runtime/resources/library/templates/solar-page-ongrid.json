@@ -4,7 +4,7 @@
     "description": "تولید و فروش برق به شبکه سراسری با تضمین قرارداد بلندمدت و بالاترین نرخ خرید تضمینی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "ongrid",
     "tags": [
         "صنعت برق",

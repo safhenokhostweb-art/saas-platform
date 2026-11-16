@@ -9,6 +9,7 @@ use SaaSPlatform\ThemeRuntime\DynamicBlockTypes;
 use SaaSPlatform\ThemeRuntime\FoodMartBlockTypes;
 use SaaSPlatform\ThemeRuntime\InteractionBlockTypes;
 use SaaSPlatform\ThemeRuntime\SleepShimanBlockTypes;
+use SaaSPlatform\ThemeRuntime\SolarIndustryBlockTypes;
 
 /**
  * Phase 2h — ADR-029: this package is the one shared authority for canonical
@@ -114,6 +115,12 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
     public static function pricingScriptPath(): string
     {
         return __DIR__ . '/../../resources/js/blocks/pricing.js';
+    }
+
+    /** Global Scroll-to-Top block runtime script. */
+    public static function scrollToTopScriptPath(): string
+    {
+        return __DIR__ . '/../../resources/js/blocks/scroll-to-top.js';
     }
 
     public static function canvasIdentityContractPath(): string
@@ -244,5 +251,8 @@ class ThemeRuntimeServiceProvider extends ServiceProvider
         // PLATFORM-THEME-SPEC-v1 (ADR-083) — the seven neutral commercial
         // widgets (CommercialBlockRendererTrait renders them), same seam.
         CommercialBlockTypes::register();
+
+        // Solar Industry template-scoped widgets
+        SolarIndustryBlockTypes::register();
     }
 }

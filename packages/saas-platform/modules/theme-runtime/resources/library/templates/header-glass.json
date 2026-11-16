@@ -8,6 +8,7 @@
     "thumbnail": "office-hero.webp",
     "blocks": [
         {
+            "id": "header-glass-nav",
             "type": "nav_header",
             "layout_slot": "header",
             "props": {
@@ -15,10 +16,10 @@
                 "logo_url": "@link:home",
                 "nav_source": "custom",
                 "nav_links": [
-                    {"label": "صفحه اصلی", "url": "@link:home"},
-                    {"label": "فروشگاه", "url": "@link:shop"},
-                    {"label": "وبلاگ", "url": "@link:blog"},
-                    {"label": "تماس با ما", "url": "@link:contact"}
+                    {"label": "صفحه اصلی", "url": "@link:home", "icon": "home"},
+                    {"label": "فروشگاه", "url": "@link:shop", "icon": "shopping-bag"},
+                    {"label": "وبلاگ", "url": "@link:blog", "icon": "book-open"},
+                    {"label": "تماس با ما", "url": "@link:contact", "icon": "phone"}
                 ],
                 "sticky": true,
                 "sticky_hide_on_scroll": false,
@@ -28,12 +29,29 @@
                 "text_color": "#0f172a",
                 "cta_text": "مشاوره رایگان",
                 "cta_url": "@link:contact",
+                "cta_icon": "calendar",
+                "cta_style": "primary",
+                "cta2_text": "ورود",
+                "cta2_url": "@link:login",
+                "cta2_icon": "log-in",
+                "cta2_style": "outline",
                 "show_search": true,
+                "search_mode": "icon",
                 "search_placeholder": "جستجو در سایت…",
                 "search_scope": "all",
                 "show_cart": false,
-                "show_account": false,
-                "show_dark_toggle": false
+                "show_account": true,
+                "show_dark_toggle": false,
+                "burger_breakpoint": "mobile",
+                "drawer_style": "side",
+                "drawer_side": "start",
+                "drawer_show_logo": true,
+                "drawer_show_search": true,
+                "drawer_show_ctas": true,
+                "drawer_action_text": "درخواست مشاوره",
+                "drawer_action_url": "@link:contact",
+                "drawer_action_icon": "calendar",
+                "drawer_action_style": "primary"
             }
         }
     ]

@@ -8,6 +8,7 @@
     "thumbnail": "tech-products.webp",
     "blocks": [
         {
+            "id": "header-mega-store-nav",
             "type": "nav_header",
             "layout_slot": "header",
             "props": {
@@ -15,15 +16,16 @@
                 "logo_url": "@link:home",
                 "nav_source": "custom",
                 "nav_links": [
-                    {"label": "صفحه اصلی", "url": "@link:home"},
+                    {"label": "صفحه اصلی", "url": "@link:home", "icon": "home"},
                     {
                         "label": "محصولات",
                         "url": "@link:shop",
+                        "icon": "grid-3x3",
                         "mega_columns": [
                             {
                                 "title": "دسته‌های محبوب",
                                 "items": [
-                                    {"label": "موبایل و تبلت", "url": "@link:shop", "icon": "smartphone"},
+                                    {"label": "موبایل و تبلت", "url": "@link:shop", "icon": "smartphone", "badge": "پرفروش", "badge_variant": "primary"},
                                     {"label": "لپ‌تاپ و کامپیوتر", "url": "@link:shop", "icon": "layers"},
                                     {"label": "ساعت و پوشیدنی", "url": "@link:shop", "icon": "clock"},
                                     {"label": "لوازم جانبی", "url": "@link:shop", "icon": "package"}
@@ -33,11 +35,15 @@
                                 "title": "خرید مطمئن",
                                 "items": [
                                     {"label": "ارسال سریع به سراسر کشور", "url": "@link:shop", "icon": "truck"},
-                                    {"label": "ضمانت اصالت کالا", "url": "@link:shop", "icon": "badge-check"},
+                                    {"label": "ضمانت اصالت کالا", "url": "@link:shop", "icon": "badge-check", "badge": "گارانتی", "badge_variant": "success"},
                                     {"label": "پرداخت امن و اقساطی", "url": "@link:shop", "icon": "credit-card"},
                                     {"label": "پشتیبانی هفت روز هفته", "url": "@link:contact", "icon": "headphones"}
                                 ]
                             }
+                        ],
+                        "mega_promo_cards": [
+                            {"eyebrow": "پیشنهاد شگفت‌انگیز", "title": "تخفیف‌های ویژه امروز", "url": "@link:shop", "icon": "arrow-left"},
+                            {"eyebrow": "پرفروش‌ترین‌ها", "title": "مشاهده تمام کالاهای منتخب", "url": "@link:shop", "icon": "arrow-left"}
                         ],
                         "mega_banner_image": "@media:tech-products.webp",
                         "mega_banner_url": "@link:shop",
@@ -46,8 +52,8 @@
                         "mega_show_desktop": true,
                         "mega_mobile_behavior": "accordion"
                     },
-                    {"label": "وبلاگ", "url": "@link:blog"},
-                    {"label": "تماس با ما", "url": "@link:contact"}
+                    {"label": "وبلاگ", "url": "@link:blog", "icon": "book-open"},
+                    {"label": "تماس با ما", "url": "@link:contact", "icon": "phone"}
                 ],
                 "sticky": true,
                 "sticky_hide_on_scroll": true,
@@ -55,11 +61,33 @@
                 "bg_color": "#ffffff",
                 "text_color": "#0f172a",
                 "show_search": true,
+                "search_mode": "icon",
                 "search_placeholder": "جستجوی محصول، برند یا دسته…",
                 "search_scope": "products",
                 "show_cart": true,
                 "show_account": true,
-                "show_dark_toggle": false
+                "show_dark_toggle": false,
+                "cta_text": "ورود / ثبت‌نام",
+                "cta_url": "@link:login",
+                "cta_icon": "user",
+                "cta_style": "primary",
+                "cta2_text": "پیگیری سفارش",
+                "cta2_url": "@link:account",
+                "cta2_icon": "truck",
+                "cta2_style": "outline",
+                "burger_breakpoint": "mobile",
+                "drawer_style": "side",
+                "drawer_side": "start",
+                "drawer_show_logo": true,
+                "drawer_show_search": true,
+                "drawer_show_ctas": true,
+                "drawer_action_text": "مشاهده کاتالوگ محصولات",
+                "drawer_action_url": "@link:shop",
+                "drawer_action_icon": "grid-3x3",
+                "drawer_action_style": "primary",
+                "mega_layout": "card",
+                "mega_icon_style": "boxed",
+                "mega_col_title_divider": true
             }
         }
     ]

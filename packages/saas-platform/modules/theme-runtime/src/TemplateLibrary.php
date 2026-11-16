@@ -42,6 +42,12 @@ final class TemplateLibrary
         // ADR-084: the header's sign-in and sign-up buttons.
         'login' => ['ورود', '/login'],
         'register' => ['ثبت‌نام', '/register'],
+        'account' => ['حساب کاربری', '/login'],
+        'download_center' => ['مرکز دانلود', '/page/download-center'],
+        'hybrid' => ['سیستم خورشیدی هیبرید', '/page/hybrid'],
+        'offgrid' => ['سیستم خورشیدی منفصل از شبکه', '/page/offgrid'],
+        'ongrid' => ['سیستم خورشیدی متصل به شبکه', '/page/ongrid'],
+        'solar_calculator' => ['محاسبه‌گر خورشیدی', '/page/solar-calculator'],
     ];
 
     /** Template type => the editor zone its blocks belong to. */

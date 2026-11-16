@@ -27,6 +27,7 @@
                 :max="CanvasControls.rangeLimits(schemaDef, ctlRange(propKey).unit).max"
                 :step="CanvasControls.rangeLimits(schemaDef, ctlRange(propKey).unit).step"
                 :value="ctlRange(propKey).size"
+                @input.debounce.300ms="ctlRangeSet(propKey, $event.target.value, ctlRange(propKey).unit)"
                 @change="ctlRangeSet(propKey, $event.target.value, ctlRange(propKey).unit)"
                 :aria-label="(schemaDef.label || propKey) + ' (عدد)'" :data-testid="'tbc-range-value-' + propKey">
             <template x-if="CanvasControls.rangeUnits(schemaDef).length > 1">
@@ -49,7 +50,9 @@
 <template x-if="schemaDef.type === 'number' && ctlIsResponsive(propKey)">
     <div class="tbc">
         <input type="number" class="tbc-input" :class="ctlInherited(propKey) ? 'is-inherited' : ''" :id="'ctrl-' + propKey"
-            :value="ctlRead(propKey) ?? ''" @change="ctlWrite(propKey, $event.target.value === '' ? '' : Number($event.target.value))"
+            :value="ctlRead(propKey) ?? ''"
+            @input.debounce.300ms="ctlWrite(propKey, $event.target.value === '' ? '' : Number($event.target.value))"
+            @change="ctlWrite(propKey, $event.target.value === '' ? '' : Number($event.target.value))"
             :min="schemaDef.min ?? null" :max="schemaDef.max ?? null" :step="schemaDef.step ?? 'any'" :data-testid="'tb-prop-' + propKey">
         @include('theme-runtime::canvas.control-inherit')
     </div>
@@ -75,7 +78,9 @@
             <template x-for="tbcSide in CanvasControls.SPACING_SIDES" :key="tbcSide">
                 <label class="tbc-side">
                     <input type="number" class="tbc-input" :class="ctlInherited(propKey) ? 'is-inherited' : ''"
-                        :value="ctlSpacing(propKey)[tbcSide]" @change="ctlSpacingSet(propKey, tbcSide, $event.target.value)"
+                        :value="ctlSpacing(propKey)[tbcSide]"
+                        @input.debounce.300ms="ctlSpacingSet(propKey, tbcSide, $event.target.value)"
+                        @change="ctlSpacingSet(propKey, tbcSide, $event.target.value)"
                         :aria-label="(schemaDef.label || propKey) + ' — ' + ({'block-start': 'بالا', 'inline-start': 'ابتدای سطر (راست)', 'block-end': 'پایین', 'inline-end': 'انتهای سطر (چپ)'})[tbcSide]"
                         :data-testid="'tbc-spacing-' + propKey + '-' + tbcSide">
                     <span x-text="({'block-start': 'بالا', 'inline-start': 'راست', 'block-end': 'پایین', 'inline-end': 'چپ'})[tbcSide]"></span>
@@ -119,7 +124,9 @@
             </label>
             <div class="tbc-pair">
                 <label><span class="tbc-sub">اندازه (px)</span>
-                    <input type="number" min="8" max="120" class="tbc-input" :value="ctlTypography(propKey).size ?? ''" @change="ctlTypographySet(propKey, 'size', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-size'">
+                    <input type="number" min="8" max="120" class="tbc-input" :value="ctlTypography(propKey).size ?? ''"
+                        @input.debounce.300ms="ctlTypographySet(propKey, 'size', $event.target.value)"
+                        @change="ctlTypographySet(propKey, 'size', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-size'">
                 </label>
                 <label><span class="tbc-sub">وزن</span>
                     <select class="tbc-select" @change="ctlTypographySet(propKey, 'weight', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-weight'">
@@ -131,10 +138,14 @@
             </div>
             <div class="tbc-pair">
                 <label><span class="tbc-sub">ارتفاع خط</span>
-                    <input type="number" min="0.8" max="3" step="0.05" class="tbc-input" :value="ctlTypography(propKey).lineHeight ?? ''" @change="ctlTypographySet(propKey, 'lineHeight', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-lineHeight'">
+                    <input type="number" min="0.8" max="3" step="0.05" class="tbc-input" :value="ctlTypography(propKey).lineHeight ?? ''"
+                        @input.debounce.300ms="ctlTypographySet(propKey, 'lineHeight', $event.target.value)"
+                        @change="ctlTypographySet(propKey, 'lineHeight', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-lineHeight'">
                 </label>
                 <label><span class="tbc-sub">فاصلهٔ حروف (px)</span>
-                    <input type="number" min="-5" max="20" step="0.1" class="tbc-input" :value="ctlTypography(propKey).letterSpacing ?? ''" @change="ctlTypographySet(propKey, 'letterSpacing', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-letterSpacing'">
+                    <input type="number" min="-5" max="20" step="0.1" class="tbc-input" :value="ctlTypography(propKey).letterSpacing ?? ''"
+                        @input.debounce.300ms="ctlTypographySet(propKey, 'letterSpacing', $event.target.value)"
+                        @change="ctlTypographySet(propKey, 'letterSpacing', $event.target.value)" :data-testid="'tbc-typography-' + propKey + '-letterSpacing'">
                 </label>
             </div>
             <p class="tbc-hint" x-show="ctlIsResponsive(propKey) && activeBreakpoint !== 'desktop'">
@@ -168,7 +179,9 @@
                     <template x-for="tbcPart in [['x', 'افقی (px)'], ['y', 'عمودی (px)'], ['blur', 'محو (px)'], ['spread', 'گسترش (px)']]" :key="tbcPart[0]">
                         <label><span class="tbc-sub" x-text="tbcPart[1]"></span>
                             <input type="number" class="tbc-input" :min="CanvasControls.SHADOW_LIMITS[tbcPart[0]][0]" :max="CanvasControls.SHADOW_LIMITS[tbcPart[0]][1]"
-                                :value="ctlShadow(propKey)?.[tbcPart[0]] ?? 0" @change="ctlShadowSet(propKey, tbcPart[0], $event.target.value)"
+                                :value="ctlShadow(propKey)?.[tbcPart[0]] ?? 0"
+                                @input.debounce.300ms="ctlShadowSet(propKey, tbcPart[0], $event.target.value)"
+                                @change="ctlShadowSet(propKey, tbcPart[0], $event.target.value)"
                                 :data-testid="'tbc-shadow-' + propKey + '-' + tbcPart[0]">
                         </label>
                     </template>

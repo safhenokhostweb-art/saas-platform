@@ -44,11 +44,12 @@ class ThemeCanvasController extends Controller
 
     public function show(Theme $theme)
     {
+        $themeSlug = $theme->slug ?? ($theme->settings['meta']['id'] ?? null);
         $pages     = $theme->getPageList();
-        $registry  = BlockRegistry::all();
-        $byCategory = BlockRegistry::byCategory();
-        $catLabels  = BlockRegistry::categoryLabels();
-        $catIcons   = BlockRegistry::categoryIcons();
+        $registry  = BlockRegistry::forTheme($themeSlug);
+        $byCategory = BlockRegistry::byCategory($themeSlug);
+        $catLabels  = BlockRegistry::categoryLabels($themeSlug);
+        $catIcons   = BlockRegistry::categoryIcons($themeSlug);
 
         // Phase 3G-B-6: merge the Theme's currently-selected Extension
         // release manifests into the palette at request time only — never

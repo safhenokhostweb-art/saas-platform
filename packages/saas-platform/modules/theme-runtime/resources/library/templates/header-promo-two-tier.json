@@ -8,6 +8,7 @@
     "thumbnail": "mobile-store.webp",
     "blocks": [
         {
+            "id": "header-promo-banner",
             "type": "promo_banner",
             "props": {
                 "text": "ارسال رایگان برای سفارش‌های بالای ۲ میلیون تومان — فقط تا پایان هفته",
@@ -16,6 +17,7 @@
             }
         },
         {
+            "id": "header-promo-two-tier-nav",
             "type": "nav_header",
             "layout_slot": "header",
             "props": {
@@ -23,11 +25,11 @@
                 "logo_url": "@link:home",
                 "nav_source": "custom",
                 "nav_links": [
-                    {"label": "صفحه اصلی", "url": "@link:home"},
-                    {"label": "فروشگاه", "url": "@link:shop"},
-                    {"label": "دوره‌ها", "url": "@link:courses"},
-                    {"label": "وبلاگ", "url": "@link:blog"},
-                    {"label": "تماس با ما", "url": "@link:contact"}
+                    {"label": "صفحه اصلی", "url": "@link:home", "icon": "home"},
+                    {"label": "فروشگاه", "url": "@link:shop", "icon": "shopping-bag"},
+                    {"label": "دوره‌ها", "url": "@link:courses", "icon": "graduation-cap"},
+                    {"label": "وبلاگ", "url": "@link:blog", "icon": "book-open"},
+                    {"label": "تماس با ما", "url": "@link:contact", "icon": "phone"}
                 ],
                 "sticky": true,
                 "sticky_hide_on_scroll": false,
@@ -37,12 +39,29 @@
                 "phone": "۰۲۱-۹۱۰۰۰۰۰۰",
                 "cta_text": "ثبت سفارش",
                 "cta_url": "@link:shop",
+                "cta_icon": "shopping-bag",
+                "cta_style": "primary",
+                "cta2_text": "ورود",
+                "cta2_url": "@link:login",
+                "cta2_icon": "log-in",
+                "cta2_style": "outline",
                 "show_search": true,
+                "search_mode": "icon",
                 "search_placeholder": "جستجو…",
                 "search_scope": "all",
                 "show_cart": true,
                 "show_account": true,
-                "show_dark_toggle": false
+                "show_dark_toggle": false,
+                "burger_breakpoint": "mobile",
+                "drawer_style": "side",
+                "drawer_side": "start",
+                "drawer_show_logo": true,
+                "drawer_show_search": true,
+                "drawer_show_ctas": true,
+                "drawer_action_text": "مشاهده پیشنهادهای شگفت‌انگیز",
+                "drawer_action_url": "@link:shop",
+                "drawer_action_icon": "tag",
+                "drawer_action_style": "primary"
             }
         }
     ]

@@ -356,11 +356,31 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
 
             {{-- TB4: Structure Tree --}}
             <div x-show="leftPanelTab==='tree'" class="flex-1 overflow-y-auto">
-                <div x-show="flattenTree().length === 0" class="flex flex-col items-center justify-center py-10 text-center text-slate-400">
-                    <svg class="w-8 h-8 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
-                    <p class="text-xs">هیچ بلوکی وجود ندارد</p>
-                </div>
                 <div class="py-1">
+                    {{-- Persistent Header Structural Node --}}
+                    <div
+                        @click="selectHeaderNode()"
+                        data-testid="tb-tree-node-header"
+                        :class="activeTarget === 'header' ? 'bg-teal-50 border-r-2 border-teal-500 text-teal-800 font-semibold' : 'hover:bg-slate-50 text-slate-700'"
+                        class="flex items-center gap-2 px-3 py-2 cursor-pointer transition text-xs border-b border-slate-100"
+                    >
+                        <span class="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0"></span>
+                        <span class="text-sm">🔝</span>
+                        <span class="flex-1 truncate font-medium">هدر سایت (سراسری)</span>
+                        <span class="text-[9px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-mono shrink-0">Header</span>
+                    </div>
+
+                    {{-- Section Divider for Current Target Content --}}
+                    <div class="px-3 py-1.5 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                        <span x-text="'محتوای ' + (activeTarget === 'header' ? 'هدر' : (activeTarget === 'footer' ? 'فوتر' : ('صفحه (' + pageDisplayName(currentPage, pages[currentPage]?.title) + ')')))"></span>
+                        <span class="font-mono text-[10px]" x-text="flattenTree().length + ' بلوک'"></span>
+                    </div>
+
+                    <div x-show="flattenTree().length === 0" class="flex flex-col items-center justify-center py-6 text-center text-slate-400">
+                        <svg class="w-8 h-8 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
+                        <p class="text-xs">هیچ بلوکی در این بخش وجود ندارد</p>
+                    </div>
+
                     <template x-for="node in flattenTree()" :key="node.block.id + node.depth">
                         <div
                             @click="selectBlock(node.path)"
@@ -407,6 +427,19 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                 class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="دارای override ریسپانسیو"></span>
                         </div>
                     </template>
+
+                    {{-- Persistent Footer Structural Node --}}
+                    <div
+                        @click="selectFooterNode()"
+                        data-testid="tb-tree-node-footer"
+                        :class="activeTarget === 'footer' ? 'bg-purple-50 border-r-2 border-purple-500 text-purple-800 font-semibold' : 'hover:bg-slate-50 text-slate-700'"
+                        class="flex items-center gap-2 px-3 py-2 cursor-pointer transition text-xs border-t border-slate-100 mt-2"
+                    >
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
+                        <span class="text-sm">🔚</span>
+                        <span class="flex-1 truncate font-medium">فوتر سایت (سراسری)</span>
+                        <span class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono shrink-0">Footer</span>
+                    </div>
                 </div>
                 {{-- Tree hint --}}
                 <div class="px-3 py-2 border-t border-slate-100 shrink-0 bg-slate-50">
@@ -475,7 +508,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                         </button>
 
                         {{-- Blocks in Category --}}
-                        <div x-show="expandedCats['{{ $catKey }}']" x-collapse>
+                        <div x-show="expandedCats['{{ $catKey }}'] || !!librarySearch" x-collapse>
                             <div class="px-2 pb-2 grid grid-cols-2 gap-1">
                                 @foreach($catBlocks as $blockType => $blockDef)
                                     @php $blockAccess = ($assetAccess ?? [])[$blockType] ?? null; @endphp
@@ -505,9 +538,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                         @pointercancel.window="cancelPointerLibraryDrag($event)"
                                         @dragstart="startDragBlock($event, '{{ $blockType }}')"
                                         @dragend="endDragBlock()"
-                                        x-show="isBlockVisible('{{ $blockType }}', '{{ $blockDef['name'] }}')"
+                                        x-show="isBlockVisible('{{ $blockType }}', '{{ $blockDef['name'] }}', '{{ $blockDef['description'] ?? '' }}')"
                                         class="flex flex-col items-start gap-1 p-2 rounded-lg border border-slate-200 bg-white hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm transition text-right cursor-grab active:cursor-grabbing group"
-                                        title="{{ $blockDef['name'] }}"
+                                        title="{{ $blockDef['description'] ?? $blockDef['name'] }}"
                                     >
                                         <div class="text-base leading-none">
                                             @switch($blockType)
@@ -525,10 +558,14 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                                 @case('module:courses_grid') 🎓 @break
                                                 @case('module:pricing_table') 💰 @break
                                                 @case('module:support_button') 💬 @break
+                                                @case('scroll_to_top') 🔝 @break
                                                 @default 🧩
                                             @endswitch
                                         </div>
                                         <span class="text-[10px] font-medium text-slate-700 group-hover:text-indigo-700 leading-tight line-clamp-2">{{ $blockDef['name'] }}</span>
+                                        @if(!empty($blockDef['description']))
+                                            <span class="text-[9px] text-slate-400 leading-tight line-clamp-1">{{ $blockDef['description'] }}</span>
+                                        @endif
                                         @if($blockDef['requires'] ?? null)
                                             <span class="text-[9px] px-1.5 py-0.5 rounded {{ $badgeClass }} font-medium leading-none">{{ $blockDef['requires'] }}</span>
                                         @endif
@@ -1491,6 +1528,7 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                                             @case('columns') ⬜ @break @case('heading') 🔠 @break
                                             @case('text') 📄 @break @case('image') 🖼️ @break
                                             @case('button') 🔘 @break @case('cta') 📢 @break
+                                            @case('scroll_to_top') 🔝 @break
                                             @default 🧩
                                         @endswitch
                                     </span>
@@ -2334,10 +2372,10 @@ function themeCanvas() {
                 return t.includes(s) || (BLOCK_LABELS[t] ?? '').toLowerCase().includes(s);
             });
         },
-        isBlockVisible(type, name) {
+        isBlockVisible(type, name, desc = '') {
             if (!this.librarySearch) return true;
             const s = this.librarySearch.toLowerCase();
-            return type.toLowerCase().includes(s) || name.toLowerCase().includes(s);
+            return type.toLowerCase().includes(s) || name.toLowerCase().includes(s) || (desc && desc.toLowerCase().includes(s));
         },
 
         // ── TB4: Block Tree Helpers ───────────────────────────────
@@ -3230,9 +3268,43 @@ function themeCanvas() {
                 this.historyEngine.clear();
                 this.historyVersion++;
                 this.reloadIframe();
+                if (target === 'header' || target === 'footer') {
+                    this.$nextTick(() => {
+                        if (this.blocks.length > 0) {
+                            this.selectBlockById(this.blocks[0]?.id);
+                            this.selectedTab = 'content';
+                        }
+                    });
+                }
             } finally {
                 this.switchingTarget = false;
             }
+        },
+
+        async selectHeaderNode() {
+            this.showLeftSidebar = true;
+            if (this.activeTarget !== 'header') {
+                await this.switchTarget('header');
+            }
+            this.$nextTick(() => {
+                if (this.blocks.length > 0) {
+                    this.selectBlockById(this.blocks[0]?.id);
+                    this.selectedTab = 'content';
+                }
+            });
+        },
+
+        async selectFooterNode() {
+            this.showLeftSidebar = true;
+            if (this.activeTarget !== 'footer') {
+                await this.switchTarget('footer');
+            }
+            this.$nextTick(() => {
+                if (this.blocks.length > 0) {
+                    this.selectBlockById(this.blocks[0]?.id);
+                    this.selectedTab = 'content';
+                }
+            });
         },
 
         async switchPage(key) {
@@ -3721,6 +3793,7 @@ function themeCanvas() {
 
                 case 'blockSelected': {
                     if (CanvasIdentity.findById(this.blocks, d.blockId)) {
+                        this.showLeftSidebar = true;
                         this.selectBlockById(d.blockId);
                         this.selectedTab = 'content';
                     }

@@ -4,7 +4,7 @@
     "description": "تأمین آب چاه‌های کشاورزی با درایو پمپ خورشیدی بدون نیاز به برق سراسری و بدون مصرف سوخت گازوئیل.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "solar-pumping",
     "tags": [
         "صنعت برق",

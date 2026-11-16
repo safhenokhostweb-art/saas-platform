@@ -275,4 +275,96 @@ class SliderRenderersTest extends TestCase
         self::assertStringContainsString('tb-grid-cols-', $html);
         self::assertStringNotContainsString('tb-carousel-dot', $html);
     }
+
+    public function test_slider_hides_controls_when_hide_controls_is_true(): void
+    {
+        $html = $this->render('slider', [
+            'hide_controls' => true,
+            'slides' => [
+                ['image' => '', 'title' => 'اول'],
+                ['image' => '', 'title' => 'دوم'],
+            ],
+        ]);
+        $xpath = $this->xpathFor($html);
+
+        $this->assertSame(0, $xpath->query('//*[contains(@class,"tb-carousel-prev")]')->length);
+        $this->assertSame(0, $xpath->query('//*[contains(@class,"tb-carousel-next")]')->length);
+        $this->assertSame(0, $xpath->query('//button[contains(@class,"tb-carousel-dot")]')->length);
+        $this->assertStringContainsString('tb-carousel--no-controls', $html);
+    }
+
+    public function test_slider_hides_controls_when_show_slider_buttons_is_false(): void
+    {
+        $html = $this->render('slider', [
+            'show_slider_buttons' => false,
+            'slides' => [
+                ['image' => '', 'title' => 'اول'],
+                ['image' => '', 'title' => 'دوم'],
+            ],
+        ]);
+        $xpath = $this->xpathFor($html);
+
+        $this->assertSame(0, $xpath->query('//*[contains(@class,"tb-carousel-prev")]')->length);
+        $this->assertSame(0, $xpath->query('//*[contains(@class,"tb-carousel-next")]')->length);
+        $this->assertSame(0, $xpath->query('//button[contains(@class,"tb-carousel-dot")]')->length);
+        $this->assertStringContainsString('tb-carousel--no-controls', $html);
+    }
+
+    public function test_slider_renders_rich_overlays_with_badges_descriptions_and_actions(): void
+    {
+        $html = $this->render('slider', [
+            'overlay_style' => 'glass',
+            'content_align' => 'center',
+            'slides' => [
+                [
+                    'image' => 'https://example.test/solar.jpg',
+                    'badge' => 'پیشرو در صنعت',
+                    'title' => 'انرژی خورشیدی پایدار',
+                    'highlight' => 'پایدار',
+                    'subtitle' => 'راهکارهای نوین برق تجاری',
+                    'description' => "خط اول توضیحات\nخط دوم توضیحات",
+                    'cta_text' => 'مشاوره رایگان',
+                    'link' => '/contact',
+                    'secondary_cta_text' => 'کاتالوگ محصولات',
+                    'secondary_link' => '/catalog',
+                ],
+            ],
+        ]);
+
+        $xpath = $this->xpathFor($html);
+        $this->assertStringContainsString('tb-slide-overlay--glass', $html);
+        $this->assertStringContainsString('tb-slide-caption--align-center', $html);
+        $this->assertStringContainsString('tb-slide-caption--glass', $html);
+        $this->assertStringContainsString('پیشرو در صنعت', $html);
+        $this->assertStringContainsString('tb-slide-badge', $html);
+        $this->assertStringContainsString('tb-slide-title-highlight', $html);
+        $this->assertStringContainsString('راهکارهای نوین برق تجاری', $html);
+        $this->assertStringContainsString('tb-slide-description', $html);
+        $this->assertStringContainsString('خط اول توضیحات<br />', $html);
+        $this->assertStringContainsString('tb-slide-actions', $html);
+        $this->assertStringContainsString('tb-slide-cta', $html);
+        $this->assertStringContainsString('مشاوره رایگان', $html);
+        $this->assertStringContainsString('tb-slide-cta-sec', $html);
+        $this->assertStringContainsString('کاتالوگ محصولات', $html);
+    }
+
+    public function test_slider_supports_per_slide_custom_alignment(): void
+    {
+        $html = $this->render('slider', [
+            'content_align' => 'right',
+            'slides' => [
+                [
+                    'title' => 'راست‌چین',
+                    'align' => 'right',
+                ],
+                [
+                    'title' => 'چپ‌چین',
+                    'align' => 'left',
+                ],
+            ],
+        ]);
+
+        $this->assertStringContainsString('tb-slide-caption--align-right', $html);
+        $this->assertStringContainsString('tb-slide-caption--align-left', $html);
+    }
 }

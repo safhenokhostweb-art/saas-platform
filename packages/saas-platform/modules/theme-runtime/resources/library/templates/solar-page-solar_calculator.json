@@ -4,7 +4,7 @@
     "description": "برآورد آنلاین ظرفیت نیروگاه، تعداد پنل، اینورتر و تخمین هزینه سیستم خورشیدی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "solar-calculator",
     "tags": [
         "صنعت برق",

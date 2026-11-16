@@ -15,13 +15,16 @@
     ],
     "blocks": [
         {
+            "id": "solar-header-nav",
             "type": "nav_header",
             "layout_slot": "header",
             "props": {
                 "logo_text": "برند",
                 "logo_text_accent": "شما",
                 "logo_tagline": "مهندسی و خدمات انرژی",
-                "logo_icon": "sun",
+                "logo_icon": "fas fa-sun",
+                "logo_animation": "rotate_pop",
+                "logo_animation_duration": 5,
                 "logo_url": "@link:home",
                 "logo_alt": "برند شما — مهندسی و خدمات انرژی",
                 "menu_align": "end",
@@ -435,14 +438,17 @@
                 "show_cart": true,
                 "show_account": true,
                 "show_dark_toggle": false,
-                "cta2_text": "ورود",
+                "show_login_btn": false,
+                "show_register_btn": false,
+                "show_calc_btn": false,
+                "cta2_text": "",
                 "cta2_url": {
                     "type": "route",
                     "id": "login"
                 },
                 "cta2_icon": "log-in",
                 "cta2_style": "outline",
-                "cta_text": "ثبت‌نام",
+                "cta_text": "",
                 "cta_url": {
                     "type": "route",
                     "id": "register"
@@ -483,9 +489,9 @@
                 "drawer_show_logo": true,
                 "drawer_show_search": true,
                 "drawer_show_ctas": true,
-                "drawer_action_text": "ماشین‌حساب آنلاین خورشیدی",
-                "drawer_action_url": "/page/solar-calculator",
-                "drawer_action_icon": "calculator",
+                "drawer_action_text": "",
+                "drawer_action_url": "",
+                "drawer_action_icon": "",
                 "drawer_action_style": "primary",
                 "compact_below": "1280",
                 "menu_aria_label": "منوی اصلی",

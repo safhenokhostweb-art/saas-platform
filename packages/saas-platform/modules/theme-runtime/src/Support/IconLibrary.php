@@ -53,6 +53,9 @@ final class IconLibrary
             return null;
         }
         $name = strtolower(trim($value));
+        if ($name === 'fas fa-sun' || $name === 'fa-sun') {
+            return 'sun-solar';
+        }
 
         return $name !== '' && isset(self::catalog()['icons'][$name]) ? $name : null;
     }

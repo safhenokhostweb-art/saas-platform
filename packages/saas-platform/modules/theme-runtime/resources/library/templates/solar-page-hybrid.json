@@ -4,7 +4,7 @@
     "description": "پیشرفته‌ترین راهکار انرژی؛ استفاده همزمان از خورشید، باتری لیتیومی و شبکه سراسری بدون قطعی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "hybrid",
     "tags": [
         "صنعت برق",

@@ -70,14 +70,19 @@ class SiteModuleController extends Controller
         // currently produced by this view, but honored if a future form
         // adds one) is treated as "wants inactive."
         $requestedActiveIds = [];
-        foreach ($assignableIds as $id) {
-            if (array_key_exists($id, $modulesInput) || array_key_exists((string) $id, $modulesInput)) {
-                $value = $modulesInput[$id] ?? $modulesInput[(string) $id];
-                if ((bool) $value) {
+        $isList = !empty($modulesInput) && array_keys($modulesInput) === range(0, count($modulesInput) - 1);
+        if ($isList) {
+            $requestedActiveIds = array_map('intval', $modulesInput);
+        } else {
+            foreach ($assignableIds as $id) {
+                if (array_key_exists($id, $modulesInput) || array_key_exists((string) $id, $modulesInput)) {
+                    $value = $modulesInput[$id] ?? $modulesInput[(string) $id];
+                    if ((bool) $value) {
+                        $requestedActiveIds[] = $id;
+                    }
+                } elseif ($currentActiveMap[$id]) {
                     $requestedActiveIds[] = $id;
                 }
-            } elseif ($currentActiveMap[$id]) {
-                $requestedActiveIds[] = $id;
             }
         }
 

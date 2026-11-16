@@ -82,7 +82,8 @@ class CanvasInspectContractTest extends TestCase
     public function test_the_preview_protocol_is_unchanged(): void
     {
         $this->assertNotContains('setInspect', PreviewProtocol::TO_PREVIEW);
-        $this->assertCount(9, PreviewProtocol::TO_PREVIEW);
+        // updateHeaderLogoAnim added for live brand icon animation postMessage
+        $this->assertCount(10, PreviewProtocol::TO_PREVIEW);
         // 2026-11-10: columnResize is the only additive action (column drag).
         $this->assertCount(10, PreviewProtocol::TO_EDITOR);
     }
