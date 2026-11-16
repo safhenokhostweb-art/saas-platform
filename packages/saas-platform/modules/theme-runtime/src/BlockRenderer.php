@@ -1113,13 +1113,9 @@ class BlockRenderer
 
         $controlsHtml = '';
         if (!$hideControls) {
-<<<<<<< HEAD
             // The template already puts this on its own indented line, so the
             // shown-controls markup stays byte-identical to before hide_controls.
             $controlsHtml = "<button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>\n"
-=======
-            $controlsHtml = "\n            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>\n"
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                 . "            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>\n"
                 . "            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\">" . implode('', $dots) . "</div>";
         }
@@ -3997,12 +3993,8 @@ class BlockRenderer
             if (preg_match('/\bfa[srbld]?\s+fa-[\w-]+|\bfa-[\w-]+/', $val)) {
                 $iconClass = $this->escapeAttr($val);
                 if (str_contains($val, 'fa-sun')) {
-<<<<<<< HEAD
                     // The catalog's own sun (not a Font Awesome path: the icon set is ISC).
                     return '<i class="' . $iconClass . '" aria-hidden="true">' . str_replace('class="tb-icon-svg ', 'class="tb-icon-svg tb-fa-sun-svg ', $this->iconHtml('sun-solar')) . '</i>';
-=======
-                    return '<i class="' . $iconClass . '" aria-hidden="true"><svg class="tb-icon-svg tb-fa-sun-svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1 10.9-2.7 14.8L429.2 248l78.8 82.8c3.7 3.9 4.8 9.8 2.7 14.8s-6.6 8.6-11.9 9.6L391 375l-19.8 107.9c-1 5.3-4.6 9.8-9.6 11.9s-10.9 1-14.8-2.7L264 413.2l-82.8 78.8c-3.9 3.7-9.8 4.8-14.8 2.7s-8.6-6.6-9.6-11.9L137 375l-107.9-19.8c-5.3-1-9.8-4.6-11.9-9.6s-1-10.9 2.7-14.8L98.8 248 20 165.2c-3.7-3.9-4.8-9.8-2.7-14.8s6.6-8.6 11.9-9.6L137 121l19.8-107.9c1-5.3 4.6-9.8 9.6-11.9s10.9-1 14.8 2.7L264 82.8l82.8-78.8c3.9-3.7 9.8-4.8 14.8-2.7zM256 160c-53 0-96 43-96 96s43 96 96 96 96-43 96-96-43-96-96-96z"/></svg></i>';
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                 }
                 return '<i class="' . $iconClass . '" aria-hidden="true"></i>';
             }
@@ -4583,11 +4575,7 @@ class BlockRenderer
                     'animDur' => $logoAnimDur,
                 ])->render();
             } else {
-<<<<<<< HEAD
                 $sunSvg = str_replace(['class="tb-icon-svg ', 'width="24" height="24"'], ['class="tb-fa-sun-svg tb-icon-svg ', 'width="26" height="26"'], $this->iconHtml('sun-solar'));
-=======
-                $sunSvg = '<svg class="tb-fa-sun-svg" width="26" height="26" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1 10.9-2.7 14.8L429.2 248l78.8 82.8c3.7 3.9 4.8 9.8 2.7 14.8s-6.6 8.6-11.9 9.6L391 375l-19.8 107.9c-1 5.3-4.6 9.8-9.6 11.9s-10.9 1-14.8-2.7L264 413.2l-82.8 78.8c-3.9 3.7-9.8 4.8-14.8 2.7s-8.6-6.6-9.6-11.9L137 375l-107.9-19.8c-5.3-1-9.8-4.6-11.9-9.6s-1-10.9 2.7-14.8L98.8 248 20 165.2c-3.7-3.9-4.8-9.8-2.7-14.8s6.6-8.6 11.9-9.6L137 121l19.8-107.9c1-5.3 4.6-9.8 9.6-11.9s10.9-1 14.8 2.7L264 82.8l82.8-78.8c3.9-3.7 9.8-4.8 14.8-2.7zM256 160c-53 0-96 43-96 96s43 96 96 96 96-43 96-96-43-96-96-96z"/></svg>';
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
                 $siteLogoHtml = '<a href="' . $logoUrl . '" class="tb-nav-header-logo" style="display:inline-flex;align-items:center;gap:0.6rem;text-decoration:none;color:inherit;font-weight:700;"><span class="tb-nav-header-logo-icon' . $logoAnimClass . '" style="color:var(--tb-primary, var(--platform-primary, #FF7900));font-size:1.4rem;display:inline-flex;align-items:center;' . ($logoAnim !== '' && $logoAnim !== 'none' ? '--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';' : '') . '" aria-hidden="true">' . $sunSvg . '</span><span>خانه</span></a>';
             }
         }
@@ -6041,12 +6029,9 @@ class BlockRenderer
 
     protected function buildAuthCanvasHtml(array $props, string $id): string
     {
-<<<<<<< HEAD
         // Block-unique field ids, so every label is tied to its input (screen
         // readers, the commercial accessibility gate).
         $fid = 'tb-auth-' . preg_replace('/[^A-Za-z0-9_-]/', '', $id) . '-';
-=======
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
         $safeId = preg_replace('/[^A-Za-z0-9_-]/', '-', $id) ?: 'auth';
         $rootId = 'tb-' . $safeId;
 
@@ -6063,13 +6048,8 @@ class BlockRenderer
 
         // Brand
         $brandLogo = $this->escapeUrl($this->mediaSrc($props['brand_logo'] ?? ''), '');
-<<<<<<< HEAD
         $brandName = $this->escape($props['brand_name'] ?? '');
         $brandTagline = $this->escape($props['brand_tagline'] ?? '');
-=======
-        $brandName = $this->escape($props['brand_name'] ?? 'اکسین‌سولار');
-        $brandTagline = $this->escape($props['brand_tagline'] ?? 'صنعت انرژی و برق خورشیدی');
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
         $brandUrl = $this->linkHref($props['brand_url'] ?? '/', '/');
 
         // Form texts
@@ -6094,15 +6074,9 @@ class BlockRenderer
 
         // Hero
         $showHero = $layoutType === 'split' && $this->flag($props['show_hero'] ?? true);
-<<<<<<< HEAD
         $heroTitle = $this->escape($props['hero_title'] ?? 'به حساب کاربری خود خوش آمدید');
         $heroSubtitle = $this->escape($props['hero_subtitle'] ?? 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.');
         $heroIcon = trim($this->stringify($props['hero_icon'] ?? 'user'));
-=======
-        $heroTitle = $this->escape($props['hero_title'] ?? 'پلتفرم جامع صنعت انرژی خورشیدی');
-        $heroSubtitle = $this->escape($props['hero_subtitle'] ?? 'دسترسی امن به سفارش تجهیزات، دوره‌های آکادمی و پشتیبانی آنلاین پروژه‌های نیروگاهی.');
-        $heroIcon = trim($this->stringify($props['hero_icon'] ?? 'fas fa-sun'));
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
         $heroImage = $this->escapeUrl($this->mediaSrc($props['hero_image'] ?? ''), '');
 
         // CSRF & Alerts
@@ -6201,7 +6175,6 @@ class BlockRenderer
             . '<form action="' . $loginUrl . '" method="POST" class="tb-auth-form">'
             . $csrfInput
             . '<div class="tb-auth-field">'
-<<<<<<< HEAD
             . '<label class="tb-auth-label" for="' . $fid . 'login-mobile">شماره همراه</label>'
             . '<input id="' . $fid . 'login-mobile" type="text" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
             . '</div>'
@@ -6211,17 +6184,6 @@ class BlockRenderer
             . '</div>'
             . '<div class="tb-auth-options">'
             . ($showRemember ? '<label class="tb-auth-checkbox" for="' . $fid . 'login-remember"><input id="' . $fid . 'login-remember" type="checkbox" name="remember" value="1"><span>مرا به خاطر بسپار</span></label>' : '<span></span>')
-=======
-            . '<label class="tb-auth-label">شماره همراه</label>'
-            . '<input type="text" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
-            . '</div>'
-            . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">رمز عبور</label>'
-            . '<input type="password" name="password" required class="tb-auth-input" placeholder="رمز عبور خود را وارد کنید" dir="ltr" autocomplete="current-password">'
-            . '</div>'
-            . '<div class="tb-auth-options">'
-            . ($showRemember ? '<label class="tb-auth-checkbox"><input type="checkbox" name="remember" value="1"><span>مرا به خاطر بسپار</span></label>' : '<span></span>')
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
             . ($showForgot ? '<a href="' . $forgotUrl . '" class="tb-auth-link">فراموشی رمز عبور؟</a>' : '')
             . '</div>'
             . '<button type="submit" class="tb-auth-btn">' . $this->iconHtml('log-in') . '<span>' . $loginBtnText . '</span></button>'
@@ -6240,7 +6202,6 @@ class BlockRenderer
             . '<form action="' . $registerUrl . '" method="POST" class="tb-auth-form">'
             . $csrfInput
             . '<div class="tb-auth-field">'
-<<<<<<< HEAD
             . '<label class="tb-auth-label" for="' . $fid . 'register-name">نام و نام خانوادگی</label>'
             . '<input id="' . $fid . 'register-name" type="text" name="name" required class="tb-auth-input" placeholder="نام خود را وارد کنید" autocomplete="name">'
             . '</div>'
@@ -6257,24 +6218,6 @@ class BlockRenderer
             . '<input id="' . $fid . 'register-password_confirmation" type="password" name="password_confirmation" required class="tb-auth-input" placeholder="تکرار رمز عبور" dir="ltr" autocomplete="new-password">'
             . '</div>'
             . ($showTerms ? '<div class="tb-auth-field"><label class="tb-auth-checkbox" for="' . $fid . 'register-terms"><input id="' . $fid . 'register-terms" type="checkbox" name="terms" required value="1"><span>' . $termsText . ' (<a href="' . $termsUrl . '" class="tb-auth-link" target="_blank">مطالعه قوانین</a>)</span></label></div>' : '')
-=======
-            . '<label class="tb-auth-label">نام و نام خانوادگی</label>'
-            . '<input type="text" name="name" required class="tb-auth-input" placeholder="نام خود را وارد کنید" autocomplete="name">'
-            . '</div>'
-            . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">شماره همراه</label>'
-            . '<input type="tel" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
-            . '</div>'
-            . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">رمز عبور</label>'
-            . '<input type="password" name="password" required class="tb-auth-input" placeholder="حداقل ۶ کاراکتر" dir="ltr" autocomplete="new-password">'
-            . '</div>'
-            . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">تکرار رمز عبور</label>'
-            . '<input type="password" name="password_confirmation" required class="tb-auth-input" placeholder="تکرار رمز عبور" dir="ltr" autocomplete="new-password">'
-            . '</div>'
-            . ($showTerms ? '<div class="tb-auth-field"><label class="tb-auth-checkbox"><input type="checkbox" name="terms" required value="1"><span>' . $termsText . ' (<a href="' . $termsUrl . '" class="tb-auth-link" target="_blank">مطالعه قوانین</a>)</span></label></div>' : '')
->>>>>>> cf756c77 (feat(saas): finalize uncommitted local changes for solar widgets, scroll-to-top, and global assets)
             . '<button type="submit" class="tb-auth-btn">' . $this->iconHtml('user-plus') . '<span>' . $registerBtnText . '</span></button>'
             . '</form>'
             . ($authMode === 'register_only' ? '<div class="tb-auth-footer-text">از قبل حساب کاربری دارید؟ <a href="' . $loginUrl . '" class="tb-auth-link">وارد شوید</a></div>' : '')
