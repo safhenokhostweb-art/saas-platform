@@ -3,6 +3,7 @@
 namespace Tests\Feature\Modules\MotionGraphics\Library;
 
 use App\Modules\MotionGraphics\Services\MotionLibraryCatalogService;
+use App\Modules\MotionGraphics\Support\MotionPrivateAssetUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
 use SaaSPlatform\Modules\MotionGraphics\Contracts\Read\MotionAssetReadContract;
@@ -28,6 +29,12 @@ final class MotionLibraryCatalogTest extends TestCase
     public function test_every_published_reference_is_served_with_the_font_embedded_and_hardened_headers(): void
     {
         foreach (MotionLibraryCatalogService::ASSETS as $slug => $libraryVersion) {
+            // ADR-086: a private library file has no public URL at all (its
+            // signed delivery is covered by PrivateMotionLicensingTest).
+            if (MotionLibraryCatalogService::isPrivateLibraryFile($slug, $libraryVersion)) {
+                $this->get('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion))->assertNotFound();
+                continue;
+            }
             $response = $this->get('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion));
 
             $response->assertOk();
@@ -99,24 +106,34 @@ final class MotionLibraryCatalogTest extends TestCase
     {
         $result = $this->sync();
 
-        $expectedTier = ['hero-motion' => 'free', 'business-growth-motion' => 'premium'];
+        $expectedTier = ['hero-motion' => 'free', 'business-growth-motion' => 'premium', 'solar-motion-graphic' => 'premium'];
+        $expectedVisibility = ['hero-motion' => 'public', 'business-growth-motion' => 'public', 'solar-motion-graphic' => 'private'];
+        $expectedLabel = ['hero-motion' => 'v2', 'business-growth-motion' => 'v2', 'solar-motion-graphic' => '1.0.0'];
         foreach (MotionLibraryCatalogService::ASSETS as $slug => $libraryVersion) {
             $motion = MotionGraphic::query()->where('slug', $slug)->firstOrFail();
             $this->assertSame('published', $motion->status);
             $this->assertSame(1, $motion->published_version);
             $this->assertSame($expectedTier[$slug], $motion->licenseTier());
+            $this->assertSame($expectedVisibility[$slug], $motion->visibility());
+            $this->assertTrue($motion->isRuntimeEnabled());
             $this->assertSame($motion->uuid, $result[$slug]['uuid']);
 
             $version = $motion->versions()->where('version', 1)->firstOrFail();
             $this->assertSame('published', $version->status);
             $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $version->source_checksum);
+            // ADR-086: every new version records its release label.
+            $this->assertSame($expectedLabel[$slug], $version->version_label);
+            $this->assertSame($expectedLabel[$slug], $version->versionLabel());
 
             // ADR-079: size/sha256 describe the bytes actually served for
             // the default parameters (font embedded), not the source file.
             $served = MotionLibraryCatalogService::render($slug, $libraryVersion, []);
             $asset = $version->compiled_assets[0];
             $this->assertSame('svg', $asset['type']);
-            $this->assertSame('/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion), $asset['url']);
+            // ADR-086: a private version stores the unsigned private base.
+            $this->assertSame($expectedVisibility[$slug] === 'private'
+                ? MotionPrivateAssetUrl::baseReference($slug, $libraryVersion)
+                : '/'.MotionLibraryCatalogService::assetPath($slug, $libraryVersion), $asset['url']);
             $this->assertSame('image/svg+xml', $asset['mime_type']);
             $this->assertSame(strlen($served), $asset['size']);
             $this->assertSame(hash('sha256', $served), $asset['sha256']);
@@ -181,7 +198,7 @@ final class MotionLibraryCatalogTest extends TestCase
 
         $this->assertSame($first['hero-motion']['uuid'], $second['hero-motion']['uuid']);
         $this->assertFalse($second['hero-motion']['created']);
-        $this->assertSame(2, MotionGraphicVersion::query()->count());
+        $this->assertSame(count(MotionLibraryCatalogService::ASSETS), MotionGraphicVersion::query()->count());
     }
 
     public function test_a_changed_library_file_becomes_a_new_version_and_the_old_one_is_retired_untouched(): void

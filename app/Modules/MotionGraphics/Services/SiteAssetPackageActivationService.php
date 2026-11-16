@@ -193,7 +193,7 @@ final class SiteAssetPackageActivationService extends AbstractMotionAdapter
                 throw new MotionAdapterFailClosedException('compatibility_rejected', $compatibility->reason);
             }
 
-            $license = $this->licensePolicy->decide($site, $assetDto->compatibility);
+            $license = $this->licensePolicy->decide($site, $assetDto->compatibility, $assetId);
             if (! $license->allowed) {
                 throw new MotionAdapterFailClosedException($license->code, $license->reason);
             }
@@ -236,7 +236,7 @@ final class SiteAssetPackageActivationService extends AbstractMotionAdapter
             if ($reason === null) {
                 $assetDto = ReadModelMapper::toAssetReferenceDTO($projection->assetReference);
                 $compatibility = $this->assetResolver->validateCompatibility($assetDto, $templatePackage->compatibility_rules ?? [], []);
-                $license = $this->licensePolicy->decide($site, $assetDto->compatibility);
+                $license = $this->licensePolicy->decide($site, $assetDto->compatibility, $assetId);
                 $reason = ! $compatibility->compatible ? 'compatibility_rejected' : (! $license->allowed ? $license->code : null);
             }
 

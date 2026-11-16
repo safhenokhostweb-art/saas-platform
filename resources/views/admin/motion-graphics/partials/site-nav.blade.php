@@ -4,6 +4,7 @@
         <a href="{{ route('admin.motion-graphics.templates', $site) }}" class="btn btn-sm {{ $active === 'templates' ? 'btn-primary' : 'btn-secondary' }}">اختصاص قالب</a>
         <a href="{{ route('admin.motion-graphics.preview', $site) }}" class="btn btn-sm {{ $active === 'preview' ? 'btn-primary' : 'btn-secondary' }}">پیش‌نمایش اجرا</a>
         <a href="{{ route('admin.motion-graphics.bespoke.index', $site) }}" class="btn btn-sm {{ $active === 'bespoke' ? 'btn-primary' : 'btn-secondary' }}">موشن اختصاصی</a>
+        <a href="{{ route('admin.motion-graphics.catalog.index') }}" class="btn btn-sm btn-secondary">کاتالوگ و دسترسی موشن‌ها</a>
     </nav>
     <div class="flex items-center gap-2 text-sm text-gray-500">
         <span>سایت آزمایشی: <strong class="text-gray-800">#{{ $site->id }} — {{ $site->title ?? $site->domain ?? 'بدون عنوان' }}</strong></span>

@@ -1,0 +1,307 @@
+{
+  "name": "موشن نیروگاه خورشیدی",
+  "name_fa": "موشن نیروگاه خورشیدی",
+  "name_en": "Solar Power Plant Motion",
+  "slug": "solar-motion-graphic",
+  "category": "solar",
+  "description": "تابش خورشید روی آرایه پنل‌ها، جریان انرژی از اینورتر به باتری و ساختمان، و کارت‌های تولید امروز، صرفه‌جویی ماهانه و کاهش کربن برای سایت‌های صنعت برق و انرژی خورشیدی.",
+  "purpose": "Solar generation, storage and consumption storytelling for electrical-industry and solar-installer landings",
+  "usage": [
+    "hero",
+    "section",
+    "card"
+  ],
+  "target_usage": [
+    "solar installer",
+    "electrical contractor",
+    "energy services",
+    "industrial supplier"
+  ],
+  "industry": [
+    "energy",
+    "solar",
+    "electrical"
+  ],
+  "tags": [
+    "solar",
+    "energy",
+    "electrical",
+    "renewable",
+    "industry",
+    "rtl",
+    "dark-mode",
+    "premium",
+    "iranian-business",
+    "motion-graphics",
+    "master-asset",
+    "themeable"
+  ],
+  "engine": "svg-js",
+  "type": "motion",
+  "subcategory": "animated-svg",
+  "version": "v1",
+  "version_label": "1.0.0",
+  "dependencies": [],
+  "license_tier": "premium",
+  "visibility": "private",
+  "dimensions": {
+    "width": 960,
+    "height": 540,
+    "viewBox": "0 0 960 540"
+  },
+  "accessibility": {
+    "reduced_motion": true,
+    "rtl": true,
+    "color_scheme": [
+      "light",
+      "dark"
+    ],
+    "label": "موشن نیروگاه خورشیدی"
+  },
+  "theme_support": true,
+  "theme_tokens": {
+    "primary": true,
+    "secondary": true,
+    "accent": true,
+    "background": true,
+    "border": true,
+    "surface": true,
+    "ink": true,
+    "muted": true,
+    "success": true
+  },
+  "editable_properties": [
+    "colors",
+    "text",
+    "speed",
+    "loop",
+    "animate"
+  ],
+  "ai_editable": true,
+  "unique_elements": [
+    "rotating sun with dashed light beams",
+    "panel array with a light sweep",
+    "animated energy flow inverter -> battery -> building",
+    "battery charge fill (RTL)",
+    "generation KPIs and weekly trend"
+  ],
+  "visual_concept": "خورشید روی آرایه پنل‌ها می‌تابد و جریان انرژی از اینورتر به باتری و ساختمان حرکت می‌کند؛ کارت پایش، تولید امروز، صرفه‌جویی و کاهش کربن را نشان می‌دهد.",
+  "performance": {
+    "animated_properties": [
+      "transform",
+      "opacity",
+      "stroke-dashoffset",
+      "stroke-dasharray"
+    ],
+    "filters": false,
+    "smil": false,
+    "scripts": false
+  },
+  "library_id": "motion:solar:solar-motion-graphic:v1",
+  "asset_role": "master",
+  "variant_supported": true,
+  "source_asset": null,
+  "ownership": {
+    "type": "platform",
+    "license": "premium",
+    "customer_restriction": false
+  },
+  "created_source": "motion-library-authoring",
+  "status": "active",
+  "typography": {
+    "font_family": "Vazirmatn",
+    "embedded": true,
+    "direction": "rtl"
+  },
+  "parameters": [
+    {
+      "key": "title",
+      "type": "text",
+      "group": "content",
+      "label": "عنوان اصلی",
+      "default": "نیروگاه خورشیدی هوشمند",
+      "max": 30
+    },
+    {
+      "key": "subtitle",
+      "type": "text",
+      "group": "content",
+      "label": "زیرعنوان",
+      "default": "پایش لحظه‌ای تولید، ذخیره و مصرف انرژی",
+      "max": 44
+    },
+    {
+      "key": "kpi1_label",
+      "type": "text",
+      "group": "content",
+      "label": "شاخص ۱ — عنوان",
+      "default": "تولید امروز",
+      "max": 16
+    },
+    {
+      "key": "kpi1_value",
+      "type": "text",
+      "group": "content",
+      "label": "شاخص ۱ — مقدار",
+      "default": "۴۸٫۶",
+      "max": 8
+    },
+    {
+      "key": "kpi2_label",
+      "type": "text",
+      "group": "content",
+      "label": "شاخص ۲ — عنوان",
+      "default": "صرفه‌جویی ماهانه",
+      "max": 16
+    },
+    {
+      "key": "kpi2_value",
+      "type": "text",
+      "group": "content",
+      "label": "شاخص ۲ — مقدار",
+      "default": "۳۲٪",
+      "max": 8
+    },
+    {
+      "key": "kpi3_label",
+      "type": "text",
+      "group": "content",
+      "label": "شاخص ۳ — عنوان",
+      "default": "کاهش کربن",
+      "max": 16
+    },
+    {
+      "key": "kpi3_value",
+      "type": "text",
+      "group": "content",
+      "label": "شاخص ۳ — مقدار",
+      "default": "۱٫۲ تن",
+      "max": 8
+    },
+    {
+      "key": "chart_title",
+      "type": "text",
+      "group": "content",
+      "label": "عنوان نمودار",
+      "default": "روند تولید هفته",
+      "max": 22
+    },
+    {
+      "key": "inverter_text",
+      "type": "text",
+      "group": "content",
+      "label": "توضیح اینورتر",
+      "default": "بازده ۹۸٪",
+      "max": 14
+    },
+    {
+      "key": "battery_label",
+      "type": "text",
+      "group": "content",
+      "label": "عنوان باتری",
+      "default": "ذخیره باتری",
+      "max": 14
+    },
+    {
+      "key": "battery_value",
+      "type": "text",
+      "group": "content",
+      "label": "شارژ باتری",
+      "default": "۸۶٪",
+      "max": 6
+    },
+    {
+      "key": "home_label",
+      "type": "text",
+      "group": "content",
+      "label": "برچسب ساختمان",
+      "default": "مصرف ساختمان",
+      "max": 16
+    },
+    {
+      "key": "badge_title",
+      "type": "text",
+      "group": "content",
+      "label": "نشان — عنوان",
+      "default": "انرژی پاک",
+      "max": 14
+    },
+    {
+      "key": "badge_text",
+      "type": "text",
+      "group": "content",
+      "label": "نشان — توضیح",
+      "default": "بدون آلایندگی",
+      "max": 16
+    },
+    {
+      "key": "cta_text",
+      "type": "text",
+      "group": "content",
+      "label": "متن نوار پایین",
+      "default": "انرژی پاک، قبض کمتر، آینده روشن‌تر",
+      "max": 40
+    },
+    {
+      "key": "primary",
+      "type": "color",
+      "group": "style",
+      "label": "رنگ پنل‌ها",
+      "token": "--asset-primary",
+      "default": "#1d4ed8"
+    },
+    {
+      "key": "secondary",
+      "type": "color",
+      "group": "style",
+      "label": "رنگ دوم",
+      "token": "--asset-secondary",
+      "default": "#0891b2"
+    },
+    {
+      "key": "accent",
+      "type": "color",
+      "group": "style",
+      "label": "رنگ خورشید",
+      "token": "--asset-accent",
+      "default": "#f59e0b"
+    },
+    {
+      "key": "success",
+      "type": "color",
+      "group": "style",
+      "label": "رنگ جریان انرژی",
+      "token": "--asset-success",
+      "default": "#16a34a"
+    },
+    {
+      "key": "animate",
+      "type": "boolean",
+      "role": "animate",
+      "group": "motion",
+      "label": "پخش انیمیشن",
+      "default": true
+    },
+    {
+      "key": "loop",
+      "type": "boolean",
+      "role": "loop",
+      "group": "motion",
+      "label": "حرکت پیوسته (لوپ)",
+      "default": true
+    },
+    {
+      "key": "speed",
+      "type": "select",
+      "role": "speed",
+      "group": "motion",
+      "label": "سرعت انیمیشن",
+      "options": {
+        "slow": "آرام",
+        "normal": "عادی",
+        "fast": "تند"
+      },
+      "default": "normal"
+    }
+  ]
+}

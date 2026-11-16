@@ -1109,6 +1109,12 @@ Route::prefix('admin')
         */
         Route::prefix('motion-graphics')->name('motion-graphics.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'selectSite'])->name('select-site');
+            // ADR-086 — central catalog: availability switch + private-motion
+            // grants. Registered before the `{site}/...` routes.
+            Route::get('catalog', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'index'])->name('catalog.index');
+            Route::post('catalog/{motion}/availability', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'availability'])->whereNumber('motion')->name('catalog.availability');
+            Route::post('catalog/{motion}/grants', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'grant'])->whereNumber('motion')->name('catalog.grants.store');
+            Route::post('catalog/grants/{grant}/revoke', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'revoke'])->whereNumber('grant')->name('catalog.grants.revoke');
             Route::get('{site}/dashboard', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'dashboard'])->name('dashboard');
             Route::get('{site}/templates', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'templates'])->name('templates');
             Route::post('{site}/templates/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewCompatibility'])->name('templates.preview');

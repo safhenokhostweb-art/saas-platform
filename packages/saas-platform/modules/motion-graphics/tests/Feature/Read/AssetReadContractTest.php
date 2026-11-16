@@ -92,8 +92,10 @@ final class AssetReadContractTest extends TestCase
             (new ReflectionClass(AssetReadModel::class))->getProperties()
         );
 
+        // `name` is picker display metadata (Theme Builder Motion Picker),
+        // not a source or AI field.
         $this->assertEqualsCanonicalizing(
-            ['assetId', 'version', 'type', 'category', 'compatibility', 'checksum', 'themeSupport'],
+            ['assetId', 'version', 'type', 'category', 'compatibility', 'checksum', 'themeSupport', 'name'],
             $properties
         );
     }

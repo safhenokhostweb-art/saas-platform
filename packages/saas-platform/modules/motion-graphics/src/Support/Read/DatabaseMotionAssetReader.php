@@ -75,11 +75,20 @@ final class DatabaseMotionAssetReader implements MotionAssetReadContract
                 'asset_type' => $motion->asset_type,
                 'group' => $motion->group?->slug,
                 'category' => $motion->category?->slug,
+                'category_label' => $motion->category?->name,
                 'tags' => $motion->tags->pluck('slug')->values()->all(),
                 // ADR-078: commercial tier, consumed by the host's per-asset
                 // license policy. Not secret (the free/premium split is
                 // shown in the catalog), so it may cross the read boundary.
                 'license_tier' => $motion->licenseTier(),
+                // ADR-086: per-asset delivery rules for the host's runtime
+                // (public vs grant-only, and the admin kill switch), plus the
+                // version's release identifiers. None of it is secret: they
+                // say whether and which build a site gets, not how it is made.
+                'visibility' => $motion->visibility(),
+                'runtime_enabled' => $motion->isRuntimeEnabled(),
+                'version_label' => $record->versionLabel(),
+                'build_id' => $record->buildId(),
             ],
             checksum: (string) $record->source_checksum,
             themeSupport: (bool) (($motion->runtime_configuration ?? [])['supports_theme_tokens'] ?? false),

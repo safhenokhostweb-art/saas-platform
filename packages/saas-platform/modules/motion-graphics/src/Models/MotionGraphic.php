@@ -26,8 +26,18 @@ final class MotionGraphic extends Model
     public const LICENSE_TIER_FREE = 'free';
     public const LICENSE_TIER_PREMIUM = 'premium';
 
+    /**
+     * ADR-086: who may receive the motion at all. `public` goes to every
+     * entitled site; `private` only to a site the host has explicitly granted
+     * it to (purchase, licence or admin assignment). Anything unrecognised is
+     * private, so a typo never publishes a paid motion to everyone.
+     */
+    public const VISIBILITY_PUBLIC = 'public';
+    public const VISIBILITY_PRIVATE = 'private';
+
     protected $fillable = [
         'name', 'slug', 'description', 'ownership_type', 'owner_site_identifier',
+        'visibility', 'runtime_enabled', 'runtime_disabled_at', 'runtime_disabled_by_actor_identifier',
         'group_id', 'category_id', 'engine', 'asset_type', 'source_definition_json',
         'editable_schema_json', 'ai_metadata_json', 'runtime_configuration', 'dimensions',
         'accessibility', 'latest_working_version', 'approved_version', 'published_version',
@@ -48,6 +58,8 @@ final class MotionGraphic extends Model
         'published_version' => 'integer',
         'published_at' => 'immutable_datetime',
         'archived_at' => 'immutable_datetime',
+        'runtime_enabled' => 'boolean',
+        'runtime_disabled_at' => 'immutable_datetime',
     ];
 
     protected static function booted(): void
@@ -77,6 +89,22 @@ final class MotionGraphic extends Model
         $tier = ($this->runtime_configuration ?? [])['license_tier'] ?? null;
 
         return $tier === self::LICENSE_TIER_FREE ? self::LICENSE_TIER_FREE : self::LICENSE_TIER_PREMIUM;
+    }
+
+    public function visibility(): string
+    {
+        return self::normalizeVisibility($this->visibility ?? self::VISIBILITY_PUBLIC);
+    }
+
+    public static function normalizeVisibility(mixed $visibility): string
+    {
+        return $visibility === self::VISIBILITY_PUBLIC ? self::VISIBILITY_PUBLIC : self::VISIBILITY_PRIVATE;
+    }
+
+    /** ADR-086: false while an admin has switched the motion off. */
+    public function isRuntimeEnabled(): bool
+    {
+        return $this->runtime_enabled ?? true;
     }
 
     public function group(): BelongsTo
