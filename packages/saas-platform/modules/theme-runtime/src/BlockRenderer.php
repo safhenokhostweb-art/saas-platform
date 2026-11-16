@@ -3993,7 +3993,8 @@ class BlockRenderer
             if (preg_match('/\bfa[srbld]?\s+fa-[\w-]+|\bfa-[\w-]+/', $val)) {
                 $iconClass = $this->escapeAttr($val);
                 if (str_contains($val, 'fa-sun')) {
-                    return '<i class="' . $iconClass . '" aria-hidden="true"><svg class="tb-icon-svg tb-fa-sun-svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1 10.9-2.7 14.8L429.2 248l78.8 82.8c3.7 3.9 4.8 9.8 2.7 14.8s-6.6 8.6-11.9 9.6L391 375l-19.8 107.9c-1 5.3-4.6 9.8-9.6 11.9s-10.9 1-14.8-2.7L264 413.2l-82.8 78.8c-3.9 3.7-9.8 4.8-14.8 2.7s-8.6-6.6-9.6-11.9L137 375l-107.9-19.8c-5.3-1-9.8-4.6-11.9-9.6s-1-10.9 2.7-14.8L98.8 248 20 165.2c-3.7-3.9-4.8-9.8-2.7-14.8s6.6-8.6 11.9-9.6L137 121l19.8-107.9c1-5.3 4.6-9.8 9.6-11.9s10.9-1 14.8 2.7L264 82.8l82.8-78.8c3.9-3.7 9.8-4.8 14.8-2.7zM256 160c-53 0-96 43-96 96s43 96 96 96 96-43 96-96-43-96-96-96z"/></svg></i>';
+                    // The catalog's own sun (not a Font Awesome path: the icon set is ISC).
+                    return '<i class="' . $iconClass . '" aria-hidden="true">' . str_replace('class="tb-icon-svg ', 'class="tb-icon-svg tb-fa-sun-svg ', $this->iconHtml('sun-solar')) . '</i>';
                 }
                 return '<i class="' . $iconClass . '" aria-hidden="true"></i>';
             }
@@ -4574,7 +4575,7 @@ class BlockRenderer
                     'animDur' => $logoAnimDur,
                 ])->render();
             } else {
-                $sunSvg = '<svg class="tb-fa-sun-svg" width="26" height="26" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1 10.9-2.7 14.8L429.2 248l78.8 82.8c3.7 3.9 4.8 9.8 2.7 14.8s-6.6 8.6-11.9 9.6L391 375l-19.8 107.9c-1 5.3-4.6 9.8-9.6 11.9s-10.9 1-14.8-2.7L264 413.2l-82.8 78.8c-3.9 3.7-9.8 4.8-14.8 2.7s-8.6-6.6-9.6-11.9L137 375l-107.9-19.8c-5.3-1-9.8-4.6-11.9-9.6s-1-10.9 2.7-14.8L98.8 248 20 165.2c-3.7-3.9-4.8-9.8-2.7-14.8s6.6-8.6 11.9-9.6L137 121l19.8-107.9c1-5.3 4.6-9.8 9.6-11.9s10.9-1 14.8 2.7L264 82.8l82.8-78.8c3.9-3.7 9.8-4.8 14.8-2.7zM256 160c-53 0-96 43-96 96s43 96 96 96 96-43 96-96-43-96-96-96z"/></svg>';
+                $sunSvg = str_replace(['class="tb-icon-svg ', 'width="24" height="24"'], ['class="tb-fa-sun-svg tb-icon-svg ', 'width="26" height="26"'], $this->iconHtml('sun-solar'));
                 $siteLogoHtml = '<a href="' . $logoUrl . '" class="tb-nav-header-logo" style="display:inline-flex;align-items:center;gap:0.6rem;text-decoration:none;color:inherit;font-weight:700;"><span class="tb-nav-header-logo-icon' . $logoAnimClass . '" style="color:var(--tb-primary, var(--platform-primary, #FF7900));font-size:1.4rem;display:inline-flex;align-items:center;' . ($logoAnim !== '' && $logoAnim !== 'none' ? '--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';' : '') . '" aria-hidden="true">' . $sunSvg . '</span><span>خانه</span></a>';
             }
         }
@@ -6044,8 +6045,8 @@ class BlockRenderer
 
         // Brand
         $brandLogo = $this->escapeUrl($this->mediaSrc($props['brand_logo'] ?? ''), '');
-        $brandName = $this->escape($props['brand_name'] ?? 'اکسین‌سولار');
-        $brandTagline = $this->escape($props['brand_tagline'] ?? 'صنعت انرژی و برق خورشیدی');
+        $brandName = $this->escape($props['brand_name'] ?? '');
+        $brandTagline = $this->escape($props['brand_tagline'] ?? '');
         $brandUrl = $this->linkHref($props['brand_url'] ?? '/', '/');
 
         // Form texts
@@ -6070,9 +6071,9 @@ class BlockRenderer
 
         // Hero
         $showHero = $layoutType === 'split' && $this->flag($props['show_hero'] ?? true);
-        $heroTitle = $this->escape($props['hero_title'] ?? 'پلتفرم جامع صنعت انرژی خورشیدی');
-        $heroSubtitle = $this->escape($props['hero_subtitle'] ?? 'دسترسی امن به سفارش تجهیزات، دوره‌های آکادمی و پشتیبانی آنلاین پروژه‌های نیروگاهی.');
-        $heroIcon = trim($this->stringify($props['hero_icon'] ?? 'fas fa-sun'));
+        $heroTitle = $this->escape($props['hero_title'] ?? 'به حساب کاربری خود خوش آمدید');
+        $heroSubtitle = $this->escape($props['hero_subtitle'] ?? 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.');
+        $heroIcon = trim($this->stringify($props['hero_icon'] ?? 'user'));
         $heroImage = $this->escapeUrl($this->mediaSrc($props['hero_image'] ?? ''), '');
 
         // CSRF & Alerts
