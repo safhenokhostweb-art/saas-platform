@@ -190,7 +190,9 @@ final class Phase2BSharedContractsTest extends TestCase
     {
         $this->assertSame(1, PreviewProtocol::VERSION);
         $this->assertSame(
-            ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop', 'setColumnWidths'],
+            // updateHeaderLogoAnim: additive (live logo-animation preview); like
+            // setColumnWidths before it, it keeps protocol version 1.
+            ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop', 'setColumnWidths', 'updateHeaderLogoAnim'],
             PreviewProtocol::TO_PREVIEW
         );
         $this->assertSame(

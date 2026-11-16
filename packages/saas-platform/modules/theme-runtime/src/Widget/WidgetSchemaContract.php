@@ -35,7 +35,7 @@ final class WidgetSchemaContract
      * never appear in the palette, so they need no palette icon; every field
      * rule still applies to them.
      */
-    public const THEME_PACK_CATEGORIES = ['foodmart', 'sleepshiman'];
+    public const THEME_PACK_CATEGORIES = ['foodmart', 'sleepshiman', 'solar-industry'];
 
     /** Editor presentation hints, per control type, that both editors render. */
     public const UI_HINTS = [

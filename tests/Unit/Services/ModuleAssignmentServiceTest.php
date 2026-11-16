@@ -202,4 +202,21 @@ class ModuleAssignmentServiceTest extends TestCase
         // Unchanged modules must never trigger a dispatch.
         Bus::assertDispatchedTimes(CustomerInstallationPipelineJob::class, 1);
     }
+
+    public function test_enable_for_site_without_release_package_activates_entitlement_directly(): void
+    {
+        $site = $this->makeSite();
+        $module = $this->makeModule(overrides: ['free_assignable' => true]);
+
+        $result = $this->service()->enableForSite($site, $module->id, 1);
+
+        $this->assertTrue($result['success']);
+        $row = DB::table('site_modules')->where('site_id', $site->id)->where('module_id', $module->id)->first();
+        $this->assertNotNull($row);
+        $this->assertTrue((bool) $row->is_active);
+        $this->assertSame('installed', $row->deployment_status);
+        $this->assertDatabaseHas('module_entitlements', [
+            'site_id' => $site->id, 'module_id' => $module->id, 'status' => 'active',
+        ]);
+    }
 }

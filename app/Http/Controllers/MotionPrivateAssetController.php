@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Modules\MotionGraphics\Models\MotionBespokeAssignment;
+use App\Modules\MotionGraphics\Models\MotionSiteAssetGrant;
 use App\Modules\MotionGraphics\Services\MotionLibraryCatalogService;
 use App\Modules\MotionGraphics\Support\MotionPrivateAssetUrl;
 use Illuminate\Http\Request;
@@ -11,7 +12,8 @@ use SaaSPlatform\Modules\MotionGraphics\Models\MotionGraphic;
 
 /**
  * ADR-081: serves an exclusive (customer_specific) library motion at its
- * site-scoped signed URL,
+ * site-scoped signed URL (and, ADR-086, a private catalog motion to a site
+ * holding an active grant for it),
  *
  *   /motion/private/{slug}/{vN}/{site}/{expires}/{signature}/animation.svg
  *
@@ -44,8 +46,8 @@ final class MotionPrivateAssetController
         string $signature,
     ): Response {
         abort_unless(
-            MotionLibraryCatalogService::isExclusive($slug)
-                && preg_match('/^v[1-9][0-9]{0,3}$/', $version) === 1
+            preg_match('/^v[1-9][0-9]{0,3}$/', $version) === 1
+                && (MotionLibraryCatalogService::isExclusive($slug) || MotionLibraryCatalogService::isPrivateLibraryFile($slug, $version))
                 && ctype_digit($site) && ctype_digit($expires)
                 && preg_match('/^[a-f0-9]{64}$/', $signature) === 1,
             404
@@ -71,9 +73,20 @@ final class MotionPrivateAssetController
     private function siteMayRead(string $slug, string $version, int $siteId): bool
     {
         $motion = MotionGraphic::query()->where('slug', $slug)->first();
-        if ($motion === null
-            || $motion->published_version === null
-            || $motion->ownership_type !== MotionGraphic::OWNERSHIP_CUSTOMER_SPECIFIC
+        if ($motion === null || $motion->published_version === null) {
+            return false;
+        }
+
+        // ADR-086: a private global motion is readable by a site only while
+        // it holds an active grant, re-checked here on every request, so a
+        // revoked grant stops the file at once, not when the URL expires.
+        if ($motion->ownership_type === MotionGraphic::OWNERSHIP_GLOBAL) {
+            return $motion->visibility() === MotionGraphic::VISIBILITY_PRIVATE
+                && MotionLibraryCatalogService::isPrivateLibraryFile($slug, $version)
+                && MotionSiteAssetGrant::isGranted($siteId, (string) $motion->uuid);
+        }
+
+        if ($motion->ownership_type !== MotionGraphic::OWNERSHIP_CUSTOMER_SPECIFIC
             || $motion->owner_site_identifier !== (string) $siteId
             || MotionLibraryCatalogService::fileOwnerSiteId($slug, $version) !== $siteId) {
             return false;

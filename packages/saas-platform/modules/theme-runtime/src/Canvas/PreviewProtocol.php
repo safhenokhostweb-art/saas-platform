@@ -5,7 +5,7 @@ namespace SaaSPlatform\ThemeRuntime\Canvas;
 final class PreviewProtocol
 {
     public const VERSION = 1;
-    public const TO_PREVIEW = ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop', 'setColumnWidths'];
+    public const TO_PREVIEW = ['select', 'updateBlock', 'setProp', 'showDropZones', 'setDropTarget', 'setContainerTarget', 'getDropIndex', 'setStructuralDrop', 'setColumnWidths', 'updateHeaderLogoAnim'];
     public const TO_EDITOR = [
         'ready', 'iframeHeight', 'blockSelected', 'dropIndexResult', 'inlinePropChange',
         'dragStart', 'dragOver', 'dropNode', 'dragCancel', 'columnResize',
@@ -56,6 +56,7 @@ final class PreviewProtocol
             'setStructuralDrop' => (!isset($message['targetId']) || is_string($message['targetId']))
                 && (!isset($message['position']) || in_array($message['position'], ['before', 'after', 'inside'], true))
                 && is_bool($message['valid'] ?? null),
+            'updateHeaderLogoAnim' => is_string($message['logoAnimation'] ?? null),
             default => true,
         };
     }

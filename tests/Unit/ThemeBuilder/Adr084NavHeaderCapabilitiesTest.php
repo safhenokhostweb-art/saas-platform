@@ -52,7 +52,7 @@ class Adr084NavHeaderCapabilitiesTest extends TestCase
     {
         $html = $this->render(['logo_text' => 'برند', 'nav_links' => [$this->megaLink(), ['label' => 'تماس', 'url' => '/contact']], 'cta_text' => 'تماس', 'cta_url' => '/contact', 'show_search' => true, 'search_mode' => 'icon']);
 
-        foreach (['tb-nav-header-logo-lockup', 'tb-nav-header-logo-icon', 'tb-nav-header-link-icon', 'tb-mega-badge', 'tb-mega-menu-main', 'tb-mega-menu-promo', 'tb-nav-header-cta--outline', 'tb-nav-header-cta--second', 'tb-nav-header-cta-icon', 'tb-nav-header-drawer-', 'tb-nav-header--mega-', 'tb-nav-header--compact', 'tb-nav-header--pointer-pill'] as $marker) {
+        foreach (['tb-nav-header-logo-lockup', 'tb-nav-header-logo-icon', 'tb-nav-header-link-icon', 'tb-mega-badge', 'tb-mega-menu-main', 'tb-mega-menu-promo', 'tb-nav-header-cta--outline', 'tb-nav-header-cta--second', 'tb-nav-header-cta-icon', 'tb-nav-header-drawer-logo', 'tb-nav-header-drawer-search', 'tb-nav-header--mega-', 'tb-nav-header--compact', 'tb-nav-header--pointer-pill'] as $marker) {
             $this->assertStringNotContainsString($marker, $html, $marker);
         }
         // The panel keeps its exact structure: columns straight inside it.

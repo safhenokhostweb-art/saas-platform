@@ -4,7 +4,7 @@
     "description": "تأمین بی‌وقفه برق برای سرورها، آسانسورها و دستگاه‌های حیاتی در زمان قطعی برق شبکه.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "emergency-power",
     "tags": [
         "صنعت برق",

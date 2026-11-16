@@ -172,6 +172,7 @@ class BlockRegistry
             'url' => ['type' => 'link', 'label' => 'آدرس', 'default' => '#'],
             'label' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
             'network' => ['type' => 'select', 'label' => 'شبکه (آیکون)', 'options' => Support\SocialNetworks::options(), 'default' => 'auto'],
+            'custom_color' => ['type' => 'color', 'label' => 'رنگ سفارشی آیکون (اختیاری)', 'default' => ''],
         ], 'default' => []];
 
         return $group === null ? $field : $field + ['group' => $group];
@@ -180,7 +181,7 @@ class BlockRegistry
     /** ADR-076: mono icons follow the block's text colour; brand fills each with its network colour. */
     private static function socialStyleField(?string $group = null): array
     {
-        $field = ['type' => 'select', 'ui' => 'segmented', 'label' => 'رنگ آیکون‌ها', 'options' => ['mono' => 'هم‌رنگ متن', 'brand' => 'رنگ برند هر شبکه'], 'default' => 'mono'];
+        $field = ['type' => 'select', 'ui' => 'segmented', 'label' => 'رنگ آیکون‌ها', 'options' => ['mono' => 'هم‌رنگ متن', 'brand' => 'رنگ برند هر شبکه', 'custom' => 'سفارشی'], 'default' => 'mono'];
 
         return $group === null ? $field : $field + ['group' => $group];
     }
@@ -350,18 +351,29 @@ class BlockRegistry
                     // Phase 0.2: promoted from customer-site's tested definition
                     // (was `type: blocks`, which no editor could author).
                     'slides' => ['type' => 'repeater', 'label' => 'اسلایدها', 'item_label' => 'اسلاید', 'storage' => 'array', 'default' => [], 'fields' => [
-                        'image'    => ['type' => 'image', 'label' => 'تصویر اسلاید', 'default' => ''],
-                        'title'    => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
-                        'subtitle' => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
-                        'link'     => ['type' => 'link', 'label' => 'لینک (اختیاری)', 'default' => ''],
-                        'cta_text' => ['type' => 'string', 'label' => 'متن دکمه CTA (اختیاری)', 'default' => ''],
+                        'image'               => ['type' => 'image', 'label' => 'تصویر اسلاید', 'default' => ''],
+                        'badge'               => ['type' => 'string', 'label' => 'برچسب / نشان (Badge)', 'default' => ''],
+                        'title'               => ['type' => 'string', 'label' => 'عنوان اصلی', 'default' => ''],
+                        'highlight'           => ['type' => 'string', 'label' => 'متن برجسته در عنوان (Highlight)', 'default' => ''],
+                        'subtitle'            => ['type' => 'string', 'label' => 'زیرعنوان', 'default' => ''],
+                        'description'         => ['type' => 'textarea', 'label' => 'توضیحات تکمیلی (چندخطی)', 'default' => ''],
+                        'cta_text'            => ['type' => 'string', 'label' => 'متن دکمه اول (Primary CTA)', 'default' => ''],
+                        'link'                => ['type' => 'link', 'label' => 'لینک دکمه اول', 'default' => ''],
+                        'secondary_cta_text'  => ['type' => 'string', 'label' => 'متن دکمه دوم (Secondary CTA)', 'default' => ''],
+                        'secondary_link'      => ['type' => 'link', 'label' => 'لینک دکمه دوم', 'default' => ''],
+                        'align'               => ['type' => 'select', 'label' => 'چینش محتوای این اسلاید', 'options' => ['auto' => 'پیش‌فرض اسلایدر', 'right' => 'راست', 'center' => 'وسط', 'left' => 'چپ'], 'default' => 'auto'],
                     ]],
-                    'autoplay' => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
-                    'interval' => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
-                    'transition' => ['type' => 'select', 'label' => 'نوع گذار', 'options' => ['slide' => 'اسلاید', 'fade' => 'محو شدن'], 'default' => 'slide'],
-                    'boxed' => ['type' => 'boolean', 'label' => 'حالت جعبه‌ای (Boxed)', 'default' => false],
-                    'aspect_ratio' => ['type' => 'select', 'label' => 'نسبت تصویر', 'options' => ['16/9' => '16:9', '21/9' => '21:9', '4/3' => '4:3', '1/1' => '1:1'], 'default' => '16/9'],
-                    'overlay' => ['type' => 'boolean', 'label' => 'گرادیان روی تصویر', 'default' => true],
+                    'autoplay'            => ['type' => 'boolean', 'label' => 'پخش خودکار', 'default' => true],
+                    'interval'            => ['type' => 'number', 'label' => 'فاصله زمانی (میلی‌ثانیه)', 'default' => 5000],
+                    'transition'          => ['type' => 'select', 'label' => 'نوع گذار', 'options' => ['slide' => 'اسلاید', 'fade' => 'محو شدن'], 'default' => 'slide'],
+                    'boxed'               => ['type' => 'boolean', 'label' => 'حالت جعبه‌ای (Boxed)', 'default' => false],
+                    'aspect_ratio'        => ['type' => 'select', 'label' => 'نسبت تصویر', 'options' => ['16/9' => '16:9', '21/9' => '21:9', '4/3' => '4:3', '1/1' => '1:1', 'auto' => 'خودکار (پوشش کامل)'], 'default' => '16/9'],
+                    'overlay'             => ['type' => 'boolean', 'label' => 'گرادیان روی تصویر', 'default' => true],
+                    'overlay_style'       => ['type' => 'select', 'label' => 'نوع گرادیان و پوشش (Overlay)', 'options' => ['gradient' => 'گرادیان تاریک تدریجی (Dark Gradient)', 'dark' => 'پوشش تیره یکپارچه (Dim Overlay)', 'glass' => 'کارت شیشه‌ای بلور (Backdrop Blur Glass)', 'none' => 'بدون پوشش اضافی'], 'default' => 'gradient'],
+                    'content_align'       => ['type' => 'select', 'label' => 'چینش سراسری محتوا (Text Alignment)', 'options' => ['right' => 'راست', 'center' => 'وسط', 'left' => 'چپ'], 'default' => 'right'],
+                    'content_width'       => ['type' => 'select', 'label' => 'عرض لایه محتوا', 'options' => ['narrow' => 'باریک (۴۸۰px)', 'normal' => 'استاندارد (۶۸۰px)', 'wide' => 'پهن (۸۸۰px)', 'full' => 'کامل'], 'default' => 'normal'],
+                    'hide_controls'       => ['type' => 'boolean', 'label' => 'مخفی‌سازی دکمه‌ها و نشانگرهای ناوبری (فلش‌ها و نقاط)', 'default' => false],
+                    'show_slider_buttons' => ['type' => 'boolean', 'label' => 'نمایش دکمه‌های ناوبری اسلایدر', 'default' => true],
                 ],
                 // Phase 0.2c: two starter slides (customer-site's tested
                 // default) — renderSlider() outputs nothing for zero
@@ -372,6 +384,8 @@ class BlockRegistry
                         ['image' => '', 'title' => 'عنوان اسلاید ۲', 'subtitle' => '', 'link' => '', 'cta_text' => ''],
                     ],
                     'autoplay' => true, 'interval' => 5000, 'transition' => 'slide', 'boxed' => false, 'aspect_ratio' => '16/9', 'overlay' => true,
+                    'overlay_style' => 'gradient', 'content_align' => 'right', 'content_width' => 'normal',
+                    'hide_controls' => false, 'show_slider_buttons' => true,
                 ],
             ],
             'modal' => [
@@ -627,13 +641,14 @@ class BlockRegistry
                 'icon' => 'icon-box',
                 'schema' => [
                     'icon' => ['type' => 'icon', 'label' => 'آیکون', 'default' => 'star'],
+                    'icon_animation' => ['type' => 'select', 'label' => 'انیمیشن آیکون', 'options' => ['none' => 'بدون انیمیشن', 'rotate_pop' => 'چرخش و جهش (Rotate & Pop 360°)', 'pulse' => 'پالس (Pulse)', 'float' => 'شناور (Float)', 'bounce' => 'پرش (Bounce)', 'spin' => 'چرخش مداوم (Spin)'], 'default' => 'none'],
                     'title' => ['type' => 'string', 'label' => 'عنوان', 'default' => ''],
                     'text' => ['type' => 'text', 'label' => 'متن', 'default' => ''],
                     'link' => ['type' => 'link', 'label' => 'لینک', 'default' => ''],
                     'align' => ['type' => 'select', 'label' => 'تراز', 'options' => ['start' => 'ابتدا', 'center' => 'وسط', 'end' => 'انتها'], 'default' => 'start'],
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['plain' => 'ساده', 'card' => 'کارت', 'outline' => 'خط‌دار', 'solid' => 'پررنگ'], 'default' => 'card'],
                 ],
-                'defaultProps' => ['icon' => 'star', 'title' => '', 'text' => '', 'link' => '', 'align' => 'start', 'style' => 'card'],
+                'defaultProps' => ['icon' => 'star', 'icon_animation' => 'none', 'title' => '', 'text' => '', 'link' => '', 'align' => 'start', 'style' => 'card'],
             ],
             'image_box' => [
                 'name' => 'جعبه تصویر (Image Box)',
@@ -934,6 +949,209 @@ class BlockRegistry
             ],
 
             // ─── UTILITY ────────────────────────────────────────────────────
+            'scroll_to_top' => [
+                'name' => 'دکمه هدایت به بالا (Scroll to Top)',
+                'category' => self::CATEGORY_UTILITY,
+                'icon' => 'arrow-up',
+                'description' => 'دکمه شناور هدایت سریع به بالای صفحه با افکت نورانی و تنظیمات سفارشی',
+                'tags' => ['scroll', 'top', 'بالا', 'هدایت', 'دکمه', 'اسکرول', 'شناور', 'utility', 'glow', 'نورانی'],
+                'emptyOutputPolicy' => self::EMPTY_POLICY_OPTIONAL,
+                'schema' => [
+                    'icon_type' => [
+                        'type' => 'select',
+                        'ui' => 'segmented',
+                        'label' => 'نوع آیکون',
+                        'options' => [
+                            'svg' => 'آیکون SVG',
+                            'custom_class' => 'فونت (FontAwesome)',
+                            'image' => 'تصویر سفارشی',
+                        ],
+                        'default' => 'svg',
+                        'group' => 'آیکون و تصویر',
+                    ],
+                    'icon' => [
+                        'type' => 'icon',
+                        'label' => 'انتخاب آیکون',
+                        'default' => 'chevron-up',
+                        'group' => 'آیکون و تصویر',
+                        'condition' => ['icon_type' => 'svg'],
+                    ],
+                    'custom_icon_class' => [
+                        'type' => 'string',
+                        'label' => 'کلاس فونت‌آیکون (مانند fas fa-arrow-up)',
+                        'default' => '',
+                        'group' => 'آیکون و تصویر',
+                        'condition' => ['icon_type' => 'custom_class'],
+                    ],
+                    'custom_icon_image' => [
+                        'type' => 'image',
+                        'label' => 'تصویر آیکون سفارشی',
+                        'default' => '',
+                        'group' => 'آیکون و تصویر',
+                        'condition' => ['icon_type' => 'image'],
+                    ],
+                    'show_label' => [
+                        'type' => 'boolean',
+                        'label' => 'نمایش متن در کنار/زیر آیکون',
+                        'default' => false,
+                        'group' => 'متن و چیدمان',
+                    ],
+                    'label' => [
+                        'type' => 'string',
+                        'label' => 'متن دکمه',
+                        'default' => 'برو بالا',
+                        'group' => 'متن و چیدمان',
+                        'condition' => ['show_label' => true],
+                    ],
+                    'orientation' => [
+                        'type' => 'select',
+                        'ui' => 'segmented',
+                        'label' => 'جهت چیدمان متن و آیکون',
+                        'options' => [
+                            'horizontal' => 'افقی (کنار هم)',
+                            'vertical' => 'عمودی (زیر هم)',
+                        ],
+                        'default' => 'horizontal',
+                        'group' => 'متن و چیدمان',
+                        'condition' => ['show_label' => true],
+                    ],
+                    'position' => [
+                        'type' => 'select',
+                        'ui' => 'segmented',
+                        'label' => 'گوشه نمایش',
+                        'options' => [
+                            'bottom-right' => 'پایین راست',
+                            'bottom-left' => 'پایین چپ',
+                        ],
+                        'default' => 'bottom-right',
+                        'group' => 'موقعیت و ابعاد',
+                    ],
+                    'offset_x' => [
+                        'type' => 'range',
+                        'unit' => 'px',
+                        'label' => 'فاصله از لبه افقی',
+                        'default' => 24,
+                        'min' => 8,
+                        'max' => 120,
+                        'step' => 2,
+                        'group' => 'موقعیت و ابعاد',
+                    ],
+                    'offset_y' => [
+                        'type' => 'range',
+                        'unit' => 'px',
+                        'label' => 'فاصله از پایین صفحه',
+                        'default' => 24,
+                        'min' => 8,
+                        'max' => 160,
+                        'step' => 2,
+                        'group' => 'موقعیت و ابعاد',
+                    ],
+                    'size' => [
+                        'type' => 'select',
+                        'ui' => 'segmented',
+                        'label' => 'اندازه دکمه',
+                        'options' => [
+                            'sm' => 'کوچک',
+                            'md' => 'متوسط',
+                            'lg' => 'بزرگ',
+                        ],
+                        'default' => 'md',
+                        'group' => 'موقعیت و ابعاد',
+                    ],
+                    'border_radius' => [
+                        'type' => 'range',
+                        'unit' => 'px',
+                        'label' => 'گردی گوشه‌ها',
+                        'default' => 9999,
+                        'min' => 0,
+                        'max' => 9999,
+                        'step' => 2,
+                        'group' => 'موقعیت و ابعاد',
+                    ],
+                    'scroll_threshold' => [
+                        'type' => 'range',
+                        'unit' => 'px',
+                        'label' => 'آستانه اسکرول برای ظهور',
+                        'default' => 300,
+                        'min' => 50,
+                        'max' => 1200,
+                        'step' => 25,
+                        'group' => 'رفتار اسکرول',
+                    ],
+                    'z_index' => [
+                        'type' => 'number',
+                        'label' => 'ترتیب نمایش (z-index)',
+                        'default' => 999,
+                        'group' => 'موقعیت و ابعاد',
+                    ],
+                    'bg_color' => [
+                        'type' => 'color',
+                        'label' => 'رنگ پس‌زمینه',
+                        'default' => 'var(--tb-primary, #2563eb)',
+                        'group' => 'رنگ‌ها',
+                    ],
+                    'text_color' => [
+                        'type' => 'color',
+                        'label' => 'رنگ آیکون و متن',
+                        'default' => '#ffffff',
+                        'group' => 'رنگ‌ها',
+                    ],
+                    'hover_bg_color' => [
+                        'type' => 'color',
+                        'label' => 'رنگ پس‌زمینه در حالت هاور',
+                        'default' => '#1d4ed8',
+                        'group' => 'رنگ‌ها',
+                    ],
+                    'hover_text_color' => [
+                        'type' => 'color',
+                        'label' => 'رنگ آیکون و متن در حالت هاور',
+                        'default' => '#ffffff',
+                        'group' => 'رنگ‌ها',
+                    ],
+                    'glow_effect' => [
+                        'type' => 'boolean',
+                        'label' => 'افکت هاله نوری درخشان (Glow Aura)',
+                        'default' => true,
+                        'group' => 'جلوه‌های نوری و انیمیشن',
+                    ],
+                    'glow_color' => [
+                        'type' => 'color',
+                        'label' => 'رنگ هاله نوری (Glow Color)',
+                        'default' => 'rgba(37, 99, 235, 0.45)',
+                        'group' => 'جلوه‌های نوری و انیمیشن',
+                        'condition' => ['glow_effect' => true],
+                    ],
+                    'hover_lift' => [
+                        'type' => 'boolean',
+                        'label' => 'انیمیشن جهش نرم در هاور (Hover Lift)',
+                        'default' => true,
+                        'group' => 'جلوه‌های نوری و انیمیشن',
+                    ],
+                ],
+                'defaultProps' => [
+                    'icon_type' => 'svg',
+                    'icon' => 'chevron-up',
+                    'custom_icon_class' => '',
+                    'custom_icon_image' => '',
+                    'show_label' => false,
+                    'label' => 'برو بالا',
+                    'orientation' => 'horizontal',
+                    'position' => 'bottom-right',
+                    'offset_x' => 24,
+                    'offset_y' => 24,
+                    'size' => 'md',
+                    'border_radius' => 9999,
+                    'scroll_threshold' => 300,
+                    'z_index' => 999,
+                    'bg_color' => 'var(--tb-primary, #2563eb)',
+                    'text_color' => '#ffffff',
+                    'hover_bg_color' => '#1d4ed8',
+                    'hover_text_color' => '#ffffff',
+                    'glow_effect' => true,
+                    'glow_color' => 'rgba(37, 99, 235, 0.45)',
+                    'hover_lift' => true,
+                ],
+            ],
             'breadcrumb' => [
                 'name' => 'مسیر (Breadcrumb)',
                 'category' => self::CATEGORY_UTILITY,
@@ -985,11 +1203,146 @@ class BlockRegistry
                 'defaultProps' => [],
             ],
             'login_register' => [
-                'name' => 'ورود / ثبت‌نام',
+                'name' => 'ورود / ثبت‌نام (Auth Canvas)',
                 'category' => self::CATEGORY_UTILITY,
                 'icon' => 'user',
-                'schema' => [],
-                'defaultProps' => [],
+                'schema' => [
+                    'auth_mode' => ['type' => 'select', 'label' => 'حالت فرم', 'options' => ['dual' => 'هر دو (تب‌های ورود و ثبت‌نام)', 'login_only' => 'فقط فرم ورود', 'register_only' => 'فقط فرم ثبت‌نام'], 'default' => 'dual', 'group' => 'محتوای فرم'],
+                    'layout_type' => ['type' => 'select', 'label' => 'طرح‌بندی صفحه', 'options' => ['split' => 'دو ستونه با پنل معرفی (Hero Side)', 'centered' => 'کارت متمرکز در وسط صفحه', 'minimal' => 'ساده و تمام‌صفحه'], 'default' => 'split', 'group' => 'چیدمان'],
+                    'split_reverse' => ['type' => 'boolean', 'label' => 'معکوس‌سازی ستون‌ها (جابه‌جایی فرم و پنل معرفی)', 'default' => false, 'group' => 'چیدمان', 'condition' => ['layout_type' => 'split']],
+                    'card_max_width' => ['type' => 'range', 'unit' => 'px', 'label' => 'حداکثر عرض کادر فرم', 'default' => 440, 'min' => 320, 'max' => 700, 'step' => 10, 'group' => 'چیدمان'],
+                    'brand_logo' => ['type' => 'image', 'label' => 'تصویر لوگوی برند', 'default' => '', 'group' => 'برند و عنوان'],
+                    'brand_name' => ['type' => 'string', 'label' => 'نام برند', 'default' => '', 'group' => 'برند و عنوان'],
+                    'brand_tagline' => ['type' => 'string', 'label' => 'شعار یا عنوان کوتاه برند', 'default' => '', 'group' => 'برند و عنوان'],
+                    'brand_url' => ['type' => 'link', 'label' => 'لینک لوگو', 'default' => '/', 'group' => 'برند و عنوان'],
+                    'login_title' => ['type' => 'string', 'label' => 'عنوان فرم ورود', 'default' => 'ورود به حساب کاربری', 'group' => 'محتوای فرم'],
+                    'login_subtitle' => ['type' => 'string', 'label' => 'توضیحات فرم ورود', 'default' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.', 'group' => 'محتوای فرم'],
+                    'login_btn_text' => ['type' => 'string', 'label' => 'متن دکمه ورود', 'default' => 'ورود به حساب', 'group' => 'محتوای فرم'],
+                    'register_title' => ['type' => 'string', 'label' => 'عنوان فرم ثبت‌نام', 'default' => 'ایجاد حساب کاربری جدید', 'group' => 'محتوای فرم'],
+                    'register_subtitle' => ['type' => 'string', 'label' => 'توضیحات فرم ثبت‌نام', 'default' => 'عضویت سریع و امن در کمتر از یک دقیقه.', 'group' => 'محتوای فرم'],
+                    'register_btn_text' => ['type' => 'string', 'label' => 'متن دکمه ثبت‌نام', 'default' => 'ثبت‌نام در سامانه', 'group' => 'محتوای فرم'],
+                    'show_remember_me' => ['type' => 'boolean', 'label' => 'نمایش «مرا به خاطر بسپار»', 'default' => true, 'group' => 'محتوای فرم'],
+                    'show_forgot_password' => ['type' => 'boolean', 'label' => 'نمایش لینک «فراموشی رمز عبور»', 'default' => true, 'group' => 'محتوای فرم'],
+                    'forgot_password_url' => ['type' => 'link', 'label' => 'لینک فراموشی رمز عبور', 'default' => '/forgot-password', 'group' => 'محتوای فرم', 'condition' => ['show_forgot_password' => true]],
+                    'show_terms' => ['type' => 'boolean', 'label' => 'نمایش قوانین در ثبت‌نام', 'default' => true, 'group' => 'محتوای فرم'],
+                    'terms_text' => ['type' => 'string', 'label' => 'متن قوانین', 'default' => 'با ثبت‌نام در سایت، شرایط و قوانین را می‌پذیرم.', 'group' => 'محتوای فرم', 'condition' => ['show_terms' => true]],
+                    'terms_url' => ['type' => 'link', 'label' => 'لینک شرایط و قوانین', 'default' => '/terms', 'group' => 'محتوای فرم', 'condition' => ['show_terms' => true]],
+                    'login_url' => ['type' => 'link', 'label' => 'مقصد فرم ورود', 'default' => '/login', 'group' => 'محتوای فرم'],
+                    'register_url' => ['type' => 'link', 'label' => 'مقصد فرم ثبت‌نام', 'default' => '/register', 'group' => 'محتوای فرم'],
+                    'show_hero' => ['type' => 'boolean', 'label' => 'نمایش پنل معرفی (Hero Side)', 'default' => true, 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_title' => ['type' => 'string', 'label' => 'عنوان پنل معرفی', 'default' => 'به حساب کاربری خود خوش آمدید', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_subtitle' => ['type' => 'string', 'label' => 'توضیحات پنل معرفی', 'default' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_icon' => ['type' => 'icon', 'label' => 'آیکون شاخص معرفی', 'default' => 'user', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه پنل معرفی (اختیاری)', 'default' => '', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه پنل معرفی', 'default' => '#12121F', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_text_color' => ['type' => 'color', 'label' => 'رنگ متن پنل معرفی', 'default' => '#ffffff', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_accent_color' => ['type' => 'color', 'label' => 'رنگ تأکیدی پنل معرفی', 'default' => '#FF7900', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'page_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه کل صفحه', 'default' => '#0B0B0B', 'panel' => 'style', 'group' => 'پس‌زمینه و صفحه'],
+                    'page_bg_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه صفحه (Background Image)', 'default' => '', 'panel' => 'style', 'group' => 'پس‌زمینه و صفحه'],
+                    'page_overlay_color' => ['type' => 'color', 'label' => 'رنگ اورلی/پوشش تصویر پس‌زمینه', 'default' => 'rgba(11, 11, 11, 0.85)', 'panel' => 'style', 'group' => 'پس‌زمینه و صفحه'],
+                    'card_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه کارت فرم', 'default' => '#1E1E1E', 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_border_color' => ['type' => 'color', 'label' => 'رنگ حاشیه کارت فرم', 'default' => '#2A2A2A', 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_border_radius' => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی گوشه‌های کارت', 'default' => 20, 'min' => 0, 'max' => 48, 'step' => 1, 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_padding' => ['type' => 'range', 'unit' => 'px', 'label' => 'فاصلهٔ داخلی کارت فرم (Padding)', 'default' => 32, 'min' => 12, 'max' => 64, 'step' => 2, 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_shadow' => ['type' => 'shadow', 'label' => 'سایهٔ کارت فرم', 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'input_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه فیلدهای ورودی', 'default' => '#12121F', 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'input_border_color' => ['type' => 'color', 'label' => 'رنگ کادر فیلدهای ورودی', 'default' => '#2A2A2A', 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'input_text_color' => ['type' => 'color', 'label' => 'رنگ متن فیلدهای ورودی', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'input_radius' => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی کادر فیلدها', 'default' => 12, 'min' => 0, 'max' => 30, 'step' => 1, 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'btn_bg_color' => ['type' => 'color', 'label' => 'رنگ دکمهٔ اصلی (CTA)', 'default' => '#FF7900', 'panel' => 'style', 'group' => 'دکمه‌ها و اکشن'],
+                    'btn_text_color' => ['type' => 'color', 'label' => 'رنگ متن دکمهٔ اصلی', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'دکمه‌ها و اکشن'],
+                    'btn_radius' => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی دکمهٔ اصلی', 'default' => 12, 'min' => 0, 'max' => 30, 'step' => 1, 'panel' => 'style', 'group' => 'دکمه‌ها و اکشن'],
+                    'text_color' => ['type' => 'color', 'label' => 'رنگ متون اصلی', 'default' => '#F5F5F5', 'panel' => 'style', 'group' => 'رنگ‌ها و تایپوگرافی'],
+                    'text_muted_color' => ['type' => 'color', 'label' => 'رنگ متون کم‌رنگ و توضیحات', 'default' => '#A3A3A3', 'panel' => 'style', 'group' => 'رنگ‌ها و تایپوگرافی'],
+                ],
+                'defaultProps' => [
+                    'auth_mode' => 'dual',
+                    'layout_type' => 'split',
+                    'brand_name' => '',
+                    'brand_tagline' => '',
+                    'login_title' => 'ورود به حساب کاربری',
+                    'login_subtitle' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.',
+                    'login_btn_text' => 'ورود به حساب',
+                    'register_title' => 'ایجاد حساب کاربری جدید',
+                    'register_subtitle' => 'عضویت سریع و امن در کمتر از یک دقیقه.',
+                    'register_btn_text' => 'ثبت‌نام در سامانه',
+                    'hero_title' => 'به حساب کاربری خود خوش آمدید',
+                    'hero_subtitle' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.',
+                    'btn_bg_color' => '#FF7900',
+                    'card_bg_color' => '#1E1E1E',
+                    'page_bg_color' => '#0B0B0B',
+                ],
+            ],
+            'auth_canvas' => [
+                'name' => 'سازنده صفحه ورود و عضویت (Auth Canvas Builder)',
+                'category' => self::CATEGORY_UTILITY,
+                'icon' => 'lock',
+                'schema' => [
+                    'auth_mode' => ['type' => 'select', 'label' => 'حالت فرم', 'options' => ['dual' => 'هر دو (تب‌های ورود و ثبت‌نام)', 'login_only' => 'فقط فرم ورود', 'register_only' => 'فقط فرم ثبت‌نام'], 'default' => 'dual', 'group' => 'محتوای فرم'],
+                    'layout_type' => ['type' => 'select', 'label' => 'طرح‌بندی صفحه', 'options' => ['split' => 'دو ستونه با پنل معرفی (Hero Side)', 'centered' => 'کارت متمرکز در وسط صفحه', 'minimal' => 'ساده و تمام‌صفحه'], 'default' => 'split', 'group' => 'چیدمان'],
+                    'split_reverse' => ['type' => 'boolean', 'label' => 'معکوس‌سازی ستون‌ها (جابه‌جایی فرم و پنل معرفی)', 'default' => false, 'group' => 'چیدمان', 'condition' => ['layout_type' => 'split']],
+                    'card_max_width' => ['type' => 'range', 'unit' => 'px', 'label' => 'حداکثر عرض کادر فرم', 'default' => 440, 'min' => 320, 'max' => 700, 'step' => 10, 'group' => 'چیدمان'],
+                    'brand_logo' => ['type' => 'image', 'label' => 'تصویر لوگوی برند', 'default' => '', 'group' => 'برند و عنوان'],
+                    'brand_name' => ['type' => 'string', 'label' => 'نام برند', 'default' => '', 'group' => 'برند و عنوان'],
+                    'brand_tagline' => ['type' => 'string', 'label' => 'شعار یا عنوان کوتاه برند', 'default' => '', 'group' => 'برند و عنوان'],
+                    'brand_url' => ['type' => 'link', 'label' => 'لینک لوگو', 'default' => '/', 'group' => 'برند و عنوان'],
+                    'login_title' => ['type' => 'string', 'label' => 'عنوان فرم ورود', 'default' => 'ورود به حساب کاربری', 'group' => 'محتوای فرم'],
+                    'login_subtitle' => ['type' => 'string', 'label' => 'توضیحات فرم ورود', 'default' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.', 'group' => 'محتوای فرم'],
+                    'login_btn_text' => ['type' => 'string', 'label' => 'متن دکمه ورود', 'default' => 'ورود به حساب', 'group' => 'محتوای فرم'],
+                    'register_title' => ['type' => 'string', 'label' => 'عنوان فرم ثبت‌نام', 'default' => 'ایجاد حساب کاربری جدید', 'group' => 'محتوای فرم'],
+                    'register_subtitle' => ['type' => 'string', 'label' => 'توضیحات فرم ثبت‌نام', 'default' => 'عضویت سریع و امن در کمتر از یک دقیقه.', 'group' => 'محتوای فرم'],
+                    'register_btn_text' => ['type' => 'string', 'label' => 'متن دکمه ثبت‌نام', 'default' => 'ثبت‌نام در سامانه', 'group' => 'محتوای فرم'],
+                    'show_remember_me' => ['type' => 'boolean', 'label' => 'نمایش «مرا به خاطر بسپار»', 'default' => true, 'group' => 'محتوای فرم'],
+                    'show_forgot_password' => ['type' => 'boolean', 'label' => 'نمایش لینک «فراموشی رمز عبور»', 'default' => true, 'group' => 'محتوای فرم'],
+                    'forgot_password_url' => ['type' => 'link', 'label' => 'لینک فراموشی رمز عبور', 'default' => '/forgot-password', 'group' => 'محتوای فرم', 'condition' => ['show_forgot_password' => true]],
+                    'show_terms' => ['type' => 'boolean', 'label' => 'نمایش قوانین در ثبت‌نام', 'default' => true, 'group' => 'محتوای فرم'],
+                    'terms_text' => ['type' => 'string', 'label' => 'متن قوانین', 'default' => 'با ثبت‌نام در سایت، شرایط و قوانین را می‌پذیرم.', 'group' => 'محتوای فرم', 'condition' => ['show_terms' => true]],
+                    'terms_url' => ['type' => 'link', 'label' => 'لینک شرایط و قوانین', 'default' => '/terms', 'group' => 'محتوای فرم', 'condition' => ['show_terms' => true]],
+                    'login_url' => ['type' => 'link', 'label' => 'مقصد فرم ورود', 'default' => '/login', 'group' => 'محتوای فرم'],
+                    'register_url' => ['type' => 'link', 'label' => 'مقصد فرم ثبت‌نام', 'default' => '/register', 'group' => 'محتوای فرم'],
+                    'show_hero' => ['type' => 'boolean', 'label' => 'نمایش پنل معرفی (Hero Side)', 'default' => true, 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_title' => ['type' => 'string', 'label' => 'عنوان پنل معرفی', 'default' => 'به حساب کاربری خود خوش آمدید', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_subtitle' => ['type' => 'string', 'label' => 'توضیحات پنل معرفی', 'default' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_icon' => ['type' => 'icon', 'label' => 'آیکون شاخص معرفی', 'default' => 'user', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه پنل معرفی (اختیاری)', 'default' => '', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه پنل معرفی', 'default' => '#12121F', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_text_color' => ['type' => 'color', 'label' => 'رنگ متن پنل معرفی', 'default' => '#ffffff', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'hero_accent_color' => ['type' => 'color', 'label' => 'رنگ تأکیدی پنل معرفی', 'default' => '#FF7900', 'group' => 'پنل معرفی (Hero)', 'condition' => ['layout_type' => 'split']],
+                    'page_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه کل صفحه', 'default' => '#0B0B0B', 'panel' => 'style', 'group' => 'پس‌زمینه و صفحه'],
+                    'page_bg_image' => ['type' => 'image', 'label' => 'تصویر پس‌زمینه صفحه (Background Image)', 'default' => '', 'panel' => 'style', 'group' => 'پس‌زمینه و صفحه'],
+                    'page_overlay_color' => ['type' => 'color', 'label' => 'رنگ اورلی/پوشش تصویر پس‌زمینه', 'default' => 'rgba(11, 11, 11, 0.85)', 'panel' => 'style', 'group' => 'پس‌زمینه و صفحه'],
+                    'card_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه کارت فرم', 'default' => '#1E1E1E', 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_border_color' => ['type' => 'color', 'label' => 'رنگ حاشیه کارت فرم', 'default' => '#2A2A2A', 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_border_radius' => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی گوشه‌های کارت', 'default' => 20, 'min' => 0, 'max' => 48, 'step' => 1, 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_padding' => ['type' => 'range', 'unit' => 'px', 'label' => 'فاصلهٔ داخلی کارت فرم (Padding)', 'default' => 32, 'min' => 12, 'max' => 64, 'step' => 2, 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'card_shadow' => ['type' => 'shadow', 'label' => 'سایهٔ کارت فرم', 'panel' => 'style', 'group' => 'کارت فرم'],
+                    'input_bg_color' => ['type' => 'color', 'label' => 'رنگ پس‌زمینه فیلدهای ورودی', 'default' => '#12121F', 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'input_border_color' => ['type' => 'color', 'label' => 'رنگ کادر فیلدهای ورودی', 'default' => '#2A2A2A', 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'input_text_color' => ['type' => 'color', 'label' => 'رنگ متن فیلدهای ورودی', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'input_radius' => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی کادر فیلدها', 'default' => 12, 'min' => 0, 'max' => 30, 'step' => 1, 'panel' => 'style', 'group' => 'فیلدها و ورودی‌ها'],
+                    'btn_bg_color' => ['type' => 'color', 'label' => 'رنگ دکمهٔ اصلی (CTA)', 'default' => '#FF7900', 'panel' => 'style', 'group' => 'دکمه‌ها و اکشن'],
+                    'btn_text_color' => ['type' => 'color', 'label' => 'رنگ متن دکمهٔ اصلی', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'دکمه‌ها و اکشن'],
+                    'btn_radius' => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی دکمهٔ اصلی', 'default' => 12, 'min' => 0, 'max' => 30, 'step' => 1, 'panel' => 'style', 'group' => 'دکمه‌ها و اکشن'],
+                    'text_color' => ['type' => 'color', 'label' => 'رنگ متون اصلی', 'default' => '#F5F5F5', 'panel' => 'style', 'group' => 'رنگ‌ها و تایپوگرافی'],
+                    'text_muted_color' => ['type' => 'color', 'label' => 'رنگ متون کم‌رنگ و توضیحات', 'default' => '#A3A3A3', 'panel' => 'style', 'group' => 'رنگ‌ها و تایپوگرافی'],
+                ],
+                'defaultProps' => [
+                    'auth_mode' => 'dual',
+                    'layout_type' => 'split',
+                    'brand_name' => '',
+                    'brand_tagline' => '',
+                    'login_title' => 'ورود به حساب کاربری',
+                    'login_subtitle' => 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.',
+                    'login_btn_text' => 'ورود به حساب',
+                    'register_title' => 'ایجاد حساب کاربری جدید',
+                    'register_subtitle' => 'عضویت سریع و امن در کمتر از یک دقیقه.',
+                    'register_btn_text' => 'ثبت‌نام در سامانه',
+                    'hero_title' => 'به حساب کاربری خود خوش آمدید',
+                    'hero_subtitle' => 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.',
+                    'btn_bg_color' => '#FF7900',
+                    'card_bg_color' => '#1E1E1E',
+                    'page_bg_color' => '#0B0B0B',
+                ],
             ],
             // Phase 2e (ADR-026): the site header, authored as one
             // self-contained block by 24 of the 28 canonical themes —
@@ -1024,6 +1377,19 @@ class BlockRegistry
                     'logo_icon'          => ['type' => 'icon', 'label' => 'آیکون کنار نام برند (اختیاری)', 'default' => '', 'group' => 'لوگو و برند'],
                     'logo_text_accent'   => ['type' => 'string', 'label' => 'بخش رنگی نام برند (پس از متن لوگو)', 'default' => '', 'group' => 'لوگو و برند'],
                     'logo_tagline'       => ['type' => 'string', 'label' => 'شعار زیر نام برند (در منوی همبرگری و حالت فشرده پنهان)', 'default' => '', 'group' => 'لوگو و برند'],
+                    'logo_animation'     => ['type' => 'select', 'label' => 'انیمیشن لوگو / آیکون برند', 'options' => ['none' => 'بدون انیمیشن', 'rotate_pop' => 'چرخش و جهش (Rotate & Pop 360°)', 'pulse' => 'پالس (Pulse)', 'float' => 'شناور (Float)', 'bounce' => 'پرش (Bounce)', 'spin' => 'چرخش مداوم (Spin)'], 'default' => 'none', 'group' => 'لوگو و برند'],
+                    'logo_animation_duration' => ['type' => 'number', 'label' => 'مدت چرخهٔ انیمیشن لوگو (ثانیه)', 'default' => 5, 'min' => 1, 'max' => 20, 'step' => 1, 'group' => 'لوگو و برند', 'condition' => ['logo_animation!' => 'none']],
+                    // Top Bar settings
+                    'topbar_enable'      => ['type' => 'boolean', 'label' => 'فعال‌سازی نوار بالایی (Top Bar)', 'default' => false, 'group' => 'نوار بالایی (Top Bar)'],
+                    'topbar_hide_mobile' => ['type' => 'boolean', 'label' => 'مخفی‌سازی نوار بالایی در موبایل', 'default' => false, 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_text'        => ['type' => 'string', 'label' => 'متن یا شعار نوار بالایی', 'default' => '', 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_phone'       => ['type' => 'string', 'label' => 'شماره تماس نوار بالایی', 'default' => '', 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_email'       => ['type' => 'string', 'label' => 'آدرس ایمیل', 'default' => '', 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_address'     => ['type' => 'string', 'label' => 'آدرس یا موقعیت مکانی', 'default' => '', 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_bg'          => ['type' => 'color', 'label' => 'رنگ پس‌زمینه نوار بالایی (خالی = شفاف/پیش‌فرض)', 'default' => '', 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_color'       => ['type' => 'color', 'label' => 'رنگ متن و آیکون‌های نوار بالایی', 'default' => '', 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_social_links'=> ['type' => 'boolean', 'label' => 'نمایش شبکه‌های اجتماعی در نوار بالایی', 'default' => true, 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
+                    'topbar_links'       => ['type' => 'repeater', 'label' => 'لینک‌های سفارشی نوار بالایی', 'item_label' => 'لینک', 'fields' => ['label' => ['type' => 'string', 'label' => 'عنوان لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => '']], 'default' => [], 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
                     // ADR-076: where the menu sits between the logo and the actions.
                     // 'end' is the original layout (links next to the actions).
                     'menu_align'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'چیدمان منو', 'options' => ['start' => 'راست (کنار لوگو)', 'center' => 'وسط', 'end' => 'چپ (کنار دکمه‌ها)'], 'default' => 'end', 'group' => 'منو'],
@@ -1052,6 +1418,9 @@ class BlockRegistry
                     'cta2_url'           => ['type' => 'link', 'label' => 'لینک دکمهٔ دوم', 'default' => '/login', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
                     'cta2_icon'          => ['type' => 'icon', 'label' => 'آیکون دکمهٔ دوم (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
                     'cta2_style'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'ظاهر دکمهٔ دوم', 'options' => ['primary' => 'توپر', 'outline' => 'خطی'], 'default' => 'outline', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
+                    'show_login_btn'     => ['type' => 'boolean', 'label' => 'نمایش دکمه ورود', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'show_register_btn'  => ['type' => 'boolean', 'label' => 'نمایش دکمه ثبت‌نام', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'show_calc_btn'      => ['type' => 'boolean', 'label' => 'نمایش دکمه ماشین‌حساب خورشیدی', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'show_search'       => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'search_mode'        => ['type' => 'select', 'label' => 'حالت جستجو', 'options' => ['input' => 'فیلد جستجوی ثابت', 'icon' => 'آیکون با پنجره بازشو'], 'default' => 'input', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_search' => true]],
                     'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_search' => true]],
@@ -1068,6 +1437,7 @@ class BlockRegistry
                     // layout templates) that prevents a flash of the wrong
                     // theme on load.
                     'show_dark_toggle'   => ['type' => 'boolean', 'label' => 'نمایش تغییر حالت روشن/تاریک', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'header_icons_animation' => ['type' => 'select', 'label' => 'انیمیشن آیکون‌های اکشن هدر', 'options' => ['none' => 'بدون انیمیشن', 'rotate_pop' => 'چرخش و جهش (Rotate & Pop 360°)', 'pulse' => 'پالس (Pulse)', 'float' => 'شناور (Float)', 'bounce' => 'پرش (Bounce)', 'spin' => 'چرخش مداوم (Spin)'], 'default' => 'none', 'group' => 'دسترسی سریع و اکشن‌ها'],
                     // Advanced tab: behaviour.
                     'sticky'             => ['type' => 'boolean', 'label' => 'چسبان به بالا (با کوچک‌شدن نرم هنگام اسکرول)', 'default' => false, 'panel' => 'advanced', 'group' => 'هدر چسبان و شفاف'],
                     // Phase 1 (ADR-067): smart sticky and transparent-over-hero; the
@@ -1098,9 +1468,11 @@ class BlockRegistry
                     'drawer_show_search'    => ['type' => 'boolean', 'label' => 'جستجو داخل منوی بازشو (در موبایل از نوار هدر برداشته می‌شود)', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never', 'show_search' => true]],
                     'drawer_show_ctas'      => ['type' => 'boolean', 'label' => 'دکمه‌ها در پایین منوی بازشو (در موبایل از نوار هدر برداشته می‌شوند)', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_action_text'    => ['type' => 'string', 'label' => 'متن دکمه ویژه کشوی موبایل (مثلا ماشین‌حساب خورشیدی)', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
-                    'drawer_action_url'     => ['type' => 'string', 'label' => 'لینک دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_action_url'     => ['type' => 'link', 'label' => 'لینک دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_action_icon'    => ['type' => 'icon', 'label' => 'آیکون دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_action_style'   => ['type' => 'select', 'label' => 'سبک دکمه ویژه کشوی موبایل', 'options' => ['primary' => 'اصلی (پررنگ)', 'outline' => 'خط دور'], 'default' => 'primary', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_duration'       => ['type' => 'number', 'label' => 'سرعت باز/بسته شدن کشوی موبایل (ثانیه)', 'default' => 0.38, 'min' => 0.15, 'max' => 1.5, 'step' => 0.05, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_easing'         => ['type' => 'select', 'label' => 'الگوی شتاب حرکت کشوی موبایل (Easing)', 'options' => ['cubic-bezier(.16,1,.3,1)' => 'نرم و روان (پیش‌فرض)', 'ease' => 'سهولت حرکت (Ease)', 'ease-in-out' => 'شتاب دوطرفه (Ease In-Out)', 'linear' => 'خطی یکنواخت (Linear)'], 'default' => 'cubic-bezier(.16,1,.3,1)', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     // ADR-084: between the burger breakpoint and this width the bar
                     // tightens (no tagline, smaller menu items and buttons) so a
                     // full menu and actions row never wraps.
@@ -1189,7 +1561,23 @@ class BlockRegistry
                     'cta_font_size'      => ['type' => 'range', 'unit' => 'px', 'label' => 'اندازهٔ متن دکمه‌ها (خالی = پیش‌فرض قالب)', 'default' => '', 'min' => 10, 'max' => 22, 'step' => 0.5, 'panel' => 'style', 'group' => 'دکمهٔ CTA و تماس'],
                     'header_order'       => ['type' => 'array', 'label' => 'ترتیب اجزای هدر (Drag & Drop)', 'default' => ['logo','menu','search','social','phone','cta','cart','account','dark_toggle','burger'], 'group' => 'چیدمان'],
                 ],
-                'defaultProps' => ['logo_text' => '', 'logo_url' => '/', 'nav_links' => [], 'sticky' => false, 'bg_color' => '#ffffff', 'text_color' => '#111827'],
+                'defaultProps' => [
+                    'logo_text' => '',
+                    'logo_url' => '/',
+                    'nav_links' => [],
+                    'sticky' => false,
+                    'bg_color' => '#ffffff',
+                    'text_color' => '#111827',
+                    'burger_breakpoint' => 'mobile',
+                    'drawer_style' => 'side',
+                    'drawer_side' => 'start',
+                    'drawer_show_logo' => true,
+                    'drawer_show_search' => true,
+                    'drawer_show_ctas' => true,
+                    'cta_style' => 'primary',
+                    'cta2_style' => 'outline',
+                    'search_mode' => 'input',
+                ],
             ],
             'header_modern_v1' => [
                 'name' => 'هدر مدرن RTL',
@@ -2473,11 +2861,31 @@ class BlockRegistry
         return $def['defaultProps'] ?? [];
     }
 
-    /** For editor: list by category. */
-    public static function byCategory(): array
+    /**
+     * Filters blocks by theme scope.
+     * Blocks declaring a 'theme_scope' are only returned when $themeSlug matches.
+     * Blocks with no theme_scope are available to all themes.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function forTheme(?string $themeSlug = null): array
+    {
+        $all = self::all();
+        return array_filter($all, function (array $def) use ($themeSlug) {
+            $scope = $def['theme_scope'] ?? null;
+            if ($scope === null || $scope === '') {
+                return true;
+            }
+            return $themeSlug !== null && $scope === $themeSlug;
+        });
+    }
+
+    /** For editor: list by category, optionally scoped to an active theme. */
+    public static function byCategory(?string $themeSlug = null): array
     {
         $byCat = [];
-        foreach (self::all() as $type => $def) {
+        $blocks = self::forTheme($themeSlug);
+        foreach ($blocks as $type => $def) {
             $cat = $def['category'] ?? 'content';
             if (!isset($byCat[$cat])) {
                 $byCat[$cat] = [];
@@ -2487,10 +2895,10 @@ class BlockRegistry
         return $byCat;
     }
 
-    /** Category labels (Persian). */
-    public static function categoryLabels(): array
+    /** Category labels (Persian), including theme-scoped labels when theme matches. */
+    public static function categoryLabels(?string $themeSlug = null): array
     {
-        return [
+        $labels = [
             self::CATEGORY_LAYOUT    => 'چیدمان',
             self::CATEGORY_CONTENT   => 'محتوای ثابت',
             self::CATEGORY_DYNAMIC   => 'محتوای پویا',
@@ -2500,12 +2908,18 @@ class BlockRegistry
             self::CATEGORY_UTILITY   => 'ابزار',
             self::CATEGORY_MODULE    => 'ماژول‌ها',
         ];
+
+        if ($themeSlug === SolarIndustryBlockTypes::THEME_SCOPE) {
+            $labels[SolarIndustryBlockTypes::CATEGORY_SOLAR] = 'ویجت‌های اختصاصی صنعت برق و خورشیدی';
+        }
+
+        return $labels;
     }
 
-    /** Category icons for canvas sidebar. */
-    public static function categoryIcons(): array
+    /** Category icons for canvas sidebar, including theme-scoped icons when theme matches. */
+    public static function categoryIcons(?string $themeSlug = null): array
     {
-        return [
+        $icons = [
             self::CATEGORY_LAYOUT    => '📐',
             self::CATEGORY_CONTENT   => '📝',
             self::CATEGORY_DYNAMIC   => '🔄',
@@ -2515,6 +2929,12 @@ class BlockRegistry
             self::CATEGORY_UTILITY   => '🔧',
             self::CATEGORY_MODULE    => '🧩',
         ];
+
+        if ($themeSlug === SolarIndustryBlockTypes::THEME_SCOPE) {
+            $icons[SolarIndustryBlockTypes::CATEGORY_SOLAR] = '☀️';
+        }
+
+        return $icons;
     }
 
     /** Get all module blocks grouped by their required module. */

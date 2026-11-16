@@ -8,6 +8,7 @@
   "thumbnail": "mobile-store.webp",
   "blocks": [
     {
+      "id": "header-mobile-standard-nav",
       "type": "nav_header",
       "layout_slot": "header",
       "props": {
@@ -20,8 +21,12 @@
         "search_placeholder": "جستجو در فروشگاه...",
         "cta_text": "تماس با ما",
         "cta_url": "@link:contact",
-        "cta_glow_enabled": true,
-        "cta_glow_color": "#c2410c",
+        "cta_icon": "phone",
+        "cta_style": "primary",
+        "cta2_text": "ورود",
+        "cta2_url": "@link:login",
+        "cta2_icon": "log-in",
+        "cta2_style": "outline",
         "phone": "+98 21 1234 5678",
         "social_links": [
           {"label": "ایتا", "url": "https://eitaa.com", "network": "eitaa"},
@@ -34,6 +39,16 @@
         "show_cart": true,
         "show_account": true,
         "show_dark_toggle": false,
+        "burger_breakpoint": "mobile",
+        "drawer_style": "side",
+        "drawer_side": "start",
+        "drawer_show_logo": true,
+        "drawer_show_search": true,
+        "drawer_show_ctas": true,
+        "drawer_action_text": "ارتباط مستقیم تلفنی",
+        "drawer_action_url": "tel:+982112345678",
+        "drawer_action_icon": "phone",
+        "drawer_action_style": "primary",
         "header_order": ["logo", "search", "social", "phone", "cta", "cart", "account", "menu", "burger"]
       }
     }

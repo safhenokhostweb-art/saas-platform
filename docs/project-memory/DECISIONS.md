@@ -5614,3 +5614,261 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   (hand-computed sizing and price), `SolarCalculatorPublicFlowTest`
   (license isolation, lead + CRM capture, gate modes, token binding),
   `SolarCalculatorWidgetTest`, `SolarCalculatorAdminTest`.
+
+## ADR-086
+
+**Title:** Granular motion licensing: public/private visibility, per-site grants, admin availability switch and version labels
+
+**Status:** Accepted
+
+**Date:** 2026-11-14
+
+**Context:**
+
+- The owner asked for per-asset motion licensing. Public motions should reach
+  every tenant. Private, bespoke or paid motions should reach only a site that
+  bought them or was assigned them in the central panel. The general «Motion
+  Graphics Premium» module must not unlock every paid motion.
+- The owner also asked for a switch that hides one motion from every site at
+  once (debugging, maintenance), and for a visible version identifier in the
+  manifest.
+- Most of the machinery existed: the ADR-078 tier check
+  (`MotionAssetLicensePolicy`, re-run on every manifest build), ADR-081
+  exclusive motions (`customer_specific` ownership, bespoke assignments,
+  signed `/motion/private/...` URLs), and version binding per package item.
+  Missing were: (a) a way to sell one *global* library motion to chosen sites,
+  (b) a kill switch, (c) human version labels, (d) delivery of a public
+  motion added after a site's package was activated.
+- The reference case is `solar-motion-graphic`, the electrical/solar industry
+  motion. In the shared dev tree it existed only as an uncommitted
+  theme-runtime block type. It is now a library asset.
+
+**Decision:**
+
+1. **Visibility on the motion.** `motion_graphics.visibility` is `public` or
+   `private`. Unknown values read as private, so a typo never publishes a paid
+   motion. For library motions, `metadata.json` `visibility` is authoritative
+   (like `license_tier`) and catalog sync applies it. Existing rows default to
+   `public`, so behaviour is unchanged. Visibility governs *global* motions
+   only. An exclusive (ADR-081) motion is already restricted by ownership, and
+   sync refuses one that also declares `visibility`.
+2. **Grants are the entitlement for private motions.** The host table
+   `motion_site_asset_grants` has one row per (site, asset): status
+   `active`/`revoked`, source `admin_grant`/`purchase`/`license`, an optional
+   order or licence reference, and who and when for both grant and revoke.
+   `MotionAssetLicensePolicy::decide()` checks visibility first. A private
+   asset is allowed only while that site holds an active grant for that exact
+   asset. The premium module is not consulted for it. Public assets keep the
+   ADR-078 tier rules unchanged (free = everyone, premium = the
+   `motion-graphics-premium` licence). The same policy call runs at activation
+   and on every manifest build, so a revoked grant removes the motion on the
+   next fetch.
+3. **Private files are signed.** A private library version stores the ADR-081
+   private base reference, and the manifest signs it for the requesting site.
+   `MotionPrivateAssetController` now also admits a private *global* motion,
+   re-checking an active grant on every request, so revocation closes the file
+   at once. The public `/motion/{slug}/{vN}/animation.svg` route refuses any
+   file whose metadata declares `private`. Every refusal is a 404.
+4. **Availability switch.** `motion_graphics.runtime_enabled` (with
+   `runtime_disabled_at` and the actor who disabled it) is written only by
+   `MotionCatalogAdminService`. A disabled motion is skipped by
+   `MotionCustomerRuntimeService` (package items, public extras, grants) and by
+   `BespokeAssignedAssets` before anything that could fail a manifest. The
+   rest of the site's manifest is unaffected, and nothing is reported as
+   locked. Versions, bindings and grants stay intact, so re-enabling restores
+   each site exactly. Catalog sync never writes the column, so a deploy never
+   re-enables a motion. Files stay servable, so a page rendered from an older
+   cached manifest does not break.
+5. **Manifest composition.** The manifest lists package items (bound
+   versions, as before), then every public, enabled library-catalog motion the
+   package does not bind (latest published version), then granted private
+   motions, then bespoke assignments (ADR-081). This makes "public = every
+   tenant" true for motions added after activation. It applies only to sites
+   whose runtime is open: an active package, a bespoke assignment or a grant.
+   A grant alone opens it, like a bespoke assignment. A non-granted private
+   motion is never listed, not even in `locked_assets`. A public premium motion
+   without the licence is listed there as before.
+6. **Version labels.** `motion_graphic_versions.version_label` is set when the
+   catalog creates a version: metadata `version_label` (`1.0.0`), else
+   `version` (`v2`), else the library directory. Rows published earlier are not
+   rewritten (versions are immutable); `versionLabel()` falls back to
+   `preview_metadata.library_version`, then `v{N}`. Each manifest entry adds
+   `version_label`, `build_id` (the first 12 hex characters of the delivered
+   bytes' sha256) and `category_label`. The integer `published_version` stays
+   the binding key.
+7. **Central panel.** Admin → Motion Graphics → «کاتالوگ و دسترسی موشن‌ها»
+   (`admin.motion-graphics.catalog.*`) lists every motion with visibility,
+   tier, published version label and build, bound-site count and state. It
+   hosts the switch and the grant/revoke controls. Every write is audited
+   (`motion.catalog.asset.*`).
+8. **customer-site.** The picker endpoint reads the platform's current answer
+   (`MotionRuntimeManifestReader::refresh()`) and writes it back to the cache,
+   so a switch, grant or revoke shows the next time the picker opens, and the
+   public runtime follows. An unreachable or invalid answer keeps the last
+   good cached copy. The picker refetches on every open, groups assets by
+   category label and shows each motion's version label. The reader passes
+   `version_label`, `build_id` and `category_label` only when well formed.
+
+**Consequences:**
+
+- `solar-motion-graphic` v1 (release `1.0.0`, category «موشن صنعت برق و
+  انرژی», premium, private) joins `MotionLibraryCatalogService::ASSETS`.
+  After release, `MotionGraphicsDefaultSeeder` / catalog sync must run in
+  production (owner action, as always). It then reaches no site until the
+  owner grants it in the panel.
+- Every manifest gains three fields, so each site's manifest checksum changes
+  once. Consumers that predate them ignore them.
+- Bespoke-only sites now also receive the public library motions (hero-motion;
+  business-growth-motion locked without the premium licence).
+- Prod site 1 keeps business-growth-motion: it is public premium and the site
+  holds the premium licence. Making a paid motion grant-only means declaring
+  it `private` in a new library version and granting the sites that should
+  keep it. Without grants, those sites lose it on the next manifest. That is
+  an owner decision per motion.
+- Tests: platform `PrivateMotionLicensingTest` (end to end, no fakes),
+  `MotionAssetLicensePolicyTest`, `MotionVersionLabelTest`, updated
+  `MotionLibraryCatalogTest` / `ExclusiveMotionDeliveryTest`, package
+  `CommercialMotionLibraryTest` (solar asset contract); customer-site
+  `MotionRuntimeManifestReaderTest` (refresh, sanitising) and
+  `MotionPickerTest` (category, version, instant refresh).
+- Guards (`MotionLicensingGuardsTest`), added after the shared dev tree was
+  found carrying uncommitted work that bypassed these rules (base
+  `motion-graphics` made free-assignable, and a distribution-mode reorder
+  that let a priced module be assigned for free; package auto-provisioning
+  on manifest build that was hidden from tests by `runningUnitTests()`): the
+  paid motion modules are never free-assignable; an active `site_modules`
+  row without a licence never unlocks premium; building a manifest never
+  creates a package; the motion runtime has no test-only branches and does
+  not call module assignment.
+
+## ADR-087
+
+**Title:** Centralized platform-asset access: one policy manifest, licence- and vertical-scoped templates and widgets, per-site grants, provisioning API
+
+**Status:** Accepted
+
+**Date:** 2026-11-16
+
+**Context:**
+
+- The owner directive: templates, headers, footers, widgets, motions and
+  future specialized assets must never be public to every tenant by
+  default. They are managed centrally on the platform and reach a tenant
+  only through its licence, its business vertical, a subscription or a
+  purchase. Restricted items are hidden in the Canvas editor, or shown
+  locked with a badge («اختصاصی لایسنس» / «نیازمند خرید») as an upgrade path.
+- The ADR-075 template library (pages, sections, headers, footers) and the
+  canonical widget registry are code, not rows: they ship byte-identical
+  in the theme-runtime package on the platform and on every tenant. Before
+  this ADR both hosts offered every library template to every site; the
+  25 solar-industry templates of ADR-084 (header, footer, 23 pages) were
+  visible to all tenants.
+- Motions already have this model (ADR-086, branch
+  feat/motion-granular-licensing, not merged): public/private visibility,
+  per-site grants, signed private files. ADR-085 gates one widget
+  (`solar_calculator`) by a licence key.
+- The platform already projects a site's licence state to the tenant
+  (`EntitlementResolver::projectionForSite`, sent as `modules` by the
+  licence check). No site had a business vertical.
+
+**Decision:**
+
+1. **One policy manifest, in the package.** theme-runtime
+   `resources/access/policy.json` classifies every library template and
+   every canonical widget as `"public"` or as a named *family* (a
+   restricted rule with a label). It is code: versioned and reviewed with
+   the assets themselves, identical on both hosts. An unlisted template or
+   canonical widget is treated as restricted, grant-only and hidden, and
+   `AssetAccessCatalogContractTest` fails, so nothing becomes public by
+   omission. Host-only and extension widget types (`column`, `ext:*`) stay
+   with their hosts' own contracts unless listed.
+2. **Rule semantics** (`Access\AssetAccessRule`, `Access\AssetAccessPolicy`,
+   shared by both hosts). A restricted asset is available to a site that
+   holds an active grant for exactly that asset, or that meets every
+   declared condition: `required_vertical` equals the site's
+   `business_vertical`, and the site holds at least one of
+   `entitlement_keys` (module/licence slugs from the platform projection).
+   A restricted rule without conditions is grant-only. A vertical mismatch
+   hides the asset (another industry's kit is noise). A missing key or
+   grant locks it, shown as a teaser or hidden per `locked_display`.
+   Parsing fails closed: only the exact visibility `public` is public, and
+   a malformed condition is dropped, which leaves a grant-only rule.
+3. **Platform data.** `sites.business_vertical` (vocabulary
+   `Access\BusinessVerticals`); `site_asset_grants` (one row per site and
+   asset, status active/revoked, source admin_grant/purchase/license,
+   reference, who/when both ways); `platform_asset_policies` (an override
+   of one asset's declared rule, `is_public`, `required_vertical`,
+   `entitlement_keys` JSON, `locked_display`, for every site and without a
+   release). All writes go through `SiteAssetEntitlementService`, which
+   also builds a site's `SiteAssetEntitlements` from platform state only
+   (projection, vertical, active grants, overrides) and audits every write
+   (`asset_access.*` activity events).
+4. **The solar kit.** Family `solar-industry` = vertical `solar_energy` +
+   licence key `solar_industry_kit`, `teaser`. A migration registers the
+   key like ADR-085's: licence-only, no price, not in the marketplace. The
+   host-only `solar_calculator` widget is listed as family
+   `solar-calculator` (key `solar_calculator`, hidden), matching ADR-085.
+   Every other current template and widget is public.
+5. **Provisioning.** `GET /api/asset-entitlements` (`tenant.api`: licence
+   key + domain, which also binds the site, so a tenant reads only its own
+   answer; `no-store`) returns the schema-1 payload `{vertical,
+   entitlement_keys, grants, overrides, issued_at}`. customer-site's
+   `AssetEntitlementClient` syncs it: the editor refreshes on open, other
+   calls read the cache, a failed or malformed answer never replaces the
+   last good one (kept in settings), and a site that never synced holds
+   public assets only. It unions the keys with the licence's own module
+   list, the same platform projection, so a key-gated widget keeps working
+   during an outage. The payload is validated strictly and rejected whole.
+   The decision is pull-based: a grant or revoke reaches the site on its
+   next editor open, with no push channel to secure.
+6. **Editors.** Both canvas editors call `Access\AssetAccessGate`. Listing:
+   template cards and the widget palette drop hidden assets and mark locked
+   ones (shared partials `theme-runtime::canvas.asset-access-badge` and
+   `asset-access-template-card`). A locked card or palette item stays
+   focusable, explains itself and cannot be inserted or dragged. Writing:
+   the template insert endpoint refuses a locked library template (403
+   with the reason), and customer-site's block save refuses a restricted
+   widget the incoming tree *introduces*. One already on the page is kept,
+   so a lapsed licence never blocks editing the rest. On the platform, a
+   theme owned by a site is gated by that site's entitlements. A global
+   catalog theme is the platform's own design surface: everything is
+   usable, restricted items carry their badge.
+7. **Panel.** Admin → «دسترسی قالب‌ها و ویجت‌های اختصاصی»
+   (`admin.asset-access.index`: restricted assets, effective rule, grant
+   counts, override form) and per site (`admin.sites.asset-access`:
+   vertical, entitlement keys, each restricted asset's state and reason,
+   grant/revoke), linked from the site edit and site modules pages.
+
+**Consequences:**
+
+- No change for any current site except one: the solar templates leave
+  every editor of a site that is not `solar_energy`, and show as a
+  «نیازمند خرید» teaser inside that vertical until the kit is licensed or
+  the templates are granted. Production effect after release: the owner
+  sets the solar customer's vertical to `solar_energy` and licenses
+  `solar_industry_kit` (or grants single templates), or the customer loses
+  insert access to the solar templates on its next editor open. Pages that
+  already contain solar sections keep rendering.
+- Rendering is never gated. Revocation stops further use and never breaks a
+  live page. Removing restricted content from published pages would be a
+  separate, explicit owner decision.
+- `TemplateLibrary::list()/find()` are unchanged (pure library), so every
+  existing caller and test of the library itself keeps its behaviour.
+- Saved templates (`theme_templates`, `site_theme_templates`) are authored
+  content, not platform assets, and are not gated. A saved template that
+  copies a restricted widget is still refused at save time on the tenant.
+- Motions stay on ADR-086's own model and endpoint. The central panel links
+  to its catalog page when that route exists. A future asset family (a
+  new kind of asset) adds an `Access\AssetRef` kind, a manifest section and
+  catalog wiring, never a host-local list.
+- Adding a template or widget now requires one manifest line. The contract
+  test names any that are missing.
+- The customer-site autosave no longer reports success for a refused save.
+  It keeps the page dirty and shows the refusal, which also surfaces the
+  existing locked-structure 422s.
+- Tests: platform `AssetAccessPolicyTest`, `AssetAccessCatalogContractTest`,
+  `AssetAccessGateTest` (unit) and `AssetProvisioningTest` (real licence →
+  projection → API → decision, panel writes and audit, tenant isolation,
+  overrides, platform canvas). customer-site `PlatformAssetAccessTest`
+  (client auth, last-good fallback, listing, insert and save gates), and
+  `TemplateLibraryInsertTest` now provisions a licensed solar site.

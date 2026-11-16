@@ -76,6 +76,34 @@
         "reviewed_by": "safhenokhostweb-art",
         "reviewed_at": "2026-10-31",
         "reason": "Create-only migration (ADR-070): up() creates tenant_prune_audit_logs; down() drops only that table (rollback of its own creation). No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_11_14_100000_create_motion_site_asset_grants_table.php",
+        "sha256": "ceeb15a472be278fef6b067f74b12ac9eb2b5d927bb72325e26e84ae6661b52e",
+        "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-16 release; not an owner sign-off)",
+        "reviewed_at": "2026-11-16",
+        "reason": "Create-only migration (ADR-086): up() creates motion_site_asset_grants; down() drops only that table (rollback of its own creation). No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_11_16_120000_add_business_vertical_to_sites_table.php",
+        "sha256": "30b671ef785aa959f53dd985f34ebcc1287755176d7c7671c3a956e2ae05196d",
+        "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-16 release; not an owner sign-off)",
+        "reviewed_at": "2026-11-16",
+        "reason": "Additive-only migration (ADR-087): up() adds the nullable, indexed sites.business_vertical; down() drops only that column and its index. No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_11_16_120100_create_site_asset_grants_table.php",
+        "sha256": "956ef50bd8d3c21de7a0f6476f3ee69e83d297b6c1f4f62abc4e64dcbb68c9c5",
+        "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-16 release; not an owner sign-off)",
+        "reviewed_at": "2026-11-16",
+        "reason": "Create-only migration (ADR-087): up() creates site_asset_grants; down() drops only that table (rollback of its own creation). No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_11_16_120200_create_platform_asset_policies_table.php",
+        "sha256": "57371a9f45addffdffbc0018aa7cd053fc08062aecffe38c27b14345032e3dc6",
+        "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-16 release; not an owner sign-off)",
+        "reviewed_at": "2026-11-16",
+        "reason": "Create-only migration (ADR-087): up() creates platform_asset_policies; down() drops only that table (rollback of its own creation). No existing data is altered."
       }
     ]
   },

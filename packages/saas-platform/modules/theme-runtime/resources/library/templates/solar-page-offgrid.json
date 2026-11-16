@@ -4,7 +4,7 @@
     "description": "تأمین کامل برق ویلاها، مزارع و مناطق دور از شبکه سراسری با پکیج‌های پنل و باتری مستقل.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "offgrid",
     "tags": [
         "صنعت برق",

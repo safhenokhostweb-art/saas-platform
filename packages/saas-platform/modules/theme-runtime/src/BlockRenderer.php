@@ -36,6 +36,7 @@ class BlockRenderer
     use SleepShimanBlockRendererTrait;
     use DynamicBlockRendererTrait;
     use CommercialBlockRendererTrait;
+    use SolarIndustryBlockRendererTrait;
 
     /**
      * Smart Public Rendering — canonical dual-mode contract, mirroring
@@ -83,6 +84,9 @@ class BlockRenderer
 
     /** Phase 3b (ADR-069): blocks/pricing.js, once per render. */
     private bool $pricingAssetsEmitted = false;
+
+    /** Global Scroll-to-Top block runtime asset emitted once per render. */
+    private bool $scrollToTopAssetsEmitted = false;
 
     /**
      * Phase 9 / Step 2 — same once-per-document rule for the shared
@@ -1085,6 +1089,15 @@ class BlockRenderer
         $fadeAttr = $fade ? 'true' : 'false';
         $fadeClass = $fade ? ' tb-carousel--fade' : '';
 
+        $hideControls = (bool) ($options['hide_controls'] ?? false) || !($options['show_controls'] ?? true);
+        if ($hideControls) {
+            $showProgress = false;
+            $thumbnailUrls = [];
+            if (!str_contains($extraClass, 'tb-carousel--no-controls')) {
+                $extraClass = trim($extraClass . ' tb-carousel--no-controls');
+            }
+        }
+
         $statusHtml = $showProgress
             ? '<div class="tb-carousel-status"><div class="tb-carousel-progress" aria-hidden="true"><span class="tb-carousel-progress-fill"></span></div><button type="button" class="tb-carousel-pause" aria-pressed="false" aria-label="توقف پخش خودکار">Ⅱ</button></div>'
             : '';
@@ -1096,6 +1109,15 @@ class BlockRenderer
                 $buttons[] = '<button type="button" class="tb-carousel-thumb" aria-label="نمایش اسلاید ' . $num . '"><img src="' . $this->escapeAttr((string) $url) . '" alt="" loading="lazy"></button>';
             }
             $thumbnailHtml = '<div class="tb-carousel-thumbs">' . implode('', $buttons) . '</div>';
+        }
+
+        $controlsHtml = '';
+        if (!$hideControls) {
+            // The template already puts this on its own indented line, so the
+            // shown-controls markup stays byte-identical to before hide_controls.
+            $controlsHtml = "<button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>\n"
+                . "            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>\n"
+                . "            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\">" . implode('', $dots) . "</div>";
         }
 
         // Phase 2 (ADR-067): arrows on logical sides (previous at the reading
@@ -1134,9 +1156,7 @@ class BlockRenderer
                 <div class=\"tb-carousel-track\">" . implode('', $slides) . "</div>
             </div>
             {$statusHtml}
-            <button type=\"button\" class=\"tb-carousel-prev\" aria-label=\"اسلاید قبلی\">" . $this->iconHtml('chevron-right') . "</button>
-            <button type=\"button\" class=\"tb-carousel-next\" aria-label=\"اسلاید بعدی\">" . $this->iconHtml('chevron-left') . "</button>
-            <div class=\"tb-carousel-dots\" role=\"group\" aria-label=\"انتخاب اسلاید\">" . implode('', $dots) . "</div>
+            {$controlsHtml}
             {$thumbnailHtml}
             {$this->carouselScript($id,$options)}
         </div>";
@@ -1355,11 +1375,27 @@ class BlockRenderer
         $boxed      = (bool) ($props['boxed'] ?? false);
         $aspect     = $this->escapeAttr($props['aspect_ratio'] ?? '16/9');
         $overlay    = (bool) ($props['overlay'] ?? true);
-        // WU-B: styling lives in the shared sheet (.tb-slide*); only the
-        // per-block aspect ratio stays inline. The overlay element is always
-        // present (its gradient switched off by a modifier) so the markup
-        // shape does not depend on the setting.
-        $overlayClass = $overlay ? 'tb-slide-overlay' : 'tb-slide-overlay tb-slide-overlay--off';
+        $overlayStyle = $props['overlay_style'] ?? 'gradient';
+        $contentAlign = $props['content_align'] ?? ($props['text_align'] ?? 'right');
+        if (!in_array($contentAlign, ['right', 'center', 'left'], true)) {
+            $contentAlign = 'right';
+        }
+        $contentWidth = $props['content_width'] ?? 'normal';
+        if (!in_array($contentWidth, ['narrow', 'normal', 'wide', 'full'], true)) {
+            $contentWidth = 'normal';
+        }
+
+        $overlayModifier = '';
+        if (!$overlay || $overlayStyle === 'none') {
+            $overlayModifier = ' tb-slide-overlay--off';
+        } elseif ($overlayStyle === 'dark') {
+            $overlayModifier = ' tb-slide-overlay--dark';
+        } elseif ($overlayStyle === 'glass') {
+            $overlayModifier = ' tb-slide-overlay--glass';
+        } elseif ($overlayStyle === 'radial') {
+            $overlayModifier = ' tb-slide-overlay--radial';
+        }
+        $overlayClass = 'tb-slide-overlay' . $overlayModifier;
 
         $slidesHtml = [];
         $thumbnailUrls = [];
@@ -1367,11 +1403,21 @@ class BlockRenderer
             if (!is_array($slide)) {
                 continue;
             }
-            $image    = trim($this->mediaSrc($slide['image'] ?? ''));
-            $title    = $this->escape($slide['title'] ?? '');
-            $subtitle = $this->escape($slide['subtitle'] ?? '');
-            $link     = $this->linkHref($slide['link'] ?? '', '');
-            $ctaText  = $this->escape($slide['cta_text'] ?? '');
+            $image       = trim($this->mediaSrc($slide['image'] ?? ''));
+            $title       = $this->escape($slide['title'] ?? '');
+            $highlight   = $this->escape($slide['highlight'] ?? '');
+            $subtitle    = $this->escape($slide['subtitle'] ?? '');
+            $description = $this->escape($slide['description'] ?? '');
+            $badge       = $this->escape($slide['badge'] ?? ($slide['badge_text'] ?? ''));
+            $link        = $this->linkHref($slide['link'] ?? ($slide['button_link'] ?? ''), '');
+            $ctaText     = $this->escape($slide['cta_text'] ?? ($slide['button_text'] ?? ''));
+            $secLink     = $this->linkHref($slide['secondary_link'] ?? ($slide['secondary_url'] ?? ''), '');
+            $secCtaText  = $this->escape($slide['secondary_cta_text'] ?? ($slide['secondary_label'] ?? ''));
+
+            $slideAlign  = $slide['align'] ?? 'auto';
+            if (!in_array($slideAlign, ['right', 'center', 'left'], true)) {
+                $slideAlign = $contentAlign;
+            }
 
             // The visible slide heading already names the same content;
             // treating the background image as decorative avoids announcing
@@ -1379,22 +1425,53 @@ class BlockRenderer
             // The first slide is the likely LCP image of a hero slider (B4).
             $imgHtml = $this->imageWithFallback($image, '', "position:absolute;inset:0;width:100%;height:100%;", '', $slidesHtml === []);
 
-            $ctaHtml = ($ctaText !== '' && $link !== '')
+            $titleHtml = '';
+            if ($title !== '') {
+                if ($highlight !== '') {
+                    if (str_contains($title, $highlight)) {
+                        $titleHtml = str_replace($highlight, "<span class=\"tb-slide-title-highlight\">{$highlight}</span>", $title);
+                    } else {
+                        $titleHtml = "{$title} <span class=\"tb-slide-title-highlight\">{$highlight}</span>";
+                    }
+                } else {
+                    $titleHtml = $title;
+                }
+            } elseif ($highlight !== '') {
+                $titleHtml = "<span class=\"tb-slide-title-highlight\">{$highlight}</span>";
+            }
+
+            $primaryCtaHtml = ($ctaText !== '' && $link !== '')
                 ? "<a href=\"{$link}\" class=\"tb-btn tb-btn-primary tb-slide-cta\">{$ctaText}</a>"
                 : '';
-
-            $captionHtml = ($title !== '' || $subtitle !== '' || $ctaHtml !== '')
-                ? '<div class="tb-slide-caption">'
-                . ($title !== '' ? "<h2 class=\"tb-slide-title\">{$title}</h2>" : '')
-                . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\">{$subtitle}</p>" : '')
-                . $ctaHtml
-                . '</div>'
+            $secondaryCtaHtml = ($secCtaText !== '' && $secLink !== '')
+                ? "<a href=\"{$secLink}\" class=\"tb-btn tb-btn-secondary tb-slide-cta-sec\">{$secCtaText}</a>"
                 : '';
 
-            $slideInner = "<div class=\"tb-slide\" style=\"aspect-ratio:{$aspect};\">"
+            $actionsHtml = '';
+            if ($primaryCtaHtml !== '' || $secondaryCtaHtml !== '') {
+                $actionsHtml = "<div class=\"tb-slide-actions\">{$primaryCtaHtml}{$secondaryCtaHtml}</div>";
+            }
+
+            $hasCaption = ($badge !== '' || $titleHtml !== '' || $subtitle !== '' || $description !== '' || $actionsHtml !== '');
+            $captionHtml = '';
+            if ($hasCaption) {
+                $captionAlignClass = 'tb-slide-caption--align-' . $slideAlign;
+                $captionWidthClass = 'tb-slide-caption--width-' . $contentWidth;
+                $captionGlassClass = ($overlayStyle === 'glass') ? ' tb-slide-caption--glass' : '';
+
+                $captionHtml = "<div class=\"tb-slide-caption {$captionAlignClass} {$captionWidthClass}{$captionGlassClass}\">"
+                    . ($badge !== '' ? "<div class=\"tb-slide-badge\"><span class=\"tb-badge\">{$badge}</span></div>" : '')
+                    . ($titleHtml !== '' ? "<h2 class=\"tb-slide-title\">{$titleHtml}</h2>" : '')
+                    . ($subtitle !== '' ? "<p class=\"tb-slide-subtitle\">{$subtitle}</p>" : '')
+                    . ($description !== '' ? "<div class=\"tb-slide-description\">" . nl2br($description) . "</div>" : '')
+                    . $actionsHtml
+                    . '</div>';
+            }
+
+            $slideInner = "<div class=\"tb-slide tb-slide--align-{$slideAlign}\" style=\"aspect-ratio:{$aspect};\">"
                 . $imgHtml . "<div class=\"{$overlayClass}\"></div>" . $captionHtml . '</div>';
 
-            $slidesHtml[] = ($link !== '' && $ctaHtml === '')
+            $slidesHtml[] = ($link !== '' && $primaryCtaHtml === '' && $secondaryCtaHtml === '')
                 ? '<a href="' . $link . '" class="tb-slide-link">' . $slideInner . '</a>'
                 : $slideInner;
             if ($image !== '') {
@@ -1406,7 +1483,15 @@ class BlockRenderer
             return '';
         }
 
-        $wrapClass = 'tb-slider' . ($boxed ? ' tb-slider-boxed' : ' tb-slider-full') . ($transition === 'fade' ? ' tb-slider-fade' : '');
+        $hideControls = (bool) ($props['hide_controls'] ?? false);
+        if (isset($props['show_slider_buttons'])) {
+            $hideControls = !(bool) $props['show_slider_buttons'];
+        }
+        if (isset($props['show_controls'])) {
+            $hideControls = !(bool) $props['show_controls'];
+        }
+
+        $wrapClass = 'tb-slider' . ($boxed ? ' tb-slider-boxed' : ' tb-slider-full') . ($transition === 'fade' ? ' tb-slider-fade' : '') . ($hideControls ? ' tb-carousel--no-controls' : '');
 
         $carousel = $this->renderCarousel(
             $slidesHtml,
@@ -1417,8 +1502,12 @@ class BlockRenderer
             [],
             true,
             $transition === 'fade',
-            true,
-            $thumbnailUrls
+            $hideControls ? false : true,
+            $hideControls ? [] : $thumbnailUrls,
+            [
+                'hide_controls' => $hideControls,
+                'show_controls' => !$hideControls,
+            ]
         );
 
         return $boxed ? "<div class=\"tb-slider-box\">{$carousel}</div>" : $carousel;
@@ -1510,9 +1599,11 @@ class BlockRenderer
         $align = $alignMap[$props['align'] ?? 'start'] ?? 'tb-align-start';
         $styleMap = ['plain' => 'tb-icon-box-plain', 'card' => 'tb-icon-box-card', 'outline' => 'tb-icon-box-outline', 'solid' => 'tb-icon-box-solid'];
         $style = $styleMap[$props['style'] ?? 'card'] ?? 'tb-icon-box-card';
+        $anim = trim($this->stringify($props['icon_animation'] ?? 'none'));
+        $animClass = in_array($anim, ['rotate_pop', 'pulse', 'float', 'bounce', 'spin'], true) ? " tb-logo-anim--{$anim}" : '';
         $titleHtml = $title !== '' ? "<h3 class=\"tb-icon-box-title\">{$title}</h3>" : '';
         $textHtml = $text !== '' ? "<p class=\"tb-icon-box-text\">{$text}</p>" : '';
-        $iconHtml = $icon !== '' ? "<span class=\"tb-icon-box-icon\" aria-hidden=\"true\">{$icon}</span>" : '';
+        $iconHtml = $icon !== '' ? "<span class=\"tb-icon-box-icon{$animClass}\" aria-hidden=\"true\">{$icon}</span>" : '';
         $body = "{$iconHtml}{$titleHtml}{$textHtml}";
         if ($url !== '') {
             return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"tb-icon-box {$align} {$style}\">{$body}</a>";
@@ -3894,6 +3985,20 @@ class BlockRenderer
      */
     protected function iconHtml(mixed $value): string
     {
+        if (is_string($value)) {
+            $val = trim($value);
+            if ($val === '') {
+                return '';
+            }
+            if (preg_match('/\bfa[srbld]?\s+fa-[\w-]+|\bfa-[\w-]+/', $val)) {
+                $iconClass = $this->escapeAttr($val);
+                if (str_contains($val, 'fa-sun')) {
+                    // The catalog's own sun (not a Font Awesome path: the icon set is ISC).
+                    return '<i class="' . $iconClass . '" aria-hidden="true">' . str_replace('class="tb-icon-svg ', 'class="tb-icon-svg tb-fa-sun-svg ', $this->iconHtml('sun-solar')) . '</i>';
+                }
+                return '<i class="' . $iconClass . '" aria-hidden="true"></i>';
+            }
+        }
         return IconLibrary::has($value) ? IconLibrary::svg((string) $value) : $this->escape($value);
     }
 
@@ -4445,13 +4550,51 @@ class BlockRenderer
         $logoHeight = max(20, min(120, is_numeric($rawLogoHeight) ? (int) $rawLogoHeight : 40));
         $mobileLogoHeight = max(16, min(96, is_numeric($rawMobileLogoHeight) ? (int) $rawMobileLogoHeight : 32));
 
+        $logoAnim = $this->escapeAttr(trim($this->stringify($props['logo_animation'] ?? 'none')));
+        $logoAnimClass = ($logoAnim !== '' && $logoAnim !== 'none') ? ' tb-logo-anim--' . $logoAnim : '';
+        $logoAnimDurRaw = trim($this->stringify($props['logo_animation_duration'] ?? '5s'));
+        $logoAnimDur = is_numeric($logoAnimDurRaw) ? $logoAnimDurRaw . 's' : ($logoAnimDurRaw !== '' ? $logoAnimDurRaw : '5s');
+        $animDurStyle = ($logoAnim !== '' && $logoAnim !== 'none') ? ' style="--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';"' : '';
+
+        $iconsAnim = $this->escapeAttr(trim($this->stringify($props['header_icons_animation'] ?? 'none')));
+        $iconsAnimClass = ($iconsAnim !== '' && $iconsAnim !== 'none') ? ' tb-hdr-icons-anim--' . $iconsAnim : '';
+
         $logoImageHtml = '';
         if ($desktopLogoImage !== '') {
-            $logoImageHtml = '<img src="' . $desktopLogoImage . '" alt="' . $logoAlt . '" class="tb-nav-header-logo-img" height="' . $logoHeight . '" decoding="async">';
+            $logoImageHtml = '<img src="' . $desktopLogoImage . '" alt="' . $logoAlt . '" class="tb-nav-header-logo-img' . $logoAnimClass . '"' . $animDurStyle . ' height="' . $logoHeight . '" decoding="async">';
         }
         $siteLogoHtml = '';
         if ($logoImageHtml === '' && $logoText === '' && is_string($this->context['site_logo_html'] ?? null)) {
             $siteLogoHtml = $this->context['site_logo_html'];
+        }
+        if ($logoImageHtml === '' && $logoText === '' && $siteLogoHtml === '') {
+            if (class_exists('\Illuminate\Support\Facades\View') && \Illuminate\Support\Facades\View::exists('components.site-brand')) {
+                $siteLogoHtml = \Illuminate\Support\Facades\View::make('components.site-brand', [
+                    'class' => 'tb-nav-header-logo',
+                    'anim' => $logoAnim,
+                    'animDur' => $logoAnimDur,
+                ])->render();
+            } else {
+                $sunSvg = str_replace(['class="tb-icon-svg ', 'width="24" height="24"'], ['class="tb-fa-sun-svg tb-icon-svg ', 'width="26" height="26"'], $this->iconHtml('sun-solar'));
+                $siteLogoHtml = '<a href="' . $logoUrl . '" class="tb-nav-header-logo" style="display:inline-flex;align-items:center;gap:0.6rem;text-decoration:none;color:inherit;font-weight:700;"><span class="tb-nav-header-logo-icon' . $logoAnimClass . '" style="color:var(--tb-primary, var(--platform-primary, #FF7900));font-size:1.4rem;display:inline-flex;align-items:center;' . ($logoAnim !== '' && $logoAnim !== 'none' ? '--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';' : '') . '" aria-hidden="true">' . $sunSvg . '</span><span>خانه</span></a>';
+            }
+        }
+        if ($siteLogoHtml !== '') {
+            $siteLogoHtml = preg_replace('/<a([^>]*?)class="([^"]*)\btb-logo-anim--[a-zA-Z0-9_-]+\b([^"]*)"/i', '<a$1class="$2$3"', $siteLogoHtml);
+            if ($logoAnim !== '' && $logoAnim !== 'none') {
+                if (preg_match('/<span[^>]*\btb-nav-header-logo-icon\b[^>]*>/i', $siteLogoHtml)) {
+                    $siteLogoHtml = preg_replace('/class="([^"]*\btb-nav-header-logo-icon\b[^"]*)"/i', 'class="$1' . $logoAnimClass . '"', $siteLogoHtml);
+                } elseif (preg_match('/<img[^>]*\btb-nav-header-logo-img\b[^>]*>/i', $siteLogoHtml)) {
+                    $siteLogoHtml = preg_replace('/class="([^"]*\btb-nav-header-logo-img\b[^"]*)"/i', 'class="$1' . $logoAnimClass . '"', $siteLogoHtml);
+                } elseif (preg_match('/<img\b[^>]*>/i', $siteLogoHtml)) {
+                    $siteLogoHtml = preg_replace('/<img\b([^>]*?)class="([^"]*)"/i', '<img$1class="$2' . $logoAnimClass . '"', $siteLogoHtml);
+                }
+                if (!str_contains($siteLogoHtml, '--tb-hdr-logo-anim-dur')) {
+                    $siteLogoHtml = preg_replace('/style="([^"]*)"/', 'style="$1;--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';"', $siteLogoHtml, 1);
+                }
+            } else {
+                $siteLogoHtml = preg_replace('/\s*\btb-logo-anim--[a-zA-Z0-9_-]+\b/', '', $siteLogoHtml);
+            }
         }
         // ADR-084: the text lockup (icon, coloured second part, tagline). It
         // applies only to a text name; without any of the three the markup is
@@ -4462,26 +4605,30 @@ class BlockRenderer
         $logoLockup = $logoText !== '' && ($logoIconName !== '' || $logoAccent !== '' || $logoTagline !== '');
         if ($logoLockup) {
             $desktopLogoContent = $logoImageHtml
-                . ($desktopLogoImage === '' && $logoIconName !== '' ? '<span class="tb-nav-header-logo-icon" aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '')
+                . ($desktopLogoImage === '' && $logoIconName !== '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '')
                 . '<span class="tb-nav-header-logo-text tb-nav-header-logo-lockup">'
                 . '<span class="tb-nav-header-logo-title">' . $logoText . ($logoAccent !== '' ? ' <span class="tb-nav-header-logo-accent">' . $logoAccent . '</span>' : '') . '</span>'
                 . ($logoTagline !== '' ? '<span class="tb-nav-header-logo-tagline">' . $logoTagline . '</span>' : '')
                 . '</span>';
         } else {
             $desktopLogoContent = $logoImageHtml
+                . ($logoIconName !== '' && $desktopLogoImage === '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '')
                 . ($logoText !== '' && $desktopLogoImage !== '' ? '<span class="tb-nav-header-logo-text">' . $logoText . '</span>' : '')
-                . ($logoImageHtml === '' && $siteLogoHtml === '' ? $logoText : '');
+                . ($logoImageHtml === '' && $siteLogoHtml === '' ? ($logoIconName !== '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '') . $logoText : '');
         }
         $desktopLogo = '';
         if ($siteLogoHtml !== '') {
             $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop">' . $siteLogoHtml . '</div>';
         } elseif ($desktopLogoContent !== '') {
-            $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop"><a href="' . $logoUrl . '" class="tb-nav-header-logo' . ($desktopLogoImage !== '' ? ' tb-nav-header-logo--image' : '') . '"' . ($desktopLogoImage !== '' ? ' style="--tb-logo-h:' . $logoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px"' : '') . ' data-widget-slot="logo">' . $desktopLogoContent . '</a></div>';
+            $desktopLogoStyle = ($desktopLogoImage !== '')
+                ? ' style="--tb-logo-h:' . $logoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px"'
+                : '';
+            $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop"><a href="' . $logoUrl . '" class="tb-nav-header-logo' . ($desktopLogoImage !== '' ? ' tb-nav-header-logo--image' : '') . '"' . $desktopLogoStyle . ' data-widget-slot="logo">' . $desktopLogoContent . '</a></div>';
         }
 
         $mobileLogo = '';
         if ($mobileLogoImage !== '') {
-            $mobileLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--mobile"><a href="' . $logoUrl . '" class="tb-nav-header-logo tb-nav-header-logo--image tb-nav-header-logo--mobile" style="--tb-logo-h:' . $mobileLogoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px" data-widget-slot="logo"><img src="' . $mobileLogoImage . '" alt="' . $logoAlt . '" class="tb-nav-header-logo-img" height="' . $mobileLogoHeight . '" decoding="async"></a></div>';
+            $mobileLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--mobile"><a href="' . $logoUrl . '" class="tb-nav-header-logo tb-nav-header-logo--image tb-nav-header-logo--mobile" style="--tb-logo-h:' . $mobileLogoHeight . 'px;--tb-logo-h-m:' . $mobileLogoHeight . 'px" data-widget-slot="logo"><img src="' . $mobileLogoImage . '" alt="' . $logoAlt . '" class="tb-nav-header-logo-img' . $logoAnimClass . '" style="--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';" height="' . $mobileLogoHeight . '" decoding="async"></a></div>';
         }
         if ($desktopLogo === '' && $mobileLogo === '') {
             $desktopLogo = '<div class="tb-nav-header-logo-slot tb-nav-header-logo-slot--desktop"><span class="tb-nav-header-logo" data-widget-slot="logo">' . ($logoText !== '' ? $logoText : 'خانه') . '</span></div>';
@@ -4600,12 +4747,12 @@ class BlockRenderer
 
         $cartHtml = '';
         if ($this->flag($props['show_cart'] ?? false)) {
-            $cartHtml = $this->cartTriggerHtml('tb-nav-header-icon-link', $this->iconHtml('shopping-cart'));
+            $cartHtml = $this->cartTriggerHtml('tb-nav-header-icon-link tb-nav-header-cart', $this->iconHtml('shopping-cart'));
         }
         $accountHtml = '';
         if ($this->flag($props['show_account'] ?? false)) {
             $accountUrl = $this->linkHref($this->context['account_url'] ?? '/account', '/account');
-            $accountHtml = '<a href="' . $accountUrl . '" class="tb-nav-header-icon-link" aria-label="حساب کاربری">' . $this->iconHtml('user') . '</a>';
+            $accountHtml = '<a href="' . $accountUrl . '" class="tb-nav-header-icon-link tb-nav-header-account" aria-label="حساب کاربری">' . $this->iconHtml('user') . '</a>';
         }
         $darkToggleHtml = '';
         if ($this->flag($props['show_dark_toggle'] ?? false)) {
@@ -4615,6 +4762,9 @@ class BlockRenderer
         $ctaHtml = '';
         $ctaPlainHtml = '';
         $ctaText = $this->escape($props['cta_text'] ?? '');
+        if ($ctaText === '' && filter_var($props['show_register_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $ctaText = 'ثبت‌نام';
+        }
         $ctaUrl = $this->linkHref($props['cta_url'] ?? '', '#');
         if ($ctaText !== '') {
             $rawCtaGlowColor = trim($this->stringify($props['cta_glow_color'] ?? $rawGlowColor));
@@ -4632,6 +4782,9 @@ class BlockRenderer
         // ADR-084: the second button sits before the first one in the same slot.
         $cta2Html = '';
         $cta2Text = $this->escape(mb_substr(trim($this->stringify($props['cta2_text'] ?? '')), 0, 40));
+        if ($cta2Text === '' && filter_var($props['show_login_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $cta2Text = 'ورود';
+        }
         if ($cta2Text !== '') {
             $cta2Url = $this->linkHref($props['cta2_url'] ?? '', '#');
             $cta2Class = 'tb-btn ' . (($props['cta2_style'] ?? 'outline') === 'primary' ? 'tb-btn-primary' : 'tb-nav-header-cta--outline') . ' tb-nav-header-cta tb-nav-header-cta--second';
@@ -4656,16 +4809,21 @@ class BlockRenderer
         }
         $drawerExtraAction = '';
         $drawerActionText = trim($this->stringify($props['drawer_action_text'] ?? ''));
-        if ($drawerEnabled && $drawerActionText !== '') {
-            $drawerActionUrl = $this->linkHref($props['drawer_action_url'] ?? '#');
+        if ($drawerActionText === '' && filter_var($props['show_calc_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $drawerActionText = 'ماشین‌حساب آنلاین خورشیدی';
+        }
+        if ($drawerActionText !== '') {
+            $drawerActionUrl = $this->linkHref($props['drawer_action_url'] ?? '/page/solar-calculator');
             $drawerActionIcon = $this->headerButtonIcon($props['drawer_action_icon'] ?? 'calculator');
             $drawerActionStyle = ($props['drawer_action_style'] ?? 'primary') === 'outline' ? ' tb-nav-header-cta--outline' : '';
-            $drawerExtraAction = '<a href="' . $this->escapeAttr($drawerActionUrl) . '" class="tb-btn tb-nav-header-cta tb-nav-header-drawer-calc-btn' . $drawerActionStyle . '">' . $drawerActionIcon . '<span>' . $this->escape($drawerActionText) . '</span></a>';
+            $drawerExtraAction = '<a href="' . $this->escapeAttr($drawerActionUrl) . '" class="tb-btn tb-nav-header-cta tb-nav-header-drawer-action-btn tb-nav-header-drawer-calc-btn' . $drawerActionStyle . '">' . $drawerActionIcon . '<span>' . $this->escape($drawerActionText) . '</span></a>';
         }
 
-        $drawerCtas = $drawerEnabled && $this->flag($props['drawer_show_ctas'] ?? false) && ($cta2Html !== '' || $ctaPlainHtml !== '' || $drawerExtraAction !== '')
+        $drawerShowCtas = $drawerEnabled && $this->flag($props['drawer_show_ctas'] ?? false);
+        $hasDrawerButtons = $drawerEnabled && ($cta2Html !== '' || $ctaPlainHtml !== '' || $drawerExtraAction !== '');
+        $drawerCtas = $hasDrawerButtons
             ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . ($drawerExtraAction !== '' ? $drawerExtraAction . '<div class="tb-nav-header-drawer-btns" style="display:flex;gap:0.5rem;width:100%;">' . $cta2Html . $ctaPlainHtml . '</div>' : $cta2Html . $ctaPlainHtml) . '</div>'
-            : ($drawerExtraAction !== '' ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . $drawerExtraAction . '</div>' : '');
+            : '';
 
         $closeButton = '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>';
         $menuHtml = $hasMenu
@@ -4797,7 +4955,7 @@ class BlockRenderer
         // css.header), driven by --tb-hdr-* properties; no per-header <style>.
 
         $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
-        $headerClass = 'tb-nav-header' . $menuAlignment . $drawerClasses;
+        $headerClass = 'tb-nav-header' . $menuAlignment . $drawerClasses . $iconsAnimClass;
         // ADR-082 step 3: the Style tab (menu, states, spacing, shadow, blur)
         // as the header's own --tb-hdr-* values; nothing when nothing is set.
         $headerStyle = Widget\HeaderStyleVars::forHeader($rootId, $props);
@@ -4806,9 +4964,77 @@ class BlockRenderer
         }
         $headerSetAttr = $headerStyle['set'] !== [] ? ' data-tb-hdr-set="' . implode(' ', $headerStyle['set']) . '"' : '';
 
+        $topbarHtml = '';
+        if ($this->flag($props['topbar_enable'] ?? false)) {
+            $topbarHideMobile = $this->flag($props['topbar_hide_mobile'] ?? false) ? ' tb-topbar--hide-mobile' : '';
+            $topbarBg = $this->escapeAttr($this->cssColor($props['topbar_bg'] ?? '', ''));
+            $topbarColor = $this->escapeAttr($this->cssColor($props['topbar_color'] ?? '', ''));
+            $topbarStyle = '';
+            if ($topbarBg !== '') $topbarStyle .= "background:{$topbarBg};";
+            if ($topbarColor !== '') $topbarStyle .= "color:{$topbarColor};";
+            $topbarStyleAttr = $topbarStyle !== '' ? ' style="' . $topbarStyle . '"' : '';
+
+            $topbarStart = '';
+            $topbarPhone = trim($this->stringify($props['topbar_phone'] ?? ''));
+            if ($topbarPhone !== '') {
+                $phoneClean = preg_replace('/[^\d+]/', '', $topbarPhone);
+                $topbarStart .= '<a href="tel:' . $this->escapeAttr($phoneClean) . '" class="tb-topbar-item">' . $this->iconHtml('phone') . '<span>' . $this->escape($topbarPhone) . '</span></a>';
+            }
+            $topbarEmail = trim($this->stringify($props['topbar_email'] ?? ''));
+            if ($topbarEmail !== '') {
+                $topbarStart .= '<a href="mailto:' . $this->escapeAttr($topbarEmail) . '" class="tb-topbar-item">' . $this->iconHtml('mail') . '<span>' . $this->escape($topbarEmail) . '</span></a>';
+            }
+            $topbarAddress = trim($this->stringify($props['topbar_address'] ?? ''));
+            if ($topbarAddress !== '') {
+                $topbarStart .= '<span class="tb-topbar-item">' . $this->iconHtml('map-pin') . '<span>' . $this->escape($topbarAddress) . '</span></span>';
+            }
+            $topbarText = trim($this->stringify($props['topbar_text'] ?? ''));
+            if ($topbarText !== '') {
+                $topbarStart .= '<span class="tb-topbar-item tb-topbar-text"><span>' . $this->escape($topbarText) . '</span></span>';
+            }
+
+            $topbarEnd = '';
+            $topbarLinks = is_array($props['topbar_links'] ?? null) ? $props['topbar_links'] : [];
+            if (!empty($topbarLinks)) {
+                $linksHtml = '';
+                foreach ($topbarLinks as $tbLink) {
+                    if (!is_array($tbLink)) continue;
+                    $lbl = trim($this->stringify($tbLink['label'] ?? ''));
+                    $url = $this->linkHref($tbLink['url'] ?? '#', '#');
+                    $icn = trim($this->stringify($tbLink['icon'] ?? ''));
+                    if ($lbl === '' && $icn === '') continue;
+                    $icnHtml = $icn !== '' ? $this->iconHtml($icn) . ' ' : '';
+                    $linksHtml .= '<a href="' . $url . '" class="tb-topbar-link">' . $icnHtml . $this->escape($lbl) . '</a>';
+                }
+                if ($linksHtml !== '') {
+                    $topbarEnd .= '<div class="tb-topbar-links">' . $linksHtml . '</div>';
+                }
+            }
+            if ($this->flag($props['topbar_social_links'] ?? true)) {
+                $topbarSocial = $this->renderSocialIcons($socialLinks, 'plain', 'tb-topbar-social');
+                if ($topbarSocial !== '') {
+                    if ($topbarEnd !== '') {
+                        $topbarEnd .= '<span class="tb-topbar-divider" aria-hidden="true"></span>';
+                    }
+                    $topbarEnd .= $topbarSocial;
+                }
+            }
+
+            if ($topbarStart !== '' || $topbarEnd !== '') {
+                $topbarHtml = '<div class="tb-nav-header-topbar' . $topbarHideMobile . '"' . $topbarStyleAttr . '>'
+                    . '<div class="tb-nav-header-topbar-inner">'
+                    . ($topbarStart !== '' ? '<div class="tb-topbar-start">' . $topbarStart . '</div>' : '')
+                    . ($topbarEnd !== '' ? '<div class="tb-topbar-end">' . $topbarEnd . '</div>' : '')
+                    . '</div></div>';
+            }
+        }
+
+        $animStyleVar = $logoAnimClass !== '' ? ';--tb-hdr-logo-anim-dur:' . $logoAnimDur : '';
+
         return $headerStyle['style']
-            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . $animStyleVar . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
             . '<div class="' . $rootClass . '">'
+            . $topbarHtml
             . '<div class="tb-nav-header-inner">'
             . $orderedInner
             // The backdrop is pointer-only: the drawer's own close button is the keyboard path.
@@ -5163,7 +5389,15 @@ class BlockRenderer
                 ? '<img class="tb-social-icon-svg" src="' . $this->escapeAttr($officialSvg) . '" alt="" aria-hidden="true">'
                 : ($network !== null ? SocialNetworks::svg($network) : $this->escape($name));
             $external = $network === null || SocialNetworks::opensExternally($network) ? ' target="_blank" rel="noopener noreferrer"' : '';
-            $items .= "<a href=\"{$url}\" class=\"tb-social-icon" . ($network === null ? ' tb-social-icon--text' : " tb-social-icon--{$network}") . "\"{$external} aria-label=\"" . $this->escapeAttr($name) . "\" title=\"" . $this->escapeAttr($name) . "\">{$inner}</a>";
+            $customColor = trim($this->stringify($link['custom_color'] ?? ''));
+            $customStyle = '';
+            $customClass = '';
+            if ($customColor !== '') {
+                $safeColor = $this->escapeAttr($customColor);
+                $customStyle = " style=\"--tb-social-custom-color: {$safeColor}; background-color: {$safeColor} !important; color: #fff !important;\"";
+                $customClass = ' tb-social-icon--custom';
+            }
+            $items .= "<a href=\"{$url}\" class=\"tb-social-icon" . ($network === null ? ' tb-social-icon--text' : " tb-social-icon--{$network}") . "{$customClass}\"{$customStyle}{$external} aria-label=\"" . $this->escapeAttr($name) . "\" title=\"" . $this->escapeAttr($name) . "\">{$inner}</a>";
         }
         $class = 'tb-social-icons tb-social-icons--svg' . ($brand ? ' tb-social-icons--brand' : '') . ($extraClass !== '' ? ' ' . $extraClass : '');
         return $items === '' ? '' : "<div id=\"tb-{$id}\" class=\"{$class}\" data-widget-slot=\"" . $this->escapeAttr($slot) . "\">{$items}</div>";
@@ -5544,6 +5778,114 @@ class BlockRenderer
     }
 
     /**
+     * Commercial Grade Global Scroll-to-Top Widget
+     */
+    public function renderScrollToTop(array $props, string $inner = '', string $id = ''): string
+    {
+        $id = $id !== '' ? $id : Str::random(8);
+        $iconType = $props['icon_type'] ?? 'svg';
+        $iconName = $props['icon'] ?? 'chevron-up';
+        $customIconClass = trim($this->stringify($props['custom_icon_class'] ?? ''));
+        $customIconImage = trim($this->stringify($props['custom_icon_image'] ?? ''));
+
+        $showLabel = (bool) ($props['show_label'] ?? false);
+        $label = trim($this->stringify($props['label'] ?? 'برو بالا'));
+        $orientation = ($props['orientation'] ?? 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
+
+        $position = ($props['position'] ?? 'bottom-right') === 'bottom-left' ? 'bottom-left' : 'bottom-right';
+        $offsetX = is_numeric($props['offset_x'] ?? null) ? (int) $props['offset_x'] : 24;
+        $offsetY = is_numeric($props['offset_y'] ?? null) ? (int) $props['offset_y'] : 24;
+        $rawSize = $props['size'] ?? 'md';
+        $size = in_array($rawSize, ['sm', 'md', 'lg'], true) ? $rawSize : 'md';
+        $borderRadius = is_numeric($props['border_radius'] ?? null) ? (int) $props['border_radius'] : 9999;
+        $scrollThreshold = is_numeric($props['scroll_threshold'] ?? null) ? (int) $props['scroll_threshold'] : 300;
+        $zIndex = is_numeric($props['z_index'] ?? null) ? (int) $props['z_index'] : 999;
+
+        $bgColor = $this->cssColor($props['bg_color'] ?? null, 'var(--tb-primary, #2563eb)');
+        $textColor = $this->cssColor($props['text_color'] ?? null, '#ffffff');
+        $hoverBgColor = $this->cssColor($props['hover_bg_color'] ?? null, '#1d4ed8');
+        $hoverTextColor = $this->cssColor($props['hover_text_color'] ?? null, '#ffffff');
+        $glowColor = $this->cssColor($props['glow_color'] ?? null, 'rgba(37, 99, 235, 0.45)');
+
+        $glowEffect = (bool) ($props['glow_effect'] ?? true);
+        $hoverLift = (bool) ($props['hover_lift'] ?? true);
+
+        // Icon resolution
+        $iconHtml = '';
+        if ($iconType === 'image' && $customIconImage !== '') {
+            $iconHtml = '<img src="' . $this->escapeAttr($customIconImage) . '" alt="" class="tb-stt-custom-img" loading="lazy" decoding="async">';
+        } elseif ($iconType === 'custom_class' && $customIconClass !== '') {
+            $iconHtml = '<i class="' . $this->escapeAttr($customIconClass) . ' tb-stt-custom-icon" aria-hidden="true"></i>';
+        } else {
+            $svgIcon = $iconName !== '' ? $iconName : 'chevron-up';
+            $iconHtml = $this->iconHtml($svgIcon);
+            if ($iconHtml === '') {
+                $iconHtml = $this->iconHtml('chevron-up');
+            }
+        }
+
+        $labelHtml = '';
+        if ($showLabel && $label !== '') {
+            $labelHtml = '<span class="tb-stt-label">' . $this->escape($label) . '</span>';
+        }
+
+        $glowClass = $glowEffect ? ' tb-scroll-to-top--glow' : '';
+        $liftClass = $hoverLift ? ' tb-scroll-to-top--lift' : '';
+        $ariaLabel = $showLabel && $label !== '' ? $label : 'بازگشت به بالای صفحه';
+
+        $inlineVars = [
+            '--tb-stt-bg:' . $bgColor,
+            '--tb-stt-color:' . $textColor,
+            '--tb-stt-hover-bg:' . $hoverBgColor,
+            '--tb-stt-hover-color:' . $hoverTextColor,
+            '--tb-stt-glow:' . $glowColor,
+            '--tb-stt-offset-x:' . $offsetX . 'px',
+            '--tb-stt-offset-y:' . $offsetY . 'px',
+            '--tb-stt-radius:' . $borderRadius . 'px',
+            '--tb-stt-z:' . $zIndex,
+        ];
+        $styleAttr = implode(';', $inlineVars);
+
+        $isEditor = $this->isEditorRendering();
+        $editorClass = $isEditor ? ' is-editor-mode' : '';
+
+        $btnId = 'tb-stt-btn-' . $id;
+
+        $html = '<div class="tb-scroll-to-top-wrap" id="tb-' . $this->escapeAttr($id) . '" data-tb-scroll-to-top-wrap>'
+            . '<button type="button"'
+            . ' id="' . $this->escapeAttr($btnId) . '"'
+            . ' class="tb-scroll-to-top tb-scroll-to-top--' . $this->escapeAttr($size)
+            . ' tb-scroll-to-top--' . $this->escapeAttr($position)
+            . ' tb-scroll-to-top--' . $this->escapeAttr($orientation)
+            . $glowClass . $liftClass . $editorClass . '"'
+            . ' aria-label="' . $this->escapeAttr($ariaLabel) . '"'
+            . ' data-tb-threshold="' . $scrollThreshold . '"'
+            . ' data-tb-position="' . $this->escapeAttr($position) . '"'
+            . ' style="' . $this->escapeAttr($styleAttr) . '">'
+            . '<span class="tb-stt-icon-wrap" aria-hidden="true">' . $iconHtml . '</span>'
+            . $labelHtml
+            . '</button>'
+            . '</div>'
+            . $this->scrollToTopAssets();
+
+        return $html;
+    }
+
+    private function scrollToTopAssets(): string
+    {
+        if ($this->scrollToTopAssetsEmitted) {
+            return '';
+        }
+        $path = ThemeRuntimeServiceProvider::scrollToTopScriptPath();
+        $js = @file_get_contents($path);
+        if (!is_string($js) || $js === '') {
+            return '';
+        }
+        $this->scrollToTopAssetsEmitted = true;
+        return '<script data-tb-block-asset="scroll_to_top">' . $js . '</script>';
+    }
+
+    /**
      * A real, statically-authored FAQ list (question/answer pairs) — a
      * simpler, top-level counterpart to the generic `accordion` container
      * (which holds arbitrary nested blocks, not just Q/A text). Uses the
@@ -5661,8 +6003,19 @@ class BlockRenderer
         </div>";
     }
 
+    public function renderAuthCanvas(array $props, string $inner, string $id): string
+    {
+        return $this->buildAuthCanvasHtml($props, $id);
+    }
+
     protected function renderLoginRegister(array $props, string $inner, string $id): string
     {
+        // If this is configured as the universal auth canvas builder:
+        if (isset($props['auth_mode']) || isset($props['layout_type']) || isset($props['brand_name']) || isset($props['login_title'])) {
+            return $this->buildAuthCanvasHtml($props, $id);
+        }
+
+        // Legacy header login/register link buttons fallback
         $loginText    = $this->escape($props['login_text'] ?? 'ورود');
         $registerText = $this->escape($props['register_text'] ?? 'ثبت‌نام');
         $loginUrl     = $this->escapeUrl(is_string($props['login_url'] ?? null) ? $props['login_url'] : '/login', '/login');
@@ -5672,6 +6025,254 @@ class BlockRenderer
             <a href=\"{$loginUrl}\" class=\"tb-nav-header-icon-link\">{$loginText}</a>
             <a href=\"{$registerUrl}\" class=\"tb-btn tb-btn-secondary\">{$registerText}</a>
         </div>";
+    }
+
+    protected function buildAuthCanvasHtml(array $props, string $id): string
+    {
+        // Block-unique field ids, so every label is tied to its input (screen
+        // readers, the commercial accessibility gate).
+        $fid = 'tb-auth-' . preg_replace('/[^A-Za-z0-9_-]/', '', $id) . '-';
+        $safeId = preg_replace('/[^A-Za-z0-9_-]/', '-', $id) ?: 'auth';
+        $rootId = 'tb-' . $safeId;
+
+        $authMode = in_array($props['auth_mode'] ?? 'dual', ['dual', 'login_only', 'register_only'], true)
+            ? ($props['auth_mode'] ?? 'dual')
+            : 'dual';
+
+        $layoutType = in_array($props['layout_type'] ?? 'split', ['split', 'centered', 'minimal'], true)
+            ? ($props['layout_type'] ?? 'split')
+            : 'split';
+
+        $splitReverse = $this->flag($props['split_reverse'] ?? false);
+        $cardMaxW = max(320, min(700, is_numeric($props['card_max_width'] ?? null) ? (int) $props['card_max_width'] : 440));
+
+        // Brand
+        $brandLogo = $this->escapeUrl($this->mediaSrc($props['brand_logo'] ?? ''), '');
+        $brandName = $this->escape($props['brand_name'] ?? '');
+        $brandTagline = $this->escape($props['brand_tagline'] ?? '');
+        $brandUrl = $this->linkHref($props['brand_url'] ?? '/', '/');
+
+        // Form texts
+        $loginTitle = $this->escape($props['login_title'] ?? 'ورود به حساب کاربری');
+        $loginSubtitle = $this->escape($props['login_subtitle'] ?? 'برای دسترسی به پنل کاربری، اطلاعات خود را وارد کنید.');
+        $loginBtnText = $this->escape($props['login_btn_text'] ?? 'ورود به حساب');
+
+        $registerTitle = $this->escape($props['register_title'] ?? 'ایجاد حساب کاربری جدید');
+        $registerSubtitle = $this->escape($props['register_subtitle'] ?? 'عضویت سریع و امن در کمتر از یک دقیقه.');
+        $registerBtnText = $this->escape($props['register_btn_text'] ?? 'ثبت‌نام در سامانه');
+
+        $showRemember = $this->flag($props['show_remember_me'] ?? true);
+        $showForgot = $this->flag($props['show_forgot_password'] ?? true);
+        $forgotUrl = $this->linkHref($props['forgot_password_url'] ?? '/forgot-password', '/forgot-password');
+
+        $showTerms = $this->flag($props['show_terms'] ?? true);
+        $termsText = $this->escape($props['terms_text'] ?? 'با ثبت‌نام در سایت، شرایط و قوانین را می‌پذیرم.');
+        $termsUrl = $this->linkHref($props['terms_url'] ?? '/terms', '/terms');
+
+        $loginUrl = $this->linkHref($props['login_url'] ?? '/login', '/login');
+        $registerUrl = $this->linkHref($props['register_url'] ?? '/register', '/register');
+
+        // Hero
+        $showHero = $layoutType === 'split' && $this->flag($props['show_hero'] ?? true);
+        $heroTitle = $this->escape($props['hero_title'] ?? 'به حساب کاربری خود خوش آمدید');
+        $heroSubtitle = $this->escape($props['hero_subtitle'] ?? 'دسترسی امن به سفارش‌ها، دوره‌ها و پشتیبانی، همه در یک حساب.');
+        $heroIcon = trim($this->stringify($props['hero_icon'] ?? 'user'));
+        $heroImage = $this->escapeUrl($this->mediaSrc($props['hero_image'] ?? ''), '');
+
+        // CSRF & Alerts
+        $csrf = function_exists('csrf_token') ? csrf_token() : ($this->context['csrf_token'] ?? '');
+        $csrfInput = $csrf !== '' ? '<input type="hidden" name="_token" value="' . $this->escapeAttr($csrf) . '">' : '';
+        $errorsBag = $this->context['errors'] ?? (function_exists('session') ? session('errors') : null);
+        $alertHtml = '';
+        if ($errorsBag && is_object($errorsBag) && method_exists($errorsBag, 'any') && $errorsBag->any()) {
+            $alertHtml = '<div class="alert alert-danger" style="margin-bottom:1.25rem;padding:0.75rem 1rem;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.35);border-radius:0.75rem;color:#fca5a5;font-size:0.875rem;line-height:1.5;">' . htmlspecialchars($errorsBag->first(), ENT_QUOTES, 'UTF-8') . '</div>';
+        }
+        if (function_exists('session')) {
+            if (session('success')) {
+                $alertHtml .= '<div class="alert alert-success" style="margin-bottom:1.25rem;padding:0.75rem 1rem;background:rgba(22,163,74,0.15);border:1px solid rgba(74,222,128,0.35);border-radius:0.75rem;color:#86efac;font-size:0.875rem;line-height:1.5;">' . htmlspecialchars(session('success'), ENT_QUOTES, 'UTF-8') . '</div>';
+            }
+            if (session('error')) {
+                $alertHtml .= '<div class="alert alert-danger" style="margin-bottom:1.25rem;padding:0.75rem 1rem;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.35);border-radius:0.75rem;color:#fca5a5;font-size:0.875rem;line-height:1.5;">' . htmlspecialchars(session('error'), ENT_QUOTES, 'UTF-8') . '</div>';
+            }
+        }
+
+        // Styling vars
+        $pageBgColor = $this->escapeAttr($this->cssColor($props['page_bg_color'] ?? '#0B0B0B', '#0B0B0B'));
+        $pageBgImage = $this->escapeUrl($this->mediaSrc($props['page_bg_image'] ?? ''), '');
+        $pageOverlay = $this->escapeAttr($this->cssColor($props['page_overlay_color'] ?? 'rgba(11, 11, 11, 0.85)', 'rgba(11, 11, 11, 0.85)'));
+
+        $cardBg = $this->escapeAttr($this->cssColor($props['card_bg_color'] ?? '#1E1E1E', '#1E1E1E'));
+        $cardBorder = $this->escapeAttr($this->cssColor($props['card_border_color'] ?? '#2A2A2A', '#2A2A2A'));
+        $cardRadius = max(0, min(48, is_numeric($props['card_border_radius'] ?? null) ? (int) $props['card_border_radius'] : 20));
+        $cardPadding = max(12, min(64, is_numeric($props['card_padding'] ?? null) ? (int) $props['card_padding'] : 32));
+
+        $inputBg = $this->escapeAttr($this->cssColor($props['input_bg_color'] ?? '#12121F', '#12121F'));
+        $inputBorder = $this->escapeAttr($this->cssColor($props['input_border_color'] ?? '#2A2A2A', '#2A2A2A'));
+        $inputText = $this->escapeAttr($this->cssColor($props['input_text_color'] ?? '#ffffff', '#ffffff'));
+        $inputRadius = max(0, min(30, is_numeric($props['input_radius'] ?? null) ? (int) $props['input_radius'] : 12));
+
+        $btnBg = $this->escapeAttr($this->cssColor($props['btn_bg_color'] ?? '#FF7900', '#FF7900'));
+        $btnText = $this->escapeAttr($this->cssColor($props['btn_text_color'] ?? '#ffffff', '#ffffff'));
+        $btnRadius = max(0, min(30, is_numeric($props['btn_radius'] ?? null) ? (int) $props['btn_radius'] : 12));
+
+        $textColor = $this->escapeAttr($this->cssColor($props['text_color'] ?? '#F5F5F5', '#F5F5F5'));
+        $textMuted = $this->escapeAttr($this->cssColor($props['text_muted_color'] ?? '#A3A3A3', '#A3A3A3'));
+
+        $heroBg = $this->escapeAttr($this->cssColor($props['hero_bg_color'] ?? '#12121F', '#12121F'));
+        $heroText = $this->escapeAttr($this->cssColor($props['hero_text_color'] ?? '#ffffff', '#ffffff'));
+        $heroAccent = $this->escapeAttr($this->cssColor($props['hero_accent_color'] ?? '#FF7900', '#FF7900'));
+
+        $styleVars = "--tb-auth-page-bg:{$pageBgColor};"
+            . "--tb-auth-overlay:{$pageOverlay};"
+            . "--tb-auth-card-bg:{$cardBg};"
+            . "--tb-auth-card-border:{$cardBorder};"
+            . "--tb-auth-card-radius:{$cardRadius}px;"
+            . "--tb-auth-card-padding:{$cardPadding}px;"
+            . "--tb-auth-card-max-w:{$cardMaxW}px;"
+            . "--tb-auth-input-bg:{$inputBg};"
+            . "--tb-auth-input-border:{$inputBorder};"
+            . "--tb-auth-input-text:{$inputText};"
+            . "--tb-auth-input-radius:{$inputRadius}px;"
+            . "--tb-auth-btn-bg:{$btnBg};"
+            . "--tb-auth-btn-text:{$btnText};"
+            . "--tb-auth-btn-radius:{$btnRadius}px;"
+            . "--tb-auth-text:{$textColor};"
+            . "--tb-auth-text-muted:{$textMuted};"
+            . "--tb-auth-hero-bg:{$heroBg};"
+            . "--tb-auth-hero-text:{$heroText};"
+            . "--tb-auth-hero-accent:{$heroAccent};";
+
+        $pageBgStyle = $pageBgImage !== '' ? "background-image:url('{$pageBgImage}');background-size:cover;background-position:center;" : '';
+
+        // Brand Lockup HTML
+        $brandHtml = '<a href="' . $brandUrl . '" class="tb-auth-brand">';
+        if ($brandLogo !== '') {
+            $brandHtml .= '<img src="' . $brandLogo . '" alt="' . $brandName . '" class="tb-auth-brand-logo">';
+        }
+        $brandHtml .= '<span class="tb-auth-brand-name">' . $brandName . '</span>';
+        if ($brandTagline !== '') {
+            $brandHtml .= '<span class="tb-auth-brand-tagline">' . $brandTagline . '</span>';
+        }
+        $brandHtml .= '</a>';
+
+        // Dual tabs switcher
+        $tabsHtml = '';
+        if ($authMode === 'dual') {
+            $tabsHtml = '<div class="tb-auth-tabs" role="tablist">'
+                . '<button type="button" class="tb-auth-tab is-active" data-tb-auth-target="login" role="tab" aria-selected="true">ورود به حساب</button>'
+                . '<button type="button" class="tb-auth-tab" data-tb-auth-target="register" role="tab" aria-selected="false">ثبت‌نام جدید</button>'
+                . '</div>';
+        }
+
+        // Login Form
+        $loginStyle = ($authMode === 'register_only') ? 'display:none;' : '';
+        $loginFormHtml = '<div class="tb-auth-pane tb-auth-pane-login" data-tb-auth-pane="login" style="' . $loginStyle . '">'
+            . '<div class="tb-auth-pane-head">'
+            . '<h2 class="tb-auth-title">' . $loginTitle . '</h2>'
+            . ($loginSubtitle !== '' ? '<p class="tb-auth-lead">' . $loginSubtitle . '</p>' : '')
+            . '</div>'
+            . $alertHtml
+            . '<form action="' . $loginUrl . '" method="POST" class="tb-auth-form">'
+            . $csrfInput
+            . '<div class="tb-auth-field">'
+            . '<label class="tb-auth-label" for="' . $fid . 'login-mobile">شماره همراه</label>'
+            . '<input id="' . $fid . 'login-mobile" type="text" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
+            . '</div>'
+            . '<div class="tb-auth-field">'
+            . '<label class="tb-auth-label" for="' . $fid . 'login-password">رمز عبور</label>'
+            . '<input id="' . $fid . 'login-password" type="password" name="password" required class="tb-auth-input" placeholder="رمز عبور خود را وارد کنید" dir="ltr" autocomplete="current-password">'
+            . '</div>'
+            . '<div class="tb-auth-options">'
+            . ($showRemember ? '<label class="tb-auth-checkbox" for="' . $fid . 'login-remember"><input id="' . $fid . 'login-remember" type="checkbox" name="remember" value="1"><span>مرا به خاطر بسپار</span></label>' : '<span></span>')
+            . ($showForgot ? '<a href="' . $forgotUrl . '" class="tb-auth-link">فراموشی رمز عبور؟</a>' : '')
+            . '</div>'
+            . '<button type="submit" class="tb-auth-btn">' . $this->iconHtml('log-in') . '<span>' . $loginBtnText . '</span></button>'
+            . '</form>'
+            . ($authMode === 'login_only' ? '<div class="tb-auth-footer-text">حساب کاربری ندارید؟ <a href="' . $registerUrl . '" class="tb-auth-link">ثبت‌نام کنید</a></div>' : '')
+            . '</div>';
+
+        // Register Form
+        $registerStyle = ($authMode === 'login_only' || $authMode === 'dual') ? 'display:none;' : '';
+        $registerFormHtml = '<div class="tb-auth-pane tb-auth-pane-register" data-tb-auth-pane="register" style="' . $registerStyle . '">'
+            . '<div class="tb-auth-pane-head">'
+            . '<h2 class="tb-auth-title">' . $registerTitle . '</h2>'
+            . ($registerSubtitle !== '' ? '<p class="tb-auth-lead">' . $registerSubtitle . '</p>' : '')
+            . '</div>'
+            . $alertHtml
+            . '<form action="' . $registerUrl . '" method="POST" class="tb-auth-form">'
+            . $csrfInput
+            . '<div class="tb-auth-field">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-name">نام و نام خانوادگی</label>'
+            . '<input id="' . $fid . 'register-name" type="text" name="name" required class="tb-auth-input" placeholder="نام خود را وارد کنید" autocomplete="name">'
+            . '</div>'
+            . '<div class="tb-auth-field">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-mobile">شماره همراه</label>'
+            . '<input id="' . $fid . 'register-mobile" type="tel" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
+            . '</div>'
+            . '<div class="tb-auth-field">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-password">رمز عبور</label>'
+            . '<input id="' . $fid . 'register-password" type="password" name="password" required class="tb-auth-input" placeholder="حداقل ۶ کاراکتر" dir="ltr" autocomplete="new-password">'
+            . '</div>'
+            . '<div class="tb-auth-field">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-password_confirmation">تکرار رمز عبور</label>'
+            . '<input id="' . $fid . 'register-password_confirmation" type="password" name="password_confirmation" required class="tb-auth-input" placeholder="تکرار رمز عبور" dir="ltr" autocomplete="new-password">'
+            . '</div>'
+            . ($showTerms ? '<div class="tb-auth-field"><label class="tb-auth-checkbox" for="' . $fid . 'register-terms"><input id="' . $fid . 'register-terms" type="checkbox" name="terms" required value="1"><span>' . $termsText . ' (<a href="' . $termsUrl . '" class="tb-auth-link" target="_blank">مطالعه قوانین</a>)</span></label></div>' : '')
+            . '<button type="submit" class="tb-auth-btn">' . $this->iconHtml('user-plus') . '<span>' . $registerBtnText . '</span></button>'
+            . '</form>'
+            . ($authMode === 'register_only' ? '<div class="tb-auth-footer-text">از قبل حساب کاربری دارید؟ <a href="' . $loginUrl . '" class="tb-auth-link">وارد شوید</a></div>' : '')
+            . '</div>';
+
+        // Hero Side HTML
+        $heroHtml = '';
+        if ($showHero) {
+            $heroBgImgStyle = $heroImage !== '' ? "background-image:url('{$heroImage}');background-size:cover;background-position:center;" : '';
+            $heroIconClass = (str_contains($heroIcon, 'sun') || str_contains($heroIcon, 'fa-')) ? ' tb-logo-anim--rotate_pop' : '';
+            $heroHtml = '<div class="tb-auth-hero" style="' . $heroBgImgStyle . '">'
+                . '<span class="tb-auth-glow tb-auth-glow-1"></span>'
+                . '<span class="tb-auth-glow tb-auth-glow-2"></span>'
+                . '<div class="auth-login-hero-inner tb-auth-hero-inner">'
+                . ($heroIcon !== '' ? '<div class="tb-auth-hero-icon' . $heroIconClass . '">' . $this->iconHtml($heroIcon) . '</div>' : '')
+                . '<h3 class="tb-auth-hero-title">' . $heroTitle . '</h3>'
+                . '<p class="tb-auth-hero-desc">' . $heroSubtitle . '</p>'
+                . '</div></div>';
+        }
+
+        // Layout classes
+        $layoutClass = 'tb-auth-layout--' . $layoutType;
+        if ($splitReverse && $layoutType === 'split') {
+            $layoutClass .= ' tb-auth-reverse';
+        }
+
+        $formCardHtml = '<div class="tb-auth-card-wrap">'
+            . $brandHtml
+            . '<div class="tb-auth-card">'
+            . $tabsHtml
+            . $loginFormHtml
+            . $registerFormHtml
+            . '</div></div>';
+
+        $scriptRootId = json_encode($rootId, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?: '""';
+        $inlineScript = '<script>(function(){var el=document.getElementById(' . $scriptRootId . ');if(!el)return;'
+            . 'var tabs=el.querySelectorAll(".tb-auth-tab");'
+            . 'tabs.forEach(function(t){t.addEventListener("click",function(){'
+            . 'tabs.forEach(function(x){x.classList.remove("is-active");x.setAttribute("aria-selected","false");});'
+            . 't.classList.add("is-active");t.setAttribute("aria-selected","true");'
+            . 'var target=t.getAttribute("data-tb-auth-target");'
+            . 'var panes=el.querySelectorAll(".tb-auth-pane");'
+            . 'panes.forEach(function(p){p.style.display=p.getAttribute("data-tb-auth-pane")===target?"block":"none";});'
+            . '});});})();</script>';
+
+        return '<div id="' . $rootId . '" class="tb-auth-canvas" style="' . $styleVars . $pageBgStyle . '" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="auth_canvas">'
+            . ($pageBgImage !== '' ? '<div class="tb-auth-overlay"></div>' : '')
+            . '<div class="tb-auth-container ' . $layoutClass . '">'
+            . '<div class="tb-auth-form-panel">'
+            . $formCardHtml
+            . '</div>'
+            . $heroHtml
+            . '</div>'
+            . $inlineScript
+            . '</div>';
     }
 
     /**

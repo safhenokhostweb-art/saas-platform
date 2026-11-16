@@ -4,7 +4,7 @@
     "description": "طراحی و شبیه‌سازی سیستم‌های خورشیدی با نرم‌افزارهای تخصصی PVSyst و AutoCAD.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "design",
     "tags": [
         "صنعت برق",

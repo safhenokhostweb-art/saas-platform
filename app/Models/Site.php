@@ -62,6 +62,8 @@ class Site extends Model implements SiteModelInterface
         'restore_requested_at',
         'lifecycle_deleted_at',
         'license_key',
+        // ADR-087: set only through SiteAssetEntitlementService::setVertical().
+        'business_vertical',
     ];
 
     protected $casts = [
@@ -129,6 +131,12 @@ class Site extends Model implements SiteModelInterface
         return $this->belongsToMany(\App\Models\Module::class, 'site_modules')
             ->withPivot(['is_active', 'deployment_status', 'last_installation_id', 'installed_version', 'version_reported_at', 'activated_at'])
             ->withTimestamps();
+    }
+
+    /** ADR-087: platform assets (templates, widgets) unlocked for this site one by one. */
+    public function assetGrants()
+    {
+        return $this->hasMany(\App\Models\SiteAssetGrant::class);
     }
 
     /**

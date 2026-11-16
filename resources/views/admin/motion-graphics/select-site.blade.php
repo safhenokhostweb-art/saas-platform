@@ -5,6 +5,15 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto">
+    <div class="card mb-4">
+        <div class="card-body flex items-center justify-between gap-3 flex-wrap">
+            <div>
+                <h2 class="text-base font-bold text-gray-900 mb-1">کاتالوگ و دسترسی موشن‌ها</h2>
+                <p class="text-sm text-gray-500">فعال/غیرفعال‌سازی فوری هر موشن، نسخه تحویلی و اعطای موشن‌های خصوصی به سایت‌ها.</p>
+            </div>
+            <a href="{{ route('admin.motion-graphics.catalog.index') }}" class="btn btn-secondary">مدیریت کاتالوگ</a>
+        </div>
+    </div>
     <div class="card">
         <div class="card-body">
             <h2 class="text-lg font-bold text-gray-900 mb-1">انتخاب سایت آزمایشی داخلی</h2>

@@ -71,6 +71,9 @@ final class HeaderStyleVars
         'cta-pad-inline' => ['length', '1rem'],
         'cta-radius' => ['length', '.375rem'],
         'glow-duration' => ['time', '2.2s'],
+        'logo-anim-dur' => ['time', '5s'],
+        'drawer-dur' => ['time', '.38s'],
+        'drawer-ease' => ['string', 'cubic-bezier(.16,1,.3,1)'],
         'min-h-m' => ['length', '3.75rem'],
         'gap-m' => ['length', '.5rem'],
         'pad-inline-m' => ['length', '.75rem'],
@@ -123,6 +126,9 @@ final class HeaderStyleVars
         'menu-bg-active' => ['color', null],
         'pointer-color' => ['color', 'currentColor'],
         'pointer-h' => ['length', '2px'],
+        // Top bar: divider line and row height.
+        'topbar-border' => ['color', 'color-mix(in srgb, currentColor 12%, transparent)'],
+        'topbar-h' => ['length', '2rem'],
         // ADR-082 step 4: scrolled look, sticky shrink (theme-runtime-blocks.css), burger, drawer side.
         'shrink-h' => ['length', '3.5rem'],
         'logo-scale' => ['number', '0.8'],
@@ -177,6 +183,7 @@ final class HeaderStyleVars
         'icon-color' => ['color', null],
         // ADR-084: the buttons' text size from 768px up (phones keep cta-size-m).
         'cta-size' => ['length', null],
+        'logo-anim-dur' => ['time', '5s'],
     ];
 
     /** Variables read by theme-runtime-blocks.css (the sticky shrink) rather than the header sheet. */
@@ -281,6 +288,9 @@ final class HeaderStyleVars
         'action_icon_radius' => ['icon-radius', null],
         'cta_radius' => ['cta-radius', null],
         'cta_font_size' => ['cta-size', null],
+        'logo_animation_duration' => ['logo-anim-dur', null],
+        'drawer_duration' => ['drawer-dur', null],
+        'drawer_easing' => ['drawer-ease', null],
     ];
 
     private const PADDING_SIDES = ['block-start' => 'bs', 'block-end' => 'be', 'inline-start' => 'is', 'inline-end' => 'ie'];
@@ -314,7 +324,8 @@ final class HeaderStyleVars
             'color' => is_string($value) && HtmlSanitizer::isCssColor($value) ? trim($value) : null,
             'shadow' => self::shadow($value),
             'weight' => is_numeric($value) && (int) $value >= 100 && (int) $value <= 900 && (int) $value % 100 === 0 ? (string) (int) $value : null,
-            'time' => is_string($value) && preg_match('/^(?:\d+|\d*\.\d+)m?s$/', trim($value)) === 1 ? trim($value) : null,
+            'time' => (is_numeric($value) && (float) $value > 0) ? ((float) $value . 's') : (is_string($value) && preg_match('/^(?:\d+|\d*\.\d+)m?s$/', trim($value)) === 1 ? trim($value) : null),
+            'string' => is_string($value) && preg_match('/^[a-zA-Z0-9_\-(),.\s]+$/', trim($value)) === 1 ? trim($value) : null,
             'number' => is_numeric($value) && (float) $value > 0 && (float) $value <= 5 ? (string) (0 + $value) : null,
             'font' => is_string($value) ? (self::FONT_TOKENS[$value] ?? null) : null,
             default => null,

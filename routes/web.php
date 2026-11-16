@@ -504,6 +504,14 @@ Route::prefix('admin')
         Route::get('sites/{site}/modules', [SiteModuleController::class, 'edit'])->name('sites.modules.edit');
         Route::put('sites/{site}/modules', [SiteModuleController::class, 'update'])->name('sites.modules.update');
         Route::post('sites/{site}/modules/toggle', [SiteModuleController::class, 'toggle'])->name('sites.modules.toggle');
+        // ADR-087 — central platform-asset access (templates, widgets).
+        Route::get('asset-access', [\App\Http\Controllers\Admin\AssetAccessController::class, 'index'])->name('asset-access.index');
+        Route::post('asset-access/overrides', [\App\Http\Controllers\Admin\AssetAccessController::class, 'saveOverride'])->name('asset-access.overrides.save');
+        Route::post('asset-access/overrides/clear', [\App\Http\Controllers\Admin\AssetAccessController::class, 'clearOverride'])->name('asset-access.overrides.clear');
+        Route::get('sites/{site}/asset-access', [\App\Http\Controllers\Admin\AssetAccessController::class, 'site'])->name('sites.asset-access');
+        Route::post('sites/{site}/asset-access/vertical', [\App\Http\Controllers\Admin\AssetAccessController::class, 'updateVertical'])->name('sites.asset-access.vertical');
+        Route::post('sites/{site}/asset-access/grants', [\App\Http\Controllers\Admin\AssetAccessController::class, 'grant'])->name('sites.asset-access.grant');
+        Route::post('sites/{site}/asset-access/grants/revoke', [\App\Http\Controllers\Admin\AssetAccessController::class, 'revoke'])->name('sites.asset-access.revoke');
         // Phase 13-K — module upgrade request & approval flow
         Route::get('sites/{site}/module-upgrades', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'index'])->name('sites.module-upgrades.index');
         Route::get('sites/{site}/module-upgrades/{moduleSlug}', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'confirm'])->name('sites.module-upgrades.confirm');
@@ -1101,6 +1109,12 @@ Route::prefix('admin')
         */
         Route::prefix('motion-graphics')->name('motion-graphics.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'selectSite'])->name('select-site');
+            // ADR-086 — central catalog: availability switch + private-motion
+            // grants. Registered before the `{site}/...` routes.
+            Route::get('catalog', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'index'])->name('catalog.index');
+            Route::post('catalog/{motion}/availability', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'availability'])->whereNumber('motion')->name('catalog.availability');
+            Route::post('catalog/{motion}/grants', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'grant'])->whereNumber('motion')->name('catalog.grants.store');
+            Route::post('catalog/grants/{grant}/revoke', [\App\Http\Controllers\Admin\MotionCatalogAdminController::class, 'revoke'])->whereNumber('grant')->name('catalog.grants.revoke');
             Route::get('{site}/dashboard', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'dashboard'])->name('dashboard');
             Route::get('{site}/templates', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'templates'])->name('templates');
             Route::post('{site}/templates/preview', [\App\Http\Controllers\Admin\MotionGraphicsAdminController::class, 'previewCompatibility'])->name('templates.preview');

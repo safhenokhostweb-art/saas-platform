@@ -41,7 +41,8 @@
 
   function name(value) {
     if (typeof value !== 'string') return null;
-    const n = value.trim().toLowerCase();
+    let n = value.trim().toLowerCase();
+    if (n === 'fas fa-sun' || n === 'fa-sun') n = 'sun-solar';
     return n !== '' && Object.prototype.hasOwnProperty.call(catalog.icons, n) ? n : null;
   }
 

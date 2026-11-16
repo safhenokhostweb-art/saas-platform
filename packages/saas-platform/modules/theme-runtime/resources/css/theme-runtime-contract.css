@@ -82,7 +82,22 @@
 .tb-bento-item-content { position: relative; z-index: 1; }
 .tb-bento-item-link { display: inline-flex; align-items: center; margin-top: .85rem; padding: .48rem .8rem; border-radius: .55rem; background: rgba(255,255,255,.92); color: #0f172a; font-size: .78rem; font-weight: 800; text-decoration: none; }
 .tb-slider-full .tb-slide { min-height: clamp(420px,48vw,640px); }
-.tb-slider-full .tb-slide-caption { width: min(50%,650px); margin-inline-start: auto; margin-inline-end: clamp(2rem,7vw,7rem); text-align: right !important; padding: 3rem !important; }
+.tb-slider-full .tb-slide-caption { width: min(50%,650px); padding: 3rem !important; }
+.tb-slider-full .tb-slide-caption.tb-slide-caption--align-right { margin-left: auto !important; margin-right: clamp(2rem,7vw,7rem) !important; text-align: right !important; }
+[dir="rtl"] .tb-slider-full .tb-slide-caption.tb-slide-caption--align-right,
+:root:not([dir="ltr"]) .tb-slider-full .tb-slide-caption.tb-slide-caption--align-right { margin-left: auto !important; margin-right: clamp(2rem,7vw,7rem) !important; }
+[dir="ltr"] .tb-slider-full .tb-slide-caption.tb-slide-caption--align-right { margin-left: auto !important; margin-right: clamp(2rem,7vw,7rem) !important; }
+
+.tb-slider-full .tb-slide-caption.tb-slide-caption--align-left { margin-right: auto !important; margin-left: clamp(2rem,7vw,7rem) !important; text-align: left !important; }
+[dir="rtl"] .tb-slider-full .tb-slide-caption.tb-slide-caption--align-left,
+:root:not([dir="ltr"]) .tb-slider-full .tb-slide-caption.tb-slide-caption--align-left { margin-right: auto !important; margin-left: clamp(2rem,7vw,7rem) !important; }
+[dir="ltr"] .tb-slider-full .tb-slide-caption.tb-slide-caption--align-left { margin-right: auto !important; margin-left: clamp(2rem,7vw,7rem) !important; }
+
+.tb-slider-full .tb-slide-caption.tb-slide-caption--align-center { margin-left: auto !important; margin-right: auto !important; text-align: center !important; }
+.tb-slider-full .tb-slide-caption.tb-slide-caption--width-narrow { width: min(90%, 480px) !important; }
+.tb-slider-full .tb-slide-caption.tb-slide-caption--width-normal { width: min(90%, 680px) !important; }
+.tb-slider-full .tb-slide-caption.tb-slide-caption--width-wide { width: min(92%, 880px) !important; }
+.tb-slider-full .tb-slide-caption.tb-slide-caption--width-full { width: min(96%, 1100px) !important; }
 /* WU-D: the 2rem floor shrinks below 390px only (see the fluid-title note in
    theme-runtime-blocks.css); it made the old phone-only 2rem rule redundant. */
 .tb-slider-full .tb-slide-title { font-size: clamp(max(1.5rem, min(2rem, calc(2rem + (100vw - 390px) * 0.1))),4vw,4.2rem) !important; line-height: 1.3; }
@@ -422,6 +437,11 @@ body.tb-col-resizing { cursor: col-resize !important; user-select: none; }
 .tb-carousel-prev:hover,
 .tb-carousel-next:hover { background: var(--tb-primary, #4f46e5); color: var(--tb-on-primary, #fff); border-color: var(--tb-primary, #4f46e5); }
 .tb-carousel-dot:hover { background-color: var(--tb-primary, #4f46e5) !important; opacity: .7; }
+.tb-carousel--no-controls .tb-carousel-prev,
+.tb-carousel--no-controls .tb-carousel-next,
+.tb-carousel--no-controls .tb-carousel-dots,
+.tb-carousel--no-controls .tb-carousel-status,
+.tb-carousel--no-controls .tb-carousel-thumbs { display: none !important; }
 
 /* ─── FAQ / accordion / tabs (simple, host-identical structural shells) ─ */
 .tb-faq-item { border: 1px solid var(--tb-border, #e5e7eb); border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }

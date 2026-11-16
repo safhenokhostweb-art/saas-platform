@@ -4,7 +4,7 @@
     "description": "نمای کلی خدمات طراحی، تأمین تجهیزات، نظارت و پیمانکاری EPC نیروگاه‌های خورشیدی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "services-overview",
     "tags": [
         "صنعت برق",

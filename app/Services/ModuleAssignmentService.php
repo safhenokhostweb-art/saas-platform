@@ -106,15 +106,38 @@ class ModuleAssignmentService
         }
 
         $wasActive = $this->currentlyActive($site->id, $moduleId);
-
         $user = $grantedByUserId ? \App\Models\User::find($grantedByUserId) : null;
-        $result = $this->deploymentRequestService->deployModule($site, $module, ModuleDeploymentRequestService::MODE_INSTALL, $user);
 
-        if ($result['success']) {
-            $this->entitlementAuditor->syncAfterPivotChange($site, $module, $wasActive, true);
+        // Check if there is an active published release package for physical remote deployment
+        $latestPublishedRelease = \App\Models\ModuleRelease::latestPublishedForModule($module->id);
+        $hasReleasePackage = $latestPublishedRelease && !empty($latestPublishedRelease->package_sha256);
+
+        if ($hasReleasePackage) {
+            $result = $this->deploymentRequestService->deployModule($site, $module, ModuleDeploymentRequestService::MODE_INSTALL, $user);
+            if ($result['success']) {
+                $this->entitlementAuditor->syncAfterPivotChange($site, $module, $wasActive, true);
+            }
+            return $result;
         }
 
-        return $result;
+        // For built-in, theme-scoped, local, or modules without physical remote packages:
+        // Activate entitlement directly in site_modules
+        $existing = DB::table('site_modules')->where('site_id', $site->id)->where('module_id', $moduleId)->first();
+
+        DB::table('site_modules')->updateOrInsert(
+            ['site_id' => $site->id, 'module_id' => $moduleId],
+            [
+                'is_active' => true,
+                'deployment_status' => $existing->deployment_status ?? 'installed',
+                'activated_at' => $existing->activated_at ?? now(),
+                'updated_at' => now(),
+                'created_at' => $existing->created_at ?? now(),
+            ]
+        );
+
+        $this->entitlementAuditor->syncAfterPivotChange($site, $module, $wasActive, true);
+
+        return ['success' => true];
     }
 
     /**

@@ -29,7 +29,9 @@ class NavHeaderOrderTest extends TestCase
         $start = strpos($html, '<div class="tb-nav-header-inner">');
         $this->assertNotFalse($start, 'header inner wrapper rendered');
 
-        return substr($html, $start);
+        // The bar's order only: the menu <nav> also carries drawer-only
+        // copies of the search and the CTA (tb-nav-header-drawer-only).
+        return (string) preg_replace('#<nav class="tb-nav-header-links".*?</nav>#s', '', substr($html, $start));
     }
 
     private function assertBefore(string $first, string $second, string $html): void

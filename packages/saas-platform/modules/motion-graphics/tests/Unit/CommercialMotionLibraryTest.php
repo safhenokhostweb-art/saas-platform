@@ -22,12 +22,26 @@ final class CommercialMotionLibraryTest extends TestCase
             'hero v2' => ['hero-motion', 'v2', 'free'],
             'business growth v1' => ['business-growth-motion', 'v1', 'premium'],
             'business growth v2' => ['business-growth-motion', 'v2', 'premium'],
+            // ADR-086: private library motion, built to the v2 parameter contract.
+            'solar v1' => ['solar-motion-graphic', 'v1', 'premium'],
         ];
     }
 
+    /** Assets built to the ADR-079 runtime-parameter contract. */
     public static function v2Assets(): array
     {
-        return array_filter(self::assets(), fn (array $a): bool => $a[1] === 'v2');
+        return array_filter(self::assets(), fn (array $a): bool => $a[1] === 'v2' || $a[0] === 'solar-motion-graphic');
+    }
+
+    public function test_the_solar_motion_is_private_with_a_release_label(): void
+    {
+        $metadata = json_decode(file_get_contents(self::LIBRARY.'/solar-motion-graphic/v1/metadata.json'), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('private', $metadata['visibility']);
+        $this->assertSame('1.0.0', $metadata['version_label']);
+        $this->assertSame('solar', $metadata['category']);
+        $this->assertSame('platform', $metadata['ownership']['type']);
+        $this->assertFalse($metadata['ownership']['customer_restriction']);
     }
 
     #[DataProvider('assets')]

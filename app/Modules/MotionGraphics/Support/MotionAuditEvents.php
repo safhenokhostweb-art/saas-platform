@@ -73,6 +73,12 @@ class MotionAuditEvents
     public const BESPOKE_ROLLBACK = 'motion.bespoke.rollback';
     public const BESPOKE_REVOKED = 'motion.bespoke.revoked';
 
+    // ADR-086 — central catalog controls (MotionCatalogAdminService).
+    public const CATALOG_ASSET_ENABLED = 'motion.catalog.asset.enabled';
+    public const CATALOG_ASSET_DISABLED = 'motion.catalog.asset.disabled';
+    public const CATALOG_ASSET_GRANTED = 'motion.catalog.asset.granted';
+    public const CATALOG_ASSET_GRANT_REVOKED = 'motion.catalog.asset.grant_revoked';
+
     public function __construct(
         private readonly ActivityLoggerInterface $logger,
     ) {}

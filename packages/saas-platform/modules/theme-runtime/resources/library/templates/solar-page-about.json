@@ -62,8 +62,8 @@
                         "icon": "sun",
                         "title": "از بررسی نیاز تا پشتیبانی",
                         "text": "ما مجموعه‌ای تخصصی در حوزهٔ انرژی خورشیدی و سیستم‌های تجدیدپذیر هستیم و خدمات خود را از مرحلهٔ بررسی نیاز و امکان‌سنجی تا طراحی، تأمین تجهیزات، اجرا، راه‌اندازی و پشتیبانی ارائه می‌کنیم.",
-                        "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
-                        "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                        "image": "/storage/solar-assets/solar-real-project-about-1024x683.jpg",
+                        "image_url": "/storage/solar-assets/solar-real-project-about-1024x683.jpg"
                     },
                     {
                         "icon": "target",
@@ -77,8 +77,8 @@
                     }
                 ],
                 "section_spacing": "regular",
-                "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
-                "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                "image": "/storage/solar-assets/solar-real-project-about-1024x683.jpg",
+                "image_url": "/storage/solar-assets/solar-real-project-about-1024x683.jpg"
             },
             "id": "solar-about-10-zigzag-rows"
         },
@@ -127,8 +127,8 @@
                         "icon": "search",
                         "title": "بررسی نیاز",
                         "text": "تحلیل مصرف و شرایط پروژه",
-                        "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
-                        "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                        "image": "/storage/solar-assets/solar-real-project-about-1024x683.jpg",
+                        "image_url": "/storage/solar-assets/solar-real-project-about-1024x683.jpg"
                     },
                     {
                         "number": "۰۲",
@@ -150,8 +150,8 @@
                     }
                 ],
                 "section_spacing": "regular",
-                "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
-                "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                "image": "/storage/solar-assets/solar-real-project-about-1024x683.jpg",
+                "image_url": "/storage/solar-assets/solar-real-project-about-1024x683.jpg"
             },
             "id": "solar-about-12-zigzag-rows"
         },
@@ -226,13 +226,13 @@
                         "text": "اگر برای خانه، مجموعهٔ تجاری، واحد صنعتی یا پروژهٔ کشاورزی خود به سیستم خورشیدی نیاز دارید، کارشناسان ما شرایط پروژه را بررسی کرده و راهکار مناسب را پیشنهاد می‌دهند.",
                         "link_label": "درخواست مشاوره",
                         "link_url": "@link:contact",
-                        "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
-                        "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                        "image": "/storage/solar-assets/solar-real-project-about-1024x683.jpg",
+                        "image_url": "/storage/solar-assets/solar-real-project-about-1024x683.jpg"
                     }
                 ],
                 "section_spacing": "regular",
-                "image": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg",
-                "image_url": "/storage/solar-assets/oxin-solar-real-project-about-1024x683.jpg"
+                "image": "/storage/solar-assets/solar-real-project-about-1024x683.jpg",
+                "image_url": "/storage/solar-assets/solar-real-project-about-1024x683.jpg"
             },
             "id": "solar-about-15-zigzag-rows"
         }

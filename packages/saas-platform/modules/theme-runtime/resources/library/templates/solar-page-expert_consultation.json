@@ -4,7 +4,7 @@
     "description": "رزرو وقت جلسه تخصصی با کارشناسان و مهندسان ارشد صنعت انرژی تجدیدپذیر.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "expert-consultation",
     "tags": [
         "صنعت برق",

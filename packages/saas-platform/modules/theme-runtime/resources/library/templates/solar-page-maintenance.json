@@ -4,7 +4,7 @@
     "description": "سرویس‌های دوره‌ای، شستشوی تخصصی، تست ترموگرافی و عیب‌یابی سیستم‌های خورشیدی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "maintenance",
     "tags": [
         "صنعت برق",

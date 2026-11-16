@@ -4,7 +4,7 @@
     "description": "چگونه مناسب‌ترین سیستم خورشیدی را بر اساس بودجه، متراژ سقف و شرایط مصرف خود انتخاب کنیم؟",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "best-system",
     "tags": [
         "صنعت برق",

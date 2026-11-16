@@ -4,7 +4,7 @@
     "description": "طراحی و اجرای نیروگاه‌های خورشیدی مگاواتی و صنعتی برای کارخانجات و شهرک‌های صنعتی.",
     "type": "page",
     "category": "industrial",
-    "spec": "PLATFORM-THEME-SPEC-v1",
+    "spec": "SOLAR-INDUSTRY-v1",
     "route": "industrial",
     "tags": [
         "صنعت برق",
