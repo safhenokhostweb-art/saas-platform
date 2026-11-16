@@ -6029,6 +6029,9 @@ class BlockRenderer
 
     protected function buildAuthCanvasHtml(array $props, string $id): string
     {
+        // Block-unique field ids, so every label is tied to its input (screen
+        // readers, the commercial accessibility gate).
+        $fid = 'tb-auth-' . preg_replace('/[^A-Za-z0-9_-]/', '', $id) . '-';
         $safeId = preg_replace('/[^A-Za-z0-9_-]/', '-', $id) ?: 'auth';
         $rootId = 'tb-' . $safeId;
 
@@ -6172,15 +6175,15 @@ class BlockRenderer
             . '<form action="' . $loginUrl . '" method="POST" class="tb-auth-form">'
             . $csrfInput
             . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">شماره همراه</label>'
-            . '<input type="text" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
+            . '<label class="tb-auth-label" for="' . $fid . 'login-mobile">شماره همراه</label>'
+            . '<input id="' . $fid . 'login-mobile" type="text" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
             . '</div>'
             . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">رمز عبور</label>'
-            . '<input type="password" name="password" required class="tb-auth-input" placeholder="رمز عبور خود را وارد کنید" dir="ltr" autocomplete="current-password">'
+            . '<label class="tb-auth-label" for="' . $fid . 'login-password">رمز عبور</label>'
+            . '<input id="' . $fid . 'login-password" type="password" name="password" required class="tb-auth-input" placeholder="رمز عبور خود را وارد کنید" dir="ltr" autocomplete="current-password">'
             . '</div>'
             . '<div class="tb-auth-options">'
-            . ($showRemember ? '<label class="tb-auth-checkbox"><input type="checkbox" name="remember" value="1"><span>مرا به خاطر بسپار</span></label>' : '<span></span>')
+            . ($showRemember ? '<label class="tb-auth-checkbox" for="' . $fid . 'login-remember"><input id="' . $fid . 'login-remember" type="checkbox" name="remember" value="1"><span>مرا به خاطر بسپار</span></label>' : '<span></span>')
             . ($showForgot ? '<a href="' . $forgotUrl . '" class="tb-auth-link">فراموشی رمز عبور؟</a>' : '')
             . '</div>'
             . '<button type="submit" class="tb-auth-btn">' . $this->iconHtml('log-in') . '<span>' . $loginBtnText . '</span></button>'
@@ -6199,22 +6202,22 @@ class BlockRenderer
             . '<form action="' . $registerUrl . '" method="POST" class="tb-auth-form">'
             . $csrfInput
             . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">نام و نام خانوادگی</label>'
-            . '<input type="text" name="name" required class="tb-auth-input" placeholder="نام خود را وارد کنید" autocomplete="name">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-name">نام و نام خانوادگی</label>'
+            . '<input id="' . $fid . 'register-name" type="text" name="name" required class="tb-auth-input" placeholder="نام خود را وارد کنید" autocomplete="name">'
             . '</div>'
             . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">شماره همراه</label>'
-            . '<input type="tel" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-mobile">شماره همراه</label>'
+            . '<input id="' . $fid . 'register-mobile" type="tel" name="mobile" required class="tb-auth-input" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" dir="ltr" autocomplete="tel">'
             . '</div>'
             . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">رمز عبور</label>'
-            . '<input type="password" name="password" required class="tb-auth-input" placeholder="حداقل ۶ کاراکتر" dir="ltr" autocomplete="new-password">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-password">رمز عبور</label>'
+            . '<input id="' . $fid . 'register-password" type="password" name="password" required class="tb-auth-input" placeholder="حداقل ۶ کاراکتر" dir="ltr" autocomplete="new-password">'
             . '</div>'
             . '<div class="tb-auth-field">'
-            . '<label class="tb-auth-label">تکرار رمز عبور</label>'
-            . '<input type="password" name="password_confirmation" required class="tb-auth-input" placeholder="تکرار رمز عبور" dir="ltr" autocomplete="new-password">'
+            . '<label class="tb-auth-label" for="' . $fid . 'register-password_confirmation">تکرار رمز عبور</label>'
+            . '<input id="' . $fid . 'register-password_confirmation" type="password" name="password_confirmation" required class="tb-auth-input" placeholder="تکرار رمز عبور" dir="ltr" autocomplete="new-password">'
             . '</div>'
-            . ($showTerms ? '<div class="tb-auth-field"><label class="tb-auth-checkbox"><input type="checkbox" name="terms" required value="1"><span>' . $termsText . ' (<a href="' . $termsUrl . '" class="tb-auth-link" target="_blank">مطالعه قوانین</a>)</span></label></div>' : '')
+            . ($showTerms ? '<div class="tb-auth-field"><label class="tb-auth-checkbox" for="' . $fid . 'register-terms"><input id="' . $fid . 'register-terms" type="checkbox" name="terms" required value="1"><span>' . $termsText . ' (<a href="' . $termsUrl . '" class="tb-auth-link" target="_blank">مطالعه قوانین</a>)</span></label></div>' : '')
             . '<button type="submit" class="tb-auth-btn">' . $this->iconHtml('user-plus') . '<span>' . $registerBtnText . '</span></button>'
             . '</form>'
             . ($authMode === 'register_only' ? '<div class="tb-auth-footer-text">از قبل حساب کاربری دارید؟ <a href="' . $loginUrl . '" class="tb-auth-link">وارد شوید</a></div>' : '')
