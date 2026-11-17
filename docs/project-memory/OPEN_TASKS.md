@@ -4,7 +4,45 @@
 
 ---
 
-## OPEN: INSTALL DB PASSWORD IN .ENV — RELEASE 281 READY, NOT DEPLOYED — 2026-11-17
+## OPEN: LICENSE_KEY UPSERT + THEMES UNLISTED BY DEFAULT — RELEASE 282 READY, NOT DEPLOYED — 2026-11-17
+
+**1. Installation 52** (`solar.safhenokhost.ir`, 18:10:47 UTC) was rolled back
+at `PROVISION_LICENSE`: "LICENSE_KEY placeholder replacement failed". Not a
+release 281 regression: the `LICENSE_KEY=__LICENSE_KEY__` template line was
+unchanged. Since `67cb40ed` (2026-06-29) the key comes from
+`LicenseServerService::issue()` as `XXXX-XXXX-XXXX-XXXX`, but the stage
+verified with `grep '^LICENSE_KEY=CIE-'`. That always failed, so
+`PROVISION_LICENSE` had **0 completions** since then; installation 52 was the
+first to reach it.
+
+**2. Theme access.** Master themes have no site, vertical or licence scoping
+(ADR-087 covers library templates and widgets only). The tenant marketplace
+lists every `is_marketplace` + published + eligible theme, and price 0 is a
+free self-service licence. solar-industry was seeded listed at price 0;
+`safhenokhost.ir` (no vertical) took it at 18:42:53 UTC (theme license 1,
+assignment 1; owner: keep).
+
+| Item | Status |
+|------|--------|
+| `Env\RemoteEnvFile::set()`: idempotent .env upsert (replace placeholder/empty/quoted/old value, drop duplicates, or append; fixes a missing final newline), DotenvValue-encoded, base64 + awk `ENVIRON`, POSIX-quoted, in-place rewrite, shell-verified; `read()`/`decode()` via phpdotenv | ✅ (also verified on the production host's dash + gawk in `/tmp`) |
+| `PROVISION_LICENSE`: upsert + decoded read-back against the issued key; CIE- check removed | ✅ |
+| `INITIALIZE_BACKUP` (next stage): `BACKUP_*` via upsert (was `echo >>`), DB credentials decoded with phpdotenv (was `cut -d= -f2`) | ✅ |
+| Production: solar-industry (theme 61) unlisted from the tenant marketplace (owner-approved, `is_marketplace=false`); marketplace now empty; wizard still offers it | ✅ DONE 2026-11-17 |
+| Owner rule in code: `ThemeRegistry::LIST_IN_MARKETPLACE_ON_INSTALL = false`, applied by `themes:sync-registry` and `theme-catalog:rebuild --slug` to newly created themes only; the solar seeder sets listing/price only on creation (a re-run used to re-list it free) | ✅ |
+| Tests | ✅ RemoteEnvFile 19 (real shell), ProvisionLicense 7 (real .env, 4 shapes), InitializeBackup 1, theme listing 6; onboarding + CustomerInstallation unit 466/466; infrastructure/pipeline/deletion 98/98; ThemeBuilder marketplace/registry/assignment 122/122; release-prepare check READY |
+| Release commit | ✅ `cbd9b4457f165caaaadcfd036ff0290c8e1d1f93` (source `00306e43`, `1093a19f` on `fix/install-license-env-upsert`, base `32813dcd`) |
+| Hub release | ✅ 282 (`2f953870-2049-400a-9a00-739059a8d614`), ready 2026-11-17 19:46:10 UTC |
+| Artifact | ✅ 312 (`2e75a173-4951-477b-87c4-3642337da15b`), available and verified; build job 479 (`5a7473d4-bfc7-4d2c-9a53-112eab591e18`); sha256 `6d425bd3a84fd034bb23b420678b8a34978e6af1fb361a678eede00413e542d1`; evidence `d2a68c0dd848dd7dcfe7c3fa2041f71089f06cd56cb2c6d52f1b58c9a3beeb73` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
+| Customer retry | ⏳ After deploy, re-run the solar installation |
+| Follow-up | ⏳ `BackupModuleUpgradeStage` and deletion `FinalBackupStage` still read DB credentials with `cut -d= -f2` (not install stages; tests pin those commands) |
+| Follow-up (owner decision) | ⏳ Master themes have no vertical/licence scoping beyond the listing; a listed theme is offered to every tenant |
+
+Full descriptor: `.deployment/releases/install-license-env-theme-unlisted.json`.
+
+---
+
+## COMPLETE: INSTALL DB PASSWORD IN .ENV — RELEASE 281 DEPLOYED — 2026-11-17 ✅
 
 Installation 51 (`solar.safhenokhost.ir`, 17:11 UTC) passed the new DNS
 stages and failed `RUN_MIGRATIONS`: MySQL 1045 `Access denied for user
@@ -28,8 +66,8 @@ Not caused by release 280 (stage order `GENERATE_ENVIRONMENT` →
 | Release commit | ✅ `c54b5ff92313fa0d28d19df6e09dfd95bac2f9b9` (source `6fdf4a58` on `fix/install-db-password-env`, base `deed90a5`) |
 | Hub release | ✅ 281 (`487d1a71-9a0e-41f9-a4d6-3e90a95c319e`), ready 2026-11-17 17:41:03 UTC |
 | Artifact | ✅ 311 (`8cc70212-108f-4784-a816-979443d400b7`), available and verified; build job 478 (`b361a28c-705e-4d9c-a19a-11e750c8aa59`); sha256 `29534cdf0a1d7f824cf6abcf9c3785e14d55b58cd956d8283181c1644f747ec5`; evidence `738484a6719cd12dc2a2da8e35803ea3f651c4d82358b09eb93c9e902f410e86` |
-| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
-| Customer retry | ⏳ After deploy, re-run the solar installation |
+| Deployment | ✅ DEPLOYED: deployment 363 (`6077a483-d3da-4b51-878d-915a9c9e9caa`), succeeded 2026-11-17 18:06:14 UTC, HTTP health verified; server manifest `c54b5ff9` |
+| Customer retry | ✅ Installation 52 passed `CREATE_DATABASE` and `RUN_MIGRATIONS` (70 s), then failed at `PROVISION_LICENSE` on an older bug (release 282 above) |
 
 Full descriptor: `.deployment/releases/install-db-password-env.json`.
 
