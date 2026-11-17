@@ -4,13 +4,35 @@ namespace App\Services\CustomerInstallation\Stages;
 
 use App\Contracts\DnsProviderInterface;
 use App\Models\Infrastructure\DnsProviderSetting;
+use App\Services\CustomerInstallation\Dns\DnsResolver;
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
+use App\Services\CustomerInstallation\Dns\ServerPublicIpResolver;
 use App\Services\Dns\ArvanDnsProvider;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Creates the platform subdomain's A record. Since 2026-11-17 this runs
+ * right after PROVISION_DOMAIN, before any upload or database. The record
+ * targets the server's inbound address (ServerPublicIpResolver), never its
+ * outbound NAT address, and with SSL requested an unverified record fails
+ * the stage at once instead of leaving it to ISSUE_SSL (installation 50).
+ */
 class ConfigureDnsStage extends AbstractStage
 {
+    /** @var \Closure(int): void */
+    private \Closure $sleeper;
+
+    public function __construct(
+        private readonly ServerPublicIpResolver $serverIps,
+        private readonly DnsResolver $dns,
+        private readonly DomainDnsPreflight $preflight,
+        ?\Closure $sleeper = null,
+    ) {
+        $this->sleeper = $sleeper ?? static function (int $seconds): void { sleep($seconds); };
+    }
+
     public function name(): string { return 'CONFIGURE_DNS'; }
     public function label(): string { return 'ایجاد رکورد DNS'; }
     public function estimatedSeconds(): int { return 60; }
@@ -55,10 +77,10 @@ class ConfigureDnsStage extends AbstractStage
             // Derive subdomain label (without the root domain suffix).
             $subdomain = rtrim(substr($fqdn, 0, -strlen('.' . $rootDomain)), '.');
 
-            // Get the server's public IP address.
-            $serverIp = $this->resolveServerIp($ctx);
+            // The server's inbound public IP (never its outbound NAT address).
+            $serverIp = $this->serverIps->forContext($ctx);
             if (empty($serverIp)) {
-                return StageResult::failure($this->name(), 'Cannot determine server public IP address for DNS record.', $this->elapsed());
+                return StageResult::failure($this->name(), 'IP عمومی سرور مقصد مشخص نیست، پس رکورد DNS ساخته نشد. در تنظیمات سرور، آدرس (host) را IP عمومی آن قرار دهید.', $this->elapsed());
             }
 
             $provider = new ArvanDnsProvider($setting);
@@ -88,12 +110,28 @@ class ConfigureDnsStage extends AbstractStage
 
             if (!config('customer_installation.dns.skip_propagation', false)) {
                 $maxWait      = (int) config('customer_installation.dns.propagation_max_wait_sec', 300);
-                $pollInterval = (int) config('customer_installation.dns.propagation_poll_sec', 15);
+                $pollInterval = max(1, (int) config('customer_installation.dns.propagation_poll_sec', 15));
 
-                $propagated    = $provider->waitForPropagation($fqdn, $serverIp, $maxWait, $pollInterval);
+                [$propagated, $seen] = $this->waitUntilPointsHere($fqdn, $serverIp, $maxWait, $pollInterval);
                 $propagationMsg = $propagated
                     ? "DNS propagated successfully to {$serverIp}."
                     : "DNS propagation timed out after {$maxWait}s — continuing (Nginx will serve once DNS resolves).";
+
+                if (!$propagated && $ctx->request->sslEnabled) {
+                    // ISSUE_SSL would only time out against wherever the name
+                    // resolves now; fail here, before upload and database.
+                    // A failed stage keeps its pre-snapshot (record_id null
+                    // for a new record), so rollback could not find the
+                    // record this run created: delete it here.
+                    if (!$existingId && $recordId) {
+                        $provider->deleteRecord($recordId);
+                    }
+                    $seenText = $seen === [] ? 'هیچ IPی' : implode('، ', $seen);
+
+                    return StageResult::failure($this->name(),
+                        "رکورد DNS زیردامنهٔ «{$fqdn}» ساخته شد، اما پس از {$maxWait} ثانیه در DNS عمومی به IP این سرور ({$serverIp}) نرسید (پاسخ فعلی: {$seenText}). بدون آن گواهی SSL صادر نمی‌شود؛ تنظیمات DNS آروان‌کلاد را بررسی کنید و دوباره تلاش کنید.",
+                        $this->elapsed());
+                }
             } else {
                 $propagated = true; // skipped = treat as passed
             }
@@ -201,32 +239,36 @@ class ConfigureDnsStage extends AbstractStage
     }
 
     /**
-     * Resolve the public IP address of the remote server.
-     * Tries (in order): SSH command, then $ctx->request metadata.
+     * Poll public DNS until $fqdn resolves to the server (or, CDN-proxied,
+     * only to ArvanCloud edge addresses). The attempt count is fixed up front
+     * so the wait is bounded whatever the sleeper does.
+     *
+     * @return array{0: bool, 1: list<string>} [points here, last answer]
      */
-    private function resolveServerIp(InstallationContext $ctx): string
+    private function waitUntilPointsHere(string $fqdn, string $serverIp, int $maxWait, int $pollInterval): array
     {
-        // Try to ask the server for its primary public IPv4
-        try {
-            $result = $ctx->connection->execute(
-                "curl -4 -sf --max-time 5 https://api.ipify.org 2>/dev/null || " .
-                "curl -4 -sf --max-time 5 https://ifconfig.me/ip 2>/dev/null || " .
-                "hostname -I 2>/dev/null | awk '{print $1}'"
-            );
-            $ip = trim($result->stdout ?? '');
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                return $ip;
+        $attempts = max(1, intdiv(max(0, $maxWait), $pollInterval) + 1);
+        $seen = [];
+
+        Log::info('CIE/DNS: Waiting for DNS propagation', ['fqdn' => $fqdn, 'expected_ip' => $serverIp, 'attempts' => $attempts]);
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            $lookup = $this->dns->lookupA($fqdn);
+            $seen = $lookup->ips;
+
+            if ($lookup->isResolved() && $this->preflight->pointsHere($lookup, $serverIp)) {
+                Log::info('CIE/DNS: DNS propagated', ['fqdn' => $fqdn, 'attempt' => $attempt, 'ips' => $seen]);
+
+                return [true, $seen];
             }
-        } catch (\Throwable $e) {
-            Log::warning('CIE/DNS: Could not detect server IP via SSH: ' . $e->getMessage());
+
+            if ($attempt < $attempts) {
+                ($this->sleeper)($pollInterval);
+            }
         }
 
-        // Fallback: use the host field from the remote server record
-        $server = \App\Models\CustomerRemoteServer::find($ctx->installation->remote_server_id);
-        if ($server && filter_var($server->host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            return $server->host;
-        }
+        Log::warning('CIE/DNS: DNS propagation timed out', ['fqdn' => $fqdn, 'expected_ip' => $serverIp, 'last_answer' => $seen]);
 
-        return '';
+        return [false, $seen];
     }
 }

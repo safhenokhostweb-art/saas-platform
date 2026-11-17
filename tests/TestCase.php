@@ -1,8 +1,10 @@
 <?php
 namespace Tests;
 
+use App\Services\CustomerInstallation\Dns\DnsResolver;
 use App\Services\ThemeBuilder\ReverseEngineering\PlaywrightExtractionService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Tests\Support\FakeDnsResolver;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -29,5 +31,11 @@ abstract class TestCase extends BaseTestCase
                 return false;
             }
         });
+
+        // The installation DNS preflight must never query real DNS in the
+        // suite (offline runs, real domains in fixtures). Every lookup is
+        // UNKNOWN, which the preflight does not block on; tests that exercise
+        // DNS bind their own FakeDnsResolver.
+        $this->app->instance(DnsResolver::class, new FakeDnsResolver());
     }
 }

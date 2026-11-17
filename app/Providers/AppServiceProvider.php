@@ -40,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
         // (e.g. CRM) can notify a site admin without touching App\Models\*.
         $this->app->bind(SiteNotificationDispatcherInterface::class, fn () => new CoreSiteNotificationDispatcher(SmsGatewayResolver::resolve()));
 
+        // Public DNS lookups for the installation DNS preflight (wizard + VALIDATE_DOMAIN_DNS).
+        $this->app->bind(\App\Services\CustomerInstallation\Dns\DnsResolver::class, \App\Services\CustomerInstallation\Dns\PublicDnsResolver::class);
+
         // SEO Override Provider — default Null Object, replaced by an installed
         // module's own adapter (e.g. seo-advanced).
         //

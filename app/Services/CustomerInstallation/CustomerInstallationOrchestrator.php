@@ -21,6 +21,7 @@ use App\Services\CustomerInstallation\Stages\ValidatePhpStage;
 use App\Services\CustomerInstallation\Stages\ValidateExtensionsStage;
 use App\Services\CustomerInstallation\Stages\ValidateDiskStage;
 use App\Services\CustomerInstallation\Stages\ValidatePermissionsStage;
+use App\Services\CustomerInstallation\Stages\ValidateDomainDnsStage;
 use App\Services\CustomerInstallation\Stages\ProvisionDomainStage;
 use App\Services\CustomerInstallation\Stages\UploadPackageStage;
 use App\Services\CustomerInstallation\Stages\VerifyPackageStage;
@@ -243,12 +244,17 @@ class CustomerInstallationOrchestrator
             app(ValidateExtensionsStage::class),
             app(ValidateDiskStage::class),
             app(ValidatePermissionsStage::class),
+            // 2026-11-17 (installation 50): DNS is checked first and the A
+            // record is created and verified before anything is uploaded or
+            // created, so an unreachable domain stops here, not at ISSUE_SSL.
+            app(ValidateDomainDnsStage::class),
             // Phase 15-D — must run before UPLOAD_PACKAGE: ExtractPackageStage
             // is the first stage to call $ctx->webRoot() (in its own
             // buildPreSnapshot()), so the domain/document-root must already
             // be resolved by then. See ProvisionDomainStage's docblock for
             // the full placement rationale.
             app(ProvisionDomainStage::class),
+            app(ConfigureDnsStage::class),
             app(UploadPackageStage::class),
             app(VerifyPackageStage::class),
             app(ExtractPackageStage::class),
@@ -259,7 +265,6 @@ class CustomerInstallationOrchestrator
             app(ConfigureStorageStage::class),
             app(ConfigureQueueStage::class),
             app(ConfigureSchedulerStage::class),
-            app(ConfigureDnsStage::class),
             app(ConfigureWebServerStage::class),
             app(IssueSslStage::class),
             app(ProvisionLicenseStage::class),

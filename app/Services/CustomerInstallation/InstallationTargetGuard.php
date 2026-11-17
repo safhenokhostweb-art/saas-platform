@@ -4,6 +4,8 @@ namespace App\Services\CustomerInstallation;
 
 use App\Models\CustomerRemoteServer;
 use App\Models\Infrastructure\DnsProviderSetting;
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
+use App\Services\CustomerInstallation\Dns\ServerPublicIpResolver;
 use App\Services\CustomerInstallation\Enums\DriverType;
 
 /**
@@ -14,6 +16,30 @@ use App\Services\CustomerInstallation\Enums\DriverType;
  */
 class InstallationTargetGuard
 {
+    public function __construct(
+        private readonly DomainDnsPreflight $dnsPreflight,
+        private readonly ServerPublicIpResolver $serverIps,
+    ) {}
+
+    /**
+     * Persian error when $domain cannot reach $server (not registered, only a
+     * wildcard match, or, with SSL, pointing elsewhere), else null. This is
+     * the submit-time copy of the pipeline's VALIDATE_DOMAIN_DNS stage.
+     */
+    public function dnsPreflightError(string $domain, CustomerRemoteServer $server, bool $sslEnabled): ?string
+    {
+        $serverIp = $this->serverIps->forServer($server);
+
+        // Without SSH only the server record's host is known. When it is not
+        // a public address, VALIDATE_DOMAIN_DNS can still find one bound on
+        // the server, so a platform subdomain is decided there, not here.
+        if ($serverIp === null && $this->dnsPreflight->isPlatformManaged(strtolower($domain))) {
+            return null;
+        }
+
+        return $this->dnsPreflight->check($domain, $serverIp, $sslEnabled)->error;
+    }
+
     /** Persian error when the server's driver cannot run an installation, else null. */
     public function driverError(CustomerRemoteServer $server): ?string
     {
@@ -50,7 +76,11 @@ class InstallationTargetGuard
         return $root !== '' && $domain !== $root && str_ends_with($domain, '.' . $root);
     }
 
-    /** Persian error when a custom domain has no DNS record yet, else null. */
+    /**
+     * Persian error when a custom domain has no DNS record of its own yet
+     * (none at all, or only a wildcard answer), else null. Server-independent,
+     * for the wizard's live check; dnsPreflightError() is the full check.
+     */
     public function customDomainDnsError(string $domain): ?string
     {
         $domain = preg_replace('#^https?://#i', '', rtrim($domain, '/'));
@@ -58,16 +88,6 @@ class InstallationTargetGuard
             return null;
         }
 
-        try {
-            $dnsExists = checkdnsrr($domain, 'A')
-                || checkdnsrr($domain, 'CNAME')
-                || checkdnsrr($domain, 'AAAA');
-        } catch (\Throwable) {
-            $dnsExists = true; // fail-open if the DNS query itself fails
-        }
-
-        return $dnsExists
-            ? null
-            : "دامنه «{$domain}» در DNS یافت نشد. مطمئن شوید دامنه ثبت شده و رکورد DNS آن (A یا CNAME) فعال باشد.";
+        return $this->dnsPreflight->check($domain, null, false)->error;
     }
 }

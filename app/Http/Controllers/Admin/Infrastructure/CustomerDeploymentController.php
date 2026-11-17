@@ -107,13 +107,14 @@ class CustomerDeploymentController extends Controller
 
         $guard = app(InstallationTargetGuard::class);
 
-        $driverError = $guard->driverError(CustomerRemoteServer::findOrFail($validated['remote_server_id']));
+        $server = CustomerRemoteServer::findOrFail($validated['remote_server_id']);
+        $driverError = $guard->driverError($server);
         if ($driverError !== null) {
             return back()->withInput()->withErrors(['remote_server_id' => $driverError]);
         }
 
-        // DNS existence check — only for custom domains that the admin must have pre-configured.
-        $dnsError = $guard->customDomainDnsError($validated['customer_domain']);
+        // DNS preflight: the domain must reach this server before anything is created.
+        $dnsError = $guard->dnsPreflightError($validated['customer_domain'], $server, (bool) ($validated['ssl_enabled'] ?? false));
         if ($dnsError !== null) {
             return back()->withInput()->withErrors(['customer_domain' => $dnsError]);
         }
