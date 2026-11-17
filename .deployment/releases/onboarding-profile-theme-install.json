@@ -25,10 +25,30 @@
         "known_failure_exemptions": [],
         "checked_timestamp": "2026-11-17T10:32:16+00:00",
         "checks": [
-            { "name": "syntax:app/Console/Commands/ThemeCatalogRebuildCommand.php", "type": "syntax", "exit_code": 0, "duration_ms": 826 },
-            { "name": "syntax:app/Services/Onboarding/SiteOnboardingService.php", "type": "syntax", "exit_code": 0, "duration_ms": 295 },
-            { "name": "syntax:resources/views/admin/onboarding/wizard.blade.php", "type": "syntax", "exit_code": 0, "duration_ms": 1158 },
-            { "name": "syntax:tests/Feature/Onboarding/ProfileThemeInstallTest.php", "type": "syntax", "exit_code": 0, "duration_ms": 275 },
+            {
+                "name": "syntax:app/Console/Commands/ThemeCatalogRebuildCommand.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 826
+            },
+            {
+                "name": "syntax:app/Services/Onboarding/SiteOnboardingService.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 295
+            },
+            {
+                "name": "syntax:resources/views/admin/onboarding/wizard.blade.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 1158
+            },
+            {
+                "name": "syntax:tests/Feature/Onboarding/ProfileThemeInstallTest.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 275
+            },
             {
                 "name": "theme-builder-regression",
                 "type": "test",
@@ -64,7 +84,7 @@
             "artifact_public_id": "b0954918-40f1-47d2-9300-5c8a22cce10f",
             "publish_job_id": 472,
             "publish_job_public_id": "8103a40c-c80b-46a2-b2a3-084a0df713a6",
-            "deployment_id": null,
+            "deployment_id": 360,
             "commit_sha": "c8a6dcf160b2e16b14a2ac052d6909eabaadd928",
             "status": "available",
             "semantic_status": "verified",
@@ -80,12 +100,75 @@
         }
     },
     "deployment": {
-        "status": "not_deployed",
-        "note": "The owner deploys Release 277 from the Hub dashboard. Confirmed from the Hub database 2026-11-17: no deployment row for release 277 yet.",
+        "status": "deployed",
+        "deployment_id": 360,
+        "deployment_public_id": "ddab53b9-fc39-4680-8e15-1b6501ea719a",
+        "artifact_id": 306,
+        "artifact_public_id": "b0954918-40f1-47d2-9300-5c8a22cce10f",
+        "release_id": 277,
+        "commit_sha": "c8a6dcf160b2e16b14a2ac052d6909eabaadd928",
+        "previous_commit_sha": "edcad53553fc58d86e076ec0d64c31164c2a1e9a",
+        "trigger": "manual (owner, Hub dashboard)",
+        "approved_at": "2026-11-17T11:33:28+00:00",
+        "started_at": "2026-11-17T11:33:41+00:00",
+        "deployed_at": "2026-11-17T11:34:03+00:00",
+        "execution_status": "succeeded",
+        "http_health": {
+            "status": "verified",
+            "url": "https://panel.safhenokhost.ir/health/ready",
+            "verified_at": "2026-11-17T11:34:03+00:00"
+        },
+        "server_manifest_commit": "c8a6dcf160b2e16b14a2ac052d6909eabaadd928",
         "post_deploy_commands": [
-            "php artisan theme-catalog:rebuild --slug=solar-industry",
-            "php artisan theme-release:backfill --slug=solar-industry"
-        ]
+            {
+                "command": "php artisan theme-catalog:rebuild --slug=solar-industry",
+                "run_as": "www-data",
+                "exit_code": 0,
+                "result": "Canonical theme solar-industry present (seeded via SolarIndustryThemeSeeder)"
+            },
+            {
+                "command": "php artisan theme-release:backfill --slug=solar-industry",
+                "run_as": "www-data",
+                "exit_code": 0,
+                "result": "solar-industry -> 1.0.0; 1 released, 0 failed"
+            }
+        ],
+        "post_deploy_verification": {
+            "theme_id": 61,
+            "theme_slug": "solar-industry",
+            "theme_name": "قالب صنعت برق",
+            "theme_status": "published",
+            "pages": [
+                "home",
+                "about",
+                "contact",
+                "courses",
+                "products"
+            ],
+            "current_release_id": 7,
+            "current_release_version": "1.0.0",
+            "current_release_status": "published",
+            "quality_report_id": 1,
+            "quality_report_status": "passed",
+            "commercially_eligible": true,
+            "master_catalog": [
+                "solar-industry"
+            ],
+            "wizard_themes": [
+                {
+                    "id": 61,
+                    "slug": "solar-industry",
+                    "pages": 5
+                }
+            ],
+            "solar_energy_profile": {
+                "theme_status": "available",
+                "theme_id": 61,
+                "kit_ids": [
+                    63
+                ]
+            }
+        }
     },
     "summary": "theme-catalog:rebuild --slug installs one canonical master theme without resurrecting purged themes; the onboarding wizard explains why a profile theme is unavailable and how to fix it. Production has an empty master catalog, so solar-industry must be installed after deploy."
 }

@@ -2,9 +2,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Theme;
-use Database\Seeders\ArianaMultiPlusThemeSeeder;
-use Database\Seeders\SalesSupportThemeSeeder;
-use Database\Seeders\SolarIndustryThemeSeeder;
+use App\Services\ThemeCatalog\ThemeRegistry;
 use Illuminate\Console\Command;
 
 /**
@@ -49,55 +47,11 @@ class ThemeCatalogRebuildCommand extends Command
     protected $description = 'Rebuild the complete canonical master Theme catalog through the authoritative seed sources and verify membership deterministically.';
 
     /**
-     * @var array<int, array{label: string, run: array{0: string, 1: array<string, mixed>}, expected_slugs: string[]}>
-     * One entry per authoritative source. Adding a new canonical theme
-     * source means adding one more entry here — never inventing a
+     * The canonical sources live in ThemeRegistry, which `themes:sync-registry`
+     * shares. Adding a theme source means adding it there, never inventing a
      * duplicate Theme definition elsewhere.
      */
-    private const CANONICAL_SOURCES = [
-        [
-            'label' => 'marketplace:seed',
-            'run' => ['marketplace:seed', []],
-            'expected_slugs' => [
-                'khabar-online', 'akademi-danesh', 'clinic-salamat', 'daftar-hoqooqi',
-                'azhans-maskan', 'restaurant-lux', 'portfolio-khalaq', 'azhans-digital',
-                'bazar-online', 'narmafzar-abri', 'landing-herfei', 'majale-online',
-                'vakil-pro', 'salon-ziba', 'safar-lux', 'khodro-pro', 'sanat-molodi',
-                'sakhteman-iran', 'mode-fa', 'digi-shop', 'mahsool-vije', 'enterprise-cloud',
-            ],
-        ],
-        [
-            'label' => 'nexus:seed',
-            'run' => ['nexus:seed', []],
-            'expected_slugs' => ['nexus-pro-corporate', 'nexus-pro-personal', 'nexus-pro-store'],
-        ],
-        [
-            'label' => 'acool:seed',
-            'run' => ['acool:seed', []],
-            'expected_slugs' => ['acool-hvac-service'],
-        ],
-        [
-            'label' => 'malltina:seed',
-            'run' => ['malltina:seed', []],
-            'expected_slugs' => ['malltina-international'],
-        ],
-        [
-            'label' => 'db:seed ' . SalesSupportThemeSeeder::class,
-            'run' => ['db:seed', ['--class' => SalesSupportThemeSeeder::class, '--force' => true]],
-            'expected_slugs' => ['sales-support-pro'],
-        ],
-        [
-            'label' => 'db:seed ' . ArianaMultiPlusThemeSeeder::class,
-            'run' => ['db:seed', ['--class' => ArianaMultiPlusThemeSeeder::class, '--force' => true]],
-            'expected_slugs' => ['ariana-multiplus'],
-        ],
-        // ADR-084: «قالب صنعت برق», assembled from the template library.
-        [
-            'label' => 'db:seed ' . SolarIndustryThemeSeeder::class,
-            'run' => ['db:seed', ['--class' => SolarIndustryThemeSeeder::class, '--force' => true]],
-            'expected_slugs' => [SolarIndustryThemeSeeder::SLUG],
-        ],
-    ];
+    private const CANONICAL_SOURCES = ThemeRegistry::SOURCES;
 
     /**
      * Deliberately NOT a canonical source (Phase 2b audit): stores its page

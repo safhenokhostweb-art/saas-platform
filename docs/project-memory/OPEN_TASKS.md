@@ -4,9 +4,9 @@
 
 ---
 
-## OPEN: ONBOARDING PROFILE THEME INSTALL — RELEASE 277 READY — 2026-11-17
+## COMPLETE: ONBOARDING PROFILE THEME INSTALL — RELEASE 277 DEPLOYED — 2026-11-17 ✅
 
-Production has an empty master theme catalog (clean-slate purge
+Production had an empty master theme catalog (clean-slate purge
 2026-11-01), so `solar-industry` was never installed. `theme-release:backfill`
 had nothing to release, and the wizard offered only «بدون قالب».
 
@@ -14,9 +14,10 @@ had nothing to release, and the wizard offered only «بدون قالب».
 |------|--------|
 | Fix: `theme-catalog:rebuild --slug=`, wizard reason + fix commands | ✅ RELEASED — `c8a6dcf160b2e16b14a2ac052d6909eabaadd928` (source `3ab12386`, base `edcad535`) |
 | Hub release | ✅ 277 (`f3143abc-e6b7-4fb6-8e9b-d019d7fd5910`) — ready 2026-11-17 10:35:55 UTC |
-| Artifact | ✅ 306 (`b0954918-40f1-47d2-9300-5c8a22cce10f`) — available, verified; sha256 `d328912e31941a27780b1782f0ef5b9077ffd866dd174f17895aff4b47566a9c`; evidence `83a1a8f14c31def59d75f2246c7a2fbad984636642fad0b08da9973468b7c302`; expires 2026-12-01 |
-| Deployment | ⏳ OWNER — Deploy release 277 from the Hub dashboard |
-| Post-deploy data step (owner-approved) | ⏳ `php artisan theme-catalog:rebuild --slug=solar-industry`, then `php artisan theme-release:backfill --slug=solar-industry` |
+| Artifact | ✅ 306 (`b0954918-40f1-47d2-9300-5c8a22cce10f`) — available, verified; sha256 `d328912e31941a27780b1782f0ef5b9077ffd866dd174f17895aff4b47566a9c`; evidence `83a1a8f14c31def59d75f2246c7a2fbad984636642fad0b08da9973468b7c302` |
+| Deployment | ✅ DEPLOYED — deployment 360 (`ddab53b9-fc39-4680-8e15-1b6501ea719a`), succeeded 2026-11-17 11:34:03 UTC, HTTP health verified; server manifest `c8a6dcf1` |
+| Post-deploy data step | ✅ `theme-catalog:rebuild --slug=solar-industry` (exit 0), then `theme-release:backfill --slug=solar-industry` (exit 0, 1.0.0 released) |
+| Result on production | ✅ theme id 61 «قالب صنعت برق», release 7 v1.0.0 published, quality report 1 passed, commercially eligible; offered in the wizard; solar_energy profile available (theme 61, kit 63) |
 
 Full descriptor: `.deployment/releases/onboarding-profile-theme-install.json`.
 
