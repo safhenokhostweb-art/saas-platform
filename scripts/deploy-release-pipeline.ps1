@@ -113,6 +113,9 @@ function Invoke-GitAutomation([string]$repoPath, [string]$repoName) {
         }
 
         # Check working tree status
+        $prevEA = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+
         $statusOutput = (git status --porcelain)
         if ($statusOutput) {
             Write-Step "Uncommitted changes detected. Staging changes..."
@@ -128,11 +131,18 @@ function Invoke-GitAutomation([string]$repoPath, [string]$repoName) {
         # Push to origin main
         if (-not $SkipPush) {
             Write-Step "Pushing to origin main..."
-            $pushResult = git push origin main 2>&1
+            git push origin main
+            $pushExit = $LASTEXITCODE
+            
+            if ($pushExit -ne 0) {
+                $ErrorActionPreference = $prevEA
+                throw "git push failed with exit code $pushExit"
+            }
             Write-Success "Pushed successfully to origin main."
         } else {
             Write-WarnMessage "SkipPush flag enabled; skipping git push."
         }
+        $ErrorActionPreference = $prevEA
     } finally {
         Pop-Location
     }
