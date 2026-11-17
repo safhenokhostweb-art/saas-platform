@@ -16,7 +16,8 @@ use App\Services\ModuleLicenseGrantService;
  * ADR-088 — applies the onboarding wizard's licensing choices to the site
  * PROVISION_LICENSE just created, through the canonical writers only:
  *   - business vertical: SiteAssetEntitlementService::setVertical() (ADR-087);
- *   - each kit (license-only module, e.g. `solar_industry_kit`):
+ *   - each kit (a paid, license-only module, Module::isSiteLicensableKit(),
+ *     e.g. `solar_industry_kit`; anything else fails the stage up front):
  *     ModuleLicenseGrantService::grant() then
  *     ModuleAssignmentService::enableForSite().
  * Together these are exactly what makes AssetAccessGate unlock a kit family
@@ -60,16 +61,42 @@ class ApplySiteEntitlementsStage extends AbstractStage
 
             $actor = $ctx->installation->installer_user_id ? User::find($ctx->installation->installer_user_id) : null;
 
+            // Fail closed, and before anything is written: every requested
+            // module must be a kit a site can be licensed for
+            // (Module::isSiteLicensableKit, what ModuleLicenseGrantService
+            // accepts). Installation 53 (2026-11-17) carried 53 core modules
+            // with license_required, which the wizard used to offer as kits;
+            // the stage granted the first kits, then failed on
+            // «marketing_automation». The wizard now offers and accepts only
+            // real kits; a stored payload that still has others is refused
+            // here in one message.
+            $modules = [];
+            $notKits = [];
+            foreach ($req->kitModuleIds as $moduleId) {
+                $module = Module::find($moduleId);
+                if ($module === null) {
+                    return StageResult::failure($this->name(), "Module #{$moduleId} does not exist.", $this->elapsed());
+                }
+                if (! $module->isSiteLicensableKit()) {
+                    $notKits[] = $module->slug;
+                }
+                $modules[] = $module;
+            }
+            if ($notKits !== []) {
+                return StageResult::failure(
+                    $this->name(),
+                    'این ماژول‌ها کیت قابل‌لایسنس برای سایت نیستند و لایسنسی برایشان صادر نمی‌شود: «' . implode('»، «', $notKits)
+                        . '». فقط کیت‌های پولیِ فقط‌لایسنسی (مثل solar_industry_kit) به سایت لایسنس می‌شوند؛ نصب را از ویزارد دوباره شروع کنید.',
+                    $this->elapsed()
+                );
+            }
+
             if ($req->businessVertical !== null) {
                 $this->assetAccess->setVertical($site, $req->businessVertical, $actor?->id);
             }
 
             $kits = [];
-            foreach ($req->kitModuleIds as $moduleId) {
-                $module = Module::find($moduleId);
-                if ($module === null || ! $module->isLicenseOnly()) {
-                    return StageResult::failure($this->name(), "Module #{$moduleId} is not a license-only kit.", $this->elapsed());
-                }
+            foreach ($modules as $module) {
                 if ($actor === null) {
                     return StageResult::failure($this->name(), 'The installing admin no longer exists; a kit license needs a granting admin.', $this->elapsed());
                 }

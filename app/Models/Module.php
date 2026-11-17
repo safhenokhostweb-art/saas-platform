@@ -201,6 +201,19 @@ class Module extends Model
         return $this->getDistributionMode() === self::MODE_LICENSE_ONLY;
     }
 
+    /**
+     * A kit a site can be licensed for: a paid, license-only module, which is
+     * exactly what ModuleLicenseGrantService::grant() accepts. Core platform
+     * modules can also carry license_required (53 on production, 2026-11-17:
+     * captcha, blog, marketing_automation, …), which makes them license-only
+     * as well, but no path licenses a core module. Offering them as kits made
+     * installation 53 fail APPLY_SITE_ENTITLEMENTS on «marketing_automation».
+     */
+    public function isSiteLicensableKit(): bool
+    {
+        return $this->type === self::TYPE_PAID && $this->isLicenseOnly();
+    }
+
     public function isDistributionDisabled(): bool
     {
         return $this->getDistributionMode() === self::MODE_DISABLED;
