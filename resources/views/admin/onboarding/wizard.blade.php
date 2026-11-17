@@ -1,0 +1,592 @@
+@extends('layouts.admin')
+@section('title', 'راه‌اندازی مشتری و سایت')
+@section('header', 'راه‌اندازی مشتری و سایت')
+
+@php
+    $stepFields = [
+        1 => ['mobile', 'customer_name', 'company_name'],
+        2 => ['site_title', 'domain_mode', 'domain'],
+        3 => ['license_type', 'business_vertical', 'kit_module_ids', 'kit_module_ids.*', 'base_modules', 'base_modules.*'],
+        4 => ['theme_id'],
+        5 => ['remote_server_id', 'ssl_enabled', 'backup_policy'],
+    ];
+    $errorStep = null;
+    foreach ($stepFields as $n => $fields) {
+        foreach ($fields as $f) {
+            if ($errors->has($f)) { $errorStep = $errorStep ?? $n; }
+        }
+    }
+    $initial = [
+        'mobile'            => old('mobile', $prefill['mobile'] ?? ''),
+        'customer_name'     => old('customer_name', ''),
+        'company_name'      => old('company_name', ''),
+        'site_title'        => old('site_title', ''),
+        'domain_mode'       => old('domain_mode', $options['root_domain'] !== '' ? 'subdomain' : 'custom'),
+        'domain'            => old('domain', ''),
+        'license_type'      => old('license_type', 'basic'),
+        'business_vertical' => old('business_vertical', ''),
+        'kit_module_ids'    => array_map('intval', (array) old('kit_module_ids', [])),
+        'base_modules'      => (array) old('base_modules', ['forms']),
+        'theme_id'          => old('theme_id') !== null && old('theme_id') !== '' ? (int) old('theme_id') : null,
+        'remote_server_id'  => old('remote_server_id') ? (int) old('remote_server_id') : (collect($options['servers'])->firstWhere('implemented', true)['id'] ?? null),
+        'ssl_enabled'       => (bool) old('ssl_enabled', true),
+        'backup_policy'     => old('backup_policy', 'daily'),
+    ];
+@endphp
+
+@push('head')
+<style>
+.ob{--ob-accent:var(--admin-primary,#4f46e5);--ob-accent-hover:var(--admin-primary-hover,#4338ca);--ob-accent-soft:var(--ui-indigo-light,#eef2ff);--ob-surface:var(--admin-surface,#fff);--ob-soft:var(--admin-surface-soft,#f8fafc);--ob-border:var(--admin-border,#e2e8f0);--ob-text:var(--ui-text,#0f172a);--ob-muted:var(--ui-text-secondary,#475569);--ob-ok:var(--ui-success,#047857);--ob-ok-soft:var(--ui-success-light,#ecfdf5);--ob-err:var(--ui-danger,#b91c1c);--ob-err-soft:var(--ui-danger-light,#fef2f2);--ob-warn:#92400e;--ob-warn-soft:#fffbeb;--ob-radius:var(--admin-radius,14px);
+    max-inline-size:60rem;margin-inline:auto;padding-block:1rem 4rem;color:var(--ob-text)}
+.ob-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:.75rem;margin-block-end:1.25rem}
+.ob-head h1{font-size:1.35rem;font-weight:800;margin:0}
+.ob-head p{margin:.25rem 0 0;color:var(--ob-muted);font-size:.875rem;line-height:1.9}
+.ob-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.375rem;list-style:none;margin:0 0 1.25rem;padding:.375rem;background:var(--ob-surface);border:1px solid var(--ob-border);border-radius:var(--ob-radius)}
+.ob-step{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .25rem;border-radius:calc(var(--ob-radius) - 4px);font-size:.75rem;color:var(--ob-muted);background:transparent;border:0;cursor:default;inline-size:100%;font:inherit}
+.ob-step[data-state=done]{color:var(--ob-ok);cursor:pointer}
+.ob-step[data-state=done]:hover{background:var(--ob-ok-soft)}
+.ob-step[data-state=current]{background:var(--ob-accent);color:#fff;font-weight:700}
+.ob-step-num{display:grid;place-items:center;inline-size:1.75rem;block-size:1.75rem;border-radius:999px;border:2px solid currentColor;font-weight:700;font-size:.8rem}
+.ob-step[data-state=current] .ob-step-num{background:#fff;color:var(--ob-accent);border-color:#fff}
+.ob-step-label{display:none}
+@media (min-width:640px){.ob-step-label{display:block}}
+.ob-card{background:var(--ob-surface);border:1px solid var(--ob-border);border-radius:var(--ob-radius);box-shadow:var(--admin-shadow,0 8px 24px rgba(15,23,42,.06));padding:1.25rem}
+@media (min-width:640px){.ob-card{padding:1.75rem}}
+.ob-card h2{font-size:1.05rem;font-weight:800;margin:0 0 .25rem}
+.ob-card .ob-lead{color:var(--ob-muted);font-size:.85rem;margin:0 0 1.25rem;line-height:1.9}
+.ob-grid{display:grid;gap:1rem}
+@media (min-width:640px){.ob-grid-2{grid-template-columns:1fr 1fr}}
+.ob-field label{display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem;color:var(--ob-text)}
+.ob-req{color:var(--ob-err)}
+.ob-input{inline-size:100%;min-block-size:2.75rem;padding:.55rem .85rem;border:1px solid var(--ob-border);border-radius:10px;background:var(--ob-surface);color:var(--ob-text);font:inherit;font-size:.95rem;transition:border-color .15s,box-shadow .15s}
+.ob-input:focus{outline:none;border-color:var(--ob-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--ob-accent) 22%,transparent)}
+.ob-input[aria-invalid=true]{border-color:var(--ob-err)}
+.ob-ltr{direction:ltr;text-align:left}
+.ob-hint{font-size:.78rem;color:var(--ob-muted);margin-block-start:.35rem;line-height:1.8}
+.ob-err{font-size:.8rem;color:var(--ob-err);margin-block-start:.35rem}
+.ob-ok-text{font-size:.8rem;color:var(--ob-ok);margin-block-start:.35rem}
+.ob-affix{display:flex;align-items:stretch;direction:ltr}
+.ob-affix .ob-input{border-start-end-radius:0;border-end-end-radius:0}
+.ob-affix span{display:flex;align-items:center;padding-inline:.75rem;border:1px solid var(--ob-border);border-inline-start:0;border-start-end-radius:10px;border-end-end-radius:10px;background:var(--ob-soft);color:var(--ob-muted);font-size:.9rem;white-space:nowrap}
+.ob-seg{display:inline-flex;flex-wrap:wrap;gap:.25rem;padding:.25rem;border-radius:12px;background:var(--ob-soft);border:1px solid var(--ob-border)}
+.ob-seg button{border:0;background:transparent;padding:.5rem .9rem;border-radius:9px;font:inherit;font-size:.85rem;color:var(--ob-muted);cursor:pointer;min-block-size:2.5rem}
+.ob-seg button[aria-pressed=true]{background:var(--ob-surface);color:var(--ob-accent);font-weight:700;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.ob-seg button:disabled{opacity:.45;cursor:not-allowed}
+.ob-choices{display:grid;gap:.625rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))}
+.ob-choice{position:relative;display:flex;flex-direction:column;gap:.25rem;padding:.85rem 1rem;border:1.5px solid var(--ob-border);border-radius:12px;background:var(--ob-surface);cursor:pointer;text-align:start;font:inherit;color:inherit;transition:border-color .15s,background .15s;min-block-size:3rem}
+.ob-choice:hover{border-color:color-mix(in srgb,var(--ob-accent) 45%,var(--ob-border))}
+.ob-choice[aria-checked=true],.ob-choice[aria-pressed=true]{border-color:var(--ob-accent);background:var(--ob-accent-soft)}
+.ob-choice:disabled,.ob-choice[aria-disabled=true]{opacity:.5;cursor:not-allowed}
+.ob-choice strong{font-size:.9rem}
+.ob-choice small{font-size:.75rem;color:var(--ob-muted);line-height:1.7}
+.ob-choice:focus-visible,.ob-step:focus-visible,.ob-seg button:focus-visible,.ob-btn:focus-visible{outline:2px solid var(--ob-accent);outline-offset:2px}
+.ob-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.1rem .55rem;border-radius:999px;font-size:.7rem;font-weight:700;background:var(--ob-soft);color:var(--ob-muted);border:1px solid var(--ob-border)}
+.ob-badge-accent{background:var(--ob-accent-soft);color:var(--ob-accent);border-color:transparent}
+.ob-badge-ok{background:var(--ob-ok-soft);color:var(--ob-ok);border-color:transparent}
+.ob-theme-img{aspect-ratio:16/9;inline-size:100%;border-radius:8px;object-fit:cover;background:linear-gradient(135deg,var(--ob-soft),var(--ob-accent-soft));margin-block-end:.4rem}
+.ob-panel{display:flex;gap:.75rem;align-items:flex-start;padding:.85rem 1rem;border-radius:12px;font-size:.85rem;line-height:1.9}
+.ob-panel-info{background:var(--ob-accent-soft);color:var(--ob-text)}
+.ob-panel-ok{background:var(--ob-ok-soft);color:var(--ob-text)}
+.ob-panel-warn{background:var(--ob-warn-soft);color:var(--ob-warn)}
+.ob-panel-err{background:var(--ob-err-soft);color:var(--ob-err)}
+.ob-sites{display:flex;flex-wrap:wrap;gap:.375rem;margin-block-start:.5rem}
+.ob-nav{position:sticky;inset-block-end:0;display:flex;justify-content:space-between;gap:.75rem;margin-block-start:1rem;padding:.75rem;background:color-mix(in srgb,var(--admin-bg,#f1f5f9) 85%,transparent);backdrop-filter:blur(6px);border-radius:var(--ob-radius)}
+.ob-btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-block-size:2.75rem;padding:.6rem 1.25rem;border-radius:10px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;border:1px solid transparent;transition:background .15s,opacity .15s}
+.ob-btn-primary{background:var(--ob-accent);color:#fff}
+.ob-btn-primary:hover{background:var(--ob-accent-hover)}
+.ob-btn-ghost{background:var(--ob-surface);color:var(--ob-text);border-color:var(--ob-border)}
+.ob-btn:disabled{opacity:.55;cursor:not-allowed}
+.ob-summary{display:grid;gap:.75rem}
+.ob-summary section{border:1px solid var(--ob-border);border-radius:12px;padding:.85rem 1rem}
+.ob-summary header{display:flex;justify-content:space-between;align-items:center;margin-block-end:.4rem}
+.ob-summary h3{font-size:.85rem;font-weight:800;margin:0}
+.ob-summary dl{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1rem;margin:0;font-size:.85rem}
+.ob-summary dt{color:var(--ob-muted)}
+.ob-summary dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.ob-link{background:none;border:0;padding:0;color:var(--ob-accent);font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
+.ob-pipeline{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;font-size:.82rem;color:var(--ob-muted)}
+.ob-pipeline li{display:flex;gap:.5rem;align-items:flex-start}
+.ob-pipeline li::before{content:"";flex:none;inline-size:.5rem;block-size:.5rem;margin-block-start:.55rem;border-radius:999px;background:var(--ob-accent)}
+.ob-spin{inline-size:1rem;block-size:1rem;border:2px solid currentColor;border-inline-end-color:transparent;border-radius:999px;animation:ob-spin .7s linear infinite}
+@keyframes ob-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ob *{transition:none!important;animation:none!important}}
+[x-cloak]{display:none!important}
+</style>
+@endpush
+
+@section('content')
+<div class="ob" dir="rtl" x-data="onboardingWizard(@js($options), @js($initial), @js($prefill), {{ $errorStep ?? 'null' }})" x-init="init()">
+
+    <div class="ob-head">
+        <div>
+            {{-- The page <h1> comes from the layout's @section('header'). --}}
+            <p>یک مسیر برای همه‌چیز: مشتری، دامنه، لایسنس و کیت‌ها، قالب و استقرار روی سرور. پس از تأیید، تمام مراحل خودکار اجرا می‌شود.</p>
+        </div>
+        <a href="{{ route('admin.infrastructure.customer-deployment.history') }}" class="ob-btn ob-btn-ghost">تاریخچهٔ راه‌اندازی‌ها</a>
+    </div>
+
+    @if($errors->any())
+        <div class="ob-panel ob-panel-err" role="alert" style="margin-block-end:1rem">
+            <div>
+                <strong>ثبت انجام نشد.</strong> موارد زیر را اصلاح کنید:
+                <ul style="margin:.25rem 0 0;padding-inline-start:1.1rem">
+                    @foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
+    <ol class="ob-steps" aria-label="مراحل راه‌اندازی">
+        <template x-for="(label, i) in stepLabels" :key="i">
+            <li>
+                <button type="button" class="ob-step"
+                        :data-state="i + 1 === step ? 'current' : (i + 1 < step ? 'done' : 'todo')"
+                        :aria-current="i + 1 === step ? 'step' : null"
+                        :disabled="i + 1 > step"
+                        @click="i + 1 < step && go(i + 1)">
+                    <span class="ob-step-num" x-text="i + 1 < step ? '✓' : fa(i + 1)"></span>
+                    <span class="ob-step-label" x-text="label"></span>
+                </button>
+            </li>
+        </template>
+    </ol>
+
+    <form method="POST" action="{{ route('admin.onboarding.store') }}" x-ref="form" @submit="submitting = true" novalidate>
+        @csrf
+
+        {{-- ── Step 1: customer ───────────────────────────────────────── --}}
+        <section class="ob-card" x-show="step === 1" x-ref="step1" aria-labelledby="ob-s1">
+            <h2 id="ob-s1">مشتری</h2>
+            <p class="ob-lead">هویت مشتری شمارهٔ موبایل اوست. اگر این موبایل قبلاً ثبت شده باشد، سایت جدید به همان مشتری اضافه می‌شود؛ یک مشتری می‌تواند هر تعداد سایت داشته باشد.</p>
+
+            <div class="ob-grid">
+                <div class="ob-field">
+                    <label for="ob-mobile">شمارهٔ موبایل <span class="ob-req" aria-hidden="true">*</span></label>
+                    <input id="ob-mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" class="ob-input ob-ltr"
+                           placeholder="09123456789" x-model="form.mobile" @input.debounce.400ms="lookupCustomer()"
+                           :aria-invalid="customer.state === 'invalid'" aria-describedby="ob-mobile-status" required>
+                    <div id="ob-mobile-status" aria-live="polite">
+                        <p class="ob-hint" x-show="customer.state === 'loading'" x-cloak>در حال بررسی…</p>
+                        <p class="ob-err" x-show="customer.state === 'invalid'" x-cloak>شماره موبایل باید با ۰۹ شروع شود و ۱۱ رقم باشد.</p>
+                        <p class="ob-err" x-show="customer.state === 'error'" x-cloak>بررسی موبایل ممکن نشد؛ دوباره تلاش کنید.</p>
+                    </div>
+                    @error('mobile')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="ob-panel ob-panel-ok" x-show="customer.state === 'existing' && !customer.data?.trashed" x-cloak>
+                    <div>
+                        <strong x-text="'مشتری موجود: ' + (customer.data?.name || '')"></strong>
+                        <span x-show="customer.data?.company_name" x-text="' — ' + customer.data?.company_name"></span>
+                        <div x-text="customer.data?.sites?.length ? ('سایت‌های فعلی این مشتری (' + fa(customer.data.sites.length) + '):') : 'این مشتری هنوز سایتی ندارد.'"></div>
+                        <div class="ob-sites">
+                            <template x-for="s in (customer.data?.sites || [])" :key="s.id">
+                                <span class="ob-badge" :title="s.title"><span class="ob-ltr" x-text="s.domain || s.title"></span></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ob-panel ob-panel-err" x-show="customer.state === 'existing' && customer.data?.trashed" x-cloak role="alert">
+                    این موبایل متعلق به مشتری حذف‌شده است؛ ابتدا او را از فهرست مشتریان بازیابی کنید.
+                </div>
+
+                <div class="ob-grid ob-grid-2" x-show="customer.state === 'new'" x-cloak>
+                    <div class="ob-panel ob-panel-info" style="grid-column:1/-1">این موبایل تازه است؛ مشتری جدید با همین شماره ساخته می‌شود.</div>
+                    <div class="ob-field">
+                        <label for="ob-name">نام و نام خانوادگی <span class="ob-req" aria-hidden="true">*</span></label>
+                        <input id="ob-name" name="customer_name" type="text" class="ob-input" autocomplete="name" x-model="form.customer_name" :aria-invalid="touched.step1 && !form.customer_name.trim()">
+                        <p class="ob-err" x-show="touched.step1 && !form.customer_name.trim()" x-cloak>نام مشتری جدید الزامی است.</p>
+                        @error('customer_name')<p class="ob-err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="ob-field">
+                        <label for="ob-company">نام شرکت یا برند</label>
+                        <input id="ob-company" name="company_name" type="text" class="ob-input" autocomplete="organization" x-model="form.company_name">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ── Step 2: site & domain ──────────────────────────────────── --}}
+        <section class="ob-card" x-show="step === 2" x-cloak aria-labelledby="ob-s2">
+            <h2 id="ob-s2">سایت و دامنه</h2>
+            <p class="ob-lead">رکورد DNS زیردامنه‌های پلتفرم خودکار ساخته می‌شود. دامنهٔ اختصاصی باید از قبل به سرور اشاره کند.</p>
+
+            <div class="ob-grid">
+                <div class="ob-field">
+                    <label for="ob-title">نام سایت <span class="ob-req" aria-hidden="true">*</span></label>
+                    <input id="ob-title" name="site_title" type="text" class="ob-input" maxlength="120" x-model="form.site_title" placeholder="مثال: خورشید انرژی پارس" :aria-invalid="touched.step2 && !titleValid()">
+                    <p class="ob-err" x-show="touched.step2 && !titleValid()" x-cloak>نام سایت الزامی است و نباید شامل " \ $ ` باشد.</p>
+                    @error('site_title')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="ob-field">
+                    <span id="ob-mode-label" style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem">نوع دامنه</span>
+                    <div class="ob-seg" role="group" aria-labelledby="ob-mode-label">
+                        <button type="button" :aria-pressed="form.domain_mode === 'subdomain'" :disabled="!options.root_domain" @click="setMode('subdomain')">زیردامنهٔ پلتفرم</button>
+                        <button type="button" :aria-pressed="form.domain_mode === 'custom'" @click="setMode('custom')">دامنهٔ اختصاصی</button>
+                    </div>
+                    <input type="hidden" name="domain_mode" :value="form.domain_mode">
+                    <p class="ob-hint" x-show="!options.root_domain" x-cloak>دامنهٔ اصلی پلتفرم در تنظیمات DNS Provider ثبت نشده؛ فقط دامنهٔ اختصاصی ممکن است.</p>
+                </div>
+
+                <div class="ob-field">
+                    <label for="ob-domain" x-text="form.domain_mode === 'subdomain' ? 'زیردامنه' : 'دامنه'"></label>
+                    <div :class="form.domain_mode === 'subdomain' ? 'ob-affix' : ''">
+                        <input id="ob-domain" name="domain" type="text" class="ob-input ob-ltr" autocomplete="off" spellcheck="false"
+                               x-model="form.domain" @input.debounce.500ms="checkDomain()"
+                               :placeholder="form.domain_mode === 'subdomain' ? 'shop' : 'example.ir'"
+                               :aria-invalid="domain.state === 'error'" aria-describedby="ob-domain-status">
+                        <span x-show="form.domain_mode === 'subdomain'" x-text="'.' + options.root_domain"></span>
+                    </div>
+                    <div id="ob-domain-status" aria-live="polite">
+                        <p class="ob-hint" x-show="domain.state === 'loading'" x-cloak>در حال بررسی دامنه…</p>
+                        <p class="ob-ok-text" x-show="domain.state === 'ok'" x-cloak>
+                            <span class="ob-ltr" x-text="domain.domain"></span> آزاد است<span x-show="domain.platform"> — DNS خودکار ساخته می‌شود</span>.
+                        </p>
+                        <p class="ob-err" x-show="domain.state === 'error'" x-cloak x-text="domain.error"></p>
+                    </div>
+                    @error('domain')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+            </div>
+        </section>
+
+        {{-- ── Step 3: business, licence & kits ───────────────────────── --}}
+        <section class="ob-card" x-show="step === 3" x-cloak aria-labelledby="ob-s3">
+            <h2 id="ob-s3">کسب‌وکار، لایسنس و کیت‌ها</h2>
+            <p class="ob-lead">حوزهٔ کسب‌وکار، کیت‌های اختصاصی آن حوزه و قالب پیشنهادی را به‌صورت خودکار انتخاب می‌کند. همه را می‌توانید تغییر دهید.</p>
+
+            <div class="ob-grid">
+                <div class="ob-field">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-vertical-label">حوزهٔ کسب‌وکار</span>
+                    <div class="ob-choices" role="radiogroup" aria-labelledby="ob-vertical-label">
+                        <button type="button" class="ob-choice" role="radio" :aria-checked="form.business_vertical === ''" @click="setVertical('')">
+                            <strong>بدون حوزهٔ اختصاصی</strong><small>فقط قالب‌ها و ابزارک‌های عمومی</small>
+                        </button>
+                        <template x-for="(p, key) in options.profiles" :key="key">
+                            <button type="button" class="ob-choice" role="radio" :aria-checked="form.business_vertical === key" @click="setVertical(key)">
+                                <strong x-text="p.label"></strong>
+                                <small x-show="p.kit_ids.length || p.theme_id" x-text="profileSummary(p)"></small>
+                            </button>
+                        </template>
+                    </div>
+                    <input type="hidden" name="business_vertical" :value="form.business_vertical">
+                    @error('business_vertical')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="ob-field">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-license-label">نوع لایسنس</span>
+                    <div class="ob-seg" role="group" aria-labelledby="ob-license-label">
+                        <template x-for="(label, key) in options.license_types" :key="key">
+                            <button type="button" :aria-pressed="form.license_type === key" @click="form.license_type = key" x-text="label"></button>
+                        </template>
+                    </div>
+                    <input type="hidden" name="license_type" :value="form.license_type">
+                </div>
+
+                <div class="ob-field" x-show="options.kits.length">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-kits-label">کیت‌های لایسنس</span>
+                    <div class="ob-choices" role="group" aria-labelledby="ob-kits-label">
+                        <template x-for="kit in options.kits" :key="kit.id">
+                            <button type="button" class="ob-choice" :aria-pressed="form.kit_module_ids.includes(kit.id)"
+                                    :aria-disabled="kit.vertical && kit.vertical !== form.business_vertical"
+                                    @click="toggleKit(kit)">
+                                <strong x-text="kit.title"></strong>
+                                <small x-show="kit.description" x-text="kit.description"></small>
+                                <span x-show="kit.vertical" class="ob-badge" style="align-self:flex-start" x-text="'ویژهٔ ' + (options.profiles[kit.vertical]?.label || kit.vertical)"></span>
+                            </button>
+                        </template>
+                    </div>
+                    <template x-for="id in form.kit_module_ids" :key="'k' + id"><input type="hidden" name="kit_module_ids[]" :value="id"></template>
+                    <p class="ob-hint">کیتی که به حوزهٔ خاصی وابسته است فقط با انتخاب همان حوزه فعال می‌شود.</p>
+                    @error('kit_module_ids')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="ob-field">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-base-label">ماژول‌های پایهٔ سایت</span>
+                    <div class="ob-choices" role="group" aria-labelledby="ob-base-label">
+                        <template x-for="(label, key) in options.base_modules" :key="key">
+                            <button type="button" class="ob-choice" :aria-pressed="form.base_modules.includes(key)" @click="toggleBase(key)"><strong x-text="label"></strong></button>
+                        </template>
+                    </div>
+                    <template x-for="m in form.base_modules" :key="'b' + m"><input type="hidden" name="base_modules[]" :value="m"></template>
+                </div>
+            </div>
+        </section>
+
+        {{-- ── Step 4: theme ──────────────────────────────────────────── --}}
+        <section class="ob-card" x-show="step === 4" x-cloak aria-labelledby="ob-s4">
+            <h2 id="ob-s4">قالب سایت</h2>
+            <p class="ob-lead">قالب انتخابی — با صفحهٔ اصلی، سربرگ و پابرگ اختصاصی‌اش — پس از پایان نصب خودکار روی سایت اعمال می‌شود و طراحی از همان لحظه روی دامنه دیده می‌شود.</p>
+
+            <div class="ob-panel ob-panel-warn" style="margin-block-end:1rem" x-show="profile()?.theme_status === 'unavailable'" x-cloak>
+                قالب اختصاصی این حوزه (<span class="ob-ltr" x-text="profile()?.theme_slug"></span>) هنوز منتشر یا واجد شرایط تجاری نشده است؛ قالب دیگری انتخاب کنید یا ابتدا Release آن را تأیید کنید.
+            </div>
+
+            <div class="ob-choices" role="radiogroup" aria-label="قالب‌ها" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+                <button type="button" class="ob-choice" role="radio" :aria-checked="form.theme_id === null" @click="form.theme_id = null">
+                    <div class="ob-theme-img" aria-hidden="true"></div>
+                    <strong>بدون قالب</strong><small>سایت با ظاهر پیش‌فرض راه‌اندازی می‌شود.</small>
+                </button>
+                <template x-for="t in options.themes" :key="t.id">
+                    <button type="button" class="ob-choice" role="radio" :aria-checked="form.theme_id === t.id" @click="form.theme_id = t.id">
+                        <img x-show="t.image" :src="t.image" alt="" class="ob-theme-img" loading="lazy">
+                        <div x-show="!t.image" class="ob-theme-img" aria-hidden="true"></div>
+                        <span style="display:flex;gap:.375rem;align-items:center;flex-wrap:wrap">
+                            <strong x-text="t.name"></strong>
+                            <span class="ob-badge ob-badge-accent" x-show="profile()?.theme_id === t.id">پیشنهاد این حوزه</span>
+                        </span>
+                        <small x-text="(t.description || '').slice(0, 110)"></small>
+                        <span class="ob-badge" style="align-self:flex-start" x-text="fa(t.pages) + ' صفحه'"></span>
+                    </button>
+                </template>
+            </div>
+            <input type="hidden" name="theme_id" :value="form.theme_id ?? ''">
+            <p class="ob-hint" x-show="!options.themes.length">هیچ قالب منتشرشده و واجد شرایط تجاری‌ای وجود ندارد.</p>
+            @error('theme_id')<p class="ob-err">{{ $message }}</p>@enderror
+        </section>
+
+        {{-- ── Step 5: server & deployment ────────────────────────────── --}}
+        <section class="ob-card" x-show="step === 5" x-cloak aria-labelledby="ob-s5">
+            <h2 id="ob-s5">سرور و استقرار</h2>
+            <p class="ob-lead">هر سایت نصب مستقل خود را دارد: پوشهٔ وب، پایگاه داده، فایل محیطی، پیکربندی Nginx روی سوکت PHP-FPM همان سرور و مجوزهای www-data.</p>
+
+            <div class="ob-grid">
+                <div class="ob-field">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-server-label">سرور مقصد <span class="ob-req" aria-hidden="true">*</span></span>
+                    <div class="ob-choices" role="radiogroup" aria-labelledby="ob-server-label">
+                        <template x-for="s in options.servers" :key="s.id">
+                            <button type="button" class="ob-choice" role="radio" :aria-checked="form.remote_server_id === s.id" :disabled="!s.implemented" @click="form.remote_server_id = s.id">
+                                <strong x-text="s.label"></strong>
+                                <small class="ob-ltr" x-text="s.host"></small>
+                                <span class="ob-badge" style="align-self:flex-start" x-text="s.implemented ? s.type : 'درایور پشتیبانی نمی‌شود'"></span>
+                            </button>
+                        </template>
+                    </div>
+                    <input type="hidden" name="remote_server_id" :value="form.remote_server_id ?? ''">
+                    <div class="ob-panel ob-panel-warn" x-show="!options.servers.length" x-cloak>
+                        هنوز سروری ثبت نشده است. <a href="{{ route('admin.infrastructure.customer-deployment.servers.create') }}" target="_blank" rel="noopener" style="font-weight:700;text-decoration:underline">افزودن سرور</a>
+                    </div>
+                    @error('remote_server_id')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="ob-grid ob-grid-2">
+                    <div class="ob-field">
+                        <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-ssl-label">گواهی SSL</span>
+                        <div class="ob-seg" role="group" aria-labelledby="ob-ssl-label">
+                            <button type="button" :aria-pressed="form.ssl_enabled" @click="form.ssl_enabled = true">فعال (HTTPS)</button>
+                            <button type="button" :aria-pressed="!form.ssl_enabled" @click="form.ssl_enabled = false">غیرفعال</button>
+                        </div>
+                        <input type="hidden" name="ssl_enabled" :value="form.ssl_enabled ? 1 : 0">
+                        <p class="ob-err" x-show="!form.ssl_enabled && form.theme_id" x-cloak>اعمال خودکار قالب از طریق HTTPS انجام می‌شود؛ بدون SSL قالب روی سایت اعمال نخواهد شد.</p>
+                    </div>
+                    <div class="ob-field">
+                        <label for="ob-backup">پشتیبان‌گیری</label>
+                        <select id="ob-backup" name="backup_policy" class="ob-input" x-model="form.backup_policy">
+                            <template x-for="(label, key) in options.backup_policies" :key="key"><option :value="key" x-text="label" :selected="form.backup_policy === key"></option></template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ── Step 6: review ─────────────────────────────────────────── --}}
+        <section class="ob-card" x-show="step === 6" x-cloak aria-labelledby="ob-s6">
+            <h2 id="ob-s6">بازبینی و اجرا</h2>
+            <p class="ob-lead">با تأیید، نصب در صف قرار می‌گیرد و پیشرفت هر مرحله را زنده می‌بینید. نیازی به هیچ اقدام دستی روی سرور نیست.</p>
+
+            <div class="ob-summary">
+                <section>
+                    <header><h3>مشتری</h3><button type="button" class="ob-link" @click="go(1)">ویرایش</button></header>
+                    <dl>
+                        <dt>موبایل</dt><dd class="ob-ltr" x-text="customer.mobile || form.mobile"></dd>
+                        <dt>مشتری</dt><dd x-text="customer.state === 'existing' ? (customer.data?.name + ' (موجود)') : (form.customer_name + ' (جدید)')"></dd>
+                    </dl>
+                </section>
+                <section>
+                    <header><h3>سایت</h3><button type="button" class="ob-link" @click="go(2)">ویرایش</button></header>
+                    <dl>
+                        <dt>نام</dt><dd x-text="form.site_title"></dd>
+                        <dt>دامنه</dt><dd class="ob-ltr" x-text="domain.domain"></dd>
+                    </dl>
+                </section>
+                <section>
+                    <header><h3>لایسنس و کیت‌ها</h3><button type="button" class="ob-link" @click="go(3)">ویرایش</button></header>
+                    <dl>
+                        <dt>لایسنس</dt><dd x-text="options.license_types[form.license_type]"></dd>
+                        <dt>حوزه</dt><dd x-text="form.business_vertical ? options.profiles[form.business_vertical]?.label : 'عمومی'"></dd>
+                        <dt>کیت‌ها</dt><dd x-text="selectedKitTitles() || '—'"></dd>
+                    </dl>
+                </section>
+                <section>
+                    <header><h3>قالب و استقرار</h3><button type="button" class="ob-link" @click="go(4)">ویرایش</button></header>
+                    <dl>
+                        <dt>قالب</dt><dd x-text="themeName() || 'بدون قالب'"></dd>
+                        <dt>سرور</dt><dd x-text="serverLabel()"></dd>
+                        <dt>SSL</dt><dd x-text="form.ssl_enabled ? 'فعال' : 'غیرفعال'"></dd>
+                    </dl>
+                </section>
+
+                <div class="ob-panel ob-panel-info">
+                    <div>
+                        <strong>پس از تأیید، به‌ترتیب و خودکار:</strong>
+                        <ul class="ob-pipeline" style="margin-block-start:.5rem">
+                            <li>بررسی سرور، PHP، افزونه‌ها، فضای دیسک و مجوزها</li>
+                            <li>ساخت پوشهٔ وب، بارگذاری و استخراج بسته، تولید فایل محیطی و پایگاه داده</li>
+                            <li>رکورد DNS، پیکربندی Nginx روی سوکت PHP-FPM شناسایی‌شده، صدور SSL و تنظیم مجوزهای www-data</li>
+                            <li>صدور لایسنس سایت، اعمال حوزهٔ کسب‌وکار و فعال‌سازی کیت‌ها</li>
+                            <li>اختصاص قالب، پاک‌سازی کش و نماها، و پس از آماده‌شدن سایت، اعمال صفحات قالب روی دامنه</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="ob-nav">
+            <button type="button" class="ob-btn ob-btn-ghost" x-show="step > 1" @click="go(step - 1)">مرحلهٔ قبل</button>
+            <span x-show="step === 1"></span>
+            <button type="button" class="ob-btn ob-btn-primary" x-show="step < 6" @click="next()" :disabled="busy()">
+                <span class="ob-spin" x-show="busy()" aria-hidden="true"></span>
+                مرحلهٔ بعد
+            </button>
+            <button type="submit" class="ob-btn ob-btn-primary" x-show="step === 6" x-cloak :disabled="submitting">
+                <span class="ob-spin" x-show="submitting" aria-hidden="true"></span>
+                <span x-text="submitting ? 'در حال ثبت…' : 'تأیید و راه‌اندازی خودکار'"></span>
+            </button>
+        </div>
+    </form>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+function onboardingWizard(options, initial, prefill, errorStep) {
+    const unsafe = /["\\$`\r\n]/;
+    return {
+        options,
+        form: { ...initial },
+        step: 1,
+        submitting: false,
+        touched: { step1: false, step2: false },
+        stepLabels: ['مشتری', 'سایت و دامنه', 'لایسنس و کیت', 'قالب', 'سرور', 'بازبینی'],
+        customer: { state: 'idle', data: null, mobile: null, seq: 0 },
+        domain: { state: 'idle', domain: null, error: null, platform: false, seq: 0 },
+        lookupUrl: @js(route('admin.onboarding.lookup-customer')),
+        domainUrl: @js(route('admin.onboarding.check-domain')),
+
+        init() {
+            if (prefill && prefill.valid) { this.applyLookup(prefill); }
+            else if (this.form.mobile) { this.lookupCustomer(); }
+            if (this.form.domain) { this.checkDomain(); }
+            if (errorStep) { this.step = errorStep; }
+        },
+        fa(n) { return Number(n).toLocaleString('fa-IR'); },
+
+        async lookupCustomer() {
+            const value = (this.form.mobile || '').trim();
+            if (value.length < 10) { this.customer = { ...this.customer, state: value ? 'invalid' : 'idle', data: null }; return; }
+            const seq = ++this.customer.seq;
+            this.customer.state = 'loading';
+            try {
+                const res = await fetch(this.lookupUrl + '?mobile=' + encodeURIComponent(value), { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) { throw new Error(res.status); }
+                const data = await res.json();
+                if (seq === this.customer.seq) { this.applyLookup(data); }
+            } catch (e) {
+                if (seq === this.customer.seq) { this.customer.state = 'error'; }
+            }
+        },
+        applyLookup(data) {
+            if (!data.valid) { this.customer.state = 'invalid'; this.customer.data = null; return; }
+            this.customer.mobile = data.mobile;
+            this.customer.data = data.customer;
+            this.customer.state = data.customer ? 'existing' : 'new';
+        },
+
+        setMode(mode) { if (this.form.domain_mode !== mode) { this.form.domain_mode = mode; this.checkDomain(); } },
+        async checkDomain() {
+            const value = (this.form.domain || '').trim();
+            if (!value) { this.domain = { ...this.domain, state: 'idle', domain: null, error: null }; return; }
+            const seq = ++this.domain.seq;
+            this.domain.state = 'loading';
+            try {
+                const q = new URLSearchParams({ mode: this.form.domain_mode, domain: value });
+                const res = await fetch(this.domainUrl + '?' + q, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) { throw new Error(res.status); }
+                const data = await res.json();
+                if (seq !== this.domain.seq) { return; }
+                this.domain = { ...this.domain, state: data.ok ? 'ok' : 'error', domain: data.domain, error: data.error, platform: data.platform_subdomain };
+            } catch (e) {
+                if (seq === this.domain.seq) { this.domain = { ...this.domain, state: 'error', error: 'بررسی دامنه ممکن نشد؛ دوباره تلاش کنید.' }; }
+            }
+        },
+
+        profile() { return this.form.business_vertical ? this.options.profiles[this.form.business_vertical] : null; },
+        profileSummary(p) {
+            const parts = [];
+            if (p.kit_ids.length) { parts.push(this.fa(p.kit_ids.length) + ' کیت اختصاصی'); }
+            if (p.theme_id) { parts.push('قالب اختصاصی'); }
+            return parts.join(' + ');
+        },
+        setVertical(key) {
+            const prev = this.form.business_vertical ? this.options.profiles[this.form.business_vertical] : null;
+            this.form.business_vertical = key;
+            // Kits bound to another vertical cannot work there: drop them.
+            this.form.kit_module_ids = this.form.kit_module_ids.filter(id => {
+                const kit = this.options.kits.find(k => k.id === id);
+                return kit && (!kit.vertical || kit.vertical === key);
+            });
+            const p = this.profile();
+            if (p) {
+                p.kit_ids.forEach(id => { if (!this.form.kit_module_ids.includes(id)) { this.form.kit_module_ids.push(id); } });
+                if (p.theme_id && (this.form.theme_id === null || this.form.theme_id === prev?.theme_id)) { this.form.theme_id = p.theme_id; }
+            } else if (prev?.theme_id && this.form.theme_id === prev.theme_id) {
+                this.form.theme_id = null;
+            }
+        },
+        toggleKit(kit) {
+            if (kit.vertical && kit.vertical !== this.form.business_vertical) { return; }
+            const i = this.form.kit_module_ids.indexOf(kit.id);
+            i === -1 ? this.form.kit_module_ids.push(kit.id) : this.form.kit_module_ids.splice(i, 1);
+        },
+        toggleBase(key) {
+            const i = this.form.base_modules.indexOf(key);
+            i === -1 ? this.form.base_modules.push(key) : this.form.base_modules.splice(i, 1);
+        },
+
+        titleValid() { const t = (this.form.site_title || '').trim(); return t.length > 0 && !unsafe.test(t); },
+        selectedKitTitles() { return this.options.kits.filter(k => this.form.kit_module_ids.includes(k.id)).map(k => k.title).join('، '); },
+        themeName() { return this.options.themes.find(t => t.id === this.form.theme_id)?.name; },
+        serverLabel() { return this.options.servers.find(s => s.id === this.form.remote_server_id)?.label || '—'; },
+
+        busy() { return (this.step === 1 && this.customer.state === 'loading') || (this.step === 2 && this.domain.state === 'loading'); },
+        stepValid(n) {
+            if (n === 1) {
+                if (this.customer.state === 'existing') { return !this.customer.data?.trashed; }
+                return this.customer.state === 'new' && this.form.customer_name.trim() !== '' && !unsafe.test(this.form.customer_name);
+            }
+            if (n === 2) { return this.titleValid() && this.domain.state === 'ok'; }
+            if (n === 5) { return this.form.remote_server_id !== null; }
+            return true;
+        },
+        next() {
+            if (this.step === 1) { this.touched.step1 = true; if (this.customer.state === 'idle') { this.customer.state = 'invalid'; } }
+            if (this.step === 2) { this.touched.step2 = true; if (this.domain.state === 'idle') { this.domain = { ...this.domain, state: 'error', error: 'دامنه یا زیردامنه را وارد کنید.' }; } }
+            if (!this.stepValid(this.step)) { this.focusFirstInvalid(); return; }
+            this.go(this.step + 1);
+        },
+        go(n) {
+            this.step = n;
+            this.$nextTick(() => {
+                const card = this.$root.querySelectorAll('section.ob-card')[n - 1];
+                card?.querySelector('h2')?.setAttribute('tabindex', '-1');
+                card?.querySelector('h2')?.focus({ preventScroll: true });
+                card?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            });
+        },
+        focusFirstInvalid() {
+            this.$nextTick(() => this.$root.querySelector('section.ob-card:not([style*="display: none"]) [aria-invalid="true"]')?.focus());
+        },
+    };
+}
+</script>
+@endpush

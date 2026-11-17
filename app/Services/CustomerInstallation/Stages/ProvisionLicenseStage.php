@@ -7,6 +7,7 @@ use App\Models\Site;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use App\Services\LicenseServerService;
+use App\Support\IranianMobileNumber;
 
 class ProvisionLicenseStage extends AbstractStage
 {
@@ -20,11 +21,27 @@ class ProvisionLicenseStage extends AbstractStage
         return $this->run($ctx, function (InstallationContext $ctx) {
             $req = $ctx->request;
 
-            // Find or create the Customer by mobile phone
-            $customer = Customer::firstOrCreate(
-                ['mobile' => $req->phone],
-                ['name'   => $req->ownerName]
-            );
+            // ADR-088: the onboarding wizard resolves (or creates) the
+            // customer before dispatch and passes its id; one mobile owns
+            // any number of sites. Older payloads still find-or-create by
+            // mobile, but only by a real, normalised one: an empty phone
+            // used to match every other phone-less customer and silently
+            // merge unrelated sites onto one owner.
+            $customer = $req->customerId !== null ? Customer::find($req->customerId) : null;
+            if ($customer === null) {
+                $mobile = IranianMobileNumber::normalize($req->phone);
+                if ($mobile === null) {
+                    return StageResult::failure(
+                        $this->name(),
+                        'A valid customer mobile number is required to attach the site to its owner.',
+                        $this->elapsed()
+                    );
+                }
+                $customer = Customer::firstOrCreate(
+                    ['mobile' => $mobile],
+                    ['name'   => $req->ownerName]
+                );
+            }
 
             // Create or find the Site record using correct column names
             $site = Site::updateOrCreate(

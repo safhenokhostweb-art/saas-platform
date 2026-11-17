@@ -18,6 +18,16 @@ class GenerateEnvironmentStage extends AbstractStage
     public function estimatedSeconds(): int { return 3; }
     public function canRollback(): bool { return true; }
 
+    /** Quote a .env value only when it would not survive unquoted. */
+    private static function envValue(string $value): string
+    {
+        if ($value === '' || preg_match('/^[A-Za-z0-9_:\/+=.\-]+$/', $value) === 1) {
+            return $value;
+        }
+
+        return '"' . addcslashes($value, '"\$') . '"';
+    }
+
     public function execute(InstallationContext $ctx): StageResult
     {
         return $this->run($ctx, function (InstallationContext $ctx) {
@@ -89,6 +99,11 @@ class GenerateEnvironmentStage extends AbstractStage
                 "PLATFORM_URL={$platformUrl}",
                 "LICENSE_KEY=__LICENSE_KEY__",
                 "LICENSE_VERIFY_SSL=false",
+                // ADR-088: the shared secret ThemeInstallGateway signs its
+                // theme push with (customer-site ProvisionSecretMiddleware
+                // refuses every push while it is empty). Without it a fresh
+                // site could never receive the theme bound at onboarding.
+                "CUSTOMER_PROVISION_SECRET=" . self::envValue((string) config('services.customer_provision_secret', '')),
                 "",
                 "SITE_TIMEZONE={$req->timezone}",
                 "SITE_LANGUAGE={$req->language}",

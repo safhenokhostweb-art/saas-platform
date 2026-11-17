@@ -37,7 +37,7 @@
         <h1 class="text-xl font-bold text-gray-900">مرکز استقرار مشتریان</h1>
         <p class="text-sm text-gray-500">مدیریت نصب، پیگیری پیشرفت، مدیریت سرورها</p>
     </div>
-    <a href="{{ route('admin.infrastructure.customer-deployment.wizard') }}" class="btn btn-primary text-sm">
+    <a href="{{ route('admin.onboarding.create') }}" class="btn btn-primary text-sm">
         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         نصب جدید
     </a>
@@ -89,7 +89,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                     <p class="text-sm">هیچ نصب فعالی وجود ندارد</p>
-                    <a href="{{ route('admin.infrastructure.customer-deployment.wizard') }}" class="btn btn-primary btn-sm mt-3 inline-flex">شروع نصب جدید</a>
+                    <a href="{{ route('admin.onboarding.create') }}" class="btn btn-primary btn-sm mt-3 inline-flex">شروع نصب جدید</a>
                 </div>
             @else
                 <div class="divide-y divide-gray-100">
@@ -186,7 +186,7 @@
         <div class="cie-card">
             <h2 class="font-semibold text-gray-800 mb-4">دسترسی سریع</h2>
             <div class="space-y-2">
-                <a href="{{ route('admin.infrastructure.customer-deployment.wizard') }}" class="cie-quick-btn">
+                <a href="{{ route('admin.onboarding.create') }}" class="cie-quick-btn">
                     <div class="cie-quick-btn__icon bg-indigo-50 text-indigo-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     </div>

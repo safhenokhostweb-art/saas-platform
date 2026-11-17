@@ -5872,3 +5872,102 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   overrides, platform canvas). customer-site `PlatformAssetAccessTest`
   (client auth, last-good fallback, listing, insert and save gates), and
   `TemplateLibraryInsertTest` now provisions a licensed solar site.
+
+## ADR-088
+
+**Title:** Unified customer & site onboarding wizard driving the canonical installation pipeline end to end
+
+**Status:** Accepted
+
+**Date:** 2026-11-17
+
+**Context:**
+
+- Onboarding was split across four entry points that each did part of the
+  job: `customers/create` (a bare customer row), `sites/create` and
+  `sites/wizard` (a bare site row, no provisioning at all), and
+  `infrastructure/customer-deployment/wizard` (provisioning, but it required
+  an email although customers are mobile-only since 2026-05-30, and could
+  not attach a site to an existing customer). Vertical, kit licences and
+  the template were then applied by hand on three more pages.
+- Owner request (2026-11-16): one wizard; one mobile managing several
+  sites; no manual server work (web root, nginx vhost on the PHP-FPM
+  socket, `www-data` permissions, cache clear); kits such as
+  `solar_industry_kit` and the industry home template applied
+  automatically.
+- customer-site is single-tenant per install (own `.env` with
+  `LICENSE_KEY`, own database). A single shared `/var/www/customer-site`
+  root for every subdomain would serve one tenant on all of them, so the
+  owner chose the per-site isolated install
+  (`CustomerInstallationOrchestrator`, `/var/www/{slug}`) on 2026-11-16.
+- Audit of that pipeline found three silent gaps: `InstallThemeStage` only
+  fired a `customer.theme.install` event nothing listened to (a chosen
+  theme never reached the site); the generated `.env` never carried
+  `CUSTOMER_PROVISION_SECRET`, so customer-site refused every theme push
+  (`ProvisionSecretMiddleware`); and `ProvisionLicenseStage` found or
+  created the owner by `firstOrCreate(['mobile' => $phone])`, so an empty
+  phone merged unrelated sites onto one phone-less customer.
+
+**Decision:**
+
+1. **One entry point.** `admin/onboarding` (`OnboardingWizardController`,
+   `SiteOnboardingService`) collects customer, site and domain, licence,
+   vertical and kits, theme, server, SSL and backup in six steps, with
+   live mobile lookup and domain checks, and starts the canonical pipeline.
+   The four legacy pages answer `301` to it (route names kept, views
+   removed). Their POST endpoints stay for compatibility; the legacy
+   deployment start now shares `InstallationTargetGuard` (driver and DNS
+   checks) with the wizard.
+2. **Identity is the mobile.** `App\Support\IranianMobileNumber` is the
+   one normaliser (Persian/Arabic-Indic digits, `+98`, separators). The
+   service resolves the customer by normalised mobile, creates it only
+   when new (`CreateCustomerUseCase`), refuses a soft-deleted owner's
+   mobile with guidance, and passes `customer_id` in the payload.
+   `ProvisionLicenseStage` attaches the site to that customer and fails,
+   instead of merging owners, when neither an id nor a valid mobile exists.
+3. **The pipeline remains the only provisioning authority.** The wizard
+   decides and dispatches; it provisions nothing itself. Two stages are
+   added to the fresh-install list (24 → 26):
+   `APPLY_SITE_ENTITLEMENTS` after `PROVISION_LICENSE` (vertical through
+   `SiteAssetEntitlementService::setVertical()`; each kit through
+   `ModuleLicenseGrantService` then `ModuleAssignmentService::enableForSite()`;
+   a kit with a code package is licensed and its activation recorded as
+   deferred), and `CLEAR_APPLICATION_CACHE` right before `CUSTOMER_READY`
+   (`config:clear`, `cache:clear`, `view:clear`, then `www-data` ownership of
+   `storage/` and `bootstrap/cache` re-asserted; non-fatal). The nginx vhost,
+   detected PHP-FPM socket (php8.3 is only the fallback), web root, DNS,
+   SSL and permissions remain the existing stages' job.
+4. **Template binding in two steps.** `INSTALL_THEME` assigns the theme
+   through `PublishedThemeAssignmentService` (ThemeLicense, ThemeAssignment,
+   `sites.theme_id`) and records `metadata.template_binding =
+   pending_push`. After the installation completes (customer-site
+   redirects every request to `/install` until `CUSTOMER_READY` writes its
+   lock), `PushSiteTemplateJob` pushes the theme's pages, home included,
+   through `ThemeInstallGateway`, retrying at 30/120/300 s, and the
+   installation page offers a retry. `GENERATE_ENVIRONMENT` writes
+   `CUSTOMER_PROVISION_SECRET` so the push authenticates.
+5. **Industry profiles are data.** `config/onboarding.php` maps a vertical
+   to its theme slug (`solar_energy` → `solar-industry`). The kits a
+   vertical needs are derived from the ADR-087 policy families
+   (`required_vertical`, `entitlement_keys`), never restated; the service
+   rejects a kit whose family requires another vertical.
+6. **Kit licensing has one path.** `ModuleLicenseGrantService` (licence,
+   zero-amount purchase, ledger) is extracted unchanged from
+   `ModuleLicenseController::grant()`, which now delegates to it.
+
+**Consequences:**
+
+- A chosen theme now actually reaches new sites, legacy `theme_slug`
+  payloads included. The theme push needs HTTPS (the gateway calls
+  `https://<domain>`); the wizard warns when SSL is off with a theme.
+- Every new install's `.env` carries the shared provision secret, the same
+  value the platform already sends. Rotation remains an owner operation
+  across all sites.
+- The installation page derives its stage list and totals from the
+  orchestrator (the hardcoded 20-stage copy had drifted).
+- No migration. `CustomerInstallRequest` gains optional fields, so older
+  payloads parse unchanged.
+- Tests: `tests/Unit/Onboarding`, `tests/Feature/Onboarding` (wizard,
+  stages, binder, push job, env secret, vhost, end to end),
+  `tests/browser/onboarding-wizard.spec.ts` (desktop, tablet, mobile; never
+  submits).

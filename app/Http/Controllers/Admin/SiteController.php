@@ -62,27 +62,25 @@ class SiteController extends Controller
     /**
      * فرم ایجاد سایت جدید
      */
-    public function create()
+    public function create(Request $request)
     {
-        $customers = Customer::all();
-        // Phase 17-D — Part 5: was Module::where('is_active', true)->get(),
-        // which included TYPE_INTERNAL (platform-only) modules in this
-        // checklist. modulesForManualAssign() is the same assignable-only
-        // filter SiteModuleController's dedicated page already used.
-        $modules = $this->moduleAssignmentService->modulesForManualAssign();
-        $paymentGateways = Schema::hasTable('payment_gateways') ? PaymentGateway::where('is_active', true)->orderBy('sort_order')->get() : collect();
-        return view('admin.sites.create', compact('customers', 'modules', 'paymentGateways'));
+        // ADR-088 — onboarding is one wizard now; this page only forwards to it.
+        return redirect()->route('admin.onboarding.create', array_filter(['mobile' => $this->customerMobile($request)]), 301);
     }
 
     /**
      * Wizard چند مرحله‌ای برای ایجاد سایت جدید
      */
-    public function wizard()
+    public function wizard(Request $request)
     {
-        $customers = Customer::orderBy('name')->get(['id', 'name', 'mobile']);
-        $modules   = $this->moduleAssignmentService->modulesForManualAssign();
-        $modulesByCategory = $modules->groupBy('category');
-        return view('admin.sites.wizard', compact('customers', 'modules', 'modulesByCategory'));
+        // ADR-088 — onboarding is one wizard now; this page only forwards to it.
+        return redirect()->route('admin.onboarding.create', array_filter(['mobile' => $this->customerMobile($request)]), 301);
+    }
+
+    /** A ?customer_id link (e.g. from the customers list) pre-fills the wizard's mobile. */
+    private function customerMobile(Request $request): ?string
+    {
+        return $request->filled('customer_id') ? Customer::find($request->customer_id)?->mobile : null;
     }
 
     /**

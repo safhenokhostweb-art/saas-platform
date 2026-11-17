@@ -58,9 +58,8 @@ class CustomerController extends Controller
      */
     public function create()
     {
-        $users = User::with('profile')->orderBy('mobile')->get();
-        $resellers = Reseller::with('user.profile')->get();
-        return view('admin.customers.create', compact('users', 'resellers'));
+        // ADR-088 — onboarding is one wizard now; this page only forwards to it.
+        return redirect()->route('admin.onboarding.create', array_filter(['mobile' => request('mobile')]), 301);
     }
 
     /**

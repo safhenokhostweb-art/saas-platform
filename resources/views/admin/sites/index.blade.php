@@ -5,11 +5,10 @@
 @section('content')
 <x-module-features module='sites' />
 <div class='mb-4 flex items-center gap-2'>
-    <a href="{{ route('admin.sites.wizard') }}" class='btn btn-primary flex items-center gap-1.5'>
+    <a href="{{ route('admin.onboarding.create') }}" class='btn btn-primary flex items-center gap-1.5'>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        افزودن سایت (Wizard)
+        راه‌اندازی سایت جدید
     </a>
-    <a href="{{ route('admin.sites.create') }}" class='btn btn-secondary text-sm'>فرم ساده</a>
 </div>
 
 @if(isset($filterCustomer) || isset($filterModule))

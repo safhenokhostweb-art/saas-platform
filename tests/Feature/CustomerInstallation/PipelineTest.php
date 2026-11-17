@@ -97,13 +97,15 @@ class PipelineTest extends TestCase
      * CONFIGURE_WEB_SERVER and PROVISION_LICENSE.
      * Phase 15-D — count raised 23 -> 24: ProvisionDomainStage added between
      * VALIDATE_PERMISSIONS and UPLOAD_PACKAGE.
+     * ADR-088 — count raised 24 -> 26: APPLY_SITE_ENTITLEMENTS after
+     * PROVISION_LICENSE, CLEAR_APPLICATION_CACHE before CUSTOMER_READY.
      */
-    public function test_orchestrator_builds_24_stages_for_fresh_mode(): void
+    public function test_orchestrator_builds_26_stages_for_fresh_mode(): void
     {
         $orchestrator = app(CustomerInstallationOrchestrator::class);
         $stages = $orchestrator->buildStageList('MODE_FRESH');
 
-        $this->assertCount(24, $stages);
+        $this->assertCount(26, $stages);
 
         $names = array_map(fn($s) => $s->name(), $stages);
         $this->assertContains('VALIDATE_SERVER', $names);

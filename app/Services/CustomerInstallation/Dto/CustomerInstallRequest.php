@@ -23,6 +23,13 @@ class CustomerInstallRequest
         public readonly string  $installMode,
         public readonly ?int    $sourceInstallationId = null,
         public readonly ?string $restoreBackupKey = null,
+        // Unified onboarding wizard (ADR-088). All optional: a payload from
+        // any earlier caller omits them and the pipeline behaves as before.
+        public readonly ?int    $customerId = null,
+        public readonly ?string $businessVertical = null,
+        /** @var list<int> license-only module ids (kits) to license and activate */
+        public readonly array   $kitModuleIds = [],
+        public readonly ?int    $themeId = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -46,6 +53,10 @@ class CustomerInstallRequest
             installMode:          $data['install_mode'] ?? 'MODE_FRESH',
             sourceInstallationId: isset($data['source_installation_id']) ? (int) $data['source_installation_id'] : null,
             restoreBackupKey:     $data['restore_backup_key'] ?? null,
+            customerId:           !empty($data['customer_id']) ? (int) $data['customer_id'] : null,
+            businessVertical:     isset($data['business_vertical']) && $data['business_vertical'] !== '' ? (string) $data['business_vertical'] : null,
+            kitModuleIds:         array_values(array_unique(array_map('intval', (array) ($data['kit_module_ids'] ?? [])))),
+            themeId:              !empty($data['theme_id']) ? (int) $data['theme_id'] : null,
         );
     }
 
@@ -70,6 +81,10 @@ class CustomerInstallRequest
             'install_mode'          => $this->installMode,
             'source_installation_id'=> $this->sourceInstallationId,
             'restore_backup_key'    => $this->restoreBackupKey,
+            'customer_id'           => $this->customerId,
+            'business_vertical'     => $this->businessVertical,
+            'kit_module_ids'        => $this->kitModuleIds,
+            'theme_id'              => $this->themeId,
         ];
     }
 }

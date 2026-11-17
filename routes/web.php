@@ -474,6 +474,19 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
+        // ADR-088 — unified customer & site onboarding wizard. The legacy
+        // customers/create, sites/create, sites/wizard and
+        // customer-deployment wizard pages redirect here.
+        Route::prefix('onboarding')->name('onboarding.')
+            ->controller(\App\Http\Controllers\Admin\OnboardingWizardController::class)
+            ->group(function () {
+                Route::get('/', 'create')->name('create');
+                Route::get('/lookup-customer', 'lookupCustomer')->middleware('throttle:60,1')->name('lookup-customer');
+                Route::get('/check-domain', 'checkDomain')->middleware('throttle:60,1')->name('check-domain');
+                Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
+                Route::post('/installations/{installation}/retry-template', 'retryTemplate')
+                    ->whereNumber('installation')->middleware('throttle:10,1')->name('retry-template');
+            });
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');
         Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');

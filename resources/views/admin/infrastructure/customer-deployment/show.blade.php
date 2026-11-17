@@ -110,12 +110,12 @@
     <div class="mt-4 border-t border-gray-100 pt-4" id="liveProgressSection">
         <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-medium text-gray-600">پیشرفت</span>
-            <span class="text-xs text-gray-500" id="stageCount">{{ count($installation->completedStagesList()) }} / 20 مرحله</span>
+            <span class="text-xs text-gray-500" id="stageCount">{{ count($installation->completedStagesList()) }} / {{ count($stageLabels) }} مرحله</span>
         </div>
         <div class="prog-bar-wrap">
-            <div class="prog-bar" id="progressBar" style="width: {{ (count($installation->completedStagesList()) / 20) * 100 }}%"></div>
+            <div class="prog-bar" id="progressBar" style="width: {{ min(100, (count($installation->completedStagesList()) / max(1, count($stageLabels))) * 100) }}%"></div>
         </div>
-        <div class="mt-1.5 text-xs text-indigo-600 font-medium" id="currentStageLabel">{{ $installation->current_stage ? str_replace('_', ' ', $installation->current_stage) : 'در انتظار شروع...' }}</div>
+        <div class="mt-1.5 text-xs text-indigo-600 font-medium" id="currentStageLabel">{{ $installation->current_stage ? ($stageLabels[$installation->current_stage] ?? str_replace('_', ' ', $installation->current_stage)) : 'در انتظار شروع...' }}</div>
     </div>
     @elseif($installation->isComplete())
     <div class="mt-4 border-t border-gray-100 pt-4">
@@ -223,29 +223,61 @@
 
         {{-- Stage Progress --}}
         <div class="detail-card">
-            <h3 class="font-semibold text-gray-800 mb-3 text-sm">پیشرفت مراحل ({{ count($installation->completedStagesList()) }}/20)</h3>
             @php
-            $allStages = ['VALIDATE_SERVER','VALIDATE_PHP','VALIDATE_EXTENSIONS','VALIDATE_DISK','VALIDATE_PERMISSIONS','DOWNLOAD_PACKAGE','UPLOAD_PACKAGE','VERIFY_PACKAGE','EXTRACT_PACKAGE','GENERATE_ENVIRONMENT','CREATE_DATABASE','RUN_MIGRATIONS','RUN_SEEDER','CONFIGURE_STORAGE','CONFIGURE_QUEUE','CONFIGURE_SCHEDULER','CONFIGURE_SSL','CONFIGURE_WEBSERVER','PROVISION_LICENSE','INSTALL_THEME','CUSTOMER_READY'];
+            $allStages = array_keys($stageLabels);
             $completedList = $installation->completedStagesList();
             $currentStage = $installation->current_stage;
             @endphp
+            <h3 class="font-semibold text-gray-800 mb-3 text-sm">پیشرفت مراحل ({{ \SaaSPlatform\ThemeRuntime\Support\PersianNumber::digits(count(array_intersect($allStages, $completedList))) }}/{{ \SaaSPlatform\ThemeRuntime\Support\PersianNumber::digits(count($allStages)) }})</h3>
             <div class="space-y-1.5">
                 @foreach($allStages as $stage)
                 <div class="flex items-center gap-2">
                     @if(in_array($stage, $completedList))
                         <div class="stage-dot stage-dot--done"></div>
-                        <span class="text-xs text-gray-500 line-through">{{ str_replace('_', ' ', $stage) }}</span>
+                        <span class="text-xs text-gray-500 line-through">{{ $stageLabels[$stage] ?? str_replace('_', ' ', $stage) }}</span>
                     @elseif($stage === $currentStage)
                         <div class="stage-dot stage-dot--active animate-pulse"></div>
-                        <span class="text-xs text-indigo-600 font-semibold">{{ str_replace('_', ' ', $stage) }}</span>
+                        <span class="text-xs text-indigo-600 font-semibold">{{ $stageLabels[$stage] ?? str_replace('_', ' ', $stage) }}</span>
                     @else
                         <div class="stage-dot stage-dot--pending"></div>
-                        <span class="text-xs text-gray-400">{{ str_replace('_', ' ', $stage) }}</span>
+                        <span class="text-xs text-gray-400">{{ $stageLabels[$stage] ?? str_replace('_', ' ', $stage) }}</span>
                     @endif
                 </div>
                 @endforeach
             </div>
         </div>
+
+        {{-- ADR-088 — template binding of an onboarded site --}}
+        @if($templateBinding)
+        @php
+            $tb = $templateBinding;
+            $tbMap = [
+                'pending_push' => ['در انتظار پایان نصب و اعمال روی سایت', '#1e40af', '#dbeafe'],
+                'bound'        => ['روی سایت اعمال شد', '#065f46', '#d1fae5'],
+                'failed'       => ['اعمال نشد', '#991b1b', '#fee2e2'],
+            ];
+            [$tbLabel, $tbColor, $tbBg] = $tbMap[$tb['status']] ?? [$tb['status'], '#374151', '#f3f4f6'];
+        @endphp
+        <div class="detail-card" aria-live="polite">
+            <h3 class="font-semibold text-gray-800 mb-3 text-sm">قالب سایت</h3>
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between gap-2"><span class="text-gray-500">قالب:</span><span class="text-gray-800 font-medium">{{ $tb['theme_name'] ?? '—' }}</span></div>
+                <div class="flex justify-between gap-2 items-center"><span class="text-gray-500">وضعیت:</span><span class="status-badge" style="background:{{ $tbBg }};color:{{ $tbColor }}">{{ $tbLabel }}</span></div>
+                @if(!empty($tb['message']))
+                    <p class="text-red-700 leading-6">{{ $tb['message'] }}</p>
+                @endif
+                @if(($tb['status'] ?? '') === 'failed' && ($tb['attempts'] ?? 0) > 0 && $installation->isComplete())
+                    <p class="text-gray-500">{{ \SaaSPlatform\ThemeRuntime\Support\PersianNumber::digits($tb['attempts']) }} تلاش انجام شد؛ تا چند دقیقه پس از نصب خودکار دوباره تلاش می‌شود.</p>
+                @endif
+            </div>
+            @if($installation->isComplete() && ($tb['status'] ?? '') !== 'bound' && !empty($tb['theme_id']))
+            <form method="POST" action="{{ route('admin.onboarding.retry-template', $installation) }}" class="mt-3">
+                @csrf
+                <button type="submit" class="btn btn-outline-primary btn-sm w-full">اعمال دوبارهٔ قالب</button>
+            </form>
+            @endif
+        </div>
+        @endif
 
         {{-- Admin Credentials (shown after GENERATE_ENVIRONMENT completes) --}}
         {{-- Phase 13-O9e — Secure Reveal: the password is never in the initial HTML; it's fetched from
@@ -304,20 +336,23 @@
 @push('scripts')
 <script>
 (function() {
+    const totalStages = {{ max(1, count($stageLabels)) }};
+    const stageLabels = @js($stageLabels);
+    const stageText = (name) => stageLabels[name] || name.replace(/_/g, ' ');
     const src = new EventSource('{{ route('admin.infrastructure.customer-deployment.installations.progress', $installation) }}');
     src.addEventListener('progress', function(e) {
         const d = JSON.parse(e.data);
-        if (d.stage) document.getElementById('currentStageLabel').textContent = d.stage.replace(/_/g, ' ') + ' — ' + (d.message || '');
+        if (d.stage) document.getElementById('currentStageLabel').textContent = stageText(d.stage) + ' — ' + (d.message || '');
     });
     src.addEventListener('status', function(e) {
         const d = JSON.parse(e.data);
         if (d.completed_stages !== undefined) {
-            const pct = Math.round((d.completed_stages / 20) * 100);
+            const pct = Math.min(100, Math.round((d.completed_stages / totalStages) * 100));
             document.getElementById('progressBar').style.width = pct + '%';
-            document.getElementById('stageCount').textContent = d.completed_stages + ' / 20 مرحله';
+            document.getElementById('stageCount').textContent = d.completed_stages + ' / ' + totalStages + ' مرحله';
         }
         if (d.current_stage) {
-            document.getElementById('currentStageLabel').textContent = d.current_stage.replace(/_/g, ' ');
+            document.getElementById('currentStageLabel').textContent = stageText(d.current_stage);
         }
     });
     src.addEventListener('done', function(e) {

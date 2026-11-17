@@ -36,6 +36,8 @@ use App\Services\CustomerInstallation\Stages\ConfigureDnsStage;
 use App\Services\CustomerInstallation\Stages\ConfigureWebServerStage;
 use App\Services\CustomerInstallation\Stages\IssueSslStage;
 use App\Services\CustomerInstallation\Stages\ProvisionLicenseStage;
+use App\Services\CustomerInstallation\Stages\ApplySiteEntitlementsStage;
+use App\Services\CustomerInstallation\Stages\ClearApplicationCacheStage;
 use App\Services\CustomerInstallation\Stages\InitializeBackupStage;
 use App\Services\CustomerInstallation\Stages\ConfigureMonitoringStage;
 use App\Services\CustomerInstallation\Stages\InstallThemeStage;
@@ -261,9 +263,14 @@ class CustomerInstallationOrchestrator
             app(ConfigureWebServerStage::class),
             app(IssueSslStage::class),
             app(ProvisionLicenseStage::class),
+            // ADR-088 — needs the site PROVISION_LICENSE creates; applies the
+            // onboarding vertical and kit licenses (no-op without them).
+            app(ApplySiteEntitlementsStage::class),
             app(InitializeBackupStage::class),
             app(ConfigureMonitoringStage::class),
             app(InstallThemeStage::class),
+            // ADR-088 — last remote step before CUSTOMER_READY opens the site.
+            app(ClearApplicationCacheStage::class),
             app(CustomerReadyStage::class),
         ];
     }

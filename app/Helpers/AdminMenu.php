@@ -10,6 +10,7 @@ class AdminMenu
     public const WIZARD_MENU_KEYS = ['theme_builder'];
     public const MENU_KEYS = [
         'dashboard' => 'داشبورد',
+        'onboarding' => 'راه‌اندازی مشتری و سایت',
         'users' => 'کاربران پلتفرم',
         'customers' => 'مشتریان',
         'sites' => 'سایت‌ها',
@@ -67,6 +68,7 @@ class AdminMenu
     /** مسیر هر آیتم منو */
     public const MENU_ROUTES = [
         'dashboard' => 'admin.dashboard',
+        'onboarding' => 'admin.onboarding.create',
         'users' => 'admin.users.index',
         'customers' => 'admin.customers.index',
         'sites' => 'admin.sites.index',
@@ -124,6 +126,7 @@ class AdminMenu
     /** الگوی روت برای حالت فعال (برای routeIs) */
     public const MENU_ROUTE_PATTERNS = [
         'dashboard' => 'admin.dashboard',
+        'onboarding' => 'admin.onboarding.*',
         'users' => 'admin.users.*',
         'customers' => 'admin.customers.*',
         'sites' => 'admin.sites.*',
@@ -188,7 +191,7 @@ class AdminMenu
     {
         return [
             'داشبورد'                          => ['dashboard'],
-            'مشتریان / کاربران'                 => ['users', 'customers'],
+            'مشتریان / کاربران'                 => ['onboarding', 'users', 'customers'],
             'سایت‌ها / پروژه‌ها'                => ['sites', 'site_license', 'modules', 'module_licenses', 'asset_access', 'licenses', 'updates'],
             'مالی / حسابداری'                    => ['finance_dashboard', 'finance_ledger'],
             'فروش / صورتحساب'                   => ['products', 'support_plans', 'payment_gateways', 'resellers', 'reseller_commissions', 'payout_requests'],

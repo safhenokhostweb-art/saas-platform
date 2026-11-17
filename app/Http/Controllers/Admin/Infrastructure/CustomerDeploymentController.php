@@ -16,7 +16,9 @@ use App\Services\ActivityLogger;
 use App\Services\AuthorizationService;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\CustomerInstallationRollbackService;
-use App\Services\CustomerInstallation\Enums\DriverType;
+use App\Services\CustomerInstallation\CustomerInstallationOrchestrator;
+use App\Services\CustomerInstallation\InstallationTargetGuard;
+use App\Services\Onboarding\SiteTemplateBinder;
 use App\Services\CustomerInstallation\RemoteConnectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -79,10 +81,8 @@ class CustomerDeploymentController extends Controller
 
     public function wizard()
     {
-        $servers  = CustomerRemoteServer::orderBy('label')->get();
-        $packages = CustomerInstallationPackage::where('is_active', true)->latest()->get();
-
-        return view('admin.infrastructure.customer-deployment.wizard', compact('servers', 'packages'));
+        // ADR-088 — onboarding is one wizard now; this page only forwards to it.
+        return redirect()->route('admin.onboarding.create', [], 301);
     }
 
     public function start(Request $request)
@@ -105,50 +105,17 @@ class CustomerDeploymentController extends Controller
             'ssl_enabled'       => 'nullable|boolean',
         ]);
 
-        // Phase 14-B1 — a CustomerRemoteServer can exist with a driver type
-        // that is registered but not yet implemented (cpanel/directadmin/
-        // sftp/docker are architecture stubs). Without this check, starting
-        // an installation against one dispatches a job that is guaranteed to
-        // fail deep inside the pipeline (see Installation #44 root-cause
-        // audit) instead of failing fast with a clear message here.
-        $targetServer = CustomerRemoteServer::findOrFail($validated['remote_server_id']);
-        $driverType   = DriverType::tryFrom($targetServer->type);
-        if (!$driverType || !$driverType->isImplemented()) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'remote_server_id' => "درایور مقصد استقرار انتخاب‌شده («{$targetServer->type}») هنوز پیاده‌سازی نشده و امکان شروع نصب روی آن وجود ندارد.",
-                ]);
+        $guard = app(InstallationTargetGuard::class);
+
+        $driverError = $guard->driverError(CustomerRemoteServer::findOrFail($validated['remote_server_id']));
+        if ($driverError !== null) {
+            return back()->withInput()->withErrors(['remote_server_id' => $driverError]);
         }
 
         // DNS existence check — only for custom domains that the admin must have pre-configured.
-        // Platform-managed subdomains (under the configured root_domain) are skipped here because
-        // ConfigureDnsStage creates the A record automatically during the installation pipeline.
-        $domainForDns = preg_replace('#^https?://#i', '', rtrim($validated['customer_domain'], '/'));
-
-        $dnsSetting   = \App\Models\Infrastructure\DnsProviderSetting::active();
-        $rootDomain   = $dnsSetting?->root_domain ?? '';
-        $isPlatformSubdomain = $rootDomain !== ''
-            && strtolower($domainForDns) !== strtolower($rootDomain)
-            && str_ends_with(strtolower($domainForDns), '.' . strtolower($rootDomain));
-
-        if (!$isPlatformSubdomain) {
-            // Custom domain — must already have a DNS record pointing somewhere
-            try {
-                $dnsExists = checkdnsrr($domainForDns, 'A')
-                          || checkdnsrr($domainForDns, 'CNAME')
-                          || checkdnsrr($domainForDns, 'AAAA');
-            } catch (\Throwable) {
-                $dnsExists = true; // fail-open if the DNS query itself fails
-            }
-
-            if (!$dnsExists) {
-                return back()
-                    ->withInput()
-                    ->withErrors([
-                        'customer_domain' => "دامنه «{$domainForDns}» در DNS یافت نشد. مطمئن شوید دامنه ثبت شده و رکورد DNS آن (A یا CNAME) فعال باشد.",
-                    ]);
-            }
+        $dnsError = $guard->customDomainDnsError($validated['customer_domain']);
+        if ($dnsError !== null) {
+            return back()->withInput()->withErrors(['customer_domain' => $dnsError]);
         }
 
         // Map form field names to DTO field names expected by CustomerInstallRequest::fromArray()
@@ -235,7 +202,15 @@ class CustomerDeploymentController extends Controller
         // revealCredential(), behind its own permission check and audit log.
         $hasCredential = $this->hasCredential($installation);
 
-        return view('admin.infrastructure.customer-deployment.show', compact('installation', 'canRollback', 'hasCredential'));
+        // ADR-088: the progress list is the pipeline's own stage list for
+        // this mode (it used to be a hardcoded copy that had drifted).
+        $stageLabels = [];
+        foreach (app(CustomerInstallationOrchestrator::class)->buildStageList((string) $installation->install_mode) as $stage) {
+            $stageLabels[$stage->name()] = $stage->label();
+        }
+        $templateBinding = app(SiteTemplateBinder::class)->binding($installation);
+
+        return view('admin.infrastructure.customer-deployment.show', compact('installation', 'canRollback', 'hasCredential', 'stageLabels', 'templateBinding'));
     }
 
     /**

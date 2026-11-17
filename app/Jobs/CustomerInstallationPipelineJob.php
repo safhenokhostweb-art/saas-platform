@@ -7,6 +7,7 @@ use App\Services\CustomerInstallation\CustomerInstallationOrchestrator;
 use App\Services\CustomerInstallation\RollbackDispatcher;
 use App\Services\Infrastructure\SlackAlertService;
 use App\Services\ModuleUpdateEligibilityService;
+use App\Services\Onboarding\SiteTemplateBinder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -90,6 +91,12 @@ class CustomerInstallationPipelineJob implements ShouldQueue
         // Deliberately outside CustomerInstallationOrchestrator/Stages: this
         // touches an unrelated table (site_modules), not pipeline behavior.
         $this->syncModuleDeploymentStatus($installation->fresh());
+
+        // ADR-088: the theme assigned by INSTALL_THEME can only be pushed
+        // onto the customer-site once CUSTOMER_READY has opened it (before
+        // that, every request redirects to /install). No-op unless the
+        // installation completed with a binding waiting.
+        app(SiteTemplateBinder::class)->dispatchIfPending($installation);
     }
 
     /**

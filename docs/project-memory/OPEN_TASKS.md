@@ -1,6 +1,28 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-11-14
+> Last Updated: 2026-11-17
+
+---
+
+## OPEN: UNIFIED ONBOARDING WIZARD (ADR-088) — 2026-11-17
+
+Owner brief 2026-11-16: one wizard for customer, sites per mobile, domain,
+licence and kits, template and provisioning; no manual server steps.
+
+| Component | Status |
+|-----------|--------|
+| `admin/onboarding` wizard + `SiteOnboardingService` (mobile identity, domain policy, kit/vertical rules, industry profiles) | ✅ BUILT — branch `feat/unified-onboarding-wizard` |
+| Pipeline: `APPLY_SITE_ENTITLEMENTS`, `CLEAR_APPLICATION_CACHE`, real `INSTALL_THEME`, provision secret in `.env`, owner attachment fix | ✅ BUILT |
+| Post-install theme push (`PushSiteTemplateJob`, retry on the installation page) | ✅ BUILT |
+| Legacy customers/create, sites/create, sites/wizard, customer-deployment wizard → 301 | ✅ BUILT |
+| Owner sign-off (licensing behaviour: kits granted at onboarding, Constitution §9) | ⏳ OWNER |
+| Release (saas-platform only; no customer-site change) | ⏳ via work-unit delivery workflow after sign-off |
+
+**Prerequisites in production for the solar profile to bind on its own:**
+`solar-industry` theme published with a passing Commercial Quality Report
+(`theme-release:backfill`), the `solar_industry_kit` migration applied, and
+`CUSTOMER_PROVISION_SECRET` set on the platform. Without the first, the
+wizard shows the profile theme as unavailable instead of failing later.
 
 ---
 

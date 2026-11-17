@@ -4,8 +4,8 @@
 
 @section('content')
 @include('admin.customers.guide')
-<a href="{{ route('admin.customers.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded">
-    افزودن مشتری
+<a href="{{ route('admin.onboarding.create') }}" class="btn btn-primary inline-flex items-center gap-1.5">
+    راه‌اندازی مشتری و سایت جدید
 </a>
 
 <div class="mt-4 bg-white rounded shadow overflow-hidden">

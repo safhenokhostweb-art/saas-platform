@@ -3,13 +3,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Module;
-use App\Models\ModuleEntitlement;
 use App\Models\ModuleLicense;
-use App\Models\ModulePurchase;
 use App\Models\Site;
-use App\Services\EntitlementLedger;
+use App\Services\ModuleLicenseGrantService;
 use App\Services\ModuleLicenseService;
-use App\Services\ModulePurchaseService;
 use Illuminate\Http\Request;
 
 /**
@@ -62,44 +59,18 @@ class ModuleLicenseController extends Controller
         ]);
 
         $site = Site::findOrFail($request->site_id);
-        $module = Module::assignableToSite()->find($request->module_id);
-        if (! $module || $module->type !== Module::TYPE_PAID) {
-            return back()->with('error', 'ماژول انتخاب‌شده معتبر نیست.');
-        }
-
-        if (app(ModuleLicenseService::class)->hasValidLicense($site, $module->id)) {
-            return back()->with('info', 'این سایت از قبل لایسنس معتبر برای این ماژول دارد.');
-        }
-
         $expiresAt = $request->filled('expires_at')
             ? \Carbon\Carbon::parse($request->expires_at)
             : null;
 
-        app(ModuleLicenseService::class)->grantByAdmin($site, $module->id, $request->user(), $expiresAt);
-        app(ModulePurchaseService::class)->grantByAdmin($site, $module->id, $request->user());
+        $outcome = app(ModuleLicenseGrantService::class)
+            ->grant($site, (int) $request->module_id, $request->user(), $expiresAt);
 
-        // Wave 8.0b — ledger grant (idempotent؛ activity_logs فقط از EntitlementLedger)
-        try {
-            $license = ModuleLicense::query()
-                ->where('site_id', $site->id)
-                ->where('module_id', $module->id)
-                ->where('status', ModuleLicense::STATUS_ACTIVE)
-                ->whereNull('revoked_at')
-                ->orderByDesc('id')
-                ->first();
-            $purchase = ModulePurchase::query()
-                ->where('site_id', $site->id)
-                ->where('module_id', $module->id)
-                ->orderByDesc('id')
-                ->first();
-            app(EntitlementLedger::class)->grant($site, $module, ModuleEntitlement::SOURCE_ADMIN_GRANT, [
-                'granted_by' => $request->user()->id,
-                'module_license_id' => $license?->id,
-                'module_purchase_id' => $purchase?->id,
-                'metadata' => ['path' => 'admin_module_license_grant'],
-            ]);
-        } catch (\Throwable) {
-            // best-effort: اعطای لایسنس اصلی نباید به خاطر ledger شکست بخورد
+        if ($outcome === ModuleLicenseGrantService::INVALID_MODULE) {
+            return back()->with('error', 'ماژول انتخاب‌شده معتبر نیست.');
+        }
+        if ($outcome === ModuleLicenseGrantService::ALREADY_LICENSED) {
+            return back()->with('info', 'این سایت از قبل لایسنس معتبر برای این ماژول دارد.');
         }
 
         return back()->with('success', 'لایسنس اعطا شد.');
