@@ -4,25 +4,32 @@
 
 ---
 
-## OPEN: UNIFIED ONBOARDING WIZARD (ADR-088) — 2026-11-17
+## COMPLETE: UNIFIED ONBOARDING WIZARD (ADR-088) — RELEASED & DEPLOYED — 2026-11-17 ✅
 
 Owner brief 2026-11-16: one wizard for customer, sites per mobile, domain,
 licence and kits, template and provisioning; no manual server steps.
 
 | Component | Status |
 |-----------|--------|
-| `admin/onboarding` wizard + `SiteOnboardingService` (mobile identity, domain policy, kit/vertical rules, industry profiles) | ✅ BUILT — branch `feat/unified-onboarding-wizard` |
-| Pipeline: `APPLY_SITE_ENTITLEMENTS`, `CLEAR_APPLICATION_CACHE`, real `INSTALL_THEME`, provision secret in `.env`, owner attachment fix | ✅ BUILT |
-| Post-install theme push (`PushSiteTemplateJob`, retry on the installation page) | ✅ BUILT |
-| Legacy customers/create, sites/create, sites/wizard, customer-deployment wizard → 301 | ✅ BUILT |
-| Owner sign-off (licensing behaviour: kits granted at onboarding, Constitution §9) | ⏳ OWNER |
-| Release (saas-platform only; no customer-site change) | ⏳ via work-unit delivery workflow after sign-off |
+| `admin/onboarding` wizard + `SiteOnboardingService` (mobile identity, domain policy, kit/vertical rules, industry profiles) | ✅ DONE — commits `13cc8ec9`, `36fc0471` |
+| Pipeline: `APPLY_SITE_ENTITLEMENTS`, `CLEAR_APPLICATION_CACHE`, real `INSTALL_THEME`, provision secret in `.env`, owner attachment fix | ✅ DONE |
+| Post-install theme push (`PushSiteTemplateJob`, retry on the installation page) | ✅ DONE |
+| Legacy customers/create, sites/create, sites/wizard, customer-deployment wizard → 301 | ✅ DONE |
+| Owner sign-off (licensing behaviour: kits granted at onboarding, Constitution §9) | ✅ APPROVED by the owner 2026-11-17 |
+| Release | ✅ RELEASED — saas-platform `6624063f` (Hub release 274, artifact 303); customer-site `d205f32e` (release 275, artifact 304) |
+| Deployment | ✅ DEPLOYED — Hub deployment 354 (saas-platform) and 357 (customer-site) SUCCEEDED; server manifests show both commits |
+| Production prerequisites (`solar_industry_kit` migration, `theme-release:backfill`, the same `CUSTOMER_PROVISION_SECRET` in both `.env` files) | ✅ DONE by the owner; secret equality checked by hash |
 
-**Prerequisites in production for the solar profile to bind on its own:**
-`solar-industry` theme published with a passing Commercial Quality Report
-(`theme-release:backfill`), the `solar_industry_kit` migration applied, and
-`CUSTOMER_PROVISION_SECRET` set on the platform. Without the first, the
-wizard shows the profile theme as unavailable instead of failing later.
+**Release note:** the work reached `main` by a direct merge and was delivered
+with an earlier version of `scripts/deploy-release-pipeline.ps1`, not through
+`release-prepare`. As a result, the Hub metadata for releases 274 and 275 lists only that
+script in `changed_files`, and its `test_results` are the Hub's own
+exact-commit checks. The test evidence is the work unit's own run
+(73 onboarding and pipeline tests, plus a full-suite sweep classified in
+`docs/KNOWN-TEST-FAILURES.md`) on `36fc0471`. That commit is code-identical to
+`6624063f` except for that script. The script was then rewritten to wrap
+`release-prepare` (fail-fast on unowned changes, no fabricated test
+results, `base_sha` = the production HEAD after fetch).
 
 ---
 

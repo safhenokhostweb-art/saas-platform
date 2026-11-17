@@ -5877,7 +5877,7 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
 
 **Title:** Unified customer & site onboarding wizard driving the canonical installation pipeline end to end
 
-**Status:** Accepted
+**Status:** Accepted — RELEASED & DEPLOYED 2026-11-17 (saas-platform `6624063f`, Hub release 274 / deployment 354)
 
 **Date:** 2026-11-17
 
