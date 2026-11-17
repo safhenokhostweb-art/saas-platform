@@ -1,0 +1,110 @@
+{
+    "schema_version": 1,
+    "version": "2026.11.17-nginx-arvan-realip-snippet.1",
+    "project_key": "saas-platform",
+    "branch": "main",
+    "task_id": "WU-NGINX-ARVAN-REALIP-SNIPPET",
+    "created_timestamp": "2026-11-17T12:33:54+00:00",
+    "release_commit": "59b5f7e2c9d8c57b8bf5ba51a4f199ca6cc2eeeb",
+    "base_sha": "34afa7dc63b1b2f1ea22a4bc0ad92a8ed2b037a7",
+    "source_commits": {
+        "saas-platform": "efb5f2c9d8e702f8fc324e2d5d022f29152abf79"
+    },
+    "source_branch": "fix/nginx-arvan-realip-snippet",
+    "includes_base_releases": [
+        "WU-THEME-REGISTRY-SYNC (34afa7dc, Hub release 278, not deployed): deploying this release also ships it"
+    ],
+    "changed_files": [
+        "app/Services/CustomerInstallation/Ssl/ArvanRealIpSnippet.php",
+        "app/Services/CustomerInstallation/Ssl/NginxVhostTemplate.php",
+        "app/Services/CustomerInstallation/Ssl/NginxVhostWriter.php",
+        "tests/Unit/Services/CustomerInstallation/Ssl/ArvanRealIpSnippetTest.php",
+        "tests/Unit/Services/CustomerInstallation/Stages/ConfigureWebServerStageTest.php"
+    ],
+    "migration_files": [],
+    "incident": {
+        "installation_id": 49,
+        "domain": "solar.safhenokhost.ir",
+        "failed_stage": "CONFIGURE_WEB_SERVER",
+        "failed_at": "2026-11-17T11:54:55+00:00",
+        "error": "nginx -t: open() \"/etc/nginx/snippets/arvan-cdn-real-ip.conf\" failed (2: No such file or directory) in /etc/nginx/sites-enabled/cust_site_49:8",
+        "root_cause": "Since 977b88f9 (2026-08-30) every customer vhost includes snippets/arvan-cdn-real-ip.conf, but nothing ever provisioned the file; installation 49 was the first fresh install after that commit.",
+        "rollback": "clean (DNS record, database, files, worker, cron and vhost removed)"
+    },
+    "production_hotfix": {
+        "file": "/etc/nginx/snippets/arvan-cdn-real-ip.conf",
+        "content": "14 official ArvanCloud ranges (https://www.arvancloud.ir/en/ips.txt, fetched 2026-11-17), real_ip_header Ar-Real-Ip, real_ip_recursive on",
+        "sha256": "d1ae266b8138c26e8f481d6b733b010e60827c23da30af91a95b80f09b62ea0d",
+        "matches_code": "ArvanRealIpSnippet::render() is byte-identical",
+        "nginx_t": "successful",
+        "note": "The first version of the file held 13 non-official ranges and was replaced with the official list the same day; backup /root/arvan-cdn-real-ip.conf.bak-20261117."
+    },
+    "verification": {
+        "status": "passed",
+        "command": "php ../deployment-system/deployment/release-prepare.php prepare",
+        "project_gate_status": "READY",
+        "readiness_agent": "deployment.readiness --strict: 0 blockers, 1 warning (BRANCH_BEHIND_PRODUCTION on the shared dev tree, not the release clone), artifact digest e5f1d98d11e02f9863b6d8917b6cd7d69b97021cd68788b64930da9b26e5a382",
+        "known_failure_exemptions": [],
+        "checked_timestamp": "2026-11-17T12:33:54+00:00",
+        "checks": [
+            { "name": "syntax:app/Services/CustomerInstallation/Ssl/ArvanRealIpSnippet.php", "type": "syntax", "exit_code": 0, "duration_ms": 230 },
+            { "name": "syntax:app/Services/CustomerInstallation/Ssl/NginxVhostTemplate.php", "type": "syntax", "exit_code": 0, "duration_ms": 180 },
+            { "name": "syntax:app/Services/CustomerInstallation/Ssl/NginxVhostWriter.php", "type": "syntax", "exit_code": 0, "duration_ms": 182 },
+            { "name": "syntax:tests/Unit/Services/CustomerInstallation/Ssl/ArvanRealIpSnippetTest.php", "type": "syntax", "exit_code": 0, "duration_ms": 183 },
+            { "name": "syntax:tests/Unit/Services/CustomerInstallation/Stages/ConfigureWebServerStageTest.php", "type": "syntax", "exit_code": 0, "duration_ms": 477 },
+            {
+                "name": "theme-builder-regression",
+                "type": "test",
+                "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+                "exit_code": 0,
+                "duration_ms": 44052
+            },
+            {
+                "name": "homepage-persistence",
+                "type": "test",
+                "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+                "exit_code": 0,
+                "duration_ms": 41021
+            }
+        ],
+        "work_unit_tests": [
+            "tests/Unit/Services/CustomerInstallation + tests/Unit/CustomerInstallation (334 tests, 896 assertions, incl. ArvanRealIpSnippetTest 8 and ConfigureWebServerStageTest 8): OK, 0 skipped",
+            "tests/Feature/CustomerInstallation + tests/Feature/Onboarding + tests/Feature/CustomerDeletion + ModulePipelineDeploymentStatusSyncTest (78 tests, 343 assertions): OK"
+        ],
+        "metadata_delivery": "prepare skipped the POST because DEPLOYMENT_RELEASE_METADATA_URL was unset; the written metadata was then POSTed with the identical HMAC contract to /api/projects/saas-platform/releases: HTTP 202 awaiting_artifact",
+        "hub_release": {
+            "release_id": 279,
+            "release_public_id": "f35943be-5587-4ac5-acd9-01b7462ae692",
+            "status": "ready",
+            "source": "project_contract",
+            "source_received_at": "2026-11-17T12:36:30+00:00",
+            "ready_at": "2026-11-17T12:42:29+00:00"
+        },
+        "source_artifact": {
+            "artifact_id": 308,
+            "artifact_public_id": "e9cfbf61-34fc-40cc-93bb-ac14e314cdce",
+            "publish_job_id": 475,
+            "publish_job_public_id": "acc5b7bf-86c3-4c02-bc75-ed93c1aa92dd",
+            "deployment_id": null,
+            "commit_sha": "59b5f7e2c9d8c57b8bf5ba51a4f199ca6cc2eeeb",
+            "status": "available",
+            "semantic_status": "verified",
+            "checksum_sha256": "87c7b10ef9345d1c5b7c6fa288936d48d8fff173df67a3156bba3eb234c9303a",
+            "size_bytes": 57792862,
+            "file_manifest_hash": "e288db7cf48721af12e95f7281c1d7eded66ebc73a824bca0c8abaacc5628dea",
+            "file_manifest_entry_count": 20906,
+            "file_manifest_total_size": 159693519,
+            "evidence_digest": "9cdc93cb1ca9388ca66b1aeb75fe878acaf82383dd8d44ef0053dee7ea47127b",
+            "created_at": "2026-11-17T12:42:24+00:00",
+            "verified_at": "2026-11-17T12:42:26+00:00",
+            "expires_at": "2026-12-01T12:42:24+00:00",
+            "on_disk_check": "sha256 of the stored zip equals checksum_sha256; ArvanRealIpSnippet.php and NginxVhostWriter.php present with the new code"
+        }
+    },
+    "deployment": {
+        "status": "not_deployed",
+        "note": "The owner deploys Release 279 from the Hub dashboard. Confirmed from the Hub database 2026-11-17: no deployment row for release 279.",
+        "post_deploy_commands": []
+    },
+    "summary": "CONFIGURE_WEB_SERVER idempotently installs /etc/nginx/snippets/arvan-cdn-real-ip.conf from the central ArvanRealIpSnippet (official 14 ArvanCloud ranges) before nginx -t, never overwriting an existing file; fixes the installation 49 rollback for every new server."
+}

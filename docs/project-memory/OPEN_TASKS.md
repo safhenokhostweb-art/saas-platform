@@ -4,6 +4,31 @@
 
 ---
 
+## OPEN: NGINX ARVAN REAL-IP SNIPPET — RELEASE 279 READY, NOT DEPLOYED — 2026-11-17
+
+Customer installation 49 (`solar.safhenokhost.ir`, theme 61 solar-industry)
+was rolled back at `CONFIGURE_WEB_SERVER` on 2026-11-17 11:54:55 UTC.
+`nginx -t` failed with: `open() "/etc/nginx/snippets/arvan-cdn-real-ip.conf"
+failed (2: No such file or directory)`. Since `977b88f9` every customer vhost
+includes that snippet, but nothing ever provisioned it. The rollback was clean.
+
+| Item | Status |
+|------|--------|
+| Production hotfix: `/etc/nginx/snippets/arvan-cdn-real-ip.conf` | ✅ DONE (owner-approved): 14 official ArvanCloud ranges from `https://www.arvancloud.ir/en/ips.txt`, `real_ip_header Ar-Real-Ip`, `real_ip_recursive on`; sha256 `d1ae266b8138c26e8f481d6b733b010e60827c23da30af91a95b80f09b62ea0d`; `nginx -t` successful |
+| Side effect fixed | ✅ A probe `nginx -t -c` without a `user` directive re-owned `/var/lib/nginx/*` to `nobody` (buffered POSTs failed 13). Restored to `www-data:root` with owner approval and verified |
+| Code fix: `ArvanRealIpSnippet` (central source), `NginxVhostWriter` installs it idempotently before the vhost write and `nginx -t`, never overwriting an existing file | ✅ RELEASED as `59b5f7e2c9d8c57b8bf5ba51a4f199ca6cc2eeeb` (source `efb5f2c9` on `fix/nginx-arvan-realip-snippet`, base `34afa7dc`) |
+| Tests | ✅ CustomerInstallation unit suites 334/334, pipeline/onboarding/deletion feature suites 78/78; release-prepare check READY |
+| Hub release | ✅ 279 (`f35943be-5587-4ac5-acd9-01b7462ae692`), ready 2026-11-17 12:42:29 UTC |
+| Artifact | ✅ 308 (`e9cfbf61-34fc-40cc-93bb-ac14e314cdce`), available and verified; build job 475 (`acc5b7bf-86c3-4c02-bc75-ed93c1aa92dd`); sha256 `87c7b10ef9345d1c5b7c6fa288936d48d8fff173df67a3156bba3eb234c9303a`; evidence `9cdc93cb1ca9388ca66b1aeb75fe878acaf82383dd8d44ef0053dee7ea47127b` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub. Base `34afa7dc` means it also ships WU-THEME-REGISTRY-SYNC (release 278) |
+| Customer retry | ⏳ Installation 49 can be re-run now, because the snippet exists on the server |
+| Follow-up (owner decision) | ⏳ The live `sites-available/customer-site` and `saas-platform` vhosts still trust 13 inline non-official ranges for `Ar-Real-Ip`; move them to the official list or the shared snippet |
+| Follow-up | ⏳ `$forwarded_https` (`conf.d/arvancloud-map.conf`) is another implicit vhost prerequisite on new servers |
+
+Full descriptor: `.deployment/releases/nginx-arvan-realip-snippet.json`.
+
+---
+
 ## COMPLETE: ONBOARDING PROFILE THEME INSTALL — RELEASE 277 DEPLOYED — 2026-11-17 ✅
 
 Production had an empty master theme catalog (clean-slate purge
