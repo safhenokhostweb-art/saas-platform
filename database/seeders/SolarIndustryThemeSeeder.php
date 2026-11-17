@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Theme;
 use App\Models\ThemeMarketplace;
 use App\Services\ThemeBuilder\ThemeBuilderService;
+use App\Services\ThemeCatalog\ThemeRegistry;
 use Illuminate\Database\Seeder;
 use SaaSPlatform\ThemeRuntime\TemplateLibrary;
 
@@ -84,13 +85,21 @@ final class SolarIndustryThemeSeeder extends Seeder
         ]);
 
         $theme->status = Theme::STATUS_PUBLISHED;
-        $theme->is_marketplace = true;
-        $theme->marketplace_price = 0;
+        // Listing and price belong to the admin («فروشگاه قالب ← Listing»).
+        // A new theme starts unlisted (ThemeRegistry owner rule, 2026-11-17).
+        // A re-run never touches an existing theme's listing or price: it
+        // used to set is_marketplace=true and price 0 every time, which would
+        // have re-listed a theme the admin had unlisted, for free.
+        if (! $theme->exists) {
+            $theme->is_marketplace = ThemeRegistry::LIST_IN_MARKETPLACE_ON_INSTALL;
+            $theme->marketplace_price = 0;
+        }
         $theme->save();
 
-        // Honest marketplace row (NexusSeedCommand convention): no fabricated
-        // sales counts, ratings or featured flags.
-        ThemeMarketplace::updateOrCreate(['theme_id' => $theme->id], [
+        // Honest marketplace metadata (NexusSeedCommand convention): no
+        // fabricated sales counts, ratings or featured flags. Created once;
+        // later edits belong to the admin listing form.
+        ThemeMarketplace::firstOrCreate(['theme_id' => $theme->id], [
             'marketplace_description' => $theme->description,
             'category_tags' => ['صنعتی', 'انرژی خورشیدی', 'صنعت برق', 'شرکتی', 'فروشگاهی'],
             'is_featured' => false,

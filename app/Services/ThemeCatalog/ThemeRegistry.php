@@ -2,6 +2,7 @@
 
 namespace App\Services\ThemeCatalog;
 
+use App\Models\Theme;
 use Database\Seeders\ArianaMultiPlusThemeSeeder;
 use Database\Seeders\SalesSupportThemeSeeder;
 use Database\Seeders\SolarIndustryThemeSeeder;
@@ -80,6 +81,26 @@ final class ThemeRegistry
             'auto_sync' => true,
         ],
     ];
+
+    /**
+     * Owner rule (2026-11-17): no master theme is listed in the tenant
+     * marketplace by default. A newly installed theme stays out of it until
+     * the admin opens «فروشگاه قالب ← Listing», ticks «نمایش در فروشگاه» and
+     * sets its price (free or paid). Reason: solar-industry was seeded listed
+     * at price 0, so every tenant could take it free (safhenokhost.ir did).
+     *
+     * Applied only to a theme that was just created, never to an existing
+     * one, so a later admin listing decision is never undone. The onboarding
+     * wizard and admin assignment do not depend on the listing.
+     */
+    public const LIST_IN_MARKETPLACE_ON_INSTALL = false;
+
+    public static function applyInstallDefaults(Theme $theme): void
+    {
+        if ((bool) $theme->is_marketplace !== self::LIST_IN_MARKETPLACE_ON_INSTALL) {
+            $theme->forceFill(['is_marketplace' => self::LIST_IN_MARKETPLACE_ON_INSTALL])->save();
+        }
+    }
 
     /** @return Source|null */
     public static function sourceFor(string $slug): ?array

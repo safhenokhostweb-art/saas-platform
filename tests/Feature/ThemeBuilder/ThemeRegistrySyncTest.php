@@ -70,6 +70,47 @@ class ThemeRegistrySyncTest extends TestCase
         $this->assertSame($theme->id, $profile['theme_id']);
     }
 
+    /**
+     * Owner rule 2026-11-17: no master theme reaches the tenant marketplace
+     * by default. solar-industry had been seeded listed at price 0, and
+     * safhenokhost.ir took it free from «قالب‌ها».
+     */
+    public function test_a_newly_synced_theme_is_not_listed_in_the_tenant_marketplace(): void
+    {
+        $this->artisan('themes:sync-registry')->assertSuccessful();
+
+        $theme = Theme::whereNull('site_id')->where('slug', self::SOLAR)->firstOrFail();
+        $this->assertFalse((bool) $theme->is_marketplace);
+        // GET /api/theme-marketplace lists exactly Theme::marketplace() ∩ eligible.
+        $this->assertSame([], Theme::marketplace()->get()->filter->isCommerciallyEligible()->pluck('slug')->all());
+        // …while the onboarding wizard still offers it to new solar sites.
+        $this->assertContains(self::SOLAR, app(SiteOnboardingService::class)->eligibleThemes()->pluck('slug')->all());
+    }
+
+    public function test_a_later_sync_keeps_the_admins_listing_and_price(): void
+    {
+        $this->artisan('themes:sync-registry')->assertSuccessful();
+        $theme = Theme::whereNull('site_id')->where('slug', self::SOLAR)->firstOrFail();
+        $theme->update(['is_marketplace' => true, 'marketplace_price' => 4_900_000]); // «فروشگاه قالب ← Listing»
+
+        app(ThemeRegistrySync::class)->sync();
+
+        $theme->refresh();
+        $this->assertTrue((bool) $theme->is_marketplace);
+        $this->assertSame(4_900_000, $theme->marketplace_price);
+        $this->assertSame([self::SOLAR], Theme::marketplace()->pluck('slug')->all());
+    }
+
+    public function test_install_defaults_unlist_whatever_a_source_seeded(): void
+    {
+        $this->assertFalse(ThemeRegistry::LIST_IN_MARKETPLACE_ON_INSTALL);
+        $theme = Theme::create(['name' => 'Future', 'slug' => 'future-theme', 'status' => Theme::STATUS_PUBLISHED, 'is_marketplace' => true, 'marketplace_price' => 0]);
+
+        ThemeRegistry::applyInstallDefaults($theme);
+
+        $this->assertFalse((bool) $theme->fresh()->is_marketplace);
+    }
+
     public function test_second_run_changes_nothing(): void
     {
         $this->artisan('themes:sync-registry')->assertSuccessful();

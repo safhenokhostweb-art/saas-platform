@@ -45,13 +45,41 @@ class SolarIndustryThemeSeederTest extends TestCase
         $this->assertSame('قالب صنعت برق', $theme->name);
         $this->assertSame([Theme::TYPE_FULL, Theme::CATEGORY_INDUSTRIAL, Theme::SOURCE_SEEDER, Theme::STATUS_PUBLISHED], [$theme->type, $theme->category, $theme->source, $theme->status]);
         $this->assertNull($theme->site_id, 'a shared platform theme, never a site clone');
-        $this->assertTrue((bool) $theme->is_marketplace);
+        // Owner rule 2026-11-17: never listed in the tenant marketplace by default.
+        $this->assertFalse((bool) $theme->is_marketplace);
         $this->assertDatabaseHas('theme_marketplace', ['theme_id' => $theme->id, 'is_featured' => false, 'is_bestseller' => false]);
 
         $this->seed(SolarIndustryThemeSeeder::class);
         $this->assertSame(1, Theme::where('slug', SolarIndustryThemeSeeder::SLUG)->count());
         $this->assertSame(1, ThemeMarketplace::where('theme_id', $theme->id)->count());
         $this->assertSame($theme->pages, $theme->fresh()->pages, 'a reseed writes the same content');
+    }
+
+    public function test_a_reseed_keeps_the_admins_listing_and_price(): void
+    {
+        $theme = $this->seedTheme();
+        // The admin lists it as a paid product («فروشگاه قالب ← Listing»).
+        $theme->update(['is_marketplace' => true, 'marketplace_price' => 4_900_000]);
+        ThemeMarketplace::where('theme_id', $theme->id)->update(['annual_price' => 1_200_000, 'is_featured' => true]);
+
+        $this->seed(SolarIndustryThemeSeeder::class);
+
+        $theme->refresh();
+        $this->assertTrue((bool) $theme->is_marketplace);
+        $this->assertSame(4_900_000, $theme->marketplace_price);
+        $meta = ThemeMarketplace::where('theme_id', $theme->id)->sole();
+        $this->assertSame(1_200_000, (int) $meta->annual_price);
+        $this->assertTrue((bool) $meta->is_featured);
+    }
+
+    public function test_a_reseed_never_relists_a_theme_the_admin_unlisted(): void
+    {
+        $theme = $this->seedTheme();
+        $theme->update(['is_marketplace' => false, 'marketplace_price' => 0]);
+
+        $this->seed(SolarIndustryThemeSeeder::class);
+
+        $this->assertFalse((bool) $theme->fresh()->is_marketplace);
     }
 
     public function test_the_content_is_the_library_blueprints_with_unique_ids(): void
