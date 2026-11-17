@@ -60,7 +60,7 @@ class OnboardingDomainPolicy
             if (preg_match('/^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/', $value) !== 1 || strlen($value) < 3) {
                 return ['domain' => null, 'error' => 'زیردامنه باید ۳ تا ۶۳ نویسهٔ لاتین کوچک، رقم یا خط تیره باشد و با خط تیره شروع یا تمام نشود.'];
             }
-            if (in_array($value, (array) config('onboarding.reserved_subdomains', []), true)) {
+            if (OnboardingProfiles::isReservedSubdomain($value)) {
                 return ['domain' => null, 'error' => "زیردامنهٔ «{$value}» برای پلتفرم رزرو شده است."];
             }
 

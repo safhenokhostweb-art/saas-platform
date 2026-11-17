@@ -5946,7 +5946,8 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
    through `ThemeInstallGateway`, retrying at 30/120/300 s, and the
    installation page offers a retry. `GENERATE_ENVIRONMENT` writes
    `CUSTOMER_PROVISION_SECRET` so the push authenticates.
-5. **Industry profiles are data.** `config/onboarding.php` maps a vertical
+5. **Industry profiles are data.** `App\Services\Onboarding\OnboardingProfiles`
+   (code, not `config/`: outside the release policy's allowed paths) maps a vertical
    to its theme slug (`solar_energy` → `solar-industry`). The kits a
    vertical needs are derived from the ADR-087 policy families
    (`required_vertical`, `entitlement_keys`), never restated; the service

@@ -70,7 +70,7 @@ class SiteOnboardingService
 
         $profiles = [];
         foreach (BusinessVerticals::LABELS as $vertical => $label) {
-            $themeSlug = config("onboarding.industry_profiles.{$vertical}.theme_slug");
+            $themeSlug = OnboardingProfiles::themeSlugFor($vertical);
             $theme = $themeSlug ? $themes->firstWhere('slug', $themeSlug) : null;
             $profiles[$vertical] = [
                 'label'        => $label,
