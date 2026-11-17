@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Site;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
+use App\Services\CustomerInstallation\Env\RemoteEnvFile;
 use App\Services\LicenseServerService;
 use App\Support\IranianMobileNumber;
 
@@ -71,22 +72,31 @@ class ProvisionLicenseStage extends AbstractStage
             // Also store the key on the Site record for quick cross-reference.
             $site->update(['license_key' => $licenseKey]);
 
-            // Update .env LICENSE_KEY placeholder on the remote server
-            $safeWebRoot = escapeshellarg($ctx->webRoot());
-            $envPath     = $ctx->webRoot() . '/.env';
-            $ctx->connection->execute(
-                "sed -i 's/__LICENSE_KEY__/" . addslashes($licenseKey) . "/' " . escapeshellarg($envPath)
-            );
-
-            // Verify the key was written correctly
-            $verifyResult = $ctx->connection->execute(
-                "grep -q '^LICENSE_KEY=CIE-' " . escapeshellarg($envPath) . " && echo ok || echo missing"
-            );
-
-            if (str_contains($verifyResult->stdout, 'missing')) {
+            // Write LICENSE_KEY into the remote .env as an upsert: replaced
+            // whatever the line holds now (the __LICENSE_KEY__ placeholder,
+            // empty, quoted) or appended when absent.
+            //
+            // Installation 52 (2026-11-17): the old check grepped for
+            // `^LICENSE_KEY=CIE-`, but since 67cb40ed (2026-06-29) keys come
+            // from LicenseServerService::issue() as XXXX-XXXX-XXXX-XXXX.
+            // So it reported "placeholder replacement failed" even when the
+            // replacement worked, and no installation passed this stage.
+            // Verification is now the value itself, decoded as Laravel will.
+            $envPath = $ctx->webRoot() . '/.env';
+            $set = $ctx->connection->execute(RemoteEnvFile::set($envPath, 'LICENSE_KEY', $licenseKey));
+            if ($set->failed() || str_contains((string) $set->stdout, RemoteEnvFile::SET_FAILED)) {
                 return StageResult::failure(
                     $this->name(),
-                    'LICENSE_KEY placeholder replacement failed — .env may be malformed',
+                    'کلید لایسنس (LICENSE_KEY) در فایل .env سایت نوشته نشد: ' . trim($set->output()),
+                    $this->elapsed()
+                );
+            }
+
+            $written = RemoteEnvFile::decode((string) $ctx->connection->execute(RemoteEnvFile::read($envPath, ['LICENSE_KEY']))->stdout);
+            if ($written !== [] && ($written['LICENSE_KEY'] ?? null) !== $licenseKey) {
+                return StageResult::failure(
+                    $this->name(),
+                    'کلید لایسنس (LICENSE_KEY) که در فایل .env سایت خوانده می‌شود با کلید صادرشده یکسان نیست.',
                     $this->elapsed()
                 );
             }
