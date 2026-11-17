@@ -318,8 +318,21 @@
             <h2 id="ob-s4">قالب سایت</h2>
             <p class="ob-lead">قالب انتخابی — با صفحهٔ اصلی، سربرگ و پابرگ اختصاصی‌اش — پس از پایان نصب خودکار روی سایت اعمال می‌شود و طراحی از همان لحظه روی دامنه دیده می‌شود.</p>
 
-            <div class="ob-panel ob-panel-warn" style="margin-block-end:1rem" x-show="profile()?.theme_status === 'unavailable'" x-cloak>
-                قالب اختصاصی این حوزه (<span class="ob-ltr" x-text="profile()?.theme_slug"></span>) هنوز منتشر یا واجد شرایط تجاری نشده است؛ قالب دیگری انتخاب کنید یا ابتدا Release آن را تأیید کنید.
+            <div class="ob-panel ob-panel-warn" style="margin-block-end:1rem" x-show="profile()?.theme_status === 'unavailable'" x-cloak role="status">
+                <p style="margin:0">
+                    قالب اختصاصی این حوزه (<span class="ob-ltr" x-text="profile()?.theme_slug"></span>) قابل انتخاب نیست:
+                    <strong x-text="themeReasonLabel(profile()?.theme_reason)"></strong>
+                </p>
+                <template x-if="(profile()?.theme_fix || []).length">
+                    <div style="margin-block-start:.5rem">
+                        <small>برای رفع، این دستورها را به ترتیب روی سرور پلتفرم اجرا کنید و صفحه را دوباره باز کنید:</small>
+                        <ol style="margin:.35rem 0 0;padding-inline-start:1.25rem">
+                            <template x-for="cmd in profile().theme_fix" :key="cmd">
+                                <li><code class="ob-ltr" x-text="cmd"></code></li>
+                            </template>
+                        </ol>
+                    </div>
+                </template>
             </div>
 
             <div class="ob-choices" role="radiogroup" aria-label="قالب‌ها" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
@@ -556,6 +569,16 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         titleValid() { const t = (this.form.site_title || '').trim(); return t.length > 0 && !unsafe.test(t); },
         selectedKitTitles() { return this.options.kits.filter(k => this.form.kit_module_ids.includes(k.id)).map(k => k.title).join('، '); },
         themeName() { return this.options.themes.find(t => t.id === this.form.theme_id)?.name; },
+        themeReasonLabel(reason) {
+            return ({
+                not_installed: 'این قالب روی پلتفرم نصب نشده است.',
+                not_published: 'قالب نصب شده ولی منتشر نشده است.',
+                no_current_release: 'قالب هنوز Release تجاری ندارد.',
+                release_not_published: 'Release فعلی قالب منتشر نشده است.',
+                release_theme_mismatch: 'Release فعلی به این قالب تعلق ندارد.',
+                no_passing_quality_report: 'Release فعلی گزارش کیفیت تأییدشده ندارد.',
+            })[reason] || 'وضعیت قالب نامشخص است؛ گزارش آن را در صفحهٔ قالب‌ها ببینید.';
+        },
         serverLabel() { return this.options.servers.find(s => s.id === this.form.remote_server_id)?.label || '—'; },
 
         busy() { return (this.step === 1 && this.customer.state === 'loading') || (this.step === 2 && this.domain.state === 'loading'); },
