@@ -4,7 +4,7 @@
 
 ---
 
-## OPEN: SOLAR-INDUSTRY 1.1.0 — ALL 24 PAGES — RELEASE 283 READY, NOT DEPLOYED — 2026-11-17
+## COMPLETE: SOLAR-INDUSTRY 1.1.0 — ALL 24 PAGES — RELEASE 283 DEPLOYED, 1.1.0 PUBLISHED — 2026-11-17 ✅
 
 The onboarding wizard card showed «۵ صفحه» for solar-industry. The number is
 `count(Theme::getPageList())` (`SiteOnboardingService::wizardOptions`), so
@@ -27,9 +27,11 @@ vertical + `solar_industry_kit`).
 | Release commit | ✅ `868e4610c269dd35289cdd07ece3630db424751a` (source `c6442327` on `fix/solar-theme-all-pages`, base `1c7cba70`) |
 | Hub release | ✅ 283 (`96d83f9f-5c19-4322-bc63-35be7b89e81f`), ready 2026-11-17 20:47:03 UTC |
 | Artifact | ✅ 313 (`b2c47225-9154-4674-a1c3-7709d67b153a`), available and verified; build job 480 (`540ef3c1-08df-45c4-8f3d-ecdc642cf325`); sha256 `0b2ce275fedcf80a5e42fb120c9b398bf7c8803014369247284e420913ef2175`; evidence `712f18d4994695e68823fc9a31de1a8c7b15544eb263815086c754dbf2a8638c` |
-| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
-| Post-deploy, step 1 (owner) | ⏳ `php artisan theme-catalog:rebuild --slug=solar-industry` as `www-data`: reseeds theme 61 in place (same row, listing/price kept); the wizard card then shows ۲۴ صفحه |
-| Post-deploy, step 2 (owner) | ⏳ Theme Builder «انتشار» for solar-industry with version **1.1.0**: new release through the Mandatory Publish Gate. New installs get all 24 pages; sites on 1.0.0 get the 19 new pages through «قالب‌های من ← ارتقا» (pages added, the site's own edits kept) |
+| Deployment | ✅ DEPLOYED by the owner: deployment 365 (`57d3c696-7719-4860-a3de-90001bc31a9f`), succeeded 2026-11-17 20:52:23 UTC, HTTP health verified; server manifest `868e4610` |
+| Post-deploy, step 1 | ✅ DONE 2026-11-17 20:54 UTC (owner-requested, run as `www-data`): `php artisan theme-catalog:rebuild --slug=solar-industry` exit 0. Theme 61 reseeded in place (same row, one master): 5 → **24** pages, meta version 1.1.0, wizard card ۲۴ صفحه, still unlisted (`is_marketplace=false`, price 0); all 22 internal `/page/` link targets resolve |
+| Post-deploy, step 2 | ✅ DONE 2026-11-17 20:56:15 UTC (owner-approved): `ThemeBuilderService::publish($theme, '1.1.0', …)` (the Theme Builder «انتشار» call, published_by admin 1) passed the Mandatory Publish Gate. **Release 8 v1.1.0 published, 24 pages in its snapshot**; release 7 v1.0.0 superseded; Commercial Quality Report 2 passed; commercially eligible; onboarding solar profile `available` with theme 61 and the card at 24 pages; tenant marketplace still empty |
+| Result | ✅ New installations push release 1.1.0 (24 pages). Sites on 1.0.0 (none installed at the time) get the 19 new pages through «قالب‌های من ← ارتقا» (pages added, the site's own edits kept) |
+| Next | ⏳ Re-run the solar installation (last attempt: 52) |
 
 Full descriptor: `.deployment/releases/solar-theme-all-pages.json`.
 

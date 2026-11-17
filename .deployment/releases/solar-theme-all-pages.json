@@ -92,12 +92,28 @@
         }
     },
     "deployment": {
-        "status": "not_deployed",
-        "note": "The owner deploys Release 283 from the Hub dashboard. Confirmed from the Hub database: no deployment row for release 283.",
+        "status": "deployed",
+        "deployment_id": 365,
+        "deployment_public_id": "57d3c696-7719-4860-a3de-90001bc31a9f",
+        "deployed_at": "2026-11-17T20:52:23+00:00",
+        "note": "Confirmed from the Hub database: deployment 365 succeeded (artifact 313, release 283), HTTP health verified; server release-manifest commit_sha 868e4610.",
         "post_deploy_commands": [
             "php artisan theme-catalog:rebuild --slug=solar-industry",
             "Theme Builder «انتشار» for solar-industry, version 1.1.0"
-        ]
+        ],
+        "post_deploy_results": {
+            "rebuild": {
+                "ran_at": "2026-11-17T20:54:29+00:00",
+                "run_as": "www-data in /var/www/saas-platform (owner-requested)",
+                "exit_code": 0,
+                "result": "theme 61 reseeded in place (single master row): pages 5 -> 24, settings.meta.version 1.1.0, wizard card 24 pages, is_marketplace false and price 0 unchanged, 22 distinct internal /page/ link targets all resolve"
+            },
+            "publish": {
+                "ran_at": "2026-11-17T20:56:15+00:00",
+                "call": "ThemeBuilderService::publish(theme 61, '1.1.0', <1.1.0 changelog>, null, published_by=1) (owner-approved; the Theme Builder «انتشار» call)",
+                "result": "Mandatory Publish Gate passed: release 8 v1.1.0 published with 24 pages in its snapshot; release 7 v1.0.0 superseded; Commercial Quality Report 2 passed; theme commercially eligible; onboarding solar profile available (theme 61); tenant marketplace empty"
+            }
+        }
     },
     "summary": "solar-industry 1.1.0 ships all 24 library pages (23 content pages + the auth canvas as the login page); 1.0.0 had 5 while its header, footer and pages linked to 13 missing pages. Rolled out in place: rebuild --slug, then publish 1.1.0; existing sites upgrade without being deleted."
 }
