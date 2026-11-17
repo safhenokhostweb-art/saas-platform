@@ -76,19 +76,32 @@ $secretsEnvPath   = "C:\laragon\www\agents\.secrets.env"
 
 # Secret resolver
 function Get-ReleaseSecret([string]$projectKey) {
-    $secretVarName = if ($projectKey -eq "saas-platform") { "DEPLOYMENT_RELEASE_SECRET_SAAS" } else { "DEPLOYMENT_RELEASE_SECRET_CUSTOMER" }
-    
-    $val = [System.Environment]::GetEnvironmentVariable($secretVarName)
-    if (-not $val) {
-        $val = [System.Environment]::GetEnvironmentVariable("DEPLOYMENT_RELEASE_SECRET")
+    $val = $null
+    if ($projectKey -eq "saas-platform") {
+        $candidates = @("DEPLOYMENT_RELEASE_SECRET_SAAS", "DEPLOYMENT_RELEASE_SECRET")
+    } else {
+        $candidates = @("DEPLOYMENT_RELEASE_SECRET_CUSTOMER_SITE", "DEPLOYMENT_RELEASE_SECRET_CUSTOMER", "DEPLOYMENT_HUB_SECRET")
     }
-    if (-not $val -and (Test-Path $secretsEnvPath)) {
-        $pattern = "^$secretVarName=(.+)$"
-        $line = Get-Content $secretsEnvPath | Where-Object { $_ -match $pattern } | Select-Object -First 1
-        if ($line -and $Matches[1]) {
-            $val = $Matches[1].Trim()
+
+    foreach ($varName in $candidates) {
+        $candidateVal = [System.Environment]::GetEnvironmentVariable($varName)
+        if ($candidateVal) {
+            $val = $candidateVal
+            break
         }
     }
+
+    if (-not $val -and (Test-Path $secretsEnvPath)) {
+        foreach ($varName in $candidates) {
+            $pattern = "^$varName=(.+)$"
+            $line = Get-Content $secretsEnvPath | Where-Object { $_ -match $pattern } | Select-Object -First 1
+            if ($line -and $Matches[1]) {
+                $val = $Matches[1].Trim()
+                break
+            }
+        }
+    }
+
     if (-not $val) {
         throw "Deployment release secret could not be resolved for project [$projectKey]."
     }
