@@ -103,9 +103,9 @@
             آیا مطمئن هستید که می‌خواهید سایت <strong id="deleteSiteName" class="text-red-700"></strong> را حذف کنید؟
         </p>
         <ul class="text-xs text-gray-500 mb-5 space-y-1 border border-gray-100 rounded-lg p-3 bg-gray-50">
-            <li>• تمام ماژول‌ها، تنظیمات، لایسنس‌ها و اعلان‌های سایت حذف می‌شوند</li>
+            <li>• سایت به همراه ماژول‌ها، تنظیمات و اعلان‌هایش کامل حذف می‌شود</li>
             <li>• نصب‌های مرتبط به وضعیت «حذف‌شده» تغییر می‌کنند (لاگ باقی می‌ماند)</li>
-            <li>• فقط لاگ فعالیت برای ردپای حسابرسی باقی می‌ماند</li>
+            <li>• سوابق لایسنس، خرید و فعالیت برای حسابرسی نگه داشته می‌شوند، بدون اتصال به سایت</li>
         </ul>
         <div class="flex gap-3 justify-end">
             <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">

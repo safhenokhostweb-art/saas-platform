@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Helpers\Jalali;
 use App\Services\ActivityLogger;
+use App\Services\SiteDeletionService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Models\Site;
 use App\Models\Customer;
@@ -337,33 +339,37 @@ class SiteController extends Controller
     /**
      * حذف سرتاسری سایت — تمام رکوردهای مرتبط پاک می‌شوند، فقط لاگ باقی می‌ماند.
      */
-    public function destroy(Site $site)
+    public function destroy(Site $site, SiteDeletionService $deletion)
     {
-        $title      = $site->title;
-        $id         = $site->id;
-        $domain     = $site->domain;
-        $customerId = $site->customer_id;
+        $title   = $site->title;
+        $context = [
+            'deleted_site_id' => $site->id,
+            'domain'          => $site->domain,
+            'customer_id'     => $site->customer_id,
+        ];
 
-        // لاگ قبل از حذف ثبت می‌شود تا در صورت خطا هم ردپا باقی بماند
-        ActivityLogger::log('site.deleted', "حذف سرتاسری سایت: {$title}", null, [
-            'deleted_site_id' => $id,
-            'domain'          => $domain,
-            'customer_id'     => $customerId,
-        ]);
+        try {
+            $result = $deletion->delete($site);
+        } catch (\Throwable $e) {
+            // Always back to the list with a readable message: never a 500,
+            // and never the edit page (GET /admin/sites/{id} redirects there).
+            report($e);
+            ActivityLogger::log('site.delete_failed', "حذف سایت ناموفق بود: {$title}", null, $context + [
+                'error' => mb_substr($e->getMessage(), 0, 500),
+            ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            // customer_installations فاقد FK به sites است — باید دستی مدیریت شود
-            // وضعیت 'deleted' بجای حذف فیزیکی → audit trail باقی می‌ماند
-            \App\Models\CustomerInstallation::where('site_id', $id)
-                ->whereNotIn('status', ['deleted'])
-                ->update(['status' => 'deleted', 'completed_at' => now()]);
+            $reason = $e instanceof QueryException && ($e->errorInfo[1] ?? null) === 1451
+                ? 'دادهٔ دیگری هنوز به این سایت وابسته است و پایگاه داده اجازهٔ حذف نداد.'
+                : 'خطای غیرمنتظره‌ای رخ داد.';
 
-            // حذف سایت — FK cascadeOnDelete بقیه جداول را خودکار پاک می‌کند
-            \App\Models\Site::find($id)?->delete();
-        });
+            return redirect()->route('admin.sites.index')
+                ->with('error', "سایت «{$title}» حذف نشد: {$reason} هیچ داده‌ای تغییر نکرد. جزئیات در لاگ سیستم ثبت شد.");
+        }
+
+        ActivityLogger::log('site.deleted', "حذف سرتاسری سایت: {$title}", null, $context + $result);
 
         return redirect()->route('admin.sites.index')
-            ->with('success', "سایت «{$title}» و تمام داده‌های مرتبط حذف شد.");
+            ->with('success', "سایت «{$title}» حذف شد. سوابق لایسنس و خرید برای حسابرسی نگه داشته شد.");
     }
 
     /**
