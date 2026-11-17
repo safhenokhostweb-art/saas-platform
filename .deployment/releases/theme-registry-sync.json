@@ -130,14 +130,33 @@
         }
     },
     "deployment": {
-        "status": "not_deployed",
-        "note": "The owner deploys from the Hub dashboard. Release 279 (59b5f7e2, artifact 308) is based on this commit and also contains this work unit; deploying 279 ships both.",
+        "status": "deployed_via_release_279",
+        "note": "Release 278 was not deployed separately. Release 279 (59b5f7e2, artifact 308) contains 34afa7dc and was deployed.",
+        "deployment_id": 361,
+        "deployment_public_id": "6cc36184-217d-4ef7-8fc4-da9c88ed238c",
+        "release_id": 279,
+        "commit_sha": "59b5f7e2c9d8c57b8bf5ba51a4f199ca6cc2eeeb",
+        "deployed_at": "2026-11-17T15:37:10+00:00",
         "post_deploy_pipeline_step": {
             "name": "theme registry sync",
             "command": "{php_binary} artisan themes:sync-registry --no-interaction",
             "insert_after": "migrate",
-            "add_only_after": "a release containing 34afa7dc is deployed"
-        }
+            "status": "added by the owner"
+        },
+        "production_runs": [
+            {
+                "command": "php artisan themes:sync-registry --dry-run --no-interaction",
+                "run_as": "www-data",
+                "exit_code": 0,
+                "result": "solar-industry up_to_date"
+            },
+            {
+                "command": "php artisan themes:sync-registry --no-interaction",
+                "run_as": "www-data",
+                "exit_code": 0,
+                "result": "solar-industry up_to_date; synced_slugs = [\"solar-industry\"]"
+            }
+        ]
     },
     "summary": "Post-deploy themes:sync-registry installs and releases the active theme registry (ThemeRegistry auto_sync; currently solar-industry) without re-seeding existing themes or recreating deleted or purged ones."
 }
