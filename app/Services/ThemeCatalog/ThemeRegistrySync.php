@@ -84,6 +84,9 @@ class ThemeRegistrySync
             if ($theme === null) {
                 return ['slug' => $slug, 'action' => self::FAILED, 'detail' => 'canonical source ran but the theme is still missing'];
             }
+            // A newly synced theme is never listed in the tenant marketplace;
+            // the admin lists it and prices it in «فروشگاه قالب ← Listing».
+            ThemeRegistry::applyInstallDefaults($theme);
             $installed = true;
         }
 

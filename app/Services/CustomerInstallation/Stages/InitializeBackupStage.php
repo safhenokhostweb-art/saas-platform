@@ -4,6 +4,7 @@ namespace App\Services\CustomerInstallation\Stages;
 
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
+use App\Services\CustomerInstallation\Env\RemoteEnvFile;
 use App\Services\Infrastructure\ArvanBackupService;
 use App\Services\Installer\LocalRecoveryRepository;
 use Illuminate\Support\Facades\Log;
@@ -29,18 +30,21 @@ class InitializeBackupStage extends AbstractStage
             $timestamp    = now()->format('Ymd_His');
             $dumpFile     = "/tmp/cie_baseline_{$siteId}_{$timestamp}.sql.gz";
 
-            // Step 1: Write backup config into .env
-            $envPath = escapeshellarg($webRoot . '/.env');
-            $ctx->connection->execute("echo 'BACKUP_ENABLED=true' >> {$envPath}");
-            $ctx->connection->execute("echo 'BACKUP_RETENTION=30' >> {$envPath}");
+            // Step 1: Write backup config into .env (upserts: a retried stage
+            // used to append the same keys again with `echo >>`).
+            $envFile = $webRoot . '/.env';
+            $ctx->connection->execute(RemoteEnvFile::set($envFile, 'BACKUP_ENABLED', 'true'));
+            $ctx->connection->execute(RemoteEnvFile::set($envFile, 'BACKUP_RETENTION', '30'));
 
-            // Step 2: Create DB dump on the remote server
-            $dbNameResult = $ctx->connection->execute(
-                "grep '^DB_DATABASE=' {$envPath} 2>/dev/null | cut -d= -f2 | tr -d '\"'"
-            );
-            $dbName    = trim($dbNameResult->stdout);
-            $dbUser    = trim($ctx->connection->execute("grep '^DB_USERNAME=' {$envPath} 2>/dev/null | cut -d= -f2 | tr -d '\"'")->stdout);
-            $dbPassRaw = trim($ctx->connection->execute("grep '^DB_PASSWORD=' {$envPath} 2>/dev/null | cut -d= -f2 | tr -d '\"'")->stdout);
+            // Step 2: Create DB dump on the remote server. The credentials are
+            // decoded the way Laravel reads them; `cut -d= -f2 | tr -d '"'`
+            // broke on a `=` in the value and ignored dotenv quoting/escapes.
+            $db = RemoteEnvFile::decode((string) $ctx->connection->execute(
+                RemoteEnvFile::read($envFile, ['DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD'])
+            )->stdout);
+            $dbName    = (string) ($db['DB_DATABASE'] ?? '');
+            $dbUser    = (string) ($db['DB_USERNAME'] ?? '');
+            $dbPassRaw = (string) ($db['DB_PASSWORD'] ?? '');
 
             $baselineCreated  = false;
             $arvanKey         = null;

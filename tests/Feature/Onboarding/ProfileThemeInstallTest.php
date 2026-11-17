@@ -72,6 +72,23 @@ class ProfileThemeInstallTest extends TestCase
         $this->assertSame(1, Theme::whereNull('site_id')->where('slug', self::SLUG)->count());
     }
 
+    /** Owner rule 2026-11-17: a single-theme install never lists it in the tenant marketplace. */
+    public function test_a_single_theme_install_is_unlisted_and_a_reinstall_keeps_the_admins_listing(): void
+    {
+        $this->artisan('theme-catalog:rebuild', ['--slug' => self::SLUG])
+            ->expectsOutputToContain('is not listed in the tenant marketplace')
+            ->assertSuccessful();
+        $theme = Theme::whereNull('site_id')->where('slug', self::SLUG)->firstOrFail();
+        $this->assertFalse((bool) $theme->is_marketplace);
+
+        $theme->update(['is_marketplace' => true, 'marketplace_price' => 2_500_000]);
+        $this->artisan('theme-catalog:rebuild', ['--slug' => self::SLUG])->assertSuccessful();
+
+        $theme->refresh();
+        $this->assertTrue((bool) $theme->is_marketplace);
+        $this->assertSame(2_500_000, $theme->marketplace_price);
+    }
+
     public function test_unknown_slug_and_fresh_with_slug_are_refused(): void
     {
         $this->artisan('theme-catalog:rebuild', ['--slug' => 'no-such-theme'])->assertFailed();

@@ -154,6 +154,8 @@ class ThemeCatalogRebuildCommand extends Command
             $this->warn("Source {$source['label']} also seeds: " . implode(', ', array_diff($source['expected_slugs'], [$slug])));
         }
 
+        $existed = Theme::whereNull('site_id')->where('slug', $slug)->exists();
+
         [$command, $arguments] = $source['run'];
         $this->info("Installing canonical theme {$slug} via {$source['label']}...");
         $this->call($command, $arguments);
@@ -162,6 +164,14 @@ class ThemeCatalogRebuildCommand extends Command
         if ($count !== 1) {
             $this->error("Expected exactly one master theme \"{$slug}\" after seeding, found {$count}.");
             return self::FAILURE;
+        }
+
+        // A theme this command just created starts outside the tenant
+        // marketplace (ThemeRegistry::applyInstallDefaults); an existing
+        // theme keeps whatever listing the admin gave it.
+        if (! $existed) {
+            \App\Services\ThemeCatalog\ThemeRegistry::applyInstallDefaults(Theme::whereNull('site_id')->where('slug', $slug)->firstOrFail());
+            $this->info("{$slug} is not listed in the tenant marketplace; list and price it in «فروشگاه قالب ← Listing».");
         }
 
         $this->info("Canonical theme {$slug} present. Next: php artisan theme-release:backfill --slug={$slug}");
