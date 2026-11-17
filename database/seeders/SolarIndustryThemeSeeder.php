@@ -29,13 +29,23 @@ final class SolarIndustryThemeSeeder extends Seeder
 {
     public const SLUG = 'solar-industry';
     public const NAME = 'قالب صنعت برق';
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.1.0';
     public const TOKEN_PRESET = 'solar-dark';
 
     /**
      * Theme page key => [library template, title, slug]. The home page is the
      * site root; the others render at /page/{slug} (the about page is the one
      * "@link:about" points at).
+     *
+     * Every page template of the solar-industry family in the library is a
+     * page of this theme (SolarIndustryThemeSeederTest enforces it): 23
+     * content pages plus the auth canvas. 1.0.0 shipped only the first five:
+     * the other templates were added to the
+     * library on 2026-11-14 (a4d8773a) without being added here, so installed
+     * sites had 5 pages while the header, footer and pages linked to 13 of
+     * the missing ones (/page/projects, /page/consulting, ...). Slugs are the
+     * templates' own `route`; the five 1.0.0 entries keep their keys and
+     * slugs so existing sites upgrade cleanly.
      */
     public const PAGES = [
         'home' => ['solar-page-home', 'صفحه اصلی', ''],
@@ -43,6 +53,29 @@ final class SolarIndustryThemeSeeder extends Seeder
         'products' => ['solar-page-products', 'محصولات', 'products'],
         'courses' => ['solar-page-courses', 'آکادمی آموزش', 'courses'],
         'contact' => ['solar-page-contact', 'تماس با ما', 'contact'],
+        // 1.1.0
+        'services_overview' => ['solar-page-services_overview', 'مرور کلی خدمات فنی و مهندسی', 'services-overview'],
+        'residential' => ['solar-page-residential', 'سیستم‌های خورشیدی مسکونی', 'residential'],
+        'commercial' => ['solar-page-commercial', 'سیستم‌های خورشیدی تجاری', 'commercial'],
+        'industrial' => ['solar-page-industrial', 'سیستم‌های خورشیدی صنعتی', 'industrial'],
+        'ongrid' => ['solar-page-ongrid', 'سیستم‌های خورشیدی متصل به شبکه (On-Grid)', 'ongrid'],
+        'offgrid' => ['solar-page-offgrid', 'سیستم‌های خورشیدی مستقل از شبکه (Off-Grid)', 'offgrid'],
+        'hybrid' => ['solar-page-hybrid', 'سیستم‌های خورشیدی هیبریدی (Hybrid)', 'hybrid'],
+        'emergency_power' => ['solar-page-emergency_power', 'سیستم‌های برق اضطراری خورشیدی (Solar UPS)', 'emergency-power'],
+        'solar_pumping' => ['solar-page-solar_pumping', 'پمپاژ خورشیدی آب کشاورزی', 'solar-pumping'],
+        'consulting' => ['solar-page-consulting', 'مشاوره تخصصی و امکان‌سنجی خورشیدی', 'consulting'],
+        'expert_consultation' => ['solar-page-expert_consultation', 'درخواست وقت مشاوره حضوری و تلفنی', 'expert-consultation'],
+        'design' => ['solar-page-design', 'طراحی مهندسی سیستم‌های خورشیدی', 'design'],
+        'installation' => ['solar-page-installation', 'اجرا و نصب نیروگاه خورشیدی', 'installation'],
+        'maintenance' => ['solar-page-maintenance', 'نگهداری و پایش نیروگاه خورشیدی', 'maintenance'],
+        'projects' => ['solar-page-projects', 'پروژه‌های اجرایی نیروگاه‌های خورشیدی', 'projects'],
+        'best_system' => ['solar-page-best_system', 'راهنمای انتخاب بهترین سیستم خورشیدی', 'best-system'],
+        'solar_calculator' => ['solar-page-solar_calculator', 'ماشین‌حساب آنلاین خورشیدی', 'solar-calculator'],
+        'download_center' => ['solar-page-download_center', 'مرکز دانلود کاتالوگ و اسناد فنی', 'download-center'],
+        // The customer site renders the theme's `login` page at /login
+        // (LoginController) instead of its default auth screen; this is the
+        // solar sign-in/sign-up canvas (auth_mode dual) made for that slot.
+        'login' => ['auth-solar-industrial', 'ورود و عضویت', 'login'],
     ];
 
     public function run(): void
@@ -52,7 +85,7 @@ final class SolarIndustryThemeSeeder extends Seeder
         $theme->fill([
             'name' => self::NAME,
             // themes.description is a 255-character column.
-            'description' => 'قالب تیرهٔ صنعتی برای شرکت‌های انرژی خورشیدی و برق: هدر با مگامنوی کارتی، ورود و ثبت‌نام و سبد خرید؛ صفحه‌های اصلی، درباره ما، محصولات، آکادمی و تماس.',
+            'description' => 'قالب تیرهٔ صنعتی برای شرکت‌های انرژی خورشیدی و برق: هدر با مگامنوی کارتی، ورود و ثبت‌نام و سبد خرید؛ ۲۴ صفحه شامل خدمات، انواع سیستم‌ها، مشاوره، پروژه‌ها، آکادمی، فروشگاه، تماس و ورود.',
             'type' => Theme::TYPE_FULL,
             'category' => Theme::CATEGORY_INDUSTRIAL,
             'source' => Theme::SOURCE_SEEDER,
@@ -75,7 +108,12 @@ final class SolarIndustryThemeSeeder extends Seeder
                     'required_platform_version' => '1.0.0',
                     'supported_modules' => ['shop', 'courses', 'forms', 'menu'],
                     'changelog' => [
-                        self::VERSION => [
+                        '1.1.0' => [
+                            'هجده صفحهٔ دیگر کتابخانهٔ صنعت برق به قالب اضافه شد: خدمات، سیستم‌های مسکونی، تجاری، صنعتی، متصل به شبکه، مستقل، هیبریدی، برق اضطراری، پمپاژ خورشیدی، مشاوره، درخواست مشاوره، طراحی، اجرا و نصب، نگهداری، پروژه‌ها، راهنمای انتخاب سیستم، ماشین‌حساب و مرکز دانلود.',
+                            'صفحهٔ ورود و عضویت صنعتی (Auth Canvas) صفحهٔ /login سایت را می‌سازد. جمعاً ۲۴ صفحه.',
+                            'پیوندهای هدر، فوتر و صفحه‌ها به این صفحه‌ها (مثل /page/projects و /page/consulting) دیگر به صفحهٔ ناموجود نمی‌روند.',
+                        ],
+                        '1.0.0' => [
                             'بستهٔ کامل قالب صنعت برق: هدر، فوتر و پنج صفحه از کتابخانهٔ قالب‌ها.',
                             'هدر با مگامنوی کارتی، آیکون‌های قاب‌دار، نشان‌ها، کارت‌های پیشنهادی و دکمه‌های ورود و ثبت‌نام (ADR-084).',
                         ],

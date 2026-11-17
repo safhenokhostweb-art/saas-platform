@@ -8,6 +8,8 @@ use App\Services\ThemeBuilder\BlockRenderer;
 use App\Services\ThemeBuilder\ThemeReleaseService;
 use Database\Seeders\SolarIndustryThemeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use SaaSPlatform\ThemeRuntime\Access\AssetAccessCatalog;
+use SaaSPlatform\ThemeRuntime\Access\AssetRef;
 use SaaSPlatform\ThemeRuntime\BlockRegistry;
 use SaaSPlatform\ThemeRuntime\TemplateLibrary;
 use Tests\TestCase;
@@ -87,9 +89,17 @@ class SolarIndustryThemeSeederTest extends TestCase
         $theme = $this->seedTheme();
         // MySQL's JSON column orders object keys itself, so compare page => slug, not order.
         $slugs = array_map(fn ($page) => $page['slug'], $theme->pages);
+        $expected = array_map(fn (array $entry) => $entry[2], SolarIndustryThemeSeeder::PAGES);
         ksort($slugs);
-        $this->assertSame(['about' => 'about', 'contact' => 'contact', 'courses' => 'courses', 'home' => '', 'products' => 'products'], $slugs);
+        ksort($expected);
+        $this->assertCount(24, $slugs);
+        $this->assertSame($expected, $slugs);
+        // The five 1.0.0 pages keep their keys and slugs, so installed sites upgrade cleanly.
+        foreach (['home' => '', 'about' => 'about', 'products' => 'products', 'courses' => 'courses', 'contact' => 'contact'] as $key => $slug) {
+            $this->assertSame($slug, $slugs[$key] ?? null, "1.0.0 page {$key} keeps its key and slug");
+        }
         $this->assertTrue($theme->pages['home']['is_home']);
+        $this->assertSame(1, count(array_filter($theme->pages, fn ($p) => $p['is_home'])));
 
         $this->assertSame('nav_header', $theme->header_blocks[0]['type']);
         $this->assertSame('nav_footer', $theme->footer_blocks[0]['type']);
@@ -104,6 +114,52 @@ class SolarIndustryThemeSeederTest extends TestCase
             $this->assertArrayHasKey($block['type'], $registry, "{$block['type']} is a canonical registered widget");
         }
         $this->assertDoesNotMatchRegularExpression('/solar_|_solar|sanat|barq/i', implode(' ', array_unique(array_column($all, 'type'))), 'no theme-specific widget types');
+    }
+
+    /**
+     * 2026-11-17: 1.0.0 shipped 5 pages while the library held 24 solar page
+     * templates (23 content pages + the auth canvas; 19 never reached it).
+     * Guard: every page template of the solar-industry family is a page here.
+     */
+    public function test_every_solar_industry_page_template_in_the_library_is_a_page_of_the_theme(): void
+    {
+        $family = AssetAccessCatalog::section(AssetRef::KIND_TEMPLATE);
+        $libraryPages = [];
+        foreach (TemplateLibrary::documents() as $key => $doc) {
+            if ($doc['type'] === 'page' && ($family[$key] ?? null) === 'solar-industry') {
+                $libraryPages[] = $key;
+            }
+        }
+        $themePages = array_column(SolarIndustryThemeSeeder::PAGES, 0);
+        sort($libraryPages);
+        sort($themePages);
+
+        $this->assertCount(24, $libraryPages, "23 content pages + the auth canvas");
+        $this->assertSame($libraryPages, $themePages);
+
+        // The added content pages use their template's own route as slug; the
+        // auth canvas (no route) is the `login` page the customer site renders at /login.
+        foreach (SolarIndustryThemeSeeder::PAGES as $key => [$template, , $slug]) {
+            if (in_array($key, ['home', 'about', 'products', 'courses', 'contact'], true)) {
+                continue;
+            }
+            $route = TemplateLibrary::documents()[$template]['route'] ?? null;
+            $this->assertSame($route ?? 'login', $slug, "{$template} slug");
+        }
+        $this->assertSame(['auth-solar-industrial', 'ورود و عضویت', 'login'], SolarIndustryThemeSeeder::PAGES['login']);
+    }
+
+    public function test_every_internal_page_link_resolves_to_a_page_of_the_theme(): void
+    {
+        $theme = $this->seedTheme();
+        $json = json_encode([$theme->header_blocks, $theme->footer_blocks, $theme->pages], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        preg_match_all('#"/page/([a-z0-9-]+)#', $json, $m);
+        $linked = array_values(array_unique($m[1]));
+        $missing = array_values(array_diff($linked, array_column($theme->pages, 'slug')));
+
+        $this->assertGreaterThanOrEqual(13, count($linked), 'the header, footer and pages link to many theme pages');
+        $this->assertSame([], $missing, 'links to pages the theme does not have');
     }
 
     public function test_colours_come_from_the_solar_dark_preset(): void
