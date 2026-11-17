@@ -282,14 +282,21 @@ function Invoke-Preflight {
 function Invoke-Readiness {
     if ($SkipReadiness) { Write-Warn "Readiness agent skipped (-SkipReadiness)."; return }
     Write-Section "Readiness agent - deployment.readiness --strict"
+    # Windows PowerShell 5.1 strips the double quotes of a JSON argument passed
+    # to a native program, so the payload goes through a file.
     $payload = (@{ projects = @($script:ProjectKey); task_id = $script:Task.task_id } | ConvertTo-Json -Compress)
+    $payloadFile = [System.IO.Path]::GetTempFileName()
+    [System.IO.File]::WriteAllText($payloadFile, $payload, (New-Object System.Text.UTF8Encoding($false)))
     Push-Location $script:RepoRoot
     try {
         $prev = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & $script:Php (Join-Path $script:Agents "bin\agent") run deployment.readiness --strict "--payload=$payload"
+        & $script:Php (Join-Path $script:Agents "bin\agent") run deployment.readiness --strict "--payload-file=$payloadFile"
         $code = $LASTEXITCODE
         $ErrorActionPreference = $prev
-    } finally { Pop-Location }
+    } finally {
+        Pop-Location
+        Remove-Item $payloadFile -ErrorAction SilentlyContinue
+    }
     if ($code -ne 0) { Stop-Release "readiness agent exit code $code (0 PASS, 1 failed, 2 blocked, 3 not READY)." }
     Write-Ok "Readiness READY"
 }
@@ -328,7 +335,9 @@ function Invoke-ReleasePrepare([string]$Action) {
 
     $result = ($out -join "`n") | ConvertFrom-Json
     Write-Ok "Status: $($result.status); base_sha $($result.base_sha); $(@($result.changed_files).Count) changed file(s)"
-    foreach ($t in @($result.test_results)) { Write-Host "         $($t.name): $($t.status)" }
+    # Entries are {name, type, command, exit_code, duration_ms}; release-prepare
+    # aborts on any non-zero exit, so every listed check passed.
+    foreach ($t in @($result.test_results)) { Write-Host "         $($t.name): exit $($t.exit_code) ($($t.duration_ms) ms)" }
     if ($Action -eq "prepare") {
         Invoke-Git @("fetch", "--no-tags", $script:Remote, $script:Branch) | Out-Null
         $pushed = (Invoke-Git @("rev-parse", "FETCH_HEAD") | Select-Object -First 1).Trim().ToLower()
