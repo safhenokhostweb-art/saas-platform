@@ -104,6 +104,13 @@
         "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-16 release; not an owner sign-off)",
         "reviewed_at": "2026-11-16",
         "reason": "Create-only migration (ADR-087): up() creates platform_asset_policies; down() drops only that table (rollback of its own creation). No existing data is altered."
+      },
+      {
+        "path": "database/migrations/2026_11_17_100000_detach_site_history_on_site_delete.php",
+        "sha256": "5297cb3010efe87927f41de2b735c763810e20ad5a1be3c00125163234e04991",
+        "reviewed_by": "Owner (approved in session 2026-11-17 for fix/site-delete-restrict-fk; prepared by Claude Opus 5.5)",
+        "reviewed_at": "2026-11-17",
+        "reason": "MySQL-only DB::statement FK rebuild: site_id on module_entitlements, motion_bespoke_commissions, motion_bespoke_assignments, motion_bespoke_purchases and motion_site_asset_packages becomes nullable with ON DELETE SET NULL (was RESTRICT, which made site delete fail with SQLSTATE 1451). No row is deleted or rewritten. down() restores NOT NULL/RESTRICT and refuses while detached rows exist."
       }
     ]
   },
