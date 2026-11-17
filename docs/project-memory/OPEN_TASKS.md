@@ -4,6 +4,28 @@
 
 ---
 
+## OPEN: ONBOARDING PROFILE THEME INSTALL — RELEASE 277 READY — 2026-11-17
+
+Production has an empty master theme catalog (clean-slate purge
+2026-11-01), so `solar-industry` was never installed. `theme-release:backfill`
+had nothing to release, and the wizard offered only «بدون قالب».
+
+| Item | Status |
+|------|--------|
+| Fix: `theme-catalog:rebuild --slug=`, wizard reason + fix commands | ✅ RELEASED — `c8a6dcf160b2e16b14a2ac052d6909eabaadd928` (source `3ab12386`, base `edcad535`) |
+| Hub release | ✅ 277 (`f3143abc-e6b7-4fb6-8e9b-d019d7fd5910`) — ready 2026-11-17 10:35:55 UTC |
+| Artifact | ✅ 306 (`b0954918-40f1-47d2-9300-5c8a22cce10f`) — available, verified; sha256 `d328912e31941a27780b1782f0ef5b9077ffd866dd174f17895aff4b47566a9c`; evidence `83a1a8f14c31def59d75f2246c7a2fbad984636642fad0b08da9973468b7c302`; expires 2026-12-01 |
+| Deployment | ⏳ OWNER — Deploy release 277 from the Hub dashboard |
+| Post-deploy data step (owner-approved) | ⏳ `php artisan theme-catalog:rebuild --slug=solar-industry`, then `php artisan theme-release:backfill --slug=solar-industry` |
+
+Full descriptor: `.deployment/releases/onboarding-profile-theme-install.json`.
+
+Release 276 (site delete fix, `edcad535`, artifact 305) is DEPLOYED as
+deployment 358. On production the migration ran and all five history tables
+now use `ON DELETE SET NULL`.
+
+---
+
 ## COMPLETE: UNIFIED ONBOARDING WIZARD (ADR-088) — RELEASED & DEPLOYED — 2026-11-17 ✅
 
 Owner brief 2026-11-16: one wizard for customer, sites per mobile, domain,

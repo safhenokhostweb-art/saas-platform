@@ -1,0 +1,91 @@
+{
+    "schema_version": 1,
+    "version": "2026.11.17-onboarding-profile-theme-install.1",
+    "project_key": "saas-platform",
+    "branch": "main",
+    "task_id": "WU-ONBOARDING-PROFILE-THEME-INSTALL",
+    "created_timestamp": "2026-11-17T10:32:16+00:00",
+    "release_commit": "c8a6dcf160b2e16b14a2ac052d6909eabaadd928",
+    "base_sha": "edcad53553fc58d86e076ec0d64c31164c2a1e9a",
+    "source_commits": {
+        "saas-platform": "3ab12386bf868b03babfc8a118b4b0e6f2afe3e4"
+    },
+    "changed_files": [
+        "app/Console/Commands/ThemeCatalogRebuildCommand.php",
+        "app/Services/Onboarding/SiteOnboardingService.php",
+        "resources/views/admin/onboarding/wizard.blade.php",
+        "tests/Feature/Onboarding/ProfileThemeInstallTest.php"
+    ],
+    "migration_files": [],
+    "verification": {
+        "status": "passed",
+        "command": "php ../deployment-system/deployment/release-prepare.php prepare (via scripts/deploy-release-pipeline.ps1 -Mode prepare)",
+        "project_gate_status": "READY",
+        "readiness_agent": "deployment.readiness --strict: READY, 0 blockers, 0 warnings",
+        "known_failure_exemptions": [],
+        "checked_timestamp": "2026-11-17T10:32:16+00:00",
+        "checks": [
+            { "name": "syntax:app/Console/Commands/ThemeCatalogRebuildCommand.php", "type": "syntax", "exit_code": 0, "duration_ms": 826 },
+            { "name": "syntax:app/Services/Onboarding/SiteOnboardingService.php", "type": "syntax", "exit_code": 0, "duration_ms": 295 },
+            { "name": "syntax:resources/views/admin/onboarding/wizard.blade.php", "type": "syntax", "exit_code": 0, "duration_ms": 1158 },
+            { "name": "syntax:tests/Feature/Onboarding/ProfileThemeInstallTest.php", "type": "syntax", "exit_code": 0, "duration_ms": 275 },
+            {
+                "name": "theme-builder-regression",
+                "type": "test",
+                "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+                "exit_code": 0,
+                "duration_ms": 84014
+            },
+            {
+                "name": "homepage-persistence",
+                "type": "test",
+                "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+                "exit_code": 0,
+                "duration_ms": 70790
+            }
+        ],
+        "work_unit_tests": [
+            "tests/Feature/Onboarding (45 tests, incl. ProfileThemeInstallTest 5): OK",
+            "tests/Feature/ThemeBuilder/ThemeCatalogRebuildCommandTest.php (8): OK",
+            "tests/Feature/ThemeBuilder/ThemeReleaseBackfillCommandTest.php (17): OK",
+            "tests/Feature/Admin/SiteDestroyTest.php (5): OK"
+        ],
+        "hub_release": {
+            "release_id": 277,
+            "release_public_id": "f3143abc-e6b7-4fb6-8e9b-d019d7fd5910",
+            "status": "ready",
+            "source": "project_contract",
+            "readiness_policy": "legacy_fallback_v1",
+            "source_received_at": "2026-11-17T10:32:22+00:00",
+            "ready_at": "2026-11-17T10:35:55+00:00"
+        },
+        "source_artifact": {
+            "artifact_id": 306,
+            "artifact_public_id": "b0954918-40f1-47d2-9300-5c8a22cce10f",
+            "publish_job_id": 472,
+            "publish_job_public_id": "8103a40c-c80b-46a2-b2a3-084a0df713a6",
+            "deployment_id": null,
+            "commit_sha": "c8a6dcf160b2e16b14a2ac052d6909eabaadd928",
+            "status": "available",
+            "semantic_status": "verified",
+            "checksum_sha256": "d328912e31941a27780b1782f0ef5b9077ffd866dd174f17895aff4b47566a9c",
+            "size_bytes": 57777756,
+            "file_manifest_hash": "525b2cbfd23a574b005cf4e89d9651cfeeb5251aff642c5c558c4047e1edd73a",
+            "file_manifest_entry_count": 20899,
+            "file_manifest_total_size": 159651306,
+            "evidence_digest": "83a1a8f14c31def59d75f2246c7a2fbad984636642fad0b08da9973468b7c302",
+            "created_at": "2026-11-17T10:35:50+00:00",
+            "verified_at": "2026-11-17T10:35:55+00:00",
+            "expires_at": "2026-12-01T10:35:50+00:00"
+        }
+    },
+    "deployment": {
+        "status": "not_deployed",
+        "note": "The owner deploys Release 277 from the Hub dashboard. Confirmed from the Hub database 2026-11-17: no deployment row for release 277 yet.",
+        "post_deploy_commands": [
+            "php artisan theme-catalog:rebuild --slug=solar-industry",
+            "php artisan theme-release:backfill --slug=solar-industry"
+        ]
+    },
+    "summary": "theme-catalog:rebuild --slug installs one canonical master theme without resurrecting purged themes; the onboarding wizard explains why a profile theme is unavailable and how to fix it. Production has an empty master catalog, so solar-industry must be installed after deploy."
+}
