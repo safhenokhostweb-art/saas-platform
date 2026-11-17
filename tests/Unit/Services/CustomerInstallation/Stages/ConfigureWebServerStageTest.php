@@ -11,6 +11,7 @@ use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Drivers\CpanelDeploymentDriver;
 use App\Services\CustomerInstallation\Drivers\FakeRemoteDriver;
 use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
+use App\Services\CustomerInstallation\Ssl\ArvanRealIpSnippet;
 use App\Services\CustomerInstallation\Ssl\NginxVhostWriter;
 use App\Services\CustomerInstallation\Ssl\VpsSslProvisioner;
 use App\Services\CustomerInstallation\Stages\ConfigureWebServerStage;
@@ -175,6 +176,64 @@ class ConfigureWebServerStageTest extends TestCase
 
         $this->assertTrue($result->success, $result->error ?? '');
         $this->assertTrue($result->output['ssl_block_written']);
+    }
+
+    /**
+     * 2026-11-17 installation 49: the vhost's include of the ArvanCloud
+     * real-IP snippet made `nginx -t` fail on a server without it. The
+     * snippet must be ensured before the vhost is written and tested.
+     */
+    public function test_real_ip_snippet_is_ensured_before_the_vhost_is_written_and_tested(): void
+    {
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('arvan-cdn-real-ip.conf.tmp', 0, "installed\n");
+        $driver->addResponse('nginx -t', 0, 'syntax is ok, test is successful');
+        $ctx = $this->context($driver);
+
+        $result = $this->stage()->execute($ctx);
+
+        $this->assertTrue($result->success, $result->error ?? '');
+        $this->assertSame(ArvanRealIpSnippet::STATUS_INSTALLED, $result->output['real_ip_snippet']);
+
+        $log = $driver->getCommandLog();
+        $ensureIdx = $this->firstIndexContaining($log, "if test -s '" . ArvanRealIpSnippet::REMOTE_PATH . "'");
+        $writeIdx  = $this->firstIndexContaining($log, 'sites-available');
+        $testIdx   = $this->firstIndexContaining($log, 'nginx -t');
+
+        $this->assertNotNull($ensureIdx, 'the real-IP snippet must be ensured');
+        $this->assertSame($log[$ensureIdx], (new ArvanRealIpSnippet())->ensureCommand());
+        $this->assertLessThan($writeIdx, $ensureIdx);
+        $this->assertLessThan($testIdx, $ensureIdx);
+    }
+
+    public function test_existing_real_ip_snippet_is_reported_present(): void
+    {
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('arvan-cdn-real-ip.conf.tmp', 0, "present\n");
+        $driver->addResponse('nginx -t', 0, 'syntax is ok, test is successful');
+
+        $result = $this->stage()->execute($this->context($driver));
+
+        $this->assertTrue($result->success, $result->error ?? '');
+        $this->assertSame(ArvanRealIpSnippet::STATUS_PRESENT, $result->output['real_ip_snippet']);
+    }
+
+    public function test_snippet_install_failure_fails_the_stage_before_any_vhost_is_written(): void
+    {
+        $driver = new FakeRemoteDriver();
+        $driver->addResponse('arvan-cdn-real-ip.conf.tmp', 1, 'mkdir: cannot create directory: Permission denied');
+        $driver->addResponse('nginx -t', 0, 'syntax is ok, test is successful');
+
+        $result = $this->stage()->execute($this->context($driver));
+
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('Failed to install nginx snippet /etc/nginx/snippets/arvan-cdn-real-ip.conf', $result->error);
+        $this->assertStringContainsString('Permission denied', $result->error);
+
+        $log = $driver->getCommandLog();
+        $this->assertNull($this->firstIndexContaining($log, 'sites-available'), 'no vhost may be written');
+        $this->assertNull($this->firstIndexContaining($log, 'nginx -t'));
+        $this->assertNull($this->firstIndexContaining($log, 'nginx -s reload'));
     }
 
     private function firstIndexContaining(array $log, string $needle): ?int

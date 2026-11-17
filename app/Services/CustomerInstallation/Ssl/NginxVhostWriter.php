@@ -27,12 +27,16 @@ class NginxVhostWriter
 
     private readonly NginxVhostTemplate $template;
 
+    private readonly ArvanRealIpSnippet $realIpSnippet;
+
     public function __construct(
         private readonly ArvanCdnDomainDecider $arvanDecider,
         private readonly VpsSslProvisioner     $sslProvisioner,
         ?NginxVhostTemplate $template = null,
+        ?ArvanRealIpSnippet $realIpSnippet = null,
     ) {
         $this->template = $template ?? new NginxVhostTemplate();
+        $this->realIpSnippet = $realIpSnippet ?? new ArvanRealIpSnippet();
     }
 
     public function write(InstallationContext $ctx): StageResult
@@ -71,6 +75,21 @@ class NginxVhostWriter
         // customer's own domain.
         $sslPaths = $this->resolveSslCertPaths($ctx, $domain, $req->sslEnabled);
 
+        // The vhost includes the ArvanCloud real-IP snippet, a server-level
+        // file. Install it when it is missing (never overwrite it) so that
+        // nginx -t cannot fail on a server that has never had it.
+        $snippetResult = $ctx->connection->execute($this->realIpSnippet->ensureCommand());
+        if ($snippetResult->failed()) {
+            return StageResult::failure(
+                self::STAGE_NAME,
+                'Failed to install nginx snippet ' . ArvanRealIpSnippet::REMOTE_PATH . ': ' . $snippetResult->output(),
+                $this->elapsedSince($startMs),
+            );
+        }
+        $snippetStatus = str_contains($snippetResult->stdout, ArvanRealIpSnippet::STATUS_PRESENT)
+            ? ArvanRealIpSnippet::STATUS_PRESENT
+            : ArvanRealIpSnippet::STATUS_INSTALLED;
+
         $nginxConfig = $this->template->render($domain, $webRoot, $phpFpmSocket, $sslPaths);
         $encoded     = base64_encode($nginxConfig);
 
@@ -103,6 +122,7 @@ class NginxVhostWriter
             'web_root'          => $webRoot,
             'ssl_enabled'       => $req->sslEnabled,
             'ssl_block_written' => $sslPaths !== null,
+            'real_ip_snippet'   => $snippetStatus,
         ], [
             'config_path' => $configPath,
             'enable_path' => $enablePath,

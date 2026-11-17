@@ -7,8 +7,9 @@ final class NginxVhostTemplate
     /** @param array{cert: string, key: string}|null $sslPaths */
     public function render(string $domain, string $webRoot, string $phpFpmSocket, ?array $sslPaths): string
     {
-        // Generated centrally from https://www.arvancloud.ir/en/ips.txt.
-        $arvanRealIpInclude = 'include snippets/arvan-cdn-real-ip.conf;';
+        // The snippet's content lives in ArvanRealIpSnippet; NginxVhostWriter
+        // installs it on the server before nginx -t.
+        $arvanRealIpInclude = (new ArvanRealIpSnippet())->includeDirective();
         $originPeerParam = 'fastcgi_param HTTP_X_ORIGIN_PEER_IP $realip_remote_addr;';
 
         $httpBlock = <<<NGINX
