@@ -304,11 +304,18 @@ class SiteOnboardingService
         return ['reason' => $reason, 'fix' => $fix];
     }
 
-    /** @return Collection<int, Module> active license-only modules (kits) */
+    /**
+     * Active kits a site can actually be licensed for (Module::isSiteLicensableKit:
+     * paid + license-only). Core modules with license_required used to be
+     * listed too (56 «کیت‌های لایسنس» on production instead of 3), and
+     * APPLY_SITE_ENTITLEMENTS then failed on the first of them.
+     *
+     * @return Collection<int, Module>
+     */
     public function kits(): Collection
     {
         return Module::assignableToSite()->where('is_active', true)->orderBy('title')->get()
-            ->filter(fn (Module $m) => $m->isLicenseOnly())
+            ->filter(fn (Module $m) => $m->isSiteLicensableKit())
             ->values();
     }
 
