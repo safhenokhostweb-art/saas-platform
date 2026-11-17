@@ -13,7 +13,7 @@ use App\Services\CustomerInstallation\Ssl\ArvanRealIpSnippet;
  *
  * Platform subdomains (under the active DNS provider's root domain) get
  * their A record from CONFIGURE_DNS. They only need a known public server
- * IP and must not already point somewhere else. Any other domain must have
+ * IP and are not looked up here (see check()). Any other domain must have
  * its own A/CNAME record, not just a wildcard match. With SSL it must point
  * at this server (or at ArvanCloud's CDN edge), because the ACME HTTP-01
  * challenge is fetched from wherever the domain resolves.
@@ -34,14 +34,32 @@ class DomainDnsPreflight
     public const FAIL_WRONG_IP = 'dns_points_elsewhere';
     public const FAIL_WILDCARD_ONLY = 'dns_wildcard_only';
     public const FAIL_NO_SERVER_IP = 'server_ip_missing';
-    public const FAIL_MANAGED_TAKEN = 'managed_subdomain_points_elsewhere';
 
     public function __construct(private readonly DnsResolver $dns) {}
 
     public function check(string $domain, ?string $serverIp, bool $sslEnabled): DnsPreflightResult
     {
         $domain = strtolower(trim(preg_replace('#^https?://#i', '', $domain) ?? '', "/. \t\n"));
-        $managed = $this->isPlatformManaged($domain);
+
+        if ($this->isPlatformManaged($domain)) {
+            // No public lookup here. Through a caching resolver (production
+            // falls back to the ISP's, because DoH is unreachable there) a
+            // "not found" answer would be cached negatively and could hide
+            // the record CONFIGURE_DNS creates moments later. CONFIGURE_DNS
+            // creates or updates the record through the Arvan API and then
+            // verifies that it resolves to this server.
+            $notQueried = DnsLookup::notQueried();
+            if ($serverIp === null) {
+                return DnsPreflightResult::fail(self::FAIL_NO_SERVER_IP,
+                    'IP عمومی سرور مقصد مشخص نیست، پس رکورد DNS زیردامنه را نمی‌توان ساخت. در تنظیمات سرور، آدرس (host) را IP عمومی یا نام دامنهٔ قابل‌دسترس آن قرار دهید.',
+                    $domain, $serverIp, $notQueried, true);
+            }
+
+            return DnsPreflightResult::pass(self::PASS_MANAGED, $domain, $serverIp, $notQueried, true,
+                ["CONFIGURE_DNS creates the A record to {$serverIp} and verifies it before any upload."]);
+        }
+
+        $managed = false;
         $lookup = $this->dns->lookupA($domain);
 
         if ($lookup->status === DnsLookup::UNKNOWN) {
@@ -51,22 +69,6 @@ class DomainDnsPreflight
 
         $pointsHere = $lookup->isResolved() && $this->pointsHere($lookup, $serverIp);
         $viaWildcard = $lookup->isResolved() && $this->matchesWildcard($domain, $lookup);
-
-        if ($managed) {
-            if ($serverIp === null) {
-                return DnsPreflightResult::fail(self::FAIL_NO_SERVER_IP,
-                    'IP عمومی سرور مقصد مشخص نیست، پس رکورد DNS زیردامنه را نمی‌توان ساخت. در تنظیمات سرور، آدرس (host) را IP عمومی یا نام دامنهٔ قابل‌دسترس آن قرار دهید.',
-                    $domain, $serverIp, $lookup, $managed);
-            }
-            if ($lookup->isResolved() && !$viaWildcard && !$pointsHere) {
-                return DnsPreflightResult::fail(self::FAIL_MANAGED_TAKEN,
-                    "زیردامنهٔ «{$domain}» از قبل در DNS به {$this->ipList($lookup)} اشاره می‌کند، نه به IP این سرور ({$serverIp}). اگر این رکورد متعلق به سرویس دیگری نیست، آن را در آروان‌کلاد حذف کنید و دوباره تلاش کنید.",
-                    $domain, $serverIp, $lookup, $managed);
-            }
-
-            return DnsPreflightResult::pass(self::PASS_MANAGED, $domain, $serverIp, $lookup, $managed,
-                ["CONFIGURE_DNS creates the A record to {$serverIp}."]);
-        }
 
         if (!$lookup->isResolved()) {
             $target = $serverIp !== null ? " به IP این سرور ({$serverIp})" : '';

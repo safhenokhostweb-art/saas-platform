@@ -2,6 +2,8 @@
 
 namespace App\Services\CustomerInstallation\Dns;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -9,10 +11,19 @@ use Illuminate\Support\Facades\Http;
  * visitors see, not a local cache), falling back to the system resolver
  * when DoH is unreachable. Same source ArvanDnsProvider::waitForPropagation
  * already uses.
+ *
+ * From the production host (2026-11-17) dns.google and cloudflare-dns.com
+ * both time out while the system resolver works. So a connection failure
+ * is detected quickly (2 s) and remembered for DOH_DOWN_TTL seconds. After
+ * that, lookups go straight to the system resolver instead of paying the
+ * timeout on every query.
  */
 class PublicDnsResolver implements DnsResolver
 {
     private const DOH_URL = 'https://dns.google/resolve';
+
+    private const DOH_DOWN_KEY = 'customer_installation.dns.doh_unreachable';
+    private const DOH_DOWN_TTL = 600;
 
     private const TYPE_A = 1;
     private const TYPE_CNAME = 5;
@@ -23,10 +34,18 @@ class PublicDnsResolver implements DnsResolver
 
     public function lookupA(string $host): DnsLookup
     {
+        if (Cache::get(self::DOH_DOWN_KEY)) {
+            return $this->nativeLookup($host);
+        }
+
         try {
-            $response = Http::timeout(8)
+            $response = Http::connectTimeout(2)->timeout(5)
                 ->withHeaders(['Accept' => 'application/dns-json'])
                 ->get(self::DOH_URL, ['name' => $host, 'type' => 'A']);
+        } catch (ConnectionException) {
+            Cache::put(self::DOH_DOWN_KEY, true, self::DOH_DOWN_TTL);
+
+            return $this->nativeLookup($host);
         } catch (\Throwable) {
             return $this->nativeLookup($host);
         }

@@ -132,16 +132,19 @@ class DomainDnsPreflightTest extends TestCase
         $this->assertSame(DomainDnsPreflight::PASS_UNVERIFIED, $result->code);
     }
 
-    public function test_platform_subdomain_without_a_record_passes_because_configure_dns_creates_it(): void
+    public function test_platform_subdomain_passes_without_any_public_lookup_because_configure_dns_creates_it(): void
     {
         $this->arvanManaged();
+        $dns = new FakeDnsResolver(DnsLookup::notFound());
 
-        $result = $this->preflight(new FakeDnsResolver(DnsLookup::notFound()))
-            ->check('solar.safhenokhost.ir', self::SERVER_IP, true);
+        $result = $this->preflight($dns)->check('solar.safhenokhost.ir', self::SERVER_IP, true);
 
         $this->assertTrue($result->ok, (string) $result->error);
         $this->assertTrue($result->managedByPlatform);
         $this->assertSame(DomainDnsPreflight::PASS_MANAGED, $result->code);
+        $this->assertSame(DnsLookup::NOT_QUERIED, $result->lookup->status);
+        // A negative answer cached by the resolver would hide the record CONFIGURE_DNS creates next.
+        $this->assertSame([], $dns->queries);
     }
 
     public function test_platform_subdomain_needs_a_known_server_ip(): void
@@ -156,32 +159,13 @@ class DomainDnsPreflightTest extends TestCase
         $this->assertStringContainsString('IP عمومی سرور مقصد مشخص نیست', $result->error);
     }
 
-    public function test_platform_subdomain_already_pointing_elsewhere_is_not_silently_taken_over(): void
+    public function test_platform_subdomain_under_a_wildcard_is_not_judged_by_the_wildcard(): void
     {
-        $this->arvanManaged();
-        $dns = (new FakeDnsResolver(DnsLookup::notFound()))->set('solar.safhenokhost.ir', DnsLookup::resolved(['5.6.7.8']));
-
-        $result = $this->preflight($dns)->check('solar.safhenokhost.ir', self::SERVER_IP, false);
-
-        $this->assertFalse($result->ok);
-        $this->assertSame(DomainDnsPreflight::FAIL_MANAGED_TAKEN, $result->code);
-        $this->assertStringContainsString('5.6.7.8', $result->error);
-    }
-
-    public function test_platform_subdomain_under_a_wildcard_still_gets_its_own_record(): void
-    {
-        $this->arvanManaged();
+        $this->arvanManaged(proxy: true);
         $dns = (new FakeDnsResolver(DnsLookup::notFound()))->setWildcard('safhenokhost.ir', DnsLookup::resolved(['5.6.7.8']));
 
         $this->assertTrue($this->preflight($dns)->check('solar.safhenokhost.ir', self::SERVER_IP, true)->ok);
-    }
-
-    public function test_platform_subdomain_proxied_by_arvan_passes(): void
-    {
-        $this->arvanManaged(proxy: true);
-        $dns = (new FakeDnsResolver(DnsLookup::notFound()))->set('solar.safhenokhost.ir', DnsLookup::resolved(['185.143.233.2']));
-
-        $this->assertTrue($this->preflight($dns)->check('solar.safhenokhost.ir', self::SERVER_IP, true)->ok);
+        $this->assertSame([], $dns->queries);
     }
 
     public function test_inactive_provider_makes_platform_subdomains_follow_custom_domain_rules(): void

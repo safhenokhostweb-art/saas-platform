@@ -83,26 +83,17 @@ class OnboardingDnsPreflightTest extends TestCase
         Queue::assertPushed(CustomerInstallationPipelineJob::class);
     }
 
-    public function test_platform_subdomain_already_pointing_elsewhere_is_rejected(): void
+    public function test_new_platform_subdomain_is_accepted_without_a_public_lookup(): void
     {
         DnsProviderSetting::query()->update(['api_token_encrypted' => 'token-present']);
-        $this->dns((new FakeDnsResolver(DnsLookup::notFound()))->set('khorshid.' . self::ROOT, DnsLookup::resolved(['5.6.7.8'])));
-
-        $this->actingAs($this->admin())->post(route('admin.onboarding.store'), $this->submission($this->publicServer()))
-            ->assertSessionHasErrors('domain');
-
-        $this->assertSame(0, CustomerInstallation::query()->count());
-    }
-
-    public function test_new_platform_subdomain_is_accepted_because_configure_dns_creates_it(): void
-    {
-        DnsProviderSetting::query()->update(['api_token_encrypted' => 'token-present']);
-        $this->dns(new FakeDnsResolver(DnsLookup::notFound()));
+        $dns = new FakeDnsResolver(DnsLookup::notFound());
+        $this->dns($dns);
 
         $this->actingAs($this->admin())->post(route('admin.onboarding.store'), $this->submission($this->publicServer()))
             ->assertSessionHasNoErrors();
 
         $this->assertSame('khorshid.' . self::ROOT, CustomerInstallation::query()->sole()->customer_domain);
+        $this->assertSame([], $dns->queries, 'CONFIGURE_DNS creates and verifies the record; no negative answer may be cached first');
     }
 
     public function test_platform_subdomain_on_a_server_without_a_public_host_is_left_to_the_pipeline_stage(): void

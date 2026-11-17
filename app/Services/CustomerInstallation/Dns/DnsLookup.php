@@ -14,6 +14,7 @@ final class DnsLookup
     public const RESOLVED = 'resolved';
     public const NOT_FOUND = 'not_found';
     public const UNKNOWN = 'unknown';
+    public const NOT_QUERIED = 'not_queried';
 
     /** @param list<string> $ips */
     private function __construct(
@@ -39,6 +40,11 @@ final class DnsLookup
     public static function unknown(): self
     {
         return new self(self::UNKNOWN);
+    }
+
+    public static function notQueried(): self
+    {
+        return new self(self::NOT_QUERIED);
     }
 
     public function isResolved(): bool
