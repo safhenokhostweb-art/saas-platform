@@ -1,0 +1,143 @@
+{
+    "schema_version": 1,
+    "version": "2026.11.17-theme-registry-sync.1",
+    "project_key": "saas-platform",
+    "branch": "main",
+    "task_id": "WU-THEME-REGISTRY-SYNC",
+    "created_timestamp": "2026-11-17T12:01:49+00:00",
+    "release_commit": "34afa7dc63b1b2f1ea22a4bc0ad92a8ed2b037a7",
+    "base_sha": "5c486a7adb882edf03b4df7fe2447937a68503ce",
+    "source_commits": {
+        "saas-platform": [
+            "6e10f842",
+            "468b35f4"
+        ]
+    },
+    "source_branch": "feat/theme-registry-sync",
+    "changed_files": [
+        ".deployment/releases/onboarding-profile-theme-install.json",
+        "app/Console/Commands/ThemeCatalogRebuildCommand.php",
+        "app/Console/Commands/ThemeRegistrySyncCommand.php",
+        "app/Services/ThemeCatalog/ThemeRegistry.php",
+        "app/Services/ThemeCatalog/ThemeRegistrySync.php",
+        "docs/project-memory/OPEN_TASKS.md",
+        "tests/Feature/ThemeBuilder/ThemeRegistrySyncTest.php"
+    ],
+    "migration_files": [],
+    "verification": {
+        "status": "passed",
+        "command": "php ../deployment-system/deployment/release-prepare.php prepare (via scripts/deploy-release-pipeline.ps1 -Mode prepare)",
+        "project_gate_status": "READY",
+        "readiness_agent": "deployment.readiness --strict: READY, 0 blockers, 0 warnings",
+        "known_failure_exemptions": [],
+        "checks": [
+            {
+                "name": "syntax:app/Console/Commands/ThemeCatalogRebuildCommand.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 151
+            },
+            {
+                "name": "syntax:app/Console/Commands/ThemeRegistrySyncCommand.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 138
+            },
+            {
+                "name": "syntax:app/Services/ThemeCatalog/ThemeRegistry.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 138
+            },
+            {
+                "name": "syntax:app/Services/ThemeCatalog/ThemeRegistrySync.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 137
+            },
+            {
+                "name": "syntax:tests/Feature/ThemeBuilder/ThemeRegistrySyncTest.php",
+                "type": "syntax",
+                "exit_code": 0,
+                "duration_ms": 136
+            },
+            {
+                "name": "theme-builder-regression",
+                "type": "test",
+                "exit_code": 0,
+                "duration_ms": 38187
+            },
+            {
+                "name": "homepage-persistence",
+                "type": "test",
+                "exit_code": 0,
+                "duration_ms": 36700
+            }
+        ],
+        "work_unit_tests": [
+            "tests/Feature/ThemeBuilder/ThemeRegistrySyncTest.php (8): OK",
+            "tests/Feature/ThemeBuilder/ThemeCatalogRebuildCommandTest.php (8): OK",
+            "tests/Feature/ThemeBuilder/ThemeReleaseBackfillCommandTest.php (17): OK",
+            "tests/Feature/ThemeBuilder/ThemeMandatoryPublishGateTest.php (14): OK",
+            "tests/Feature/ThemeBuilder/ThemeCommercialEligibilityTest.php (21): OK",
+            "tests/Feature/Onboarding (45): OK"
+        ],
+        "hub_release": {
+            "release_id": 278,
+            "release_public_id": "6df92d09-3c3e-451c-83e9-5ac4762d1cfe",
+            "status": "ready",
+            "source": "project_contract",
+            "readiness_policy": "legacy_fallback_v1",
+            "source_received_at": "2026-11-17T12:01:55+00:00",
+            "ready_at": "2026-11-17T15:36:07+00:00"
+        },
+        "build_history": [
+            {
+                "publish_job_id": 473,
+                "status": "failed",
+                "reason": "artifact upload HTTP 500: /var/lib/nginx temp dirs had been re-owned to nobody by a probe nginx -t (fixed, owner-approved)"
+            },
+            {
+                "publish_job_id": 474,
+                "status": "failed",
+                "reason": "artifact_job_conflict: stale uploading artifact 307 still bound to job 473 (removed by the Hub's artifacts:cleanup)"
+            },
+            {
+                "publish_job_id": 476,
+                "publish_job_public_id": "ee27535e-c972-442a-9e34-538072c481b9",
+                "status": "succeeded",
+                "requested_by": "owner-approved retry (Claude session, 2026-11-17)"
+            }
+        ],
+        "source_artifact": {
+            "artifact_id": 309,
+            "artifact_public_id": "2e69396a-c348-4a7c-bef6-6067d671954c",
+            "publish_job_id": 476,
+            "publish_job_public_id": "ee27535e-c972-442a-9e34-538072c481b9",
+            "deployment_id": null,
+            "commit_sha": "34afa7dc63b1b2f1ea22a4bc0ad92a8ed2b037a7",
+            "status": "available",
+            "semantic_status": "verified",
+            "checksum_sha256": "ae5670616867cf809a9bae797e606f5b0d13424cfd5bfcc76c9cc893f7625e40",
+            "size_bytes": 57787477,
+            "file_manifest_hash": "4a1f82b946ad89ca9df4510521951c3d55797b799624382de478e4424d5618d1",
+            "file_manifest_entry_count": 20904,
+            "file_manifest_total_size": 159677306,
+            "evidence_digest": "10cd5c27df7fc68952db629befb076c79e8bd5a698327ae46412485642450092",
+            "created_at": "2026-11-17T15:36:01+00:00",
+            "verified_at": "2026-11-17T15:36:07+00:00",
+            "expires_at": "2026-12-01T15:36:01+00:00"
+        }
+    },
+    "deployment": {
+        "status": "not_deployed",
+        "note": "The owner deploys from the Hub dashboard. Release 279 (59b5f7e2, artifact 308) is based on this commit and also contains this work unit; deploying 279 ships both.",
+        "post_deploy_pipeline_step": {
+            "name": "theme registry sync",
+            "command": "{php_binary} artisan themes:sync-registry --no-interaction",
+            "insert_after": "migrate",
+            "add_only_after": "a release containing 34afa7dc is deployed"
+        }
+    },
+    "summary": "Post-deploy themes:sync-registry installs and releases the active theme registry (ThemeRegistry auto_sync; currently solar-industry) without re-seeding existing themes or recreating deleted or purged ones."
+}

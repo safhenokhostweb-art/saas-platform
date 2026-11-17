@@ -4,6 +4,28 @@
 
 ---
 
+## OPEN: THEME REGISTRY SYNC (POST-DEPLOY) — RELEASE 278 READY, NOT DEPLOYED — 2026-11-17
+
+New themes reached production only by hand (`theme-catalog:rebuild --slug` +
+`theme-release:backfill --slug`). `themes:sync-registry` now runs after every
+deploy and installs and releases the active registry.
+
+| Item | Status |
+|------|--------|
+| `ThemeRegistry` (canonical sources + `auto_sync`; active = `solar-industry`), `ThemeRegistrySync`, `themes:sync-registry` (`--dry-run`, `--strict`) | ✅ RELEASED — `34afa7dc63b1b2f1ea22a4bc0ad92a8ed2b037a7` (source `6e10f842`, `468b35f4` on `feat/theme-registry-sync`, base `5c486a7a`) |
+| Safety | ✅ never re-seeds an existing theme; never recreates a synced or adopted theme that was deleted (`settings.theme_registry.synced_slugs`); never touches the purged legacy catalog; exit 0 unless `--strict` |
+| Tests | ✅ ThemeRegistrySyncTest 8/8; catalog rebuild, backfill, publish gate, eligibility, onboarding (45) green; release-prepare READY |
+| Hub release | ✅ 278 (`6df92d09-3c3e-451c-83e9-5ac4762d1cfe`) — ready 2026-11-17 15:36:07 UTC |
+| Artifact | ✅ 309 (`2e69396a-c348-4a7c-bef6-6067d671954c`) — available, verified; sha256 `ae5670616867cf809a9bae797e606f5b0d13424cfd5bfcc76c9cc893f7625e40`; evidence `10cd5c27df7fc68952db629befb076c79e8bd5a698327ae46412485642450092`; expires 2026-12-01 |
+| Build history | jobs 473 (HTTP 500, nginx temp dirs owned by `nobody`) and 474 (stale artifact 307) failed; 476 succeeded |
+| Deployment | ⏳ OWNER — release 279 (`59b5f7e2`, artifact 308) is based on this commit, so deploying 279 ships this too |
+| Hub pipeline step | ⏳ OWNER — after deploy add `{"name":"theme registry sync","command":"{php_binary} artisan themes:sync-registry --no-interaction"}` after `migrate` |
+| Open security finding | ⚠️ the live `customer-site` and `saas-platform` nginx vhosts inline 13 non-official ArvanCloud ranges for `Ar-Real-Ip`; not changed, owner decision |
+
+Full descriptor: `.deployment/releases/theme-registry-sync.json`.
+
+---
+
 ## OPEN: NGINX ARVAN REAL-IP SNIPPET — RELEASE 279 READY, NOT DEPLOYED — 2026-11-17
 
 Customer installation 49 (`solar.safhenokhost.ir`, theme 61 solar-industry)
