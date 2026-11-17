@@ -178,5 +178,49 @@ class VpsDatabaseProvisionerTest extends TestCase
         $log = $driver->getCommandLog();
         $this->assertStringContainsString('DROP DATABASE IF EXISTS `cust_abc123_1`;', $log[0]);
         $this->assertStringContainsString("DROP USER IF EXISTS 'u_deadbeef'@'localhost';", $log[1]);
+        $this->assertStringContainsString("DROP USER IF EXISTS 'u_deadbeef'@'127.0.0.1';", $log[1]);
+    }
+
+    /**
+     * 2026-11-17 (installation 51): the site connects to DB_HOST=127.0.0.1
+     * over TCP. The account exists for both hosts, and an account that
+     * already exists still gets this run's password.
+     */
+    public function test_user_is_created_for_both_hosts_and_its_password_is_always_set(): void
+    {
+        $driver = new FakeRemoteDriver();
+        $ctx = $this->context($driver);
+        $provisioner = new VpsDatabaseProvisioner();
+
+        $provisioner->createUser($ctx, 'u_deadbeef', 'Ab9-x_y.Z');
+        $provisioner->grantPrivileges($ctx, 'cust_abc123_1', 'u_deadbeef');
+
+        [$create, $grant, $flush] = $driver->getCommandLog();
+        foreach (['localhost', '127.0.0.1'] as $host) {
+            $this->assertStringContainsString("CREATE USER IF NOT EXISTS 'u_deadbeef'@'{$host}' IDENTIFIED BY 'Ab9-x_y.Z';", $create);
+            $this->assertStringContainsString("ALTER USER 'u_deadbeef'@'{$host}' IDENTIFIED BY 'Ab9-x_y.Z';", $create);
+            $this->assertStringContainsString("GRANT ALL PRIVILEGES ON `cust_abc123_1`.* TO 'u_deadbeef'@'{$host}';", $grant);
+        }
+        $this->assertStringContainsString('FLUSH PRIVILEGES;', $flush);
+    }
+
+    public function test_password_is_a_safe_sql_literal_even_with_quotes_and_backslashes(): void
+    {
+        $driver = new FakeRemoteDriver();
+        (new VpsDatabaseProvisioner())->createUser($this->context($driver), 'u_x', "a'b\\c");
+
+        // The SQL itself (before shell quoting) carries the escaped literal.
+        $this->assertStringContainsString("IDENTIFIED BY 'a\\'b\\\\c'", $this->sqlOf($driver->getCommandLog()[0]));
+    }
+
+    /** Undo the platform's shell quoting so the SQL can be asserted on any host OS. */
+    private function sqlOf(string $command): string
+    {
+        $arg = substr($command, strpos($command, '-e ') + 3);
+        if (str_starts_with($arg, "'")) {
+            return str_replace("'\\''", "'", substr($arg, 1, -1)); // POSIX escapeshellarg
+        }
+
+        return substr($arg, 1, -1); // Windows escapeshellarg (double quotes)
     }
 }

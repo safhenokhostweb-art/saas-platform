@@ -13,6 +13,14 @@ use RuntimeException;
  */
 class VpsDatabaseProvisioner implements DatabaseProvisionerInterface
 {
+    /**
+     * Every account exists for both client hosts. The site connects to
+     * DB_HOST=127.0.0.1 over TCP. With skip_name_resolve=OFF (production,
+     * 2026-11-17) MySQL maps that to 'localhost'; with it ON only a
+     * '127.0.0.1' account would match.
+     */
+    public const HOSTS = ['localhost', '127.0.0.1'];
+
     public function createDatabase(InstallationContext $ctx, string $dbName): void
     {
         $this->runSql($ctx, "CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;", 'CREATE DATABASE');
@@ -20,12 +28,24 @@ class VpsDatabaseProvisioner implements DatabaseProvisionerInterface
 
     public function createUser(InstallationContext $ctx, string $dbUser, string $dbPassword): void
     {
-        $this->runSql($ctx, "CREATE USER IF NOT EXISTS '{$dbUser}'@'localhost' IDENTIFIED BY '{$dbPassword}';", 'CREATE USER');
+        // ALTER USER after CREATE ... IF NOT EXISTS: an account that already
+        // exists (a retried stage) must still end up with THIS password.
+        $password = self::sqlString($dbPassword);
+        $sql = '';
+        foreach (self::HOSTS as $host) {
+            $sql .= "CREATE USER IF NOT EXISTS '{$dbUser}'@'{$host}' IDENTIFIED BY {$password}; "
+                . "ALTER USER '{$dbUser}'@'{$host}' IDENTIFIED BY {$password}; ";
+        }
+        $this->runSql($ctx, rtrim($sql), 'CREATE USER');
     }
 
     public function grantPrivileges(InstallationContext $ctx, string $dbName, string $dbUser): void
     {
-        $this->runSql($ctx, "GRANT ALL PRIVILEGES ON `{$dbName}`.* TO '{$dbUser}'@'localhost';", 'GRANT PRIVILEGES');
+        $sql = '';
+        foreach (self::HOSTS as $host) {
+            $sql .= "GRANT ALL PRIVILEGES ON `{$dbName}`.* TO '{$dbUser}'@'{$host}'; ";
+        }
+        $this->runSql($ctx, rtrim($sql), 'GRANT PRIVILEGES');
         $this->runSql($ctx, "FLUSH PRIVILEGES;", 'FLUSH PRIVILEGES');
     }
 
@@ -36,7 +56,17 @@ class VpsDatabaseProvisioner implements DatabaseProvisionerInterface
 
     public function dropUser(InstallationContext $ctx, string $dbUser): void
     {
-        $ctx->connection->execute('mysql -u root -e ' . escapeshellarg("DROP USER IF EXISTS '{$dbUser}'@'localhost';"));
+        $sql = '';
+        foreach (self::HOSTS as $host) {
+            $sql .= "DROP USER IF EXISTS '{$dbUser}'@'{$host}'; ";
+        }
+        $ctx->connection->execute('mysql -u root -e ' . escapeshellarg(rtrim($sql)));
+    }
+
+    /** A MySQL single-quoted string literal (backslash and quote escaped). */
+    private static function sqlString(string $value): string
+    {
+        return "'" . str_replace(['\\', "'"], ['\\\\', "\\'"], $value) . "'";
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\InstallationCredential;
 use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
+use App\Services\CustomerInstallation\Env\DotenvValue;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
@@ -18,14 +19,10 @@ class GenerateEnvironmentStage extends AbstractStage
     public function estimatedSeconds(): int { return 3; }
     public function canRollback(): bool { return true; }
 
-    /** Quote a .env value only when it would not survive unquoted. */
+    /** Quote a .env value only when it would not survive unquoted (see DotenvValue). */
     private static function envValue(string $value): string
     {
-        if ($value === '' || preg_match('/^[A-Za-z0-9_:\/+=.\-]+$/', $value) === 1) {
-            return $value;
-        }
-
-        return '"' . addcslashes($value, '"\$') . '"';
+        return DotenvValue::encode($value);
     }
 
     public function execute(InstallationContext $ctx): StageResult
@@ -67,7 +64,9 @@ class GenerateEnvironmentStage extends AbstractStage
             };
 
             $envLines = [
-                "APP_NAME=\"{$req->company}\"",
+                // User-supplied values go through envValue(): a raw `#`, `"`,
+                // `$` or space would be cut or misread by phpdotenv.
+                "APP_NAME=" . self::envValue((string) $req->company),
                 "APP_ENV=production",
                 "APP_KEY={$appKey}",
                 "APP_DEBUG=false",
@@ -92,8 +91,8 @@ class GenerateEnvironmentStage extends AbstractStage
                 "MAIL_MAILER=" . ($req->smtp['mailer'] ?? 'smtp'),
                 "MAIL_HOST=" . ($req->smtp['host'] ?? ''),
                 "MAIL_PORT=" . ($req->smtp['port'] ?? '587'),
-                "MAIL_USERNAME=" . ($req->smtp['username'] ?? ''),
-                "MAIL_PASSWORD=" . ($req->smtp['password'] ?? ''),
+                "MAIL_USERNAME=" . self::envValue((string) ($req->smtp['username'] ?? '')),
+                "MAIL_PASSWORD=" . self::envValue((string) ($req->smtp['password'] ?? '')),
                 "MAIL_ENCRYPTION=" . ($req->smtp['encryption'] ?? 'tls'),
                 "",
                 "PLATFORM_URL={$platformUrl}",
@@ -113,7 +112,7 @@ class GenerateEnvironmentStage extends AbstractStage
                 "MODULE_FORMS_ENABLED=" . (in_array('forms', $req->modules) ? 'true' : 'false'),
                 "MODULE_TICKETS_ENABLED=" . (in_array('tickets', $req->modules) ? 'true' : 'false'),
                 "",
-                "ADMIN_NAME=\"{$req->ownerName}\"",
+                "ADMIN_NAME=" . self::envValue((string) $req->ownerName),
                 "ADMIN_EMAIL={$req->email}",
                 "ADMIN_MOBILE={$req->phone}",
                 "ADMIN_PASSWORD={$adminPassword}",
