@@ -107,8 +107,11 @@
         }
     },
     "deployment": {
-        "status": "not_deployed",
-        "note": "The owner deploys Release 282 from the Hub dashboard. Confirmed from the Hub database 2026-11-17: no deployment row for release 282.",
+        "status": "deployed",
+        "deployment_id": 364,
+        "deployment_public_id": "f4ccf831-dd65-4fbc-ae02-1dd797d679fe",
+        "deployed_at": "2026-11-17T19:52:37+00:00",
+        "note": "Confirmed from the Hub database: deployment 364 succeeded (artifact 312, release 282, previous c54b5ff9), HTTP health verified; server release-manifest commit_sha cbd9b445. No installation has run since (last is 52).",
         "post_deploy_commands": []
     },
     "follow_ups": [

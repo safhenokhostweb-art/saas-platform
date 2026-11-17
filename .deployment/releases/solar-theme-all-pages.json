@@ -1,0 +1,103 @@
+{
+    "schema_version": 1,
+    "version": "2026.11.17-solar-theme-all-pages.1",
+    "project_key": "saas-platform",
+    "branch": "main",
+    "task_id": "WU-SOLAR-THEME-ALL-PAGES",
+    "created_timestamp": "2026-11-17T20:41:45+00:00",
+    "release_commit": "868e4610c269dd35289cdd07ece3630db424751a",
+    "base_sha": "1c7cba704cbe2a4cedc89dfb3da7553f33e586a0",
+    "source_commits": {
+        "saas-platform": "c6442327ff3c81be26d93c80781b965f6248403b"
+    },
+    "source_branch": "fix/solar-theme-all-pages",
+    "changed_files": [
+        "database/seeders/SolarIndustryThemeSeeder.php",
+        "tests/Feature/Onboarding/ProfileThemeInstallTest.php",
+        "tests/Feature/ThemeBuilder/SolarIndustryThemeSeederTest.php"
+    ],
+    "migration_files": [],
+    "finding": {
+        "symptom": "The onboarding wizard card showed «۵ صفحه» for solar-industry; the library has 24+ solar templates.",
+        "source_of_the_number": "SiteOnboardingService::wizardOptions(): 'pages' => count($theme->getPageList()), i.e. the master theme row's pages (no pages_count column, no manifest).",
+        "production_state": "theme 61 pages = 5 (home, about, products, courses, contact); release 7 (1.0.0) snapshot pages = the same 5.",
+        "library": "24 solar-industry page templates: 23 content pages (solar-page-*) + auth-solar-industrial (auth canvas), plus solar-header and solar-footer. All classified in policy.json family solar-industry. The customer-site package on production also ships them, so they are available as Canvas library templates on sites with vertical solar_energy and solar_industry_kit.",
+        "root_cause": "ADR-084 (33a6a459, 2026-11-13) seeded the theme with header, footer and 5 pages. The other 19 templates were added to the library on 2026-11-14 (a4d8773a), but nothing added them to SolarIndustryThemeSeeder::PAGES.",
+        "impact": "An installed 1.0.0 site gets 5 pages, while the header, footer and pages link to 13 of the missing pages (/page/projects x6, /page/consulting x3, /page/installation, /page/expert-consultation, /page/design, ...), which would 404."
+    },
+    "rollout": {
+        "deploy": "Release 283 from the Hub dashboard (owner).",
+        "step_1": "php artisan theme-catalog:rebuild --slug=solar-industry (as www-data in /var/www/saas-platform): reseeds the existing theme 61 in place with 24 pages; the marketplace listing and price are kept (release 282 rule); no delete.",
+        "step_2": "Theme Builder «انتشار» for solar-industry with version 1.1.0 (ThemeBuilderService::publish): a new release through the Mandatory Publish Gate. New installations push 1.1.0 (24 pages).",
+        "existing_sites": "Sites on 1.0.0 upgrade in «قالب‌های من ← ارتقا» (ThemeUpgradeReconciler: remote-only pages are added as page_added; the site's own edits are preserved). No site needs to be deleted. At the time of writing no customer site is installed with solar-industry (all solar installations were rolled back)."
+    },
+    "verification": {
+        "status": "passed",
+        "command": "php ../deployment-system/deployment/release-prepare.php prepare (DEPLOYMENT_RELEASE_METADATA_URL set; delivered by prepare itself)",
+        "project_gate_status": "READY",
+        "readiness_agent": "deployment.readiness --strict: 0 blockers, 1 warning (BRANCH_BEHIND_PRODUCTION on the shared dev tree, not the release clone), digest 519160eed6c9812d1a68c090477844dbdf53b786c5e8adc4fa2fb502b37af051",
+        "known_failure_exemptions": [],
+        "checked_timestamp": "2026-11-17T20:41:45+00:00",
+        "checks": [
+            { "name": "syntax:* (3 owned PHP files)", "type": "syntax", "exit_code": 0 },
+            {
+                "name": "theme-builder-regression",
+                "type": "test",
+                "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+                "exit_code": 0,
+                "duration_ms": 40613
+            },
+            {
+                "name": "homepage-persistence",
+                "type": "test",
+                "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+                "exit_code": 0,
+                "duration_ms": 36699
+            }
+        ],
+        "work_unit_tests": [
+            "SolarIndustryThemeSeederTest: 24 pages with the five 1.0.0 keys/slugs unchanged; every solar-industry library page template is a theme page and new slugs follow template routes; every internal /page/ link resolves to a theme page; every zone renders through the canonical renderer; release through the canonical release writer",
+            "ProfileThemeInstallTest: an existing 5-page theme with release 1.0.0 is updated in place (same row) by theme-catalog:rebuild --slug to 24 pages, then ThemeBuilderService::publish('1.1.0') passes the Mandatory Publish Gate with 24 pages in the snapshot",
+            "tests/Feature/Onboarding + tests/Unit/Services/CustomerInstallation + tests/Unit/CustomerInstallation: 467 tests, 4426 assertions OK",
+            "ThemeBuilder registry/seeder/rebuild/assignment/eligibility/marketplace/delivery/contract suites: 124 tests, 695 assertions OK",
+            "tests/Unit/ThemeBuilder: 540 tests, 23349 assertions, 2 skipped (pre-existing), 0 failures"
+        ],
+        "hub_release": {
+            "release_id": 283,
+            "release_public_id": "96d83f9f-5c19-4322-bc63-35be7b89e81f",
+            "status": "ready",
+            "source": "project_contract",
+            "source_received_at": "2026-11-17T20:41:51+00:00",
+            "ready_at": "2026-11-17T20:47:03+00:00"
+        },
+        "source_artifact": {
+            "artifact_id": 313,
+            "artifact_public_id": "b2c47225-9154-4674-a1c3-7709d67b153a",
+            "publish_job_id": 480,
+            "publish_job_public_id": "540ef3c1-08df-45c4-8f3d-ecdc642cf325",
+            "deployment_id": null,
+            "commit_sha": "868e4610c269dd35289cdd07ece3630db424751a",
+            "status": "available",
+            "semantic_status": "verified",
+            "checksum_sha256": "0b2ce275fedcf80a5e42fb120c9b398bf7c8803014369247284e420913ef2175",
+            "size_bytes": 57862506,
+            "file_manifest_hash": "903942ae86706529206bcba64f72529e902c909a01765fe2332f5f0b8708a1e5",
+            "file_manifest_entry_count": 20934,
+            "file_manifest_total_size": 159872765,
+            "evidence_digest": "712f18d4994695e68823fc9a31de1a8c7b15544eb263815086c754dbf2a8638c",
+            "created_at": "2026-11-17T20:46:58+00:00",
+            "verified_at": "2026-11-17T20:47:01+00:00",
+            "expires_at": "2026-12-01T20:46:58+00:00",
+            "on_disk_check": "sha256 of the stored zip equals checksum_sha256; the packaged SolarIndustryThemeSeeder has VERSION 1.1.0, the login (auth-solar-industrial) page and the new content pages"
+        }
+    },
+    "deployment": {
+        "status": "not_deployed",
+        "note": "The owner deploys Release 283 from the Hub dashboard. Confirmed from the Hub database: no deployment row for release 283.",
+        "post_deploy_commands": [
+            "php artisan theme-catalog:rebuild --slug=solar-industry",
+            "Theme Builder «انتشار» for solar-industry, version 1.1.0"
+        ]
+    },
+    "summary": "solar-industry 1.1.0 ships all 24 library pages (23 content pages + the auth canvas as the login page); 1.0.0 had 5 while its header, footer and pages linked to 13 missing pages. Rolled out in place: rebuild --slug, then publish 1.1.0; existing sites upgrade without being deleted."
+}

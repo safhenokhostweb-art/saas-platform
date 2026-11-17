@@ -4,7 +4,38 @@
 
 ---
 
-## OPEN: LICENSE_KEY UPSERT + THEMES UNLISTED BY DEFAULT — RELEASE 282 READY, NOT DEPLOYED — 2026-11-17
+## OPEN: SOLAR-INDUSTRY 1.1.0 — ALL 24 PAGES — RELEASE 283 READY, NOT DEPLOYED — 2026-11-17
+
+The onboarding wizard card showed «۵ صفحه» for solar-industry. The number is
+`count(Theme::getPageList())` (`SiteOnboardingService::wizardOptions`), so
+the theme row's `pages`. Production theme 61 and release 7 (1.0.0) both
+hold exactly 5 pages (home, about, products, courses, contact), which is
+the ADR-084 seeder list (2026-11-13). The library holds **24**
+solar-industry page templates (23 content pages + `auth-solar-industrial`).
+The other 19 were added on 2026-11-14 (`a4d8773a`), but nothing added them
+to `SolarIndustryThemeSeeder::PAGES`. The header, footer and pages link to
+13 of the missing pages (`/page/projects` ×6, `/page/consulting` ×3,
+`/page/design`, …), which 404 on an installed 1.0.0 site. The customer-site
+package already ships all 24 templates as Canvas library templates (solar
+vertical + `solar_industry_kit`).
+
+| Item | Status |
+|------|--------|
+| `PAGES`: + 18 content pages (template route as slug, template name as title); `auth-solar-industrial` as the theme's `login` page (the customer site renders it at `/login`); the five 1.0.0 keys and slugs unchanged | ✅ |
+| `VERSION` 1.1.0 + changelog; description updated | ✅ |
+| Tests | ✅ every solar-industry library page template is a theme page (24) and slugs follow template routes; every internal `/page/` link resolves; the existing 5-page theme + release 1.0.0 is updated in place by `theme-catalog:rebuild --slug` and `publish('1.1.0')` passes the Mandatory Publish Gate with 24 pages; onboarding + CustomerInstallation 467/467; ThemeBuilder registry/marketplace 124/124; `tests/Unit/ThemeBuilder` 540 (2 skipped, 0 failed); release-prepare check READY |
+| Release commit | ✅ `868e4610c269dd35289cdd07ece3630db424751a` (source `c6442327` on `fix/solar-theme-all-pages`, base `1c7cba70`) |
+| Hub release | ✅ 283 (`96d83f9f-5c19-4322-bc63-35be7b89e81f`), ready 2026-11-17 20:47:03 UTC |
+| Artifact | ✅ 313 (`b2c47225-9154-4674-a1c3-7709d67b153a`), available and verified; build job 480 (`540ef3c1-08df-45c4-8f3d-ecdc642cf325`); sha256 `0b2ce275fedcf80a5e42fb120c9b398bf7c8803014369247284e420913ef2175`; evidence `712f18d4994695e68823fc9a31de1a8c7b15544eb263815086c754dbf2a8638c` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
+| Post-deploy, step 1 (owner) | ⏳ `php artisan theme-catalog:rebuild --slug=solar-industry` as `www-data`: reseeds theme 61 in place (same row, listing/price kept); the wizard card then shows ۲۴ صفحه |
+| Post-deploy, step 2 (owner) | ⏳ Theme Builder «انتشار» for solar-industry with version **1.1.0**: new release through the Mandatory Publish Gate. New installs get all 24 pages; sites on 1.0.0 get the 19 new pages through «قالب‌های من ← ارتقا» (pages added, the site's own edits kept) |
+
+Full descriptor: `.deployment/releases/solar-theme-all-pages.json`.
+
+---
+
+## OPEN: LICENSE_KEY UPSERT + THEMES UNLISTED BY DEFAULT — RELEASE 282 DEPLOYED — 2026-11-17
 
 **1. Installation 52** (`solar.safhenokhost.ir`, 18:10:47 UTC) was rolled back
 at `PROVISION_LICENSE`: "LICENSE_KEY placeholder replacement failed". Not a
@@ -33,8 +64,8 @@ assignment 1; owner: keep).
 | Release commit | ✅ `cbd9b4457f165caaaadcfd036ff0290c8e1d1f93` (source `00306e43`, `1093a19f` on `fix/install-license-env-upsert`, base `32813dcd`) |
 | Hub release | ✅ 282 (`2f953870-2049-400a-9a00-739059a8d614`), ready 2026-11-17 19:46:10 UTC |
 | Artifact | ✅ 312 (`2e75a173-4951-477b-87c4-3642337da15b`), available and verified; build job 479 (`5a7473d4-bfc7-4d2c-9a53-112eab591e18`); sha256 `6d425bd3a84fd034bb23b420678b8a34978e6af1fb361a678eede00413e542d1`; evidence `d2a68c0dd848dd7dcfe7c3fa2041f71089f06cd56cb2c6d52f1b58c9a3beeb73` |
-| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
-| Customer retry | ⏳ After deploy, re-run the solar installation |
+| Deployment | ✅ DEPLOYED: deployment 364 (`f4ccf831-dd65-4fbc-ae02-1dd797d679fe`), succeeded 2026-11-17 19:52:37 UTC, HTTP health verified; server manifest `cbd9b445` |
+| Customer retry | ⏳ Re-run the solar installation (none since 52); best after release 283 below |
 | Follow-up | ⏳ `BackupModuleUpgradeStage` and deletion `FinalBackupStage` still read DB credentials with `cut -d= -f2` (not install stages; tests pin those commands) |
 | Follow-up (owner decision) | ⏳ Master themes have no vertical/licence scoping beyond the listing; a listed theme is offered to every tenant |
 
