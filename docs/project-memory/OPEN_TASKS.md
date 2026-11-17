@@ -4,6 +4,34 @@
 
 ---
 
+## OPEN: INSTALL DNS PREFLIGHT — RELEASE 280 READY, NOT DEPLOYED — 2026-11-17
+
+Installation 50 (`solar.safhenokhost.ir`) ran 18 stages and was rolled back
+at `ISSUE_SSL` (2026-11-17 15:46:16 UTC): Let's Encrypt timed out on
+`205.252.135.188`. `CONFIGURE_DNS` did create the Arvan A record, but with
+the server's **outbound** NAT address (`curl api.ipify.org`, a different
+`205.252.135.x` on each call) instead of `eth0` `87.107.12.81`. Its
+propagation check compared the record with itself, and a timeout only
+logged "continuing". No wildcard exists for `*.safhenokhost.ir`.
+
+| Item | Status |
+|------|--------|
+| Inbound server IP (`ServerPublicIpResolver`): server host IP / hostname via public DNS, then a public address bound on the server; the outbound address is never used | ✅ |
+| `DomainDnsPreflight`: custom domains need their own A/CNAME (wildcard-only answers rejected via a random-sibling probe); with SSL they must point to the server or ArvanCloud edge; platform subdomains need a known server IP; unreachable resolver does not block; Persian errors | ✅ |
+| New stage `VALIDATE_DOMAIN_DNS` (after `VALIDATE_PERMISSIONS`); `CONFIGURE_DNS` moved to right after `PROVISION_DOMAIN`, before upload/database; with SSL an unverified record fails the stage and deletes the record it created | ✅ (fresh-mode stages 26 → 27) |
+| Wizard submit + legacy start form: same preflight against the chosen server; live check flags wildcard-only custom subdomains | ✅ |
+| Production fact found while verifying: `dns.google` / `cloudflare-dns.com` time out from the server; lookups fail over to the system resolver after 2 s and remember the outage 10 min; platform subdomains are not looked up before `CONFIGURE_DNS` (negative caching) | ✅ |
+| Tests | ✅ 36 new DNS tests; onboarding + CustomerInstallation unit 415/415; infrastructure/pipeline/deletion features 98/98; release-prepare check READY |
+| Release commit | ✅ `c7aadfc49a6b0087c3c4eda0f2b2ca73f7621e84` (source `fafe50e1`, `eb458a6b` on `fix/install-dns-preflight`, base `1cb79034`) |
+| Hub release | ✅ 280 (`877a3d86-4faa-4ef3-9fea-515cd8178e18`), ready 2026-11-17 16:55:52 UTC |
+| Artifact | ✅ 310 (`cb70325e-76e0-428a-9b19-4cd9f2052540`), available and verified; build job 477 (`89d34e7b-c67c-450b-9243-8fe0770c48c6`); sha256 `cfeca1487e13c55e1af85743dd8254c555e029443e2cab58643ab429fa4fc0d4`; evidence `cf15058b87527fe8b69ae95cbc5c437f9dc9e1cc10f1fb74933d3a0f94295407` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub (the pipeline also runs `themes:sync-registry`, expected up_to_date) |
+| Customer retry | ⏳ After deploy, re-run the solar installation: the A record will target `87.107.12.81` |
+
+Full descriptor: `.deployment/releases/install-dns-preflight.json`.
+
+---
+
 ## COMPLETE: THEME REGISTRY SYNC (POST-DEPLOY) — SHIPPED VIA RELEASE 279, ACTIVE — 2026-11-17 ✅
 
 New themes reached production only by hand (`theme-catalog:rebuild --slug` +
@@ -26,7 +54,7 @@ Full descriptor: `.deployment/releases/theme-registry-sync.json`.
 
 ---
 
-## OPEN: NGINX ARVAN REAL-IP SNIPPET — RELEASE 279 READY, NOT DEPLOYED — 2026-11-17
+## COMPLETE: NGINX ARVAN REAL-IP SNIPPET — RELEASE 279 DEPLOYED — 2026-11-17 ✅
 
 Customer installation 49 (`solar.safhenokhost.ir`, theme 61 solar-industry)
 was rolled back at `CONFIGURE_WEB_SERVER` on 2026-11-17 11:54:55 UTC.
@@ -42,9 +70,9 @@ includes that snippet, but nothing ever provisioned it. The rollback was clean.
 | Tests | ✅ CustomerInstallation unit suites 334/334, pipeline/onboarding/deletion feature suites 78/78; release-prepare check READY |
 | Hub release | ✅ 279 (`f35943be-5587-4ac5-acd9-01b7462ae692`), ready 2026-11-17 12:42:29 UTC |
 | Artifact | ✅ 308 (`e9cfbf61-34fc-40cc-93bb-ac14e314cdce`), available and verified; build job 475 (`acc5b7bf-86c3-4c02-bc75-ed93c1aa92dd`); sha256 `87c7b10ef9345d1c5b7c6fa288936d48d8fff173df67a3156bba3eb234c9303a`; evidence `9cdc93cb1ca9388ca66b1aeb75fe878acaf82383dd8d44ef0053dee7ea47127b` |
-| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub. Base `34afa7dc` means it also ships WU-THEME-REGISTRY-SYNC (release 278) |
-| Customer retry | ⏳ Installation 49 can be re-run now, because the snippet exists on the server |
-| Follow-up (owner decision) | ⏳ The live `sites-available/customer-site` and `saas-platform` vhosts still trust 13 inline non-official ranges for `Ar-Real-Ip`; move them to the official list or the shared snippet |
+| Deployment | ✅ DEPLOYED: deployment 361 (`6cc36184-217d-4ef7-8fc4-da9c88ed238c`), succeeded 2026-11-17 15:37:10 UTC (Hub records); server manifest `59b5f7e2`; also shipped WU-THEME-REGISTRY-SYNC |
+| Customer retry | ✅ Installation 50 (15:43 UTC) passed `CONFIGURE_WEB_SERVER` (`real_ip_snippet: present`). It then failed at `ISSUE_SSL` on a different bug, fixed in release 280 below |
+| Follow-up (owner decision) | ✅ RESOLVED: the live vhosts now include the shared snippet (see THEME REGISTRY SYNC above) |
 | Follow-up | ⏳ `$forwarded_https` (`conf.d/arvancloud-map.conf`) is another implicit vhost prerequisite on new servers |
 
 Full descriptor: `.deployment/releases/nginx-arvan-realip-snippet.json`.

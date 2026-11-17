@@ -102,8 +102,11 @@
         }
     },
     "deployment": {
-        "status": "not_deployed",
-        "note": "The owner deploys Release 279 from the Hub dashboard. Confirmed from the Hub database 2026-11-17: no deployment row for release 279.",
+        "status": "deployed",
+        "deployment_id": 361,
+        "deployment_public_id": "6cc36184-217d-4ef7-8fc4-da9c88ed238c",
+        "deployed_at": "2026-11-17T15:37:10+00:00",
+        "note": "Confirmed from the Hub database: deployment 361 succeeded (artifact 308, release 279, previous c8a6dcf1); server release-manifest commit_sha 59b5f7e2. Installation 50 (15:43 UTC) reported real_ip_snippet=present.",
         "post_deploy_commands": []
     },
     "summary": "CONFIGURE_WEB_SERVER idempotently installs /etc/nginx/snippets/arvan-cdn-real-ip.conf from the central ArvanRealIpSnippet (official 14 ArvanCloud ranges) before nginx -t, never overwriting an existing file; fixes the installation 49 rollback for every new server."
