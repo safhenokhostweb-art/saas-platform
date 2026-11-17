@@ -43,12 +43,13 @@ use Illuminate\Console\Command;
 class ThemeCatalogRebuildCommand extends Command
 {
     protected $signature = 'theme-catalog:rebuild
-        {--fresh : Also remove any master theme not in the canonical membership list}';
+        {--fresh : Also remove any master theme not in the canonical membership list}
+        {--slug= : Run only the canonical source that declares this slug and verify only that theme (never removes anything)}';
 
     protected $description = 'Rebuild the complete canonical master Theme catalog through the authoritative seed sources and verify membership deterministically.';
 
     /**
-     * @var array<int, array{label: string, expected_slugs: string[]}>
+     * @var array<int, array{label: string, run: array{0: string, 1: array<string, mixed>}, expected_slugs: string[]}>
      * One entry per authoritative source. Adding a new canonical theme
      * source means adding one more entry here — never inventing a
      * duplicate Theme definition elsewhere.
@@ -56,6 +57,7 @@ class ThemeCatalogRebuildCommand extends Command
     private const CANONICAL_SOURCES = [
         [
             'label' => 'marketplace:seed',
+            'run' => ['marketplace:seed', []],
             'expected_slugs' => [
                 'khabar-online', 'akademi-danesh', 'clinic-salamat', 'daftar-hoqooqi',
                 'azhans-maskan', 'restaurant-lux', 'portfolio-khalaq', 'azhans-digital',
@@ -66,27 +68,33 @@ class ThemeCatalogRebuildCommand extends Command
         ],
         [
             'label' => 'nexus:seed',
+            'run' => ['nexus:seed', []],
             'expected_slugs' => ['nexus-pro-corporate', 'nexus-pro-personal', 'nexus-pro-store'],
         ],
         [
             'label' => 'acool:seed',
+            'run' => ['acool:seed', []],
             'expected_slugs' => ['acool-hvac-service'],
         ],
         [
             'label' => 'malltina:seed',
+            'run' => ['malltina:seed', []],
             'expected_slugs' => ['malltina-international'],
         ],
         [
             'label' => 'db:seed ' . SalesSupportThemeSeeder::class,
+            'run' => ['db:seed', ['--class' => SalesSupportThemeSeeder::class, '--force' => true]],
             'expected_slugs' => ['sales-support-pro'],
         ],
         [
             'label' => 'db:seed ' . ArianaMultiPlusThemeSeeder::class,
+            'run' => ['db:seed', ['--class' => ArianaMultiPlusThemeSeeder::class, '--force' => true]],
             'expected_slugs' => ['ariana-multiplus'],
         ],
         // ADR-084: «قالب صنعت برق», assembled from the template library.
         [
             'label' => 'db:seed ' . SolarIndustryThemeSeeder::class,
+            'run' => ['db:seed', ['--class' => SolarIndustryThemeSeeder::class, '--force' => true]],
             'expected_slugs' => [SolarIndustryThemeSeeder::SLUG],
         ],
     ];
@@ -106,15 +114,17 @@ class ThemeCatalogRebuildCommand extends Command
 
     public function handle(): int
     {
+        $slug = $this->option('slug');
+        if ($slug !== null && $slug !== '') {
+            return $this->rebuildSingle((string) $slug);
+        }
+
         $this->info('Rebuilding the canonical Theme catalog...');
 
-        $this->call('marketplace:seed');
-        $this->call('nexus:seed');
-        $this->call('acool:seed');
-        $this->call('malltina:seed');
-        $this->call('db:seed', ['--class' => SalesSupportThemeSeeder::class, '--force' => true]);
-        $this->call('db:seed', ['--class' => ArianaMultiPlusThemeSeeder::class, '--force' => true]);
-        $this->call('db:seed', ['--class' => SolarIndustryThemeSeeder::class, '--force' => true]);
+        foreach (self::CANONICAL_SOURCES as $source) {
+            [$command, $arguments] = $source['run'];
+            $this->call($command, $arguments);
+        }
 
         $expectedSlugs = collect(self::CANONICAL_SOURCES)->flatMap(fn ($s) => $s['expected_slugs'])->unique()->values();
 
@@ -160,6 +170,47 @@ class ThemeCatalogRebuildCommand extends Command
         }
 
         $this->info("Canonical catalog verified: {$expectedSlugs->count()} theme(s) present, deterministic membership confirmed.");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Installs one canonical master theme without touching the rest of the
+     * catalog. A production catalog may be deliberately partial (the
+     * 2026-11-01 clean-slate purge removed the legacy marketplace themes), so
+     * a full rebuild there would resurrect purged themes. This runs only the
+     * one source that declares the slug. The theme still needs the Mandatory
+     * Publish Gate (`theme-release:backfill --slug=`) before it becomes
+     * commercially eligible.
+     */
+    private function rebuildSingle(string $slug): int
+    {
+        if ($this->option('fresh')) {
+            $this->error('--fresh cannot be combined with --slug: a single-theme install never removes anything.');
+            return self::FAILURE;
+        }
+
+        $source = collect(self::CANONICAL_SOURCES)
+            ->first(fn (array $s) => in_array($slug, $s['expected_slugs'], true));
+        if ($source === null) {
+            $this->error("\"{$slug}\" is not a canonical master theme slug.");
+            return self::FAILURE;
+        }
+        if (count($source['expected_slugs']) > 1) {
+            $this->warn("Source {$source['label']} also seeds: " . implode(', ', array_diff($source['expected_slugs'], [$slug])));
+        }
+
+        [$command, $arguments] = $source['run'];
+        $this->info("Installing canonical theme {$slug} via {$source['label']}...");
+        $this->call($command, $arguments);
+
+        $count = Theme::whereNull('site_id')->where('slug', $slug)->count();
+        if ($count !== 1) {
+            $this->error("Expected exactly one master theme \"{$slug}\" after seeding, found {$count}.");
+            return self::FAILURE;
+        }
+
+        $this->info("Canonical theme {$slug} present. Next: php artisan theme-release:backfill --slug={$slug}");
 
         return self::SUCCESS;
     }

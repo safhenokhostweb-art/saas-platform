@@ -72,12 +72,15 @@ class SiteOnboardingService
         foreach (BusinessVerticals::LABELS as $vertical => $label) {
             $themeSlug = OnboardingProfiles::themeSlugFor($vertical);
             $theme = $themeSlug ? $themes->firstWhere('slug', $themeSlug) : null;
+            $diagnosis = ($themeSlug !== null && $theme === null) ? $this->themeUnavailability($themeSlug) : null;
             $profiles[$vertical] = [
                 'label'        => $label,
                 'kit_ids'      => $this->kitIdsForVertical($vertical, $kits),
                 'theme_id'     => $theme?->id,
                 'theme_slug'   => $themeSlug,
                 'theme_status' => $themeSlug === null ? null : ($theme ? 'available' : 'unavailable'),
+                'theme_reason' => $diagnosis['reason'] ?? null,
+                'theme_fix'    => $diagnosis['fix'] ?? [],
             ];
         }
 
@@ -259,6 +262,38 @@ class SiteOnboardingService
             ->orderBy('name')->get()
             ->filter(fn (Theme $theme) => $theme->isCommerciallyEligible())
             ->values();
+    }
+
+    /**
+     * Why a profile's canonical theme is not offered, and the commands that
+     * fix it. The admin sees this instead of a bare "unavailable". Reasons are
+     * `not_installed` (no master theme row: production starts with an empty
+     * catalog after the clean-slate purge), `not_published`, or one of
+     * Theme::commercialIneligibilityReasons().
+     *
+     * @return array{reason: string, fix: list<string>}
+     */
+    public function themeUnavailability(string $slug): array
+    {
+        $theme = Theme::whereNull('site_id')->where('slug', $slug)->first();
+        $install = "php artisan theme-catalog:rebuild --slug={$slug}";
+        $release = "php artisan theme-release:backfill --slug={$slug}";
+
+        if ($theme === null) {
+            return ['reason' => 'not_installed', 'fix' => [$install, $release]];
+        }
+        if ($theme->status !== Theme::STATUS_PUBLISHED) {
+            return ['reason' => 'not_published', 'fix' => [$install, $release]];
+        }
+
+        $reason = $theme->commercialIneligibilityReasons()[0] ?? 'unknown';
+        $fix = match ($reason) {
+            'no_current_release' => $theme->releases()->exists() ? [] : [$release],
+            'no_passing_quality_report' => ['php artisan theme-release:link-quality-reports'],
+            default => [],
+        };
+
+        return ['reason' => $reason, 'fix' => $fix];
     }
 
     /** @return Collection<int, Module> active license-only modules (kits) */
