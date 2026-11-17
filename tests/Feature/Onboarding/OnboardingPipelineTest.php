@@ -377,7 +377,8 @@ class OnboardingPipelineTest extends TestCase
             ->assertOk()
             ->assertSee('اعمال حوزهٔ کسب‌وکار و کیت‌های لایسنس')
             ->assertSee('پاک‌سازی کش برنامه و نماها')
-            ->assertSee('/ 26 مرحله', false)
+            ->assertSee('بررسی DNS دامنه')
+            ->assertSee('/ 27 مرحله', false)
             ->assertSee('در انتظار پایان نصب و اعمال روی سایت');
     }
 

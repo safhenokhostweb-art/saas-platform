@@ -99,13 +99,15 @@ class PipelineTest extends TestCase
      * VALIDATE_PERMISSIONS and UPLOAD_PACKAGE.
      * ADR-088 — count raised 24 -> 26: APPLY_SITE_ENTITLEMENTS after
      * PROVISION_LICENSE, CLEAR_APPLICATION_CACHE before CUSTOMER_READY.
+     * 2026-11-17 (installation 50) — count raised 26 -> 27: VALIDATE_DOMAIN_DNS
+     * after VALIDATE_PERMISSIONS; CONFIGURE_DNS moved up after PROVISION_DOMAIN.
      */
-    public function test_orchestrator_builds_26_stages_for_fresh_mode(): void
+    public function test_orchestrator_builds_27_stages_for_fresh_mode(): void
     {
         $orchestrator = app(CustomerInstallationOrchestrator::class);
         $stages = $orchestrator->buildStageList('MODE_FRESH');
 
-        $this->assertCount(26, $stages);
+        $this->assertCount(27, $stages);
 
         $names = array_map(fn($s) => $s->name(), $stages);
         $this->assertContains('VALIDATE_SERVER', $names);

@@ -162,7 +162,8 @@ class SiteOnboardingService
             throw ValidationException::withMessages(['mobile' => 'شماره موبایل معتبر نیست.']);
         }
 
-        $domainCheck = $this->domains->check($data['domain_mode'], (string) $data['domain']);
+        // DNS is checked below against the chosen server (dnsPreflightError).
+        $domainCheck = $this->domains->check($data['domain_mode'], (string) $data['domain'], withDns: false);
         if (!$domainCheck['ok']) {
             throw ValidationException::withMessages(['domain' => $domainCheck['error']]);
         }
@@ -171,6 +172,13 @@ class SiteOnboardingService
         $server = CustomerRemoteServer::query()->findOrFail($data['remote_server_id']);
         if (($driverError = $this->guard->driverError($server)) !== null) {
             throw ValidationException::withMessages(['remote_server_id' => $driverError]);
+        }
+
+        // Before anything is created: the domain must reach this server
+        // (installation 50 only failed at ISSUE_SSL, after 18 stages).
+        $dnsError = $this->guard->dnsPreflightError($domain, $server, (bool) ($data['ssl_enabled'] ?? true));
+        if ($dnsError !== null) {
+            throw ValidationException::withMessages(['domain' => $dnsError]);
         }
 
         $theme = null;
