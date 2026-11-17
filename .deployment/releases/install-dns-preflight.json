@@ -110,8 +110,11 @@
         }
     },
     "deployment": {
-        "status": "not_deployed",
-        "note": "The owner deploys Release 280 from the Hub dashboard. Confirmed from the Hub database 2026-11-17: no deployment row for release 280. The Hub pipeline also runs themes:sync-registry (expected up_to_date).",
+        "status": "deployed",
+        "deployment_id": 362,
+        "deployment_public_id": "30d5dafe-a959-42b3-a916-d0605bd0c1bb",
+        "deployed_at": "2026-11-17T17:07:56+00:00",
+        "note": "Confirmed from the Hub database: deployment 362 succeeded (artifact 310, release 280, previous 59b5f7e2), HTTP health verified; server release-manifest commit_sha c7aadfc4. Installation 51 (17:11 UTC) then passed VALIDATE_DOMAIN_DNS and CONFIGURE_DNS (A record to 87.107.12.81, propagated in 2.5 s) and failed later at RUN_MIGRATIONS on the separate .env password bug (release 281).",
         "post_deploy_commands": []
     },
     "summary": "DNS preflight before any install work (wizard, legacy form, new VALIDATE_DOMAIN_DNS stage); CONFIGURE_DNS moved before upload/database, targets the server's inbound IP instead of its outbound NAT address, and fails early with SSL when the record does not reach the server."

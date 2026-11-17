@@ -4,7 +4,38 @@
 
 ---
 
-## OPEN: INSTALL DNS PREFLIGHT — RELEASE 280 READY, NOT DEPLOYED — 2026-11-17
+## OPEN: INSTALL DB PASSWORD IN .ENV — RELEASE 281 READY, NOT DEPLOYED — 2026-11-17
+
+Installation 51 (`solar.safhenokhost.ir`, 17:11 UTC) passed the new DNS
+stages and failed `RUN_MIGRATIONS`: MySQL 1045 `Access denied for user
+'u_Vwa6d7Y7'@'localhost' (using password: YES)`. `CREATE_DATABASE` wrote
+`DB_PASSWORD` **unquoted** into `.env`, and the generated password could
+contain `#`. phpdotenv 5 (what Laravel reads) starts a comment at *any* `#`
+in an unquoted value, so Laravel used a truncated prefix (`aB3xY9#kLm2!` →
+`aB3xY9`). Probability ≈ 36% per installation; installation 50 was lucky.
+Not caused by release 280 (stage order `GENERATE_ENVIRONMENT` →
+`CREATE_DATABASE` → `RUN_MIGRATIONS` is unchanged) and not a host mismatch
+(`skip_name_resolve=OFF`, so 127.0.0.1 TCP maps to `'localhost'`).
+
+| Item | Status |
+|------|--------|
+| `Env\DotenvValue`: one encoder for .env values (quote + escape when unsafe), read-back with phpdotenv's own parser | ✅ |
+| Password charset: letters, digits, `-_.` (32 chars). Production `validate_password` is MEDIUM with `special_char_count=1`, so purely alphanumeric would fail `CREATE USER` | ✅ |
+| `.env` write: encoded value, sed-escaped, POSIX-quoted; the `DB_*` lines are read back and decoded, and a mismatch fails `CREATE_DATABASE` before migrations (no secret in the message) | ✅ |
+| MySQL account for `'localhost'` and `'127.0.0.1'`; `ALTER USER` after `CREATE … IF NOT EXISTS`; escaped SQL literal; `DROP` covers both | ✅ |
+| Same bug class: `APP_NAME`, `ADMIN_NAME`, `MAIL_USERNAME`, `MAIL_PASSWORD` now encoded (an SMTP password with `#` was cut too) | ✅ |
+| Tests | ✅ 23 new tests incl. real-shell sed + phpdotenv round trips and stage end to end; onboarding + CustomerInstallation unit 438/438; infrastructure/pipeline/deletion features 98/98; release-prepare check READY |
+| Release commit | ✅ `c54b5ff92313fa0d28d19df6e09dfd95bac2f9b9` (source `6fdf4a58` on `fix/install-db-password-env`, base `deed90a5`) |
+| Hub release | ✅ 281 (`487d1a71-9a0e-41f9-a4d6-3e90a95c319e`), ready 2026-11-17 17:41:03 UTC |
+| Artifact | ✅ 311 (`8cc70212-108f-4784-a816-979443d400b7`), available and verified; build job 478 (`b361a28c-705e-4d9c-a19a-11e750c8aa59`); sha256 `29534cdf0a1d7f824cf6abcf9c3785e14d55b58cd956d8283181c1644f747ec5`; evidence `738484a6719cd12dc2a2da8e35803ea3f651c4d82358b09eb93c9e902f410e86` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
+| Customer retry | ⏳ After deploy, re-run the solar installation |
+
+Full descriptor: `.deployment/releases/install-db-password-env.json`.
+
+---
+
+## COMPLETE: INSTALL DNS PREFLIGHT — RELEASE 280 DEPLOYED — 2026-11-17 ✅
 
 Installation 50 (`solar.safhenokhost.ir`) ran 18 stages and was rolled back
 at `ISSUE_SSL` (2026-11-17 15:46:16 UTC): Let's Encrypt timed out on
@@ -25,8 +56,8 @@ logged "continuing". No wildcard exists for `*.safhenokhost.ir`.
 | Release commit | ✅ `c7aadfc49a6b0087c3c4eda0f2b2ca73f7621e84` (source `fafe50e1`, `eb458a6b` on `fix/install-dns-preflight`, base `1cb79034`) |
 | Hub release | ✅ 280 (`877a3d86-4faa-4ef3-9fea-515cd8178e18`), ready 2026-11-17 16:55:52 UTC |
 | Artifact | ✅ 310 (`cb70325e-76e0-428a-9b19-4cd9f2052540`), available and verified; build job 477 (`89d34e7b-c67c-450b-9243-8fe0770c48c6`); sha256 `cfeca1487e13c55e1af85743dd8254c555e029443e2cab58643ab429fa4fc0d4`; evidence `cf15058b87527fe8b69ae95cbc5c437f9dc9e1cc10f1fb74933d3a0f94295407` |
-| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub (the pipeline also runs `themes:sync-registry`, expected up_to_date) |
-| Customer retry | ⏳ After deploy, re-run the solar installation: the A record will target `87.107.12.81` |
+| Deployment | ✅ DEPLOYED: deployment 362 (`30d5dafe-a959-42b3-a916-d0605bd0c1bb`), succeeded 2026-11-17 17:07:56 UTC, HTTP health verified; server manifest `c7aadfc4` |
+| Customer retry | ✅ Installation 51 passed `VALIDATE_DOMAIN_DNS` and `CONFIGURE_DNS` (A record to `87.107.12.81`, propagated in 2.5 s), then failed at `RUN_MIGRATIONS` on the .env password bug (release 281 above) |
 
 Full descriptor: `.deployment/releases/install-dns-preflight.json`.
 
