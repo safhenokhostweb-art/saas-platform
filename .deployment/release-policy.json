@@ -111,6 +111,13 @@
         "reviewed_by": "Owner (approved in session 2026-11-17 for fix/site-delete-restrict-fk; prepared by Claude Opus 5.5)",
         "reviewed_at": "2026-11-17",
         "reason": "MySQL-only DB::statement FK rebuild: site_id on module_entitlements, motion_bespoke_commissions, motion_bespoke_assignments, motion_bespoke_purchases and motion_site_asset_packages becomes nullable with ON DELETE SET NULL (was RESTRICT, which made site delete fail with SQLSTATE 1451). No row is deleted or rewritten. down() restores NOT NULL/RESTRICT and refuses while detached rows exist."
+      },
+      {
+        "path": "database/migrations/2026_11_18_190000_add_distribution_model_to_themes_and_create_theme_fleet_updates_table.php",
+        "sha256": "017c807bc3d06a0f303adef52bad0b5d1d82c07cf692cdb6d1a29a98475c7500",
+        "reviewed_by": "Antigravity (agent review for WU-THEME-FLEET-UPDATE-PIPELINE-AND-ISOLATION)",
+        "reviewed_at": "2026-11-18",
+        "reason": "Additive migration: up() adds nullable/defaulted distribution_model column to themes and creates theme_fleet_updates table. down() drops only this table and added column. No existing customer data is altered."
       }
     ]
   },

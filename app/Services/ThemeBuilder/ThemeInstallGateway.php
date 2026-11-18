@@ -117,4 +117,89 @@ class ThemeInstallGateway
 
         return ThemeInstallResult::ok($response->json() ?? []);
     }
+
+    /**
+     * Non-destructive 3-Way Reconciled Theme Upgrade authority.
+     * Calls customer-site POST /builder/api/theme/upgrade using X-Provision-Secret.
+     */
+    public function upgrade(Site $site, \App\Models\ThemeRelease $release): ThemeInstallResult
+    {
+        $domain = $site->getDomain();
+        if (!$domain) {
+            return ThemeInstallResult::noDomain(
+                'دامنه سایت "' . $site->title . '" تنظیم نشده است.'
+            );
+        }
+
+        $theme = $release->theme;
+        if (!$theme) {
+            return ThemeInstallResult::requestFailed('قالب مرتبط با این نسخه یافت نشد.');
+        }
+
+        $baseUrl  = str_starts_with($domain, 'http') ? rtrim($domain, '/') : 'https://' . rtrim($domain, '/');
+        $endpoint = $baseUrl . '/builder/api/theme/upgrade';
+        $secret   = config('services.customer_provision_secret', '');
+
+        $snapshot = $release->snapshot ?? [];
+        $payload = [
+            'theme_id'              => $theme->slug,
+            'theme_name'            => $theme->name,
+            'source_theme_id'       => (string) $theme->id,
+            'source_theme_version'  => $release->version,
+            'source_release_id'     => $release->id,
+            'remote_snapshot'       => [
+                'name'             => $theme->name,
+                'slug'             => $theme->slug,
+                'header_blocks'    => $snapshot['header_blocks'] ?? $theme->header_blocks ?? [],
+                'footer_blocks'    => $snapshot['footer_blocks'] ?? $theme->footer_blocks ?? [],
+                'header_variants'  => $snapshot['header_variants'] ?? $theme->getHeaderVariants(),
+                'footer_variants'  => $snapshot['footer_variants'] ?? $theme->getFooterVariants(),
+                'pages'            => $snapshot['pages'] ?? $theme->getPageList(),
+                'global_styles'    => $snapshot['global_styles'] ?? $theme->global_styles ?? [],
+                'extension_assets' => $snapshot['extension_assets'] ?? ExtensionThemeRuntimeAssetProjector::project($theme),
+                'theme_assets'     => $snapshot['theme_assets'] ?? ($theme->settings['theme_assets_manifest'] ?? []),
+            ],
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'X-Provision-Secret' => $secret,
+                'Accept'             => 'application/json',
+            ])->timeout(25)->post($endpoint, $payload);
+        } catch (\Throwable $e) {
+            Log::error('ThemeUpgrade request failed', [
+                'theme_id'   => $theme->id,
+                'release_id' => $release->id,
+                'site_id'    => $site->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return ThemeInstallResult::requestFailed(
+                'اتصال به سایت "' . $site->title . '" جهت ارتقا ناموفق بود: ' . $e->getMessage()
+            );
+        }
+
+        if ($response->status() === 409) {
+            $body = $response->json() ?? [];
+            return ThemeInstallResult::collision(
+                'ارتقای قالب روی سایت "' . $site->title . '" به دلیل تداخل متوقف شد: '
+                . ($body['message'] ?? 'تداخل ساختاری در ارتقای قالب گزارش شد.')
+            );
+        }
+
+        if (!$response->successful()) {
+            Log::error('ThemeUpgrade failed', [
+                'theme_id'   => $theme->id,
+                'release_id' => $release->id,
+                'site_id'    => $site->id,
+                'status'     => $response->status(),
+                'body'       => $response->body(),
+            ]);
+            return ThemeInstallResult::httpFailed(
+                'ارتقای قالب روی سایت "' . $site->title . '" ناموفق بود (کد ' . $response->status() . ').',
+                $response->status()
+            );
+        }
+
+        return ThemeInstallResult::ok($response->json() ?? []);
+    }
 }

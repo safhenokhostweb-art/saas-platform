@@ -4,6 +4,38 @@
 
 ---
 
+## RESOLVED & READY: FLEET THEME & CORE PACKAGE UPGRADE PIPELINE, NON-DESTRUCTIVE RECONCILIATION, AND COMPONENT ISOLATION â€” 2026-11-18
+
+Implemented the unified fleet update management and non-destructive reconciliation pipeline across `saas-platform` and `customer-site` per ADR-089:
+1. **Fleet Updates Discovery & Dual-Mode Console (`saas-platform`):**
+   - Expanded Onboarding Wizard (`/admin/onboarding`) with dual tabs: Onboarding vs. Fleet Updates.
+   - Real-time discovery of pending Theme Releases, Core/Canvas packages (`CustomerInstallationPackage`), and Motion Graphics grants.
+   - Smart eligibility guards preventing mismatched updates or unlicensed executions with clear administrative feedback.
+2. **Tri-Model Commercial Distribution (`Theme`):**
+   - Added `distribution_model` (`marketplace`, `private_license`, `free`) to themes and migrations.
+   - Unlisted private themes and enforced license checks across the platform.
+3. **Non-Destructive 3-Way Reconciler & Canvas Library Deposit (`customer-site`):**
+   - Added server-to-server upgrade endpoint `/builder/api/theme/upgrade` secured by `CUSTOMER_PROVISION_SECRET`.
+   - Guaranteed 100% preservation of customer-edited pages (`customer_edit`), never injecting unwanted blocks into custom layouts.
+   - Deposited upstream header/footer/section presets directly into the tenant's `SiteThemeTemplate` library for voluntary insertion.
+   - Recorded immutable audit history (`TYPE_UPGRADE_RECONCILED` and `theme_fleet_updates`).
+4. **Strict Isolation & Solar Auth Style Restoration:**
+   - Isolated `TemplateLibrary` strictly by `theme_slug`.
+   - Restored solar dark industrial styles (`#auth-solar-industrial-css`) on `/login` and `/register` only for `solar-industry` / `solar_energy` tenants, maintaining neutral white-label design for all other themes.
+5. **Zero-SSH Compliance:**
+   - Pure serverless API communication; zero manual intervention on production servers.
+
+| Item | Status |
+|------|--------|
+| Dual-mode Fleet Console & Discovery | ✅ Verified in `saas-platform` |
+| Distribution Models (`marketplace`, `private_license`, `free`) | ✅ Added and tested in `Theme` & DB migration |
+| Smart Eligibility & Mismatch Guard | ✅ Verified closed with flash alerts |
+| Non-Destructive 3-Way Reconciler | ✅ Preserves customer-edited layouts; deposits blocks to Canvas library |
+| Component & Auth Style Isolation | ✅ TemplateLibrary filtered by theme; Solar `/login` isolated |
+| Tests | ✅ `FleetThemeUpgradeAndIsolationTest` (5/5 OK), `ServerToServerThemeUpgradeTest` (2/2 OK), `SolarAuthStyleIsolationTest` (2/2 OK) |
+
+---
+
 ## RESOLVED & READY: SOLAR INDUSTRY THEME ISOLATION, SLIDER, CALCULATOR, MEDIA INDEXING, AND MOTION GRAPHICS — 2026-11-18
 
 Investigation and root-cause fixes for 5 reported issues on `solar.safhenokhost.ir` (Site #10, `/var/www/cust_site_54`) and future site installations:

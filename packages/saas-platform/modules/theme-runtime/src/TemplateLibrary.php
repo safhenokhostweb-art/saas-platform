@@ -76,13 +76,22 @@ final class TemplateLibrary
      * Modal cards, in library order, filtered like the hosts' own
      * template lists (type, category, free-text term).
      *
+     * @param ?string $activeThemeSlug When provided, only returns universal templates
+     *   plus templates explicitly matching this theme's slug (isolating theme components).
      * @return list<array<string, mixed>>
      */
-    public static function list(?string $type = null, ?string $category = null, ?string $term = null): array
+    public static function list(?string $type = null, ?string $category = null, ?string $term = null, ?string $activeThemeSlug = null): array
     {
         $term = trim((string) $term);
         $cards = [];
         foreach (self::documents() as $key => $doc) {
+            $docThemeSlug = self::themeSlugForDoc($key, $doc);
+
+            // Theme isolation: if document belongs to a specific theme and activeThemeSlug does not match, omit it.
+            if ($activeThemeSlug !== null && $docThemeSlug !== null && $docThemeSlug !== $activeThemeSlug) {
+                continue;
+            }
+
             if (($type && $doc['type'] !== $type) || ($category && $doc['category'] !== $category)) {
                 continue;
             }
@@ -100,11 +109,24 @@ final class TemplateLibrary
                 'category_label' => self::CATEGORY_LABELS[$doc['category']] ?? $doc['category'],
                 'zone' => self::zone($doc['type']),
                 'tags' => $doc['tags'] ?? [],
+                'theme_slug' => $docThemeSlug,
                 'thumbnail_url' => isset($doc['thumbnail']) ? self::mediaUrl($doc['thumbnail']) : null,
             ];
         }
 
         return $cards;
+    }
+
+    /** Resolve which theme a library template belongs to, or null if universal. */
+    public static function themeSlugForDoc(string $key, array $doc): ?string
+    {
+        if (!empty($doc['theme_slug'])) {
+            return (string) $doc['theme_slug'];
+        }
+        if (str_starts_with($key, 'solar-') || str_starts_with($key, 'auth-solar-') || ($doc['spec'] ?? '') === 'SOLAR-INDUSTRY-v1') {
+            return 'solar-industry';
+        }
+        return null;
     }
 
     /**

@@ -119,11 +119,182 @@
 
     <div class="ob-head">
         <div>
-            {{-- The page <h1> comes from the layout's @section('header'). --}}
-            <p>یک مسیر برای همه‌چیز: مشتری، دامنه، لایسنس و کیت‌ها، قالب و استقرار روی سرور. پس از تأیید، تمام مراحل خودکار اجرا می‌شود.</p>
+            <p>یک مسیر برای همه‌چیز: مشتری، دامنه، لایسنس و کیت‌ها، قالب و استقرار روی سرور، و مدیریت به‌روزرسانی‌های ناوگان سایت‌ها.</p>
         </div>
         <a href="{{ route('admin.infrastructure.customer-deployment.history') }}" class="ob-btn ob-btn-ghost">تاریخچهٔ راه‌اندازی‌ها</a>
     </div>
+
+    {{-- ── Main Mode Switcher: Onboarding vs Fleet Updates ── --}}
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;border-bottom:2px solid var(--ob-border);padding-bottom:.75rem">
+        <a href="{{ route('admin.onboarding.create', ['tab' => 'onboarding']) }}"
+           class="ob-btn {{ ($activeTab ?? 'onboarding') === 'onboarding' ? 'ob-btn-primary' : 'ob-btn-ghost' }}"
+           style="border-radius:999px;font-weight:700">
+            ➕ راه‌اندازی سایت جدید (Onboarding)
+        </a>
+        <a href="{{ route('admin.onboarding.create', ['tab' => 'fleet-updates']) }}"
+           class="ob-btn {{ ($activeTab ?? 'onboarding') === 'fleet-updates' ? 'ob-btn-primary' : 'ob-btn-ghost' }}"
+           style="border-radius:999px;font-weight:700;display:inline-flex;align-items:center;gap:.5rem">
+            🔄 مدیریت به‌روزرسانی‌های ناوگان (Fleet Updates)
+            @if(!empty($fleetUpdates['summary']['total_pending']))
+                <span style="background:#ef4444;color:#fff;border-radius:999px;padding:.15rem .5rem;font-size:.75rem;font-weight:800">
+                    {{ $fleetUpdates['summary']['total_pending'] }}
+                </span>
+            @endif
+        </a>
+    </div>
+
+    {{-- ── Persistent Announcement Banner: Available Updates ── --}}
+    @if(!empty($fleetUpdates['summary']['total_pending']))
+        <div class="ob-panel ob-panel-ok" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;margin-bottom:1.25rem;border-radius:var(--ob-radius);padding:1rem 1.25rem">
+            <div style="display:flex;align-items:flex-start;gap:.75rem">
+                <span style="font-size:1.4rem">🔔</span>
+                <div style="flex:1">
+                    <strong style="font-size:.95rem">اعلان‌های به‌روزرسانی پلتفرم:</strong>
+                    <ul style="margin:.35rem 0 0;padding-inline-start:1.2rem;font-size:.85rem;line-height:1.8">
+                        @if(!empty($fleetUpdates['summary']['themes_count']))
+                            <li><strong>آپدیت قالب‌ها:</strong> {{ $fleetUpdates['summary']['themes_count'] }} سایت دارای نسخه جدیدتر قالب و ویجت‌های کانواس هستند.</li>
+                        @endif
+                        @if(!empty($fleetUpdates['summary']['packages_count']))
+                            <li><strong>آپدیت هسته و ویجت‌ها:</strong> نسخه جدید پکیج هسته و توسعه موتور کانواس در دسترس است ({{ $fleetUpdates['summary']['packages_count'] }} سایت نیازمند به‌روزرسانی).</li>
+                        @endif
+                        @if(!empty($fleetUpdates['summary']['motions_count']))
+                            <li><strong>آپدیت موشن‌گرافیک‌ها:</strong> {{ $fleetUpdates['summary']['motions_count'] }} موشن‌گرافیک دارای لایسنس آماده ارتقا هستند.</li>
+                        @endif
+                    </ul>
+                </div>
+                @if(($activeTab ?? 'onboarding') !== 'fleet-updates')
+                    <a href="{{ route('admin.onboarding.create', ['tab' => 'fleet-updates']) }}" class="ob-btn ob-btn-primary" style="font-size:.8rem;padding:.4rem .75rem">
+                        مشاهده و اعمال در ناوگان ←
+                    </a>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if(($activeTab ?? 'onboarding') === 'fleet-updates')
+        {{-- ── Fleet Updates Management Tab ── --}}
+        <section class="ob-card" style="margin-bottom:2rem">
+            <h2>مدیریت و اعمال به‌روزرسانی‌های ناوگان (Non-Destructive Fleet Updates)</h2>
+            <p class="ob-lead">
+                تمامی عملیات به‌روزرسانی مستقیماً از طریق پایپلاین امن پلتفرم و بدون کوچک‌ترین دخالت دستی یا SSH انجام می‌شوند.
+                موتور هوشمند تطبیق ۳-جانبه (3-Way Merge) تضمین می‌کند که <strong>۱۰۰٪ محتوا و صفحات ویرایش‌شده توسط مشتری دست‌نخورده باقی بمانند</strong> و هیچ بلاک ناخواسته‌ای به صفحات تغییریافته تزریق نشود.
+            </p>
+
+            {{-- 1. Theme Updates Table --}}
+            <h3 style="font-size:.95rem;font-weight:700;margin:1.5rem 0 .5rem">قالب‌ها و ویجت‌های نیازمند به‌روزرسانی:</h3>
+            @if(empty($fleetUpdates['themes']))
+                <div style="background:#f8fafc;border:1px dashed var(--ob-border);border-radius:var(--ob-radius);padding:1.5rem;text-align:center;color:var(--ob-muted);font-size:.85rem">
+                    ✅ تمامی سایت‌های فعال آخرین نسخهٔ رسمی قالب و ویجت‌های خود را دارند و هیچ آپدیت معوقه‌ای وجود ندارد.
+                </div>
+            @else
+                <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--ob-border);background:#f8fafc">
+                                <th style="padding:.65rem">دامنه و سایت</th>
+                                <th style="padding:.65rem">قالب فعال</th>
+                                <th style="padding:.65rem">مدل عرضه</th>
+                                <th style="padding:.65rem">نسخه فعلی</th>
+                                <th style="padding:.65rem">نسخه در دسترس</th>
+                                <th style="padding:.65rem">وضعیت گارد انطباق</th>
+                                <th style="padding:.65rem;text-align:center">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($fleetUpdates['themes'] as $item)
+                                <tr style="border-bottom:1px solid var(--ob-border)">
+                                    <td style="padding:.75rem">
+                                        <strong>{{ $item['site_title'] }}</strong>
+                                        <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $item['domain'] }}</div>
+                                    </td>
+                                    <td style="padding:.75rem">
+                                        <span class="ob-badge ob-badge-outline">{{ $item['theme_name'] }}</span>
+                                    </td>
+                                    <td style="padding:.75rem">
+                                        @if($item['distribution_model'] === 'private_license')
+                                            <span style="background:#fef3c7;color:#92400e;padding:.2rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600">لایسنس اختصاصی</span>
+                                        @elseif($item['distribution_model'] === 'free')
+                                            <span style="background:#f3f4f6;color:#4b5563;padding:.2rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600">رایگان</span>
+                                        @else
+                                            <span style="background:#ecfdf5;color:#065f46;padding:.2rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600">مارکت‌پلیس</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:.75rem">
+                                        <span style="color:#ef4444;font-family:monospace;font-weight:700">v{{ $item['installed_version'] }}</span>
+                                    </td>
+                                    <td style="padding:.75rem">
+                                        <span style="color:#059669;font-family:monospace;font-weight:700">v{{ $item['available_version'] }}</span>
+                                    </td>
+                                    <td style="padding:.75rem">
+                                        @if($item['eligible'])
+                                            <span style="color:#059669;font-weight:700;display:inline-flex;align-items:center;gap:.25rem">
+                                                ✅ واجد شرایط
+                                            </span>
+                                        @else
+                                            <span style="color:#dc2626;font-weight:700;display:inline-flex;align-items:center;gap:.25rem" title="{{ $item['eligibility_reason'] }}">
+                                                ⛔ {{ $item['eligibility_reason'] }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:.75rem;text-align:center">
+                                        @if($item['eligible'])
+                                            <form method="POST" action="{{ route('admin.onboarding.fleet-updates.apply') }}" onsubmit="return confirm('آیا از اعمال به‌روزرسانی غیرمخرب به نسخه {{ $item['available_version'] }} اطمینان دارید؟ تمام صفحات مشتری محفوظ خواهد ماند.');">
+                                                @csrf
+                                                <input type="hidden" name="site_id" value="{{ $item['site_id'] }}">
+                                                <input type="hidden" name="release_id" value="{{ $item['available_release_id'] }}">
+                                                <button type="submit" class="ob-btn ob-btn-primary" style="font-size:.75rem;padding:.35rem .75rem">
+                                                    اعمال آپدیت امن
+                                                </button>
+                                            </form>
+                                        @else
+                                            <button type="button" disabled class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.35rem .75rem;opacity:.5;cursor:not-allowed">
+                                                غیرقابل اعمال
+                                            </button>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+            {{-- 2. Core Package Updates Table --}}
+            <h3 style="font-size:.95rem;font-weight:700;margin:2rem 0 .5rem">پکیج‌های هسته، ویجت‌ها و موتور کانواس:</h3>
+            @if(empty($fleetUpdates['packages']))
+                <div style="background:#f8fafc;border:1px dashed var(--ob-border);border-radius:var(--ob-radius);padding:1.5rem;text-align:center;color:var(--ob-muted);font-size:.85rem">
+                    ✅ تمامی سایت‌ها آخرین پکیج هسته فعال پلتفرم را دارند.
+                </div>
+            @else
+                <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--ob-border);background:#f8fafc">
+                                <th style="padding:.65rem">دامنه و سایت</th>
+                                <th style="padding:.65rem">نسخه نصب‌شده</th>
+                                <th style="padding:.65rem">نسخه جدید پکیج</th>
+                                <th style="padding:.65rem">توضیحات نسخه</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($fleetUpdates['packages'] as $pkg)
+                                <tr style="border-bottom:1px solid var(--ob-border)">
+                                    <td style="padding:.75rem">
+                                        <strong>{{ $pkg['site_title'] }}</strong>
+                                        <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $pkg['domain'] }}</div>
+                                    </td>
+                                    <td style="padding:.75rem"><span style="font-family:monospace;color:#ef4444">v{{ $pkg['current_version'] }}</span></td>
+                                    <td style="padding:.75rem"><span style="font-family:monospace;color:#059669;font-weight:700">v{{ $pkg['available_version'] }}</span></td>
+                                    <td style="padding:.75rem;color:var(--ob-muted)">{{ $pkg['release_notes'] ?? 'به‌روزرسانی ویجت‌ها و پایداری کانواس' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </section>
+    @else
+        {{-- ── Standard Onboarding Form ── --}}
 
     @if($errors->any())
         <div class="ob-panel ob-panel-err" role="alert" style="margin-block-end:1rem">
@@ -467,6 +638,7 @@
             </button>
         </div>
     </form>
+    @endif
 </div>
 @endsection
 

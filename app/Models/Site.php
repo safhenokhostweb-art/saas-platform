@@ -94,6 +94,11 @@ class Site extends Model implements SiteModelInterface
         return $this->hasMany(\App\Models\ThemeAssignment::class);
     }
 
+    public function fleetUpdates()
+    {
+        return $this->hasMany(\App\Models\ThemeFleetUpdate::class);
+    }
+
     /**
      * Phase 13-O12a — central read path for the site's remote database
      * password, encrypted via CredentialVault in db_password_encrypted.

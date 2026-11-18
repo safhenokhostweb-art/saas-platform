@@ -486,6 +486,8 @@ Route::prefix('admin')
                 Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
                 Route::post('/installations/{installation}/retry-template', 'retryTemplate')
                     ->whereNumber('installation')->middleware('throttle:10,1')->name('retry-template');
+                Route::post('/fleet-updates/apply', 'applyFleetUpdate')
+                    ->middleware('throttle:30,1')->name('fleet-updates.apply');
             });
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');

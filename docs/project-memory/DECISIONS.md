@@ -5972,3 +5972,41 @@ and deployed (saas 65744f4f, cs f472fef; Hub deployments 317 and 318).
   stages, binder, push job, env secret, vhost, end to end),
   `tests/browser/onboarding-wizard.spec.ts` (desktop, tablet, mobile; never
   submits).
+
+## ADR-089 — Fleet Update Management, Non-Destructive Theme Reconciliation, and Template Isolation
+
+**Status:** Accepted (2026-11-18)  
+**Scope:** `saas-platform` and `customer-site`  
+**Deciders:** Antigravity Agent & Project Owner  
+
+**Context:**
+Prior to this decision, the onboarding wizard supported only initial site provisioning. As themes, canvas widgets, core packages, and motion graphic assets evolve across releases, platform administrators required a centralized, unified fleet management and upgrade console in `saas-platform` without resorting to direct server/SSH interventions. Furthermore, updating themes on active customer sites posed severe risks of overwriting customer edits, corrupting layouts, or leaking theme-specific template blocks and auth styles across disparate tenants.
+
+**Decision:**
+1. **Fleet Management & Upgrade Discovery (`saas-platform`):**
+   - Transformed the onboarding wizard into a dual-mode control center: Onboarding vs. Fleet Updates.
+   - Discovers pending updates across three critical dimensions:
+     - Theme Releases (`ThemeRelease` newer than active site assignment).
+     - Core & Canvas Engine installation packages (`CustomerInstallationPackage`).
+     - Motion Graphics entitlements & asset grants (`motion_site_asset_grants`).
+   - Displays clear contextual announcements and tabular actions per site.
+2. **Smart Eligibility & Guard Enforcement:**
+   - Strict mismatch guards: Theme updates are strictly restricted to sites actively running that specific theme and holding a valid license.
+   - Mismatched or unlicensed update requests fail closed with clear administrative flash feedback.
+3. **Tri-Model Commercial Distribution:**
+   - Themes support three explicit commercial distribution models:
+     - `marketplace`: Public marketplace listing and purchase flow.
+     - `private_license`: Unlisted from public marketplace; assignable exclusively via admin licensing.
+     - `free`: Publicly available without license checks.
+4. **Non-Destructive 3-Way Reconciler (`customer-site`):**
+   - In `/builder/api/theme/upgrade`, customer-edited pages (`customer_edit` / modified locally) are completely immune to destructive block injection.
+   - Upstream new blocks, headers, footers, and sections are deposited into the site's Canvas block library (`SiteThemeTemplate`) for voluntary customer usage.
+   - System/untouched pages receive clean additive updates while preserving all existing configuration and customer assets.
+   - Every upgrade creates an immutable revision of type `TYPE_UPGRADE_RECONCILED`.
+5. **Absolute Component & Auth Style Isolation:**
+   - Canvas `TemplateLibrary` filters documents strictly by `activeThemeSlug`.
+   - Solar auth styles (`#auth-solar-industrial-css` and industrial dark layout) are strictly gated to `solar-industry` / `solar_energy` tenants, maintaining neutral white-label branding for all other themes.
+6. **Zero-SSH & Serverless Governance:**
+   - All fleet operations run purely server-to-server over authenticated HTTPS (`provision.secret`).
+   - No direct SSH or database manipulation on customer production servers.
+

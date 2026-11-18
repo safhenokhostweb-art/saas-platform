@@ -44,6 +44,10 @@ class Theme extends Model
     public const LICENSE_PREMIUM  = 'premium';
     public const LICENSE_BUNDLE   = 'bundle';
 
+    public const DISTRIBUTION_MARKETPLACE      = 'marketplace';
+    public const DISTRIBUTION_PRIVATE_LICENSE  = 'private_license';
+    public const DISTRIBUTION_FREE             = 'free';
+
     public static function categoryLabel(string $category): string
     {
         return [
@@ -98,6 +102,7 @@ class Theme extends Model
         'is_marketplace',
         'marketplace_price',
         'license_type',
+        'distribution_model',
         'marketplace_badge',
         'installs_count',
     ];
@@ -179,6 +184,21 @@ class Theme extends Model
     public function assignments()
     {
         return $this->hasMany(ThemeAssignment::class);
+    }
+
+    public function fleetUpdates()
+    {
+        return $this->hasMany(\App\Models\ThemeFleetUpdate::class);
+    }
+
+    public function scopePrivateLicense($query)
+    {
+        return $query->where('distribution_model', self::DISTRIBUTION_PRIVATE_LICENSE);
+    }
+
+    public function scopeFreeDistribution($query)
+    {
+        return $query->where('distribution_model', self::DISTRIBUTION_FREE);
     }
 
     public function scopePublished($query)
@@ -328,7 +348,10 @@ class Theme extends Model
 
     public function scopeMarketplace($query)
     {
-        return $query->where('is_marketplace', true)->published();
+        return $query->where(function ($q) {
+            $q->where('is_marketplace', true)
+              ->orWhere('distribution_model', self::DISTRIBUTION_MARKETPLACE);
+        })->published();
     }
 
     public function marketplaceMeta()

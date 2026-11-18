@@ -1,6 +1,20 @@
 ﻿# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-10-30
+> Last Updated: 2026-11-18
+
+---
+
+## Fleet Theme & Package Update Pipeline, Non-Destructive Reconciliation, and Theme Isolation (ADR-089)
+
+**IMPLEMENTATION VERIFIED & GATED FOR RELEASE — 2026-11-18.** Scope,
+evidence and specifications: ADR-089 in `DECISIONS.md`, `OPEN_TASKS.md`, and
+delivery manifests.
+
+- Dual-mode Onboarding & Fleet Updates console implemented in `saas-platform` with smart eligibility guards.
+- Theme commercial distribution models (`marketplace`, `private_license`, `free`) active in `Theme` & database.
+- Non-destructive 3-way reconciliation on `/builder/api/theme/upgrade` preserving customer edits in `customer-site`.
+- Absolute component and authentication style isolation between themes.
+- Zero-SSH and serverless compliance enforced.
 
 ---
 

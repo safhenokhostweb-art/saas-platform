@@ -10,6 +10,7 @@ use App\Services\ActivityLogger;
 use App\Services\Onboarding\OnboardingDomainPolicy;
 use App\Services\Onboarding\SiteOnboardingService;
 use App\Services\Onboarding\SiteTemplateBinder;
+use App\Services\ThemeBuilder\ThemeFleetUpgradeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,14 +28,17 @@ class OnboardingWizardController extends Controller
     public function __construct(
         private readonly SiteOnboardingService $onboarding,
         private readonly OnboardingDomainPolicy $domains,
+        private readonly ThemeFleetUpgradeService $fleetService,
     ) {}
 
     public function create(Request $request): View
     {
         $options = $this->onboarding->wizardOptions();
         $prefill = $request->filled('mobile') ? $this->onboarding->lookupCustomer((string) $request->query('mobile')) : null;
+        $fleetUpdates = $this->fleetService->discoverAvailableUpdates();
+        $activeTab = $request->query('tab', 'onboarding');
 
-        return view('admin.onboarding.wizard', compact('options', 'prefill'));
+        return view('admin.onboarding.wizard', compact('options', 'prefill', 'fleetUpdates', 'activeTab'));
     }
 
     public function lookupCustomer(Request $request): JsonResponse
@@ -80,5 +84,31 @@ class OnboardingWizardController extends Controller
         ]);
 
         return back()->with('success', 'اعمال قالب دوباره در صف قرار گرفت.');
+    }
+
+    /** Dispatch non-destructive fleet update for a customer site. */
+    public function applyFleetUpdate(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'site_id'    => 'required|integer|exists:sites,id',
+            'release_id' => 'required|integer|exists:theme_releases,id',
+        ]);
+
+        $site = \App\Models\Site::findOrFail($data['site_id']);
+        $release = \App\Models\ThemeRelease::with('theme')->findOrFail($data['release_id']);
+
+        try {
+            $update = $this->fleetService->dispatchUpgrade($site, $release, $request->user()?->id);
+            if ($update->status === \App\Models\ThemeFleetUpdate::STATUS_FAILED) {
+                return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                    ->with('error', "ارتقای قالب برای «{$site->title}» ناموفق بود: " . $update->failure_reason);
+            }
+
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('success', "به‌روزرسانی قالب «{$release->theme?->name}» به نسخه {$release->version} برای سایت «{$site->title}» با موفقیت اعمال شد و تمام صفحات و شخصی‌سازی‌های مشتری حفظ شدند.");
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('error', "خطا در ارتقای قالب: " . $e->getMessage());
+        }
     }
 }
