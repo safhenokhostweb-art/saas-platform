@@ -31,6 +31,18 @@
             "id": "solar-solar_calculator-71-hero-with-stats"
         },
         {
+            "id": "solar-calc-widget-tool",
+            "type": "module:solar_calculator",
+            "props": {
+                "anchor_id": "calc-tool",
+                "layout": "stacked",
+                "default_system_type": "",
+                "show_price": "",
+                "show_steps": true,
+                "accent_color": "#FF7900"
+            }
+        },
+        {
             "type": "target_audience_grid",
             "props": {
                 "title": "راهنمای گام‌به‌گام انتخاب سیستم",

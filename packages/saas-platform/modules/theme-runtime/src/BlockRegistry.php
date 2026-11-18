@@ -2326,6 +2326,28 @@ class BlockRegistry
                 ],
                 'defaultProps' => ['title' => 'پرداخت فاکتور', 'placeholder' => 'شماره فاکتور را وارد کنید'],
             ],
+            'module:solar_calculator' => [
+                'name' => 'ماشین‌حساب خورشیدی',
+                'category' => self::CATEGORY_MODULE,
+                'icon' => 'calculator',
+                'requires' => 'solar_calculator',
+                'schema' => [
+                    'anchor_id' => ['type' => 'string', 'label' => 'شناسه لنگر', 'default' => 'calc-tool'],
+                    'layout' => ['type' => 'select', 'label' => 'چیدمان', 'options' => ['stacked' => 'یک‌ستونه', 'split' => 'دوستونه با تصویر کناری'], 'default' => 'stacked'],
+                    'default_system_type' => ['type' => 'select', 'label' => 'نوع سیستم پیش‌فرض', 'options' => ['' => 'مطابق تنظیمات ماژول', 'on_grid' => 'متصل به شبکه', 'off_grid' => 'مستقل', 'hybrid' => 'هیبرید'], 'default' => ''],
+                    'show_price' => ['type' => 'select', 'label' => 'نمایش برآورد قیمت', 'options' => ['' => 'مطابق تنظیمات ماژول', 'show' => 'نمایش', 'hide' => 'عدم نمایش'], 'default' => ''],
+                    'show_steps' => ['type' => 'boolean', 'label' => 'نمایش نوار مراحل', 'default' => true],
+                    'accent_color' => ['type' => 'color', 'label' => 'رنگ تأکیدی', 'default' => ''],
+                ],
+                'defaultProps' => [
+                    'anchor_id' => 'calc-tool',
+                    'layout' => 'stacked',
+                    'default_system_type' => '',
+                    'show_price' => '',
+                    'show_steps' => true,
+                    'accent_color' => '',
+                ],
+            ],
 
             // ─── NEXUS PRO PREMIUM BLOCKS ────────────────────────────────────
             'hero_split' => [

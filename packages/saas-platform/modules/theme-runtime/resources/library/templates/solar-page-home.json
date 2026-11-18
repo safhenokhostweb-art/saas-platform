@@ -14,6 +14,64 @@
     ],
     "blocks": [
         {
+            "id": "solar-home-0-slider",
+            "type": "slider",
+            "props": {
+                "slides": [
+                    {
+                        "image": "/storage/solar-assets/hero-industrial-slide1.jpg",
+                        "title": "طراحی و اجرای سیستم‌های خورشیدی در سراسر کشور",
+                        "subtitle": "از مشاوره و طراحی تا تأمین تجهیزات، نصب و پشتیبانی نیروگاه‌های خورشیدی",
+                        "link": {
+                            "type": "entity",
+                            "entity": "route",
+                            "id": "home",
+                            "label": "صفحه اصلی",
+                            "url": "/"
+                        },
+                        "cta_text": "دریافت مشاوره رایگان",
+                        "badge": "مهندسی انرژی خورشیدی",
+                        "highlight": "سراسر کشور",
+                        "align": "auto",
+                        "secondary_link": {
+                            "type": "entity",
+                            "entity": "route",
+                            "id": "products",
+                            "label": "فروشگاه تجهیزات",
+                            "url": "/page/products"
+                        },
+                        "secondary_cta_text": "مشاهده محصولات"
+                    },
+                    {
+                        "image": "/storage/solar-assets/hero-residential-slide2.jpg",
+                        "title": "تأمین تجهیزات و پنل‌های خورشیدی با راندمان بالا",
+                        "subtitle": "کاهش هزینه برق و تأمین انرژی پایدار برای مصارف خانگی، تجاری و صنعتی",
+                        "link": {
+                            "type": "entity",
+                            "entity": "route",
+                            "id": "solar_calculator",
+                            "label": "محاسبه آنلاین هزینه",
+                            "url": "/page/solar-calculator"
+                        },
+                        "cta_text": "محاسبه آنلاین هزینه",
+                        "badge": "کاهش هزینه برق",
+                        "highlight": "انرژی پاک",
+                        "align": "auto"
+                    }
+                ],
+                "autoplay": true,
+                "interval": 5000,
+                "transition": "fade",
+                "boxed": false,
+                "aspect_ratio": "auto",
+                "overlay": false,
+                "hide_controls": false,
+                "show_slider_buttons": false,
+                "content_align": "right",
+                "content_width": "full"
+            }
+        },
+        {
             "type": "hero_with_stats",
             "props": {
                 "eyebrow": "مهندسی انرژی خورشیدی",

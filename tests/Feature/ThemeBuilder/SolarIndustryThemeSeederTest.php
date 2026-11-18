@@ -113,7 +113,11 @@ class SolarIndustryThemeSeederTest extends TestCase
         foreach ($all as $block) {
             $this->assertArrayHasKey($block['type'], $registry, "{$block['type']} is a canonical registered widget");
         }
-        $this->assertDoesNotMatchRegularExpression('/solar_|_solar|sanat|barq/i', implode(' ', array_unique(array_column($all, 'type'))), 'no theme-specific widget types');
+        $nonModuleTypes = array_filter(
+            array_unique(array_column($all, 'type')),
+            fn ($t) => !str_starts_with($t, 'module:')
+        );
+        $this->assertDoesNotMatchRegularExpression('/solar_|_solar|sanat|barq/i', implode(' ', $nonModuleTypes), 'no theme-specific widget types');
     }
 
     /**
@@ -194,5 +198,15 @@ class SolarIndustryThemeSeederTest extends TestCase
         $release = app(ThemeReleaseService::class)->release($theme, '1.0.0', 'قالب صنعت برق 1.0.0');
         $this->assertSame('1.0.0', $release->version);
         $this->assertSame($release->id, $theme->fresh()->current_release_id);
+    }
+
+    public function test_homepage_has_slider_and_calculator_page_has_solar_calculator_module(): void
+    {
+        $theme = $this->seedTheme();
+        $homeTypes = array_column($theme->pages['home']['blocks'], 'type');
+        $this->assertContains('slider', $homeTypes, 'homepage contains the slider block');
+
+        $calcTypes = array_column($theme->pages['solar_calculator']['blocks'], 'type');
+        $this->assertContains('module:solar_calculator', $calcTypes, 'solar_calculator page contains module:solar_calculator block');
     }
 }
