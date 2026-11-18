@@ -1,0 +1,24 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-THEME-RUNTIME-SOLAR-SLIDER-CALC",
+    "summary": "fix(theme-runtime): solar slider, module:solar_calculator block registration and protective tests",
+    "base_sha": "aa1bb793820196922241b2945a11356ca54b489a",
+    "branch": "main",
+    "release_number": 286,
+    "release_public_id": "48c46647-464a-4cd4-83cc-555fc10f44e7",
+    "commit_sha": "226cbff771970022d31625b787592a3006d46372",
+    "artifact_id": 316,
+    "artifact_uuid": "24de4fb3-bd8d-4826-b050-e046c901a0ef",
+    "artifact_checksum": "13336a341ef2135049a07a41aeda1f5fbf5a9f39055bf6d724abf09477d5a6a1",
+    "artifact_size_bytes": 57885345,
+    "publish_job_id": 484,
+    "evidence_digest": "f87db0263d04d855ff1427a0c0a3978039906bfbbc77433895f29aad25afd70d",
+    "changed_files": [
+        "packages/saas-platform/modules/theme-runtime/resources/library/templates/solar-page-home.json",
+        "packages/saas-platform/modules/theme-runtime/resources/library/templates/solar-page-solar_calculator.json",
+        "packages/saas-platform/modules/theme-runtime/src/BlockRegistry.php",
+        "tests/Feature/ThemeBuilder/SolarIndustryThemeSeederTest.php"
+    ],
+    "created_timestamp": "2026-11-18T10:31:03+00:00"
+}

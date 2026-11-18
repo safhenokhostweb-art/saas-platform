@@ -1,0 +1,62 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-THEME-RUNTIME-SOLAR-SLIDER-CALC",
+    "summary": "fix(theme-runtime): solar slider, module:solar_calculator block registration and protective tests",
+    "base_sha": "aa1bb793820196922241b2945a11356ca54b489a",
+    "branch": "main",
+    "changed_files": [
+        "packages/saas-platform/modules/theme-runtime/resources/library/templates/solar-page-home.json",
+        "packages/saas-platform/modules/theme-runtime/resources/library/templates/solar-page-solar_calculator.json",
+        "packages/saas-platform/modules/theme-runtime/src/BlockRegistry.php",
+        "tests/Feature/ThemeBuilder/SolarIndustryThemeSeederTest.php"
+    ],
+    "migration_files": [],
+    "reviewed_migrations": [],
+    "dependency_commits": [],
+    "test_results": [
+        {
+            "name": "syntax:packages/saas-platform/modules/theme-runtime/src/BlockRegistry.php",
+            "type": "syntax",
+            "command": "php -l packages/saas-platform/modules/theme-runtime/src/BlockRegistry.php",
+            "exit_code": 0,
+            "duration_ms": 329
+        },
+        {
+            "name": "syntax:tests/Feature/ThemeBuilder/SolarIndustryThemeSeederTest.php",
+            "type": "syntax",
+            "command": "php -l tests/Feature/ThemeBuilder/SolarIndustryThemeSeederTest.php",
+            "exit_code": 0,
+            "duration_ms": 1013
+        },
+        {
+            "name": "theme-builder-regression",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 273874
+        },
+        {
+            "name": "homepage-persistence",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 82583
+        }
+    ],
+    "build_result": {
+        "required": true,
+        "status": "pending",
+        "contract": "server-managed-exact-commit"
+    },
+    "health_contract": {
+        "required": true,
+        "endpoint_source": "deployment-system project http_health_check"
+    },
+    "risk_flags": [],
+    "excluded_untracked_files": [],
+    "release_ready": true,
+    "commit_sha": "226cbff771970022d31625b787592a3006d46372",
+    "created_timestamp": "2026-11-18T10:31:03+00:00",
+    "metadata_version": 1
+}
