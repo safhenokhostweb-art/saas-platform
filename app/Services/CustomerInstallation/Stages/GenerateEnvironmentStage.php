@@ -96,8 +96,10 @@ class GenerateEnvironmentStage extends AbstractStage
                 "MAIL_ENCRYPTION=" . ($req->smtp['encryption'] ?? 'tls'),
                 "",
                 "PLATFORM_URL={$platformUrl}",
+                "PLATFORM_SITE_ID=" . ($ctx->installation->site_id ? (string) $ctx->installation->site_id : ""),
                 "LICENSE_KEY=__LICENSE_KEY__",
                 "LICENSE_VERIFY_SSL=false",
+                "FILESYSTEM_DISK=local",
                 // ADR-088: the shared secret ThemeInstallGateway signs its
                 // theme push with (customer-site ProvisionSecretMiddleware
                 // refuses every push while it is empty). Without it a fresh

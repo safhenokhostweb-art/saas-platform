@@ -2,6 +2,7 @@
 
 namespace App\Services\CustomerInstallation;
 
+use App\Models\CustomerInstallationPackage;
 use App\Models\CustomerRemoteServer;
 use App\Models\Infrastructure\DnsProviderSetting;
 use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
@@ -52,6 +53,20 @@ class InstallationTargetGuard
         $driverType = DriverType::tryFrom($server->type);
         if (!$driverType || !$driverType->isImplemented()) {
             return "درایور مقصد استقرار انتخاب‌شده («{$server->type}») هنوز پیاده‌سازی نشده و امکان شروع نصب روی آن وجود ندارد.";
+        }
+
+        return null;
+    }
+
+    /** Persian error when active package is missing or stale, else null. */
+    public function packageError(): ?string
+    {
+        $pkg = CustomerInstallationPackage::active();
+        if ($pkg === null) {
+            return 'هیچ بسته نصب فعالی برای استقرار سایت مشتری ثبت نشده است.';
+        }
+        if ($pkg->isStale()) {
+            return "نسخه بسته نصب فعال ({$pkg->version}) قدیمی است. حداقل نسخه مورد نیاز " . CustomerInstallationPackage::MINIMUM_SUPPORTED_VERSION . " است.";
         }
 
         return null;

@@ -94,6 +94,7 @@ class ProvisionLicenseStageEnvTest extends TestCase
 
             $env = DotenvValue::parse(file_get_contents($file));
             $this->assertSame($site->license_key, $env['LICENSE_KEY']);
+            $this->assertSame((string) $site->id, $env['PLATFORM_SITE_ID'] ?? null);
             $this->assertSame(1, substr_count(file_get_contents($file), 'LICENSE_KEY='));
         } finally {
             @unlink($file);

@@ -101,6 +101,16 @@ class ProvisionLicenseStage extends AbstractStage
                 );
             }
 
+            // Write PLATFORM_SITE_ID into .env so customer media and site services function
+            $setSiteId = $ctx->connection->execute(RemoteEnvFile::set($envPath, 'PLATFORM_SITE_ID', (string) $site->id));
+            if ($setSiteId->failed() || str_contains((string) $setSiteId->stdout, RemoteEnvFile::SET_FAILED)) {
+                return StageResult::failure(
+                    $this->name(),
+                    'شناسه سایت (PLATFORM_SITE_ID) در فایل .env سایت نوشته نشد: ' . trim($setSiteId->output()),
+                    $this->elapsed()
+                );
+            }
+
             return StageResult::success($this->name(), [
                 'site_id'            => $site->id,
                 'license_key_prefix' => substr($licenseKey, 0, 8),

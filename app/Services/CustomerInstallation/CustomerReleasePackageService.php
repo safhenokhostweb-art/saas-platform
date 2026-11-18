@@ -20,6 +20,9 @@ class CustomerReleasePackageService implements CustomerPackageInterface
         if (!$pkg) {
             throw new RuntimeException('No active release package registered. Run: php artisan customer-install:register-package');
         }
+        if ($pkg->isStale()) {
+            throw new RuntimeException("Active customer-site package v{$pkg->version} is stale (minimum required: " . CustomerInstallationPackage::MINIMUM_SUPPORTED_VERSION . ").");
+        }
         return $pkg->version;
     }
 

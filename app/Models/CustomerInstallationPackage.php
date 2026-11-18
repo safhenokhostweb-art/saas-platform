@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerInstallationPackage extends Model
 {
+    public const MINIMUM_SUPPORTED_VERSION = '1.1.0';
+
     protected $fillable = [
         'version',
         'arvan_key',
@@ -33,6 +35,11 @@ class CustomerInstallationPackage extends Model
     {
         static::where('is_active', true)->update(['is_active' => false]);
         $this->update(['is_active' => true]);
+    }
+
+    public function isStale(): bool
+    {
+        return version_compare($this->version, self::MINIMUM_SUPPORTED_VERSION, '<');
     }
 
     public function sizeHuman(): string

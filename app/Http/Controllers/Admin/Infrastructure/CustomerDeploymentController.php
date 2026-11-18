@@ -113,6 +113,11 @@ class CustomerDeploymentController extends Controller
             return back()->withInput()->withErrors(['remote_server_id' => $driverError]);
         }
 
+        $packageError = $guard->packageError();
+        if ($packageError !== null) {
+            return back()->withInput()->withErrors(['package' => $packageError]);
+        }
+
         // DNS preflight: the domain must reach this server before anything is created.
         $dnsError = $guard->dnsPreflightError($validated['customer_domain'], $server, (bool) ($validated['ssl_enabled'] ?? false));
         if ($dnsError !== null) {

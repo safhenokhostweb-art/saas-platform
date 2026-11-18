@@ -174,6 +174,10 @@ class SiteOnboardingService
             throw ValidationException::withMessages(['remote_server_id' => $driverError]);
         }
 
+        if (($packageError = $this->guard->packageError()) !== null) {
+            throw ValidationException::withMessages(['package' => $packageError]);
+        }
+
         // Before anything is created: the domain must reach this server
         // (installation 50 only failed at ISSUE_SSL, after 18 stages).
         $dnsError = $this->guard->dnsPreflightError($domain, $server, (bool) ($data['ssl_enabled'] ?? true));
