@@ -1,0 +1,146 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-THEME-FLEET-UPDATE-PIPELINE-AND-ISOLATION",
+    "summary": "feat(theme-fleet): non-destructive theme upgrade pipeline, smart eligibility guard, 3-model distribution and template library isolation",
+    "base_sha": "1a8cc166e09e0b9c7207f13b68db5d0c5bff52db",
+    "branch": "main",
+    "changed_files": [
+        ".deployment/release-policy.json",
+        "app/Http/Controllers/Admin/OnboardingWizardController.php",
+        "app/Models/Site.php",
+        "app/Models/Theme.php",
+        "app/Models/ThemeFleetUpdate.php",
+        "app/Services/ThemeBuilder/ThemeFleetUpgradeService.php",
+        "app/Services/ThemeBuilder/ThemeInstallGateway.php",
+        "database/migrations/2026_11_18_190000_add_distribution_model_to_themes_and_create_theme_fleet_updates_table.php",
+        "docs/project-memory/DECISIONS.md",
+        "docs/project-memory/OPEN_TASKS.md",
+        "docs/project-memory/PROJECT_STATE.md",
+        "packages/saas-platform/modules/theme-runtime/src/TemplateLibrary.php",
+        "resources/views/admin/onboarding/wizard.blade.php",
+        "routes/web.php",
+        "tests/Feature/ThemeBuilder/FleetThemeUpgradeAndIsolationTest.php"
+    ],
+    "migration_files": [
+        "database/migrations/2026_11_18_190000_add_distribution_model_to_themes_and_create_theme_fleet_updates_table.php"
+    ],
+    "reviewed_migrations": [
+        {
+            "path": "database/migrations/2026_11_18_190000_add_distribution_model_to_themes_and_create_theme_fleet_updates_table.php",
+            "sha256": "017c807bc3d06a0f303adef52bad0b5d1d82c07cf692cdb6d1a29a98475c7500",
+            "reviewed_by": "Antigravity (agent review for WU-THEME-FLEET-UPDATE-PIPELINE-AND-ISOLATION)",
+            "reviewed_at": "2026-11-18",
+            "reason": "Additive migration: up() adds nullable/defaulted distribution_model column to themes and creates theme_fleet_updates table. down() drops only this table and added column. No existing customer data is altered."
+        }
+    ],
+    "dependency_commits": [],
+    "test_results": [
+        {
+            "name": "syntax:app/Http/Controllers/Admin/OnboardingWizardController.php",
+            "type": "syntax",
+            "command": "php -l app/Http/Controllers/Admin/OnboardingWizardController.php",
+            "exit_code": 0,
+            "duration_ms": 731
+        },
+        {
+            "name": "syntax:app/Models/Site.php",
+            "type": "syntax",
+            "command": "php -l app/Models/Site.php",
+            "exit_code": 0,
+            "duration_ms": 151
+        },
+        {
+            "name": "syntax:app/Models/Theme.php",
+            "type": "syntax",
+            "command": "php -l app/Models/Theme.php",
+            "exit_code": 0,
+            "duration_ms": 788
+        },
+        {
+            "name": "syntax:app/Models/ThemeFleetUpdate.php",
+            "type": "syntax",
+            "command": "php -l app/Models/ThemeFleetUpdate.php",
+            "exit_code": 0,
+            "duration_ms": 169
+        },
+        {
+            "name": "syntax:app/Services/ThemeBuilder/ThemeFleetUpgradeService.php",
+            "type": "syntax",
+            "command": "php -l app/Services/ThemeBuilder/ThemeFleetUpgradeService.php",
+            "exit_code": 0,
+            "duration_ms": 138
+        },
+        {
+            "name": "syntax:app/Services/ThemeBuilder/ThemeInstallGateway.php",
+            "type": "syntax",
+            "command": "php -l app/Services/ThemeBuilder/ThemeInstallGateway.php",
+            "exit_code": 0,
+            "duration_ms": 170
+        },
+        {
+            "name": "syntax:database/migrations/2026_11_18_190000_add_distribution_model_to_themes_and_create_theme_fleet_updates_table.php",
+            "type": "syntax",
+            "command": "php -l database/migrations/2026_11_18_190000_add_distribution_model_to_themes_and_create_theme_fleet_updates_table.php",
+            "exit_code": 0,
+            "duration_ms": 785
+        },
+        {
+            "name": "syntax:packages/saas-platform/modules/theme-runtime/src/TemplateLibrary.php",
+            "type": "syntax",
+            "command": "php -l packages/saas-platform/modules/theme-runtime/src/TemplateLibrary.php",
+            "exit_code": 0,
+            "duration_ms": 154
+        },
+        {
+            "name": "syntax:resources/views/admin/onboarding/wizard.blade.php",
+            "type": "syntax",
+            "command": "php -l resources/views/admin/onboarding/wizard.blade.php",
+            "exit_code": 0,
+            "duration_ms": 137
+        },
+        {
+            "name": "syntax:routes/web.php",
+            "type": "syntax",
+            "command": "php -l routes/web.php",
+            "exit_code": 0,
+            "duration_ms": 781
+        },
+        {
+            "name": "syntax:tests/Feature/ThemeBuilder/FleetThemeUpgradeAndIsolationTest.php",
+            "type": "syntax",
+            "command": "php -l tests/Feature/ThemeBuilder/FleetThemeUpgradeAndIsolationTest.php",
+            "exit_code": 0,
+            "duration_ms": 652
+        },
+        {
+            "name": "theme-builder-regression",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 52424
+        },
+        {
+            "name": "homepage-persistence",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 46798
+        }
+    ],
+    "build_result": {
+        "required": true,
+        "status": "pending",
+        "contract": "server-managed-exact-commit"
+    },
+    "health_contract": {
+        "required": true,
+        "endpoint_source": "deployment-system project http_health_check"
+    },
+    "risk_flags": [],
+    "excluded_untracked_files": [],
+    "release_ready": true,
+    "commit_sha": "00fa4e9efb2075bd2ba6968a0a0d5030e7f6bfec",
+    "created_timestamp": "2026-11-18T17:29:31+00:00",
+    "metadata_version": 1
+}
