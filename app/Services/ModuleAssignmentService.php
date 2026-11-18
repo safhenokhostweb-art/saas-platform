@@ -137,6 +137,15 @@ class ModuleAssignmentService
 
         $this->entitlementAuditor->syncAfterPivotChange($site, $module, $wasActive, true);
 
+        if (in_array($module->slug, ['motion-graphics', 'motion-graphics-premium'], true)) {
+            $features = $site->features ?? [];
+            if (! ($features['motion_graphics_integration'] ?? false)) {
+                $features['motion_graphics_integration'] = true;
+                $site->features = $features;
+                $site->save();
+            }
+        }
+
         return ['success' => true];
     }
 

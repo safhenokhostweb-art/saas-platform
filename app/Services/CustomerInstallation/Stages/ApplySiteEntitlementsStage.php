@@ -120,6 +120,31 @@ class ApplySiteEntitlementsStage extends AbstractStage
                     );
                 }
                 $kits[$module->slug] = 'active';
+
+                if (in_array($module->slug, ['motion-graphics', 'motion-graphics-premium'], true)) {
+                    $features = $site->features ?? [];
+                    if (! ($features['motion_graphics_integration'] ?? false)) {
+                        $features['motion_graphics_integration'] = true;
+                        $site->features = $features;
+                        $site->save();
+                    }
+                }
+                if ($module->slug === 'solar_industry_kit' || $req->businessVertical === 'solar_energy') {
+                    $solarMotion = \SaaSPlatform\Modules\MotionGraphics\Models\MotionGraphic::where('slug', 'solar-motion-graphic')->first();
+                    if ($solarMotion && $solarMotion->uuid) {
+                        \App\Modules\MotionGraphics\Models\MotionSiteAssetGrant::query()->firstOrCreate(
+                            ['site_id' => $site->id, 'asset_id' => $solarMotion->uuid],
+                            [
+                                'status' => \App\Modules\MotionGraphics\Models\MotionSiteAssetGrant::STATUS_ACTIVE,
+                                'source' => \App\Modules\MotionGraphics\Models\MotionSiteAssetGrant::SOURCE_ADMIN_GRANT,
+                                'reference' => 'onboarding_vertical_solar_energy',
+                                'note' => 'Auto-granted for solar energy vertical onboarding',
+                                'granted_by_actor_identifier' => $actor ? 'admin:' . $actor->id : 'system',
+                                'granted_at' => now(),
+                            ]
+                        );
+                    }
+                }
             }
 
             return StageResult::success($this->name(), [
