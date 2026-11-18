@@ -1,6 +1,32 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-11-17
+> Last Updated: 2026-11-18
+
+---
+
+## OPEN: CIE PACKAGE SYNC, STALE-PACKAGE GUARD, PLATFORM_SITE_ID ENV — RELEASE 285 READY, NOT DEPLOYED — 2026-11-18
+
+Customer Installation Pipeline & Stale Package Prevention:
+1. Production Customer Site package upgraded to v1.1.0 (Hub Artifact 304, commit `d205f32e` containing `/builder/api/theme/install` and all 50 `solar-assets` images). Registered and activated on production via `customer-install:register-local-package` (size 37,793,133 bytes, SHA256 `3bf34cf132629f849f4623409a0be7cbddb208f1621a4eef9c9780b1f70113ae`).
+2. Site 10 (`solar.safhenokhost.ir`, installation 54, `/var/www/cust_site_54`) successfully upgraded in-place with `PLATFORM_SITE_ID=10` and `FILESYSTEM_DISK=local`. Media Library 500 fixed (now returns HTTP 200). Theme assets (all 50 `solar-assets` images) restored to `/var/www/cust_site_54/storage/app/public/solar-assets/` and returning HTTP 200. 24-page `solar-industry` theme successfully bound and fully rendering.
+3. Code guards implemented to prevent stale packages (< 1.1.0) and auto-provision `PLATFORM_SITE_ID` in `.env` on all future customer site installations:
+   - `CustomerInstallationPackage::MINIMUM_SUPPORTED_VERSION = '1.1.0'` and `isStale()` method.
+   - `InstallationTargetGuard::packageError()` fails fast during onboarding submission and manual deployment triggers if the active package is missing or stale.
+   - `GenerateEnvironmentStage` & `ProvisionLicenseStage` ensure `PLATFORM_SITE_ID` and `FILESYSTEM_DISK=local` are written to remote customer `.env`.
+   - `SyncInstallPackagesCommand` (`customer-install:sync-packages`) command added to sync packages from storage/deployment.
+
+| Item | Status |
+|------|--------|
+| Stale Package Guard (`MINIMUM_SUPPORTED_VERSION = 1.1.0`) & Fail-fast | ✅ `CustomerInstallationPackage`, `InstallationTargetGuard`, `CustomerReleasePackageService`, `SiteOnboardingService`, `CustomerDeploymentController` |
+| `customer-install:sync-packages` artisan command | ✅ Registered and functional |
+| `PLATFORM_SITE_ID` & `FILESYSTEM_DISK` in customer `.env` provisioning | ✅ `GenerateEnvironmentStage` & `ProvisionLicenseStage` |
+| Tests | ✅ `PackageGuardAndSyncTest` (4 tests, 18 assertions), `ProvisionLicenseStageEnvTest` (34 assertions), theme-builder-regression, homepage-persistence |
+| Release commit | ✅ `1764811326ab1d1ee24899aa4dd0f69a5a6b8215` on `main` (base `13a59829b006f8a40ead6731434d940f724ac114`) |
+| Hub release | ✅ 285 (`b44af3a6-7c0d-41e7-92d7-bce62c874fab`), ready 2026-11-18 08:20:23 UTC |
+| Artifact | ✅ 315 (`0895be7d-4dc6-4434-992a-5de3bc78483f`), available and verified; publish job 482; size 57,880,097 bytes; sha256 `eda29526c61db16529757964e26b987363335c223ca9223555016bf93ae6618d`; evidence `74a46175b32971c0feb64782a814da3b043820abefb3eb0e0d5b8bf33aa1d602` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
+
+Full descriptor: `.deployment/releases/cie-package-sync-guard-env.json`.
 
 ---
 

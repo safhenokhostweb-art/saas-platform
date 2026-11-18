@@ -1,0 +1,124 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-CIE-PACKAGE-SYNC-GUARD-ENV",
+    "summary": "fix(cie): stale package guard, package sync command, and PLATFORM_SITE_ID env provisioning",
+    "base_sha": "13a59829b006f8a40ead6731434d940f724ac114",
+    "branch": "main",
+    "changed_files": [
+        "app/Console/Commands/SyncInstallPackagesCommand.php",
+        "app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php",
+        "app/Models/CustomerInstallationPackage.php",
+        "app/Services/CustomerInstallation/CustomerReleasePackageService.php",
+        "app/Services/CustomerInstallation/InstallationTargetGuard.php",
+        "app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php",
+        "app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php",
+        "app/Services/Onboarding/SiteOnboardingService.php",
+        "tests/Unit/Services/CustomerInstallation/PackageGuardAndSyncTest.php",
+        "tests/Unit/Services/CustomerInstallation/Stages/ProvisionLicenseStageEnvTest.php"
+    ],
+    "migration_files": [],
+    "reviewed_migrations": [],
+    "dependency_commits": [],
+    "test_results": [
+        {
+            "name": "syntax:app/Console/Commands/SyncInstallPackagesCommand.php",
+            "type": "syntax",
+            "command": "php -l app/Console/Commands/SyncInstallPackagesCommand.php",
+            "exit_code": 0,
+            "duration_ms": 883
+        },
+        {
+            "name": "syntax:app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php",
+            "type": "syntax",
+            "command": "php -l app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php",
+            "exit_code": 0,
+            "duration_ms": 301
+        },
+        {
+            "name": "syntax:app/Models/CustomerInstallationPackage.php",
+            "type": "syntax",
+            "command": "php -l app/Models/CustomerInstallationPackage.php",
+            "exit_code": 0,
+            "duration_ms": 274
+        },
+        {
+            "name": "syntax:app/Services/CustomerInstallation/CustomerReleasePackageService.php",
+            "type": "syntax",
+            "command": "php -l app/Services/CustomerInstallation/CustomerReleasePackageService.php",
+            "exit_code": 0,
+            "duration_ms": 261
+        },
+        {
+            "name": "syntax:app/Services/CustomerInstallation/InstallationTargetGuard.php",
+            "type": "syntax",
+            "command": "php -l app/Services/CustomerInstallation/InstallationTargetGuard.php",
+            "exit_code": 0,
+            "duration_ms": 275
+        },
+        {
+            "name": "syntax:app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php",
+            "type": "syntax",
+            "command": "php -l app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php",
+            "exit_code": 0,
+            "duration_ms": 1097
+        },
+        {
+            "name": "syntax:app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php",
+            "type": "syntax",
+            "command": "php -l app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php",
+            "exit_code": 0,
+            "duration_ms": 262
+        },
+        {
+            "name": "syntax:app/Services/Onboarding/SiteOnboardingService.php",
+            "type": "syntax",
+            "command": "php -l app/Services/Onboarding/SiteOnboardingService.php",
+            "exit_code": 0,
+            "duration_ms": 259
+        },
+        {
+            "name": "syntax:tests/Unit/Services/CustomerInstallation/PackageGuardAndSyncTest.php",
+            "type": "syntax",
+            "command": "php -l tests/Unit/Services/CustomerInstallation/PackageGuardAndSyncTest.php",
+            "exit_code": 0,
+            "duration_ms": 881
+        },
+        {
+            "name": "syntax:tests/Unit/Services/CustomerInstallation/Stages/ProvisionLicenseStageEnvTest.php",
+            "type": "syntax",
+            "command": "php -l tests/Unit/Services/CustomerInstallation/Stages/ProvisionLicenseStageEnvTest.php",
+            "exit_code": 0,
+            "duration_ms": 325
+        },
+        {
+            "name": "theme-builder-regression",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 222748
+        },
+        {
+            "name": "homepage-persistence",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 78875
+        }
+    ],
+    "build_result": {
+        "required": true,
+        "status": "pending",
+        "contract": "server-managed-exact-commit"
+    },
+    "health_contract": {
+        "required": true,
+        "endpoint_source": "deployment-system project http_health_check"
+    },
+    "risk_flags": [],
+    "excluded_untracked_files": [],
+    "release_ready": true,
+    "commit_sha": "1764811326ab1d1ee24899aa4dd0f69a5a6b8215",
+    "created_timestamp": "2026-11-18T08:08:35+00:00",
+    "metadata_version": 1
+}

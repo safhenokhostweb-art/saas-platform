@@ -1,0 +1,30 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-CIE-PACKAGE-SYNC-GUARD-ENV",
+    "summary": "fix(cie): stale package guard, package sync command, and PLATFORM_SITE_ID env provisioning",
+    "base_sha": "13a59829b006f8a40ead6731434d940f724ac114",
+    "branch": "main",
+    "release_number": 285,
+    "release_public_id": "b44af3a6-7c0d-41e7-92d7-bce62c874fab",
+    "commit_sha": "1764811326ab1d1ee24899aa4dd0f69a5a6b8215",
+    "artifact_id": 315,
+    "artifact_uuid": "0895be7d-4dc6-4434-992a-5de3bc78483f",
+    "artifact_checksum": "eda29526c61db16529757964e26b987363335c223ca9223555016bf93ae6618d",
+    "artifact_size_bytes": 57880097,
+    "publish_job_id": 482,
+    "evidence_digest": "74a46175b32971c0feb64782a814da3b043820abefb3eb0e0d5b8bf33aa1d602",
+    "changed_files": [
+        "app/Console/Commands/SyncInstallPackagesCommand.php",
+        "app/Http/Controllers/Admin/Infrastructure/CustomerDeploymentController.php",
+        "app/Models/CustomerInstallationPackage.php",
+        "app/Services/CustomerInstallation/CustomerReleasePackageService.php",
+        "app/Services/CustomerInstallation/InstallationTargetGuard.php",
+        "app/Services/CustomerInstallation/Stages/GenerateEnvironmentStage.php",
+        "app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php",
+        "app/Services/Onboarding/SiteOnboardingService.php",
+        "tests/Unit/Services/CustomerInstallation/PackageGuardAndSyncTest.php",
+        "tests/Unit/Services/CustomerInstallation/Stages/ProvisionLicenseStageEnvTest.php"
+    ],
+    "created_timestamp": "2026-11-18T08:20:23+00:00"
+}
