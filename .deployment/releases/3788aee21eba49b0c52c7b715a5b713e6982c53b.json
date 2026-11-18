@@ -1,0 +1,68 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-SOLAR-SITE-AUTOMATION-MOTION-ENTITLEMENTS",
+    "summary": "fix(onboarding): auto-enable motion graphics integration and grant solar motion graphics during site entitlement and module assignment",
+    "base_sha": "682c7de59d56f64d367cb85adf160f030c8a7ded",
+    "branch": "main",
+    "changed_files": [
+        "app/Services/CustomerInstallation/Stages/ApplySiteEntitlementsStage.php",
+        "app/Services/ModuleAssignmentService.php",
+        "tests/Feature/SolarReleaseProtectiveTest.php"
+    ],
+    "migration_files": [],
+    "reviewed_migrations": [],
+    "dependency_commits": [],
+    "test_results": [
+        {
+            "name": "syntax:app/Services/CustomerInstallation/Stages/ApplySiteEntitlementsStage.php",
+            "type": "syntax",
+            "command": "php -l app/Services/CustomerInstallation/Stages/ApplySiteEntitlementsStage.php",
+            "exit_code": 0,
+            "duration_ms": 256
+        },
+        {
+            "name": "syntax:app/Services/ModuleAssignmentService.php",
+            "type": "syntax",
+            "command": "php -l app/Services/ModuleAssignmentService.php",
+            "exit_code": 0,
+            "duration_ms": 1034
+        },
+        {
+            "name": "syntax:tests/Feature/SolarReleaseProtectiveTest.php",
+            "type": "syntax",
+            "command": "php -l tests/Feature/SolarReleaseProtectiveTest.php",
+            "exit_code": 0,
+            "duration_ms": 335
+        },
+        {
+            "name": "theme-builder-regression",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Unit/ThemeBuilder tests/Unit/Architecture/Phase3CContractsTest.php tests/Unit/Architecture/Phase3CInteractionContractsTest.php tests/Unit/Architecture/Phase3CDynamicContractsTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 143990
+        },
+        {
+            "name": "homepage-persistence",
+            "type": "test",
+            "command": "php vendor/bin/phpunit tests/Feature/ThemeCanvas/DefaultHomepagePersistenceTest.php --do-not-cache-result",
+            "exit_code": 0,
+            "duration_ms": 124088
+        }
+    ],
+    "build_result": {
+        "required": true,
+        "status": "pending",
+        "contract": "server-managed-exact-commit"
+    },
+    "health_contract": {
+        "required": true,
+        "endpoint_source": "deployment-system project http_health_check"
+    },
+    "risk_flags": [],
+    "excluded_untracked_files": [],
+    "release_ready": true,
+    "commit_sha": "3788aee21eba49b0c52c7b715a5b713e6982c53b",
+    "created_timestamp": "2026-11-18T14:32:14+00:00",
+    "metadata_version": 1
+}
