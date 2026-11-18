@@ -4,6 +4,39 @@
 
 ---
 
+## RESOLVED & READY: SOLAR INDUSTRY THEME ISOLATION, SLIDER, CALCULATOR, MEDIA INDEXING, AND MOTION GRAPHICS — 2026-11-18
+
+Investigation and root-cause fixes for 5 reported issues on `solar.safhenokhost.ir` (Site #10, `/var/www/cust_site_54`) and future site installations:
+1. **Homepage Image Slider**:
+   - Added `slider` block with slides and CTAs to canonical `solar-page-home.json`.
+   - Injected `solar-home-0-slider` block into live `cust_site_54` revision 7; verified full `tb-carousel` markup on `https://solar.safhenokhost.ir/`.
+2. **Theme Isolation on `/login`**:
+   - Reverted shared `resources/views/layouts/auth-login.blade.php` to clean neutral Indigo theme on `customer-site`.
+   - Verified `https://safhenokhost.ir/login` is fully restored without leaking solar theme styles.
+   - Verified `https://solar.safhenokhost.ir/login` renders custom dual-tab `tb-auth-canvas`.
+3. **Media Library Indexing (`customer_media`)**:
+   - Live: Indexed all 50 `solar-assets` images in `customer_media` on `cust_site_54` (`site_id=10`, disk `public`).
+   - Code: Added `indexThemeStaticAssets` to `ThemeInstanceRevisionService` in `customer-site` to auto-index static assets on any theme install.
+4. **Solar Calculator Form Rendering (`solar_calculator`)**:
+   - Re-added `solar-calc-widget-tool` (`module:solar_calculator`) block into `solar-page-solar_calculator.json`.
+   - Updated live DB revision 7; verified interactive form (`sc-calc--stacked`) on `https://solar.safhenokhost.ir/page/solar-calculator`.
+5. **Motion Graphics Versioned Assets in Canvas Widget**:
+   - Published `solar-motion-graphic` v1 (UUID `f428d9ce-aa28-4afb-9f31-b8d1e9ee3f97`, label `1.0.0`) on `saas-platform`.
+   - Updated `ApplySiteEntitlementsStage` and `ModuleAssignmentService` to auto-enable `motion_graphics_integration` and auto-grant vertical motion assets.
+   - Live Site 10 verified: `MotionRuntimeManifestReader::readFresh()` loads all 3 motions (2 public + 1 private electrical industry).
+
+| Item | Status |
+|------|--------|
+| Theme Isolation (`/login`) | ✅ Verified clean on `safhenokhost.ir`, isolated on `solar.safhenokhost.ir` |
+| Media Library 50 assets | ✅ Indexed in `cust_site_54`, automated in `ThemeInstanceRevisionService` |
+| Solar Slider & Calculator blocks | ✅ In canonical JSON and live `theme_instance_revisions` |
+| Motion Graphics versioned manifest | ✅ 3 motions available with version tags, auto-entitlement in pipeline |
+| Tests | ✅ `SolarReleaseProtectiveTest` (5/5 OK), `SolarThemeProtectiveIntegrationTest` |
+| Customer-site Release | ✅ Commit `28207e8` on `main`, release 287 recorded |
+| SaaS-platform Release Commit | ✅ `3788aee21eba49b0c52c7b715a5b713e6982c53b` (descriptor commit `debd5a1d`) |
+
+---
+
 ## OPEN: CIE PACKAGE SYNC, STALE-PACKAGE GUARD, PLATFORM_SITE_ID ENV — RELEASE 285 READY, NOT DEPLOYED — 2026-11-18
 
 Customer Installation Pipeline & Stale Package Prevention:
