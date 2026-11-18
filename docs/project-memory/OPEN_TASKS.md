@@ -4,6 +4,39 @@
 
 ---
 
+## RESOLVED & READY: COMPONENT SEMVER VERSIONING, AUDIT HISTORY, ONE-CLICK ROLLBACK, AND DEPLOYMENT BOUNDARIES — 2026-11-18
+
+Implemented unified component versioning, full audit history tracking, one-click rollback, and strict repository deployment boundaries across `saas-platform` and `customer-site`:
+1. **Deployment Boundaries & Hub Integration:**
+   - Enforced boundary: `saas-platform` is deployed exclusively via Deployment Hub directly to the platform server; it never appears as an update option in customer fleet management (`ThemeFleetUpgradeService::assertNotPlatformScope`).
+   - `customer-site` artifacts and packages (`CustomerInstallationPackage`) are automatically discovered from storage/Hub releases and surfaced in the Fleet Updates console for explicit platform admin review and multi-site dispatch.
+2. **Component SemVer Versioning & Changelogs:**
+   - Created `ComponentVersionRegistry` providing authoritative SemVer versions and detailed changelogs for all 5 core subsystems:
+     - **قالب‌ها (`Theme`):** Dynamic SemVer per theme release (e.g. 1.1.0).
+     - **موتور و بلوک‌های کانواس (`Canvas`):** v2.2.0.
+     - **ویجت‌ها (`Widgets`):** v2.5.0.
+     - **داشبورد و هسته سایت مشتری (`Customer Core / Dashboard`):** v1.3.0.
+     - **موشن‌گرافیک‌ها (`Motion Graphics`):** v1.2.0.
+3. **Comprehensive Audit History (`theme_fleet_updates`):**
+   - Extended `theme_fleet_updates` schema with `update_type`, `component_versions` (before → after diffs), `changelog_summary`, `is_rollback`, and `rollback_from_update_id`.
+   - Admin console surfaces full audit log: site title/domain, update type, component versions, exact timestamp, executed user, and diff summary.
+4. **One-Click Rollback (`/builder/api/theme/rollback`):**
+   - Server-to-server HTTPS endpoint `/builder/api/theme/rollback` on `customer-site` guarded by `CUSTOMER_PROVISION_SECRET`.
+   - Restores exact prior `ThemeInstanceRevision` snapshots atomically using `ThemeInstanceRevisionService::rollbackTo`, creating immutable `TYPE_ROLLBACK_SNAPSHOT` revisions without history rewind or data loss.
+   - Platform admin one-click rollback action dispatches rollback and logs full audit trail.
+5. **Zero-SSH & Governance Compliance:**
+   - No manual server intervention; verified with comprehensive feature tests in both repositories.
+
+| Item | Status |
+|------|--------|
+| Deployment Boundary Guard | ✅ Verified closed (`assertNotPlatformScope`) |
+| SemVer & Changelog Registry (5 subsystems) | ✅ Registered and displayed in fleet console |
+| Comprehensive Audit Logging | ✅ Extended schema & audit UI active |
+| One-Click Rollback Endpoint & Dispatch | ✅ Implemented and verified end-to-end |
+| Tests | ✅ `FleetThemeUpgradeAndIsolationTest` (9/9 OK), `OnboardingWizardTest` (22/22 OK), `ServerToServerThemeUpgradeTest` (4/4 OK) |
+
+---
+
 ## RESOLVED & READY: FLEET THEME & CORE PACKAGE UPGRADE PIPELINE, NON-DESTRUCTIVE RECONCILIATION, AND COMPONENT ISOLATION â€” 2026-11-18
 
 Implemented the unified fleet update management and non-destructive reconciliation pipeline across `saas-platform` and `customer-site` per ADR-089:

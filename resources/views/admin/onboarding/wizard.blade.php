@@ -174,14 +174,49 @@
     @if(($activeTab ?? 'onboarding') === 'fleet-updates')
         {{-- ── Fleet Updates Management Tab ── --}}
         <section class="ob-card" style="margin-bottom:2rem">
-            <h2>مدیریت و اعمال به‌روزرسانی‌های ناوگان (Non-Destructive Fleet Updates)</h2>
+            <h2>مدیریت، نسخه‎بندی و به‌روزرسانی‌های ناوگان (Fleet Management & Rollback)</h2>
             <p class="ob-lead">
                 تمامی عملیات به‌روزرسانی مستقیماً از طریق پایپلاین امن پلتفرم و بدون کوچک‌ترین دخالت دستی یا SSH انجام می‌شوند.
                 موتور هوشمند تطبیق ۳-جانبه (3-Way Merge) تضمین می‌کند که <strong>۱۰۰٪ محتوا و صفحات ویرایش‌شده توسط مشتری دست‌نخورده باقی بمانند</strong> و هیچ بلاک ناخواسته‌ای به صفحات تغییریافته تزریق نشود.
             </p>
 
+            {{-- ── Architectural Deployment Boundaries Notice ── --}}
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--ob-radius);padding:1rem;margin:1rem 0;font-size:.85rem;color:#1e40af">
+                <div style="display:flex;align-items:center;gap:.5rem;font-weight:700;margin-bottom:.35rem">
+                    <span>🛡️ قوانین قطعی استقرار مخازن (Deployment Boundaries):</span>
+                </div>
+                <ul style="margin:0;padding-inline-start:1.25rem;line-height:1.6">
+                    <li><strong>پروژه saas-platform:</strong> منحصراً از طریق <strong>Deployment Hub</strong> مستقیم روی سرور پلتفرم دیپلوی می‌شود و <strong>هرگز</strong> به عنوان آیتم آپدیت ناوگان مشتریان عرضه نمی‌گردد.</li>
+                    <li><strong>پروژه customer-site (هسته، داشبورد، کانواس و ویجت‌ها):</strong> به صورت خودکار در Deployment Hub بیلد و دیپلوی شده و به صورت پکیج آماده (<code>CustomerInstallationPackage</code>) در این فرم ظاهر می‌گردد تا <strong>تنها پس از تأیید ادمین پلتفرم</strong> روی سایت‌های هدف اعمال شود.</li>
+                </ul>
+            </div>
+
+            {{-- ── Component Versioning Cards (SemVer & Changelogs) ── --}}
+            <h3 style="font-size:.95rem;font-weight:700;margin:1.75rem 0 .75rem">نسخه‌بندی جامع اجزا (Component Versioning & Changelogs):</h3>
+            @if(!empty($fleetUpdates['components']))
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:1rem;margin-bottom:1.5rem">
+                    @foreach($fleetUpdates['components'] as $key => $comp)
+                        <div style="background:#ffffff;border:1px solid var(--ob-border);border-radius:var(--ob-radius);padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.03)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+                                <span style="font-weight:700;font-size:.85rem;color:var(--ob-text)">{{ $comp['name'] }}</span>
+                                <span style="background:#ecfdf5;color:#065f46;font-family:monospace;font-weight:700;font-size:.8rem;padding:.2rem .45rem;border-radius:4px">v{{ $comp['version'] }}</span>
+                            </div>
+                            <p style="font-size:.75rem;color:var(--ob-muted);margin:0 0 .5rem;line-height:1.4">{{ $comp['summary'] }}</p>
+                            <div style="font-size:.7rem;color:#475569;border-top:1px dashed var(--ob-border);padding-top:.5rem">
+                                <strong>تغییرات کلیدی (Changelog):</strong>
+                                <ul style="margin:.25rem 0 0;padding-inline-start:1rem;line-height:1.35">
+                                    @foreach(array_slice($comp['changelog'], 0, 2) as $logItem)
+                                        <li>{{ $logItem }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
             {{-- 1. Theme Updates Table --}}
-            <h3 style="font-size:.95rem;font-weight:700;margin:1.5rem 0 .5rem">قالب‌ها و ویجت‌های نیازمند به‌روزرسانی:</h3>
+            <h3 style="font-size:.95rem;font-weight:700;margin:1.5rem 0 .5rem">۱. قالب‌ها و ویجت‌های نیازمند به‌روزرسانی:</h3>
             @if(empty($fleetUpdates['themes']))
                 <div style="background:#f8fafc;border:1px dashed var(--ob-border);border-radius:var(--ob-radius);padding:1.5rem;text-align:center;color:var(--ob-muted);font-size:.85rem">
                     ✅ تمامی سایت‌های فعال آخرین نسخهٔ رسمی قالب و ویجت‌های خود را دارند و هیچ آپدیت معوقه‌ای وجود ندارد.
@@ -260,32 +295,138 @@
             @endif
 
             {{-- 2. Core Package Updates Table --}}
-            <h3 style="font-size:.95rem;font-weight:700;margin:2rem 0 .5rem">پکیج‌های هسته، ویجت‌ها و موتور کانواس:</h3>
+            <h3 style="font-size:.95rem;font-weight:700;margin:2rem 0 .5rem">۲. پکیج‌های هسته، ویجت‌ها و موتور کانواس (Customer Installation Packages):</h3>
             @if(empty($fleetUpdates['packages']))
                 <div style="background:#f8fafc;border:1px dashed var(--ob-border);border-radius:var(--ob-radius);padding:1.5rem;text-align:center;color:var(--ob-muted);font-size:.85rem">
                     ✅ تمامی سایت‌ها آخرین پکیج هسته فعال پلتفرم را دارند.
+                </div>
+            @else
+                <form method="POST" action="{{ route('admin.onboarding.fleet-updates.apply-package') }}" onsubmit="return confirm('آیا از اعمال ارتقای پکیج روی سایت‌های انتخاب‌شده اطمینان دارید؟');">
+                    @csrf
+                    <div style="overflow-x:auto">
+                        <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
+                            <thead>
+                                <tr style="border-bottom:2px solid var(--ob-border);background:#f8fafc">
+                                    <th style="padding:.65rem;width:40px;text-align:center">انتخاب</th>
+                                    <th style="padding:.65rem">دامنه و سایت</th>
+                                    <th style="padding:.65rem">نسخه فعلی</th>
+                                    <th style="padding:.65rem">نسخه جدید پکیج</th>
+                                    <th style="padding:.65rem">حجم و شناسه</th>
+                                    <th style="padding:.65rem">توضیحات و تغییرات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($fleetUpdates['packages'] as $pkg)
+                                    <tr style="border-bottom:1px solid var(--ob-border)">
+                                        <td style="padding:.75rem;text-align:center">
+                                            <input type="checkbox" name="site_ids[]" value="{{ $pkg['site_id'] }}" checked>
+                                        </td>
+                                        <td style="padding:.75rem">
+                                            <strong>{{ $pkg['site_title'] }}</strong>
+                                            <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $pkg['domain'] }}</div>
+                                        </td>
+                                        <td style="padding:.75rem"><span style="font-family:monospace;color:#ef4444">v{{ $pkg['current_version'] }}</span></td>
+                                        <td style="padding:.75rem"><span style="font-family:monospace;color:#059669;font-weight:700">v{{ $pkg['available_version'] }}</span></td>
+                                        <td style="padding:.75rem">
+                                            <span class="ob-badge ob-badge-outline">{{ $pkg['size_human'] ?? '—' }}</span>
+                                        </td>
+                                        <td style="padding:.75rem;color:var(--ob-muted)">{{ $pkg['release_notes'] ?? 'به‌روزرسانی ویجت‌ها و پایداری کانواس' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:1rem;display:flex;justify-content:flex-end">
+                        <button type="submit" class="ob-btn ob-btn-primary" style="font-size:.8rem;padding:.45rem 1.1rem">
+                            🚀 اعمال به‌روزرسانی پکیج روی سایت‌های انتخاب‌شده
+                        </button>
+                    </div>
+                </form>
+            @endif
+
+            {{-- 3. Comprehensive Audit Log & Rollback Table --}}
+            <h3 style="font-size:.95rem;font-weight:700;margin:2.5rem 0 .5rem">۳. تاریخچه حسابرسی به‌روزرسانی‌ها و بازگشت به نسخه قبل (Audit Log & Rollback):</h3>
+            @if(empty($auditHistory) || $auditHistory->isEmpty())
+                <div style="background:#f8fafc;border:1px dashed var(--ob-border);border-radius:var(--ob-radius);padding:1.5rem;text-align:center;color:var(--ob-muted);font-size:.85rem">
+                    تاکنون هیچ عملیات به‌روزرسانی یا بازگردانی روی ناوگان ثبت نشده است.
                 </div>
             @else
                 <div style="overflow-x:auto">
                     <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
                         <thead>
                             <tr style="border-bottom:2px solid var(--ob-border);background:#f8fafc">
-                                <th style="padding:.65rem">دامنه و سایت</th>
-                                <th style="padding:.65rem">نسخه نصب‌شده</th>
-                                <th style="padding:.65rem">نسخه جدید پکیج</th>
-                                <th style="padding:.65rem">توضیحات نسخه</th>
+                                <th style="padding:.65rem">شناسه</th>
+                                <th style="padding:.65rem">سایت و دامنه</th>
+                                <th style="padding:.65rem">نوع تغییر</th>
+                                <th style="padding:.65rem">نسخه‌ها (قبلی ← جدید)</th>
+                                <th style="padding:.65rem">تاریخ و ساعت</th>
+                                <th style="padding:.65rem">کاربر اجراکننده</th>
+                                <th style="padding:.65rem">جزئیات و لاگ تغییرات</th>
+                                <th style="padding:.65rem">وضعیت</th>
+                                <th style="padding:.65rem;text-align:center">بازیابی (Rollback)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($fleetUpdates['packages'] as $pkg)
-                                <tr style="border-bottom:1px solid var(--ob-border)">
+                            @foreach($auditHistory as $log)
+                                <tr style="border-bottom:1px solid var(--ob-border);background:{{ $log->is_rollback ? '#fefce8' : 'inherit' }}">
+                                    <td style="padding:.75rem;font-family:monospace;font-weight:700">#{{ $log->id }}</td>
                                     <td style="padding:.75rem">
-                                        <strong>{{ $pkg['site_title'] }}</strong>
-                                        <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $pkg['domain'] }}</div>
+                                        <strong>{{ $log->site?->title ?? 'سایت نامشخص' }}</strong>
+                                        <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $log->site?->domain }}</div>
                                     </td>
-                                    <td style="padding:.75rem"><span style="font-family:monospace;color:#ef4444">v{{ $pkg['current_version'] }}</span></td>
-                                    <td style="padding:.75rem"><span style="font-family:monospace;color:#059669;font-weight:700">v{{ $pkg['available_version'] }}</span></td>
-                                    <td style="padding:.75rem;color:var(--ob-muted)">{{ $pkg['release_notes'] ?? 'به‌روزرسانی ویجت‌ها و پایداری کانواس' }}</td>
+                                    <td style="padding:.75rem">
+                                        @if($log->is_rollback)
+                                            <span style="background:#fef3c7;color:#92400e;padding:.2rem .45rem;border-radius:4px;font-size:.75rem;font-weight:700">🔄 بازیابی (Rollback)</span>
+                                        @elseif($log->update_type === 'package')
+                                            <span style="background:#e0e7ff;color:#3730a3;padding:.2rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600">📦 پکیج هسته</span>
+                                        @else
+                                            <span style="background:#dbeafe;color:#1e40af;padding:.2rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600">🎨 قالب و ویجت</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:.75rem;font-family:monospace;font-size:.8rem">
+                                        @if(!empty($log->component_versions['theme']))
+                                            <div>قالب: {{ $log->component_versions['theme']['from'] }} ← {{ $log->component_versions['theme']['to'] }}</div>
+                                        @elseif($log->fromRelease || $log->toRelease)
+                                            <div>قالب: {{ $log->fromRelease?->version ?? '—' }} ← {{ $log->toRelease?->version ?? '—' }}</div>
+                                        @endif
+                                        @if(!empty($log->component_versions['customer_core']))
+                                            <div style="color:#059669">هسته: {{ $log->component_versions['customer_core']['from'] }} ← {{ $log->component_versions['customer_core']['to'] }}</div>
+                                        @endif
+                                    </td>
+                                    <td style="padding:.75rem;font-size:.75rem;color:var(--ob-muted)">
+                                        {{ $log->started_at ? $log->started_at->format('Y-m-d H:i') : ($log->created_at ? $log->created_at->format('Y-m-d H:i') : '—') }}
+                                    </td>
+                                    <td style="padding:.75rem;font-size:.8rem">
+                                        {{ $log->dispatchedBy?->name ?? 'سیستم / خودکار' }}
+                                    </td>
+                                    <td style="padding:.75rem;font-size:.75rem;color:#475569;max-width:260px">
+                                        <div style="white-space:pre-line;line-height:1.3">{{ Str::limit($log->changelog_summary ?: 'ارتقای غیرمخرب با موفقیت اعمال شد.', 120) }}</div>
+                                        @if($log->revision_number)
+                                            <div style="font-size:.7rem;color:var(--ob-muted);margin-top:.2rem">شماره بازبینی مشتری: <strong>#{{ $log->revision_number }}</strong></div>
+                                        @endif
+                                    </td>
+                                    <td style="padding:.75rem">
+                                        @if($log->status === 'completed')
+                                            <span style="color:#059669;font-weight:700">✅ موفق</span>
+                                        @elseif($log->status === 'failed')
+                                            <span style="color:#dc2626;font-weight:700" title="{{ $log->failure_reason }}">❌ خطا</span>
+                                        @else
+                                            <span style="color:#d97706;font-weight:700">⏳ در حال اجرا</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:.75rem;text-align:center">
+                                        @if($log->status === 'completed' && !$log->is_rollback && $log->revision_number)
+                                            <form method="POST" action="{{ route('admin.onboarding.fleet-updates.rollback') }}" onsubmit="return confirm('آیا از بازگشت به نسخه قبل (Rollback) برای سایت «{{ $log->site?->title }}» اطمینان دارید؟ تمام تنظیمات به اسنپ‌شات قبلی بازگردانده خواهد شد.');">
+                                                @csrf
+                                                <input type="hidden" name="update_id" value="{{ $log->id }}">
+                                                <button type="submit" class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.3rem .6rem;color:#b45309;border:1px solid #fde68a;background:#fffbeb">
+                                                    ↩️ بازگشت به نسخه قبل
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span style="font-size:.75rem;color:var(--ob-muted)">—</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

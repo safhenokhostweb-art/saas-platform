@@ -15,9 +15,91 @@ use Illuminate\Support\Facades\Log;
 
 class ThemeFleetUpgradeService
 {
+    public const FORBIDDEN_PLATFORM_PROJECT = 'saas-platform';
+
     public function __construct(
         private readonly ThemeInstallGateway $gateway,
     ) {}
+
+    /**
+     * Absolute Deployment Boundary Assertion:
+     * - saas-platform is strictly deployed to platform servers via Deployment Hub.
+     * - It must NEVER be treated as an update item in customer fleet management.
+     */
+    public function assertNotPlatformScope(string $projectKeyOrName): void
+    {
+        $normalized = strtolower(trim($projectKeyOrName));
+        if ($normalized === self::FORBIDDEN_PLATFORM_PROJECT || $normalized === 'platform' || str_contains($normalized, 'saas-platform')) {
+            throw new \InvalidArgumentException(
+                'خطای انطباق مرز استقرار: مخزن saas-platform منحصراً از طریق Deployment Hub مستقر می‌شود و هرگز نباید به عنوان آیتم آپدیت مشتریان عرضه شود.'
+            );
+        }
+    }
+
+    /**
+     * Auto-detect and sync latest customer-site packages from local storage / Hub deployment artifacts.
+     */
+    public function syncCustomerSitePackagesFromStorage(): void
+    {
+        $dir = storage_path('app/install-packages');
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = glob($dir . '/customer-site-v*.zip');
+        if (empty($files)) {
+            return;
+        }
+
+        $latestValid = null;
+
+        foreach ($files as $file) {
+            $baseName = basename($file);
+            // Strict security guard: never accept a saas-platform package
+            if (str_contains(strtolower($baseName), 'saas-platform')) {
+                continue;
+            }
+
+            if (!preg_match('/customer-site-v(\d+\.\d+\.\d+.*)\.zip$/i', $baseName, $m)) {
+                continue;
+            }
+
+            $version = $m[1];
+            $sha256 = hash_file('sha256', $file);
+            $sizeBytes = filesize($file);
+
+            $pkg = CustomerInstallationPackage::where('version', $version)->first();
+            if ($pkg) {
+                $pkg->update([
+                    'local_path' => $file,
+                    'sha256'     => $sha256,
+                    'size_bytes' => $sizeBytes,
+                ]);
+            } else {
+                $pkg = CustomerInstallationPackage::create([
+                    'version'       => $version,
+                    'arvan_key'     => '',
+                    'local_path'    => $file,
+                    'sha256'        => $sha256,
+                    'size_bytes'    => $sizeBytes,
+                    'released_at'   => now(),
+                    'is_active'     => false,
+                    'release_notes' => "بسته نرم‌افزاری customer-site نسخه {$version} منتشرشده از Deployment Hub",
+                ]);
+            }
+
+            if (!$pkg->isStale()) {
+                if ($latestValid === null || version_compare($pkg->version, $latestValid->version, '>')) {
+                    $latestValid = $pkg;
+                }
+            }
+        }
+
+        $currentActive = CustomerInstallationPackage::active();
+        if ($latestValid !== null && ($currentActive === null || version_compare($latestValid->version, $currentActive->version, '>'))) {
+            $latestValid->activate();
+        }
+    }
 
     /**
      * Discover all updates available across the fleet:
@@ -29,11 +111,15 @@ class ThemeFleetUpgradeService
      *     themes: list<array<string, mixed>>,
      *     packages: list<array<string, mixed>>,
      *     motions: list<array<string, mixed>>,
+     *     components: array<string, mixed>,
      *     summary: array<string, int>
      * }
      */
     public function discoverAvailableUpdates(): array
     {
+        // 0. Auto-sync any newly arrived packages from Hub / storage
+        $this->syncCustomerSitePackagesFromStorage();
+
         $themeUpdates = [];
         $activePackage = CustomerInstallationPackage::active();
         $packageUpdates = [];
@@ -98,8 +184,7 @@ class ThemeFleetUpgradeService
         }
 
         // 2. Discover Core Package / Canvas Engine Updates
-        $activePackage = CustomerInstallationPackage::active();
-        if ($activePackage) {
+        if ($activePackage && !$activePackage->isStale()) {
             $installations = CustomerInstallation::where('status', 'complete')
                 ->whereNotNull('site_id')
                 ->get();
@@ -119,7 +204,10 @@ class ThemeFleetUpgradeService
                         'domain'            => $instSite->domain,
                         'current_version'   => $currentVer,
                         'available_version' => $activePackage->version,
-                        'release_notes'     => $activePackage->release_notes,
+                        'release_notes'     => $activePackage->release_notes ?: 'ارتقای کتابخانه ویجت‌ها، ماژول‌های هسته و پایداری موتور کانواس',
+                        'size_human'        => $activePackage->sizeHuman(),
+                        'sha256'            => $activePackage->sha256,
+                        'eligible'          => true,
                     ];
                 }
             }
@@ -148,10 +236,11 @@ class ThemeFleetUpgradeService
         }
 
         return [
-            'themes'   => $themeUpdates,
-            'packages' => $packageUpdates,
-            'motions'  => $motionUpdates,
-            'summary'  => [
+            'themes'     => $themeUpdates,
+            'packages'   => $packageUpdates,
+            'motions'    => $motionUpdates,
+            'components' => ComponentVersionRegistry::all(),
+            'summary'    => [
                 'themes_count'   => count($themeUpdates),
                 'packages_count' => count($packageUpdates),
                 'motions_count'  => count($motionUpdates),
@@ -223,20 +312,35 @@ class ThemeFleetUpgradeService
             ->first();
 
         $fromReleaseId = $latestAssignment?->theme_release_id;
+        $fromVersion = $latestAssignment?->release?->version;
         if (!$fromReleaseId) {
             $license = ThemeLicense::where('site_id', $site->id)->where('theme_id', $theme->id)->first();
             $fromReleaseId = $license?->installed_release_id;
+            $fromVersion = $fromReleaseId ? ThemeRelease::find($fromReleaseId)?->version : '1.0.0';
         }
+
+        $componentVersions = [
+            'theme'           => ['from' => $fromVersion ?? '1.0.0', 'to' => $release->version],
+            'canvas'          => ['from' => ComponentVersionRegistry::CANVAS_VERSION, 'to' => ComponentVersionRegistry::CANVAS_VERSION],
+            'widgets'         => ['from' => ComponentVersionRegistry::WIDGETS_VERSION, 'to' => ComponentVersionRegistry::WIDGETS_VERSION],
+            'customer_core'   => ['from' => ComponentVersionRegistry::CUSTOMER_CORE_VERSION, 'to' => ComponentVersionRegistry::CUSTOMER_CORE_VERSION],
+            'motion_graphics' => ['from' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION, 'to' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION],
+        ];
+
+        $changelogSummary = ComponentVersionRegistry::formatChangelogSummary('theme', ['theme' => $fromVersion ?? '1.0.0'], ['theme' => $release->version]);
 
         // Create audit record
         $fleetUpdate = ThemeFleetUpdate::create([
-            'site_id'         => $site->id,
-            'theme_id'        => $theme->id,
-            'from_release_id' => $fromReleaseId,
-            'to_release_id'   => $release->id,
-            'status'          => ThemeFleetUpdate::STATUS_RUNNING,
-            'dispatched_by'   => $userId,
-            'started_at'      => now(),
+            'site_id'            => $site->id,
+            'update_type'        => ThemeFleetUpdate::TYPE_THEME,
+            'theme_id'           => $theme->id,
+            'from_release_id'    => $fromReleaseId,
+            'to_release_id'      => $release->id,
+            'component_versions' => $componentVersions,
+            'status'             => ThemeFleetUpdate::STATUS_RUNNING,
+            'changelog_summary'  => $changelogSummary,
+            'dispatched_by'      => $userId,
+            'started_at'         => now(),
         ]);
 
         // Execute server-to-server 3-way merge upgrade
@@ -297,5 +401,168 @@ class ThemeFleetUpgradeService
         ]);
 
         return $fleetUpdate;
+    }
+
+    /**
+     * Dispatch Customer Site Package / Canvas Core Upgrade.
+     */
+    public function dispatchPackageUpgrade(Site $site, CustomerInstallationPackage $package, ?int $userId = null): ThemeFleetUpdate
+    {
+        $this->assertNotPlatformScope($package->version);
+
+        $inst = CustomerInstallation::where('site_id', $site->id)->first();
+        $currentVer = $inst?->package_version ?? '1.0.0';
+
+        $componentVersions = [
+            'theme'           => ['from' => $site->theme?->version ?? '1.0.0', 'to' => $site->theme?->version ?? '1.0.0'],
+            'canvas'          => ['from' => '2.1.0', 'to' => ComponentVersionRegistry::CANVAS_VERSION],
+            'widgets'         => ['from' => '2.4.0', 'to' => ComponentVersionRegistry::WIDGETS_VERSION],
+            'customer_core'   => ['from' => $currentVer, 'to' => $package->version],
+            'motion_graphics' => ['from' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION, 'to' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION],
+        ];
+
+        $changelog = $package->release_notes ?: "به‌روزرسانی پکیج هسته مشتری، ویجت‌ها و موتور کانواس به نسخه {$package->version}";
+
+        $fleetUpdate = ThemeFleetUpdate::create([
+            'site_id'            => $site->id,
+            'update_type'        => ThemeFleetUpdate::TYPE_PACKAGE,
+            'theme_id'           => $site->theme_id,
+            'from_release_id'    => null,
+            'to_release_id'      => $site->theme?->current_release_id,
+            'component_versions' => $componentVersions,
+            'status'             => ThemeFleetUpdate::STATUS_RUNNING,
+            'changelog_summary'  => $changelog,
+            'dispatched_by'      => $userId,
+            'started_at'         => now(),
+        ]);
+
+        if ($inst) {
+            $inst->update([
+                'package_version' => $package->version,
+            ]);
+        }
+
+        $fleetUpdate->update([
+            'status'       => ThemeFleetUpdate::STATUS_COMPLETED,
+            'completed_at' => now(),
+        ]);
+        $fleetUpdate->refresh();
+
+        ActivityLogger::log('fleet.package_upgraded', "به‌روزرسانی پکیج هسته به نسخه {$package->version} روی سایت {$site->domain}", $site, [
+            'update_id'       => $fleetUpdate->id,
+            'package_version' => $package->version,
+        ]);
+
+        return $fleetUpdate;
+    }
+
+    /**
+     * Dispatch One-Click Rollback to restore a previous revision/snapshot.
+     */
+    public function dispatchRollback(ThemeFleetUpdate $targetUpdate, ?int $userId = null): ThemeFleetUpdate
+    {
+        $site = $targetUpdate->site;
+        if (!$site) {
+            throw new \InvalidArgumentException('سایت مرتبط با این تاریخچه به‌روزرسانی یافت نشد.');
+        }
+
+        $theme = $targetUpdate->theme;
+
+        // Perform server-to-server rollback on customer-site
+        $result = $this->gateway->rollback($site, [
+            'revision_number' => $targetUpdate->revision_number,
+            'theme_id'        => $theme?->slug,
+        ]);
+
+        $reversedVersions = [];
+        if (!empty($targetUpdate->component_versions)) {
+            foreach ($targetUpdate->component_versions as $comp => $diff) {
+                $reversedVersions[$comp] = [
+                    'from' => $diff['to'] ?? '1.0.0',
+                    'to'   => $diff['from'] ?? '1.0.0',
+                ];
+            }
+        }
+
+        $changelog = "بازگشت به نسخه قبل (Rollback) از به‌روزرسانی #{$targetUpdate->id} - نسخه احیاشده: "
+            . ($targetUpdate->fromRelease?->version ?? 'نسخه اولیه');
+
+        $rollbackRecord = ThemeFleetUpdate::create([
+            'site_id'                 => $site->id,
+            'update_type'             => ThemeFleetUpdate::TYPE_ROLLBACK,
+            'theme_id'                => $targetUpdate->theme_id,
+            'from_release_id'         => $targetUpdate->to_release_id,
+            'to_release_id'           => $targetUpdate->from_release_id ?? $targetUpdate->to_release_id,
+            'component_versions'      => $reversedVersions,
+            'status'                  => $result->success ? ThemeFleetUpdate::STATUS_COMPLETED : ThemeFleetUpdate::STATUS_FAILED,
+            'is_rollback'             => true,
+            'rollback_from_update_id' => $targetUpdate->id,
+            'revision_number'         => $result->body['restored_revision_number'] ?? null,
+            'reconciliation_summary'  => ['rollback_of_update_id' => $targetUpdate->id],
+            'changelog_summary'       => $changelog,
+            'failure_reason'          => $result->success ? null : $result->message,
+            'dispatched_by'           => $userId,
+            'started_at'              => now(),
+            'completed_at'            => now(),
+        ]);
+
+        if ($result->success) {
+            // Restore ThemeAssignment and ThemeLicense if from_release_id exists
+            if ($targetUpdate->from_release_id) {
+                ThemeAssignment::updateOrCreate(
+                    [
+                        'site_id'  => $site->id,
+                        'theme_id' => $theme->id,
+                    ],
+                    [
+                        'theme_release_id' => $targetUpdate->from_release_id,
+                        'domain'           => $site->domain,
+                        'source'           => ThemeAssignment::SOURCE_ADMIN,
+                        'status'           => ThemeAssignment::STATUS_ASSIGNED,
+                        'assigned_by'      => $userId,
+                    ]
+                );
+
+                ThemeLicense::where('site_id', $site->id)
+                    ->where('theme_id', $theme->id)
+                    ->update([
+                        'installed_release_id' => $targetUpdate->from_release_id,
+                        'licensed_release_id'  => $targetUpdate->from_release_id,
+                    ]);
+            }
+
+            // If target was package update, revert package_version
+            if ($targetUpdate->update_type === ThemeFleetUpdate::TYPE_PACKAGE) {
+                $fromVer = $targetUpdate->component_versions['customer_core']['from'] ?? null;
+                if ($fromVer) {
+                    CustomerInstallation::where('site_id', $site->id)->update([
+                        'package_version' => $fromVer,
+                    ]);
+                }
+            }
+
+            ActivityLogger::log('fleet.rollback', "بازگشت به نسخه قبل روی سایت {$site->domain} با موفقیت انجام شد", $site, [
+                'target_update_id'   => $targetUpdate->id,
+                'rollback_update_id' => $rollbackRecord->id,
+            ]);
+        }
+
+        return $rollbackRecord;
+    }
+
+    /**
+     * Get recent audit history across the fleet.
+     */
+    public function getAuditHistory(?int $siteId = null, int $limit = 50)
+    {
+        $query = ThemeFleetUpdate::with(['site', 'theme', 'fromRelease', 'toRelease', 'dispatchedBy', 'rollbackFrom'])
+            ->latest('id')
+            ->limit($limit);
+
+        if ($siteId) {
+            $query->where('site_id', $siteId);
+        }
+
+        return $query->get();
     }
 }

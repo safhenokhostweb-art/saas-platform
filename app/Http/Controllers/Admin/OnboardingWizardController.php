@@ -36,9 +36,10 @@ class OnboardingWizardController extends Controller
         $options = $this->onboarding->wizardOptions();
         $prefill = $request->filled('mobile') ? $this->onboarding->lookupCustomer((string) $request->query('mobile')) : null;
         $fleetUpdates = $this->fleetService->discoverAvailableUpdates();
+        $auditHistory = $this->fleetService->getAuditHistory();
         $activeTab = $request->query('tab', 'onboarding');
 
-        return view('admin.onboarding.wizard', compact('options', 'prefill', 'fleetUpdates', 'activeTab'));
+        return view('admin.onboarding.wizard', compact('options', 'prefill', 'fleetUpdates', 'auditHistory', 'activeTab'));
     }
 
     public function lookupCustomer(Request $request): JsonResponse
@@ -109,6 +110,85 @@ class OnboardingWizardController extends Controller
         } catch (\Throwable $e) {
             return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
                 ->with('error', "خطا در ارتقای قالب: " . $e->getMessage());
+        }
+    }
+
+    /** Dispatch customer-site package update for selected site(s). */
+    public function applyPackageFleetUpdate(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'site_ids'   => 'nullable|array',
+            'site_ids.*' => 'integer|exists:sites,id',
+            'site_id'    => 'nullable|integer|exists:sites,id',
+        ]);
+
+        $siteIds = $data['site_ids'] ?? [];
+        if (!empty($data['site_id']) && !in_array($data['site_id'], $siteIds)) {
+            $siteIds[] = (int) $data['site_id'];
+        }
+
+        if (empty($siteIds)) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('error', 'هیچ سایتی برای ارتقای پکیج انتخاب نشده است.');
+        }
+
+        $package = \App\Models\CustomerInstallationPackage::active();
+        if (!$package) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('error', 'هیچ بسته نرم‌افزاری فعالی یافت نشد.');
+        }
+
+        $successCount = 0;
+        $errors = [];
+
+        foreach ($siteIds as $sId) {
+            $site = \App\Models\Site::find($sId);
+            if (!$site) {
+                continue;
+            }
+
+            try {
+                $update = $this->fleetService->dispatchPackageUpgrade($site, $package, $request->user()?->id);
+                if ($update->status === \App\Models\ThemeFleetUpdate::STATUS_COMPLETED) {
+                    $successCount++;
+                } else {
+                    $errors[] = "{$site->title}: {$update->failure_reason}";
+                }
+            } catch (\Throwable $e) {
+                $errors[] = "{$site->title}: " . $e->getMessage();
+            }
+        }
+
+        $msg = "ارتقای پکیج هسته و ویجت‌ها به نسخه {$package->version} روی {$successCount} سایت با موفقیت اعمال شد.";
+        if (!empty($errors)) {
+            $msg .= " (خطاها: " . implode(' | ', $errors) . ")";
+        }
+
+        return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+            ->with($successCount > 0 ? 'success' : 'error', $msg);
+    }
+
+    /** Dispatch one-click rollback to restore the customer site to its previous snapshot. */
+    public function rollbackFleetUpdate(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'update_id' => 'required|integer|exists:theme_fleet_updates,id',
+        ]);
+
+        $targetUpdate = \App\Models\ThemeFleetUpdate::with(['site', 'theme', 'fromRelease', 'toRelease'])->findOrFail($data['update_id']);
+
+        try {
+            $rollback = $this->fleetService->dispatchRollback($targetUpdate, $request->user()?->id);
+            if ($rollback->status === \App\Models\ThemeFleetUpdate::STATUS_FAILED) {
+                return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                    ->with('error', "عملیات بازگشت به نسخه قبل برای «{$targetUpdate->site?->title}» ناموفق بود: " . $rollback->failure_reason);
+            }
+
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('success', "سایت «{$targetUpdate->site?->title}» با موفقیت به اسنپ‌شات و نسخه قبل بازگردانی شد.");
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('error', "خطا در عملیات بازگشت به نسخه قبل: " . $e->getMessage());
         }
     }
 }

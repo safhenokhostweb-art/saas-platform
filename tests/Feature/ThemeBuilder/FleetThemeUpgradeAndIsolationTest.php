@@ -276,4 +276,143 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
         $this->assertNotNull($assignment);
         $this->assertSame($release->id, $assignment->theme_release_id);
     }
+
+    public function test_saas_platform_is_strictly_excluded_from_fleet_updates_and_violating_throws_exception(): void
+    {
+        $service = app(ThemeFleetUpgradeService::class);
+
+        // 1. Boundary assertion must reject saas-platform
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('خطای انطباق مرز استقرار: مخزن saas-platform منحصراً از طریق Deployment Hub مستقر می‌شود');
+        $service->assertNotPlatformScope('saas-platform');
+    }
+
+    public function test_component_version_registry_provides_semver_and_changelog_for_all_five_components(): void
+    {
+        $all = \App\Services\ThemeBuilder\ComponentVersionRegistry::all();
+
+        $this->assertArrayHasKey('theme', $all);
+        $this->assertArrayHasKey('canvas', $all);
+        $this->assertArrayHasKey('widgets', $all);
+        $this->assertArrayHasKey('customer_core', $all);
+        $this->assertArrayHasKey('motion_graphics', $all);
+
+        foreach (['theme', 'canvas', 'widgets', 'customer_core', 'motion_graphics'] as $key) {
+            $this->assertNotEmpty($all[$key]['version'], "{$key} must have a SemVer version");
+            $this->assertNotEmpty($all[$key]['changelog'], "{$key} must have a changelog array");
+            $this->assertGreaterThanOrEqual(1, count($all[$key]['changelog']));
+        }
+    }
+
+    public function test_dispatch_package_upgrade_records_audit_history_with_component_versions(): void
+    {
+        $customer = Customer::create(['name' => 'Pkg Customer', 'mobile' => '09123456784']);
+        $site = Site::create(['customer_id' => $customer->id, 'title' => 'Pkg Site', 'domain' => 'pkg.example.com']);
+        $inst = CustomerInstallation::create([
+            'site_id'          => $site->id,
+            'remote_server_id' => 1,
+            'installer_user_id'=> 1,
+            'status'           => 'complete',
+            'customer_company' => 'Pkg Co',
+            'customer_email'   => 'user@pkg.com',
+            'customer_domain'  => 'pkg.example.com',
+            'package_version'  => '1.1.0',
+        ]);
+
+        $package = CustomerInstallationPackage::create([
+            'version'       => '1.3.0',
+            'arvan_key'     => 'pkg/1.3.0',
+            'sha256'        => str_repeat('b', 64),
+            'size_bytes'    => 2048000,
+            'is_active'     => true,
+            'release_notes' => 'بروزرسانی ماژول‌ها و ویجت‌های کانواس',
+            'released_at'   => now(),
+        ]);
+
+        $service = app(ThemeFleetUpgradeService::class);
+        $update = $service->dispatchPackageUpgrade($site, $package);
+
+        $this->assertSame(ThemeFleetUpdate::STATUS_COMPLETED, $update->status);
+        $this->assertSame(ThemeFleetUpdate::TYPE_PACKAGE, $update->update_type);
+        $this->assertSame('1.1.0', $update->component_versions['customer_core']['from']);
+        $this->assertSame('1.3.0', $update->component_versions['customer_core']['to']);
+
+        $inst->refresh();
+        $this->assertSame('1.3.0', $inst->package_version);
+    }
+
+    public function test_dispatch_rollback_calls_gateway_and_records_audit_log(): void
+    {
+        $theme = Theme::create([
+            'name'               => 'Solar Industry',
+            'slug'               => 'solar-industry',
+            'distribution_model' => Theme::DISTRIBUTION_MARKETPLACE,
+            'status'             => Theme::STATUS_PUBLISHED,
+        ]);
+
+        $rel1 = ThemeRelease::create([
+            'theme_id'  => $theme->id,
+            'version'   => '1.0.0',
+            'changelog' => 'init',
+            'status'    => ThemeRelease::STATUS_SUPERSEDED,
+            'snapshot'  => ['pages' => []],
+        ]);
+
+        $rel2 = ThemeRelease::create([
+            'theme_id'  => $theme->id,
+            'version'   => '1.1.0',
+            'changelog' => 'upgrade',
+            'status'    => ThemeRelease::STATUS_PUBLISHED,
+            'snapshot'  => ['pages' => []],
+        ]);
+
+        $customer = Customer::create(['name' => 'Rollback Customer', 'mobile' => '09123456785']);
+        $site = Site::create(['customer_id' => $customer->id, 'title' => 'Rollback Site', 'domain' => 'rollback.example.com', 'theme_id' => $theme->id]);
+
+        $targetUpdate = ThemeFleetUpdate::create([
+            'site_id'            => $site->id,
+            'update_type'        => ThemeFleetUpdate::TYPE_THEME,
+            'theme_id'           => $theme->id,
+            'from_release_id'    => $rel1->id,
+            'to_release_id'      => $rel2->id,
+            'revision_number'    => 7,
+            'component_versions' => [
+                'theme' => ['from' => '1.0.0', 'to' => '1.1.0'],
+            ],
+            'status'             => ThemeFleetUpdate::STATUS_COMPLETED,
+            'started_at'         => now()->subHour(),
+            'completed_at'       => now()->subHour(),
+        ]);
+
+        $mockGateway = $this->createMock(ThemeInstallGateway::class);
+        $mockGateway->expects($this->once())
+            ->method('rollback')
+            ->with(
+                $this->callback(fn ($s) => $s instanceof Site && $s->id === $site->id),
+                [
+                    'revision_number' => 7,
+                    'theme_id'        => 'solar-industry',
+                ]
+            )
+            ->willReturn(ThemeInstallResult::ok([
+                'restored_revision_number'  => 8,
+                'restored_from_revision_id' => 7,
+                'restored_version'          => '1.0.0',
+            ]));
+
+        $service = new ThemeFleetUpgradeService($mockGateway);
+        $rollback = $service->dispatchRollback($targetUpdate);
+
+        $this->assertSame(ThemeFleetUpdate::STATUS_COMPLETED, $rollback->status);
+        $this->assertTrue($rollback->is_rollback);
+        $this->assertSame(ThemeFleetUpdate::TYPE_ROLLBACK, $rollback->update_type);
+        $this->assertSame($targetUpdate->id, $rollback->rollback_from_update_id);
+        $this->assertSame(8, $rollback->revision_number);
+        $this->assertStringContainsString('بازگشت به نسخه قبل', $rollback->changelog_summary);
+
+        // Check history retrieval
+        $history = $service->getAuditHistory($site->id);
+        $this->assertCount(2, $history);
+        $this->assertSame($rollback->id, $history[0]->id);
+    }
 }

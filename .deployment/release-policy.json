@@ -118,6 +118,13 @@
         "reviewed_by": "Antigravity (agent review for WU-THEME-FLEET-UPDATE-PIPELINE-AND-ISOLATION)",
         "reviewed_at": "2026-11-18",
         "reason": "Additive migration: up() adds nullable/defaulted distribution_model column to themes and creates theme_fleet_updates table. down() drops only this table and added column. No existing customer data is altered."
+      },
+      {
+        "path": "database/migrations/2026_11_18_200000_extend_theme_fleet_updates_with_audit_and_rollback.php",
+        "sha256": "7b498d9c677e507547c280151c7761eb0c7b0d4435ca96b24ab1e38f881ceca6",
+        "reviewed_by": "Antigravity (agent review for WU-FLEET-VERSIONING-AUDIT-ROLLBACK)",
+        "reviewed_at": "2026-11-18",
+        "reason": "Additive schema extension on theme_fleet_updates table: up() adds audit/rollback columns and alters theme_id/to_release_id to nullable for package updates. down() drops only the newly added columns and foreign key. No existing customer data is altered."
       }
     ]
   },

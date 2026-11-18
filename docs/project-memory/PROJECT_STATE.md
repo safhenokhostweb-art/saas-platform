@@ -4,6 +4,20 @@
 
 ---
 
+## Component SemVer Versioning, Fleet Audit Logging, and One-Click Rollback
+
+**IMPLEMENTATION VERIFIED & GATED FOR RELEASE — 2026-11-18.** Scope,
+evidence and specifications: `OPEN_TASKS.md`, `TESTING_AND_DELIVERY_GOVERNANCE.md`, and
+delivery manifests.
+
+- `saas-platform` excluded from fleet updates forms by constitutional deployment boundary; Hub direct deploy only.
+- `customer-site` releases packaged and discovered as `CustomerInstallationPackage` for admin-approved fleet dispatch.
+- Authoritative SemVer versioning and changelogs across Themes, Canvas Engine, Widgets, Customer Core/Dashboard, and Motion Graphics via `ComponentVersionRegistry`.
+- Detailed audit logs with component version diffs and one-click rollback on `/builder/api/theme/rollback`.
+- Automated serverless HTTPS operations without SSH intervention.
+
+---
+
 ## Fleet Theme & Package Update Pipeline, Non-Destructive Reconciliation, and Theme Isolation (ADR-089)
 
 **IMPLEMENTATION VERIFIED & GATED FOR RELEASE — 2026-11-18.** Scope,

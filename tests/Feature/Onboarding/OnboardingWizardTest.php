@@ -25,6 +25,16 @@ class OnboardingWizardTest extends TestCase
         parent::setUp();
         Queue::fake();
         $this->platformRootDomain();
+
+        \App\Models\CustomerInstallationPackage::create([
+            'version'       => '1.1.0',
+            'arvan_key'     => 'packages/customer-site-v1.1.0.zip',
+            'sha256'        => str_repeat('a', 64),
+            'size_bytes'    => 1024000,
+            'is_active'     => true,
+            'released_at'   => now(),
+            'release_notes' => 'Active test package',
+        ]);
     }
 
     // ── entry points ───────────────────────────────────────────────────
@@ -259,5 +269,102 @@ class OnboardingWizardTest extends TestCase
         $this->assertSame([$kit->id], $payload['kit_module_ids']);
         $this->assertSame($theme->id, $payload['theme_id']);
         $this->assertSame('solar-industry', $payload['theme_slug']);
+    }
+
+    public function test_fleet_updates_tab_renders_component_versioning_and_boundary_rules(): void
+    {
+        $this->eligibleTheme();
+        $this->server();
+
+        $response = $this->actingAs($this->admin())
+            ->get(route('admin.onboarding.create', ['tab' => 'fleet-updates']));
+
+        $response->assertOk();
+        $response->assertSee('مدیریت، نسخه‎بندی و به‌روزرسانی‌های ناوگان');
+        $response->assertSee('قوانین قطعی استقرار مخازن');
+        $response->assertSee('پروژه saas-platform:');
+        $response->assertSee('نسخه‌بندی جامع اجزا');
+        $response->assertSee('موتور و بلوک‌های کانواس');
+        $response->assertSee('کتابخانه ویجت‌ها');
+        $response->assertSee('هسته و داشبورد مشتری');
+        $response->assertSee('موشن‌گرافیک‌ها');
+    }
+
+    public function test_apply_package_fleet_update_dispatches_package_upgrade(): void
+    {
+        $cust = $this->customer('09121112244');
+        $site = $this->site($cust, 'pkg-target.example.com');
+        $pkg = \App\Models\CustomerInstallationPackage::create([
+            'version'       => '1.3.0',
+            'arvan_key'     => 'pkg/1.3.0',
+            'sha256'        => str_repeat('c', 64),
+            'size_bytes'    => 1024,
+            'is_active'     => true,
+            'release_notes' => 'نسخه آزمایشی',
+            'released_at'   => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin())
+            ->post(route('admin.onboarding.fleet-updates.apply-package'), [
+                'site_ids' => [$site->id],
+            ]);
+
+        $response->assertRedirect(route('admin.onboarding.create', ['tab' => 'fleet-updates']));
+        $response->assertSessionHas('success');
+
+        $this->assertTrue(\App\Models\ThemeFleetUpdate::where('site_id', $site->id)
+            ->where('update_type', \App\Models\ThemeFleetUpdate::TYPE_PACKAGE)
+            ->exists());
+    }
+
+    public function test_rollback_fleet_update_dispatches_one_click_rollback(): void
+    {
+        $theme = $this->eligibleTheme('solar-industry');
+        $cust = $this->customer('09121112255');
+        $site = $this->site($cust, 'rollback-site.example.com');
+        $site->update(['theme_id' => $theme->id]);
+
+        $rel1 = $theme->currentRelease;
+
+        $rel2 = \App\Models\ThemeRelease::create([
+            'theme_id'  => $theme->id,
+            'version'   => '1.1.0',
+            'changelog' => 'r2',
+            'status'    => \App\Models\ThemeRelease::STATUS_PUBLISHED,
+            'snapshot'  => ['pages' => []],
+        ]);
+
+        $update = \App\Models\ThemeFleetUpdate::create([
+            'site_id'         => $site->id,
+            'update_type'     => \App\Models\ThemeFleetUpdate::TYPE_THEME,
+            'theme_id'        => $theme->id,
+            'from_release_id' => $rel1->id,
+            'to_release_id'   => $rel2->id,
+            'revision_number' => 12,
+            'status'          => \App\Models\ThemeFleetUpdate::STATUS_COMPLETED,
+        ]);
+
+        $mockGateway = $this->createMock(\App\Services\ThemeBuilder\ThemeInstallGateway::class);
+        $mockGateway->expects($this->once())
+            ->method('rollback')
+            ->willReturn(\App\Services\ThemeBuilder\ThemeInstallResult::ok([
+                'restored_revision_number' => 13,
+                'restored_version'         => '1.0.0',
+            ]));
+
+        $this->app->instance(\App\Services\ThemeBuilder\ThemeInstallGateway::class, $mockGateway);
+
+        $response = $this->actingAs($this->admin())
+            ->post(route('admin.onboarding.fleet-updates.rollback'), [
+                'update_id' => $update->id,
+            ]);
+
+        $response->assertRedirect(route('admin.onboarding.create', ['tab' => 'fleet-updates']));
+        $response->assertSessionHas('success');
+
+        $this->assertTrue(\App\Models\ThemeFleetUpdate::where('site_id', $site->id)
+            ->where('is_rollback', true)
+            ->where('rollback_from_update_id', $update->id)
+            ->exists());
     }
 }

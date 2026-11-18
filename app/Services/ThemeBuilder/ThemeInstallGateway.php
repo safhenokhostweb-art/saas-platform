@@ -202,4 +202,51 @@ class ThemeInstallGateway
 
         return ThemeInstallResult::ok($response->json() ?? []);
     }
+
+    /**
+     * Server-to-server theme rollback authority.
+     * Calls customer-site POST /builder/api/theme/rollback using X-Provision-Secret.
+     */
+    public function rollback(Site $site, array $payload = []): ThemeInstallResult
+    {
+        $domain = $site->getDomain();
+        if (!$domain) {
+            return ThemeInstallResult::noDomain(
+                'دامنه سایت "' . $site->title . '" تنظیم نشده است.'
+            );
+        }
+
+        $baseUrl  = str_starts_with($domain, 'http') ? rtrim($domain, '/') : 'https://' . rtrim($domain, '/');
+        $endpoint = $baseUrl . '/builder/api/theme/rollback';
+        $secret   = config('services.customer_provision_secret', '');
+
+        try {
+            $response = Http::withHeaders([
+                'X-Provision-Secret' => $secret,
+                'Accept'             => 'application/json',
+            ])->timeout(20)->post($endpoint, $payload);
+        } catch (\Throwable $e) {
+            Log::error('ThemeRollback request failed', [
+                'site_id' => $site->id,
+                'error'   => $e->getMessage(),
+            ]);
+            return ThemeInstallResult::requestFailed(
+                'اتصال به سایت "' . $site->title . '" جهت بازگشت به نسخه قبل ناموفق بود: ' . $e->getMessage()
+            );
+        }
+
+        if (!$response->successful()) {
+            Log::error('ThemeRollback failed', [
+                'site_id' => $site->id,
+                'status'  => $response->status(),
+                'body'    => $response->body(),
+            ]);
+            return ThemeInstallResult::httpFailed(
+                'بازگشت به نسخه قبل روی سایت "' . $site->title . '" ناموفق بود (کد ' . $response->status() . ').',
+                $response->status()
+            );
+        }
+
+        return ThemeInstallResult::ok($response->json() ?? []);
+    }
 }
