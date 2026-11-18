@@ -4,6 +4,40 @@
 
 ---
 
+## OPEN: ONBOARDING SITE KITS — RELEASE 284 READY, NOT DEPLOYED — 2026-11-17
+
+Installation 53 (`solar.safhenokhost.ir`, 21:08:51 UTC) passed
+`PROVISION_LICENSE` (site 9) and was rolled back at `APPLY_SITE_ENTITLEMENTS`:
+"Kit «marketing_automation» cannot be licensed to a site" (from
+`ApplySiteEntitlementsStage`, on `ModuleLicenseGrantService::INVALID_MODULE`).
+The payload carried **56** `kit_module_ids`. `SiteOnboardingService::kits()`
+listed every license-only module as a «کیت لایسنس»; on production that is
+3 paid kits (`motion-graphics-premium`, `solar_calculator`,
+`solar_industry_kit`) plus **53 core platform modules** with
+`license_required` (captcha, blog, marketing_automation, …). `grant()`
+licenses only `type = paid`, and no path licenses a core module (0 core
+`module_licenses` on production). The admin ticked all 56 (installations
+49, 50 and 53, in different orders). The solar profile itself preselects
+only `solar_industry_kit` (id 63). None of the 3 real kits has a code
+package, so `enableForSite()` activates them directly (no module dispatch).
+
+| Item | Status |
+|------|--------|
+| `Module::isSiteLicensableKit()`: paid + license-only, the exact set `grant()` accepts | ✅ |
+| Wizard `kits()` lists only those: 3 on production instead of 56; the submit validation rejects any other id | ✅ |
+| `APPLY_SITE_ENTITLEMENTS` stays fail-closed (ADR-088) but validates every requested module up front, before the vertical or any licence is written, and names all offending modules in one Persian message | ✅ |
+| Tests | ✅ OnboardingSiteKitsTest 6: the wizard lists only site kits; a core module as a kit is rejected before anything is created; a stored payload with a core module fails closed with nothing written; several real kits are licensed and activated; a missing id fails; full solar onboarding with the 24-page solar-industry theme passes PROVISION_LICENSE + APPLY_SITE_ENTITLEMENTS and unlocks the solar templates (incl. `lib:auth-solar-industrial`). Onboarding + CustomerInstallation 473/473; AssetAccess/infrastructure/pipeline 56/56; module licence/assignment/entitlement suites 69/69; release-prepare check READY |
+| Release commit | ✅ `4feb4bf5ee23fba1c351d455010a775cf0ea8d7c` (source `84f7167c` on `fix/onboarding-site-kits`, base `7a1363e4`) |
+| Hub release | ✅ 284 (`fd561645-a394-4116-99be-8a411e6fff33`), ready 2026-11-17 21:50:56 UTC |
+| Artifact | ✅ 314 (`c20cc7d6-03bd-4deb-9a36-5033885c5314`), available and verified; build job 481 (`a18a8c06-8228-4df0-ad42-cb8c3948f41e`); sha256 `d02be20df0742f191e23f721f37770f9de08d233a43694abc1e93ee9e8794683`; evidence `b0f13ebc2b70611702a5d2f96f5b7a60216d04df08929753696fc1fa62d24d0c` |
+| Deployment | ⏳ NOT DEPLOYED. The owner presses Deploy in the Hub |
+| Customer retry | ⏳ After deploy, start the solar installation again from the wizard (the profile preselects only `solar_industry_kit`); do not retry installation 53's stored payload, which still carries the 53 core ids and is refused by design |
+| Follow-up (owner decision) | ⏳ 53 core modules carry `license_required = true`, but no path licenses a core module; fix that data or the rule, and decide how those modules should reach a site |
+
+Full descriptor: `.deployment/releases/onboarding-site-kits.json`.
+
+---
+
 ## COMPLETE: SOLAR-INDUSTRY 1.1.0 — ALL 24 PAGES — RELEASE 283 DEPLOYED, 1.1.0 PUBLISHED — 2026-11-17 ✅
 
 The onboarding wizard card showed «۵ صفحه» for solar-industry. The number is
