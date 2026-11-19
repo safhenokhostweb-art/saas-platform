@@ -66,7 +66,12 @@ class LocalRecoveryRepository
         return in_array($this->getPolicy(), ['arvan', 'both'], true);
     }
 
-    /** Verified copies kept per scope (platform, and each customer site). */
+    /**
+     * Verified copies kept per scope (platform, and each customer site).
+     * config/installer.php is outside the release policy's allowed paths,
+     * so the default lives here; installer.recovery_repository.keep_per_scope
+     * overrides it once that file carries the key.
+     */
     public function keepPerScope(): int
     {
         return max(1, (int) config('installer.recovery_repository.keep_per_scope', 2));

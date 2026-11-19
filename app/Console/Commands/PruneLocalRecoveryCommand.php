@@ -6,8 +6,8 @@ use App\Services\Installer\LocalRecoveryRepository;
 use Illuminate\Console\Command;
 
 /**
- * Applies the Local Recovery Repository retention (RECOVERY_LOCAL_KEEP,
- * default 2 verified copies per scope) to copies already on disk. New
+ * Applies the Local Recovery Repository retention (2 verified copies per
+ * scope; LocalRecoveryRepository::keepPerScope()) to copies already on disk. New
  * copies trigger it themselves; this clears the backlog. Dry run unless
  * --execute is given.
  */
@@ -15,7 +15,7 @@ class PruneLocalRecoveryCommand extends Command
 {
     protected $signature = 'recovery:prune-local
                             {--execute : Delete the listed copies}
-                            {--keep=   : Override RECOVERY_LOCAL_KEEP}';
+                            {--keep=   : Verified copies to keep per scope (default 2)}';
 
     protected $description = 'Keep only the newest verified Local Recovery Repository copies per scope';
 
