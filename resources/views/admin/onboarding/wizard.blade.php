@@ -645,6 +645,8 @@
                     <div class="ob-choices" role="group" aria-labelledby="ob-modules-label" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr))">
                         <template x-for="mod in filteredModules()" :key="mod.id">
                             <button type="button" class="ob-choice" :aria-pressed="form.active_module_ids.includes(mod.id)"
+                                    :aria-disabled="!mod.selectable" :disabled="!mod.selectable" :title="mod.unselectable_reason || ''"
+                                    data-module-choice :data-selectable="mod.selectable ? '1' : '0'"
                                     @click="toggleActiveModule(mod.id)">
                                 <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
                                     <strong x-text="mod.title"></strong>
@@ -655,6 +657,7 @@
                                     <span x-show="mod.is_kit" class="ob-badge ob-badge-accent">کیت اختصاصی</span>
                                     <span x-show="mod.is_paid" class="ob-badge" style="color:#d97706;border-color:#fde68a">پرمیوم</span>
                                 </div>
+                                <small x-show="!mod.selectable" x-text="mod.unselectable_reason" style="color:var(--ob-muted)"></small>
                             </button>
                         </template>
                     </div>
@@ -1036,7 +1039,12 @@ function onboardingWizard(options, initial, prefill, errorStep) {
             }
             return this.options.modules.filter(m => m.category === this.activeModuleCategory);
         },
+        isModuleSelectable(id) {
+            const mod = this.options.modules.find(m => m.id === id);
+            return !!(mod && mod.selectable);
+        },
         toggleActiveModule(id) {
+            if (!this.isModuleSelectable(id)) { return; }
             const idx = this.form.active_module_ids.indexOf(id);
             if (idx === -1) {
                 this.form.active_module_ids.push(id);
@@ -1045,7 +1053,9 @@ function onboardingWizard(options, initial, prefill, errorStep) {
             }
         },
         selectAllModules() {
-            this.form.active_module_ids = this.options.modules.map(m => m.id);
+            // Only modules the wizard can activate: kits are licensed from the
+            // kits section, paid/license-only modules cannot be enabled here.
+            this.form.active_module_ids = this.options.modules.filter(m => m.selectable).map(m => m.id);
         },
         deselectAllModules() {
             this.form.active_module_ids = [];
@@ -1053,7 +1063,7 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         selectDefaultVerticalModules() {
             const vert = this.form.business_vertical || 'general';
             const defaults = this.options.vertical_modules[vert] || this.options.vertical_modules['general'] || [];
-            this.form.active_module_ids = Array.from(new Set([...defaults]));
+            this.form.active_module_ids = Array.from(new Set([...defaults])).filter(id => this.isModuleSelectable(id));
         },
         selectedModuleTitlesSummary() {
             if (!this.form.active_module_ids.length) { return 'هیچ ماژولی انتخاب نشده است.'; }

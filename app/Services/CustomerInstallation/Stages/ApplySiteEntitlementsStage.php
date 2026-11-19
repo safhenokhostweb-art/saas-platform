@@ -147,28 +147,47 @@ class ApplySiteEntitlementsStage extends AbstractStage
                 }
             }
 
-            // Phase 18 / Onboarding unifications: Activate selected general and core modules directly
+            // General modules chosen in the wizard go through the one canonical
+            // activation path, ModuleAssignmentService::enableForSite(). It
+            // refuses paid-marketplace and unlicensed license-only modules and
+            // runs the entitlement sync/audit. (2026-11-19: this block used to
+            // upsert site_modules directly, which activated paid modules for
+            // free, enabled license-only modules without a license and skipped
+            // the entitlement sync.) The wizard already validated the ids;
+            // anything refused here still fails the stage instead of being
+            // silently dropped.
             $activatedModules = [];
-            if (!empty($req->activeModuleIds)) {
-                $additionalModules = Module::whereIn('id', $req->activeModuleIds)
-                    ->where('is_active', true)
-                    ->get();
+            $requestedModuleIds = array_values(array_unique(array_map('intval', $req->activeModuleIds)));
+            if ($requestedModuleIds !== []) {
+                $additionalModules = Module::whereIn('id', $requestedModuleIds)->get()->keyBy('id');
 
-                foreach ($additionalModules as $mod) {
+                foreach ($requestedModuleIds as $moduleId) {
+                    $mod = $additionalModules->get($moduleId);
+                    if ($mod === null || ! $mod->is_active) {
+                        return StageResult::failure($this->name(), "ماژول شمارهٔ {$moduleId} وجود ندارد یا غیرفعال است.", $this->elapsed());
+                    }
                     if ($mod->isSiteLicensableKit()) {
-                        continue; // Already processed via kits loop
+                        if (! in_array($mod->id, $req->kitModuleIds, true)) {
+                            return StageResult::failure($this->name(), "«{$mod->slug}» یک کیت لایسنسی است و فقط از بخش کیت‌ها اعمال می‌شود.", $this->elapsed());
+                        }
+                        continue; // licensed and activated by the kits loop above
+                    }
+                    if ($this->hasCodePackage($mod)) {
+                        // Same reason as for kits: enableForSite() would dispatch a
+                        // module installation before this site's own installation
+                        // has finished. Activated from the site's modules page.
+                        $activatedModules[$mod->slug] = 'activation_deferred';
+                        continue;
                     }
 
-                    \Illuminate\Support\Facades\DB::table('site_modules')->updateOrInsert(
-                        ['site_id' => $site->id, 'module_id' => $mod->id],
-                        [
-                            'is_active' => true,
-                            'deployment_status' => 'installed',
-                            'activated_at' => now(),
-                            'updated_at' => now(),
-                            'created_at' => now(),
-                        ]
-                    );
+                    $enabled = $this->assignments->enableForSite($site, $mod->id, $actor?->id);
+                    if (! ($enabled['success'] ?? false)) {
+                        return StageResult::failure(
+                            $this->name(),
+                            "ماژول «{$mod->slug}» فعال نشد: " . ($enabled['error'] ?? 'خطای نامشخص'),
+                            $this->elapsed()
+                        );
+                    }
                     $activatedModules[$mod->slug] = 'active';
                 }
             }

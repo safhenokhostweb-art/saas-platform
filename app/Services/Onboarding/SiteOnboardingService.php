@@ -168,12 +168,16 @@ class SiteOnboardingService
             'is_kit'      => $m->isSiteLicensableKit(),
             'is_paid'     => (bool) ($m->price_irr > 0),
             'price_irr'   => $m->price_irr,
+            'selectable'  => self::isWizardSelectable($m),
+            'unselectable_reason' => self::isWizardSelectable($m) ? null : self::unselectableReason($m),
         ])->values()->all();
 
-        // Map business vertical to default module IDs
+        // Map business vertical to default module IDs (only modules the
+        // wizard can actually activate; kits come from the kits section).
+        $selectableAssignable = $allAssignable->filter(fn (Module $m) => self::isWizardSelectable($m));
         $verticalDefaultModules = [];
         foreach (self::VERTICAL_DEFAULT_MODULES as $vertKey => $slugs) {
-            $verticalDefaultModules[$vertKey] = $allAssignable->whereIn('slug', $slugs)->pluck('id')->values()->all();
+            $verticalDefaultModules[$vertKey] = $selectableAssignable->whereIn('slug', $slugs)->pluck('id')->values()->all();
         }
 
         $profiles = [];
@@ -325,7 +329,7 @@ class SiteOnboardingService
         }
 
         $kitIds = $this->validatedKitIds((array) ($data['kit_module_ids'] ?? []), $vertical);
-        $activeModuleIds = array_values(array_unique(array_map('intval', (array) ($data['active_module_ids'] ?? []))));
+        $activeModuleIds = $this->validatedActiveModuleIds((array) ($data['active_module_ids'] ?? []));
 
         $existing = Customer::withTrashed()->where('mobile', $mobile)->first();
         if ($existing?->trashed()) {
@@ -533,6 +537,53 @@ class SiteOnboardingService
         }
 
         return $kits->whereIn('slug', $slugs)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+    }
+
+    /**
+     * A general module the wizard may activate at onboarding: assignable to a
+     * site, active, and free to assign. Paid-marketplace modules are sold in
+     * the tenant store, license-only modules need a license first, and kits
+     * are licensed from the kits section — ModuleAssignmentService::
+     * enableForSite() refuses all three, so offering them only produced a
+     * failed or silently skipped activation.
+     */
+    public static function isWizardSelectable(Module $module): bool
+    {
+        return (bool) $module->is_active
+            && ! $module->isSiteLicensableKit()
+            && $module->isFreeAssignable();
+    }
+
+    private static function unselectableReason(Module $module): string
+    {
+        return match (true) {
+            $module->isSiteLicensableKit() => 'کیت لایسنسی است؛ از بخش «کیت‌ها» انتخاب کنید.',
+            $module->isPaidMarketplace()   => 'ماژول پولی است و از فروشگاه ماژول خریداری می‌شود.',
+            $module->isLicenseOnly()       => 'نیاز به لایسنس دارد؛ پس از صدور لایسنس از صفحهٔ ماژول‌های سایت فعال کنید.',
+            default                        => 'در حال حاضر قابل فعال‌سازی نیست.',
+        };
+    }
+
+    /** @return list<int> */
+    private function validatedActiveModuleIds(array $requested): array
+    {
+        $requested = array_values(array_unique(array_map('intval', $requested)));
+        if ($requested === []) {
+            return [];
+        }
+
+        $modules = Module::assignableToSite()->whereIn('id', $requested)->get()->keyBy('id');
+        foreach ($requested as $id) {
+            $module = $modules->get($id);
+            if ($module === null) {
+                throw ValidationException::withMessages(['active_module_ids' => 'یکی از ماژول‌های انتخاب‌شده وجود ندارد یا قابل اختصاص به سایت نیست.']);
+            }
+            if (! self::isWizardSelectable($module)) {
+                throw ValidationException::withMessages(['active_module_ids' => "ماژول «{$module->title}» در ویزارد قابل فعال‌سازی نیست: " . self::unselectableReason($module)]);
+            }
+        }
+
+        return $requested;
     }
 
     /** @return list<int> */
