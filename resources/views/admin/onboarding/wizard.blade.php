@@ -311,83 +311,48 @@
             {{-- 2. Core Package Updates Table --}}
             <h3 style="font-size:.95rem;font-weight:700;margin:2rem 0 .5rem">۲. پکیج‌های هسته، ویجت‌ها و موتور کانواس (Customer Installation Packages):</h3>
             
+            {{-- P0 safety (2026-11-19): package upgrade is disabled until it runs through
+                 the canonical upgrade pipeline (see ThemeFleetUpgradeService::dispatchPackageUpgrade).
+                 Pending versions are listed read-only; there is no apply form. --}}
+            <div class="ob-panel ob-panel-warn" role="status" data-fleet-package-upgrade="disabled" style="border:1px solid #fde68a;background:#fffbeb;border-radius:var(--ob-radius);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem;color:#92400e">
+                <strong>ارتقای پکیج موقتاً غیرفعال است.</strong>
+                {{ \App\Services\ThemeBuilder\ThemeFleetUpgradeService::PACKAGE_UPGRADE_DISABLED_REASON }}
+            </div>
             @if(!empty($fleetUpdates['packages']))
-                <form method="POST" action="{{ route('admin.onboarding.fleet-updates.apply-package') }}" onsubmit="return confirm('آیا از اعمال ارتقای پکیج و همگام‌سازی فایل‌ها روی سایت‌های انتخاب‌شده اطمینان دارید؟');">
-                    @csrf
-                    <div style="overflow-x:auto">
-                        <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
-                            <thead>
-                                <tr style="border-bottom:2px solid var(--ob-border);background:#f8fafc">
-                                    <th style="padding:.65rem;width:40px;text-align:center">
-                                        <input type="checkbox" id="select-all-pkgs" checked onclick="document.querySelectorAll('.pkg-site-cb').forEach(c => c.checked = this.checked)">
-                                    </th>
-                                    <th style="padding:.65rem">دامنه و سایت مشتری</th>
-                                    <th style="padding:.65rem">نسخه فعلی</th>
-                                    <th style="padding:.65rem">نسخه جدید پکیج</th>
-                                    <th style="padding:.65rem">حجم و شناسه</th>
-                                    <th style="padding:.65rem">توضیحات و تغییرات</th>
-                                    <th style="padding:.65rem;text-align:center">عملیات</th>
+                <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--ob-border);background:#f8fafc">
+                                <th style="padding:.65rem">دامنه و سایت مشتری</th>
+                                <th style="padding:.65rem">نسخه فعلی</th>
+                                <th style="padding:.65rem">نسخه فعال پکیج</th>
+                                <th style="padding:.65rem">حجم</th>
+                                <th style="padding:.65rem">وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($fleetUpdates['packages'] as $pkg)
+                                <tr style="border-bottom:1px solid var(--ob-border)">
+                                    <td style="padding:.75rem">
+                                        <strong>{{ $pkg['site_title'] }}</strong>
+                                        <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $pkg['domain'] }}</div>
+                                    </td>
+                                    <td style="padding:.75rem"><span style="font-family:monospace">v{{ $pkg['current_version'] }}</span></td>
+                                    <td style="padding:.75rem"><span style="font-family:monospace;font-weight:700">v{{ $pkg['available_version'] }}</span></td>
+                                    <td style="padding:.75rem"><span class="ob-badge ob-badge-outline">{{ $pkg['size_human'] ?? '—' }}</span></td>
+                                    <td style="padding:.75rem;color:var(--ob-muted)">در انتظار پایپلاین استاندارد ارتقا</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($fleetUpdates['packages'] as $pkg)
-                                    <tr style="border-bottom:1px solid var(--ob-border)">
-                                        <td style="padding:.75rem;text-align:center">
-                                            <input type="checkbox" class="pkg-site-cb" name="site_ids[]" value="{{ $pkg['site_id'] }}" checked>
-                                        </td>
-                                        <td style="padding:.75rem">
-                                            <strong>{{ $pkg['site_title'] }}</strong>
-                                            <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $pkg['domain'] }}</div>
-                                        </td>
-                                        <td style="padding:.75rem"><span style="font-family:monospace;color:#ef4444">v{{ $pkg['current_version'] }}</span></td>
-                                        <td style="padding:.75rem"><span style="font-family:monospace;color:#059669;font-weight:700">v{{ $pkg['available_version'] }}</span></td>
-                                        <td style="padding:.75rem">
-                                            <span class="ob-badge ob-badge-outline">{{ $pkg['size_human'] ?? '—' }}</span>
-                                        </td>
-                                        <td style="padding:.75rem;color:var(--ob-muted)">{{ $pkg['release_notes'] ?? 'به‌روزرسانی ویجت‌ها، استایل‌های ورود و پایداری موتور کانواس' }}</td>
-                                        <td style="padding:.75rem;text-align:center">
-                                            <button type="submit" name="site_id" value="{{ $pkg['site_id'] }}" class="ob-btn ob-btn-secondary" style="font-size:.75rem;padding:.3rem .65rem">
-                                                اعمال روی این سایت
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:.75rem 1rem;border-radius:var(--ob-radius);border:1px solid var(--ob-border)">
-                        <div style="font-size:.8rem;color:var(--ob-muted)">
-                            💡 با کلیک روی دکمه اعمال، علاوه بر به‌روزرسانی اطلاعات، فایل‌های ویو و کدهای ارتقایافته به پوشه سایت مشتری همگام‌سازی شده و کش ویو بازنشانی می‌شود.
-                        </div>
-                        <button type="submit" class="ob-btn ob-btn-primary" style="font-size:.85rem;padding:.5rem 1.25rem;font-weight:700">
-                            🚀 اعمال به‌روزرسانی (Apply Fleet Update) روی سایت‌های انتخاب‌شده
-                        </button>
-                    </div>
-                </form>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @elseif(\App\Models\CustomerInstallationPackage::active() === null)
+                <div style="background:#fef2f2;border:1px dashed #fecaca;border-radius:var(--ob-radius);padding:1.25rem;text-align:center;color:#991b1b;font-size:.85rem;margin-bottom:1rem">
+                    هیچ بستهٔ نصب فعالی ثبت نشده است؛ بسته را با فرمان install-packages ثبت و فعال کنید.
+                </div>
             @else
                 <div style="background:#f8fafc;border:1px dashed var(--ob-border);border-radius:var(--ob-radius);padding:1.25rem;text-align:center;color:var(--ob-muted);font-size:.85rem;margin-bottom:1rem">
                     ✅ تمامی سایت‌ها آخرین پکیج هسته فعال پلتفرم را دارند.
-                </div>
-            @endif
-
-            {{-- Manual Site Package Sync & Apply Dropdown --}}
-            @if(!empty($allSites) && $allSites->isNotEmpty())
-                <div style="background:#ffffff;border:1px solid var(--ob-border);border-radius:var(--ob-radius);padding:1rem 1.25rem;margin-top:1rem">
-                    <form method="POST" action="{{ route('admin.onboarding.fleet-updates.apply-package') }}" style="display:flex;flex-wrap:wrap;align-items:center;gap:1rem;justify-content:space-between" onsubmit="return confirm('آیا از اعمال و همگام‌سازی پکیج روی سایت انتخابی اطمینان دارید؟');">
-                        @csrf
-                        <div style="display:flex;align-items:center;gap:.75rem;flex:1;min-width:280px">
-                            <label style="font-size:.85rem;font-weight:600;white-space:nowrap">همگام‌سازی مستقیم سایت دلخواه:</label>
-                            <select name="site_id" required style="flex:1;padding:.45rem .75rem;font-size:.85rem;border:1px solid var(--ob-border);border-radius:var(--ob-radius);background:#ffffff">
-                                <option value="">-- انتخاب سایت مشتری --</option>
-                                @foreach($allSites as $s)
-                                    <option value="{{ $s->id }}">{{ $s->title }} ({{ $s->domain }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <button type="submit" class="ob-btn ob-btn-primary" style="font-size:.8rem;padding:.45rem 1rem">
-                            ⚡ اعمال پکیج و همگام‌سازی فایل‌های سایت انتخابی
-                        </button>
-                    </form>
                 </div>
             @endif
 

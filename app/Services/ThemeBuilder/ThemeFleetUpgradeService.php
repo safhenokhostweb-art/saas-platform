@@ -117,26 +117,16 @@ class ThemeFleetUpgradeService
      */
     public function discoverAvailableUpdates(): array
     {
-        // 0. Auto-sync any newly arrived packages from Hub / storage
-        $this->syncCustomerSitePackagesFromStorage();
-
+        // P0 safety (2026-11-19): discovery is read-only. It used to call
+        // syncCustomerSitePackagesFromStorage() on every GET (hashing every
+        // zip and auto-activating whatever version was highest, with no
+        // provenance check) and, when no package existed, to INSERT an
+        // active package with a fabricated sha256/size/arvan_key. That fake
+        // row then satisfied InstallationTargetGuard::packageError(), so new
+        // installations failed mid-pipeline. Packages are registered and
+        // activated only by the explicit install-package commands.
         $themeUpdates = [];
-        $activePackage = CustomerInstallationPackage::active()
-            ?? CustomerInstallationPackage::latest('id')->first();
-        if (!$activePackage) {
-            $coreVer = ComponentVersionRegistry::get('customer_core')['version'] ?? '1.3.0';
-            $activePackage = CustomerInstallationPackage::firstOrCreate(
-                ['version' => $coreVer],
-                [
-                    'arvan_key'     => 'packages/customer-site-v' . $coreVer . '.zip',
-                    'sha256'        => hash('sha256', 'customer-site-v' . $coreVer),
-                    'size_bytes'    => 15000000,
-                    'release_notes' => 'ارتقای کتابخانه ویجت‌ها، ماژول‌های هسته، تمپلیت‌های احراز هویت و پایداری موتور کانواس',
-                    'is_active'     => true,
-                    'released_at'   => now(),
-                ]
-            );
-        }
+        $activePackage = CustomerInstallationPackage::active();
         $packageUpdates = [];
         $motionUpdates = [];
 
@@ -225,7 +215,8 @@ class ThemeFleetUpgradeService
                         'release_notes'     => $activePackage->release_notes ?: 'ارتقای کتابخانه ویجت‌ها، ماژول‌های هسته، تمپلیت‌های احراز هویت و پایداری موتور کانواس',
                         'size_human'        => $activePackage->sizeHuman(),
                         'sha256'            => $activePackage->sha256 ?? '',
-                        'eligible'          => true,
+                        'eligible'          => false,
+                        'eligibility_reason' => self::PACKAGE_UPGRADE_DISABLED_REASON,
                     ];
                 }
             }
@@ -424,60 +415,46 @@ class ThemeFleetUpgradeService
     /**
      * Dispatch Customer Site Package / Canvas Core Upgrade.
      */
+    /**
+     * P0 safety (2026-11-19): DISABLED. This path never downloaded or
+     * verified the package. It copied eight hard-coded files (routes/web.php
+     * and controllers among them) from the platform host's own customer-site
+     * tree into a guessed directory, then recorded COMPLETED and bumped
+     * package_version even when nothing was copied. A partial copy can break
+     * a tenant site (routes pointing at code it lacks). Until package
+     * upgrades run through the canonical CustomerInstallationOrchestrator
+     * upgrade pipeline (lock, backup, upload, verify, extract, migrate,
+     * unlock), this records a FAILED audit row and changes nothing on the
+     * site. syncSiteFilesAndViews() is kept for that integration but is no
+     * longer called.
+     */
+    public const PACKAGE_UPGRADE_DISABLED_REASON = 'ارتقای پکیج تا یکپارچه‌سازی با پایپلاین استاندارد ارتقا (قفل، پشتیبان، بارگذاری، تأیید checksum، استخراج، مایگریشن) غیرفعال است؛ هیچ فایلی روی سایت تغییر نکرد.';
+
     public function dispatchPackageUpgrade(Site $site, CustomerInstallationPackage $package, ?int $userId = null): ThemeFleetUpdate
     {
         $this->assertNotPlatformScope($package->version);
 
-        $inst = CustomerInstallation::where('site_id', $site->id)->first();
-        $currentVer = $inst?->package_version ?? '1.0.0';
-
-        $componentVersions = [
-            'theme'           => ['from' => $site->theme?->version ?? '1.0.0', 'to' => $site->theme?->version ?? '1.0.0'],
-            'canvas'          => ['from' => '2.1.0', 'to' => ComponentVersionRegistry::CANVAS_VERSION],
-            'widgets'         => ['from' => '2.4.0', 'to' => ComponentVersionRegistry::WIDGETS_VERSION],
-            'customer_core'   => ['from' => $currentVer, 'to' => $package->version],
-            'motion_graphics' => ['from' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION, 'to' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION],
-        ];
-
-        $syncResult = $this->syncSiteFilesAndViews($site);
-
-        $changelog = $package->release_notes ?: "به‌روزرسانی پکیج هسته مشتری، ویجت‌ها و موتور کانواس به نسخه {$package->version}";
-        if (!empty($syncResult['synced_files'])) {
-            $changelog .= ' | همگام‌سازی فایل‌ها: ' . count($syncResult['synced_files']) . ' فایل ویو و کد به‌روزرسانی شد.';
-        }
-        if (!empty($syncResult['view_clear_output'])) {
-            $changelog .= ' (view:clear اجرا شد)';
-        }
+        $inst = CustomerInstallation::where('site_id', $site->id)->latest('id')->first();
+        $currentVer = $inst?->package_version ?? null;
 
         $fleetUpdate = ThemeFleetUpdate::create([
             'site_id'            => $site->id,
             'update_type'        => ThemeFleetUpdate::TYPE_PACKAGE,
             'theme_id'           => $site->theme_id,
             'from_release_id'    => null,
-            'to_release_id'      => $site->theme?->current_release_id,
-            'component_versions' => $componentVersions,
-            'status'             => ThemeFleetUpdate::STATUS_RUNNING,
-            'changelog_summary'  => $changelog,
+            'to_release_id'      => null,
+            'component_versions' => ['customer_core' => ['from' => $currentVer, 'to' => $package->version]],
+            'status'             => ThemeFleetUpdate::STATUS_FAILED,
+            'changelog_summary'  => 'درخواست ارتقای پکیج رد شد (مسیر ارتقای پکیج غیرفعال است).',
+            'failure_reason'     => self::PACKAGE_UPGRADE_DISABLED_REASON,
             'dispatched_by'      => $userId,
             'started_at'         => now(),
+            'completed_at'       => now(),
         ]);
 
-        if ($inst) {
-            $inst->update([
-                'package_version' => $package->version,
-            ]);
-        }
-
-        $fleetUpdate->update([
-            'status'       => ThemeFleetUpdate::STATUS_COMPLETED,
-            'completed_at' => now(),
-        ]);
-        $fleetUpdate->refresh();
-
-        ActivityLogger::log('fleet.package_upgraded', "به‌روزرسانی پکیج هسته به نسخه {$package->version} روی سایت {$site->domain}", $site, [
+        ActivityLogger::log('fleet.package_upgrade_refused', "درخواست ارتقای پکیج به نسخه {$package->version} برای سایت {$site->domain} رد شد (مسیر غیرفعال)", $site, [
             'update_id'       => $fleetUpdate->id,
             'package_version' => $package->version,
-            'synced_files'    => $syncResult['synced_files'] ?? [],
         ]);
 
         return $fleetUpdate;
@@ -644,6 +621,18 @@ class ThemeFleetUpgradeService
         $site = $targetUpdate->site;
         if (!$site) {
             throw new \InvalidArgumentException('سایت مرتبط با این تاریخچه به‌روزرسانی یافت نشد.');
+        }
+
+        // P0 safety (2026-11-19): a package update carries no theme
+        // revision, and customer-site's rollback endpoint then falls back
+        // to "the revision before the active one" — i.e. it reverted the
+        // customer's PAGES while the package files stayed as they were.
+        // Package rollback must come from the upgrade pipeline's own backup.
+        if ($targetUpdate->update_type === ThemeFleetUpdate::TYPE_PACKAGE) {
+            throw new \InvalidArgumentException('بازگشت به نسخه قبل برای به‌روزرسانی پکیج پشتیبانی نمی‌شود؛ این کار محتوای قالب مشتری را برمی‌گرداند نه فایل‌های پکیج را.');
+        }
+        if ($targetUpdate->status !== ThemeFleetUpdate::STATUS_COMPLETED || $targetUpdate->is_rollback) {
+            throw new \InvalidArgumentException('فقط یک به‌روزرسانی موفق (و نه خودِ یک بازگشت) قابل بازگشت است.');
         }
 
         $theme = $targetUpdate->theme;

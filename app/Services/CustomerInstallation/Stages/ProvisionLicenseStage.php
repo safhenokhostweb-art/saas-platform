@@ -48,8 +48,13 @@ class ProvisionLicenseStage extends AbstractStage
             }
 
             $server = CustomerRemoteServer::find($ctx->installation->remote_server_id);
-            $dbName = $ctx->getOutput('CREATE_DATABASE', 'db_name') ?? $req->dbName;
-            $dbUser = $ctx->getOutput('CREATE_DATABASE', 'db_user') ?? $req->dbUser;
+            // getOutput() takes the stage name only and returns that stage's
+            // whole output array; passing a key as a second argument was
+            // silently ignored, so sites.db_name received an array and every
+            // installation failed here ("Array to string conversion").
+            $databaseOutput = $ctx->getOutput('CREATE_DATABASE');
+            $dbName = $databaseOutput['db_name'] ?? $req->dbName;
+            $dbUser = $databaseOutput['db_user'] ?? $req->dbUser;
             $dbHost = $req->dbHost ?: '127.0.0.1';
             $dbPass = $req->dbPassword;
 
