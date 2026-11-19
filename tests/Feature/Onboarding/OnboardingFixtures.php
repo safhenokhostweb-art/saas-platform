@@ -38,10 +38,18 @@ trait OnboardingFixtures
 
     protected function server(string $type = 'fake'): CustomerRemoteServer
     {
-        return CustomerRemoteServer::create([
+        $server = CustomerRemoteServer::create([
             'label' => 'Server ' . $type, 'type' => $type, 'host' => '10.0.0.' . random_int(2, 250),
             'port' => 22, 'username' => 'deploy', 'auth_method' => 'key',
         ]);
+        // ServerCapacityService no longer invents specs (2026-11-19): a server
+        // the onboarding tests install onto has registered hardware.
+        \App\Models\Infrastructure\InfraServer::firstOrCreate(['ip_address' => $server->host], [
+            'name' => 'Test node ' . $server->host, 'hostname' => $server->host,
+            'cpu_cores' => 8, 'ram_gb' => 16, 'disk_gb' => 250, 'is_active' => true,
+        ]);
+
+        return $server;
     }
 
     protected function customer(string $mobile = '09121112233', string $name = 'مشتری موجود'): Customer

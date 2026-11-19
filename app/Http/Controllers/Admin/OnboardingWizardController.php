@@ -83,7 +83,10 @@ class OnboardingWizardController extends Controller
                 (int) $data['ram_mb'],
                 (float) $data['disk_gb'],
                 isset($data['soft_disk_gb']) ? (float) $data['soft_disk_gb'] : null,
-                isset($data['cpu_cores']) ? (float) $data['cpu_cores'] : 1.0
+                isset($data['cpu_cores']) ? (float) $data['cpu_cores'] : 1.0,
+                // Live, debounced check from the wizard: reuse the 15s cached
+                // inspection. The submit-time check (SiteOnboardingService) is fresh.
+                fresh: false,
             );
         }
 

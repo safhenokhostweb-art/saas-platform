@@ -14,7 +14,9 @@ use App\Services\CustomerInstallation\InstallationTargetGuard;
 use App\Services\Infrastructure\ServerCapacityService;
 use App\Support\IranianMobileNumber;
 use App\UseCases\Customer\CreateCustomerUseCase;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -310,10 +312,8 @@ class SiteOnboardingService
         $cpuCores = (float) ($data['cpu_cores'] ?? 1.0);
         $bandwidthGb = (float) ($data['bandwidth_gb'] ?? 10.0);
 
-        $capacityCheck = $this->capacityService->validateAllocation($server, $ramMb, $diskGb, $softDiskGb, $cpuCores);
-        if (! $capacityCheck['valid']) {
-            throw ValidationException::withMessages(['ram_mb' => implode(' | ', $capacityCheck['errors'])]);
-        }
+        // The authoritative capacity check runs below, under a per-server lock
+        // together with the INSERT (see createReservedInstallation()).
 
         $theme = null;
         if (!empty($data['theme_id'])) {
@@ -339,7 +339,7 @@ class SiteOnboardingService
             throw ValidationException::withMessages(['customer_name' => 'نام مشتری جدید الزامی است.']);
         }
 
-        $installation = DB::transaction(function () use ($data, $mobile, $domain, $server, $theme, $vertical, $kitIds, $activeModuleIds, $ramMb, $diskGb, $softDiskGb, $cpuCores, $bandwidthGb, $actor) {
+        $installation = $this->createReservedInstallation($server, $ramMb, $diskGb, $softDiskGb, $cpuCores, fn () => DB::transaction(function () use ($data, $mobile, $domain, $server, $theme, $vertical, $kitIds, $activeModuleIds, $ramMb, $diskGb, $softDiskGb, $cpuCores, $bandwidthGb, $actor) {
             $customer = Customer::query()->where('mobile', $mobile)->lockForUpdate()->first()
                 ?? $this->createCustomer->execute([
                     'name'         => trim((string) $data['customer_name']),
@@ -392,7 +392,7 @@ class SiteOnboardingService
                 'customer_domain'   => $domain,
                 'request_payload'   => $payload,
             ]);
-        });
+        }));
 
         ActivityLogger::log('onboarding.started', "راه‌اندازی سایت {$domain}", $installation, [
             'installation_id'   => $installation->id,
@@ -409,6 +409,32 @@ class SiteOnboardingService
             ->onQueue('customer-install');
 
         return $installation;
+    }
+
+    /**
+     * Validate capacity and create the installation atomically per server.
+     * The new pending installation's request_payload IS the reservation:
+     * ServerCapacityService counts pending/running installations, so a
+     * second submission waiting on this lock sees the first one's quota.
+     *
+     * @param  \Closure(): CustomerInstallation  $create
+     *
+     * @throws ValidationException
+     */
+    private function createReservedInstallation(CustomerRemoteServer $server, int $ramMb, float $diskGb, float $softDiskGb, float $cpuCores, \Closure $create): CustomerInstallation
+    {
+        try {
+            return Cache::lock("onboarding:server-capacity:{$server->id}", 60)->block(15, function () use ($server, $ramMb, $diskGb, $softDiskGb, $cpuCores, $create) {
+                $capacityCheck = $this->capacityService->validateAllocation($server, $ramMb, $diskGb, $softDiskGb, $cpuCores, fresh: true);
+                if (! $capacityCheck['valid']) {
+                    throw ValidationException::withMessages(['ram_mb' => implode(' | ', $capacityCheck['errors'])]);
+                }
+
+                return $create();
+            });
+        } catch (LockTimeoutException) {
+            throw ValidationException::withMessages(['remote_server_id' => 'نصب دیگری هم‌زمان روی این سرور در حال ثبت است؛ چند ثانیه بعد دوباره تلاش کنید.']);
+        }
     }
 
     /**
