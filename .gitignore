@@ -131,3 +131,7 @@ composer_output.txt
 /deployment-test.txt
 /DEPLOY_TEST.txt
 /FINAL_*TEST*.txt
+
+# Release descriptors live in .git/deployment/releases (policy metadata.local_directory).
+# Committing one advanced the production branch and superseded the real Release on the Hub.
+/.deployment/releases/*.json

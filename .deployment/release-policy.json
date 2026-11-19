@@ -147,7 +147,7 @@
     "endpoint_source": "deployment-system project http_health_check"
   },
   "metadata": {
-    "local_directory": ".deployment/releases"
+    "local_directory": ".git/deployment/releases"
   },
   "project_key": "saas-platform",
   "checks": [

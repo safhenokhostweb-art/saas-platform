@@ -637,10 +637,22 @@ class ThemeFleetUpgradeService
 
         $theme = $targetUpdate->theme;
 
-        // Perform server-to-server rollback on customer-site
+        // An update with no recorded theme revision has nothing to undo; the
+        // customer site would otherwise have to guess (it used to restore
+        // "the revision before the active one").
+        if ($targetUpdate->revision_number === null) {
+            throw new \InvalidArgumentException('این به‌روزرسانی شمارهٔ نسخهٔ قالب ثبت‌شده ندارد و بازگشت خودکار آن ممکن نیست.');
+        }
+
+        // Perform server-to-server rollback on customer-site.
+        // undo_revision_number = "undo the revision this update produced";
+        // customer-site refuses it (409) if the customer has edited since, so
+        // later edits are never discarded. revision_number is kept for
+        // customer sites that predate the explicit field.
         $result = $this->gateway->rollback($site, [
-            'revision_number' => $targetUpdate->revision_number,
-            'theme_id'        => $theme?->slug,
+            'undo_revision_number' => $targetUpdate->revision_number,
+            'revision_number'      => $targetUpdate->revision_number,
+            'theme_id'             => $theme?->slug,
         ]);
 
         $reversedVersions = [];

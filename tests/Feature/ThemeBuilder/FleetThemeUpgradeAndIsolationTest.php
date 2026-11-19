@@ -393,8 +393,9 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
             ->with(
                 $this->callback(fn ($s) => $s instanceof Site && $s->id === $site->id),
                 [
-                    'revision_number' => 7,
-                    'theme_id'        => 'solar-industry',
+                    'undo_revision_number' => 7,
+                    'revision_number'      => 7,
+                    'theme_id'             => 'solar-industry',
                 ]
             )
             ->willReturn(ThemeInstallResult::ok([
@@ -580,5 +581,23 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         app(ThemeFleetUpgradeService::class)->dispatchRollback($failed);
+    }
+
+    public function test_rollback_of_an_update_without_a_theme_revision_is_refused(): void
+    {
+        $customer = Customer::create(['name' => 'Rb3', 'mobile' => '09123450004']);
+        $site = Site::create(['customer_id' => $customer->id, 'title' => 'Rb3 Site', 'domain' => 'rb3.example.com']);
+        $noRevision = ThemeFleetUpdate::create([
+            'site_id' => $site->id, 'update_type' => ThemeFleetUpdate::TYPE_THEME,
+            'status' => ThemeFleetUpdate::STATUS_COMPLETED, 'revision_number' => null,
+            'started_at' => now(), 'completed_at' => now(),
+        ]);
+
+        $gateway = $this->createMock(ThemeInstallGateway::class);
+        $gateway->expects($this->never())->method('rollback');
+        $this->app->instance(ThemeInstallGateway::class, $gateway);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(ThemeFleetUpgradeService::class)->dispatchRollback($noRevision);
     }
 }

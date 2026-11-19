@@ -92,7 +92,10 @@ the test database configured, and the required test fixtures present (see
 5. `php ../deployment-system/deployment/release-prepare.php prepare` —
    stages exactly the owned paths, creates the single
    `release(saas-platform): <task_id>` commit on `main`, writes
-   `.deployment/releases/<commit-sha>.json`, pushes it, and delivers the
+   `.git/deployment/releases/<commit-sha>.json` (outside the worktree; never
+   commit it: a follow-up commit advances the production branch and the Hub
+   records it as a newer Release that supersedes the real one), pushes it,
+   and delivers the
    signed release metadata (P6).
 
 The artifact itself is **server-managed-exact-commit**
@@ -196,7 +199,7 @@ Commit SHA:
 Remote / push result:
 
 Artifact:           artifact id from Hub, version, commit SHA, checksum
-Artifact location:  Hub record (deployment id) + .deployment/releases/<sha>.json
+Artifact location:  Hub record (deployment id) + .git/deployment/releases/<sha>.json
 Integrity check:    Hub checksum/evidence digest vs release metadata
 
 Deployment-system:  delivery result, destination artifact id, receipt-confirmation
