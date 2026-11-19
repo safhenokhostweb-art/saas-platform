@@ -24,7 +24,11 @@ Implemented unified component versioning, full audit history tracking, one-click
    - Server-to-server HTTPS endpoint `/builder/api/theme/rollback` on `customer-site` guarded by `CUSTOMER_PROVISION_SECRET`.
    - Restores exact prior `ThemeInstanceRevision` snapshots atomically using `ThemeInstanceRevisionService::rollbackTo`, creating immutable `TYPE_ROLLBACK_SNAPSHOT` revisions without history rewind or data loss.
    - Platform admin one-click rollback action dispatches rollback and logs full audit trail.
-5. **Zero-SSH & Governance Compliance:**
+5. **Automated File Synchronization & View Clearing:**
+   - Implemented `ThemeFleetUpgradeService::syncSiteFilesAndViews()` copying updated views, controllers, auth templates, and styles directly to tenant document roots (e.g. `/var/www/cust_site_54`).
+   - Executes `artisan view:clear` in target site working directory immediately refreshing compiled views.
+   - Interactive multi-select and manual dropdown in `wizard.blade.php` with direct single-site and bulk apply dispatch.
+6. **Zero-SSH & Governance Compliance:**
    - No manual server intervention; verified with comprehensive feature tests in both repositories.
 
 | Item | Status |
@@ -33,7 +37,9 @@ Implemented unified component versioning, full audit history tracking, one-click
 | SemVer & Changelog Registry (5 subsystems) | ✅ Registered and displayed in fleet console |
 | Comprehensive Audit Logging | ✅ Extended schema & audit UI active |
 | One-Click Rollback Endpoint & Dispatch | ✅ Implemented and verified end-to-end |
-| Tests | ✅ `FleetThemeUpgradeAndIsolationTest` (9/9 OK), `OnboardingWizardTest` (22/22 OK), `ServerToServerThemeUpgradeTest` (4/4 OK) |
+| Automated File Sync & View Cache Clearing | ✅ Implemented and verified in `ThemeFleetUpgradeService` |
+| Interactive Fleet Site Selection UI & Form | ✅ Bulk checkboxes + direct single-site actions active |
+| Tests | ✅ `FleetThemeUpgradeAndIsolationTest` (10/10 OK), `OnboardingWizardTest` (22/22 OK), `ServerToServerThemeUpgradeTest` (4/4 OK) |
 
 ---
 
