@@ -32,5 +32,10 @@ return [
         'priority'    => env('RECOVERY_PRIORITY', 'local_first'),
         'local_path'  => env('RECOVERY_LOCAL_PATH', ''),
         'min_free_gb' => (int) env('RECOVERY_MIN_FREE_GB', 10),
+        // Verified copies kept per scope (platform; each customer site).
+        // Older copies are pruned after every successful store and by
+        // `php artisan recovery:prune-local --execute`.
+        // INITIAL_INSTALLATION_BASELINE is never pruned.
+        'keep_per_scope' => (int) env('RECOVERY_LOCAL_KEEP', 2),
     ],
 ];

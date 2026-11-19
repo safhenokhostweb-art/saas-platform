@@ -10,8 +10,12 @@ use Illuminate\Support\Facades\Log;
 
 class BackupDatabaseCommand extends Command
 {
+    /** Name the run is recorded under (InfraSchedulerRun::recentSummary()). */
+    public const SCHEDULER_RUN_NAME = 'db:backup';
+
     protected $signature = 'db:backup
-                            {--retention=7 : Number of daily backup files to keep}
+                            {--retention=2 : Local backup files to keep on this server}
+                            {--remote-retention=7 : Offsite (Arvan) backup files to keep}
                             {--dry-run     : Show what would be backed up without running}';
 
     protected $description = 'Create a gzip-compressed MySQL backup and prune old backups';
@@ -20,6 +24,9 @@ class BackupDatabaseCommand extends Command
     {
         $dryRun    = $this->option('dry-run');
         $retention = max(1, (int) $this->option('retention'));
+        // Offsite copies are the durable ones; they are no longer tied to
+        // the (smaller) local retention.
+        $remoteRetention = max(1, (int) $this->option('remote-retention'));
 
         $db       = config('database.connections.mysql.database');
         $host     = config('database.connections.mysql.host');
@@ -41,7 +48,7 @@ class BackupDatabaseCommand extends Command
         }
 
         $backupRun = InfraBackupRun::startRun('database');
-        $schedRun  = InfraSchedulerRun::startRun('db:backup --retention=7');
+        $schedRun  = InfraSchedulerRun::startRun(self::SCHEDULER_RUN_NAME);
         $startedAt = microtime(true);
 
         $envPwd = $password !== '' ? 'MYSQL_PWD=' . escapeshellarg($password) . ' ' : '';
@@ -98,10 +105,10 @@ class BackupDatabaseCommand extends Command
 
         $this->pruneOldBackups($backupDir, $retention);
 
-        // Prune Arvan remote files — keep same retention as local
+        // Prune Arvan remote files to their own retention
         try {
             $arvan  = app(ArvanBackupService::class);
-            $pruned = $arvan->prune($arvan->platformDbPath(''), $retention);
+            $pruned = $arvan->prune($arvan->platformDbPath(''), $remoteRetention);
             if ($pruned['pruned'] > 0) {
                 $this->line("Arvan pruned {$pruned['pruned']} old backup(s), kept {$pruned['kept']}");
                 Log::info("db:backup arvan prune", $pruned);

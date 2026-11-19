@@ -66,6 +66,12 @@ class LocalRecoveryRepository
         return in_array($this->getPolicy(), ['arvan', 'both'], true);
     }
 
+    /** Verified copies kept per scope (platform, and each customer site). */
+    public function keepPerScope(): int
+    {
+        return max(1, (int) config('installer.recovery_repository.keep_per_scope', 2));
+    }
+
     public function isConfigured(): bool
     {
         return $this->validate($this->getRepoPath())['is_valid'];
@@ -183,6 +189,10 @@ class LocalRecoveryRepository
 
         Log::info("LocalRecoveryRepo: Platform baseline {$label} stored at {$destDir} — status: {$status}");
 
+        if ($verification['pass']) {
+            $this->pruneAfterStore('platform');
+        }
+
         return [
             'success'      => $verification['pass'],
             'local_path'   => $destDir,
@@ -273,6 +283,10 @@ class LocalRecoveryRepository
         ]);
 
         Log::info("LocalRecoveryRepo: Customer baseline site={$siteId} uuid={$installationUuid} stored — status: {$status}");
+
+        if ($checksumOk) {
+            $this->pruneAfterStore('customer', $siteId);
+        }
 
         return [
             'success'    => $checksumOk,
@@ -462,6 +476,143 @@ class LocalRecoveryRepository
             ->filter(fn($item) => file_exists($item['path']))
             ->values()
             ->all();
+    }
+
+    // ─── Retention ────────────────────────────────────────────────────────────
+
+    /**
+     * Copies older than the newest $keep verified ones, per scope: platform
+     * baselines (INITIAL_INSTALLATION_BASELINE* never counts and is never
+     * pruned) and each customer site. Failed or pending copies newer than
+     * those verified ones are left alone, so a run of failed baselines can
+     * never cost the last good copies.
+     *
+     * @return list<LocalRecoveryLog>
+     */
+    public function pruneCandidates(?int $keep = null, ?string $type = null, ?int $siteId = null): array
+    {
+        $keep = max(1, $keep ?? $this->keepPerScope());
+        $candidates = [];
+
+        if ($type === null || $type === 'platform') {
+            $platform = LocalRecoveryLog::platform()->orderByDesc('created_at')->orderByDesc('id')->get()
+                ->reject(fn (LocalRecoveryLog $log) => str_starts_with((string) $log->baseline_label, 'INITIAL_INSTALLATION_BASELINE'));
+            array_push($candidates, ...$this->olderThanNewestVerified($platform, $keep));
+        }
+
+        if ($type === null || $type === 'customer') {
+            LocalRecoveryLog::customer()
+                ->when($siteId !== null, fn ($q) => $q->where('site_id', $siteId))
+                ->orderByDesc('created_at')->orderByDesc('id')->get()
+                ->groupBy('site_id')
+                ->each(function ($logs) use (&$candidates, $keep) {
+                    array_push($candidates, ...$this->olderThanNewestVerified($logs, $keep));
+                });
+        }
+
+        return $candidates;
+    }
+
+    /**
+     * Delete the candidates' directories (only inside the repository root)
+     * and their log rows. With $dryRun nothing is touched.
+     *
+     * @return array{dry_run: bool, keep: int, items: list<array{log_id: int, type: string, site_id: ?int, label: ?string, path: string, size_bytes: int, action: string}>, reclaimed_bytes: int}
+     */
+    public function prune(?int $keep = null, bool $dryRun = true, ?string $type = null, ?int $siteId = null): array
+    {
+        $keep = max(1, $keep ?? $this->keepPerScope());
+        $items = [];
+        $reclaimed = 0;
+
+        foreach ($this->pruneCandidates($keep, $type, $siteId) as $log) {
+            $path = (string) $log->local_path;
+            $exists = $path !== '' && file_exists($path);
+            $action = match (true) {
+                $exists && !$this->isInsideRepository($path) => 'skipped_outside_repository',
+                $exists => 'delete',
+                default => 'forget_missing',
+            };
+
+            $size = $exists && is_dir($path) ? $this->dirSize($path) : ($exists ? (int) filesize($path) : 0);
+            $items[] = [
+                'log_id'     => $log->id,
+                'type'       => $log->type,
+                'site_id'    => $log->site_id,
+                'label'      => $log->baseline_label,
+                'path'       => $path,
+                'size_bytes' => $size,
+                'action'     => $action,
+            ];
+
+            if ($dryRun || $action === 'skipped_outside_repository') {
+                continue;
+            }
+
+            if ($exists) {
+                $this->deleteTree($path);
+                $reclaimed += $size;
+            }
+            $log->delete();
+            Log::info('LocalRecoveryRepo: pruned by retention', ['log_id' => $log->id, 'type' => $log->type, 'site_id' => $log->site_id, 'path' => $path, 'bytes' => $size]);
+        }
+
+        return ['dry_run' => $dryRun, 'keep' => $keep, 'items' => $items, 'reclaimed_bytes' => $reclaimed];
+    }
+
+    private function pruneAfterStore(string $type, ?int $siteId = null): void
+    {
+        try {
+            $this->prune(null, false, $type, $siteId);
+        } catch (\Throwable $e) {
+            Log::warning("LocalRecoveryRepo: retention prune failed — {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, LocalRecoveryLog> $logs newest first
+     * @return list<LocalRecoveryLog>
+     */
+    private function olderThanNewestVerified(\Illuminate\Support\Collection $logs, int $keep): array
+    {
+        $verified = 0;
+        $older = [];
+        foreach ($logs as $log) {
+            if ($verified >= $keep) {
+                $older[] = $log;
+            } elseif ($log->status === 'verified') {
+                $verified++;
+            }
+        }
+
+        return $older;
+    }
+
+    private function isInsideRepository(string $path): bool
+    {
+        $root = realpath($this->getRepoPath());
+        $real = realpath($path);
+
+        return $root !== false && $real !== false
+            && str_starts_with($real, rtrim($root, '\\/') . DIRECTORY_SEPARATOR);
+    }
+
+    private function deleteTree(string $path): void
+    {
+        if (!is_dir($path)) {
+            @unlink($path);
+
+            return;
+        }
+
+        $iter = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iter as $item) {
+            $item->isDir() && !$item->isLink() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        }
+        @rmdir($path);
     }
 
     // ─── Private Helpers ──────────────────────────────────────────────────────
