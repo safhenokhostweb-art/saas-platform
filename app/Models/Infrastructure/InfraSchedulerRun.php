@@ -66,7 +66,7 @@ class InfraSchedulerRun extends Model
         $tracked = [
             'monitor:sites',
             'monitor:platform',
-            'db:backup --retention=7',
+            \App\Console\Commands\BackupDatabaseCommand::SCHEDULER_RUN_NAME,
             'education:generate-content',
             'education:generate-gap-content',
             'education:refresh-recommendations',
