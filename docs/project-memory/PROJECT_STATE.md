@@ -1,6 +1,17 @@
 # PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-11-18
+> Last Updated: 2026-11-19
+
+---
+
+## Fleet Package Manual Sync & Direct Apply Pipeline
+
+**IMPLEMENTATION VERIFIED & GATED FOR RELEASE — 2026-11-19.** Scope,
+evidence and specifications: `OPEN_TASKS.md`, `TESTING_AND_DELIVERY_GOVERNANCE.md`.
+
+- Platform admin can manually select target customer sites from a dedicated dropdown to apply packages directly.
+- Automated file synchronization and view cache clearing (`artisan view:clear`) on the target site.
+- Comprehensive end-to-end integration tests passing with 0 regressions.
 
 ---
 
