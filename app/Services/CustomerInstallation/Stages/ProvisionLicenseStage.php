@@ -3,7 +3,10 @@
 namespace App\Services\CustomerInstallation\Stages;
 
 use App\Models\Customer;
+use App\Models\CustomerRemoteServer;
 use App\Models\Site;
+use App\Models\SiteResourceLimit;
+use App\Services\CustomerInstallation\CredentialVault;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use App\Services\CustomerInstallation\Env\RemoteEnvFile;
@@ -44,19 +47,54 @@ class ProvisionLicenseStage extends AbstractStage
                 );
             }
 
+            $server = CustomerRemoteServer::find($ctx->installation->remote_server_id);
+            $dbName = $ctx->getOutput('CREATE_DATABASE', 'db_name') ?? $req->dbName;
+            $dbUser = $ctx->getOutput('CREATE_DATABASE', 'db_user') ?? $req->dbUser;
+            $dbHost = $req->dbHost ?: '127.0.0.1';
+            $dbPass = $req->dbPassword;
+
+            $siteData = [
+                'customer_id'      => $customer->id,
+                'title'            => $req->company,
+                'is_active'        => true,
+                'lifecycle_status' => Site::LIFECYCLE_ACTIVE,
+                'hosting_company'  => $server?->label ?? $server?->host,
+                'db_name'          => $dbName,
+                'db_user'          => $dbUser,
+                'db_host'          => $dbHost,
+            ];
+
+            if (!empty($dbPass)) {
+                $siteData['db_password_encrypted'] = app(CredentialVault::class)->encrypt($dbPass);
+            }
+
             // Create or find the Site record using correct column names
             $site = Site::updateOrCreate(
                 ['domain' => $req->domain],
-                [
-                    'customer_id'      => $customer->id,
-                    'title'            => $req->company,
-                    'is_active'        => true,
-                    'lifecycle_status' => Site::LIFECYCLE_ACTIVE,
-                ]
+                $siteData
             );
 
             // Link installation to site
             $ctx->installation->update(['site_id' => $site->id]);
+
+            // Persist resource governance limits for this site
+            $hardBytes = (int) ($req->diskGb * 1024 * 1024 * 1024);
+            $softGb    = $req->softDiskGb ?? round($req->diskGb * 0.70, 2);
+            $softBytes = (int) ($softGb * 1024 * 1024 * 1024);
+            $ramBytes  = (int) ($req->ramMb * 1024 * 1024);
+
+            SiteResourceLimit::updateOrCreate(
+                ['site_id' => $site->id],
+                [
+                    'plan_name'             => $req->resourcePlan ?? 'basic',
+                    'memory_limit_bytes'    => $ramBytes,
+                    'disk_hard_limit_bytes' => $hardBytes,
+                    'storage_limit_bytes'   => $hardBytes,
+                    'disk_soft_limit_bytes' => $softBytes,
+                    'cpu_cores_limit'       => (float) $req->cpuCores,
+                    'bandwidth_limit_bytes' => (int) ($req->bandwidthGb * 1024 * 1024 * 1024),
+                ]
+            );
 
             // Issue the license via LicenseServerService so that a PlatformLicense record
             // is created with the correct HMAC-SHA256 hash. Without this record the

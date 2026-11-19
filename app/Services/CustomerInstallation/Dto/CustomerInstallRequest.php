@@ -30,6 +30,19 @@ class CustomerInstallRequest
         /** @var list<int> license-only module ids (kits) to license and activate */
         public readonly array   $kitModuleIds = [],
         public readonly ?int    $themeId = null,
+        /** @var list<int> all requested active module ids (core + paid + kits) */
+        public readonly array   $activeModuleIds = [],
+        public readonly ?string $webRootPath = null,
+        public readonly ?string $dbName = null,
+        public readonly ?string $dbUser = null,
+        public readonly ?string $dbHost = null,
+        public readonly ?string $dbPassword = null,
+        public readonly ?string $resourcePlan = 'basic',
+        public readonly int     $ramMb = 1024,
+        public readonly float   $diskGb = 5.0,
+        public readonly ?float  $softDiskGb = null,
+        public readonly float   $cpuCores = 1.0,
+        public readonly float   $bandwidthGb = 10.0,
     ) {}
 
     public static function fromArray(array $data): self
@@ -57,6 +70,18 @@ class CustomerInstallRequest
             businessVertical:     isset($data['business_vertical']) && $data['business_vertical'] !== '' ? (string) $data['business_vertical'] : null,
             kitModuleIds:         array_values(array_unique(array_map('intval', (array) ($data['kit_module_ids'] ?? [])))),
             themeId:              !empty($data['theme_id']) ? (int) $data['theme_id'] : null,
+            activeModuleIds:      array_values(array_unique(array_map('intval', (array) ($data['active_module_ids'] ?? [])))),
+            webRootPath:          !empty($data['web_root_path']) ? (string) $data['web_root_path'] : null,
+            dbName:               !empty($data['db_name']) ? (string) $data['db_name'] : null,
+            dbUser:               !empty($data['db_user']) ? (string) $data['db_user'] : null,
+            dbHost:               !empty($data['db_host']) ? (string) $data['db_host'] : null,
+            dbPassword:           !empty($data['db_password']) ? (string) $data['db_password'] : null,
+            resourcePlan:         $data['resource_plan'] ?? 'basic',
+            ramMb:                (int) ($data['ram_mb'] ?? 1024),
+            diskGb:               (float) ($data['disk_gb'] ?? 5.0),
+            softDiskGb:           isset($data['soft_disk_gb']) ? (float) $data['soft_disk_gb'] : null,
+            cpuCores:             (float) ($data['cpu_cores'] ?? 1.0),
+            bandwidthGb:          (float) ($data['bandwidth_gb'] ?? 10.0),
         );
     }
 
@@ -85,6 +110,18 @@ class CustomerInstallRequest
             'business_vertical'     => $this->businessVertical,
             'kit_module_ids'        => $this->kitModuleIds,
             'theme_id'              => $this->themeId,
+            'active_module_ids'     => $this->activeModuleIds,
+            'web_root_path'         => $this->webRootPath,
+            'db_name'               => $this->dbName,
+            'db_user'               => $this->dbUser,
+            'db_host'               => $this->dbHost,
+            'db_password'           => $this->dbPassword,
+            'resource_plan'         => $this->resourcePlan,
+            'ram_mb'                => $this->ramMb,
+            'disk_gb'               => $this->diskGb,
+            'soft_disk_gb'          => $this->softDiskGb,
+            'cpu_cores'             => $this->cpuCores,
+            'bandwidth_gb'          => $this->bandwidthGb,
         ];
     }
 }

@@ -13,6 +13,16 @@ class ComponentVersionRegistry
     public const MOTION_GRAPHICS_VERSION = '1.2.0';
 
     /**
+     * Get a specific component's metadata.
+     *
+     * @return array{name: string, slug: string, version: string, type: string, summary: string, changelog: list<string>, updated_at: string}|null
+     */
+    public static function get(string $component): ?array
+    {
+        return self::all()[$component] ?? null;
+    }
+
+    /**
      * Get authoritative metadata and changelogs for all platform components.
      *
      * @return array<string, array{

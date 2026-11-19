@@ -21,7 +21,8 @@ class SiteResourceAlertService
      */
     public function checkAndAlertStorage(Site $site, SiteResourceUsage $usage, SiteResourceLimit $limit): void
     {
-        $pct     = $usage->storagePercent((int) $limit->storage_limit_bytes);
+        $hardLimit = (int) ($limit->disk_hard_limit_bytes ?: $limit->storage_limit_bytes ?: 5368709120);
+        $pct     = $usage->storagePercent($hardLimit);
         $warning = config('resource_governance.alert_warning_percent', 80);
         $critical = config('resource_governance.alert_critical_percent', 95);
 
@@ -31,6 +32,35 @@ class SiteResourceAlertService
         } elseif ($pct >= $warning && !$usage->alerted_80) {
             $this->alertStorageWarning($site, $pct);
             $usage->update(['alerted_80' => true]);
+        }
+
+        $this->checkAndAlertSoftDisk($site, $usage, $limit);
+    }
+
+    /**
+     * Check soft disk limit (default 70% of hard disk) with 7-day Grace Period policy.
+     */
+    public function checkAndAlertSoftDisk(Site $site, SiteResourceUsage $usage, SiteResourceLimit $limit): void
+    {
+        $hardLimit = (int) ($limit->disk_hard_limit_bytes ?: $limit->storage_limit_bytes ?: 5368709120);
+        $softLimit = (int) ($limit->disk_soft_limit_bytes ?: ($hardLimit * 0.70));
+        $usedBytes = (int) ($usage->disk_usage_bytes ?: $usage->storage_bytes ?: 0);
+
+        if ($softLimit > 0 && $usedBytes >= $softLimit && !$usage->alerted_80) {
+            $softGb = round($softLimit / (1024 ** 3), 1);
+            $usedGb = round($usedBytes / (1024 ** 3), 1);
+            $message = "سایت {$site->title} — مصرف دیسک از سقف نرم ({$softGb} گیگابایت) فراتر رفت (مصرف: {$usedGb} گیگابایت). مهلت ۷ روزه برای ارتقا یا پاکسازی فعال است.";
+
+            $this->nc->notify([
+                'type'          => 'soft_disk_warning',
+                'priority'      => 'medium',
+                'title'         => "⚠️ هشدار دیسک نرم: {$site->title}",
+                'message'       => $message,
+                'audience_type' => 'platform_admin',
+                'channel'       => 'dashboard',
+                'site_id'       => $site->id,
+                'link'          => route('admin.resource-governance.site', $site->id),
+            ]);
         }
     }
 

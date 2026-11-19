@@ -483,6 +483,8 @@ Route::prefix('admin')
                 Route::get('/', 'create')->name('create');
                 Route::get('/lookup-customer', 'lookupCustomer')->middleware('throttle:60,1')->name('lookup-customer');
                 Route::get('/check-domain', 'checkDomain')->middleware('throttle:60,1')->name('check-domain');
+                Route::get('/server-capacity', 'serverCapacity')->middleware('throttle:60,1')->name('server-capacity');
+                Route::get('/suggest-infrastructure', 'suggestInfrastructure')->middleware('throttle:60,1')->name('suggest-infrastructure');
                 Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
                 Route::post('/installations/{installation}/retry-template', 'retryTemplate')
                     ->whereNumber('installation')->middleware('throttle:10,1')->name('retry-template');

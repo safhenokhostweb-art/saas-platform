@@ -50,8 +50,8 @@ class ApplySiteEntitlementsStage extends AbstractStage
         return $this->run($ctx, function (InstallationContext $ctx) {
             $req = $ctx->request;
 
-            if ($req->businessVertical === null && $req->kitModuleIds === []) {
-                return StageResult::skipped($this->name(), 'No business vertical or kits requested');
+            if ($req->businessVertical === null && $req->kitModuleIds === [] && empty($req->activeModuleIds)) {
+                return StageResult::skipped($this->name(), 'No business vertical, kits, or modules requested');
             }
 
             $site = $ctx->installation->site_id ? Site::find($ctx->installation->site_id) : null;
@@ -147,10 +147,37 @@ class ApplySiteEntitlementsStage extends AbstractStage
                 }
             }
 
+            // Phase 18 / Onboarding unifications: Activate selected general and core modules directly
+            $activatedModules = [];
+            if (!empty($req->activeModuleIds)) {
+                $additionalModules = Module::whereIn('id', $req->activeModuleIds)
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($additionalModules as $mod) {
+                    if ($mod->isSiteLicensableKit()) {
+                        continue; // Already processed via kits loop
+                    }
+
+                    \Illuminate\Support\Facades\DB::table('site_modules')->updateOrInsert(
+                        ['site_id' => $site->id, 'module_id' => $mod->id],
+                        [
+                            'is_active' => true,
+                            'deployment_status' => 'installed',
+                            'activated_at' => now(),
+                            'updated_at' => now(),
+                            'created_at' => now(),
+                        ]
+                    );
+                    $activatedModules[$mod->slug] = 'active';
+                }
+            }
+
             return StageResult::success($this->name(), [
                 'site_id'           => $site->id,
                 'business_vertical' => $site->fresh()->business_vertical,
                 'kits'              => $kits,
+                'modules'           => $activatedModules,
             ], [], $this->elapsed());
         });
     }

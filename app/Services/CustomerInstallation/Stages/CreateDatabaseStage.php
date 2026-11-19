@@ -42,14 +42,18 @@ class CreateDatabaseStage extends AbstractStage
     {
         return $this->run($ctx, function (InstallationContext $ctx) {
             $server = CustomerRemoteServer::find($ctx->installation->remote_server_id);
-            $names  = (new DatabaseNameResolver())->resolve($ctx, $server);
-            $dbPass = $this->generateDbPassword();
+            $resolvedNames = (new DatabaseNameResolver())->resolve($ctx, $server);
+
+            // Use reviewed/custom names if specified in request, otherwise use resolved defaults
+            $dbName = !empty($ctx->request->dbName) ? preg_replace('/[^a-zA-Z0-9_]/', '', $ctx->request->dbName) : $resolvedNames->database;
+            $dbUser = !empty($ctx->request->dbUser) ? preg_replace('/[^a-zA-Z0-9_]/', '', $ctx->request->dbUser) : $resolvedNames->username;
+            $dbPass = !empty($ctx->request->dbPassword) ? $ctx->request->dbPassword : $this->generateDbPassword();
 
             $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
 
-            $provisioner->createDatabase($ctx, $names->database);
-            $provisioner->createUser($ctx, $names->username, $dbPass);
-            $provisioner->grantPrivileges($ctx, $names->database, $names->username);
+            $provisioner->createDatabase($ctx, $dbName);
+            $provisioner->createUser($ctx, $dbUser, $dbPass);
+            $provisioner->grantPrivileges($ctx, $dbName, $dbUser);
 
             // Update .env with real DB credentials, each value encoded the way
             // phpdotenv decodes it (DotenvValue) and the whole sed script
@@ -58,13 +62,17 @@ class CreateDatabaseStage extends AbstractStage
             $webRoot = $ctx->webRoot();
             $envPath = $webRoot . '/.env';
             $expected = [
-                'DB_DATABASE' => $names->database,
-                'DB_USERNAME' => $names->username,
+                'DB_DATABASE' => $dbName,
+                'DB_USERNAME' => $dbUser,
                 'DB_PASSWORD' => $dbPass,
             ];
             $placeholders = ['DB_DATABASE' => '__DB_NAME__', 'DB_USERNAME' => '__DB_USER__', 'DB_PASSWORD' => '__DB_PASS__'];
             foreach ($placeholders as $key => $placeholder) {
                 $ctx->connection->execute(self::envSedCommand($placeholder, $expected[$key], $envPath));
+            }
+
+            if (!empty($ctx->request->dbHost) && $ctx->request->dbHost !== '127.0.0.1' && $ctx->request->dbHost !== 'localhost') {
+                $ctx->connection->execute(self::envSedCommand('DB_HOST=127.0.0.1', 'DB_HOST=' . $ctx->request->dbHost, $envPath));
             }
 
             // Read the lines back and decode them exactly as Laravel will, so
@@ -84,11 +92,11 @@ class CreateDatabaseStage extends AbstractStage
             }
 
             return StageResult::success($this->name(), [
-                'db_name' => $names->database,
-                'db_user' => $names->username,
+                'db_name' => $dbName,
+                'db_user' => $dbUser,
             ], [
-                'db_name' => $names->database,
-                'db_user' => $names->username,
+                'db_name' => $dbName,
+                'db_user' => $dbUser,
             ], $this->elapsed());
         });
     }

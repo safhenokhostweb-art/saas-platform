@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StartOnboardingRequest;
 use App\Models\CustomerInstallation;
+use App\Models\CustomerRemoteServer;
 use App\Models\Theme;
 use App\Services\ActivityLogger;
+use App\Services\Infrastructure\ServerCapacityService;
 use App\Services\Onboarding\OnboardingDomainPolicy;
 use App\Services\Onboarding\SiteOnboardingService;
 use App\Services\Onboarding\SiteTemplateBinder;
@@ -29,6 +31,7 @@ class OnboardingWizardController extends Controller
         private readonly SiteOnboardingService $onboarding,
         private readonly OnboardingDomainPolicy $domains,
         private readonly ThemeFleetUpgradeService $fleetService,
+        private readonly ServerCapacityService $capacityService,
     ) {}
 
     public function create(Request $request): View
@@ -58,6 +61,50 @@ class OnboardingWizardController extends Controller
         ]);
 
         return response()->json($this->domains->check($data['mode'], $data['domain']));
+    }
+
+    public function serverCapacity(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'server_id'    => ['required', 'integer', 'exists:customer_remote_servers,id'],
+            'ram_mb'       => ['nullable', 'integer', 'min:256'],
+            'disk_gb'      => ['nullable', 'numeric', 'min:1'],
+            'soft_disk_gb' => ['nullable', 'numeric', 'min:0.5'],
+            'cpu_cores'    => ['nullable', 'numeric', 'min:0.25'],
+        ]);
+
+        $server = CustomerRemoteServer::findOrFail($data['server_id']);
+        $capacity = $this->capacityService->getCapacity($server);
+
+        $validation = null;
+        if (isset($data['ram_mb']) && isset($data['disk_gb'])) {
+            $validation = $this->capacityService->validateAllocation(
+                $server,
+                (int) $data['ram_mb'],
+                (float) $data['disk_gb'],
+                isset($data['soft_disk_gb']) ? (float) $data['soft_disk_gb'] : null,
+                isset($data['cpu_cores']) ? (float) $data['cpu_cores'] : 1.0
+            );
+        }
+
+        return response()->json([
+            'capacity'   => $capacity,
+            'validation' => $validation,
+        ]);
+    }
+
+    public function suggestInfrastructure(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'server_id'  => ['required', 'integer', 'exists:customer_remote_servers,id'],
+            'domain'     => ['required', 'string', 'max:253'],
+            'site_title' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $server = CustomerRemoteServer::findOrFail($data['server_id']);
+        $suggested = $this->onboarding->suggestInfrastructure($server, $data['domain'], $data['site_title'] ?? '');
+
+        return response()->json($suggested);
     }
 
     public function store(StartOnboardingRequest $request): RedirectResponse

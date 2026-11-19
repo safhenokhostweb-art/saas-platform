@@ -255,17 +255,28 @@ class SiteResourceCalculatorService
 
         try {
             $limit = \App\Models\SiteResourceLimit::defaultForSite($site);
-            $pct   = $limit->storage_limit_bytes > 0
-                ? round(($metrics['storage_bytes'] / $limit->storage_limit_bytes) * 100, 1)
-                : 0;
+            $hardLimit = (int) ($limit->disk_hard_limit_bytes ?: $limit->storage_limit_bytes ?: 5368709120);
+            $softLimit = (int) ($limit->disk_soft_limit_bytes ?: ($hardLimit * 0.70));
+            $ramLimit  = (int) ($limit->memory_limit_bytes ?: 1073741824);
+            $cpuLimit  = (float) ($limit->cpu_cores_limit ?: 1.0);
+
+            $usedBytes = $metrics['storage_bytes'] ?? 0;
+            $pct = $hardLimit > 0 ? round(($usedBytes / $hardLimit) * 100, 1) : 0;
+            $softPct = $softLimit > 0 ? round(($usedBytes / $softLimit) * 100, 1) : 0;
 
             $summary = json_encode([
-                'storage_pct'    => $pct,
-                'storage_bytes'  => $metrics['storage_bytes'],
-                'storage_limit'  => (int) $limit->storage_limit_bytes,
-                'db_bytes'       => $metrics['db_bytes'],
-                'archive_bytes'  => $metrics['archive_bytes'],
-                'calculated_at'  => now()->toDateTimeString(),
+                'storage_pct'           => $pct,
+                'storage_bytes'         => $usedBytes,
+                'storage_limit'         => $hardLimit,
+                'disk_hard_limit_bytes' => $hardLimit,
+                'disk_soft_limit_bytes' => $softLimit,
+                'disk_soft_pct'         => $softPct,
+                'memory_limit_bytes'    => $ramLimit,
+                'memory_limit_mb'       => (int) ($ramLimit / (1024 * 1024)),
+                'cpu_cores_limit'       => $cpuLimit,
+                'db_bytes'              => $metrics['db_bytes'] ?? 0,
+                'archive_bytes'         => $metrics['archive_bytes'] ?? 0,
+                'calculated_at'         => now()->toDateTimeString(),
             ]);
 
             $conn = $this->openSiteConnection($site);
@@ -282,6 +293,44 @@ class SiteResourceCalculatorService
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+            }
+
+            // Sync Warning notification & activity log to customer dashboard if threshold reached (80% or soft limit)
+            if ($pct >= 80.0 || $usedBytes >= $softLimit) {
+                $level = $pct >= 95.0 ? 'critical' : 'warning';
+                $title = $level === 'critical' ? '🚨 بحران فضا: ظرفیت سایت در آستانه تکمیل' : '⚠️ هشدار فضا: مصرف منابع سایت به آستانه هشدار رسید';
+                $body  = "مصرف دیسک سایت شما به {$pct}٪ از سقف مجاز رسیده است. برای جلوگیری از اختلال در بارگذاری فایل‌ها، فضای خود را ارتقا دهید.";
+
+                // Insert into customer-site's admin_notifications if table exists
+                try {
+                    $alreadyNotifiedToday = $db->table('admin_notifications')
+                        ->where('type', 'resource_warning')
+                        ->where('created_at', '>=', now()->subHours(24))
+                        ->exists();
+
+                    if (!$alreadyNotifiedToday) {
+                        $db->table('admin_notifications')->insert([
+                            'type'       => 'resource_warning',
+                            'title'      => $title,
+                            'body'       => $body,
+                            'link'       => '/account/resources',
+                            'is_read'    => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } catch (\Throwable) {}
+
+                // Insert into customer-site's admin_activity_log if table exists
+                try {
+                    $db->table('admin_activity_log')->insert([
+                        'action'      => 'resource_threshold_warning',
+                        'description' => "هشدار مصرف منابع سخت‌افزاری ({$pct}٪)",
+                        'properties'  => json_encode(['storage_pct' => $pct, 'used_bytes' => $usedBytes, 'level' => $level]),
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                } catch (\Throwable) {}
             }
 
             // Clear settings cache

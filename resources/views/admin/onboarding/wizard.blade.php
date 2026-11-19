@@ -6,9 +6,9 @@
     $stepFields = [
         1 => ['mobile', 'customer_name', 'company_name'],
         2 => ['site_title', 'domain_mode', 'domain'],
-        3 => ['license_type', 'business_vertical', 'kit_module_ids', 'kit_module_ids.*', 'base_modules', 'base_modules.*'],
+        3 => ['license_type', 'business_vertical', 'kit_module_ids', 'kit_module_ids.*', 'active_module_ids', 'active_module_ids.*', 'base_modules', 'base_modules.*'],
         4 => ['theme_id'],
-        5 => ['remote_server_id', 'ssl_enabled', 'backup_policy'],
+        5 => ['remote_server_id', 'ssl_enabled', 'backup_policy', 'web_root_path', 'db_name', 'db_user', 'db_host', 'db_password', 'resource_plan', 'ram_mb', 'disk_gb', 'soft_disk_gb', 'cpu_cores', 'bandwidth_gb'],
     ];
     $errorStep = null;
     foreach ($stepFields as $n => $fields) {
@@ -26,11 +26,25 @@
         'license_type'      => old('license_type', 'basic'),
         'business_vertical' => old('business_vertical', ''),
         'kit_module_ids'    => array_map('intval', (array) old('kit_module_ids', [])),
+        'active_module_ids' => array_map('intval', (array) old('active_module_ids', [])),
         'base_modules'      => (array) old('base_modules', ['forms']),
         'theme_id'          => old('theme_id') !== null && old('theme_id') !== '' ? (int) old('theme_id') : null,
         'remote_server_id'  => old('remote_server_id') ? (int) old('remote_server_id') : (collect($options['servers'])->firstWhere('implemented', true)['id'] ?? null),
         'ssl_enabled'       => (bool) old('ssl_enabled', true),
         'backup_policy'     => old('backup_policy', 'daily'),
+        // Infrastructure & DB fields
+        'web_root_path'     => old('web_root_path', ''),
+        'db_name'           => old('db_name', ''),
+        'db_user'           => old('db_user', ''),
+        'db_host'           => old('db_host', '127.0.0.1'),
+        'db_password'       => old('db_password', ''),
+        // Resource Governance fields
+        'resource_plan'     => old('resource_plan', 'basic'),
+        'ram_mb'            => (int) old('ram_mb', 1024),
+        'disk_gb'           => (float) old('disk_gb', 5.0),
+        'soft_disk_gb'      => (float) old('soft_disk_gb', 3.5),
+        'cpu_cores'         => (float) old('cpu_cores', 1.0),
+        'bandwidth_gb'      => (float) old('bandwidth_gb', 10.0),
     ];
 @endphp
 
@@ -595,17 +609,17 @@
             </div>
         </section>
 
-        {{-- ── Step 3: business, licence & kits ───────────────────────── --}}
+        {{-- ── Step 3: business, licence & modules ───────────────────────── --}}
         <section class="ob-card" x-show="step === 3" x-cloak aria-labelledby="ob-s3">
-            <h2 id="ob-s3">کسب‌وکار، لایسنس و کیت‌ها</h2>
-            <p class="ob-lead">حوزهٔ کسب‌وکار، کیت‌های اختصاصی آن حوزه و قالب پیشنهادی را به‌صورت خودکار انتخاب می‌کند. همه را می‌توانید تغییر دهید.</p>
+            <h2 id="ob-s3">کسب‌وکار، لایسنس و انتخاب ماژول‌ها</h2>
+            <p class="ob-lead">با انتخاب حوزهٔ کسب‌وکار، قالب مناسب و تمام ماژول‌های مورد نیاز به صورت خودکار انتخاب می‌شوند. امکان انتخاب کلی، دسته‌ای و تکی فراهم است تا نیازی به تنظیمات دستی پس از نصب نباشد.</p>
 
             <div class="ob-grid">
                 <div class="ob-field">
                     <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-vertical-label">حوزهٔ کسب‌وکار</span>
                     <div class="ob-choices" role="radiogroup" aria-labelledby="ob-vertical-label">
                         <button type="button" class="ob-choice" role="radio" :aria-checked="form.business_vertical === ''" @click="setVertical('')">
-                            <strong>بدون حوزهٔ اختصاصی</strong><small>فقط قالب‌ها و ابزارک‌های عمومی</small>
+                            <strong>بدون حوزهٔ اختصاصی</strong><small>فقط قالب‌ها و ماژول‌های عمومی</small>
                         </button>
                         <template x-for="(p, key) in options.profiles" :key="key">
                             <button type="button" class="ob-choice" role="radio" :aria-checked="form.business_vertical === key" @click="setVertical(key)">
@@ -628,8 +642,67 @@
                     <input type="hidden" name="license_type" :value="form.license_type">
                 </div>
 
-                <div class="ob-field" x-show="options.kits.length">
-                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-kits-label">کیت‌های لایسنس</span>
+                {{-- All Modules (Categorized with Fast Bulk/Individual Toggle) --}}
+                <div class="ob-field" style="border-top:1px solid var(--ob-border);padding-top:1rem;margin-top:.5rem">
+                    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem">
+                        <div>
+                            <span style="display:block;font-size:.9rem;font-weight:700" id="ob-modules-label">
+                                ماژول‌ها و امکانات فعال سایت
+                                <span class="ob-badge ob-badge-accent" style="margin-right:.5rem" x-text="fa(form.active_module_ids.length) + ' فعال'"></span>
+                            </span>
+                            <small style="color:var(--ob-muted);font-size:.78rem">ماژول‌های انتخاب‌شده مستقیماً در لحظهٔ نصب روی سایت فعال می‌شوند.</small>
+                        </div>
+                        <div style="display:flex;gap:.35rem;flex-wrap:wrap">
+                            <button type="button" class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.3rem .6rem;min-height:2rem" @click="selectDefaultVerticalModules()">
+                                🎯 پیشنهاد این کسب‌وکار
+                            </button>
+                            <button type="button" class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.3rem .6rem;min-height:2rem" @click="selectAllModules()">
+                                ✅ انتخاب همه
+                            </button>
+                            <button type="button" class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.3rem .6rem;min-height:2rem" @click="deselectAllModules()">
+                                ❌ لغو همه
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Category filter pills --}}
+                    <div class="ob-seg" style="margin-bottom:1rem;display:flex;gap:.25rem;overflow-x:auto;padding:.2rem">
+                        <button type="button" :aria-pressed="activeModuleCategory === 'all'" @click="activeModuleCategory = 'all'" style="font-size:.8rem;padding:.35rem .75rem">
+                            همه ماژول‌ها (<span x-text="fa(options.modules.length)"></span>)
+                        </button>
+                        <template x-for="(cat, cKey) in options.module_categories" :key="cKey">
+                            <button type="button" :aria-pressed="activeModuleCategory === cKey" @click="activeModuleCategory = cKey" style="font-size:.8rem;padding:.35rem .75rem" x-text="cat.label">
+                            </button>
+                        </template>
+                    </div>
+
+                    {{-- Modules Grid --}}
+                    <div class="ob-choices" role="group" aria-labelledby="ob-modules-label" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr))">
+                        <template x-for="mod in filteredModules()" :key="mod.id">
+                            <button type="button" class="ob-choice" :aria-pressed="form.active_module_ids.includes(mod.id)"
+                                    @click="toggleActiveModule(mod.id)">
+                                <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+                                    <strong x-text="mod.title"></strong>
+                                    <span class="ob-badge ob-badge-ok" x-show="form.active_module_ids.includes(mod.id)">فعال</span>
+                                </div>
+                                <small x-show="mod.description" x-text="mod.description" style="line-height:1.5"></small>
+                                <div style="display:flex;gap:.35rem;margin-top:auto;padding-top:.3rem">
+                                    <span x-show="mod.is_kit" class="ob-badge ob-badge-accent">کیت اختصاصی</span>
+                                    <span x-show="mod.is_paid" class="ob-badge" style="color:#d97706;border-color:#fde68a">پرمیوم</span>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+
+                    <template x-for="id in form.active_module_ids" :key="'m' + id">
+                        <input type="hidden" name="active_module_ids[]" :value="id">
+                    </template>
+                    @error('active_module_ids')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Kits (Preserved for compatibility and entitlement linkage) --}}
+                <div class="ob-field" x-show="options.kits.length" style="border-top:1px dashed var(--ob-border);padding-top:1rem">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-kits-label">کیت‌های لایسنس پلتفرم</span>
                     <div class="ob-choices" role="group" aria-labelledby="ob-kits-label">
                         <template x-for="kit in options.kits" :key="kit.id">
                             <button type="button" class="ob-choice" :aria-pressed="form.kit_module_ids.includes(kit.id)"
@@ -642,17 +715,11 @@
                         </template>
                     </div>
                     <template x-for="id in form.kit_module_ids" :key="'k' + id"><input type="hidden" name="kit_module_ids[]" :value="id"></template>
-                    <p class="ob-hint">کیتی که به حوزهٔ خاصی وابسته است فقط با انتخاب همان حوزه فعال می‌شود.</p>
+                    <p class="ob-hint">کیت‌های لایسنس به صورت یکپارچه با ماژول‌های فعال سایت لایسنس‌گذاری می‌شوند.</p>
                     @error('kit_module_ids')<p class="ob-err">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="ob-field">
-                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-base-label">ماژول‌های پایهٔ سایت</span>
-                    <div class="ob-choices" role="group" aria-labelledby="ob-base-label">
-                        <template x-for="(label, key) in options.base_modules" :key="key">
-                            <button type="button" class="ob-choice" :aria-pressed="form.base_modules.includes(key)" @click="toggleBase(key)"><strong x-text="label"></strong></button>
-                        </template>
-                    </div>
+                <div class="ob-field" style="display:none">
                     <template x-for="m in form.base_modules" :key="'b' + m"><input type="hidden" name="base_modules[]" :value="m"></template>
                 </div>
             </div>
@@ -703,17 +770,18 @@
             @error('theme_id')<p class="ob-err">{{ $message }}</p>@enderror
         </section>
 
-        {{-- ── Step 5: server & deployment ────────────────────────────── --}}
+        {{-- ── Step 5: server, host/db & resource governance ────────────────────── --}}
         <section class="ob-card" x-show="step === 5" x-cloak aria-labelledby="ob-s5">
-            <h2 id="ob-s5">سرور و استقرار</h2>
-            <p class="ob-lead">هر سایت نصب مستقل خود را دارد: پوشهٔ وب، پایگاه داده، فایل محیطی، پیکربندی Nginx روی سوکت PHP-FPM همان سرور و مجوزهای www-data.</p>
+            <h2 id="ob-s5">سرور، اطلاعات دیتابیس و مدیریت منابع سخت‌افزاری</h2>
+            <p class="ob-lead">با انتخاب سرور، اطلاعات پایگاه‌داده و مسیر وب به صورت هوشمند پیشنهاد می‌شوند. همچنین پلن‌های سهمیه‌بندی منابع (اشتراکی/ایمن) به طور دقیق و برخط کنترل می‌گردند.</p>
 
             <div class="ob-grid">
+                {{-- 1. Server Selection --}}
                 <div class="ob-field">
                     <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-server-label">سرور مقصد <span class="ob-req" aria-hidden="true">*</span></span>
                     <div class="ob-choices" role="radiogroup" aria-labelledby="ob-server-label">
                         <template x-for="s in options.servers" :key="s.id">
-                            <button type="button" class="ob-choice" role="radio" :aria-checked="form.remote_server_id === s.id" :disabled="!s.implemented" @click="form.remote_server_id = s.id">
+                            <button type="button" class="ob-choice" role="radio" :aria-checked="form.remote_server_id === s.id" :disabled="!s.implemented" @click="selectServer(s.id)">
                                 <strong x-text="s.label"></strong>
                                 <small class="ob-ltr" x-text="s.host"></small>
                                 <span class="ob-badge" style="align-self:flex-start" x-text="s.implemented ? s.type : 'درایور پشتیبانی نمی‌شود'"></span>
@@ -725,6 +793,127 @@
                         هنوز سروری ثبت نشده است. <a href="{{ route('admin.infrastructure.customer-deployment.servers.create') }}" target="_blank" rel="noopener" style="font-weight:700;text-decoration:underline">افزودن سرور</a>
                     </div>
                     @error('remote_server_id')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Live Server Capacity Monitor Banner --}}
+                <div x-show="serverCapacity" x-cloak class="ob-panel" :class="serverCapacity?.has_headroom ? 'ob-panel-ok' : 'ob-panel-warn'" style="border:1px solid var(--ob-border)">
+                    <div style="width:100%">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem">
+                            <strong style="font-size:.85rem" x-text="'وضعیت منابع برخط سرور (' + (serverCapacity?.server?.label || '') + ')'"></strong>
+                            <span class="ob-badge" :class="serverCapacity?.has_headroom ? 'ob-badge-ok' : 'ob-badge-accent'" x-text="serverCapacity?.has_headroom ? 'ظرفیت سخت‌افزاری ایمن' : 'هشدار پر بودن یا ریسک سرور'"></span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;font-size:.78rem">
+                            <div>رم آزاد فیزیکی: <strong class="ob-ltr" x-text="serverCapacity?.ram?.free_mb + ' MB'"></strong> / کل: <span class="ob-ltr" x-text="serverCapacity?.ram?.total_mb + ' MB'"></span></div>
+                            <div>دیسک آزاد فیزیکی: <strong class="ob-ltr" x-text="serverCapacity?.disk?.free_gb + ' GB'"></strong> / کل: <span class="ob-ltr" x-text="serverCapacity?.disk?.total_gb + ' GB'"></span></div>
+                            <div>تعهد رم (Overcommit): <strong class="ob-ltr" x-text="serverCapacity?.ram?.overcommit_ratio + 'x'"></strong></div>
+                            <div>تعداد سایت‌های سرور: <strong x-text="fa(serverCapacity?.sites_count || 0)"></strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2. Host & Database Auto-Configuration --}}
+                <div style="border:1px solid var(--ob-border);border-radius:12px;padding:1rem;background:var(--ob-soft);margin-top:.5rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                        <strong style="font-size:.9rem">🗄️ مشخصات هاست و دیتابیس هوشمند</strong>
+                        <button type="button" class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.25rem .6rem;min-height:1.8rem" @click="fetchSuggestedInfrastructure()">
+                            🔄 تولید مجدد مشخصات
+                        </button>
+                    </div>
+                    <div class="ob-grid ob-grid-2">
+                        <div class="ob-field">
+                            <label for="ob-webroot">مسیر وب‌روت (Web Root Path) <span class="ob-req">*</span></label>
+                            <input id="ob-webroot" name="web_root_path" type="text" class="ob-input ob-ltr" x-model="form.web_root_path" placeholder="/var/www/site_..." required>
+                            @error('web_root_path')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field">
+                            <label for="ob-dbhost">میزبان دیتابیس (DB Host) <span class="ob-req">*</span></label>
+                            <input id="ob-dbhost" name="db_host" type="text" class="ob-input ob-ltr" x-model="form.db_host" placeholder="127.0.0.1" required>
+                            @error('db_host')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field">
+                            <label for="ob-dbname">نام دیتابیس (DB Name) <span class="ob-req">*</span></label>
+                            <input id="ob-dbname" name="db_name" type="text" class="ob-input ob-ltr" x-model="form.db_name" placeholder="site_..." required>
+                            @error('db_name')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field">
+                            <label for="ob-dbuser">نام کاربر دیتابیس (DB User) <span class="ob-req">*</span></label>
+                            <input id="ob-dbuser" name="db_user" type="text" class="ob-input ob-ltr" x-model="form.db_user" placeholder="site_..." required>
+                            @error('db_user')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field" style="grid-column:1/-1">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+                                <label for="ob-dbpass" style="margin:0">کلمه عبور امن دیتابیس (DB Password)</label>
+                                <button type="button" class="ob-link" style="font-size:.75rem" @click="generateRandomPassword()">🎲 کلمه عبور تصادفی جدید</button>
+                            </div>
+                            <div class="ob-affix">
+                                <input id="ob-dbpass" name="db_password" :type="showDbPass ? 'text' : 'password'" class="ob-input ob-ltr" x-model="form.db_password" placeholder="کلمه عبور امن (اختیاری جهت شخصی‌سازی)">
+                                <button type="button" @click="showDbPass = !showDbPass" style="border:1px solid var(--ob-border);border-inline-start:0;background:var(--ob-surface);padding:0 .75rem;cursor:pointer;font-size:.8rem">
+                                    <span x-text="showDbPass ? 'مخفی' : 'نمایش'"></span>
+                                </button>
+                            </div>
+                            <small class="ob-hint">در صورت خالی ماندن، پایپلاین استقرار یک رمز عبور تصادفی ۳۲ کاراکتری تولید و در فایل .env ذخیره می‌کند.</small>
+                            @error('db_password')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 3. Hardware Resource Governance & Shared Pool (Overcommit) --}}
+                <div style="border:1px solid var(--ob-border);border-radius:12px;padding:1rem;margin-top:.5rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                        <strong style="font-size:.9rem">⚡ سهمیه‌بندی منابع سخت‌افزاری و استخر اشتراکی (Resource Governance)</strong>
+                        <span class="ob-badge ob-badge-accent">سیاست دیسک نرم: ۷۰٪ + Grace Period ۷ روزه</span>
+                    </div>
+
+                    {{-- Resource Plan presets --}}
+                    <div class="ob-choices" role="radiogroup" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:1rem">
+                        <template x-for="(plan, pKey) in options.resource_plans" :key="pKey">
+                            <button type="button" class="ob-choice" role="radio" :aria-checked="form.resource_plan === pKey" @click="applyResourcePlan(pKey)">
+                                <strong x-text="plan.label"></strong>
+                                <small x-text="plan.description"></small>
+                                <div style="font-size:.75rem;color:var(--ob-muted);margin-top:.35rem;line-height:1.6">
+                                    رم: <span class="ob-ltr" x-text="plan.ram_mb + ' MB'"></span> | دیسک: <span class="ob-ltr" x-text="plan.disk_gb + ' GB'"></span>
+                                </div>
+                            </button>
+                        </template>
+                        <button type="button" class="ob-choice" role="radio" :aria-checked="form.resource_plan === 'custom'" @click="form.resource_plan = 'custom'">
+                            <strong>سفارشی (Custom)</strong>
+                            <small>تنظیم دستی تمامی مقادیر منابع</small>
+                        </button>
+                    </div>
+                    <input type="hidden" name="resource_plan" :value="form.resource_plan">
+
+                    {{-- Custom Quota Inputs --}}
+                    <div class="ob-grid ob-grid-2" style="background:#f8fafc;padding:.85rem;border-radius:10px;border:1px solid var(--ob-border)">
+                        <div class="ob-field">
+                            <label for="ob-ram">سقف رم مجاز (RAM Limit - MB) <span class="ob-req">*</span></label>
+                            <input id="ob-ram" name="ram_mb" type="number" min="512" max="32768" step="256" class="ob-input ob-ltr" x-model.number="form.ram_mb" required>
+                            <span class="ob-hint" x-text="'معادل ' + (form.ram_mb / 1024).toFixed(1) + ' گیگابایت (استخر اشتراکی)'"></span>
+                            @error('ram_mb')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field">
+                            <label for="ob-cpu">هسته پردازنده مجاز (CPU Cores) <span class="ob-req">*</span></label>
+                            <input id="ob-cpu" name="cpu_cores" type="number" min="0.5" max="16" step="0.5" class="ob-input ob-ltr" x-model.number="form.cpu_cores" required>
+                            <span class="ob-hint">سهمیه پردازش پویا</span>
+                            @error('cpu_cores')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field">
+                            <label for="ob-disk">دیسک سخت (Hard Disk Quota - GB) <span class="ob-req">*</span></label>
+                            <input id="ob-disk" name="disk_gb" type="number" min="1" max="1000" step="1" class="ob-input ob-ltr" x-model.number="form.disk_gb" @input="updateHardDisk()" required>
+                            <span class="ob-hint">سقف نهایی فیزیکی ذخیره‌سازی</span>
+                            @error('disk_gb')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field">
+                            <label for="ob-softdisk">دیسک نرم (Soft Disk Quota - GB) <span class="ob-req">*</span></label>
+                            <input id="ob-softdisk" name="soft_disk_gb" type="number" min="0.5" max="1000" step="0.5" class="ob-input ob-ltr" x-model.number="form.soft_disk_gb" required>
+                            <span class="ob-hint" x-text="'پیش‌فرض ۷۰٪ (' + (form.disk_gb * 0.70).toFixed(1) + ' GB) — هشدار به مشتری بدون قطعی سایت'"></span>
+                            @error('soft_disk_gb')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="ob-field" style="grid-column:1/-1">
+                            <label for="ob-bandwidth">ترافیک ماهانه مجاز (Bandwidth - GB)</label>
+                            <input id="ob-bandwidth" name="bandwidth_gb" type="number" min="1" max="10000" step="5" class="ob-input ob-ltr" x-model.number="form.bandwidth_gb">
+                            @error('bandwidth_gb')<p class="ob-err">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
                 </div>
 
                 <div class="ob-grid ob-grid-2">
@@ -749,8 +938,8 @@
 
         {{-- ── Step 6: review ─────────────────────────────────────────── --}}
         <section class="ob-card" x-show="step === 6" x-cloak aria-labelledby="ob-s6">
-            <h2 id="ob-s6">بازبینی و اجرا</h2>
-            <p class="ob-lead">با تأیید، نصب در صف قرار می‌گیرد و پیشرفت هر مرحله را زنده می‌بینید. نیازی به هیچ اقدام دستی روی سرور نیست.</p>
+            <h2 id="ob-s6">بازبینی و اجرای استقرار</h2>
+            <p class="ob-lead">خلاصهٔ نهایی تنظیمات هوشمند سایت و سهمیه‌بندی منابع. با تأیید، پایپلاین استقرار بدون نیاز به اقدامات تکراری اجرا می‌شود.</p>
 
             <div class="ob-summary">
                 <section>
@@ -768,19 +957,38 @@
                     </dl>
                 </section>
                 <section>
-                    <header><h3>لایسنس و کیت‌ها</h3><button type="button" class="ob-link" @click="go(3)">ویرایش</button></header>
+                    <header><h3>ماژول‌ها و لایسنس</h3><button type="button" class="ob-link" @click="go(3)">ویرایش</button></header>
                     <dl>
                         <dt>لایسنس</dt><dd x-text="options.license_types[form.license_type]"></dd>
                         <dt>حوزه</dt><dd x-text="form.business_vertical ? options.profiles[form.business_vertical]?.label : 'عمومی'"></dd>
-                        <dt>کیت‌ها</dt><dd x-text="selectedKitTitles() || '—'"></dd>
+                        <dt>ماژول‌های فعال</dt><dd><span class="ob-badge ob-badge-ok" x-text="fa(form.active_module_ids.length) + ' ماژول'"></span> <span x-text="selectedModuleTitlesSummary()"></span></dd>
+                        <dt>کیت‌های لایسنس</dt><dd x-text="selectedKitTitles() || '—'"></dd>
                     </dl>
                 </section>
                 <section>
-                    <header><h3>قالب و استقرار</h3><button type="button" class="ob-link" @click="go(4)">ویرایش</button></header>
+                    <header><h3>قالب</h3><button type="button" class="ob-link" @click="go(4)">ویرایش</button></header>
                     <dl>
                         <dt>قالب</dt><dd x-text="themeName() || 'بدون قالب'"></dd>
-                        <dt>سرور</dt><dd x-text="serverLabel()"></dd>
-                        <dt>SSL</dt><dd x-text="form.ssl_enabled ? 'فعال' : 'غیرفعال'"></dd>
+                    </dl>
+                </section>
+                <section>
+                    <header><h3>هاست و پایگاه داده</h3><button type="button" class="ob-link" @click="go(5)">ویرایش</button></header>
+                    <dl>
+                        <dt>سرور مقصد</dt><dd x-text="serverLabel()"></dd>
+                        <dt>مسیر وب</dt><dd class="ob-ltr" x-text="form.web_root_path || '(پیش‌فرض سرور)'"></dd>
+                        <dt>دیتابیس / کاربر</dt><dd class="ob-ltr" x-text="(form.db_name || '—') + ' @ ' + (form.db_user || '—')"></dd>
+                        <dt>میزبان دیتابیس</dt><dd class="ob-ltr" x-text="form.db_host || '127.0.0.1'"></dd>
+                        <dt>SSL</dt><dd x-text="form.ssl_enabled ? 'فعال (HTTPS)' : 'غیرفعال'"></dd>
+                    </dl>
+                </section>
+                <section>
+                    <header><h3>سهمیه‌بندی منابع سخت‌افزاری</h3><button type="button" class="ob-link" @click="go(5)">ویرایش</button></header>
+                    <dl>
+                        <dt>پلن منابع</dt><dd x-text="resourcePlanLabel()"></dd>
+                        <dt>رم تخصیصی</dt><dd class="ob-ltr" x-text="form.ram_mb + ' MB (' + (form.ram_mb / 1024).toFixed(1) + ' GB)'"></dd>
+                        <dt>دیسک سخت / نرم</dt><dd class="ob-ltr" x-text="form.disk_gb + ' GB سخت / ' + form.soft_disk_gb + ' GB نرم (۷۰٪)'"></dd>
+                        <dt>هسته‌های پردازنده</dt><dd class="ob-ltr" x-text="form.cpu_cores + ' Core'"></dd>
+                        <dt>ترافیک ماهانه</dt><dd class="ob-ltr" x-text="form.bandwidth_gb + ' GB'"></dd>
                     </dl>
                 </section>
 
@@ -788,10 +996,10 @@
                     <div>
                         <strong>پس از تأیید، به‌ترتیب و خودکار:</strong>
                         <ul class="ob-pipeline" style="margin-block-start:.5rem">
-                            <li>بررسی سرور، PHP، افزونه‌ها، فضای دیسک و مجوزها</li>
-                            <li>ساخت پوشهٔ وب، بارگذاری و استخراج بسته، تولید فایل محیطی و پایگاه داده</li>
-                            <li>رکورد DNS، پیکربندی Nginx روی سوکت PHP-FPM شناسایی‌شده، صدور SSL و تنظیم مجوزهای www-data</li>
-                            <li>صدور لایسنس سایت، اعمال حوزهٔ کسب‌وکار و فعال‌سازی کیت‌ها</li>
+                            <li>بررسی سرور، PHP، افزونه‌ها، ظرفیت رم و دیسک فیزیکی و مجوزها</li>
+                            <li>ساخت دایرکتوری وب سفارشی، بارگذاری و استخراج بسته، تولید فایل .env و دیتابیس اختصاصی</li>
+                            <li>رکورد DNS، پیکربندی Nginx روی سوکت PHP-FPM، صدور SSL و تنظیم مجوزهای www-data</li>
+                            <li>صدور لایسنس سایت، فعال‌سازی مستقیم تمامی ماژول‌های انتخابی در پایگاه‌داده و سهمیه‌بندی منابع</li>
                             <li>اختصاص قالب، پاک‌سازی کش و نماها، و پس از آماده‌شدن سایت، اعمال صفحات قالب روی دامنه</li>
                         </ul>
                     </div>
@@ -832,13 +1040,142 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         lookupUrl: @js(route('admin.onboarding.lookup-customer')),
         domainUrl: @js(route('admin.onboarding.check-domain')),
 
+        activeModuleCategory: 'all',
+        showDbPass: false,
+        serverCapacity: null,
+        capacityLoading: false,
+        serverCapacityUrl: @js(route('admin.onboarding.server-capacity')),
+        suggestInfraUrl: @js(route('admin.onboarding.suggest-infrastructure')),
+
         init() {
             if (prefill && prefill.valid) { this.applyLookup(prefill); }
             else if (this.form.mobile) { this.lookupCustomer(); }
             if (this.form.domain) { this.checkDomain(); }
             if (errorStep) { this.step = errorStep; }
+            if (this.form.remote_server_id) {
+                this.fetchServerCapacity(this.form.remote_server_id);
+                if (!this.form.web_root_path || !this.form.db_name) {
+                    this.fetchSuggestedInfrastructure();
+                }
+            }
+            if (this.form.business_vertical && !this.form.active_module_ids.length) {
+                this.selectDefaultVerticalModules();
+            }
         },
         fa(n) { return Number(n).toLocaleString('fa-IR'); },
+
+        // Module methods
+        filteredModules() {
+            if (this.activeModuleCategory === 'all') {
+                return this.options.modules;
+            }
+            return this.options.modules.filter(m => m.category === this.activeModuleCategory);
+        },
+        toggleActiveModule(id) {
+            const idx = this.form.active_module_ids.indexOf(id);
+            if (idx === -1) {
+                this.form.active_module_ids.push(id);
+            } else {
+                this.form.active_module_ids.splice(idx, 1);
+            }
+        },
+        selectAllModules() {
+            this.form.active_module_ids = this.options.modules.map(m => m.id);
+        },
+        deselectAllModules() {
+            this.form.active_module_ids = [];
+        },
+        selectDefaultVerticalModules() {
+            const vert = this.form.business_vertical || 'general';
+            const defaults = this.options.vertical_modules[vert] || this.options.vertical_modules['general'] || [];
+            this.form.active_module_ids = Array.from(new Set([...defaults]));
+        },
+        selectedModuleTitlesSummary() {
+            if (!this.form.active_module_ids.length) { return 'هیچ ماژولی انتخاب نشده است.'; }
+            const titles = this.options.modules
+                .filter(m => this.form.active_module_ids.includes(m.id))
+                .slice(0, 5)
+                .map(m => m.title);
+            const remaining = this.form.active_module_ids.length - titles.length;
+            return '(' + titles.join('، ') + (remaining > 0 ? ' و ' + this.fa(remaining) + ' ماژول دیگر' : '') + ')';
+        },
+
+        // Infrastructure & Capacity methods
+        async selectServer(serverId) {
+            this.form.remote_server_id = serverId;
+            await this.fetchServerCapacity(serverId);
+            await this.fetchSuggestedInfrastructure();
+        },
+        async fetchServerCapacity(serverId) {
+            if (!serverId) { return; }
+            this.capacityLoading = true;
+            try {
+                const res = await fetch(`${this.serverCapacityUrl}?server_id=${serverId}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (res.ok) {
+                    this.serverCapacity = await res.json();
+                }
+            } catch (e) {
+                console.error('Failed to fetch server capacity', e);
+            } finally {
+                this.capacityLoading = false;
+            }
+        },
+        async fetchSuggestedInfrastructure() {
+            if (!this.form.remote_server_id) { return; }
+            try {
+                const params = new URLSearchParams({
+                    server_id: this.form.remote_server_id,
+                    domain: this.form.domain || 'site',
+                    mobile: this.form.mobile || ''
+                });
+                const res = await fetch(`${this.suggestInfraUrl}?${params}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.form.web_root_path = data.web_root_path;
+                    this.form.db_name = data.db_name;
+                    this.form.db_user = data.db_user;
+                    this.form.db_host = data.db_host || '127.0.0.1';
+                    if (!this.form.db_password) {
+                        this.form.db_password = data.db_password;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to suggest infrastructure', e);
+            }
+        },
+        generateRandomPassword() {
+            const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+            let pass = '';
+            for (let i = 0; i < 20; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            this.form.db_password = pass;
+        },
+
+        // Resource Governance methods
+        applyResourcePlan(planKey) {
+            this.form.resource_plan = planKey;
+            const p = this.options.resource_plans[planKey];
+            if (p) {
+                this.form.ram_mb = p.ram_mb;
+                this.form.disk_gb = p.disk_gb;
+                this.form.soft_disk_gb = p.soft_disk_gb;
+                this.form.cpu_cores = p.cpu_cores;
+                this.form.bandwidth_gb = p.bandwidth_gb;
+            }
+        },
+        updateHardDisk() {
+            const ratio = this.options.default_soft_disk_ratio || 0.70;
+            this.form.soft_disk_gb = Math.round(this.form.disk_gb * ratio * 10) / 10;
+        },
+        resourcePlanLabel() {
+            if (this.form.resource_plan === 'custom') { return 'سفارشی (Custom)'; }
+            return this.options.resource_plans[this.form.resource_plan]?.label || this.form.resource_plan;
+        },
 
         async lookupCustomer() {
             const value = (this.form.mobile || '').trim();
@@ -901,6 +1238,7 @@ function onboardingWizard(options, initial, prefill, errorStep) {
             } else if (prev?.theme_id && this.form.theme_id === prev.theme_id) {
                 this.form.theme_id = null;
             }
+            this.selectDefaultVerticalModules();
         },
         toggleKit(kit) {
             if (kit.vertical && kit.vertical !== this.form.business_vertical) { return; }
