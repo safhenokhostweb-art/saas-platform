@@ -415,4 +415,73 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
         $this->assertCount(2, $history);
         $this->assertSame($rollback->id, $history[0]->id);
     }
+
+    public function test_dispatch_package_upgrade_synchronizes_files_and_clears_views(): void
+    {
+        $customer = Customer::create(['name' => 'Solar Fleet Customer', 'mobile' => '09120003344']);
+        $site = Site::create([
+            'customer_id' => $customer->id,
+            'title'       => 'Solar Power Station',
+            'domain'      => 'solar.safhenokhost.ir',
+            'db_user'     => 'cust_site_54',
+        ]);
+
+        $tempBase = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'fleet_sync_test_' . uniqid();
+        $sourceDir = $tempBase . DIRECTORY_SEPARATOR . 'source_customer_site';
+        $targetDir = $tempBase . DIRECTORY_SEPARATOR . 'cust_site_54';
+
+        @mkdir($sourceDir . '/resources/views/layouts', 0777, true);
+        @mkdir($sourceDir . '/resources/views/themes/solar-industry', 0777, true);
+        @mkdir($targetDir, 0777, true);
+
+        file_put_contents($sourceDir . '/resources/views/layouts/auth-login.blade.php', '<!-- Updated Auth Login -->');
+        file_put_contents($sourceDir . '/resources/views/themes/solar-industry/auth-styles.blade.php', '/* Updated Solar Styles */');
+
+        // Create mock artisan in target directory
+        file_put_contents($targetDir . '/artisan', "#!/usr/bin/env php\n<?php echo 'Compiled views cleared!';");
+
+        config(['services.customer_site_source_path' => $sourceDir]);
+        $site->update(['features' => ['local_path' => $targetDir]]);
+
+        $package = CustomerInstallationPackage::create([
+            'version'       => '1.3.0',
+            'arvan_key'     => 'packages/customer-site-v1.3.0.zip',
+            'sha256'        => str_repeat('b', 64),
+            'size_bytes'    => 15000000,
+            'is_active'     => true,
+            'released_at'   => now(),
+            'release_notes' => 'نسخه جدید شامل تمپلیت ورود و استایل خورشیدی',
+        ]);
+
+        $service = app(ThemeFleetUpgradeService::class);
+        $update = $service->dispatchPackageUpgrade($site, $package);
+
+        $this->assertSame(ThemeFleetUpdate::STATUS_COMPLETED, $update->status);
+        $this->assertSame(ThemeFleetUpdate::TYPE_PACKAGE, $update->update_type);
+        $this->assertFileExists($targetDir . '/resources/views/layouts/auth-login.blade.php');
+        $this->assertSame('<!-- Updated Auth Login -->', file_get_contents($targetDir . '/resources/views/layouts/auth-login.blade.php'));
+        $this->assertFileExists($targetDir . '/resources/views/themes/solar-industry/auth-styles.blade.php');
+        $this->assertSame('/* Updated Solar Styles */', file_get_contents($targetDir . '/resources/views/themes/solar-industry/auth-styles.blade.php'));
+        $this->assertStringContainsString('همگام‌سازی فایل‌ها', $update->changelog_summary);
+
+        // Clean up temp dirs
+        @unlink($targetDir . '/resources/views/layouts/auth-login.blade.php');
+        @unlink($targetDir . '/resources/views/themes/solar-industry/auth-styles.blade.php');
+        @unlink($targetDir . '/artisan');
+        @rmdir($targetDir . '/resources/views/layouts');
+        @rmdir($targetDir . '/resources/views/themes/solar-industry');
+        @rmdir($targetDir . '/resources/views/themes');
+        @rmdir($targetDir . '/resources/views');
+        @rmdir($targetDir . '/resources');
+        @rmdir($targetDir);
+        @unlink($sourceDir . '/resources/views/layouts/auth-login.blade.php');
+        @unlink($sourceDir . '/resources/views/themes/solar-industry/auth-styles.blade.php');
+        @rmdir($sourceDir . '/resources/views/layouts');
+        @rmdir($sourceDir . '/resources/views/themes/solar-industry');
+        @rmdir($sourceDir . '/resources/views/themes');
+        @rmdir($sourceDir . '/resources/views');
+        @rmdir($sourceDir . '/resources');
+        @rmdir($sourceDir);
+        @rmdir($tempBase);
+    }
 }

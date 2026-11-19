@@ -1,4 +1,4 @@
-﻿# PROJECT STATE
+# PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
 > Last Updated: 2026-11-18
 
