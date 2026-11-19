@@ -1,0 +1,65 @@
+{
+    "status": "READY",
+    "project_key": "saas-platform",
+    "task_id": "WU-ONBOARDING-INTELLIGENT-UNIFIED-RESOURCE-GOVERNANCE",
+    "summary": "feat(onboarding): intelligent unified onboarding, module selection, db provisioning, and hardware resource governance",
+    "base_sha": "1891f7f22e7dacf4d2686bf30256f3077b9eeab0",
+    "branch": "main",
+    "changed_files": [
+        "app/Http/Controllers/Admin/OnboardingWizardController.php",
+        "app/Http/Requests/Admin/StartOnboardingRequest.php",
+        "app/Services/CustomerInstallation/Dto/CustomerInstallRequest.php",
+        "app/Services/CustomerInstallation/Stages/ApplySiteEntitlementsStage.php",
+        "app/Services/CustomerInstallation/Stages/CreateDatabaseStage.php",
+        "app/Services/CustomerInstallation/Stages/ProvisionLicenseStage.php",
+        "app/Services/Infrastructure/ServerCapacityService.php",
+        "app/Services/Onboarding/SiteOnboardingService.php",
+        "app/Services/ResourceGovernance/SiteResourceAlertService.php",
+        "app/Services/ResourceGovernance/SiteResourceCalculatorService.php",
+        "app/Services/ThemeBuilder/ComponentVersionRegistry.php",
+        "resources/views/admin/onboarding/wizard.blade.php",
+        "routes/web.php",
+        "tests/Feature/Infrastructure/ServerCapacityServiceTest.php"
+    ],
+    "migration_files": [],
+    "reviewed_migrations": [],
+    "dependency_commits": [],
+    "test_results": [
+        {
+            "name": "server-capacity-service",
+            "type": "test",
+            "command": "php artisan test tests/Feature/Infrastructure/ServerCapacityServiceTest.php",
+            "exit_code": 0,
+            "duration_ms": 33430
+        },
+        {
+            "name": "onboarding-wizard",
+            "type": "test",
+            "command": "php artisan test tests/Feature/Onboarding/OnboardingWizardTest.php",
+            "exit_code": 0,
+            "duration_ms": 36170
+        },
+        {
+            "name": "tenant-resource-governor",
+            "type": "test",
+            "command": "php artisan test tests/Feature/DevOps/TenantResourceGovernorTest.php",
+            "exit_code": 0,
+            "duration_ms": 33090
+        }
+    ],
+    "build_result": {
+        "required": true,
+        "status": "pending",
+        "contract": "server-managed-exact-commit"
+    },
+    "health_contract": {
+        "required": true,
+        "endpoint_source": "deployment-system project http_health_check"
+    },
+    "risk_flags": [],
+    "excluded_untracked_files": [],
+    "release_ready": true,
+    "commit_sha": "d2dac8f8d5252f8ac23521c89bae02f930a4520d",
+    "created_timestamp": "2026-11-19T10:14:37+00:00",
+    "metadata_version": 1
+}
