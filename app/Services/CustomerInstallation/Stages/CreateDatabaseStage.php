@@ -51,6 +51,32 @@ class CreateDatabaseStage extends AbstractStage
 
             $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
 
+            // P0 safety (2026-11-19): reviewed/custom names (the wizard now
+            // always sends them) can collide with another tenant on the same
+            // server. The provisioners are idempotent (CREATE ... IF NOT
+            // EXISTS, ALTER USER ... IDENTIFIED BY), so a collision silently
+            // reset the other site's password and granted it to this one, and
+            // rollback() then DROPPED the other site's database. Refuse any
+            // name that already exists; fail closed when a custom name cannot
+            // be checked. Random generated names keep the old behaviour when
+            // the driver cannot answer (null).
+            $customNames = !empty($ctx->request->dbName) || !empty($ctx->request->dbUser);
+            $dbExists = $provisioner->databaseExists($ctx, $dbName);
+            $userExists = $provisioner->databaseUserExists($ctx, $dbUser);
+            if ($dbExists === true || $userExists === true) {
+                return StageResult::failure($this->name(), sprintf(
+                    'نام %s از قبل روی این سرور وجود دارد و ممکن است متعلق به سایت دیگری باشد؛ برای جلوگیری از آسیب به آن، پایگاه داده ساخته نشد. نام دیگری انتخاب کنید.',
+                    $dbExists === true ? "پایگاه داده «{$dbName}»" : "کاربر «{$dbUser}»",
+                ), $this->elapsed());
+            }
+            if ($customNames && ($dbExists === null || $userExists === null)) {
+                return StageResult::failure(
+                    $this->name(),
+                    'وجود پایگاه داده/کاربر روی سرور قابل بررسی نبود؛ نام‌های سفارشی بدون این بررسی استفاده نمی‌شوند.',
+                    $this->elapsed(),
+                );
+            }
+
             $provisioner->createDatabase($ctx, $dbName);
             $provisioner->createUser($ctx, $dbUser, $dbPass);
             $provisioner->grantPrivileges($ctx, $dbName, $dbUser);
@@ -97,6 +123,9 @@ class CreateDatabaseStage extends AbstractStage
             ], [
                 'db_name' => $dbName,
                 'db_user' => $dbUser,
+                // Ownership marker: this stage verified neither existed and
+                // created both, so rollback() may drop exactly these.
+                'created_by_stage' => true,
             ], $this->elapsed());
         });
     }
@@ -162,6 +191,13 @@ class CreateDatabaseStage extends AbstractStage
 
     public function rollback(InstallationContext $ctx, array $snapshot): void
     {
+        // Snapshots written since 2026-11-19 carry created_by_stage; without
+        // it (an older in-flight installation) the stage keeps the previous
+        // behaviour, whose names were random and therefore its own.
+        if (array_key_exists('created_by_stage', $snapshot) && $snapshot['created_by_stage'] !== true) {
+            return;
+        }
+
         $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
 
         if (!empty($snapshot['db_name'])) {

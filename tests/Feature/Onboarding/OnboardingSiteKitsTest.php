@@ -38,6 +38,12 @@ class OnboardingSiteKitsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // InstallationTargetGuard::packageError() (17648113) refuses to start
+        // without an active install package; the wizard GET used to fabricate one.
+        \App\Models\CustomerInstallationPackage::create([
+            'version' => '1.1.0', 'arvan_key' => 'packages/customer-site-v1.1.0.zip',
+            'sha256' => str_repeat('a', 64), 'size_bytes' => 1024, 'is_active' => true, 'released_at' => now(),
+        ]);
         Queue::fake();
         $this->platformRootDomain();
         config(['services.customer_provision_secret' => 'provision-secret-for-tests']);

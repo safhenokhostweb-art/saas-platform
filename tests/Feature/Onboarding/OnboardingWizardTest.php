@@ -309,12 +309,39 @@ class OnboardingWizardTest extends TestCase
                 'site_ids' => [$site->id],
             ]);
 
+        // P0 safety (2026-11-19): the request is refused and audited, never "successful".
         $response->assertRedirect(route('admin.onboarding.create', ['tab' => 'fleet-updates']));
-        $response->assertSessionHas('success');
+        $response->assertSessionHas('error');
 
         $this->assertTrue(\App\Models\ThemeFleetUpdate::where('site_id', $site->id)
             ->where('update_type', \App\Models\ThemeFleetUpdate::TYPE_PACKAGE)
+            ->where('status', \App\Models\ThemeFleetUpdate::STATUS_FAILED)
             ->exists());
+    }
+
+    public function test_apply_package_without_an_active_package_never_fabricates_one(): void
+    {
+        $cust = $this->customer('09121112245');
+        $site = $this->site($cust, 'pkg-none.example.com');
+        \App\Models\CustomerInstallationPackage::query()->update(['is_active' => false]);
+        $packagesBefore = \App\Models\CustomerInstallationPackage::count();
+
+        $response = $this->actingAs($this->admin())
+            ->post(route('admin.onboarding.fleet-updates.apply-package'), ['site_ids' => [$site->id]]);
+
+        $response->assertSessionHas('error');
+        $this->assertSame($packagesBefore, \App\Models\CustomerInstallationPackage::count());
+        $this->assertNull(\App\Models\CustomerInstallationPackage::active(), 'An inactive package must not be used or re-activated.');
+        $this->assertSame(0, \App\Models\ThemeFleetUpdate::count());
+    }
+
+    public function test_fleet_tab_shows_package_upgrade_as_disabled_without_an_apply_form(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(route('admin.onboarding.create', ['tab' => 'fleet-updates']))
+            ->assertOk()
+            ->assertSee('data-fleet-package-upgrade="disabled"', false)
+            ->assertDontSee(route('admin.onboarding.fleet-updates.apply-package'), false);
     }
 
     public function test_rollback_fleet_update_dispatches_one_click_rollback(): void

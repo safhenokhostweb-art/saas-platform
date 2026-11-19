@@ -180,22 +180,13 @@ class OnboardingWizardController extends Controller
                 ->with('error', 'هیچ سایتی برای ارتقای پکیج انتخاب نشده است.');
         }
 
-        $package = \App\Models\CustomerInstallationPackage::active()
-            ?? \App\Models\CustomerInstallationPackage::latest('id')->first();
-
+        // P0 safety (2026-11-19): only the genuinely active package. This used
+        // to fall back to any (possibly inactive) package and, when none
+        // existed, to INSERT an active one with a fabricated sha256/size.
+        $package = \App\Models\CustomerInstallationPackage::active();
         if (!$package) {
-            $coreVer = \App\Services\ThemeBuilder\ComponentVersionRegistry::get('customer_core')['version'] ?? '1.3.0';
-            $package = \App\Models\CustomerInstallationPackage::firstOrCreate(
-                ['version' => $coreVer],
-                [
-                    'arvan_key'     => 'packages/customer-site-v' . $coreVer . '.zip',
-                    'sha256'        => hash('sha256', 'customer-site-v' . $coreVer),
-                    'size_bytes'    => 15000000,
-                    'release_notes' => 'ارتقای کتابخانه ویجت‌ها، ماژول‌های هسته، تمپلیت‌های احراز هویت و پایداری موتور کانواس',
-                    'is_active'     => true,
-                    'released_at'   => now(),
-                ]
-            );
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates'])
+                ->with('error', 'هیچ بستهٔ نصب فعالی ثبت نشده است.');
         }
 
         $successCount = 0;
